@@ -15,8 +15,12 @@ $modules = array(
 	'Job',
 	'File',
 	'Log',
+	//'Restore',
+	//'Statistics',
 	'Admin',
+	//'User',
 );
+
 if($env == 'development') {
   $modules[] = 'ZendDeveloperTools';
 }

@@ -26,15 +26,18 @@ $this->headTitle($title);
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th>Job</th>
-	<th>Name</th>
-	<th>Client</th>
-	<th>Type</th>
-	<th>Level</th>
-	<th>Start</th>
-	<th>Duration</th>
-	<th>Status</th>
-	<th>Log</th>
+	<th><?php echo $this->translate("Job"); ?></th>
+	<th><?php echo $this->translate("Name"); ?></th>
+	<th><?php echo $this->translate("Client"); ?></th>
+	<th><?php echo $this->translate("Type"); ?></th>
+	<th><?php echo $this->translate("Level"); ?></th>
+	<th><?php echo $this->translate("Start"); ?></th>
+	<th><?php echo $this->translate("End"); ?></th>
+	<th><?php echo $this->translate("Duration"); ?></th>
+	<th><?php echo $this->translate("Status"); ?></th>
+	<th><?php echo $this->translate("Log"); ?></th>
+	<th></th>
+	<th></th>
 	
 </tr>
 
@@ -48,9 +51,20 @@ $this->headTitle($title);
 	<td><?php echo $this->printJobType($job->type); ?></td>
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
 	<td><?php echo $this->escapeHtml($job->starttime); ?></td>
+	<td><?php echo $this->escapeHtml($job->endtime); ?></td>
 	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
-	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>"><span class="glyphicon glyphicon-file"></span></a></td>
+	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a></td>
+	<td>
+	<?php if($job->type == "B") : ?>
+	<a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span></a>
+	<?php endif; ?>
+	</td>
+	<td>
+	<?php if($job->type == "B") : ?>
+	<a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></a>
+	<?php endif; ?>
+	</td>
 	
 </tr>
 

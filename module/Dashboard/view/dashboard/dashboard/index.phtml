@@ -99,20 +99,21 @@ $flash->setMessageOpenFormat('
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse out" id="collapseRunning">
+	    <div class="panel-body panel-collapse collapse in" id="collapseRunning">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
             <tr>
-		<th>Job</th>
-		<th>Name</th>
-		<th>Client</th>
-		<th>Type</th>
-		<th>Level</th>
-		<th>Start</th>
+		<th><?php echo $this->translate("Job"); ?></th>
+		<th><?php echo $this->translate("Name"); ?></th>
+		<th><?php echo $this->translate("Client"); ?></th>
+		<th><?php echo $this->translate("Type"); ?></th>
+		<th><?php echo $this->translate("Level"); ?></th>
+		<th><?php echo $this->translate("Start"); ?></th>
 		<!-- <th>Duration</th> -->
-		<th>Status</th>
-		<th>Log</th>
+		<th><?php echo $this->translate("Status"); ?></th>
+		<th><?php echo $this->translate("Log"); ?></th>
+		<th></th>
 	    </tr>
             
             <?php foreach ($this->runningJobs as $item) : ?>
@@ -127,8 +128,9 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->escapeHtml($item->starttime); ?></td>
 	      <!-- <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td> -->
 	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
-	  
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	      <td><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span></a></td>
+
 	      </tr>
 
 	    <?php endforeach; ?>
@@ -168,20 +170,21 @@ $flash->setMessageOpenFormat('
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse out" id="collapseWaiting">
+	    <div class="panel-body panel-collapse collapse in" id="collapseWaiting">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
             <tr>
-		<th>Job</th>
-		<th>Name</th>
-		<th>Client</th>
-		<th>Type</th>
-		<th>Level</th>
-		<th>Start</th>
+		<th><?php echo $this->translate("Job"); ?></th>
+		<th><?php echo $this->translate("Name"); ?></th>
+		<th><?php echo $this->translate("Client"); ?></th>
+		<th><?php echo $this->translate("Type"); ?></th>
+		<th><?php echo $this->translate("Level"); ?></th>
+		<th><?php echo $this->translate("Start"); ?></th>
 		<!-- <th>Duration</th> -->
-		<th>Status</th>
-		<th>Log</th>
+		<th><?php echo $this->translate("Status"); ?></th>
+		<th><?php echo $this->translate("Log"); ?></th>
+		<th></th>
 	    </tr>
             
             <?php foreach ($this->waitingJobs as $item) : ?>
@@ -196,7 +199,8 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->escapeHtml($item->starttime); ?></td>
 	      <!-- <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td> -->
 	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	      <td><a href="<?php ?>>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span></a></td>
 	  
 	      </tr>
 
@@ -237,20 +241,21 @@ $flash->setMessageOpenFormat('
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse out" id="collapseUnsuccessful">
+	    <div class="panel-body panel-collapse collapse in" id="collapseUnsuccessful">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
             <tr>
-		<th>Job</th>
-		<th>Name</th>
-		<th>Client</th>
-		<th>Type</th>
-		<th>Level</th>
-		<th>Start</th>
-		<th>Duration</th>
-		<th>Status</th>
-		<th>Log</th>
+		<th><?php echo $this->translate("Job"); ?></th>
+		<th><?php echo $this->translate("Name"); ?></th>
+		<th><?php echo $this->translate("Client"); ?></th>
+		<th><?php echo $this->translate("Type"); ?></th>
+		<th><?php echo $this->translate("Level"); ?></th>
+		<th><?php echo $this->translate("Start"); ?></th>
+		<th><?php echo $this->translate("Duration") ?></th>
+		<th><?php echo $this->translate("Status"); ?></th>
+		<th><?php echo $this->translate("Log"); ?></th>
+		<th></th>
 	    </tr>
             
             <?php foreach ($this->lastUnsuccessfulJobs as $jobUnsuccess) : ?>
@@ -265,8 +270,8 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->escapeHtml($jobUnsuccess->starttime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobUnsuccess->starttime, $jobUnsuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>"><span class="glyphicon glyphicon-file"></a></td>
-	  
+	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
+	      <td><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span></a></td>
 	      </tr>
 
 	    <?php endforeach; ?>
@@ -309,20 +314,22 @@ $flash->setMessageOpenFormat('
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse out" id="collapseSuccessful">
+	    <div class="panel-body panel-collapse collapse in" id="collapseSuccessful">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
             <tr>
-		<th>Job</th>
-		<th>Name</th>
-		<th>Client</th>
-		<th>Type</th>
-		<th>Level</th>
-		<th>Start</th>
-		<th>Duration</th>
-		<th>Status</th>
-		<th>Log</th>
+		<th><?php echo $this->translate("Job"); ?></th>
+		<th><?php echo $this->translate("Name"); ?></th>
+		<th><?php echo $this->translate("Client"); ?></th>
+		<th><?php echo $this->translate("Type"); ?></th>
+		<th><?php echo $this->translate("Level"); ?></th>
+		<th><?php echo $this->translate("Start"); ?></th>
+		<th><?php echo $this->translate("Duration"); ?></th>
+		<th><?php echo $this->translate("Status"); ?></th>
+		<th><?php echo $this->translate("Log"); ?></th>
+		<th></th>
+		<th></th>
 	    </tr>
             
             <?php foreach ($this->lastSuccessfulJobs as $jobSuccess) : ?>
@@ -339,6 +346,16 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
 	      <td>
 	      <a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a>
+	      </td>
+	      <td>
+	      <?php if($jobSuccess->type == "B") : ?>
+	      <a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span></a>
+	      <?php endif; ?>
+	      </td>
+	      <td>
+	      <?php if($jobSuccess->type == "B") : ?>
+	      <a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></a>
+	      <?php endif; ?>
 	      </td>
 	  
 	      </tr>
@@ -375,37 +392,36 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 	    	<span class="glyphicon glyphicon-stats"></span>
-		<a data-toggle="collapse" href="#collapseJobStats"><?php echo $this->translate('Job statistic (last 24 hours)') ?></a>
-		<span class="caret"></span>
+		<?php echo $this->translate('Job statistic (last 24 hours)') ?>
 		</h3>
             </div>
             
-            <div class="panel-body panel-collapse collapse in" id="collapseJobStats">
+            <div class="panel-body">
             
             <div class="col-md-4">
             
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td>Running</td><td><?php echo $this->jobsRunning; ?></td></tr>
-		<tr><td>Completed successful</td><td><?php echo $this->jobsTerminated; ?></td></tr>
-		<tr><td>Terminated with errors</td><td><?php echo $this->jobsTerminatedWithErrors; ?></td></tr>
-		<tr><td>Non-fatal errors</td><td><?php echo $this->jobsWithNonFatalErrors; ?></td></tr>
-		<tr><td>Fatal errors</td><td><?php echo $this->jobsWithFatalErrors; ?></td></tr>
-		<tr><td>Canceled by user</td><td><?php echo $this->jobsCanceled; ?></td></tr>
-		<tr><td>Verify found difference</td><td><?php echo $this->jobsVerifyFoundDiff; ?></td></tr>
-		<tr><td>Waiting for client</td><td><?php echo $this->jobsWaitingForClient; ?></td></tr>
-		<tr><td>Waiting for storage daemon</td><td><?php echo $this->jobsWaitingForStorageDaemon; ?></td></tr>
-		<tr><td>Waiting for new media</td><td><?php echo $this->jobsWaitingForNewMedia; ?></td></tr>
-		<tr><td>Waiting for media mount</td><td><?php echo $this->jobsWaitingForMediaMount; ?></td></tr>
-		<tr><td>Waiting for storage resource</td><td><?php echo $this->jobsWaitingForStorageResource; ?></td></tr>
-		<tr><td>Waiting for job resource</td><td><?php echo $this->jobsWaitingForJobResource; ?></td></tr>
-		<tr><td>Waiting for client resource</td><td><?php echo $this->jobsWaitingForClientResource; ?></td></tr>
-		<tr><td>Waiting on maximum jobs</td><td><?php echo $this->jobsWaitingOnMaximumJobs; ?></td></tr>
-		<tr><td>Waiting on start time</td><td><?php echo $this->jobsWaitingOnStartTime; ?></td></tr>
-		<tr><td>Waiting on higher priority jobs</td><td><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></td></tr>
-		<tr><td>SD despooling attributes</td><td><?php echo $this->jobsSDdespoolingAttributes; ?></td></tr>
-		<tr><td>Doing batch insert file records</td><td><?php echo $this->jobsBatchInsertFileRecords; ?></td></tr>
-		<tr><td>Created not yet running</td><td><?php echo $this->jobsCreatedNotRunning; ?></td></tr>
-		<tr><td>Blocked</td><td><?php echo $this->jobsBlocked; ?></td></tr>
+		<tr><td><?php echo $this->translate("Running"); ?></td><td><?php echo $this->jobsRunning; ?></td></tr>
+		<tr><td><?php echo $this->translate("Completed successful"); ?></td><td><?php echo $this->jobsTerminated; ?></td></tr>
+		<tr><td><?php echo $this->translate("Terminated with errors"); ?></td><td><?php echo $this->jobsTerminatedWithErrors; ?></td></tr>
+		<tr><td><?php echo $this->translate("Non-fatal errors"); ?></td><td><?php echo $this->jobsWithNonFatalErrors; ?></td></tr>
+		<tr><td><?php echo $this->translate("Fatal errors"); ?></td><td><?php echo $this->jobsWithFatalErrors; ?></td></tr>
+		<tr><td><?php echo $this->translate("Canceled by user"); ?></td><td><?php echo $this->jobsCanceled; ?></td></tr>
+		<tr><td><?php echo $this->translate("Verify found difference"); ?></td><td><?php echo $this->jobsVerifyFoundDiff; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for client"); ?></td><td><?php echo $this->jobsWaitingForClient; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for storage daemon"); ?></td><td><?php echo $this->jobsWaitingForStorageDaemon; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for new media"); ?></td><td><?php echo $this->jobsWaitingForNewMedia; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for media mount"); ?></td><td><?php echo $this->jobsWaitingForMediaMount; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for storage resource"); ?></td><td><?php echo $this->jobsWaitingForStorageResource; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for job resource"); ?></td><td><?php echo $this->jobsWaitingForJobResource; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting for client resource"); ?></td><td><?php echo $this->jobsWaitingForClientResource; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting on maximum jobs"); ?></td><td><?php echo $this->jobsWaitingOnMaximumJobs; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting on start time"); ?></td><td><?php echo $this->jobsWaitingOnStartTime; ?></td></tr>
+		<tr><td><?php echo $this->translate("Waiting on higher priority jobs"); ?></td><td><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></td></tr>
+		<tr><td><?php echo $this->translate("SD despooling attributes"); ?></td><td><?php echo $this->jobsSDdespoolingAttributes; ?></td></tr>
+		<tr><td><?php echo $this->translate("Doing batch insert file records"); ?></td><td><?php echo $this->jobsBatchInsertFileRecords; ?></td></tr>
+		<tr><td><?php echo $this->translate("Created not yet running"); ?></td><td><?php echo $this->jobsCreatedNotRunning; ?></td></tr>
+		<tr><td><?php echo $this->translate("Blocked"); ?></td><td><?php echo $this->jobsBlocked; ?></td></tr>
 	      </table>
 	      
             </div>
@@ -422,6 +438,7 @@ $flash->setMessageOpenFormat('
         
 </div>
     
+<!-- CATALOG STATISTICS -->
 <div class="col-md-3">
         
         <div class="panel panel-default">
@@ -435,13 +452,13 @@ $flash->setMessageOpenFormat('
             <div class="panel-body">
                         
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td>Total clients</td><td><span class="badge"><?php echo $this->clientNum; ?></span></td></tr>
-		<tr><td>Total filesets</td><td><span class="badge"><?php echo $this->filesetNum; ?></span></td></tr>
-		<tr><td>Total pools</td><td><span class="badge"><?php echo $this->poolNum; ?></span></td></tr>
-		<tr><td>Total volumes</td><td><span class="badge"><?php echo $this->volumeNum; ?></span></td></tr>
-		<tr><td>Total jobs</td><td><span class="badge"><?php echo $this->jobNum; ?></span></td></tr>
-		<tr><td>Total files</td><td><span class="badge"><?php echo $this->fileNum; ?></span></td></tr>
-		<tr><td>Total logs</td><td><span class="badge"><?php echo $this->logNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total clients"); ?></td><td><span class="badge"><?php echo $this->clientNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total filesets"); ?></td><td><span class="badge"><?php echo $this->filesetNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total pools"); ?></td><td><span class="badge"><?php echo $this->poolNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total volumes"); ?></td><td><span class="badge"><?php echo $this->volumeNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total jobs"); ?></td><td><span class="badge"><?php echo $this->jobNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total files"); ?></td><td><span class="badge"><?php echo $this->fileNum; ?></span></td></tr>
+		<tr><td><?php echo $this->translate("Total logs"); ?></td><td><span class="badge"><?php echo $this->logNum; ?></span></td></tr>
 	      </table>
             
             </div>
