@@ -116,7 +116,8 @@ bEventType = dict(
     bEventVssPrepareSnapshot = 22,
     bEventOptionPlugin = 23,
     bEventHandleBackupFile = 24,
-    bEventComponentInfo = 25
+    bEventComponentInfo = 25,
+    bEventNewPluginOptions = 26
 )
 
 bIOPS = dict(

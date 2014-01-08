@@ -103,6 +103,7 @@ static pFuncs pluginFuncs = {
 struct plugin_ctx {
    boffset_t offset;
    BPIPE *pfd;                        /* bpipe() descriptor */
+   char *plugin_options;              /* Override of plugin options passed in */
    char *fname;                       /* Filename to "backup/restore" */
    char *reader;                      /* Reader program for backup */
    char *writer;                      /* Writer program for backup */
@@ -189,7 +190,8 @@ static bRC newPlugin(bpContext *ctx)
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
    bfuncs->registerBareosEvents(ctx,
-                                5,
+                                6,
+                                bEventNewPluginOptions,
                                 bEventPluginCommand,
                                 bEventJobStart,
                                 bEventRestoreCommand,
@@ -213,11 +215,17 @@ static bRC freePlugin(bpContext *ctx)
    if (p_ctx->fname) {
       free(p_ctx->fname);
    }
+
    if (p_ctx->reader) {
       free(p_ctx->reader);
    }
+
    if (p_ctx->writer) {
       free(p_ctx->writer);
+   }
+
+   if (p_ctx->plugin_options) {
+      free(p_ctx->plugin_options);
    }
 
    free(p_ctx);                          /* free our private context */
@@ -246,7 +254,9 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
+   bRC retval = bRC_OK;
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
    if (!p_ctx) {
       return bRC_Error;
    }
@@ -268,14 +278,32 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
        * Fall-through wanted
        */
    case bEventPluginCommand:
-      return parse_plugin_definition(ctx, value);
+      retval = parse_plugin_definition(ctx, value);
+      break;
+   case bEventNewPluginOptions:
+      /*
+       * Free any previous value.
+       */
+      if (p_ctx->plugin_options) {
+         free(p_ctx->plugin_options);
+         p_ctx->plugin_options = NULL;
+      }
+
+      retval = parse_plugin_definition(ctx, value);
+
+      /*
+       * Save that we got a plugin override.
+       */
+      p_ctx->plugin_options = bstrdup((char *)value);
+      break;
    default:
       Jmsg(ctx, M_FATAL, "bpipe-fd: unknown event=%d\n", event->eventType);
       Dmsg(ctx, dbglvl, "bpipe-fd: unknown event=%d\n", event->eventType);
+      retval = bRC_Error;
       break;
    }
 
-   return bRC_OK;
+   return retval;
 }
 
 /*
@@ -431,6 +459,11 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
  */
 static bRC endRestoreFile(bpContext *ctx)
 {
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   if (!p_ctx) {
+      return bRC_Error;
+   }
+
    return bRC_OK;
 }
 
@@ -575,11 +608,23 @@ static inline bool parse_boolean(const char *argument_value)
 /*
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_if_null(char **destination, char *value)
+static inline void set_string_if_null(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
    }
+}
+
+/*
+ * Always set destination to value and clean any previous one.
+ */
+static inline void set_string(char **destination, char *value)
+{
+   if (*destination) {
+      free(*destination);
+   }
+
+   *destination = bstrdup(value);
 }
 
 /*
@@ -594,11 +639,14 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    int i, cnt;
    char *plugin_definition, *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+   bool keep_existing;
    bool allow_old_plugin_definition = true;
 
    if (!p_ctx || !value) {
       return bRC_Error;
    }
+
+   keep_existing = (p_ctx->plugin_options) ? true : false;
 
    /*
     * Parse the plugin definition.
@@ -672,11 +720,18 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             break;
          }
 
-         /*
-          * Keep the first value, ignore any next setting.
-          */
          if (str_destination) {
-            set_if_null(str_destination, argument);
+            if (keep_existing) {
+               /*
+                * Keep the first value, ignore any next setting.
+                */
+               set_string_if_null(str_destination, argument);
+            } else {
+               /*
+                * Overwrite any existing value.
+                */
+               set_string(str_destination, argument);
+            }
          }
 
          /*
@@ -720,11 +775,18 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                   break;
                }
 
-               /*
-                * Keep the first value, ignore any next setting.
-                */
                if (str_destination) {
-                  set_if_null(str_destination, argument_value);
+                  if (keep_existing) {
+                     /*
+                      * Keep the first value, ignore any next setting.
+                      */
+                     set_string_if_null(str_destination, argument);
+                  } else {
+                     /*
+                      * Overwrite any existing value.
+                      */
+                     set_string(str_destination, argument);
+                  }
                }
 
                /*
