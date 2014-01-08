@@ -210,7 +210,8 @@ typedef enum {
   bEventVssPrepareSnapshot = 22,
   bEventOptionPlugin = 23,
   bEventHandleBackupFile = 24,                 /* Used with Options Plugin */
-  bEventComponentInfo = 25                     /* Plugin component */
+  bEventComponentInfo = 25,                    /* Plugin component */
+  bEventNewPluginOptions = 26
 } bEventType;
 
 #define FD_NR_EVENTS bEventHandleBackupFile /* keep this updated ! */

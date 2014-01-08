@@ -990,7 +990,7 @@ static bool pluginoptions_cmd(JCR *jcr)
    }
 
    unbash_spaces(msg);
-   generate_plugin_event(jcr, bEventPluginCommand, (void *)msg);
+   generate_plugin_event(jcr, bEventNewPluginOptions, (void *)msg);
    free_memory(msg);
 
    return dir->fsend(OKPluginOptions);

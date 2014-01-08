@@ -147,6 +147,7 @@ struct plugin_ctx {
    bool DoNoRecovery;
    bool ForceReplace;
    bool RecoverAfterRestore;
+   char *plugin_options;
    char *filename;
    char *instance;
    char *database;
@@ -274,12 +275,13 @@ static bRC newPlugin(bpContext *ctx)
     * Only register the events we are really interested in.
     */
    bfuncs->registerBareosEvents(ctx,
-                                5,
+                                6,
                                 bEventLevel,
                                 bEventRestoreCommand,
                                 bEventBackupCommand,
                                 bEventPluginCommand,
-                                bEventEndRestoreJob);
+                                bEventEndRestoreJob,
+                                bEventNewPluginOptions);
 
    return bRC_OK;
 }
@@ -309,6 +311,10 @@ static bRC freePlugin(bpContext *ctx)
    /*
     * Cleanup the context.
     */
+   if (p_ctx->plugin_options) {
+      free(p_ctx->plugin_options);
+   }
+
    if (p_ctx->filename) {
       free(p_ctx->filename);
    }
@@ -387,6 +393,7 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
+   bRC retval;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
@@ -406,16 +413,35 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       * Fall-through wanted
       */
    case bEventPluginCommand:
-      return parse_plugin_definition(ctx, value);
+      retval = parse_plugin_definition(ctx, value);
+      break;
+   case bEventNewPluginOptions:
+      /*
+       * Free any previous value.
+       */
+      if (p_ctx->plugin_options) {
+         free(p_ctx->plugin_options);
+         p_ctx->plugin_options = NULL;
+      }
+
+      retval = parse_plugin_definition(ctx, value);
+
+      /*
+       * Save that we got a plugin override.
+       */
+      p_ctx->plugin_options = bstrdup((char *)value);
+      break;
    case bEventEndRestoreJob:
-      return end_restore_job(ctx, value);
+      retval = end_restore_job(ctx, value);
+      break;
    default:
       Jmsg(ctx, M_FATAL, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
       Dmsg(ctx, dbglvl, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
+      retval = bRC_Error;
       break;
    }
 
-   return bRC_OK;
+   return retval;
 }
 
 /*
@@ -500,11 +526,23 @@ static inline bool parse_boolean(const char *argument_value)
 /*
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_if_null(char **destination, char *value)
+static inline void set_string_if_null(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
    }
+}
+
+/*
+ * Always set destination to value and clean any previous one.
+ */
+static inline void set_string(char **destination, char *value)
+{
+   if (*destination) {
+      free(*destination);
+   }
+
+   *destination = bstrdup(value);
 }
 
 /*
@@ -517,12 +555,15 @@ static inline void set_if_null(char **destination, char *value)
 static bRC parse_plugin_definition(bpContext *ctx, void *value)
 {
    int i;
+   bool keep_existing;
    char *plugin_definition, *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx || !value) {
       return bRC_Error;
    }
+
+   keep_existing = (p_ctx->plugin_options) ? true : false;
 
    /*
     * Parse the plugin definition.
@@ -614,7 +655,11 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              * Keep the first value, ignore any next setting.
              */
             if (str_destination) {
-               set_if_null(str_destination, argument_value);
+               if (keep_existing) {
+                  set_string_if_null(str_destination, argument_value);
+               } else {
+                  set_string(str_destination, argument_value);
+               }
             }
 
             /*

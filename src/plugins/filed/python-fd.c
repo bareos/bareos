@@ -127,6 +127,7 @@ struct plugin_ctx {
    int32_t backup_level;
 #ifdef HAVE_PYTHON
    bool python_loaded;
+   char *plugin_options;
    char *module_path;
    char *module_name;
    char *fname;
@@ -235,12 +236,13 @@ static bRC newPlugin(bpContext *ctx)
     * any other events it is interested in.
     */
    bfuncs->registerBareosEvents(ctx,
-                                5,
-                                bEventBackupCommand,
+                                6,
+                                bEventNewPluginOptions,
+                                bEventPluginCommand,
+                                bEventJobStart,
                                 bEventRestoreCommand,
                                 bEventEstimateCommand,
-                                bEventLevel,
-                                bEventPluginCommand);
+                                bEventBackupCommand);
 
    return bRC_OK;
 }
@@ -258,6 +260,10 @@ static bRC freePlugin(bpContext *ctx)
    }
 
 #ifdef HAVE_PYTHON
+   if (p_ctx->plugin_options) {
+      free(p_ctx->plugin_options);
+   }
+
    if (p_ctx->module_path) {
       free(p_ctx->module_path);
    }
@@ -391,6 +397,24 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    case bEventPluginCommand:
       event_dispatched = true;
       retval = parse_plugin_definition(ctx, value);
+      break;
+   case bEventNewPluginOptions:
+      /*
+       * Free any previous value.
+       */
+      if (p_ctx->plugin_options) {
+         free(p_ctx->plugin_options);
+         p_ctx->plugin_options = NULL;
+      }
+
+      event_dispatched = true;
+      retval = parse_plugin_definition(ctx, value);
+
+      /*
+       * Save that we got a plugin override.
+       */
+      p_ctx->plugin_options = bstrdup((char *)value);
+      break;
    default:
       break;
    }
@@ -421,6 +445,10 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          * Fall-through wanted
          */
       case bEventPluginCommand:
+        /*
+         * Fall-through wanted
+         */
+      case bEventNewPluginOptions:
          /*
           * See if we already loaded the Python modules.
           */
@@ -666,11 +694,23 @@ static inline bool parse_boolean(const char *argument_value)
 /*
  * Only set destination to value when it has no previous setting.
  */
-static inline void set_if_null(char **destination, char *value)
+static inline void set_string_if_null(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
    }
+}
+
+/*
+ * Always set destination to value and clean any previous one.
+ */
+static inline void set_string(char **destination, char *value)
+{
+   if (*destination) {
+      free(*destination);
+   }
+
+   *destination = bstrdup(value);
 }
 
 /*
@@ -683,12 +723,15 @@ static inline void set_if_null(char **destination, char *value)
 static bRC parse_plugin_definition(bpContext *ctx, void *value)
 {
    int i;
+   bool keep_existing;
    char *plugin_definition, *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!value) {
       return bRC_Error;
    }
+
+   keep_existing = (p_ctx->plugin_options) ? true : false;
 
    /*
     * Parse the plugin definition.
@@ -756,7 +799,11 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
              * Keep the first value, ignore any next setting.
              */
             if (str_destination) {
-               set_if_null(str_destination, argument_value);
+               if (keep_existing) {
+                  set_string_if_null(str_destination, argument_value);
+               } else {
+                  set_string(str_destination, argument_value);
+               }
             }
 
             /*
