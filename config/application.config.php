@@ -15,10 +15,10 @@ $modules = array(
 	'Job',
 	'File',
 	'Log',
-	//'Restore',
-	//'Statistics',
+	'Restore',
+	'Statistics',
 	'Admin',
-	//'User',
+	'User',
 );
 
 if($env == 'development') {

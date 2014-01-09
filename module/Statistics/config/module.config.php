@@ -4,22 +4,22 @@ return array(
 
 	'controllers' => array(
 		'invokables' => array(
-			'Restore\Controller\Restore' => 'Restore\Controller\RestoreController',
+			'Statistics\Controller\Statistics' => 'Statistics\Controller\StatisticsController',
 		),
 	),
 	
 	'router' => array(
 		'routes' => array(
-			'restore' => array(
+			'statistics' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/restore[/][:action][/:id]',
+					'route' => '/statistics[/][:action][/:id]',
 					'constraints' => array(
 						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[0-9]+',
 					),
 					'defaults' => array(
-						'controller' => 'Restore\Controller\Restore',
+						'controller' => 'Statistics\Controller\Statistics',
 						'action' => 'index',
 					),
 				),
@@ -29,7 +29,7 @@ return array(
 	
 	'view_manager' => array(
 		'template_path_stack' => array(
-			'restore' => __DIR__ . '/../view',
+			'statistics' => __DIR__ . '/../view',
 		),
 	),
 

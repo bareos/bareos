@@ -1,11 +1,11 @@
 <?php
 
-namespace Restore\Controller;
+namespace Statistics\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
-class RestoreController extends AbstractActionController 
+class StatisticsController extends AbstractActionController 
 {
 	
 	public function indexAction()

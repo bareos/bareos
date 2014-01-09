@@ -1,9 +1,9 @@
 <?php
 
-namespace Restore;
+namespace User;
 
-use Restore\Model\Restore;
-use Restore\Model\RestoreTable;
+use User\Model\User;
+use User\Model\UserTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 
@@ -33,18 +33,18 @@ class Module
 	{
 		return array(
 			'factories' => array(
-				'Restore\Model\RestoreTable' => function($sm) 
+				'User\Model\UserTable' => function($sm) 
 				{
-					$tableGateway = $sm->get('RestoreTableGateway');
-					$table = new RestoreTable($tableGateway);
+					$tableGateway = $sm->get('UserTableGateway');
+					$table = new UserTable($tableGateway);
 					return $table;
 				},
-				'RestoreTableGateway' => function($sm)
+				'UserTableGateway' => function($sm)
 				{
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Restore());
-					return new TableGateway('restore', $dbAdapter, null, $resultSetPrototype);
+					$resultSetPrototype->setArrayObjectPrototype(new User());
+					return new TableGateway('user', $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

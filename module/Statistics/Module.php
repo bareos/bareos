@@ -1,9 +1,9 @@
 <?php
 
-namespace Restore;
+namespace Statistics;
 
-use Restore\Model\Restore;
-use Restore\Model\RestoreTable;
+use Statistics\Model\Statistics;
+use Statistics\Model\StatisticsTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 
@@ -33,18 +33,18 @@ class Module
 	{
 		return array(
 			'factories' => array(
-				'Restore\Model\RestoreTable' => function($sm) 
+				'Statistics\Model\StatisticsTable' => function($sm) 
 				{
-					$tableGateway = $sm->get('RestoreTableGateway');
-					$table = new RestoreTable($tableGateway);
+					$tableGateway = $sm->get('StatisticsTableGateway');
+					$table = new StatisticsTable($tableGateway);
 					return $table;
 				},
-				'RestoreTableGateway' => function($sm)
+				'StatisticsTableGateway' => function($sm)
 				{
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Restore());
-					return new TableGateway('restore', $dbAdapter, null, $resultSetPrototype);
+					$resultSetPrototype->setArrayObjectPrototype(new Statistics());
+					return new TableGateway('statistics', $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

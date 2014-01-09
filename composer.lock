@@ -11,12 +11,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/zendframework/ZendDeveloperTools.git",
-                "reference": "23bcd78e80bd963f08b125d80587a640ad7a237d"
+                "reference": "9a8848612c0c6d9890dd6533b3dd5045745e1299"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zendframework/ZendDeveloperTools/zipball/23bcd78e80bd963f08b125d80587a640ad7a237d",
-                "reference": "23bcd78e80bd963f08b125d80587a640ad7a237d",
+                "url": "https://api.github.com/repos/zendframework/ZendDeveloperTools/zipball/9a8848612c0c6d9890dd6533b3dd5045745e1299",
+                "reference": "9a8848612c0c6d9890dd6533b3dd5045745e1299",
                 "shasum": ""
             },
             "require": {
@@ -64,7 +64,7 @@
                 "module",
                 "zf2"
             ],
-            "time": "2013-10-24 10:03:13"
+            "time": "2014-01-02 17:27:54"
         },
         {
             "name": "zendframework/zendframework",

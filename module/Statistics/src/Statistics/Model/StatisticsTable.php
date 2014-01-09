@@ -1,10 +1,10 @@
 <?php
 
-namespace Restore\Model;
+namespace Statistics\Model;
 
 //use Zend\Db\TableGateway\TableGateway;
 
-class RestoreTable 
+class StatisticsTable 
 {
 //	protected $tableGateway;
 /*
