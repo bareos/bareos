@@ -361,20 +361,22 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     {
                       if (errno == EINTR)
                         goto retry;
-                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "poll"); 
+                      DPL_LOG(conn->ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
                       ret = DPL_FAILURE;
                       goto end;
                     }
 
                   if (0 == ret2)
                     {
-                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "read timeout");
+		      DPL_LOG(conn->ctx, DPL_ERROR,
+			      "Timed out waiting to read from server %s:%s",
+			      conn->host, conn->port);
                       ret = DPL_FAILURE;
                       goto end;
                     }
                   else if (!(fds.revents & POLLIN))
                     {
-                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "socket error");
+                      DPL_LOG(conn->ctx, DPL_ERROR, "poll returned strange results");
                       ret = DPL_FAILURE;
                       goto end;
                     }
@@ -384,7 +386,9 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                   conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
                   if (-1 == conn->cc)
                     {
-                      DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "recv");
+                      DPL_LOG(conn->ctx, DPL_ERROR,
+			      "Failed to read from server %s:%s: %s",
+			      conn->host, conn->port, strerror(errno));
                       ret = DPL_FAILURE;
                       goto end;
                     }
