@@ -301,8 +301,6 @@ START_TEST(logging_test)
 {
   dpl_ctx_t *ctx;
   dpl_dict_t *profile;
-  char *stderr_logfile;
-  char *stdout_logfile;
   char *dropdir;
   off_t logsize;
   int nerrs;
