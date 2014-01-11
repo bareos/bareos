@@ -8,11 +8,63 @@
 #include <check.h>
 #include <droplet.h>
 #include <droplet/backend.h>
+#include <arpa/inet.h>
+#include <errno.h>
 
 #include "testutils.h"
 #include "utest_main.h"
 
 #ifdef __linux__
+
+static int bound_sock = -1;
+
+static int
+get_bound_port(char *host, int maxlen)
+{
+    struct sockaddr_in sin;
+    socklen_t len;
+    int sock;
+    int r;
+
+    /* only one at a time */
+    fail_if(bound_sock >= 0, NULL);
+
+    /* create a TCP socket */
+    sock = socket(PF_INET, SOCK_STREAM, 0);
+    fail_if(sock < 0, strerror(errno));
+
+    /* bind the socket to some port on localhost */
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sin.sin_port = 0;	/* kernel allocates */
+    r = bind(sock, (struct sockaddr *)&sin, sizeof(sin));
+    fail_if(r < 0, strerror(errno));
+
+    /* note: we never listen() on the socket, so attempts
+     * to connect() should fail immediately with ECONNREFUSED */
+
+    /* find out what port the kernel chose for us */
+    len = sizeof(sin);
+    r = getsockname(sock, (struct sockaddr *)&sin, &len);
+    fail_if(r < 0, strerror(errno));
+
+    bound_sock = sock;
+
+    snprintf(host, maxlen, "%s:%d", inet_ntoa(sin.sin_addr), ntohs(sin.sin_port));
+    return 0;
+}
+
+static void
+release_bound_port(void)
+{
+    if (bound_sock >= 0)
+      {
+	close(bound_sock);
+	bound_sock = -1;
+      }
+}
+
 
 static void
 setup(void)
@@ -28,6 +80,8 @@ static void
 teardown(void)
 {
   dpl_free();
+
+  release_bound_port();
 
   rmtree(home);
   free(home);
@@ -374,6 +428,85 @@ START_TEST(logging_test)
 }
 END_TEST
 
+/* Create a context talking to a valid address on which nothing
+ * is listening.  This will fail during connect, and should log
+ * a message. */
+START_TEST(connect_logging_test)
+{
+  dpl_ctx_t *ctx;
+  dpl_dict_t *profile;
+  dpl_req_t *req;
+  dpl_conn_t *conn = NULL;
+  char *dropdir;
+  int r;
+  dpl_status_t s;
+  char host[128];
+
+  /* because libcheck forks a new process for each testcase, we
+   * can feel free to futz around with the process state like stderr */
+  redirect_stdio(stdout, "stdout");
+  redirect_stdio(stderr, "stderr");
+
+  /* At this point we have a pretend ~ with NO
+   * .droplet/ directory in it.  We don't create
+   * a dropdir on disk at all, nor a profile, it's
+   * all in memory. */
+  dropdir = strconcat(home, "/trust-fund", (char *)NULL);  /* never created */
+
+  r = get_bound_port(host, sizeof(host));
+  fail_if(r < 0, NULL);
+
+  profile = dpl_dict_new(13);
+  dpl_assert_ptr_not_null(profile);
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "host", host, 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "droplet_dir", dropdir, 0));
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "profile_name", "viral", 0));
+  /* need this to disable the event log, otherwise the droplet_dir needs to exist */
+  dpl_assert_int_eq(DPL_SUCCESS, dpl_dict_add(profile, "pricing_dir", "", 0));
+  unsetenv("DPLDIR");
+  unsetenv("DPLPROFILE");
+
+  dpl_assert_int_eq(nlogged, 0);
+  dpl_set_log_func(log_func);
+
+  /* create the profile */
+  ctx = dpl_ctx_new_from_dict(profile);
+  dpl_assert_ptr_not_null(ctx);
+  /* no errors so far */
+  dpl_assert_int_eq(nlogged, 0);
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* nothing went to stderr */
+  dpl_assert_int_eq(0, file_size(stderr));
+
+  req = dpl_req_new(ctx);
+  dpl_assert_ptr_not_null(req);
+  req->behavior_flags &= ~DPL_BEHAVIOR_VIRTUAL_HOSTING;
+
+  /* attempt to connect */
+  s = dpl_try_connect(ctx, req, &conn);
+  dpl_assert_int_eq(DPL_FAILURE, s);
+  dpl_assert_ptr_null(conn);
+  /* at least 1 error logged */
+  dpl_assert_int_ne(nlogged, 0);
+  /* an error mentions the broken address */
+  dpl_assert_int_ne(-1, log_find(host));
+  /* an error mentions the libc error message */
+  dpl_assert_int_ne(-1, log_find(strerror(ECONNREFUSED)));
+  /* nothing went to stdout */
+  dpl_assert_int_eq(0, file_size(stdout));
+  /* nothing went to stderr */
+  dpl_assert_int_eq(0, file_size(stderr));
+
+  dpl_req_free(req);
+  dpl_ctx_free(ctx);
+  dpl_dict_free(profile);
+  release_bound_port();
+  free(dropdir);
+}
+END_TEST
+
+
 Suite *
 profile_suite()
 {
@@ -387,6 +520,7 @@ profile_suite()
   tcase_add_test(t, ctx_new_from_dict_test);
   tcase_add_test(t, ctx_new_params_test);
   tcase_add_test(t, logging_test);
+  tcase_add_test(t, connect_logging_test);
   suite_add_tcase(s, t);
   return s;
 }
