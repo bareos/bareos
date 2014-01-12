@@ -182,15 +182,16 @@ bool do_a_dot_command(UAContext *ua)
 
 static bool dot_bvfs_update(UAContext *ua, const char *cmd)
 {
+   int pos;
+
    if (!open_new_client_db(ua)) {
       return 1;
    }
 
-   int pos = find_arg_with_value(ua, "jobid");
+   pos = find_arg_with_value(ua, "jobid");
    if (pos != -1 && is_a_number_list(ua->argv[pos])) {
       if (!bvfs_update_path_hierarchy_cache(ua->jcr, ua->db, ua->argv[pos])) {
-         ua->error_msg("ERROR: BVFS reported a problem for %s\n",
-                       ua->argv[pos]);
+         ua->error_msg("ERROR: BVFS reported a problem for %s\n", ua->argv[pos]);
       }
    } else {
       /* update cache for all jobids */
