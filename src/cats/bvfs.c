@@ -518,27 +518,36 @@ void bvfs_update_cache(JCR *jcr, B_DB *mdb)
 /*
  * Update the bvfs cache for given jobids (1,2,3,4)
  */
-int bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids)
+bool bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids)
 {
    char *p;
-   int retval;
+   int status;
    JobId_t JobId;
+   bool retval = false;
    pathid_cache ppathid_cache;
 
    p = jobids;
    while (1) {
-      retval = get_next_jobid_from_list(&p, &JobId);
+      status = get_next_jobid_from_list(&p, &JobId);
       if (retval < 0) {
-         return 0;
+         goto bail_out;
       }
+
       if (retval == 0) {
-         break;
+         /*
+          * We reached the end of the list.
+          */
+         retval = true;
+         goto bail_out;
       }
+
       Dmsg1(dbglevel, "Updating cache for %lld\n", (uint64_t)JobId);
       if (!update_path_hierarchy_cache(jcr, mdb, ppathid_cache, JobId)) {
-         retval = 0;
+         goto bail_out;
       }
    }
+
+bail_out:
    return retval;
 }
 
