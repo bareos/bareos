@@ -529,11 +529,11 @@ bool bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids)
    p = jobids;
    while (1) {
       status = get_next_jobid_from_list(&p, &JobId);
-      if (retval < 0) {
+      if (status < 0) {
          goto bail_out;
       }
 
-      if (retval == 0) {
+      if (status == 0) {
          /*
           * We reached the end of the list.
           */
