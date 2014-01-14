@@ -56,7 +56,7 @@ class JobTable
 		return $row;
 	}
 
-	public function getRunningJobs()
+	public function getRunningJobs($paginated=false)
 	{
 		$select = new Select();
 		$select->from('job');
@@ -64,9 +64,21 @@ class JobTable
 		$select->order('job.jobid DESC');
 		$select->where("jobstatus = 'R'");
 		
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
 	public function getWaitingJobs() 
@@ -108,7 +120,7 @@ class JobTable
 		return $resultSet;
 	}
 	
-	public function getLast24HoursUnsuccessfulJobs()
+	public function getLast24HoursUnsuccessfulJobs($paginated=false)
 	{
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
@@ -119,9 +131,21 @@ class JobTable
 		$select->order('job.jobid DESC');
 		$select->where("jobstatus != 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
 				
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
 	public function getJobCountLast24HoursByStatus($status) 

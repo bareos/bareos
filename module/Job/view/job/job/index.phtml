@@ -5,12 +5,13 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
 <ul class="nav nav-tabs">
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful jobs'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
 </ul>
 
@@ -50,9 +51,14 @@ $this->headTitle($title);
 	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td>
 	<td><?php echo $this->printJobType($job->type); ?></td>
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
-	<td><?php echo $this->escapeHtml($job->starttime); ?></td>
-	<td><?php echo $this->escapeHtml($job->endtime); ?></td>
+	<td><?php echo $this->printDate($job->starttime); ?></td>
+	<td><?php echo $this->printDate($job->endtime); ?></td>
+	<?php if(!empty($job->endtime)) : ?>
 	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
+	<?php endif; ?>
+	<?php if(empty($job->endtime)) : ?>
+	<td><?php echo $this->escapeHtml("-"); ?></td>
+	<?php endif; ?>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a></td>
 	<td>

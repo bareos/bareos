@@ -5,12 +5,13 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
 <ul class="nav nav-tabs">
 	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful jobs'); ?></a></li>
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
 </ul>
 

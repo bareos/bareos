@@ -5,7 +5,7 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
 <div class="row">
@@ -26,9 +26,9 @@ $this->headTitle($title);
 	      <tr><td>Mediatype</td><td><?php echo $this->escapeHtml($media->mediatype); ?></td></tr>
 	      <tr><td>Mediatype ID</td><td><?php echo $this->escapeHtml($media->mediatypeid); ?></td></tr>
 	      <tr><td>Labeltype</td><td><?php echo $this->escapeHtml($media->labeltype); ?></td></tr>
-	      <tr><td>First written</td><td><?php echo $this->escapeHtml($media->firstwritten); ?></td></tr>
-	      <tr><td>Last written</td><td><?php echo $this->escapeHtml($media->lastwritten); ?></td></tr>
-	      <tr><td>Label date</td><td><?php echo $this->escapeHtml($media->labeldate); ?></td></tr>
+	      <tr><td>First written</td><td><?php echo $this->printDate($media->firstwritten); ?></td></tr>
+	      <tr><td>Last written</td><td><?php echo $this->printDate($media->lastwritten); ?></td></tr>
+	      <tr><td>Label date</td><td><?php echo $this->printDate($media->labeldate); ?></td></tr>
 	      <tr><td>Volume jobs</td><td><?php echo $this->escapeHtml($media->voljobs); ?></td></tr>
 	      <tr><td>Volume files</td><td><?php echo $this->escapeHtml($media->volfiles); ?></td></tr>
 	      <tr><td>Volume blocks</td><td><?php echo $this->escapeHtml($media->volblocks); ?></td></tr>
