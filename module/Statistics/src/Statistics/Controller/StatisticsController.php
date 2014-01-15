@@ -42,6 +42,15 @@ class StatisticsController extends AbstractActionController
 				'jobsSDdespoolingAttributes' => $this->getJobTable()->getJobCountLast24HoursByStatus("a"),
 				'jobsBatchInsertFileRecords' => $this->getJobTable()->getJobCountLast24HoursByStatus("i"),
 				
+			)
+		);
+	}
+
+	public function catalogAction()
+	{
+		return new ViewModel(
+		      array(
+			
 				'clientNum' => $this->getClientTable()->getClientNum(),
 				'poolNum' => $this->getPoolTable()->getPoolNum(),
 				'volumeNum' => $this->getMediaTable()->getMediaNum(),
@@ -53,7 +62,25 @@ class StatisticsController extends AbstractActionController
 			)
 		);
 	}
-
+	
+	public function storedAction() 
+	{
+		return new ViewModel(
+		);
+	}
+	
+	public function clientAction() 
+	{
+		return new ViewModel(
+		);
+	}
+	
+	public function backupjobAction() 
+	{
+		return new ViewModel(
+		);
+	}
+	
 	public function getJobTable()
 	{
 		if(!$this->jobTable)

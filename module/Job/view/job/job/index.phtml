@@ -11,6 +11,7 @@ $this->headTitle($title);
 <ul class="nav nav-tabs">
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting jobs'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful jobs'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
 </ul>

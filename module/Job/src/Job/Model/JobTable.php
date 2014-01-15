@@ -19,11 +19,12 @@ class JobTable
 
 	public function fetchAll($paginated=false)
 	{
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		
 		if($paginated) {
-			$select = new Select();
-			$select->from('job');
-			$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-			$select->order('job.jobid DESC');
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
 			$paginatorAdapter = new DbSelect(
@@ -81,7 +82,7 @@ class JobTable
 		}
 	}
 	
-	public function getWaitingJobs() 
+	public function getWaitingJobs($paginated=false) 
 	{
 		$select = new Select();
 		$select->from('job');
@@ -99,9 +100,21 @@ class JobTable
 				jobstatus = 'p' OR
 				jobstatus = 'C'");
 		
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
 	public function getLast24HoursSuccessfulJobs()

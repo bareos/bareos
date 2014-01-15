@@ -28,12 +28,12 @@
             ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
             ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',))
         ; ?>
-        
+
     </head>
     <body>
     
 	<!-- Navigation start -->
-        <!--<nav class="navbar navbar-default navbar-fixed-top" role="navigation">-->
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
             <!-- <div class="container"> -->
 		
 		<div class="navbar-header">
@@ -44,8 +44,7 @@
                         <span class="icon-bar"></span>
                     </button>
                     <a class="navbar-brand" href="<?php echo $this->url('dashboard') ?>">
-		    	<!--<img src="<?php echo $this->basePath('img/bareos.png') ?>" alt="Bareos"/>&nbsp;-->
-		    	<!--<?php echo $this->translate('Bareos') ?>-->
+		    	<?php echo $this->translate('Bareos') ?>
 		    </a>
                 </div>
                 
@@ -56,7 +55,7 @@
 			    		->menu()
 					->setMinDepth(0)
 					->setMaxDepth(0)
-					->setUlClass('nav nav-tabs navbar-fixed-top');
+					->setUlClass('nav navbar-nav');
 			?>
 			<!--                
 			<ul class="nav navbar-nav">
@@ -68,7 +67,7 @@
                 <!--</div>-->
               
             <!-- </div> -->
-        <!--</nav>-->
+        </nav>
         <!-- Navigation end -->
         
 
@@ -89,7 +88,7 @@
             <hr />
 		
             <footer>
-                <p class="text-muted">&copy; 2013 - <?php echo date('Y') ?> Bareos GmbH, <?php echo $this->translate('GNU Affero General Public License Version 3') ?></p>
+                <p class="text-muted">&copy; 2013 - <?php echo date('Y') ?> Bareos GmbH &amp; Co. KG</p>
             </footer>
 
         </div> <!-- /container -->

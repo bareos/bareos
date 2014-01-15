@@ -24,14 +24,14 @@ $this->headTitle($title);
 	<th>Modified</th>
 </tr>
 
-<?php foreach($filesets as $fileset) : ?>
+<?php foreach($this->paginator as $fileset) : ?>
 
 <tr>
 
 	<td><a href="<?php echo $this->url('fileset', array('action'=>'details', 'id' => $fileset->filesetid)); ?>"><?php echo $this->escapeHtml($fileset->filesetid); ?></a></td>
 	<td><?php echo $this->escapeHtml($fileset->fileset); ?></td>
 	<td><?php echo $this->escapeHtml($fileset->md5); ?></td>
-	<td><?php echo $this->escapeHtml($fileset->createtime); ?></td>
+	<td><?php echo $this->printDate($fileset->createtime); ?></td>
 
 </tr>
 
@@ -41,6 +41,18 @@ $this->headTitle($title);
 
 </div>
 </div>
+
+<?php
+
+echo $this->paginationControl(
+			$this->paginator, 
+			'Elastic',
+			array('partial/paginator.phtml', 'Fileset'),
+			array('route' => 'fileset')
+		);
+
+?>
+
 </div>
 
 </div>

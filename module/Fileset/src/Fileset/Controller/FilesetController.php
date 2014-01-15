@@ -13,11 +13,11 @@ class FilesetController extends AbstractActionController
 
 	public function indexAction()
 	{
-		return new ViewModel(
-			array(
-				'filesets' => $this->getFilesetTable()->fetchAll(),
-			)
-		);
+		$paginator = $this->getFilesetTable()->fetchAll(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(array('paginator' => $paginator));
 	}
 
 	public function detailsAction() 

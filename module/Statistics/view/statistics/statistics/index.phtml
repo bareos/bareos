@@ -6,6 +6,16 @@
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
+<ul class="nav nav-tabs">
+	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Job status'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'stored')); ?>"><?php echo $this->translate('Stored bytes'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'client')); ?>"><?php echo $this->translate('Client'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'backupjob')); ?>"><?php echo $this->translate('Backup job'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>
+</ul>
+
+<br />
+
 <script type="text/javascript">
 
     function chart1() {
@@ -64,19 +74,19 @@
 <!-- JOB STATISTICS -->
 <div class="row">
 
-<div class="col-md-9">
+<div class="col-md-12">
         
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">
 	    	<span class="glyphicon glyphicon-stats"></span>
-		<?php echo $this->translate('Job statistic (last 24 hours)') ?>
+		<?php echo $this->translate('Job status overview (last 24 hours)') ?>
 		</h3>
             </div>
             
             <div class="panel-body">
             
-            <div class="col-md-4">
+            <div class="col-md-5">
             
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
 		<tr><td><?php echo $this->translate("Running"); ?></td><td><?php echo $this->jobsRunning; ?></td></tr>
@@ -104,40 +114,11 @@
 	      
             </div>
             
-            <div class="col-md-5">
+            <div class="col-md-7">
             
 	      <div id="chart1" style="width:500px; height:500px;"></div>
             
             </div>
-            
-            </div>
-            
-        </div>
-        
-</div>
-    
-<!-- CATALOG STATISTICS -->
-<div class="col-md-3">
-        
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">
-	    	<span class="glyphicon glyphicon-stats"></span>
-		<?php echo $this->translate('Catalog statistic') ?>
-		</h3>
-            </div>
-            
-            <div class="panel-body">
-                        
-	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td><?php echo $this->translate("Total clients"); ?></td><td><span class="badge"><?php echo $this->clientNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total filesets"); ?></td><td><span class="badge"><?php echo $this->filesetNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total pools"); ?></td><td><span class="badge"><?php echo $this->poolNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total volumes"); ?></td><td><span class="badge"><?php echo $this->volumeNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total jobs"); ?></td><td><span class="badge"><?php echo $this->jobNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total files"); ?></td><td><span class="badge"><?php echo $this->fileNum; ?></span></td></tr>
-		<tr><td><?php echo $this->translate("Total logs"); ?></td><td><span class="badge"><?php echo $this->logNum; ?></span></td></tr>
-	      </table>
             
             </div>
             

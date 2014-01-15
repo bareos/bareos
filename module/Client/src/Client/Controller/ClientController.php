@@ -13,11 +13,11 @@ class ClientController extends AbstractActionController
 
 	public function indexAction()
 	{
-		return new ViewModel(
-			array(
-				'clients' => $this->getClientTable()->fetchAll(),
-			)
-		);
+		$paginator = $this->getClientTable()->fetchAll(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(array('paginator' => $paginator));
 	}
 
 	public function detailsAction() 
