@@ -60,7 +60,7 @@ dpl_status_t dpl_req_add_metadatum(dpl_req_t *req, const char *key, const char *
 dpl_status_t dpl_req_add_metadata(dpl_req_t *req, const dpl_dict_t *metadata);
 dpl_status_t dpl_req_set_content_type(dpl_req_t *req, const char *content_type);
 dpl_status_t dpl_req_set_object_type(dpl_req_t *req, dpl_ftype_t object_type);
-dpl_status_t dpl_req_add_range(dpl_req_t *req, int start, int end);
+dpl_status_t dpl_req_add_range(dpl_req_t *req, uint64_t start, uint64_t end);
 void dpl_req_set_expires(dpl_req_t *req, time_t expires);
 dpl_status_t dpl_req_set_src_bucket(dpl_req_t *req, const char *src_bucket);
 dpl_status_t dpl_req_set_src_resource(dpl_req_t *req, const char *src_resource);

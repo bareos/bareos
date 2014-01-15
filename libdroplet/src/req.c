@@ -393,8 +393,8 @@ dpl_req_set_object_type(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_add_range(dpl_req_t *req,
-                  int start,
-                  int end)
+                  uint64_t start,
+                  uint64_t end)
 {
   req->range.start = start;
   req->range.end = end;

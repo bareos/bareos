@@ -390,7 +390,7 @@ dpl_cdmi_req_add_range(dpl_req_t *req,
     {
       char buf[256];
       
-      snprintf(buf, sizeof (buf), "value:%d-%d", range->start, range->end);
+      snprintf(buf, sizeof (buf), "value:%lu-%lu", range->start, range->end);
       ret2 = dpl_req_set_subresource(req, buf);
       if (DPL_SUCCESS != ret2)
         {

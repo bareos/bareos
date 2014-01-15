@@ -398,9 +398,9 @@ typedef struct
 
 typedef struct
 {
-#define DPL_UNDEF -1
-  int start;
-  int end;
+#define DPL_UNDEF -1LL
+  uint64_t start;
+  uint64_t end;
 } dpl_range_t;
 
 typedef enum
