@@ -498,6 +498,25 @@ Please note:
 Example:
 
 \begin{bconfig}{bareos-dir.conf: Copy Job between different Storage Daemons}
+
+# Fake fileset for copy jobs
+Fileset {
+  Name = None
+  Include {
+    Options {
+      signature = MD5
+    }
+  }
+}
+
+# Fake client for copy jobs
+Client {
+  Name = None
+  Address = localhost
+  Password = "NoNe"
+  Catalog = MyCatalog
+}
+
 # Source storage for migration
 Storage {
    Name = storage1
