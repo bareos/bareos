@@ -171,7 +171,7 @@ class JobTable
 		
 		if($status == "C")
 		{
-			$select->where("jobstatus = 'C' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where("jobstatus = 'C' AND schedtime >= '" . $back24h_time . "'");
 		}
 		if($status == "B")
 		{

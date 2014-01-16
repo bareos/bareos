@@ -66,6 +66,8 @@ class StatisticsController extends AbstractActionController
 	public function storedAction() 
 	{
 		return new ViewModel(
+		      array(
+		      )
 		);
 	}
 	
