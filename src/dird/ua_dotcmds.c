@@ -1127,10 +1127,6 @@ static bool volstatuscmd(UAContext *ua, const char *cmd)
  */
 static bool defaultscmd(UAContext *ua, const char *cmd)
 {
-   JOBRES *job;
-   CLIENTRES *client;
-   STORERES *storage;
-   POOLRES *pool;
    char ed1[50];
 
    if (ua->argc != 2 || !ua->argv[1]) {
@@ -1138,31 +1134,42 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
    }
 
    if (bstrcmp(ua->argk[1], "job")) {
-      /* Job defaults */
+      JOBRES *job;
+
+      /*
+       * Job defaults
+       */
       if (!acl_access_ok(ua, Job_ACL, ua->argv[1])) {
          return true;
       }
+
       job = (JOBRES *)GetResWithName(R_JOB, ua->argv[1]);
       if (job) {
          USTORERES store;
+
          ua->send_msg("job=%s", job->name());
          ua->send_msg("pool=%s", job->pool->name());
          ua->send_msg("messages=%s", job->messages->name());
-         ua->send_msg("client=%s", job->client->name());
+         ua->send_msg("client=%s", (job->client) ? job->client->name() : _("*None*"));
          get_job_storage(&store, job, NULL);
          ua->send_msg("storage=%s", store.store->name());
-         ua->send_msg("where=%s", job->RestoreWhere?job->RestoreWhere:"");
+         ua->send_msg("where=%s", job->RestoreWhere?job->RestoreWhere : "");
          ua->send_msg("level=%s", level_to_str(job->JobLevel));
          ua->send_msg("type=%s", job_type_to_str(job->JobType));
-         ua->send_msg("fileset=%s", job->fileset->name());
+         ua->send_msg("fileset=%s", (job->fileset) ? job->fileset->name() : _("*None*"));
          ua->send_msg("enabled=%d", job->enabled);
          ua->send_msg("catalog=%s", job->client->catalog->name());
       }
    } else if (bstrcmp(ua->argk[1], "client")) {
-      /* Client defaults */
+      CLIENTRES *client;
+
+      /*
+       * Client defaults
+       */
       if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
          return true;
       }
+
       client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[1]);
       if (client) {
          ua->send_msg("client=%s", client->name());
@@ -1174,12 +1181,17 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("catalog=%s", client->catalog->name());
       }
    } else if (bstrcmp(ua->argk[1], "storage")) {
-      /* Storage defaults */
+      STORERES *storage;
+      DEVICERES *device;
+
+      /*
+       * Storage defaults
+       */
       if (!acl_access_ok(ua, Storage_ACL, ua->argv[1])) {
          return true;
       }
+
       storage = (STORERES *)GetResWithName(R_STORAGE, ua->argv[1]);
-      DEVICERES *device;
       if (storage) {
          ua->send_msg("storage=%s", storage->name());
          ua->send_msg("address=%s", storage->address);
@@ -1195,10 +1207,15 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          }
       }
    } else if (bstrcmp(ua->argk[1], "pool")) {
-      /* Pool defaults */
+      POOLRES *pool;
+
+      /*
+       * Pool defaults
+       */
       if (!acl_access_ok(ua, Pool_ACL, ua->argv[1])) {
          return true;
       }
+
       pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[1]);
       if (pool) {
          ua->send_msg("pool=%s", pool->name());
@@ -1220,5 +1237,6 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("job_retention=%s", edit_uint64(pool->JobRetention, ed1));
       }
    }
+
    return true;
 }
