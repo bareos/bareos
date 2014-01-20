@@ -5,7 +5,7 @@ A PHP-Frontend to manage Bareos over the web.
 
 ### RELEASE INFORMATION
 
-Currently, there is no official release available.
+Currently, there is no official release available, but there are some screenshots from alpha in the [wiki](https://github.com/fbergkemper/barbossa/wiki/Screenshots).
 
 [![Build Status](https://travis-ci.org/fbergkemper/barbossa.png?branch=master)](https://travis-ci.org/fbergkemper/barbossa)
 
