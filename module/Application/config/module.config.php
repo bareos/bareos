@@ -157,32 +157,30 @@ return array(
 			'label' => 'Job',
 			'route' => 'job',
 		),
-		/*
 		array(
 			'label' => 'File',
 			'route' => 'file',
 		),
-		*/
 		array(
 			'label' => 'Log',
 			'route' => 'log',
 		),
-		/*
 		array(
 			'label' => 'Restore',
 			'route' => 'restore',
 		),
-		*/
+		array(
+			'label' => 'Statistics',
+			'route' => 'statistics',
+		),
 		array(
 			'label' => 'Administration',
 			'route' => 'admin',
 		),
-		/*
 		array(
 			'label' => 'User',
 			'route' => 'user',
 		),
-		*/
 	),
     ),
 );

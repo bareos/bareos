@@ -1,0 +1,18 @@
+<?php
+  $title = 'Statistics';
+  $this->headTitle($title);
+?>
+
+<h3 class="text-muted"><?php echo $title; ?></h3>
+<hr />
+
+<ul class="nav nav-tabs">
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Job status'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'stored')); ?>"><?php echo $this->translate('Stored bytes'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'client')); ?>"><?php echo $this->translate('Client'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'backupjob')); ?>"><?php echo $this->translate('Backup job'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>
+</ul>
+
+<br />
+

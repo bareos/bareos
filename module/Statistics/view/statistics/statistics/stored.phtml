@@ -1,0 +1,138 @@
+<?php
+  $title = 'Statistics';
+  $this->headTitle($title);
+?>
+
+<h3 class="text-muted"><?php echo $title; ?></h3>
+<hr />
+
+<script type="text/javascript">
+
+    function chart1() {
+
+      var data = [];
+      var ticks = [];
+      
+      var plot1 = jQuery.jqplot('chart1', [data],
+      {
+	seriesDefaults: {
+	  renderer: jQuery.jqplot.BarRenderer,
+	  rendererOptions: { 
+	    fillToZero: true
+	},
+	series:[
+	    {label:'MB'},
+	],
+      },
+      axes: {
+	  xaxis: {
+	      renderer: jQuery.jqplot.CategoryAxisRenderer,
+	      ticks: ticks
+	  },
+	  yaxis: {
+	      //pad: 1.05,
+	      tickOptions: {formatString: '%d MB'}
+	  }
+      }
+      });
+      
+    }
+
+    function chart2() {
+
+      var data = [];
+      var ticks = [];
+      
+      var plot1 = jQuery.jqplot('chart2', [data],
+      {
+	seriesDefaults: {
+	  renderer: jQuery.jqplot.BarRenderer,
+	  rendererOptions: { 
+	    fillToZero: true
+	},
+	series:[
+	    {label:'MB'},
+	],
+      },
+      axes: {
+	  xaxis: {
+	      renderer: jQuery.jqplot.CategoryAxisRenderer,
+	      ticks: ticks
+	  },
+	  yaxis: {
+	      //pad: 1.05,
+	      tickOptions: {formatString: '%d MB'}
+	  }
+      }
+      });
+      
+    }
+    
+    $(document).ready(
+      function(){
+	chart1();
+	chart2();
+      }
+    );
+
+</script>
+
+<ul class="nav nav-tabs">
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Job status'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'stored')); ?>"><?php echo $this->translate('Stored bytes'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'client')); ?>"><?php echo $this->translate('Client'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'backupjob')); ?>"><?php echo $this->translate('Backup job'); ?></a></li>
+	<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+
+<div class="col-md-12">
+        
+        <div class="panel panel-default">
+        
+            <div class="panel-heading">
+                <h3 class="panel-title">
+	    	<span class="glyphicon glyphicon-stats"></span>
+		<?php echo $this->translate('Stored bytes (last 7 days)') ?>
+		</h3>
+            </div>
+            
+            <div class="panel-body">
+            
+            <div id="chart1" style="width:1024px; height:250px;"></div>
+            
+            </div>
+            
+        </div>
+
+</div>
+
+</div>
+
+<div class="row">
+
+<div class="col-md-12">
+        
+        <div class="panel panel-default">
+        
+            <div class="panel-heading">
+                <h3 class="panel-title">
+	    	<span class="glyphicon glyphicon-stats"></span>
+		<?php echo $this->translate('Stored bytes (last 14 days)') ?>
+		</h3>
+            </div>
+            
+            <div class="panel-body">
+            
+            <div id="chart2" style="width:1024px; height:250px;"></div>
+            
+            </div>
+            
+        </div>
+
+</div>
+
+</div>

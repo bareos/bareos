@@ -13,11 +13,11 @@ class FilesetController extends AbstractActionController
 
 	public function indexAction()
 	{
-		return new ViewModel(
-			array(
-				'filesets' => $this->getFilesetTable()->fetchAll(),
-			)
-		);
+		$paginator = $this->getFilesetTable()->fetchAll(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(array('paginator' => $paginator));
 	}
 
 	public function detailsAction() 
@@ -59,7 +59,7 @@ class FilesetController extends AbstractActionController
 		);
 
 		$cwd = '/usr/sbin';
-		$env = NULL;
+		$env = array('/usr/sbin');
 
 		$process = proc_open('bconsole', $descriptorspec, $pipes, $cwd, $env);
 

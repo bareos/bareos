@@ -5,7 +5,7 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
 <div class="row">
@@ -39,7 +39,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($volume->volumename); ?></td>
 	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($volume->storageid); ?></a></td>
 	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
-	<td><?php echo $this->escapeHtml($volume->lastwritten); ?></td>
+	<td><?php echo $this->printDate($volume->lastwritten); ?></td>
 	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
 	<td><?php echo $this->printRetention($volume->volretention) . " days"; ?></td>
 	<td><?php echo $this->printBytes($volume->maxvolbytes); ?></td>

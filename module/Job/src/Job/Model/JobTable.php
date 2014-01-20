@@ -19,11 +19,12 @@ class JobTable
 
 	public function fetchAll($paginated=false)
 	{
+		$select = new Select();
+		$select->from('job');
+		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
+		$select->order('job.jobid DESC');
+		
 		if($paginated) {
-			$select = new Select();
-			$select->from('job');
-			$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-			$select->order('job.jobid DESC');
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
 			$paginatorAdapter = new DbSelect(
@@ -56,7 +57,7 @@ class JobTable
 		return $row;
 	}
 
-	public function getRunningJobs()
+	public function getRunningJobs($paginated=false)
 	{
 		$select = new Select();
 		$select->from('job');
@@ -64,12 +65,24 @@ class JobTable
 		$select->order('job.jobid DESC');
 		$select->where("jobstatus = 'R'");
 		
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
-	public function getWaitingJobs() 
+	public function getWaitingJobs($paginated=false) 
 	{
 		$select = new Select();
 		$select->from('job');
@@ -84,11 +97,24 @@ class JobTable
 				jobstatus = 'c' OR 
 				jobstatus = 'd' OR 
 				jobstatus = 't' OR 
-				jobstatus = 'p'");
+				jobstatus = 'p' OR
+				jobstatus = 'C'");
 		
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
 	public function getLast24HoursSuccessfulJobs()
@@ -107,7 +133,7 @@ class JobTable
 		return $resultSet;
 	}
 	
-	public function getLast24HoursUnsuccessfulJobs()
+	public function getLast24HoursUnsuccessfulJobs($paginated=false)
 	{
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
@@ -118,9 +144,21 @@ class JobTable
 		$select->order('job.jobid DESC');
 		$select->where("jobstatus != 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
 				
-		$resultSet = $this->tableGateway->selectWith($select);
-		
-		return $resultSet;
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Job());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);      
+			return $resultSet;
+		}
 	}
 	
 	public function getJobCountLast24HoursByStatus($status) 
@@ -133,7 +171,7 @@ class JobTable
 		
 		if($status == "C")
 		{
-			$select->where("jobstatus = 'C' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where("jobstatus = 'C' AND schedtime >= '" . $back24h_time . "'");
 		}
 		if($status == "B")
 		{
@@ -259,6 +297,31 @@ class JobTable
 		}
 		
 		return $row;
+	}
+	
+	public function getStoredBytes7Days() 
+	{
+		$end = date("Y-m-d H:i:s",time());
+		$start = date("Y-m-d H:i:s",time() - (60*60*23*7));
+		
+		$select = new Select();
+		$select->from('job');
+		$select->columns(array('endtime','jobbytes'), true);
+		$select->where("endtime >= '" . $start . "' AND endtime <= '" . $end . "'");
+		$select->order('endtime ASC');
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		return $resultSet;
+	}
+	
+	public function getStoredBytes14Days() 
+	{
+		$select = new Select();
+		$select->from('job');
+		
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		return $resultSet;
 	}
 	
 }

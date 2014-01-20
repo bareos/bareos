@@ -6,6 +6,7 @@ use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
+use Zend\Paginator\Paginator;
 
 class FilesetTable
 {
@@ -17,10 +18,27 @@ class FilesetTable
 		$this->tableGateway = $tableGateway;
 	}
 
-	public function fetchAll() 
+	public function fetchAll($paginated=false) 
 	{
+	
+		$select = new Select();
+		$select->from('fileset');
+		
+		if($paginated) {
+			$resultSetPrototype = new ResultSet();
+			$resultSetPrototype->setArrayObjectPrototype(new Fileset());
+			$paginatorAdapter = new DbSelect(
+						$select,
+						$this->tableGateway->getAdapter(),
+						$resultSetPrototype
+					);
+			$paginator = new Paginator($paginatorAdapter);
+			return $paginator;
+		}
+
 		$resultSet = $this->tableGateway->select();
 		return $resultSet;
+	
 	}
 
 	public function getFileset($id)

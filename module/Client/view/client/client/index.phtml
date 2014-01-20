@@ -5,10 +5,8 @@ $this->headTitle($title);
 
 ?>
 
-<h2><?php echo $title; ?></h2>
+<h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
-
-<?php foreach($clients as $client) : ?>
 
 <div class="row">
 
@@ -27,6 +25,9 @@ $this->headTitle($title);
 	<th>Fileretention</th>
 	<th>Jobretention</th>
 </tr>
+
+<?php foreach($this->paginator as $client) : ?>
+
 <tr>
 
 	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client->clientid)); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
@@ -38,13 +39,24 @@ $this->headTitle($title);
 
 </tr>
 
+<?php endforeach; ?>
+
 </table>
 
 </div>
 </div>
-</div>
+
+<?php
+
+echo $this->paginationControl(
+			$this->paginator, 
+			'Elastic',
+			array('partial/paginator.phtml', 'Client'),
+			array('route' => 'client')
+		);
+
+?>
 
 </div>
 
-<?php endforeach; ?>
-
+</div>

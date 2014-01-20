@@ -35,7 +35,44 @@ class JobController extends AbstractActionController
 
 	public function runningAction() 
 	{
-		return new ViewModel();
+		$paginator = $this->getJobTable()->getRunningJobs(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(
+			array(
+			      'paginator' => $paginator,
+			      'runningJobs' => $this->getJobTable()->getRunningJobs()
+			    )
+			);
+	}
+	
+	public function waitingAction() 
+	{
+		$paginator = $this->getJobTable()->getWaitingJobs(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(
+			array(
+			      'paginator' => $paginator,
+			      'waitingJobs' => $this->getJobTable()->getWaitingJobs()
+			    )
+			);
+	}
+	
+	public function problemAction() 
+	{
+		$paginator = $this->getJobTable()->getLast24HoursUnsuccessfulJobs(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(
+			array(
+			      'paginator' => $paginator,
+			      'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
+			    )
+			);
 	}
 	
 	public function timelineAction() 
