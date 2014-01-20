@@ -10,14 +10,17 @@ Please follow these steps to get a working barbossa for development purposes on 
 
 2. Get the current version from github.
 
+```
 git clone git@github.com:fbergkemper/barbossa.git
+```
 
 3. cd into the barbossa directory
 
 4. Execute composer.phar, which will download all the dependencies (Zend Framework 2, Zend Developers tools) into the vendor directory.
 
+```
 ./composer.phar update
-
+```
 ### Configure Apache
 
 See the example file barbossa/install/apache/barbossa.conf .
@@ -32,13 +35,16 @@ See the example file barbossa/install/apache/barbossa.conf .
 
 For testing and development the easiest way is to add the user under which apache is running to the bareos group, e.g.
 
+```
 usermod -aG bareos www-run
+```
 
 Next, setup bconsole can be executed under Apache webserver.
 
+```
 chown root:bareos /usr/sbin/bconsole
 chmod 750 /usr/sbin/bconsole
 
 chown root:bareos /etc/bareos/bconsole.conf
 chmod 740 /etc/bareos/bconsole.conf
-
+```
