@@ -23,7 +23,7 @@ git clone git@github.com:fbergkemper/barbossa.git
 ```
 ### Configure Apache
 
-See the example file barbossa/install/apache/barbossa.conf .
+See the example file [barbossa/install/apache/barbossa.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/barbossa.conf) .
 
 ### Configure the database connection
 
