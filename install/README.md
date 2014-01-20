@@ -4,7 +4,7 @@ As we are in alpha state, there is no installation routine so far.
 
 Please follow these steps to get a working barbossa for development purposes on your system.
 
-### Get the current version of barbossa
+### Get the current version of barbossa from github
 
 1. cd into your webservers root directory e.g. /var/www/
 
@@ -22,7 +22,7 @@ git clone git@github.com:fbergkemper/barbossa.git
 
 See the example file barbossa/install/apache/barbossa.conf .
 
-### Configure barbossa
+### Configure the database connection
 
 1. Open the file barbossa/config/autoload/global.php and edit it to your needs. Currently only PostgreSQL has been tested.
 
