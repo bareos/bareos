@@ -299,4 +299,29 @@ class JobTable
 		return $row;
 	}
 	
+	public function getStoredBytes7Days() 
+	{
+		$end = date("Y-m-d H:i:s",time());
+		$start = date("Y-m-d H:i:s",time() - (60*60*23*7));
+		
+		$select = new Select();
+		$select->from('job');
+		$select->columns(array('endtime','jobbytes'), true);
+		$select->where("endtime >= '" . $start . "' AND endtime <= '" . $end . "'");
+		$select->order('endtime ASC');
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		return $resultSet;
+	}
+	
+	public function getStoredBytes14Days() 
+	{
+		$select = new Select();
+		$select->from('job');
+		
+		
+		$resultSet = $this->tableGateway->selectWith($select);
+		return $resultSet;
+	}
+	
 }

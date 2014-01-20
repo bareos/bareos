@@ -67,6 +67,8 @@ class StatisticsController extends AbstractActionController
 	{
 		return new ViewModel(
 		      array(
+				'stored7days' => $this->getJobTable()->getStoredBytes7Days(),
+				'stored14days' => $this->getJobTable()->getStoredBytes14Days(),
 		      )
 		);
 	}

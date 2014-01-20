@@ -7,5 +7,5 @@ barbossa
 
 ## Requirements
 
-* PHP 5.3 or higher
-* Zend Framework 2
+* PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
+* Zend Framework 2.x
