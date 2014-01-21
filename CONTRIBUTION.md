@@ -8,9 +8,9 @@ too, of course!).
 
 ### Localization
 
-### Testing and quality accurance
+### Testing and quality assurance
 
-One important thing for us is avoid problems in the user interface. Your can really help us out here
+One important thing for us is to avoid problems in the user interface. You can really help us out here
 providing feedback on releases and especially by testing the pre-releases (alpha/beta/rc) we provide
 for testing. Just download them and report any issues you face with them.
 
@@ -22,6 +22,6 @@ repository.
 
 ### Developing
 
-Coding contribution are very welcome, the easiest way is to fork our code on github and submit a
+Coding contributions are very welcome, the easiest way is to fork our code on github and submit a
 pull request. We really welcome bug fixes or new features.
 
