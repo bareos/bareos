@@ -25,7 +25,7 @@ git clone https://github.com/fbergkemper/barbossa.git
 
 See the example file [barbossa/install/apache/barbossa.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/barbossa.conf) .
 
-You might configure your Apache manually or copy the example configuration with wget from git, e.g.
+You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
 ```
 cd /etc/apache2/conf.d

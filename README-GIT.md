@@ -37,3 +37,36 @@ repository. A typical work flow will then consist of the following:
 4. Push the local branch to your remote repository.
 5. Send a pull request.
 
+## Keeping Up-to-Date
+
+Periodically, you should update your fork or personal repository to match the canonical Barbossa 
+repository.
+
+```
+sh% git checkout master
+sh% git pull barbossa master
+```
+To keep your remote up-to-date:
+
+```
+sh% git push origin
+```
+
+### Branch Cleanup
+
+As you might imagine, if you are a frequent contributor, you'll start to get a ton of branches both 
+locally and remote. Once you know that your changes have been accepted to the master repository, we
+suggest doing some cleanup of these branches.
+
+Local branch cleanup:
+
+```
+sh% git branch -d <branchname>
+```
+
+Remote branch removal:
+
+```
+sh% git push origin :<branchname>
+```
+
