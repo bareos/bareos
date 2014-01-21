@@ -21,6 +21,8 @@ Currently, there is no official release available, but there are some screenshot
 * PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
 * PHP PDO Extension
 * PHP intl Extension
+* PHP PHAR Extension
+* PHP OpenSSL Extension
 * Zend Framework 2.2.x or later
 * A Browser of your choice with JavaScript enabled
 

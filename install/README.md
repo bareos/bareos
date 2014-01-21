@@ -11,7 +11,7 @@ Please follow these steps to get a working barbossa for development purposes on 
 2. Get the current version from github.
 
 ```
-git clone git@github.com:fbergkemper/barbossa.git
+git clone https://github.com/fbergkemper/barbossa.git
 ```
 
 3. cd into the barbossa directory
@@ -24,6 +24,13 @@ git clone git@github.com:fbergkemper/barbossa.git
 ### Configure Apache
 
 See the example file [barbossa/install/apache/barbossa.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/barbossa.conf) .
+
+You might configure your Apache manually or copy the example configuration with wget from git, e.g.
+
+```
+cd /etc/apache2/conf.d
+wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/barbossa.conf 
+```
 
 ### Configure the database connection
 
