@@ -1,4 +1,4 @@
-barbossa
+Barbossa
 ========
 
 A PHP-Frontend to manage Bareos over the web.
