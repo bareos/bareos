@@ -14,7 +14,7 @@ dbc_go univention-bareos $@
 if [ "$1" = remove ]
 then
 	invoke-rc.d bareos-dir stop || true
-	file="/usr/lib/univention-uninstall/63univention-bareos-uninstall.uinst"
+	file="/usr/lib/univention-uninstall/63univention-bareos.uinst"
 	if [ -r "$file" ]
 	then
 	  cp "$file" /usr/lib/univention-install/

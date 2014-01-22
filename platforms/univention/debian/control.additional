@@ -1,16 +1,7 @@
-Source: univention-bareos
-Section: contrib/admin
-Priority: optional
-Maintainer: Sebastian Lederer <slederer@dass-it.de>
-Build-Depends: debhelper (>= 4.0.0),
- ucslint,
- univention-config-dev,
- dh-make,devscripts,build-essential,acl-dev,autotools-dev,libacl1-dev,libcap-dev,liblzo2-dev,libqt4-dev,libreadline-dev,libssl-dev,libwrap0-dev,libx11-dev,libsqlite3-dev,libmysqlclient-dev,libpq-dev,mtx,ncurses-dev,pkg-config,python-dev,zlib1g-dev,univention-config-dev,ucslint
-Standards-Version: 3.6.1
 
 Package: univention-bareos
 Architecture: all
-Depends: univention-postgresql, postgresql-8.4, bareos (>= 12.4.4) , bareos-database-common, bareos-database-postgresql,
+Depends: univention-postgresql, postgresql-8.4, bareos (>= 12.4.4), bareos-database-common, bareos-database-postgresql,
  dbconfig-common, bareos-database-tools,
  univention-join (>> 5.0.20-1.436),
  shell-univention-lib (>> 2.0.17-1.125)

@@ -9,8 +9,6 @@
   }
   FileDaemon {
     Name = ${client_name}-fd
-    WorkingDirectory = /var/lib/bareos
-    Pid Directory = /var/run
     Maximum Concurrent Jobs = 20
   }
   Messages {
