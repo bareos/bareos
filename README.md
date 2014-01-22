@@ -10,8 +10,10 @@ Currently, there is no official release available, but there are some screenshot
 ### FEATURES
 
 * PostgreSQL database support
+* MySQL database support (not implemented yet)
 * Detailed information on Jobs, Clients, Filesets, Pools, Volumes, Storage and Logs
 * Multilingual support - standard gettext (.mo) files. Currently supported languages: English, ...
+* Responsive Webdesign
 
 ### SYSTEM REQUIREMENTS
 
