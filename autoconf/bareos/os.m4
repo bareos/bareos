@@ -203,6 +203,9 @@ else
          Ubuntu)
             DISTNAME=ubuntu
             ;;
+         Univention)
+            DISTNAME=univention
+            ;;
          *)
             DISTNAME=""
             ;;
