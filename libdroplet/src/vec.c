@@ -35,6 +35,13 @@
 
 /** @file */
 
+/**
+ * @defgroup vec Vectors
+ * @addtogroup vec
+ * @{
+ * Nestable vectors
+ */
+
 void
 dpl_vec_free(dpl_vec_t *vec)
 {
@@ -259,3 +266,5 @@ dpl_vec_print(dpl_vec_t *vec,
         fprintf(f, ",");
     }
 }
+
+/* @} */

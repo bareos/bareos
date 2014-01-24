@@ -35,6 +35,13 @@
 
 /** @file */
 
+/**
+ * @defgroup conn Connection management
+ * @addtogroup conn
+ * @{
+ * Connection management routines
+ */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
@@ -983,3 +990,5 @@ dpl_conn_open_file(dpl_ctx_t *ctx,
 
   return conn;
 }
+
+/* @} */

@@ -36,6 +36,13 @@
 
 /** @file */
 
+/**
+ * @defgroup async Asynchronous management
+ * @addtogroup async
+ * @{
+ * Asynchronous REST operations
+ */
+
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
@@ -1279,3 +1286,5 @@ dpl_copy_id_async_prepare(dpl_ctx_t *ctx,
   
   return NULL;
 }
+
+/* @} */

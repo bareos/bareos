@@ -38,6 +38,13 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+/**
+ * @defgroup value Values
+ * @addtogroup value
+ * @{
+ * Nestable values
+ */
+
 /** 
  * allow null contained values
  * 
@@ -170,3 +177,5 @@ dpl_value_print(dpl_value_t *val,
       break ;
     }
 }
+
+/* @} */

@@ -38,6 +38,21 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+/**
+ * @defgroup rest RESTful API
+ * @addtogroup rest
+ * @{
+ * Functions specific to RESTful API (S3, CDMI, sproxyd, SRWS, etc)
+ *
+ * This is the abstraction layer fo all backends (S3, CDMI, sproxyd, SRWS, etc). 
+ * Mainly, this API is used for PUTting, GETting and DELETing objects, but also manipulating the object attributes.
+ * For backends that has bucket support, this API allows to create/list/destroy buckets, 
+ *
+ * Users are supposed to call these functions as opposed to using the backend functions directly. 
+ *
+ * Configuring the backend is done is the profile dictionnary or the profile configuration file (see dpl_ctx_new())
+ */
+
 /** 
  * return the name of the backend currently used
  * 
@@ -1156,3 +1171,5 @@ dpl_copy_id(dpl_ctx_t *ctx,
   
   return ret;
 }
+
+/* @} */
