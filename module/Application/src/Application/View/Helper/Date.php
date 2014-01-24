@@ -1,42 +1,37 @@
 <?php
-/**
- * ZF2 Buch Kapitel 15
- * 
- * Das Buch "Zend Framework 2 - Das Praxisbuch"
- * von Ralf Eggert ist im Galileo-Computing Verlag erschienen. 
- * ISBN 978-3-8362-2610-3
- * 
- * @package    Application
- * @author     Ralf Eggert <r.eggert@travello.de>
- * @copyright  Alle Listings sind urheberrechtlich geschützt!
- * @link       http://www.zendframeworkbuch.de/ und http://www.galileocomputing.de/3460
- */
 
 /**
- * namespace definition and usage
+ *
+ * Barbossa - A Web-Frontend to manage Bareos
+ * 
+ * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
+ * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
+
 namespace Application\View\Helper;
 
 use DateTime;
 use IntlDateFormatter;
 use Zend\View\Helper\AbstractHelper;
 
-/**
- * Date output
- * 
- * Simplifies the date output for the dateFormat view helper
- * 
- * @package    Application
- */
 class Date extends AbstractHelper
 {
-    /**
-     * get string date and output it
-     * 
-     * @param string $dateString
-     * @param string $mode
-     * @return boolean
-     */
+
     public function __invoke($dateString, $mode = 'medium')
     {
         if ($dateString == '0000-00-00 00:00:00' || $dateString == '') {
@@ -70,4 +65,5 @@ class Date extends AbstractHelper
         
         return $this->getView()->dateFormat($dateTime, $dateType, $timeType);
     }
+    
 }
