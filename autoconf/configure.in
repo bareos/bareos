@@ -3659,6 +3659,16 @@ ubuntu)
        platforms/ubuntu/bareos-sd \
        platforms/ubuntu/bareos-dir"
   ;;
+univention)
+   TAPEDRIVE="/dev/nst0"
+   PSCMD="ps -e -o pid,command"
+   PFILES="${PFILES} \
+     platforms/univention/Makefile \
+     platforms/debian/Makefile \
+     platforms/debian/bareos-fd \
+     platforms/debian/bareos-sd \
+     platforms/debian/bareos-dir"
+  ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
   ;;
@@ -3918,11 +3928,20 @@ echo "Cleaning up"
 echo " "
 ${MAKE:-make} clean
 
+dnl for some Debian based distribution, e.g. Univention, there are additional packages to build
+dnl must run after clean
+cp ${BUILD_DIR}/debian/control.common ${BUILD_DIR}/debian/control
+DEBIAN_CONTROL_ADDITIONAL=${BUILD_DIR}/platform/$DISTNAME/debian/control.additional
+if test -e "$DEBIAN_CONTROL_ADDITIONAL"; then
+    cat $DEBIAN_CONTROL_ADDITIONAL >> ${BUILD_DIR}/debian/control
+fi
+
 echo "
 Configuration on `date`:
 
    Host:                    ${host}${post_host} -- ${DISTNAME} ${DISTVER}
    Bareos version:          ${BAREOS} ${VERSION} (${DATE})
+   Distribution:            ${DISTNAME}
    Source code location:    ${srcdir}
    Install binaries:        ${sbindir}
    Install libraries:       ${libdir}

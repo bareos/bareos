@@ -9,7 +9,7 @@
 @MCOMMON@
 
 SUBDIRS = hurd freebsd redhat suse solaris unknown openbsd osx irix gentoo \
-	  debian darwin aix bsdi mandrake slackware alpha ubuntu systemd
+	  debian darwin aix bsdi mandrake slackware alpha ubuntu univention systemd
 
 DISTNAME=@DISTNAME@
 DISTVER=@DISTVER@

@@ -1,1 +1,2 @@
-30 0 * * * /usr/share/univention-bareos/restart_director
+# restart the bareos director before running the daily backup jobs
+30 0 * * * root /usr/share/univention-bareos/restart_director

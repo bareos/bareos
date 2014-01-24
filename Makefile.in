@@ -163,7 +163,7 @@ clean:
 	@$(RMF) examples/1 examples/2 examples/devices/1 examples/devices/2
 	@$(RMF) -r autom4te.cache
 	@find . -name ".#*" -exec $(RMF) {} \;
-
+	@cp debian/control.common debian/control
 
 # clean for distribution
 distclean:
