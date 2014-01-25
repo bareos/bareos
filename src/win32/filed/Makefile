@@ -3,23 +3,17 @@ VPATH = .:../../filed:../generic
 include ../Makefile.inc
 
 DEFINES += -DWIN32_VSS
-
-ifeq ($(WIN_VERSION),32)
-INCLUDES = -I. \
-	   -I../.. \
-	   -I../../include \
-	   -I../include \
-	   -I../compat/include \
-	   -I../vss/include
-else
-INCLUDES = -I. \
-	   -I../.. \
-	   -I../../include \
-	   -I../include \
-	   -I../compat/include \
-	   -I../vss/include
+ifeq ($(WIN_VERSION),64)
 DEFINES += -DHAVE_VSS64
 endif
+
+INCLUDES = -I. \
+	   -I../.. \
+	   -I../../include \
+	   -I../include \
+	   -I../compat/include \
+	   -I../vss/include
+
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
 	 ../findlib/libbareosfind.dll \
