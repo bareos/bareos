@@ -413,6 +413,7 @@ public:
     * Director Daemon specific data part of JCR
     */
    pthread_t SD_msg_chan;                 /* Message channel thread id */
+   bool SD_msg_chan_started;              /* Message channel thread started */
    pthread_cond_t term_wait;              /* Wait for job termination */
    pthread_cond_t nextrun_ready;          /* Wait for job next run to become ready */
    workq_ele_t *work_item;                /* Work queue item if scheduled */

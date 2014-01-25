@@ -162,8 +162,7 @@ PROG_COPYRIGHT
  *
  */
 #if defined(HAVE_WIN32)
-/* For Win32 main() is in src/win32 code ... */
-#define main BAREOSMain
+#define main BareosMain
 #endif
 
 int main (int argc, char *argv[])
