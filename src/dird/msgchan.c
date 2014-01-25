@@ -354,14 +354,14 @@ bool start_storage_daemon_message_thread(JCR *jcr)
 
    jcr->inc_use_count();              /* mark in use by msg thread */
    jcr->sd_msg_thread_done = false;
-   jcr->SD_msg_chan = 0;
+   jcr->SD_msg_chan_started = false;
    Dmsg0(100, "Start SD msg_thread.\n");
    if ((status = pthread_create(&thid, NULL, msg_thread, (void *)jcr)) != 0) {
       berrno be;
       Jmsg1(jcr, M_ABORT, 0, _("Cannot create message thread: %s\n"), be.bstrerror(status));
    }
    /* Wait for thread to start */
-   while (jcr->SD_msg_chan == 0) {
+   while (!jcr->SD_msg_chan_started) {
       bmicrosleep(0, 50);
       if (job_canceled(jcr) || jcr->sd_msg_thread_done) {
          return false;
@@ -378,7 +378,7 @@ extern "C" void msg_thread_cleanup(void *arg)
    db_end_transaction(jcr, jcr->db);        /* terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
-   jcr->SD_msg_chan = 0;
+   jcr->SD_msg_chan_started = false;
    jcr->unlock();
    pthread_cond_broadcast(&jcr->nextrun_ready); /* wakeup any waiting threads */
    pthread_cond_broadcast(&jcr->term_wait); /* wakeup any waiting threads */
@@ -406,6 +406,7 @@ extern "C" void *msg_thread(void *arg)
    pthread_detach(pthread_self());
    set_jcr_in_tsd(jcr);
    jcr->SD_msg_chan = pthread_self();
+   jcr->SD_msg_chan_started = true;
    pthread_cleanup_push(msg_thread_cleanup, arg);
    sd = jcr->store_bsock;
 
@@ -480,7 +481,7 @@ void wait_for_storage_daemon_termination(JCR *jcr)
       pthread_cond_timedwait(&jcr->term_wait, &mutex, &timeout);
       V(mutex);
       if (jcr->is_canceled()) {
-         if (jcr->SD_msg_chan) {
+         if (jcr->SD_msg_chan_started) {
             jcr->store_bsock->set_timed_out();
             jcr->store_bsock->set_terminated();
             sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);

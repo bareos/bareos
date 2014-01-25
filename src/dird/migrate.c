@@ -1605,7 +1605,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
           */
          if (jcr->store_bsock) {
             jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan) {
+            if (jcr->SD_msg_chan_started) {
                pthread_cancel(jcr->SD_msg_chan);
             }
          }
@@ -1615,7 +1615,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
           */
          if (mig_jcr->store_bsock) {
             mig_jcr->store_bsock->signal(BNET_TERMINATE);
-            if (mig_jcr->SD_msg_chan) {
+            if (mig_jcr->SD_msg_chan_started) {
                pthread_cancel(mig_jcr->SD_msg_chan);
             }
          }
