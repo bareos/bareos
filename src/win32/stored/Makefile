@@ -2,21 +2,12 @@ VPATH = .:../../stored:../generic
 
 include ../Makefile.inc
 
-ifeq ($(WIN_VERSION),32)
 INCLUDES = -I. \
 	   -I../.. \
 	   -I../../include \
 	   -I../../stored \
 	   -I../include \
 	   -I../compat/include
-else
-INCLUDES = -I. \
-	   -I../.. \
-	   -I../../include \
-	   -I../../stored \
-	   -I../include \
-	   -I../compat/include
-endif
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
