@@ -62,7 +62,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($volume->volumename); ?></td>
 	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($volume->storageid); ?></a></td>
 	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
-	<td><?php echo $this->printDate($volume->lastwritten); ?></td>
+	<td><?php echo $this->printHumanReadableTimeperiod($volume->lastwritten, "short"); ?></td>
 	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
 	<td><?php echo $this->printRetention($volume->volretention) . " days"; ?></td>
 	<td><?php echo $this->printBytes($volume->maxvolbytes); ?></td>

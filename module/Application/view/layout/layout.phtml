@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -30,7 +31,7 @@ echo $this->doctype();
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <?php echo $this->headTitle('Barbossa | '. $this->translate('Version 0.0.1'))->setSeparator(' - ')->setAutoEscape(false) ?>
+        <?php echo $this->headTitle('Bareos Web-Frontend | '. $this->translate('Version 0.0.1'))->setSeparator(' - ')->setAutoEscape(false) ?>
 
         <?php echo $this->headMeta()
             ->appendName('viewport', 'width=device-width, initial-scale=1.0')
@@ -63,8 +64,8 @@ echo $this->doctype();
     <body>
     
 	<!-- Navigation start -->
-        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-            <!-- <div class="container"> -->
+        <nav class="navbar navbar-justified navbar-fixed-top" role="navigation">
+            <div class="container">
 		
 		<div class="navbar-header">
                     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -74,7 +75,7 @@ echo $this->doctype();
                         <span class="icon-bar"></span>
                     </button>
                     <a class="navbar-brand" href="<?php echo $this->url('dashboard') ?>">
-		    	<?php echo $this->translate('Barbossa') ?>
+		    	<?php echo $this->translate('Bareos') ?>
 		    </a>
                 </div>
                 
@@ -96,7 +97,7 @@ echo $this->doctype();
                 <!-- </div> -->
                 <!--</div>-->
               
-            <!-- </div> -->
+            </div>
         </nav>
         <!-- Navigation end -->
         

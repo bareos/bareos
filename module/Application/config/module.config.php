@@ -89,6 +89,7 @@ return array(
 	    'printJobDuration' => 'Application\View\Helper\JobDuration',
 	    'printBytes' => 'Application\View\Helper\Bytes',
 	    'printRetention' => 'Application\View\Helper\Retention',
+	    'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
 	),
     ),
     'view_manager' => array(
