@@ -3931,7 +3931,7 @@ ${MAKE:-make} clean
 dnl for some Debian based distribution, e.g. Univention, there are additional packages to build
 dnl must run after clean
 cp ${BUILD_DIR}/debian/control.common ${BUILD_DIR}/debian/control
-DEBIAN_CONTROL_ADDITIONAL=${BUILD_DIR}/platform/$DISTNAME/debian/control.additional
+DEBIAN_CONTROL_ADDITIONAL=${BUILD_DIR}/platforms/$DISTNAME/debian/control.additional
 if test -e "$DEBIAN_CONTROL_ADDITIONAL"; then
     cat $DEBIAN_CONTROL_ADDITIONAL >> ${BUILD_DIR}/debian/control
 fi
