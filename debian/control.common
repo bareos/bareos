@@ -113,7 +113,7 @@ Description: Backup Archiving Recovery Open Sourced - client meta-package
 Package:        bareos-common
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        openssl, ${shlibs:Depends}, ${misc:Depends}
+Depends:        ${shlibs:Depends}, ${misc:Depends}
 Suggests:       bareos-doc
 Description:    Backup Archiving Recovery Open Sourced - common libraries and support files
  Bareos is a set of programs to manage backup, recovery and verification of
@@ -311,32 +311,3 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
  .
  The monitor constantly displays Bareos's status.
 
-Package:        bareos-director-python-plugin
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - director-python-plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the python plugin for the director.
-
-Package:        bareos-filedaemon-python-plugin
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - filedaemon-python-plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the python plugin for the filedaemon.
-
-Package:        bareos-storage-python-plugin
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage-python-plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the python plugin for the storage daemon.
