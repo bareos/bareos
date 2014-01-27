@@ -24,6 +24,7 @@ Currently, there is no official release available, but there are some screenshot
 * PHP PDO Extension
 * PHP intl Extension
 * PHP PHAR Extension
+* PHP DATE Extension
 * PHP OpenSSL Extension
 * Zend Framework 2.2.x or later
 * A Browser of your choice with JavaScript enabled
