@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -26,15 +27,33 @@ namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 
+/**
+ * 
+ */
 class Bytes extends AbstractHelper
 {
+
     protected $mb;
 
+    /**
+     * @method 
+     * @return string 
+     */
     public function __invoke($bytes)
     {
-	$bytes = (int) $bytes;
-	$this->mb = ( ($bytes / 1024) / 1024 );
-	$this->mb = round( $this->mb, 2, PHP_ROUND_HALF_EVEN ) . " MB";
-	return $this->mb;
+
+	$units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB');
+    	$this->b = "0.00 B";
+
+    	if($bytes > 0)
+    	{
+        	$result = log($bytes) / log(1024);
+        	$this->b = round(pow(1024, $result - ($tmp = floor($result))), 2)." ".$units[$tmp];
+    	}
+
+	return $this->b;
+
     }
+
 }
+
