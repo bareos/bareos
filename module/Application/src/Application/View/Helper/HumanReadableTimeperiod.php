@@ -36,7 +36,7 @@ class HumanReadableTimeperiod extends AbstractHelper
     protected $result;
 
     /**
-     * A function for making timeperiods readable
+     * A function for making timeperiods human readable
      * @method 
      * @return string 
      * @param
@@ -45,56 +45,67 @@ class HumanReadableTimeperiod extends AbstractHelper
     public function __invoke($time, $format="short")
     {
 
-	$this->result = "-";
-
-	$dateTime = date_create($time); 
-	$timestamp = date_format($dateTime, 'U');
-
-	//$timestamp = date('u', strtotime($time));			
-	$seconds = time() - $timestamp;
-
-	if($format == "short" && $time > 0) {
-
-                $units = array(
-                        'y' => $seconds / 31556926 % 12, 
-                        'w' => $seconds / 604800 % 52, 
-                        'd' => $seconds / 86400 % 7,
-                        'h' => $seconds / 3600 % 24, 
-                        'm' => $seconds / 60 % 60, 
-                        's' => $seconds % 60
-                );  
-
-                foreach($units as $key => $value) {
-                        if($value > 0) {
-                                $res[] = $value . $key;
-                        }   
-                }   
-
-                $this->result = join(' ', $res) . " ago";
-
-        } 		
-	elseif($format == "long" && $time > 0) {
-		
-		$units = array(
-			'Year(s)' => $seconds / 31556926 % 12,
-			'Week(s)' => $seconds / 604800 % 52,
-			'Day(s)' => $seconds / 86400 % 7,
-			'Hour(s)' => $seconds / 3600 % 24,
-			'Minute(s)' => $seconds / 60 % 60,
-			'Second(s)' => $seconds % 60
-		);
-
-		foreach($units as $key => $value) {
-			if($value > 0) {
-				$res[] = $value . $key;
-			}
-		}		
-
-		$this->result = join(' ', $res) . " ago";
-
+	if(empty($time)) {
+		$this->result = "-";
 	}
-	
-	return $this->result;
+	else {
+
+		$this->result = "-";
+		$dateTime = date_create($time); 
+		$timestamp = date_format($dateTime, 'U');
+		$seconds = time() - $timestamp;
+
+		if($format == "short") {
+
+			$units = array(
+				'y' => $seconds / 31556926 % 12, 
+				'w' => $seconds / 604800 % 52, 
+				'd' => $seconds / 86400 % 7,
+				'h' => $seconds / 3600 % 24, 
+				'm' => $seconds / 60 % 60, 
+				's' => $seconds % 60
+			);  
+
+			foreach($units as $key => $value) {
+				if($value > 0) {
+					$res[] = $value . $key;
+				}   
+			}   
+			
+			$this->result = join(' ', $res) . " ago";
+
+		} 		
+		elseif($format == "long") {
+			
+			$units = array(
+				'Year(s)' => $seconds / 31556926 % 12,
+				'Week(s)' => $seconds / 604800 % 52,
+				'Day(s)' => $seconds / 86400 % 7,
+				'Hour(s)' => $seconds / 3600 % 24,
+				'Minute(s)' => $seconds / 60 % 60,
+				'Second(s)' => $seconds % 60
+			);
+
+			foreach($units as $key => $value) {
+				if($value > 0) {
+					$res[] = $value . $key;
+				}
+			}		
+			
+			$this->result = join(' ', $res) . " ago";
+
+		}
+		elseif($format == "fuzzy") {
+
+			// TODO
+
+			$this->result = "~TODO ago";
+
+		}
+		
+		return $this->result;
+
+		}
 
     }
 
