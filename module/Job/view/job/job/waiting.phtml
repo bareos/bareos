@@ -23,7 +23,7 @@
  *
  */
 
-$title = 'Waiting Jobs';
+$title = 'Waiting jobs';
 $this->headTitle($title);
 
 ?>
@@ -51,11 +51,11 @@ $flash->setMessageOpenFormat('
 ?>
 
 <ul class="nav nav-tabs">
-	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Job history'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running jobs'); ?></a></li>
-	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting jobs'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful jobs'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Job timeline'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
 </ul>
 
 <br />
