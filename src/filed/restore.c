@@ -1178,6 +1178,7 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
    if (jcr->crypto.digest) {
       crypto_digest_update(jcr->crypto.digest, (uint8_t *)data, length);
    }
+
    if (win32_decomp) {
       if (!processWin32BackupAPIBlock(bfd, data, length)) {
          berrno be;
@@ -1186,22 +1187,28 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
          return false;
       }
 #ifdef HAVE_WIN32
-   } else if (!bfd->encrypted && bwrite(bfd, data, length) != (ssize_t)length) {
-#else
-   } else if (bwrite(bfd, data, length) != (ssize_t)length) {
-#endif
-      berrno be;
-      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
-            jcr->last_fname, be.bstrerror(bfd->berrno));
-      return false;
-#ifdef HAVE_WIN32
-   } else if (win32_send_to_copy_thread(jcr, bfd, data, length) != (ssize_t)length) {
-      berrno be;
-      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
-            jcr->last_fname, be.bstrerror(bfd->berrno));
-      return false;
+   } else {
+      if (bfd->encrypted) {
+         if (win32_send_to_copy_thread(jcr, bfd, data, length) != (ssize_t)length) {
+            berrno be;
+            Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+                  jcr->last_fname, be.bstrerror(bfd->berrno));
+            return false;
+         }
+      } else {
+         if (bwrite(bfd, data, length) != (ssize_t)length) {
+            berrno be;
+            Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+                  jcr->last_fname, be.bstrerror(bfd->berrno));
+         }
+      }
    }
 #else
+   } else if (bwrite(bfd, data, length) != (ssize_t)length) {
+      berrno be;
+      Jmsg2(jcr, M_ERROR, 0, _("Write error on %s: %s\n"),
+            jcr->last_fname, be.bstrerror(bfd->berrno));
+      return false;
    }
 #endif
 
