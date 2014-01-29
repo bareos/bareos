@@ -1084,6 +1084,7 @@ int main(int argc, char *argv[])
    bool test_config = false;
    JCR jcr;
    TLS_CONTEXT *tls_ctx = NULL;
+   POOL_MEM history_file;
    utime_t heart_beat;
 
    errmsg_len = sizeof(errmsg);
@@ -1327,11 +1328,17 @@ int main(int argc, char *argv[])
 
    sendit(_("Enter a period to cancel a command.\n"));
 
+#if defined(HAVE_WIN32)
+   /*
+    * Read/Update history file if USERPROFILE exists
+    */
+   char *env = getenv("USERPROFILE");
+#else
    /*
     * Read/Update history file if HOME exists
     */
-   POOL_MEM history_file;
    char *env = getenv("HOME");
+#endif
 
    /*
     * Run commands in ~/.bconsolerc if any
