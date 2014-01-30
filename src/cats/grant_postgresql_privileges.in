@@ -43,6 +43,7 @@ GRANT ALL ON PathVisibility TO ${db_user};
 GRANT ALL ON RestoreObject TO ${db_user};
 GRANT ALL ON Quota TO ${db_user};
 GRANT ALL ON NDMPLevelMap TO ${db_user};
+GRANT ALL ON NDMPJobEnvironment TO ${db_user};
 
 -- For sequences ON those tables
 GRANT SELECT, UPDATE ON filename_filenameid_seq TO ${db_user};

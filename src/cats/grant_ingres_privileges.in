@@ -41,6 +41,7 @@ GRANT ALL ON TABLE PathVisibility TO ${db_user};
 GRANT ALL ON TABLE Version TO ${db_user};
 GRANT ALL ON TABLE Status TO ${db_user};
 GRANT ALL ON TABLE NDMPLevelMap TO ${db_user};
+GRANT ALL ON TABLE NDMPJobEnvironment TO  ${db_user};
 
 -- for sequences ON those tables
 GRANT NEXT ON SEQUENCE Filename_Seq TO ${db_user};

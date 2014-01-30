@@ -122,6 +122,27 @@ ndma_store_env_list (struct ndm_env_table *envtab, ndmp9_pval *pv)
 }
 
 /*
+ * Update an entry in an environment list table.
+ * If it doesn't exist add a new entry.
+ * Return entry if caller want to modify it.
+ */
+struct ndm_env_entry *
+ndma_update_env_list (struct ndm_env_table *envtab, ndmp9_pval *pv)
+{
+	struct ndm_env_entry *	entry;
+
+	for (entry = envtab->head; entry; entry = entry->next) {
+		if (strcmp(entry->pval.name, pv->name) == 0) {
+			NDMOS_API_FREE (entry->pval.value);
+			entry->pval.value = NDMOS_API_STRDUP (pv->value);
+			return entry;
+                }
+	}
+
+	return ndma_store_env_list (envtab, pv);
+}
+
+/*
  * Destroy an environment list table including any
  * enumerate buffers allocated for it.
  */
@@ -208,21 +229,27 @@ ndma_store_nlist (struct ndm_nlist_table *nlist, ndmp9_name *nl)
 
 	entry = NDMOS_API_MALLOC (sizeof(struct ndm_nlist_entry));
 	if (!entry)
-		return NULL;
+		goto bail_out;
+
+	NDMOS_MACRO_ZEROFILL (entry);
 
 	entry->name.original_path = NDMOS_API_STRDUP (nl->original_path);
-	if (!entry->name.original_path) {
-		NDMOS_API_FREE (entry);
-		return NULL;
-	}
+	if (!entry->name.original_path)
+		goto bail_out;
 
 	entry->name.destination_path = NDMOS_API_STRDUP (nl->destination_path);
-	if (!entry->name.destination_path) {
-		NDMOS_API_FREE (entry->name.original_path);
-		NDMOS_API_FREE (entry);
-		return NULL;
-	}
+	if (!entry->name.destination_path)
+		goto bail_out;
 
+	entry->name.name = NDMOS_API_STRDUP (nl->name);
+	if (!entry->name.name)
+		goto bail_out;
+
+	entry->name.other_name = NDMOS_API_STRDUP (nl->other_name);
+	if (!entry->name.other_name)
+		goto bail_out;
+
+	entry->name.node = nl->node;
 	entry->name.fh_info = nl->fh_info;
 	entry->result_err = NDMP9_UNDEFINED_ERR;
 	entry->result_count = 0;
@@ -239,6 +266,23 @@ ndma_store_nlist (struct ndm_nlist_table *nlist, ndmp9_name *nl)
 	nlist->n_nlist++;
 
 	return entry;
+
+bail_out:
+	if (entry->name.other_name)
+		NDMOS_API_FREE (entry->name.other_name);
+
+	if (entry->name.name)
+		NDMOS_API_FREE (entry->name.name);
+
+	if (entry->name.destination_path)
+		NDMOS_API_FREE (entry->name.destination_path);
+
+	if (entry->name.original_path)
+		NDMOS_API_FREE (entry->name.original_path);
+
+	NDMOS_API_FREE (entry);
+
+	return NULL;
 }
 
 /*

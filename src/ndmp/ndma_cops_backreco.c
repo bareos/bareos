@@ -554,8 +554,6 @@ ndmca_monitor_recover (struct ndm_session *sess)
 
 			ndmalogf (sess, 0, 2, "Operation done, cleaning up");
 
-			ndmca_monitor_get_post_backup_env (sess);
-
 			return 0;
 		}
 

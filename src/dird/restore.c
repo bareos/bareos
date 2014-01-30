@@ -534,34 +534,66 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
    jobstatus_to_ascii(jcr->FDJobStatus, fd_term_msg, sizeof(fd_term_msg));
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
-   Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
-        "  Build OS:               %s %s %s\n"
-        "  JobId:                  %d\n"
-        "  Job:                    %s\n"
-        "  Restore Client:         %s\n"
-        "  Start time:             %s\n"
-        "  End time:               %s\n"
-        "  Files Expected:         %s\n"
-        "  Files Restored:         %s\n"
-        "  Bytes Restored:         %s\n"
-        "  Rate:                   %.1f KB/s\n"
-        "  FD Errors:              %d\n"
-        "  FD termination status:  %s\n"
-        "  SD termination status:  %s\n"
-        "  Termination:            %s\n\n"),
-        BAREOS, my_name, VERSION, LSMDATE,
-        HOST_OS, DISTNAME, DISTVER,
-        jcr->jr.JobId,
-        jcr->jr.Job,
-        jcr->res.client->name(),
-        sdt,
-        edt,
-        edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
-        edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
-        edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
-        (float)kbps,
-        jcr->JobErrors,
-        fd_term_msg,
-        sd_term_msg,
-        term_msg);
+   switch (jcr->getJobProtocol()) {
+   case PT_NDMP:
+      Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
+           "  Build OS:               %s %s %s\n"
+           "  JobId:                  %d\n"
+           "  Job:                    %s\n"
+           "  Restore Client:         %s\n"
+           "  Start time:             %s\n"
+           "  End time:               %s\n"
+           "  Files Expected:         %s\n"
+           "  Files Restored:         %s\n"
+           "  Bytes Restored:         %s\n"
+           "  Rate:                   %.1f KB/s\n"
+           "  SD termination status:  %s\n"
+           "  Termination:            %s\n\n"),
+           BAREOS, my_name, VERSION, LSMDATE,
+           HOST_OS, DISTNAME, DISTVER,
+           jcr->jr.JobId,
+           jcr->jr.Job,
+           jcr->res.client->name(),
+           sdt,
+           edt,
+           edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
+           edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
+           edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
+           (float)kbps,
+           sd_term_msg,
+           term_msg);
+      break;
+   default:
+      Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
+           "  Build OS:               %s %s %s\n"
+           "  JobId:                  %d\n"
+           "  Job:                    %s\n"
+           "  Restore Client:         %s\n"
+           "  Start time:             %s\n"
+           "  End time:               %s\n"
+           "  Files Expected:         %s\n"
+           "  Files Restored:         %s\n"
+           "  Bytes Restored:         %s\n"
+           "  Rate:                   %.1f KB/s\n"
+           "  FD Errors:              %d\n"
+           "  FD termination status:  %s\n"
+           "  SD termination status:  %s\n"
+           "  Termination:            %s\n\n"),
+           BAREOS, my_name, VERSION, LSMDATE,
+           HOST_OS, DISTNAME, DISTVER,
+           jcr->jr.JobId,
+           jcr->jr.Job,
+           jcr->res.client->name(),
+           sdt,
+           edt,
+           edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
+           edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
+           edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
+           (float)kbps,
+           jcr->JobErrors,
+           fd_term_msg,
+           sd_term_msg,
+           term_msg);
+      break;
+   }
 }
