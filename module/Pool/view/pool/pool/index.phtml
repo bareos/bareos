@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -44,12 +45,12 @@ $this->headTitle($title);
 	<th>Pool ID</th>
 	<th>Pool name</th>
 	<th>Pool type</th>
-	<th>Volumes</th>
-	<th>Maximum volumes</th>
-	<th>Volume retention</th>
-	<th>Maximum volume jobs</th>
-	<th>Maximum volume files</th>
-	<th>Maximum volume bytes</th>	
+	<th><div align="right">Volumes</div></th>
+	<th><div align="right">Maximum volumes</div></th>
+	<th><div align="right">Volume retention</div></th>
+	<th><div align="right">Maximum volume jobs</div></th>
+	<th><div align="right">Maximum volume files</div></th>
+	<th><div align="right">Maximum volume bytes</div></th>	
 	
 </tr>
 
@@ -60,12 +61,12 @@ $this->headTitle($title);
 	<td><a href="<?php echo $this->url('pool', array('action'=>'details', 'id' => $pool->poolid)); ?>"><?php echo $this->escapeHtml($pool->poolid); ?></a></td>
 	<td><a href="<?php echo $this->url('pool', array('action'=>'details', 'id' => $pool->poolid)); ?>"><?php echo $this->escapeHtml($pool->name); ?></a></td>
 	<td><?php echo $this->escapeHtml($pool->pooltype); ?></td>
-	<td><?php echo $this->escapeHtml($pool->numvols); ?></td>
-	<td><?php echo $this->escapeHtml($pool->maxvols); ?></td>
-	<td><?php echo $this->printRetention($pool->volretention) . " days"; ?></td>
-	<td><?php echo $this->escapeHtml($pool->maxvoljobs); ?></td>
-	<td><?php echo $this->escapeHtml($pool->maxvolfiles); ?></td>
-	<td><?php echo $this->printBytes($pool->maxvolbytes); ?></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool->numvols); ?></div></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvols); ?></div></td>
+	<td><div align="right"><div align="right"><?php echo $this->printRetention($pool->volretention) . " days"; ?></div></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvoljobs); ?></div></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvolfiles); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($pool->maxvolbytes); ?></div></td>
 
 </tr>
 

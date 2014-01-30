@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -47,10 +48,10 @@ $this->headTitle($title);
 	<th>Type</th>
 	<th>Last written</th>
 	<th>Status</th>
-	<th>Retention</th>
-	<th>Maximum bytes</th>
-	<th>Current bytes</th>
-	<th>Free bytes</th>
+	<th><div align="right">Retention / Expires</div></th>
+	<th><div align="right">Maximum bytes</div></th>
+	<th><div align="right">Current bytes</div></th>
+	<th><div align="right">Free bytes</div></th>
 	
 </tr>
 
@@ -62,12 +63,16 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($volume->volumename); ?></td>
 	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($volume->storageid); ?></a></td>
 	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
-	<td><?php echo $this->printHumanReadableTimeperiod($volume->lastwritten, "short"); ?></td>
+	<td><div title="<?php echo $volume->lastwritten; ?>"><?php echo $this->printHumanReadableTimeperiod($volume->lastwritten, "fuzzy"); ?></div></td>
 	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
-	<td><?php echo $this->printRetention($volume->volretention) . " days"; ?></td>
-	<td><?php echo $this->printBytes($volume->maxvolbytes); ?></td>
-	<td><?php echo $this->printBytes($volume->volbytes); ?></td>
-	<td><?php echo $this->printBytes($volume->maxvolbytes - $volume->volbytes); ?></td>
+
+	<!-- <?php if($volume->volstatus == "Append") : ?> -->
+	<td><div align="right"><?php echo $this->printRetention($volume->volretention) . " / " . $this->printRetention($volume->volretention)  . " days"; ?></div></td>
+	<!-- <?php endif; ?> -->
+
+	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($volume->volbytes); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes - $volume->volbytes); ?></div></td>
 	
 </tr>
 

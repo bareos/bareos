@@ -46,7 +46,7 @@ class HumanReadableTimeperiod extends AbstractHelper
     {
 
 	if(empty($time)) {
-		$this->result = "-";
+		return $this->result = "never";
 	}
 	else {
 
@@ -97,9 +97,74 @@ class HumanReadableTimeperiod extends AbstractHelper
 		}
 		elseif($format == "fuzzy") {
 
-			// TODO
+			$t1 = explode("-", $time);
+			$t2 = explode("-", date("Y-m-d", time("NOW")));
 
-			$this->result = "~TODO ago";
+			$d1 = mktime(0, 0, 0, (int)$t1[1],(int)$t1[2],(int)$t1[0]);
+			$d2 = mktime(0, 0, 0, (int)$t2[1],(int)$t2[2],(int)$t2[0]);
+
+ 			$interval = ($d2 - $d1) / (3600 * 24);
+
+			if($interval < 1) {
+
+/*
+
+STILL BUGGY TEST CODE
+
+				$tmp = explode(" ", $time);
+				$t1 = explode(":", $tmp[1]);
+				$t2 = explode(":", date("H:i:s", time("NOW")));
+				$h1 = $t1[0];
+				$h2 = $t2[0];
+
+				if($h1 > $h2) {
+					$interval = (24 - $h1) + ($h2);
+				}
+				else {
+					$interval = $h2 - $h1;
+				}
+
+				if($interval <= 1) {
+
+					$tmp = explode(" ", $time); 
+					$t1 = explode(":", $tmp[1]);
+					$t2 = explode(":", date("H:i:s", time("NOW")));
+					$m1 = $t1[1];
+					$m2 = $t2[1];
+
+					if($m1 > $m2) {
+						$interval = (60 - $m1) + ($m2);
+					}
+					else {
+						$interval = $m2 - $m1;
+					}
+					
+					if($interval > 1) {	
+						return $this->result = "about " . $interval . " minute(s) ago";
+					}
+					else {
+						return $this->result = " just now";
+					}
+
+				}
+				elseif($interval < 24) {
+					return $this->result = "about " . $interval . " hour(s) ago";
+				}
+*/				
+				return $this->result = "today";
+
+			}
+			elseif($interval <= 31 && $interval >= 1) {
+				$this->result = "about " . $interval . " day(s) ago";
+			}
+			elseif($interval >= 31 && $interval <= 365) {
+				$interval = round($interval / 31, 0, PHP_ROUND_HALF_UP);
+				$this->result = "about " . $interval . " month ago";
+			}
+			elseif($interval > 365) {
+				$interval = round($interval / 12, 1, PHP_ROUND_HALF_UP);
+				$this->result = "about " . $interval . " year(s) ago";
+			}
 
 		}
 		
