@@ -196,22 +196,6 @@ realclean: clean
 	$(RMF) create_bareos_database	   update_bareos_tables     make_bareos_tables
 	$(RMF) grant_bareos_privileges	   drop_bareos_tables	    drop_bareos_database
 
-	$(RMF) create_mysql_database	   update_mysql_tables	    make_mysql_tables
-	$(RMF) grant_mysql_privileges	   drop_mysql_tables	    drop_mysql_database
-
-	$(RMF) create_postgresql_database  update_postgresql_tables make_postgresql_tables
-	$(RMF) grant_postgresql_privileges drop_postgresql_tables   drop_postgresql_database
-
-	$(RMF) create_ingres_database update_ingres_tables make_ingres_tables
-	$(RMF) grant_ingres_privileges drop_ingres_tables   drop_ingres_database
-
-	$(RMF) create_sqlite_database	   update_sqlite_tables     make_sqlite_tables
-	$(RMF) grant_sqlite_privileges	   drop_sqlite_tables	    drop_sqlite_database
-
-	$(RMF) create_sqlite3_database	   update_sqlite3_tables     make_sqlite3_tables
-	$(RMF) grant_sqlite3_privileges    drop_sqlite3_tables	    drop_sqlite3_database
-
-	$(RMF) mysql sqlite postgresql ingres
 	$(RMF) make_catalog_backup make_catalog_backup.pl delete_catalog_backup
 
 distclean: realclean
@@ -242,23 +226,33 @@ libtool-install: all
 	done
 
 install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCLUDE_INSTALL_TARGET@
-	for db_type in @DB_BACKENDS@; do \
-	    if [ -f create_$${db_type}_database ]; then \
-	    $(INSTALL_SCRIPT) create_$${db_type}_database $(DESTDIR)$(scriptdir)/create_$${db_type}_database; \
-	    $(INSTALL_SCRIPT) update_$${db_type}_tables $(DESTDIR)$(scriptdir)/update_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) make_$${db_type}_tables $(DESTDIR)$(scriptdir)/make_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) grant_$${db_type}_privileges $(DESTDIR)$(scriptdir)/grant_$${db_type}_privileges; \
-	    $(INSTALL_SCRIPT) drop_$${db_type}_tables $(DESTDIR)$(scriptdir)/drop_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) drop_$${db_type}_database $(DESTDIR)$(scriptdir)/drop_$${db_type}_database; \
-	    fi; \
-	done
-
 	$(INSTALL_SCRIPT) create_bareos_database $(DESTDIR)$(scriptdir)/create_bareos_database
 	$(INSTALL_SCRIPT) update_bareos_tables $(DESTDIR)$(scriptdir)/update_bareos_tables
 	$(INSTALL_SCRIPT) make_bareos_tables $(DESTDIR)$(scriptdir)/make_bareos_tables
 	$(INSTALL_SCRIPT) grant_bareos_privileges $(DESTDIR)$(scriptdir)/grant_bareos_privileges
 	$(INSTALL_SCRIPT) drop_bareos_tables $(DESTDIR)$(scriptdir)/drop_bareos_tables
 	$(INSTALL_SCRIPT) drop_bareos_database $(DESTDIR)$(scriptdir)/drop_bareos_database
+
+	#
+	# Make sure the DDL subdir exists.
+	#
+	@if ! test -d $(DESTDIR)$(scriptdir)/ddl; then \
+	   $(MKDIR) $(DESTDIR)$(libdir)/ddl; \
+	fi;
+
+	#
+	# Install all DDL schemas for Drop, Grant, Create and Update
+	#
+	@for db_type in @DB_BACKENDS@; do \
+           for dir in drops grants creates updates; do \
+	      if ! test -d $(DESTDIR)$(scriptdir)/ddl/$$dir; then \
+	         $(MKDIR) $(DESTDIR)$(scriptdir)/ddl/$$dir; \
+	      fi; \
+	      if test `ls -1 ddl/$$dir/$$db_type*.sql 2>/dev/null | wc -l` -gt 0; then \
+	         $(INSTALL_DATA) ddl/$$dir/$$db_type*.sql $(DESTDIR)$(scriptdir)/ddl/$$dir; \
+	      fi; \
+	   done \
+	done
 
 	@filename=make_catalog_backup.pl; \
 	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \

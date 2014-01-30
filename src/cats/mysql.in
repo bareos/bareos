@@ -1,8 +1,0 @@
-#!/bin/sh
-#
-# shell script to create Bareos MySQL tables
-#
-bindir=@MYSQL_BINDIR@
-db_name=@db_name@
-
-$bindir/mysql $* ${db_name}

@@ -1,11 +1,41 @@
 #!/bin/sh
 #
-# This routine makes the appropriately configured
-# Bareos tables for PostgreSQL or MySQL.
-# SQLite does not have permissions.
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
+# shell script to grant privileges to the bareos database
+# for PostgreSQL, Ingres, MySQL, or SQLite.
 #
 
-default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+#
+# Source the Bareos config functions.
+#
+. @scriptdir@/bareos-config-lib.sh
+
+db_name="${db_name:-@db_name@}"
+db_user="${db_user:-@db_user@}"
+db_password="${db_password:-@db_password@}"
+db_version=`get_database_version`
+bareos_sql_ddl=`get_database_ddl_dir`
+temp_sql_grants="/tmp/grants.sql.$$"
+default_db_type=`get_database_driver_default`
 
 #
 # See if the first argument is a valid backend name.
@@ -13,24 +43,24 @@ default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
 #
 if [ $# -gt 0 ]; then
    case $1 in
-     sqlite3)
-       db_type=$1
-       shift
-       ;;
-     mysql)
-       db_type=$1
-       shift
-       ;;
-     postgresql)
-       db_type=$1
-       shift
-       ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
-     *)
-       ;;
+      sqlite3)
+         db_type=$1
+         shift
+         ;;
+      mysql)
+         db_type=$1
+         shift
+         ;;
+      postgresql)
+         db_type=$1
+         shift
+         ;;
+      ingres)
+         db_type=$1
+         shift
+         ;;
+      *)
+         ;;
    esac
 fi
 
@@ -41,5 +71,53 @@ if [ -z "${db_type}" ]; then
    db_type="${default_db_type}"
 fi
 
-echo "Granting ${db_type} privileges"
-@scriptdir@/grant_${db_type}_privileges $*
+echo "Granting ${db_type} tables"
+
+if ! get_database_grant_priviliges "${db_type}" "${db_user}" "${db_password}" > ${temp_sql_grants}; then
+    echo "Error creating privileges."
+    exit 1
+fi
+
+bindir=`get_database_utility_path ${db_type}`
+if [ ! -z "${bindir}" ]; then
+   PATH="$bindir:$PATH"
+fi
+
+case ${db_type} in
+   sqlite3)
+      #
+      # Nothing to do for SQLite3
+      #
+      retval=0
+      ;;
+   mysql)
+      mysql $* -f < ${temp_sql_grants}
+
+      retval=$?
+      ;;
+   postgresql)
+      psql -f ${temp_sql_grants} -d ${db_name} $*
+
+      retval=$?
+      ;;
+   ingres)
+      sql iidbdb $* << END-OF-DATA
+      CREATE USER ${db_user} ${pass}
+      \g
+END-OF-DATA
+
+      sql -u${db_user} $* ${db_name} < ${temp_sql_grants}
+
+      retval=$?
+      ;;
+esac
+
+rm -f ${temp_sql_grants}
+
+if [ ${retval} = 0 ]; then
+   echo "Privileges for user ${db_user} granted ON database ${db_name}."
+else
+   echo "Error creating privileges."
+fi
+
+exit ${retval}

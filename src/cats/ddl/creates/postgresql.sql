@@ -1,17 +1,3 @@
-#!/bin/sh
-#
-# shell script to create Bareos PostgreSQL tables
-#
-# Important note:
-#   You won't get any support for performance issue if you changed the default
-#   schema.
-#
-bindir=@POSTGRESQL_BINDIR@
-PATH="$bindir:$PATH"
-db_name=${db_name:-@db_name@}
-
-psql -f - -d ${db_name} $* <<END-OF-DATA
-
 CREATE TABLE Filename
 (
     FilenameId        SERIAL      NOT NULL,
@@ -208,6 +194,8 @@ CREATE TABLE Media
     EndBlock          BIGINT      DEFAULT 0,
     LocationId        INTEGER     DEFAULT 0,
     RecycleCount      INTEGER     DEFAULT 0,
+    MinBlockSize      INTEGER     DEFAULT 0,
+    MaxBlockSize      INTEGER     DEFAULT 0,
     InitialWrite      TIMESTAMP   WITHOUT TIME ZONE,
     ScratchPoolId     INTEGER     DEFAULT 0,
     RecyclePoolId     INTEGER     DEFAULT 0,
@@ -278,6 +266,8 @@ CREATE TABLE Pool
     ScratchPoolId     INTEGER     DEFAULT 0,
     RecyclePoolId     INTEGER     DEFAULT 0,
     NextPoolId        INTEGER     DEFAULT 0,
+    MinBlockSize      INTEGER     DEFAULT 0,
+    MaxBlockSize      INTEGER     DEFAULT 0,
     MigrationHighBytes BIGINT     DEFAULT 0,
     MigrationLowBytes BIGINT      DEFAULT 0,
     MigrationTime     BIGINT      DEFAULT 0,
@@ -345,7 +335,7 @@ CREATE TABLE basefiles
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
-CREATE TABLE unsavedfiles
+CREATE TABLE UnsavedFiles
 (
     UnsavedId         INTEGER     NOT NULL,
     JobId             INTEGER     NOT NULL,
@@ -417,6 +407,28 @@ CREATE TABLE NDMPJobEnvironment (
     CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
 );
 
+CREATE TABLE DeviceStats (
+    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
+    ReadTime          BIGINT      NOT NULL DEFAULT 0,
+    WriteTime         BIGINT      NOT NULL DEFAULT 0,
+    ReadBytes         BIGINT      DEFAULT 0,
+    WriteBytes        BIGINT      DEFAULT 0,
+    Spool             SMALLINT    DEFAULT 0,
+    Waiting           SMALLINT    DEFAULT 0,
+    Writers           SMALLINT    DEFAULT 0,
+    MediaId           INTEGER     NOT NULL,
+    VolCatBytes       BIGINT      DEFAULT 0,
+    VolCatFiles       BIGINT      DEFAULT 0,
+    VolCatBlocks      BIGINT      DEFAULT 0
+);
+
+CREATE TABLE JobStats (
+    SampleTime        TIMESTAMP   WITHOUT TIME ZONE NOT NULL,
+    JobId             INTEGER     NOT NULL,
+    JobFiles          INTEGER     DEFAULT 0,
+    JobBytes          BIGINT      DEFAULT 0
+);
+
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -439,8 +451,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('F', 'Waiting for Client',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('S', 'Waiting for Storage daemon',15);
-INSERT INTO Status (JobStatus,JobStatusLong) VALUES
-   ('m', 'Waiting for new media');
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('m', 'Waiting for new media',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('M', 'Waiting for media mount',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -460,16 +472,6 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
+INSERT INTO Version (VersionId) VALUES (2002);
 
 -- Make sure we have appropriate permissions
-
-END-OF-DATA
-pstat=$?
-if test $pstat = 0;
-then
-   echo "Creation of Bareos PostgreSQL tables succeeded."
-else
-   echo "Creation of Bareos PostgreSQL tables failed."
-fi
-exit $pstat

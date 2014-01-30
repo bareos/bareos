@@ -1,11 +1,40 @@
 #!/bin/sh
 #
-# This routine creates the Bareos database
-# using PostgreSQL, Ingres, MySQL, or SQLite.
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
+# This routine makes the appropriately configured
+# Bareos database for PostgreSQL, Ingres, MySQL, or SQLite.
 #
 
-default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+#
+# Source the Bareos config functions.
+#
+. @scriptdir@/bareos-config-lib.sh
 
+db_name="${db_name:-@db_name@}"
+db_user="${db_user:-@db_user@}"
+dir_user=`get_user_dir`
+dir_group=`get_group_dir`
+default_db_type=`get_database_driver_default`
+working_dir=`get_working_dir`
 
 #
 # See if the first argument is a valid backend name.
@@ -13,24 +42,24 @@ default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
 #
 if [ $# -gt 0 ]; then
    case $1 in
-     sqlite3)
-       db_type=$1
-       shift
-       ;;
-     mysql)
-       db_type=$1
-       shift
-       ;;
-     postgresql)
-       db_type=$1
-       shift
-       ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
-     *)
-       ;;
+      sqlite3)
+         db_type=$1
+         shift
+         ;;
+      mysql)
+         db_type=$1
+         shift
+         ;;
+      postgresql)
+         db_type=$1
+         shift
+         ;;
+      ingres)
+         db_type=$1
+         shift
+         ;;
+      *)
+         ;;
    esac
 fi
 
@@ -42,4 +71,95 @@ if [ -z "${db_type}" ]; then
 fi
 
 echo "Creating ${db_type} database"
-@scriptdir@/create_${db_type}_database $*
+
+bindir=`get_database_utility_path ${db_type}`
+if [ ! -z "${bindir}" ]; then
+   PATH="$bindir:$PATH"
+fi
+
+case ${db_type} in
+   sqlite3)
+      sqlite3 $* ${working_dir}/${db_name}.db ".tables"
+      # Allow non root access
+      chown ${dir_user}:${dir_group} ${working_dir}/${db_name}.db
+      chmod 0640 ${working_dir}/${db_name}.db
+      retval=0
+      ;;
+   mysql)
+      mysql $* -e "CREATE DATABASE ${db_name};"
+      retval=$?
+      ;;
+   postgresql)
+      #
+      # use SQL_ASCII to be able to put any filename into
+      # the database even those created with unusual character sets
+      PSQLVERSION=`psql -d template1 -c 'SELECT version()' $* 2>/dev/null | \
+                   awk '/PostgreSQL/ { print $2 }' | \
+                   cut -d '.' -f 1,2`
+
+      if [ -z "${PSQLVERSION}" ]; then
+         echo "Unable to determine PostgreSQL version."
+         exit 1
+      fi
+
+      #
+      # Note, LC_COLLATE and LC_TYPE are needed on 8.4 and beyond, but are not implemented in 8.3 or below.
+      # This must be updated for future versions of PostgreSQL
+      #
+      case ${PSQLVERSION} in
+         9.*)
+	    ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
+            ;;
+         8.[456789])
+	    ENCODING="ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
+            ;;
+         *)
+	    ENCODING="ENCODING 'SQL_ASCII'"
+            ;;
+      esac
+
+      psql -f - -d template1 $* << END-OF-DATA
+\set ON_ERROR_STOP on
+CREATE DATABASE ${db_name} $ENCODING TEMPLATE template0;
+ALTER DATABASE ${db_name} SET datestyle TO 'ISO, YMD';
+END-OF-DATA
+      retval=$?
+
+      if psql -l ${dbname} | grep " ${db_name}.*SQL_ASCII" >/dev/null; then
+         echo "Database encoding OK"
+      else
+         echo " "
+         echo "Database encoding bad. Do not use this database"
+         echo " "
+      fi
+      ;;
+   ingres)
+      #
+      # Use SQL_ASCII to be able to put any filename into
+      # the database even those created with unusual character sets
+      #
+      ENCODING="ENCODING 'SQL_ASCII'"
+
+      #
+      # use UTF8 if you are using standard Unix/Linux LANG specifications
+      # that use UTF8 -- this is normally the default and *should* be
+      # your standard.  Bareos works correctly *only* with correct UTF8.
+      #
+      # Note, with this encoding, if you have any "weird" filenames on
+      # your system (names generated from Win32 or Mac OS), you may
+      # get Bareos batch insert failures.
+      #
+      #ENCODING="ENCODING 'UTF8'"
+
+      createdb -u${db_user} $* ${db_name}
+      retval=$?
+      ;;
+esac
+
+if [ ${retval} = 0 ]; then
+   echo "Creating of ${db_name} database succeeded."
+else
+   echo "Creating of ${db_name} database failed."
+fi
+
+exit ${retval}
