@@ -742,6 +742,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{script_dir}
 %{script_dir}/bareos-config
 %{script_dir}/bareos-config-lib.sh
+%{script_dir}/bareos-explorer
 %{script_dir}/btraceback.gdb
 %if "%{_libdir}/bareos/" != "/usr/lib/bareos/"
 %dir %{_libdir}/bareos/
