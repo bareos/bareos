@@ -1,11 +1,41 @@
 #!/bin/sh
 #
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
 # This routine makes the appropriately configured
 # Bareos tables for PostgreSQL, Ingres, MySQL, or SQLite.
 #
 
-default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+#
+# Source the Bareos config functions.
+#
+. @scriptdir@/bareos-config-lib.sh
 
+db_name="${db_name:-@db_name@}"
+db_user="${db_user:-@db_user@}"
+db_version=`get_database_version`
+bareos_sql_ddl=`get_database_ddl_dir`
+temp_sql_schema="/tmp/creates.sql.$$"
+default_db_type=`get_database_driver_default`
+working_dir=`get_working_dir`
 
 #
 # See if the first argument is a valid backend name.
@@ -13,24 +43,24 @@ default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
 #
 if [ $# -gt 0 ]; then
    case $1 in
-     sqlite3)
-       db_type=$1
-       shift
-       ;;
-     mysql)
-       db_type=$1
-       shift
-       ;;
-     postgresql)
-       db_type=$1
-       shift
-       ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
-     *)
-       ;;
+      sqlite3)
+         db_type=$1
+         shift
+         ;;
+      mysql)
+         db_type=$1
+         shift
+         ;;
+      postgresql)
+         db_type=$1
+         shift
+         ;;
+      ingres)
+         db_type=$1
+         shift
+         ;;
+      *)
+         ;;
    esac
 fi
 
@@ -42,4 +72,79 @@ if [ -z "${db_type}" ]; then
 fi
 
 echo "Making ${db_type} tables"
-@scriptdir@/make_${db_type}_tables $*
+
+case ${db_type} in
+   sqlite3)
+      sql_definitions="${bareos_sql_ddl}/creates/sqlite3.sql"
+      ;;
+   mysql)
+      sql_definitions="${bareos_sql_ddl}/creates/mysql.sql"
+      ;;
+   postgresql)
+      sql_definitions="${bareos_sql_ddl}/creates/postgresql.sql"
+      ;;
+   ingres)
+      sql_definitions="${bareos_sql_ddl}/creates/ingres.sql"
+      ;;
+   *)
+      echo "Unknown database type $1"
+      exit 1
+      ;;
+esac
+
+if [ ! -z "${sql_definitions}" ]; then
+   if [ ! -f ${sql_definitions} ]; then
+      echo "Unable to open database table definitions in file ${sql_definitions}"
+      exit 1
+   fi
+
+   if ! get_translated_sql_file ${sql_definitions} > ${temp_sql_schema}; then
+        echo "Failed to translate SQL definitions in ${sql_definitions}"
+        exit 1
+   fi
+fi
+
+bindir=`get_database_utility_path ${db_type}`
+if [ ! -z "${bindir}" ]; then
+   PATH="$bindir:$PATH"
+fi
+
+case ${db_type} in
+   sqlite3)
+      sqlite3 $* ${working_dir}/${db_name}.db < ${temp_sql_schema}
+      chmod 640 ${working_dir}/${db_name}.db
+      retval=0
+      ;;
+   mysql)
+      mysql $* --database=${db_name} -f < ${temp_sql_schema}
+      retval=$?
+      if test $retval = 0; then
+         echo "Creation of Bareos MySQL tables succeeded."
+      else
+         echo "Creation of Bareos MySQL tables failed."
+      fi
+      ;;
+   postgresql)
+      psql -f ${temp_sql_schema} -d ${db_name} $*
+      retval=$?
+      if test $retval = 0; then
+         echo "Creation of Bareos PostgreSQL tables succeeded."
+      else
+         echo "Creation of Bareos PostgreSQL tables failed."
+      fi
+      ;;
+   ingres)
+      sql -u${db_user} $* ${db_name} < ${temp_sql_schema}
+
+      retval=$?
+      if test $retval = 0; then
+         echo "Creation of Bareos Ingres tables succeeded."
+      else
+         echo "Creation of Bareos Ingres tables failed."
+      fi
+      ;;
+esac
+
+rm -f ${temp_sql_schema}
+
+exit ${retval}

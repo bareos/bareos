@@ -1,13 +1,3 @@
-#!/bin/sh
-#
-# shell script to delete Bareos tables for PostgreSQL
-
-bindir=@INGRES_BINDIR@
-PATH="$bindir:$PATH"
-db_name=${db_name:-@db_name@}
-db_user=${db_user:-@db_user@}
-
-sql -u${db_user} ${db_name} $* <<END-OF-DATA
 DROP TABLE Filename;
 DROP TABLE Path;
 DROP TABLE File;
@@ -35,6 +25,9 @@ DROP TABLE Version;
 DROP TABLE Status;
 DROP TABLE Quota;
 DROP TABLE NDMPLevelMap;
+DROP TABLE NDMPJobEnvironment;
+DROP TABLE DeviceStats;
+DROP TABLE JobStats;
 DROP SEQUENCE Filename_Seq;
 DROP SEQUENCE Path_Seq;
 DROP SEQUENCE File_Seq;
@@ -54,12 +47,3 @@ DROP SEQUENCE Log_Seq;
 DROP SEQUENCE LocationLog_Seq;
 DROP SEQUENCE BaseFiles_Seq;
 \g
-END-OF-DATA
-pstat=$?
-if test $pstat = 0;
-then
-   echo "Deletion of Bareos Ingres tables succeeded."
-else
-   echo "Deletion of Bareos Ingres tables failed."
-fi
-exit $pstat

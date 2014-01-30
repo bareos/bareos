@@ -1,8 +1,0 @@
-#!/bin/sh
-#
-# shell script to drop Bareos SQLite tables
-db_name=@db_name@
-
-cd @working_dir@
-rm -rf ${db_name}.db
-echo "SQLite database dropped."

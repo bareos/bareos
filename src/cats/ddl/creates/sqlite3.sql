@@ -1,13 +1,3 @@
-#!/bin/sh
-#
-# shell script to create Bareos SQLite tables
-
-bindir=@SQLITE_BINDIR@
-PATH="$bindir:$PATH"
-cd @working_dir@
-db_name=@db_name@
-
-sqlite3 $* ${db_name}.db <<END-OF-DATA
 CREATE TABLE Filename (
   FilenameId INTEGER,
   Name TEXT DEFAULT '',
@@ -219,6 +209,8 @@ CREATE TABLE Media (
    EndBlock INTEGER UNSIGNED DEFAULT 0,
    LocationId INTEGER UNSIGNED REFERENCES Location DEFAULT 0,
    RecycleCount INTEGER UNSIGNED DEFAULT 0,
+   MinBlockSize INTEGER UNSIGNED DEFAULT 0,
+   MaxBlockSize INTEGER UNSIGNED DEFAULT 0,
    InitialWrite DATETIME DEFAULT 0,
    ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
    RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
@@ -284,6 +276,8 @@ CREATE TABLE Pool (
    ScratchPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
    RecyclePoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
    NextPoolId INTEGER UNSIGNED REFERENCES Pool DEFAULT 0,
+   MinBlockSize INTEGER UNSIGNED DEFAULT 0,
+   MaxBlockSize INTEGER UNSIGNED DEFAULT 0,
    MigrationHighBytes BIGINT UNSIGNED DEFAULT 0,
    MigrationLowBytes BIGINT UNSIGNED DEFAULT 0,
    MigrationTime BIGINT UNSIGNED DEFAULT 0,
@@ -401,6 +395,28 @@ CREATE TABLE NDMPJobEnvironment (
    CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
 );
 
+CREATE TABLE DeviceStats (
+   SampleTime DATETIME NOT NULL,
+   ReadTime BIGINT UNSIGNED DEFAULT 0,
+   WriteTime BIGINT UNSIGNED DEFAULT 0,
+   ReadBytes BIGINT UNSIGNED DEFAULT 0,
+   WriteBytes BIGINT UNSIGNED DEFAULT 0,
+   Spool INTEGER UNSIGNED DEFAULT 0,
+   Waiting INTEGER DEFAULT 0,
+   Writers INTEGER DEFAULT 0,
+   MediaId INTEGER UNSIGNED REFERENCES Media DEFAULT 0,
+   VolCatBytes BIGINT UNSIGNED DEFAULT 0,
+   VolCatFiles BIGINT UNSIGNED DEFAULT 0,
+   VolCatBlocks BIGINT UNSIGNED DEFAULT 0
+);
+
+CREATE TABLE JobStats (
+   SampleTime DATETIME NOT NULL,
+   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0
+);
+
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -444,15 +460,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-
 -- Initialize Version
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
-
+INSERT INTO Version (VersionId) VALUES (2002);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;
-
-END-OF-DATA
-
-chmod 640 ${db_name}.db
-exit 0

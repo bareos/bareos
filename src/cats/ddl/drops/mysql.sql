@@ -1,12 +1,3 @@
-#!/bin/sh
-#
-# shell script to delete Bareos tables for MySQL
-
-bindir=@MYSQL_BINDIR@
-db_name=@db_name@
-
-if $bindir/mysql $* <<END-OF-DATA
-USE ${db_name};
 DROP TABLE IF EXISTS Filename;
 DROP TABLE IF EXISTS Path;
 DROP TABLE IF EXISTS LongName;
@@ -31,6 +22,9 @@ DROP TABLE IF EXISTS CDImages;
 DROP TABLE IF EXISTS Status;
 DROP TABLE IF EXISTS Quota;
 DROP TABLE IF EXISTS NDMPLevelMap;
+DROP TABLE IF EXISTS NDMPJobEnvironment;
+DROP TABLE IF EXISTS DeviceStats;
+DROP TABLE IF EXISTS JobStats;
 DROP TABLE IF EXISTS MAC;
 DROP TABLE IF EXISTS Log;
 DROP TABLE IF EXISTS Location;
@@ -38,10 +32,3 @@ DROP TABLE IF EXISTS LocationLog;
 DROP TABLE IF EXISTS PathVisibility;
 DROP TABLE IF EXISTS PathHierarchy;
 DROP TABLE IF EXISTS RestoreObject;
-END-OF-DATA
-then
-   echo "Deletion of ${db_name} MySQL tables succeeded."
-else
-   echo "Deletion of ${db_name} MySQL tables failed."
-fi
-exit 0

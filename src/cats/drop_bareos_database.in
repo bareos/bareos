@@ -1,11 +1,37 @@
 #!/bin/sh
 #
-#  Drop Bareos database -- works for whatever is configured,
-#  MySQL, SQLite, PostgreSQL, Ingres
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
+# This scripts drops the Bareos tables for PostgreSQL, Ingres, MySQL, or SQLite.
 #
 
-default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
+#
+# Source the Bareos config functions.
+#
+. @scriptdir@/bareos-config-lib.sh
 
+db_name="${db_name:-@db_name@}"
+db_user="${db_user:-@db_user@}"
+default_db_type=`get_database_driver_default`
+working_dir=`get_working_dir`
 
 #
 # See if the first argument is a valid backend name.
@@ -13,24 +39,24 @@ default_db_type=`@scriptdir@/bareos-config get_database_driver_default`
 #
 if [ $# -gt 0 ]; then
    case $1 in
-     sqlite3)
-       db_type=$1
-       shift
-       ;;
-     mysql)
-       db_type=$1
-       shift
-       ;;
-     postgresql)
-       db_type=$1
-       shift
-       ;;
-     ingres)
-       db_type=$1
-       shift
-       ;;
-     *)
-       ;;
+      sqlite3)
+         db_type=$1
+         shift
+         ;;
+      mysql)
+         db_type=$1
+         shift
+         ;;
+      postgresql)
+         db_type=$1
+         shift
+         ;;
+      ingres)
+         db_type=$1
+         shift
+         ;;
+      *)
+         ;;
    esac
 fi
 
@@ -42,4 +68,36 @@ if [ -z "${db_type}" ]; then
 fi
 
 echo "Dropping ${db_type} database"
-@scriptdir@/drop_${db_type}_database $*
+
+bindir=`get_database_utility_path ${db_type}`
+if [ ! -z "${bindir}" ]; then
+   PATH="$bindir:$PATH"
+fi
+PATH="$bindir:$PATH"
+
+case ${db_type} in
+   sqlite3)
+      rm -f ${working_dir}/${db_name}.db
+      retval=0
+      ;;
+   mysql)
+      mysql $* -e "DROP DATABASE ${db_name};"
+      retval=$?
+      ;;
+   postgresql)
+      dropdb $* ${db_name}
+      retval=$?
+      ;;
+   ingres)
+      destroydb -u${db_user} ${db_name}
+      retval=$?
+      ;;
+esac
+
+if [ ${retval} = 0 ]; then
+   echo "Drop of ${db_name} database succeeded."
+else
+   echo "Drop of ${db_name} database failed."
+fi
+
+exit ${retval}

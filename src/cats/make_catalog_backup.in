@@ -1,5 +1,25 @@
 #!/bin/sh
 #
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
 # This script dumps your Bareos catalog in ASCII format
 # It works for MySQL, SQLite, and PostgreSQL
 #
@@ -17,15 +37,14 @@
 #     (default "")
 #  $5 is the type of database
 #
-#
-CFG="@sysconfdir@/bareos-dir.conf"
-DBCHECK="@sbindir@/bareos-dbcheck"
 
-default_db_type=`${DBCHECK} -B -c ${CFG} | \
-                 grep 'db_type=' | \
-                 head -1 | \
-                 cut -d'=' -f2 | \
-                 tr '[A-Z]' '[a-z]'`
+#
+# Source the Bareos config functions.
+#
+. @scriptdir@/bareos-config-lib.sh
+
+working_dir=`get_working_dir`
+default_db_type=`get_database_driver_default`
 
 #
 # See if the fifth argument is a valid backend name.
@@ -57,30 +76,32 @@ if [ -z "${db_type}" ]; then
    db_type="${default_db_type}"
 fi
 
-cd @working_dir@
+cd ${working_dir}
 rm -f $1.sql
+
+bindir=`get_database_utility_path ${db_type}`
+if [ ! -z "${bindir}" ]; then
+   PATH="$bindir:$PATH"
+fi
 
 case ${db_type} in
   sqlite3)
-    BINDIR=@SQLITE_BINDIR@
-    echo ".dump" | ${BINDIR}/sqlite3 $1.db >$1.sql
+    echo ".dump" | sqlite3 $1.db > $1.sql
     ;;
   mysql)
-    BINDIR=@MYSQL_BINDIR@
     if test $# -gt 2; then
-      MYSQLPASSWORD=" --password=$3"
+       MYSQLPASSWORD=" --password=$3"
     else
-      MYSQLPASSWORD=""
+       MYSQLPASSWORD=""
     fi
     if test $# -gt 3; then
-      MYSQLHOST=" --host=$4"
+       MYSQLHOST=" --host=$4"
     else
-      MYSQLHOST=""
+       MYSQLHOST=""
     fi
-    ${BINDIR}/mysqldump -u ${2}${MYSQLPASSWORD}${MYSQLHOST} -f --opt $1 >$1.sql
+    mysqldump -u ${2}${MYSQLPASSWORD}${MYSQLHOST} -f --opt $1 > $1.sql
     ;;
   postgresql)
-    BINDIR=@POSTGRESQL_BINDIR@
     if test $# -gt 2; then
       PGPASSWORD=$3
       export PGPASSWORD
@@ -91,7 +112,7 @@ case ${db_type} in
       PGHOST=""
     fi
     # you could also add --compress for compression.  See man pg_dump
-    exec ${BINDIR}/pg_dump -c $PGHOST -U $2 $1 >$1.sql
+    pg_dump -c $PGHOST -U $2 $1 > $1.sql
     ;;
 esac
 #
