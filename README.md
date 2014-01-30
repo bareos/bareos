@@ -3,12 +3,15 @@ Barbossa
 
 A PHP-Frontend to manage Bareos over the web.
 
+http://fbergkemper.github.io/
+
 ### RELEASE INFORMATION
 
 Currently, there is no official release available, but there are some screenshots from alpha in the [wiki](https://github.com/fbergkemper/barbossa/wiki/Screenshots).
 
 ### FEATURES
 
+* Intuitive Webinterface
 * PostgreSQL database support
 * MySQL database support (not implemented yet)
 * Detailed information on Jobs, Clients, Filesets, Pools, Volumes, Storage and Logs
@@ -38,16 +41,7 @@ Please see [install/README.md](install/README.md).
 If you wish to contribute to barbossa, please read both the
 [CONTRIBUTION.md](CONTRIBUTION.md) and [README-GIT.md](README-GIT.md) file.
 
-### LICENSES
+### LICENSE
 
-Barbossa is licensed under AGPL Version 3, unless there is no other license 
-mentioned, e.g. in external libraries, frameworks etc., which are beeing used
-by Barbossa.
-
-* Zend Framework 2 - BSD 3-Clause License 
-* ZendSkeletonApplication - MIT/BSD like License
-* Composer Dependency Manager for PHP - MIT License
-* jQuery - MIT License
-* jqplot - dual licensed under MIT and GPL version 2 licenses
-* Twitter Bootstrap - Apache License v2.0
+Barbossa is licensed under AGPL Version 3.
 
