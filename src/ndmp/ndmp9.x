@@ -845,6 +845,9 @@ struct ndmp9_name {
 	string			original_path<>; /* relative to backup root */
 	string			destination_path<>;
 	/* nt_destination_path<> */
+	string			name<>;
+	string			other_name<>;
+	ndmp9_u_quad		node;
 	ndmp9_valid_u_quad	fh_info;
 };
 

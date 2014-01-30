@@ -318,6 +318,9 @@ args_to_job_recover_nlist (void)
 
 		nlist[i].original_path = file_arg[i];
 		nlist[i].destination_path = dest;
+		nlist[i].name = "";
+		nlist[i].other_name = "";
+		nlist[i].node = NDMP_INVALID_U_QUAD;
 	    } else {
 		len = strlen (file_arg[i]) + prefix_len + 1;
 
@@ -337,6 +340,9 @@ args_to_job_recover_nlist (void)
 
 		nlist[i].original_path = file_arg[i];
 		nlist[i].destination_path = dest;
+		nlist[i].name = "";
+		nlist[i].other_name = "";
+		nlist[i].node = NDMP_INVALID_U_QUAD;
 	    }
 	}
 

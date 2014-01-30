@@ -452,7 +452,7 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 #define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
 
 /* Current database version number for all drivers */
-#define BDB_VERSION 2001
+#define BDB_VERSION 2002
 
 class B_DB: public SMARTALLOC {
 protected:

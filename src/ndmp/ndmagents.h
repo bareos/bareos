@@ -157,6 +157,7 @@ struct ndm_env_table {
 /* ndma_listmgt.c */
 extern ndmp9_pval *		ndma_enumerate_env_list (struct ndm_env_table *envtab);
 extern struct ndm_env_entry *	ndma_store_env_list (struct ndm_env_table *envtab, ndmp9_pval *pv);
+extern struct ndm_env_entry *	ndma_update_env_list (struct ndm_env_table *envtab, ndmp9_pval *pv);
 extern void			ndma_destroy_env_list (struct ndm_env_table *envtab);
 
 #ifndef NDM_MAX_NLIST

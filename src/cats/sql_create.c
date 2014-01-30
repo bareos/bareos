@@ -63,7 +63,7 @@ bool db_create_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    struct tm tm;
    int len;
    utime_t JobTDate;
-   char ed1[30],ed2[30];
+   char ed1[30], ed2[30];
    char esc_job[MAX_ESCAPE_NAME_LENGTH];
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
 
@@ -1334,6 +1334,37 @@ bool db_create_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesy
    }
 
 bail_out:
+   db_unlock(mdb);
+   return retval;
+}
+
+/**
+ * Create a NDMP Job Environment String
+ * Returns: false on failure
+ *          true on success
+ */
+bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *name, char *value)
+{
+   bool retval = false;
+   char ed1[50], ed2[50];
+   char esc_name[MAX_ESCAPE_NAME_LENGTH];
+   char esc_value[MAX_ESCAPE_NAME_LENGTH];
+
+   db_lock(mdb);
+
+   mdb->db_escape_string(jcr, esc_name, name, strlen(name));
+   mdb->db_escape_string(jcr, esc_value, value, strlen(value));
+   Mmsg(mdb->cmd, "INSERT INTO NDMPJobEnvironment (JobId, FileIndex, EnvName, EnvValue)"
+                  " VALUES ('%s', '%s', '%s', '%s')",
+        edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_name, esc_value);
+   if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
+      Mmsg2(&mdb->errmsg, _("Create DB NDMP Job Environment record %s failed. ERR=%s\n"),
+            mdb->cmd, sql_strerror(mdb));
+      Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
+   } else {
+      retval = true;
+   }
+
    db_unlock(mdb);
    return retval;
 }

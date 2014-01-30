@@ -465,6 +465,15 @@ CREATE TABLE NDMPLevelMap
    DumpLevel		INTEGER 	DEFAULT 0,
    CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
 );
+
+CREATE TABLE NDMPJobEnvironment
+(
+   JobId		INTEGER 	NOT NULL,
+   FileIndex		INTEGER 	NOT NULL,
+   EnvName    		VARBYTE(256)	NOT NULL,
+   EnvValue   		VARBYTE(256)	NOT NULL,
+   CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
+);
 \g
 
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES

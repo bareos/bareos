@@ -60,12 +60,12 @@ ndma_client_session (struct ndm_session *sess, struct ndm_job_param *job, int sw
 	sess->robot_agent_enabled = 1;
 
         /*
-         * Old behavious enable session snooping
+         * Old behaviour enable session snooping
          */
 	sess->conn_snooping = 1;
 
         /*
-         * Old behavious enable media info dumping.
+         * Old behaviour enable media info dumping.
          */
 	sess->dump_media_info = 1;
 
@@ -114,12 +114,12 @@ ndma_server_session (struct ndm_session *sess, int control_sock)
 	sess->robot_agent_enabled = 1;
 
         /*
-         * Old behavious enable session snooping
+         * Old behaviour enable session snooping
          */
 	sess->conn_snooping = 1;
 
         /*
-         * Old behavious enable media info dumping.
+         * Old behaviour enable media info dumping.
          */
 	sess->dump_media_info = 1;
 

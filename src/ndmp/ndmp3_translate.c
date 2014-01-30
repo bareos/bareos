@@ -2311,7 +2311,8 @@ ndmp_3to9_name (
 	}
 	name9->destination_path = NDMOS_API_STRDUP(buf);
 
-
+	name9->other_name = NDMOS_API_STRDUP (name3->other_name);
+	name9->node = name3->node;
 
 	if (name3->fh_info != NDMP_INVALID_U_QUAD) {
 		name9->fh_info.valid = NDMP9_VALIDITY_VALID;
@@ -2358,16 +2359,14 @@ ndmp_9to3_name (
 	    }
 	}
 
-	name3->other_name = NDMOS_API_STRDUP ("");	/* Yechy */
-
+	name3->other_name = NDMOS_API_STRDUP (name9->other_name);
+	name3->node = name9->node;
 
 	if (name9->fh_info.valid == NDMP9_VALIDITY_VALID) {
 		name3->fh_info = name9->fh_info.value;
 	} else {
 		name3->fh_info = NDMP_INVALID_U_QUAD;
 	}
-
-	name3->node = NDMP_INVALID_U_QUAD;
 
 	return 0;
 }
