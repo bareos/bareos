@@ -3757,6 +3757,7 @@ debian/bareos-director.preinst \
 debian/bareos-storage.preinst \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \
+scripts/bareos-explorer \
 scripts/btraceback \
 scripts/bconsole \
 scripts/bareos \
