@@ -106,53 +106,7 @@ class HumanReadableTimeperiod extends AbstractHelper
  			$interval = ($d2 - $d1) / (3600 * 24);
 
 			if($interval < 1) {
-
-/*
-
-STILL BUGGY TEST CODE
-
-				$tmp = explode(" ", $time);
-				$t1 = explode(":", $tmp[1]);
-				$t2 = explode(":", date("H:i:s", time("NOW")));
-				$h1 = $t1[0];
-				$h2 = $t2[0];
-
-				if($h1 > $h2) {
-					$interval = (24 - $h1) + ($h2);
-				}
-				else {
-					$interval = $h2 - $h1;
-				}
-
-				if($interval <= 1) {
-
-					$tmp = explode(" ", $time); 
-					$t1 = explode(":", $tmp[1]);
-					$t2 = explode(":", date("H:i:s", time("NOW")));
-					$m1 = $t1[1];
-					$m2 = $t2[1];
-
-					if($m1 > $m2) {
-						$interval = (60 - $m1) + ($m2);
-					}
-					else {
-						$interval = $m2 - $m1;
-					}
-					
-					if($interval > 1) {	
-						return $this->result = "about " . $interval . " minute(s) ago";
-					}
-					else {
-						return $this->result = " just now";
-					}
-
-				}
-				elseif($interval < 24) {
-					return $this->result = "about " . $interval . " hour(s) ago";
-				}
-*/				
 				return $this->result = "today";
-
 			}
 			elseif($interval <= 31 && $interval >= 1) {
 				$this->result = "about " . $interval . " day(s) ago";

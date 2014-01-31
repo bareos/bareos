@@ -298,9 +298,8 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Start"); ?></th>
 		<th><?php echo $this->translate("Duration"); ?></th>
 		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Log"); ?></th>
-		<th></th>
-		<th></th>
+		<!--<th><?php echo $this->translate("Log"); ?></th>-->
+		<th><?php echo $this->translate("Action"); ?></th>
 	    </tr>
             
             <?php foreach ($this->lastSuccessfulJobs as $jobSuccess) : ?>
@@ -315,17 +314,26 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printDate($jobSuccess->starttime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
+<!--
 	      <td>
 	      <a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a>
 	      </td>
+-->
 	      <td>
-	      <?php if($jobSuccess->type == "B") : ?>
-	      <a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span></a>
-	      <?php endif; ?>
-	      </td>
-	      <td>
-	      <?php if($jobSuccess->type == "B") : ?>
-	      <a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></a>
+              <?php if($jobSuccess->type == "B") : ?>
+	      <div class="btn-group">
+		<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+			<span class="caret"></span>
+			<span class="sr-only">Toggle Dropdown</span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid));?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+			<li class="divider"></li>
+			<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
+		</ul>
+	      </div>
 	      <?php endif; ?>
 	      </td>
 	  
@@ -353,4 +361,3 @@ $flash->setMessageOpenFormat('
 
 <?php endif; ?>
             
-

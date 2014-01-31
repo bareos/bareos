@@ -90,6 +90,7 @@ return array(
 	    'printBytes' => 'Application\View\Helper\Bytes',
 	    'printRetention' => 'Application\View\Helper\Retention',
 	    'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
+	    'printExpiration' => 'Application\View\Helper\Expiration',
 	),
     ),
     'view_manager' => array(
