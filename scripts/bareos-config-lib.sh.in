@@ -246,35 +246,8 @@ get_database_param()
 {
     PARAM="$1"
     DEFAULT="$2"
-
-    DBCHECK_OUTPUT=`$DBCHECK`
-    rc=$?
-    if [ $rc != 0 ]; then
-        temp_log="/tmp/bareos-config.$$.log"
-        echo "executing: $DBCHECK" >> $temp_log
-        echo "${DBCHECK_OUTPUT}" >> $temp_log
-        echo "" >> $temp_log
-
-        # if default value is given, return it anyway
-        if [ -n "$DEFAULT" ]; then
-            warn "failed to get \"${PARAM}\" from config, using default value \"${DEFAULT}\", see $temp_log"
-            echo "$DEFAULT"
-        else
-            warn "failed to get \"${PARAM}\" from config, see $temp_log"
-        fi
-
-        return 1
-    fi
-
-    # DBCHECK gets the database parameter from the Director config file in a standard format,
-    # however, it writes "db_name" (like the environment variables)
-    # instead of "dbname" like in the config file.
-    # Replace "db_" by "db" to be compatible with the config file.
-    VALUE=`echo "$DBCHECK_OUTPUT" | sed "s/^db_/db/" | sed -n "s/^${PARAM}=//p"`
-
-    [ -z "$VALUE" ] && VALUE="$DEFAULT"
-    echo "$VALUE"
-    return $rc
+    get_config_param "${CFG_DIR}" "catalog" "MyCatalog" "$PARAM" "$DEFAULT"
+    return $?
 }
 
 get_database_driver()
