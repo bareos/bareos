@@ -54,16 +54,16 @@ have one and only one Storage resource definition.
 
 \begin{description}
 
-\directive{sd}{Name}{name}{required}{}
+\directive{sd}{Name}{name}{required}{}{}
 Specifies the Name of the Storage daemon.
 
-\directive{sd}{Working Directory}{directory}{required}{{\it platform specific}}
+\directive{sd}{Working Directory}{directory}{required}{{\it platform specific}}{}
 This directive specifies a directory in which the Storage daemon may put
 its status files. This directory should be used only  by {\bf Bareos},
 but may be shared by other Bareos daemons provided the names given to each
 daemon are unique.
 
-\directive{sd}{Pid Directory}{directory}{required}{{\it platform specific}}
+\directive{sd}{Pid Directory}{directory}{required}{{\it platform specific}}{}
 This directive specifies a directory in which the Storage Daemon may put its
 process Id file files. The process Id file is used to  shutdown Bareos and to
 prevent multiple copies of  Bareos from running simultaneously.
@@ -76,14 +76,14 @@ properly expanded.
 % \index[sd]{Directive!Subsys Directory}
 % This directive is currently unused.
 
-\directive{sd}{Plugin Directory}{directory}{required}{{\it platform specific}}
+\directive{sd}{Plugin Directory}{directory}{required}{{\it platform specific}}{}
 This directive specifies a directory in which the Storage Daemon searches for
 plugins with the name {\bf {\textless}pluginname{\textgreater}-sd.so} which it will load at startup.
 
-%\directive{sd}{Scripts Directory}{directory}{required}{{\it platform specific}}
+%\directive{sd}{Scripts Directory}{directory}{required}{{\it platform specific}}{}
 %This directive is currently unused.
 
-\directive{sd}{Heartbeat Interval}{time-interval}{required}{0}
+\directive{sd}{Heartbeat Interval}{time-interval}{required}{0}{}
 \index[general]{Heartbeat Interval}
 \index[general]{Broken pipe}
 This directive defines an interval of time in seconds.  When
@@ -96,7 +96,7 @@ standards and times out an valid connection after a short
 duration despite the fact that keepalive is set.  This usually
 results in a broken pipe error message.
 
-\directive{sd}{Client Connect Wait}{time-interval}{required}{30 minutes}
+\directive{sd}{Client Connect Wait}{time-interval}{required}{30 minutes}{}
 \index[general]{Client Connect Wait}
 This directive defines an interval of time in seconds that
 the Storage daemon will wait for a Client (the File daemon)
@@ -104,7 +104,7 @@ to connect.  Be aware that the
 longer the Storage daemon waits for a Client, the more
 resources will be tied up.
 
-\directive{sd}{Maximum Concurrent Jobs}{number}{required}{10}
+\directive{sd}{Maximum Concurrent Jobs}{number}{required}{10}{}
 where {\textless}number{\textgreater} is the maximum number of Jobs that may run
 concurrently.  The default is set to 10, but you may set it to a larger
 number.  Each contact from the Director (e.g.  status request, job start
@@ -117,7 +117,7 @@ will almost certainly need to set the {\bf Maximum Concurrent Jobs} in
 the Storage resource in the Director's configuration file and possibly
 those in the Job and Client resources.
 
-\directive{sd}{SD Adress}{IP-address}{}{}
+\directive{sd}{SD Adress}{IP-address}{}{}{}
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for Director and File daemon connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
@@ -125,7 +125,7 @@ IP address specified as a dotted quadruple.  If this directive is not
 specified, the Storage daemon will bind to any available address (the
 default).
 
-\directive{sd}{SD Adresses}{IP-address-specification}{}{}
+\directive{sd}{SD Adresses}{IP-address-specification}{}{}{}
 Specify the ports and addresses on which the Storage daemon will listen
 for Director connections.  Normally, the default is sufficient and you
 do not need to specify this directive.  Probably the simplest way to
@@ -169,11 +169,11 @@ only IPv4 resolutions will be permitted,  and likewise with ip6.
 Using this directive, you can replace both the SDPort and SDAddress
 directives shown below.
 
-\directive{sd}{SD Port}{port-number}{required}{9103}
+\directive{sd}{SD Port}{port-number}{required}{9103}{}
 Specifies port number on which the Storage daemon  listens for Director
 connections.
 
-\directive{sd}{Compatible}{yes{\textbar}no}{required}{yes}
+\directive{sd}{Compatible}{yes{\textbar}no}{required}{yes}{}
 This directive enables the compatible mode of the storage daemon. In
 this mode the storage daemon will try to write the storage data in a
 compatible way with Bareos of which Bareos is a fork. This only works
@@ -182,17 +182,17 @@ are Bareos specific. Which may be read when used by a Bareos storage
 daemon but might not be understood by any of the Bareos components
 (dir/sd/fd).
 
-\directive{sd}{NDMP Enable}{yes{\textbar}no}{}{}
+\directive{sd}{NDMP Enable}{yes{\textbar}no}{}{}{}
 This directive enables the Native NDMP Tape Agent.
 
-\directive{sd}{NDMP Snooping}{yes{\textbar}no}{}{}
+\directive{sd}{NDMP Snooping}{yes{\textbar}no}{}{}{}
 This directive enables the Snooping and pretty printing of NDMP protocol
 information in debugging mode.
 
-\directive{sd}{NDMP Loglevel}{level}{}{}
+\directive{sd}{NDMP Loglevel}{level}{}{}{}
 This directive sets the loglevel for the NDMP protocol library.
 
-\directive{sd}{NDMP Address}{IP-address}{}{}
+\directive{sd}{NDMP Address}{IP-address}{}{}{}
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for NDMP Tape Server connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
@@ -200,17 +200,16 @@ IP address specified as a dotted quadruple.  If this directive is not
 specified, the Storage daemon will bind to any available address (the
 default).
 
-\directive{sd}{NDMP Addresses}{IP-address-specification}{}{}
+\directive{sd}{NDMP Addresses}{IP-address-specification}{}{}{}
 Specify the ports and addresses on which the Storage daemon will listen
 for NDMP Tape Server connections.  Normally, the default is sufficient and you
 do not need to specify this directive.
 
-\directive{sd}{NDMP Port}{port-specification}{}{10000}
+\directive{sd}{NDMP Port}{port-specification}{}{10000}{}
 Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 
-\directive{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}
-This directive controls the autoxflate-sd plugin when replicating data inside one or
+\xdirective{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{This directive controls the autoxflate-sd plugin when replicating data inside one or
 between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will
 use the autoinflate/autodeflate setting of the device when reading and writing
 data to it which could mean that while reading it inflates the compressed data
@@ -218,14 +217,12 @@ and the while writing the other deflates it again. If you just want the data to
 be exactly the same e.g. don't perform any on the fly uncompression and compression
 while doing the replication of data you can set this option to no and it will
 override any setting on the device for doing auto inflation/deflation when doing
-data replication. This will not have any impact on any normal backup or restore jobs.
-
+data replication. This will not have any impact on any normal backup or restore jobs.}
 \end{description}
 
 The following is a typical Storage daemon Storage definition.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Storage daemon Storage definition}
 #
 # "Global" Storage daemon configuration specifications appear
 # under the Storage resource.
@@ -234,8 +231,7 @@ Storage {
   Name = "Storage daemon"
   Address = localhost
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 \section{Director Resource}
 \label{DirectorResource1}
@@ -355,7 +351,7 @@ specified within the Device resource are specific to the Device.
 
 \begin{description}
 
-\directive{sd}{Name}{name}{required}{}
+\directive{sd}{Name}{name}{required}{}{}
 Specifies the Name that the Director will use when asking to backup or
 restore to or from to this device. This is the logical  Device name, and may
 be any string up to 127 characters in length.  It is generally a good idea to
@@ -366,7 +362,7 @@ conf  file on the
 \ilink{Device directive}{StorageResource2}  in its Storage
 resource.
 
-\directive{sd}{Archive Device}{device {\textbar} directory {\textbar} fifo}{required}{}
+\directive{sd}{Archive Device}{device {\textbar} directory {\textbar} fifo}{required}{}{}
 Specifies where to read and write the backup data.
 The type of the Archive Device can be specified by the {\bf Device Type} directive.
 If Device Type is not specified, Bareos tries to guess the Device Type
@@ -430,7 +426,7 @@ at the beginning of the job.
 \end{description}
 
 
-\directive{sd}{Device Type}{tape {\textbar} file {\textbar} fifo}{}{}
+\directive{sd}{Device Type}{tape {\textbar} file {\textbar} fifo}{}{}{}
 The Device Type specification allows you to explicitly tell Bareos
 what kind of device you are defining. It the {\bf type-specification}
 may be one of the following:
@@ -607,7 +603,7 @@ by directly using the Device name in the Director. This is useful
 for reserving a drive for something special such as a high priority
 backup or restore operations.
 
-\directive{sd}{Maximum Concurrent Jobs}{number}{}{}
+\directive{sd}{Maximum Concurrent Jobs}{number}{}{}{}
 {\bf Maximum Concurrent Jobs} is a directive that permits setting the maximum
 number of Jobs that can run concurrently on a specified Device.  Using this
 directive, it is possible to have different Jobs using multiple drives, because
@@ -640,7 +636,7 @@ This directive specifies the maximum time in seconds for Bareos to wait
 for a open before timing out.  If this time is exceeded,
 Bareos will cancel the job.  The default is 5 minutes.
 
-\directive{sd}{Always Open}{yes{\textbar}no}{}{no}
+\directive{sd}{Always Open}{yes{\textbar}no}{}{no}{}
 If {\bf Yes}, Bareos will always keep the device open unless
 specifically {\bf unmounted} by the Console program.  This permits
 Bareos to ensure that the tape drive is always available, and properly
@@ -828,7 +824,7 @@ device before asking the system operator to mount a tape.  However,
 please note that the tape must be mounted before the job begins.
 
 
-\directive{sd}{Block Checksum}{yes{\textbar}no}{}{yes}
+\directive{sd}{Block Checksum}{yes{\textbar}no}{}{yes}{}
 You may turn off the Block Checksum (CRC32) code that Bareos uses when
 writing blocks to a Volume. Doing so can reduce the Storage daemon CPU usage
 slightly.  It will also permit Bareos to read a Volume that has corrupted
@@ -838,7 +834,7 @@ data.
 drives or for disk Volumes where doing so may allow corrupted data to go
 undetected.
 
-\directive{sd}{Minimum block size}{size-in-bytes}{}{0}
+\directive{sd}{Minimum block size}{size-in-bytes}{}{0}{}
 This statement applies only to non-random access devices (e.g.
 tape drives).  Blocks written by the storage daemon to a non-random
 archive device will never be smaller than the given {\bf size-in-bytes}.
@@ -875,7 +871,7 @@ Maximum block size = 200K
 \end{bconfig}
 
 
-\directive{sd}{Maximum block size}{size-in-bytes}{}{64512}
+\directive{sd}{Maximum block size}{size-in-bytes}{}{64512}{}
 The Storage daemon will always attempt to
 write blocks of the specified {\bf size-in-bytes} to the archive device.
 As a consequence, this statement specifies both the default block size
@@ -899,7 +895,7 @@ For more information, please see the tape speed whitepaper:
 \warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes. So normally you will not change the block size in an existing configuration.}
 
 
-\directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}
+\directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}{}
 All modern (after 1998) tape drives should support this
 feature. In doubt, use the {\bf btape} program  to test your drive to see whether or not it
 supports this function.
@@ -916,7 +912,7 @@ option, which if set will cause the driver to lose track of the file
 number. You should ensure that this option is always turned off using the
 {\bf mt} program.
 
-\directive{sd}{Fast Forward Space File}{yes{\textbar}no}{}{yes}
+\directive{sd}{Fast Forward Space File}{yes{\textbar}no}{}{yes}{}
 If {\bf No}, the archive device is not required to support  keeping track of
 the file number ({\bf MTIOCGET} ioctl) during  forward space file. If {\bf
 Yes}, the archive device must support  the {\tt ioctl} {\tt MTFSF} call, which
@@ -926,7 +922,7 @@ track of the  file number on the tape and report it back correctly by the
 but they do not keep track of the file number or more  seriously, they do not
 report end of medium.
 
-\directive{sd}{Use MTIOCGET}{yes{\textbar}no}{}{yes}
+\directive{sd}{Use MTIOCGET}{yes{\textbar}no}{}{yes}{}
 If {\bf No}, the operating system is not required to support keeping track of
 the file number and reporting it in the ({\bf MTIOCGET} ioctl).
 If you must set this to No, Bareos will do the proper file
@@ -936,7 +932,7 @@ Fortunately, this operation system deficiency seems to be the case only
 on a few *BSD systems.  Operating systems known to work correctly are
 Solaris, Linux and FreeBSD.
 
-\directive{sd}{BSF at EOM}{yes{\textbar}no}{}{no}
+\directive{sd}{BSF at EOM}{yes{\textbar}no}{}{no}{}
 If {\bf No}, the default, no special action is taken by Bareos with the End
 of Medium (end of tape) is reached because the tape will be positioned after
 the last EOF tape mark, and Bareos can append to the tape as desired.
@@ -948,7 +944,7 @@ systems is to specify {\bf BSF at EOM} which causes Bareos to backspace over
 the second EOF mark. Determination of whether or not you need this directive
 is done using the {\bf test} command in the {\bf btape} program.
 
-\directive{sd}{Two EOF}{yes{\textbar}no}{}{no}
+\directive{sd}{Two EOF}{yes{\textbar}no}{}{no}{}
 If {\bf Yes}, Bareos will write two end of file marks when terminating a
 tape -- i.e. after the last job or at the end of the medium. If {\bf No},
 the default, Bareos will only write one end of file to terminate the tape.
@@ -1146,10 +1142,7 @@ this device. This directory is also used to store  temporary part files when
 writing to a device that requires mount (USB).  The default is to use the
 working directory.
 
-\item [AutoDeflate = {\textless}in{\textbar}out{\textbar}both{\textgreater}] \hfill \\
-\index[sd]{AutoDeflate}
-\index[sd]{Directive!AutoDeflate}
-This is a parameter used by the autoxflate-sd plugin which allow you to transform
+\xdirective{sd}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{This is a parameter used by the autoxflate-sd plugin which allow you to transform
 a non compressed piece of data into a compressed piece of data on the storage daemon.
 e.g. Storage Daemon compression. You can either enable compression on the client
 and use the CPU cyclces there to compress your data with one of the supported
@@ -1174,31 +1167,22 @@ This option could be used if your clients doesn't have enough power to do
 the compression/decompression itself and you have enough network bandwidth.
 Or when your filesystem doesn't have the option to transparently compress
 data you write to it but you want the data to be compressed when written.
+}
 
-\item [AutoDeflateAlgorithm = {\textless}GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
-\index[sd]{AutoDeflateAlgorithm}
-\index[sd]{Directive!AutoDeflateAlgorithm}
-This option specifies the compression algorithm used for the autodeflate option
+\xdirective{sd}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{This option specifies the compression algorithm used for the autodeflate option
 which is performed by the autoxflate-sd plugin. The algorithms supported are:
-
 \begin{itemize}
-\item GZIP - gzip level 1 -9
+\item GZIP - gzip level 1--9
 \item LZO
 \item LZFAST
 \item LZ4
 \item LZ4HC
-\end{itemize}
+\end{itemize}}
 
-\item [AutoDeflateLevel = {\textless}{\textgreater}] \hfill \\
-\index[sd]{AutoDeflateLevel}
-\index[sd]{Directive!AutoDeflateLevel}
-This option specifies the level to be used when compressing when you select a
-compression algorithm that has different levels.
+\xdirective{sd}{AutoDeflateLevel}{0--9}{}{}{13.4}{This option specifies the level to be used when compressing when you select a
+compression algorithm that has different levels.}
 
-\item [AutoInflate = {\textless}in{\textbar}out{\textbar}both{\textgreater}] \hfill \\
-\index[sd]{AutoInflate}
-\index[sd]{Directive!AutoInflate}
-This is a parameter used by the autoxflate-sd plugin which allow you to transform
+\xdirective{sd}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{This is a parameter used by the autoxflate-sd plugin which allow you to transform
 a compressed piece of data into a non compressed piece of data on the storage daemon.
 e.g. Storage Daemon decompression. You can either enable decompression on the client
 and use the CPU cyclces there to decompress your data with one of the supported
@@ -1217,8 +1201,7 @@ for instance a low cpu load compression method (LZ4 for instance) to transfer
 less data over the network. It also allows you to restore data in a compression
 format that the client might not support but the storage daemon does. This only
 works on normal compressed datastreams not on encrypted datastreams or meta data
-streams.
-
+streams.}
 \end{description}
 
 \subsection{Edit Codes for Mount and Unmount Directives}

@@ -33,26 +33,23 @@ and multiple backup programs.
 \subsection{Director Pool Directive}
 
 \begin{description}
-\directive{dir}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{Bareos}
-  This directive is implemented in the Director Pool resource and in the SD Device
+\xdirective{dir}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{required}{Bareos}{}{This directive is implemented in the Director Pool resource and in the SD Device
   resource.  If it is specified in the SD Device resource, it will take
-  precedence over the value passed from the Director to the SD.
+  precedence over the value passed from the Director to the SD.}
 \end{description}
 
 \subsection{Storage Daemon Device Directives}
 
 \begin{description}
-\directive{sd}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{}
-  This directive is implemented in the Director Pool resource and in the SD Device
+\xdirective{sd}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{}{}{This directive is implemented in the Director Pool resource and in the SD Device
   resource.  If it is specified in the the SD Device resource, it will take
-  precedence over the value passed from the Director to the SD.
+  precedence over the value passed from the Director to the SD.}
 
-\directive{sd}{Check Label}{yes{\textbar}no}{}{no}
-  This directive is implemented in the the SD Device resource.  If you intend
+\xdirective{sd}{Check Label}{yes{\textbar}no}{}{no}{}{This directive is implemented in the the SD Device resource.  If you intend
   to read ANSI or IBM labels, this *must* be set.  Even if the volume is
   not ANSI labeled, you can set this to yes, and Bareos will check the
   label type. Without this directive set to yes, Bareos will assume that
   labels are of Bareos type and will not check for ANSI or IBM labels.
   In other words, if there is a possibility of Bareos encountering an
-  ANSI/IBM label, you must set this to yes.
+  ANSI/IBM label, you must set this to yes.}
 \end{description}

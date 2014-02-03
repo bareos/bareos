@@ -203,7 +203,7 @@ specified at the Director level.  It is implemented only on systems
 that provide the {\bf setsockopt} TCP\_KEEPIDLE function (Linux, ...).
 The default value is zero, which means no change is made to the socket.
 
-\directive{dir}{Maximum Concurrent Jobs}{number}{}{1}
+\directive{dir}{Maximum Concurrent Jobs}{number}{}{1}{}
 \label{DirMaxConJobs}
 %\item [Maximum Concurrent Jobs = {\textless}number{\textgreater}] \hfill \\
 \index[dir]{Maximum Concurrent Jobs}
@@ -3367,20 +3367,20 @@ name.  This name will be specified in the Client resource directive
 indicating that all catalog data for that Client is maintained in this
 Catalog.  This directive is required.
 
-\directive{dir}{dbdriver}{postgresql {\textbar} mysql {\textbar} sqlite}{required}{}
+\directive{dir}{dbdriver}{postgresql {\textbar} mysql {\textbar} sqlite}{required}{}{}
 Selects the database type to use.
 
-\directive{dir}{dbname}{name}{required}{}
+\directive{dir}{dbname}{name}{required}{}{}
 This specifies the name of the database.  If you use multiple catalogs
 (databases), you specify which one here.  If you are using an external
 database server rather than the internal one, you must specify a name
 that is known to the server (i.e.  you explicitly created the Bareos
 tables using this name).
 
-\directive{dir}{dbuser}{user}{required}{}
+\directive{dir}{dbuser}{user}{required}{}{}
 This specifies what user name to use to log into the database.
 
-\directive{dir}{dbpassword}{password}{required}{}
+\directive{dir}{dbpassword}{password}{required}{}{}
 This specifies the password to use when logging into the database.
 
 

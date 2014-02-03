@@ -90,7 +90,7 @@ The following directives can appear in a Director's Job resource, and they
 are used to define a Migration job.
 
 \begin{description}
-\directive{dir}{Pool}{pool-name}{required}{}
+\directive{dir}{Pool}{pool-name}{required}{}{}
    The Pool specified in the Migration
    control Job is not a new directive for the Job resource, but it is
    particularly important because it determines what Pool will be examined
@@ -101,7 +101,7 @@ are used to define a Migration job.
    directove must contain a {\bf Next Pool = ...} directive to define the
    Pool to which the data will be migrated.
 
-\directive{dir}{Type}{Migrate{\textbar}Copy}{required}{}
+\directive{dir}{Type}{Migrate{\textbar}Copy}{required}{}{}
 \begin{description}
 \item [Migrate]
    defines the job that is run as being a
@@ -128,7 +128,7 @@ are used to define a Migration job.
    subsequently be used for restoration.
 \end{description}
 
-\directive{dir}{Selection Type}{selection-type-keyword}{required}{}
+\directive{dir}{Selection Type}{selection-type-keyword}{required}{}{}
   The {\textless}selection-type-keyword{\textgreater} determines how the migration job
   will go about selecting what JobIds to migrate. In most cases, it is
   used in conjunction with a {\bf Selection Pattern} to give you fine
@@ -211,7 +211,7 @@ are used to define a Migration job.
   \end{description}
 
 
-\directive{dir}{Selection Pattern}{quoted-string}{}{}
+\directive{dir}{Selection Pattern}{quoted-string}{}{}{}
   The Selection Patterns permitted for each Selection-type-keyword are
   described above.
 
@@ -225,7 +225,7 @@ are used to define a Migration job.
   For the SQLQuery keyword, this pattern must be a valid SELECT SQL statement
   that returns JobIds.
 
-\directive{dir}{Purge Migration Job}{yes{\textbar}no}{}{no}
+\directive{dir}{Purge Migration Job}{yes{\textbar}no}{}{no}{}
   This directive may be added to the Migration Job definition in the Director
   configuration file to purge the job migrated at the end of a migration.
 

@@ -60,27 +60,80 @@
 %%
 \newcommand{\warning}[1]{Please note! \textit{#1}}
 %%
-\newcommand{\sinceVersion}[3]{
-    \index[#1]{#2}Included since version #3
-    \index[general]{#3!#2}
+\newcommand{\sinceVersion}[3]{Version $>=$ #3.%
+    \index[#1]{#2}%
+    \index[general]{#3!#2}%
 }
 \newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
 \newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
 \newcommand{\removedSince}[3]{This option is removed since version #3}
 
-\newcommand{\directive}[5]{
-% 1: config file
+% \newenvironment{directives}[1]
+%     {%
+%         \def\configfile{#1}
+%         \begin{itemize}
+%     }{%
+%         \end{itemize}
+%     }
+
+% \newcommand{\xdirective}[5]{
+% %% 1: config file (dir | sd | fd)
+% % 2: directive name
+% % 3: directive type/value
+% % 4: "required" | ""
+% % 5: default value
+% % 6: since version
+% \item [#1 = {\textless}#2{\textgreater}]
+%     \hfill
+%   \ifthenelse{\isempty{#4}}{}{(default: #4)}
+%   \ifthenelse{\isempty{#3}}{}{(#3)}
+%   \hfill \\
+%   \index[\configfile]{#1}
+%   \index[\configfile]{Directive!#1}
+%   \ifthenelse{\isempty{#5}}{}{\sinceVersion{\configfile}{#1}{#5}}
+% }
+
+% deprecated. use xdirective instead.
+\newcommand{\directive}[6]{
+% 1: config file (dir | sd | fd)
 % 2: directive name
-% 3: directory type/value
+% 3: directive type/value
 % 4: "required" | ""
 % 5: default value
+% 6: since version
 \item [#2 = {\textless}#3{\textgreater}]
     \hfill
   \ifthenelse{\isempty{#5}}{}{(default: #5)}
   \ifthenelse{\isempty{#4}}{}{(#4)}
+  \ifthenelse{\isempty{#6}}{}{\sinceVersion{#1}{#2}{#6}}
   \hfill \\
-\index[#1]{#2}\index[#1]{Directive!#2}}
-% \directive{}{}{}{required}{}
+  \index[#1]{#2}
+  \index[#1]{Directive!#2}
+}
+
+\newcommand{\xdirective}[7]{
+% 1: config file (dir | sd | fd)
+% 2: directive name
+% 3: directive type/value
+% 4: "required" | ""
+% 5: default value
+% 6: since version
+% 7: description
+\item [#2 = {\textless}#3{\textgreater}]%
+    \hfill%
+  \ifthenelse{\isempty{#5}}{}{(default: #5)}%
+  \ifthenelse{\isempty{#4}}{}{(#4)}%
+  \hfill \\%
+  \index[#1]{#2}%
+  \index[#1]{Directive!#2}%
+#7\ \\%
+  \ifthenelse{\isempty{#6}}{}{%
+    \sinceVersion{#1}{#2}{#6}%
+    %\marginpar{#6}
+  }%
+}
+% \xdirective{dir|sd|fd}{name}{type}{required}{default}{version}{}
+% \xdirective{}{}{}{required}{}{}{}
 
 
 % \floatstyle{boxed}
@@ -152,7 +205,7 @@
         basicstyle=\ttfamily,
         columns=fullflexible,
         %label=config:#1,
-        caption=#1,  
+        caption=#1,
         captionpos=b,
     }
 }{}

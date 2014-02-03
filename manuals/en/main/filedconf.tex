@@ -57,7 +57,7 @@ it is a good idea  to use a name related to the machine so that error messages
 can be easily identified if you have multiple Clients.  This directive is
 required.
 
-\directive{fd}{Working Directory}{directory}{}{{\it platform specific}}
+\directive{fd}{Working Directory}{directory}{}{{\it platform specific}}{}
 % \item [Working Directory = {\textless}Directory{\textgreater}] \hfill \\
 % \index[fd]{Working Directory}
 % \index[fd]{Directive!Working Directory}
@@ -78,7 +78,7 @@ may fail (the bootstrap file that is transferred to the File daemon from
 the Director is temporarily put in this directory before being passed
 to the Storage daemon).
 
-\directive{fd}{Pid Directory}{directory}{}{{\it platform specific}}
+\directive{fd}{Pid Directory}{directory}{}{{\it platform specific}}{}
 This directive specifies a directory in which the File Daemon
 may put its process Id file files. The process Id file is used to  shutdown
 Bareos and to prevent multiple copies of  Bareos from running simultaneously.
@@ -92,12 +92,12 @@ Typically on Linux systems, it is set to \path|/var/lib/bareos/| or \path|/var/r
 % will be properly expanded.
 
 
-\directive{fd}{Plugin Directory}{directory}{}{{\it platform specific}}
+\directive{fd}{Plugin Directory}{directory}{}{{\it platform specific}}{}
 This directive specifies a directory in which the File Daemon searches for
 plugins with the name {\bf {\textless}pluginname{\textgreater}-fd.so} which it will load at startup.
 Typically on Linux systems, it is set to \path|/usr/lib/bareos/plugins/| or \path|/usr/lib64/bareos/plugins/|.
 
-\directive{fd}{Heartbeat Interval}{time-interval}{}{{0}}
+\directive{fd}{Heartbeat Interval}{time-interval}{}{{0}}{}
 \index[general]{Heartbeat Interval}
 \index[general]{Broken pipe}
 \index[general]{slow}
@@ -131,7 +131,7 @@ set. This usually results in a broken pipe error message.
 % also be caused by Linux firewalls where you have a rule that throttles
 % connections or traffic.
 
-\directive{fd}{Maximum Concurrent Jobs}{number}{}{{2}}
+\directive{fd}{Maximum Concurrent Jobs}{number}{}{{2}}{}
 where {\textless}number{\textgreater} is the maximum number of Jobs that should run
 concurrently.  The default is set to 2, but you may set it to a larger
 number.  Each contact from the Director (e.g.  status request, job start
@@ -190,7 +190,7 @@ is not specified, the default will be used. If an ip  section is specified,
 the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
 only IPv4 resolutions will be permitted,  and likewise with ip6.
 
-\directive{fd}{FD Port}{port-number}{}{{9102}}
+\directive{fd}{FD Port}{port-number}{}{{9102}}{}
 This specifies the port number  on which the Client listens for Director
 connections. It must agree  with the FDPort specified in the Client resource
 of the Director's  configuration file.
@@ -228,7 +228,7 @@ seem abnormally slow compared to other systems, you might try
 setting the Maximum Network Buffer Size to 32,768 in both the
 File daemon and in the Storage daemon.
 
-\directive{fd}{Compatible}{yes{\textbar}no}{}{{yes}}
+\directive{fd}{Compatible}{yes{\textbar}no}{}{{yes}}{}
 This directive enables the compatible mode of the file daemon. In
 this mode the file daemon will try to be as compatible to a native
 Bacula file daemon as possible. Enabling this option means that

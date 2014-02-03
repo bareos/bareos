@@ -54,7 +54,7 @@ connection.  This password must be identical to the {\bf Password} specified
 in  the {\bf Console} resource of the \ilink{Director's configuration}{DirectorChapter}
 file. This record is required if you wish to monitor Directors.
 
-\directive{monitor}{Refresh Interval}{time}{}{5 seconds}
+\directive{monitor}{Refresh Interval}{time}{}{5 seconds}{}
 Specifies the time to wait  between status requests to each daemon. It can't
 be set to less than  1 second, or more than 10 minutes, and the default value
 is 5 seconds.
@@ -94,7 +94,7 @@ The Director name used to identify  the Director in the list of monitored
 daemons. It is not required  to be the same as the one defined in the Director's
 configuration file.  This record is required.
 
-\directive{monitor}{DIRPort}{port-number}{}{9101}
+\directive{monitor}{DIRPort}{port-number}{}{9101}{}
 Specify the port to use to connect  to the Director.
 This port must be
 identical to the  {\bf DIRport} specified in the {\bf Director} resource of the

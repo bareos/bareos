@@ -24,13 +24,13 @@ Bareos will ensure that the next backup is always a Full save.
 Start of the FileSet resource. One {\bf FileSet}  resource must be
 defined for each Backup job.
 
-\directive{dir}{Name}{name}{required}{}
+\directive{dir}{Name}{name}{required}{}{}
     The name of the FileSet resource.  This directive is required.
 
-\directive{dir}{Description}{text}{}{}
+\directive{dir}{Description}{text}{}{}{}
     Information only.
 
-\directive{dir}{Enable VSS}{yes{\textbar}no}{}{yes (on Windows)}
+\directive{dir}{Enable VSS}{yes{\textbar}no}{}{yes (on Windows)}{}
   If this directive is set to {\bf yes} the File daemon will be notified
   that the user wants to use a Volume Shadow Copy Service (VSS) backup
   for this job. This directive is effective only on the Windows File Daemon.
@@ -44,7 +44,7 @@ defined for each Backup job.
   \ilink{Windows}{VSS} chapter of this manual.
 
 
-\directive{dir}{Ignore FileSet Changes}{yes{\textbar}no}{}{no}
+\directive{dir}{Ignore FileSet Changes}{yes{\textbar}no}{}{no}{}
    Normally, if you modify the FileSet Include or Exclude lists,
    the next backup will be forced to a Full so that Bareos can
    guarantee that any additions or deletions are properly saved.
@@ -60,10 +60,10 @@ defined for each Backup job.
    Exclude, Bareos will force a Full backup to ensure that everything is
    properly backed up.
 
-\directive{dir}{Include}{$\ldots$}{}{}
+\directive{dir}{Include}{$\ldots$}{}{}{}
     Describe the files, that should get included to a backup, see section about the \ilink{Include Ressource}{fileset-include}.
 
-\directive{dir}{Exclude}{$\ldots$}{}{}
+\directive{dir}{Exclude}{$\ldots$}{}{}{}
     Describe the files, that should get excluded from a backup, see section about the \ilink{Exclude Ressource}{fileset-exclude}.
 
 \end{description}
@@ -100,7 +100,7 @@ Please take note of the following items in the FileSet syntax:
 
 
 \begin{description}
-\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}
+\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}{}
     The file list
     consists of one file or directory name per line.  Directory names should be
     specified without a trailing slash with Unix path notation.
@@ -360,7 +360,7 @@ Include {
 
 
 
-\directive{dir}{Exclude Dir Containing}{filename}{}{}
+\directive{dir}{Exclude Dir Containing}{filename}{}{}{}
     This directive can be added to the Include section of the FileSet resource.  If the specified
     filename ({\bf filename-string}) is found on the Client in any directory to be
     backed up, the whole directory will be ignored (not backed up).
@@ -406,7 +406,7 @@ Include {
     files, directories, etc).
 
 
-\directive{dir}{Plugin}{plugin-name:plugin-parameter1:plugin-parameter2:$\ldots$}{}{}
+\directive{dir}{Plugin}{plugin-name:plugin-parameter1:plugin-parameter2:$\ldots$}{}{}{}
 \label{directive-fileset-plugin}
         Instead of only specifying files, a file set can also use plugins.
         Plugins are additional libraries that handle specific requirements.
@@ -425,7 +425,7 @@ Include {
 
         Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 
-\directive{dir}{Options}{$\ldots$}{}{}
+\directive{dir}{Options}{$\ldots$}{}{}{}
     See the \ilink{File Set Options}{fileset-options} section.
 
 \end{description}
@@ -1333,7 +1333,7 @@ Include {
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
 \begin{description}
-\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}
+\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}{}
     Files to exclude are descripted in the same way as at the \ilink{Include ressource}{fileset-include}.
 \end{description}
 
