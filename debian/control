@@ -340,4 +340,3 @@ Description: Backup Archiving Recovery Open Sourced - storage-python-plugin
  data across a network of computers of different kinds.
  .
  This package provides the python plugin for the storage daemon.
-
