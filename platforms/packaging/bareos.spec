@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#                    2013 Bareos GmbH & Co KG
+#               2013-2014 Bareos GmbH & Co KG
 #
 #   Redesign of the bareos specfile: goals (20110922)
 #
@@ -33,7 +33,7 @@
 
 Summary: 	The Network Backup Solution
 Name: 		bareos
-Version: 	13.4.0
+Version: 	14.1.0
 Release: 	1.0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
@@ -42,7 +42,7 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    13.4.0
+%define _libversion    14.1.0
 
 %define plugin_dir     %_libdir/bareos/plugins
 %define script_dir     /usr/lib/bareos/scripts
