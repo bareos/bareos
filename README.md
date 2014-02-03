@@ -6,6 +6,13 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+Release 14.1.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* Windows DIR.
+
 Release 13.4.x
 ==============
 
@@ -14,6 +21,17 @@ Release 13.4.x
 * First attempt at supporting IBM lin_tape driver.
 * Fix storage daemon plugin interface.
 * AIX compile fixes.
+* Catalog backend scripting reworked.
+* Python plugins (fd/sd/dir)
+* Windows SD.
+* Support for Univention packages.
+* Bpipe plugin upgraded to new plugin config parser.
+* Socket abstraction (TCP supported, prototype for SCTP and UDT sockets).
+* Windows enhancements
+  * Volume Mountpoints support (VMP).
+  * Use GetFileInformationByHandleEx to get real changetime.
+  * Windows dedup support
+  * Initial support for Windows EFS filesystems
 
 Release 13.3.x
 ==============
