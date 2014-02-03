@@ -63,8 +63,10 @@
 extern "C" int tgetent(void *, const char *);
 extern "C" int tgetnum(const char *);
 extern "C" char *tgetstr (const char*, char**);
-# Note: the following on older (Solaris 10) systems
-#  may need to be moved to after the #endif
+/*
+ * Note: the following on older (Solaris 10) systems
+ * may need to be moved to after the #endif
+ */
 extern "C" char *tgoto (const char *, int, int);
 #endif
 #elif defined(__sgi)
