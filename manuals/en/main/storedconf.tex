@@ -209,6 +209,16 @@ do not need to specify this directive.
 Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 
+\directive{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}
+This directive controls the autoxflate-sd plugin when replicating data inside one or
+between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will
+use the autoinflate/autodeflate setting of the device when reading and writing
+data to it which could mean that while reading it inflates the compressed data
+and the while writing the other deflates it again. If you just want the data to
+be exactly the same e.g. don't perform any on the fly uncompression and compression
+while doing the replication of data you can set this option to no and it will
+override any setting on the device for doing auto inflation/deflation when doing
+data replication. This will not have any impact on any normal backup or restore jobs.
 
 \end{description}
 
@@ -1135,6 +1145,80 @@ specifies the name of the directory to be used to store  the spool files for
 this device. This directory is also used to store  temporary part files when
 writing to a device that requires mount (USB).  The default is to use the
 working directory.
+
+\item [AutoDeflate = {\textless}in{\textbar}out{\textbar}both{\textgreater}] \hfill \\
+\index[sd]{AutoDeflate}
+\index[sd]{Directive!AutoDeflate}
+This is a parameter used by the autoxflate-sd plugin which allow you to transform
+a non compressed piece of data into a compressed piece of data on the storage daemon.
+e.g. Storage Daemon compression. You can either enable compression on the client
+and use the CPU cyclces there to compress your data with one of the supported
+compression algorithms. The value of this parameter specifies a so called io-direction
+currently you can use the following io-directions:
+
+\begin{itemize}
+\item in - compress data streams while reading the data from a device.
+\item out - compress data streams while writing the data to a device.
+\item both - compress data streams both when reading and writing to a device.
+\end{itemize}
+
+Currently only plain data streams are compressed (so things that are already
+compressed or encrypted will not be considered for compression.) Also meta-data
+streams are not compressed. The compression is done in a way that the stream is
+transformed into a native compressed data stream. So if you enable this and
+send the data to a filedaemon it will know its a compressed stream and will
+do the decompression itself. This also means that you can turn this option on
+and off at any time without having any problems with data already written.
+
+This option could be used if your clients doesn't have enough power to do
+the compression/decompression itself and you have enough network bandwidth.
+Or when your filesystem doesn't have the option to transparently compress
+data you write to it but you want the data to be compressed when written.
+
+\item [AutoDeflateAlgorithm = {\textless}GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
+\index[sd]{AutoDeflateAlgorithm}
+\index[sd]{Directive!AutoDeflateAlgorithm}
+This option specifies the compression algorithm used for the autodeflate option
+which is performed by the autoxflate-sd plugin. The algorithms supported are:
+
+\begin{itemize}
+\item GZIP - gzip level 1 -9
+\item LZO
+\item LZFAST
+\item LZ4
+\item LZ4HC
+\end{itemize}
+
+\item [AutoDeflateLevel = {\textless}{\textgreater}] \hfill \\
+\index[sd]{AutoDeflateLevel}
+\index[sd]{Directive!AutoDeflateLevel}
+This option specifies the level to be used when compressing when you select a
+compression algorithm that has different levels.
+
+\item [AutoInflate = {\textless}in{\textbar}out{\textbar}both{\textgreater}] \hfill \\
+\index[sd]{AutoInflate}
+\index[sd]{Directive!AutoInflate}
+This is a parameter used by the autoxflate-sd plugin which allow you to transform
+a compressed piece of data into a non compressed piece of data on the storage daemon.
+e.g. Storage Daemon decompression. You can either enable decompression on the client
+and use the CPU cyclces there to decompress your data with one of the supported
+compression algorithms. The value of this parameter specifies a so called io-direction
+currently you can use the following io-directions:
+
+\begin{itemize}
+\item in - decompress data streams while reading the data from a device.
+\item out - decompress data streams while writing the data to a device.
+\item both - decompress data streams both when reading and writing to a device.
+\end{itemize}
+
+This option allows you to write uncompressed data to for instance a tape drive
+that has hardware compression even when you compress your data on the client with
+for instance a low cpu load compression method (LZ4 for instance) to transfer
+less data over the network. It also allows you to restore data in a compression
+format that the client might not support but the storage daemon does. This only
+works on normal compressed datastreams not on encrypted datastreams or meta data
+streams.
+
 \end{description}
 
 \subsection{Edit Codes for Mount and Unmount Directives}
