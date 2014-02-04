@@ -11,4 +11,4 @@ Currently, there is no official release available.
 
 ### LICENSE
 
-Barbossa is licensed under AGPL Version 3.
+The Bareos Web-Frontend is licensed under AGPL Version 3.
