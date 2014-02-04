@@ -1,8 +1,22 @@
-## INSTALLATION
+## INSTALLATION MANUAL FOR DEVELOPMENT PURPOSES
 
-As we are in alpha state, there is no installation routine so far.
+As the project is in alpha state and there is no installation routine so far, 
+this installation manual should help developers to get a working version on 
+their system for development.
 
-Please follow these steps to get a working barbossa for development purposes on your system.
+### SYSTEM REQUIREMENTS
+
+* A working Bareos Environment, Bareos 12.4 or later
+* A Bareos Catalog database (Currently only PostgreSQL is supported, MySQL should be in near future)
+* An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenvif enabled
+* PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
+* PHP PDO Extension
+* PHP intl Extension
+* PHP PHAR Extension
+* PHP DATE Extension
+* PHP OpenSSL Extension
+* Zend Framework 2.2.x or later
+* A Browser of your choice with JavaScript enabled
 
 ### Get the current version of barbossa from github
 

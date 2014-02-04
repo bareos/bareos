@@ -8,6 +8,10 @@ too, of course!).
 
 ### Localization
 
+For localization, the Bareos Web-Frontend uses Gettext; you can find po files for each translation 
+in the language directory https://github.com/fbergkemper/barbossa/tree/master/module/Application/language.
+You can translate them using the usual tools for handling Gettext translations, e.g. Poedit.
+
 ### Testing and quality assurance
 
 One important thing for us is to avoid problems in the user interface. You can really help us out here
@@ -24,4 +28,3 @@ repository.
 
 Coding contributions are very welcome, the easiest way is to fork our code on github and submit a
 pull request. We really welcome bug fixes or new features.
-
