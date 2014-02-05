@@ -8,7 +8,7 @@ at the [Project Homepage](http://fbergkemper.github.io/).
 
 ### RELEASES
 
-Currently, there is no official release available.
+[v0.0.1-alpha](https://github.com/fbergkemper/barbossa/releases/tag/v0.0.1-alpha)
 
 ### SYSTEM REQUIREMENTS
 
