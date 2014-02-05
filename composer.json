@@ -1,12 +1,12 @@
 {
     "name": "fbergkemper/barbossa",
-    "description": "Barbossa",
+    "description": "A Web-Frontend to manage Bareos",
     "license": "AGPL3",
     "keywords": [
         "bareos",
         "webinterface"
     ],
-    "homepage": "http://sourceforge.net/projects/barbossa/",
+    "homepage": "http://fbergkemper.github.io/",
     "require": {
         "php": ">=5.3.3",
         "zendframework/zendframework": "2.2.*",
