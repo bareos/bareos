@@ -6,8 +6,7 @@ their system for development.
 
 ### SYSTEM REQUIREMENTS
 
-* A working Bareos Environment, Bareos 12.4 or later
-* A Bareos Catalog database (Currently only PostgreSQL is supported, MySQL should be in near future)
+* A working Bareos Environment, Bareos 12.4 or later, including a Bareos catalog database (Currently only PostgreSQL is supported, MySQL should be in near future.)
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenvif enabled
 * PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
 * PHP PDO Extension
@@ -38,13 +37,13 @@ git clone https://github.com/fbergkemper/barbossa.git
 ```
 ### Configure Apache
 
-See the example file [barbossa/install/apache/barbossa.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/barbossa.conf) .
+See the example file [barbossa/install/apache/barbossa.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/bareos.conf) .
 
 You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
 ```
 cd /etc/apache2/conf.d
-wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/barbossa.conf 
+wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/bareos.conf 
 ```
 
 ### Configure the database connection
