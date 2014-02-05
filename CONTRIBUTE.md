@@ -1,4 +1,4 @@
-## How to contribute to Barbossa
+## CONTRIBUTE
 
 As a free software project, Barbossa is very open to your contributions. You don't need developer 
 skills to help, there are several non-coding ways to get involved in a project (code is welcome 
