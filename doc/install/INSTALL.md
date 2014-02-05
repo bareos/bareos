@@ -17,7 +17,7 @@ their system for development.
 * Zend Framework 2.2.x or later
 * A Browser of your choice with JavaScript enabled
 
-### Get the current version of barbossa from github
+### Get the current version from github
 
 * Change into your webservers root directory e.g. 
 

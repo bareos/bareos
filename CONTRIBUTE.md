@@ -34,4 +34,5 @@ Some good starting points to get involved into development might be:
 * http://www.jqplot.com/
 * http://www.postgresql.org/
 * http://dev.mysql.com/
+* http://www.bareos.org/
 
