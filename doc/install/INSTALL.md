@@ -31,7 +31,7 @@ See the example file [barbossa/install/apache/bareos.conf](https://github.com/fb
 
 You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
-```cd /etc/apache2/conf.d```
+```cd /etc/apache2/conf.d``` \\
 ```wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/bareos.conf```
 
 ### Configure the database connection
@@ -47,7 +47,7 @@ For testing and development the easiest way is to add the user under which apach
 
 Next, setup bconsole can be executed under Apache webserver.
 
-```chown root:bareos /usr/sbin/bconsole```
-```chmod 750 /usr/sbin/bconsole```
-```chown root:bareos /etc/bareos/bconsole.conf```
+```chown root:bareos /usr/sbin/bconsole``` \\
+```chmod 750 /usr/sbin/bconsole``` \\
+```chown root:bareos /etc/bareos/bconsole.conf``` \\
 ```chmod 740 /etc/bareos/bconsole.conf```
