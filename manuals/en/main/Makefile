@@ -15,6 +15,8 @@ INDEXES = bareos-manual-main-reference.console.ind \
 	bareos-manual-main-reference.sd.ind \
 	bareos-manual-main-reference.monitor.ind
 
+LOG = bareos-manual-main-reference.log
+
 all: pdf html
 
 depend:
@@ -48,6 +50,9 @@ bareos-manual-main-reference.dvi: *.sty *.tex $(INDEXES) bareos-manual-main-refe
 bareos-manual-main-reference.pdf: depend *.sty *.tex $(INDEXES) bareos-manual-main-reference.toc
 	$(PDFLATEX) bareos-manual-main-reference.tex
 	$(PDFLATEX) bareos-manual-main-reference.tex
+
+check: bareos-manual-main-reference.pdf
+	@if ! grep "LaTeX Warning: Hyper reference .* undefined on input\|LaTeX Warning: There were undefined references." $(LOG); then true; else false; fi
 
 clean:
 	rm -f *.aux *.dvi *.idx *.log *.out *.pdf *.toc *.4ct *.4tc *.idv *.lg *.tmp *.xref html/* bareos-manual-main-reference.html bareos-manual-main-reference.css
