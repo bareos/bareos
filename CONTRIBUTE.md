@@ -1,10 +1,7 @@
 ## CONTRIBUTE
 
-As a free software project, Barbossa is very open to your contributions. You don't need developer 
-skills to help, there are several non-coding ways to get involved in a project (code is welcome 
-too, of course!).
-
-### Mailing lists
+As a free software project, we are very open to your contributions. You don't need developer 
+skills to help, there are several ways to get involved into the project.
 
 ### Localization
 
@@ -28,3 +25,13 @@ repository.
 
 Coding contributions are very welcome, the easiest way is to fork our code on github and submit a
 pull request. We really welcome bug fixes or new features.
+
+Some good starting points to get involved into development might be:
+
+* http://www.php.net/
+* http://framework.zend.com/
+* http://getbootstrap.com/
+* http://www.jqplot.com/
+* http://www.postgresql.org/
+* http://dev.mysql.com/
+

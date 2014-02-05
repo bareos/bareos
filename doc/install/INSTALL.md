@@ -1,4 +1,4 @@
-## INSTALLATION MANUAL FOR DEVELOPMENT PURPOSES
+## INSTALLATION MANUAL
 
 As the project is in alpha state and there is no installation routine so far, 
 this installation manual should help developers to get a working version on 
@@ -45,10 +45,11 @@ wget https://getcomposer.org/composer.phar
 ./composer.phar install
 ```
 
+See [https://getcomposer.org/](https://getcomposer.org/) for more information and documentation about the composer dependency manager for PHP.
+
 ### Configure Apache
 
-See the example file [barbossa/install/apache/bareos.conf](https://github.com/fbergkemper/barbossa/blob/master/install/apache/bareos.conf) .
-
+See the example file [barbossa/install/apache/bareos.conf](https://raw.github.com/fbergkemper/barbossa/master/doc/install/apache/bareos.conf).
 You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
 ```
