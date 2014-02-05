@@ -1,6 +1,12 @@
+
+subdirs = ../../images/
+
+MAKE=make
 LATEX=latex
 DVI2PDF=dvipdf
+PDFLATEX=pdflatex
 MAKEINDEX=makeindex
+CONVERT=convert
 
 INDEXES = bareos-manual-main-reference.console.ind \
 	bareos-manual-main-reference.director.ind \
@@ -10,6 +16,10 @@ INDEXES = bareos-manual-main-reference.console.ind \
 	bareos-manual-main-reference.monitor.ind
 
 all: pdf html
+
+depend:
+	@for I in ${subdirs}; \
+		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) || exit 1); done
 
 pdf: bareos-manual-main-reference.pdf
 
@@ -32,8 +42,14 @@ bareos-manual-main-reference.dvi: *.sty *.tex $(INDEXES) bareos-manual-main-refe
 	$(LATEX) bareos-manual-main-reference.tex
 	$(LATEX) bareos-manual-main-reference.tex
 
-bareos-manual-main-reference.pdf: bareos-manual-main-reference.dvi
-	$(DVI2PDF) bareos-manual-main-reference.dvi bareos-manual-main-reference.pdf
+#bareos-manual-main-reference.pdf: bareos-manual-main-reference.dvi
+#	$(DVI2PDF) bareos-manual-main-reference.dvi bareos-manual-main-reference.pdf
+
+bareos-manual-main-reference.pdf: depend *.sty *.tex $(INDEXES) bareos-manual-main-reference.toc
+	$(PDFLATEX) bareos-manual-main-reference.tex
+	$(PDFLATEX) bareos-manual-main-reference.tex
 
 clean:
 	rm -f *.aux *.dvi *.idx *.log *.out *.pdf *.toc *.4ct *.4tc *.idv *.lg *.tmp *.xref html/* bareos-manual-main-reference.html bareos-manual-main-reference.css
+	@for I in ${subdirs}; \
+		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) clean || exit 1); done
