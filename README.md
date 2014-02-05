@@ -8,3 +8,5 @@ The documentation is published as PDF and HTML at http://www.bareos.org/en/manua
 The documentation source is done using LaTeX.
 
 If you like to contribute, please have a look at http://www.bareos.org/en/howto-contribute.html
+
+[![Build Status](https://travis-ci.org/bareos/bareos-docs.png?branch=master)](https://travis-ci.org/bareos/bareos-docs)
