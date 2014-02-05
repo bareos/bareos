@@ -2912,10 +2912,8 @@ created, changing the value in the bareos-dir.conf file will not change
 what is stored for the Volume.  To change the value for an existing
 Volume you must use the {\bf update} command in the Console.
 
-\item [Volume Use Duration = {\textless}time-period-specification{\textgreater}] \hfill \\
-\index[dir]{Volume Use Duration}
-\index[dir]{Directive!Volume Use Duration}
-The Volume Use Duration directive defines the time period that the
+\xdirective{dir}{Volume Use Duration}{time-period-specification}{}{0 (no limit)}{}
+{The Volume Use Duration directive defines the time period that the
 Volume can be written beginning from the time of first data write to the
 Volume.  If the time-period specified is zero (the default), the Volume
 can be written indefinitely.  Otherwise, the next time a job
@@ -2923,9 +2921,10 @@ runs that wants to access this Volume, and the time period from the
 first write to the volume (the first Job written) exceeds the
 time-period-specification, the Volume will be marked {\bf Used}, which
 means that no more Jobs can be appended to the Volume, but it may be
-recycled if recycling is enabled. Using the command {\bf
-status dir} applies algorithms similar to running jobs, so
-during such a command, the Volume status may also be changed.
+recycled if recycling is enabled.
+% Using the command {\bf
+% status dir} applies algorithms similar to running jobs, so
+% during such a command, the Volume status may also be changed.
 Once the Volume is
 recycled, it will be available for use again.
 
@@ -2940,14 +2939,14 @@ hours, or you might experience problems of Bareos waiting for a tape
 over the weekend only to complete the backups Monday morning when an
 operator mounts a new tape.
 
-The use duration is checked and the {\bf Used} status is set only at the
-end of a job that writes to the particular volume, which means that even
-though the use duration may have expired, the catalog entry will not be
-updated until the next job that uses this volume is run. This
-directive is not intended to be used to limit volume sizes
-and will not work correctly (i.e. will fail jobs) if the use
-duration expires while multiple simultaneous jobs are writing
-to the volume.
+% The use duration is checked and the {\bf Used} status is set only at the
+% end of a job that writes to the particular volume, which means that even
+% though the use duration may have expired, the catalog entry will not be
+% updated until the next job that uses this volume is run. This
+% directive is not intended to be used to limit volume sizes
+% and will not work correctly (i.e. will fail jobs) if the use
+% duration expires while multiple simultaneous jobs are writing
+% to the volume.
 
 Please note that the value defined by this directive in the  bareos-dir.conf
 file is the default value used when a Volume  is created. Once the volume is
@@ -2955,6 +2954,7 @@ created, changing the value  in the bareos-dir.conf file will not change what
 is stored  for the Volume. To change the value for an existing Volume  you
 must use the
 \ilink{\bf update volume}{UpdateCommand} command in the Console.
+}
 
 \item [Catalog Files = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[dir]{Catalog Files}
