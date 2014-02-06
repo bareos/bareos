@@ -1,17 +1,29 @@
 language: php
 
 php:
-  - 5.5
-  - 5.4
   - 5.3
+  - 5.4
+  - 5.5
+  - hhvm
 
 before_install:
+  - composer self-update
+  - composer install --prefer-source --no-interaction --dev
 
 before_script:
+
+branches:
+  only:
+    - master
 
 script:
 
 after_script:
+
+matrix:
+  allow_failures:
+    - php: hhvm
+  fast_finish: true
 
 notifications:
   email: false
