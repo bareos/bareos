@@ -15,6 +15,8 @@ before_install:
 
 before_script:
   - psql -c 'create database bareos;' -U postgres
+  - su postgres -c tests/travis/pgsql/make_tables.sql
+  - su postgres -c tests/travis/pgsql/grant_privileges.sql
 
 branches:
   only:
