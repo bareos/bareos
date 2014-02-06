@@ -8,11 +8,11 @@ at the [Project Homepage](http://fbergkemper.github.io/).
 
 ### RELEASES
 
-[v0.0.1-alpha](https://github.com/fbergkemper/barbossa/releases/tag/v0.0.1-alpha)
+[Bareos Web-Frontend v0.0.1-alpha](https://github.com/fbergkemper/barbossa/releases/tag/v0.0.1-alpha)
 
 ### SYSTEM REQUIREMENTS
 
-* A working Bareos Environment, Bareos 12.4 or later, including a Bareos catalog database (Currently only PostgreSQL is supported, MySQL should be in near future.)
+* A working Bareos Environment, Bareos 12.4 or later, including a Bareos catalog database (Currently only PostgreSQL is supported by the Web-Frontend, MySQL should be in near future.)
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenvif enabled
 * PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
 * PHP PDO Extension
