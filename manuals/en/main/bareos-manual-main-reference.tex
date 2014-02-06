@@ -34,7 +34,11 @@
 \usepackage{caption} % captionof
 % mdframed does not work on openSUSE 12.2
 %\usepackage{mdframed}
-\usepackage{refcheck}
+
+% check for undefined references (refcheck), 
+% but don't write them as marginal notes, 
+% instead only write remarks to the log file
+\usepackage[norefs,nocites]{refcheck}
 
 \usepackage{bareos}
 
