@@ -1,6 +1,8 @@
 Bareos Web-Frontend
 ===================
 
+[![Build Status](https://travis-ci.org/fbergkemper/barbossa.png?branch=master)](https://travis-ci.org/fbergkemper/barbossa)
+
 A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 For a feature list and a few screenshots from alpha, please take a look 
