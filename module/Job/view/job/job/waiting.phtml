@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -54,7 +55,8 @@ $flash->setMessageOpenFormat('
 	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'problem')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
 </ul>
 
@@ -77,9 +79,8 @@ $flash->setMessageOpenFormat('
 	<th><?php echo $this->translate("Client"); ?></th>
 	<th><?php echo $this->translate("Type"); ?></th>
 	<th><?php echo $this->translate("Level"); ?></th>
-	<th><?php echo $this->translate("Start"); ?></th>
 	<th><?php echo $this->translate("Status"); ?></th>
-	<th><?php echo $this->translate("Log"); ?></th>
+	<th><?php echo $this->translate("Action"); ?></th>
 	
 </tr>
 
@@ -92,10 +93,23 @@ $flash->setMessageOpenFormat('
 	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td>
 	<td><?php echo $this->printJobType($job->type); ?></td>
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
-	<td><?php echo $this->printDate($job->starttime); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
-	<td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a></td>
-	
+	<td>
+
+	<div class="btn-group">
+		<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+			<span class="caret"></span>
+			<span class="sr-only">Toggle Dropdown</span>
+		</button>
+		<ul class="dropdown-menu" role="menu">
+		<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+		<li class="divider"></li>
+		<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+		</ul>
+
+	</div>
+	</td>	
 	
 </tr>
 

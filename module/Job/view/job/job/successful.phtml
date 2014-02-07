@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Running jobs';
+$title = 'Successful jobs (last 24h)';
 $this->headTitle($title);
 
 ?>
@@ -53,16 +53,16 @@ $flash->setMessageOpenFormat('
 
 <ul class="nav nav-tabs">
 	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
-	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
 </ul>
 
 <br />
 
-<?php if(count($this->runningJobs) > 0) : ?>
+<?php if(count($this->lastSuccessfulJobs) > 0) : ?>
 
 <div class="row">
 
@@ -80,6 +80,8 @@ $flash->setMessageOpenFormat('
 	<th><?php echo $this->translate("Type"); ?></th>
 	<th><?php echo $this->translate("Level"); ?></th>
 	<th><?php echo $this->translate("Start"); ?></th>
+	<th><?php echo $this->translate("End"); ?></th>
+	<th><?php echo $this->translate("Duration"); ?></th>
 	<th><?php echo $this->translate("Status"); ?></th>
 	<th><?php echo $this->translate("Action"); ?></th>
 	
@@ -95,24 +97,26 @@ $flash->setMessageOpenFormat('
 	<td><?php echo $this->printJobType($job->type); ?></td>
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
 	<td><?php echo $this->printDate($job->starttime); ?></td>
+	<td><?php echo $this->printDate($job->endtime); ?></td>
+	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	<td>
 	
 	<div class="btn-group">
 		<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
-		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">	
+		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
 			<span class="caret"></span>
 			<span class="sr-only">Toggle Dropdown</span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+			<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
 		</ul>
-	</div>	
-
+	</div>
 	</td>
-
+	
 </tr>
 
 <?php endforeach; ?>
@@ -137,11 +141,13 @@ echo $this->paginationControl(
 
 </div>
 
-<?php elseif(count($this->runningJobs) == 0) : ?>
-	<div class="alert alert-dismissable alert-info">
-	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-	<ul>
-	<li><?php echo $this->translate("Currently, there are no jobs running."); ?></li>
-	</ul>
-	</div>
+<?php elseif(count($this->lastSuccessfulJobs) == 0) : ?>
+
+<div class="alert alert-dismissable alert-info">
+<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+<ul>
+<li><?php echo $this->translate("There were no successful jobs during the last 24 hours!"); ?></li>
+</ul>
+</div>
+
 <?php endif; ?>

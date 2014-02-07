@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -84,7 +85,7 @@ class JobController extends AbstractActionController
 			);
 	}
 	
-	public function problemAction() 
+	public function unsuccessfulAction() 
 	{
 		$paginator = $this->getJobTable()->getLast24HoursUnsuccessfulJobs(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
@@ -98,6 +99,21 @@ class JobController extends AbstractActionController
 			);
 	}
 	
+	public function successfulAction() 
+	{
+		$paginator = $this->getJobTable()->getLast24HoursSuccessfulJobs(true);
+		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+		$paginator->setItemCountPerPage(10);
+
+		return new ViewModel(
+			array(
+				'paginator' => $paginator,
+				'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
+			)
+		);
+
+	}
+
 	public function timelineAction() 
 	{
 		return new ViewModel();

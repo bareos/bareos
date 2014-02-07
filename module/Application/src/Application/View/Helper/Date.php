@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -32,33 +33,32 @@ use Zend\View\Helper\AbstractHelper;
 class Date extends AbstractHelper
 {
 
-    public function __invoke($dateString, $mode = 'medium')
+    public function __invoke($dateString, $mode = 'iso8601')
     {
         if ($dateString == '0000-00-00 00:00:00' || $dateString == '') {
             return '-';
         }
         
         switch ($mode) {
+	    case 'full':
+		$dateType = IntlDateFormatter::FULL;
+		$timeType = IntlDateFormatter::FULL;
+		break;
             case 'long':
                 $dateType = IntlDateFormatter::LONG;
                 $timeType = IntlDateFormatter::LONG;
                 break;
-
             case 'short':
                 $dateType = IntlDateFormatter::SHORT;
                 $timeType = IntlDateFormatter::SHORT;
                 break;
-
-            case 'dateonly':
-                $dateType = IntlDateFormatter::MEDIUM;
-                $timeType = IntlDateFormatter::NONE;
-                break;
-
-            default:
             case 'medium':
                 $dateType = IntlDateFormatter::MEDIUM;
                 $timeType = IntlDateFormatter::MEDIUM;
                 break;
+	    default:
+	    case 'iso8601':
+		return $dateString;
         }
         
         $dateTime = new DateTime($dateString);

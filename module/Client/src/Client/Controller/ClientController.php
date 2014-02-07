@@ -54,6 +54,6 @@ class ClientController extends AbstractActionController
 		}
 		return $this->jobTable;
 	}
-	
+
 }
 

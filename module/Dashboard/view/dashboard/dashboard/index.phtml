@@ -83,8 +83,7 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Start"); ?></th>
 		<!-- <th>Duration</th> -->
 		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Log"); ?></th>
-		<th></th>
+		<th><?php echo $this->translate("Action"); ?></th>
 	    </tr>
             
             <?php foreach ($this->runningJobs as $item) : ?>
@@ -99,9 +98,22 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printDate($item->starttime); ?></td>
 	      <!-- <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td> -->
 	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
-	      <td><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span></a></td>
+	      <td>
 
+		<div class="btn-group">
+			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+				<span class="caret"></span>
+				<span class="sr-only">Toggle Dropdown</span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+				<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"> View messages</a></li>
+	      			<li class="divider"></li>
+				<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+			</ul>
+		</div>
+
+	      </td>
 	      </tr>
 
 	    <?php endforeach; ?>
@@ -151,11 +163,8 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Client"); ?></th>
 		<th><?php echo $this->translate("Type"); ?></th>
 		<th><?php echo $this->translate("Level"); ?></th>
-		<th><?php echo $this->translate("Start"); ?></th>
-		<!-- <th>Duration</th> -->
 		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Log"); ?></th>
-		<th></th>
+		<th><?php echo $this->translate("Action"); ?></th>
 	    </tr>
             
             <?php foreach ($this->waitingJobs as $item) : ?>
@@ -167,12 +176,23 @@ $flash->setMessageOpenFormat('
 	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $item->clientid)); ?>"><?php echo $this->escapeHtml($item->clientname); ?></a></td>
 	      <td><?php echo $this->printJobType($item->type); ?></td>
 	      <td><?php echo $this->printJobLevel($item->level); ?></td>
-	      <td><?php echo $this->printDate($item->starttime); ?></td>
-	      <!-- <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td> -->
 	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
-	      <td><a href="<?php ?>>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span></a></td>
-	  
+	      <td>
+
+		<div class="btn-group">
+			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+				<span class="caret"></span>
+				<span class="sr-only">Toggle Dropdown</span>
+			</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"> View messages</a></li>
+			<li class="divider"></li>
+			<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+		<ul>
+		</div>
+
+		</td>
 	      </tr>
 
 	    <?php endforeach; ?>
@@ -223,10 +243,10 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Type"); ?></th>
 		<th><?php echo $this->translate("Level"); ?></th>
 		<th><?php echo $this->translate("Start"); ?></th>
+		<th><?php echo $this->translate("End"); ?></th>
 		<th><?php echo $this->translate("Duration") ?></th>
 		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Log"); ?></th>
-		<th></th>
+		<th><?php echo $this->translate("Action"); ?></th>
 	    </tr>
             
             <?php foreach ($this->lastUnsuccessfulJobs as $jobUnsuccess) : ?>
@@ -239,10 +259,25 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobType($jobUnsuccess->type); ?></td>
 	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
 	      <td><?php echo $this->printDate($jobUnsuccess->starttime); ?></td>
+	      <td><?php echo $this->printDate($jobUnsuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobUnsuccess->starttime, $jobUnsuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
-	      <td><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></a></td>
-	      <td><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span></a></td>
+	      <td>
+	      <?php if($jobUnsuccess->type == "B") : ?>
+	      	<div class="btn-group">
+			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+				<span class="caret"></span>
+				<span class="sr-only">Toggle Dropdown</span>
+			</button>
+		<ul class="dropdown-menu" role="menu">
+			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+			<li class="divider"></li>
+	      		<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+	      	</ul>
+		</div>
+	      <?php endif; ?>
+	      </td>
 	      </tr>
 
 	    <?php endforeach; ?>
@@ -296,6 +331,7 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Type"); ?></th>
 		<th><?php echo $this->translate("Level"); ?></th>
 		<th><?php echo $this->translate("Start"); ?></th>
+		<th><?php echo $this->translate("End"); ?></th>
 		<th><?php echo $this->translate("Duration"); ?></th>
 		<th><?php echo $this->translate("Status"); ?></th>
 		<!--<th><?php echo $this->translate("Log"); ?></th>-->
@@ -312,13 +348,9 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
 	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
 	      <td><?php echo $this->printDate($jobSuccess->starttime); ?></td>
+	      <td><?php echo $this->printDate($jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
-<!--
-	      <td>
-	      <a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span></a>
-	      </td>
--->
 	      <td>
               <?php if($jobSuccess->type == "B") : ?>
 	      <div class="btn-group">
