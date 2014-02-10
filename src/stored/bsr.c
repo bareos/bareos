@@ -842,7 +842,7 @@ void create_restore_volume_list(JCR *jcr)
    jcr->CurReadVolume = 0;
    if (jcr->bsr) {
       BSR *bsr = jcr->bsr;
-      if (!bsr->volume || !bsr->volume->VolumeName) {
+      if (!bsr->volume || !bsr->volume->VolumeName[0]) {
          return;
       }
       for ( ; bsr; bsr=bsr->next) {
