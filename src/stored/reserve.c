@@ -757,7 +757,7 @@ bail_out:
 }
 
 /*
- * We "reserve" the drive by setting the ST_READ bit. No one else
+ * We "reserve" the drive by setting the ST_READREADY bit. No one else
  *  should touch the drive until that is cleared.
  *  This allows the DIR to "reserve" the device before actually
  *  starting the job.
@@ -784,9 +784,9 @@ static bool reserve_device_for_read(DCR *dcr)
    }
 
    if (dev->is_busy()) {
-      Dmsg4(dbglvl, "Device %s is busy ST_READ=%d num_writers=%d reserved=%d.\n",
+      Dmsg4(dbglvl, "Device %s is busy ST_READREADY=%d num_writers=%d reserved=%d.\n",
          dev->print_name(),
-         dev->state & ST_READ?1:0, dev->num_writers, dev->num_reserved());
+         dev->state & ST_READREADY ? 1 : 0, dev->num_writers, dev->num_reserved());
       Mmsg(jcr->errmsg, _("3602 JobId=%u device %s is busy (already reading/writing).\n"),
             jcr->JobId, dev->print_name());
       queue_reserve_message(jcr);

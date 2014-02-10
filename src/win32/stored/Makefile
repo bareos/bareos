@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../stored:../generic
+VPATH = .:../../stored:../generic:backends
 
 include ../Makefile.inc
 
@@ -39,30 +39,32 @@ LDLIBS_FIND = ../lib/libbareos.a \
 	      $(MINGW_LIB)/libpthreadGCE2.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
+DEVICE_API_SRCS = win32_tape_device.c win32_file_device.c
+
 SVRSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
 	  autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
 	  dir_cmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c mount.c \
 	  ndmp_tape.c read_record.c read.c record.c reserve.c scan.c sd_cmds.c \
 	  sd_plugins.c spool.c status.c stored_conf.c stored.c vol_mgr.c \
-	  wait.c win32_tape_device.c win32_file_device.c service.c main.c
+	  wait.c service.c main.c $(DEVICE_API_SRCS)
 SVROBJS = $(SVRSRCS:.c=.o)
 
 TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \
 	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
 	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c win32_tape_device.c win32_file_device.c
+	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 TAPEOBJS = $(TAPESRCS:.c=.o)
 
 BLSSRCS = acquire.c ansi_label.c autochanger.c block.c bls.c bsr.c \
 	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
 	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	  stored_conf.c vol_mgr.c wait.c win32_tape_device.c win32_file_device.c
+	  stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 BLSOBJS = $(BLSSRCS:.c=.o)
 
 BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c bsr.c \
 	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
 	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c win32_tape_device.c win32_file_device.c
+	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 WINDRESSRCS = storedres.rc

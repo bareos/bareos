@@ -291,7 +291,7 @@ default_path:
 
          /* Mount a specific volume and no other */
          Dmsg0(rdbglvl, "calling dir_ask_sysop\n");
-         if (!dir_ask_sysop_to_mount_volume(dcr, ST_READ)) {
+         if (!dir_ask_sysop_to_mount_volume(dcr, ST_READREADY)) {
             goto get_out;             /* error return */
          }
 

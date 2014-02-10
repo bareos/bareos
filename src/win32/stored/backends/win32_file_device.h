@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,25 +19,29 @@
    02110-1301, USA.
 */
 /*
+ * Windows File API device abstraction.
+ *
+ * Marco van Wieringen, December 2013
  */
 
-#ifndef WIN32_DISK_DEVICE_H
-#define WIN32_DISK_DEVICE_H
+#ifndef WIN32_FILE_DEVICE_H
+#define WIN32_FILE_DEVICE_H
 
-class unix_device: public DEVICE {
+class win32_file_device: public DEVICE {
 public:
-   unix_device();
-   ~unix_device();
+   win32_file_device();
+   ~win32_file_device();
 
    /*
     * Interface from DEVICE
     */
    int d_close(int);
-   int d_open(const char *pathname, int flags);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt=NULL);
-   boffset_t lseek(DCR *dcr, boffset_t offset, int whence);
+   int d_open(const char *pathname, int flags, int mode);
+   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
+   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   bool d_truncate(DCR *dcr);
 };
 
-#endif /* WIN32_DISK_DEVICE_H */
+#endif /* WIN32_FILE_DEVICE_H */

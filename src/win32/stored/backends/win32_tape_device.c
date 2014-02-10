@@ -152,7 +152,7 @@ TAPE_HANDLE_INFO TapeHandleTable[] =
 static DWORD GetTapePositionInfo(HANDLE hDevice, PTAPE_POSITION_INFO TapePositionInfo);
 static DWORD GetDensityBlockSize(HANDLE hDevice, DWORD *pdwDensity, DWORD *pdwBlockSize);
 
-int win32_tape_device::d_open(const char *pathname, int flags)
+int win32_tape_device::d_open(const char *pathname, int flags, int mode)
 {
    HANDLE hDevice = INVALID_HANDLE_VALUE;
    char szDeviceName[256] = "\\\\.\\";
@@ -397,9 +397,14 @@ int win32_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return result;
 }
 
-boffset_t win32_tape_device::lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t win32_tape_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 {
    return -1;
+}
+
+bool win32_tape_device::d_truncate(DCR *dcr)
+{
+   return true;                    /* we don't really truncate tapes */
 }
 
 int win32_tape_device::tape_op(struct mtop *mt_com)

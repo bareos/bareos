@@ -83,12 +83,13 @@ public:
 
    /* interface from DEVICE */
    int d_close(int);
-   int d_open(const char *pathname, int flags);
+   int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
+   bool d_truncate(DCR *dcr);
 
-   boffset_t lseek(DCR *dcr, off_t offset, int whence);
+   boffset_t d_lseek(DCR *dcr, off_t offset, int whence);
    boffset_t lseek(int fd, off_t offset, int whence);
 
    int tape_op(struct mtop *mt_com);
