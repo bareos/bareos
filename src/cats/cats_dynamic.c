@@ -149,6 +149,7 @@ B_DB *db_init_database(JCR *jcr,
    if (backend_instantiate == NULL) {
       Jmsg(jcr, M_ABORT, 0, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
            shared_library_name, NPRT(dlerror()));
+      dlclose(dl_handle);
       return (B_DB *)NULL;
    }
 
@@ -159,6 +160,7 @@ B_DB *db_init_database(JCR *jcr,
    if (flush_backend == NULL) {
       Jmsg(jcr, M_ABORT, 0, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
            shared_library_name, NPRT(dlerror()));
+      dlclose(dl_handle);
       return (B_DB *)NULL;
    }
 
