@@ -75,6 +75,9 @@
 #ifdef USE_VTAPE
 #include "backends/vtape.h"
 #endif
+#ifdef HAVE_GFAPI
+#include "backends/gfapi_device.h"
+#endif
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
 #include "backends/win32_file_device.h"
@@ -159,6 +162,11 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 #ifdef USE_VTAPE
    case B_VTAPE_DEV:
       dev = New(vtape);
+      break;
+#endif
+#ifdef HAVE_GFAPI
+   case B_GFAPI_DEV:
+      dev = New(gfapi_device);
       break;
 #endif
 #ifdef HAVE_WIN32
@@ -1954,6 +1962,8 @@ bool DEVICE::mount(DCR *dcr, int timeout)
          retval = do_file_mount(dcr, 1, timeout);
       }
       break;
+   case B_GFAPI_DEV:
+      break;
    default:
       break;
    }
@@ -2020,6 +2030,8 @@ bool DEVICE::unmount(DCR *dcr, int timeout)
       if (requires_mount() && device->unmount_command) {
          retval = do_file_mount(dcr, 0, timeout);
       }
+      break;
+   case B_GFAPI_DEV:
       break;
    default:
       break;

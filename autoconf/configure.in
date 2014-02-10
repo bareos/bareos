@@ -3386,6 +3386,67 @@ fi
 AC_SUBST(CAM_LIBS)
 
 dnl
+dnl Check for GlusterFS via gfapi.
+dnl
+GLUSTER_LIBS="-lgfapi"
+GLUSTER_INC=""
+have_glusterfs=no
+AC_ARG_WITH(glusterfs,
+   AC_HELP_STRING([--with-glusterfs@<:@=DIR@:>@], [Directory holding GLUSTERFS includes/libs]),
+      with_glusterfs_directory=$withval
+)
+
+if test "x${with_glusterfs_directory}" != "xyes" && test x"${with_glusterfs_directory}" != "x"; then
+   #
+   # Make sure the $with_glusterfs_directory also makes sense
+   #
+   if test -d "${with_glusterfs_directory}/lib" -a -d "${with_glusterfs_directory}/include"; then
+      GLUSTER_LIBS="-L${with_glusterfs_directory}/lib ${GLUSTER_LIBS}"
+      GLUSTER_INC="-I${with_glusterfs_directory}/include ${GLUSTER_INC}"
+   fi
+else
+   GLUSTER_INC="-I/usr/include/glusterfs"
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${GLUSTER_LIBS}"
+CFLAGS="${saved_CFLAGS} ${GLUSTER_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${GLUSTER_INC}"
+
+AC_CHECK_HEADER(api/glfs.h)
+
+AC_MSG_CHECKING(for glfs_init in gfapi library)
+AC_TRY_LINK(
+   [
+       #include <api/glfs.h>
+   ], [
+       glfs_new("volumename");
+   ], [
+       AC_MSG_RESULT(yes)
+       have_glusterfs="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_glusterfs="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_glusterfs}" = "xyes"; then
+   AC_DEFINE(HAVE_GFAPI, 1, [Define to 1 if you have gfapi lib])
+else
+   GLUSTER_LIBS=""
+   GLUSTER_INC=""
+fi
+
+AC_SUBST(GLUSTER_INC)
+AC_SUBST(GLUSTER_LIBS)
+
+dnl
 dnl Check for pthread libraries
 dnl
 PTHREAD_LIB=""
@@ -3980,6 +4041,7 @@ Configuration on `date`:
    ACL support:             ${have_acl}
    XATTR support:           ${have_xattr}
    SCSI Crypto support:     ${have_scsi_crypto}
+   GLUSTERFS support:       ${have_glusterfs}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}
