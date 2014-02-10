@@ -277,6 +277,7 @@ static s_kw dev_types[] = {
    { "fifo", B_FIFO_DEV },
    { "vtl", B_VTL_DEV },
    { "vtape", B_VTAPE_DEV },
+   { "gfapi", B_GFAPI_DEV },
    { NULL, 0 }
 };
 
