@@ -183,8 +183,11 @@ static bool close_data_spool_file(DCR *dcr)
    } else {
       spool_stats.data_size -= dcr->job_spool_size;
    }
-   dcr->job_spool_size = 0;
    V(mutex);
+
+   P(dcr->dev->spool_mutex);
+   dcr->job_spool_size = 0;
+   V(dcr->dev->spool_mutex);
 
    make_unique_data_spool_filename(dcr, &name);
    close(dcr->spool_fd);
