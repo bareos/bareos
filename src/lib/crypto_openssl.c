@@ -968,6 +968,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       /* Camellia 128 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_128_cbc);
       ec = EVP_camellia_128_cbc();
+      break;
 #endif
 #ifndef HAVE_OPENSSL_EXPORT_LIBRARY
 #ifdef NID_camellia_192_cbc
@@ -975,12 +976,14 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       /* Camellia 192 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_192_cbc);
       ec = EVP_camellia_192_cbc();
+      break;
 #endif
 #ifdef NID_camellia_256_cbc
    case CRYPTO_CIPHER_CAMELLIA_256_CBC:
       /* Camellia 256 bit CBC */
       cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_camellia_256_cbc);
       ec = EVP_camellia_256_cbc();
+      break;
 #endif
 #endif /* OPENSSL_NO_CAMELLIA */
 #endif /* HAVE_OPENSSL_EXPORT_LIBRARY */
