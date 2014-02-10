@@ -453,7 +453,9 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
 
 bail_out:
    free(slot_list);
-   free_vol_list(vol_list);
+   if (vol_list) {
+      free_vol_list(vol_list);
+   }
    close_sd_bsock(ua);
 
    return;
