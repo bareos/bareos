@@ -138,8 +138,10 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
    switch (db_get_type_index(context->db)) {
    case SQL_TYPE_MYSQL:
       index = 1;
+      break;
    default:
       index = 0;
+      break;
    }
 
    if (row[index]) {
