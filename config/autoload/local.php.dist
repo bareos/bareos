@@ -39,12 +39,18 @@
 return array(
 
 	'db' => array(
-		// Set your database driver here, e.g. Pdo_Mysql, Pdo_Pgsql, Mysqli or Pgsql
-		'driver' => 'YOUR_DB_DRIVER', 
-		'dbname' => 'YOUR_DATABASE_HERE',
-		'host' => 'YOUR_HOSTNAME_HERE',
-		'username' => 'YOUR_USERNAME_HERE',
-		'password' => 'YOUR_PASSWORD_HERE',
+
+		// Set your database driver here: Pdo_Mysql, Pdo_Pgsql, Mysqli or Pgsql
+		'driver' => 'Pdo_Pgsql', 
+		// Set your database here
+		'dbname' => 'bareos',
+		// Set your hostname here
+		'host' => 'localhost',
+		// Set your username here
+		'username' => 'bareos',
+		// Set your password here
+		'password' => '',
+
 	),
 
 );

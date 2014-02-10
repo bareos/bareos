@@ -17,6 +17,7 @@ before_script:
   - psql -c 'create database bareos;' -U postgres
   - psql bareos < tests/travis/pgsql/make_tables.sql -U postgres
   - psql bareos < tests/travis/pgsql/grant_privileges.sql -U postgres
+  - tests/travis/config_db.sh
 
 branches:
   only:
