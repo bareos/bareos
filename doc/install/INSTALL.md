@@ -61,19 +61,19 @@ wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/bareos.c
 
 * Copy barbossa/config/autoload/local.php.dist to barbossa/config/autoload/local.php and edit the local.php file to your needs.
 
-### Configuration to be able to run bconsole from barbossa
+### Configuration to be able to run bconsole commands within the web-frontend
 
-For testing and development the easiest way is to add the user under which apache is running to the bareos group, e.g.
-
-```
-usermod -aG bareos wwwrun
-```
-
-Next, setup bconsole can be executed under Apache webserver.
+In order to be able to execute bconsole commands within the web-frontend, it is necessary there is a sudo rule for the user under
+which your webserver is running. So, run visudo and add the following lines, e.g:
 
 ```
-chown root:bareos /usr/sbin/bconsole
-chmod 750 /usr/sbin/bconsole
-chown root:bareos /etc/bareos/bconsole.conf
-chmod 740 /etc/bareos/bconsole.conf
+# bareos web-frontend entry
+wwwrun ALL=NOPASSWD: /usr/sbin/bconsole
+```
+
+or something like ...
+
+```
+# bareos web-frontend entry
+apache ALL=NOPASSWD: /usr/sbin/bconsole
 ```

@@ -84,7 +84,7 @@ class FilesetController extends AbstractActionController
 		$cwd = '/usr/sbin';
 		$env = array('/usr/sbin');
 
-		$process = proc_open('bconsole', $descriptorspec, $pipes, $cwd, $env);
+		$process = proc_open('sudo /usr/sbin/bconsole', $descriptorspec, $pipes, $cwd, $env);
 
 		if(!is_resource($process)) {
 			throw new \Exception("proc_open error");
