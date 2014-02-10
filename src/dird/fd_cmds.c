@@ -471,6 +471,7 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
          fd->msglen = Mmsg(fd->msg, "%s", buf);
          if (!bnet_send(fd)) {
             Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
+            fclose(ffd);
             return false;
          }
       }
