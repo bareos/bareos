@@ -1,3 +1,4 @@
+CREATE ROLE bareos WITH PASSWORD '';
 CREATE USER bareos bareos;
 
 -- For tables
