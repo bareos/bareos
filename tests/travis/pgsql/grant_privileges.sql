@@ -1,4 +1,4 @@
-CREATE ROLE bareos WITH PASSWORD '';
+CREATE ROLE bareos WITH LOGIN;
 CREATE USER bareos bareos;
 
 -- For tables
