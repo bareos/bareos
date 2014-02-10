@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -30,16 +31,20 @@
  * security-sensitive configuration information. Copy this file without the
  * .dist extension at the end and populate values as needed.
  *
- * @NOTE: This file is ignored from Git by default with the .gitignore included
- * in ZendSkeletonApplication. This is a good practice, as it prevents sensitive
- * credentials from accidentally being committed into version control.
+ * @NOTE: This file is ignored from Git by default with the .gitignore included.
+ * This is a good practice, as it prevents sensitive credentials from accidentally 
+ * being committed into version control.
  */
 
 return array(
 
 	'db' => array(
-		'username' => 'bareos',
-		'password' => 'bareos',
+		// Set your database driver here, e.g. Pdo_Mysql, Pdo_Pgsql, Mysqli or Pgsql
+		'driver' => 'YOUR_DB_DRIVER', 
+		'dbname' => 'YOUR_DATABASE_HERE',
+		'host' => 'YOUR_HOSTNAME_HERE',
+		'username' => 'YOUR_USERNAME_HERE',
+		'password' => 'YOUR_PASSWORD_HERE',
 	),
 
 );

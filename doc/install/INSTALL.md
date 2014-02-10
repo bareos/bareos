@@ -1,4 +1,4 @@
-## INSTALLATION MANUAL
+## INSTALL
 
 As the project is in alpha state and there is no installation routine so far, 
 this installation manual should help developers to get a working version on 
@@ -59,7 +59,6 @@ wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/bareos.c
 
 ### Configure the database connection
 
-* Open the file barbossa/config/autoload/global.php and edit it to your needs. Currently only PostgreSQL has been tested.
 * Copy barbossa/config/autoload/local.php.dist to barbossa/config/autoload/local.php and edit the local.php file to your needs.
 
 ### Configuration to be able to run bconsole from barbossa

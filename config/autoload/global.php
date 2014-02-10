@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -37,10 +38,7 @@
 
 return array(
 	'db' => array(
-		'driver' 	=> 'Pdo',
-		'dsn'		=> 'pgsql:dbname=bareos;host=localhost',
 		'driver_options'=> array(
-			//TODO
 		),
 	),
 	'service_manager' => array(
