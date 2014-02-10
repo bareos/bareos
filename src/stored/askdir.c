@@ -625,7 +625,7 @@ bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode)
       if (!dev->poll && (status == W_TIMEOUT || status == W_MOUNT)) {
          const char *msg;
 
-         if (mode == ST_APPEND) {
+         if (mode == ST_APPENDREADY) {
             msg = _("Please mount append Volume \"%s\" or label a new one for:\n"
                     "    Job:          %s\n"
                     "    Storage:      %s\n"

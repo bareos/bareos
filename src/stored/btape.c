@@ -36,10 +36,6 @@
 #include "stored.h"
 #include "lib/crypto_cache.h"
 
-#ifdef USE_VTAPE
-#include "vtape.h"
-#endif
-
 /* Dummy functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 

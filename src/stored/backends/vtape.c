@@ -25,7 +25,7 @@ Device {
   Name = Drive-1                      #
   Maximum File Size = 800M
   Maximum Volume Size = 3G
-  Device Type = TAPE
+  Device Type = vtape
   Archive Device = /tmp/fake
   Media Type = DLT-8000
   AutomaticMount = yes;               # when device opened, read it
@@ -49,10 +49,10 @@ Device {
  */
 
 #include "bareos.h"
-#include "stored.h"
 
 #ifdef USE_VTAPE
-#include "vtape.h"
+#include "stored.h"
+#include "backends/vtape.h"
 
 static int dbglevel = 100;
 #define FILE_OFFSET 30
@@ -702,7 +702,7 @@ int vtape::bsr(int count)
    return 0;
 }
 
-boffset_t vtape::lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t vtape::d_lseek(DCR *dcr, boffset_t offset, int whence)
 {
    return -1;
 }
@@ -710,6 +710,11 @@ boffset_t vtape::lseek(DCR *dcr, boffset_t offset, int whence)
 boffset_t vtape::lseek(int fd, off_t offset, int whence)
 {
    return ::lseek(fd, offset, whence);
+}
+
+bool vtape::d_truncate(DCR *dcr)
+{
+   return true;                    /* we don't really truncate tapes */
 }
 
 /* BSF => just before last EOF
@@ -852,7 +857,7 @@ ssize_t vtape::d_read(int, void *buffer, size_t count)
    return nb;
 }
 
-int vtape::d_open(const char *pathname, int flags)
+int vtape::d_open(const char *pathname, int flags, int mode)
 {
    Dmsg2(dbglevel, "vtape::d_open(%s, %i)\n", pathname, flags);
 

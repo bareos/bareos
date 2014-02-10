@@ -85,7 +85,7 @@ enum {
    B_FILE_DEV = 1,
    B_TAPE_DEV,
    B_FIFO_DEV,
-   B_VTAPE_DEV,                       /* change to B_TAPE_DEV after init */
+   B_VTAPE_DEV,
    B_VTL_DEV
 };
 
@@ -148,8 +148,8 @@ enum {
 
 #define ST_LABEL           (1 << 6)   /* label found */
 #define ST_MALLOC          (1 << 7)   /* dev packet malloc'ed in init_dev() */
-#define ST_APPEND          (1 << 8)   /* ready for Bareos append */
-#define ST_READ            (1 << 9)   /* ready for Bareos read */
+#define ST_APPENDREADY     (1 << 8)   /* Ready for Bareos append */
+#define ST_READREADY       (1 << 9)   /* Ready for Bareos read */
 #define ST_EOT             (1 << 10)  /* at end of tape */
 #define ST_WEOT            (1 << 11)  /* Got EOT on write */
 #define ST_EOF             (1 << 12)  /* Read EOF i.e. zero bytes */
@@ -240,9 +240,9 @@ public:
    int capabilities;                  /* capabilities mask */
    int state;                         /* state mask */
    int dev_errno;                     /* Our own errno */
-   int mode;                          /* read/write modes */
-   int openmode;                      /* parameter passed to open_dev (useful to reopen the device) */
-   int dev_type;                      /* device type */
+   int oflags;                        /* Read/write flags */
+   int open_mode;                     /* Parameter passed to open_dev (useful to reopen the device) */
+   int dev_type;                      /* Device type */
    bool autoselect;                   /* Autoselect in autochanger */
    bool norewindonclose;              /* Don't rewind tape drive on close */
    bool initiated;                    /* set when init_dev() called */
@@ -323,11 +323,11 @@ public:
    int is_part_spooled() const { return state & ST_PART_SPOOLED; }
    int have_media() const { return state & ST_MEDIA; }
    int is_short_block() const { return state & ST_SHORT; }
-   int is_busy() const { return (state & ST_READ) || num_writers || num_reserved(); }
+   int is_busy() const { return (state & ST_READREADY) || num_writers || num_reserved(); }
    int at_eof() const { return state & ST_EOF; }
    int at_eot() const { return state & ST_EOT; }
    int at_weot() const { return state & ST_WEOT; }
-   int can_append() const { return state & ST_APPEND; }
+   int can_append() const { return state & ST_APPENDREADY; }
    int is_crypto_enabled() const { return state & ST_CRYPTOKEY; }
    /*
     * can_write() is meant for checking at the end of a job to see
@@ -336,7 +336,7 @@ public:
     */
    int can_write() const { return is_open() && can_append() &&
                             is_labeled() && !at_weot(); }
-   int can_read() const   { return state & ST_READ; }
+   int can_read() const   { return state & ST_READREADY; }
    bool can_steal_lock() const { return m_blocked &&
                     (m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
@@ -355,9 +355,9 @@ public:
    void set_ateot(); /* in dev.c */
    void set_eot() { state |= ST_EOT; };
    void set_eof() { state |= ST_EOF; };
-   void set_append() { state |= ST_APPEND; };
+   void set_append() { state |= ST_APPENDREADY; };
    void set_labeled() { state |= ST_LABEL; };
-   inline void set_read() { state |= ST_READ; };
+   inline void set_read() { state |= ST_READREADY; };
    void set_offline() { state |= ST_OFFLINE; };
    void set_mounted() { state |= ST_MOUNTED; };
    void set_media() { state |= ST_MEDIA; };
@@ -371,8 +371,8 @@ public:
    void set_load() { m_load = true; };
    void inc_reserved() { m_num_reserved++; }
    void dec_reserved() { m_num_reserved--; ASSERT(m_num_reserved>=0); };
-   void clear_append() { state &= ~ST_APPEND; };
-   void clear_read() { state &= ~ST_READ; };
+   void clear_append() { state &= ~ST_APPENDREADY; };
+   void clear_read() { state &= ~ST_READREADY; };
    void clear_labeled() { state &= ~ST_LABEL; };
    void clear_offline() { state &= ~ST_OFFLINE; };
    void clear_eot() { state &= ~ST_EOT; };
@@ -429,16 +429,21 @@ public:
    uint32_t get_block_num() const { return block_num; };
    int fd() const { return m_fd; };
 
-   /* low level operations */
+   /*
+    * Low level operations
+    */
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com = NULL) = 0;
-   virtual int d_open(const char *pathname, int flags) = 0;
+   virtual int d_open(const char *pathname, int flags, int mode) = 0;
    virtual int d_close(int fd) = 0;
    virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
-   virtual boffset_t lseek(DCR *dcr, boffset_t offset, int whence) = 0;
+   virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence) = 0;
+   virtual bool d_truncate(DCR *dcr) = 0;
    virtual bool update_pos(DCR *dcr);
    virtual bool rewind(DCR *dcr);
-   virtual bool truncate(DCR *dcr);
+   bool truncate(DCR *dcr);
+   boffset_t lseek(DCR *dcr, boffset_t offset, int whence);
+
    /*
     * Locking and blocking calls
     */
@@ -477,10 +482,11 @@ public:
    bool is_blocked() const { return m_blocked != BST_NOT_BLOCKED; };
    const char *print_blocked() const;     /* in dev.c */
 
+protected:
+   void set_mode(int mode);                       /* in dev.c */
 private:
    bool do_tape_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
    bool do_file_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
-   void set_mode(int omode);                      /* in dev.c */
    void open_tape_device(DCR *dcr, int omode);    /* in dev.c */
    void open_file_device(DCR *dcr, int omode);    /* in dev.c */
 };

@@ -73,13 +73,14 @@
 #include "bareos.h"
 #include "stored.h"
 #ifdef USE_VTAPE
-#include "vtape.h"
+#include "backends/vtape.h"
 #endif
 #ifdef HAVE_WIN32
-#include "win32_tape_device.h"
-#include "win32_file_device.h"
+#include "backends/win32_tape_device.h"
+#include "backends/win32_file_device.h"
 #else
-#include "unix_device.h"
+#include "backends/unix_tape_device.h"
+#include "backends/unix_file_device.h"
 #endif
 
 #ifndef O_NONBLOCK
@@ -89,7 +90,7 @@
 /* Forward referenced functions */
 void set_os_device_parameters(DCR *dcr);
 static bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat);
-static const char *mode_to_str(int mode);
+static const char *mode_to_str(int omode);
 static DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init);
 
 /*
@@ -120,9 +121,13 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 
    Dmsg1(400, "max_block_size in device res is %u\n", device->max_block_size);
 
-   /* If no device type specified, try to guess */
+   /*
+    * If no device type specified, try to guess
+    */
    if (!device->dev_type) {
-      /* Check that device is available */
+      /*
+       * Check that device is available
+       */
       if (stat(device->device_name, &statp) < 0) {
          berrno be;
          Jmsg2(jcr, M_ERROR, 0, _("Unable to stat device %s: ERR=%s\n"),
@@ -136,8 +141,8 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       } else if (S_ISFIFO(statp.st_mode)) {
          device->dev_type = B_FIFO_DEV;
 #ifdef USE_VTAPE
-      /* must set DeviceType = Vtape
-       * in normal mode, autodetection is disabled
+      /*
+       * Must set DeviceType = Vtape in normal mode, autodetection is disabled
        */
       } else if (S_ISREG(statp.st_mode)) {
          device->dev_type = B_VTAPE_DEV;
@@ -149,6 +154,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
          return NULL;
       }
    }
+
    switch (device->dev_type) {
 #ifdef USE_VTAPE
    case B_VTAPE_DEV:
@@ -164,9 +170,11 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       break;
 #else
    case B_TAPE_DEV:
+      dev = New(unix_tape_device);
+      break;
    case B_FILE_DEV:
    case B_FIFO_DEV:
-      dev = New(unix_device);
+      dev = New(unix_file_device);
       break;
 #endif
    default:
@@ -247,21 +255,19 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       max_bs = dev->max_block_size;
    }
    if (dev->min_block_size > max_bs) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"),
-           dev->print_name());
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"), dev->print_name());
    }
    if (dev->max_block_size > MAX_BLOCK_LENGTH) {
       Jmsg3(jcr, M_ERROR, 0, _("Block size %u on device %s is too large, using default %u\n"),
-         dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
+            dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
       dev->max_block_size = 0;
    }
    if (dev->max_block_size % TAPE_BSIZE != 0) {
       Jmsg3(jcr, M_WARNING, 0, _("Max block size %u not multiple of device %s block size=%d.\n"),
-         dev->max_block_size, dev->print_name(), TAPE_BSIZE);
+            dev->max_block_size, dev->print_name(), TAPE_BSIZE);
    }
    if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
-      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"),
-           dev->print_name());
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"), dev->print_name());
    }
 
    dev->errmsg = get_pool_memory(PM_EMSG);
@@ -273,30 +279,35 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+
    if ((errstat = pthread_cond_init(&dev->wait, NULL)) != 0) {
       berrno be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+
    if ((errstat = pthread_cond_init(&dev->wait_next_vol, NULL)) != 0) {
       berrno be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init cond variable: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+
    if ((errstat = pthread_mutex_init(&dev->spool_mutex, NULL)) != 0) {
       berrno be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init spool mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+
    if ((errstat = dev->init_acquire_mutex()) != 0) {
       berrno be;
       dev->dev_errno = errstat;
       Mmsg1(dev->errmsg, _("Unable to init acquire mutex: ERR=%s\n"), be.bstrerror(errstat));
       Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+
    if ((errstat = dev->init_read_acquire_mutex()) != 0) {
       berrno be;
       dev->dev_errno = errstat;
@@ -443,13 +454,13 @@ bool DEVICE::open(DCR *dcr, int omode)
 {
    int preserve = 0;
    if (is_open()) {
-      if (openmode == omode) {
+      if (open_mode == omode) {
          return true;
       } else {
          d_close(m_fd);
          clear_opened();
          Dmsg0(100, "Close fd for mode change.\n");
-         preserve = state & (ST_LABEL|ST_APPEND|ST_READ);
+         preserve = state & (ST_LABEL | ST_APPENDREADY | ST_READREADY);
       }
    }
    if (dcr) {
@@ -459,7 +470,7 @@ bool DEVICE::open(DCR *dcr, int omode)
 
    Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
          print_name(), getVolCatName(), mode_to_str(omode));
-   state &= ~(ST_LABEL|ST_APPEND|ST_READ|ST_EOT|ST_WEOT|ST_EOF);
+   state &= ~(ST_LABEL | ST_APPENDREADY | ST_READREADY | ST_EOT | ST_WEOT | ST_EOF);
    label_type = B_BAREOS_LABEL;
 
    if (is_tape() || is_fifo()) {
@@ -470,23 +481,24 @@ bool DEVICE::open(DCR *dcr, int omode)
    }
    state |= preserve;                 /* reset any important state info */
    Dmsg2(100, "preserve=0x%x fd=%d\n", preserve, m_fd);
+
    return m_fd >= 0;
 }
 
-void DEVICE::set_mode(int new_mode)
+void DEVICE::set_mode(int mode)
 {
-   switch (new_mode) {
+   switch (mode) {
    case CREATE_READ_WRITE:
-      mode = O_CREAT | O_RDWR | O_BINARY;
+      oflags = O_CREAT | O_RDWR | O_BINARY;
       break;
    case OPEN_READ_WRITE:
-      mode = O_RDWR | O_BINARY;
+      oflags = O_RDWR | O_BINARY;
       break;
    case OPEN_READ_ONLY:
-      mode = O_RDONLY | O_BINARY;
+      oflags = O_RDONLY | O_BINARY;
       break;
    case OPEN_WRITE_ONLY:
-      mode = O_WRONLY | O_BINARY;
+      oflags = O_WRONLY | O_BINARY;
       break;
    default:
       Emsg0(M_ABORT, 0, _("Illegal mode given to open dev.\n"));
@@ -511,7 +523,7 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
 
    get_autochanger_loaded_slot(dcr);
 
-   openmode = omode;
+   open_mode = omode;
    set_mode(omode);
 
    if (timeout < 1) {
@@ -524,30 +536,39 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
    }
    Dmsg2(100, "Try open %s mode=%s\n", print_name(), mode_to_str(omode));
 #if defined(HAVE_WIN32)
-
-   /*   Windows Code */
-   if ((m_fd = d_open(dev_name, mode)) < 0) {
+   /*
+    * Windows Code
+    */
+   if ((m_fd = d_open(dev_name, oflags, 0)) < 0) {
       dev_errno = errno;
    }
-
 #else
-
-   /*  UNIX  Code */
-   /* If busy retry each second for max_open_wait seconds */
+   /*
+    * UNIX Code
+    *
+    * If busy retry each second for max_open_wait seconds
+    */
    for ( ;; ) {
-      /* Try non-blocking open */
-      m_fd = d_open(dev_name, mode+O_NONBLOCK);
+      /*
+       * Try non-blocking open
+       */
+      m_fd = d_open(dev_name, oflags | O_NONBLOCK, 0);
       if (m_fd < 0) {
          berrno be;
          dev_errno = errno;
-         Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n",
-              print_name(), omode, mode, errno, be.bstrerror());
+         Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+               print_name(), omode, oflags, errno, be.bstrerror());
       } else {
-         /* Tape open, now rewind it */
+         /*
+          * Tape open, now rewind it
+          */
          Dmsg0(100, "Rewind after open\n");
          mt_com.mt_op = MTREW;
          mt_com.mt_count = 1;
-         /* rewind only if dev is a tape */
+
+         /*
+          * Rewind only if dev is a tape
+          */
          if (is_tape() && (d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com) < 0)) {
             berrno be;
             dev_errno = errno;           /* set error status from rewind */
@@ -555,19 +576,23 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
             clear_opened();
             Dmsg2(100, "Rewind error on %s close: ERR=%s\n", print_name(),
                   be.bstrerror(dev_errno));
-            /* If we get busy, device is probably rewinding, try again */
+            /*
+             * If we get busy, device is probably rewinding, try again
+             */
             if (dev_errno != EBUSY) {
                break;                    /* error -- no medium */
             }
          } else {
-            /* Got fd and rewind worked, so we must have medium in drive */
+            /*
+             * Got fd and rewind worked, so we must have medium in drive
+             */
             d_close(m_fd);
-            m_fd = d_open(dev_name, mode);  /* open normally */
+            m_fd = d_open(dev_name, oflags, 0); /* open normally */
             if (m_fd < 0) {
                berrno be;
                dev_errno = errno;
-               Dmsg5(100, "Open error on %s omode=%d mode=%x errno=%d: ERR=%s\n",
-                     print_name(), omode, mode, errno, be.bstrerror());
+               Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+                     print_name(), omode, oflags, errno, be.bstrerror());
                break;
             }
             dev_errno = 0;
@@ -577,7 +602,10 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
          }
       }
       bmicrosleep(5, 0);
-      /* Exceed wait time ? */
+
+      /*
+       * Exceed wait time ?
+       */
       if (time(NULL) - start_time >= max_open_wait) {
          break;                       /* yes, get out */
       }
@@ -591,7 +619,9 @@ void DEVICE::open_tape_device(DCR *dcr, int omode)
       Dmsg1(100, "%s", errmsg);
    }
 
-   /* Stop any open() timer we started */
+   /*
+    * Stop any open() timer we started
+    */
    if (tid) {
       stop_thread_timer(tid);
       tid = 0;
@@ -611,8 +641,8 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
    /*
     * Handle opening of File Archive (not a tape)
     */
-
    pm_strcpy(archive_name, dev_name);
+
    /*
     * If this is a virtual autochanger (i.e. changer_res != NULL)
     *  we simply use the device name, assuming it has been
@@ -634,24 +664,29 @@ void DEVICE::open_file_device(DCR *dcr, int omode)
 
    mount(dcr, 1);                     /* do mount if required */
 
-   openmode = omode;
+   open_mode = omode;
    set_mode(omode);
-   /* If creating file, give 0640 permissions */
+
+   /*
+    * If creating file, give 0640 permissions
+    */
    Dmsg3(100, "open disk: mode=%s open(%s, 0x%x, 0640)\n", mode_to_str(omode),
-         archive_name.c_str(), mode);
-   /* Use system open() */
-   if ((m_fd = ::open(archive_name.c_str(), mode, 0640)) < 0) {
+         archive_name.c_str(), oflags);
+
+   if ((m_fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
       berrno be;
       dev_errno = errno;
       Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
             be.bstrerror());
       Dmsg1(100, "open failed: %s", errmsg);
    }
+
    if (m_fd >= 0) {
       dev_errno = 0;
       file = 0;
       file_addr = 0;
    }
+
    Dmsg1(100, "open dev: disk fd=%d opened\n", m_fd);
 }
 
@@ -674,6 +709,7 @@ bool DEVICE::rewind(DCR *dcr)
    if (m_fd < 0) {
       return false;
    }
+
    if (is_tape()) {
       mt_com.mt_op = MTREW;
       mt_com.mt_count = 1;
@@ -695,10 +731,10 @@ bool DEVICE::rewind(DCR *dcr)
              *   So, we close the drive and re-open it.
              */
             if (first && dcr) {
-               int open_mode = openmode;
+               int oo_mode = open_mode;
                d_close(m_fd);
                clear_opened();
-               open(dcr, open_mode);
+               open(dcr, oo_mode);
                if (m_fd < 0) {
                   return false;
                }
@@ -731,7 +767,11 @@ bool DEVICE::rewind(DCR *dcr)
             print_name(), be.bstrerror());
          return false;
       }
+   } else {
+      Mmsg1(errmsg, _("Don't know how to rewind device of type %d\n"), dev_type);
+      return false;
    }
+
    return true;
 }
 
@@ -955,6 +995,7 @@ bool DEVICE::update_pos(DCR *dcr)
          file = (uint32_t)(pos >> 32);
       }
    }
+
    return ok;
 }
 
@@ -1134,7 +1175,7 @@ bool DEVICE::offline()
       return true;                    /* device not open */
    }
 
-   state &= ~(ST_APPEND|ST_READ|ST_EOT|ST_EOF|ST_WEOT);  /* remove EOF/EOT flags */
+   state &= ~(ST_APPENDREADY | ST_READREADY | ST_EOT | ST_EOF | ST_WEOT);  /* remove EOF/EOT flags */
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
@@ -1853,14 +1894,14 @@ void DEVICE::close(DCR *dcr)
    /* Clean up device packet so it can be reused */
    clear_opened();
 
-   state &= ~(ST_LABEL | ST_READ | ST_APPEND | ST_EOT | ST_WEOT |
+   state &= ~(ST_LABEL | ST_READREADY | ST_APPENDREADY | ST_EOT | ST_WEOT |
               ST_EOF | ST_MOUNTED | ST_MEDIA | ST_SHORT);
    label_type = B_BAREOS_LABEL;
    file = block_num = 0;
    file_size = 0;
    file_addr = 0;
    EndFile = EndBlock = 0;
-   openmode = 0;
+   open_mode = 0;
    clear_volhdr();
    memset(&VolCatInfo, 0, sizeof(VolCatInfo));
    if (tid) {
@@ -1874,78 +1915,16 @@ void DEVICE::close(DCR *dcr)
  */
 bool DEVICE::truncate(DCR *dcr)
 {
-   struct stat st;
-   DEVICE *dev = this;
-
    Dmsg1(100, "truncate %s\n", print_name());
-   switch (dev_type) {
-   case B_VTL_DEV:
-   case B_VTAPE_DEV:
-   case B_TAPE_DEV:
-      /* maybe we should rewind and write and eof ???? */
-      return true;                    /* we don't really truncate tapes */
-   case B_FILE_DEV:
-      for ( ;; ) {
-         if (ftruncate(dev->m_fd, 0) != 0) {
-            berrno be;
-            Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
-                  print_name(), be.bstrerror());
-            return false;
-         }
+   return d_truncate(dcr);
+}
 
-         /*
-          * Check for a successful ftruncate() and issue a work-around for devices
-          * (mostly cheap NAS) that don't support truncation.
-          * Workaround supplied by Martin Schmid as a solution to bug #1011.
-          * 1. close file
-          * 2. delete file
-          * 3. open new file with same mode
-          * 4. change ownership to original
-          */
-
-         if (fstat(dev->m_fd, &st) != 0) {
-            berrno be;
-            Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"),
-                  print_name(), be.bstrerror());
-            return false;
-         }
-
-         if (st.st_size != 0) {             /* ftruncate() didn't work */
-            POOL_MEM archive_name(PM_FNAME);
-
-            pm_strcpy(archive_name, dev_name);
-            if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
-               pm_strcat(archive_name, "/");
-            }
-            pm_strcat(archive_name, dcr->VolumeName);
-
-            Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
-                  print_name(), archive_name.c_str());
-
-            /* Close file and blow it away */
-            ::close(dev->m_fd);
-            ::unlink(archive_name.c_str());
-
-            /* Recreate the file -- of course, empty */
-            dev->set_mode(CREATE_READ_WRITE);
-            if ((dev->m_fd = ::open(archive_name.c_str(), mode, st.st_mode)) < 0) {
-               berrno be;
-               dev_errno = errno;
-               Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(),
-                     be.bstrerror());
-               Dmsg1(100, "reopen failed: %s", errmsg);
-               Emsg0(M_FATAL, 0, errmsg);
-               return false;
-            }
-
-            /* Reset proper owner */
-            chown(archive_name.c_str(), st.st_uid, st.st_gid);
-         }
-         break;
-      }
-      return true;
-   }
-   return false;
+/*
+ * Seek on a volume.
+ */
+boffset_t DEVICE::lseek(DCR *dcr, boffset_t offset, int whence)
+{
+   return d_lseek(dcr, offset, whence);
 }
 
 /*

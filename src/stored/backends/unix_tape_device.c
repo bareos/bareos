@@ -18,46 +18,59 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ * UNIX Tape API device abstraction.
+ *
+ * Marco van Wieringen, December 2013
+ */
 
 #include "bareos.h"
 #include "stored.h"
-#include "win32_file_device.h"
+#include "unix_tape_device.h"
 
-int win32_file_device::d_open(const char *pathname, int flags)
+int unix_tape_device::d_open(const char *pathname, int flags, int mode)
 {
-   return ::open(pathname, flags);
+   return ::open(pathname, flags, mode);
 }
 
-ssize_t win32_file_device::d_read(int fd, void *buffer, size_t count)
+ssize_t unix_tape_device::d_read(int fd, void *buffer, size_t count)
 {
    return ::read(fd, buffer, count);
 }
 
-ssize_t win32_file_device::d_write(int fd, const void *buffer, size_t count)
+ssize_t unix_tape_device::d_write(int fd, const void *buffer, size_t count)
 {
    return ::write(fd, buffer, count);
 }
 
-int win32_file_device::d_close(int fd)
+int unix_tape_device::d_close(int fd)
 {
    return ::close(fd);
 }
 
-int win32_file_device::d_ioctl(int fd, ioctl_req_t request, char *op)
+int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
+{
+   return ::ioctl(fd, request, op);
+}
+
+boffset_t unix_tape_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 {
    return -1;
 }
 
-boffset_t win32_file_device::lseek(DCR *dcr, boffset_t offset, int whence)
+bool unix_tape_device::d_truncate(DCR *dcr)
 {
-   return ::_lseeki64(m_fd, (__int64)offset, whence);
+  /*
+   * Maybe we should rewind and write and eof ????
+   */
+  return true;                    /* We don't really truncate tapes */
 }
 
-win32_file_device::~win32_file_device()
+unix_tape_device::~unix_tape_device()
 {
 }
 
-win32_file_device::win32_file_device()
+unix_tape_device::unix_tape_device()
 {
    m_fd = -1;
 }

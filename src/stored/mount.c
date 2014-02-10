@@ -91,7 +91,7 @@ mount_next_vol:
        */
       VolCatInfo.Slot = 0;
       V(mount_mutex);
-      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPEND)) {
+      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPENDREADY)) {
          Jmsg(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s.\n"),
               dev->print_name());
          goto no_lock_bail_out;
@@ -162,7 +162,7 @@ mount_next_vol:
    if (ask) {
       V(mount_mutex);
       dcr->setVolCatInfo(false);   /* out of date when Vols unlocked */
-      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPEND)) {
+      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPENDREADY)) {
          Dmsg0(150, "Error return ask_sysop ...\n");
          goto no_lock_bail_out;
       }
@@ -608,8 +608,7 @@ void DCR::do_swapping(bool is_writing)
 }
 
 /*
- * Check if the current position on the volume corresponds to
- *  what is in the catalog.
+ * Check if the current position on the volume corresponds to what is in the catalog.
  */
 bool DCR::is_eod_valid()
 {
@@ -644,6 +643,7 @@ bool DCR::is_eod_valid()
       }
    } else if (dev->is_file()) {
       char ed1[50], ed2[50];
+
       boffset_t pos;
       pos = dev->lseek(dcr, (boffset_t)0, SEEK_END);
       if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
@@ -674,7 +674,13 @@ bool DCR::is_eod_valid()
          mark_volume_in_error();
          return false;
       }
+   } else {
+      Mmsg1(jcr->errmsg, _("Don't know how to check if EOD is valid for a device of type %d\n"), dev->dev_type);
+      Jmsg(jcr, M_ERROR, 0, jcr->errmsg);
+      Dmsg0(050, jcr->errmsg);
+      return false;
    }
+
    return true;
 }
 
