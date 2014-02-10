@@ -397,7 +397,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
                    addr->get_port_host_order());
          }
       }
-      if (res->res_store.SDaddrs) {
+      if (res->res_store.NDMPaddrs) {
          foreach_dlist(addr, res->res_store.NDMPaddrs) {
             sendit(sock, "        NDMPaddr=%s NDMPport=%d\n",
                    addr->get_address(buf, sizeof(buf)),
