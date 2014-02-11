@@ -107,9 +107,9 @@ $flash->setMessageOpenFormat('
 				<span class="sr-only">Toggle Dropdown</span>
 			</button>
 			<ul class="dropdown-menu" role="menu">
-				<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"> View messages</a></li>
+				<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 	      			<li class="divider"></li>
-				<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+				<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
 			</ul>
 		</div>
 
@@ -186,9 +186,9 @@ $flash->setMessageOpenFormat('
 				<span class="sr-only">Toggle Dropdown</span>
 			</button>
 		<ul class="dropdown-menu" role="menu">
-			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"> View messages</a></li>
+			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
 		<ul>
 		</div>
 
@@ -273,7 +273,7 @@ $flash->setMessageOpenFormat('
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
-	      		<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+	      		<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
 	      	</ul>
 		</div>
 	      <?php endif; ?>
@@ -362,7 +362,7 @@ $flash->setMessageOpenFormat('
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid));?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
 			<li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
 		</ul>
 	      </div>

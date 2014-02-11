@@ -33,6 +33,7 @@ class JobController extends AbstractActionController
 {
 
 	protected $jobTable;
+	protected $bconsoleOutput = array();
 
 	public function indexAction() 
 	{
@@ -119,6 +120,32 @@ class JobController extends AbstractActionController
 		return new ViewModel();
 	}
 	
+	public function rerunAction()
+	{
+		$jobid = (int) $this->params()->fromRoute('id', 0);
+		$cmd = "rerun jobid=" . $jobid . " yes";
+		return new ViewModel(
+			array(
+				'bconsoleOutput' => $this->getBConsoleOutput($cmd),
+				'jobid' => $jobid,
+			)
+		);
+	}
+
+	public function cancelAction()
+	{
+		$jobid = (int) $this->params()->fromRoute('id', 0);
+
+		//TODO
+		//$this->getJobTable()->getJobNameById($jobid);
+
+                $cmd = "cancel jobid=" . $jobid; //. " jobname=" . $jobname;
+
+                return new ViewModel(
+                        array('bconsoleOutput' => $this->getBConsoleOutput($cmd))
+                );	
+	}
+
 	public function getJobTable()
        	{
 		if(!$this->jobTable) {
@@ -126,6 +153,39 @@ class JobController extends AbstractActionController
 			$this->jobTable = $sm->get('Job\Model\JobTable');
 		}
 		return $this->jobTable;
+	}
+	
+	public function getBConsoleOutput($cmd)
+	{
+		$descriptorspec = array(
+			0 => array("pipe", "r"),
+			1 => array("pipe", "w"),
+			2 => array("pipe", "r")
+		);
+	
+		$cwd = '/usr/sbin';
+		$env = array('/usr/sbin');
+	
+		$process = proc_open('sudo /usr/sbin/bconsole', $descriptorspec, $pipes, $cwd, $env);
+
+		if(!is_resource($process))
+			throw new \Exception("proc_open error");	
+
+		if(is_resource($process))
+		{
+			fwrite($pipes[0], $cmd);
+			fclose($pipes[0]);
+			while(!feof($pipes[1])) {
+                        	array_push($this->bconsoleOutput, fread($pipes[1],8192));
+			}
+			fclose($pipes[1]);
+
+		}
+	
+		$return_value = proc_close($process);
+	 
+		return $this->bconsoleOutput;
+
 	}
 	
 }

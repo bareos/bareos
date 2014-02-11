@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Director';
+$title = 'Job Cancel';
 $this->headTitle($title);
 
 ?>
@@ -32,29 +32,14 @@ $this->headTitle($title);
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
-<ul class="nav nav-tabs">
-	<li class="active"><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
-	<li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
-	<li><a href="<?php echo $this->url('director', array('action'=>'scheduler')); ?>"><?php echo $this->translate('Scheduler status'); ?></a></li>
-	<li><a href="<?php echo $this->url('director', array('action'=>'version')); ?>"><?php echo $this->translate('Version'); ?></a></li>
-</ul>
+<p>Cancel job <?php echo $this->jobid; ?></p>
 
-<br />
-
-<div class="row">
-
-  <div class="col-md-12">
-  
-    <pre style="font-size: 8pt;">
+<pre style="font-size: 8pt;">
     <code>
     <?php
-      foreach($this->directorOutput as $row) {
+      foreach($this->bconsoleOutput as $row) {
 	echo $row ."<br />";
       }
     ?>
-    </code>
-    </pre>
-  
-  </div>
-
-</div>
+</code>
+</pre>

@@ -334,6 +334,16 @@ class JobTable
 		return $row;
 	}
 	
+	public function getJobNameById($jobid)
+	{
+		$select = new Select();
+		$select->columns(array('name'));
+		$select->from('job');
+		$select->where("jobid=".$jobid);
+		$resultSet = $this->tableGateway->selectWith($select);
+		return $resultSet;
+	}
+
 	public function getStoredBytes7Days() 
 	{
 		$end = date("Y-m-d H:i:s",time());

@@ -111,7 +111,7 @@ $flash->setMessageOpenFormat('
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
 		</ul>
 	</div>	
 
