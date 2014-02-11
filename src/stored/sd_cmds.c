@@ -217,37 +217,33 @@ bool do_listen_run(JCR *jcr)
 {
    char ec1[30];
    int errstat = 0;
-   struct timeval tv;
-   struct timezone tz;
-   struct timespec timeout;
    BSOCK *dir = jcr->dir_bsock;
 
    jcr->sendJobStatus(JS_WaitSD);          /* wait for SD to connect */
 
-   gettimeofday(&tv, &tz);
-   timeout.tv_nsec = tv.tv_usec * 1000;
-   timeout.tv_sec = tv.tv_sec + me->client_wait;
-
-   Dmsg3(50, "%s waiting %d sec for SD to contact SD key=%s\n",
-         jcr->Job, (int)(timeout.tv_sec-time(NULL)), jcr->sd_auth_key);
+   Dmsg2(50, "%s waiting for SD to contact SD key=%s\n", jcr->Job, jcr->sd_auth_key);
    Dmsg2(800, "Wait SD for jid=%d %p\n", jcr->JobId, jcr);
 
    /*
-    * Wait for the Storage daemon to contact us to start the Job,
-    * when he does, we will be released, unless the 30 minutes expires.
+    * Wait for the Storage daemon to contact us to start the Job, when he does, we will be released.
     */
    P(mutex);
    while (!jcr->authenticated && !job_canceled(jcr)) {
-      errstat = pthread_cond_timedwait(&jcr->job_start_wait, &mutex, &timeout);
-      if (errstat == ETIMEDOUT || errstat == EINVAL || errstat == EPERM) {
+      errstat = pthread_cond_wait(&jcr->job_start_wait, &mutex);
+      if (errstat == EINVAL || errstat == EPERM) {
          break;
       }
       Dmsg1(800, "=== Auth cond errstat=%d\n", errstat);
    }
-   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated,
-         job_canceled(jcr), errstat);
+   Dmsg3(50, "Auth=%d canceled=%d errstat=%d\n", jcr->authenticated, job_canceled(jcr), errstat);
    V(mutex);
-   Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+
+   if (!jcr->authenticated || !jcr->store_bsock) {
+      Dmsg2(800, "Auth fail or cancel for jid=%d %p\n", jcr->JobId, jcr);
+      dequeue_messages(jcr);          /* send any queued messages */
+
+      goto cleanup;
+   }
 
    Dmsg1(120, "Start run Job=%s\n", jcr->Job);
 
@@ -269,9 +265,11 @@ bool do_listen_run(JCR *jcr)
    do_sd_commands(jcr);
 
    jcr->end_time = time(NULL);
+
    dequeue_messages(jcr);             /* send any queued messages */
    jcr->setJobStatus(JS_Terminated);
 
+cleanup:
    generate_plugin_event(jcr, bsdEventJobEnd);
 
    dir->fsend(Job_end, jcr->Job, jcr->JobStatus, jcr->JobFiles,

@@ -475,7 +475,7 @@ static bool cancel_cmd(JCR *cjcr)
    jcr->setJobStatus(status);
 
    Dmsg2(800, "Cancel JobId=%d %p\n", jcr->JobId, jcr);
-   if (!jcr->authenticated && oldStatus == JS_WaitFD) {
+   if (!jcr->authenticated && (oldStatus == JS_WaitFD || oldStatus == JS_WaitSD)) {
       pthread_cond_signal(&jcr->job_start_wait); /* wake waiting thread */
    }
 
@@ -484,9 +484,13 @@ static bool cancel_cmd(JCR *cjcr)
       jcr->file_bsock->set_timed_out();
       Dmsg2(800, "Term bsock jid=%d %p\n", jcr->JobId, jcr);
    } else {
-      /* Still waiting for FD to connect, release it */
-      pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
-      Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
+      if (oldStatus != JS_WaitSD) {
+         /*
+          * Still waiting for FD to connect, release it
+          */
+         pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */
+         Dmsg2(800, "Signal FD connect jid=%d %p\n", jcr->JobId, jcr);
+      }
    }
 
    /*
