@@ -1063,7 +1063,7 @@ ok_out:
       Jmsg(jcr, M_INFO, 0, _("%d non-supported acl streams ignored.\n"), non_support_acl);
    }
    if (non_support_crypto) {
-      Jmsg(jcr, M_INFO, 0, _("%d non-supported crypto streams ignored.\n"), non_support_acl);
+      Jmsg(jcr, M_INFO, 0, _("%d non-supported crypto streams ignored.\n"), non_support_crypto);
    }
    if (non_support_xattr) {
       Jmsg(jcr, M_INFO, 0, _("%d non-supported xattr streams ignored.\n"), non_support_xattr);
