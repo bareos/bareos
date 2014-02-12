@@ -43,8 +43,8 @@ install:
 	@$(MKDIR)           $(DESTDIR)/usr/share/univention-bareos/
 	@$(INSTALL_PROGRAM) restart_director $(DESTDIR)/usr/share/univention-bareos/
 
-	@$(MKDIR)           $(DESTDIR)/usr/share/univention-ldap/schema/
-	@$(INSTALL_CONFIG)  univention-bareos.schema $(DESTDIR)/usr/share/univention-ldap/schema/
+	@$(MKDIR)           $(DESTDIR)/usr/share/univention-bareos-schema/
+	@$(INSTALL_CONFIG)  univention-bareos.schema $(DESTDIR)/usr/share/univention-bareos-schema/univention-bareos.schema
 
 clean:
 	(cd ../debian; $(MAKE) $@;)
