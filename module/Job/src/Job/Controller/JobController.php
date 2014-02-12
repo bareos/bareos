@@ -136,10 +136,7 @@ class JobController extends AbstractActionController
 	{
 		$jobid = (int) $this->params()->fromRoute('id', 0);
 
-		//TODO
-		//$this->getJobTable()->getJobNameById($jobid);
-
-                $cmd = "cancel jobid=" . $jobid; //. " jobname=" . $jobname;
+                $cmd = "cancel jobid=" . $jobid . " yes";
 
                 return new ViewModel(
                         array('bconsoleOutput' => $this->getBConsoleOutput($cmd))

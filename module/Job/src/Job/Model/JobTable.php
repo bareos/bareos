@@ -334,6 +334,7 @@ class JobTable
 		return $row;
 	}
 	
+	/*
 	public function getJobNameById($jobid)
 	{
 		$select = new Select();
@@ -343,6 +344,7 @@ class JobTable
 		$resultSet = $this->tableGateway->selectWith($select);
 		return $resultSet;
 	}
+	*/
 
 	public function getStoredBytes7Days() 
 	{
