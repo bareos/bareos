@@ -750,7 +750,7 @@ bool compress_data(JCR *jcr,
    return true;
 }
 
-bool decompress_data(JCR *jcr, int32_t stream, char **data, uint32_t *length)
+bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream, char **data, uint32_t *length)
 {
    Qmsg(jcr, M_ERROR, 0, _("Compressed data stream found, but compression not configured!\n"));
    return false;
