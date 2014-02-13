@@ -1,3 +1,9 @@
+# If versionstring contains debug, enable debug during build
+%define WIN_DEBUG %(echo %version | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
+
+# Determine Windows Version (32/64) from name (mingw32-.../ming64-...)
+%define WIN_VERSION %(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
+
 %define __strip %{_mingw64_strip}
 %define __objdump %{_mingw64_objdump}
 %define _use_internal_dependency_generator 0
@@ -86,7 +92,7 @@ tar xvf %SOURCE3
 %build
 
 cd src/win32/
-make BUILD_QTGUI=yes WIN_VERSION=64 VISTACOMPAT=yes %{?jobs:-j%jobs}
+make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=yes WIN_VERSION=%{WIN_VERSION} VISTACOMPAT=yes %{?jobs:-j%jobs}
 
 %install
 
