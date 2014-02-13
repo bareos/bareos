@@ -119,7 +119,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
 	<td><div title="<?php echo $volume->lastwritten; ?>"><?php echo $this->printHumanReadableTimeperiod($volume->lastwritten, "fuzzy"); ?></div></td>
 	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
-	<td><div align="right"><?php echo $this->printRetention($volume->volretention) . " days"; ?></div></td>
+	<td><div align="right"><?php echo $this->printExpiration($volume->volretention, $volume->lastwritten, $volume->volstatus); ?></div></td>
 	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes); ?></div></td>
 	<td><div align="right"><?php echo $this->printBytes($volume->volbytes); ?></div></td>
 	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes - $volume->volbytes); ?></div></td>

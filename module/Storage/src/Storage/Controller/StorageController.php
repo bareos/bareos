@@ -32,6 +32,7 @@ class StorageController extends AbstractActionController
 {
 
 	protected $storageTable;
+	protected $bconsoleOutput = array();
 
 	public function indexAction()
 	{
@@ -44,7 +45,18 @@ class StorageController extends AbstractActionController
 
 	public function detailsAction() 
 	{
-
+		$id = (int) $this->params()->fromRoute('id', 0);
+		if(!$id) {
+		    return $this->redirect()->toRoute('storage');
+		}
+	
+		$result = $this->getStorageTable()->getStorage($id);
+		
+		$cmd = "status storage=" . $result->name . " slots";
+		return new ViewModel(array(
+				'bconsoleOutput' => $this->getBConsoleOutput($cmd),
+			)
+		);
 	}
 
 	public function getStorageTable() 
@@ -54,6 +66,39 @@ class StorageController extends AbstractActionController
 			$this->storageTable = $sm->get('Storage\Model\StorageTable');
 		}
 		return $this->storageTable;
+	}
+	
+	public function getBConsoleOutput($cmd) 
+	{
+		
+		$descriptorspec = array(
+			0 => array("pipe", "r"),
+			1 => array("pipe", "w"),
+			2 => array("pipe", "r")
+		);
+		
+		$cwd = '/usr/sbin';
+		$env = array('/usr/sbin');
+			
+		$process = proc_open('sudo /usr/sbin/bconsole', $descriptorspec, $pipes, $cwd, $env);
+			
+		if(!is_resource($process)) 
+			throw new \Exception("proc_open error");
+			
+		if(is_resource($process))
+		{
+			fwrite($pipes[0], $cmd);
+			fclose($pipes[0]);
+			while(!feof($pipes[1])) {
+			  array_push($this->bconsoleOutput, fread($pipes[1],8192));
+			}
+			fclose($pipes[1]);
+		}
+		
+		$return_value = proc_close($process);
+		
+		return $this->bconsoleOutput;
+		
 	}
 	
 }

@@ -49,7 +49,15 @@ class DirectorController extends AbstractActionController
 			));
 	}
 	
-	public function schedulerAction()
+	public function scheduleAction()
+	{
+		$cmd = "show schedule";
+		return new ViewModel(array(
+				'directorOutput' => $this->getBConsoleOutput($cmd),
+			));
+	}
+	
+	public function schedulerstatusAction()
 	{
 		$cmd = "status scheduler";
 		return new ViewModel(array(

@@ -33,6 +33,7 @@ class JobController extends AbstractActionController
 {
 
 	protected $jobTable;
+	protected $logTable;
 	protected $bconsoleOutput = array();
 
 	public function indexAction() 
@@ -55,6 +56,7 @@ class JobController extends AbstractActionController
 	  
 		return new ViewModel(array(
 				'job' => $this->getJobTable()->getJob($id),
+				'log' => $this->getLogTable()->getLogsByJob($id),
 			));
 	}
 
@@ -152,6 +154,16 @@ class JobController extends AbstractActionController
 		return $this->jobTable;
 	}
 	
+	public function getLogTable() 
+	{
+		if(!$this->logTable)
+		{
+			$sm = $this->getServiceLocator();
+			$this->logTable = $sm->get('Log\Model\LogTable');
+		}
+		return $this->logTable;
+	}
+
 	public function getBConsoleOutput($cmd)
 	{
 		$descriptorspec = array(

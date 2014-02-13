@@ -30,3 +30,21 @@ $this->headTitle($title);
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<div class="row">
+
+  <div class="col-md-12">
+  
+    <pre style="font-size: 8pt;">
+    <code>
+    <?php
+      foreach($this->bconsoleOutput as $row) {
+	echo $row ."<br />";
+      }
+    ?>
+    </code>
+    </pre>
+  
+  </div>
+
+</div>

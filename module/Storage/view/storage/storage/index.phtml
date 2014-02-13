@@ -38,7 +38,7 @@ $this->headTitle($title);
     
 <div class="panel-body">
 
-<table class="table table-striped table-hover" style="font-size: 9pt;">
+<table class="table table-striped table-bordered" style="font-size: 9pt;">
 
 <tr>
 	<th>ID</th>
@@ -50,8 +50,8 @@ $this->headTitle($title);
 
 <tr>
 
-	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($storage->storageid); ?></a></td>
-	<td><?php echo $this->escapeHtml($storage->name); ?></td>
+	<td><a href="<?php echo $this->url('storage', array('action'=>'details', 'id'=>$storage->storageid)); ?>"><?php echo $this->escapeHtml($storage->storageid); ?></a></td>
+	<td><a href="<?php echo $this->url('storage', array('action'=>'details', 'id'=>$storage->storageid)); ?>"><?php echo $this->escapeHtml($storage->name); ?></a></td>
 	<td><?php echo $this->escapeHtml($storage->autochanger); ?></td>
 
 </tr>

@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -117,27 +118,27 @@ $this->headTitle($title);
             <div class="col-md-5">
             
 	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td><?php echo $this->translate("Running"); ?></td><td><?php echo $this->jobsRunning; ?></td></tr>
-		<tr><td><?php echo $this->translate("Completed successful"); ?></td><td><?php echo $this->jobsTerminated; ?></td></tr>
-		<tr><td><?php echo $this->translate("Terminated with errors"); ?></td><td><?php echo $this->jobsTerminatedWithErrors; ?></td></tr>
-		<tr><td><?php echo $this->translate("Non-fatal errors"); ?></td><td><?php echo $this->jobsWithNonFatalErrors; ?></td></tr>
-		<tr><td><?php echo $this->translate("Fatal errors"); ?></td><td><?php echo $this->jobsWithFatalErrors; ?></td></tr>
-		<tr><td><?php echo $this->translate("Canceled by user"); ?></td><td><?php echo $this->jobsCanceled; ?></td></tr>
-		<tr><td><?php echo $this->translate("Verify found difference"); ?></td><td><?php echo $this->jobsVerifyFoundDiff; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for client"); ?></td><td><?php echo $this->jobsWaitingForClient; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for storage daemon"); ?></td><td><?php echo $this->jobsWaitingForStorageDaemon; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for new media"); ?></td><td><?php echo $this->jobsWaitingForNewMedia; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for media mount"); ?></td><td><?php echo $this->jobsWaitingForMediaMount; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for storage resource"); ?></td><td><?php echo $this->jobsWaitingForStorageResource; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for job resource"); ?></td><td><?php echo $this->jobsWaitingForJobResource; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting for client resource"); ?></td><td><?php echo $this->jobsWaitingForClientResource; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting on maximum jobs"); ?></td><td><?php echo $this->jobsWaitingOnMaximumJobs; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting on start time"); ?></td><td><?php echo $this->jobsWaitingOnStartTime; ?></td></tr>
-		<tr><td><?php echo $this->translate("Waiting on higher priority jobs"); ?></td><td><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></td></tr>
-		<tr><td><?php echo $this->translate("SD despooling attributes"); ?></td><td><?php echo $this->jobsSDdespoolingAttributes; ?></td></tr>
-		<tr><td><?php echo $this->translate("Doing batch insert file records"); ?></td><td><?php echo $this->jobsBatchInsertFileRecords; ?></td></tr>
-		<tr><td><?php echo $this->translate("Created not yet running"); ?></td><td><?php echo $this->jobsCreatedNotRunning; ?></td></tr>
-		<tr><td><?php echo $this->translate("Blocked"); ?></td><td><?php echo $this->jobsBlocked; ?></td></tr>
+		<tr><td><b><?php echo $this->translate("Running"); ?></b></td><td><span class="badge"><?php echo $this->jobsRunning; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Completed successful"); ?></b></td><td><span class="badge"><?php echo $this->jobsTerminated; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Terminated with errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsTerminatedWithErrors; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Non-fatal errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsWithNonFatalErrors; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Fatal errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsWithFatalErrors; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Canceled by user"); ?></b></td><td><span class="badge"><?php echo $this->jobsCanceled; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Verify found difference"); ?></b></td><td><span class="badge"><?php echo $this->jobsVerifyFoundDiff; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for client"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForClient; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for storage daemon"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForStorageDaemon; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for new media"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForNewMedia; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for media mount"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForMediaMount; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for storage resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForStorageResource; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for job resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForJobResource; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting for client resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForClientResource; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting on maximum jobs"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnMaximumJobs; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting on start time"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnStartTime; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Waiting on higher priority jobs"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("SD despooling attributes"); ?></b></td><td><span class="badge"><?php echo $this->jobsSDdespoolingAttributes; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Doing batch insert file records"); ?></b></td><td><span class="badge"><?php echo $this->jobsBatchInsertFileRecords; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Created not yet running"); ?></b></td><td><span class="badge"><?php echo $this->jobsCreatedNotRunning; ?></span></td></tr>
+		<tr><td><b><?php echo $this->translate("Blocked"); ?></b></td><td><span class="badge"><?php echo $this->jobsBlocked; ?></span></td></tr>
 	      </table>
 	      
             </div>
