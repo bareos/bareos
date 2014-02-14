@@ -6,7 +6,7 @@ Bareos WebUI
 A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 For a feature list and a few screenshots from alpha, please take a look 
-at the [Project Homepage](http://fbergkemper.github.io/).
+at the [Project Homepage](http://bareos.github.io/bareos-webui/index.html).
 
 ### SYSTEM REQUIREMENTS
 
