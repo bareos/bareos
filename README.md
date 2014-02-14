@@ -1,16 +1,12 @@
-Bareos Web-Frontend
-===================
+Bareos WebUI
+============
 
-[![Build Status](https://travis-ci.org/fbergkemper/barbossa.png?branch=master)](https://travis-ci.org/fbergkemper/barbossa)
+[![Build Status](https://travis-ci.org/bareos/bareos-webui.png?branch=master)](https://travis-ci.org/bareos/bareos-webui)
 
 A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 For a feature list and a few screenshots from alpha, please take a look 
 at the [Project Homepage](http://fbergkemper.github.io/).
-
-### RELEASES
-
-[Bareos Web-Frontend v0.0.1-alpha](https://github.com/fbergkemper/barbossa/releases/tag/v0.0.1-alpha)
 
 ### SYSTEM REQUIREMENTS
 
@@ -31,11 +27,10 @@ Please see [doc/install/INSTALL.md](doc/install/INSTALL.md).
 
 ### LICENSES
 
-The Bareos Web-Frontend is licensed under AGPL Version 3. 
+The Bareos WebUI is licensed under AGPL Version 3. 
 You can find a copy of this license in [LICENSE.txt](LICENSE.txt).
 
 * Zend Framework 2 - BSD 3-Clause License
 * Twitter Bootstrap - Apache License v2.0
 * jQuery - MIT License
 * jqplot - dual licensed under MIT License and GPL Version 2 License
-

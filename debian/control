@@ -1,4 +1,4 @@
-Source: bareos-console-web
+Source: bareos-webui
 Section: web
 Priority: extra
 Maintainer: Bareos Packager <packager@bareos.org>
@@ -7,13 +7,13 @@ Build-Depends: debhelper (>= 7.0.50~),
   autoconf,
   automake
 Standards-Version: 3.9.1
-#Homepage: <insert the upstream URL, if relevant>
-Vcs-Git: git://github.com/bareos/contrib-webacula.git
-Vcs-Browser: https://github.com/bareos/contrib-webacula.git
+Homepage: https://github.com/bareos/bareos-webui
+Vcs-Git: git://github.com/bareos/bareos-webui.git
+Vcs-Browser: https://github.com/bareos/bareos-webui.git
 
-Package: bareos-console-web
+Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd, libapache2-mod-php5 | php5 | php5-cgi, php5-cli, php5-gd, php5-json, php5-mysql | php5-pgsql | php5-sqlite3, zendframework, ${misc:Depends}
 Recommends: sudo
-Description: Barbossa - Bareos webinterface.
- Webinterface for Bareos.
+Description: Bareos Web User Interface.
+ Webinterface for the Bareos backup system.

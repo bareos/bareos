@@ -1,16 +1,17 @@
 
-Name:          bareos-console-web
+Name:          bareos-webui
+Provides:      bareos-console-web
 Provides:      barrossa
 Version:       0.1
 Release:       0%{?dist}
-Summary:       Web interface of a Bareos backup system
+Summary:       Bareos Web User Interface
 
-Group:      Productivity/Archiving/Backup
-License:    AGPL-3.0+
-#URL:        http://webacula.sourceforge.net/
-Source:     %{name}_%{version}.tar.gz
-BuildRoot:  %{_tmppath}/%{name}-%{version}-build
-BuildArch:  noarch
+Group:         Productivity/Archiving/Backup
+License:       AGPL-3.0+
+URL:           https://github.com/bareos/bareos-webui
+Source:        %{name}_%{version}.tar.gz
+BuildRoot:     %{_tmppath}/%{name}-%{version}-build
+BuildArch:     noarch
 
 BuildRequires: autoconf automake
 BuildRequires: sudo
@@ -62,7 +63,7 @@ Requires:   php-pgsql php-mysql
 #define serverroot #(/usr/sbin/apxs2 -q datadir 2>/dev/null || /usr/sbin/apxs2 -q PREFIX)/htdocs/
 
 %description
-Barbossa - web interface of a Bareos backup system.
+Bareos Web User Interface.
 Supports status overview about Jobs.
 
 %prep
@@ -84,14 +85,14 @@ make DESTDIR=%{buildroot} install
 %post
 # if command a2enmod exists, 
 # use it to enable Apache rewrite module
-LOG=/var/log/bareos-console-web-install.log
-echo "`date`: BEGIN bareos-console-web init" >> $LOG
+LOG=/var/log/bareos-webui-install.log
+echo "`date`: BEGIN bareos-webui init" >> $LOG
 which a2enmod >/dev/null && a2enmod rewrite >> $LOG 2>&1
-export WEBACULA_INTERACTIVE="no"
-# if /usr/sbin/webacula-config init >> $LOG 2>&1; then
-#     echo "SUCCESS: webacula-config init, see $LOG"
+export BAREOS_WEBUI_INTERACTIVE="no"
+# if /usr/sbin/bareos-webui-config init >> $LOG 2>&1; then
+#     echo "SUCCESS: bareos-webui-config init, see $LOG"
 # else
-#     echo "FAILED: webacula-config init, see $LOG"
+#     echo "FAILED: bareos-webui-config init, see $LOG"
 # fi
 
 %clean
@@ -104,12 +105,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/%{name}/
 #attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
 #{_sysconfdir}/#{name}
-%config(noreplace) %{_apache_conf_dir}/bareos-console-web.conf
+%config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 #config(noreplace) #{_sysconfdir}/#{name}/config.ini
-#/usr/sbin/webacula-config
+#/usr/sbin/bareos-webui-config
 
 # /etc/sudoers.d/ should not belong to this package,
 # but is does currently not exist on most distributions
-dir /etc/sudoers.d/
+%dir /etc/sudoers.d/
 # sudo requires permissions 440 and config files without any "."
-%attr(440,root,root) %config(noreplace) /etc/sudoers.d/bareos-console-web-bconsole
+%attr(440,root,root) %config(noreplace) /etc/sudoers.d/bareos-webui-bconsole

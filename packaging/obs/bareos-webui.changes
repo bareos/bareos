@@ -1,0 +1,5 @@
+bareos-webui (0.1-1) unstable; urgency=low
+
+  * initial packaging
+
+ -- Joerg Steffens <joerg.steffens@bareos.com>  Fri, 14 Feb 2014 11:52:57 +0100

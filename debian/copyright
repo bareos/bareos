@@ -1,10 +1,10 @@
 This work was packaged for Debian by:
 
-    Jörg Steffens <joerg.steffens@bareos.org> on Fri, 14 Feb 2014 16:52:57 +0100
+    Jörg Steffens <joerg.steffens@bareos.org> on Fri, 14 Feb 2014 10:52:57 +0100
 
 It was downloaded from:
 
-    https://github.com/bareos/bareos-console-web
+    https://github.com/bareos/bareos-webui
 
 Upstream Author(s):
 
@@ -17,11 +17,3 @@ Copyright:
 License:
 
     AGPL-3+
-
-The Debian packaging is:
-
-    Copyright (C) 2014 Joerg Steffens <joerg.steffens@bareos.org>
-
-and is licensed under the AGPL version 3,
-see "/usr/share/common-licenses/AGPL-3".
-

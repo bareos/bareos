@@ -1,4 +1,4 @@
-AC_INIT([bareos-console-web], [0.1])
+AC_INIT([bareos-webui], [0.1])
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 AC_PATH_PROGS( [APXS], [apxs apxs2], [apxs2], [$PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin])
