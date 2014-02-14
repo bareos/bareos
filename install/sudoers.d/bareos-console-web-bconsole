@@ -1,0 +1,4 @@
+# allow apache to run bconsole. required for bareos-console-web/barbossa
+Cmnd_Alias BCONSOLE = /usr/sbin/bconsole -n -c /etc/bareos/bconsole.conf, /usr/sbin/bconsole -n -c /etc/bareos/console-web/bconsole.conf
+Defaults!BCONSOLE !requiretty
+wwwrun,www-data,apache ALL=(root) NOPASSWD: BCONSOLE
