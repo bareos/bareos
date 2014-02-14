@@ -11,9 +11,9 @@ their system for development.
 * PHP 5.3.3 or later; we recommend using the latest PHP version whenever possible
 * PHP PDO Extension
 * PHP intl Extension
-* PHP PHAR Extension
+* PHP PHAR Extension (only needed if you are going to use composer.phar for development purposes, e.g.)
 * PHP DATE Extension
-* PHP OpenSSL Extension
+* PHP OpenSSL Extension (only needed if you are going to use composer.phar for development purposes, e.g.)
 * Zend Framework 2.2.x or later
 * A Browser of your choice with JavaScript enabled
 
@@ -49,12 +49,12 @@ See [https://getcomposer.org/](https://getcomposer.org/) for more information an
 
 ### Configure Apache
 
-See the example file [barbossa/install/apache/bareos.conf](https://raw.github.com/fbergkemper/barbossa/master/doc/install/apache/bareos.conf).
+See the example file [bareos-console-web.conf](https://raw.github.com/fbergkemper/barbossa/master/install/apache/bareos-console-web.conf).
 You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
 ```
 cd /etc/apache2/conf.d
-wget https://raw2.github.com/fbergkemper/barbossa/master/install/apache/bareos.conf
+wget https://raw.github.com/fbergkemper/barbossa/master/install/apache/bareos-console-web.conf
 ```
 
 ### Configure the database connection
