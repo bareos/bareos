@@ -49,14 +49,26 @@ class StorageController extends AbstractActionController
 		if(!$id) {
 		    return $this->redirect()->toRoute('storage');
 		}
-	
 		$result = $this->getStorageTable()->getStorage($id);
-		
-		$cmd = "status storage=" . $result->name . " slots";
+		$cmd = "status storage=" . $result->name;
 		return new ViewModel(array(
 				'bconsoleOutput' => $this->getBConsoleOutput($cmd),
 			)
 		);
+	}
+
+	public function autochangerAction() 
+	{
+		$id = (int) $this->params()->fromRoute('id', 0);
+        if(!$id) {
+            return $this->redirect()->toRoute('storage');
+        }
+        $result = $this->getStorageTable()->getStorage($id);
+        $cmd = "status storage=" . $result->name . " slots";
+        return new ViewModel(array(
+                'bconsoleOutput' => $this->getBConsoleOutput($cmd),
+            )
+        );
 	}
 
 	public function getStorageTable() 

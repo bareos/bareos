@@ -7,6 +7,7 @@
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author	  Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -52,7 +53,16 @@ $this->headTitle($title);
 
 	<td><a href="<?php echo $this->url('storage', array('action'=>'details', 'id'=>$storage->storageid)); ?>"><?php echo $this->escapeHtml($storage->storageid); ?></a></td>
 	<td><a href="<?php echo $this->url('storage', array('action'=>'details', 'id'=>$storage->storageid)); ?>"><?php echo $this->escapeHtml($storage->name); ?></a></td>
-	<td><?php echo $this->escapeHtml($storage->autochanger); ?></td>
+	<td>
+	<?php if($storage->autochanger > 0) : ?>
+		<span class="glyphicon glyphicon-list-alt"></span>
+		<a href="<?php echo $this->url('storage', array('action'=>'autochanger', 'id'=>$storage->storageid)); ?>" title="<?php echo $this->escapeHtml("View slots"); ?>">
+		<?php echo $this->escapeHtml("View slots"); ?>
+		</a>
+	<?php else : ?>
+		<?php echo $this->escapeHtml("-"); ?>
+	<?php endif; ?>
+	</td>
 
 </tr>
 
