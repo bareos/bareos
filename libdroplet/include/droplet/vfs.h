@@ -34,6 +34,10 @@
 #ifndef __DROPLET_VFS_H__
 #define __DROPLET_VFS_H__ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * vdir
  */
@@ -129,4 +133,9 @@ dpl_status_t dpl_link(dpl_ctx_t *ctx, const char *src_locator, const char *dst_l
 dpl_status_t dpl_mkdent(dpl_ctx_t *ctx, const char *src_id, const char *dst_locator, dpl_ftype_t object_type);
 dpl_status_t dpl_rmdent(dpl_ctx_t *ctx, const char *src_name, const char *dst_locator);
 dpl_status_t dpl_mvdent(dpl_ctx_t *ctx, const char *src_locator, const char *dst_locator);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
