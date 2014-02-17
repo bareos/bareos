@@ -70,8 +70,11 @@ typedef struct
 /*
  * vfile
  */
-
+#ifndef __cplusplus
 typedef enum
+#else
+enum
+#endif
   {
     DPL_VFILE_FLAG_CREAT =   (1u<<0),     /*!< create file if it doesnt exist */
     DPL_VFILE_FLAG_EXCL =    (1u<<1),     /*!< exclusive creation */
@@ -79,7 +82,13 @@ typedef enum
     DPL_VFILE_FLAG_WRONLY =  (1u<<3),     /*!< open in write-only mode */
     DPL_VFILE_FLAG_RDWR =    (1u<<4),     /*!< open in read-write mode */
     DPL_VFILE_FLAG_STREAM =  (1u<<5),     /*!< open in stream mode (required for read/append) */
+#ifndef __cplusplus
   } dpl_vfile_flag_t;
+#else
+  };
+
+typedef unsigned int dpl_vfile_flag_t;
+#endif
 
 typedef struct
 {
