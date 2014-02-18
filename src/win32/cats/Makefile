@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../findlib
+VPATH = .:../../cats
 
 include ../Makefile.inc
 
@@ -27,33 +27,46 @@ INCLUDES = -I../.. \
 	   -I../include \
 	   -I../../findlib \
 	   -I../compat/include
-LDLIBS = ../lib/libbareos.dll \
-	 $(MINGW_LIB)/libpthreadGCE2.a \
-	 $(WINSOCKLIB)
+LDLIBS = ../lib/libbareos.dll
 
-LIBBAREOSFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
-                     drivetype.c enable_priv.c find_one.c \
-                     find.c fstype.c match.c mkpath.c \
-                     shadowing.c win32.c xattr.c
-LIBBAREOSFIND_OBJS = $(LIBBAREOSFIND_SRCS:.c=.o)
+LIBBAREOSCATS_SRCS = bvfs.c cats.c cats_dynamic.c sql.c sql_cmds.c \
+                     sql_create.c sql_delete.c sql_find.c sql_get.c \
+                     sql_glue.c sql_list.c sql_pooling.c sql_update.c
+LIBBAREOSCATS_OBJS = $(LIBBAREOSCATS_SRCS:.c=.o)
 
-DYNAMIC_OBJS = $(LIBBAREOSFIND_OBJS)
+DEFINES += -D_BDB_PRIV_INTERFACE_
 
-all: libbareosfind.dll
+DYNAMIC_OBJS = $(LIBBAREOSCATS_OBJS)
+
+all: libbareoscats.dll libbareoscats-postgresql.dll libbareoscats-sqlite3.dll
 
 bareos$(WIN_VERSION).def: $(DYNAMIC_OBJS) make_def
 	./make_def $(WIN_VERSION) $(DYNAMIC_OBJS) > $@
 
-libbareosfind.dll: DLL_USAGE = -DBUILDING_DLL
-libbareosfind.dll: $(DYNAMIC_OBJS) \
+libbareoscats.dll: DLL_USAGE = -DBUILDING_DLL
+libbareoscats.dll: $(DYNAMIC_OBJS) \
 		bareos$(WIN_VERSION).def
 	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a $(DYNAMIC_OBJS) bareos$(WIN_VERSION).def $(LDLIBS) -o $@
+
+postgresql.o: postgresql.c
+	@echo "Compiling $<"
+	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -Ipgsql/include -c -o $@ $<
+
+libbareoscats-postgresql.dll: DLL_USAGE = -DBUILDING_DLL
+libbareoscats-postgresql.dll: postgresql.o libbareoscats.dll
+	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a postgresql.o $(LDLIBS) libbareoscats.dll pgsql/lib/$(WIN_VERSION)/libpq.dll -o $@
+
+libbareoscats-sqlite3.dll: DLL_USAGE = -DBUILDING_DLL
+libbareoscats-sqlite3.dll: sqlite.o libbareoscats.dll
+	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a sqlite.o $(LDLIBS) libbareoscats.dll -lsqlite3 -o $@
 
 clean:
 	rm -f *.o bareos$(WIN_VERSION).def
 
 distclean: clean
-	rm -f libbareosfind.dll libbareosfind.dll.a
+	rm -f libbareoscats.dll libbareoscats.dll.a \
+              libbareoscats-postgresql.dll libbareoscats-postgresql.dll.a \
+              libbareoscats-sqlite3.dll libbareoscats-sqlite3.dll.a
 
 # inference rules
 .c.o:

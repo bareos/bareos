@@ -18,53 +18,57 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../filed:../generic
+VPATH = .:../../dird:../generic
 
 include ../Makefile.inc
-
-DEFINES += -DWIN32_VSS
-ifeq ($(WIN_VERSION),64)
-DEFINES += -DHAVE_VSS64
-endif
 
 INCLUDES = -I. \
 	   -I../.. \
 	   -I../../include \
 	   -I../include \
-	   -I../compat/include \
-	   -I../vss/include
-
+	   -I../compat/include
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
-	 ../findlib/libbareosfind.dll \
-         $(MINGW_LIB)/libz.dll.a \
-         $(MINGW_LIB)/liblzo2.dll.a \
-         $(MINGW_LIB)/libfastlz.dll.a \
+         ../findlib/libbareosfind.dll \
+	 ../cats/libbareoscats.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-SVRSRCS = accurate.c authenticate.c backup.c compression.c \
-	  crypto.c dir_cmd.c estimate.c fd_plugins.c filed_conf.c \
-	  filed.c fileset.c heartbeat.c restore.c sd_cmds.c status.c verify.c \
-	  verify_vol.c vss.c vss_XP.c vss_W2K3.c vss_Vista.c \
-	  service.c main.c
-
+SVRSRCS = admin.c authenticate.c autoprune.c backup.c bsr.c catreq.c \
+          dir_plugins.c dird_conf.c dird.c expand.c fd_cmds.c getmsg.c \
+          inc_conf.c job.c jobq.c migrate.c mountreq.c msgchan.c \
+          ndmp_dma.c newvol.c next_vol.c quota.c recycle.c restore.c \
+          run_conf.c sd_cmds.c scheduler.c ua_acl.c ua_cmds.c \
+          ua_dotcmds.c ua_input.c ua_impexp.c ua_label.c ua_output.c \
+          ua_prune.c ua_purge.c ua_query.c ua_restore.c ua_run.c \
+          ua_select.c ua_server.c ua_status.c ua_tree.c ua_update.c \
+          vbackup.c verify.c service.c main.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
-WINDRESSRCS = filedres.rc
+DBCHKSRCS = dbcheck.c dird_conf.c ua_acl.c run_conf.c inc_conf.c
+DBCHKOBJS = $(DBCHKSRCS:.c=.o)
+
+WINDRESSRCS = dirdres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
 
-all: bareos-fd.exe
+DBCHKRESSRCS = dbcheckres.rc
+DBCHKRESOBJS = $(DBCHKRESSRCS:.rc=.o)
 
-bareos-fd.exe: DLL_USAGE = -DUSING_DLL
-bareos-fd.exe: $(SVROBJS) $(WINDRESOBJS)
+all: bareos-dir.exe dbcheck.exe
+
+bareos-dir.exe: DLL_USAGE = -DUSING_DLL
+bareos-dir.exe: $(SVROBJS) $(WINDRESOBJS)
 	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(WINDRESOBJS) $(LDLIBS) -o $@
+
+dbcheck.exe: DLL_USAGE = -DUSING_DLL
+dbcheck.exe: $(DBCHKOBJS) $(DBCHKRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(DBCHKOBJS) $(LDLIBS) $(WINDRESOBJS) -o $@
 
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f bareos-fd.exe
+	rm -f bareos-dir.exe dbcheck.exe
 
 # inference rules
 .c.o:
@@ -74,7 +78,3 @@ distclean:: clean
 %.o : %.rc
 	@echo "Ressource Compiling $^"
 	$(WINDRES) $^ -o $@
-
-main.o: ../generic/main.c
-	@echo "Compiling $<"
-	$(CXX) -DFILE_DAEMON $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

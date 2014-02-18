@@ -179,7 +179,7 @@ FileSet {
     Options {
       Signature = MD5 # calculate md5 checksum per file
     }
-    File = @sbindir@
+    File = "@sbindir@"
   }
 }
 

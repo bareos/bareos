@@ -7,7 +7,7 @@
 %define __strip %{_mingw64_strip}
 %define __objdump %{_mingw64_objdump}
 %define _use_internal_dependency_generator 0
-%define __find_requires %{_mingw64_findrequires}
+#define __find_requires %{_mingw64_findrequires}
 %define __find_provides %{_mingw64_findprovides}
 #define __os_install_post #{_mingw64_debug_install_post} \
 #                          #{_mingw64_install_post}
@@ -29,6 +29,7 @@ BuildArch:      noarch
 Source1:       fillup.sed
 Source2:       vss_headers.tar
 Source3:       vdi_headers.tar
+Source4:       pgsql-libpq.tar
 
 Patch1:        tray-monitor-conf.patch
 Patch2:        tray-monitor-conf-fd-sd.patch
@@ -65,6 +66,8 @@ BuildRequires:  mingw64-lzo
 BuildRequires:  mingw64-lzo-devel
 BuildRequires:  mingw64-libfastlz
 BuildRequires:  mingw64-libfastlz-devel
+BuildRequires:  mingw64-libsqlite
+BuildRequires:  mingw64-libsqlite-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
@@ -86,16 +89,18 @@ bareos
 #setup
 %setup -q -n bareos-%{version}
 cp src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.conf.in.orig
+cp src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in
 %patch1 -p1
-mv src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.conf.in.fd
-cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monitor.conf.in
+mv src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in src/qt-tray-monitor/tray-monitor.fd.conf.in
+cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in
 %patch2 -p1
-mv src/qt-tray-monitor/tray-monitor.conf.in src/qt-tray-monitor/tray-monitor.fd-sd.conf.in
-mv src/qt-tray-monitor/tray-monitor.conf.in.fd src/qt-tray-monitor/tray-monitor.conf.in
+mv src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in src/qt-tray-monitor/tray-monitor.fd-sd.conf.in
+cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in
 
 
 tar xvf %SOURCE2
 tar xvf %SOURCE3
+tar xvf %SOURCE4
 
 %build
 
@@ -118,6 +123,10 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    stored/btape.exe \
    stored/bls.exe \
    stored/bextract.exe \
+   dird/bareos-dir.exe \
+   dird/dbcheck.exe \
+   tools/bsmtp.exe \
+   cats/libbareoscats*.dll \
    lib/libbareos.dll \
    findlib/libbareosfind.dll \
    plugins/filed/bpipe-fd.dll \
@@ -125,9 +134,11 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    plugins/stored/autoxflate-sd.dll \
    $RPM_BUILD_ROOT%{_mingw64_bindir}
 
-for cfg in  ../qt-tray-monitor/tray-monitor.conf.in \
+for cfg in  ../qt-tray-monitor/tray-monitor.fd.conf.in \
    ../qt-tray-monitor/tray-monitor.fd-sd.conf.in \
+   ../qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in \
    ../qt-console/bat.conf.in \
+   ../dird/bareos-dir.conf.in \
    ../filed/bareos-fd.conf.in \
    ../stored/bareos-sd.conf.in \
    ../console/bconsole.conf.in \
@@ -139,12 +150,28 @@ do
   sed -f %SOURCE1 $cfg -i ;
 done
 
+popd
+
+mkdir -p  $RPM_BUILD_ROOT/etc/%name/ddl
+for i in creates drops grants updates; do
+   mkdir $RPM_BUILD_ROOT/etc/%name/ddl/$i/
+   cp -av src/cats/ddl/$i/postgres* $RPM_BUILD_ROOT/etc/%name/ddl/$i/
+done
+
+for sql in  $RPM_BUILD_ROOT/etc/%name/ddl/*/*.sql;
+do
+   sed -f %SOURCE1 $sql -i ;
+done
+
+
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
 /etc/%name/*.conf
+/etc/%name/ddl/
 %dir %{_mingw64_bindir}
 %{_mingw64_bindir}/*.dll
 %{_mingw64_bindir}/*.exe

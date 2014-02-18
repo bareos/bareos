@@ -324,7 +324,7 @@ int installService(const char *cmdOpts)
        */
       set_service_description(serviceManager,
                               bareosService,
-                              (char *)_("Provides file backup and restore services. BAREOS -- Backup Archiving REcovery Open Sourced"));
+                              (char *)_(SERVICE_DESC));
 
       CloseServiceHandle(serviceManager);
       CloseServiceHandle(bareosService);

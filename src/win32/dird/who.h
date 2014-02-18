@@ -22,10 +22,10 @@
  * Kern Sibbald, August 2007
  */
 
-#define APP_NAME "Bareos-sd"
-#define LC_APP_NAME "bareos-sd"
-#define APP_DESC "Bareos Storage Service"
-#define SERVICE_DESC "Provides bareos storage services."
+#define APP_NAME "Bareos-dir"
+#define LC_APP_NAME "bareos-dir"
+#define APP_DESC "Bareos Director Service"
+#define SERVICE_DESC "Provides bareos director services."
 
-#define terminate_app(x) terminate_stored(x)
-extern void terminate_stored(int sig);
+#define terminate_app(x) terminate_dird(x)
+extern void terminate_dird(int sig);

@@ -132,8 +132,13 @@ B_DB *db_init_database(JCR *jcr,
    /*
     * This is a new backend try to use dynamic loading to load the backend library.
     */
+#if defined(HAVE_WIN32)
+   bsnprintf(shared_library_name, sizeof(shared_library_name), "libbareoscats-%s%s",
+             backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
+#else
    bsnprintf(shared_library_name, sizeof(shared_library_name), "%s/libbareoscats-%s%s",
              LIBDIR, backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
+#endif
 
    dl_handle = dlopen(shared_library_name, RTLD_NOW);
    if (!dl_handle) {

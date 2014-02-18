@@ -104,15 +104,12 @@ void InitWinAPIWrapper();
 
 #if defined(BUILDING_DLL)
 #define DLL_IMP_EXP _declspec(dllexport)
+#define CATS_IMP_EXP _declspec(dllexport)
 #elif defined(USING_DLL)
 #define DLL_IMP_EXP _declspec(dllimport)
-#else
-#define DLL_IMP_EXP
-#endif
-
-#if defined(USING_CATS)
 #define CATS_IMP_EXP _declspec(dllimport)
 #else
+#define DLL_IMP_EXP
 #define CATS_IMP_EXP
 #endif
 

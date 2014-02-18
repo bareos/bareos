@@ -25,6 +25,7 @@
 #define APP_NAME "Bareos-fd"
 #define LC_APP_NAME "bareos-fd"
 #define APP_DESC "Bareos File Backup Service"
+#define SERVICE_DESC "Provides file backup and restore services (bareos client)."
 
 #define terminate_app(x) terminate_filed(x)
 extern void terminate_filed(int sig);

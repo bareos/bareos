@@ -1,8 +1,28 @@
+#
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation and included
+# in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
 include Makefile.inc
 
 VERSION_STRING := $(shell grep 'VERSION "' ../include/version.h | cut -d ' ' -f3)
 
-all_subdirs = lib findlib filed stored console plugins
+all_subdirs = lib findlib filed console tools cats dird stored plugins
 ifeq ($(BUILD_QTGUI),yes)
 all_subdirs += qt-console qt-tray-monitor
 endif
@@ -36,11 +56,23 @@ distclean:
 	done
 
 ifeq ($(BUILD_QTGUI),)
-rc-files: console/consoleres.rc filed/filedres.rc stored/storedres.rc
+rc-files: tools/bsmtpres.rc \
+	  console/consoleres.rc \
+	  filed/filedres.rc \
+	  stored/storedres.rc \
+	  dird/dirdres.rc \
+	  dird/dbcheckres.rc
 
 qt-gui:
 else
-rc-files: console/consoleres.rc filed/filedres.rc stored/storedres.rc qt-console/batres.rc qt-tray-monitor/traymon.rc
+rc-files: tools/bsmtpres.rc \
+	  console/consoleres.rc \
+	  filed/filedres.rc \
+	  stored/storedres.rc \
+	  dird/dirdres.rc \
+	  dird/dbcheckres.rc \
+	  qt-console/batres.rc \
+	  qt-tray-monitor/traymon.rc
 
 qt-gui: qt-console/Makefile qt-tray-monitor/Makefile
 
@@ -57,6 +89,9 @@ qt-tray-monitor/traymon.rc: qt-tray-monitor/traymon.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 endif
 
+tools/bsmtpres.rc: tools/bsmtpres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
 console/consoleres.rc: console/consoleres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
@@ -64,4 +99,10 @@ filed/filedres.rc: filed/filedres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 stored/storedres.rc: stored/storedres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+dird/dirdres.rc: dird/dirdres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+dird/dbcheckres.rc: dird/dbcheckres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@

@@ -40,7 +40,7 @@ typedef struct sql_field {
    uint32_t flags;                    /* flags */
 } SQL_FIELD;
 
-class B_DB_PRIV: public B_DB {
+class CATS_IMP_EXP B_DB_PRIV: public B_DB {
 protected:
    int m_status;                      /* status */
    int m_num_rows;                    /* number of rows returned by last query */
