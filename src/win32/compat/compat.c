@@ -440,6 +440,13 @@ static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*=
        * Check for Unix separator and convert to Win32, eliminating duplicate separators.
        */
       if (IsPathSeparator(*name)) {
+         /*
+          * Don't add a trailing slash.
+          */
+         if (!*(name + 1)) {
+            name++;
+            continue;
+         }
          *win32_name++ = '\\';     /* convert char */
 
          /*
@@ -699,11 +706,11 @@ int umask(int)
 #define LOAD_WITH_ALTERED_SEARCH_PATH 0x00000008
 #endif
 
-void *dlopen(const char *file, int mode)
+void *dlopen(const char *filename, int mode)
 {
    void *handle;
 
-   handle = LoadLibraryEx(file, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+   handle = LoadLibraryEx(filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 
    return handle;
 }
@@ -838,7 +845,7 @@ static const char *errorString(void)
 /*
  * Retrieve the unique devicename of a Volume MountPoint.
  */
-static inline bool get_volume_mount_point_data(const char *win32_fname, POOLMEM **devicename)
+static inline bool get_volume_mount_point_data(const char *filename, POOLMEM **devicename)
 {
    HANDLE h = INVALID_HANDLE_VALUE;
 
@@ -849,7 +856,8 @@ static inline bool get_volume_mount_point_data(const char *win32_fname, POOLMEM 
     */
    if (p_GetFileAttributesW) {
       POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
+
       if (p_CreateFileW) {
          h = CreateFileW((LPCWSTR)pwszBuf,
                          GENERIC_READ,
@@ -858,9 +866,20 @@ static inline bool get_volume_mount_point_data(const char *win32_fname, POOLMEM 
                          OPEN_EXISTING,
                          FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
                          NULL);
-         }
+      }
+
+      if (h == INVALID_HANDLE_VALUE) {
+         Dmsg1(dbglvl, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
          free_pool_memory(pwszBuf);
+         return false;
+      }
+
+      free_pool_memory(pwszBuf);
    } else if (p_GetFileAttributesA) {
+      POOLMEM *win32_fname;
+
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
       h = CreateFileA(win32_fname,
                       GENERIC_READ,
                       FILE_SHARE_READ,
@@ -868,6 +887,14 @@ static inline bool get_volume_mount_point_data(const char *win32_fname, POOLMEM 
                       OPEN_EXISTING,
                       FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
                       NULL);
+
+      if (h == INVALID_HANDLE_VALUE) {
+         Dmsg1(dbglvl, "Invalid handle from CreateFile(%s)\n", win32_fname);
+         free_pool_memory(win32_fname);
+         return false;
+      }
+
+      free_pool_memory(win32_fname);
    }
 
    if (h != INVALID_HANDLE_VALUE) {
@@ -890,12 +917,11 @@ static inline bool get_volume_mount_point_data(const char *win32_fname, POOLMEM 
       }
 
       CloseHandle(h);
-
-      return true;
    } else {
-      Dmsg1(dbglvl, "Invalid handle from CreateFile(%s)\n", win32_fname);
       return false;
    }
+
+   return true;
 }
 
 /*
@@ -920,7 +946,7 @@ static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, stru
  * This is called for directories, and reparse points and is used to
  * get some special attributes like the type of reparse point etc..
  */
-static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool is_directory)
+static int get_windows_file_info(const char *filename, struct stat *sb, bool is_directory)
 {
    WIN32_FIND_DATAW info_w;       // window's file info
    WIN32_FIND_DATAA info_a;       // window's file info
@@ -942,9 +968,9 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
 
    if (p_FindFirstFileW) { /* use unicode */
       POOLMEM* pwszBuf = get_pool_memory (PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
-      Dmsg1(dbglvl, "FindFirstFileW=%s\n", win32_fname);
+      Dmsg1(dbglvl, "FindFirstFileW=%s\n", pwszBuf);
       h = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
       free_pool_memory(pwszBuf);
 
@@ -975,6 +1001,11 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
 #endif
       }
    } else if (p_FindFirstFileA) { // use ASCII
+      POOLMEM *win32_fname;
+
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
+
       Dmsg1(dbglvl, "FindFirstFileA=%s\n", win32_fname);
       h = p_FindFirstFileA(win32_fname, &info_a);
 
@@ -1004,6 +1035,8 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
          }
 #endif
       }
+
+      free_pool_memory(win32_fname);
    } else {
       Dmsg0(dbglvl, "No findFirstFile A or W found\n");
    }
@@ -1014,7 +1047,7 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
       /*
        * Note, in creating leading paths, it is normal that the file does not exist.
        */
-      Dmsg2(2099, "FindFirstFile(%s):%s\n", win32_fname, err);
+      Dmsg2(2099, "FindFirstFile(%s):%s\n", filename, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
       return -1;
@@ -1057,8 +1090,8 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
          if (*pdwReserved0 & IO_REPARSE_TAG_MOUNT_POINT) {
             POOLMEM *vmp = get_pool_memory(PM_NAME);
 
-            if (get_volume_mount_point_data(win32_fname, &vmp)) {
-               Dmsg2(dbglvl, "Junction %s points to: %s\n", win32_fname, vmp);
+            if (get_volume_mount_point_data(filename, &vmp)) {
+               Dmsg2(dbglvl, "Junction %s points to: %s\n", filename, vmp);
 
                if (strncasecmp(vmp, "\\??\\volume{", 11) == 0) {
                   sb->st_rdev |= FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
@@ -1081,7 +1114,7 @@ static int get_windows_file_info(const char *win32_fname, struct stat *sb, bool 
       sb->st_mode |= S_IFREG;
    }
 
-   Dmsg2(dbglvl, "st_rdev=%d file=%s\n", sb->st_rdev, win32_fname);
+   Dmsg2(dbglvl, "st_rdev=%d filename=%s\n", sb->st_rdev, filename);
 
    sb->st_size = *pnFileSizeHigh;
    sb->st_size <<= 32;
@@ -1173,25 +1206,22 @@ int fstat(intptr_t fd, struct stat *sb)
    return 0;
 }
 
-static inline bool is_drive_letter_only(const char *file)
+static inline bool is_drive_letter_only(const char *filename)
 {
-   return ((file[1] == ':' && file[2] == 0) ||
-           (file[1] == ':' && file[2] == '/' && file[3] == 0));
+   return ((filename[1] == ':' && filename[2] == 0) ||
+           (filename[1] == ':' && filename[2] == '/' && filename[3] == 0));
 }
 
-static int stat2(const char *file, struct stat *sb)
+static int stat2(const char *filename, struct stat *sb)
 {
    HANDLE h = INVALID_HANDLE_VALUE;
    int rval = 0;
-   POOLMEM *win32_fname;
    DWORD attr = (DWORD)-1;
 
-   win32_fname = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_fname, file);
    if (p_GetFileAttributesW) {
       POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
 
-      make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
       attr = p_GetFileAttributesW((LPCWSTR) pwszBuf);
       if (p_CreateFileW) {
          h = CreateFileW((LPCWSTR)pwszBuf,
@@ -1204,6 +1234,11 @@ static int stat2(const char *file, struct stat *sb)
       }
       free_pool_memory(pwszBuf);
    } else if (p_GetFileAttributesA) {
+      POOLMEM *win32_fname;
+
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
+
       attr = p_GetFileAttributesA(win32_fname);
       h = CreateFileA(win32_fname,
                       GENERIC_READ,
@@ -1212,12 +1247,14 @@ static int stat2(const char *file, struct stat *sb)
                       OPEN_EXISTING,
                       0,
                       NULL);
+
+      free_pool_memory(win32_fname);
    }
 
    if (attr == (DWORD)-1) {
       const char *err = errorString();
 
-      Dmsg2(2099, "GetFileAttributes(%s): %s\n", win32_fname, err);
+      Dmsg2(2099, "GetFileAttributes(%s): %s\n", filename, err);
 
       LocalFree((void *)err);
       if (h != INVALID_HANDLE_VALUE) {
@@ -1232,7 +1269,7 @@ static int stat2(const char *file, struct stat *sb)
    if (h == INVALID_HANDLE_VALUE) {
       const char *err = errorString();
 
-      Dmsg2(2099, "Cannot open file for stat (%s):%s\n", win32_fname, err);
+      Dmsg2(2099, "Cannot open file for stat (%s):%s\n", filename, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
 
@@ -1249,32 +1286,29 @@ static int stat2(const char *file, struct stat *sb)
     */
    if (((attr & FILE_ATTRIBUTE_DIRECTORY) ||
         (attr & FILE_ATTRIBUTE_REPARSE_POINT)) &&
-        !is_drive_letter_only(file)) {
-      rval = get_windows_file_info(win32_fname, sb, (attr & FILE_ATTRIBUTE_DIRECTORY));
+        !is_drive_letter_only(filename)) {
+      rval = get_windows_file_info(filename, sb, (attr & FILE_ATTRIBUTE_DIRECTORY));
    }
 
 bail_out:
-   free_pool_memory(win32_fname);
    return rval;
 }
 
-int stat(const char *file, struct stat *sb)
+int stat(const char *filename, struct stat *sb)
 {
    int rval = 0;
+   POOLMEM *win32_fname = NULL;
    WIN32_FILE_ATTRIBUTE_DATA data;
-   POOLMEM *win32_fname;
 
    errno = 0;
    memset(sb, 0, sizeof(*sb));
 
-   win32_fname = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_fname, file);
    if (p_GetFileAttributesExW) {
       /*
        * Dynamically allocate enough space for UCS2 filename
        */
       POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
       BOOL b = p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard, &data);
       free_pool_memory(pwszBuf);
@@ -1284,6 +1318,9 @@ int stat(const char *file, struct stat *sb)
       }
 
    } else if (p_GetFileAttributesExA) {
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
+
       if (!p_GetFileAttributesExA(win32_fname, GetFileExInfoStandard, &data)) {
          goto bail_out;
        }
@@ -1299,8 +1336,8 @@ int stat(const char *file, struct stat *sb)
     */
    if (((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ||
         (data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) &&
-        !is_drive_letter_only(file)) {
-      rval = get_windows_file_info(win32_fname, sb, (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
+        !is_drive_letter_only(filename)) {
+      rval = get_windows_file_info(filename, sb, (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
    } else {
       sb->st_mode = 0777;
 
@@ -1345,7 +1382,7 @@ int stat(const char *file, struct stat *sb)
             POOLMEM *pwszBuf;
 
             pwszBuf = get_pool_memory(PM_FNAME);
-            make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+            make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
             h = p_CreateFileW((LPCWSTR)pwszBuf,
                                GENERIC_READ,
@@ -1405,13 +1442,16 @@ int stat(const char *file, struct stat *sb)
    }
    rval = 0;
 
-   Dmsg3(dbglvl, "sizino=%d ino=%lld file=%s\n", sizeof(sb->st_ino), (long long)sb->st_ino, file);
+   Dmsg3(dbglvl, "sizino=%d ino=%lld filename=%s\n", sizeof(sb->st_ino), (long long)sb->st_ino, filename);
 
    return rval;
 
 bail_out:
-   free_pool_memory(win32_fname);
-   return stat2(file, sb);
+   if (win32_fname) {
+      free_pool_memory(win32_fname);
+   }
+
+   return stat2(filename, sb);
 }
 
 /*
@@ -1419,16 +1459,9 @@ bail_out:
  * This is a wrapper around get_volume_mount_point_data() used for retrieving
  * the VMP data used in the VSS snapshotting.
  */
-bool win32_get_vmp_devicename(const char *file, POOLMEM **devicename)
+bool win32_get_vmp_devicename(const char *filename, POOLMEM **devicename)
 {
-   bool rval;
-   POOLMEM *win32_fname;
-
-   win32_fname = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_fname, file);
-   rval = get_volume_mount_point_data(win32_fname, devicename);
-   free_pool_memory(win32_fname);
-   return rval;
+   return get_volume_mount_point_data(filename, devicename);
 }
 
 /*
@@ -1478,9 +1511,9 @@ int fcntl(int fd, int cmd, long arg)
    return rval;
 }
 
-int lstat(const char *file, struct stat *sb)
+int lstat(const char *filename, struct stat *sb)
 {
-   return stat(file, sb);
+   return stat(filename, sb);
 }
 
 void sleep(int sec)
@@ -2979,15 +3012,11 @@ int close_wpipe(BPIPE *bpipe)
 }
 
 #ifndef HAVE_MINGW
-int utime(const char *fname, struct utimbuf *times)
+int utime(const char *filename, struct utimbuf *times)
 {
    int rval = -1;
    FILETIME acc, mod;
-   POOLMEM *win32_fname;
    HANDLE h = INVALID_HANDLE_VALUE;
-
-   win32_fname = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_fname, fname);
 
    cvt_utime_to_ftime(times->actime, acc);
    cvt_utime_to_ftime(times->modtime, mod);
@@ -2996,7 +3025,7 @@ int utime(const char *fname, struct utimbuf *times)
       POOLMEM *pwszBuf;
 
       pwszBuf = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, win32_fname);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
       h = p_CreateFileW((LPCWSTR)pwszBuf,
                         FILE_WRITE_ATTRIBUTES,
@@ -3008,6 +3037,11 @@ int utime(const char *fname, struct utimbuf *times)
 
       free_pool_memory(pwszBuf);
    } else if (p_CreateFileA) {
+      POOLMEM *win32_fname;
+
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
+
       h = p_CreateFileA(win32_fname,
                         FILE_WRITE_ATTRIBUTES,
                         FILE_SHARE_WRITE|FILE_SHARE_READ|FILE_SHARE_DELETE,
@@ -3015,12 +3049,14 @@ int utime(const char *fname, struct utimbuf *times)
                         OPEN_EXISTING,
                         FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
                         NULL);
+
+      free_pool_memory(win32_fname);
    }
 
    if (h == INVALID_HANDLE_VALUE) {
       const char *err = errorString();
 
-      Dmsg2(dbglvl, "Cannot open file \"%s\" for utime(): ERR=%s", win32_fname, err);
+      Dmsg2(dbglvl, "Cannot open file \"%s\" for utime(): ERR=%s", filename, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
 
@@ -3034,7 +3070,6 @@ int utime(const char *fname, struct utimbuf *times)
    }
 
 bail_out:
-   free_pool_memory(win32_fname);
    return rval;
 }
 #endif
