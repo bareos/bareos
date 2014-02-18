@@ -18,53 +18,38 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../filed:../generic
+VPATH = .:../../tools
 
 include ../Makefile.inc
 
-DEFINES += -DWIN32_VSS
-ifeq ($(WIN_VERSION),64)
-DEFINES += -DHAVE_VSS64
-endif
-
-INCLUDES = -I. \
-	   -I../.. \
+INCLUDES = -I../.. \
 	   -I../../include \
 	   -I../include \
 	   -I../compat/include \
 	   -I../vss/include
-
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
-	 ../findlib/libbareosfind.dll \
-         $(MINGW_LIB)/libz.dll.a \
-         $(MINGW_LIB)/liblzo2.dll.a \
-         $(MINGW_LIB)/libfastlz.dll.a \
          $(MINGW_LIB)/libpthreadGCE2.a \
-	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
+         $(MINGW_LIB)/libz.dll.a \
+	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-SVRSRCS = accurate.c authenticate.c backup.c compression.c \
-	  crypto.c dir_cmd.c estimate.c fd_plugins.c filed_conf.c \
-	  filed.c fileset.c heartbeat.c restore.c sd_cmds.c status.c verify.c \
-	  verify_vol.c vss.c vss_XP.c vss_W2K3.c vss_Vista.c \
-	  service.c main.c
+BSMTPSRCS = bsmtp.c
+BSMTPOBJS = $(BSMTPSRCS:.c=.o)
 
-SVROBJS = $(SVRSRCS:.c=.o)
-
-WINDRESSRCS = filedres.rc
+WINDRESSRCS = bsmtpres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
 
-all: bareos-fd.exe
+all: bsmtp.exe
 
-bareos-fd.exe: DLL_USAGE = -DUSING_DLL
-bareos-fd.exe: $(SVROBJS) $(WINDRESOBJS)
-	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(WINDRESOBJS) $(LDLIBS) -o $@
+bsmtp.exe: DLL_USAGE = -DUSING_DLL
+bsmtp.exe: $(BSMTPOBJS) $(WINDRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BSMTPOBJS) $(LDLIBS) $(WINDRESOBJS) -o $@
 
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f bareos-fd.exe
+	rm -f bsmtp.exe
 
 # inference rules
 .c.o:
@@ -74,7 +59,3 @@ distclean:: clean
 %.o : %.rc
 	@echo "Ressource Compiling $^"
 	$(WINDRES) $^ -o $@
-
-main.o: ../generic/main.c
-	@echo "Compiling $<"
-	$(CXX) -DFILE_DAEMON $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

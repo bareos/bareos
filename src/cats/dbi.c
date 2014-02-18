@@ -1451,17 +1451,17 @@ bail_out:
  * never have errors, or it is really fatal.
  */
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" B_DB *backend_instantiate(JCR *jcr,
-                                     const char *db_driver,
-                                     const char *db_name,
-                                     const char *db_user,
-                                     const char *db_password,
-                                     const char *db_address,
-                                     int db_port,
-                                     const char *db_socket,
-                                     bool mult_db_connections,
-                                     bool disable_batch_insert,
-                                     bool need_private)
+extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
+                                                  const char *db_driver,
+                                                  const char *db_name,
+                                                  const char *db_user,
+                                                  const char *db_password,
+                                                  const char *db_address,
+                                                  int db_port,
+                                                  const char *db_socket,
+                                                  bool mult_db_connections,
+                                                  bool disable_batch_insert,
+                                                  bool need_private)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -1528,7 +1528,7 @@ bail_out:
 }
 
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" void flush_backend(void)
+extern "C" void CATS_IMP_EXP flush_backend(void)
 #else
 void db_flush_backends(void)
 #endif

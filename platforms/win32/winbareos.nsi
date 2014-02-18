@@ -58,6 +58,17 @@ Var StorageAddress
 Var DirectorAddress       #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var DirectorPassword      #XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX
 Var DirectorName
+Var DirectorMonPassword
+
+# Needed for Postgresql Database
+Var PostgresPath
+Var PostgresBinPath
+Var DbDriver
+Var DbPassword
+Var DbPort
+Var DbUser
+Var DbName
+Var DbEncoding
 
 # Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
@@ -116,6 +127,9 @@ ${StrRep}
 
 ; Components page
 !insertmacro MUI_PAGE_COMPONENTS
+
+; Check if database server is installed
+Page custom checkForDatabase
 
 ; Custom für Abfragen benötigter Parameter für den Client
 Page custom getClientParameters
@@ -267,7 +281,10 @@ Section -StopDaemon
 # so we use the shotgun:
   KillProcWMI::KillProc "bareos-fd.exe"
   KillProcWMI::KillProc "bareos-sd.exe"
+  KillProcWMI::KillProc "bareos-dir.exe"
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
+  KillProcWMI::KillProc "bconsole.exe"
+  KillProcWMI::KillProc "bat.exe"
 SectionEnd
 
 
@@ -285,6 +302,7 @@ Section -SetPasswords
   FileWrite $R1 "s#@DISTNAME@#Windows#g$\r$\n"
 
   FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX#$DirectorPassword#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX#$DirectorMonPassword#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX#$ClientPassword#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX#$ClientMonitorPassword#g$\r$\n"
 
@@ -305,15 +323,29 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX#$StoragePassword#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-sd#$StorageDaemonName#g$\r$\n"
 
+  # Director DB Connection Setup
+
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DATABASE_DRIVER_XXX#$DbDriver#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PORT_XXX#$DbPort#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#$DbPassword#g$\r$\n"
+
   FileClose $R1
 
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-dir.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-fd.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-sd.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.conf"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd-sd.conf"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd-sd-dir.conf"'
 
   #Delete config.sed
 
+  FileOpen $R1 $PLUGINSDIR\postgres.sed w
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#with password '$DbPassword'#g$\r$\n"
+
+  FileClose $R1
   #
   # config files for bconsole and bat to access remote director
   #
@@ -346,6 +378,17 @@ Section -SetPasswords
 #
 #  FileClose $R1
 SectionEnd
+
+!If ${WIN_DEBUG} == yes
+# install sourcecode if WIN_DEBUG is yes
+Section Sourcecode SEC_SOURCE
+   SectionIn 1 2 3
+   SetShellVarContext all
+   SetOutPath "C:\"
+   SetOverwrite ifnewer
+   File /r "bareos-${VERSION}"
+SectionEnd
+!Endif
 
 SubSection "File Daemon (Client)" SUBSEC_FD
 
@@ -425,6 +468,8 @@ SectionIn 2
   File "bls.exe"
   File "bextract.exe"
 
+  CreateDirectory "C:\bareos-storage"
+
   !insertmacro InstallConfFile bareos-sd.conf
 SectionEnd
 
@@ -442,21 +487,132 @@ SectionIn 2
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
-    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos backup client rule$\""
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos storage daemon (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos storage daemon rule$\""
     # profile=[private,domain]"
-    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos backup client (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos backup client rule$\""
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos storage daemon (bareos-sd) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-sd.exe$\" enable=yes protocol=TCP localport=9103 description=$\"Bareos storage daemon rule$\""
     # profile=[private,domain]"
   ${Else}
     DetailPrint  "Opening Firewall, OS is < Win7"
-    DetailPrint  "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
-    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
+    DetailPrint  "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos storage daemon (bareos-sd) access$\""
+    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9103 name=$\"Bareos storage daemon (bareos-sd) access$\""
+  ${EndIf}
+SectionEnd
+
+SubSectionEnd # Storage Daemon Subsection
+
+SubSection "Director" SUBSEC_DIR
+
+Section /o "Director" SEC_DIR
+SectionIn 2
+
+  SetShellVarContext all
+  CreateDirectory "$APPDATA\${PRODUCT_NAME}\logs"
+  CreateDirectory "$APPDATA\${PRODUCT_NAME}\working"
+  CreateDirectory "$APPDATA\${PRODUCT_NAME}\scripts"
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
+  File "bareos-dir.exe"
+  File "dbcheck.exe"
+  File "bsmtp.exe"
+  File "libbareoscats.dll"
+  File "libbareoscats-postgresql.dll"
+
+  # install sql ddl files
+  # SetOutPath "$APPDATA\${PRODUCT_NAME}\scripts"
+
+  # CopyFiles /SILENT "$PLUGINSDIR\ddl\*" "$APPDATA\${PRODUCT_NAME}\scripts"
+
+  #  File "libbareoscats-sqlite3.dll"
+  !insertmacro InstallConfFile bareos-dir.conf
+
+  # edit sql ddl files
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
+  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-create.sql"'
+  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\postgresql-drop.sql"'
+
+
+  # install edited sql ddl files
+  Rename  "$PLUGINSDIR\postgresql-create.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-create.sql"
+  Rename  "$PLUGINSDIR\postgresql-grant.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-grant.sql"
+  Rename  "$PLUGINSDIR\postgresql-drop.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-drop.sql"
+
+  # create db-create script
+  FileOpen  $R1 $PLUGINSDIR\postgresql-createdb.sql w
+  FileWrite $R1 "CREATE DATABASE $DbName $DbEncoding TEMPLATE template0; $\r$\n"
+  FileWrite $R1 "ALTER DATABASE $DbName SET datestyle TO 'ISO, YMD'; $\r$\n"
+  FileClose $R1
+  # install db-create script
+  Rename  "$PLUGINSDIR\postgresql-createdb.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-createdb.sql"
+
+ # copy postgresql libs to our path
+
+  StrCpy $R0 "$PostgresPath"
+  StrCpy $R1 "\bin"
+
+  StrCpy $PostgresBinPath "$R0$R1"
+  DetailPrint "Copying dlls from $PostgresBinPath ..."
+
+  DetailPrint "libpq.dll"
+  CopyFiles /SILENT "$PostgresBinPath\libpq.dll" "$INSTDIR"
+
+  DetailPrint "libintl-8.dll"
+  CopyFiles /SILENT "$PostgresBinPath\libintl-8.dll" "$INSTDIR"
+
+  DetailPrint "ssleay32.dll"
+  CopyFiles /SILENT "$PostgresBinPath\ssleay32.dll" "$INSTDIR"
+
+  DetailPrint "libeay32.dll"
+  CopyFiles /SILENT "$PostgresBinPath\libeay32.dll" "$INSTDIR"
+
+  #
+  #  write database create batch file
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat" w
+  FileWrite $R1 'rem  call this batch file to create the bareos database in postgresql $\r$\n'
+  FileWrite $R1 'rem $\r$\n'
+  FileWrite $R1 'REM $\r$\n'
+  FileWrite $R1 'REM  create postgresql database $\r$\n'
+  FileWrite $R1 "SET PATH=%PATH%;$\"$PostgresBinPath$\"$\r$\n"
+  FileWrite $R1 "cd $APPDATA\${PRODUCT_NAME}\scripts\$\r$\n"
+
+  FileWrite $R1 "echo creating bareos database$\r$\n"
+  FileWrite $R1 "psql.exe -U postgres -f postgresql-createdb.sql$\r$\n"
+
+  FileWrite $R1 "echo creating bareos database tables$\r$\n"
+  FileWrite $R1 "psql.exe -U postgres -f postgresql-create.sql $DbName$\r$\n"
+
+  FileWrite $R1 "echo granting bareos database rights$\r$\n"
+  FileWrite $R1 "psql.exe -U postgres -f postgresql-grant.sql $DbName$\r$\n"
+  FileClose $R1
+
+SectionEnd
+
+Section /o "Director Plugins " SEC_DIRPLUGINS
+SectionIn 2
+  SetShellVarContext all
+  SetOutPath "$INSTDIR\Plugins"
+  SetOverwrite ifnewer
+#  File "autoxflate-sd.dll"
+SectionEnd
+
+Section "Open Firewall for Director" SEC_FIREWALL_DIR
+SectionIn 2
+  SetShellVarContext current
+  ${If} ${AtLeastWin7}
+    DetailPrint  "Opening Firewall, OS is Win7+"
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos director (bareos-dir) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-dir.exe$\" enable=yes protocol=TCP localport=9101 description=$\"Bareos director rule$\""
+    # profile=[private,domain]"
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos director (bareos-dir) access$\" dir=in action=allow program=$\"$PROGRAMFILES64\${PRODUCT_NAME}\bareos-dir.exe$\" enable=yes protocol=TCP localport=9101 description=$\"Bareos director rule$\""
+    # profile=[private,domain]"
+  ${Else}
+    DetailPrint  "Opening Firewall, OS is < Win7"
+    DetailPrint  "netsh firewall add portopening protocol=TCP port=9101 name=$\"Bareos director (bareos-dir) access$\""
+    nsExec::Exec "netsh firewall add portopening protocol=TCP port=9101 name=$\"Bareos director (bareos-dir) access$\""
   ${EndIf}
 SectionEnd
 
 
-SubSectionEnd # Storage Daemon Subsection
-
-
+SubSectionEnd # Director Subsection
 
 SubSection "Consoles" SUBSEC_CONSOLES
 
@@ -489,10 +645,16 @@ SectionIn 1 2
   File "libpng15-15.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
+  rename "$PLUGINSDIR\tray-monitor.fd.conf" "$PLUGINSDIR\tray-monitor.conf"
 ${If} ${SectionIsSelected} ${SEC_SD}
   delete "$PLUGINSDIR\tray-monitor.conf"
   rename "$PLUGINSDIR\tray-monitor.fd-sd.conf" "$PLUGINSDIR\tray-monitor.conf"
 ${EndIf}
+${If} ${SectionIsSelected} ${SEC_DIR}
+  delete "$PLUGINSDIR\tray-monitor.conf"
+  rename "$PLUGINSDIR\tray-monitor.fd-sd-dir.conf" "$PLUGINSDIR\tray-monitor.conf"
+${EndIf}
+
   !insertmacro InstallConfFile "tray-monitor.conf"
 SectionEnd
 
@@ -513,21 +675,41 @@ SectionIn 2
 SectionEnd
 SubSectionEnd # Consoles Subsection
 
+
+
+
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+
+  ; FD
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FD} "Installs the Bareos File Daemon and required Files"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGINS} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
+
+  ; SD
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SD} "Installs the Bareos Storage Daemon"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_SD} "Programs belonging to the Bareos Storage Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SDPLUGINS} "Installs the Bareos Storage Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_SD} "Opens the needed ports for the Storage Daemon in the windows firewall"
+
+  ; DIR
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR} "Installs the Bareos Director Daemon"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_DIR} "Programs belonging to the Bareos Director"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIRPLUGINS} "Installs the Bareos Director Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_DIR} "Opens the needed ports for the Director Daemon in the windows firewall"
+
+  ; Consoles
+
+  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_CONSOLES} "Programs to access and monitor the Bareos system (Consoles and Tray Monitor)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the Tray Icon to monitor the Bareos File Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_SD} "Opens the needed ports for the Storage Daemon in the windows firewall"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
 
-  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_SD} "Programs belonging to the Bareos Storage Daemon"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_CONSOLES} "Programs to access and monitor the Bareos system (Consoles and Tray Monitor)"
+  ; Sourcecode
+!If ${WIN_DEBUG} == yes
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SOURCE} "Sourcecode for debugging will be installed into C:\bareos-${VERSION}"
+!Endif
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
@@ -561,17 +743,35 @@ Section -Post
     nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /remove'
     nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"'
   ${EndIf}
+
+  ${If} ${SectionIsSelected} ${SEC_DIR}
+    nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /kill'
+    sleep 3000
+    nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
+    nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf"'
+  ${EndIf}
 SectionEnd
 
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
+
   ${If} ${SectionIsSelected} ${SEC_SD}
     nsExec::ExecToLog "net start bareos-sd"
   ${EndIf}
+
+  ${If} ${SectionIsSelected} ${SEC_DIR}
+      MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
+                     $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
+                     with administrator rights now." /SD IDOK
+
+    nsExec::ExecToLog "net start bareos-dir"
+  ${EndIf}
+
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
     MessageBox MB_OK|MB_ICONINFORMATION "The tray monitor will be started automatically on next login. $\r$\n Alternatively it can be started from the start menu entry now." /SD IDOK
   ${EndIf}
 SectionEnd
+
 
 # helper functions to find out computer name
 Function GetComputerName
@@ -815,17 +1015,27 @@ done:
 
   File "/oname=$PLUGINSDIR\bareos-fd.conf" "bareos-fd.conf"
   File "/oname=$PLUGINSDIR\bareos-sd.conf" "bareos-sd.conf"
+  File "/oname=$PLUGINSDIR\bareos-dir.conf" "bareos-dir.conf"
   File "/oname=$PLUGINSDIR\bconsole.conf" "bconsole.conf"
   File "/oname=$PLUGINSDIR\bat.conf" "bat.conf"
 
-  File "/oname=$PLUGINSDIR\tray-monitor.conf" "tray-monitor.conf"
+  File "/oname=$PLUGINSDIR\tray-monitor.fd.conf" "tray-monitor.fd.conf"
   File "/oname=$PLUGINSDIR\tray-monitor.fd-sd.conf" "tray-monitor.fd-sd.conf"
+  File "/oname=$PLUGINSDIR\tray-monitor.fd-sd-dir.conf" "tray-monitor.fd-sd-dir.conf"
+
+  File "/oname=$PLUGINSDIR\postgresql-create.sql" ".\ddl\creates\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-drop.sql" ".\ddl\drops\postgresql.sql"
+  File "/oname=$PLUGINSDIR\postgresql-grant.sql" ".\ddl\grants\postgresql.sql"
+  # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
+
+
 
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} # SF_SELECTED
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
+  SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
 
   # find out the computer name
   Call GetComputerName
@@ -891,6 +1101,34 @@ done:
     ${EndIf}
   skipstoragemonpassword:
 
+  strcmp $DirectorPassword "" gendirectorpassword skipdirectorpassword
+  gendirectorpassword:
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+     IfErrors +4
+       FileRead $R1 $R0
+       ${StrTrimNewLines} $DirectorPassword $R0
+       FileClose $R1
+    ${EndIf}
+  skipdirectorpassword:
+
+  strcmp $DirectorMonPassword "" gendirectormonpassword skipdirectormonpassword
+  gendirectormonpassword:
+    nsExec::Exec '"$PLUGINSDIR\openssl.exe" rand -base64 -out $PLUGINSDIR\pw.txt 33'
+    pop $R0
+    ${If} $R0 = 0
+     FileOpen $R1 "$PLUGINSDIR\pw.txt" r
+     IfErrors +4
+       FileRead $R1 $R0
+       ${StrTrimNewLines} $DirectorMonPassword $R0
+       FileClose $R1
+    ${EndIf}
+  skipdirectormonpassword:
+
+
+
 
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
@@ -899,11 +1137,11 @@ done:
   strcmp $ClientAddress "" +1 +2
   StrCpy $ClientAddress "$HostName"
   strcmp $DirectorName   "" +1 +2
-  StrCpy $DirectorName  "bareos-dir"
+  StrCpy $DirectorName  "$HostName-dir"
   strcmp $DirectorAddress  "" +1 +2
-  StrCpy $DirectorAddress  "bareos-dir.example.com"
+  StrCpy $DirectorAddress  "$HostName"
   strcmp $DirectorPassword "" +1 +2
-  StrCpy $DirectorPassword "DIRECTORPASSWORD"
+  StrCpy $DirectorPassword "$DirectorPassword"
 
   strcmp $StorageDaemonName     "" +1 +2
   StrCpy $StorageDaemonName    "$HostName-sd"
@@ -913,6 +1151,50 @@ done:
 
   strcmp $StorageAddress "" +1 +2
   StrCpy $StorageAddress "$HostName"
+
+  strcmp $DbDriver "" +1 +2
+  StrCpy $DbDriver "postgresql"
+
+  strcmp $DbPassword "" +1 +2
+  StrCpy $DbPassword "bareos"
+
+  strcmp $DbPort "" +1 +2
+  StrCpy $DbPort "5432"
+
+  strcmp $DbUser "" +1 +2
+  StrCpy $DbUser "bareos"
+
+  strcmp $DbEncoding "" +1 +2
+  StrCpy $DbEncoding "ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
+
+  strcmp $DbName "" +1 +2
+  StrCpy $DbName "bareos"
+
+
+
+
+FunctionEnd
+
+
+#
+## Check for Database
+#
+Function checkForDatabase
+${IfNot} ${SectionIsSelected} ${SEC_DIR}
+   goto dbcheckend
+${EndIf}
+
+# search for value of HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL Global Development Group\PostgreSQL,  Key "Location"
+   ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
+
+   StrCmp $PostgresPath "" postgresnotfound dbcheckend
+
+postgresnotfound:
+
+   MessageBox MB_OK|MB_ICONSTOP "Postgresql installation was not found.$\r$\nPostgresql installation is needed for the bareos director to work. $\r$\nPlease download Postgresql for windows following the instructions on$\r$\nhttp://www.postgresql.org/download/windows/. $\r$\nBareos director on windows was tested with Postgresql 9.3 "
+   Quit
+
+dbcheckend:
 
 FunctionEnd
 
@@ -952,8 +1234,6 @@ skip:
   Pop $R0
 FunctionEnd
 
-
-
 #
 # Storage Configuration Dialog
 #
@@ -988,7 +1268,6 @@ skip:
   Pop $R0
 FunctionEnd
 
-
 #
 # Director Configuration Dialog (for bconsole and bat configuration)
 #
@@ -1017,6 +1296,11 @@ FunctionEnd
 Function displayDirconfSnippet
 
 strcmp $Upgrading "yes" skip
+
+# skip config snippets if we have local director
+${If} ${SectionIsSelected} ${SEC_DIR}
+  goto skip
+${EndIf}
 #
 # write client config snippet for director
 #
@@ -1065,9 +1349,6 @@ ${EndIf}
 skip:
 FunctionEnd
 
-
-
-
 Function un.onUninstSuccess
   HideWindow
   MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully uninstalled." /SD IDYES
@@ -1078,9 +1359,7 @@ Function un.onInit
   Abort
 FunctionEnd
 
-
 Section Uninstall
-
 # UnInstaller Options
    ${GetParameters} $cmdLineParams
    ClearErrors
@@ -1110,8 +1389,16 @@ Section Uninstall
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /remove'
 
+  nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /kill'
+  sleep 3000
+  nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
+
+
   # kill tray monitor
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
+  # kill bconsole and bat if running
+  KillProcWMI::KillProc "bconsole.exe"
+  KillProcWMI::KillProc "bat.exe"
 
   StrCmp $SilentKeepConfig "yes" ConfDeleteSkip # keep if silent and  $SilentKeepConfig is yes
 
@@ -1120,6 +1407,7 @@ Section Uninstall
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf"
@@ -1127,9 +1415,14 @@ Section Uninstall
 ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
+
+  RMDir "$APPDATA\${PRODUCT_NAME}\logs"
+  RMDir "$APPDATA\${PRODUCT_NAME}\working"
+  RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
 
   RMDir  "$APPDATA\${PRODUCT_NAME}"
 
@@ -1139,6 +1432,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bat.exe"
   Delete "$INSTDIR\bareos-fd.exe"
   Delete "$INSTDIR\bareos-sd.exe"
+  Delete "$INSTDIR\bareos-dir.exe"
+  Delete "$INSTDIR\dbcheck.exe"
   Delete "$INSTDIR\btape.exe"
   Delete "$INSTDIR\bls.exe"
   Delete "$INSTDIR\bextract.exe"
@@ -1196,15 +1491,25 @@ ConfDeleteSkip:
     DetailPrint  "Closing Firewall, OS is Win7+"
     DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-fd) access$\""
-    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-sd) access$\""
-    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos backup client (bareos-sd) access$\""
+    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos storage daemon (bareos-sd) access$\""
+    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos storage daemon (bareos-sd) access$\""
+    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
+    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
+
   ${Else}
     DetailPrint  "Closing Firewall, OS is < Win7"
     DetailPrint  "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
     nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
-    DetailPrint  "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
-    nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos backup client (bareos-sd) access$\""
+    DetailPrint  "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos storage dameon (bareos-sd) access$\""
+    nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9103 name=$\"Bareos storage daemon (bareos-sd) access$\""
+    DetailPrint  "netsh firewall delete portopening protocol=TCP port=9101 name=$\"Bareos director (bareos-dir) access$\""
+    nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9101 name=$\"Bareos director (bareos-dir) access$\""
+
   ${EndIf}
+
+  # remove sourcecode
+  RMDir /r "C:\bareos-${VERSION}"
+
 SectionEnd
 
 Function .onSelChange

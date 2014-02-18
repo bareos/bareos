@@ -58,7 +58,9 @@ struct backend_shared_library_t {
    t_flush_backend flush_backend;
 };
 
-#if defined(HAVE_DARWIN_OS)
+#if defined(HAVE_WIN32)
+#define DYN_LIB_EXTENSION ".dll"
+#elif defined(HAVE_DARWIN_OS)
 #define DYN_LIB_EXTENSION ".dylib"
 #else
 #define DYN_LIB_EXTENSION ".so"

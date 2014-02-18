@@ -454,7 +454,7 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 /* Current database version number for all drivers */
 #define BDB_VERSION 2002
 
-class B_DB: public SMARTALLOC {
+class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:
    brwlock_t m_lock;                      /* transaction lock */
    dlink m_link;                          /* queue control */
