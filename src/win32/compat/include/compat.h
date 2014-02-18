@@ -284,7 +284,7 @@ int readlink(const char *, char *, int);
 
 int geteuid();
 
-DIR *opendir(const char *name);
+DIR *opendir(const char *filename);
 int closedir(DIR *dir);
 
 struct passwd {
@@ -396,7 +396,7 @@ inline unsigned long ffs(unsigned long word)
 #define  ffs   __builtin_ffs
 #endif
 
-bool win32_get_vmp_devicename(const char *file, POOLMEM **device);
+bool win32_get_vmp_devicename(const char *filename, POOLMEM **device);
 int win32_ftruncate(int fd, int64_t length);
 
 #undef ftruncate
