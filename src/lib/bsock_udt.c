@@ -96,7 +96,7 @@ BSOCK *BSOCK_UDT::clone()
     */
    o_msg = clone->msg;
    o_errmsg = clone->errmsg;
-   memcpy(clone, this, sizeof(BSOCK_TCP));
+   memcpy((void *)clone, (void *)this, sizeof(BSOCK_UDT));
    clone->msg = o_msg;
    clone->errmsg = o_errmsg;
 
