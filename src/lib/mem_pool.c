@@ -629,7 +629,7 @@ void POOL_MEM::realloc_pm(int32_t size)
    if (buf == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
-      return NULL;
+      return;
    }
 
    Dmsg2(900, "Old buf=%p new buf=%p\n", cp, buf);
