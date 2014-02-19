@@ -364,7 +364,7 @@ static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
    int i;
 
    if ((i = find_arg_with_value(ua, "path")) >= 0) {
-      if (!open_client_db(ua), true) {
+      if (!open_client_db(ua, true)) {
          return false;
       }
       Bvfs fs(ua->jcr, ua->db);
