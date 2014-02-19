@@ -748,7 +748,7 @@ bool get_scsi_encryption_enabled(int fd, const char *device_name)
 static void indent_status_msg(POOLMEM *&status, const char *msg, int indent)
 {
    int cnt;
-   char indent_level[16];
+   char indent_level[17];
 
    /*
     * See if we need to indent the line.
