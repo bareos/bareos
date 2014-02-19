@@ -111,7 +111,9 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
 
    if (pool > PM_MAX) {
       Emsg2(M_ABORT, 0, _("MemPool index %d larger than max %d\n"), pool, PM_MAX);
+      return NULL;
    }
+
    P(mutex);
    if (pool_ctl[pool].free_buf) {
       buf = pool_ctl[pool].free_buf;
@@ -129,7 +131,9 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      return NULL;
    }
+
    buf->ablen = pool_ctl[pool].size;
    buf->pool = pool;
    pool_ctl[pool].in_use++;
@@ -149,7 +153,9 @@ POOLMEM *sm_get_memory(const char *fname, int lineno, int32_t size)
 
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, size + HEAD_SIZE)) == NULL) {
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      return NULL;
    }
+
    buf->ablen = size;
    buf->pool = pool;
    buf->next = NULL;
@@ -168,7 +174,9 @@ int32_t sm_sizeof_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
 
    if (obuf == NULL) {
       Emsg0(M_ABORT, 0, _("obuf is NULL\n"));
+      return 0;
    }
+
    cp -= HEAD_SIZE;
    return ((struct abufhead *)cp)->ablen;
 }
@@ -187,7 +195,9 @@ POOLMEM *sm_realloc_pool_memory(const char *fname, int lineno, POOLMEM *obuf, in
    if (buf == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      return NULL;
    }
+
    ((struct abufhead *)buf)->ablen = size;
    pool = ((struct abufhead *)buf)->pool;
    if (size > pool_ctl[pool].max_allocated) {
@@ -258,7 +268,9 @@ POOLMEM *get_pool_memory(int pool)
    if ((buf=malloc(pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      return NULL;
    }
+
    buf->ablen = pool_ctl[pool].size;
    buf->pool = pool;
    buf->next = NULL;
@@ -278,7 +290,9 @@ POOLMEM *get_memory(int32_t size)
 
    if ((buf=malloc(size + HEAD_SIZE)) == NULL) {
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      return NULL;
    }
+
    buf->ablen = size;
    buf->pool = pool;
    buf->next = NULL;
@@ -313,7 +327,9 @@ POOLMEM *realloc_pool_memory(POOLMEM *obuf, int32_t size)
    if (buf == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      return NULL;
    }
+
    ((struct abufhead *)buf)->ablen = size;
    pool = ((struct abufhead *)buf)->pool;
    if (size > pool_ctl[pool].max_allocated) {
@@ -637,7 +653,9 @@ void POOL_MEM::realloc_pm(int32_t size)
    if (buf == NULL) {
       V(mutex);
       Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      return NULL;
    }
+
    Dmsg2(900, "Old buf=%p new buf=%p\n", cp, buf);
    ((struct abufhead *)buf)->ablen = size;
    pool = ((struct abufhead *)buf)->pool;
