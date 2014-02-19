@@ -313,7 +313,10 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
             *fatal = 1;
             Pmsg2(000, _("Source address bind error. proto=%d. ERR=%s\n"),
                   src_addr->get_family(), be.bstrerror() );
-            socketClose(sockfd);
+            if (sockfd >= 0) {
+               socketClose(sockfd);
+               sockfd = -1;
+            }
             continue;
          }
       }
@@ -342,7 +345,10 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
        */
       if (::connect(sockfd, ipaddr->get_sockaddr(), ipaddr->get_sockaddr_len()) < 0) {
          save_errno = errno;
-         socketClose(sockfd);
+         if (sockfd >= 0) {
+            socketClose(sockfd);
+            sockfd = -1;
+         }
          continue;
       }
       *fatal = 0;
@@ -353,7 +359,10 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
    if (!connected) {
       free_addresses(addr_list);
       errno = save_errno | b_errno_win32;
-      socketClose(sockfd);
+      if (sockfd >= 0) {
+         socketClose(sockfd);
+         sockfd = -1;
+      }
       return false;
    }
 
@@ -894,6 +903,7 @@ void BSOCK_TCP::close()
          shutdown(m_fd, SHUT_RDWR);   /* discard any pending I/O */
       }
       socketClose(m_fd);      /* normal close */
+      m_fd = -1;
    }
 
    return;
