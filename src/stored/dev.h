@@ -88,7 +88,8 @@ enum {
    B_VTAPE_DEV,
    B_VTL_DEV,
    B_GFAPI_DEV,
-   B_OBJECT_STORE_DEV
+   B_OBJECT_STORE_DEV,
+   B_RADOS_DEV
 };
 
 /* IO directions */
@@ -314,7 +315,8 @@ public:
                                  dev_type == B_VTAPE_DEV); }
    int is_file() const { return (dev_type == B_FILE_DEV ||
                                  dev_type == B_GFAPI_DEV ||
-                                 dev_type == B_OBJECT_STORE_DEV); }
+                                 dev_type == B_OBJECT_STORE_DEV ||
+                                 dev_type == B_RADOS_DEV); }
    int is_fifo() const { return dev_type == B_FIFO_DEV; }
    int is_vtl() const  { return dev_type == B_VTL_DEV; }
    int is_vtape() const  { return dev_type == B_VTAPE_DEV; }
