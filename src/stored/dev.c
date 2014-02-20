@@ -81,6 +81,9 @@
 #ifdef HAVE_OBJECTSTORE
 #include "backends/object_store_device.h"
 #endif
+#ifdef HAVE_RADOS
+#include "backends/rados_device.h"
+#endif
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
 #include "backends/win32_file_device.h"
@@ -175,6 +178,11 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 #ifdef HAVE_OBJECTSTORE
    case B_OBJECT_STORE_DEV:
       dev = New(object_store_device);
+      break;
+#endif
+#ifdef HAVE_RADOS
+   case B_RADOS_DEV:
+      dev = New(rados_device);
       break;
 #endif
 #ifdef HAVE_WIN32
@@ -1974,6 +1982,8 @@ bool DEVICE::mount(DCR *dcr, int timeout)
       break;
    case B_OBJECT_STORE_DEV:
       break;
+   case B_RADOS_DEV:
+      break;
    default:
       break;
    }
@@ -2044,6 +2054,8 @@ bool DEVICE::unmount(DCR *dcr, int timeout)
    case B_GFAPI_DEV:
       break;
    case B_OBJECT_STORE_DEV:
+      break;
+   case B_RADOS_DEV:
       break;
    default:
       break;

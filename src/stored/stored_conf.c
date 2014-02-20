@@ -279,6 +279,7 @@ static s_kw dev_types[] = {
    { "vtape", B_VTAPE_DEV },
    { "gfapi", B_GFAPI_DEV },
    { "object", B_OBJECT_STORE_DEV },
+   { "rados", B_RADOS_DEV },
    { NULL, 0 }
 };
 
