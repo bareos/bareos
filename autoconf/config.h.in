@@ -351,6 +351,9 @@
 /* Define to 1 if you have the `get_proplist_entry' function. */
 #undef HAVE_GET_PROPLIST_ENTRY
 
+/* Define to 1 if you have gfapi lib */
+#undef HAVE_GFAPI
+
 /* Define to 1 if GNUTLS library is available */
 #undef HAVE_GNUTLS
 
@@ -547,6 +550,9 @@
 /* Define to 1 if you have the `nvlist_next_nvpair' function. */
 #undef HAVE_NVLIST_NEXT_NVPAIR
 
+/* Define to 1 if you have libdroplet lib */
+#undef HAVE_OBJECTSTORE
+
 /* Define to 1 to use the old sockopt option */
 #undef HAVE_OLD_SOCKOPT
 
@@ -604,6 +610,9 @@
 
 /* Define to 1 if python support should be enabled */
 #undef HAVE_PYTHON
+
+/* Define to 1 if you have rados lib */
+#undef HAVE_RADOS
 
 /* Define to 1 if you have the `readdir_r' function. */
 #undef HAVE_READDIR_R
