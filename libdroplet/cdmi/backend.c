@@ -1308,11 +1308,16 @@ dpl_cdmi_copy(dpl_ctx_t *ctx,
         }
     }
 
-  if (copy_directive == DPL_COPY_DIRECTIVE_MKDENT ||
-      copy_directive == DPL_COPY_DIRECTIVE_RMDENT)
-    add_base_path = 0;
-  else
+  switch (copy_directive)
+    {
+    case DPL_COPY_DIRECTIVE_MKDENT:
+    case DPL_COPY_DIRECTIVE_RMDENT:
+    case DPL_COPY_DIRECTIVE_SYMLINK:
+      add_base_path = 0;
+      break;
+    default:
     add_base_path = 1;
+    }
 
   ret2 = dpl_req_set_src_resource_ext(req, src_resource, add_base_path);
   if (DPL_SUCCESS != ret2)

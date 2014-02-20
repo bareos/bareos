@@ -302,13 +302,16 @@ dir_open(dpl_ctx_t *ctx,
 
   if (DPL_SUCCESS != ret)
     {
-      if (NULL != dir->files)
-        dpl_vec_objects_free(dir->files);
+      if (NULL != dir)
+        {
+          if (NULL != dir->files)
+            dpl_vec_objects_free(dir->files);
 
-      if (NULL != dir->directories)
-        dpl_vec_common_prefixes_free(dir->directories);
+          if (NULL != dir->directories)
+            dpl_vec_common_prefixes_free(dir->directories);
 
-      free(dir);
+          free(dir);
+        }
     }
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
@@ -2031,13 +2034,20 @@ copy_path_to_path(dpl_ctx_t *ctx,
       dst_path = dst_nlocator;
     }
 
-  ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
-  if (DPL_SUCCESS != ret2)
+  if ((NULL == src_bucket || 0 == src_bucket[0]) /* there is no src_bucket */
+      && DPL_COPY_DIRECTIVE_SYMLINK == copy_directive)
     {
-      ret = ret2;
-      goto end;
+      strcpy(src_obj_fqn.path, src_path);
     }
-
+  else
+    {
+      ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
   ret2 = make_abs_path(ctx, dst_bucket, dst_path, &dst_obj_fqn);
   if (DPL_SUCCESS != ret2)
     {
