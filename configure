@@ -646,6 +646,12 @@ DLIB
 DINCLUDE
 DEBUG
 CAP_LIBS
+RADOS_LIBS
+RADOS_INC
+DROPLET_LIBS
+DROPLET_INC
+GLUSTER_LIBS
+GLUSTER_INC
 CAM_LIBS
 XATTR_LIBS_NONSHARED
 XATTR_LIBS
@@ -1030,6 +1036,9 @@ with_afsdir
 enable_acl
 enable_xattr
 enable_scsi_crypto
+with_glusterfs
+with_droplet
+with_rados
 with_systemd
 '
       ac_precious_vars='build_alias
@@ -1779,6 +1788,9 @@ Optional Packages:
   --with-lzo[=DIR]        Directory holding lzo includes/libs
   --with-fastlz[=DIR]     Directory holding fastlz includes/libs
   --with-afsdir[=DIR]     Directory holding AFS includes/libs
+  --with-glusterfs[=DIR]  Directory holding GLUSTERFS includes/libs
+  --with-droplet[=DIR]    Directory holding DROPLET includes/libs
+  --with-rados[=DIR]      Directory holding RADOS includes/libs
   --with-systemd[=UNITDIR]
                           Include systemd support. UNITDIR is where systemd
                           system .service files are located, default is to ask
@@ -31173,6 +31185,265 @@ $as_echo "#define HAVE_LOWLEVEL_SCSI_INTERFACE 1" >>confdefs.h
 fi
 
 
+GLUSTER_LIBS="-lgfapi"
+GLUSTER_INC=""
+have_glusterfs=no
+
+# Check whether --with-glusterfs was given.
+if test "${with_glusterfs+set}" = set; then :
+  withval=$with_glusterfs; with_glusterfs_directory=$withval
+
+fi
+
+
+if test "x${with_glusterfs_directory}" != "xyes" && test x"${with_glusterfs_directory}" != "x"; then
+   #
+   # Make sure the $with_glusterfs_directory also makes sense
+   #
+   if test -d "${with_glusterfs_directory}/lib" -a -d "${with_glusterfs_directory}/include"; then
+      GLUSTER_LIBS="-L${with_glusterfs_directory}/lib ${GLUSTER_LIBS}"
+      GLUSTER_INC="-I${with_glusterfs_directory}/include ${GLUSTER_INC}"
+   fi
+else
+   GLUSTER_INC="-I/usr/include/glusterfs"
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${GLUSTER_LIBS}"
+CFLAGS="${saved_CFLAGS} ${GLUSTER_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${GLUSTER_INC}"
+
+ac_fn_c_check_header_mongrel "$LINENO" "api/glfs.h" "ac_cv_header_api_glfs_h" "$ac_includes_default"
+if test "x$ac_cv_header_api_glfs_h" = xyes; then :
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glfs_init in gfapi library" >&5
+$as_echo_n "checking for glfs_init in gfapi library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <api/glfs.h>
+
+int
+main ()
+{
+
+       glfs_new("volumename");
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       have_glusterfs="yes"
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       have_glusterfs="no"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_glusterfs}" = "xyes"; then
+
+$as_echo "#define HAVE_GFAPI 1" >>confdefs.h
+
+else
+   GLUSTER_LIBS=""
+   GLUSTER_INC=""
+fi
+
+
+
+
+DROPLET_LIBS="-ldroplet"
+DROPLET_INC=""
+have_droplet=no
+
+# Check whether --with-droplet was given.
+if test "${with_droplet+set}" = set; then :
+  withval=$with_droplet; with_droplet_directory=$withval
+
+fi
+
+
+if test "x${with_droplet_directory}" != "xyes" && test x"${with_droplet_directory}" != "x"; then
+   #
+   # Make sure the $with_droplet_directory also makes sense
+   #
+   if test -d "${with_droplet_directory}/lib" -a -d "${with_droplet_directory}/include"; then
+      DROPLET_LIBS="-L${with_droplet_directory}/lib ${DROPLET_LIBS}"
+      DROPLET_INC="-I${with_droplet_directory}/include ${DROPLET_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${DROPLET_LIBS}"
+CFLAGS="${saved_CFLAGS} ${DROPLET_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${DROPLET_INC}"
+
+ac_fn_c_check_header_mongrel "$LINENO" "droplet.h" "ac_cv_header_droplet_h" "$ac_includes_default"
+if test "x$ac_cv_header_droplet_h" = xyes; then :
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for dpl_ctx_new in libdroplet library" >&5
+$as_echo_n "checking for dpl_ctx_new in libdroplet library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <droplet.h>
+
+int
+main ()
+{
+
+       dpl_ctx_new(NULL, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       have_droplet="yes"
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       have_droplet="no"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_droplet}" = "xyes"; then
+
+$as_echo "#define HAVE_OBJECTSTORE 1" >>confdefs.h
+
+else
+   DROPLET_LIBS=""
+   DROPLET_INC=""
+fi
+
+
+
+
+RADOS_LIBS="-lrados"
+RADOS_INC=""
+have_ceph=no
+
+# Check whether --with-rados was given.
+if test "${with_rados+set}" = set; then :
+  withval=$with_rados; with_rados_directory=$withval
+
+fi
+
+
+if test "x${with_rados_directory}" != "xyes" && test x"${with_rados_directory}" != "x"; then
+   #
+   # Make sure the $with_rados_directory also makes sense
+   #
+   if test -d "${with_rados_directory}/lib" -a -d "${with_rados_directory}/include"; then
+      RADOS_LIBS="-L${with_rados_directory}/lib ${RADOS_LIBS}"
+      RADOS_INC="-I${with_rados_directory}/include ${RADOS_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${RADOS_LIBS}"
+CFLAGS="${saved_CFLAGS} ${RADOS_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${RADOS_INC}"
+
+ac_fn_c_check_header_mongrel "$LINENO" "rados/librados.h" "ac_cv_header_rados_librados_h" "$ac_includes_default"
+if test "x$ac_cv_header_rados_librados_h" = xyes; then :
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for glfs_init in gfapi library" >&5
+$as_echo_n "checking for glfs_init in gfapi library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <rados/librados.h>
+
+int
+main ()
+{
+
+      rados_t cluster;
+
+      rados_create(&cluster, NULL);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       have_ceph="yes"
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       have_ceph="no"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_ceph}" = "xyes"; then
+
+$as_echo "#define HAVE_RADOS 1" >>confdefs.h
+
+else
+   RADOS_LIBS=""
+   RADOS_INC=""
+fi
+
+
+
+
 PTHREAD_LIB=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
 $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
@@ -34582,6 +34853,9 @@ Configuration on `date`:
    ACL support:             ${have_acl}
    XATTR support:           ${have_xattr}
    SCSI Crypto support:     ${have_scsi_crypto}
+   GLUSTERFS support:       ${have_glusterfs}
+   DROPLET support:         ${have_droplet}
+   CEPH support:            ${have_ceph}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}
