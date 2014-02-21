@@ -394,7 +394,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
        */
       for (i = 0; FS_options[i].name; i++) {
          if (FS_options[i].keyword == keyword && bstrcasecmp(lc->str, FS_options[i].name)) {
-            strncpy(option, FS_options[i].option, sizeof(option));
+            bstrncpy(option, FS_options[i].option, sizeof(option));
             i = 0;
             break;
          }
