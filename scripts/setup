@@ -78,6 +78,7 @@ scripts/create_sed
 # to backup to be build directory
 #
 echo "s%File = @sbindir@%File = @BUILD_DIR@%g" >tmp/t$$
+echo "s%File = \"@sbindir@\"%File = \"@BUILD_DIR@\"%g" >tmp/t$$
 sed -f tmp/t$$ build/src/dird/bareos-dir.conf.in >tmp/o$$
 cp tmp/o$$ build/src/dird/bareos-dir.conf.in
 rm -f tmp/t$$ tmp/o$$
