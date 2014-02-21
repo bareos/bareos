@@ -729,7 +729,7 @@ command.  For each tape in the changer containing a barcode, Bareos will
 mount the tape and then label it with the same name as the barcode.  An
 appropriate Media record will also be created in the catalog.  Any barcode
 that begins with the same characters as specified on the
-"CleaningPrefix=xxx" directive in the Director's Pool resource, will be
+"CleaningPrefix=xxx" (default is "CLN") directive in the Director's Pool resource, will be
 treated as a cleaning tape, and will not be labeled.  However, an entry for
 the cleaning tape will be created in the catalog.  For example with:
 
@@ -1151,7 +1151,7 @@ run job=<job-name> client=<client-name>
 
 \item[setbandwidth]
   \index[general]{Console!Command!setbandwidth}
-  This command is used to limit the bandwidth of a running job or a client.
+  This command (\sinceVersion{console}{setbandwidth}{12.4.0}) is used to limit the bandwidth of a running job or a client.
 
 \begin{bconsole}{setbandwidth}
 setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
@@ -1234,9 +1234,8 @@ setdebug level=nn [trace=0/1 client=<client-name> | dir | director | storage=<st
    full form of this command is:
 
 \begin{bconsole}{status}
-status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |
-        storage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |
-        subscriptions]
+status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | 
+        client=<client-name> | storage=<storage-name> slots | subscriptions]
 \end{bconsole}
 
    If you do a {\bf status dir}, the console will list any currently
@@ -1348,6 +1347,107 @@ to use the Autochanger (with two devices), it would block because
 the user unmounted the device. The real problem for the Job I started
 using the "File" device is that the device is blocked waiting for
 media -- that is Bareos needs you to label a Volume.
+
+
+
+The command \bcommand{status scheduler} (\sinceVersion{console}{status scheduler}{12.4.4}) can be used to check when a certain schedule will trigger.
+This gives more information than \bcommand{status director}.
+
+Called without parameters, \bcommand{status scheduler} shows a preview for all schedules for the next 14 days.
+It first shows a list of the known schedules and the jobs that will be triggered by these jobs:
+
+\begin{bconsole}{status scheduler}
+*<input>status scheduler</input> 
+Scheduler Jobs:
+
+Schedule               Jobs Triggered
+===========================================================
+WeeklyCycle
+                       BackupClient1
+
+WeeklyCycleAfterBackup
+                       BackupCatalog
+
+====
+
+Scheduler Preview for 14 days:
+
+Date                  Schedule                Overrides
+==============================================================
+Di 04-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Di 04-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Mi 05-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Mi 05-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Do 06-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
+Do 06-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
+Fr 07-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
+Fr 07-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
+Sa 08-Jun-2013 21:00  WeeklyCycle             Level=Differential                                                                                                                   
+Mo 10-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
+Mo 10-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
+Di 11-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
+Di 11-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Mi 12-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Mi 12-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Do 13-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Do 13-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Fr 14-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Fr 14-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Sa 15-Jun-2013 21:00  WeeklyCycle             Level=Differential
+Mo 17-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+====
+\end{bconsole}
+
+\bcommand{status scheduler} accepts the following parameters:
+\begin{description}
+    \item[client=clientname] shows only the schedules that affect the given client.
+    \item[job=jobname] shows only the schedules that affect the given job.
+    \item[schedule=schedulename] shows only the given schedule.
+    \item[days=number] of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria.
+\end{description}
+
+In case you are running a maintained version of Bareos, 
+the command \bcommand{status subscriptions} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions 
+that are used.
+
+To enable this functionality, just add the configuration directive subscriptions to the director configuration in the director ressource:
+
+The number of subscribed clients can be set in
+the director resource, for example: 
+\begin{bconfig}{enable subscription check}
+Director {
+   ...
+   Subscriptions = 50
+}
+\end{bconfig}
+
+Using the console command \bcommand{status subscriptions}, the status of
+the subscriptions can be checked any time interactively:
+
+\begin{bconsole}{status subscriptions}
+*<input>status subscriptions</input>
+Ok: available subscriptions: 8 (42/50) (used/total)
+\end{bconsole}
+
+Also, the number of subscriptions is checked after every job.
+If the number of clients is bigger than the configured limit, a Job warning is
+created a message like this:
+\begin{bconsole}{subscriptions warning}
+JobId 7: Warning: Subscriptions exceeded: (used/total) (51/50)
+\end{bconsole}
+
+Please note: Nothing else than the warning is issued, no enforcement on
+backup, restore or any other operation will happen.
+
+Setting the value for \configdirective{Subscriptions} to 0 disables this functionality:
+\begin{bconfig}{disable subscription check}
+Director {
+   ...
+   Subscriptions = 0
+}
+\end{bconfig}
+
 
 \item [time]
    \index[general]{Console!Command!time}
