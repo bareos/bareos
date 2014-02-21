@@ -238,7 +238,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
          if (var_index == -1) {
             bsnprintf(buf, sizeof(buf), "%d", counter->CurrentValue);
             *val_len = bsnprintf(buf, sizeof(buf), "%d", strlen(buf));
-            *val_ptr = buf;
+            *val_ptr = bstrdup(buf);
             *val_size = 0;                  /* don't try to free val_ptr */
             return VAR_OK;
          } else {
@@ -354,7 +354,7 @@ static var_rc_t lookup_var(var_t *ctx,
          len = count;                 /* else return # array items */
       }
       *val_len = bsnprintf(buf, sizeof(buf), "%d", len);
-      *val_ptr = buf;
+      *val_ptr = bstrdup(buf);
       *val_size = 0;                  /* don't try to free val_ptr */
       return VAR_OK;
    }
