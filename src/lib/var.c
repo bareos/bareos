@@ -1868,8 +1868,8 @@ lookup_value(
     if (ctx->rel_lookup_flag && rc == VAR_ERR_UNDEFINED_VARIABLE) {
         ctx->rel_lookup_cnt--;
         buf[0] = EOS;
-        *val_ptr  = buf;
-        *val_len  = 0;
+        *val_ptr = bstrdup(buf);
+        *val_len = 0;
         *val_size = 0;
         return VAR_OK;
     }
