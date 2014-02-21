@@ -225,7 +225,7 @@ Please note, this list is incomplete.
   to be used.
 \item [catalogs]
   Used in the show command. Takes no arguments.
-\item [client | fd]
+\item [client \textbar\ fd]
 \item [clients]
   Used in the show, list, and llist commands. Takes no arguments.
 \item [counters]
@@ -239,7 +239,7 @@ Please note, this list is incomplete.
   jobs scheduled for the number of days you want.
 \item [devices]
   Used in the show command. Takes no arguments.
-\item [dir | director]
+\item [director \textbar\ dir]
 \item [directors]
   Used in the show command. Takes no arguments.
 \item [directory]
@@ -277,7 +277,7 @@ Please note, this list is incomplete.
   in the catalog database, the same JobId can be reused once a
   Job is removed from the catalog. Probably you will refer
   specific Jobs that ran using their numeric JobId.
-\item [job | jobname]
+\item [job \textbar\  jobname]
   The Job or Jobname keyword refers to the name you specified
   in the Job resource, and hence it refers to any number of
   Jobs that ran.  It is typically useful if you want to list
@@ -290,7 +290,7 @@ Please note, this list is incomplete.
   Used in the show command. Takes no arguments.
 \item [media]
   Used in the list and llist commands. Takes no arguments.
-\item [nextvol | nextvolume]
+\item [nextvolume \textbar\ nextvol]
   Used in the list and llist commands. Takes no arguments.
 \item [on]
   Takes no keyword.
@@ -307,7 +307,7 @@ Please note, this list is incomplete.
   Used in the show command. Takes no arguments.
 \item [schedules]
   Used in the show command. Takes no arguments.
-\item [sd | store | storage]
+\item [storage \textbar\ store \textbar\ sd]
 \item [ujobid]
   The ujobid is a unique job identification that is printed
   in the Job Report output. At the current time, it consists
@@ -342,11 +342,10 @@ The following commands are currently implemented:
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{add}
 add [pool=<pool-name> storage=<storage> jobid=<JobId>
-\end{verbatim}
-\normalsize
+\end{bconsole}
+
 
    Normally, the {\bf label} command is used rather than this command
    because the {\bf label} command labels the physical media (tape, disk,
@@ -389,11 +388,9 @@ add [pool=<pool-name> storage=<storage> jobid=<JobId>
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{cancel}
 cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Once a Job is marked to be canceled, it may take a bit of time
    (generally within a minute but up to two hours) before the Job actually
@@ -421,11 +418,10 @@ cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{create}
 create [pool=<pool-name>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
+
 
    When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
@@ -449,14 +445,12 @@ create [pool=<pool-name>]
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{delete}
 delete pool=<pool-name>
 delete volume=<volume-name> pool=<pool-name>
 delete JobId=<job-id> JobId=<job-id2> ...
 delete Job JobId=n,m,o-r,t ...
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    The first form deletes a Pool record from the catalog database.  The
    second form deletes a Volume record from the specified pool in the
@@ -476,12 +470,9 @@ delete Job JobId=n,m,o-r,t ...
   (default enabled) as defined in the bareos-dir.conf file.
 
    The full form of this command is:
-
-\footnotesize
-\begin{verbatim}
-disable job<job-name{\textgreater
-\end{verbatim}
-\normalsize
+\begin{bconsole}{disable}
+disable job=<job-name>
+\end{bconsole}
 
 \item [enable]
   \index[general]{Console!Command!enable}
@@ -494,11 +485,9 @@ disable job<job-name{\textgreater
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-enable job<job-name>
-\end{verbatim}
-\normalsize
+\begin{bconsole}{enable}
+enable job=<job-name>
+\end{bconsole}
 
 \label{estimate}
 \item [estimate]
@@ -526,12 +515,9 @@ enable job<job-name>
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-estimate job=<job-name> listing client=<client-name> accurate=<yes|no>
-  fileset=<fileset-name> level=<level-name>
-\end{verbatim}
-\normalsize
+\begin{bconsole}{estimate}
+estimate job=<job-name> listing client=<client-name> accurate=<yes|no> fileset=<fileset-name> level=<level-name>
+\end{bconsole}
 
    Specification of the {\bf job} is sufficient, but you can also override the
    client, fileset, accurate and/or level by specifying them on the estimate
@@ -539,13 +525,11 @@ estimate job=<job-name> listing client=<client-name> accurate=<yes|no>
 
 As an example, you might do:
 
-\footnotesize
-\begin{verbatim}
-     @output /tmp/listing
-     estimate job=NightlySave listing level=Incremental
-     @output
-\end{verbatim}
-\normalsize
+\begin{bconsole}{estimate: redirected output}
+@output /tmp/listing
+estimate job=NightlySave listing level=Incremental
+@output
+\end{bconsole}
 
    which will do a full listing of all files to be backed up for the  Job {\bf
    NightlySave} during an Incremental save and put it in the  file {\bf
@@ -571,12 +555,9 @@ As an example, you might do:
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-export storage=<storage-name> srcslots=<slot-selection>
-  [dstslots=<slot-selection> volume=<volume-name> scan]
-\end{verbatim}
-\normalsize
+\begin{bconsole}{export}
+export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selection> volume=<volume-name> scan]
+\end{bconsole}
 
    The export command does exactly the opposite of the import command. You
    can specify which slots should be transferred to import/export slots. The
@@ -589,11 +570,9 @@ export storage=<storage-name> srcslots=<slot-selection>
 
    Example:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{export volume}
 export volume=A00020L4|A00007L4|A00005L4
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Instead of exporting volumes by names you can also select a number of slots via
    the srcslots keyword and export those to the slots you specify in dstslots. The export
@@ -602,11 +581,9 @@ export volume=A00020L4|A00007L4|A00005L4
 
    Example:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{export slots}
 export srcslots=1-2 dstslots=37-38
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [gui]
    \index[general]{Console!Command!gui}
@@ -626,12 +603,9 @@ export srcslots=1-2 dstslots=37-38
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-import storage=<storage-name> [srcslots=<slot-selection>
-  dstslots=<slot-selection> volume=<volume-name> scan]
-\end{verbatim}
-\normalsize
+\begin{bconsole}{import}
+import storage=<storage-name> [srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan]
+\end{bconsole}
 
    To import new tapes into the autochanger, you only have to load the new
    tapes into the import/export slots and call import from the cmdline.
@@ -642,8 +616,7 @@ import storage=<storage-name> [srcslots=<slot-selection>
 
    Example with a Library with 36 Slots and 3 Import/Export Slots:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{import example}
 *import storage=TandbergT40
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger "slots" command.
@@ -659,16 +632,14 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger transfer command.
 3308 Successfully transfered volume from slot 39 to 25.
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    You can also import certain slots when you don't have enough free slots
    in your autochanger to put all the import/export slots in.
 
    Example with a Library with 36 Slots and 3 Import/Export Slots importing one slot:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{import example}
 *import storage=TandbergT40 srcslots=37 dstslots=20
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger "slots" command.
@@ -678,8 +649,7 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger transfer command.
 3308 Successfully transfered volume from slot 37 to 20.
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [label]
    \index[general]{Console!Command!label}
@@ -687,11 +657,9 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
    This command is used to label physical volumes.
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{label}
 label storage=<storage-name> volume=<volume-name> slot=<slot>
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    If you leave out any part, you will be prompted for it.  The media type
    is automatically taken from the Storage resource definition that you
@@ -717,6 +685,7 @@ label storage=<storage-name> volume=<volume-name> slot=<slot>
        mt weof
 \end{verbatim}
 \normalsize
+
 
 The label command can fail for a number of reasons:
 
@@ -764,24 +733,19 @@ that begins with the same characters as specified on the
 treated as a cleaning tape, and will not be labeled.  However, an entry for
 the cleaning tape will be created in the catalog.  For example with:
 
-\footnotesize
-\begin{verbatim}
-        Pool {
-          Name ...
-          Cleaning Prefix = "CLN"
-       }
-
-\end{verbatim}
-\normalsize
+\begin{bconfig}{Cleaning Tape}
+Pool {
+    Name ...
+    Cleaning Prefix = "CLN"
+}
+\end{bconfig}
 
 Any slot containing a barcode of CLNxxxx will be treated as a cleaning tape
 and will not be mounted.  Note, the full form of the command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{label}
 label storage=xxx pool=yyy slots=1-5,10 barcodes
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [list]
    \index[general]{Console!Command!list}
@@ -789,57 +753,32 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    various fields of each record are listed on a single line.  The various
    forms of the list command are:
 
-\footnotesize
-\begin{verbatim}
-   list jobs
+\begin{bconsole}{list}
+list jobs
+list jobid=<id>           (list jobid id)
+list ujobid=<unique job name> (list job with unique name)
+list job=<job-name>   (list all jobs with "job-name")
+list jobname=<job-name>  (same as above)
+    In the above, you can add "limit=nn" to limit the output to nn jobs.
+list joblog jobid=<id> (list job output if recorded in the catalog)
+list jobmedia
+list jobmedia jobid=<id>
+list jobmedia job=<job-name>
+list files jobid=<id>
+list files job=<job-name>
+list pools
+list clients
+list jobtotals
+list volumes
+list volumes jobid=<id>
+list volumes pool=<pool-name>
+list volumes job=<job-name>
+list volume=<volume-name>
+list nextvolume job=<job-name>
+list nextvol job=<job-name>
+list nextvol job=<job-name> days=nnn
+\end{bconsole}
 
-   list jobid=<id>           (list jobid id)
-
-   list ujobid=<unique job name> (list job with unique name)
-
-   list job=<job-name>   (list all jobs with "job-name")
-
-   list jobname=<job-name>  (same as above)
-
-       In the above, you can add "limit=nn" to limit the output to
-       nn jobs.
-
-   list joblog jobid=<id> (list job output if recorded in the catalog)
-
-   list jobmedia
-
-   list jobmedia jobid=<id>
-
-   list jobmedia job=<job-name>
-
-   list files jobid=<id>
-
-   list files job=<job-name>
-
-   list pools
-
-   list clients
-
-   list jobtotals
-
-   list volumes
-
-   list volumes jobid=<id>
-
-   list volumes pool=<pool-name>
-
-   list volumes job=<job-name>
-
-   list volume=<volume-name>
-
-   list nextvolume job=<job-name>
-
-   list nextvol job=<job-name>
-
-   list nextvol job=<job-name> days=nnn
-
-\end{verbatim}
-\normalsize
 
    What most of the above commands do should be more or less obvious.  In
    general if you do not specify all the command line arguments, the
@@ -869,16 +808,15 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    As an example, the command {\bf list pools} might produce  the following
    output:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{list pools}
+*<input>list pools</input>
 +------+---------+---------+---------+----------+-------------+
 | PoId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
 +------+---------+---------+---------+----------+-------------+
 |    1 | Default |       0 |       0 | Backup   | *           |
 |    2 | Recycle |       0 |       8 | Backup   | File        |
 +------+---------+---------+---------+----------+-------------+
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    As mentioned above, the {\bf list} command lists what is in the
    database.  Some things are put into the database immediately when Bareos
@@ -907,8 +845,8 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    If instead of the {\bf list pools} as in the example above, you enter
    {\bf llist pools} you might get the following output:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{llist pools}
+*<input>llist pools</input>
           PoolId: 1
             Name: Default
          NumVols: 0
@@ -940,9 +878,7 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
          Recycle: 1
         PoolType: Backup
      LabelFormat: File
-
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [messages]
    \index[general]{Console!Command!messages}
@@ -965,13 +901,11 @@ label storage=xxx pool=yyy slots=1-5,10 barcodes
    operate the autoloader unless you specify a {\bf slot} and possibly a
    {\bf drive}. The various forms of the mount command are:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{mount}
 mount  storage=<storage-name> [slot=<num>] [
        drive=<num> ]
 mount [jobid=<id> | job=<job-name>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
    Device resource,  under most circumstances, Bareos will automatically access
@@ -985,9 +919,8 @@ mount [jobid=<id> | job=<job-name>]
 
    To move a volume from slot 32 to slots 33, use:
 
-\footnotesize
-\begin{verbatim}
-*move storage=TandbergT40 srcslots=32 dstslots=33
+\begin{bconsole}{move}
+*<input>move storage=TandbergT40 srcslots=32 dstslots=33</input>
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger "slots" command.
 Device "Drive-1" has 39 slots.
@@ -996,8 +929,7 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 Connecting to Storage daemon TandbergT40 at bareos:9103 ...
 3306 Issuing autochanger transfer command.
 3308 Successfully transfered volume from slot 32 to 33.
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [prune]
    \index[general]{Console!Command!prune}
@@ -1010,12 +942,9 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
    records from the database, and you can Prune both expired Job and File
    records from specified Volumes.
 
-\footnotesize
-\begin{verbatim}
-prune files|jobs|volume|stats client=<client-name>
-volume=<volume-name>
-\end{verbatim}
-\normalsize
+\begin{bconsole}{prune}
+prune files|jobs|volume|stats client=<client-name> volume=<volume-name>
+\end{bconsole}
 
    For a Volume to be pruned, the {\bf VolStatus} must be Full, Used, or
    Append, otherwise the pruning will not take place.
@@ -1030,13 +959,11 @@ volume=<volume-name>
    you do not use it unless you know what you are doing.  The permitted
    forms of {\bf purge} are:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{purge}
 purge files jobid=<jobid>|job=<job-name> | client=<client-name>
 purge jobs client=<client-name> (of all jobs)
 purge volume|volume=<vol-name> (of all jobs)
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 For the {\bf purge} command to work on Volume Catalog database  records the
 {\bf VolStatus}  must be Append, Full, Used, or Error.
@@ -1046,11 +973,11 @@ you are using the \texttt{ActionOnPurge=Truncate} option on those Media.
 
 To ask Bareos to truncate your \texttt{Purged} volumes, you need to use the
 following command in interactive mode or in a RunScript:
-\begin{verbatim}
-*purge volume action=truncate storage=File allpools
+\begin{bconsole}{purge example}
+*<input>purge volume action=truncate storage=File allpools</input>
 # or by default, action=all
-*purge volume action storage=File pool=Default
-\end{verbatim}
+*<input>purge volume action storage=File pool=Default</input>
+\end{bconsole}
 
 This is possible to specify the volume name, the media type, the pool, the
 storage, etc\dots (see \texttt{help purge}) Be sure that your storage device is
@@ -1078,12 +1005,9 @@ idle when you decide to run this command.
 
    The full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-relabel storage=<storage-name> oldvolume=<old-volume-name>
-  volume=<newvolume-name>}
-\end{verbatim}
-\normalsize
+\begin{bconsole}{relabel}
+relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<newvolume-name>}
+\end{bconsole}
 
    If you leave out any part, you will be prompted for it.  In order for
    the Volume (old-volume-name) to be relabeled, it must be in the catalog,
@@ -1100,11 +1024,9 @@ relabel storage=<storage-name> oldvolume=<old-volume-name>
    current tape in the drive, and to re-read the Volume label the next time
    the tape is used.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{release}
 release storage=<storage-name>
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    After a release command, the device is still kept open by Bareos (unless
    Always Open is set to No in the Storage Daemon's configuration) so it
@@ -1152,12 +1074,9 @@ release storage=<storage-name>
    By using the rerun command, it is much easier to rerun a jobs exactly
    as it was configured. You only have to specify the JobId of the failed job.
 
-\footnotesize
-\begin{verbatim}
-rerun jobid=<jobid> since_jobid=<jobid>
-  days=<nr_days> hours=<nr_hours> yes
-\end{verbatim}
-\normalsize
+\begin{bconsole}{rerun}
+rerun jobid=<jobid> since_jobid=<jobid> days=<nr_days> hours=<nr_hours> yes
+\end{bconsole}
 
    You can select the jobid(s) to rerun by using one of the selection criteria.
 
@@ -1174,15 +1093,13 @@ rerun jobid=<jobid> since_jobid=<jobid>
    to be restored.  This mode is somewhat similar to the standard Unix {\bf
    restore} program's interactive file selection mode.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{restore}
 restore storage=<storage-name> client=<backup-client-name>
   where=<path> pool=<pool-name> fileset=<fileset-name>
   restoreclient=<restore-client-name>
   restorejob=<job-name>
   select current all done
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Where {\bf current}, if specified, tells the restore command to
    automatically select a restore to the most current backup.  If not
@@ -1211,14 +1128,12 @@ restore storage=<storage-name> client=<backup-client-name>
 
    The full form of the command is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{run}
 run job=<job-name> client=<client-name>
   fileset=<FileSet-name>  level=<level-keyword>
   storage=<storage-name>  where=<directory-prefix>
   when=<universal-time-specification> spooldata=yes|no yes
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Any information that is needed but not specified will be listed for
    selection, and before starting the job, you will be prompted to accept,
@@ -1238,11 +1153,10 @@ run job=<job-name> client=<client-name>
   \index[general]{Console!Command!setbandwidth}
   This command is used to limit the bandwidth of a running job or a client.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{setbandwidth}
 setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
+
 
 \item [setdebug]
    \index[general]{Console!Command!setdebug}
@@ -1252,12 +1166,9 @@ setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
    This command is used to set the debug level in each  daemon. The form of this
    command is:
 
-\footnotesize
-\begin{verbatim}
-setdebug level=nn [trace=0/1 client=<client-name> | dir | director |
-  storage=<storage-name> | all]
-\end{verbatim}
-\normalsize
+\begin{bconsole}{setdebug}
+setdebug level=nn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
+\end{bconsole}
 
    If trace=1 is set, then tracing will be enabled, and the daemon will be
    placed in trace mode, which means that all debug output as set by the
@@ -1322,12 +1233,11 @@ setdebug level=nn [trace=0/1 client=<client-name> | dir | director |
    information about current jobs like average speed or file accounting. The
    full form of this command is:
 
-\footnotesize
-\begin{verbatim}
-status [all | dir=<dir-name> | director [days=nnn] |
-  client=<client-name> | [slots] storage=<storage-name>]
-\end{verbatim}
-\normalsize
+\begin{bconsole}{status}
+status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |
+        storage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |
+        subscriptions]
+\end{bconsole}
 
    If you do a {\bf status dir}, the console will list any currently
    running jobs, a summary of all jobs scheduled to be run in the next 24
@@ -1343,16 +1253,13 @@ status [all | dir=<dir-name> | director [days=nnn] |
    In the Running Jobs listing, you may find the following types of
    information:
 
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{}
 2507 Catalog MatouVerify.2004-03-13_05.05.02 is waiting execution
 5349 Full    CatalogBackup.2004-03-13_01.10.00 is waiting for higher
              priority jobs to finish
 5348 Differe Minou.2004-03-13_01.05.09 is waiting on max Storage jobs
 5343 Full    Rufus.2004-03-13_01.05.04 is running
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Looking at the above listing from bottom to top, obviously JobId 5343
    (Rufus) is running.  JobId 5348 (Minou) is waiting for JobId 5343 to
@@ -1377,9 +1284,9 @@ status [all | dir=<dir-name> | director [days=nnn] |
    much more specific indication of the problem by doing a
    {\bf status storage=xxx}.  For example, on an idle test system, when
    I do {\bf status storage=File}, I get:
-\footnotesize
-\begin{verbatim}
-status storage=File
+
+\begin{bconsole}{status storage}
+*<input>status storage=File</input>
 Connecting to Storage daemon File at 192.168.68.112:8103
 
 rufus-sd Version: 1.39.6 (24 March 2006) i686-pc-linux-gnu redhat (Stentz)
@@ -1407,14 +1314,12 @@ Pool="*unknown*"
     Total Bytes Read=0 Blocks Read=0 Bytes/block=0
     Positioned at File=0 Block=0
 
-Device "DVD-Writer" (/dev/hdc) is not open.
 Device "File" (/tmp) is not open.
 ====
 
 In Use Volume status:
 ====
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 Now, what this tells me is that no jobs are running and that none of
 the devices are in use.  Now, if I {\bf unmount} the autochanger, which
@@ -1422,9 +1327,8 @@ will not be used in this example, and then start a Job that uses the
 File device, the job will block.  When I re-issue the status storage
 command, I get for the Device status:
 
-\footnotesize
-\begin{verbatim}
-status storage=File
+\begin{bconsole}{status storage}
+*<input>status storage=File</input>
 ...
 Device status:
 Autochanger "DDS-4-changer" with devices:
@@ -1433,13 +1337,11 @@ Device "DDS-4" (/dev/nst0) is not open.
     Device is BLOCKED. User unmounted.
     Drive 0 is not loaded.
 
-Device "DVD-Writer" (/dev/hdc) is not open.
 Device "File" (/tmp) is not open.
     Device is BLOCKED waiting for media.
 ====
 ...
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 Now, here it should be clear that if a job were running that wanted
 to use the Autochanger (with two devices), it would block because
@@ -1464,12 +1366,10 @@ media -- that is Bareos needs you to label a Volume.
    This command causes the indicated Bareos Storage  daemon to unmount the
    specified device. The forms of the command  are the same as the mount command:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{unmount}
 unmount storage=<storage-name> [drive=<num>]
 unmount [jobid=<id> | job=<job-name>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    Once you unmount a storage device, Bareos will no longer be able to use
    it until you issue a mount command for that device. If Bareos needs to
@@ -1547,14 +1447,13 @@ wish to change.  The following Volume parameters may be changed:
 
    The full form of the update command with all command line arguments is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{update}
 update volume=<volume-name> pool=<poolname>
   slots volstatus=<volume-status> VolRetention=<volume-retention>
   VolUse=<volume-use-period> MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes|no
   slot=nnn enabled=n recyclepool=<pool-name>
-\end{verbatim}
-\normalsize
+\end{bconsole}
+
 
 \item [use]
    \index[general]{Console!Command!use}
@@ -1563,11 +1462,9 @@ update volume=<volume-name> pool=<poolname>
    the case that you are using  more than one database, you can use this command
    to switch from  one to another.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{use}
 use [catalog=<catalog>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 \item [var]
    \label{var}
@@ -1591,11 +1488,9 @@ use [catalog=<catalog>]
    testing where you  wish to start a job and wait until that job completes
    before continuing. This command now has the following options:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{wait}
 wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
    If specified with a specific JobId, ... the wait command will wait
    for that particular job to terminate before continuing.
