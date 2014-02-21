@@ -28,7 +28,7 @@ cd /var/www/htdocs
 * Get the current version from github 
 
 ```
-git clone https://github.com/fbergkemper/barbossa.git
+git clone https://github.com/bareos/bareos-webui.git
 ```
 
 * Change into the barbossa directory
@@ -49,17 +49,17 @@ See [https://getcomposer.org/](https://getcomposer.org/) for more information an
 
 ### Configure Apache
 
-See the example file [bareos-console-web.conf](https://raw.github.com/fbergkemper/barbossa/master/install/apache/bareos-console-web.conf).
+See the example file [bareos-console-web.conf](https://raw.github.com/bareos/bareos-webui/master/install/apache/bareos-webui.conf).
 You might configure your Apache manually or copy the example configuration with wget from the git repo, e.g.
 
 ```
 cd /etc/apache2/conf.d
-wget https://raw.github.com/fbergkemper/barbossa/master/install/apache/bareos-console-web.conf
+wget https://raw.github.com/bareos/bareos-webui/master/install/apache/bareos-webui.conf
 ```
 
 ### Configure the database connection
 
-* Copy barbossa/config/autoload/local.php.dist to barbossa/config/autoload/local.php and edit the local.php file to your needs.
+* Copy bareos-webui/config/autoload/local.php.dist to bareos-webui/config/autoload/local.php and edit the local.php file to your needs.
 
 ### Configuration to be able to run bconsole commands within the web-frontend
 

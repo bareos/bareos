@@ -4,6 +4,7 @@ install: install-am
 	mkdir -p $(DESTDIR)@sysconfdir@/sudoers.d/
 #	dnl #mkdir -p $(DESTDIR)@sysconfdir@/@PACKAGE@
 #	dnl #mkdir -p $(DESTDIR)@sbindir@
+	cp -p init_autoloader.php $(DESTDIR)$(pkgdatadir)
 	cp -pr config/ data/ module/ public/ $(DESTDIR)$(pkgdatadir)
 
 #	#mkdir -p $(DESTDIR)$(pkgdatadir)/install

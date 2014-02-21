@@ -44,9 +44,21 @@ $modules = array(
 	'User',
 );
 
+/*
 if($env == 'development') {
-  $modules[] = 'ZendDeveloperTools';
+   $modules[] = 'ZendDeveloperTools';
 }
+*/
+
+// to display all errors use: 
+
+/*
+if($env == 'development') {
+        $modules[] = 'ZendDeveloperTools';  // you may comment only this line out if ZendDeveloperTools are not installed e.g.
+        error_reporting(E_ALL);
+        ini_set("display_errors", 1);
+}
+*/
 
 return array(
     // This should be an array of module namespaces used in the application.

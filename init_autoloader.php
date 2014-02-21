@@ -42,6 +42,16 @@ if ($zf2Path) {
             )
         ));
     }
+} else {
+    // Zend Framework available in normal include path? Use it.
+    if( stream_resolve_include_path("Zend/Loader/AutoloaderFactory.php") ) {
+        include 'Zend/Loader/AutoloaderFactory.php';
+        Zend\Loader\AutoloaderFactory::factory(array(
+                'Zend\Loader\StandardAutoloader' => array(
+                    'autoregister_zf' => true
+                )
+            ));
+    }
 }
 
 if (!class_exists('Zend\Loader\AutoloaderFactory')) {
