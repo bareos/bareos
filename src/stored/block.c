@@ -357,7 +357,6 @@ bool DCR::write_block_to_device()
    DCR *dcr = this;
 
    if (dcr->spooling) {
-      Dmsg0(100, "Write to spool\n");
       status = write_block_to_spool_file(dcr);
       return status;
    }
