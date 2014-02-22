@@ -1234,7 +1234,7 @@ setdebug level=nn [trace=0/1 client=<client-name> | dir | director | storage=<st
    full form of this command is:
 
 \begin{bconsole}{status}
-status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | 
+status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
         client=<client-name> | storage=<storage-name> slots | subscriptions]
 \end{bconsole}
 
@@ -1357,7 +1357,7 @@ Called without parameters, \bcommand{status scheduler} shows a preview for all s
 It first shows a list of the known schedules and the jobs that will be triggered by these jobs:
 
 \begin{bconsole}{status scheduler}
-*<input>status scheduler</input> 
+*<input>status scheduler</input>
 Scheduler Jobs:
 
 Schedule               Jobs Triggered
@@ -1378,14 +1378,14 @@ Di 04-Jun-2013 21:00  WeeklyCycle             Level=Incremental
 Di 04-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 Mi 05-Jun-2013 21:00  WeeklyCycle             Level=Incremental
 Mi 05-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
-Do 06-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
-Do 06-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
-Fr 07-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
-Fr 07-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
-Sa 08-Jun-2013 21:00  WeeklyCycle             Level=Differential                                                                                                                   
-Mo 10-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
-Mo 10-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full                                                                                                                           
-Di 11-Jun-2013 21:00  WeeklyCycle             Level=Incremental                                                                                                                    
+Do 06-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Do 06-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Fr 07-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Fr 07-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Sa 08-Jun-2013 21:00  WeeklyCycle             Level=Differential
+Mo 10-Jun-2013 21:00  WeeklyCycle             Level=Incremental
+Mo 10-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
+Di 11-Jun-2013 21:00  WeeklyCycle             Level=Incremental
 Di 11-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 Mi 12-Jun-2013 21:00  WeeklyCycle             Level=Incremental
 Mi 12-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
@@ -1407,14 +1407,14 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
     \item[days=number] of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria.
 \end{description}
 
-In case you are running a maintained version of Bareos, 
-the command \bcommand{status subscriptions} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions 
+In case you are running a maintained version of Bareos,
+the command \bcommand{status subscriptions} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions
 that are used.
 
 To enable this functionality, just add the configuration directive subscriptions to the director configuration in the director ressource:
 
 The number of subscribed clients can be set in
-the director resource, for example: 
+the director resource, for example:
 \begin{bconfig}{enable subscription check}
 Director {
    ...
