@@ -292,12 +292,8 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.Slot         = sdmr.Slot;
       mr.InChanger    = sdmr.InChanger;
       bstrncpy(mr.VolStatus, sdmr.VolStatus, sizeof(mr.VolStatus));
-      if (sdmr.VolReadTime >= 0) {
-         mr.VolReadTime  = sdmr.VolReadTime;
-      }
-      if (sdmr.VolWriteTime >= 0) {
-         mr.VolWriteTime = sdmr.VolWriteTime;
-      }
+      mr.VolReadTime  = sdmr.VolReadTime;
+      mr.VolWriteTime = sdmr.VolWriteTime;
 
       Dmsg2(400, "db_update_media_record. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
       /*
