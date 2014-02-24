@@ -1,14 +1,3 @@
-#!/bin/sh
-#
-# shell script to create Bareos Ingres tables
-#
-bindir=@INGRES_BINDIR@
-PATH="$bindir:$PATH"
-db_name=${db_name:-@db_name@}
-db_user=${db_user:-@db_user@}
-
-sql -u${db_user} $* ${db_name} <<END-OF-DATA
-
 --
 -- When using batch insert make sure you adhere to the following
 -- minimum Ingres version:
@@ -217,57 +206,58 @@ CREATE INDEX job_media_job_id_media_id_idx ON JobMedia (jobid, mediaid);
 CREATE SEQUENCE Media_Seq;
 CREATE TABLE Media
 (
-    MediaId		INTEGER 	NOT NULL DEFAULT Media_Seq.nextval,
-    VolumeName		VARBYTE(128)	NOT NULL,
-    Slot		INTEGER 	DEFAULT 0,
-    PoolId		INTEGER 	DEFAULT 0,
-    MediaType		VARBYTE(128)	NOT NULL,
-    MediaTypeId 	INTEGER 	DEFAULT 0,
-    LabelType		INTEGER 	DEFAULT 0,
-    FirstWritten	TIMESTAMP WITHOUT TIME ZONE,
-    LastWritten 	TIMESTAMP WITHOUT TIME ZONE,
-    LabelDate		TIMESTAMP WITHOUT TIME ZONE,
-    VolJobs		INTEGER 	DEFAULT 0,
-    VolFiles		INTEGER 	DEFAULT 0,
-    VolBlocks		INTEGER 	DEFAULT 0,
-    VolMounts		INTEGER 	DEFAULT 0,
-    VolBytes		BIGINT		DEFAULT 0,
-    VolErrors		INTEGER 	DEFAULT 0,
-    VolWrites		INTEGER 	DEFAULT 0,
-    VolCapacitybytes	BIGINT		DEFAULT 0,
-    VolStatus		VARBYTE(128)	NOT NULL
+   MediaId		INTEGER 	NOT NULL DEFAULT Media_Seq.nextval,
+   VolumeName		VARBYTE(128)	NOT NULL,
+   Slot			INTEGER 	DEFAULT 0,
+   PoolId		INTEGER 	DEFAULT 0,
+   MediaType		VARBYTE(128)	NOT NULL,
+   MediaTypeId 		INTEGER 	DEFAULT 0,
+   LabelType		INTEGER 	DEFAULT 0,
+   FirstWritten		TIMESTAMP WITHOUT TIME ZONE,
+   LastWritten 		TIMESTAMP WITHOUT TIME ZONE,
+   LabelDate		TIMESTAMP WITHOUT TIME ZONE,
+   VolJobs		INTEGER 	DEFAULT 0,
+   VolFiles		INTEGER 	DEFAULT 0,
+   VolBlocks		INTEGER 	DEFAULT 0,
+   VolMounts		INTEGER 	DEFAULT 0,
+   VolBytes		BIGINT		DEFAULT 0,
+   VolErrors		INTEGER 	DEFAULT 0,
+   VolWrites		INTEGER 	DEFAULT 0,
+   VolCapacitybytes	BIGINT		DEFAULT 0,
+   VolStatus		VARBYTE(128)	NOT NULL
 	CHECK (volstatus in ('Full','Archive','Append',
 	      'Recycle','Purged','Read-Only','Disabled',
 	      'Error','Busy','Used','Cleaning','Scratch')),
-    Enabled		SMALLINT	DEFAULT 1,
-    Recycle		SMALLINT	DEFAULT 0,
-    ActionOnPurge	SMALLINT	DEFAULT 0,
-    VolRetention	BIGINT		DEFAULT 0,
-    VolUseDuration	BIGINT		DEFAULT 0,
-    MaxVolJobs		INTEGER 	DEFAULT 0,
-    MaxVolFiles 	INTEGER 	DEFAULT 0,
-    MaxVolBytes 	BIGINT		DEFAULT 0,
-    InChanger		SMALLINT	DEFAULT 0,
-    StorageId		BIGINT		DEFAULT 0,
-    DeviceId		INTEGER 	DEFAULT 0,
-    MediaAddressing	SMALLINT	DEFAULT 0,
-    VolReadTime 	BIGINT		DEFAULT 0,
-    VolWriteTime	BIGINT		DEFAULT 0,
-    EndFile		INTEGER 	DEFAULT 0,
-    EndBlock		BIGINT		DEFAULT 0,
-    LocationId		INTEGER 	DEFAULT 0,
-    RecycleCount	INTEGER 	DEFAULT 0,
-    InitialWrite	TIMESTAMP WITHOUT TIME ZONE,
-    ScratchPoolId	INTEGER 	DEFAULT 0,
-    RecyclePoolId	INTEGER 	DEFAULT 0,
-    EncryptionKey	VARBYTE(128),
-    Comment		VARBYTE(4096),
-    PRIMARY KEY (mediaid)
+   Enabled		SMALLINT	DEFAULT 1,
+   Recycle		SMALLINT	DEFAULT 0,
+   ActionOnPurge	SMALLINT	DEFAULT 0,
+   VolRetention		BIGINT		DEFAULT 0,
+   VolUseDuration	BIGINT		DEFAULT 0,
+   MaxVolJobs		INTEGER 	DEFAULT 0,
+   MaxVolFiles 		INTEGER 	DEFAULT 0,
+   MaxVolBytes 		BIGINT		DEFAULT 0,
+   InChanger		SMALLINT	DEFAULT 0,
+   StorageId		BIGINT		DEFAULT 0,
+   DeviceId		INTEGER 	DEFAULT 0,
+   MediaAddressing	SMALLINT	DEFAULT 0,
+   VolReadTime 		BIGINT		DEFAULT 0,
+   VolWriteTime		BIGINT		DEFAULT 0,
+   EndFile		INTEGER 	DEFAULT 0,
+   EndBlock		BIGINT		DEFAULT 0,
+   LocationId		INTEGER 	DEFAULT 0,
+   RecycleCount		INTEGER 	DEFAULT 0,
+   MinBlockSize		INTEGER		DEFAULT 0,
+   MaxBlockSize		INTEGER		DEFAULT 0,
+   InitialWrite		TIMESTAMP WITHOUT TIME ZONE,
+   ScratchPoolId	INTEGER 	DEFAULT 0,
+   RecyclePoolId	INTEGER 	DEFAULT 0,
+   EncryptionKey	VARBYTE(128),
+   Comment		VARBYTE(4096),
+   PRIMARY KEY (mediaid)
 );
 
 CREATE UNIQUE INDEX media_volumename_id ON Media (VolumeName);
 CREATE INDEX media_poolid_idx ON Media (PoolId);
-CREATE INDEX media_storageid_idx ON Media (StorageId);
 
 CREATE SEQUENCE MediaType_Seq;
 CREATE TABLE MediaType (
@@ -331,6 +321,8 @@ CREATE TABLE Pool
    ScratchPoolId	INTEGER 	DEFAULT 0,
    RecyclePoolId	INTEGER 	DEFAULT 0,
    NextPoolId		INTEGER 	DEFAULT 0,
+   MinBlockSize		INTEGER		DEFAULT 0,
+   MaxBlockSize		INTEGER		DEFAULT 0,
    MigrationHighBytes	BIGINT		DEFAULT 0,
    MigrationLowBytes	BIGINT		DEFAULT 0,
    MigrationTime	BIGINT		DEFAULT 0,
@@ -402,7 +394,7 @@ CREATE TABLE BaseFiles
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
-CREATE TABLE unsavedfiles
+CREATE TABLE UnsavedFiles
 (
    UnsavedId		INTEGER 	NOT NULL,
    JobId		INTEGER 	NOT NULL,
@@ -474,6 +466,28 @@ CREATE TABLE NDMPJobEnvironment
    EnvValue   		VARBYTE(256)	NOT NULL,
    CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
 );
+
+CREATE TABLE DeviceStats (
+   SampleTime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+   ReadTime		BIGINT		DEFAULT 0,
+   WriteTime		BIGINT		DEFAULT 0,
+   ReadBytes		BIGINT		DEFAULT 0,
+   WriteBytes		BIGINT		DEFAULT 0,
+   Spool		INTEGER 	DEFAULT 0,
+   Waiting		INTEGER 	DEFAULT 0,
+   Writers		INTEGER 	DEFAULT 0,
+   MediaId		INTEGER 	DEFAULT 0,
+   VolCatBytes		BIGINT		DEFAULT 0,
+   VolCatFiles		BIGINT		DEFAULT 0,
+   VolCatBlocks		BIGINT		DEFAULT 0
+);
+
+CREATE TABLE JobStats (
+   SampleTime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+   JobId		INTEGER 	NOT NULL,
+   JobFiles		INTEGER 	DEFAULT 0,
+   JobBytes		BIGINT		DEFAULT 0
+);
 \g
 
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -498,8 +512,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('F', 'Waiting for Client',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('S', 'Waiting for Storage daemon',15);
-INSERT INTO Status (JobStatus,JobStatusLong) VALUES
-   ('m', 'Waiting for new media');
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('m', 'Waiting for new media',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('M', 'Waiting for media mount',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -519,17 +533,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
+INSERT INTO Version (VersionId) VALUES (2002);
 
 -- Make sure we have appropriate permissions
 \g
-
-END-OF-DATA
-pstat=$?
-if test $pstat = 0;
-then
-   echo "Creation of Bareos Ingres tables succeeded."
-else
-   echo "Creation of Bareos Ingres tables failed."
-fi
-exit $pstat

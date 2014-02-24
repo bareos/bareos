@@ -1,7 +1,0 @@
-#!/bin/sh
-#
-# shell script to grant privileges to the bareos database
-#
-bindir=@SQLITE_BINDIR@
-
-# nothing to do here

@@ -3742,88 +3742,69 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-AC_OUTPUT([autoconf/Make.common \
-	   Makefile \
-	   manpages/Makefile \
-	   debian/bareos-common.preinst \
-	   debian/bareos-filedaemon.preinst \
-	   debian/bareos-director.preinst \
-	   debian/bareos-storage.preinst \
-	   scripts/bareos-config \
-	   scripts/btraceback \
-	   scripts/bconsole \
-	   scripts/bareos \
-	   scripts/bareos-ctl-dir \
-	   scripts/bareos-ctl-fd \
-	   scripts/bareos-ctl-sd \
-	   scripts/devel_bareos \
-	   scripts/Makefile \
-	   scripts/logrotate \
-	   scripts/mtx-changer \
-	   scripts/disk-changer \
-	   scripts/logwatch/Makefile \
-	   scripts/logwatch/logfile.bareos.conf \
-	   scripts/bat.console_apps \
-	   src/Makefile \
-	   src/include/host.h \
-	   src/console/Makefile \
-	   src/console/bconsole.conf \
-	   src/qt-tray-monitor/bareos-tray-monitor.desktop \
-	   src/qt-tray-monitor/tray-monitor.conf \
-	   src/qt-tray-monitor/tray-monitor.pro \
-	   src/qt-console/bat.conf \
-	   src/qt-console/bat.desktop \
-	   src/qt-console/bat.pro \
-	   src/qt-console/install_conf_file \
-	   src/dird/Makefile \
-	   src/dird/bareos-dir.conf \
-	   src/lib/Makefile \
-	   src/stored/Makefile \
-	   src/stored/bareos-sd.conf \
-	   src/filed/Makefile \
-	   src/filed/bareos-fd.conf \
-	   src/cats/Makefile \
-	   src/cats/make_catalog_backup.pl \
-	   src/cats/make_catalog_backup \
-	   src/cats/delete_catalog_backup \
-	   src/cats/create_postgresql_database \
-	   src/cats/update_postgresql_tables \
-	   src/cats/make_postgresql_tables \
-	   src/cats/grant_postgresql_privileges \
-	   src/cats/drop_postgresql_tables \
-	   src/cats/drop_postgresql_database \
-	   src/cats/create_mysql_database \
-	   src/cats/update_mysql_tables \
-	   src/cats/make_mysql_tables \
-	   src/cats/grant_mysql_privileges \
-	   src/cats/drop_mysql_tables \
-	   src/cats/drop_mysql_database \
-	   src/cats/create_sqlite3_database \
-	   src/cats/update_sqlite3_tables \
-	   src/cats/make_sqlite3_tables \
-	   src/cats/grant_sqlite3_privileges \
-	   src/cats/drop_sqlite3_tables \
-	   src/cats/drop_sqlite3_database \
-	   src/cats/sqlite \
-	   src/cats/mysql \
-	   src/cats/create_bareos_database \
-	   src/cats/update_bareos_tables \
-	   src/cats/grant_bareos_privileges \
-	   src/cats/make_bareos_tables \
-	   src/cats/drop_bareos_tables \
-	   src/cats/drop_bareos_database \
-	   src/cats/install-default-backend \
-	   src/findlib/Makefile \
-	   src/ndmp/Makefile \
-	   src/tests/Makefile \
-	   src/tools/Makefile \
-	   src/plugins/filed/Makefile \
-	   src/plugins/stored/Makefile \
-	   src/plugins/dird/Makefile \
-	   po/Makefile.in \
-	   src/defaultconfigs/diskonly/bareos-sd.conf \
-	   src/defaultconfigs/diskonly/bareos-dir.conf \
-	   $PFILES ],
+AC_OUTPUT(autoconf/Make.common \
+	  Makefile \
+	  manpages/Makefile \
+	  debian/bareos-common.preinst \
+	  debian/bareos-filedaemon.preinst \
+	  debian/bareos-director.preinst \
+	  debian/bareos-storage.preinst \
+	  scripts/bareos-config \
+	  scripts/bareos-config-lib.sh \
+	  scripts/btraceback \
+	  scripts/bconsole \
+	  scripts/bareos \
+	  scripts/bareos-ctl-dir \
+	  scripts/bareos-ctl-fd \
+	  scripts/bareos-ctl-sd \
+	  scripts/devel_bareos \
+	  scripts/Makefile \
+	  scripts/logrotate \
+	  scripts/mtx-changer \
+	  scripts/disk-changer \
+	  scripts/logwatch/Makefile \
+	  scripts/logwatch/logfile.bareos.conf \
+	  scripts/bat.console_apps \
+	  src/Makefile \
+	  src/include/host.h \
+	  src/console/Makefile \
+	  src/console/bconsole.conf \
+	  src/qt-tray-monitor/bareos-tray-monitor.desktop \
+	  src/qt-tray-monitor/tray-monitor.conf \
+	  src/qt-tray-monitor/tray-monitor.pro \
+	  src/qt-console/bat.conf \
+	  src/qt-console/bat.desktop \
+	  src/qt-console/bat.pro \
+	  src/qt-console/install_conf_file \
+	  src/dird/Makefile \
+	  src/dird/bareos-dir.conf \
+	  src/lib/Makefile \
+	  src/stored/Makefile \
+	  src/stored/bareos-sd.conf \
+	  src/filed/Makefile \
+	  src/filed/bareos-fd.conf \
+	  src/cats/Makefile \
+	  src/cats/make_catalog_backup.pl \
+	  src/cats/make_catalog_backup \
+	  src/cats/delete_catalog_backup \
+	  src/cats/create_bareos_database \
+	  src/cats/update_bareos_tables \
+	  src/cats/grant_bareos_privileges \
+	  src/cats/make_bareos_tables \
+	  src/cats/drop_bareos_tables \
+	  src/cats/drop_bareos_database \
+	  src/cats/install-default-backend \
+	  src/findlib/Makefile \
+	  src/ndmp/Makefile \
+	  src/tests/Makefile \
+	  src/tools/Makefile \
+	  src/plugins/filed/Makefile \
+	  src/plugins/stored/Makefile \
+	  src/plugins/dird/Makefile \
+	  po/Makefile.in \
+	  src/defaultconfigs/diskonly/bareos-sd.conf \
+	  src/defaultconfigs/diskonly/bareos-dir.conf \
+	  $PFILES,
      [ ]
 )
 
@@ -3882,24 +3863,7 @@ c=src/cats
 
 chmod 755 $c/create_bareos_database   $c/update_bareos_tables  $c/make_bareos_tables
 chmod 755 $c/grant_bareos_privileges  $c/drop_bareos_tables    $c/drop_bareos_database
-
-chmod 755 $c/create_mysql_database    $c/update_mysql_tables   $c/make_mysql_tables
-chmod 755 $c/grant_mysql_privileges   $c/drop_mysql_tables     $c/drop_mysql_database
-
-chmod 755 $c/create_sqlite3_database   $c/update_sqlite3_tables  $c/make_sqlite3_tables
-chmod 755 $c/grant_sqlite3_privileges  $c/drop_sqlite3_tables	 $c/drop_sqlite3_database
-
-chmod 755 $c/create_postgresql_database  $c/update_postgresql_tables $c/make_postgresql_tables
-chmod 755 $c/grant_postgresql_privileges $c/drop_postgresql_tables   $c/drop_postgresql_database
-
-#chmod 755 $c/create_ingres_database  $c/update_ingres_tables $c/make_ingres_tables
-#chmod 755 $c/grant_ingres_privileges $c/drop_ingres_tables   $c/drop_ingres_database
-
-
 chmod 755 $c/make_catalog_backup $c/delete_catalog_backup  $c/make_catalog_backup.pl
-chmod 755 $c/sqlite
-chmod 755 $c/mysql
-
 chmod 755 $c/install-default-backend
 
 if test "x$ac_cv_sys_largefile_CFLAGS" != "xno" ; then

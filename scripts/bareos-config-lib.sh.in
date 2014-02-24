@@ -1,0 +1,489 @@
+#!/bin/sh
+
+DIR_CFG=@sysconfdir@
+CFG_DIR=${DIR_CFG}/bareos-dir.conf
+DIR_SCRIPTS=@scriptdir@
+
+SEC_GROUPS="tape disk"
+
+WORKING_DIR="@working_dir@"
+FILE_DAEMON_USER="@fd_user@"
+FILE_DAEMON_GROUP="@fd_group@"
+STORAGE_DAEMON_USER="@sd_user@"
+STORAGE_DAEMON_GROUP="@sd_group@"
+DIRECTOR_DAEMON_USER="@dir_user@"
+DIRECTOR_DAEMON_GROUP="@dir_group@"
+
+DB_VERSION="@BDB_VERSION@"
+SQL_DDL_DIR="@scriptdir@/ddl"
+SQLITE_BINDIR="@SQLITE_BINDIR@"
+MYSQL_BINDIR="@MYSQL_BINDIR@"
+POSTGRESQL_BINDIR="@POSTGRESQL_BINDIR@"
+INGRES_BINDIR="@INGRES_BINDIR@"
+
+PASSWORD_SUBST="\
+XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX \
+XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX \
+XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX \
+XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX \
+"
+
+os_type=`uname -s`
+
+is_function()
+{
+    func=$1
+    test "$func" && type "$func" > /dev/null 2>&1
+    return $?
+}
+
+# does not work on all shells (only bash),
+# therefore removed until a better solution is found
+# list_functions()
+# {
+#     if type typeset >/dev/null 2>&1; then
+#         # show available shell functions,
+#         # but exclude internal functions (name starts with "_" ...)
+#         typeset -F | cut -d " " -f 3 | grep "^[a-z]"
+#     else
+#         echo "function list not available"
+#     fi
+# }
+
+get_user_fd()
+{
+    echo "${FILE_DAEMON_USER}"
+}
+
+get_group_fd()
+{
+    echo "${FILE_DAEMON_GROUP}"
+}
+
+get_user_sd()
+{
+    echo "${STORAGE_DAEMON_USER}"
+}
+
+get_group_sd()
+{
+    echo "${STORAGE_DAEMON_GROUP}"
+}
+
+get_user_dir()
+{
+    echo "${DIRECTOR_DAEMON_USER}"
+}
+
+get_group_dir()
+{
+    echo "${DIRECTOR_DAEMON_GROUP}"
+}
+
+get_working_dir()
+{
+    echo "${WORKING_DIR}"
+}
+
+get_database_version()
+{
+    echo "${DB_VERSION}"
+}
+
+get_database_ddl_dir()
+{
+    echo "${SQL_DDL_DIR}"
+}
+
+get_database_utility_path()
+{
+    db_type="$1"
+
+    case ${db_type} in
+        sqlite3)
+            utility="sqlite3"
+            bindir="${SQLITE_BINDIR}"
+            ;;
+        mysql)
+            utility="mysql"
+            bindir="${MYSQL_BINDIR}"
+            ;;
+        postgresql)
+            utility="psql"
+            pg_config --bindir > /dev/null 2>&1
+            if [ $? = 0 ]; then
+                bindir=`pg_config --bindir`
+            else
+                bindir="${POSTGRESQL_BINDIR}"
+            fi
+            ;;
+        ingres)
+            utility="sql"
+            bindir="${INGRES_BINDIR}"
+            ;;
+        *)
+            ;;
+    esac
+
+    #
+    # First see if the utility is already on the path
+    #
+    which ${utility} > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        echo ""
+    else
+        echo "${bindir}"
+    fi
+}
+
+[ ${os_type} = Linux ] && \
+setup_sd_user()
+{
+    #
+    # guaranties that storage-daemon user and group exists
+    # and storage-daemon user belongs to the required groups.
+    #
+    # normally, storage-daemon user
+    # is already installed by the package preinstall script.
+    #
+
+    #
+    # See what secondary groups exist for the sd user to be added to.
+    #
+    ADD_GROUPS=""
+    for sec_group in ${SEC_GROUPS}; do
+        cnt=`getent group ${sec_group} | wc -l`
+        if [ ${cnt} -gt 0 ]; then
+            [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="-G ${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
+        fi
+    done
+
+    getent group ${STORAGE_DAEMON_GROUP} > /dev/null || groupadd -r ${STORAGE_DAEMON_GROUP}
+
+    #
+    # If the user doesn't exist create a new one otherwise modify it to have the wanted secondary groups.
+    #
+    if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
+        getent passwd ${STORAGE_DAEMON_USER} > /dev/null
+        if [ $? -ne 0 ]; then
+            # create a new storage_daemon_user
+            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
+        fi
+
+        # if the user has already created before,
+        # make sure the correct primary group is set otherwise fix it.
+        if [ "`id -gn ${STORAGE_DAEMON_USER}`" != "${STORAGE_DAEMON_GROUP}" ]; then
+            usermod -g ${STORAGE_DAEMON_GROUP} ${STORAGE_DAEMON_USER}
+        fi
+
+        # add the storage_daemon_user to additional groups (if defined)
+        [ "${ADD_GROUPS}" ] && usermod ${ADD_GROUPS} ${STORAGE_DAEMON_USER}
+    fi
+}
+
+[ ${os_type} != Linux ] && \
+setup_sd_user()
+{
+   echo "setup_sd_user() is not supported on this platform"
+   exit 1
+}
+
+get_database_driver()
+{
+    if ! [ -r "${CFG_DIR}" ]; then
+        return
+    fi
+
+    # get dbdriver, that is defined in director configuration.
+    # If string is still set to default, return nothing
+    DBDRIVER=`egrep -i '^[ 	]*dbdriver[ 	]*=' ${CFG_DIR} |\
+              cut -d'=' -f2 | \
+              sed -e 's/[ 	]*"//' -e 's/"//' | \
+              grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"`
+
+    echo "$DBDRIVER"
+}
+
+get_database_name()
+{
+    if ! [ -r "${CFG_DIR}" ]; then
+        return
+    fi
+
+    # get dbname, that is defined in director configuration.
+    DBNAME=`egrep -i '^[ 	]*dbname[ 	]*=' ${CFG_DIR} |\
+              cut -d'=' -f2 | \
+              sed -e 's/[ 	]*"//' -e 's/"//'`
+    echo "$DBNAME"
+}
+
+get_databases_installed()
+{
+    # manually check different backends, to get the correct order
+    [ -e ${SQL_DDL_DIR}/creates/postgresql.sql ] && echo "postgresql"
+    [ -e ${SQL_DDL_DIR}/creates/mysql.sql ] && echo "mysql"
+    [ -e ${SQL_DDL_DIR}/creates/sqlite3.sql ] && echo "sqlite3"
+}
+
+get_database_driver_default()
+{
+    DBDRIVER=`get_database_driver`
+
+    if [ -z "$DBDRIVER" ]; then
+        DBDRIVER=`get_databases_installed | head -n 1`
+    fi
+
+    if [ -z "$DBDRIVER" ]; then
+        # fallback and first choice
+        DBDRIVER="postgresql"
+    fi
+
+    echo "$DBDRIVER"
+}
+
+initialize_database_driver()
+{
+    DBDRIVER=`get_database_driver_default`
+    replace "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX" "${DBDRIVER}"
+}
+
+is_template_sql_file()
+{
+    input_file=$1
+
+    if [ -z "${input_file}" ]; then
+        return 1
+    fi
+
+    if ! egrep -q '@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@' ${input_file}; then
+        # no variables found in file, this file is not a template.
+        return 0
+    else
+        # variables found, this file is a template, therefore return FALSE
+        return 1
+    fi
+}
+
+get_translated_sql_file()
+{
+    # replaces variables in a SQL DDL file
+    # and returns the result as stdout.
+
+    input_file=$1
+
+    if [ -z "${input_file}" ]; then
+        return 1
+    fi
+
+    if [ ! -f ${input_file} ]; then
+        return 2
+    fi
+
+    db_type="${db_type:-`get_database_driver_default`}"
+    db_name="${db_name:-@db_name@}"
+    db_user="${db_user:-@db_user@}"
+    db_password="${db_password:-@db_password@}"
+    db_version=`get_database_version`
+
+    case ${db_type} in
+        sqlite3)
+            ;;
+        mysql)
+            if [ "$db_password" != "" ]; then
+                pass="IDENTIFIED BY '$db_password'"
+            fi
+            ;;
+        postgresql)
+            if [ "$db_password" != "" ]; then
+                pass="PASSWORD '$db_password'"
+            fi
+            ;;
+        ingres)
+            if [ "$db_password" != "" ]; then
+                pass="WITH PASSWORD = '$db_password'"
+            fi
+            ;;
+        *)
+            ;;
+    esac
+
+    sed -e "s/@DB_NAME@/${db_name}/" \
+        -e "s/@DB_USER@/${db_user}/" \
+        -e "s/@DB_PASS@/${pass}/" \
+        -e "s/@DB_VERSION@/${db_version}/" \
+        ${input_file}
+}
+
+get_database_grant_priviliges()
+{
+    # Returns the DDL for granting priviliges for a database user.
+    # Can be used, to get the SQL commands
+    # to create additional database users.
+    # If requested, this user can be limited to read-only database access.
+
+    #db_name="$1"
+    db_type="${1:-${db_type:-`get_database_driver_default`}}"
+    db_user="$2"
+    db_password="$3"
+    case "$4" in
+        "")
+            # full access
+            privileges=""
+            ;;
+        "readonly")
+            privileges="-readonly"
+            ;;
+        *)
+            echo "Unknown privileges parameter $4"
+            return 1
+            ;;
+    esac
+
+    case ${db_type} in
+        sqlite3)
+            ;;
+        mysql)
+            sql_definitions="${SQL_DDL_DIR}/grants/mysql${privileges}.sql"
+            ;;
+        postgresql)
+            sql_definitions="${SQL_DDL_DIR}/grants/postgresql${privileges}.sql"
+            ;;
+        ingres)
+            sql_definitions="${SQL_DDL_DIR}/grants/ingres${privileges}.sql"
+            ;;
+        *)
+            echo "Unknown database type $1"
+            return 1
+            ;;
+    esac
+
+    if [ ! -z "${sql_definitions}" ]; then
+        if [ ! -f ${sql_definitions} ]; then
+            echo "Unable to open database table definitions in file ${sql_definitions}"
+            return 1
+        fi
+        get_translated_sql_file ${sql_definitions}
+    fi
+
+    return
+}
+
+translate_sql_files()
+{
+    # Translates all available DDL files for one database type.
+    # However, currently not used, because it reduced flexibility.
+
+    SOURCE_DIR=${1:-$SQL_DDL_DIR}
+    DEST_DIR=${2:-"@working_dir@/ddl"}
+
+    db_type="${db_type:-`get_database_driver_default`}"
+
+    for i in `find "$SOURCE_DIR" -name "${db_type}*.sql" -printf "%P\n"`; do
+        dest_file=${DEST_DIR}/$i
+        mkdir -p `dirname $dest_file`
+        get_translated_sql_file ${SOURCE_DIR}/$i > $dest_file
+        # in case of errors, remove file
+        if [ $? -ne 0 ]; then
+            rm -f $dest_file
+        fi
+    done
+}
+
+get_local_hostname()
+{
+    # put actual short hostname in configuration files
+    # try to get short hostname
+    hname=`hostname -s`
+    if [ -z "$hname" ]; then
+        # try to get long hostname
+        hname=`hostname|sed 's/\..*//g'`
+        if [ -z "$hname" ]; then
+            # set to "localhost"
+            hname='localhost'
+        fi
+    fi
+    echo "$hname"
+}
+
+replace()
+{
+    if ! [ $# -eq 2 ]; then
+        return 1
+    fi
+
+    SEARCH="$1"
+    REPLACE="$2"
+
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
+    do
+        echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
+        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    done
+    return 0
+}
+
+initialize_local_hostname()
+{
+    #
+    # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
+    #
+    hname=`get_local_hostname`
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-dir" "${hname}-dir"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-fd" "${hname}-fd"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
+    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
+}
+
+replace_password()
+{
+    if ! [ $# -eq 2 ]; then
+        return 1
+    fi
+
+    SEARCH="$1"
+    REPLACE="$2"
+
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
+    do
+        echo "replacing '${SEARCH}' in $file"
+        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    done
+    return 0
+}
+
+initialize_passwords()
+{
+    #
+    # See if we need to generate a set of random passwords.
+    #
+    if [ ! -f ${DIR_CFG}/.rndpwd ]; then
+        for string in ${PASSWORD_SUBST}
+        do
+           pass=`openssl rand -base64 33`
+           echo "${string}=${pass}" >> ${DIR_CFG}/.rndpwd
+        done
+        chmod 400 ${DIR_CFG}/.rndpwd
+    fi
+
+    # Source the passwords
+    . ${DIR_CFG}/.rndpwd
+
+    for string in ${PASSWORD_SUBST}
+    do
+        eval "pass=\${$string}"
+        if [ ! -z "${pass}" ]; then
+            replace_password "${string}" "${pass}"
+        fi
+    done
+}
+
+init()
+{
+    initialize_local_hostname
+    #initialize_director_hostname
+    initialize_passwords
+    initialize_database_driver
+}

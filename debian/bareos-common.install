@@ -1,4 +1,5 @@
 /usr/lib/bareos/scripts/bareos-config
+/usr/lib/bareos/scripts/bareos-config-lib.sh
 /usr/lib/bareos/scripts/btraceback.gdb
 /usr/lib/libbareos.so
 /usr/lib/libbareos-*.so

@@ -1,17 +1,3 @@
-#!/bin/sh
-#
-# shell script to create Bareos MySQL tables
-#
-# Important note:
-#   You won't get any support for performance issue if you changed the default
-#   schema.
-#
-bindir=@MYSQL_BINDIR@
-PATH="$bindir:$PATH"
-db_name=${db_name:-@db_name@}
-
-if mysql $* -f <<END-OF-DATA
-USE ${db_name};
 --
 -- Note, we use BLOB rather than TEXT because in MySQL,
 --  BLOBs are identical to TEXT except that BLOB is case
@@ -266,6 +252,8 @@ CREATE TABLE Media (
    EndBlock INTEGER UNSIGNED DEFAULT 0,
    LocationId INTEGER UNSIGNED DEFAULT 0 REFERENCES Location,
    RecycleCount INTEGER UNSIGNED DEFAULT 0,
+   MinBlockSize INTEGER UNSIGNED DEFAULT 0,
+   MaxBlockSize INTEGER UNSIGNED DEFAULT 0,
    InitialWrite DATETIME DEFAULT 0,
    ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
@@ -299,6 +287,8 @@ CREATE TABLE Pool (
    ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
    NextPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
+   MinBlockSize INTEGER UNSIGNED DEFAULT 0,
+   MaxBlockSize INTEGER UNSIGNED DEFAULT 0,
    MigrationHighBytes BIGINT UNSIGNED DEFAULT 0,
    MigrationLowBytes BIGINT UNSIGNED DEFAULT 0,
    MigrationTime BIGINT UNSIGNED DEFAULT 0,
@@ -347,8 +337,8 @@ CREATE TABLE UnsavedFiles (
 
 CREATE TABLE Counters (
    Counter TINYBLOB NOT NULL,
-   \`MinValue\` INTEGER DEFAULT 0,
-   \`MaxValue\` INTEGER DEFAULT 0,
+   `MinValue` INTEGER DEFAULT 0,
+   `MaxValue` INTEGER DEFAULT 0,
    CurrentValue INTEGER DEFAULT 0,
    WrapCounter TINYBLOB NOT NULL,
    PRIMARY KEY (Counter(128))
@@ -415,6 +405,28 @@ CREATE TABLE NDMPJobEnvironment (
    CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
 );
 
+CREATE TABLE DeviceStats (
+   SampleTime DATETIME NOT NULL,
+   ReadTime BIGINT UNSIGNED DEFAULT 0,
+   WriteTime BIGINT UNSIGNED DEFAULT 0,
+   ReadBytes BIGINT UNSIGNED DEFAULT 0,
+   WriteBytes BIGINT UNSIGNED DEFAULT 0,
+   Spool INTEGER UNSIGNED DEFAULT 0,
+   Waiting INTEGER DEFAULT 0,
+   Writers INTEGER DEFAULT 0,
+   MediaId INTEGER UNSIGNED DEFAULT 0 REFERENCES Media,
+   VolCatBytes BIGINT UNSIGNED DEFAULT 0,
+   VolCatFiles BIGINT UNSIGNED DEFAULT 0,
+   VolCatBlocks BIGINT UNSIGNED DEFAULT 0
+);
+
+CREATE TABLE JobStats (
+   SampleTime DATETIME NOT NULL,
+   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+   JobFiles INTEGER UNSIGNED DEFAULT 0,
+   JobBytes BIGINT UNSIGNED DEFAULT 0
+);
+
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running', 15),
    ('R', 'Running', 15),
@@ -439,12 +451,4 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('a', 'SD despooling attributes', 15);
 
 -- Initialize Version
-INSERT INTO Version (VersionId) VALUES (@BDB_VERSION@);
-
-END-OF-DATA
-then
-   echo "Creation of Bareos MySQL tables succeeded."
-else
-   echo "Creation of Bareos MySQL tables failed."
-fi
-exit 0
+INSERT INTO Version (VersionId) VALUES (2002);

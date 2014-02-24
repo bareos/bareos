@@ -62,6 +62,7 @@ install: installdirs
 	$(INSTALL_DATA) btraceback.mdb $(DESTDIR)$(scriptdir)/btraceback.mdb
 	#$(INSTALL_SCRIPT) -m 700 bareos-password-setup.sh ${DESTDIR}${scriptdir}/bareos-password-setup.sh
 	$(INSTALL_SCRIPT) bareos-config ${DESTDIR}${scriptdir}/bareos-config
+	$(INSTALL_SCRIPT) bareos-config-lib.sh ${DESTDIR}${scriptdir}/bareos-config-lib.sh
 	$(INSTALL_SCRIPT) btraceback $(DESTDIR)$(sbindir)/btraceback
 	#$(INSTALL_SCRIPT) logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
 
