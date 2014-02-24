@@ -2951,6 +2951,7 @@ ndmp2_sxa_log_log (struct ndm_session *sess,
 {
 	char			prefix[32];
 	char *			tag;
+	char *			bp;
 	int			lev;
 
 	xa->reply.flags |= NDMNMB_FLAG_NO_SEND;
@@ -2960,6 +2961,11 @@ ndmp2_sxa_log_log (struct ndm_session *sess,
 		lev = 1;
 
 		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+
+		bp = strrchr(request->entry, '\n');
+		if (bp) {
+			*bp = '\0';
+		}
 
 		ndmalogf (sess, prefix, lev, "LOG_LOG: '%s'", request->entry);
 	NDMS_ENDWITH
@@ -2976,6 +2982,7 @@ ndmp2_sxa_log_debug (struct ndm_session *sess,
 {
 	char			prefix[32];
 	char *			tag;
+	char *			bp;
 	int			lev;
 
 	xa->reply.flags |= NDMNMB_FLAG_NO_SEND;
@@ -2985,6 +2992,11 @@ ndmp2_sxa_log_debug (struct ndm_session *sess,
 		lev = 2;
 
 		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+
+		bp = strrchr(request->message, '\n');
+		if (bp) {
+			*bp = '\0';
+		}
 
 		ndmalogf (sess, prefix, lev, "LOG_DEBUG: '%s'", request->message);
 	NDMS_ENDWITH
@@ -3006,6 +3018,7 @@ ndmp_sxa_log_message (struct ndm_session *sess,
 {
 	char			prefix[32];
 	char *			tag;
+	char *			bp;
 	int			lev;
 
 	xa->reply.flags |= NDMNMB_FLAG_NO_SEND;
@@ -3039,6 +3052,11 @@ ndmp_sxa_log_message (struct ndm_session *sess,
 		}
 
 		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+
+		bp = strrchr(request->entry, '\n');
+		if (bp) {
+			*bp = '\0';
+		}
 
 		ndmalogf (sess, prefix, lev, "LOG_MESSAGE: '%s'", request->entry);
 	NDMS_ENDWITH

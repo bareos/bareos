@@ -151,6 +151,40 @@ enum {
    NDMP_ENV_VALUE_YES
 };
 
+struct ndmp_backup_format_option {
+   char *format;
+   bool uses_file_history;
+   bool uses_level;
+   bool restore_prefix_relative;
+   bool needs_namelist;
+};
+
+static ndmp_backup_format_option ndmp_backup_format_options[] = {
+   { (char *)"dump", true, true, true, true },
+   { (char *)"tar", true, false, true, true },
+   { (char *)"smtape", false, false, false, false },
+   { (char *)"zfs", false, true, false, true },
+   { NULL, false, false, false }
+};
+
+static ndmp_backup_format_option *lookup_backup_format_options(const char *backup_format)
+{
+   int i = 0;
+
+   while (ndmp_backup_format_options[i].format) {
+      if (bstrcasecmp(backup_format, ndmp_backup_format_options[i].format)) {
+         break;
+      }
+      i++;
+   }
+
+   if (ndmp_backup_format_options[i].format) {
+      return &ndmp_backup_format_options[i];
+   }
+
+   return (ndmp_backup_format_option *)NULL;
+}
+
 /*
  * Lightweight version of Bareos tree functions for holding the NDMP
  * filehandle index database. See lib/tree.[ch] for the full version.
@@ -386,7 +420,7 @@ static inline void parse_meta_tag(struct ndm_env_table *env_tab,
    *p = '\0';
    pv.name = meta_tag;
    pv.value = p + 1;
-   ndma_store_env_list(env_tab, &pv);
+   ndma_update_env_list(env_tab, &pv);
 
    /*
     * Restore the '='
@@ -408,13 +442,28 @@ static inline bool fill_backup_environment(JCR *jcr,
    ndmp9_pval pv;
    POOL_MEM pattern;
    POOL_MEM tape_device;
+   ndmp_backup_format_option *nbf_options;
 
    /*
-    * We want to receive file history info from the NDMP backup.
+    * See if we know this backup format and get it options.
     */
-   pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
-   pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
-   ndma_store_env_list(&job->env_tab, &pv);
+   nbf_options = lookup_backup_format_options(job->bu_type);
+
+   if (!nbf_options || nbf_options->uses_file_history) {
+      /*
+       * We want to receive file history info from the NDMP backup.
+       */
+      pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
+      pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
+      ndma_store_env_list(&job->env_tab, &pv);
+   } else {
+      /*
+       * We don't want to receive file history info from the NDMP backup.
+       */
+      pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
+      pv.value = ndmp_env_values[NDMP_ENV_VALUE_NO];
+      ndma_store_env_list(&job->env_tab, &pv);
+   }
 
    /*
     * Tell the data agent what type of backup to make.
@@ -424,10 +473,9 @@ static inline bool fill_backup_environment(JCR *jcr,
    ndma_store_env_list(&job->env_tab, &pv);
 
    /*
-    * See if we are doing a dump backup type and set any specific keywords
-    * for that backup type.
+    * See if we are doing a backup type that uses dumplevels.
     */
-   if (bstrcasecmp(job->bu_type, "dump")) {
+   if (nbf_options && nbf_options->uses_level) {
       char text_level[50];
 
       /*
@@ -537,29 +585,73 @@ static inline bool fill_backup_environment(JCR *jcr,
 }
 
 /*
- * Add a filename to the files we want to restore. Whe need
- * to create both the original path and the destination patch
- * of the file to restore in a ndmp9_name structure.
+ * Add a filename to the files we want to restore.
+ *
+ * The RFC says this:
+ *
+ * original_path - The original path name of the data to be recovered,
+ *                 relative to the backup root. If original_path is the null
+ *                 string, the server shall recover all data contained in the
+ *                 backup image.
+ *
+ * destination_path, name, other_name
+ *               - Together, these identify the absolute path name to which
+ *                 data are to be recovered.
+ *
+ *               If name is the null string:
+ *                 - destination_path identifies the name to which the data
+ *                   identified by original_path are to be recovered.
+ *                 - other_name must be the null string.
+ *
+ *               If name is not the null string:
+ *                 - destination_path, when concatenated with the server-
+ *                   specific path name delimiter and name, identifies the
+ *                   name to which the data identified by original_path are
+ *                   to be recovered.
+ *
+ *               If other_name is not the null string:
+ *                 - destination_path, when concatenated with the server-
+ *                   specific path name delimiter and other_name,
+ *                   identifies the alternate name-space name of the data
+ *                   to be recovered. The definition of such alternate
+ *                   name-space is server-specific.
+ *
+ * Neither name nor other_name may contain a path name delimiter.
+ *
+ * Under no circumstance may destination_path be the null string.
+ *
+ * If intermediate directories that lead to the path name to
+ * recover do not exist, the server should create them.
  */
 static inline void add_to_namelist(struct ndm_job_param *job,
                                    char *filename,
-                                   char *restore_prefix)
+                                   char *restore_prefix,
+                                   char *name,
+                                   char *other_name,
+                                   int64_t node)
 {
    ndmp9_name nl;
    POOL_MEM destination_path;
 
+   memset(&nl, 0, sizeof(ndmp9_name));
+
    /*
     * See if the filename is an absolute pathname.
     */
-   if (*filename == '/') {
+   if (*filename == '\0') {
+      pm_strcpy(destination_path, restore_prefix);
+   } else if (*filename == '/') {
       Mmsg(destination_path, "%s%s", restore_prefix, filename);
    } else {
       Mmsg(destination_path, "%s/%s", restore_prefix, filename);
    }
 
-   memset(&nl, 0, sizeof(ndmp9_name));
    nl.original_path = filename;
    nl.destination_path = destination_path.c_str();
+   nl.name = name;
+   nl.other_name = other_name;
+   nl.node = node;
+
    ndma_store_nlist(&job->nlist_tab, &nl);
 }
 
@@ -596,6 +688,25 @@ static inline char *lookup_fileindex(JCR *jcr, int32_t FileIndex)
 }
 
 /*
+ * Database handler that handles the returned environment data for a given JobId.
+ */
+static int ndmp_env_handler(void *ctx, int num_fields, char **row)
+{
+   struct ndm_env_table *envtab;
+   ndmp9_pval pv;
+
+   if (row[0] && row[1]) {
+      envtab = (struct ndm_env_table *)ctx;
+      pv.name = row[0];
+      pv.value = row[1];
+
+      ndma_store_env_list(envtab, &pv);
+   }
+
+   return 0;
+}
+
+/*
  * Fill the NDMP restore environment table with the data for the data agent to act on.
  */
 static inline bool fill_restore_environment(JCR *jcr,
@@ -607,16 +718,17 @@ static inline bool fill_restore_environment(JCR *jcr,
    ndmp9_pval pv;
    FILESETRES *fileset;
    char *restore_pathname,
-        *restore_prefix;
+        *original_pathname,
+        *restore_prefix,
+        *level;
    POOL_MEM tape_device;
    POOL_MEM destination_path;
+   ndmp_backup_format_option *nbf_options;
 
    /*
-    * Tell the data agent what type of restore stream to expect.
+    * See if we know this backup format and get it options.
     */
-   pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
-   pv.value = job->bu_type;
-   ndma_store_env_list(&job->env_tab, &pv);
+   nbf_options = lookup_backup_format_options(job->bu_type);
 
    /*
     * Lookup the current fileindex and map it to an actual pathname.
@@ -631,14 +743,67 @@ static inline bool fill_restore_environment(JCR *jcr,
     */
    if (!bstrncmp(restore_pathname, "/@NDMP/", 7)) {
       return false;
+   } else {
+      /*
+       * Skip over the /@NDMP prefix.
+       */
+      original_pathname = restore_pathname + 6;
    }
 
    /*
     * See if there is a level embedded in the pathname.
     */
-   bp = strrchr(restore_pathname, '%');
+   bp = strrchr(original_pathname, '%');
    if (bp) {
-      *bp = '\0';
+      *bp++ = '\0';
+      level = bp;
+   } else {
+      level = NULL;
+   }
+
+   /*
+    * Lookup the environment stack saved during the backup so we can restore it.
+    */
+   if (!db_get_ndmp_environment_string(jcr, jcr->db, &jcr->jr,
+                                       ndmp_env_handler, &job->env_tab)) {
+      /*
+       * Fallback code try to build a environment stack that is good enough to
+       * restore this NDMP backup. This is used when the data is not available in
+       * the database when its either expired or when an old NDMP backup is restored
+       * where the whole environment was not saved.
+       */
+
+      if (!nbf_options || nbf_options->uses_file_history) {
+         /*
+          * We asked during the NDMP backup to receive file history info.
+          */
+         pv.name = ndmp_env_keywords[NDMP_ENV_KW_HIST];
+         pv.value = ndmp_env_values[NDMP_ENV_VALUE_YES];
+         ndma_store_env_list(&job->env_tab, &pv);
+      }
+
+      /*
+       * Tell the data agent what type of restore stream to expect.
+       */
+      pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
+      pv.value = job->bu_type;
+      ndma_store_env_list(&job->env_tab, &pv);
+
+      /*
+       * Tell the data agent that this is a NDMP backup which uses a level indicator.
+       */
+      if (level) {
+         pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
+         pv.value = level;
+         ndma_store_env_list(&job->env_tab, &pv);
+      }
+
+      /*
+       * Tell the data engine what was backuped.
+       */
+      pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
+      pv.value = original_pathname;
+      ndma_store_env_list(&job->env_tab, &pv);
    }
 
    /*
@@ -657,9 +822,9 @@ static inline bool fill_restore_environment(JCR *jcr,
          item = (char *)ie->name_list.get(j);
 
          /*
-          * See if the restore path matches.
+          * See if the original path matches.
           */
-         if (bstrcasecmp(item, restore_pathname)) {
+         if (bstrcasecmp(item, original_pathname)) {
             int k, l;
             FOPTS *fo;
 
@@ -694,26 +859,51 @@ static inline bool fill_restore_environment(JCR *jcr,
    /*
     * Tell the data engine where to restore.
     */
-   if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-      pm_strcpy(destination_path, restore_pathname + 6);
+   if (nbf_options && nbf_options->restore_prefix_relative) {
+      switch (*restore_prefix) {
+      case '^':
+         /*
+          * Use the restore_prefix as an absolute restore prefix.
+          * We skip the leading ^ that is the trigger for absolute restores.
+          */
+         pm_strcpy(destination_path, restore_prefix + 1);
+         break;
+      default:
+         /*
+          * Use the restore_prefix as an relative restore prefix.
+          */
+         if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
+            pm_strcpy(destination_path, original_pathname);
+         } else {
+            pm_strcpy(destination_path, restore_prefix);
+            pm_strcat(destination_path, original_pathname);
+         }
+      }
    } else {
-      pm_strcpy(destination_path, restore_prefix);
-      pm_strcat(destination_path, restore_pathname + 6);
+      if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
+         /*
+          * Use the original pathname as restore prefix.
+          */
+         pm_strcpy(destination_path, original_pathname);
+      } else {
+         /*
+          * Use the restore_prefix as an absolute restore prefix.
+          */
+         pm_strcpy(destination_path, restore_prefix);
+      }
    }
+
    pv.name = ndmp_env_keywords[NDMP_ENV_KW_PREFIX];
    pv.value = destination_path.c_str();
    ndma_store_env_list(&job->env_tab, &pv);
 
-   /*
-    * The smtape NDMP backup type doesn't need a namelist to restore the
-    * data as it restores all data from the stream anyhow.
-    */
-   if (!bstrcasecmp(job->bu_type, "smtape")) {
+   if (!nbf_options || nbf_options->needs_namelist) {
       /*
        * FIXME: For now we say we want to restore everything later on it would
        * be nice to only restore parts of the whole backup.
        */
-      add_to_namelist(job, (char *)"/", destination_path.c_str());
+      add_to_namelist(job, (char *)"", destination_path.c_str(),
+                      (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
    }
 
    /*
@@ -895,6 +1085,13 @@ static inline bool extract_post_backup_stats(JCR *jcr,
 {
    bool retval = true;
    struct ndmmedia *me;
+   ndmp_backup_format_option *nbf_options;
+   struct ndm_env_entry *ndm_ee;
+
+   /*
+    * See if we know this backup format and get it options.
+    */
+   nbf_options = lookup_backup_format_options(sess->control_acb->job.bu_type);
 
    /*
     * See if an error was raised during the backup session.
@@ -922,9 +1119,22 @@ static inline bool extract_post_backup_stats(JCR *jcr,
    jcr->JobBytes += sess->control_acb->job.bytes_written;
 
    /*
+    * After a successfull backup we need to store all NDMP ENV variables
+    * for doing a successfull restore operation.
+    */
+   ndm_ee = sess->control_acb->job.result_env_tab.head;
+   while (ndm_ee) {
+      if (!db_create_ndmp_environment_string(jcr, jcr->db, &jcr->jr,
+                                             ndm_ee->pval.name, ndm_ee->pval.value)) {
+         break;
+      }
+      ndm_ee = ndm_ee->next;
+   }
+
+   /*
     * If this was a NDMP backup with backup type dump save the last used dump level.
     */
-   if (bstrcasecmp(sess->control_acb->job.bu_type, "dump")) {
+   if (nbf_options && nbf_options->uses_level) {
       db_update_ndmp_level_mapping(jcr, jcr->db, &jcr->jr,
                                    filesystem, sess->control_acb->job.bu_level);
    }
@@ -1352,6 +1562,7 @@ bool do_ndmp_backup(JCR *jcr)
          /*
           * See if there were any errors during the backup.
           */
+         jcr->jr.FileIndex = cnt + 1;
          if (!extract_post_backup_stats(jcr, item, &ndmp_sess)) {
             goto cleanup;
          }
@@ -1761,6 +1972,15 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
             /*
              * Copy the actual job to perform.
              */
+            jcr->jr.FileIndex = current_fi;
+            if (bsr->sessid && bsr->sesstime) {
+               jcr->jr.VolSessionId = bsr->sessid->sessid;
+               jcr->jr.VolSessionTime = bsr->sesstime->sesstime;
+            } else {
+               Jmsg(jcr, M_FATAL, 0, _("Wrong BSR missing sessid and/or sesstime\n"));
+               goto cleanup_ndmp;
+            }
+
             memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
             if (!fill_restore_environment(jcr,
                                           current_fi,

@@ -92,6 +92,37 @@ struct ndmp_log_cookie {
    JCR *jcr;
 };
 
+struct ndmp_backup_format_option {
+   char *format;
+   bool uses_level;
+};
+
+static ndmp_backup_format_option ndmp_backup_format_options[] = {
+   { (char *)"dump", true },
+   { (char *)"tar", false },
+   { (char *)"smtape", false },
+   { (char *)"zfs", true },
+   { NULL, false }
+};
+
+static ndmp_backup_format_option *lookup_backup_format_options(const char *backup_format)
+{
+   int i = 0;
+
+   while (ndmp_backup_format_options[i].format) {
+      if (bstrcasecmp(backup_format, ndmp_backup_format_options[i].format)) {
+         break;
+      }
+      i++;
+   }
+
+   if (ndmp_backup_format_options[i].format) {
+      return &ndmp_backup_format_options[i];
+   }
+
+   return (ndmp_backup_format_option *)NULL;
+}
+
 /* Static globals */
 static bool quit = false;
 static bool ndmp_initialized = false;
@@ -517,6 +548,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    char *filesystem;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta;
+   ndmp_backup_format_option *nbf_options;
 
    /*
     * The drive_name should be in the form <AuthKey>@<file_system>
@@ -575,6 +607,11 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
       log_cookie = (struct ndmp_log_cookie *)sess->param->log.cookie;
       log_cookie->jcr = jcr;
    }
+
+   /*
+    * See if we know this backup format and get it options.
+    */
+   nbf_options = lookup_backup_format_options(jcr->backup_format);
 
    /*
     * Depending on the open mode select the right DCR.
@@ -669,7 +706,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
        * Create a virtual file name @NDMP/<filesystem>%<dumplevel> or
        * @NDMP/<filesystem> and save the attributes to the director.
        */
-      if (bstrcasecmp(jcr->backup_format, "dump")) {
+      if (nbf_options && nbf_options->uses_level) {
          Mmsg(virtual_filename, "/@NDMP%s%%%d", filesystem, jcr->DumpLevel);
       } else {
          Mmsg(virtual_filename, "/@NDMP%s", filesystem);
@@ -1070,7 +1107,12 @@ void end_of_ndmp_backup(JCR *jcr)
    /*
     * Release the device -- and send final Vol info to DIR and unlock it.
     */
-   release_device(dcr);
+   if (jcr->acquired_storage) {
+      release_device(dcr);
+      jcr->acquired_storage = false;
+   } else {
+      dcr->unreserve_device();
+   }
 
    jcr->sendJobStatus();              /* update director */
 }
@@ -1081,7 +1123,13 @@ void end_of_ndmp_restore(JCR *jcr)
       free_read_context(jcr->rctx);
       jcr->rctx = NULL;
    }
-   release_device(jcr->read_dcr);
+
+   if (jcr->acquired_storage) {
+      release_device(jcr->read_dcr);
+      jcr->acquired_storage = false;
+   } else {
+      jcr->read_dcr->unreserve_device();
+   }
 }
 
 extern "C" void *handle_ndmp_client_request(void *arg)

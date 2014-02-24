@@ -2299,15 +2299,12 @@ ndmp_4to9_name (
   ndmp4_name *name4,
   ndmp9_name *name9)
 {
-	char		buf[1024];
-
 	name9->original_path = NDMOS_API_STRDUP(name4->original_path);
-	strcpy (buf, name4->destination_path);
-	if (name4->name && *name4->name) {
-		strcat (buf, "/");
-		strcat (buf, name4->name);
-	}
-	name9->destination_path = NDMOS_API_STRDUP(buf);
+	name9->destination_path = NDMOS_API_STRDUP(name4->destination_path);
+	name9->name = NDMOS_API_STRDUP(name4->name);
+	name9->other_name =  NDMOS_API_STRDUP(name4->other_name);
+
+	name9->node = name4->node;
 	if (name4->fh_info != NDMP_INVALID_U_QUAD) {
 		name9->fh_info.valid = NDMP9_VALIDITY_VALID;
 		name9->fh_info.value = name4->fh_info;
@@ -2326,16 +2323,15 @@ ndmp_9to4_name (
 {
 	name4->original_path = NDMOS_API_STRDUP(name9->original_path);
 	name4->destination_path = NDMOS_API_STRDUP(name9->destination_path);
-	name4->name = NDMOS_API_STRDUP("");
-	name4->other_name =  NDMOS_API_STRDUP("");
+	name4->name = NDMOS_API_STRDUP(name9->name);
+	name4->other_name =  NDMOS_API_STRDUP(name9->other_name);
 
+	name4->node = name9->node;
 	if (name9->fh_info.valid == NDMP9_VALIDITY_VALID) {
 		name4->fh_info = name9->fh_info.value;
 	} else {
 		name4->fh_info = NDMP_INVALID_U_QUAD;
 	}
-
-	name4->node = NDMP_INVALID_U_QUAD;
 
 	return 0;
 }

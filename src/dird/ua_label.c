@@ -128,8 +128,18 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
-      ua->warning_msg(_("Storage has non-native protocol.\n"));
-      return 1;
+      /*
+       * See if the user selected a NDMP storage device but its
+       * handled by a native Bareos storage daemon e.g. we have
+       * a paired_storage pointer.
+       */
+      if (store.store->paired_storage) {
+         store.store = store.store->paired_storage;
+      } else {
+         ua->warning_msg(_("Storage has non-native protocol.\n"));
+         return 1;
+      }
+      break;
    default:
       break;
    }

@@ -62,6 +62,7 @@ bool db_commit_base_file_attributes_record(JCR *jcr, B_DB *mdb);
 bool db_create_base_file_list(JCR *jcr, B_DB *mdb, char *jobids);
 bool db_create_quota_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr);
 bool db_create_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem);
+bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *name, char *value);
 
 /* sql_delete.c */
 bool db_delete_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pool_dbr);
@@ -105,6 +106,7 @@ bool db_get_quota_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr);
 bool db_get_quota_jobbytes(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t JobRetention);
 bool db_get_quota_jobbytes_nofailed(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t JobRetention);
 int db_get_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem);
+bool db_get_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
 
 /* sql_list.c */
 void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);

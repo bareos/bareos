@@ -479,6 +479,10 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete PathVisibility sql=%s\n", query.c_str());
 
+   Mmsg(query, "DELETE FROM NDMPJobEnvironment WHERE JobId IN (%s)", jobs);
+   db_sql_query(ua->db, query.c_str());
+   Dmsg1(050, "Delete NDMPJobEnvironment sql=%s\n", query.c_str());
+
    upgrade_copies(ua, jobs);
 
    /* Now remove the Job record itself */

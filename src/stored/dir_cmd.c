@@ -504,6 +504,24 @@ static bool cancel_cmd(JCR *cjcr)
       pthread_cond_broadcast(&wait_device_release);
    }
 
+   /*
+    * See if the Job has a certain protocol.
+    * When canceling a NDMP job make sure we call the end_of_ndmp_* functions.
+    */
+   switch (jcr->getJobProtocol()) {
+   case PT_NDMP:
+      switch (jcr->getJobType()) {
+      case JT_BACKUP:
+         end_of_ndmp_backup(jcr);
+         break;
+      case JT_RESTORE:
+         end_of_ndmp_restore(jcr);
+         break;
+      default:
+         break;
+      }
+   }
+
    pthread_cond_signal(&jcr->job_end_wait); /* wake waiting job */
 
    dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId, jcr->Job, reason);

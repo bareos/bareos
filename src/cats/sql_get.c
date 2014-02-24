@@ -1127,28 +1127,31 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
                       bool use_md5, bool use_delta,
                       DB_RESULT_HANDLER *result_handler, void *ctx)
 {
+   POOL_MEM query(PM_FNAME);
+   POOL_MEM query2(PM_FNAME);
+
    if (!*jobids) {
       db_lock(mdb);
       Mmsg(mdb->errmsg, _("ERR=JobIds are empty\n"));
       db_unlock(mdb);
       return false;
    }
-   POOL_MEM buf(PM_MESSAGE);
-   POOL_MEM buf2(PM_MESSAGE);
+
    if (use_delta) {
-      Mmsg(buf2, select_recent_version_with_basejob_and_delta[db_get_type_index(mdb)],
+      Mmsg(query2, select_recent_version_with_basejob_and_delta[db_get_type_index(mdb)],
            jobids, jobids, jobids, jobids);
 
    } else {
-      Mmsg(buf2, select_recent_version_with_basejob[db_get_type_index(mdb)],
+      Mmsg(query2, select_recent_version_with_basejob[db_get_type_index(mdb)],
            jobids, jobids, jobids, jobids);
    }
 
-   /* bsr code is optimized for JobId sorted, with Delta, we need to get
+   /*
+    * BSR code is optimized for JobId sorted, with Delta, we need to get
     * them ordered by date. JobTDate and JobId can be mixed if using Copy
     * or Migration
     */
-   Mmsg(buf,
+   Mmsg(query,
 "SELECT Path.Path, Filename.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
  "FROM ( %s ) AS T1 "
  "JOIN Filename ON (Filename.FilenameId = T1.FilenameId) "
@@ -1156,15 +1159,15 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
 "WHERE FileIndex > 0 "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */
                                       /* FileIndex for restore code */
-        buf2.c_str());
+        query2.c_str());
 
    if (!use_md5) {
-      strip_md5(buf.c_str());
+      strip_md5(query.c_str());
    }
 
-   Dmsg1(100, "q=%s\n", buf.c_str());
+   Dmsg1(100, "q=%s\n", query.c_str());
 
-   return db_big_sql_query(mdb, buf.c_str(), result_handler, ctx);
+   return db_big_sql_query(mdb, query.c_str(), result_handler, ctx);
 }
 
 /**
@@ -1173,13 +1176,14 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
 bool db_get_used_base_jobids(JCR *jcr, B_DB *mdb,
                              POOLMEM *jobids, db_list_ctx *result)
 {
-   POOL_MEM buf;
-   Mmsg(buf,
+   POOL_MEM query(PM_FNAME);
+
+   Mmsg(query,
  "SELECT DISTINCT BaseJobId "
  "  FROM Job JOIN BaseFiles USING (JobId) "
  " WHERE Job.HasBase = 1 "
  "   AND Job.JobId IN (%s) ", jobids);
-   return db_sql_query(mdb, buf.c_str(), db_list_handler, result);
+   return db_sql_query(mdb, query.c_str(), db_list_handler, result);
 }
 
 /**
@@ -1277,17 +1281,17 @@ bail_out:
 bool db_get_base_file_list(JCR *jcr, B_DB *mdb, bool use_md5,
                            DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM buf(PM_MESSAGE);
+   POOL_MEM query(PM_FNAME);
 
-   Mmsg(buf,
+   Mmsg(query,
  "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5 "
    "FROM new_basefile%lld ORDER BY JobId, FileIndex ASC",
         (uint64_t) jcr->JobId);
 
    if (!use_md5) {
-      strip_md5(buf.c_str());
+      strip_md5(query.c_str());
    }
-   return db_big_sql_query(mdb, buf.c_str(), result_handler, ctx);
+   return db_big_sql_query(mdb, query.c_str(), result_handler, ctx);
 }
 
 bool db_get_base_jobid(JCR *jcr, B_DB *mdb, JOB_DBR *jr, JobId_t *jobid)
@@ -1299,6 +1303,7 @@ bool db_get_base_jobid(JCR *jcr, B_DB *mdb, JOB_DBR *jr, JobId_t *jobid)
    char esc[MAX_ESCAPE_NAME_LENGTH];
    bool retval = false;
 // char clientid[50], filesetid[50];
+
    *jobid = 0;
    lctx.count = 0;
    lctx.value = 0;
@@ -1414,6 +1419,7 @@ bool db_get_quota_jobbytes(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t JobRetentio
 
 /**
  * This function returns the sum of all the Clients JobBytes of non failed jobs.
+ *
  * Returns false: on failure
  *         true: on success
  */
@@ -1561,5 +1567,51 @@ int db_get_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem
 bail_out:
    db_unlock(mdb);
    return dumplevel;
+}
+
+/**
+ * Fetch the NDMP Job Environment Strings
+ *
+ * Returns false: on failure
+ *         true: on success
+ */
+bool db_get_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx)
+{
+   POOL_MEM query(PM_FNAME);
+   char ed1[50], ed2[50];
+   db_int64_ctx lctx;
+   JobId_t JobId;
+   bool retval = false;
+
+   lctx.count = 0;
+   lctx.value = 0;
+
+   /*
+    * Lookup the JobId
+    */
+   Mmsg(query, "SELECT JobId FROM Job "
+               "WHERE VolSessionId = '%s' "
+               "AND VolSessionTime = '%s'",
+               edit_uint64(jr->VolSessionId, ed1),
+               edit_uint64(jr->VolSessionTime, ed2));
+   if (!db_sql_query(mdb, query.c_str(), db_int64_handler, &lctx)) {
+      goto bail_out;
+   }
+
+   JobId = (JobId_t) lctx.value;
+
+   /*
+    * Lookup all environment settings belonging to this JobId and FileIndex.
+    */
+   Mmsg(query, "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
+               "WHERE JobId='%s' "
+               "AND FileIndex='%s'",
+               edit_uint64(JobId, ed1),
+               edit_uint64(jr->FileIndex, ed2));
+
+   retval = db_sql_query(mdb, query.c_str(), result_handler, ctx);
+
+bail_out:
+   return retval;
 }
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

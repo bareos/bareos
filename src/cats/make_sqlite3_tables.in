@@ -393,6 +393,14 @@ CREATE TABLE NDMPLevelMap (
    CONSTRAINT NDMPLevelMap_pkey PRIMARY KEY (ClientId, FilesetId, FileSystem)
 );
 
+CREATE TABLE NDMPJobEnvironment (
+   JobId integer NOT NULL,
+   FileIndex INTEGER UNSIGNED NOT NULL,
+   EnvName TEXT NOT NULL,
+   EnvValue TEXT NOT NULL,
+   CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
+);
+
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('C', 'Created, not yet running',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
