@@ -141,17 +141,17 @@ int purge_cmd(UAContext *ua, const char *cmd)
       }
    /* Volume */
    case 2:
-      /* Perform ActionOnPurge (action=truncate) */
-      if (find_arg(ua, "action") >= 0) {
-         return action_on_purge_cmd(ua, ua->cmd);
-      }
-
       while ((i=find_arg(ua, NT_("volume"))) >= 0) {
          if (select_media_dbr(ua, &mr)) {
             purge_jobs_from_volume(ua, &mr, /*force*/true);
          }
          *ua->argk[i] = 0;            /* zap keyword already seen */
          ua->send_msg("\n");
+      }
+
+      /* Perform ActionOnPurge (action=truncate) */
+      if (find_arg(ua, "action") >= 0) {
+         return action_on_purge_cmd(ua, ua->cmd);
       }
       return 1;
    /* Quota */
