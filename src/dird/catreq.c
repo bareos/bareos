@@ -68,7 +68,7 @@ static char OK_media[] =
    " MaxVolBytes=%s VolCapacityBytes=%s VolStatus=%s Slot=%d"
    " MaxVolJobs=%u MaxVolFiles=%u InChanger=%d VolReadTime=%s"
    " VolWriteTime=%s EndFile=%u EndBlock=%u LabelType=%d"
-   " MediaId=%s EncryptionKey=%s\n";
+   " MediaId=%s EncryptionKey=%s MinBlocksize=%d MaxBlocksize=%d\n";
 static char OK_create[] =
    "1000 OK CreateJobMedia\n";
 
@@ -92,7 +92,7 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
       mr->EndFile, mr->EndBlock,
       mr->LabelType,
       edit_uint64(mr->MediaId, ed6),
-      mr->EncrKey);
+      mr->EncrKey, mr->MinBlocksize, mr->MaxBlocksize);
    unbash_spaces(mr->VolumeName);
    Dmsg2(100, "Vol Info for %s: %s", jcr->Job, sd->msg);
    return status;

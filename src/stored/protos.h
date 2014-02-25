@@ -32,7 +32,7 @@ DCR *acquire_device_for_append(DCR *dcr);
 bool acquire_device_for_read(DCR *dcr);
 bool release_device(DCR *dcr);
 bool clean_device(DCR *dcr);
-DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev);
+DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes);
 void free_dcr(DCR *dcr);
 
 /* append.c */

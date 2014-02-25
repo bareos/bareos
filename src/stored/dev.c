@@ -118,6 +118,8 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    DEVICE *dev;
    uint32_t max_bs;
 
+   Dmsg1(400, "max_block_size in device res is %u\n", device->max_block_size);
+
    /* If no device type specified, try to guess */
    if (!device->dev_type) {
       /* Check that device is available */
@@ -172,14 +174,23 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    }
    dev->clear_slot();         /* unknown */
 
-   /* Copy user supplied device parameters from Resource */
+   /*
+    * Copy user supplied device parameters from Resource
+    */
    dev->dev_name = get_memory(strlen(device->device_name)+1);
    pm_strcpy(dev->dev_name, device->device_name);
    dev->prt_name = get_memory(strlen(device->device_name) + strlen(device->hdr.name) + 20);
-   /* We edit "Resource-name" (physical-name) */
+
+   /*
+    * We edit "Resource-name" (physical-name)
+    */
    Mmsg(dev->prt_name, "\"%s\" (%s)", device->hdr.name, device->device_name);
    Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
    dev->capabilities = device->cap_bits;
+
+   /*
+    * current block sizes
+    */
    dev->min_block_size = device->min_block_size;
    dev->max_block_size = device->max_block_size;
    dev->max_volume_size = device->max_volume_size;
@@ -196,7 +207,10 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    dev->norewindonclose = device->norewindonclose;
    dev->dev_type = device->dev_type;
    dev->device = device;
-   /* Sanity check */
+
+   /*
+    * Sanity check
+    */
    if (dev->vol_poll_interval && dev->vol_poll_interval < 60) {
       dev->vol_poll_interval = 60;
    }
@@ -206,7 +220,8 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       dev->capabilities |= CAP_STREAM; /* set stream device */
    }
 
-   /* If the device requires mount :
+   /*
+    * If the device requires mount :
     * - Check that the mount point is available
     * - Check that (un)mount commands are defined
     */
@@ -223,7 +238,9 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       }
    }
 
-   /* Sanity check */
+   /*
+    * Sanity check
+    */
    if (dev->max_block_size == 0) {
       max_bs = DEFAULT_BLOCK_SIZE;
    } else {
@@ -289,7 +306,6 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 
    dev->set_mutex_priorities();
 
-
 #ifdef xxx
    if ((errstat = rwl_init(&dev->lock)) != 0) {
       berrno be;
@@ -303,8 +319,111 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    dev->attached_dcrs = New(dlist(dcr, &dcr->dev_link));
    Dmsg2(100, "init_dev: tape=%d dev_name=%s\n", dev->is_tape(), dev->dev_name);
    dev->initiated = true;
+   Dmsg3(100, "dev=%s dev_max_bs=%u max_bs=%u\n", dev->dev_name, dev->device->max_block_size, dev->max_block_size);
 
    return dev;
+}
+
+/*
+ * Set the block size of the device.
+ * If the volume block size is zero, we set the max block size to what is
+ * configured in the device resource i.e. dev->device->max_block_size.
+ */
+void DEVICE::set_blocksizes(DCR *dcr) {
+
+   DEVICE* dev = this;
+   JCR* jcr = dcr->jcr;
+   uint32_t max_bs;
+
+   Dmsg3(100, "Device %s has dev_max_block_size of %u and max_block_size of %u\n",
+         dev->print_name(), dev->device->max_block_size, dev->max_block_size);
+
+   if (dcr->VolMaxBlocksize == 0) {
+      Dmsg2(100, "setting dev->max_block_size to dev_max_block_size=%u "
+                 "on device %s because dcr->VolMaxBlocksize is 0\n",
+            dev->device->max_block_size, dev->print_name());
+      dev->min_block_size = dev->device->min_block_size;
+      dev->max_block_size = dev->device->max_block_size;
+   } else {
+      dev->min_block_size = dcr->VolMinBlocksize;
+      dev->max_block_size = dcr->VolMaxBlocksize;
+   }
+
+   /*
+    * Sanity check
+    */
+   if (dev->max_block_size == 0) {
+      max_bs = DEFAULT_BLOCK_SIZE;
+   } else {
+      max_bs = dev->max_block_size;
+   }
+
+   if (dev->min_block_size > max_bs) {
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Min block size > max on device %s\n"), dev->print_name());
+   }
+
+   if (dev->max_block_size > MAX_BLOCK_LENGTH) {
+      Jmsg3(jcr, M_ERROR, 0, _("Block size %u on device %s is too large, using default %u\n"),
+            dev->max_block_size, dev->print_name(), DEFAULT_BLOCK_SIZE);
+      dev->max_block_size = 0;
+   }
+
+   if (dev->max_block_size % TAPE_BSIZE != 0) {
+      Jmsg3(jcr, M_WARNING, 0, _("Max block size %u not multiple of device %s block size=%d.\n"),
+            dev->max_block_size, dev->print_name(), TAPE_BSIZE);
+   }
+
+   if (dev->max_volume_size != 0 && dev->max_volume_size < (dev->max_block_size << 4)) {
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Max Vol Size < 8 * Max Block Size for device %s\n"), dev->print_name());
+   }
+
+   Dmsg3(100, "set minblocksize to %d, maxblocksize to %d on device %s\n",
+         dev->min_block_size, dev->max_block_size, dev->print_name());
+
+   /*
+    * If blocklen is not dev->max_block_size create a new block with the right size.
+    * (as header is always dev->label_block_size which is preset with DEFAULT_BLOCK_SIZE)
+    */
+   if (dcr->block) {
+     if (dcr->block->buf_len != dev->max_block_size) {
+         Dmsg2(100, "created new block of buf_len: %u on device %s\n",
+               dev->max_block_size, dev->print_name());
+         free_block(dcr->block);
+         dcr->block = new_block(dev);
+         Dmsg2(100, "created new block of buf_len: %u on device %s, freeing block\n",
+               dcr->block->buf_len, dev->print_name());
+      }
+   }
+}
+
+/*
+ * Set the block size of the device to the label_block_size
+ * to read labels as we want to always use that blocksize when
+ * writing volume labels
+ */
+void DEVICE::set_label_blocksize(DCR *dcr)
+{
+   DEVICE *dev = this;
+
+   Dmsg3(100, "setting minblocksize to %u, "
+              "maxblocksize to label_block_size=%u, on device %s\n",
+         0, dev->device->label_block_size, dev->print_name());
+
+   dev->min_block_size = 0;
+
+   dev->max_block_size = dev->device->label_block_size;
+   /*
+    * If blocklen is not dev->max_block_size create a new block with the right size
+    * (as header is always label_block_size)
+    */
+   if (dcr->block) {
+     if (dcr->block->buf_len != dev->max_block_size) {
+         free_block(dcr->block);
+         dcr->block = new_block(dev);
+         Dmsg2(100, "created new block of buf_len: %u on device %s\n",
+               dcr->block->buf_len, dev->print_name());
+      }
+   }
 }
 
 /*

@@ -30,7 +30,7 @@
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 
-const int dbglvl = 150;
+const int dbglvl = 250;
 const char *plugin_type = "-sd.so";
 static alist *sd_plugin_list = NULL;
 

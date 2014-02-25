@@ -607,6 +607,8 @@ public:
    CATRES *catalog;                   /* Catalog to be used */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
+   uint32_t MinBlocksize;             /* Minimum Blocksize */
+   uint32_t MaxBlocksize;             /* Maximum Blocksize */
 
    /* Methods */
    char *name() const;

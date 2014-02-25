@@ -247,7 +247,7 @@ static bool use_device_cmd(JCR *jcr)
 #endif
 
    init_jcr_device_wait_timers(jcr);
-   jcr->dcr = new_dcr(jcr, NULL, NULL);         /* get a dcr */
+   jcr->dcr = new_dcr(jcr, NULL, NULL, NULL);         /* get a dcr */
    if (!jcr->dcr) {
       BSOCK *dir = jcr->dir_bsock;
       dir->fsend(_("3939 Could not get dcr\n"));
@@ -645,9 +645,9 @@ static int reserve_device(RCTX &rctx)
    rctx.suitable_device = true;
    Dmsg1(dbglvl, "try reserve %s\n", rctx.device->hdr.name);
    if (rctx.store->append) {
-      dcr = new_dcr(rctx.jcr, rctx.jcr->dcr, rctx.device->dev);
+      dcr = new_dcr(rctx.jcr, rctx.jcr->dcr, rctx.device->dev, NULL);
    } else {
-      dcr = new_dcr(rctx.jcr, rctx.jcr->read_dcr, rctx.device->dev);
+      dcr = new_dcr(rctx.jcr, rctx.jcr->read_dcr, rctx.device->dev, NULL);
    }
    if (!dcr) {
       BSOCK *dir = rctx.jcr->dir_bsock;

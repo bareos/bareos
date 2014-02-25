@@ -608,7 +608,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.PoolId=%s",
+"ActionOnPurge,MinBlocksize,MaxBlocksize FROM Pool WHERE Pool.PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
@@ -616,7 +616,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.Name='%s'", esc);
+"ActionOnPurge,MinBlocksize,MaxBlocksize FROM Pool WHERE Pool.Name='%s'", esc);
    }
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
@@ -650,6 +650,8 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
             pdbr->RecyclePoolId = str_to_int64(row[17]);
             pdbr->ScratchPoolId = str_to_int64(row[18]);
             pdbr->ActionOnPurge = str_to_int32(row[19]);
+            pdbr->MinBlocksize = str_to_int32(row[20]);
+            pdbr->MaxBlocksize = str_to_int32(row[21]);
             ok = true;
          }
       }
@@ -1004,7 +1006,7 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
    } else {                           /* find by name */
@@ -1016,7 +1018,7 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE VolumeName='%s'", esc);
    }
 
@@ -1075,7 +1077,8 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
             mr->VolWriteTime = str_to_int64(row[35]);
             mr->ActionOnPurge = str_to_int32(row[36]);
             bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
-
+            mr->MinBlocksize = str_to_int32(row[38]);
+            mr->MaxBlocksize = str_to_int32(row[39]);
             retval = true;
          }
       } else {

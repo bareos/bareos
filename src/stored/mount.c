@@ -237,7 +237,21 @@ read_volume:
       if (!find_a_volume()) {
          goto mount_next_vol;
       }
+
       dev->VolCatInfo = VolCatInfo;      /* structure assignment */
+
+      /*
+       * Apply the Volume Blocksizes to device
+       */
+      dcr->VolMinBlocksize = VolCatInfo.VolMinBlocksize;
+      dcr->VolMaxBlocksize = VolCatInfo.VolMaxBlocksize;
+      Dmsg3(200, "applying vol block sizes to device %s: dcr->VolMinBlocksize set to %u, dcr->VolMaxBlocksize set to %u\n",
+            dev->print_name(), dcr->VolMinBlocksize, dcr->VolMaxBlocksize);
+
+      /*
+       * Set the block sizes of the dcr in the device.
+       */
+      dev->set_blocksizes(dcr);
    }
 
    /*

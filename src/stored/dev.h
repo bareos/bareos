@@ -192,6 +192,13 @@ struct VOLUME_CAT_INFO {
    char VolCatStatus[20];             /* Volume status */
    char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
    char VolEncrKey[MAX_NAME_LENGTH];  /* Encryption Key needed to read the media */
+   uint32_t VolMinBlocksize;          /* Volume Minimum Blocksize */
+   uint32_t VolMaxBlocksize;          /* Volume Maximum Blocksize */
+};
+
+struct BLOCKSIZES {
+   uint32_t max_block_size;
+   uint32_t min_block_size;
 };
 
 class DEVRES; /* Device resource defined in stored_conf.h */
@@ -251,8 +258,8 @@ public:
    uint64_t file_size;                /* Current file size */
    uint32_t EndBlock;                 /* last block written */
    uint32_t EndFile;                  /* last file written */
-   uint32_t min_block_size;           /* min block size */
-   uint32_t max_block_size;           /* max block size */
+   uint32_t min_block_size;           /* min block size currently set */
+   uint32_t max_block_size;           /* max block size currently set */
    uint32_t max_concurrent_jobs;      /* maximum simultaneous jobs this drive */
    uint64_t max_volume_size;          /* max bytes to put on one volume */
    uint64_t max_file_size;            /* max file size to put in one file on volume */
@@ -415,6 +422,9 @@ public:
    void set_slot(int32_t slot);  /* in dev.c */
    void clear_slot();            /* in dev.c */
 
+   void set_blocksizes(DCR* dcr); /* in dev.c */
+   void set_label_blocksize(DCR* dcr); /* in dev.c */
+
    uint32_t get_file() const { return file; };
    uint32_t get_block_num() const { return block_num; };
    int fd() const { return m_fd; };
@@ -538,6 +548,8 @@ public:
    int64_t  VolMediaId;               /* MediaId */
    int64_t job_spool_size;            /* Current job spool size */
    int64_t max_job_spool_size;        /* Max job spool size */
+   uint32_t VolMinBlocksize;          /* Minimum Blocksize */
+   uint32_t VolMaxBlocksize;          /* Maximum Blocksize */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
    char pool_name[MAX_NAME_LENGTH];   /* Pool name */
    char pool_type[MAX_NAME_LENGTH];   /* Pool type */
@@ -610,7 +622,6 @@ public:
 
    /* Methods in label.c */
    bool rewrite_volume_label(bool recycle);
-
 };
 
 /* Get some definition of function to position

@@ -157,8 +157,9 @@ public:
    utime_t max_rewind_wait;           /* Maximum secs to wait for rewind */
    utime_t max_open_wait;             /* Maximum secs to wait for open */
    uint32_t max_open_vols;            /* Maximum simultaneous open volumes */
-   uint32_t min_block_size;           /* Min block size */
-   uint32_t max_block_size;           /* Max block size */
+   uint32_t label_block_size;         /* block size of the label block*/
+   uint32_t min_block_size;           /* Current Minimum block size */
+   uint32_t max_block_size;           /* Current Maximum block size */
    uint32_t max_volume_jobs;          /* Max jobs to put on one volume */
    uint32_t max_network_buffer_size;  /* Max network buf size */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs this drive */
