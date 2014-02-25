@@ -247,6 +247,8 @@ struct POOL_DBR {
    DBId_t ScratchPoolId;              /* ScratchPool source when media is needed */
    char PoolType[MAX_NAME_LENGTH];
    char LabelFormat[MAX_NAME_LENGTH];
+   uint32_t MinBlocksize;             /* Minimum Block Size */
+   uint32_t MaxBlocksize;             /* Maximum Block Size */
    /* Extra stuff not in DB */
    faddr_t rec_addr;
 };
@@ -330,6 +332,8 @@ public:
    uint32_t EndFile;                  /* Last file on volume */
    uint32_t EndBlock;                 /* Last block on volume */
    uint32_t RecycleCount;             /* Number of times recycled */
+   uint32_t MinBlocksize;             /* Minimum Block Size */
+   uint32_t MaxBlocksize;             /* Maximum Block Size */
    char     VolStatus[20];            /* Volume status */
    DBId_t   DeviceId;                 /* Device where Vol last written */
    DBId_t   LocationId;               /* Where Volume is -- user defined */

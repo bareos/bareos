@@ -629,7 +629,7 @@ void *device_initialization(void *arg)
          continue;
       }
 
-      jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
+      jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
       if (dev->is_autochanger()) {
          /* If autochanger set slot in dev structure */

@@ -455,6 +455,8 @@ static RES_ITEM pool_items[] = {
    { "catalog", store_res, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
    { "fileretention", store_time, ITEM(res_pool.FileRetention), 0, 0, NULL },
    { "jobretention", store_time, ITEM(res_pool.JobRetention), 0, 0, NULL },
+   { "minimumblocksize", store_pint32, ITEM(res_pool.MinBlocksize), 0, 0, NULL },
+   { "maximumblocksize", store_pint32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -1136,6 +1138,8 @@ next_run:
          sendit(sock, _("      max_vols=%d auto_prune=%d VolRetention=%s\n"),
                 res->res_pool.max_volumes, res->res_pool.AutoPrune,
                 edit_utime(res->res_pool.VolRetention, ed1, sizeof(ed1)));
+         sendit(sock, _("      minblocksize=%d maxblocksize=%d\n"),
+                res->res_pool.MinBlocksize, res->res_pool.MaxBlocksize);
          sendit(sock, _("      VolUse=%s recycle=%d LabelFormat=%s\n"),
                 edit_utime(res->res_pool.VolUseDuration, ed1, sizeof(ed1)),
                 res->res_pool.Recycle,

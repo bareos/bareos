@@ -198,8 +198,8 @@ bool db_create_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
 "INSERT INTO Pool (Name,NumVols,MaxVols,UseOnce,UseCatalog,"
 "AcceptAnyVolume,AutoPrune,Recycle,VolRetention,VolUseDuration,"
 "MaxVolJobs,MaxVolFiles,MaxVolBytes,PoolType,LabelType,LabelFormat,"
-"RecyclePoolId,ScratchPoolId,ActionOnPurge) "
-"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d)",
+"RecyclePoolId,ScratchPoolId,ActionOnPurge,MinBlocksize,MaxBlocksize) "
+"VALUES ('%s',%u,%u,%d,%d,%d,%d,%d,%s,%s,%u,%u,%s,'%s',%d,'%s',%s,%s,%d,%d,%d)",
                   esc_name,
                   pr->NumVols, pr->MaxVols,
                   pr->UseOnce, pr->UseCatalog,
@@ -212,8 +212,9 @@ bool db_create_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
                   pr->PoolType, pr->LabelType, esc_lf,
                   edit_int64(pr->RecyclePoolId,ed4),
                   edit_int64(pr->ScratchPoolId,ed5),
-                  pr->ActionOnPurge
-      );
+                  pr->ActionOnPurge,
+                  pr->MinBlocksize,
+                  pr->MaxBlocksize);
    Dmsg1(200, "Create Pool: %s\n", mdb->cmd);
    pr->PoolId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Pool"));
    if (pr->PoolId == 0) {
@@ -438,9 +439,10 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
 "VolCapacityBytes,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "VolStatus,Slot,VolBytes,InChanger,VolReadTime,VolWriteTime,"
 "EndFile,EndBlock,LabelType,StorageId,DeviceId,LocationId,"
-"ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey)"
+"ScratchPoolId,RecyclePoolId,Enabled,ActionOnPurge,EncryptionKey,"
+"MinBlocksize,MaxBlocksize) "
 "VALUES ('%s','%s',0,%u,%s,%s,%d,%s,%s,%u,%u,'%s',%d,%s,%d,%s,%s,0,0,%d,%s,"
-"%s,%s,%s,%s,%d,%d,'%s')",
+"%s,%s,%s,%s,%d,%d,'%s',%d,%d)",
           esc_name,
           esc_mtype, mr->PoolId,
           edit_uint64(mr->MaxVolBytes,ed1),
@@ -463,7 +465,8 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
           edit_int64(mr->ScratchPoolId, ed11),
           edit_int64(mr->RecyclePoolId, ed12),
           mr->Enabled, mr->ActionOnPurge,
-          mr->EncrKey);
+          mr->EncrKey, mr->MinBlocksize,
+          mr->MaxBlocksize);
 
    Dmsg1(500, "Create Volume: %s\n", mdb->cmd);
    mr->MediaId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Media"));

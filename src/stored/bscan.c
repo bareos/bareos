@@ -1391,7 +1391,7 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
    jobjcr->VolSessionId = rec->VolSessionId;
    jobjcr->VolSessionTime = rec->VolSessionTime;
    jobjcr->ClientId = jr->ClientId;
-   jobjcr->dcr = jobjcr->read_dcr = new_dcr(jobjcr, NULL, dev);
+   jobjcr->dcr = jobjcr->read_dcr = new_dcr(jobjcr, NULL, dev, NULL);
 
    return jobjcr;
 }

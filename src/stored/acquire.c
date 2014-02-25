@@ -338,7 +338,9 @@ get_out:
    }
    Dmsg2(rdbglvl, "dcr=%p dev=%p\n", dcr, dcr->dev);
    Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
+
    dev->Unlock_read_acquire();
+
    Leave(rdbglvl);
    return ok;
 }
@@ -606,7 +608,7 @@ bool clean_device(DCR *dcr)
  *   this dcr in the right place
  *
  */
-DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev)
+DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
 {
    if (!dcr) {
       int errstat;
@@ -633,6 +635,14 @@ DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev)
     * Set device information, possibly change device
     */
    if (dev) {
+      /*
+       * Set wanted blocksizes
+       */
+      if (blocksizes) {
+         dev->min_block_size = blocksizes->min_block_size;
+         dev->max_block_size = blocksizes->max_block_size;
+      }
+
       if (dcr->block) {
          free_block(dcr->block);
       }

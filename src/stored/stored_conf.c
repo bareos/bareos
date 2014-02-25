@@ -196,6 +196,7 @@ static RES_ITEM dev_items[] = {
    { "maximumnetworkbuffersize", store_pint32, ITEM(res_dev.max_network_buffer_size), 0, 0, NULL },
    { "volumepollinterval", store_time, ITEM(res_dev.vol_poll_interval), 0, ITEM_DEFAULT, "300" /* 5 minutes */ },
    { "maximumrewindwait", store_time, ITEM(res_dev.max_rewind_wait), 0, ITEM_DEFAULT, "300" /* 5 minutes */ },
+   { "labelblocksize", store_pint32, ITEM(res_dev.label_block_size), 0, ITEM_DEFAULT, "64512"/* DEFAULT_BLOCK_SIZE */ },
    { "minimumblocksize", store_pint32, ITEM(res_dev.min_block_size), 0, 0, NULL },
    { "maximumblocksize", store_maxblocksize, ITEM(res_dev.max_block_size), 0, 0, NULL },
    { "maximumvolumesize", store_size64, ITEM(res_dev.max_volume_size), 0, ITEM_DEPRECATED, NULL },

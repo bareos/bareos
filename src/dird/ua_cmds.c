@@ -309,6 +309,8 @@ void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
    mr->MaxVolFiles = pr->MaxVolFiles;
    mr->MaxVolBytes = pr->MaxVolBytes;
    mr->LabelType = pr->LabelType;
+   mr->MinBlocksize = pr->MinBlocksize;
+   mr->MaxBlocksize = pr->MaxBlocksize;
    mr->Enabled = 1;
 }
 
@@ -555,7 +557,7 @@ static int cancel_cmd(UAContext *ua, const char *cmd)
  *   Pool DB base record from a Pool Resource. We handle
  *   the setting of MaxVols and NumVols slightly differently
  *   depending on if we are creating the Pool or we are
- *   simply bringing it into agreement with the resource (updage).
+ *   simply bringing it into agreement with the resource (update).
  *
  * Caution : RecyclePoolId isn't setup in this function.
  *           You can use set_pooldbr_recyclepoolid();
@@ -585,6 +587,9 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
    pr->MaxVolBytes = pool->MaxVolBytes;
    pr->AutoPrune = pool->AutoPrune;
    pr->ActionOnPurge = pool->action_on_purge;
+   pr->ActionOnPurge = pool->action_on_purge;
+   pr->MinBlocksize = pool->MinBlocksize;
+   pr->MaxBlocksize = pool->MaxBlocksize;
    pr->Recycle = pool->Recycle;
    if (pool->label_format) {
       bstrncpy(pr->LabelFormat, pool->label_format, sizeof(pr->LabelFormat));

@@ -62,6 +62,7 @@ const int sd_dbglvl = 300;
 #include "jcr.h"
 #include "vol_mgr.h"
 #include "reserve.h"
+
 #include "protos.h"
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>

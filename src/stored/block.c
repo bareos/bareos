@@ -42,7 +42,6 @@ static const bool no_tape_write_test = true;
 static const bool no_tape_write_test = false;
 #endif
 
-
 static bool terminate_writing_volume(DCR *dcr);
 static bool do_new_file_bookkeeping(DCR *dcr);
 static void reread_last_block(DCR *dcr);
@@ -121,13 +120,12 @@ DEV_BLOCK *new_block(DEVICE *dev)
 
    memset(block, 0, sizeof(DEV_BLOCK));
 
-   /*
-    * If the user has specified a max_block_size, use it as the default
-    */
    if (dev->max_block_size == 0) {
-      block->buf_len = DEFAULT_BLOCK_SIZE;
+      block->buf_len = dev->device->label_block_size;
+      Dmsg1(100, "created new block of blocksize %d (dev->device->label_block_size) as dev->max_block_size is zero\n", block->buf_len);
    } else {
       block->buf_len = dev->max_block_size;
+      Dmsg1(100, "created new block of blocksize %d (dev->max_block_size)\n", block->buf_len);
    }
    block->dev = dev;
    block->block_len = block->buf_len;  /* default block size */
@@ -502,10 +500,18 @@ bool DCR::write_block_to_dev()
             wlen = ((wlen + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
          }
       }
+
+      Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+
       if (wlen-blen > 0) {
          memset(block->bufp, 0, wlen-blen); /* clear garbage */
       }
    }
+
+   Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+
 
    checksum = ser_block_header(block, dev->do_checksum());
 

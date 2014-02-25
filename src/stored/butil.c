@@ -171,7 +171,7 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
       return NULL;
    }
    device->dev = dev;
-   jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
+   jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
    if (VolName[0]) {
       bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
    }

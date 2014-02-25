@@ -412,8 +412,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       set_storageid_in_mr(store, &mr);
 
       /*
-       * Deal with creating cleaning tape here. Normal tapes created in
-       *  send_label_request() below
+       * Deal with creating cleaning tape here. Normal tapes created in send_label_request() below
        */
       if (is_cleaning_tape(ua, &mr, &pr)) {
          if (media_record_exists) {      /* we update it */
@@ -458,7 +457,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       }
 
       mr.Slot = vl->Slot;
-      send_label_request(ua, &mr, &omr, &pr, 0, media_record_exists, drive);
+      send_label_request(ua, &mr, &omr, &pr, false, media_record_exists, drive);
    }
 
 bail_out:
@@ -555,20 +554,30 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    if (relabel) {
       bash_spaces(omr->VolumeName);
       sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-                     "MediaType=%s Slot=%d drive=%d",
+                     "MediaType=%s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
                  dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
-                 mr->MediaType, mr->Slot, drive);
+                 mr->MediaType, mr->Slot, drive,
+                 /*
+                  * if relabeling, keep blocksize settings
+                  */
+                 omr->MinBlocksize, omr->MaxBlocksize);
       ua->send_msg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
          omr->VolumeName, mr->VolumeName);
    } else {
       sd->fsend("label %s VolumeName=%s PoolName=%s MediaType=%s "
-                     "Slot=%d drive=%d",
+                     "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
                  dev_name, mr->VolumeName, pr->Name, mr->MediaType,
-                 mr->Slot, drive);
+                 mr->Slot, drive,
+                 /*
+                  * if labeling, use blocksize defined in pool
+                  */
+                 pr->MinBlocksize, pr->MaxBlocksize);
       ua->send_msg(_("Sending label command for Volume \"%s\" Slot %d ...\n"),
          mr->VolumeName, mr->Slot);
-      Dmsg6(100, "label %s VolumeName=%s PoolName=%s MediaType=%s Slot=%d drive=%d\n",
-         dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive);
+      Dmsg8(100, "label %s VolumeName=%s PoolName=%s MediaType=%s "
+                 "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d\n",
+         dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
+         pr->MinBlocksize, pr->MaxBlocksize);
    }
 
    /*

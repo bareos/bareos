@@ -337,7 +337,7 @@ int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN ('Full',"
          "'Recycle','Purged','Used','Append') AND Enabled=1 "
          "ORDER BY LastWritten LIMIT 1",
@@ -363,7 +363,7 @@ int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
          "AND VolStatus='%s' "
          "%s "
@@ -443,6 +443,8 @@ int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR
    mr->VolWriteTime = str_to_int64(row[35]);
    mr->ActionOnPurge = str_to_int64(row[36]);
    bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
+   mr->MinBlocksize = str_to_int32(row[38]);
+   mr->MaxBlocksize = str_to_int32(row[39]);
 
    sql_free_result(mdb);
 

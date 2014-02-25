@@ -67,9 +67,19 @@ int read_dev_volume_label(DCR *dcr)
    bool want_ansi_label;
    bool have_ansi_label = false;
 
-   Dmsg4(100, "Enter read_volume_label res=%d device=%s vol=%s dev_Vol=%s\n",
+  /*
+   *  We always write the label in an 64512 byte / 63k  block.
+   *  so we never have problems reading the volume label.
+   */
+
+  /*
+   * Set the default blocksize to read the label
+   */
+   dev->set_label_blocksize(dcr);
+
+   Dmsg5(100, "Enter read_volume_label res=%d device=%s vol=%s dev_Vol=%s max_blocksize=%u\n",
       dev->num_reserved(), dev->print_name(), VolName,
-      dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*");
+      dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*", dev->max_block_size);
 
    if (!dev->is_open()) {
       if (!dev->open(dcr, OPEN_READ_ONLY)) {
@@ -259,7 +269,7 @@ ok_out:
     * the return value e.g. although we think the volume label is ok the plugin
     * has reasons to override that. So when the plugin returns something else
     * then bRC_OK it want to tell us the volume is not OK to use and as
-    * such we return VOL_NAME_ERROR as error although it might not be te
+    * such we return VOL_NAME_ERROR as error although it might not be the
     * best error it should be sufficient.
     */
    if (generate_plugin_event(jcr, bsdEventLabelVerified, dcr) != bRC_OK) {
@@ -268,6 +278,13 @@ ok_out:
       goto bail_out;
    }
    empty_block(block);
+
+   /*
+    * reset blocksizes from volinfo to device as we set blocksize to
+    * DEFAULT_BLOCK_SIZE to read the label
+    */
+   dev->set_blocksizes(dcr);
+
    return VOL_OK;
 
 bail_out:
@@ -328,12 +345,16 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    DEVICE *dev = dcr->dev;
    DEV_BLOCK *block = dcr->block;
 
+   /*
+    * Set the default blocksize to read the label
+    */
+   dev->set_label_blocksize(dcr);
+
    Dmsg0(150, "write_volume_label()\n");
    if (*VolName == 0) {
       Pmsg0(0, "=== ERROR: write_new_volume_label_to_dev called with NULL VolName\n");
       goto bail_out;
    }
-
    if (relabel) {
       volume_unused(dcr);             /* mark current volume unused */
       /* Truncate device */
@@ -349,6 +370,8 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    dev->setVolCatName(VolName);
    dcr->setVolCatName(VolName);
    Dmsg1(150, "New VolName=%s\n", VolName);
+
+
    if (!dev->open(dcr, OPEN_READ_WRITE)) {
       /* If device is not tape, attempt to create it */
       if (dev->is_tape() || !dev->open(dcr, CREATE_READ_WRITE)) {
@@ -379,6 +402,7 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       /* Temporarily mark in append state to enable writing */
       dev->set_append();
 
+
       /* Create PRE_LABEL */
       create_volume_label(dev, VolName, PoolName);
 
@@ -399,6 +423,11 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       create_volume_label_record(dcr, dev, dcr->rec);
       dcr->rec->Stream = 0;
       dcr->rec->maskedStream = 0;
+
+      /*
+       * Set the label blocksize to read the label
+       */
+      dev->set_label_blocksize(dcr);
 
       if (!write_record_to_block(dcr, dcr->rec)) {
          Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
@@ -436,6 +465,12 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
    dev = dcr->dev;                    /* may have changed in reserve_volume */
 
    dev->clear_append();               /* remove append since this is PRE_LABEL */
+
+   /*
+    * Reset blocksizes from volinfo to device as we set blocksize to DEFAULT_BLOCK_SIZE to read the label.
+    */
+   dev->set_blocksizes(dcr);
+
    return true;
 
 bail_out:
@@ -455,6 +490,11 @@ bail_out:
 bool DCR::rewrite_volume_label(bool recycle)
 {
    DCR *dcr = this;
+
+   /*
+    * Set the label blocksize to write the label
+    */
+   dev->set_label_blocksize(dcr);
 
    if (!dev->open(dcr, OPEN_READ_WRITE)) {
       Jmsg3(jcr, M_WARNING, 0, _("Open device %s Volume \"%s\" failed: ERR=%s\n"),
@@ -571,6 +611,12 @@ bool DCR::rewrite_volume_label(bool recycle)
     *  the volume.
     */
    Dmsg1(150, "OK from rewrite vol label. Vol=%s\n", dcr->VolumeName);
+
+   /*
+    * reset blocksizes from volinfo to device as we set blocksize to
+    * DEFAULT_BLOCK_SIZE to write the label
+    */
+   dev->set_blocksizes(dcr);
 
    /*
     * Let any stored plugin know the label was rewritten and as such is verified .

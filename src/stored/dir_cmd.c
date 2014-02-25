@@ -58,10 +58,10 @@ static char cancelcmd[] =
    "cancel Job=%127s";
 static char relabelcmd[] =
    "relabel %127s OldName=%127s NewName=%127s PoolName=%127s "
-   "MediaType=%127s Slot=%d drive=%d";
+   "MediaType=%127s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d";
 static char labelcmd[] =
    "label %127s VolumeName=%127s PoolName=%127s "
-   "MediaType=%127s Slot=%d drive=%d";
+   "MediaType=%127s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d";
 static char mountslotcmd[] =
    "mount %127s drive=%d slot=%d";
 static char mountcmd[] =
@@ -136,7 +136,7 @@ static bool setbandwidth_cmd(JCR *jcr);
 static bool setdebug_cmd(JCR *jcr);
 static bool unmount_cmd(JCR *jcr);
 
-static DCR *find_device(JCR *jcr, POOL_MEM &dev_name, int drive);
+static DCR *find_device(JCR *jcr, POOL_MEM &dev_name, int drive, BLOCKSIZES *blocksizes);
 static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot);
 static void label_volume_if_ok(DCR *dcr, char *oldname,
                                char *newname, char *poolname,
@@ -578,8 +578,10 @@ static bool do_label(JCR *jcr, bool relabel)
    BSOCK *dir = jcr->dir_bsock;
    DCR *dcr;
    DEVICE *dev;
+   BLOCKSIZES blocksizes;
    bool ok = false;
    int32_t slot, drive;
+   //, max_block_size, min_block_size;
 
    /*
     * Determine the length of the temporary buffers.
@@ -600,25 +602,35 @@ static bool do_label(JCR *jcr, bool relabel)
    mediatype = get_memory(len);
    if (relabel) {
       if (sscanf(dir->msg, relabelcmd, dev_name.c_str(), oldname,
-                 newname, poolname, mediatype, &slot, &drive) == 7) {
+                 newname, poolname, mediatype, &slot, &drive,
+                 &blocksizes.min_block_size, &blocksizes.max_block_size) == 9) {
          ok = true;
       }
    } else {
       *oldname = 0;
       if (sscanf(dir->msg, labelcmd, dev_name.c_str(), newname,
-                 poolname, mediatype, &slot, &drive) == 6) {
+                 poolname, mediatype, &slot, &drive,
+                 &blocksizes.min_block_size, &blocksizes.max_block_size) == 8) {
          ok = true;
       }
    }
+
    if (ok) {
       unbash_spaces(newname);
       unbash_spaces(oldname);
       unbash_spaces(poolname);
       unbash_spaces(mediatype);
-      dcr = find_device(jcr, dev_name, drive);
+
+      dcr = find_device(jcr, dev_name, drive, &blocksizes);
       if (dcr) {
          dev = dcr->dev;
+
+
          dev->Lock();                 /* Use P to avoid indefinite block */
+         dcr->VolMinBlocksize = blocksizes.min_block_size;
+         dcr->VolMaxBlocksize = blocksizes.max_block_size;
+         dev->set_blocksizes(dcr);    /* apply blocksizes from dcr to dev  */
+
          if (!dev->is_open() && !dev->is_busy()) {
             Dmsg1(400, "Can %slabel. Device is not open\n", relabel ? "re" : "");
             label_volume_if_ok(dcr, oldname, newname, poolname, slot, relabel);
@@ -801,7 +813,7 @@ static bool read_label(DCR *dcr)
 /*
  * Searches for device by name, and if found, creates a dcr and returns it.
  */
-static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive)
+static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *blocksizes)
 {
    DEVRES *device;
    AUTOCHANGERRES *changer;
@@ -862,7 +874,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive)
 
    if (found) {
       Dmsg1(100, "Found device %s\n", device->hdr.name);
-      dcr = new_dcr(jcr, NULL, device->dev);
+      dcr = new_dcr(jcr, NULL, device->dev, blocksizes);
       dcr->device = device;
    }
    return dcr;
@@ -888,7 +900,7 @@ static bool mount_cmd(JCR *jcr)
 
    Dmsg3(100, "ok=%d drive=%d slot=%d\n", ok, drive, slot);
    if (ok) {
-      dcr = find_device(jcr, devname, drive);
+      dcr = find_device(jcr, devname, drive, NULL);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                  /* Use P to avoid indefinite block */
@@ -1038,7 +1050,7 @@ static bool unmount_cmd(JCR *jcr)
    int32_t drive;
 
    if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive) == 2) {
-      dcr = find_device(jcr, devname, drive);
+      dcr = find_device(jcr, devname, drive, NULL);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
@@ -1173,7 +1185,7 @@ static bool release_cmd(JCR *jcr)
    int32_t drive;
 
    if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive) == 2) {
-      dcr = find_device(jcr, devname, drive);
+      dcr = find_device(jcr, devname, drive, NULL);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
@@ -1328,7 +1340,7 @@ static bool changer_cmd(JCR *jcr)
       is_transfer = true;
    }
    if (ok) {
-      dcr = find_device(jcr, devname, -1);
+      dcr = find_device(jcr, devname, -1, NULL);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
@@ -1378,7 +1390,7 @@ static bool readlabel_cmd(JCR *jcr)
 
    if (sscanf(dir->msg, readlabelcmd, devname.c_str(),
        &Slot, &drive) == 3) {
-      dcr = find_device(jcr, devname, drive);
+      dcr = find_device(jcr, devname, drive, NULL);
       if (dcr) {
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */

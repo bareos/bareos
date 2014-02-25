@@ -59,7 +59,8 @@ static char OK_media[] =
    " MaxVolBytes=%lld VolCapacityBytes=%lld VolStatus=%20s"
    " Slot=%ld MaxVolJobs=%lu MaxVolFiles=%lu InChanger=%ld"
    " VolReadTime=%lld VolWriteTime=%lld EndFile=%lu EndBlock=%lu"
-   " LabelType=%ld MediaId=%lld EncryptionKey=%127s\n";
+   " LabelType=%ld MediaId=%lld EncryptionKey=%127s"
+   " MinBlocksize=%lu MaxBlocksize=%lu\n";
 static char OK_create[] =
    "1000 OK CreateJobMedia\n";
 
@@ -181,8 +182,9 @@ static bool do_get_volume_info(DCR *dcr)
                &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles,
                &InChanger, &vol.VolReadTime, &vol.VolWriteTime,
                &vol.EndFile, &vol.EndBlock, &vol.LabelType,
-               &vol.VolMediaId, vol.VolEncrKey);
-    if (n != 22) {
+               &vol.VolMediaId, vol.VolEncrKey,
+               &vol.VolMinBlocksize, &vol.VolMaxBlocksize);
+    if (n != 24) {
        Dmsg3(dbglvl, "Bad response from Dir fields=%d, len=%d: %s",
              n, dir->msglen, dir->msg);
        Mmsg(jcr->errmsg, _("Error getting Volume info: %s"), dir->msg);
@@ -195,8 +197,7 @@ static bool do_get_volume_info(DCR *dcr)
     dcr->VolCatInfo = vol;            /* structure assignment */
 
     /*
-     * If we received a new crypto key update the cache and write
-     * out the new cache on a change.
+     * If we received a new crypto key update the cache and write out the new cache on a change.
      */
     if (*vol.VolEncrKey) {
        if (update_crypto_cache(vol.VolCatName, vol.VolEncrKey)) {
@@ -205,11 +206,22 @@ static bool do_get_volume_info(DCR *dcr)
        }
     }
 
-    Dmsg2(dbglvl, "do_get_volume_info return true slot=%d Volume=%s\n",
-          vol.Slot, vol.VolCatName);
+    Dmsg4(dbglvl, "do_get_volume_info return true slot=%d Volume=%s, "
+                  "VolminBlocksize=%u VolMaxBlocksize=%u\n",
+          vol.Slot, vol.VolCatName, vol.VolMinBlocksize, vol.VolMaxBlocksize);
+    Dmsg2(dbglvl, "setting dcr->VolMinBlocksize(%u) to vol.VolMinBlocksize(%u)\n",
+          dcr->VolMinBlocksize, vol.VolMinBlocksize);
+    Dmsg2(dbglvl, "setting dcr->VolMaxBlocksize(%u) to vol.VolMaxBlocksize(%u)\n",
+          dcr->VolMaxBlocksize, vol.VolMaxBlocksize);
+
+    /*
+     * Assign the volcatinfo to the dcr.
+     */
+    dcr->VolMinBlocksize = vol.VolMinBlocksize;
+    dcr->VolMaxBlocksize = vol.VolMaxBlocksize;
+
     return true;
 }
-
 
 /**
  * Get Volume info for a specific volume from the Director's Database
@@ -237,8 +249,6 @@ bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw writing)
    V(vol_info_mutex);
    return ok;
 }
-
-
 
 /**
  * Get info on the next appendable volume in the Director's database
@@ -315,7 +325,6 @@ get_out:
     unlock_volumes();
     return rtn;
 }
-
 
 /**
  * After writing a Volume, send the updated statistics
@@ -443,7 +452,6 @@ bool dir_create_jobmedia_record(DCR *dcr, bool zero)
    return true;
 }
 
-
 /**
  * Update File Attribute data
  * We do the following:
@@ -485,7 +493,6 @@ bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec)
    Dmsg1(1800, ">dird %s\n", dir->msg);    /* Attributes */
    return dir->send();
 }
-
 
 /**
  *   Request the sysop to create an appendable volume
