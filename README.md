@@ -12,6 +12,11 @@ Release 14.1.x
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
 * Windows DIR.
+* Support for different blocksizes (e.g. per volume blocksize) for better performance.
+* Preliminary support for Cloud storage backends:
+  * GFAPI (Gluster FileSystem) (tested)
+  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (partly tested)
+  * Rados (CEPH) (untested)
 
 Release 13.4.x
 ==============
