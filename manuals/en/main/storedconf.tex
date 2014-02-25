@@ -894,6 +894,12 @@ For more information, please see the tape speed whitepaper:
 
 \warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes. So normally you will not change the block size in an existing configuration.}
 
+\directive{sd}{Label block size}{size-in-bytes}{}{64512}{}
+The storage daemon will write the label blocks with the size configured here.
+Usually, you will not need to change this directive.
+
+For more information on this directive, please see \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes}.
+
 
 \directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}{}
 All modern (after 1998) tape drives should support this
