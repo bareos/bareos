@@ -791,6 +791,8 @@ bool DEVICE::rewind(DCR *dcr)
             print_name(), be.bstrerror());
          return false;
       }
+   } else if (is_fifo() || is_vtl()) {
+      return true;
    } else {
       Mmsg1(errmsg, _("Don't know how to rewind device of type %d\n"), dev_type);
       return false;
