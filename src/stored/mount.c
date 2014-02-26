@@ -674,7 +674,7 @@ bool DCR::is_eod_valid()
          mark_volume_in_error();
          return false;
       }
-   } else if (is_fifo() || is_vtl()) {
+   } else if (dev->is_fifo() || dev->is_vtl()) {
       return true;
    } else {
       Mmsg1(jcr->errmsg, _("Don't know how to check if EOD is valid for a device of type %d\n"), dev->dev_type);
