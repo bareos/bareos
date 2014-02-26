@@ -38,8 +38,6 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <sys/types.h>
-#include <linux/xattr.h>
-#include <attr/xattr.h>
 #include <utime.h>
 #include <pwd.h>
 #include <grp.h>
@@ -567,8 +565,6 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
   struct stat st;
   char buf[256];
   dpl_dict_t *metadata = NULL;
-  char xattr[64*1024];
-  ssize_t ssize_ret, off;
   dpl_dict_t *subdict = NULL;
   dpl_value_t value;
 
@@ -701,45 +697,14 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ssize_ret = llistxattr(path, xattr, sizeof (xattr));
-  if (-1 == ssize_ret)
+  ret2 = dpl_get_xattrs(path,
+                        subdict,
+                        DPL_POSIX_XATTR_PREFIX,
+                        XATTRS_NO_ENCODING);
+  if (DPL_SUCCESS != ret2)
     {
-      ret = DPL_FAILURE;
+      ret = ret2;
       goto end;
-    }
-
-  off = 0;
-  while (off < ssize_ret)
-    {
-      char *key;
-      int key_len;
-      ssize_t val_len;
-      
-      key = (xattr + off);
-      key_len = strlen(key);
-
-      val_len = lgetxattr(path, key, buf, sizeof (buf) - 1);
-      if (val_len == -1)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      if (strncmp(key, DPL_POSIX_XATTR_PREFIX, strlen(DPL_POSIX_XATTR_PREFIX)))
-        {
-          ret = DPL_EINVAL;
-          goto end;
-        }
-
-      buf[val_len] = 0;
-      ret2 = dpl_dict_add(subdict, key + strlen(DPL_POSIX_XATTR_PREFIX), buf, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
-
-      off += key_len + 1;
     }
 
   value.type = DPL_VALUE_SUBDICT;

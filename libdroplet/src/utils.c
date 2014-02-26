@@ -32,6 +32,9 @@
  * https://github.com/scality/Droplet
  */
 #include <dropletp.h>
+#include <linux/xattr.h>
+#include <attr/xattr.h>
+#include <errno.h>
 
 /** @file */
 
@@ -1006,3 +1009,118 @@ dpl_set_log_func(dpl_log_func_t logfunc)
 }
 
 /** @} */
+
+/**
+ * Fills a dictionnary with file extended attributes.
+ *
+ * @param path path to the file
+ * @param dict dict to fill, must be pre-allocated
+ * @param prefix if not null, gather only this namespace, and remove prefix from
+ * key names
+ * @param  do_64encode if set to XATTRS_ENCODE_BASE64,  values in  the dict  are
+ * base64 encoded.
+ *
+ * @return DPL_SUCCESS if OK
+ */
+dpl_status_t
+dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode)
+{
+  dpl_status_t ret;
+  char *xattr = NULL;
+  char buf[4096];
+  char encoded_buf[8192];
+  ssize_t ssize_ret, off;
+  ssize_t xattr_buf_len = 2048;
+  int retry = 0;
+
+  if (NULL == dict)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  do
+    {
+      retry = 0;
+      xattr = malloc(xattr_buf_len);
+      if (NULL == xattr)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      ssize_ret = llistxattr(path, xattr, xattr_buf_len);
+      if (-1 == ssize_ret)
+        {
+          if (ERANGE == errno)
+            {
+              free(xattr);
+              xattr_buf_len *= 2;
+              retry = 1;
+            }
+          else
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+        }
+    }
+  while (1 == retry);
+
+  off = 0;
+  while (off < ssize_ret)
+    {
+      char *key, *full_key;
+      int key_len;
+      ssize_t val_len, base64_len;
+
+      full_key = (xattr + off);
+      key_len = strlen(full_key);
+
+      val_len = lgetxattr(path, full_key, buf, sizeof (buf) - 1);
+      if (val_len == -1)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      buf[val_len] = '\0';
+      if (NULL != prefix)
+        {
+          if (strncmp(full_key, prefix, strlen(prefix)))
+            {
+              off += key_len + 1;
+              continue;
+            }
+          key = full_key + strlen(prefix);
+        }
+      else
+        {
+          key = full_key;
+        }
+      if (XATTRS_ENCODE_BASE64 == do_64encode)
+        {
+          base64_len = dpl_base64_encode(buf, val_len, encoded_buf);
+          encoded_buf[base64_len] = '\0';
+          ret = dpl_dict_add(dict, key, encoded_buf, 0);
+        }
+      else
+        {
+          ret = dpl_dict_add(dict, key, buf, 0);
+        }
+      if (DPL_SUCCESS != ret)
+        {
+          goto end;
+        }
+      off += key_len + 1;
+    }
+  ret = DPL_SUCCESS;
+ end:
+
+  if (NULL != xattr)
+    {
+      free(xattr);
+    }
+
+  return ret;
+}

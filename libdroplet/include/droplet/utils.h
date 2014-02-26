@@ -91,19 +91,21 @@
 //defines htonll() and ntohll() natively
 # include <byteswap.h>
 
-#ifndef __BYTE_ORDER
-# error "byte order is not defined"
-#endif
-
-# if __BYTE_ORDER == __BIG_ENDIAN
-#  define ntohll(x)       (x)
-#  define htonll(x)       (x)
-#  else
-#   if __BYTE_ORDER == __LITTLE_ENDIAN
-#    define ntohll(x)     bswap_64 (x)
-#    define htonll(x)     bswap_64 (x)
-#   endif
+# ifndef __BYTE_ORDER
+#  error "byte order is not defined"
 # endif
+
+# ifndef ntohll
+#  if __BYTE_ORDER == __BIG_ENDIAN
+#   define ntohll(x)       (x)
+#   define htonll(x)       (x)
+#   else
+#    if __BYTE_ORDER == __LITTLE_ENDIAN
+#     define ntohll(x)     bswap_64 (x)
+#     define htonll(x)     bswap_64 (x)
+#    endif
+#  endif
+# endif /* ndef ntohll */
 #endif
 
 #ifndef HAVE_DRAND48_R
@@ -251,4 +253,9 @@ time_t dpl_get_date(const char *p, const time_t *now);
 u_int dpl_pow2_next(u_int v);
 dpl_status_t dpl_log(dpl_ctx_t *ctx, dpl_log_level_t level, const char *file,
 		     const char *func, int lineno, const char *fmt, ...);
+dpl_status_t dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode);
+
+#define XATTRS_ENCODE_BASE64 1
+#define XATTRS_NO_ENCODING 0
+
 #endif
