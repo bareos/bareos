@@ -611,39 +611,54 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    bool ok=false;
    uint64_t VolBytes = 0;
 
-   /* TODO: Return if not mr->Recyle ? */
+   /*
+    * TODO: Return if not mr->Recyle ?
+    */
    if (!mr->Recycle) {
       return;
    }
 
-   /* Do it only if action on purge = truncate is set */
+   /*
+    * Do it only if action on purge = truncate is set
+    */
    if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
       return;
    }
+
    /*
     * Send the command to truncate the volume after purge. If this feature
     * is disabled for the specific device, this will be a no-op.
     */
 
-   /* Protect us from spaces */
+   /*
+    * Protect us from spaces
+    */
    bash_spaces(mr->VolumeName);
    bash_spaces(mr->MediaType);
    bash_spaces(pool);
    bash_spaces(storage);
 
-   /* Do it by relabeling the Volume, which truncates it */
+   /*
+    * Do it by relabeling the Volume, which truncates it
+    */
    sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-             "MediaType=%s Slot=%d drive=%d\n",
-                storage,
-                mr->VolumeName, mr->VolumeName,
-                pool, mr->MediaType, mr->Slot, drive);
+             "MediaType=%s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d\n",
+             storage,
+             mr->VolumeName, mr->VolumeName,
+             pool, mr->MediaType, mr->Slot, drive,
+             /*
+              * If relabeling, keep blocksize settings
+              */
+             mr->MinBlocksize, mr->MaxBlocksize);
 
    unbash_spaces(mr->VolumeName);
    unbash_spaces(mr->MediaType);
    unbash_spaces(pool);
    unbash_spaces(storage);
 
-   /* Send relabel command, and check for valid response */
+   /*
+    * Send relabel command, and check for valid response
+    */
    while (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
       if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {

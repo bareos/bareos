@@ -363,6 +363,8 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
  * Set the block size of the device.
  * If the volume block size is zero, we set the max block size to what is
  * configured in the device resource i.e. dev->device->max_block_size.
+ *
+ * If dev->device->max_block_size is zero, do nothing and leave dev->max_block_size as it is.
  */
 void DEVICE::set_blocksizes(DCR *dcr) {
 
@@ -370,19 +372,20 @@ void DEVICE::set_blocksizes(DCR *dcr) {
    JCR* jcr = dcr->jcr;
    uint32_t max_bs;
 
-   Dmsg3(100, "Device %s has dev_max_block_size of %u and max_block_size of %u\n",
-         dev->print_name(), dev->device->max_block_size, dev->max_block_size);
+   Dmsg4(100, "Device %s has dev->device->max_block_size of %u and dev->max_block_size of %u, dcr->VolMaxBlocksize is %u\n",
+         dev->print_name(), dev->device->max_block_size, dev->max_block_size, dcr->VolMaxBlocksize);
 
-   if (dcr->VolMaxBlocksize == 0) {
-      Dmsg2(100, "setting dev->max_block_size to dev_max_block_size=%u "
+   if (dcr->VolMaxBlocksize == 0 && dev->device->max_block_size != 0) {
+      Dmsg2(100, "setting dev->max_block_size to dev->device->max_block_size=%u "
                  "on device %s because dcr->VolMaxBlocksize is 0\n",
             dev->device->max_block_size, dev->print_name());
       dev->min_block_size = dev->device->min_block_size;
       dev->max_block_size = dev->device->max_block_size;
-   } else {
-      dev->min_block_size = dcr->VolMinBlocksize;
-      dev->max_block_size = dcr->VolMaxBlocksize;
+   } else if (dcr->VolMaxBlocksize != 0) {
+       dev->min_block_size = dcr->VolMinBlocksize;
+       dev->max_block_size = dcr->VolMaxBlocksize;
    }
+
 
    /*
     * Sanity check
