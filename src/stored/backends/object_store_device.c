@@ -126,7 +126,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
        * Strip any .conf prefix from the libdroplet profile name.
        */
       len = strlen(m_object_configstring);
-      if (bstrcasecmp(m_object_configstring + (len - 5), ".conf")) {
+      if (len > 8 && bstrcasecmp(m_object_configstring + (len - 8), ".profile")) {
          m_object_configstring[len - 5] = '\0';
       }
    }
