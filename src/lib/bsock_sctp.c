@@ -77,11 +77,6 @@ void BSOCK_SCTP::init()
    m_bwlimit = 0;
    m_nb_bytes = 0;
    m_last_tick = 0;
-
-   /*
-    * ****FIXME**** reduce this to a few hours once heartbeats are implemented
-    */
-   timeout = 60 * 60 * 6 * 24;   /* 6 days timeout */
 }
 
 BSOCK *BSOCK_SCTP::clone()
