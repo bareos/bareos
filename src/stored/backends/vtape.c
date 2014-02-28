@@ -50,7 +50,7 @@ Device {
 
 #include "bareos.h"
 
-#ifdef USE_VTAPE
+#ifdef HAVE_LINUX_OS
 #include "stored.h"
 #include "backends/vtape.h"
 
@@ -926,4 +926,4 @@ void vtape::dump()
    Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n",
          atEOF, atEOT, atEOD, atBOT);
 }
-#endif  /* ! USE_VTAPE */
+#endif  /* ! HAVE_LINUX_OS */

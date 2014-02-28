@@ -94,13 +94,6 @@
 #endif
 
 /*
- * USE_VTAPE is a dummy tape driver. This is useful to run regress test.
- */
-#ifdef HAVE_LINUX_OS
-#define USE_VTAPE
-#endif
-
-/*
  * for fastest speed but you must have a UPS to avoid unwanted shutdowns
  */
 //#define SQLITE3_INIT_QUERY "PRAGMA synchronous = OFF"
