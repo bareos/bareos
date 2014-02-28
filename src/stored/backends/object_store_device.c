@@ -123,11 +123,11 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
       }
 
       /*
-       * Strip any .conf prefix from the libdroplet profile name.
+       * Strip any .profile prefix from the libdroplet profile name.
        */
       len = strlen(m_object_configstring);
       if (len > 8 && bstrcasecmp(m_object_configstring + (len - 8), ".profile")) {
-         m_object_configstring[len - 5] = '\0';
+         m_object_configstring[len - 8] = '\0';
       }
    }
 
@@ -165,6 +165,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
        * If we failed to allocate a new context fail the open.
        */
       if (!m_ctx) {
+         Mmsg1(errmsg, _("Failed to create a new context using config %s\n"), dev_name);
          return -1;
       }
 
