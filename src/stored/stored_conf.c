@@ -112,6 +112,7 @@ static RES_ITEM store_items[] = {
    { "ndmpaddresses", store_addresses, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, NDMP_DEFAULT_PORT },
    { "ndmpport", store_addresses_port, ITEM(res_store.NDMPaddrs), 0, ITEM_DEFAULT, NDMP_DEFAULT_PORT },
    { "autoxflateonreplication", store_bool, ITEM(res_store.autoxflateonreplication), 0, ITEM_DEFAULT, "false" },
+   { "absolutejobtimeout", store_pint32, ITEM(res_store.jcr_watchdog_time), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 

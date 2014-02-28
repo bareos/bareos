@@ -59,7 +59,6 @@ public:
    uint32_t out_msg_no;               /* Output message number */
    int32_t msglen;                    /* Message length */
    volatile time_t timer_start;       /* Time started read/write */
-   volatile time_t timeout;           /* Timeout BSOCK after this interval */
    int b_errno;                       /* BSOCK errno */
    int m_blocking;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
