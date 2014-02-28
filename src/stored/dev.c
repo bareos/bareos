@@ -72,7 +72,7 @@
 
 #include "bareos.h"
 #include "stored.h"
-#ifdef USE_VTAPE
+#ifdef HAVE_LINUX_OS
 #include "backends/vtape.h"
 #endif
 #ifdef HAVE_GFAPI
@@ -158,7 +158,7 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    }
 
    switch (device->dev_type) {
-#ifdef USE_VTAPE
+#ifdef HAVE_LINUX_OS
    case B_VTAPE_DEV:
       dev = New(vtape);
       break;
