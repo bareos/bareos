@@ -14,9 +14,9 @@ Release 14.1.x
 * Windows DIR.
 * Support for different blocksizes (e.g. per volume blocksize) for better performance.
 * Preliminary support for Cloud storage backends:
-  * GFAPI (Gluster FileSystem) (tested)
-  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (POSIX backend works, S3 has problems)
-  * Rados (CEPH) (untested)
+  * GFAPI (Gluster FileSystem) (tested simple backup and restore, needs more tests)
+  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (Due to unusable VFS abstraction not working).
+  * Rados (CEPH) (tested simple backup and restore, needs more tests)
 
 Release 13.4.x
 ==============
