@@ -15,7 +15,7 @@ Release 14.1.x
 * Support for different blocksizes (e.g. per volume blocksize) for better performance.
 * Preliminary support for Cloud storage backends:
   * GFAPI (Gluster FileSystem) (tested)
-  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (partly tested)
+  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (POSIX backend works, S3 has problems)
   * Rados (CEPH) (untested)
 
 Release 13.4.x
