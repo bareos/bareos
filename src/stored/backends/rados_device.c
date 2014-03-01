@@ -35,6 +35,9 @@
  */
 int rados_device::d_open(const char *pathname, int flags, int mode)
 {
+   int status;
+   berrno be;
+
    if (!m_rados_configstring) {
       char *bp;
 
@@ -52,27 +55,24 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    }
 
    if (!m_cluster_initialized) {
-      if (rados_create(&m_cluster, NULL) < 0) {
-         berrno be;
-
-         Mmsg1(errmsg, _("Unable to create RADOS cluster: ERR=%s\n"), be.bstrerror());
+      status = rados_create(&m_cluster, NULL);
+      if (status < 0) {
+         Mmsg1(errmsg, _("Unable to create RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      if (rados_conf_read_file(m_cluster, m_rados_conffile) < 0) {
-         berrno be;
-
-         Mmsg2(errmsg, _("Unable to read RADOS config %s: ERR=%s\n"), m_rados_conffile, be.bstrerror());
+      status = rados_conf_read_file(m_cluster, m_rados_conffile);
+      if (status < 0) {
+         Mmsg2(errmsg, _("Unable to read RADOS config %s: ERR=%s\n"), m_rados_conffile, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          rados_shutdown(m_cluster);
          goto bail_out;
       }
 
-      if (rados_connect(m_cluster) < 0) {
-         berrno be;
-
-         Mmsg1(errmsg, _("Unable to connect to RADOS cluster: ERR=%s\n"), be.bstrerror());
+      status = rados_connect(m_cluster);
+      if (status < 0) {
+         Mmsg1(errmsg, _("Unable to connect to RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          rados_shutdown(m_cluster);
          goto bail_out;
@@ -82,10 +82,9 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    }
 
    if (!m_ctx) {
-      if (rados_ioctx_create(m_cluster, m_rados_poolname, &m_ctx) < 0) {
-         berrno be;
-
-         Mmsg2(errmsg, _("Unable to create RADOS IO context for pool %s: ERR=%s\n"), m_rados_poolname, be.bstrerror());
+      status = rados_ioctx_create(m_cluster, m_rados_poolname, &m_ctx);
+      if (status < 0) {
+         Mmsg2(errmsg, _("Unable to create RADOS IO context for pool %s: ERR=%s\n"), m_rados_poolname, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
@@ -96,6 +95,11 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    return 0;
 
 bail_out:
+   if (m_cluster_initialized) {
+      rados_shutdown(&m_cluster);
+      m_cluster_initialized = false;
+   }
+
    return -1;
 }
 
@@ -110,8 +114,11 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
       nr_read = rados_read(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
       if (nr_read > 0) {
          m_offset += nr_read;
+         return nr_read;
+      } else {
+         errno = -nr_read;
+         return -1;
       }
-      return nr_read;
    } else {
       errno = EBADF;
       return -1;
@@ -129,8 +136,11 @@ ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
       nr_written = rados_write(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
       if (nr_written > 0) {
          m_offset += nr_written;
+         return nr_written;
+      } else {
+         errno = -nr_written;
+         return -1;
       }
-      return nr_written;
    } else {
       errno = EBADF;
       return -1;
@@ -188,30 +198,29 @@ boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 bool rados_device::d_truncate(DCR *dcr)
 {
    if (m_ctx) {
+      int status;
       uint64_t object_size;
       time_t object_mtime;
+      berrno be;
 
-      if (rados_trunc(m_ctx, getVolCatName(), 0) != 0) {
-         berrno be;
-
+      status = rados_trunc(m_ctx, getVolCatName(), 0);
+      if (status < 0) {
          Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
-               print_name(), be.bstrerror());
+               print_name(), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          return false;
       }
 
-      if (rados_stat(m_ctx, getVolCatName(), &object_size, &object_mtime) == 0) {
-         berrno be;
-
-         Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror());
+      status = rados_stat(m_ctx, getVolCatName(), &object_size, &object_mtime);
+      if (status < 0) {
+         Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror(-status));
          return false;
       }
 
       if (object_size != 0) { /* rados_trunc() didn't work. */
-         if (rados_remove(m_ctx, getVolCatName()) != 0) {
-            berrno be;
-
-            Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror());
+         status = rados_remove(m_ctx, getVolCatName());
+         if (status < 0) {
+            Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror(-status));
             return false;
          }
       }
