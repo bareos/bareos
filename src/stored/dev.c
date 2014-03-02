@@ -156,7 +156,9 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       break;
 #endif
    default:
-         return NULL;
+      Jmsg2(jcr, M_ERROR, 0, _("%s has an unknown device type %d\n"),
+            device->device_name, device->dev_type);
+      return NULL;
    }
    dev->clear_slot();         /* unknown */
 
