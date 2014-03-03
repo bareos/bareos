@@ -32,7 +32,7 @@
 
 void vtape_debug(int level);
 
-#ifdef USE_VTAPE
+#ifdef HAVE_LINUX_OS
 
 #define FTAPE_MAX_DRIVE 50
 
@@ -102,7 +102,7 @@ public:
 };
 
 
-#else  /*!USE_VTAPE */
+#else  /* !HAVE_LINUX_OS */
 
 class vtape: public DEVICE {
 public:
@@ -116,6 +116,6 @@ public:
    boffset_t lseek(DCR *dcr, off_t offset, int whence) { return -1; }
 };
 
-#endif  /* USE_VTAPE */
+#endif  /* HAVE_LINUX_OS */
 
 #endif /* !VTAPE_H */
