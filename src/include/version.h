@@ -94,19 +94,6 @@
 #endif
 
 /*
- * USE_VTAPE is a dummy tape driver. This is useful to
- *  run regress test.
- */
-#ifdef HAVE_LINUX_OS
-# define USE_VTAPE
-#endif
-
-/*
- * USE_FTP is a ftp driver for the FD using curl.
- */
-// #define USE_FTP
-
-/*
  * for fastest speed but you must have a UPS to avoid unwanted shutdowns
  */
 //#define SQLITE3_INIT_QUERY "PRAGMA synchronous = OFF"

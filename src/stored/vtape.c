@@ -51,12 +51,10 @@ Device {
  */
 
 #include "bareos.h"             /* define 64bit file usage */
+
+#ifdef HAVE_LINUX_OS
 #include "stored.h"
-
 #include "vtape.h"
-
-
-#ifdef USE_VTAPE
 
 static int dbglevel = 100;
 #define FILE_OFFSET 30
@@ -920,5 +918,4 @@ void vtape::dump()
    Dmsg4(dbglevel+1, "EOF=%i EOT=%i EOD=%i BOT=%i\n",
          atEOF, atEOT, atEOD, atBOT);
 }
-
-#endif  /* ! USE_VTAPE */
+#endif  /* ! HAVE_LINUX_OS */
