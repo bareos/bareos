@@ -124,13 +124,6 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
          device->dev_type = B_TAPE_DEV;
       } else if (S_ISFIFO(statp.st_mode)) {
          device->dev_type = B_FIFO_DEV;
-#ifdef USE_VTAPE
-      /* must set DeviceType = Vtape
-       * in normal mode, autodetection is disabled
-       */
-      } else if (S_ISREG(statp.st_mode)) {
-         device->dev_type = B_VTAPE_DEV;
-#endif
       } else if (!(device->cap_bits & CAP_REQMOUNT)) {
          Jmsg2(jcr, M_ERROR, 0,
                _("%s is an unknown device type. Must be tape or directory, st_mode=%x\n"),
