@@ -396,8 +396,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    switch (event->eventType) {
    case bEventLevel:
       p_ctx->backup_level = (int64_t)value;
-      retval = bRC_OK;
-      break;
+      return bRC_OK;
    case bEventRestoreCommand:
      /*
       * Fall-through wanted
