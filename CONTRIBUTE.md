@@ -6,7 +6,7 @@ skills to help, there are several ways to get involved into the project.
 ### Localization
 
 For localization, the Bareos Web-Frontend uses Gettext; you can find po files for each translation 
-in the language directory https://github.com/fbergkemper/barbossa/tree/master/module/Application/language.
+in the language directory https://github.com/bareos/bareos-webui/tree/master/module/Application/language.
 You can translate them using the usual tools for handling Gettext translations, e.g. Poedit.
 
 ### Testing and quality assurance

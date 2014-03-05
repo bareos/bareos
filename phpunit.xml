@@ -2,7 +2,7 @@
 
 <phpunit bootstrap="tests/Bootstrap.php" colors="true">
 	<testsuites>
-		<testsuite name="barbossa">
+		<testsuite name="bareos-webui">
 			<directory>./tests/JobTest</directory>
 			<directory>./tests/DashboardTest</directory>
 			<directory>./tests/DirectorTest</directory>

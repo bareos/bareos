@@ -1,12 +1,12 @@
 {
-    "name": "fbergkemper/barbossa",
+    "name": "bareos-webui",
     "description": "A Web-Frontend to manage Bareos",
     "license": "AGPL3",
     "keywords": [
         "bareos",
         "webinterface"
     ],
-    "homepage": "http://fbergkemper.github.io/",
+    "homepage": "http://bareos.github.io/bareos-webui",
     "require": {
         "php": ">=5.3.3",
         "zendframework/zendframework": "2.2.*",

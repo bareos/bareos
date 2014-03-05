@@ -10,24 +10,24 @@ submit patches, this is discouraged as it does not facilitate public peer
 review. So please contribute by pull request.
 
 1. Setup a GitHub account (http://github.com/), if you haven't yet.
-2. Fork the Barbossa repository (http://github.com/fbergkemper/barbossa)
+2. Fork the bareos-webui repository (http://github.com/bareos/bareos-webui)
 3. Clone your fork locally and enter it (use your own GitHub username in the statement below)
 
 ```
-sh% git clone git@github.com:<username>/barbossa.git
-% cd barbossa
+sh% git clone git@github.com:<username>/bareos-webui.git
+% cd bareos-webui
 ```
 
-4. Add a remote to the canonical Barbossa repository, so you can keep your fork up-to-date:
+4. Add a remote to the canonical bareos-webui repository, so you can keep your fork up-to-date:
 
 ```
-sh% git remote add upstream https://github.com/fbergkemper/barbossa.git
+sh% git remote add upstream https://github.com/bareos/bareos-webui.git
 sh% git fetch upstream
 ```
 
 ## Everyday workflow
 
-When working on Barbossa, we recommend you do each new feature or bugfix in a new branch. 
+When working on bareos-webui, we recommend you do each new feature or bugfix in a new branch. 
 This simplifies the task of code review as well as of merging your changes into the canonical 
 repository. A typical work flow will then consist of the following:
 
@@ -39,12 +39,12 @@ repository. A typical work flow will then consist of the following:
 
 ## Keeping Up-to-Date
 
-Periodically, you should update your fork or personal repository to match the canonical Barbossa 
+Periodically, you should update your fork or personal repository to match the canonical bareos-webui 
 repository.
 
 ```
 sh% git checkout master
-sh% git pull barbossa master
+sh% git pull bareos-webui master
 ```
 To keep your remote up-to-date:
 
