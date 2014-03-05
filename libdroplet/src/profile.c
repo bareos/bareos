@@ -127,7 +127,7 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
 
           ret = cbuf_add_char(ctx->cur_cbuf, c);
           if (-1 == ret)
-            return DPL_FAILURE;
+            goto cbuf_error;
 
 	  ctx->backslash = 0;
 	  goto cont;
@@ -147,7 +147,7 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
             {
               ret = cbuf_add_char(ctx->cur_cbuf, c);
               if (-1 == ret)
-                return DPL_FAILURE;
+                goto cbuf_error;
             }
 
 	  goto cont;
@@ -192,13 +192,18 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
 
       ret = cbuf_add_char(ctx->cur_cbuf, c);
       if (-1 == ret)
-        return DPL_FAILURE;
+        goto cbuf_error;
 
     cont:
       i++;
     }
 
   return DPL_SUCCESS;
+
+ cbuf_error:
+  DPL_LOG(NULL, DPL_ERROR, "error appending to configuration");
+
+  return DPL_FAILURE;
 }
 
 dpl_status_t
@@ -458,14 +463,14 @@ dpl_profile_parse(dpl_ctx_t *ctx,
   conf_ctx = dpl_conf_new(conf_cb_func, ctx);
   if (NULL == conf_ctx)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   fd = open(path, O_RDONLY);
   if (-1 == fd)
     {
-      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s\n",
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s",
 		path, strerror(errno));
       ret = DPL_FAILURE;
       goto end;
@@ -479,6 +484,8 @@ dpl_profile_parse(dpl_ctx_t *ctx,
 
       if (-1 == cc)
         {
+          DPL_LOG(ctx, DPL_ERROR, "error reading from '%s': %s",
+                  path, strerror(errno));
           ret = DPL_FAILURE;
           goto end;
         }
@@ -584,8 +591,10 @@ dpl_open_event_log(dpl_ctx_t *ctx)
 
   ctx->event_log = fopen(path, "a+");
   if (NULL == ctx->event_log)
-    return DPL_FAILURE;
-
+    {
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s", path, strerror(errno));
+      return DPL_FAILURE;
+    }
   return DPL_SUCCESS;
 }
 
@@ -609,7 +618,7 @@ dpl_profile_init(dpl_ctx_t *ctx,
 
   ret = dpl_profile_default(ctx);
   if (DPL_SUCCESS != ret)
-    return DPL_FAILURE;
+    return ret;
 
   if (NULL == droplet_dir)
     {
@@ -685,6 +694,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
       ctx->ssl_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
       if (NULL == ctx->ssl_bio_err)
         {
+          DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
           ret = DPL_FAILURE;
           goto end;
         }
@@ -693,6 +703,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
       ctx->ssl_ctx = SSL_CTX_new(method);
       if (NULL == ctx->ssl_ctx)
 	{
+          DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
 	  ret = DPL_FAILURE;
 	  goto end;
 	}
@@ -703,6 +714,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
             {
+              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
               BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
               ERR_print_errors(ctx->ssl_bio_err);
               BIO_printf(ctx->ssl_bio_err, "\n");
@@ -721,6 +733,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
             {
+              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
               BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
               ERR_print_errors(ctx->ssl_bio_err);
               BIO_printf(ctx->ssl_bio_err, "\n");
@@ -733,6 +746,7 @@ dpl_profile_post(dpl_ctx_t *ctx)
         {
           if (!(SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)))
             {
+              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
               BIO_printf(ctx->ssl_bio_err, "load_verify_location: ");
               ERR_print_errors(ctx->ssl_bio_err);
               BIO_printf(ctx->ssl_bio_err, "\n");
@@ -813,8 +827,17 @@ dpl_profile_load(dpl_ctx_t *ctx,
 
   ret = dpl_profile_init(ctx, droplet_dir, profile_name);
   if (DPL_SUCCESS != ret)
+    {
+      if (DPL_ENOMEM == ret)
+        {
+          DPL_LOG(ctx, DPL_ERROR, "No memory for droplet context initialization.");
+        }
+      else
+        {
+          DPL_LOG(ctx, DPL_ERROR, "Error during droplet context initialization.");
+        }
       goto end;
-
+    }
   snprintf(path, sizeof (path), "%s/%s.profile", ctx->droplet_dir, ctx->profile_name);
 
   ret = dpl_profile_parse(ctx, path);

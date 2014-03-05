@@ -932,7 +932,7 @@ dpl_pricing_parse(dpl_ctx_t *ctx,
   parse_ctx = parse_ctx_new(ctx);
   if (NULL == parse_ctx)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
@@ -952,6 +952,7 @@ dpl_pricing_parse(dpl_ctx_t *ctx,
           ret2 = parse_buf(parse_ctx, NULL, 0, 1);
           if (DPL_SUCCESS != ret2)
             {
+              DPL_LOG(ctx, DPL_ERROR, "error parsing '%s'", path);
               ret = DPL_FAILURE;
               goto end;
             }
@@ -960,6 +961,7 @@ dpl_pricing_parse(dpl_ctx_t *ctx,
 
       if (-1 == cc)
         {
+          DPL_LOG(ctx, DPL_ERROR, "error reading '%s': %s\n", path, strerror(errno));
           ret = DPL_FAILURE;
           goto end;
         }
@@ -996,7 +998,7 @@ dpl_pricing_load(dpl_ctx_t *ctx)
   ctx->request_pricing = dpl_vec_new(2, 2);
   if (NULL == ctx->request_pricing)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
@@ -1005,7 +1007,7 @@ dpl_pricing_load(dpl_ctx_t *ctx)
       ctx->data_pricing[i] = dpl_vec_new(2, 2);
       if (NULL == ctx->data_pricing[i])
         {
-          ret = DPL_FAILURE;
+          ret = DPL_ENOMEM;
           goto end;
         }
     }

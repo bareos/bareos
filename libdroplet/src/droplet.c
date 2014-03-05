@@ -266,7 +266,10 @@ dpl_ctx_new(const char *droplet_dir,
 
   ctx = dpl_ctx_alloc();
   if (NULL == ctx)
-    return NULL;
+    {
+      DPL_LOG(NULL, DPL_ERROR, "No memory for droplet context creation.");
+      return NULL;
+    }
 
   ret = dpl_profile_load(ctx, droplet_dir, profile_name);
   if (DPL_SUCCESS != ret)
