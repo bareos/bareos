@@ -648,7 +648,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sysconfdir}/rc.d/init.d/bareos-dir
 %endif
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
-%attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
 # we do not have any dir plugin but the python plugin
 #%%{plugin_dir}/*-dir.so
@@ -729,6 +728,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files common
 # common shared libraries (without db)
 %defattr(-, root, root)
+%attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %{_libdir}/libbareos-%{_libversion}.so
 %{_libdir}/libbareos.so
 %{_libdir}/libbareoscfg-%{_libversion}.so
