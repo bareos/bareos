@@ -112,7 +112,7 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
       int nr_read;
 
       nr_read = rados_read(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
-      if (nr_read > 0) {
+      if (nr_read >= 0) {
          m_offset += nr_read;
          return nr_read;
       } else {
@@ -134,7 +134,7 @@ ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
       int nr_written;
 
       nr_written = rados_write(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
-      if (nr_written > 0) {
+      if (nr_written >= 0) {
          m_offset += nr_written;
          return nr_written;
       } else {
