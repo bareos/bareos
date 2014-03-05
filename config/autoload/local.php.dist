@@ -2,7 +2,7 @@
 
 /**
  *
- * Barbossa - A Web-Frontend to manage Bareos
+ * bareos-webui - A Web-Frontend to manage Bareos
  * 
  * @link      http://github.com/fbergkemper/barbossa for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
@@ -47,7 +47,7 @@ return array(
 		// Set your hostname here
 		'host' => 'localhost',
 		// Set your username here
-		'username' => 'bareos',
+		'username' => 'bareos_webui',
 		// Set your password here
 		'password' => '',
 

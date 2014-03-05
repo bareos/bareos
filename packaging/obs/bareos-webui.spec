@@ -104,9 +104,8 @@ rm -rf $RPM_BUILD_ROOT
 %doc doc/
 %{_datadir}/%{name}/
 #attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
-#{_sysconfdir}/#{name}
+%config(noreplace) /etc/bareos-webui.conf.php
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
-#config(noreplace) #{_sysconfdir}/#{name}/config.ini
 #/usr/sbin/bareos-webui-config
 
 # /etc/sudoers.d/ should not belong to this package,
