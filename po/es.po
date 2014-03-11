@@ -12,10 +12,10 @@ msgstr ""
 "PO-Revision-Date: 2009-12-01 16:04-0300\n"
 "Last-Translator: Victor Hugo dos Santos <listas.vhs@gmail.com>\n"
 "Language-Team: Bareos Spanish Team <bareos-users-es@lists.sourceforge.net>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Language: Spanish\n"
 "X-Poedit-SourceCharset: utf-8\n"
@@ -1024,8 +1024,8 @@ msgstr "SHA1Update() retorno un error: %d\n"
 #, fuzzy, c-format
 msgid "Failed to create a new GNUTLS certificate credential: ERR=%s\n"
 msgstr ""
-"No se ha podido re-abrir el DVD después de truncar el dispositivo %s: ERR="
-"%s\n"
+"No se ha podido re-abrir el DVD después de truncar el dispositivo %s: ERR=%"
+"s\n"
 
 #: src/lib/tls_gnutls.c:135
 msgid "GNUTLS doesn't support certdir use certfile instead\n"
@@ -1915,8 +1915,8 @@ msgstr "Intento de redefinir el nombre \"%s\" para \"%s\"."
 #, c-format
 msgid "Could not find config Resource %s referenced on line %d : %s\n"
 msgstr ""
-"No se pudo encontrar Recursos de configuración %s  referenciado en la línea "
-"%d: %s\n"
+"No se pudo encontrar Recursos de configuración %s  referenciado en la línea %"
+"d: %s\n"
 
 #: src/lib/parse_conf.c:556
 #, c-format
@@ -2307,8 +2307,8 @@ msgstr ""
 msgid ""
 "Error with certificate at depth: %d, issuer = %s, subject = %s, ERR=%d:%s\n"
 msgstr ""
-"Error con el certificado en profundidad: %d, emisor=%s, asunto=%s, ERR=%d:"
-"%s\n"
+"Error con el certificado en profundidad: %d, emisor=%s, asunto=%s, ERR=%d:%"
+"s\n"
 
 #: src/lib/tls_openssl.c:117
 msgid "Error initializing SSL context"
@@ -4193,8 +4193,8 @@ msgstr ""
 msgid ""
 "The next Volume to be used by Job \"%s\" (Pool=%s, Level=%s) will be %s\n"
 msgstr ""
-"El próximo Volumen que se utilizará por Job \"%s\" (Pool=%s, Nivel=%s) será "
-"%s\n"
+"El próximo Volumen que se utilizará por Job \"%s\" (Pool=%s, Nivel=%s) será %"
+"s\n"
 
 #: src/dird/ua_output.c:587
 #, c-format
@@ -9129,8 +9129,8 @@ msgstr ""
 #, c-format
 msgid ""
 "Device: name=%s ok=%d num_writers=%d max_writers=%d\n"
-"      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr="
-"%d\n"
+"      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr=%"
+"d\n"
 "      poolid=%s volname=%s MediaType=%s\n"
 msgstr ""
 "Device: nombre=%s ok=%d num_writers=%d max_writers=%d\n"
@@ -9516,8 +9516,8 @@ msgstr ""
 #, c-format
 msgid "Error there is no Catalog section in the given config file [%s]\n"
 msgstr ""
-"Error, no hay una sección de Catálogo en el archivo de configuración dado "
-"[% s]\n"
+"Error, no hay una sección de Catálogo en el archivo de configuración dado [% "
+"s]\n"
 
 #: src/dird/dbcheck.c:214
 msgid "Error no Director resource defined.\n"
@@ -10778,8 +10778,8 @@ msgid ""
 "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"
 msgstr ""
 "Job cancelado. Intento de leer y escribir mismo dispositivo.\n"
-" Storage de Lectura \"%s\" (desde %s) -- Storage de Escritura \"%s\" (desde "
-"%s)\n"
+" Storage de Lectura \"%s\" (desde %s) -- Storage de Escritura \"%s\" (desde %"
+"s)\n"
 
 #: src/dird/quota.c:118 src/dird/quota.c:125 src/dird/quota.c:175
 #: src/dird/quota.c:183
@@ -11025,8 +11025,8 @@ msgstr "Opción replace no valida: %s\n"
 #, c-format
 msgid "File size of restored file %s not correct. Original %s, restored %s.\n"
 msgstr ""
-"Tamaño del archivo %s restaurado no es correcto. Original %s, restaurado "
-"%s.\n"
+"Tamaño del archivo %s restaurado no es correcto. Original %s, restaurado %"
+"s.\n"
 
 #: src/findlib/attribs.c:271 src/findlib/attribs.c:278
 #, c-format
@@ -11689,8 +11689,8 @@ msgstr ""
 #, c-format
 msgid "Unable to restore filetimes of xattr %s on file \"%s\": ERR=%s\n"
 msgstr ""
-"No es posible restablecer filetimes de xattr %s en el archivo \"%s\": ERR="
-"%s\n"
+"No es posible restablecer filetimes de xattr %s en el archivo \"%s\": ERR=%"
+"s\n"
 
 #: src/findlib/xattr.c:3726
 #, c-format
@@ -12737,8 +12737,8 @@ msgstr "Fallo al descifrar la clave de sesión.\n"
 #, c-format
 msgid "An error occurred while decoding encrypted session data stream: %s\n"
 msgstr ""
-"Se produjo un error al descodificar flujo de datos de sesión encriptados: "
-"%s\n"
+"Se produjo un error al descodificar flujo de datos de sesión encriptados: %"
+"s\n"
 
 #: src/filed/restore.c:834
 #, c-format
@@ -13305,8 +13305,8 @@ msgid ""
 "Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
 "Probably due to reading encrypted data from volume\n"
 msgstr ""
-"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR="
-"%s.\n"
+"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR=%"
+"s.\n"
 
 #: src/console/console_conf.c:136 src/qt-console/bat_conf.cpp:138
 #, c-format
@@ -14128,8 +14128,8 @@ msgstr "desconocido"
 #, c-format
 msgid "Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"
 msgstr ""
-"Error de codificación de la base de datos \"%s\". Busco SQL_ASCII, obtuvo "
-"%s\n"
+"Error de codificación de la base de datos \"%s\". Busco SQL_ASCII, obtuvo %"
+"s\n"
 
 #: src/cats/postgresql.c:236
 #, fuzzy, c-format
@@ -14952,8 +14952,8 @@ msgstr ""
 #: src/stored/reserve.c:893
 #, c-format
 msgid ""
-"3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive "
-"%s.\n"
+"3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive %"
+"s.\n"
 msgstr ""
 "3608 JobId=%u requiere Pool=\"%s\", pero hay Pool=\"%s\" nreserve=%d en la "
 "unidad %s.\n"
@@ -15509,8 +15509,8 @@ msgstr "Volumen \"%s\" buscado en %s está en uso por el dispositivo %s\n"
 #, fuzzy, c-format
 msgid "3997 Bad autochanger \"unload slot %d, drive %d\": ERR=%s.\n"
 msgstr ""
-"3995 Malo comando auto-cambiador \"descargar ranura %d, unidad %d\": ERR="
-"%s.\n"
+"3995 Malo comando auto-cambiador \"descargar ranura %d, unidad %d\": ERR=%"
+"s.\n"
 
 #: src/stored/autochanger.c:578 src/stored/autochanger.c:687
 #, c-format
@@ -15571,8 +15571,8 @@ msgstr ""
 #, c-format
 msgid "Cannot find device \"%s\" in config file %s.\n"
 msgstr ""
-"No se puede encontrar el dispositivo \"%s\" en el archivo de configuración "
-"%s.\n"
+"No se puede encontrar el dispositivo \"%s\" en el archivo de configuración %"
+"s.\n"
 
 #: src/stored/butil.c:170
 #, c-format
@@ -16472,8 +16472,8 @@ msgstr "Fin de archivo %u en el dispositivo %s, Volumen \"%s\"\n"
 #: src/stored/bls.c:353
 #, c-format
 msgid ""
-"File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm="
-"%s rlen=%d\n"
+"File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%"
+"s rlen=%d\n"
 msgstr ""
 "Archivo:blk=%u:%u blk_num=%u blen=%u Primer registro FI=%s SessId=%u SessTim="
 "%u Strm=%s rlen=%d\n"
@@ -16594,8 +16594,8 @@ msgstr "No es posible crear el registro JobMedia para Volumen=\"%s\" Job=%s\n"
 msgid ""
 "Despooling elapsed time = %02d:%02d:%02d, Transfer rate = %s Bytes/second\n"
 msgstr ""
-"Tiempo transcurrido desencolando = %02d:%02d:%02d, Tasa de transferencia = "
-"%s Bytes/segundo\n"
+"Tiempo transcurrido desencolando = %02d:%02d:%02d, Tasa de transferencia = %"
+"s Bytes/segundo\n"
 
 #: src/stored/spool.c:341 src/stored/spool.c:542 src/stored/spool.c:588
 #, c-format
@@ -16637,8 +16637,8 @@ msgstr "Tamaño de cola especificada por el usuario alcanzado.\n"
 #: src/stored/spool.c:478
 #, fuzzy, c-format
 msgid ""
-"User specified Device spool size reached: DevSpoolSize=%s MaxDevSpoolSize="
-"%s\n"
+"User specified Device spool size reached: DevSpoolSize=%s MaxDevSpoolSize=%"
+"s\n"
 msgstr "Tamaño de cola especificada por el usuario alcanzado.\n"
 
 #: src/stored/spool.c:485
@@ -19019,8 +19019,8 @@ msgstr ""
 #, fuzzy, c-format
 msgid "Write error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
 msgstr ""
-"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR="
-"%s.\n"
+"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR=%"
+"s.\n"
 
 #: src/stored/block.c:733 src/stored/block.c:739
 #, c-format
@@ -19088,8 +19088,8 @@ msgstr "Intento de leer sesión no abierta.\n"
 #, fuzzy, c-format
 msgid "Attempt to read closed device: fd=%d at file:blk %u:%u on device %s\n"
 msgstr ""
-"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR="
-"%s.\n"
+"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR=%"
+"s.\n"
 
 #: src/stored/block.c:968
 #, c-format
@@ -19100,8 +19100,8 @@ msgstr "Problema de tamaño de búfer del bloque en el dispositivo %s\n"
 #, c-format
 msgid "Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
 msgstr ""
-"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR="
-"%s.\n"
+"Error de lectura en fd=%d desde archivo:blk %u:%u en el dispositivo %s. ERR=%"
+"s.\n"
 
 #: src/stored/block.c:1015
 #, c-format
@@ -19312,8 +19312,8 @@ msgstr "Error al truncar en el dispositivo %s :ERR=%s\n"
 #, fuzzy, c-format
 msgid "Failed to re-open after truncate on device %s: ERR=%s\n"
 msgstr ""
-"No se ha podido re-abrir el DVD después de truncar el dispositivo %s: ERR="
-"%s\n"
+"No se ha podido re-abrir el DVD después de truncar el dispositivo %s: ERR=%"
+"s\n"
 
 #: src/stored/label.c:532
 #, c-format
@@ -21103,8 +21103,8 @@ msgstr "Storage: nombre=%s dirección=%s SDport=%d\n"
 #~ msgid ""
 #~ "Media Type not the same for all devices in changer %s. Cannot continue.\n"
 #~ msgstr ""
-#~ "Tipo de Media no es el mismo para todos los dispositivos en el cambiador "
-#~ "%s. No se puede continuar.\n"
+#~ "Tipo de Media no es el mismo para todos los dispositivos en el cambiador %"
+#~ "s. No se puede continuar.\n"
 
 #~ msgid "Network buffer size %d not multiple of tape block size.\n"
 #~ msgstr ""

@@ -11,10 +11,10 @@ msgstr ""
 "PO-Revision-Date: 2009-10-18 14:04+0000\n"
 "Last-Translator: Eric Bollengier <eric@eb.homelinux.org>\n"
 "Language-Team: French <bareos-devel-fr@lists.sourceforge.net>\n"
-"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: fr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: src/lib/daemon.c:56
@@ -1581,8 +1581,8 @@ msgstr "%s: %s\n"
 #, c-format
 msgid "Runscript: %s returned non-zero status=%d. ERR=%s\n"
 msgstr ""
-"Runscript : %s s'est terminé avec un statut différent de 0 statut=%d. ERR="
-"%s\n"
+"Runscript : %s s'est terminé avec un statut différent de 0 statut=%d. ERR=%"
+"s\n"
 
 #: src/lib/runscript.c:333 src/dird/dird_conf.c:897
 msgid " --> RunScript\n"
@@ -2016,8 +2016,8 @@ msgstr "Attendait une fin de bloc }, pas : %s"
 #, c-format
 msgid "Can't add hostname(%s) and port(%s) to addrlist (%s)"
 msgstr ""
-"Impossible d'ajouter le hostname (%s) et le port (%s) à la liste d'adresse "
-"(%s)"
+"Impossible d'ajouter le hostname (%s) et le port (%s) à la liste d'adresse (%"
+"s)"
 
 #: src/lib/parse_conf.c:1061 src/lib/parse_conf.c:1078
 #, c-format
@@ -4077,8 +4077,8 @@ msgstr "Pas de volume à labéliser ou pas de codebar.\n"
 #, c-format
 msgid "Unable move recycled Volume in full Pool \"%s\" MaxVols=%d\n"
 msgstr ""
-"Impossible de déplacer le volume recyclé, le Pool \"%s\" est plein. MaxVols="
-"%d\n"
+"Impossible de déplacer le volume recyclé, le Pool \"%s\" est plein. MaxVols=%"
+"d\n"
 
 #: src/dird/ua_purge.c:844
 #, c-format
@@ -6172,8 +6172,8 @@ msgstr "1997 le Volume \"%s\" n'est pas dans le catalogue.\n"
 #, c-format
 msgid "Unable to get Media record for Volume %s: ERR=%s\n"
 msgstr ""
-"Impossible de récupérer les informations du Media pour le Volume %s : ERR="
-"%s\n"
+"Impossible de récupérer les informations du Media pour le Volume %s : ERR=%"
+"s\n"
 
 #: src/dird/catreq.c:228
 #, c-format
@@ -9046,8 +9046,8 @@ msgstr ""
 #, c-format
 msgid ""
 "Device: name=%s ok=%d num_writers=%d max_writers=%d\n"
-"      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr="
-"%d\n"
+"      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr=%"
+"d\n"
 "      poolid=%s volname=%s MediaType=%s\n"
 msgstr ""
 
@@ -10265,8 +10265,8 @@ msgstr "Le volume \"%s\" est à jour dans le catalogue.\n"
 #, c-format
 msgid "Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"
 msgstr ""
-"Volume \"%s\" absent du catalogue. mise à zéro de InChanger pour le Slot="
-"%d.\n"
+"Volume \"%s\" absent du catalogue. mise à zéro de InChanger pour le Slot=%"
+"d.\n"
 
 #: src/dird/ua_status.c:221
 msgid "Status available for:\n"
@@ -11130,15 +11130,15 @@ msgstr "Impossible d'ouvrir le fichier %s : ERR=%s\n"
 msgid ""
 "acl_delete_def_file error on file \"%s\": filesystem doesn't support ACLs\n"
 msgstr ""
-"Impossible de récupérer les informations du Media pour le Volume %s : ERR="
-"%s\n"
+"Impossible de récupérer les informations du Media pour le Volume %s : ERR=%"
+"s\n"
 
 #: src/findlib/acl.c:935
 #, fuzzy, c-format
 msgid "acl_delete_def_file error on file \"%s\": ERR=%s\n"
 msgstr ""
-"Impossible de récupérer les informations du Media pour le Volume %s : ERR="
-"%s\n"
+"Impossible de récupérer les informations du Media pour le Volume %s : ERR=%"
+"s\n"
 
 #: src/findlib/acl.c:946
 #, fuzzy, c-format
@@ -14656,8 +14656,8 @@ msgstr ""
 #: src/stored/reserve.c:893
 #, fuzzy, c-format
 msgid ""
-"3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive "
-"%s.\n"
+"3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive %"
+"s.\n"
 msgstr ""
 "3608 JobId=%u voulait le Pool=\"%s\", mais c'est le Pool=\"%s\" qui est dans "
 "le drive %s.\n"
@@ -14666,15 +14666,15 @@ msgstr ""
 #, fuzzy, c-format
 msgid "3609 JobId=%u Max concurrent jobs exceeded on drive %s.\n"
 msgstr ""
-"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive "
-"%s.\n"
+"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive %"
+"s.\n"
 
 #: src/stored/reserve.c:928
 #, fuzzy, c-format
 msgid "3610 JobId=%u Volume max jobs exceeded on drive %s.\n"
 msgstr ""
-"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive "
-"%s.\n"
+"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive %"
+"s.\n"
 
 #: src/stored/reserve.c:980
 #, c-format
@@ -14691,8 +14691,8 @@ msgstr "3606 JobId=%u voulait un lecteur monté, mais le lecteur %s est vide.\n"
 #, c-format
 msgid "3607 JobId=%u wants Vol=\"%s\" drive has Vol=\"%s\" on drive %s.\n"
 msgstr ""
-"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive "
-"%s.\n"
+"3607 JobId=%u voulait Vol=\"%s\", c'est le Vol=\"%s\" qui est dans le drive %"
+"s.\n"
 
 #: src/stored/reserve.c:1066
 #, c-format
@@ -15590,8 +15590,8 @@ msgstr ""
 msgid ""
 "Invalid tape position on volume \"%s\" on device %s. Expected %d, got %d\n"
 msgstr ""
-"Fin du volume \"%s\" à %u:%u sur le device %s. Ecriture de %u octets, eu "
-"%d.\n"
+"Fin du volume \"%s\" à %u:%u sur le device %s. Ecriture de %u octets, eu %"
+"d.\n"
 
 #: src/stored/mount.c:868 src/stored/btape.c:3156
 #, c-format
@@ -16127,8 +16127,8 @@ msgstr ""
 #: src/stored/bls.c:353
 #, c-format
 msgid ""
-"File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm="
-"%s rlen=%d\n"
+"File:blk=%u:%u blk_num=%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%"
+"s rlen=%d\n"
 msgstr ""
 
 #: src/stored/bls.c:362
@@ -16286,8 +16286,8 @@ msgstr "Taille du spool spécifiée par l'utlisateur atteinte.\n"
 #: src/stored/spool.c:478
 #, fuzzy, c-format
 msgid ""
-"User specified Device spool size reached: DevSpoolSize=%s MaxDevSpoolSize="
-"%s\n"
+"User specified Device spool size reached: DevSpoolSize=%s MaxDevSpoolSize=%"
+"s\n"
 msgstr "Taille du spool spécifiée par l'utlisateur atteinte.\n"
 
 #: src/stored/spool.c:485
@@ -18399,8 +18399,8 @@ msgstr "Erreur d'écriture à %u:%u sur le device %s. ERR=%s\n"
 #, c-format
 msgid "End of Volume \"%s\" at %u:%u on device %s. Write of %u bytes got %d.\n"
 msgstr ""
-"Fin du volume \"%s\" à %u:%u sur le device %s. Ecriture de %u octets, eu "
-"%d.\n"
+"Fin du volume \"%s\" à %u:%u sur le device %s. Ecriture de %u octets, eu %"
+"d.\n"
 
 #: src/stored/block.c:637
 #, fuzzy, c-format
