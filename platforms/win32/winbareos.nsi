@@ -555,8 +555,8 @@ SectionIn 2
   DetailPrint "libpq.dll"
   CopyFiles /SILENT "$PostgresBinPath\libpq.dll" "$INSTDIR"
 
-  DetailPrint "libintl-8.dll"
-  CopyFiles /SILENT "$PostgresBinPath\libintl-8.dll" "$INSTDIR"
+  DetailPrint "libintl*.dll"
+  CopyFiles /SILENT "$PostgresBinPath\libintl*.dll" "$INSTDIR"
 
   DetailPrint "ssleay32.dll"
   CopyFiles /SILENT "$PostgresBinPath\ssleay32.dll" "$INSTDIR"
