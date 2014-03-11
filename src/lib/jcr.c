@@ -71,6 +71,7 @@ dlist *last_jobs = NULL;
 const int max_last_jobs = 10;
 
 static dlist *jcrs = NULL;            /* JCR chain */
+static int watch_dog_timeout = 0;
 
 static pthread_mutex_t jcr_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t job_start_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1132,10 +1133,11 @@ int job_count()
  * Setup to call the timeout check routine every 30 seconds
  * This routine will check any timers that have been enabled.
  */
-bool init_jcr_subsystem(void)
+bool init_jcr_subsystem(int timeout)
 {
    watchdog_t *wd = new_watchdog();
 
+   watch_dog_timeout = timeout;
    wd->one_shot = false;
    wd->interval = 30;   /* FIXME: should be configurable somewhere, even
                          if only with a #define */
@@ -1165,7 +1167,7 @@ static void jcr_timeout_check(watchdog_t *self)
       bs = jcr->store_bsock;
       if (bs) {
          timer_start = bs->timer_start;
-         if (timer_start && (watchdog_time - timer_start) > bs->timeout) {
+         if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(
@@ -1177,7 +1179,7 @@ static void jcr_timeout_check(watchdog_t *self)
       bs = jcr->file_bsock;
       if (bs) {
          timer_start = bs->timer_start;
-         if (timer_start && (watchdog_time - timer_start) > bs->timeout) {
+         if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(
@@ -1189,7 +1191,7 @@ static void jcr_timeout_check(watchdog_t *self)
       bs = jcr->dir_bsock;
       if (bs) {
          timer_start = bs->timer_start;
-         if (timer_start && (watchdog_time - timer_start) > bs->timeout) {
+         if (timer_start && (watchdog_time - timer_start) > watch_dog_timeout) {
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(

@@ -774,11 +774,6 @@ BSOCK *init_bsock(JCR * jcr, int sockfd, const char *who, const char *host, int 
    bsock->set_port(port);
    memset(&bsock->peer_addr, 0, sizeof(bsock->peer_addr));
    memcpy(&bsock->client_addr, client_addr, sizeof(bsock->client_addr));
-   /*
-    * ****FIXME**** reduce this to a few hours once
-    *   heartbeats are implemented
-    */
-   bsock->timeout = 60 * 60 * 6 * 24;   /* 6 days timeout */
    bsock->set_jcr(jcr);
    return bsock;
 }

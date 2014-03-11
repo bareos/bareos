@@ -601,7 +601,7 @@ extern DLL_IMP_EXP dlist *last_jobs;
  * The following routines are found in lib/jcr.c
  */
 extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
-extern bool init_jcr_subsystem(void);
+extern bool init_jcr_subsystem(int timeout);
 extern JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
 extern JCR *get_jcr_by_id(uint32_t JobId);
 extern JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);

@@ -98,7 +98,7 @@ public:
    RES hdr;
 
    dlist *DIRaddrs;
-   dlist *DIRsrc_addr;                /* address to source connections from */
+   dlist *DIRsrc_addr;                /* Address to source connections from */
    char *password;                    /* Password for UA access */
    char *query_file;                  /* SQL query file */
    char *working_directory;           /* WorkingDirectory */
@@ -132,6 +132,7 @@ public:
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    uint32_t subscriptions;            /* Number of subscribtions available */
    uint32_t subscriptions_used;       /* Number of subscribtions used */
+   uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
    char *verid;                       /* Custom Id to print in version command */
    char *keyencrkey;                  /* Key Encryption Key */
 

@@ -93,6 +93,7 @@ struct CLIENTRES {
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t max_network_buffer_size;  /* Max network buf size */
+   uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
    bool compatible;                   /* Support old protocol keywords */
    bool allow_bw_bursting;            /* Allow bursting with bandwidth limiting */
    bool pki_sign;                     /* Enable Data Integrity Verification via Digital Signatures */

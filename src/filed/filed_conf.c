@@ -125,6 +125,7 @@ static RES_ITEM cli_items[] = {
    { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, ITEM_DEFAULT, "false" },
    { "allowedscriptdir", store_alist_str, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
    { "allowedjobcommand", store_alist_str, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
+   { "absolutejobtimeout", store_pint32, ITEM(res_client.jcr_watchdog_time), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 

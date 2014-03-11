@@ -250,7 +250,9 @@ int main (int argc, char *argv[])
 
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */
-      init_jcr_subsystem();           /* start JCR watchdogs etc. */
+      if (me->jcr_watchdog_time) {
+         init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+      }
    }
    server_tid = pthread_self();
 

@@ -285,7 +285,9 @@ int main (int argc, char *argv[])
    }
 
    start_watchdog();                  /* start watchdog thread */
-   init_jcr_subsystem();              /* start JCR watchdogs etc. */
+   if (me->jcr_watchdog_time) {
+      init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+   }
 
 #if HAVE_NDMP
    /* Seperate thread that handles NDMP connections */

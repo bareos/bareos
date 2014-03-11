@@ -66,11 +66,6 @@ void BSOCK::init()
    m_blocking = 1;
    msg = get_pool_memory(PM_BSOCK);
    errmsg = get_pool_memory(PM_MESSAGE);
-   /*
-    * ****FIXME**** reduce this to a few hours once
-    *   heartbeats are implemented
-    */
-   timeout = 60 * 60 * 6 * 24;   /* 6 days timeout */
 }
 
 /*

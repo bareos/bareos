@@ -148,6 +148,7 @@ static RES_ITEM dir_items[] = {
    { "keyencryptionkey", store_clearpassword, ITEM(res_dir.keyencrkey), 1, 0, NULL },
    { "ndmpsnooping", store_bool, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_dir.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
+   { "absolutejobtimeout", store_pint32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 

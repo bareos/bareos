@@ -94,6 +94,7 @@ public:
    char *scripts_directory;
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
    uint32_t ndmploglevel;             /* Initial NDMP log level */
+   uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
    MSGSRES *messages;                 /* Daemon message handler */
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t FDConnectTimeout;          /* Timeout in seconds */
