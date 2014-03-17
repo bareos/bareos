@@ -20,6 +20,15 @@ Release 13.2.x
 * Plugin to do backup of Microsoft Sql Server (mssql) server.
 * Cleanup win api compat layer.
 
+* Remove hardcoded job timeout of 6 days.
+* Remove vtape autodetection
+* SD to SD replication makes SD crash
+* Rework database scripting.
+* Allow updates from Bacula 2.x to Bareos.
+* Fix some bugs in the NDMP implementation.
+* Some coverity warning and errors fixed.
+* Add support for setting allowed cns for passive mode.
+
 Release 13.1.x
 ==============
 
