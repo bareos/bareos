@@ -18,7 +18,7 @@ env:
         # Name of the project
         - COVERITY_SCAN_PROJECT_NAME="bareos/bareos"
         # Email address for notifications related to this build
-        - COVERITY_SCAN_NOTIFICATION_EMAIL="joerg.steffens@bareos.com"
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="coverity@bareos.org"
         # Regular expression selects on which branches to run analysis
         # Be aware of quotas. Do not run on every branch/commit
         - COVERITY_SCAN_BRANCH_PATTERN="master"
