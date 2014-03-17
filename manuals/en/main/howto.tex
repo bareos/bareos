@@ -278,7 +278,7 @@ Incremental FileSet example:
 If you want to perfom a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
 
 \begin{description}
-  \item[replace=\textless yes|no\textgreater]
+  \item[replace=\textless yes{\textbar}no\textgreater]
   With this option you can replace the database if it still exist.
   \item[instance]
   Defines the server instance whithin the database is running.
@@ -429,9 +429,9 @@ If you like to restore a specific state or a whole chain consists of full, incre
 "LSN" it it not recommend to work with this option.
 
 \begin{description}
-  \item[norecovery=\textless yes|no\textgreater]
+  \item[norecovery=\textless yes{\textbar}no\textgreater]
   This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenace operations are possible.
-  \item[recoverafterrestore=\textless yes|no\textgreater]
+  \item[recoverafterrestore=\textless yes{\textbar}no\textgreater]
   With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
   \footnotesize
   \begin{verbatim}

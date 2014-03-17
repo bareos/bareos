@@ -6,6 +6,342 @@
 \index[general]{Maintenance!Catalog}
 \index[general]{Catalog Maintenance}
 
+\section{Catalog Database}
+
+Bareos stores its catalog in a database.
+Different database backends are supported:
+\begin{itemize}
+    \item PostgreSQL
+    \item MySQL
+    \item Sqlite (only for testing)
+\end{itemize}
+
+What database will be used, can be configured in \file{/etc/bareos/bareos-dir.conf}, see the \ilink{Catalog ressource}{CatalogResource}.
+The database often runs on the same server as the Bareos Director.
+However, it is also possible to run it on a different system.
+This might require some more manual configuration.
+
+Bareos comes with a number of scripts to prepare and update the databases. All these scripts are located in the Bareos script directory, normally at \scriptPathUnix.
+
+\begin{center}
+\begin{tabular}{| l | l | l |}
+\hline
+\textbf{Script}                & \textbf{Stage} & \textbf{Description} \\
+\hline
+\hline
+\file{create_bareos_database}  & installation & create Bareos database \\
+\file{make_bareos_tables}      & installation & create Bareos tables \\
+\file{grant_bareos_privileges} & installation & grant database access priviliges \\
+\hline
+\file{update_bareos_tables}    & update       & update the database schema \\
+\hline
+\file{drop_bareos_tables}      & deinstallation & remove Bareos database tables \\
+\file{drop_bareos_database}    & deinstallation & create Bareos database \\
+\hline
+\file{make_catalog_backup.pl}  & backup         & backup the Bareos database, default on Linux \\
+\file{make_catalog_backup}     & backup         & backup the Bareos database for systems without Perl \\
+\file{delete_catalog_backup}   & backup helper  & remove the temporary Bareos database backup  file \\
+\hline
+\end{tabular}
+\end{center}
+
+The database preparation scripts have following configuration options:
+\begin{center}
+\begin{tabular}{| l | l | l |}
+\hline
+\textbf{Parameter}      & \textbf{Values} \\
+\hline
+\hline
+\parameter{db_type}     & parameter, dbdriver from \configFileDirUnix, installed database backends \\
+\parameter{db_name}     & environment variable \variable{db_name}, bareos \\
+\parameter{db_user}     & environment variable \variable{db_user}, bareos \\
+\parameter{db_password} & environment variable \variable{db_password}, \textit{none} \\
+\hline
+\end{tabular}
+\end{center}
+
+The database preparation scripts need to have password-less administrator access to the database.
+Depending on the distribution you're using, this require additional configuration.
+See the following section about howto achieve this for the different database systems.
+
+\subsection{PostgreSQL}
+
+On most distributions, PostgreSQL uses ident to allow access to the database system.
+The database administrator account is the Unix user \user{postgres}.
+Normally, this use can access the database without password, as the ident mechanism is used to identify the user.
+
+If this works on your system can be verified by
+\begin{commands}{Access the local PostgreSQL database}
+su - postgres
+psql
+\end{commands}
+
+If your database is configured to to require a password, this must be definied in the file
+\elink{\file{~/.pgpass}}{http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html}
+in the following syntax: \parameter{HOST:POST:DATABASE:USER:PASSWORD}, e.g.
+\begin{config}{PostgreSQL access credentials}
+localhost:*:bareos:bareos:secret
+\end{config}
+The permission of this file must be 0600 (\command{chmod 0600 ~/.pgpass}).
+
+Again, verify that you have specified the correct settings by calling the \command{psql} command.
+If this connects you to the database, your credentials are good.
+Exit the PostgreSQL client and run the Bareos database preparation scripts:
+\begin{commands}{Setup Bareos catalog database}
+su - postgres
+/usr/lib/bareos/scripts/create_bareos_database
+/usr/lib/bareos/scripts/make_bareos_tables
+/usr/lib/bareos/scripts/grant_bareos_privileges
+\end{commands}
+
+% \warning{The user \user{postgres} normally can't read the Bareos director config file \configFileDirUnix. If you're using non-standard settings (like different database name, ...), make sure, it got read access to it.}
+
+The encoding of the bareos database must be \parameter{SQL_ASCII}.
+The command \command{create_bareos_database} automatically creates the database with this encoding.
+This can be verified by the command \command{psql -l}, which  shows information about existing databases:
+\begin{commands}{List existing databases}
+<command>psql</command><parameter> -l</parameter>
+        List of databases
+   Name    |  Owner   | Encoding
+-----------+----------+-----------
+ bareos    | root     | SQL_ASCII
+ postgres  | postgres | UTF8
+ template0 | postgres | UTF8
+ template1 | postgres | UTF8
+(4 rows)
+\end{commands}
+
+By default, using PostgreSQL ident, a Unix user can access a database with the same name.
+Therefore the user \user{bareos} can access the database \path|bareos|.
+
+\begin{commands}{Verify Bareos database on PostgreSQL as Unix user bareos}
+root@linux:~# <input>su - bareos -s /bin/sh</input>
+bareos@linux:~# <input>psql</input>
+Welcome to psql 8.3.23, the PostgreSQL interactive terminal.
+
+Type:  \copyright for distribution terms
+       \h for help with SQL commands
+       \? for help with psql commands
+       \g or terminate with semicolon to execute query
+       \q to quit
+
+bareos=> <input>\dt</input>
+                 List of relations
+ Schema |          Name          | Type  |  Owner
+--------+------------------------+-------+----------
+ public | basefiles              | table | root
+ public | cdimages               | table | root
+ public | client                 | table | root
+ public | counters               | table | root
+ public | device                 | table | root
+ public | devicestats            | table | postgres
+ public | file                   | table | root
+ public | filename               | table | root
+ public | fileset                | table | root
+ public | job                    | table | root
+ public | jobhisto               | table | root
+ public | jobmedia               | table | root
+ public | jobstats               | table | postgres
+ public | location               | table | root
+ public | locationlog            | table | root
+ public | log                    | table | root
+ public | media                  | table | root
+ public | mediatype              | table | root
+ public | ndmpjobenvironment     | table | postgres
+ public | ndmplevelmap           | table | root
+ public | path                   | table | root
+ public | pathhierarchy          | table | root
+ public | pathvisibility         | table | root
+ public | pool                   | table | root
+ public | quota                  | table | root
+ public | restoreobject          | table | root
+ public | status                 | table | root
+ public | storage                | table | root
+ public | unsavedfiles           | table | root
+ public | version                | table | root
+(30 rows)
+
+bareos=> <input>select * from Version;</input>
+ versionid
+-----------
+      2002
+(1 row)
+
+bareos=> <input>\du</input>
+                                 List of roles
+   Role name   | Superuser | Create role | Create DB | Connections | Member of
+---------------+-----------+-------------+-----------+-------------+-----------
+ bareos        | no        | no          | no        | no limit    | {}
+ postgres      | yes       | yes         | yes       | no limit    | {}
+(2 rows)
+
+bareos=> <input>\dp</input>
+                 Access privileges for database "bareos"
+ Schema |               Name                |   Type   |  Access privileges
+--------+-----------------------------------+----------+--------------------------------------
+ public | basefiles                         | table    | {root=arwdxt/root,bareos=arwdxt/root}
+ public | basefiles_baseid_seq              | sequence | {root=rwU/root,bareos=rw/root}
+...
+
+bareos=>
+\end{commands}
+
+
+\subsection{MySQL}
+
+MySQL user authentication is username, password and host-based.
+The database administrator is the user \user{root}.
+
+On some distributions access to the MySQL database is allowed password-less as database user \user{root},
+on other distributions, a password is required.
+On productive systems you normally want to have password secured acccess.
+
+The bareos database preparation scripts require password-less access to the database.
+To guarantee this, create a MySQL credentials file \elink{\file{~/.my.cnf}}{http://dev.mysql.com/doc/refman/4.1/en/password-security.html} with the credentials of the database administrator:
+\begin{config}{MySQL credentials file ~/.my.cnf}
+[client]
+host=localhost
+user=root
+password=<input>YourPasswordForAccessingMysqlAsRoot</input>
+\end{config}
+Alternatively you can specifiy your database password by adding it to the file \file{/etc/my.cnf}.
+
+Verify that you have specified the correct settings by calling the \command{mysql} command.
+If this connects you to the database, your credentials are good.
+Exit the MySQL client and run the Bareos database preparation scripts:
+\begin{commands}{Setup Bareos catalog database}
+/usr/lib/bareos/scripts/create_bareos_database
+/usr/lib/bareos/scripts/make_bareos_tables
+/usr/lib/bareos/scripts/grant_bareos_privileges
+\end{commands}
+
+After this, you can use the \command{mysql} command to verify that your database setup is okay.
+The result should look similar as this (here Bareos 13.2 is used on SLES11):
+
+\begin{commands}{Verify Bareos database on MySQL}
+<command>mysql</command>
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 162
+Server version: 5.5.32 SUSE MySQL package
+
+Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> <input>show databases;</input>
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| bareos             |
+| mysql              |
+| performance_schema |
++--------------------+
+4 rows in set (0.08 sec)
+
+mysql> <input>use bareos;</input>
+Database changed
+
+mysql> <input>show tables;</input>
++--------------------+
+| Tables_in_bareos   |
++--------------------+
+| BaseFiles          |
+| CDImages           |
+| Client             |
+| Counters           |
+| Device             |
+| DeviceStats        |
+| File               |
+| FileSet            |
+| Filename           |
+| Job                |
+| JobHisto           |
+| JobMedia           |
+| JobStats           |
+| Location           |
+| LocationLog        |
+| Log                |
+| Media              |
+| MediaType          |
+| NDMPJobEnvironment |
+| NDMPLevelMap       |
+| Path               |
+| PathHierarchy      |
+| PathVisibility     |
+| Pool               |
+| Quota              |
+| RestoreObject      |
+| Status             |
+| Storage            |
+| UnsavedFiles       |
+| Version            |
++--------------------+
+30 rows in set (0.00 sec)
+
+mysql> <input>select * from Version;</input>
++-----------+
+| VersionId |
++-----------+
+|      2002 |
++-----------+
+1 row in set (0.00 sec)
+
+mysql> <input>select user,host,password from mysql.user where user='bareos';</input>
++--------+-----------+-------------------------------------------+
+| user   | host      | password                                  |
++--------+-----------+-------------------------------------------+
+| bareos | localhost | *1D402C8D0488095B40BFAE5844F88676C2EF23B1 |
++--------+-----------+-------------------------------------------+
+1 row in set (0.00 sec)
+
+mysql>
+\end{commands}
+
+
+
+\subsection{Sqlite}
+
+There are different versions of Sqlite available. When we use the term Sqlite, we will always refer to Sqlite3.
+
+Sqlite is a file based database. Access via network connection is not supported.
+Because its setup is easy, it is a good database for testing.
+However please don't use it in a production environment.
+
+Sqlite stores a database in a single file.
+Bareos creates this file at \file{/var/lib/bareos/bareos.db}.
+
+Sqlite does not offer access permissions. The only permissions that do apply are the Unix file permissions.
+
+The database is accessable by following command:
+\begin{commands}{Verify Bareos database on Sqlite3}
+<command>sqlite3</command><input> /var/lib/bareos/bareos.db</input>
+SQLite version 3.7.6.3
+Enter ".help" for instructions
+Enter SQL statements terminated with a ";"
+sqlite> <input>.tables</input>
+BaseFiles           Filename            Media               Pool
+CDImages            Job                 MediaType           Quota
+Client              JobHisto            NDMPJobEnvironment  RestoreObject
+Counters            JobMedia            NDMPLevelMap        Status
+Device              JobStats            NextId              Storage
+DeviceStats         Location            Path                UnsavedFiles
+File                LocationLog         PathHierarchy       Version
+FileSet             Log                 PathVisibility
+sqlite> <input>select * from Version;</input>
+2002
+sqlite>
+\end{commands}
+
+
+
+
+\section{Retention Periods}
+
 Without proper setup and maintenance, your Catalog may continue to grow
 indefinitely as you run Jobs and backup Files, and/or it may become
 very inefficient and slow. How fast the size of your
@@ -16,7 +352,7 @@ deleting old expired records (dates older than the Retention period), your
 database size will remain constant.
 
 
-\section{Setting Retention Periods}
+\subsection{Setting Retention Periods}
 \index[general]{Setting Retention Periods}
 \index[general]{Periods!Setting Retention}
 \label{Retention}
@@ -55,7 +391,7 @@ job.
 Retention periods are specified in seconds, but as a convenience, there are
 a number of modifiers that permit easy specification in terms of minutes,
 hours, days, weeks, months, quarters, or years on the record.  See the
-\ilink{ Configuration chapter}{Time} of this manual for additional details
+\ilink{Configuration chapter}{Time} of this manual for additional details
 of modifier specification.
 
 The default File retention period is 60 days.
@@ -80,8 +416,8 @@ records much longer than the File records.
 
 The retention period is specified in seconds, but as a convenience, there
 are a number of modifiers that permit easy specification in terms of
-minutes, hours, days, weeks, months, quarters, or years.  See the \ilink{
-Configuration chapter}{Time} of this manual for additional details of
+minutes, hours, days, weeks, months, quarters, or years.
+See the \ilink{Configuration chapter}{Time} of this manual for additional details of
 modifier specification.
 
 The default Job Retention period is 180 days.
@@ -96,7 +432,7 @@ time you run a Job.
 \end{description}
 
 
-\subsection{Job statistics}
+\subsubsection{Job statistics}
 
 %\chapter{Using Bareos catalog to grab information}
 \label{UseBareosCatalogToExtractInformationChapter}
@@ -257,21 +593,6 @@ ALTER TABLE File MAX_ROWS=281474976710656;
 \end{verbatim}
 \normalsize
 
-Alternatively you can modify your /etc/my.conf file before creating the
-Bareos tables, and in the [mysqld] section set:
-
-\footnotesize
-\begin{verbatim}
-set-variable = myisam_data_pointer_size=6
-\end{verbatim}
-\normalsize
-
-The above myisam data pointer size must be made before you create your
-Bareos tables or it will have no effect.
-
-The row and pointer size changes should already be the default on MySQL
-version 5.x, so making these changes should only be necessary on MySQL 4.x
-depending on the size of your catalog database.
 
 \subsection{MySQL Server Has Gone Away}
 \index[general]{Database!MySQL Server Has Gone Away}
@@ -540,7 +861,7 @@ CREATE INDEX file_jfp_idx on File (JobId, PathId, FilenameId);
 
 
 
-% hidE: sqlite is not supported
+% hide: sqlite is not supported
 \hide{
 \section{Compacting Your SQLite Database}
 \index[general]{Compacting Your SQLite Database}
@@ -613,8 +934,7 @@ Assuming that you start all your nightly backup jobs at 1:05 am (and that they
 run one after another), you can do the catalog backup with the following
 additional Director configuration statements:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Bareos Catalog Backup Job}
 # Backup the catalog database (after the nightly save)
 Job {
   Name = "BackupCatalog"
@@ -650,43 +970,15 @@ FileSet {
     }
     File = "/var/lib/bareos/bareos.sql" # database dump
     File = "/etc/bareos"                # configuration
-
   }
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 It is preferable
-to write/send the bootstrap file to another computer. It will allow
+to write/send the \ilink{bootstrap}{BootstrapChapter} file to another computer. It will allow
 you to quickly recover the database backup should that be necessary.  If
 you do not have a bootstrap file, it is still possible to recover your
 database backup, but it will be more work and take longer.
-
-
-\label{BackingUpBareosSecurityConsiderations}
-\section{Security considerations}
-\index[general]{Backing Up Your Bareos Database - Security Considerations}
-\index[general]{Database!Backing Up Your Bareos Database - Security Considerations}
-
-We provide make\_catalog\_backup as an example of what can be used to backup
-your Bareos database.  We expect you to take security precautions relevant
-to your situation.  make\_catalog\_backup is designed to take a password on
-the command line.  This is fine on machines with only trusted users.  It is
-not acceptable on machines without trusted users.  Most database systems
-provide a alternative method, which does not place the password on the
-command line.
-
-The make\_catalog\_backup script contains some warnings about how to use it. Please
-read those tips.
-
-To help you get started, we know PostgreSQL has a password file,
-\elink{
-.pgpass}{http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html}, and
-we know MySQL has
-\elink{ .my.cnf}{http://dev.mysql.com/doc/refman/4.1/en/password-security.html}.
-
-Only you can decide what is appropriate for your situation. We have provided
-you with a starting point.  We hope it helps.
 
 
 

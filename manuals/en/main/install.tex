@@ -46,19 +46,19 @@ Here are some working examples:
 \subsubsection{RHEL 6}
 
 For adding the repository:
-\begin{verbatim}
+\begin{commands}{Add Bareos repository}
 wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/RHEL_6/bareos.repo
-\end{verbatim}
+\end{commands}
 
 For using PostgreSQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on RHEL 6 (PostgreSQL backend)}
 yum install bareos bareos-database-postgresql
-\end{verbatim}
+\end{commands}
 
 For using MySQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on RHEL 6 (MySQL backend)}
 yum install bareos bareos-database-mysql
-\end{verbatim}
+\end{commands}
 
 \subsubsection{CentOS 6}
 
@@ -69,21 +69,21 @@ Just replace RHEL by CentOS in the repository URL
 yum in RHEL 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
 
 First add the repository using:
-\begin{verbatim}
+\begin{commands}{Add Bareos repository}
 wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/RHEL_5/bareos.repo
-\end{verbatim}
+\end{commands}
 
 After that you can install with PostgreSQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on RHEL 5 (PostgreSQL backend)}
 yum install bareos-database-postgresql
 yum install bareos
-\end{verbatim}
+\end{commands}
 
 Or install with MySQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on RHEL 5 (MySQL backend)}
 yum install bareos-database-mysql
 yum install bareos
-\end{verbatim}
+\end{commands}
 
 \subsubsection{CentOS 5}
 
@@ -92,36 +92,36 @@ Again, just replace RHEL with CentOS in the repository URL.
 \subsubsection{Fedora 18}
 
 For adding the repository:
-\begin{verbatim}
+\begin{commands}{Add Bareos repository}
 wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/Fedora_18/bareos.repo
-\end{verbatim}
+\end{commands}
 
 After that you can install with PostgreSQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on Fedora 18 (PostgreSql backend)}
 yum install bareos bareos-database-postgresql
-\end{verbatim}
+\end{commands}
 
 Or install with MySQL backend:
-\begin{verbatim}
+\begin{commands}{Bareos installation on Fedora 18 (MySQL backend)}
 yum install bareos bareos-database-mysql
-\end{verbatim}
+\end{commands}
 
 \subsection{Install on SUSE based Linux Distributions}
 
 \subsubsection{SLES11 SP3}
 
-\begin{verbatim}
+\begin{commands}{Bareos installation on SUSE Linux Enterprise Server (SLES) 11 SP3}
 zypper addrepo --refresh http://download.bareos.org/bareos/release/latest/SLE_11_SP3/bareos.repo
 zypper install bareos bareos-database-mysql
-\end{verbatim}
+\end{commands}
 In this example using mysql as database backend.
 
 \subsubsection{openSUSE 13.1}
 
-\begin{verbatim}
+\begin{commands}{Bareos installation on openSUSE 13.1}
 zypper addrepo --refresh http://download.bareos.org/bareos/release/latest/openSUSE_13.1/bareos.repo
 zypper install bareos bareos-database-mysql
-\end{verbatim}
+\end{commands}
 
 
 \subsection{Install on Debian based Linux Distributions}
@@ -129,7 +129,7 @@ zypper install bareos bareos-database-mysql
 
 \subsubsection{Debian 7}
 
-\begin{verbatim}
+\begin{commands}{Bareos installation on Debian 7}
 URL=http://download.bareos.org/bareos/release/latest/Debian_7.0/
 printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
 
@@ -138,11 +138,11 @@ wget -q $URL/Release.key -O- | apt-key add -
 
 apt-get update
 apt-get install bareos bareos-database-postgresql
-\end{verbatim}
+\end{commands}
 
 \subsubsection{Ubuntu 12.04}
 
-\begin{verbatim}
+\begin{commands}{Bareos installation on Ubuntu 12.04}
 URL=http://download.bareos.org/bareos/release/latest/xUbuntu_12.04/
 printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
 
@@ -151,107 +151,121 @@ wget -q $URL/Release.key -O- | apt-key add -
 
 apt-get update
 apt-get install bareos bareos-database-postgresql
-\end{verbatim}
+\end{commands}
 
 \section{Prepare Bareos database}
     \label{CreateDatabase}
 
 We assume that you have already your database installed and basically running.
-Currently the database backend Postgres and MySQL are recommended. The Sqlite database backend is only intended for testing purposes.
+Currently the database backend PostgreSQL and MySQL are recommended. The Sqlite database backend is only intended for testing purposes.
 
 The easiest way to set up a database is using an system account that have passwordless local access to the database. 
-Often this is the user root for MySQL and the user postgres for PostgreSQL.
+Often this is the user \user{root} for MySQL and the user \user{postgres} for PostgreSQL.
+
+For details, see chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
 
 \subsection{PostgreSQL}
-If your are using PostgreSql and your PostgreSql admin is is postgres (default), use following commands:
+If your are using PostgreSQL and your PostgreSQL administration user is \user{postgres} (default), use following commands:
 
-\begin{verbatim}
+\begin{commands}{Setup Bareos catalog database}
 su postgres -c /usr/lib/bareos/scripts/create_bareos_database
 su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
 su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-\end{verbatim}
+\end{commands}
 
 
 \subsection{MySQL}
 Make sure, that \user{root} has direct access to the local MySQL server. 
-Check if the command \command{mysql} connects to the database without defining the the password. 
+Check if the command \command{mysql} connects to the database without defining the password.
 This is the default on RedHat and SUSE distributions. 
 On other systems (Debian, Ubuntu),
-create the file \file{/root/.my.cnf} with your authentication informations:
-\begin{verbatim}
+create the file \file{~/.my.cnf} with your authentication informations:
+
+\begin{config}{MySQL credentials file .my.cnf}
 [client]
+host=localhost
 user=root
-password=YourPasswordForAccessingMysqlAsRoot
-\end{verbatim}
+password=<input>YourPasswordForAccessingMysqlAsRoot</input>
+\end{config}
 
 Setup the Bareos database tables by following commands:
-\begin{verbatim}
+\begin{commands}{Setup Bareos catalog database}
 /usr/lib/bareos/scripts/create_bareos_database
 /usr/lib/bareos/scripts/make_bareos_tables
 /usr/lib/bareos/scripts/grant_bareos_privileges
-\end{verbatim}
+\end{commands}
 
-After this, the file \file{/root/.my.cnf} is no longer required for Bareos.
-
+As some Bareos updates also require a database schema update,
+the file \file{/root/.my.cnf} might also be useful in the future.
 
 
 \section{Start the daemons}
-\begin{verbatim}
+\begin{commands}{Start the Bareos Daemons}
 service bareos-dir start
 service bareos-sd start
 service bareos-fd start
-\end{verbatim}
+\end{commands}
 
 You will eventually have to allow access to the ports 9101-9103, used by Bareos.
 
 Now you should be able to access the director using the bconsole.
 
-\section{Overview about Bareos Packages}
+\chapter{Updating Bareos}
+\label{bareos-update}
 
-Following Bareos Linux packages are available (release 13.2):
+In most cases, a Bareos update is simply done by a package update of the distribution.
+Please remind, that Bareos Director and Bareos Storage Daemon must always have the same version.
+The version of the File Daemon may differ, see chapter about \ilink{backward compatibility}{backward-compability}.
 
-% generated by
-% cd bareos:/bareos-13.2/SLE_11_SP3/x86_64
-% rpm -qp --qf '%{NAME} & %{SUMMARY} \\\\\n' *bareos*.rpm
-\begin{center}
-\begin{tabular}{ | l | l | }
-\hline
-\textbf{Package Name} & \textbf{Description} \\ \hline
-bareos & Bares All-In-One package (dir,sd,fd) \\
-bareos-bat & Provide Bareos Admin Tool gui \\
-bareos-bconsole & Provide ncurses administration console \\
-bareos-client & Meta-All-In-One package client package \\
-bareos-common & Generic libs needed by every package \\
-bareos-database-common & Generic abstration lib for the sql catalog \\
-bareos-database-mysql & Libs and tools for mysql catalog \\
-bareos-database-postgresql & Libs and tools for postgresql catalog \\
-bareos-database-sqlite3 & Libs and tools for sqlite3 catalog \\
-bareos-database-tools & Provides bareos-dbcheck, bscan \\
-bareos-devel & Devel headers \\
-bareos-director & Provide bareos director daemon \\
-bareos-filedaemon & Provide bareos file daemon service \\
-bareos-storage & Provide bareos storage daemon \\
-bareos-storage-tape & Provide bareos storage daemon tape support \\
-bareos-tools & Provides bcopy, bextract, bls, bregex, bwild \\
-bareos-traymonitor & Qt based tray monitor \\
-\hline
-\end{tabular}
-\end{center}
+\section{Updating the database schema}
 
-Additionally, packages containing debug information are available.
-These are named differently depending on the distribution (\package{bareos-debuginfo} or \package{bareos-dbg} or  $\ldots$).
-%bareos-debuginfo & Debug information for package bareos \\
-%bareos-debugsource & Debug sources for package bareos \\
+Sometimes improvements in Bareos make it neccessary to update the database scheme.
+This has to be done as database administrator and can therefore not be done by the Bareos packages itself, even if the database host runs on the same system as the Bareos Director.
 
-Not all packages are required to run Bareos.
+\warning{If the Bareos catalog database has not the current schema, the Bareos Director refuses to start.}
+Detailed information can than be found in the log file \logfileUnix.
 
-\begin{itemize}
-    \item For the Bareos Director, the package \package{bareos-director} and one of \package{bareos-database-mysql}, \package{bareos-database-postgresql} or \package{bareos-database-sqlite3} are required (use \package{bareos-database-sqlite3} only for testing).
+Take a look in the \ilink{Release Notes}{releasenotes} to see, what Bareos updates to require a database schema update.
 
-    \item For the Bareos Storage Daemon, the package \package{bareos-storage} is required. If you plan to connect tape drives to the storage director, also install the package \package{bareos-storage-tape}. This is keeped separtly, because it has additional dependencies  for tape tools.
+The task of updating the database schema is done by the script
+\command{/usr/lib/bareos/scripts/update_bareos_tables}.
 
-    \item On a client, only the package \package{bareos-filedaemon} is required. If you run it on a workstation, the packages \package{bareos-traymonitor} gives the user information about running backups.
+However, this script requires administration access to the database.
+Depending on your distribution and your database, this requires different preparations.
+More details can be found in chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
 
-    \item On a Backup Administration system you need to install at least \package{bareos-bconsole} to have an interactive console to the Bareos Director.
+\warning{If you had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \ilink{Catalog Maitenance}{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts.}
 
-\end{itemize}
+\subsection{PostgreSQL}
+If your are using PostgreSQL and your PostgreSQL administrator is \user{postgres} (default), use following commands:
+
+\begin{commands}{Update PostgreSQL database schema}
+su postgres -c /usr/lib/bareos/scripts/update_bareos_tables
+su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+\end{commands}
+
+The \command{grant_bareos_privileges} command is required, if new databases tables are introduced. It does not hurt to run es multiple times.
+
+After this, restart the Bareos Director and verify it starts without problems.
+
+\subsection{MySQL}
+Make sure, that \user{root} has direct access to the local MySQL server.
+Check if the command \command{mysql} without parameter connects to the database.
+If not, you may be required to adapt your local MySQL config file \file{~/.my.cnf}.
+It should look similar to this:
+
+\begin{config}{MySQL credentials file .my.cnf}
+[client]
+host=localhost
+user=root
+password=<input>YourPasswordForAccessingMysqlAsRoot</input>
+\end{config}
+
+If you are able to connect via the \command{mysql} to the database, run the following script from the Unix prompt:
+\begin{commands}{Update MySQL database schema}
+/usr/lib/bareos/scripts/update_bareos_tables
+\end{commands}
+
+Currently on MySQL is it not neccessary to run \command{grant_bareos_privileges}, because access to the database is already given using wildcards.
+
+After this, restart the Bareos Director and verify it starts without problems.

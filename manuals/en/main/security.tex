@@ -3,14 +3,12 @@
 
 \chapter{Bareos Security Issues}
 \label{SecurityChapter}
-\index[general]{Bareos Security Issues}
 \index[general]{Security}
-\index[general]{Issues!Bareos Security}
 
 \begin{itemize}
 \item Security means being able to restore your files, so read the
    \ilink{Critical Items Chapter}{Critical} of this manual.
-\item The Clients ({\bf bareos-fd}) must run as root to be able to access  all
+\item The clients ({\bf bareos-fd}) must run as root to be able to access  all
    the system files.
 \item It is not necessary to run the Director as root.
 \item It is not necessary to run the Storage daemon as root, but you  must
@@ -33,10 +31,8 @@
    section of this manual.
 \item You should ensure that the Bareos working directories are  readable and
    writable only by the Bareos daemons.
-\item If you are using {\bf MySQL} it is not necessary for it to  run with
-   {\bf root} permission.
-\item The default Bareos {\bf grant-mysql-permissions} script  grants all
-   permissions to use the MySQL database without a  password. If you want
+\item The default Bareos \command{grant_bareos_privileges} script  grants all
+   permissions to use the MySQL (and PostgreSQL) database without a  password. If you want
    security, please tighten this up!
 \item Don't forget that Bareos is a network program, so anyone anywhere  on
    the network with the console program and the Director's password  can access
@@ -44,15 +40,6 @@
 \item You can restrict what IP addresses Bareos will bind to by using the
    appropriate {\bf DirAddress}, {\bf FDAddress}, or {\bf SDAddress}  records in
    the respective daemon configuration files.
-\item Be aware that if you are backing up your database using the default
-   script, if you have a password on your database, it will be passed as
-   a command line option to that script, and any user will be able to see
-   this information. If you want it to be secure, you will need to pass it
-   by an environment variable or a secure file.
-
-   See also \ilink{Backing Up Your Bareos
-   Database - Security Considerations }{BackingUpBareosSecurityConsiderations}
-   for more information.
 \end{itemize}
 
 

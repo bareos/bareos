@@ -45,19 +45,15 @@ In other words, what is and what is not currently implemented and functional.
    \begin{itemize}
    \item Restore of one or more files selected interactively either for the
       current backup or a backup prior to a specified time and date.
-   \item Restore of a complete system starting from bare  metal. This is mostly
-      automated for Linux systems and  partially automated for Solaris. See
-      \ilink{Disaster Recovery Using Bareos}{RescueChapter}. This is also
-      reported to work on Win2K/XP systems.
-   \item Listing and Restoration of files using stand-alone {\bf bls} and {\bf
-        bextract} tool programs. Among other things, this permits extraction of
+   \item Listing and Restoration of files using stand-alone \command{bls} and \command{bextract}
+      tool programs. Among other things, this permits extraction of
       files when Bareos and/or the catalog are not available. Note, the
       recommended way to restore files is using the restore command in the
       Console. These programs are designed for use as a last resort.
    \item Ability to restore the catalog database rapidly by using bootstrap
       files (previously saved).
    \item Ability to recreate the catalog database by scanning backup Volumes
-      using the {\bf bscan} program.
+      using the \command{bscan} program.
    \end{itemize}
 
 \item SQL Catalog
@@ -97,7 +93,7 @@ In other words, what is and what is not currently implemented and functional.
 \item Advanced Support for most Storage Devices
     \begin{itemize}
    \item Autochanger support using a simple shell interface that can interface
-      to virtually any autoloader program. A script for {\bf mtx} is  provided.
+      to virtually any autoloader program. A script for \command{mtx} is  provided.
    \item Support for autochanger barcodes -- automatic tape labeling from
       barcodes.
    \item Automatic support for multiple autochanger magazines either using
@@ -165,31 +161,10 @@ In other words, what is and what is not currently implemented and functional.
    shared memory.
 \item Bareos installation and configuration is relatively simple compared  to
    other comparable products.
-\item According to one user Bareos is as fast as the big major commercial
-   applications.
-\item According to another user Bareos is four times as fast as another
-   commercial application, probably because that application  stores its catalog
-   information in a large number of individual  files rather than an SQL database
-   as Bareos does.
 \item Aside from several GUI administrative interfaces, Bareos has a
    comprehensive shell administrative interface, which allows the
    administrator to use tools such as ssh to administrate any part of
-   Bareos from anywhere (even from home).
-% \item Bareos has a Rescue CD for Linux systems with the following features:
-%    \begin{itemize}
-%    \item You build it on your own system from scratch with one simple  command:
-%       make -- well, then make burn.
-%    \item It uses your kernel
-%    \item It captures your current disk parameters and builds scripts that  allow
-%       you to automatically repartition a disk and format it to  put it back to what
-%       you had before.
-%    \item It has a script that will restart your networking (with the right  IP
-%       address)
-%    \item It has a script to automatically mount your hard disks.
-%    \item It has a full Bareos FD statically linked
-%    \item You can easily add additional data/programs, ... to the disk.
-%    \end{itemize}
-
+   Bareos from anywhere.
 \end{itemize}
 
 \section{Current Implementation Restrictions}
@@ -223,14 +198,14 @@ In other words, what is and what is not currently implemented and functional.
 \index[general]{Design!Restrictions}
 
 \begin{itemize}
-\item Names (resource names, Volume names, and such) defined in Bareos
+\item Names (resource names, volume names, and such) defined in Bareos
    configuration files are limited to a fixed number of
    characters.  Currently the limit is defined as 127 characters.  Note,
    this does not apply to filenames, which may be arbitrarily long.
-\item Command line input to some of the stand alone tools -- e.g. btape,
-   bconsole is restricted to several hundred characters maximum.
+\item Command line input to some of the stand alone tools -- e.g. \command{btape},
+   \command{bconsole} is restricted to several hundred characters maximum.
    Normally, this is not a restriction, except in the case of listing
-   multiple Volume names for programs such as {\bf bscan}. To avoid
+   multiple Volume names for programs such as \command{bscan}. To avoid
    this command line length restriction, please use a {\bf .bsr}
    file to specify the Volume names.
 \item Bareos configuration files for each of the components can be
@@ -240,7 +215,6 @@ In other words, what is and what is not currently implemented and functional.
    they permit a list of names are character strings simply
    specify multiple short lines repeating the directive on
    each line but with different list values.
-
 \end{itemize}
 
 \section{Items to Note}
@@ -250,9 +224,9 @@ In other words, what is and what is not currently implemented and functional.
   on time stamps.  Consequently, if you move files into an existing directory
   or move a whole directory into the backup fileset after a Full backup, those
   files will probably not be backed up by an Incremental save because they will
-  have old dates.  This problem is corrected by using Accurate mode backups
+  have old dates.  This problem is corrected by using \ilink{Accurate mode}{accuratemode} backups
   or by explicitly updating the date/time stamp on all moved files.
-\item In non \textsl{Accurate} mode, files deleted after a Full save will be
+\item In non Accurate mode, files deleted after a Full save will be
   included in a restoration. This is typical for most similar backup programs.
-  To avoid this, use Accurate mode backup.
+  To avoid this, use \ilink{Accurate mode}{accuratemode} backup.
 \end{itemize}

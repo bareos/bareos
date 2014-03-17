@@ -24,7 +24,10 @@
 \def\idir{../../images/conv/}  %% images directory
 
 \newcommand{\fileStoragePath}{\path|/var/lib/bareos/storage/|}
+\newcommand{\scriptPathUnix}{\path|/usr/lib/bareos/scripts/|}
 \newcommand{\configPathUnix}{\path|/etc/bareos/|}
+\newcommand{\configFileDirUnix}{\path|/etc/bareos/bareos-dir.conf|}
+\newcommand{\logfileUnix}{\path|/var/log/bareos/bareos.log|}
 
 
 %%
@@ -41,6 +44,7 @@
 \newcommand{\lt}{\textless}
 \newcommand{\gt}{\textgreater}
 
+\newcommand{\commandPrompt}{root{\at}linux:\~{}\# }
 \newcommand{\command}[1]{\path|#1|}
 \newcommand{\bcommand}[1]{\path|#1|}
 \newcommand{\file}[1]{\path|#1|}
@@ -50,6 +54,7 @@
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
 \newcommand{\configdirective}[1]{\textbf{#1}}
+\newcommand{\host}[1]{\path|#1|}
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}
 %%
@@ -60,6 +65,11 @@
 %%
 \newcommand{\warning}[1]{Please note! \textit{#1}}
 %%
+\newcommand{\releasenote}[2]{
+    \subsection*{bareos-#1}
+    \index[general]{#1!Release Notes}%
+    #2
+}
 \newcommand{\sinceVersion}[3]{Version $>=$ #3%
     \index[#1]{#2}%
     \index[general]{#3!#2}%
@@ -178,6 +188,7 @@
         %basicstyle=\ttfamily,
         basicstyle=\small,
         stringstyle=\ttfamily,
+        keepspaces=true,
         columns=fixed,
         backgroundcolor=\color{colorBconsole},
         frame=single,
@@ -203,10 +214,55 @@
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
+        keepspaces=true,
         columns=fullflexible,
         %label=config:#1,
         caption=#1,
         captionpos=b,
+    }
+}{}
+
+\lstnewenvironment{config}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Configuration}
+    \footnotesize
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        keepspaces=true,
+        columns=fullflexible,
+        %label=config:#1,
+        caption=#1,
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+\lstnewenvironment{commands}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Commands}
+    \footnotesize
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        keepspaces=true,
+        columns=fullflexible,
+        caption=#1,
+        captionpos=b,
+        % command only work for single commands without parameter.
+        % as workaround, split a command and its parameter as in following example:
+        % <command>su</command><input> - bareos</input>
+        moredelim=[is][\commandPrompt\bf]{<command>}{</command>},
+        moredelim=[is][\bf]{<parameter>}{</parameter>},
+        moredelim=[is][\bf]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
     }
 }{}
 
@@ -222,16 +278,16 @@
     \footnotesize
     \def\commandOut1{#1}
     \ifthenelse{\isempty{#2}}{
-        \def\commandPrompt{root@linux:\~{}\# }
+        \def\commandOutPrompt{\commandPrompt}
     }{
-        \def\commandPrompt{#2}
+        \def\commandOutPrompt{#2}
     }
 
     % \definecolor{shadecolor}{gray}{0.95}
     % TODO: does not work with htlatex
     % \snugshade
     \verbatim
-\commandPrompt{}#3
+\commandOutPrompt{}#3
 }
 {
     \endverbatim
@@ -239,7 +295,6 @@
     \ifthenelse{\isempty{\commandOut1}}{
     }{
         \captionof{floatCommandOut}{\commandOut1}
-        %\label{command:\commandOut1}
     }
 }
 

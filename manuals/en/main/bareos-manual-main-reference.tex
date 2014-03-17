@@ -19,10 +19,10 @@
 \usepackage{longtable}
 \usepackage{makeidx}
 \usepackage{index}
-\usepackage{hyperref}
 % \usepackage[linkcolor=black,colorlinks=true]{hyperref}
+%\usepackage{hyperref}
+\usepackage[hyperindex]{hyperref}
 \usepackage{url}
-\usepackage{varioref}
 \usepackage{moreverb}
 \renewcommand\verbatimtabsize{4\relax}
 \usepackage{ifthen}
@@ -41,7 +41,6 @@
 \usepackage[norefs,nocites]{refcheck}
 
 \usepackage{bareos}
-
 
 \makeindex
 \newindex{general}{general.idx}{general.ind}{General Index}
@@ -133,8 +132,7 @@
 \include{migration}
 
 \chapter{Accurate Mode}
-    \label{accuratemode}
-    \TODO{to be written}
+    \input{accuratemode}
 
 \include{basejob}
 
@@ -199,6 +197,9 @@
 \chapter{Troubleshooting}
 \input{troubleshooting}
 
+\chapter{Release Notes}
+\input{releasenotes}
+
 \chapter{Bareos Copyright, Trademark, and Licenses}
 \label{LicenseChapter}
 \index[general]{Licenses!Bareos Copyright Trademark}
@@ -227,6 +228,11 @@
 % pull in the index
 %\clearpage
 \part{Index}
+
+% label should reside directly at index begin, not Index cover page.
+\phantomsection
+\label{index}
+
 \printindex[general]
 \printindex[dir]
 \printindex[sd]

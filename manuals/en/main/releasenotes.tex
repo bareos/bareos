@@ -1,0 +1,104 @@
+\label{releasenotes}
+
+The technical changelog is automatically generated from the Bareos bug tracking system, see \elink{http://bugs.bareos.org/changelog\_page.php}{http://bugs.bareos.org/changelog\_page.php}.
+
+Please note, that some of the subreleases are only internal development releases.
+
+Open issues for a specific version are shown at
+\elink{http://bugs.bareos.org/roadmap\_page.php}{http://bugs.bareos.org/roadmap\_page.php}.
+
+The overview about new feature of a release are shown at
+\elink{https://github.com/bareos/bareos}{https://github.com/bareos/bareos} and in the \ilink{index}{index} of this document.
+
+This chapter concentrates on things to do when updating an existing Baroes installation.
+
+\section*{Bareos-14.1}
+
+Bareos-14.1 is currently in development and not yet released.
+
+However, please note, that Bareos using the PostgreSQL backend will require PostgreSQL $>=$ 8.4.
+
+
+
+\section*{Bareos-13.2}
+
+\releasenote{13.2.3}{
+
+\begin{tabular}{l l}
+Release Date & 2013-12-31 \\
+Database Version: & 2002\\
+                  & Database update required, see the \ilink{Updating Bareos}{bareos-update} section\\
+\end{tabular}
+
+It is known, that \command{drop_database} scripts will not longer work on PostgreSQL $<$ 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL $>=$ 8.4. We plan to ensure this in future version of Bareos.
+}
+
+\releasenote{13.2.2}{
+
+\begin{tabular}{l l}
+Release Date & 2013-11-19 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+
+
+\section*{Bareos-12.4}
+
+
+\releasenote{12.4.6}{
+
+\begin{tabular}{l l}
+Release Date & 2013-11-19 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+
+
+\releasenote{12.4.5}{
+
+\begin{tabular}{l l}
+Release Date & 2013-09-10 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+
+\releasenote{12.4.4}{
+
+\begin{tabular}{l l}
+Release Date & 2013-06-17 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+
+\releasenote{12.4.3}{
+
+\begin{tabular}{l l}
+Release Date & 2013-04-15 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+
+\releasenote{12.4.2}{
+
+\begin{tabular}{l l}
+Release Date & 2013-03-03 \\
+Database Version: & 2001 (unchanged)\\
+\end{tabular}
+}
+
+\releasenote{12.4.1}{
+
+\begin{tabular}{l l}
+Release Date & 2013-02-06 \\
+Database Version: & 2001 (initial)\\
+\end{tabular}
+
+This have been the initial release of Bareos.
+
+Information about migrating from Bacula to Bareos are available at \elink{Howto upgrade from Bacula to Bareos}{http://www.bareos.org/en/HOWTO/articles/upgrade_bacula_bareos.html} and in section \ilink{Compatibility between Bareos and Bacula}{compat-bacula}.
+}
