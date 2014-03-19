@@ -12,7 +12,8 @@
 # Added rc.status functions 3/13/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
 # Added LSB init info 10/14/2004 D. Scott Barninger <barninger at fairfieldcomputers.com>
 # Added $remote_fs, add bareos specific daemon user & group Bruno Friedmann <bruno@ioda-net.ch>
-#
+# Added config check Philipp Storz <Philipp.Storz@bareos.com>
+
 ### BEGIN INIT INFO
 # Provides:			 bareos-dir
 # Required-Start:	 $local_fs $remote_fs $network $time $syslog
@@ -29,12 +30,28 @@
 # this gives us funtion rc_status -v to tell us if we succeed or fail
 . /etc/rc.status
 
+function checkcfg () {
+   echo "Checking Configuration and Database connection ... "
+   su -s /bin/sh @dir_user@ -c "@sbindir@/bareos-dir -f -t -c @sysconfdir@/bareos-dir.conf"
+   if [ $? -eq 0 ]; then
+      return 0
+   else
+      return 1
+   fi
+}
+
 RETVAL=0
 case "$1" in
     start)
-       echo -n "Starting the Bareos Director: "
-       /sbin/startproc -u @dir_user@ -g @dir_group@ @sbindir@/bareos-dir $2 -c @sysconfdir@/bareos-dir.conf
-       rc_status -v && touch @subsysdir@/bareos-dir
+       checkcfg
+       if [ $? -eq 0 ]; then
+          echo -n "Starting the Bareos Director: "
+          /sbin/startproc -u @dir_user@ -g @dir_group@ @sbindir@/bareos-dir $2 -c @sysconfdir@/bareos-dir.conf
+          rc_status -v && touch @subsysdir@/bareos-dir
+       else
+          echo "Configuration check failed, please check log file for errors"
+          rc_failed
+       fi
        ;;
     stop)
        echo -n "Stopping the Director daemon: "
