@@ -457,51 +457,54 @@ void add_fileset(JCR *jcr, const char *item)
 bool term_fileset(JCR *jcr)
 {
    FF_PKT *ff = jcr->ff;
+   findFILESET *fileset = ff->fileset;
 
 #ifdef HAVE_WIN32
-   if (!expand_win32_fileset(ff->fileset)) {
+   if (!expand_win32_fileset(fileset)) {
       return false;
    }
 #endif
 
 #ifdef xxx_DEBUG_CODE
-   findFILESET *fileset = ff->fileset;
-   int i, j, k;
-
-   for (i = 0; i < fileset->include_list.size(); i++) {
+   for (int i = 0; i < fileset->include_list.size(); i++) {
       findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
       Dmsg0(400, "I\n");
-      for (j = 0; j < incexe->opts_list.size(); j++) {
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         for (k = 0; k < fo->regex.size(); k++) {
+
+         for (int k = 0; k < fo->regex.size(); k++) {
             Dmsg1(400, "R %s\n", (char *)fo->regex.get(k));
          }
-         for (k = 0; k < fo->regexdir.size(); k++) {
+         for (int k = 0; k < fo->regexdir.size(); k++) {
             Dmsg1(400, "RD %s\n", (char *)fo->regexdir.get(k));
          }
-         for (k = 0; k < fo->regexfile.size(); k++) {
+         for (int k = 0; k < fo->regexfile.size(); k++) {
             Dmsg1(400, "RF %s\n", (char *)fo->regexfile.get(k));
          }
-         for (k = 0; k < fo->wild.size(); k++) {
+         for (int k = 0; k < fo->wild.size(); k++) {
             Dmsg1(400, "W %s\n", (char *)fo->wild.get(k));
          }
-         for (k = 0; k < fo->wilddir.size(); k++) {
+         for (int k = 0; k < fo->wilddir.size(); k++) {
             Dmsg1(400, "WD %s\n", (char *)fo->wilddir.get(k));
          }
-         for (k = 0; k < fo->wildfile.size(); k++) {
+         for (int k = 0; k < fo->wildfile.size(); k++) {
             Dmsg1(400, "WF %s\n", (char *)fo->wildfile.get(k));
          }
-         for (k = 0; k < fo->wildbase.size(); k++) {
+         for (int k = 0; k < fo->wildbase.size(); k++) {
             Dmsg1(400, "WB %s\n", (char *)fo->wildbase.get(k));
          }
-         for (k = 0; k < fo->base.size(); k++) {
+         for (int k = 0; k < fo->base.size(); k++) {
             Dmsg1(400, "B %s\n", (char *)fo->base.get(k));
          }
-         for (k = 0; k < fo->fstype.size(); k++) {
+         for (int k = 0; k < fo->fstype.size(); k++) {
             Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
          }
-         for (k = 0; k < fo->drivetype.size(); k++) {
+         for (int k = 0; k < fo->drivetype.size(); k++) {
             Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
+         }
+         if (fo->plugin) {
+            Dmsg1(400, "G %s\n", (char *)fo->plugin);
          }
       }
       if (incexe->ignoredir) {
@@ -515,39 +518,40 @@ bool term_fileset(JCR *jcr)
          Dmsg1(400, "P %s\n", node->c_str());
       }
    }
-   for (i = 0; i < fileset->exclude_list.size(); i++) {
+   for (int i = 0; i < fileset->exclude_list.size(); i++) {
       findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+
       Dmsg0(400, "E\n");
-      for (j = 0; j < incexe->opts_list.size(); j++) {
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         for (k = 0; k < fo->regex.size(); k++) {
+         for (int k = 0; k < fo->regex.size(); k++) {
             Dmsg1(400, "R %s\n", (char *)fo->regex.get(k));
          }
-         for (k = 0; k < fo->regexdir.size(); k++) {
+         for (int k = 0; k < fo->regexdir.size(); k++) {
             Dmsg1(400, "RD %s\n", (char *)fo->regexdir.get(k));
          }
-         for (k = 0; k < fo->regexfile.size(); k++) {
+         for (int k = 0; k < fo->regexfile.size(); k++) {
             Dmsg1(400, "RF %s\n", (char *)fo->regexfile.get(k));
          }
-         for (k = 0; k < fo->wild.size(); k++) {
+         for (int k = 0; k < fo->wild.size(); k++) {
             Dmsg1(400, "W %s\n", (char *)fo->wild.get(k));
          }
-         for (k = 0; k < fo->wilddir.size(); k++) {
+         for (int k = 0; k < fo->wilddir.size(); k++) {
             Dmsg1(400, "WD %s\n", (char *)fo->wilddir.get(k));
          }
-         for (k = 0; k < fo->wildfile.size(); k++) {
+         for (int k = 0; k < fo->wildfile.size(); k++) {
             Dmsg1(400, "WF %s\n", (char *)fo->wildfile.get(k));
          }
-         for (k = 0; k < fo->wildbase.size(); k++) {
+         for (int k = 0; k < fo->wildbase.size(); k++) {
             Dmsg1(400, "WB %s\n", (char *)fo->wildbase.get(k));
          }
-         for (k=0; k<fo->base.size(); k++) {
+         for (int k = 0; k<fo->base.size(); k++) {
             Dmsg1(400, "B %s\n", (char *)fo->base.get(k));
          }
-         for (k = 0; k < fo->fstype.size(); k++) {
+         for (int k = 0; k < fo->fstype.size(); k++) {
             Dmsg1(400, "X %s\n", (char *)fo->fstype.get(k));
          }
-         for (k = 0; k < fo->drivetype.size(); k++) {
+         for (int k = 0; k < fo->drivetype.size(); k++) {
             Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
          }
       }
@@ -560,6 +564,21 @@ bool term_fileset(JCR *jcr)
       }
    }
 #endif
+
+   /*
+    * Generate bEventPluginCommand events for each Options Plugin.
+    */
+   for (int i = 0; i < fileset->include_list.size(); i++) {
+      findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+         if (fo->plugin) {
+            generate_plugin_event(jcr, bEventPluginCommand, (void *)fo->plugin);
+         }
+      }
+   }
 
    return ff->fileset->state != state_error;
 }
