@@ -552,6 +552,10 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       goto bail_out;
    }
 
+   if (!p_ctx->python_loaded) {
+      goto bail_out;
+   }
+
 #ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyPluginIO(ctx, io);
