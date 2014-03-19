@@ -45,6 +45,21 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 . /lib/lsb/init-functions
 
 #
+# Function that checks if the configuration is OK and
+# the Database can be connected
+#
+
+checkcfg() {
+   echo "Checking Configuration and Database connection ... "
+   su -s /bin/sh $DAEMON_USER -c "@sbindir@/bareos-dir -f -t -c @sysconfdir@/bareos-dir.conf"
+   if [ $? -eq 0 ]; then
+      return 0
+   else
+      return 1
+   fi
+}
+
+#
 # Function that starts the daemon/service
 #
 do_start()
@@ -53,6 +68,7 @@ do_start()
     #   0 if daemon has been started
     #   1 if daemon was already running
     #   2 if daemon could not be started
+    checkcfg || return 2
     start-stop-daemon --start --quiet --pidfile $PIDFILE $DAEMON_USERGROUP --exec $DAEMON --test > /dev/null \
         || return 1
     start-stop-daemon --start --quiet --pidfile $PIDFILE $DAEMON_USERGROUP --exec $DAEMON -- \

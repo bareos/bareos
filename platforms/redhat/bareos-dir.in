@@ -31,17 +31,32 @@ fi
 MALLOC_CHECK_=0
 export MALLOC_CHECK_
 
+function checkcfg () {
+   echo "Checking Configuration and Database connection ... "
+   su -s /bin/sh ${DIR_USER} -c "@sbindir@/bareos-dir -f -t -c @sysconfdir@/bareos-dir.conf"
+   if [ $? -eq 0 ]; then
+      return 0
+   else
+      return 1
+   fi
+}
+
 RETVAL=0
 case "$1" in
     start)
-       if [ "${DIR_GROUP}" != '' ]; then
-	  DIR_OPTIONS="${DIR_OPTIONS} -g ${DIR_GROUP}"
+       checkcfg
+       if [ $? -eq 0 ]; then
+          if [ "${DIR_GROUP}" != '' ]; then
+             DIR_OPTIONS="${DIR_OPTIONS} -g ${DIR_GROUP}"
+          fi
+          echo -n "Starting Bareos Director services: "
+          daemon --user ${DIR_USER} @sbindir@/bareos-dir $2 ${DIR_OPTIONS} -c @sysconfdir@/bareos-dir.conf
+          RETVAL=$?
+          echo
+          [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dira
+       else
+          echo "Configuration check failed, please check log file for errors"
        fi
-       echo -n "Starting Bareos Director services: "
-       daemon --user ${DIR_USER} @sbindir@/bareos-dir $2 ${DIR_OPTIONS} -c @sysconfdir@/bareos-dir.conf
-       RETVAL=$?
-       echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dir
        ;;
     stop)
        echo -n "Stopping Bareos Director services: "
