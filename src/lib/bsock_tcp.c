@@ -832,10 +832,6 @@ int BSOCK_TCP::wait_data(int sec, int usec)
 {
    int msec;
 
-   if (this == NULL) {
-      return -1;
-   }
-
    msec = (sec * 1000) + (usec / 1000);
    switch (wait_for_readable_fd(m_fd, msec, true)) {
    case 0:
@@ -856,10 +852,6 @@ int BSOCK_TCP::wait_data(int sec, int usec)
 int BSOCK_TCP::wait_data_intr(int sec, int usec)
 {
    int msec;
-
-   if (this == NULL) {
-      return -1;
-   }
 
    msec = (sec * 1000) + (usec / 1000);
    switch (wait_for_readable_fd(m_fd, msec, false)) {
