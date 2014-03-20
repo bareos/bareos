@@ -110,11 +110,15 @@ END-OF-DATA
 
       retval=$?
       ;;
+   *)
+      echo "Unknown database type $1"
+      exit 1
+      ;;
 esac
 
 rm -f ${temp_sql_grants}
 
-if [ ${retval} = 0 ]; then
+if [ "${retval}" = 0 ]; then
    echo "Privileges for user ${db_user} granted ON database ${db_name}."
 else
    echo "Error creating privileges."
