@@ -296,7 +296,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
 
    if (!auth_success) {
       Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s daemon.\n"
-                              "Please see " MANUAL_AUTH_URL " for help.\n"), what);
+                              "Please see %s for help.\n"), what, MANUAL_AUTH_URL);
       goto auth_fatal;
    }
 

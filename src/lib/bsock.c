@@ -1099,10 +1099,10 @@ bail_out:
    dir->stop_timer();
    bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\"\n"
                                        "Most likely the passwords do not agree.\n"
-                                       "If you are using TLS, there may have been a certificate"
-                                       " validation error during the TLS handshake.\n"
-                                       "Please see " MANUAL_AUTH_URL " for help.\n"),
-             dir->host(), dir->port());
+                                       "If you are using TLS, there may have been a certificate "
+                                       "validation error during the TLS handshake.\n"
+                                       "Please see %s for help.\n"),
+             dir->host(), dir->port(), MANUAL_AUTH_URL);
 
    return false;
 }

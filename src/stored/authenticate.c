@@ -87,9 +87,9 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    if (!director) {
       Dmsg2(dbglvl, "Connection from unknown Director %s at %s rejected.\n",
             dirname, bs->who());
-      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
-                               "Please see " MANUAL_AUTH_URL " for help.\n"),
-            dirname, bs->who());
+      Jmsg(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
+                              "Please see %s for help.\n"),
+           dirname, bs->who(), MANUAL_AUTH_URL);
       free_pool_memory(dirname);
       return 0;
    }
@@ -128,8 +128,8 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
 
    if (!auth_success) {
-      Jmsg0(jcr, M_FATAL, 0, _("Incorrect password given by Director.\n"
-                               "Please see " MANUAL_AUTH_URL " for help.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Incorrect password given by Director.\n"
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       auth_success = false;
       goto auth_fatal;
    }
@@ -256,7 +256,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
 
    if (!auth_success) {
       Jmsg(jcr, M_FATAL, 0, _("Incorrect authorization key from %s daemon at %s rejected.\n"
-                              "Please see " MANUAL_AUTH_URL " for help.\n"), what, bs->who());
+                              "Please see %s for help.\n"), what, bs->who(), MANUAL_AUTH_URL);
       auth_success = false;
       goto auth_fatal;
    }
