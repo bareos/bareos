@@ -255,7 +255,7 @@ int authenticate_storagedaemon(JCR *jcr)
 
    if (!auth_success) {
       Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by Storage daemon.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       goto auth_fatal;
    }
 

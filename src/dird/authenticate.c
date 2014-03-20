@@ -101,13 +101,13 @@ bool authenticate_storage_daemon(JCR *jcr, STORERES *store)
    if (!auth_success) {
       stop_bsock_timer(tid);
       Dmsg0(dbglvl, _("Director and Storage daemon passwords or names not the same.\n"));
-      Jmsg2(jcr, M_FATAL, 0,
-            _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
-            "Passwords or names not the same or\n"
-            "Maximum Concurrent Jobs exceeded on the SD or\n"
-            "SD networking messed up (restart daemon).\n"
-            "Please see " MANUAL_AUTH_URL " for help.\n"),
-            sd->host(), sd->port());
+      Jmsg(jcr, M_FATAL, 0,
+           _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
+             "Passwords or names not the same or\n"
+             "Maximum Concurrent Jobs exceeded on the SD or\n"
+             "SD networking messed up (restart daemon).\n"
+             "Please see %s for help.\n"),
+           sd->host(), sd->port(), MANUAL_AUTH_URL);
       return 0;
    }
 
@@ -212,11 +212,11 @@ int authenticate_file_daemon(JCR *jcr)
       Dmsg0(dbglvl, _("Director and File daemon passwords or names not the same.\n"));
       Jmsg(jcr, M_FATAL, 0,
             _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
-            "Passwords or names not the same or\n"
-            "Maximum Concurrent Jobs exceeded on the FD or\n"
-            "FD networking messed up (restart daemon).\n"
-            "Please see " MANUAL_AUTH_URL " for help.\n"),
-            fd->host(), fd->port());
+              "Passwords or names not the same or\n"
+              "Maximum Concurrent Jobs exceeded on the FD or\n"
+              "FD networking messed up (restart daemon).\n"
+              "Please see %s for help.\n"),
+            fd->host(), fd->port(), MANUAL_AUTH_URL);
       return 0;
    }
 
