@@ -78,9 +78,9 @@ static int authenticate_director(JCR *jcr)
    if (!cram_md5_respond(dir, monitor->password.value, &tls_remote_need, &compatible) ||
        !cram_md5_challenge(dir, monitor->password.value, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
-      Jmsg0(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-            "Most likely the passwords do not agree.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
+                              "Most likely the passwords do not agree.\n"
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       return 0;
    }
 
@@ -196,7 +196,7 @@ static int authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
        !cram_md5_challenge(fd, client->password.value, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg(jcr, M_FATAL, 0, _("Director and File daemon passwords or names not the same.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
       return 0;
    }
 
