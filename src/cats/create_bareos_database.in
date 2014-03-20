@@ -154,9 +154,13 @@ END-OF-DATA
       createdb -u${db_user} $* ${db_name}
       retval=$?
       ;;
+   *)
+      echo "Unknown database type $1"
+      exit 1
+      ;;
 esac
 
-if [ ${retval} = 0 ]; then
+if [ "${retval}" = 0 ]; then
    echo "Creating of ${db_name} database succeeded."
 else
    echo "Creating of ${db_name} database failed."
