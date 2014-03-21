@@ -406,7 +406,7 @@ This package contains the Storage Daemon tape support
 %{dscr}
 
 This package contains the File Daemon
-(Bareoss client daemon to read/write data from the backed up computer)
+(Bareos client daemon to read/write data from the backed up computer)
 
 %description common
 %{dscr}
@@ -438,12 +438,12 @@ This package contains the shared library to use sqlite as catalog db.
 %description database-tools
 %{dscr}
 
-This package contains bareoss database tools.
+This package contains Bareos database tools.
 
 %description tools
 %{dscr}
 
-This package contains bareoss tools.
+This package contains Bareos tools.
 
 %if 0%{?build_qt_monitor}
 %description traymonitor
@@ -845,19 +845,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_prefix}/share/applications/bat.desktop
 %{_mandir}/man1/bat.1.gz
 %dir %{_docdir}/%{name}
-%dir %{_docdir}/%{name}/html
-%{_docdir}/%{name}/html/clients.html
-%{_docdir}/%{name}/html/console.html
-%{_docdir}/%{name}/html/filesets.html
-%{_docdir}/%{name}/html/index.html
-%{_docdir}/%{name}/html/joblist.html
-%{_docdir}/%{name}/html/jobplot.html
-%{_docdir}/%{name}/html/jobs.html
-%{_docdir}/%{name}/html/restore.html
-%{_docdir}/%{name}/html/status.png
-%{_docdir}/%{name}/html/storage.html
-%{_docdir}/%{name}/html/mail-message-new.png
-%{_docdir}/%{name}/html/media.html
+%dir %{_docdir}/%{name}/html/
+%doc %{_docdir}/%{name}/html/bat/
 %endif
 
 %files devel
