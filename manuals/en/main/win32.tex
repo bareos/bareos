@@ -174,57 +174,40 @@ normally has multiple Clients and a Client (or File daemon) may permit access
 by multiple Directors, you can see that the names and the passwords on both
 sides must match for proper authentication.
 
-Running Unix like programs on Windows machines is a bit frustrating because
-the Windows command line shell (DOS Window) is rather primitive. As a
-consequence, it is not generally possible to see the debug information and
-certain error messages that Bareos prints. With a bit of work, however, it is
-possible. When everything else fails and you want to {\bf see} what is going
-on, try the following:
 
+To get proper debug output of the daemons running on windows, please do the following:
+(The following example shows how to to it with the bareos filedaemon).
+
+Use regedit and open the registry in
+{
 \footnotesize
 \begin{verbatim}
-   Start a DOS shell Window.
-   c:\Program Files\bareos\bareos-fd -t >out
-   type out
+Computer\HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\services\Bareos-fd
 \end{verbatim}
-\normalsize
+}
 
-The precise path to bareos-fd depends on where it is installed.
-The {\bf -t} option will cause Bareos to read the configuration file, print
-any error messages and then exit. the {\bf {\textgreater}} redirects the output to the
-file named {\bf out}, which you can list with the {\bf type} command.
+and set the \textbf{ImagePath} setting from
 
-If something is going wrong later, or you want to run {\bf Bareos} with a
-debug option, you might try starting it as:
-
+{
 \footnotesize
 \begin{verbatim}
-   c:\Program Files\bareos\bin\bareos-fd -d 100 >out
+"C:\Program Files\Bareos\bareos-fd.exe" /service  -c "C:\ProgramData\Bareos\bareos-fd.conf"
 \end{verbatim}
-\normalsize
+}
 
-In this case, Bareos will run until you explicitly stop it, which will give
-you a chance to connect to it from your Unix/Linux server.
+to
 
-In addition, you should look in the System Applications log on the Control
-Panel to find any Windows errors that Bareos got during the startup process.
-
-Finally, due to the above problems, when you turn on debugging, and specify
-\bcommand{trace=on} on a setdebug command in the Console, Bareos will write the debug
-information to the file \file{bareos.trace} in the directory from which Bareos
-is executing.
-
-You may wish to start the daemon with debug mode on rather than doing it
-using bconsole. To do so, edit the following registry key:
-
+{
 \footnotesize
 \begin{verbatim}
-HKEY_LOCAL_MACHINE\HARDWARE\SYSTEM\CurrentControlSet\Services\Bareos-dir
+"C:\Program Files\Bareos\bareos-fd.exe" /service -d200  -c "C:\ProgramData\Bareos\bareos-fd.conf"
 \end{verbatim}
-\normalsize
+}
 
-using regedit, then add -dnn after the /service option, where nn represents
-the debug level you want.
+After restarting the service, you will find a file called {\bf C:\textbackslash bareos-fd.trace} which will
+contain the debug output created by the daemon.
+
+The same can be done for the Director (replace bareos-fd by bareos-dir) and for the Storage Daemon (replace bareos-fd by bareos-sd).
 
 \section{Windows Compatibility Considerations}
 \label{Compatibility}
