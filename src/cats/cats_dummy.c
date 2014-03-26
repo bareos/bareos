@@ -40,7 +40,7 @@ B_DB *db_init_database(JCR *jcr,
                        bool need_private)
 {
    Jmsg(jcr, M_FATAL, 0, _("Please replace this dummy libbareoscats library with a proper one.\n"));
-
+   Dmsg0(0, _("Please replace this dummy libbareoscats library with a proper one.\n"));
    return NULL;
 }
 
