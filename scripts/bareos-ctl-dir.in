@@ -50,7 +50,7 @@ fi
 case "$1" in
    start)
       [ -x ${BACDIRBIN}/bareos-dir ] && {
-	  echo "Starting the $Bareos Director daemon"
+	 echo "Starting the $Bareos Director daemon"
 	 OPTIONS=''
 	 if [ "${DIR_USER}" != '' ]; then
 	    OPTIONS="${OPTIONS} -u ${DIR_USER}"
@@ -59,6 +59,11 @@ case "$1" in
 	 if [ "${DIR_GROUP}" != '' ]; then
 	    OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
 	 fi
+
+         checkcfg
+         if [ $? != 0 ]; then
+            exit 1
+         fi
 
 	 if [ "x${VALGRIND_DIR}" = "x1" ]; then
 	    valgrind --leak-check=full ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}/bareos-dir.conf
