@@ -46,19 +46,47 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 \end{center}
 
 The database preparation scripts have following configuration options:
-\begin{center}
-\begin{tabular}{| l | l | l |}
-\hline
-\textbf{Parameter}      & \textbf{Values} \\
-\hline
-\hline
-\parameter{db_type}     & parameter, dbdriver from \configFileDirUnix, installed database backends \\
-\parameter{db_name}     & environment variable \variable{db_name}, bareos \\
-\parameter{db_user}     & environment variable \variable{db_user}, bareos \\
-\parameter{db_password} & environment variable \variable{db_password}, \textit{none} \\
-\hline
-\end{tabular}
-\end{center}
+% \begin{center}
+% \begin{tabular}{| l | l | l |}
+% \hline
+% \textbf{Parameter}      & \textbf{Values} & \textbf{Default} \\
+% \hline
+% \hline
+% \parameter{db_type}     & parameter, dbdriver from \configFileDirUnix, installed database backends & \\
+% \parameter{db_name}     & environment variable \variable{db_name}, dbdriver from \configFileDirUnix & bareos \\
+% \parameter{db_user}     & environment variable \variable{db_user} & bareos \\
+% \parameter{db_password} & environment variable \variable{db_password} & \textit{none} \\
+% \hline
+% \end{tabular}
+% \end{center}
+
+\begin{description}
+    \item[db\_type] \hfill
+        \begin{itemize}
+            \item command line parameter \$1
+            \item config file \configFileDirUnix: catalog.MyCatalog.dbdriver
+            \item installed database backends
+            \item fallback: postgresql
+        \end{itemize}
+    \item[db\_name] \hfill
+        \begin{itemize}
+            \item environment variable \variable{db_name}
+            \item config file \configFileDirUnix: catalog.MyCatalog.dbname
+            \item default: bareos
+        \end{itemize}
+    \item[db\_user] \hfill
+        \begin{itemize}
+            \item environment variable \variable{db_user}
+            \item config file \configFileDirUnix: catalog.MyCatalog.dbuser
+            \item default: bareos
+        \end{itemize}
+    \item[db\_password] \hfill
+        \begin{itemize}
+            \item environment variable \variable{db_password}
+            \item config file \configFileDirUnix: catalog.MyCatalog.dbpassword
+            \item default: \textit{none}
+        \end{itemize}
+\end{description}
 
 The database preparation scripts need to have password-less administrator access to the database.
 Depending on the distribution you're using, this require additional configuration.
@@ -188,6 +216,7 @@ bareos=>
 
 
 \subsection{MySQL}
+\label{catalog-maintenance-mysql}
 
 MySQL user authentication is username, password and host-based.
 The database administrator is the user \user{root}.
@@ -208,18 +237,46 @@ Alternatively you can specifiy your database password by adding it to the file \
 
 Verify that you have specified the correct settings by calling the \command{mysql} command.
 If this connects you to the database, your credentials are good.
-Exit the MySQL client and run the Bareos database preparation scripts:
+Exit the MySQL client.
+
+For the Bareos database connection, you should specify a database password. 
+Otherwise the Bareos database user gets the permission to connect without password.
+This is not recommended.
+Choose a database password and add it into the Bareos Director configuration file \configFileDirUnix:
+\begin{bconfig}{Bareos catalog configuration}
+...
+#
+# Generic catalog service
+#
+Catalog {
+  Name = MyCatalog
+  # Uncomment the following lines if you want the dbi driver
+  # dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport =  
+  dbdriver = "mysql"
+  dbname = "bareos"
+  dbuser = "bareos"
+  dbpassword = "YourSecretPassword"
+}
+...
+\end{bconfig}
+
+After this, run the Bareos database preparation scripts.
+For Bareos $<=$ 13.2.2, the database password must be specified as environment variable \variable{db_password}.
+From Bareos $>=$ 13.2.3 the database password is read from \configFileDirUnix, if no environment variable is given.
+
 \begin{commands}{Setup Bareos catalog database}
+export db_password=<input>YourSecretPassword</input>
 /usr/lib/bareos/scripts/create_bareos_database
 /usr/lib/bareos/scripts/make_bareos_tables
 /usr/lib/bareos/scripts/grant_bareos_privileges
 \end{commands}
 
-After this, you can use the \command{mysql} command to verify that your database setup is okay.
+After this, you can use the \command{mysql} command to verify that your database setup is okay
+and works with your the Bareos database user.
 The result should look similar as this (here Bareos 13.2 is used on SLES11):
 
 \begin{commands}{Verify Bareos database on MySQL}
-<command>mysql</command>
+root@linux:~# <input>mysql --user=bareos --password=YourSecretPassword bareos</input>
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 162
 Server version: 5.5.32 SUSE MySQL package
@@ -231,20 +288,6 @@ affiliates. Other names may be trademarks of their respective
 owners.
 
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-mysql> <input>show databases;</input>
-+--------------------+
-| Database           |
-+--------------------+
-| information_schema |
-| bareos             |
-| mysql              |
-| performance_schema |
-+--------------------+
-4 rows in set (0.08 sec)
-
-mysql> <input>use bareos;</input>
-Database changed
 
 mysql> <input>show tables;</input>
 +--------------------+
@@ -291,15 +334,81 @@ mysql> <input>select * from Version;</input>
 +-----------+
 1 row in set (0.00 sec)
 
-mysql> <input>select user,host,password from mysql.user where user='bareos';</input>
+mysql> <input>exit</input>
+Bye
+\end{commands}
+
+
+\subsubsection{Modify database credentials}
+
+If you want to change the Bareos database credentials, do the following:
+
+\begin{itemize}
+    \item stop the Bareos director
+    \item modify the configuration file \configFileDirUnix
+    \item rerun the grant script \command{grant_bareos_privileges} (or modify database user directly)
+    \item start the Bareos director
+\end{itemize}
+
+Modify the configuration file \configFileDirUnix:
+
+\begin{bconfig}{Bareos catalog configuration: set new password}
+...
+#
+# Generic catalog service
+#
+Catalog {
+  Name = MyCatalog
+  # Uncomment the following lines if you want the dbi driver
+  # dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport =  
+  dbdriver = "mysql"
+  dbname = "bareos"
+  dbuser = "bareos"
+  dbpassword = "MyNewSecretPassword"
+}
+...
+\end{bconfig}
+
+Rerun the Bareos grant script \command{grant_bareos_privileges} ...
+
+\begin{commands}{Modify database privileges}
+export db_password=<input>MyNewSecretPassword</input>
+/usr/lib/bareos/scripts/grant_bareos_privileges
+\end{commands}
+
+... or modify the database users directly:
+
+\begin{commands}{Show Bareos database users}
+<command>mysql</command>
+mysql> <input>SELECT user,host,password FROM mysql.user WHERE user='bareos';</input>
 +--------+-----------+-------------------------------------------+
 | user   | host      | password                                  |
 +--------+-----------+-------------------------------------------+
-| bareos | localhost | *1D402C8D0488095B40BFAE5844F88676C2EF23B1 |
+| bareos | 127.0.0.1 | *CD8C42695AC221807E2BA599FC392C650155C16C |
+| bareos | localhost | *CD8C42695AC221807E2BA599FC392C650155C16C |
+| bareos | ::1       | *CD8C42695AC221807E2BA599FC392C650155C16C |
 +--------+-----------+-------------------------------------------+
-1 row in set (0.00 sec)
+3 rows in set (0.00 sec)
 
-mysql>
+mysql> <input>UPDATE mysql.user SET Password=PASSWORD('MyNewSecretPassword') where User='bareos';</input>
+Query OK, 3 rows affected (0.00 sec)
+Rows matched: 3  Changed: 3  Warnings: 0
+
+mysql> <input>FLUSH PRIVILEGES;</input>
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> <input>SELECT user,host,password FROM mysql.user WHERE user='bareos';</input>
++--------+-----------+-------------------------------------------+
+| user   | host      | password                                  |
++--------+-----------+-------------------------------------------+
+| bareos | 127.0.0.1 | *2119D34B0C0F7452E952EE3A73A7CAA30C1B1852 |
+| bareos | localhost | *2119D34B0C0F7452E952EE3A73A7CAA30C1B1852 |
+| bareos | ::1       | *2119D34B0C0F7452E952EE3A73A7CAA30C1B1852 |
++--------+-----------+-------------------------------------------+
+3 rows in set (0.00 sec)
+
+mysql> 
+
 \end{commands}
 
 

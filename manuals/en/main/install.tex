@@ -162,7 +162,7 @@ Currently the database backend PostgreSQL and MySQL are recommended. The Sqlite 
 The easiest way to set up a database is using an system account that have passwordless local access to the database. 
 Often this is the user \user{root} for MySQL and the user \user{postgres} for PostgreSQL.
 
-For details, see chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
+For details, see chapter \ilink{Catalog Maintenance}{CatMaintenanceChapter}.
 
 \subsection{PostgreSQL}
 If your are using PostgreSQL and your PostgreSQL administration user is \user{postgres} (default), use following commands:
@@ -188,6 +188,9 @@ user=root
 password=<input>YourPasswordForAccessingMysqlAsRoot</input>
 \end{config}
 
+It is recommended, to secure the Bareos database connection with a password.
+See \ilink{Catalog Maintance -- MySQL}{catalog-maintenance-mysql} about how to archieve this.
+For testing, using a password-less MySQL connection is probable okay.
 Setup the Bareos database tables by following commands:
 \begin{commands}{Setup Bareos catalog database}
 /usr/lib/bareos/scripts/create_bareos_database
@@ -234,7 +237,7 @@ However, this script requires administration access to the database.
 Depending on your distribution and your database, this requires different preparations.
 More details can be found in chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
 
-\warning{If you had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \ilink{Catalog Maitenance}{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts.}
+\warning{If you're updating to Bareos $<=$ 13.2.3 and had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \ilink{Catalog Maintenance}{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts. Newer versions of Bareos read this variables from the Director configuration file \configFileDirUnix. However, make sure, the user running the database scripts has read access to this file (or set the environment variables). The \user{postgres} user normally does not have the required permissions.}
 
 \subsection{PostgreSQL}
 If your are using PostgreSQL and your PostgreSQL administrator is \user{postgres} (default), use following commands:
