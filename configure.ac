@@ -32,8 +32,8 @@ AC_PROG_YACC
 
 AC_ARG_WITH(json_c_include_dir,
         [  --with-json-c-include-dir=
-			  Specify json-c include dir [default=/usr/local/include/json-c]],
-        [json_c_include_dir="$withval"],[json_c_include_dir="/usr/local/include/json-c"])
+			  Specify json-c include dir [default=/usr/include/json]],
+        [json_c_include_dir="$withval"],[json_c_include_dir="/usr/include/json"])
 
 json_c_include_dir="$(cd $json_c_include_dir ; pwd)"
 
