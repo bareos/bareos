@@ -246,7 +246,11 @@ get_database_param()
 {
     PARAM="$1"
     DEFAULT="$2"
-    get_config_param "${CFG_DIR}" "catalog" "MyCatalog" "$PARAM" "$DEFAULT"
+    # DBCHECKS gets the database from the Director config file in a standard format,
+    # however, it writes "db_name" (like the environment variables)
+    # instead of "dbname" like in the config file.
+    # Replace "db_" by "db" to be compatible with the config file.
+    $DBCHECK | sed "s/^db_/db/" | sed -n "s/^${PARAM}=//p"
     return $?
 }
 
