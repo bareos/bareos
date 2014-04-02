@@ -54,6 +54,7 @@ before_script:
     - if [ "${COVERITY_SCAN}" = '1' ]; then eval "$COVERITY_SCAN_BUILD"; else make; fi
     - for script in $PWD/debian/bareos*.preinst; do echo "$script"; sudo /bin/sh $script install; done
     - sudo make install
+    - sudo make install-autostart
     - for script in $PWD/debian/bareos*.postinst; do echo "$script"; sudo /bin/sh $script configure; done
 
 # test script

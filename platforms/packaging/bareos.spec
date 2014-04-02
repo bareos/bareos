@@ -8,7 +8,6 @@
 #   * only support platforms that are available in OBS
 #   * activate all options available (if reasonable)
 #   * single-dir-install is not supported
-#   * use special group (bconsole) for users that can access bconsole
 #   * Single packages for:
 #       * console package
 #       * dir package ( bsmtp )
@@ -23,10 +22,7 @@
 #       * bat
 #       * doc
 #
-#	For openSUSE/SUSE we placed the /usr/sbin/rcscript
-#	And added the firewall basics rules
-#
-#	Notice : the libbareoscats* package to be able to pass the shlib name policy are
+#	Notice: the libbareoscats* package to be able to pass the shlib name policy are
 #	explicitly named
 #
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
@@ -63,6 +59,7 @@ Vendor: 	The Bareos Team
 %define file_daemon_user        root
 %define storage_daemon_group    %{daemon_group}
 
+%define client_only 0
 %define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
@@ -101,6 +98,7 @@ BuildRequires: systemd
 
 Source0: %{name}_%{version}.tar.gz
 
+BuildRequires: elfutils
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -125,63 +123,72 @@ BuildRequires: sqlite-devel
 %endif
 BuildRequires: mysql-devel
 BuildRequires: postgresql-devel
-BuildRequires: libqt4-devel
 BuildRequires: openssl
 BuildRequires: libcap-devel
 BuildRequires: mtx
 
+%if 0%{?build_bat} || 0%{?build_qt_monitor}
+BuildRequires: libqt4-devel
+%endif
+
+%if 0%{?python_plugins}
+BuildRequires: python-devel >= 2.6
+%endif
+
 %if 0%{?suse_version}
+
 # link identical files
 BuildRequires: fdupes
-BuildRequires: termcap
+BuildRequires: lsb-release
+BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
+BuildRequires: termcap
 BuildRequires: update-desktop-files
 
-# Some magic to be able to determine what platform we are running on.
-%if !0%{sles_version}
-BuildRequires: openSUSE-release
-%else
-%if 0%{?sles_version} && !0%{?sled_version}
+%if 0%{?sles_version}
 BuildRequires: sles-release
-%else
-BuildRequires: sled-release
-%endif
 %endif
 
-BuildRequires: lsb-release
 
 %else
-BuildRequires: qt4-devel
+# non suse
+
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
 BuildRequires: tcp_wrappers
 
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
-%if 0%{?fedora_version}
-BuildRequires: fedora-release
-%endif
-# Favor lsb_release on platform that have proper support for it.
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
+
 BuildRequires: redhat-lsb
-%else
-# Older RHEL (5)/ CentOS (5)
+
+# older versions require additional release packages
+%if 0%{?rhel_version}   && 0%{?rhel_version} <= 600
 BuildRequires: redhat-release
 %endif
-%else
-# Non redhat like distribution for example mandriva.
-BuildRequires: lsb-release
+
+%if 0%{?centos_version} && 0%{?centos_version} <= 600
+BuildRequires: redhat-release
 %endif
+
+%if 0%{?fedora_version}
+BuildRequires: fedora-release
 %endif
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: tcp_wrappers-devel
 %endif
 
-%if 0%{?python_plugins}
-BuildRequires: python-devel >= 2.6
+%else
+# non suse, non redhat: eg. mandriva.
+
+BuildRequires: lsb-release
+
 %endif
+
+%endif
+
 
 Summary:  Bareos All-In-One package (dir,sd,fd)
 #BuildArch: noarch
@@ -469,7 +476,7 @@ This package contains bareos development files.
 %setup
 
 %build
-%if %{undefined suse_version}
+%if !0%{?suse_version}
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
 %endif
 export MTX=/usr/sbin/mtx
@@ -509,6 +516,9 @@ export MTX=/usr/sbin/mtx
 %endif
 %if 0%{?build_qt_monitor}
   --enable-traymonitor \
+%endif
+%if 0%{?client_only}
+  --enable-client-only \
 %endif
   --with-postgresql \
   --with-mysql \
@@ -551,10 +561,10 @@ export MTX=/usr/sbin/mtx
     make DESTDIR=%{buildroot} install
 %endif
 
-install -d 755 %{buildroot}/usr/share/applications
-install -d 755 %{buildroot}/usr/share/pixmaps
+install -d -m 755 %{buildroot}/usr/share/applications
+install -d -m 755 %{buildroot}/usr/share/pixmaps
 
-install -d 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}%{working_dir}
 
 #Cleaning
 for F in  \
@@ -626,6 +636,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %dir %{_docdir}/%{name}
 %{_docdir}/%{name}/README.bareos-client
+
 
 %files bconsole
 # console package
@@ -738,8 +749,10 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_libdir}/libbareosfind.so
 %{_libdir}/libbareoslmdb-%{_libversion}.so
 %{_libdir}/libbareoslmdb.so
+%if !0%{?client_only}
 %{_libdir}/libbareosndmp-%{_libversion}.so
 %{_libdir}/libbareosndmp.so
+%endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
 %dir %{script_dir}
@@ -884,40 +897,70 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 
 #
 # Define some macros for updating the system settings.
-# SUSE has most macros by default others have not so we
-# define the missing here.
 #
 %if 0%{?suse_version}
+
+%if 0%{!?add_service_start:1}
 %define add_service_start() \
-/bin/true \
-%nil
-%else
-%if 0%{?systemd_support}
-%define add_service_start() \
-/bin/systemctl daemon-reload >/dev/null 2>&1 || true \
-%nil
-%define stop_on_removal() \
-/bin/systemctl --no-reload disable %1.service > /dev/null 2>&1 || \
-/bin/systemctl stop %1.service > /dev/null 2>&1 || true \
-%nil
-%define restart_on_update() \
-/bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
-%nil
-%else
-%define add_service_start() \
-/sbin/chkconfig --add %1 \
-%nil
-%define stop_on_removal() \
-/sbin/service %1 stop >/dev/null 2>&1 || \
-/sbin/chkconfig --del %1 || true \
-%nil
-%define restart_on_update() \
-/sbin/service %1 condrestart >/dev/null 2>&1 || true \
+SERVICE=%1 \
+#service_add $1 \
+%fillup_and_insserv $SERVICE \
 %nil
 %endif
+
+%else
+# non suse, systemd
+
 %define insserv_cleanup() \
 /bin/true \
 %nil
+
+%if 0%{?systemd_support}
+# non suse, systemd
+
+%define add_service_start() \
+/bin/systemctl daemon-reload >/dev/null 2>&1 || true \
+/bin/systemctl enable %1.service >/dev/null 2>&1 || true \
+%nil
+
+%define stop_on_removal() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" = "0" ; then \
+  /bin/systemctl stop %1.service > /dev/null 2>&1 || true \
+fi \
+%nil
+
+%define restart_on_update() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" -ge 1 ; then \
+  /bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
+fi \
+%nil
+
+%else
+# non suse, init.d
+
+%define add_service_start() \
+/sbin/chkconfig --add %1 \
+%nil
+
+%define stop_on_removal() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" = "0" ; then \
+  /sbin/service %1 stop >/dev/null 2>&1 || \
+  /sbin/chkconfig --del %1 || true \
+fi \
+%nil
+
+%define restart_on_update() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" -ge 1 ; then \
+  /sbin/service %1 condrestart >/dev/null 2>&1 || true \
+fi \
+%nil
+
+%endif
+
 %endif
 
 %define create_group() \
@@ -1017,36 +1060,24 @@ exit 0
 exit 0
 
 %preun director
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-dir
-fi
 
 %preun storage
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-sd
-fi
 
 %preun filedaemon
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-fd
-fi
 
 %postun director
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-dir
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun storage
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-sd
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun filedaemon
-if [ "$1" -ge "1" ]; then
 %restart_on_update bareos-fd
-fi
 %insserv_cleanup
 
 %changelog

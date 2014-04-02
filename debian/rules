@@ -83,6 +83,10 @@ override_dh_fixperms:
 override_dh_strip:
 	dh_strip --dbg-package=bareos-dbg
 
+override_dh_installinit:
+	dh_installinit --package=bareos-director   --name=bareos-dir --no-start
+	dh_installinit --package=bareos-storage    --name=bareos-sd  --no-start
+	dh_installinit --package=bareos-filedaemon --name=bareos-fd
+
 %:
 	dh $@
-
