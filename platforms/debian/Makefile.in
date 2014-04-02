@@ -10,7 +10,7 @@
 
 nothing:
 
-install: install-autostart install_logrotate install-dbconfig
+install: install_logrotate install-dbconfig
 
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
@@ -21,28 +21,28 @@ install_logrotate:
 install-autostart-fd:
 	@echo "Installing bareos-fd boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/etc/init.d/bareos-fd
+	@$(INSTALL_PROGRAM) ../../debian/bareos-filedaemon.bareos-fd.init $(DESTDIR)/etc/init.d/bareos-fd
 	@echo "Installing bareos-fd symlinks ..."
 	@if test x$(DESTDIR) = x ; then \
-	   /usr/sbin/update-rc.d bareos-fd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-fd defaults; \
 	fi
 
 install-autostart-sd:
 	@echo "Installing bareos-sd boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-sd $(DESTDIR)/etc/init.d/bareos-sd
+	@$(INSTALL_PROGRAM) ../../debian/bareos-storage.bareos-sd.init $(DESTDIR)/etc/init.d/bareos-sd
 	@echo "Installing bareos-sd symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
-	   /usr/sbin/update-rc.d bareos-sd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-sd defaults; \
 	fi
 
 install-autostart-dir:
 	@echo "Installing bareos-dir boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-dir $(DESTDIR)/etc/init.d/bareos-dir
+	@$(INSTALL_PROGRAM) ../../debian/bareos-director.bareos-dir.init $(DESTDIR)/etc/init.d/bareos-dir
 	@echo "Installing bareos-dir symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
-	   /usr/sbin/update-rc.d bareos-dir start 90 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-dir defaults; \
 	fi
 
 install-dbconfig:
@@ -64,8 +64,6 @@ clean:
 
 distclean: clean
 	@$(RMF) Makefile
-	@$(RMF) bareos-sd bareos-fd bareos-dir
 
 devclean: clean
 	@$(RMF) Makefile
-	@$(RMF) bareos-sd bareos-fd bareos-dir

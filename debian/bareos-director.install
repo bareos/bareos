@@ -1,6 +1,5 @@
 /etc/bareos/bareos-dir.conf
 /etc/logrotate.d/bareos-dir
-/etc/init.d/bareos-dir
 /usr/lib/bareos/scripts/delete_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup
 /usr/lib/bareos/scripts/make_catalog_backup.pl

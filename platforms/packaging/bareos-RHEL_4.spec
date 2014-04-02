@@ -8,7 +8,6 @@
 #   * only support platforms that are available in OBS
 #   * activate all options available (if reasonable)
 #   * single-dir-install is not supported
-#   * use special group (bconsole) for users that can access bconsole
 #   * Single packages for:
 #       * console package
 #       * dir package ( bsmtp )
@@ -23,10 +22,7 @@
 #       * bat
 #       * doc
 #
-#	For openSUSE/SUSE we placed the /usr/sbin/rcscript
-#	And added the firewall basics rules
-#
-#	Notice : the libbareoscats* package to be able to pass the shlib name policy are
+#	Notice: the libbareoscats* package to be able to pass the shlib name policy are
 #	explicitly named
 #
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
@@ -43,8 +39,6 @@ Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
 %define _libversion    14.2.0
-
-%define client_only 1
 
 %define plugin_dir     %_libdir/bareos/plugins
 %define script_dir     /usr/lib/bareos/scripts
@@ -65,6 +59,7 @@ Vendor: 	The Bareos Team
 %define file_daemon_user        root
 %define storage_daemon_group    %{daemon_group}
 
+%define client_only 1
 %define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
@@ -103,6 +98,7 @@ BuildRequires: systemd
 
 Source0: %{name}_%{version}.tar.gz
 
+BuildRequires: elfutils
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -122,68 +118,77 @@ BuildRequires: libfastlz-devel
 %if 0%{?suse_version}
 BuildRequires: sqlite3-devel
 %else
-#BuildRequires: sqlite-devel
+BuildRequires: sqlite-devel
 %endif
 %endif
 BuildRequires: mysql-devel
 BuildRequires: postgresql-devel
-#BuildRequires: libqt4-devel
 BuildRequires: openssl
 BuildRequires: libcap-devel
 BuildRequires: mtx
 
+%if 0%{?build_bat} || 0%{?build_qt_monitor}
+BuildRequires: libqt4-devel
+%endif
+
+%if 0%{?python_plugins}
+BuildRequires: python-devel >= 2.6
+%endif
+
 %if 0%{?suse_version}
+
 # link identical files
 BuildRequires: fdupes
-BuildRequires: termcap
+BuildRequires: lsb-release
+BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
+BuildRequires: termcap
 BuildRequires: update-desktop-files
 
-# Some magic to be able to determine what platform we are running on.
-%if !0%{sles_version}
-BuildRequires: openSUSE-release
-%else
-%if 0%{?sles_version} && !0%{?sled_version}
+%if 0%{?sles_version}
 BuildRequires: sles-release
-%else
-BuildRequires: sled-release
-%endif
 %endif
 
-BuildRequires: lsb-release
 
 %else
-#BuildRequires: qt4-devel
+# non suse
+
 BuildRequires: libtermcap-devel
 BuildRequires: passwd
 BuildRequires: tcp_wrappers
 
 # Some magic to be able to determine what platform we are running on.
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
-%if 0%{?fedora_version}
-BuildRequires: fedora-release
-%endif
-# Favor lsb_release on platform that have proper support for it.
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
+
 BuildRequires: redhat-lsb
-%else
-# Older RHEL (5)/ CentOS (5)
+
+# older versions require additional release packages
+%if 0%{?rhel_version}   && 0%{?rhel_version} <= 600
 BuildRequires: redhat-release
 %endif
-%else
-# Non redhat like distribution for example mandriva.
-BuildRequires: lsb-release
+
+%if 0%{?centos_version} && 0%{?centos_version} <= 600
+BuildRequires: redhat-release
 %endif
+
+%if 0%{?fedora_version}
+BuildRequires: fedora-release
 %endif
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
 BuildRequires: tcp_wrappers-devel
 %endif
 
-%if 0%{?python_plugins}
-BuildRequires: python-devel >= 2.6
+%else
+# non suse, non redhat: eg. mandriva.
+
+BuildRequires: lsb-release
+
 %endif
+
+%endif
+
 
 Summary:  Bareos All-In-One package (dir,sd,fd)
 #BuildArch: noarch
@@ -464,9 +469,9 @@ This package contains bareos development files.
 %setup
 
 %build
-#if #{undefined suse_version}
+%if !0%{?suse_version}
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
-#endif
+%endif
 export MTX=/usr/sbin/mtx
 # Notice keep the upstream order of ./configure --help
 %configure \
@@ -502,14 +507,17 @@ export MTX=/usr/sbin/mtx
 %if 0%{?build_bat}
   --enable-bat \
 %endif
-%if 0%{?client_only}
-  --enable-client-only\
-%endif
 %if 0%{?build_qt_monitor}
   --enable-traymonitor \
 %endif
+%if 0%{?client_only}
+  --enable-client-only \
+%endif
   --with-postgresql \
   --with-mysql \
+%if 0%{?build_sqlite3}
+  --with-sqlite3 \
+%endif
   --with-tcp-wrappers \
   --with-dir-user=%{director_daemon_user} \
   --with-dir-group=%{daemon_group} \
@@ -530,9 +538,6 @@ export MTX=/usr/sbin/mtx
   --with-systemd \
 %endif
   --enable-includes
-#if 0#{?build_sqlite3}
-#  --with-sqlite3 \
-#endif
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
@@ -549,10 +554,10 @@ export MTX=/usr/sbin/mtx
     make DESTDIR=%{buildroot} install
 %endif
 
-install -d 755 %{buildroot}/usr/share/applications
-install -d 755 %{buildroot}/usr/share/pixmaps
+install -d -m 755 %{buildroot}/usr/share/applications
+install -d -m 755 %{buildroot}/usr/share/pixmaps
 
-install -d 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}%{working_dir}
 
 #Cleaning
 for F in  \
@@ -1028,15 +1033,11 @@ if [ "$1" = 0 ]; then
 fi
 
 %postun director
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-dir
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun storage
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-sd
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun filedaemon

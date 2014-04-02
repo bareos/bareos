@@ -16,14 +16,16 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-disable_rc_scripts()
-{
-  update-rc.d -f bareos-dir remove
-}
-
 case "$1" in
     remove|deconfigure)
-        disable_rc_scripts
+        # stop only on deinstall. Restart on upgrade must be done manually
+        if [ -x "/etc/init.d/bareos-dir" ]; then
+                if [ -x "`which invoke-rc.d 2>/dev/null`" ]; then
+                        invoke-rc.d bareos-dir stop || exit $?
+                else
+                        /etc/init.d/bareos-dir stop || exit $?
+                fi
+        fi
         ;;
     failed-upgrade|upgrade)
         ;;

@@ -3752,11 +3752,8 @@ debian)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
-	 platforms/debian/Makefile \
-	 platforms/debian/bareos-fd \
-	 platforms/debian/bareos-sd \
-	 platforms/debian/bareos-dir \
-	 platforms/debian/set_dbconfig_vars.sh"
+    platforms/debian/Makefile \
+    platforms/debian/set_dbconfig_vars.sh"
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -3906,12 +3903,9 @@ ubuntu)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
-       platforms/ubuntu/Makefile \
-       platforms/debian/Makefile \
-       platforms/debian/bareos-fd \
-       platforms/debian/bareos-sd \
-       platforms/debian/bareos-dir \
-       platforms/debian/set_dbconfig_vars.sh"
+    platforms/ubuntu/Makefile \
+    platforms/debian/Makefile \
+    platforms/debian/set_dbconfig_vars.sh"
   ;;
 univention)
    TAPEDRIVE="/dev/nst0"
@@ -3919,9 +3913,6 @@ univention)
    PFILES="${PFILES} \
      platforms/univention/Makefile \
      platforms/debian/Makefile \
-     platforms/debian/bareos-fd \
-     platforms/debian/bareos-sd \
-     platforms/debian/bareos-dir \
      platforms/debian/set_dbconfig_vars.sh"
   ;;
 unknown)
@@ -4004,8 +3995,11 @@ manpages/Makefile \
 debian/bareos-common.preinst \
 debian/bareos-database-common.config \
 debian/bareos-database-common.postinst \
+debian/bareos-filedaemon.bareos-fd.init \
 debian/bareos-filedaemon.preinst \
+debian/bareos-director.bareos-dir.init \
 debian/bareos-director.preinst \
+debian/bareos-storage.bareos-sd.init \
 debian/bareos-storage.preinst \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \
