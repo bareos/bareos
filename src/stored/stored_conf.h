@@ -24,6 +24,16 @@
  * Resource codes -- they must be sequential for indexing
  */
 
+/*
+ * Program specific config types (start at 50)
+ */
+#define CFG_TYPE_CLEARPASSWORD      50  /* Password stored in clear when needed otherwise hashed */
+#define CFG_TYPE_AUTHTYPE           51  /* Authentication Type */
+#define CFG_TYPE_DEVTYPE            52  /* Device Type */
+#define CFG_TYPE_MAXBLOCKSIZE       53  /* Maximum Blocksize */
+#define CFG_TYPE_IODIRECTION        54  /* IO Direction */
+#define CFG_TYPE_CMPRSALGO          55  /* Compression Algorithm */
+
 enum {
    R_DIRECTOR = 3001,
    R_NDMP,

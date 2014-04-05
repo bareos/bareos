@@ -29,6 +29,42 @@
 /* NOTE:  #includes at the end of this file */
 
 /*
+ * Program specific config types (start at 50)
+ */
+#define CFG_TYPE_CLEARPASSWORD      50  /* Password stored in clear when needed otherwise hashed */
+#define CFG_TYPE_ACL                51  /* User Access Control List */
+#define CFG_TYPE_AUTHPROTOCOLTYPE   52  /* Authentication Protocol */
+#define CFG_TYPE_AUTHTYPE           53  /* Authentication Type */
+#define CFG_TYPE_DEVICE             54  /* Device resource */
+#define CFG_TYPE_JOBTYPE            55  /* Type of Job */
+#define CFG_TYPE_PROTOCOLTYPE       56  /* Protocol */
+#define CFG_TYPE_LEVEL              57  /* Backup Level */
+#define CFG_TYPE_REPLACE            58  /* Replace option */
+#define CFG_TYPE_SHRTRUNSCRIPT      59  /* Short Runscript definition */
+#define CFG_TYPE_RUNSCRIPT          60  /* Runscript */
+#define CFG_TYPE_RUNSCRIPT_CMD      61  /* Runscript Command */
+#define CFG_TYPE_RUNSCRIPT_TARGET   62  /* Runscript Target (Host) */
+#define CFG_TYPE_RUNSCRIPT_BOOL     63  /* Runscript Boolean */
+#define CFG_TYPE_RUNSCRIPT_WHEN     64  /* Runscript When expression */
+#define CFG_TYPE_MIGTYPE            65  /* Migration Type */
+#define CFG_TYPE_INCEXC             66  /* Include/Exclude item */
+#define CFG_TYPE_RUN                67  /* Schedule Run Command */
+#define CFG_TYPE_ACTIONONPURGE      68  /* Action to perform on Purge */
+
+#define CFG_TYPE_FNAME              80  /* Filename */
+#define CFG_TYPE_PLUGINNAME         81  /* Pluginname */
+#define CFG_TYPE_EXCLUDEDIR         82  /* Exclude directory */
+#define CFG_TYPE_OPTIONS            83  /* Options block */
+#define CFG_TYPE_OPTION             84  /* Option of Options block */
+#define CFG_TYPE_REGEX              85  /* Regular Expression */
+#define CFG_TYPE_BASE               86  /* Basejob Expression */
+#define CFG_TYPE_WILD               87  /* Wildcard Expression */
+#define CFG_TYPE_PLUGIN             88  /* Plugin definition */
+#define CFG_TYPE_FSTYPE             89  /* FileSytem match criterium (UNIX)*/
+#define CFG_TYPE_DRIVETYPE          90  /* DriveType match criterium (Windows) */
+#define CFG_TYPE_META               91  /* Meta tag */
+
+/*
  * Resource codes -- they must be sequential for indexing
  */
 enum {

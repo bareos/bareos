@@ -73,45 +73,45 @@ int32_t res_all_size = sizeof(res_all);
  * information.
  */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(dir_res.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(dir_res.hdr.desc), 0, 0, NULL },
-   { "dirport", store_pint32, ITEM(dir_res.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", store_str, ITEM(dir_res.address), 0, ITEM_REQUIRED, NULL },
-   { "password", store_password, ITEM(dir_res.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(dir_res.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(dir_res.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(dir_res.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(dir_res.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(dir_res.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(dir_res.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(dir_res.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(dir_res.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(dir_res.tls_keyfile), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(dir_res.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { "name", CFG_TYPE_NAME, ITEM(dir_res.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(dir_res.hdr.desc), 0, 0, NULL },
+   { "dirport", CFG_TYPE_PINT32, ITEM(dir_res.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "address", CFG_TYPE_STR, ITEM(dir_res.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(dir_res.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(dir_res.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(dir_res.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(dir_res.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(dir_res.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(dir_res.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(dir_res.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(dir_res.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(dir_res.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(dir_res.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(dir_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_items[] = {
-   { "name", store_name, ITEM(con_res.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(con_res.hdr.desc), 0, 0, NULL },
-   { "password", store_password, ITEM(con_res.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(con_res.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(con_res.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(con_res.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(con_res.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(con_res.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(con_res.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(con_res.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(con_res.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(con_res.tls_keyfile), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(con_res.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
+   { "name", CFG_TYPE_NAME, ITEM(con_res.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(con_res.hdr.desc), 0, 0, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(con_res.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(con_res.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(con_res.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(con_res.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(con_res.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(con_res.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(con_res.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(con_res.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(con_res.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(con_res.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(con_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_font_items[] = {
-   { "name", store_name, ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(con_font.hdr.desc), 0, 0, NULL },
-   { "font", store_str, ITEM(con_font.fontface), 0, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
+   { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -119,7 +119,7 @@ static RES_ITEM con_font_items[] = {
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
-RES_TABLE resources[] = {
+static RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR },
    { "console", con_items, R_CONSOLE },
    { "consolefont", con_font_items, R_CONSOLE_FONT },
@@ -268,7 +268,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
     * Ensure that all required items are present
     */
    for (i=0; items[i].name; i++) {
-      if (items[i].flags & ITEM_REQUIRED) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.dir_res.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex]);
@@ -362,7 +362,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, exit_code,
+   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
                 (void *)&res_all, res_all_size, r_first,
                 r_last, resources, res_head);
    return config->parse_config();
