@@ -699,9 +699,9 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
       1              /* byte */
    };
 
-   if ((item->flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
       /*
-       * Always print required items or if me->omit_defaults is false
+       * Always print required items or if my_config->m_omit_defaults is false
        */
       print_item = true;
    } else if (item->flags & CFG_ITEM_DEFAULT) {
@@ -775,9 +775,9 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
       0
    };
 
-   if ((item->flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
       /*
-       * Always print required items or if me->omit_defaults is false
+       * Always print required items or if my_config->m_omit_defaults is false
        */
       print_item = true;
    } else if (item->flags & CFG_ITEM_DEFAULT) {
@@ -1276,9 +1276,9 @@ bool BRSRES::print_config(POOL_MEM &buff)
          /*
           * String types
           */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
             /*
-             * Always print required items or if me->omit_defaults is false
+             * Always print required items or if my_config->m_omit_defaults is false
              */
             print_item = true;
          } else if (items[i].flags & CFG_ITEM_DEFAULT) {
@@ -1305,9 +1305,9 @@ bool BRSRES::print_config(POOL_MEM &buff)
          s_password *password;
 
          password = items[i].pwdvalue;
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
             /*
-             * Always print required items or if me->omit_defaults is false
+             * Always print required items or if my_config->m_omit_defaults is false
              */
             print_item = true;
          } else if (items[i].flags & CFG_ITEM_DEFAULT) {
@@ -1356,9 +1356,9 @@ bool BRSRES::print_config(POOL_MEM &buff)
          /*
           * Integer types
           */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
             /*
-             * Always print required items or if me->omit_defaults is false
+             * Always print required items or if my_config->m_omit_defaults is false
              */
             print_item = true;
          } else if (items[i].flags & CFG_ITEM_DEFAULT) {
@@ -1386,9 +1386,9 @@ bool BRSRES::print_config(POOL_MEM &buff)
          print_config_time(&items[i], cfg_str);
          break;
       case CFG_TYPE_BOOL:
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
             /*
-             * Always print required items or if me->omit_defaults is false
+             * Always print required items or if my_config->m_omit_defaults is false
              */
             print_item = true;
          } else if (items[i].flags & CFG_ITEM_DEFAULT) {
