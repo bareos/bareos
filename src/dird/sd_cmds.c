@@ -23,6 +23,8 @@
 /*
  * BAREOS Director -- sd_cmds.c -- send commands to Storage daemon
  *
+ * Kern Sibbald, August MM
+ *
  * Extracted from other source files by Marco van Wieringen, December 2011
  */
 

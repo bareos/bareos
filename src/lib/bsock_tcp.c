@@ -22,7 +22,9 @@
 /*
  * TCP Sockets abstraction.
  *
- * Marco van Wieringen, September 2013.
+ * Kern Sibbald
+ *
+ * Extracted from other source files by Marco van Wieringen, September 2013.
  */
 
 #include "bareos.h"
