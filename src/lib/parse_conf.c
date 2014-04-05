@@ -76,7 +76,6 @@ extern "C" URES res_all;
 #else
 extern  URES res_all;
 #endif
-extern brwlock_t res_lock;            /* resource lock */
 
 /* Forward referenced subroutines */
 static const char *get_default_configdir();
@@ -148,7 +147,7 @@ bool CONFIG::parse_config()
    LEX_WARNING_HANDLER *scan_warning = m_scan_warning;
    int err_type = m_err_type;
 
-   if (first && (errstat=rwl_init(&res_lock)) != 0) {
+   if (first && (errstat = rwl_init(&m_res_lock)) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -216,14 +215,14 @@ bool CONFIG::parse_config()
                scan_err1(lc, _("Expected a Resource name identifier, got: %s"), lc->str);
                goto bail_out;
             }
-            for (i = 0; resources[i].name; i++) {
-               if (bstrcasecmp(resources[i].name, lc->str)) {
-                  items = resources[i].items;
+            for (i = 0; m_resources[i].name; i++) {
+               if (bstrcasecmp(m_resources[i].name, lc->str)) {
+                  items = m_resources[i].items;
                   if (!items) {
                      break;
                   }
                   state = p_resource;
-                  res_type = resources[i].rcode;
+                  res_type = m_resources[i].rcode;
                   init_resource(res_type, items, pass);
                   break;
                }
@@ -571,7 +570,7 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
           * If this triggers, take a look at lib/parse_conf.h
           */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources[type - r_first]);
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first]);
          }
       }
    }

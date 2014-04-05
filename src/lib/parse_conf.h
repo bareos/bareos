@@ -244,7 +244,6 @@ public:
    int32_t m_res_all_size;              /* Length of buffer */
    bool m_omit_defaults;                /* Omit config variables with default values when dumping the config */
 
-   /* The below are not yet implemented */
    int32_t m_r_first;                   /* First daemon resource type */
    int32_t m_r_last;                    /* Last daemon resource type */
    RES_TABLE *m_resources;              /* Pointer to table of permitted resources */
@@ -297,10 +296,3 @@ const char *res_to_str(int rcode);
 #define foreach_res(var, type) \
     for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (RES *)var));)
 #endif
-
-/* ***FIXME*** eliminate these globals */
-extern int32_t r_first;
-extern int32_t r_last;
-extern RES_TABLE resources[];
-extern RES **res_head;
-extern int32_t res_all_size;

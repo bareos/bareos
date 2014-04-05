@@ -32,10 +32,8 @@
 /*
  * First and last resource ids
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
 
 /*
  * Forward referenced subroutines
@@ -238,7 +236,7 @@ extern RES_ITEM msgs_items[];
 /*
  * This is the master resource definition
  */
-RES_TABLE resources[] = {
+static RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "ndmp", ndmp_items, R_NDMP, sizeof(NDMPRES) },
    { "storage", store_items, R_STORAGE, sizeof(STORES) },
@@ -251,7 +249,7 @@ RES_TABLE resources[] = {
 /*
  * Authentication methods
  */
-struct s_kw authmethods[] = {
+static struct s_kw authmethods[] = {
    { "None", AT_NONE },
    { "Clear", AT_CLEAR },
    { "MD5", AT_MD5 },
@@ -784,7 +782,7 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
+   int rindex = type - R_FIRST;
    int i;
    int error = 0;
 
@@ -971,8 +969,8 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
-                r_first,
-                r_last,
+                R_FIRST,
+                R_LAST,
                 resources,
                 res_head);
    return config->parse_config();

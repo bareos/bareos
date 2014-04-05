@@ -114,7 +114,7 @@ static void list_resources(STATUS_PKT *sp)
 
    len = Mmsg(msg, _("\nSD Resources:\n"));
    if (!sp->api) sendit(msg, len, sp);
-   dump_resource(R_DEVICE, resources[R_DEVICE-r_first], sp);
+   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->m_r_first], sp);
    if (!sp->api) sendit("====\n\n", 6, sp);
 #endif
 }

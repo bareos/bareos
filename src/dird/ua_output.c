@@ -173,7 +173,7 @@ int show_cmd(UAContext *ua, const char *cmd)
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                if (type > 0) {
-                  res = res_head[type-r_first];
+                  res = my_config->m_res_head[type - my_config->m_r_first];
                } else {
                   res = NULL;
                }
@@ -198,10 +198,10 @@ int show_cmd(UAContext *ua, const char *cmd)
 
       switch (type) {
       case -1:                           /* all */
-         for (j=r_first; j<=r_last; j++) {
+         for (j = my_config->m_r_first; j <= my_config->m_r_last; j++) {
             /* Skip R_DEVICE since it is really not used or updated */
             if (j != R_DEVICE) {
-               dump_resource(j, res_head[j-r_first], bsendmsg, ua);
+               dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua);
             }
          }
          break;

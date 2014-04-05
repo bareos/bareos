@@ -49,10 +49,8 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
 
 /*
  * Forward referenced subroutines
@@ -162,7 +160,7 @@ extern RES_ITEM msgs_items[];
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
-RES_TABLE resources[] = {
+static RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "filedaemon", cli_items, R_CLIENT, sizeof(CLIENTRES) },
    { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) }, /* alias for filedaemon */
@@ -387,7 +385,7 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
+   int rindex = type - R_FIRST;
    int i;
    int error = 0;
 
@@ -571,8 +569,8 @@ bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
-                r_first,
-                r_last,
+                R_FIRST,
+                R_LAST,
                 resources,
                 res_head);
    return config->parse_config();

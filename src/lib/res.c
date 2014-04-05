@@ -31,15 +31,7 @@
 /* Forward referenced subroutines */
 static void scan_types(LEX *lc, MSGSRES *msg, int dest, char *where, char *cmd);
 
-/* Each daemon has a slightly different set of
- * resources, so it will define the following
- * global values.
- */
-extern int32_t r_first;
-extern int32_t r_last;
-extern RES_TABLE resources[];
-extern RES **res_head;
-extern CONFIG *my_config;
+extern CONFIG *my_config;             /* Our Global config */
 
 /*
  * Set default indention e.g. 2 spaces.
@@ -62,7 +54,6 @@ extern "C" URES res_all;
 extern  URES res_all;
 #endif
 
-brwlock_t res_lock;                   /* resource lock */
 static int res_locked = 0;            /* resource chain lock count -- for debug */
 
 /* #define TRACE_RES */
@@ -72,13 +63,13 @@ void b_LockRes(const char *file, int line)
    int errstat;
 #ifdef TRACE_RES
    Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n",
-         res_locked, res_lock.w_active, file, line);
+         res_locked, my_config->m_res_lock.w_active, file, line);
     if (res_locked) {
-       Pmsg2(000, "LockRes writerid=%d myid=%d\n", res_lock.writer_id,
+       Pmsg2(000, "LockRes writerid=%d myid=%d\n", my_config->m_res_lock.writer_id,
           pthread_self());
      }
 #endif
-   if ((errstat=rwl_writelock(&res_lock)) != 0) {
+   if ((errstat = rwl_writelock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
            file, line, strerror(errstat));
    }
@@ -88,14 +79,14 @@ void b_LockRes(const char *file, int line)
 void b_UnlockRes(const char *file, int line)
 {
    int errstat;
-   if ((errstat=rwl_writeunlock(&res_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writeunlock failure at %s:%d:. ERR=%s\n"),
            file, line, strerror(errstat));
    }
    res_locked--;
 #ifdef TRACE_RES
    Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n",
-         res_locked, res_lock.w_active, file, line);
+         res_locked, my_config->m_res_lock.w_active, file, line);
 #endif
 }
 
@@ -105,10 +96,10 @@ void b_UnlockRes(const char *file, int line)
 RES *GetResWithName(int rcode, const char *name)
 {
    RES *res;
-   int rindex = rcode - r_first;
+   int rindex = rcode - my_config->m_r_first;
 
    LockRes();
-   res = res_head[rindex];
+   res = my_config->m_res_head[rindex];
    while (res) {
       if (bstrcmp(res->name, name)) {
          break;
@@ -128,10 +119,10 @@ RES *GetResWithName(int rcode, const char *name)
 RES *GetNextRes(int rcode, RES *res)
 {
    RES *nres;
-   int rindex = rcode - r_first;
+   int rindex = rcode - my_config->m_r_first;
 
    if (res == NULL) {
-      nres = res_head[rindex];
+      nres = my_config->m_res_head[rindex];
    } else {
       nres = res->next;
    }
@@ -164,10 +155,10 @@ RES_ITEM msgs_items[] = {
 
 const char *res_to_str(int rcode)
 {
-   if (rcode < r_first || rcode > r_last) {
+   if (rcode < my_config->m_r_first || rcode > my_config->m_r_last) {
       return _("***UNKNOWN***");
    } else {
-      return resources[rcode-r_first].name;
+      return my_config->m_resources[rcode - my_config->m_r_first].name;
    }
 }
 
@@ -1371,7 +1362,7 @@ bool MSGSRES::print_config(POOL_MEM &buff)
 bool BRSRES::print_config(POOL_MEM &buff)
 {
    RES_ITEM *items;
-   int rindex = this->hdr.rcode - r_first;
+   int rindex = this->hdr.rcode - my_config->m_r_first;
    int i = 0;
    POOL_MEM cfg_str;
    POOL_MEM temp;
@@ -1379,16 +1370,16 @@ bool BRSRES::print_config(POOL_MEM &buff)
    /*
     * Make sure the resource class has any items.
     */
-   if (!resources[rindex].items) {
+   if (!my_config->m_resources[rindex].items) {
       return true;
    }
 
-   memcpy(&res_all, this, resources[rindex].size);
+   memcpy(&res_all, this, my_config->m_resources[rindex].size);
 
    pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
    pm_strcat(cfg_str, " {\n");
 
-   items = resources[rindex].items;
+   items = my_config->m_resources[rindex].items;
 
    for (i = 0; items[i].name; i++) {
       bool print_item = false;

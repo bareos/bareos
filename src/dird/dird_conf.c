@@ -51,10 +51,8 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
 
 /*
  * Set default indention e.g. 2 spaces.
@@ -476,7 +474,7 @@ extern RES_ITEM msgs_items[];
  *
  * name handler value code flags default_value
  */
-RES_TABLE resources[] = {
+static RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
    { "jobdefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
@@ -1899,7 +1897,7 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
+   int rindex = type - R_FIRST;
    int i;
    bool error = false;
 
@@ -2172,7 +2170,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res;
-   int rindex = R_DEVICE - r_first;
+   int rindex = R_DEVICE - R_FIRST;
    bool found = false;
 
    if (pass == 1) {
@@ -3075,8 +3073,8 @@ bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
-                r_first,
-                r_last,
+                R_FIRST,
+                R_LAST,
                 resources,
                 res_head);
    return config->parse_config();

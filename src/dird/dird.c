@@ -429,15 +429,16 @@ static void init_reload(void)
 
 static void free_saved_resources(int table)
 {
-   int num = r_last - r_first + 1;
+   int num = my_config->m_r_last - my_config->m_r_first + 1;
    RES **res_tab = reload_table[table].res_table;
+
    if (!res_tab) {
       Dmsg1(100, "res_tab for table %d already released.\n", table);
       return;
    }
    Dmsg1(100, "Freeing resources for table %d\n", table);
    for (int j=0; j<num; j++) {
-      free_resource(res_tab[j], r_first + j);
+      free_resource(res_tab[j], my_config->m_r_first + j);
    }
    free(res_tab);
    reload_table[table].job_count = 0;
@@ -550,10 +551,10 @@ void reload_config(int sig)
       }
       reload_table[rtable].res_table = my_config->save_resources();
       /* Now restore old resource values */
-      int num = r_last - r_first + 1;
+      int num = my_config->m_r_last - my_config->m_r_first + 1;
       RES **res_tab = reload_table[table].res_table;
       for (int i=0; i<num; i++) {
-         res_head[i] = res_tab[i];
+         my_config->m_res_head[i] = res_tab[i];
       }
       table = rtable;                 /* release new, bad, saved table below */
    } else {
