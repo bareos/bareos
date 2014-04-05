@@ -52,17 +52,11 @@ enum {
    R_TYPE
 };
 
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   uint32_t token;
-};
-
 /* Definition of the contents of each Resource */
 struct DIRRES {
    RES hdr;
 
-   char *password;                    /* Director password */
+   s_password password;               /* Director password */
    char *address;                     /* Director address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TSL */

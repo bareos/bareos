@@ -560,12 +560,14 @@ bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *con
 
    errmsg[0] = 0;
    if (cons) {
+      ASSERT(cons->password.encoding == p_encoding_md5);
       name = cons->hdr.name;
-      password = cons->password;
+      password = cons->password.value;
       tls_ctx = cons->tls_ctx;
    } else {
+      ASSERT(director->password.encoding == p_encoding_md5);
       name = "*UserAgent*";
-      password = director->password;
+      password = director->password.value;
       tls_ctx = director->tls_ctx;
    }
 

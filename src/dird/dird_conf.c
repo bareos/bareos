@@ -108,7 +108,7 @@ static RES_ITEM dir_items[] = {
    { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
    { "maximumconsoleconnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnect), 0, CFG_ITEM_DEFAULT, "20" },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */ },
    { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
    { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
@@ -125,9 +125,10 @@ static RES_ITEM dir_items[] = {
    { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "statisticsretention", CFG_TYPE_TIME, ITEM(res_dir.stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */ },
    { "verid", CFG_TYPE_STR, ITEM(res_dir.verid), 0, 0, NULL },
-   { "optimizeforsize", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_size), 0, CFG_ITEM_DEFAULT, "true" },
+   { "optimizeforsize", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_size), 0, CFG_ITEM_DEFAULT, "false" },
    { "optimizeforspeed", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false" },
-   { "keyencryptionkey", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
+   { "omitdefaults", CFG_TYPE_BOOL, ITEM(res_dir.omit_defaults), 0, CFG_ITEM_DEFAULT, "true" },
+   { "keyencryptionkey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
    { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
    { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
@@ -142,7 +143,7 @@ static RES_ITEM dir_items[] = {
 static RES_ITEM con_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "jobacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL },
    { "clientacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL },
    { "storageacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL },
@@ -183,8 +184,8 @@ static RES_ITEM cli_items[] = {
    { "port", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "username", CFG_TYPE_STR, ITEM(res_client.username), 0, 0, NULL },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "fdpassword", CFG_TYPE_CLEARPASSWORD, ITEM(res_client.password), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, 0, NULL },
    { "catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
    { "passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false" },
    { "hardquota", CFG_TYPE_SIZE64, ITEM(res_client.HardQuota), 0, CFG_ITEM_DEFAULT, "0" },
@@ -226,8 +227,8 @@ static RES_ITEM store_items[] = {
    { "port", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
    { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
    { "username", CFG_TYPE_STR, ITEM(res_store.username), 0, 0, NULL },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "sdpassword", CFG_TYPE_PASSWORD, ITEM(res_store.password), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, 0, NULL },
    { "device", CFG_TYPE_DEVICE, ITEM(res_store.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL },
    { "mediatype", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL },
    { "autochanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false" },
@@ -261,8 +262,8 @@ static RES_ITEM cat_items[] = {
    { "address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL },
    { "dbaddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL },
    { "dbport", CFG_TYPE_PINT32, ITEM(res_cat.db_port), 0, 0, NULL },
-   { "password", CFG_TYPE_STR, ITEM(res_cat.db_password), 0, 0, NULL },
-   { "dbpassword", CFG_TYPE_STR, ITEM(res_cat.db_password), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat.db_password), 0, 0, NULL },
+   { "dbpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat.db_password), 0, 0, NULL },
    { "dbuser", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, 0, NULL },
    { "user", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, 0, NULL },
    { "dbname", CFG_TYPE_STR, ITEM(res_cat.db_name), 0, CFG_ITEM_REQUIRED, NULL },
@@ -471,20 +472,20 @@ extern RES_ITEM msgs_items[];
  * name handler value code flags default_value
  */
 RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "client", cli_items, R_CLIENT },
-   { "job", job_items, R_JOB },
-   { "storage", store_items, R_STORAGE },
-   { "catalog", cat_items, R_CATALOG },
-   { "schedule", sch_items, R_SCHEDULE },
-   { "fileset", fs_items, R_FILESET },
-   { "pool", pool_items, R_POOL },
-   { "messages", msgs_items, R_MSGS },
-   { "counter", counter_items, R_COUNTER },
-   { "console", con_items, R_CONSOLE },
-   { "jobdefs", job_items, R_JOBDEFS },
-   { "device", NULL, R_DEVICE }, /* info obtained from SD */
-   { NULL, NULL, 0 }
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "job", job_items, R_JOB, sizeof(JOBRES) },
+   { "storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "catalog", cat_items, R_CATALOG, sizeof(CATRES) },
+   { "schedule", sch_items, R_SCHEDULE, sizeof(SCHEDRES) },
+   { "fileset", fs_items, R_FILESET, sizeof(FILESETRES) },
+   { "pool", pool_items, R_POOL, sizeof(POOLRES) },
+   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
+   { "counter", counter_items, R_COUNTER, sizeof(COUNTERRES) },
+   { "console", con_items, R_CONSOLE, sizeof(CONRES) },
+   { "jobdefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
+   { "device", NULL, R_DEVICE, sizeof(DEVICERES) }, /* info obtained from SD */
+   { NULL, NULL, 0, 0 }
 };
 
 /*
@@ -568,7 +569,7 @@ struct s_jt jobtypes[] = {
  *
  * name token
  */
-struct s_kw backupprotocols[] = {
+static struct s_kw backupprotocols[] = {
    { "Native", PT_NATIVE },
    { "NDMP", PT_NDMP },
    { NULL, 0 }
@@ -578,7 +579,7 @@ struct s_kw backupprotocols[] = {
  *
  * name token
  */
-struct s_kw authprotocols[] = {
+static struct s_kw authprotocols[] = {
    { "Native", APT_NATIVE },
    { "NDMPV2", APT_NDMPV2 },
    { "NDMPV3", APT_NDMPV3 },
@@ -590,7 +591,7 @@ struct s_kw authprotocols[] = {
  *
  * name token
  */
-struct s_kw authmethods[] = {
+static struct s_kw authmethods[] = {
    { "None", AT_NONE },
    { "Clear", AT_CLEAR },
    { "MD5", AT_MD5 },
@@ -602,7 +603,7 @@ struct s_kw authmethods[] = {
  *
  * type_name job_type
  */
-struct s_jt migtypes[] = {
+static struct s_jt migtypes[] = {
    { "SmallestVolume", MT_SMALLEST_VOL },
    { "OldestVolume", MT_OLDEST_VOL },
    { "PoolOccupancy", MT_POOL_OCCUPANCY },
@@ -649,14 +650,1333 @@ struct s_kw VolumeStatus[] = {
    { NULL, 0 }
 };
 
-char *CATRES::display(POOLMEM *dst) {
-   Mmsg(dst,"catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
-        "db_password=%s\ndb_address=%s\ndb_port=%i\n"
-        "db_socket=%s\n",
+char *CATRES::display(POOLMEM *dst)
+{
+   Mmsg(dst, "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
+             "db_password=%s\ndb_address=%s\ndb_port=%i\n"
+             "db_socket=%s\n",
         name(), NPRTB(db_name),
-        NPRTB(db_driver), NPRTB(db_user), NPRTB(db_password),
+        NPRTB(db_driver), NPRTB(db_user), NPRTB(db_password.value),
         NPRTB(db_address), db_port, NPRTB(db_socket));
+
    return dst;
+}
+
+static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   bool print_item = false;
+
+   /*
+    * convert default value string to numeric value
+    */
+   static const char *modifier[] = {
+      "g",
+      "m",
+      "k",
+      "",
+      NULL
+   };
+   const int64_t multiplier[] = {
+      1073741824,    /* gibi */
+      1048576,       /* mebi */
+      1024,          /* kibi */
+      1              /* byte */
+   };
+
+   if ((item->flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+      /*
+       * Always print required items or if me->omit_defaults is false
+       */
+      print_item = true;
+   } else if (item->flags & CFG_ITEM_DEFAULT) {
+      /*
+       * We have a default value
+       */
+      if (*(item->i64value) != str_to_int64(item->default_value)) {
+         /*
+          * Print if value differs from default
+          */
+         print_item = true;
+      }
+   }
+
+   if (print_item) {
+      POOL_MEM volspec;   /* vol specification string*/
+      int64_t bytes = *(item->i64value);
+      int factor;
+
+      if (bytes == 0) {
+         pm_strcat(volspec, "0");
+      } else {
+         for (int t=0; modifier[t]; t++) {
+            Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
+            factor = bytes / multiplier[t];
+            bytes  = bytes % multiplier[t];
+            if (factor > 0) {
+               Mmsg(temp, "%d %s ", factor, modifier[t]);
+               pm_strcat(volspec, temp.c_str());
+               Dmsg1(200, " volspec: %s\n", volspec.c_str());
+            }
+            if (bytes == 0) {
+               break;
+            }
+         }
+      }
+      Mmsg(temp, "   %s = %s\n", item->name, volspec.c_str());
+      pm_strcat(cfg_str, temp.c_str());
+   }
+}
+
+static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   bool print_item = false;
+
+   /*
+    * Reverse time formatting: 1 Month, 1 Week, etc.
+    *
+    * convert default value string to numeric value
+    */
+   static const char *modifier[] = {
+      "years",
+      "months",
+      "weeks",
+      "days",
+      "hours",
+      "minutes",
+      "seconds",
+      NULL
+   };
+   static const int32_t multiplier[] = {
+      60 * 60 * 24 * 365,
+      60 * 60 * 24 * 30,
+      60 * 60 * 24 * 7,
+      60 * 60 * 24,
+      60 * 60,
+      60,
+      1,
+      0
+   };
+
+   if ((item->flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+      /*
+       * Always print required items or if me->omit_defaults is false
+       */
+      print_item = true;
+   } else if (item->flags & CFG_ITEM_DEFAULT) {
+      /*
+       * We have a default value
+       */
+      if (*(item->i64value) != str_to_int64(item->default_value)) {
+         /*
+          * Print if value differs from default
+          */
+         print_item = true;
+      }
+   }
+
+   if (print_item) {
+      POOL_MEM timespec;
+      utime_t secs = *(item->utimevalue);
+      int factor;
+      if (secs == 0) {
+         pm_strcat(timespec, "0");
+      } else {
+         for (int t=0; modifier[t]; t++) {
+            factor = secs / multiplier[t];
+            secs   = secs % multiplier[t];
+            if (factor > 0) {
+               Mmsg(temp, "%d %s ", factor, modifier[t]);
+               pm_strcat(timespec, temp.c_str());
+            }
+            if (secs == 0) {
+               break;
+            }
+         }
+      }
+
+      Mmsg(temp, "   %s = %s\n", item->name, timespec.c_str());
+      pm_strcat(cfg_str, temp.c_str());
+   }
+}
+
+static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   RUNSCRIPT* runscript;
+   alist* list;
+   list = (alist *) *(item->value);
+
+   if (bstrcmp(item->name, "runscript")) {
+      if (list != NULL) {
+         foreach_alist(runscript, list) {
+            int len;
+            bool shortrunscript = false;
+            POOLMEM *cmdbuf;
+
+            len = strlen(runscript->command);
+            cmdbuf = get_pool_memory(PM_NAME);
+            cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+            escape_string(cmdbuf, runscript->command, len);
+
+            /*
+             * Check if runscript can be written as short runscript
+             */
+            if (runscript->cmd_type == '|') {  /* short runscripts only support shell command */
+               if (runscript->when == SCRIPT_Before &&           /* runbeforejob */
+                  (bstrcmp(runscript->target, ""))) {
+                     Mmsg(temp, "   run before job = \"%s\"\n", cmdbuf);
+                     shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&     /* runafterjob */
+                          runscript->on_success &&
+                         !runscript->on_failure &&
+                         !runscript->fail_on_error &&
+                          bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "   run after job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&     /* client run after job */
+                          runscript->on_success &&
+                         !runscript->on_failure &&
+                         !runscript->fail_on_error &&
+                          !bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "   client run after job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
+                          !bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "   client run before job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
+                          runscript->on_failure &&
+                         !runscript->on_success &&
+                         !runscript->fail_on_error &&
+                          bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "   run after failed job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               }
+               pm_strcat(cfg_str, temp.c_str());
+            }
+
+            if (!shortrunscript) { /* if we cannot write the runscript as short runscript...*/
+               Mmsg(temp, "   runscript {\n");
+               pm_strcat(cfg_str, temp.c_str());
+               char *cmdstring = (char *)"command"; /* '|' */
+               if (runscript->cmd_type == '@') {
+                  cmdstring = (char *)"console";
+               }
+               Mmsg(temp, "      %s = \"%s\"\n", cmdstring, cmdbuf);
+               pm_strcat(cfg_str, temp.c_str());
+
+               /*
+                * default: never
+                */
+               char* when = (char *)"never";
+               switch (runscript->when) {
+                  case SCRIPT_Before:
+                     when  = (char*)"before";
+                     break;
+                  case SCRIPT_After:
+                     when = (char*)"after";
+                     break;
+                  case SCRIPT_AfterVSS:
+                     when = (char*)"aftervss";
+                     break;
+                  case SCRIPT_Any:
+                     when = (char*)"always";
+                     break;
+               }
+
+               if (! bstrcmp(when, "never")) { /* suppress default value */
+                  Mmsg(temp, "      runswhen = %s\n", when);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               /* default: fail_on_error = true */
+               char* fail_on_error = (char*)"Yes";
+               if (! runscript->fail_on_error){
+                  fail_on_error = (char*)"No";
+                  Mmsg(temp, "      failonerror = %s\n", fail_on_error);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               /* default: on_success = true */
+               char* run_on_success = (char*)"Yes";
+               if (! runscript->on_success){
+                  run_on_success = (char*)"No";
+                  Mmsg(temp, "      runsonsuccess = %s\n", run_on_success);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               /* default: on_failure = false */
+               char *run_on_failure = (char *)"No";
+               if (runscript->on_failure) {
+                  run_on_failure = (char*)"Yes";
+                  Mmsg(temp, "      runsonfailure = %s\n", run_on_failure);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               /* level is not implemented
+               Dmsg1(200, "   level = %d\n", runscript->level);
+               */
+
+               /* default: runsonclient = yes */
+               char* runsonclient = (char*)"Yes";
+               if (bstrcmp(runscript->target, "")) {
+                  runsonclient = (char*)"No";
+                  Mmsg(temp, "      runsonclient = %s\n", runsonclient);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               Mmsg(temp, "   }\n");
+               pm_strcat(cfg_str, temp.c_str());
+            } /* not a short runscript */
+
+            free_pool_memory(cmdbuf);
+         }
+      } /* foreach runscript */
+   }
+}
+
+static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   RUNRES *run;
+   bool all_set;
+   int interval_start;
+   char *weekdays[] = {
+      (char *)"Sun",
+      (char *)"Mon",
+      (char *)"Tue",
+      (char *)"Wed",
+      (char *)"Thu",
+      (char *)"Fri",
+      (char *)"Sat"
+   };
+   char *ordinals[] = {
+      (char *)"1st",
+      (char *)"2nd",
+      (char *)"3rd",
+      (char *)"4th",
+      (char *)"5th"
+   };
+
+   run = (RUNRES *)*(item->value);
+   if (run != NULL) {
+      while (run) {
+         POOL_MEM run_str; /* holds the complete run= ... line */
+         Mmsg(temp, "   run = ");
+         pm_strcat(run_str, temp.c_str());
+
+         /*
+          * Overrides
+          */
+         if (run->pool) {
+            Mmsg(temp, "pool=\"%s\" ", run->pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->full_pool) {
+            Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->inc_pool) {
+            Mmsg(temp, "incrementalpool=\"%s\" ", run->inc_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->diff_pool) {
+            Mmsg(temp, "differentialpool=\"%s\" ", run->diff_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->next_pool) {
+            Mmsg(temp, "nextpool=\"%s\" ", run->next_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->level) {
+            for (int j = 0; joblevels[j].level_name; j++) {
+               if (joblevels[j].level == run->level) {
+                  Mmsg(temp, "level=%s ", joblevels[j].level_name);
+                  pm_strcat(run_str, temp.c_str());
+                  break;
+               }
+            }
+         }
+
+         if (run->storage) {
+            Mmsg(temp, "storage=\"%s\" ", run->storage->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->msgs) {
+            Mmsg(temp, "messages=\"%s\" ", run->msgs->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->Priority && run->Priority != 10) {
+            Mmsg(temp, "priority=%d ", run->Priority);
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->MaxRunSchedTime) {
+            Mmsg(temp, "maxrunschedtime=%d ", run->MaxRunSchedTime);
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->accurate) {
+            /*
+             * TODO: You cannot distinct if accurate was not set or if it was set to no
+             *       maybe we need an additional variable like "accurate_set".
+             */
+            Mmsg(temp, "accurate=\"%s\" ","yes");
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         /*
+          * Now the time specification
+          */
+
+         /*
+          * run->mday , output is just the number comma separated
+          */
+         all_set =  true;
+         interval_start = -1;
+
+         POOL_MEM t; /* is one entry of day/month/week etc. */
+
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 32; i++) {  /* search for one more than needed to detect also intervals that stop on last value  */
+            if (bit_is_set(i, run->mday)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %d\n", i+1);
+                  Mmsg(t, ",%d", i+1);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (!bit_is_set(i, run->mday)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %d to %d\n", interval_start+1, i);
+                     Mmsg(t, "-%d", i);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((!bit_is_set(i, run->mday)) && (i != 31)) {
+               all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set =  true;
+         }
+
+         /*
+          * run->wom output is 1st, 2nd... 5th comma separated
+          *                    first, second, third... is also allowed
+          *                    but we ignore that for now
+          */
+         interval_start = -1;
+
+         all_set =  true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 6; i++) {
+            if (bit_is_set(i, run->wom)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %s\n", ordinals[i]);
+                  Mmsg(t, ",%s", ordinals[i]);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (! bit_is_set(i, run->wom)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i-1]);
+                     Mmsg(t, "-%s", ordinals[i-1]);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((!bit_is_set(i, run->wom)) && (i != 5)) {
+               all_set = false;
+            }
+         }
+
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+
+         /*
+          * run->wday output is Sun, Mon, ..., Sat comma separated
+          */
+         all_set =  true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 8; i++) {
+            if (bit_is_set(i, run->wday)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %s\n", weekdays[i]);
+                  Mmsg(t, ",%s", weekdays[i]);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (!bit_is_set(i, run->wday)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i-1]);
+                     Mmsg(t, "-%s", weekdays[i-1]);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((! bit_is_set(i, run->wday)) && (i != 7)) {
+               all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+         /*
+          * run->woy output is w00 - w53, comma separated
+          */
+         all_set = true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 55; i++) {
+            if (bit_is_set(i, run->woy)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at w%02d\n", i);
+                  Mmsg(t, ",w%02d", i);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+            if (! bit_is_set(i, run->woy)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i-1);
+                     Mmsg(t, "-w%02d", i-1);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((! bit_is_set(i, run->woy)) && (i != 54)) {
+                  all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+         /*
+          * run->hour output is HH:MM for hour and minute though its a bitfield.
+          * only "hourly" sets all bits.
+          */
+         all_set = true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 24; i++) {
+            if bit_is_set(i, run->hour) {
+               Mmsg(temp, "at %02d:%02d\n", i, run->minute);
+               pm_strcat(run_str, temp.c_str());
+            } else {
+               all_set = false;
+            }
+         }
+
+         /* run->minute output is smply the minute in HH:MM */
+         pm_strcat(cfg_str, run_str.c_str());
+         all_set = true;
+
+         run = run->next;
+      } // loop over runs
+   }
+}
+
+bool BRSRES::print_config(POOL_MEM &buff)
+{
+   RES_ITEM *items;
+   int rindex = this->hdr.rcode - R_FIRST;
+   int i = 0;
+   POOL_MEM cfg_str;
+   POOL_MEM temp;
+
+   /*
+    * Make sure the resource class has any items.
+    */
+   if (!resources[rindex].items) {
+      return true;
+   }
+
+   memcpy(&res_all, this, resources[rindex].size);
+
+   pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
+   pm_strcat(cfg_str, " {\n");
+
+   items = resources[rindex].items;
+
+   for (i = 0; items[i].name; i++) {
+      bool print_item = false;
+
+      switch (items[i].type) {
+      case CFG_TYPE_STR:
+      case CFG_TYPE_DIR:
+      case CFG_TYPE_NAME:
+      case CFG_TYPE_STRNAME:
+         /*
+          * String types
+          */
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+            /*
+             * Always print required items or if me->omit_defaults is false
+             */
+            print_item = true;
+         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+            /*
+             * We have a default value
+             */
+            if (!bstrcmp(*(items[i].value), items[i].default_value)) {
+               /*
+                * Print if value differs from default
+                */
+               print_item = true;
+            }
+         }
+
+         if (print_item && *(items[i].value) != NULL) {
+            Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
+            Mmsg(temp, "   %s = \"%s\"\n", items[i].name, *(items[i].value));
+            pm_strcat(cfg_str, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_MD5PASSWORD:
+      case CFG_TYPE_CLEARPASSWORD:
+      case CFG_TYPE_AUTOPASSWORD: {
+         s_password *password;
+
+         password = items[i].pwdvalue;
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+            /*
+             * Always print required items or if me->omit_defaults is false
+             */
+            print_item = true;
+         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+            /*
+             * We have a default value
+             */
+            if (!bstrcmp(password->value, items[i].default_value)) {
+               /*
+                * Print if value differs from default
+                */
+               print_item = true;
+            }
+         }
+
+         if (print_item && password && password->value != NULL) {
+            switch (password->encoding) {
+            case p_encoding_clear:
+               Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
+               Mmsg(temp, "   %s = \"%s\"\n", items[i].name, password->value);
+               break;
+            case p_encoding_md5:
+               Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+               Mmsg(temp, "   %s = \"[md5]%s\"\n", items[i].name, password->value);
+               break;
+            default:
+               break;
+            }
+            pm_strcat(cfg_str, temp.c_str());
+         }
+         break;
+      }
+      case CFG_TYPE_LABEL: {
+         for (int j = 0; tapelabels[j].name; j++) {
+            if (*(items[i].ui32value) == tapelabels[j].token) {
+               Mmsg(temp, "   %s = \"%s\"\n", items[i].name, tapelabels[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_INT32:
+      case CFG_TYPE_PINT32:
+      case CFG_TYPE_INT64:
+      case CFG_TYPE_SPEED:
+         /*
+          * Integer types
+          */
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+            /*
+             * Always print required items or if me->omit_defaults is false
+             */
+            print_item = true;
+         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+            /*
+             * We have a default value
+             */
+            if (*(items[i].i64value) != str_to_int64(items[i].default_value)) {
+               /*
+                * Print if value differs from default
+                */
+               print_item = true;
+            }
+         }
+
+         if (print_item) {
+            Mmsg(temp, "   %s = %d\n", items[i].name, *(items[i].value));
+            pm_strcat(cfg_str, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_SIZE64:
+      case CFG_TYPE_SIZE32:
+         print_config_size(&items[i], cfg_str);
+         break;
+      case CFG_TYPE_TIME:
+         print_config_time(&items[i], cfg_str);
+         break;
+      case CFG_TYPE_BOOL:
+         if ((items[i].flags & CFG_ITEM_REQUIRED) || !me->omit_defaults) {
+            /*
+             * Always print required items or if me->omit_defaults is false
+             */
+            print_item = true;
+         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+            /*
+             * we have a default value
+             */
+            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
+                                 bstrcasecmp(items[i].default_value, "yes");
+
+            /*
+             * Print if value differs from default
+             */
+            if (*items[i].boolvalue != default_value) {
+               print_item = true;
+            }
+         }
+
+         if (print_item) {
+            if (*items[i].boolvalue) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, NT_("yes"));
+               pm_strcat(cfg_str, temp.c_str());
+            } else {
+               Mmsg(temp, "   %s = %s\n", items[i].name, NT_("no"));
+               pm_strcat(cfg_str, temp.c_str());
+            }
+         }
+         break;
+      case CFG_TYPE_RUNSCRIPT:
+         Dmsg0(200, "CFG_TYPE_RUNSCRIPT\n");
+         print_config_runscript(&items[i], cfg_str);
+         break;
+      case CFG_TYPE_SHRTRUNSCRIPT:
+         /*
+          * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT when parsed
+          */
+         break;
+      case CFG_TYPE_ALIST_STR:
+      case CFG_TYPE_ALIST_DIR: {
+        /*
+         * One line for each member of the list
+         */
+         char *value;
+         alist* list;
+         list = (alist *) *(items[i].value);
+
+         if (list != NULL) {
+            foreach_alist(value, list) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, value);
+               pm_strcat(cfg_str, temp.c_str());
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_ACL: {
+         int cnt = 0;
+         char *value;
+         alist* list;
+         POOL_MEM acl;
+
+         list = ((alist **)items[i].value)[items[i].code] ;
+         if (list != NULL) {
+            Mmsg(temp, "   %s = ", items[i].name);
+            pm_strcat(cfg_str, temp.c_str());
+            foreach_alist(value, list) {
+               if (cnt) {
+                  Mmsg(temp, ",\"%s\"", value);
+               } else {
+                  Mmsg(temp, "\"%s\"", value);
+               }
+               pm_strcat(acl, temp.c_str());
+               cnt++;
+            }
+
+            pm_strcat(cfg_str, acl.c_str());
+            pm_strcat(cfg_str, "\n");
+         }
+         break;
+      }
+      case CFG_TYPE_DEVICE:
+      case CFG_TYPE_ALIST_RES: {
+         /*
+          * Each member of the list is comma-separated
+          */
+         int cnt = 0;
+         RES *res;
+         alist* list;
+         POOL_MEM res_names;
+
+         list = (alist *) *(items[i].value);
+         if (list != NULL) {
+            Mmsg(temp, "   %s = ", items[i].name);
+            pm_strcat(cfg_str, temp.c_str());
+            pm_strcpy(res_names, "");
+            foreach_alist(res, list) {
+               if (cnt) {
+                  Mmsg(temp, ",\"%s\"", res->name);
+               } else {
+                  Mmsg(temp, "\"%s\"", res->name);
+               }
+               pm_strcat(res_names, temp.c_str());
+               cnt++;
+            }
+
+            pm_strcat(cfg_str, res_names.c_str());
+            pm_strcat(cfg_str, "\n");
+         }
+         break;
+      }
+      case CFG_TYPE_RUN:
+         print_config_run(&items[i], cfg_str);
+         break;
+      case CFG_TYPE_RES: {
+         RES *res;
+
+         res = (RES*)*(items[i].value);
+         if (res != NULL && res->name != NULL) {
+            Mmsg(temp, "   %s = \"%s\"\n", items[i].name, res->name);
+            pm_strcat(cfg_str, temp.c_str());
+         }
+         break;
+      }
+      case CFG_TYPE_JOBTYPE: {
+         int32_t jobtype = *(items[i].ui32value);
+
+         for (int32_t j = 0; jobtypes[j].type_name; j++) {
+            if (jobtypes[j].job_type == jobtype) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, jobtypes[j].type_name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_PROTOCOLTYPE: {
+         uint32_t protocoltoken = *(items[i].ui32value);
+
+         for (uint32_t j = 0; backupprotocols[j].name; j++) {
+            if (backupprotocols[j].token == protocoltoken) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, backupprotocols[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_MIGTYPE: {
+         int32_t migtypetoken = *(items[i].ui32value);
+
+         for (int32_t j = 0; migtypes[j].type_name; j++) {
+            if (migtypes[j].job_type == migtypetoken) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, migtypes[j].type_name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_REPLACE: {
+         uint32_t replacetoken = *(items[i].ui32value);
+
+         for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
+            if (ReplaceOptions[j].token == replacetoken) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, ReplaceOptions[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_LEVEL: {
+         int32_t level = *(items[i].i32value);
+
+         for (int32_t j = 0; joblevels[j].level_name; j++) {
+            if (joblevels[j].level == level) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, joblevels[j].level_name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_ACTIONONPURGE: {
+         uint32_t destination = *(items[i].ui32value);
+
+         for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
+            if (ActionOnPurgeOptions[j].token == destination) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_AUTHPROTOCOLTYPE: {
+         uint32_t authprotocol = *(items[i].ui32value);
+
+         for (uint32_t j = 0; authprotocols[j].name; j++) {
+            if (authprotocols[j].token == authprotocol) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, authprotocols[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_AUTHTYPE: {
+         uint32_t authtype = *(items[i].ui32value);
+
+         for (uint32_t j = 0; authmethods[j].name; j++) {
+            if (authprotocols[j].token == authtype) {
+               Mmsg(temp, "   %s = %s\n", items[i].name, authmethods[j].name);
+               pm_strcat(cfg_str, temp.c_str());
+               break;
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_BIT: {
+         if (*(items[i].ui32value) & items[i].code) {
+            Mmsg(temp, "   %s = %s\n", items[i].name, NT_("yes"));
+            pm_strcat(cfg_str, temp.c_str());
+         } else {
+            Mmsg(temp, "   %s = %s\n", items[i].name, NT_("no"));
+            pm_strcat(cfg_str, temp.c_str());
+         }
+         break;
+      }
+      case CFG_TYPE_MSGS:
+         /*
+          * We ignore these items as they are printed in a special way in MSGSRES::print_config()
+          */
+         break;
+      case CFG_TYPE_INCEXC:
+         /*
+          * Ignored as these items are printed  in FILESETRES::print_config()
+          */
+         break;
+      case CFG_TYPE_ADDRESSES: {
+         Mmsg(temp, "   %s = {\n", items[i].name);
+         pm_strcat(cfg_str, temp.c_str());
+         dlist *addrs = *items[i].dlistvalue;
+         IPADDR *adr;
+         foreach_dlist(adr, addrs) {
+            char tmp[1024];
+            adr->build_config_str(tmp, sizeof(tmp));
+            pm_strcat(cfg_str, tmp);
+            pm_strcat(cfg_str, "\n");
+         }
+         Mmsg(temp, "   }\n");
+         pm_strcat(cfg_str, temp.c_str());
+
+
+         break;
+      }
+
+      case CFG_TYPE_ADDRESSES_PORT:
+         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
+         /* Mmsg(temp, "   %s = %s\n", items[i].name, *(items[i].ui32value));*/
+         break;
+
+      case CFG_TYPE_ADDRESSES_ADDRESS:
+         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
+         break;
+
+      case CFG_TYPE_DEFS:
+      default:
+         Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
+         break;
+      } // switch items.type
+   } // items
+
+   pm_strcat(cfg_str, "}\n\n");
+   pm_strcat(buff, cfg_str.c_str());
+
+   return true;
+}
+
+bool FILESETRES::print_config(POOL_MEM &buff)
+{
+   POOL_MEM cfg_str;
+   POOL_MEM temp;
+   int i, j, k, l;
+   const char *p;
+
+   Dmsg0(200,"FILESETRES::print_config\n");
+
+   Mmsg(temp, "FileSet {\n");
+   pm_strcat(cfg_str, temp.c_str());
+
+   Mmsg(temp, "   Name = \"%s\"\n", this->name());
+   pm_strcat(cfg_str, temp.c_str());
+
+   if (num_includes) {
+      /*
+       * Loop over all exclude blocks.
+       */
+      for (i = 0;  i < num_includes; i++) {
+         INCEXE *incexe = include_items[i];
+         Mmsg(temp, "   Include {\n");
+         pm_strcat(cfg_str, temp.c_str());
+
+         /*
+          * Start options block
+          */
+         if (incexe->num_opts > 0) {
+            Mmsg(temp, "      Options {\n");
+            pm_strcat(cfg_str, temp.c_str());
+
+            for (j = 0; j < incexe->num_opts; j++) {
+               FOPTS *fo = incexe->opts_list[j];
+               bool enhanced_wild = false;
+               for (p=&fo->opts[0]; *p; p++) {
+                  switch (*p) {
+                     case 'a':                 /* alway replace */
+                        Mmsg(temp, "      replace = always\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case '0':                 /* no option */
+                        break;
+                     case 'e':
+                        Mmsg(temp, "      exclude = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'f':
+                        Mmsg(temp, "      onefs = no\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'h':                 /* no recursion */
+                        Mmsg(temp, "      recurse = no\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'H':                 /* no hard link handling */
+                        Mmsg(temp, "      hardlinks = no\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'i':
+                        Mmsg(temp, "      ignorecase = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'M':                 /* MD5 */
+                        Mmsg(temp, "      signature = md5\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'n':
+                        Mmsg(temp, "      replace = never\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'p':                 /* use portable data format */
+                        Mmsg(temp, "      portable = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'R':                 /* Resource forks and Finder Info */
+                        Mmsg(temp, "      hfsplussupport = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                     case 'r':                 /* read fifo */
+                        Mmsg(temp, "      readfifo = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'S':
+                        switch(*(p + 1)) {
+                        case ' ':
+                           /* Old director did not specify SHA variant */
+                           break;
+                        case '1':
+                           Mmsg(temp, "      signature = sha1\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++;
+                           break;
+#ifdef HAVE_SHA2
+                        case '2':
+                           Mmsg(temp, "      signature = sha256\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++;
+                           break;
+                        case '3':
+                           Mmsg(temp, "      signature = sha512\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++;
+                           break;
+#endif
+                        default:
+                           /* Automatically downgrade to SHA-1 if an unsupported
+                            * SHA variant is specified */
+                           Mmsg(temp, "      signature = sha1\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++;
+                           break;
+                        }
+                        break;
+                     case 's':
+                        Mmsg(temp, "      sparse = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'm':
+                        Mmsg(temp, "      mtimeonly = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'k':
+                        Mmsg(temp, "      keepatime = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'A':
+                        Mmsg(temp, "      aclsupport = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'V':                  /* verify options */
+                        Mmsg(temp, "      verify = ");
+                        pm_strcat(cfg_str, temp.c_str());
+                        /* Copy Verify Options */
+                        for (l=0; *p && *p != ':'; p++) {
+                           Mmsg(temp, "   %c ", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                           //fo->VerifyOpts[j] = *p;
+                           //if (j < (int)sizeof(fo->VerifyOpts) - 1) {
+                           //   j++;
+                           //}
+                        }
+                        //fo->VerifyOpts[j] = 0;
+                        break;
+                     case 'w':
+                        Mmsg(temp, "      replace = ifnewer\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'W':
+                        Mmsg(temp, "      enhancedwild = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     case 'Z':                 /* compression */
+                        p++;                   /* skip Z */
+                        Mmsg(temp, "      compression = ");
+                        pm_strcat(cfg_str, temp.c_str());
+                        if (*p >= '0' && *p <= '9') {
+                           Mmsg(temp, "gzip\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           Mmsg(temp, "       %c \n", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++; /* skip number */
+                           //fo->Compress_level = *p - '0';
+                        } else if (*p == 'o') {
+                           Mmsg(temp, "lzo\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           break;
+                        } else if (*p == 'f') {
+                           p++;
+                           if (*p == 'f') {
+                              Mmsg(temp, "lzfast\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           } else if (*p == '4') {
+                              Mmsg(temp, "lz4\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           } else if (*p == 'h') {
+                              Mmsg(temp, "lz4hc\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           }
+                        }
+                        break;
+                     case 'X':
+                        Mmsg(temp, "      xattr = yes\n");
+                        pm_strcat(cfg_str, temp.c_str());
+                        break;
+                     default:
+                        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+                        break;
+                  }
+               }
+
+               for (k = 0; k < fo->regex.size(); k++) {
+                  Mmsg(temp, "      Regex =  \"%s\"\n", fo->regex.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->regexdir.size(); k++) {
+                  Mmsg(temp, "      Regex Dir = \"%s\"\n", fo->regexdir.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->regexfile.size(); k++) {
+                  Mmsg(temp, "      Regex File = \" %s\"\n", fo->regexfile.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->wild.size(); k++) {
+                  Mmsg(temp, "      Wild =  \"%s\"\n", fo->wild.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->wilddir.size(); k++) {
+                  Mmsg(temp, "      Wild Dir = \"%s\"\n", fo->wilddir.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->wildfile.size(); k++) {
+                  Mmsg(temp, "      Wild File =  \"%s\"\n", fo->wildfile.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->wildbase.size(); k++) {
+                  Mmsg(temp, "      Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->base.size(); k++) {
+                  Mmsg(temp, "      Base = \"%s\"\n", fo->base.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->fstype.size(); k++) {
+                  Mmsg(temp, "      Fs Type =  \"%s\"\n", fo->fstype.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->drivetype.size(); k++) {
+                  Mmsg(temp, "      Drive Type = \"%s\"\n", fo->drivetype.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               for (k = 0; k < fo->meta.size(); k++) {
+                  Mmsg(temp, "      Meta = \"%s\"\n", fo->meta.get(k));
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               if (fo->plugin) {
+                  Mmsg(temp, "      Plugin = \"%s\"\n", fo->plugin);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               if (fo->reader) {
+                  Mmsg(temp, "      Reader = \"%s\"\n", fo->reader);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+
+               if (fo->writer) {
+                  Mmsg(temp, "      Writer = \"%s\"\n", fo->writer);
+                  pm_strcat(cfg_str, temp.c_str());
+               }
+            }
+
+            if (incexe->num_opts > 0) {
+               Mmsg(temp, "      }\n");
+               pm_strcat(cfg_str, temp.c_str());
+            }
+         } /* end options block */
+
+         /*
+          * File = entries.
+          */
+         if (incexe->name_list.size()) {
+            for (l = 0; l < incexe->name_list.size(); l++) {
+               Mmsg(temp, "      File = \"%s\"\n", incexe->name_list.get(l));
+               pm_strcat(cfg_str, temp.c_str());
+            }
+         }
+
+         /*
+          * Plugin = entries.
+          */
+         if (incexe->plugin_list.size()) {
+            for (l = 0; l < incexe->plugin_list.size(); l++) {
+               Mmsg(temp, "      Plugin =  %s\n", incexe->plugin_list.get(l));
+               pm_strcat(cfg_str, temp.c_str());
+            }
+         }
+
+         /*
+          * Ignore Dir Containing = entry.
+          */
+         if (incexe->ignoredir) {
+            Mmsg(temp, "      Ignore Dir Containing =  \"%s\"\n", incexe->ignoredir);
+            pm_strcat(cfg_str, temp.c_str());
+         }
+
+         Mmsg(temp, "   }\n");
+         pm_strcat(cfg_str, temp.c_str());
+
+         /*
+          * End Include block
+          */
+      } /* loop over all include blocks */
+   }
+
+   if (num_excludes) {
+      /*
+       * Loop over all exclude blocks.
+       */
+      for (j = 0; j < num_excludes; j++) {
+         INCEXE *incexe = exclude_items[j];
+
+         if (incexe->name_list.size()) {
+            Mmsg(temp, "   Exclude {\n");
+            pm_strcat(cfg_str, temp.c_str());
+            for (k = 0; k < incexe->name_list.size(); k++) {
+               Mmsg(temp, "      File = \"%s\"\n", incexe->name_list.get(k));
+               pm_strcat(cfg_str, temp.c_str());
+            }
+
+            Mmsg(temp, "   }\n");
+            pm_strcat(cfg_str, temp.c_str());
+         }
+      } /* loop over all exclude blocks */
+   }
+
+   pm_strcat(cfg_str, "}\n\n");
+   pm_strcat(buff, cfg_str.c_str());
+
+   return true;
 }
 
 const char *level_to_str(int level)
@@ -675,514 +1995,97 @@ const char *level_to_str(int level)
    return str;
 }
 
-/* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+/*
+ * Dump contents of resource
+ */
+void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   URES *res = (URES *)reshdr;
+   RES *next;
+   URES *res = (URES *)ures;
    bool recurse = true;
-   char ed1[100], ed2[100], ed3[100], ed4[100], ed5[100];
-   DEVICERES *dev;
+   POOL_MEM buf;
    UAContext *ua = (UAContext *)sock;
 
    if (res == NULL) {
       sendit(sock, _("No %s resource defined\n"), res_to_str(type));
       return;
    }
+
    if (type < 0) { /* no recursion */
-      type = - type;
+      type = -type;
       recurse = false;
    }
+
    switch (type) {
    case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s \n"
-                     "   subscriptions=%d, subscriptions_used=%d\n"),
-             reshdr->name,
-             res->res_dir.MaxConcurrentJobs,
-             edit_uint64(res->res_dir.FDConnectTimeout, ed1),
-             edit_uint64(res->res_dir.SDConnectTimeout, ed2),
-             res->res_dir.subscriptions,
-             res->res_dir.subscriptions_used);
-      if (res->res_dir.query_file) {
-         sendit(sock, _("   query_file=%s\n"), res->res_dir.query_file);
-      }
-      if (res->res_dir.messages) {
-         sendit(sock, _("  --> "));
-         dump_resource(-R_MSGS, (RES *)res->res_dir.messages, sendit, sock);
-      }
-
+      res->res_dir.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_CONSOLE:
-      sendit(sock, _("Console: name=%s SSL=%d\n"),
-             res->res_con.hdr.name, res->res_con.tls_enable);
+      res->res_con.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_COUNTER:
-      if (res->res_counter.WrapCounter) {
-         sendit(sock, _("Counter: name=%s min=%d max=%d cur=%d wrapcntr=%s\n"),
-                res->res_counter.hdr.name, res->res_counter.MinValue,
-                res->res_counter.MaxValue, res->res_counter.CurrentValue,
-                res->res_counter.WrapCounter->hdr.name);
-      } else {
-         sendit(sock, _("Counter: name=%s min=%d max=%d\n"),
-                res->res_counter.hdr.name, res->res_counter.MinValue,
-                res->res_counter.MaxValue);
-      }
-      if (res->res_counter.Catalog) {
-         sendit(sock, _("  --> "));
-         dump_resource(-R_CATALOG, (RES *)res->res_counter.Catalog, sendit, sock);
-      }
+      res->res_counter.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
-
    case R_CLIENT:
       if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.hdr.name)) {
-         sendit(sock, _("Client: name=%s protocol=%d authtype=%d address=%s FDport=%d MaxJobs=%u\n"),
-                res->res_client.hdr.name, res->res_client.Protocol, res->res_client.AuthType,
-                res->res_client.address, res->res_client.FDport, res->res_client.MaxConcurrentJobs);
-         sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d Passive=%d"
-                        " SoftQuota=%s SoftQuotaGrace=%s HardQuota=%s StrictQuotas=%d\n"),
-                edit_utime(res->res_client.JobRetention, ed1, sizeof(ed1)),
-                edit_utime(res->res_client.FileRetention, ed2, sizeof(ed2)),
-                res->res_client.AutoPrune,
-                res->res_client.passive,
-                edit_uint64(res->res_client.SoftQuota, ed3),
-                edit_utime(res->res_client.SoftQuotaGracePeriod, ed4, sizeof(ed4)),
-                edit_uint64(res->res_client.HardQuota, ed5),
-                res->res_client.StrictQuotas);
-         if (res->res_client.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_client.max_bandwidth);
-         }
-         if (res->res_client.catalog) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_CATALOG, (RES *)res->res_client.catalog, sendit, sock);
-         }
+         res->res_client.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_DEVICE:
-      dev = &res->res_dev;
-      char ed1[50];
-      sendit(sock, _("Device: name=%s ok=%d num_writers=%d max_writers=%d\n"
-                     "      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr=%d\n"
-                     "      poolid=%s volname=%s MediaType=%s\n"),
-             dev->hdr.name, dev->found, dev->num_writers, dev->max_writers,
-             dev->reserved, dev->open, dev->append, dev->read, dev->labeled,
-             dev->offline, dev->autochanger,
-             edit_uint64(dev->PoolId, ed1),
-             dev->VolumeName, dev->MediaType);
+      res->res_dev.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
-
    case R_STORAGE:
       if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.hdr.name)) {
-         sendit(sock, _("Storage: name=%s protocol=%d authtype=%d address=%s SDport=%d MaxJobs=%u\n"
-                        "      DeviceName=%s MediaType=%s PairedStorage=%s StorageId=%s\n"),
-                res->res_store.hdr.name, res->res_store.Protocol, res->res_store.AuthType,
-                res->res_store.address, res->res_store.SDport, res->res_store.MaxConcurrentJobs,
-                res->res_store.dev_name(), res->res_store.media_type,
-               (res->res_store.paired_storage) ? res->res_store.paired_storage->hdr.name : "None",
-                edit_int64(res->res_store.StorageId, ed1));
-         if (res->res_store.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_store.max_bandwidth);
-         }
+         res->res_store.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_CATALOG:
       if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.hdr.name)) {
-         sendit(sock, _("Catalog: name=%s address=%s DBport=%d db_name=%s\n"
-                        "      db_driver=%s db_user=%s MutliDBConn=%d\n"),
-                res->res_cat.hdr.name, NPRT(res->res_cat.db_address),
-                res->res_cat.db_port, res->res_cat.db_name,
-                NPRT(res->res_cat.db_driver), NPRT(res->res_cat.db_user),
-                res->res_cat.mult_db_connections);
+         res->res_cat.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_JOB:
    case R_JOBDEFS:
       if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
-         sendit(sock, _("%s: name=%s JobType=%d protocol=%d level=%s Priority=%d Enabled=%d\n"),
-                type == R_JOB ? _("Job") : _("JobDefs"),
-                res->res_job.hdr.name, res->res_job.JobType, res->res_job.Protocol,
-                level_to_str(res->res_job.JobLevel), res->res_job.Priority,
-                res->res_job.enabled);
-         sendit(sock, _("     MaxJobs=%u Resched=%d Times=%d Interval=%s Spool=%d\n"),
-                res->res_job.MaxConcurrentJobs,
-                res->res_job.RescheduleOnError, res->res_job.RescheduleTimes,
-                edit_uint64_with_commas(res->res_job.RescheduleInterval, ed1),
-                res->res_job.spool_data);
-         if (res->res_job.spool_size) {
-            sendit(sock, _("     SpoolSize=%s\n"),        edit_uint64(res->res_job.spool_size, ed1));
-         }
-         if (res->res_job.JobType == JT_BACKUP) {
-            sendit(sock, _("     Accurate=%d\n"), res->res_job.accurate);
-         }
-         if (res->res_job.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_job.max_bandwidth);
-         }
-         if (res->res_job.JobType == JT_MIGRATE || res->res_job.JobType == JT_COPY) {
-            sendit(sock, _("     SelectionType=%d\n"), res->res_job.selection_type);
-         }
-         if (res->res_job.client) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_CLIENT, (RES *)res->res_job.client, sendit, sock);
-         }
-         if (res->res_job.fileset) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_FILESET, (RES *)res->res_job.fileset, sendit, sock);
-         }
-         if (res->res_job.schedule) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_SCHEDULE, (RES *)res->res_job.schedule, sendit, sock);
-         }
-         if (res->res_job.RestoreWhere && !res->res_job.RegexWhere) {
-              sendit(sock, _("  --> Where=%s\n"), NPRT(res->res_job.RestoreWhere));
-         }
-         if (res->res_job.RegexWhere) {
-              sendit(sock, _("  --> RegexWhere=%s\n"), NPRT(res->res_job.RegexWhere));
-         }
-         if (res->res_job.RestoreBootstrap) {
-            sendit(sock, _("  --> Bootstrap=%s\n"), NPRT(res->res_job.RestoreBootstrap));
-         }
-         if (res->res_job.WriteBootstrap) {
-            sendit(sock, _("  --> WriteBootstrap=%s\n"), NPRT(res->res_job.WriteBootstrap));
-         }
-         if (res->res_job.PluginOptions) {
-            sendit(sock, _("  --> PluginOptions=%s\n"), NPRT(res->res_job.PluginOptions));
-         }
-         if (res->res_job.MaxRunTime) {
-            sendit(sock, _("  --> MaxRunTime=%u\n"), res->res_job.MaxRunTime);
-         }
-         if (res->res_job.MaxWaitTime) {
-            sendit(sock, _("  --> MaxWaitTime=%u\n"), res->res_job.MaxWaitTime);
-         }
-         if (res->res_job.MaxStartDelay) {
-            sendit(sock, _("  --> MaxStartDelay=%u\n"), res->res_job.MaxStartDelay);
-         }
-         if (res->res_job.MaxRunSchedTime) {
-            sendit(sock, _("  --> MaxRunSchedTime=%u\n"), res->res_job.MaxRunSchedTime);
-         }
-         if (res->res_job.storage) {
-            STORERES *store;
-            foreach_alist(store, res->res_job.storage) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_STORAGE, (RES *)store, sendit, sock);
-            }
-         }
-         if (res->res_job.base) {
-            JOBRES *job;
-            foreach_alist(job, res->res_job.base) {
-               sendit(sock, _("  --> Base %s\n"), job->name());
-            }
-         }
-         if (res->res_job.RunScripts) {
-           RUNSCRIPT *script;
-           foreach_alist(script, res->res_job.RunScripts) {
-              sendit(sock, _(" --> RunScript\n"));
-              sendit(sock, _("  --> Command=%s\n"), NPRT(script->command));
-              sendit(sock, _("  --> Target=%s\n"),  NPRT(script->target));
-              sendit(sock, _("  --> RunOnSuccess=%u\n"),  script->on_success);
-              sendit(sock, _("  --> RunOnFailure=%u\n"),  script->on_failure);
-              sendit(sock, _("  --> FailJobOnError=%u\n"),  script->fail_on_error);
-              sendit(sock, _("  --> RunWhen=%u\n"),  script->when);
-           }
-         }
-         if (res->res_job.pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.pool, sendit, sock);
-         }
-         if (res->res_job.full_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.full_pool, sendit, sock);
-         }
-         if (res->res_job.inc_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.inc_pool, sendit, sock);
-         }
-         if (res->res_job.diff_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.diff_pool, sendit, sock);
-         }
-         if (res->res_job.next_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.next_pool, sendit, sock);
-         }
-         if (res->res_job.verify_job) {
-            sendit(sock, _("  --> "));
-            dump_resource(-type, (RES *)res->res_job.verify_job, sendit, sock);
-         }
-         if (res->res_job.run_cmds) {
-            char *runcmd;
-            foreach_alist(runcmd, res->res_job.run_cmds) {
-               sendit(sock, _("  --> Run=%s\n"), runcmd);
-            }
-         }
-         if (res->res_job.selection_pattern) {
-            sendit(sock, _("  --> SelectionPattern=%s\n"), NPRT(res->res_job.selection_pattern));
-         }
-         if (res->res_job.messages) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_MSGS, (RES *)res->res_job.messages, sendit, sock);
-         }
+         res->res_job.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
-   case R_FILESET:
-   {
-      int i, j, k;
+   case R_FILESET: {
       if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.hdr.name)) {
-         sendit(sock, _("FileSet: name=%s\n"), res->res_fs.hdr.name);
-         for (i = 0;  i < res->res_fs.num_includes; i++) {
-            INCEXE *incexe = res->res_fs.include_items[i];
-            for (j = 0; j < incexe->num_opts; j++) {
-               FOPTS *fo = incexe->opts_list[j];
-               sendit(sock, "      O %s\n", fo->opts);
-
-               bool enhanced_wild = false;
-               for (k = 0; fo->opts[k] != '\0'; k++) {
-                  if (fo->opts[k]=='W') {
-                     enhanced_wild = true;
-                     break;
-                  }
-               }
-
-               for (k = 0; k < fo->regex.size(); k++) {
-                  sendit(sock, "      R %s\n", fo->regex.get(k));
-               }
-               for (k = 0; k < fo->regexdir.size(); k++) {
-                  sendit(sock, "      RD %s\n", fo->regexdir.get(k));
-               }
-               for (k = 0; k < fo->regexfile.size(); k++) {
-                  sendit(sock, "      RF %s\n", fo->regexfile.get(k));
-               }
-               for (k = 0; k < fo->wild.size(); k++) {
-                  sendit(sock, "      W %s\n", fo->wild.get(k));
-               }
-               for (k = 0; k < fo->wilddir.size(); k++) {
-                  sendit(sock, "      WD %s\n", fo->wilddir.get(k));
-               }
-               for (k = 0; k < fo->wildfile.size(); k++) {
-                  sendit(sock, "      WF %s\n", fo->wildfile.get(k));
-               }
-               for (k = 0; k < fo->wildbase.size(); k++) {
-                  sendit(sock, "      W%c %s\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
-               }
-               for (k = 0; k < fo->base.size(); k++) {
-                  sendit(sock, "      B %s\n", fo->base.get(k));
-               }
-               for (k = 0; k < fo->fstype.size(); k++) {
-                  sendit(sock, "      X %s\n", fo->fstype.get(k));
-               }
-               for (k = 0; k < fo->drivetype.size(); k++) {
-                  sendit(sock, "      XD %s\n", fo->drivetype.get(k));
-               }
-               if (fo->plugin) {
-                  sendit(sock, "      G %s\n", fo->plugin);
-               }
-               if (fo->reader) {
-                  sendit(sock, "      D %s\n", fo->reader);
-               }
-               if (fo->writer) {
-                  sendit(sock, "      T %s\n", fo->writer);
-               }
-               sendit(sock, "      N\n");
-            }
-            if (incexe->ignoredir) {
-               sendit(sock, "      Z %s\n", incexe->ignoredir);
-            }
-            for (j = 0; j < incexe->name_list.size(); j++) {
-               sendit(sock, "      I %s\n", incexe->name_list.get(j));
-            }
-            if (incexe->name_list.size()) {
-               sendit(sock, "      N\n");
-            }
-            for (j = 0; j < incexe->plugin_list.size(); j++) {
-               sendit(sock, "      P %s\n", incexe->plugin_list.get(j));
-            }
-            if (incexe->plugin_list.size()) {
-               sendit(sock, "      N\n");
-            }
-         }
-
-         for (i = 0; i < res->res_fs.num_excludes; i++) {
-            INCEXE *incexe = res->res_fs.exclude_items[i];
-            for (j = 0; j < incexe->name_list.size(); j++) {
-               sendit(sock, "      E %s\n", incexe->name_list.get(j));
-            }
-            if (incexe->name_list.size()) {
-               sendit(sock, "      N\n");
-            }
-         }
+         res->res_fs.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
    }
-
    case R_SCHEDULE:
       if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.hdr.name)) {
-         if (res->res_sch.run) {
-            int i;
-            RUNRES *run = res->res_sch.run;
-            char buf[1000], num[30];
-            sendit(sock, _("Schedule: name=%s\n"), res->res_sch.hdr.name);
-            if (!run) {
-               break;
-            }
-
-next_run:
-            sendit(sock, _("  --> Run Level=%s\n"), level_to_str(run->level));
-            bstrncpy(buf, _("      hour="), sizeof(buf));
-            for (i = 0; i < 24; i++) {
-               if (bit_is_set(i, run->hour)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      mday="), sizeof(buf));
-            for (i = 0; i < 31; i++) {
-               if (bit_is_set(i, run->mday)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      month="), sizeof(buf));
-            for (i = 0; i < 12; i++) {
-               if (bit_is_set(i, run->month)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      wday="), sizeof(buf));
-            for (i = 0; i < 7; i++) {
-               if (bit_is_set(i, run->wday)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      wom="), sizeof(buf));
-            for (i = 0; i < 5; i++) {
-               if (bit_is_set(i, run->wom)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      woy="), sizeof(buf));
-            for (i = 0; i < 54; i++) {
-               if (bit_is_set(i, run->woy)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            sendit(sock, _("      mins=%d\n"), run->minute);
-            if (run->pool) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_POOL, (RES *)run->pool, sendit, sock);
-            }
-            if (run->storage) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_STORAGE, (RES *)run->storage, sendit, sock);
-            }
-            if (run->msgs) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_MSGS, (RES *)run->msgs, sendit, sock);
-            }
-            /* If another Run record is chained in, go print it */
-            if (run->next) {
-               run = run->next;
-               goto next_run;
-            }
-         } else {
-            sendit(sock, _("Schedule: name=%s\n"), res->res_sch.hdr.name);
-         }
+         res->res_sch.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_POOL:
       if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.hdr.name)) {
-         sendit(sock, _("Pool: name=%s PoolType=%s\n"), res->res_pool.hdr.name,
-                res->res_pool.pool_type);
-         sendit(sock, _("      use_cat=%d use_once=%d cat_files=%d\n"),
-                res->res_pool.use_catalog, res->res_pool.use_volume_once,
-                res->res_pool.catalog_files);
-         sendit(sock, _("      max_vols=%d auto_prune=%d VolRetention=%s\n"),
-                res->res_pool.max_volumes, res->res_pool.AutoPrune,
-                edit_utime(res->res_pool.VolRetention, ed1, sizeof(ed1)));
-         sendit(sock, _("      minblocksize=%d maxblocksize=%d\n"),
-                res->res_pool.MinBlocksize, res->res_pool.MaxBlocksize);
-         sendit(sock, _("      VolUse=%s recycle=%d LabelFormat=%s\n"),
-                edit_utime(res->res_pool.VolUseDuration, ed1, sizeof(ed1)),
-                res->res_pool.Recycle,
-                NPRT(res->res_pool.label_format));
-         sendit(sock, _("      CleaningPrefix=%s LabelType=%d\n"),
-                 NPRT(res->res_pool.cleaning_prefix), res->res_pool.LabelType);
-         sendit(sock, _("      RecyleOldest=%d PurgeOldest=%d ActionOnPurge=%d\n"),
-                res->res_pool.recycle_oldest_volume,
-                res->res_pool.purge_oldest_volume,
-                res->res_pool.action_on_purge);
-         sendit(sock, _("      MaxVolJobs=%d MaxVolFiles=%d MaxVolBytes=%s\n"),
-                res->res_pool.MaxVolJobs,
-                res->res_pool.MaxVolFiles,
-                edit_uint64(res->res_pool.MaxVolBytes, ed1));
-         sendit(sock, _("      MigTime=%s MigHiBytes=%s MigLoBytes=%s\n"),
-                edit_utime(res->res_pool.MigrationTime, ed1, sizeof(ed1)),
-                edit_uint64(res->res_pool.MigrationHighBytes, ed2),
-                edit_uint64(res->res_pool.MigrationLowBytes, ed3));
-         sendit(sock, _("      JobRetention=%s FileRetention=%s\n"),
-                edit_utime(res->res_pool.JobRetention, ed1, sizeof(ed1)),
-                edit_utime(res->res_pool.FileRetention, ed2, sizeof(ed2)));
-         if (res->res_pool.NextPool) {
-            sendit(sock, _("      NextPool=%s\n"), res->res_pool.NextPool->name());
-         }
-         if (res->res_pool.RecyclePool) {
-            sendit(sock, _("      RecyclePool=%s\n"), res->res_pool.RecyclePool->name());
-         }
-         if (res->res_pool.ScratchPool) {
-            sendit(sock, _("      ScratchPool=%s\n"), res->res_pool.ScratchPool->name());
-         }
-         if (res->res_pool.catalog) {
-            sendit(sock, _("      Catalog=%s\n"), res->res_pool.catalog->name());
-         }
-         if (res->res_pool.storage) {
-            STORERES *store;
-            foreach_alist(store, res->res_pool.storage) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_STORAGE, (RES *)store, sendit, sock);
-            }
-         }
-         if (res->res_pool.CopyPool) {
-            POOLRES *copy;
-            foreach_alist(copy, res->res_pool.CopyPool) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_POOL, (RES *)copy, sendit, sock);
-            }
-         }
+        res->res_pool.print_config(buf);
+        sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_MSGS:
-      sendit(sock, _("Messages: name=%s\n"), res->res_msgs.hdr.name);
-      if (res->res_msgs.mail_cmd)
-         sendit(sock, _("      mailcmd=%s\n"), res->res_msgs.mail_cmd);
-      if (res->res_msgs.operator_cmd)
-         sendit(sock, _("      opcmd=%s\n"), res->res_msgs.operator_cmd);
+      res->res_msgs.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
-
    default:
       sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
       break;
    }
+
    if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, res->res_dir.hdr.next, sendit, sock);
    }
@@ -1275,8 +2178,8 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.subsys_directory) {
          free(res->res_dir.subsys_directory);
       }
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
       }
       if (res->res_dir.query_file) {
          free(res->res_dir.query_file);
@@ -1322,8 +2225,8 @@ void free_resource(RES *sres, int type)
    case R_COUNTER:
        break;
    case R_CONSOLE:
-      if (res->res_con.password) {
-         free(res->res_con.password);
+      if (res->res_con.password.value) {
+         free(res->res_con.password.value);
       }
       if (res->res_con.tls_ctx) {
          free_tls_context(res->res_con.tls_ctx);
@@ -1363,8 +2266,8 @@ void free_resource(RES *sres, int type)
       if (res->res_client.username) {
          free(res->res_client.username);
       }
-      if (res->res_client.password) {
-         free(res->res_client.password);
+      if (res->res_client.password.value) {
+         free(res->res_client.password.value);
       }
       if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
@@ -1395,8 +2298,8 @@ void free_resource(RES *sres, int type)
       if (res->res_store.username) {
          free(res->res_store.username);
       }
-      if (res->res_store.password) {
-         free(res->res_store.password);
+      if (res->res_store.password.value) {
+         free(res->res_store.password.value);
       }
       if (res->res_store.media_type) {
          free(res->res_store.media_type);
@@ -1439,8 +2342,8 @@ void free_resource(RES *sres, int type)
       if (res->res_cat.db_driver) {
          free(res->res_cat.db_driver);
       }
-      if (res->res_cat.db_password) {
-         free(res->res_cat.db_password);
+      if (res->res_cat.db_password.value) {
+         free(res->res_cat.db_password.value);
       }
       break;
    case R_FILESET:
@@ -1564,7 +2467,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size = 0;
+   int i;
    bool error = false;
 
    /*
@@ -1772,57 +2675,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed during pass 1
-    */
-   switch (type) {
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_CLIENT:
-      size =sizeof(CLIENTRES);
-      break;
-   case R_STORAGE:
-      size = sizeof(STORERES);
-      break;
-   case R_CATALOG:
-      size = sizeof(CATRES);
-      break;
-   case R_JOB:
-   case R_JOBDEFS:
-      size = sizeof(JOBRES);
-      break;
-   case R_FILESET:
-      size = sizeof(FILESETRES);
-      break;
-   case R_SCHEDULE:
-      size = sizeof(SCHEDRES);
-      break;
-   case R_POOL:
-      size = sizeof(POOLRES);
-      break;
-   case R_MSGS:
-      size = sizeof(MSGSRES);
-      break;
-   case R_COUNTER:
-      size = sizeof(COUNTERRES);
-      break;
-   case R_DEVICE:
-      error = true;
-      break;
-   default:
-      printf(_("Unknown resource type %d in save_resource.\n"), type);
-      error = true;
-      break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
@@ -1854,7 +2711,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
-   uint32_t *destination = (uint32_t*)item->value;
+   uint32_t *destination = item->ui32value;
 
    lex_get_token(lc, T_NAME);
    /*
@@ -1883,14 +2740,13 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res;
    int rindex = R_DEVICE - r_first;
-   int size = sizeof(DEVICERES);
    bool found = false;
 
    if (pass == 1) {
       lex_get_token(lc, T_NAME);
       if (!res_head[rindex]) {
-         res = (URES *)malloc(size);
-         memset(res, 0, size);
+         res = (URES *)malloc(resources[rindex].size);
+         memset(res, 0, resources[rindex].size);
          res->res_dev.hdr.name = bstrdup(lc->str);
          res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(R_DEVICE),
@@ -1907,8 +2763,8 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
             }
          }
          if (!found) {
-            res = (URES *)malloc(size);
-            memset(res, 0, size);
+            res = (URES *)malloc(resources[rindex].size);
+            memset(res, 0, resources[rindex].size);
             res->res_dev.hdr.name = bstrdup(lc->str);
             next->next = (RES *)res;
             Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(R_DEVICE),
@@ -1936,7 +2792,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; migtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, migtypes[i].type_name)) {
-         *(uint32_t *)(item->value) = migtypes[i].job_type;
+         *(item->ui32value) = migtypes[i].job_type;
          i = 0;
          break;
       }
@@ -1961,7 +2817,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; jobtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, jobtypes[i].type_name)) {
-         *(uint32_t *)(item->value) = jobtypes[i].job_type;
+         *(item->ui32value) = jobtypes[i].job_type;
          i = 0;
          break;
       }
@@ -1986,7 +2842,7 @@ static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; backupprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, backupprotocols[i].name)) {
-         *(uint32_t *)(item->value) = backupprotocols[i].token;
+         *(item->ui32value) = backupprotocols[i].token;
          i = 0;
          break;
       }
@@ -2007,7 +2863,7 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; ReplaceOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
-         *(uint32_t *)(item->value) = ReplaceOptions[i].token;
+         *(item->ui32value) = ReplaceOptions[i].token;
          i = 0;
          break;
       }
@@ -2032,7 +2888,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; authprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, authprotocols[i].name)) {
-         *(uint32_t *)(item->value) = authprotocols[i].token;
+         *(item->ui32value) = authprotocols[i].token;
          i = 0;
          break;
       }
@@ -2057,7 +2913,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; authmethods[i].name; i++) {
       if (bstrcasecmp(lc->str, authmethods[i].name)) {
-         *(uint32_t *)(item->value) = authmethods[i].token;
+         *(item->ui32value) = authmethods[i].token;
          i = 0;
          break;
       }
@@ -2082,7 +2938,7 @@ static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; joblevels[i].level_name; i++) {
       if (bstrcasecmp(lc->str, joblevels[i].level_name)) {
-         *(uint32_t *)(item->value) = joblevels[i].level;
+         *(item->ui32value) = joblevels[i].level;
          i = 0;
          break;
       }
@@ -2097,7 +2953,7 @@ static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store password either clear if for NDMP and catalog or MD5 hashed for native.
  */
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    switch (res_all.hdr.rcode) {
    case R_DIRECTOR:
@@ -2108,10 +2964,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         store_resource(CFG_TYPE_STR, lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2120,10 +2976,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_resource(CFG_TYPE_STR, lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2132,18 +2988,18 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_resource(CFG_TYPE_STR, lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_CATALOG:
-      store_resource(CFG_TYPE_STR, lc, item, index, pass);
+      store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+      store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -2182,13 +3038,13 @@ static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
    lex_get_token(lc, T_NAME);
 
    if (bstrcasecmp(lc->str, "before")) {
-      *(uint32_t *)(item->value) = SCRIPT_Before ;
+      *(item->ui32value) = SCRIPT_Before ;
    } else if (bstrcasecmp(lc->str, "after")) {
-      *(uint32_t *)(item->value) = SCRIPT_After;
+      *(item->ui32value) = SCRIPT_After;
    } else if (bstrcasecmp(lc->str, "aftervss")) {
-      *(uint32_t *)(item->value) = SCRIPT_AfterVSS;
+      *(item->ui32value) = SCRIPT_AfterVSS;
    } else if (bstrcasecmp(lc->str, "always")) {
-      *(uint32_t *)(item->value) = SCRIPT_Any;
+      *(item->ui32value) = SCRIPT_Any;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "Before, After, AfterVSS or Always", lc->str);
    }
@@ -2204,11 +3060,11 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
 
    if (pass == 2) {
       if (bstrcmp(lc->str, "%c")) {
-         ((RUNSCRIPT*) item->value)->set_target(lc->str);
+         ((RUNSCRIPT *)item->value)->set_target(lc->str);
       } else if (bstrcasecmp(lc->str, "yes")) {
-         ((RUNSCRIPT*) item->value)->set_target("%c");
+         ((RUNSCRIPT *)item->value)->set_target("%c");
       } else if (bstrcasecmp(lc->str, "no")) {
-         ((RUNSCRIPT*) item->value)->set_target("");
+         ((RUNSCRIPT *)item->value)->set_target("");
       } else {
          RES *res = GetResWithName(R_CLIENT, lc->str);
          if (res == NULL) {
@@ -2216,7 +3072,7 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
                       lc->str, lc->line_no, lc->line);
          }
 
-         ((RUNSCRIPT*) item->value)->set_target(lc->str);
+         ((RUNSCRIPT *)item->value)->set_target(lc->str);
       }
    }
    scan_to_eol(lc);
@@ -2236,8 +3092,8 @@ static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
        * Each runscript command takes 2 entries in commands list
        */
       pm_strcpy(c, lc->str);
-      ((RUNSCRIPT*) item->value)->commands->prepend(c); /* command line */
-      ((RUNSCRIPT*) item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
+      ((RUNSCRIPT *)item->value)->commands->prepend(c); /* command line */
+      ((RUNSCRIPT *)item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
    }
    scan_to_eol(lc);
 }
@@ -2297,9 +3153,9 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      *(bool *)(item->value) = true;
+      *(item->boolvalue) = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      *(bool *)(item->value) = false;
+      *(item->boolvalue) = false;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
    }
@@ -2501,21 +3357,21 @@ static void init_resource_cb(RES_ITEM *item)
    case CFG_TYPE_REPLACE:
       for (i = 0; ReplaceOptions[i].name; i++) {
          if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
-            *(uint32_t *)(item->value) = ReplaceOptions[i].token;
+            *(item->ui32value) = ReplaceOptions[i].token;
          }
       }
       break;
    case CFG_TYPE_AUTHPROTOCOLTYPE:
       for (i = 0; authprotocols[i].name; i++) {
          if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
-            *(uint32_t *)(item->value) = authprotocols[i].token;
+            *(item->ui32value) = authprotocols[i].token;
          }
       }
       break;
    case CFG_TYPE_AUTHTYPE:
       for (i = 0; authmethods[i].name; i++) {
          if (bstrcasecmp(item->default_value, authmethods[i].name)) {
-            *(uint32_t *)(item->value) = authmethods[i].token;
+            *(item->ui32value) = authmethods[i].token;
          }
       }
       break;
@@ -2531,8 +3387,8 @@ static void init_resource_cb(RES_ITEM *item)
 static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    switch (item->type) {
-   case CFG_TYPE_CLEARPASSWORD:
-      store_clearpassword(lc, item, index, pass);
+   case CFG_TYPE_AUTOPASSWORD:
+      store_autopassword(lc, item, index, pass);
       break;
    case CFG_TYPE_ACL:
       store_acl(lc, item, index, pass);

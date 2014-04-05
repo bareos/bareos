@@ -621,7 +621,12 @@ static bool check_resources()
          }
       }
 
-      if (me->optimize_for_size && me->optimize_for_speed) {
+      /*
+       * When the user didn't force use we optimize for size.
+       */
+      if (!me->optimize_for_size && !me->optimize_for_speed) {
+         me->optimize_for_size = true;
+      } else if (me->optimize_for_size && me->optimize_for_speed) {
          Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
          OK = false;
       }
@@ -1071,9 +1076,13 @@ static bool initialize_sql_pooling(void)
    CATRES *catalog;
 
    foreach_res(catalog, R_CATALOG) {
-      if (!db_sql_pool_initialize(catalog->db_driver, catalog->db_name, catalog->db_user,
-                                  catalog->db_password, catalog->db_address,
-                                  catalog->db_port, catalog->db_socket,
+      if (!db_sql_pool_initialize(catalog->db_driver,
+                                  catalog->db_name,
+                                  catalog->db_user,
+                                  catalog->db_password.value,
+                                  catalog->db_address,
+                                  catalog->db_port,
+                                  catalog->db_socket,
                                   catalog->disable_batch_insert,
                                   catalog->pooling_min_connections,
                                   catalog->pooling_max_connections,
@@ -1112,7 +1121,7 @@ static bool check_catalog(cat_op mode)
                             catalog->db_driver,
                             catalog->db_name,
                             catalog->db_user,
-                            catalog->db_password,
+                            catalog->db_password.value,
                             catalog->db_address,
                             catalog->db_port,
                             catalog->db_socket,

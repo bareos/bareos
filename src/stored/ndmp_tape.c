@@ -261,8 +261,10 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
          continue;
       }
 
+      ASSERT(auth_config->password.encoding == p_encoding_clear);
+
       if (bstrcmp(name, auth_config->username) &&
-          bstrcmp(pass, auth_config->password)) {
+          bstrcmp(pass, auth_config->password.value)) {
          /*
           * See if we need to adjust the logging level.
           */
@@ -302,7 +304,9 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
          continue;
       }
 
-      if (!ndmmd5_ok_digest(sess->md5_challenge, auth_config->password, digest)) {
+      ASSERT(auth_config->password.encoding == p_encoding_clear);
+
+      if (!ndmmd5_ok_digest(sess->md5_challenge, auth_config->password.value, digest)) {
          return 0;
       }
 

@@ -26,6 +26,7 @@
  */
 
 #include "bareos.h"
+#include "generic_res.h"
 
 /* Each daemon has a slightly different set of
  * resources, so it will define the following
@@ -113,4 +114,81 @@ GetNextRes(int rcode, RES *res)
       nres = res->next;
    }
    return nres;
+}
+
+bool MSGSRES::print_config(POOL_MEM &buff)
+{
+   int len;
+   POOLMEM *cmdbuf;
+   POOL_MEM cfg_str;    /* configuration as string  */
+   POOL_MEM temp;
+   MSGSRES* msgres;
+   DEST *d;
+   msgres = this;//(MSGSRES*) *items[i].value;
+
+   pm_strcat(cfg_str, "Messages {\n");
+   Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->name());
+   pm_strcat(cfg_str, temp.c_str());
+
+   cmdbuf = get_pool_memory(PM_NAME);
+   if (msgres->mail_cmd) {
+      len = strlen(msgres->mail_cmd);
+      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+      escape_string(cmdbuf, msgres->mail_cmd, len);
+      Mmsg(temp, "   mailcommand = \"%s\"\n", cmdbuf);
+      pm_strcat(cfg_str, temp.c_str());
+   }
+
+   if (msgres->operator_cmd) {
+      len = strlen(msgres->operator_cmd);
+      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+      escape_string(cmdbuf, msgres->operator_cmd, len);
+      Mmsg(temp, "   operatorcommand = \"%s\"\n", cmdbuf);
+      pm_strcat(cfg_str, temp.c_str());
+   }
+   free_pool_memory(cmdbuf);
+
+   for (d = msgres->dest_chain; d; d = d->next) {
+      int nr_set = 0;
+      int nr_unset = 0;
+      POOL_MEM t; /* number of set   types */
+      POOL_MEM u; /* number of unset types */
+
+      for (int i = 0; msg_destinations[i].code; i++) {
+         if (msg_destinations[i].code == d->dest_code) {
+            if (msg_destinations[i].where) {
+               Mmsg(temp, "   %s = %s = ", msg_destinations[i].destination, d->where);
+            } else {
+               Mmsg(temp, "   %s = ", msg_destinations[i].destination);
+            }
+            pm_strcat(cfg_str, temp.c_str());
+            break;
+         }
+      }
+
+      for (int j = 0; j < M_MAX - 1; j++) {
+         if bit_is_set(msg_types[j].token, d->msg_types) {
+            nr_set ++;
+            Mmsg(temp, ",%s" , msg_types[j].name );
+            pm_strcat(t, temp.c_str());
+         } else {
+            Mmsg(temp, ",!%s" , msg_types[j].name );
+            nr_unset++;
+            pm_strcat(u, temp.c_str());
+         }
+      }
+
+      if (nr_set > nr_unset) {               /* if more is set than is unset */
+         pm_strcat(cfg_str,"all");           /* all, but not ... */
+         pm_strcat(cfg_str, u.c_str());
+      } else {                               /* only print set types */
+         pm_strcat(cfg_str, t.c_str() + 1);  /* skip first comma */
+      }
+      pm_strcat(cfg_str, "\n");
+   }
+
+   pm_strcat (cfg_str, "}\n\n");
+   pm_strcat (buff, cfg_str.c_str());
+
+   return true;
 }

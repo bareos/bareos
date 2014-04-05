@@ -152,11 +152,11 @@ static RES_ITEM con_font_items[] = {
  *  name items rcode res_head
  */
 RES_TABLE resources[] = {
-   { "monitor", mon_items, R_MONITOR },
-   { "director", dir_items, R_DIRECTOR },
-   { "client", cli_items, R_CLIENT },
-   { "storage", store_items, R_STORAGE },
-   { "consolefont", con_font_items, R_CONSOLE_FONT },
+   { "monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
    { NULL, NULL, 0 }
 };
 
@@ -247,16 +247,16 @@ void free_resource(RES *sres, int type)
       if (res->res_client.address) {
          free(res->res_client.address);
       }
-      if (res->res_client.password) {
-         free(res->res_client.password);
+      if (res->res_client.password.value) {
+         free(res->res_client.password.value);
       }
       break;
    case R_STORAGE:
       if (res->res_store.address) {
          free(res->res_store.address);
       }
-      if (res->res_store.password) {
-         free(res->res_store.password);
+      if (res->res_store.password.value) {
+         free(res->res_store.password.value);
       }
       break;
    case R_CONSOLE_FONT:
@@ -289,7 +289,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size;
+   int i;
    int error = 0;
 
    /*
@@ -346,36 +346,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed during pass 1
-    */
-   switch (type) {
-   case R_MONITOR:
-      size = sizeof(MONITORRES);
-      break;
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   case R_CLIENT:
-      size = sizeof(CLIENTRES);
-      break;
-   case R_STORAGE:
-      size = sizeof(STORERES);
-      break;
-   case R_CONSOLE_FONT:
-      size = sizeof(CONFONTRES);
-      break;
-   default:
-      printf(_("Unknown resource type %d in save_resource.\n"), type);
-      error = 1;
-      size = 1;
-      break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
         res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),

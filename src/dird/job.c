@@ -140,7 +140,7 @@ bool setup_job(JCR *jcr, bool suppress_output)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password,
+                                          jcr->res.catalog->db_password.value,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,

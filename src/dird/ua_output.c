@@ -132,6 +132,7 @@ static struct showstruct avail_resources[] = {
    { NT_("filesets"), R_FILESET },
    { NT_("pools"), R_POOL },
    { NT_("messages"), R_MSGS },
+   { NT_("consoles"), R_CONSOLE },
    { NT_("all"), -1 },
    { NT_("help"), -2 },
    { NULL, 0 }
@@ -708,7 +709,7 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password,
+                                          jcr->res.catalog->db_password.value,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,

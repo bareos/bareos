@@ -207,7 +207,7 @@ static struct cmdstruct commands[] = {
      NT_(""), false },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("job=<job-name> | pool=<pool-name> | fileset=<fileset-name> | schedule=<schedule-name> |\n"
-         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | disabled | all"), true },
+         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false },
    { NT_("time"), time_cmd, _("Print current time"),
@@ -2435,7 +2435,7 @@ bool open_db(UAContext *ua, bool use_private)
                                          ua->catalog->db_driver,
                                          ua->catalog->db_name,
                                          ua->catalog->db_user,
-                                         ua->catalog->db_password,
+                                         ua->catalog->db_password.value,
                                          ua->catalog->db_address,
                                          ua->catalog->db_port,
                                          ua->catalog->db_socket,

@@ -54,9 +54,9 @@ enum {
 struct CONRES {
    RES hdr;
 
-   char *password;                    /* UA server password */
    char *rc_file;                     /* startup file */
    char *history_file;                /* command history file */
+   s_password password;               /* UA server password */
    uint32_t history_length;           /* readline history length */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS on all connections */
@@ -79,7 +79,7 @@ struct DIRRES {
 
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
-   char *password;                    /* UA server password */
+   s_password password;               /* UA server password */
    bool tls_authenticate;             /* Authenticate with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */

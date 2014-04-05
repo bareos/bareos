@@ -63,18 +63,20 @@ static int authenticate_director(JCR *jcr)
    int tls_remote_need = BNET_TLS_NONE;
    bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
-   char *password;
 
    bstrncpy(bashed_name, monitor->hdr.name, sizeof(bashed_name));
    bash_spaces(bashed_name);
-   password = monitor->password;
 
-   /* Timeout Hello after 5 mins */
+   /*
+    * Timeout Hello after 5 mins
+    */
    btimer_t *tid = start_bsock_timer(dir, 60 * 5);
    dir->fsend(DIRhello, bashed_name);
 
-   if (!cram_md5_respond(dir, password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(dir, password, tls_local_need, compatible)) {
+   ASSERT(monitor->password.encoding == p_encoding_md5);
+
+   if (!cram_md5_respond(dir, monitor->password.value, &tls_remote_need, &compatible) ||
+       !cram_md5_challenge(dir, monitor->password.value, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg0(jcr, M_FATAL, 0, _("Director authorization problem.\n"
             "Most likely the passwords do not agree.\n"
@@ -89,6 +91,7 @@ static int authenticate_director(JCR *jcr)
          dir->bstrerror());
       return 0;
    }
+
    Dmsg1(10, "<dird: %s", dir->msg);
    stop_bsock_timer(tid);
    if (strncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1) != 0) {
@@ -97,6 +100,7 @@ static int authenticate_director(JCR *jcr)
    } else {
       Jmsg0(jcr, M_INFO, 0, dir->msg);
    }
+
    return 1;
 }
 
@@ -118,20 +122,27 @@ static int authenticate_storage_daemon(JCR *jcr, STORERES* store)
     */
    bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
    bash_spaces(dirname);
-   /* Timeout Hello after 5 mins */
+
+   /*
+    * Timeout Hello after 5 mins
+    */
    btimer_t *tid = start_bsock_timer(sd, 60 * 5);
    if (!sd->fsend(SDFDhello, dirname)) {
       stop_bsock_timer(tid);
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
       return 0;
    }
-   if (!cram_md5_respond(sd, store->password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(sd, store->password, tls_local_need, compatible)) {
+
+   ASSERT(store->password.encoding == p_encoding_md5);
+
+   if (!cram_md5_respond(sd, store->password.value, &tls_remote_need, &compatible) ||
+       !cram_md5_challenge(sd, store->password.value, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg0(jcr, M_FATAL, 0, _("Director and Storage daemon passwords or names not the same.\n"
        "Please see " MANUAL_AUTH_URL " for help.\n"));
       return 0;
    }
+
    Dmsg1(116, ">stored: %s", sd->msg);
    if (sd->recv() <= 0) {
       stop_bsock_timer(tid);
@@ -139,12 +150,14 @@ static int authenticate_storage_daemon(JCR *jcr, STORERES* store)
          sd->bstrerror());
       return 0;
    }
+
    Dmsg1(110, "<stored: %s", sd->msg);
    stop_bsock_timer(tid);
    if (strncmp(sd->msg, SDOKhello, sizeof(SDOKhello)) != 0) {
       Jmsg0(jcr, M_FATAL, 0, _("Storage daemon rejected Hello command\n"));
       return 0;
    }
+
    return 1;
 }
 
@@ -166,20 +179,27 @@ static int authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
     */
    bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
    bash_spaces(dirname);
-   /* Timeout Hello after 5 mins */
+
+   /*
+    * Timeout Hello after 5 mins
+    */
    btimer_t *tid = start_bsock_timer(fd, 60 * 5);
    if (!fd->fsend(SDFDhello, dirname)) {
       stop_bsock_timer(tid);
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon. ERR=%s\n"), bnet_strerror(fd));
       return 0;
    }
-   if (!cram_md5_respond(fd, client->password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(fd, client->password, tls_local_need, compatible)) {
+
+   ASSERT(client->password.encoding == p_encoding_md5);
+
+   if (!cram_md5_respond(fd, client->password.value, &tls_remote_need, &compatible) ||
+       !cram_md5_challenge(fd, client->password.value, tls_local_need, compatible)) {
       stop_bsock_timer(tid);
       Jmsg(jcr, M_FATAL, 0, _("Director and File daemon passwords or names not the same.\n"
        "Please see " MANUAL_AUTH_URL " for help.\n"));
       return 0;
    }
+
    Dmsg1(116, ">filed: %s", fd->msg);
    if (fd->recv() <= 0) {
       stop_bsock_timer(tid);
@@ -187,12 +207,14 @@ static int authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
          fd->bstrerror());
       return 0;
    }
+
    Dmsg1(110, "<stored: %s", fd->msg);
    stop_bsock_timer(tid);
    if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1) != 0) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
       return 0;
    }
+
    return 1;
 }
 

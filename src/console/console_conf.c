@@ -82,7 +82,7 @@ static RES_ITEM cons_items[] = {
    { "rcfile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL },
    { "historyfile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL },
    { "historylength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100" },
-   { "password", CFG_TYPE_PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
    { "tlsenable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL },
    { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL },
@@ -103,7 +103,7 @@ static RES_ITEM dir_items[] = {
    { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
    { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
    { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
-   { "password", CFG_TYPE_PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
    { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
    { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
@@ -122,8 +122,8 @@ static RES_ITEM dir_items[] = {
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   { "console", cons_items, R_CONSOLE },
-   { "director", dir_items, R_DIRECTOR },
+   { "console", cons_items, R_CONSOLE, sizeof(CONRES) },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { NULL, NULL, 0 }
 };
 
@@ -250,7 +250,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size;
+   int i;
    int error = 0;
 
    /*
@@ -296,24 +296,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
       return;
    }
 
-   /* The following code is only executed during pass 1 */
-   switch (type) {
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   default:
-      printf(_("Unknown resource type %d\n"), type);
-      error = 1;
-      size = 1;
-      break;
-   }
    /* Common */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {

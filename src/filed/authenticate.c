@@ -134,16 +134,21 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    tid = start_bsock_timer(bs, AUTH_TIMEOUT);
 
    /*
+    * Sanity check.
+    */
+   ASSERT(director->password.encoding == p_encoding_md5);
+
+   /*
     * Challenge the director
     */
-   auth_success = cram_md5_challenge(bs, director->password, tls_local_need, compatible);
+   auth_success = cram_md5_challenge(bs, director->password.value, tls_local_need, compatible);
    if (job_canceled(jcr)) {
       auth_success = false;
       goto auth_fatal;                   /* quick exit */
    }
 
    if (auth_success) {
-      auth_success = cram_md5_respond(bs, director->password, &tls_remote_need, &compatible);
+      auth_success = cram_md5_respond(bs, director->password.value, &tls_remote_need, &compatible);
       if (!auth_success) {
           char addr[64];
           char *who = bnet_get_peer(bs, addr, sizeof(addr)) ? bs->who() : addr;
