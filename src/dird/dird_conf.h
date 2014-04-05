@@ -100,8 +100,8 @@ enum {
  */
 struct s_jl {
    const char *level_name;                 /* level keyword */
-   int32_t  level;                         /* level */
-   int32_t  job_type;                      /* JobType permitting this level */
+   uint32_t level;                         /* level */
+   int32_t job_type;                       /* JobType permitting this level */
 };
 
 /*
