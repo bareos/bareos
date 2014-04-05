@@ -122,6 +122,8 @@ static RES_ITEM cli_items[] = {
    { "allowedscriptdir", CFG_TYPE_ALIST_DIR, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
    { "allowedjobcommand", CFG_TYPE_ALIST_STR, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
    { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_client.jcr_watchdog_time), 0, 0, NULL },
+   { "alwaysuselmdb", CFG_TYPE_BOOL, ITEM(res_client.always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false" },
+   { "lmdbthreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
