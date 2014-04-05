@@ -70,6 +70,7 @@
 enum {
    R_DIRECTOR = 1001,
    R_CLIENT,
+   R_JOBDEFS,
    R_JOB,
    R_STORAGE,
    R_CATALOG,
@@ -79,7 +80,6 @@ enum {
    R_MSGS,
    R_COUNTER,
    R_CONSOLE,
-   R_JOBDEFS,
    R_DEVICE,
    R_FIRST = R_DIRECTOR,
    R_LAST = R_DEVICE                  /* keep this updated */
