@@ -474,6 +474,7 @@ extern RES_ITEM msgs_items[];
 RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "jobdefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
    { "job", job_items, R_JOB, sizeof(JOBRES) },
    { "storage", store_items, R_STORAGE, sizeof(STORERES) },
    { "catalog", cat_items, R_CATALOG, sizeof(CATRES) },
@@ -483,7 +484,6 @@ RES_TABLE resources[] = {
    { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { "counter", counter_items, R_COUNTER, sizeof(COUNTERRES) },
    { "console", con_items, R_CONSOLE, sizeof(CONRES) },
-   { "jobdefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
    { "device", NULL, R_DEVICE, sizeof(DEVICERES) }, /* info obtained from SD */
    { NULL, NULL, 0, 0 }
 };
@@ -2051,8 +2051,8 @@ void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt,
          sendit(sock, "%s", buf.c_str());
       }
       break;
-   case R_JOB:
    case R_JOBDEFS:
+   case R_JOB:
       if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
          res->res_job.print_config(buf);
          sendit(sock, "%s", buf.c_str());
@@ -2387,8 +2387,8 @@ void free_resource(RES *sres, int type)
          }
       }
       break;
-   case R_JOB:
    case R_JOBDEFS:
+   case R_JOB:
       if (res->res_job.backup_format) {
          free(res->res_job.backup_format);
       }
@@ -2473,7 +2473,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    /*
     * Check Job requirements after applying JobDefs
     */
-   if (type != R_JOB && type != R_JOBDEFS) {
+   if (type != R_JOBDEFS && type != R_JOB) {
       /*
        * Ensure that all required items are present
        */
@@ -2569,8 +2569,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          res->res_store.device = res_all.res_store.device;
          break;
-      case R_JOB:
       case R_JOBDEFS:
+      case R_JOB:
          if ((res = (URES *)GetResWithName(type, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"),
                   res_all.res_dir.hdr.name);
