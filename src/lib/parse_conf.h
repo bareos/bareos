@@ -229,22 +229,23 @@ typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
  */
 class CONFIG {
 public:
-   const char *m_cf;                    /* config file */
-   LEX_ERROR_HANDLER *m_scan_error;     /* error handler if non-null */
-   LEX_WARNING_HANDLER *m_scan_warning; /* warning handler if non-null */
-   INIT_RES_HANDLER *m_init_res;        /* init resource handler for non default types if non-null */
-   STORE_RES_HANDLER *m_store_res;       /* store resource handler for non default types if non-null */
+   const char *m_cf;                    /* Config file */
+   LEX_ERROR_HANDLER *m_scan_error;     /* Error handler if non-null */
+   LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
+   INIT_RES_HANDLER *m_init_res;        /* Init resource handler for non default types if non-null */
+   STORE_RES_HANDLER *m_store_res;      /* Store resource handler for non default types if non-null */
 
-   int32_t m_err_type;                  /* the way to terminate on failure */
-   void *m_res_all;                     /* pointer to res_all buffer */
-   int32_t m_res_all_size;              /* length of buffer */
+   int32_t m_err_type;                  /* The way to terminate on failure */
+   void *m_res_all;                     /* Pointer to res_all buffer */
+   int32_t m_res_all_size;              /* Length of buffer */
+   bool m_omit_defaults;                /* Omit config variables with default values when dumping the config */
 
    /* The below are not yet implemented */
-   int32_t m_r_first;                   /* first daemon resource type */
-   int32_t m_r_last;                    /* last daemon resource type */
-   RES_TABLE *m_resources;              /* pointer to table of permitted resources */
-   RES **m_res_head;                    /* pointer to defined resources */
-   brwlock_t m_res_lock;                /* resource lock */
+   int32_t m_r_first;                   /* First daemon resource type */
+   int32_t m_r_last;                    /* Last daemon resource type */
+   RES_TABLE *m_resources;              /* Pointer to table of permitted resources */
+   RES **m_res_head;                    /* Pointer to defined resources */
+   brwlock_t m_res_lock;                /* Resource lock */
 
    /* functions */
    void init(

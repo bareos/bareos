@@ -67,10 +67,10 @@ void init_device_resources();
 static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
-static CONFIG *config;
 
 /* Globals Exported */
-DIRRES *me;           /* "Global" daemon resource */
+DIRRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 char *configfile = NULL;
 void *start_heap;
 
@@ -281,8 +281,8 @@ int main (int argc, char *argv[])
       drop(uid, gid, false);                    /* reduce privileges if requested */
    }
 
-   config = new_config_parser();
-   parse_dir_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -397,10 +397,10 @@ void terminate_dird(int sig)
    if (debug_level > 5) {
       print_memory_pool_stats();
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
    stop_UA_server();
    term_msg();                        /* terminate message handler */
@@ -533,10 +533,10 @@ void reload_config(int sig)
    db_sql_pool_flush();
 
    Dmsg1(100, "Reload_config njobs=%d\n", njobs);
-   reload_table[table].res_table = config->save_resources();
+   reload_table[table].res_table = my_config->save_resources();
    Dmsg1(100, "Saved old config in table %d\n", table);
 
-   ok = parse_dir_config(config, configfile, M_ERROR);
+   ok = parse_dir_config(my_config, configfile, M_ERROR);
 
    Dmsg0(100, "Reloaded config file\n");
    if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG) || !initialize_sql_pooling()) {
@@ -548,7 +548,7 @@ void reload_config(int sig)
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
       }
-      reload_table[rtable].res_table = config->save_resources();
+      reload_table[rtable].res_table = my_config->save_resources();
       /* Now restore old resource values */
       int num = r_last - r_first + 1;
       RES **res_tab = reload_table[table].res_table;
@@ -612,6 +612,7 @@ static bool check_resources()
                                "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
+      my_config->m_omit_defaults = me->omit_defaults;
       set_working_directory(me->working_directory);
       if (!me->messages) {       /* If message resource not specified */
          me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
