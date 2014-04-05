@@ -26,7 +26,7 @@
  * Also handles Copy jobs (March 2008)
  *
  * Kern Sibbald, September 2004
- * Marco van Wieringen, November 2012
+ * SD-SD Migration by Marco van Wieringen, November 2012
  *
  * Basic tasks done here:
  *    Open DB and create records for this job.

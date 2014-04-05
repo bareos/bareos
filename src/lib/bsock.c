@@ -23,7 +23,7 @@
 /*
  * Network Utility Routines
  *
- * by Kern Sibbald
+ * Kern Sibbald
  */
 
 #include "bareos.h"

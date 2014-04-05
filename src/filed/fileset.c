@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -23,7 +23,9 @@
 /*
  * Bareos File Daemon Include Exclude pattern handling.
  *
- * Marco van Wieringen, September 2012
+ * Kern Sibbald, October MM
+ *
+ * Extracted from other source files by Marco van Wieringen, September 2012
  */
 
 #include "bareos.h"

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -22,6 +22,8 @@
 */
 /**
  * Functions to handle compression/decompression of data.
+ *
+ * Kern Sibbald, March MM
  *
  * Extracted from other source files by Marco van Wieringen, June 2011
  */
