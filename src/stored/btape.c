@@ -44,7 +44,8 @@ int quit = 0;
 char buf[100000];
 int bsize = TAPE_BSIZE;
 char VolName[MAX_NAME_LENGTH];
-STORES *me = NULL;                    /* our Global resource */
+STORES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -87,10 +88,10 @@ static bool open_the_device();
 static void autochangercmd();
 static bool do_unfill();
 
-
 /* Static variables */
-static CONFIG *config;
+
 #define CONFIG_FILE "bareos-sd.conf"
+
 char *configfile = NULL;
 
 #define MAX_CMD_ARGS 30
@@ -265,8 +266,8 @@ int main(int margc, char *margv[])
 
    daemon_start_time = time(NULL);
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    LockRes();
    me = (STORES *)GetNextRes(R_STORAGE, NULL);
@@ -359,10 +360,10 @@ static void terminate_btape(int status)
       free(configfile);
    }
 
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    if (debug_level > 10) {

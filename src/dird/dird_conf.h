@@ -31,25 +31,24 @@
 /*
  * Program specific config types (start at 50)
  */
-#define CFG_TYPE_AUTOPASSWORD       50  /* Password stored in clear when needed otherwise hashed */
-#define CFG_TYPE_ACL                51  /* User Access Control List */
-#define CFG_TYPE_AUTHPROTOCOLTYPE   52  /* Authentication Protocol */
-#define CFG_TYPE_AUTHTYPE           53  /* Authentication Type */
-#define CFG_TYPE_DEVICE             54  /* Device resource */
-#define CFG_TYPE_JOBTYPE            55  /* Type of Job */
-#define CFG_TYPE_PROTOCOLTYPE       56  /* Protocol */
-#define CFG_TYPE_LEVEL              57  /* Backup Level */
-#define CFG_TYPE_REPLACE            58  /* Replace option */
-#define CFG_TYPE_SHRTRUNSCRIPT      59  /* Short Runscript definition */
-#define CFG_TYPE_RUNSCRIPT          60  /* Runscript */
-#define CFG_TYPE_RUNSCRIPT_CMD      61  /* Runscript Command */
-#define CFG_TYPE_RUNSCRIPT_TARGET   62  /* Runscript Target (Host) */
-#define CFG_TYPE_RUNSCRIPT_BOOL     63  /* Runscript Boolean */
-#define CFG_TYPE_RUNSCRIPT_WHEN     64  /* Runscript When expression */
-#define CFG_TYPE_MIGTYPE            65  /* Migration Type */
-#define CFG_TYPE_INCEXC             66  /* Include/Exclude item */
-#define CFG_TYPE_RUN                67  /* Schedule Run Command */
-#define CFG_TYPE_ACTIONONPURGE      68  /* Action to perform on Purge */
+#define CFG_TYPE_ACL                50  /* User Access Control List */
+#define CFG_TYPE_AUTHPROTOCOLTYPE   51  /* Authentication Protocol */
+#define CFG_TYPE_AUTHTYPE           52  /* Authentication Type */
+#define CFG_TYPE_DEVICE             53  /* Device resource */
+#define CFG_TYPE_JOBTYPE            54  /* Type of Job */
+#define CFG_TYPE_PROTOCOLTYPE       55  /* Protocol */
+#define CFG_TYPE_LEVEL              56  /* Backup Level */
+#define CFG_TYPE_REPLACE            57  /* Replace option */
+#define CFG_TYPE_SHRTRUNSCRIPT      58  /* Short Runscript definition */
+#define CFG_TYPE_RUNSCRIPT          59  /* Runscript */
+#define CFG_TYPE_RUNSCRIPT_CMD      60  /* Runscript Command */
+#define CFG_TYPE_RUNSCRIPT_TARGET   61  /* Runscript Target (Host) */
+#define CFG_TYPE_RUNSCRIPT_BOOL     62  /* Runscript Boolean */
+#define CFG_TYPE_RUNSCRIPT_WHEN     63  /* Runscript When expression */
+#define CFG_TYPE_MIGTYPE            64  /* Migration Type */
+#define CFG_TYPE_INCEXC             65  /* Include/Exclude item */
+#define CFG_TYPE_RUN                66  /* Schedule Run Command */
+#define CFG_TYPE_ACTIONONPURGE      67  /* Action to perform on Purge */
 
 #define CFG_TYPE_FNAME              80  /* Filename */
 #define CFG_TYPE_PLUGINNAME         81  /* Pluginname */

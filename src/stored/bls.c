@@ -51,11 +51,12 @@ static JCR *jcr;
 static SESSION_LABEL sessrec;
 static uint32_t num_files = 0;
 static ATTR *attr;
-static CONFIG *config;
 
 #define CONFIG_FILE "bareos-sd.conf"
+
 char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
+STORES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 bool forge_on = false;
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -217,8 +218,8 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    LockRes();
    me = (STORES *)GetNextRes(R_STORAGE, NULL);

@@ -36,11 +36,12 @@
 
 #define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */
 
+CONFIG *my_config = NULL;             /* Our Global config */
+
 /* Imported function from tray_conf.cpp */
 extern bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Static variables */
-static CONFIG* config = NULL;
 static QApplication* app = NULL;
 
 static void usage()
@@ -144,10 +145,10 @@ static void cleanup()
       app = NULL;
    }
 
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    WSACleanup(); /* Cleanup Windows sockets */
@@ -185,8 +186,8 @@ int main(int argc, char *argv[])
    parse_command_line(argc, argv, cl);
 
    // read the config file
-   config = new_config_parser();
-   parse_tmon_config(config, cl.configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
 
    // this is the Qt core application
    // with its message handler

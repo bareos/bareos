@@ -47,7 +47,8 @@
 #endif
 
 /* Exported variables */
-CONRES *me = NULL;                        /* my resource */
+CONRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 
 //extern int rl_catch_signals;
 
@@ -82,7 +83,6 @@ static int numdir;
 static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
-static CONFIG *config;
 static bool file_selection = false;
 
 /* Command prototypes */
@@ -1181,8 +1181,8 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_cons_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_cons_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -1399,9 +1399,9 @@ static void terminate_console(int sig)
    }
    already_here = true;
    stop_watchdog();
-   config->free_resources();
-   free(config);
-   config = NULL;
+   my_config->free_resources();
+   free(my_config);
+   my_config = NULL;
    cleanup_crypto();
    free_pool_memory(args);
    if (!no_conio) {

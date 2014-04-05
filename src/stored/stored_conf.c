@@ -962,8 +962,18 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
 
 bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, init_resource_cb, parse_config_cb,
-                exit_code, (void *)&res_all, res_all_size, r_first, r_last,
-                resources, res_head);
+   config->init(configfile,
+                NULL,
+                NULL,
+                init_resource_cb,
+                parse_config_cb,
+                NULL,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                r_first,
+                r_last,
+                resources,
+                res_head);
    return config->parse_config();
 }

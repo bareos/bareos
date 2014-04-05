@@ -56,7 +56,10 @@ extern "C" void *device_initialization(void *arg);
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
-STORES *me = NULL;                    /* our Global resource */
+
+STORES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
+
 bool forge_on = false;                /* proceed inspite of I/O errors */
 pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -75,7 +78,6 @@ static workq_t dird_workq;            /* queue for processing connections */
 static workq_t ndmp_workq;            /* queue for processing NDMP connections */
 #endif
 static alist *sock_fds;
-static CONFIG *config;
 
 static void usage()
 {
@@ -224,8 +226,8 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -761,10 +763,10 @@ void terminate_stored(int sig)
       free(configfile);
       configfile = NULL;
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    if (debug_level > 10) {
