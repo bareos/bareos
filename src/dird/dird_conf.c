@@ -1493,47 +1493,55 @@ bool BRSRES::print_config(POOL_MEM &buff)
       case CFG_TYPE_JOBTYPE: {
          int32_t jobtype = *(items[i].ui32value);
 
-         for (int32_t j = 0; jobtypes[j].type_name; j++) {
-            if (jobtypes[j].job_type == jobtype) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, jobtypes[j].type_name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (jobtype) {
+            for (int32_t j = 0; jobtypes[j].type_name; j++) {
+               if (jobtypes[j].job_type == jobtype) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, jobtypes[j].type_name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
       }
       case CFG_TYPE_PROTOCOLTYPE: {
-         uint32_t protocoltoken = *(items[i].ui32value);
+         uint32_t protocol = *(items[i].ui32value);
 
-         for (uint32_t j = 0; backupprotocols[j].name; j++) {
-            if (backupprotocols[j].token == protocoltoken) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, backupprotocols[j].name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (protocol) {
+            for (uint32_t j = 0; backupprotocols[j].name; j++) {
+               if (backupprotocols[j].token == protocol) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, backupprotocols[j].name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
       }
       case CFG_TYPE_MIGTYPE: {
-         int32_t migtypetoken = *(items[i].ui32value);
+         int32_t migtype = *(items[i].ui32value);
 
-         for (int32_t j = 0; migtypes[j].type_name; j++) {
-            if (migtypes[j].job_type == migtypetoken) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, migtypes[j].type_name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (migtype) {
+            for (int32_t j = 0; migtypes[j].type_name; j++) {
+               if (migtypes[j].job_type == migtype) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, migtypes[j].type_name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
       }
       case CFG_TYPE_REPLACE: {
-         uint32_t replacetoken = *(items[i].ui32value);
+         uint32_t replace = *(items[i].ui32value);
 
-         for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
-            if (ReplaceOptions[j].token == replacetoken) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, ReplaceOptions[j].name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (replace) {
+            for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
+               if (ReplaceOptions[j].token == replace) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, ReplaceOptions[j].name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
@@ -1541,23 +1549,27 @@ bool BRSRES::print_config(POOL_MEM &buff)
       case CFG_TYPE_LEVEL: {
          int32_t level = *(items[i].i32value);
 
-         for (int32_t j = 0; joblevels[j].level_name; j++) {
-            if (joblevels[j].level == level) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, joblevels[j].level_name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (level) {
+            for (int32_t j = 0; joblevels[j].level_name; j++) {
+               if (joblevels[j].level == level) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, joblevels[j].level_name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
       }
       case CFG_TYPE_ACTIONONPURGE: {
-         uint32_t destination = *(items[i].ui32value);
+         uint32_t action = *(items[i].ui32value);
 
-         for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
-            if (ActionOnPurgeOptions[j].token == destination) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (action) {
+            for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
+               if (ActionOnPurgeOptions[j].token == action) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
@@ -1565,11 +1577,13 @@ bool BRSRES::print_config(POOL_MEM &buff)
       case CFG_TYPE_AUTHPROTOCOLTYPE: {
          uint32_t authprotocol = *(items[i].ui32value);
 
-         for (uint32_t j = 0; authprotocols[j].name; j++) {
-            if (authprotocols[j].token == authprotocol) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, authprotocols[j].name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (authprotocol) {
+            for (uint32_t j = 0; authprotocols[j].name; j++) {
+               if (authprotocols[j].token == authprotocol) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, authprotocols[j].name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
@@ -1577,11 +1591,13 @@ bool BRSRES::print_config(POOL_MEM &buff)
       case CFG_TYPE_AUTHTYPE: {
          uint32_t authtype = *(items[i].ui32value);
 
-         for (uint32_t j = 0; authmethods[j].name; j++) {
-            if (authprotocols[j].token == authtype) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, authmethods[j].name);
-               pm_strcat(cfg_str, temp.c_str());
-               break;
+         if (authtype) {
+            for (uint32_t j = 0; authmethods[j].name; j++) {
+               if (authprotocols[j].token == authtype) {
+                  Mmsg(temp, "   %s = %s\n", items[i].name, authmethods[j].name);
+                  pm_strcat(cfg_str, temp.c_str());
+                  break;
+               }
             }
          }
          break;
