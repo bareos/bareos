@@ -199,9 +199,17 @@ int show_cmd(UAContext *ua, const char *cmd)
       switch (type) {
       case -1:                           /* all */
          for (j = my_config->m_r_first; j <= my_config->m_r_last; j++) {
-            /* Skip R_DEVICE since it is really not used or updated */
-            if (j != R_DEVICE) {
-               dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua);
+            switch (j) {
+            case R_DEVICE:
+               /*
+                * Skip R_DEVICE since it is really not used or updated
+                */
+               continue;
+            default:
+               if (my_config->m_res_head[j - my_config->m_r_first]) {
+                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua);
+               }
+               break;
             }
          }
          break;
@@ -218,7 +226,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         dump_resource(recurse?type:-type, res, bsendmsg, ua);
+         dump_resource(recurse ? type : -type, res, bsendmsg, ua);
          break;
       }
    }
