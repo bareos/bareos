@@ -721,7 +721,14 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
       if (size32) {
          *(item->ui32value) = (uint32_t)uvalue;
       } else {
-         *(item->ui64value) = uvalue;
+         switch (type) {
+         case STORE_SIZE:
+            *(item->i64value) = uvalue;
+            break;
+         case STORE_SPEED:
+            *(item->ui64value) = uvalue;
+            break;
+         }
       }
       break;
    default:
@@ -1146,7 +1153,9 @@ static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_
 static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
-   bool print_item = false;
+   POOL_MEM volspec;   /* vol specification string*/
+   int64_t bytes = *(item->ui64value);
+   int factor;
 
    /*
     * convert default value string to numeric value
@@ -1165,55 +1174,34 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
       1              /* byte */
    };
 
-   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-      /*
-       * Always print required items or if my_config->m_omit_defaults is false
-       */
-      print_item = true;
-   } else if (item->flags & CFG_ITEM_DEFAULT) {
-      /*
-       * We have a default value
-       */
-      if (*(item->i64value) != str_to_int64(item->default_value)) {
-         /*
-          * Print if value differs from default
-          */
-         print_item = true;
-      }
-   }
-
-   if (print_item) {
-      POOL_MEM volspec;   /* vol specification string*/
-      int64_t bytes = *(item->i64value);
-      int factor;
-
-      if (bytes == 0) {
-         pm_strcat(volspec, "0");
-      } else {
-         for (int t=0; modifier[t]; t++) {
-            Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
-            factor = bytes / multiplier[t];
-            bytes  = bytes % multiplier[t];
-            if (factor > 0) {
-               Mmsg(temp, "%d %s ", factor, modifier[t]);
-               pm_strcat(volspec, temp.c_str());
-               Dmsg1(200, " volspec: %s\n", volspec.c_str());
-            }
-            if (bytes == 0) {
-               break;
-            }
+   if (bytes == 0) {
+      pm_strcat(volspec, "0");
+   } else {
+      for (int t=0; modifier[t]; t++) {
+         Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
+         factor = bytes / multiplier[t];
+         bytes  = bytes % multiplier[t];
+         if (factor > 0) {
+            Mmsg(temp, "%d %s ", factor, modifier[t]);
+            pm_strcat(volspec, temp.c_str());
+            Dmsg1(200, " volspec: %s\n", volspec.c_str());
+         }
+         if (bytes == 0) {
+            break;
          }
       }
-
-      Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
-      indent_config_item(cfg_str, 1, temp.c_str());
    }
+
+   Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str());
 }
 
 static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
-   bool print_item = false;
+   POOL_MEM timespec;
+   utime_t secs = *(item->utimevalue);
+   int factor;
 
    /*
     * Reverse time formatting: 1 Month, 1 Week, etc.
@@ -1241,46 +1229,24 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
       0
    };
 
-   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-      /*
-       * Always print required items or if my_config->m_omit_defaults is false
-       */
-      print_item = true;
-   } else if (item->flags & CFG_ITEM_DEFAULT) {
-      /*
-       * We have a default value
-       */
-      if (*(item->i64value) != str_to_int64(item->default_value)) {
-         /*
-          * Print if value differs from default
-          */
-         print_item = true;
-      }
-   }
-
-   if (print_item) {
-      POOL_MEM timespec;
-      utime_t secs = *(item->utimevalue);
-      int factor;
-      if (secs == 0) {
-         pm_strcat(timespec, "0");
-      } else {
-         for (int t=0; modifier[t]; t++) {
-            factor = secs / multiplier[t];
-            secs   = secs % multiplier[t];
-            if (factor > 0) {
-               Mmsg(temp, "%d %s ", factor, modifier[t]);
-               pm_strcat(timespec, temp.c_str());
-            }
-            if (secs == 0) {
-               break;
-            }
+   if (secs == 0) {
+      pm_strcat(timespec, "0");
+   } else {
+      for (int t=0; modifier[t]; t++) {
+         factor = secs / multiplier[t];
+         secs   = secs % multiplier[t];
+         if (factor > 0) {
+            Mmsg(temp, "%d %s ", factor, modifier[t]);
+            pm_strcat(timespec, temp.c_str());
+         }
+         if (secs == 0) {
+            break;
          }
       }
-
-      Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
-      indent_config_item(cfg_str, 1, temp.c_str());
    }
+
+   Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str());
 }
 
 bool MSGSRES::print_config(POOL_MEM &buff)
@@ -1392,31 +1358,60 @@ bool BRSRES::print_config(POOL_MEM &buff)
          continue;
       }
 
+      if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
+         /*
+          * Always print required items or if my_config->m_omit_defaults is false
+          */
+         print_item = true;
+      } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+         /*
+          * Check for default values.
+          */
+         switch (items[i].type) {
+         case CFG_TYPE_STR:
+         case CFG_TYPE_DIR:
+         case CFG_TYPE_NAME:
+         case CFG_TYPE_STRNAME:
+            print_item = !bstrcmp(*(items[i].value), items[i].default_value);
+            break;
+         case CFG_TYPE_INT32:
+            print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_PINT32:
+            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_INT64:
+            print_item = (*(items[i].i64value) != str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SPEED:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SIZE64:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SIZE32:
+            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_TIME:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_BOOL: {
+            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
+                                 bstrcasecmp(items[i].default_value, "yes");
+
+            print_item = (*items[i].boolvalue != default_value);
+            break;
+         }
+         default:
+            break;
+         }
+      }
+
       switch (items[i].type) {
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
       case CFG_TYPE_NAME:
       case CFG_TYPE_STRNAME:
-         /*
-          * String types
-          */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (!bstrcmp(*(items[i].value), items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
-            }
-         }
-
          if (print_item && *(items[i].value) != NULL) {
             Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
@@ -1425,111 +1420,82 @@ bool BRSRES::print_config(POOL_MEM &buff)
          break;
       case CFG_TYPE_MD5PASSWORD:
       case CFG_TYPE_CLEARPASSWORD:
-      case CFG_TYPE_AUTOPASSWORD: {
-         s_password *password;
+      case CFG_TYPE_AUTOPASSWORD:
+         if (print_item) {
+            s_password *password;
 
-         password = items[i].pwdvalue;
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (!bstrcmp(password->value, items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
+            password = items[i].pwdvalue;
+            if (password && password->value != NULL) {
+               switch (password->encoding) {
+               case p_encoding_clear:
+                  Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
+                  Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
+                  break;
+               case p_encoding_md5:
+                  Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                  Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                  break;
+               default:
+                  break;
+               }
+               indent_config_item(cfg_str, 1, temp.c_str());
             }
-         }
-
-         if (print_item && password && password->value != NULL) {
-            switch (password->encoding) {
-            case p_encoding_clear:
-               Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
-               break;
-            case p_encoding_md5:
-               Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-               break;
-            default:
-               break;
-            }
-            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
-      }
-      case CFG_TYPE_LABEL: {
+      case CFG_TYPE_LABEL:
          for (int j = 0; tapelabels[j].name; j++) {
             if (*(items[i].ui32value) == tapelabels[j].token) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
+                     break;
+                  }
+               }
+
                Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
                break;
             }
          }
          break;
-      }
       case CFG_TYPE_INT32:
-      case CFG_TYPE_PINT32:
-      case CFG_TYPE_INT64:
-      case CFG_TYPE_SPEED:
-         /*
-          * Integer types
-          */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (*(items[i].i64value) != str_to_int64(items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
-            }
-         }
-
          if (print_item) {
-            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].value));
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i32value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_PINT32:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui32value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_INT64:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i64value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_SPEED:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui64value));
             indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       case CFG_TYPE_SIZE64:
       case CFG_TYPE_SIZE32:
-         print_config_size(&items[i], cfg_str);
+         if (print_item) {
+            print_config_size(&items[i], cfg_str);
+         }
          break;
       case CFG_TYPE_TIME:
-         print_config_time(&items[i], cfg_str);
+         if (print_item) {
+            print_config_time(&items[i], cfg_str);
+         }
          break;
       case CFG_TYPE_BOOL:
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * we have a default value
-             */
-            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
-                                 bstrcasecmp(items[i].default_value, "yes");
-
-            /*
-             * Print if value differs from default
-             */
-            if (*items[i].boolvalue != default_value) {
-               print_item = true;
-            }
-         }
-
          if (print_item) {
             if (*items[i].boolvalue) {
                Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
@@ -1596,7 +1562,7 @@ bool BRSRES::print_config(POOL_MEM &buff)
          }
          break;
       }
-      case CFG_TYPE_BIT: {
+      case CFG_TYPE_BIT:
          if (*(items[i].ui32value) & items[i].code) {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
          } else {
@@ -1604,7 +1570,6 @@ bool BRSRES::print_config(POOL_MEM &buff)
          }
          indent_config_item(cfg_str, 1, temp.c_str());
          break;
-      }
       case CFG_TYPE_MSGS:
          /*
           * We ignore these items as they are printed in a special way in MSGSRES::print_config()
@@ -1628,10 +1593,14 @@ bool BRSRES::print_config(POOL_MEM &buff)
          break;
       }
       case CFG_TYPE_ADDRESSES_PORT:
-         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
+         /*
+          * Is stored in CFG_TYPE_ADDRESSES and printed there.
+          */
          break;
       case CFG_TYPE_ADDRESSES_ADDRESS:
-         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
+         /*
+          * Is stored in CFG_TYPE_ADDRESSES and printed there.
+          */
          break;
       default:
          /*
