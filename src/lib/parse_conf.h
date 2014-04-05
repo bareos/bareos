@@ -138,10 +138,11 @@ struct RES_TABLE {
 
 /*
  */
-#define CFG_ITEM_REQUIRED           0x1 /* Item required */
-#define CFG_ITEM_DEFAULT            0x2 /* Default supplied */
-#define CFG_ITEM_NO_EQUALS          0x4 /* Don't scan = after name */
-#define CFG_ITEM_DEPRECATED         0x8 /* Deprecated config option */
+#define CFG_ITEM_REQUIRED          0x1  /* Item required */
+#define CFG_ITEM_DEFAULT           0x2  /* Default supplied */
+#define CFG_ITEM_NO_EQUALS         0x4  /* Don't scan = after name */
+#define CFG_ITEM_DEPRECATED        0x8  /* Deprecated config option */
+#define CFG_ITEM_ALIAS             0x10 /* Item is an alias for an other */
 
 /*
  * Standard global types with handlers defined in res.c

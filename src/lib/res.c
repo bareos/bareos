@@ -1385,6 +1385,13 @@ bool BRSRES::print_config(POOL_MEM &buff)
    for (i = 0; items[i].name; i++) {
       bool print_item = false;
 
+      /*
+       * If this is an alias for an other config keyword suppress it.
+       */
+      if ((items[i].flags & CFG_ITEM_ALIAS)) {
+         continue;
+      }
+
       switch (items[i].type) {
       case CFG_TYPE_STR:
       case CFG_TYPE_DIR:
