@@ -197,8 +197,8 @@ const char *IPADDR::build_config_str(char *buf, int blen)
 {
    char tmp[1024];
    bsnprintf(buf, blen, "      %s = {\n"
-                        "           addr = %s\n"
-                        "           port = %hu\n"
+                        "         addr = %s\n"
+                        "         port = %hu\n"
                         "      }",
              get_family() == AF_INET ? "ipv4" : "ipv6",
              get_address(tmp, sizeof(tmp) - 1), get_port_host_order());

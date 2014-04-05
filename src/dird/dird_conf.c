@@ -57,6 +57,11 @@ static RES *sres_head[R_LAST - R_FIRST + 1];
 RES **res_head = sres_head;
 
 /*
+ * Set default indention e.g. 2 spaces.
+ */
+#define DEFAULT_INDENT_STRING "  "
+
+/*
  * Imported subroutines
  */
 extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -662,6 +667,16 @@ char *CATRES::display(POOLMEM *dst)
    return dst;
 }
 
+static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
+{
+   int i;
+
+   for (i = 0; i < level; i++) {
+      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
+   }
+   pm_strcat(cfg_str, config_item);
+}
+
 static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
@@ -723,8 +738,9 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
             }
          }
       }
-      Mmsg(temp, "   %s = %s\n", item->name, volspec.c_str());
-      pm_strcat(cfg_str, temp.c_str());
+
+      Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
+      indent_config_item(cfg_str, 1, temp.c_str());
    }
 }
 
@@ -796,8 +812,8 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
          }
       }
 
-      Mmsg(temp, "   %s = %s\n", item->name, timespec.c_str());
-      pm_strcat(cfg_str, temp.c_str());
+      Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
+      indent_config_item(cfg_str, 1, temp.c_str());
    }
 }
 
@@ -826,93 +842,98 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
             if (runscript->cmd_type == '|') {  /* short runscripts only support shell command */
                if (runscript->when == SCRIPT_Before &&           /* runbeforejob */
                   (bstrcmp(runscript->target, ""))) {
-                     Mmsg(temp, "   run before job = \"%s\"\n", cmdbuf);
+                     Mmsg(temp, "run before job = \"%s\"\n", cmdbuf);
                      shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&     /* runafterjob */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "   run after job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "run after job = \"%s\"\n", cmdbuf);
                   shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&     /* client run after job */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           !bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "   client run after job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "client run after job = \"%s\"\n", cmdbuf);
                   shortrunscript = true;
                } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
                           !bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "   client run before job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "before job = \"%s\"\n", cmdbuf);
                   shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
                           runscript->on_failure &&
                          !runscript->on_success &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "   run after failed job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "run after failed job = \"%s\"\n", cmdbuf);
                   shortrunscript = true;
                }
-               pm_strcat(cfg_str, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str());
             }
 
-            if (!shortrunscript) { /* if we cannot write the runscript as short runscript...*/
-               Mmsg(temp, "   runscript {\n");
-               pm_strcat(cfg_str, temp.c_str());
+            /*
+             * If we cannot write the runscript as short runscript...
+             */
+            if (!shortrunscript) {
+               Mmsg(temp, "runscript {\n");
+               indent_config_item(cfg_str, 1, temp.c_str());
+
                char *cmdstring = (char *)"command"; /* '|' */
                if (runscript->cmd_type == '@') {
                   cmdstring = (char *)"console";
                }
-               Mmsg(temp, "      %s = \"%s\"\n", cmdstring, cmdbuf);
-               pm_strcat(cfg_str, temp.c_str());
+
+               Mmsg(temp, "%s = \"%s\"\n", cmdstring, cmdbuf);
+               indent_config_item(cfg_str, 2, temp.c_str());
 
                /*
                 * default: never
                 */
-               char* when = (char *)"never";
+               char *when = (char *)"never";
                switch (runscript->when) {
                   case SCRIPT_Before:
-                     when  = (char*)"before";
+                     when  = (char *)"before";
                      break;
                   case SCRIPT_After:
-                     when = (char*)"after";
+                     when = (char *)"after";
                      break;
                   case SCRIPT_AfterVSS:
-                     when = (char*)"aftervss";
+                     when = (char *)"aftervss";
                      break;
                   case SCRIPT_Any:
-                     when = (char*)"always";
+                     when = (char *)"always";
                      break;
                }
 
                if (! bstrcmp(when, "never")) { /* suppress default value */
-                  Mmsg(temp, "      runswhen = %s\n", when);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "runswhen = %s\n", when);
+                  indent_config_item(cfg_str, 2, temp.c_str());
                }
 
                /* default: fail_on_error = true */
-               char* fail_on_error = (char*)"Yes";
+               char *fail_on_error = (char *)"Yes";
                if (! runscript->fail_on_error){
-                  fail_on_error = (char*)"No";
-                  Mmsg(temp, "      failonerror = %s\n", fail_on_error);
-                  pm_strcat(cfg_str, temp.c_str());
+                  fail_on_error = (char *)"No";
+                  Mmsg(temp, "failonerror = %s\n", fail_on_error);
+                  indent_config_item(cfg_str, 2, temp.c_str());
                }
 
                /* default: on_success = true */
-               char* run_on_success = (char*)"Yes";
+               char *run_on_success = (char *)"Yes";
                if (! runscript->on_success){
-                  run_on_success = (char*)"No";
-                  Mmsg(temp, "      runsonsuccess = %s\n", run_on_success);
-                  pm_strcat(cfg_str, temp.c_str());
+                  run_on_success = (char *)"No";
+                  Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
+                  indent_config_item(cfg_str, 2, temp.c_str());
                }
 
                /* default: on_failure = false */
                char *run_on_failure = (char *)"No";
                if (runscript->on_failure) {
-                  run_on_failure = (char*)"Yes";
-                  Mmsg(temp, "      runsonfailure = %s\n", run_on_failure);
-                  pm_strcat(cfg_str, temp.c_str());
+                  run_on_failure = (char *)"Yes";
+                  Mmsg(temp, "runsonfailure = %s\n", run_on_failure);
+                  indent_config_item(cfg_str, 2, temp.c_str());
                }
 
                /* level is not implemented
@@ -920,15 +941,14 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                */
 
                /* default: runsonclient = yes */
-               char* runsonclient = (char*)"Yes";
+               char *runsonclient = (char *)"Yes";
                if (bstrcmp(runscript->target, "")) {
-                  runsonclient = (char*)"No";
-                  Mmsg(temp, "      runsonclient = %s\n", runsonclient);
-                  pm_strcat(cfg_str, temp.c_str());
+                  runsonclient = (char *)"No";
+                  Mmsg(temp, "runsonclient = %s\n", runsonclient);
+                  indent_config_item(cfg_str, 2, temp.c_str());
                }
 
-               Mmsg(temp, "   }\n");
-               pm_strcat(cfg_str, temp.c_str());
+               indent_config_item(cfg_str, 1, "}\n");
             } /* not a short runscript */
 
             free_pool_memory(cmdbuf);
@@ -964,8 +984,8 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    if (run != NULL) {
       while (run) {
          POOL_MEM run_str; /* holds the complete run= ... line */
-         Mmsg(temp, "   run = ");
-         pm_strcat(run_str, temp.c_str());
+
+         indent_config_item(cfg_str, 1, "run = ");
 
          /*
           * Overrides
@@ -1275,8 +1295,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          if (print_item && *(items[i].value) != NULL) {
             Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
-            Mmsg(temp, "   %s = \"%s\"\n", items[i].name, *(items[i].value));
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
+            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       case CFG_TYPE_MD5PASSWORD:
@@ -1306,24 +1326,24 @@ bool BRSRES::print_config(POOL_MEM &buff)
             switch (password->encoding) {
             case p_encoding_clear:
                Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "   %s = \"%s\"\n", items[i].name, password->value);
+               Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
                break;
             case p_encoding_md5:
                Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "   %s = \"[md5]%s\"\n", items[i].name, password->value);
+               Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
                break;
             default:
                break;
             }
-            pm_strcat(cfg_str, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       }
       case CFG_TYPE_LABEL: {
          for (int j = 0; tapelabels[j].name; j++) {
             if (*(items[i].ui32value) == tapelabels[j].token) {
-               Mmsg(temp, "   %s = \"%s\"\n", items[i].name, tapelabels[j].name);
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
                break;
             }
          }
@@ -1354,8 +1374,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          }
 
          if (print_item) {
-            Mmsg(temp, "   %s = %d\n", items[i].name, *(items[i].value));
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].value));
+            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       case CFG_TYPE_SIZE64:
@@ -1388,12 +1408,11 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          if (print_item) {
             if (*items[i].boolvalue) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, NT_("yes"));
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
             } else {
-               Mmsg(temp, "   %s = %s\n", items[i].name, NT_("no"));
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
             }
+            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       case CFG_TYPE_RUNSCRIPT:
@@ -1416,8 +1435,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          if (list != NULL) {
             foreach_alist(value, list) {
-               Mmsg(temp, "   %s = %s\n", items[i].name, value);
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "%s = %s\n", items[i].name, value);
+               indent_config_item(cfg_str, 1, temp.c_str());
             }
          }
          break;
@@ -1430,8 +1449,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          list = ((alist **)items[i].value)[items[i].code] ;
          if (list != NULL) {
-            Mmsg(temp, "   %s = ", items[i].name);
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = ", items[i].name);
+            indent_config_item(cfg_str, 1, temp.c_str());
             foreach_alist(value, list) {
                if (cnt) {
                   Mmsg(temp, ",\"%s\"", value);
@@ -1459,8 +1478,9 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          list = (alist *) *(items[i].value);
          if (list != NULL) {
-            Mmsg(temp, "   %s = ", items[i].name);
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = ", items[i].name);
+            indent_config_item(cfg_str, 1, temp.c_str());
+
             pm_strcpy(res_names, "");
             foreach_alist(res, list) {
                if (cnt) {
@@ -1485,8 +1505,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          res = (RES*)*(items[i].value);
          if (res != NULL && res->name != NULL) {
-            Mmsg(temp, "   %s = \"%s\"\n", items[i].name, res->name);
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
+            indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
       }
@@ -1496,8 +1516,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (jobtype) {
             for (int32_t j = 0; jobtypes[j].type_name; j++) {
                if (jobtypes[j].job_type == jobtype) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, jobtypes[j].type_name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1510,8 +1530,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (protocol) {
             for (uint32_t j = 0; backupprotocols[j].name; j++) {
                if (backupprotocols[j].token == protocol) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, backupprotocols[j].name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1524,8 +1544,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (migtype) {
             for (int32_t j = 0; migtypes[j].type_name; j++) {
                if (migtypes[j].job_type == migtype) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, migtypes[j].type_name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1538,8 +1558,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (replace) {
             for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
                if (ReplaceOptions[j].token == replace) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, ReplaceOptions[j].name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1552,8 +1572,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (level) {
             for (int32_t j = 0; joblevels[j].level_name; j++) {
                if (joblevels[j].level == level) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, joblevels[j].level_name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1566,8 +1586,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (action) {
             for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
                if (ActionOnPurgeOptions[j].token == action) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1580,8 +1600,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (authprotocol) {
             for (uint32_t j = 0; authprotocols[j].name; j++) {
                if (authprotocols[j].token == authprotocol) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, authprotocols[j].name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1594,8 +1614,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          if (authtype) {
             for (uint32_t j = 0; authmethods[j].name; j++) {
                if (authprotocols[j].token == authtype) {
-                  Mmsg(temp, "   %s = %s\n", items[i].name, authmethods[j].name);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
+                  indent_config_item(cfg_str, 1, temp.c_str());
                   break;
                }
             }
@@ -1604,12 +1624,11 @@ bool BRSRES::print_config(POOL_MEM &buff)
       }
       case CFG_TYPE_BIT: {
          if (*(items[i].ui32value) & items[i].code) {
-            Mmsg(temp, "   %s = %s\n", items[i].name, NT_("yes"));
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
          } else {
-            Mmsg(temp, "   %s = %s\n", items[i].name, NT_("no"));
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
          }
+         indent_config_item(cfg_str, 1, temp.c_str());
          break;
       }
       case CFG_TYPE_MSGS:
@@ -1623,26 +1642,25 @@ bool BRSRES::print_config(POOL_MEM &buff)
           */
          break;
       case CFG_TYPE_ADDRESSES: {
-         Mmsg(temp, "   %s = {\n", items[i].name);
-         pm_strcat(cfg_str, temp.c_str());
          dlist *addrs = *items[i].dlistvalue;
          IPADDR *adr;
+
+         Mmsg(temp, "%s = {\n", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
          foreach_dlist(adr, addrs) {
             char tmp[1024];
+
             adr->build_config_str(tmp, sizeof(tmp));
             pm_strcat(cfg_str, tmp);
             pm_strcat(cfg_str, "\n");
          }
-         Mmsg(temp, "   }\n");
-         pm_strcat(cfg_str, temp.c_str());
 
-
+         indent_config_item(cfg_str, 1, "}\n");
          break;
       }
 
       case CFG_TYPE_ADDRESSES_PORT:
          /* is stored in CFG_TYPE_ADDRESSES and printed there  */
-         /* Mmsg(temp, "   %s = %s\n", items[i].name, *(items[i].ui32value));*/
          break;
 
       case CFG_TYPE_ADDRESSES_ADDRESS:
@@ -1674,8 +1692,8 @@ bool FILESETRES::print_config(POOL_MEM &buff)
    Mmsg(temp, "FileSet {\n");
    pm_strcat(cfg_str, temp.c_str());
 
-   Mmsg(temp, "   Name = \"%s\"\n", this->name());
-   pm_strcat(cfg_str, temp.c_str());
+   Mmsg(temp, "Name = \"%s\"\n", this->name());
+   indent_config_item(cfg_str, 1, temp.c_str());
 
    if (num_includes) {
       /*
@@ -1683,15 +1701,16 @@ bool FILESETRES::print_config(POOL_MEM &buff)
        */
       for (i = 0;  i < num_includes; i++) {
          INCEXE *incexe = include_items[i];
-         Mmsg(temp, "   Include {\n");
-         pm_strcat(cfg_str, temp.c_str());
+
+         Mmsg(temp, "Include {\n");
+         indent_config_item(cfg_str, 1, temp.c_str());
 
          /*
           * Start options block
           */
          if (incexe->num_opts > 0) {
-            Mmsg(temp, "      Options {\n");
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "Options {\n");
+            indent_config_item(cfg_str, 2, temp.c_str());
 
             for (j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
@@ -1699,49 +1718,38 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                for (p=&fo->opts[0]; *p; p++) {
                   switch (*p) {
                      case 'a':                 /* alway replace */
-                        Mmsg(temp, "      replace = always\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "replace = always\n");
                         break;
                      case '0':                 /* no option */
                         break;
                      case 'e':
-                        Mmsg(temp, "      exclude = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "exclude = yes\n");
                         break;
                      case 'f':
-                        Mmsg(temp, "      onefs = no\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "onefs = no\n");
                         break;
                      case 'h':                 /* no recursion */
-                        Mmsg(temp, "      recurse = no\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "recurse = no\n");
                         break;
                      case 'H':                 /* no hard link handling */
-                        Mmsg(temp, "      hardlinks = no\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "hardlinks = no\n");
                         break;
                      case 'i':
-                        Mmsg(temp, "      ignorecase = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "ignorecase = yes\n");
                         break;
                      case 'M':                 /* MD5 */
-                        Mmsg(temp, "      signature = md5\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "signature = md5\n");
                         break;
                      case 'n':
-                        Mmsg(temp, "      replace = never\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "replace = never\n");
                         break;
                      case 'p':                 /* use portable data format */
-                        Mmsg(temp, "      portable = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "portable = yes\n");
                         break;
                      case 'R':                 /* Resource forks and Finder Info */
-                        Mmsg(temp, "      hfsplussupport = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "hfsplussupport = yes\n");
                      case 'r':                 /* read fifo */
-                        Mmsg(temp, "      readfifo = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "readfifo = yes\n");
                         break;
                      case 'S':
                         switch(*(p + 1)) {
@@ -1749,53 +1757,47 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                            /* Old director did not specify SHA variant */
                            break;
                         case '1':
-                           Mmsg(temp, "      signature = sha1\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           indent_config_item(cfg_str, 3, "signature = sha1\n");
                            p++;
                            break;
 #ifdef HAVE_SHA2
                         case '2':
-                           Mmsg(temp, "      signature = sha256\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           indent_config_item(cfg_str, 3, "signature = sha256\n");
                            p++;
                            break;
                         case '3':
-                           Mmsg(temp, "      signature = sha512\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           indent_config_item(cfg_str, 3, "signature = sha512\n");
                            p++;
                            break;
 #endif
                         default:
                            /* Automatically downgrade to SHA-1 if an unsupported
                             * SHA variant is specified */
-                           Mmsg(temp, "      signature = sha1\n");
-                           pm_strcat(cfg_str, temp.c_str());
+                           indent_config_item(cfg_str, 3, "signature = sha1\n");
                            p++;
                            break;
                         }
                         break;
                      case 's':
-                        Mmsg(temp, "      sparse = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "sparse = yes\n");
                         break;
                      case 'm':
-                        Mmsg(temp, "      mtimeonly = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "mtimeonly = yes\n");
                         break;
                      case 'k':
-                        Mmsg(temp, "      keepatime = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "keepatime = yes\n");
                         break;
                      case 'A':
-                        Mmsg(temp, "      aclsupport = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "aclsupport = yes\n");
                         break;
                      case 'V':                  /* verify options */
-                        Mmsg(temp, "      verify = ");
-                        pm_strcat(cfg_str, temp.c_str());
-                        /* Copy Verify Options */
-                        for (l=0; *p && *p != ':'; p++) {
-                           Mmsg(temp, "   %c ", *p);
+                        indent_config_item(cfg_str, 3, "verify = ");
+
+                        /*
+                         * Copy Verify Options
+                         */
+                        for (l = 0; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
                            pm_strcat(cfg_str, temp.c_str());
                            //fo->VerifyOpts[j] = *p;
                            //if (j < (int)sizeof(fo->VerifyOpts) - 1) {
@@ -1805,24 +1807,20 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                         //fo->VerifyOpts[j] = 0;
                         break;
                      case 'w':
-                        Mmsg(temp, "      replace = ifnewer\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "replace = ifnewer\n");
                         break;
                      case 'W':
-                        Mmsg(temp, "      enhancedwild = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "enhancedwild = yes\n");
                         break;
                      case 'Z':                 /* compression */
+                        indent_config_item(cfg_str, 3, "compression = ");
                         p++;                   /* skip Z */
-                        Mmsg(temp, "      compression = ");
-                        pm_strcat(cfg_str, temp.c_str());
                         if (*p >= '0' && *p <= '9') {
                            Mmsg(temp, "gzip\n");
                            pm_strcat(cfg_str, temp.c_str());
-                           Mmsg(temp, "       %c \n", *p);
+                           Mmsg(temp, "%c\n", *p);
                            pm_strcat(cfg_str, temp.c_str());
                            p++; /* skip number */
-                           //fo->Compress_level = *p - '0';
                         } else if (*p == 'o') {
                            Mmsg(temp, "lzo\n");
                            pm_strcat(cfg_str, temp.c_str());
@@ -1845,8 +1843,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                         }
                         break;
                      case 'X':
-                        Mmsg(temp, "      xattr = yes\n");
-                        pm_strcat(cfg_str, temp.c_str());
+                        indent_config_item(cfg_str, 3, "xattr = yes\n");
                         break;
                      default:
                         Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
@@ -1855,79 +1852,78 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                }
 
                for (k = 0; k < fo->regex.size(); k++) {
-                  Mmsg(temp, "      Regex =  \"%s\"\n", fo->regex.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Regex =  \"%s\"\n", fo->regex.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->regexdir.size(); k++) {
-                  Mmsg(temp, "      Regex Dir = \"%s\"\n", fo->regexdir.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->regexfile.size(); k++) {
-                  Mmsg(temp, "      Regex File = \" %s\"\n", fo->regexfile.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->wild.size(); k++) {
-                  Mmsg(temp, "      Wild =  \"%s\"\n", fo->wild.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Wild =  \"%s\"\n", fo->wild.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->wilddir.size(); k++) {
-                  Mmsg(temp, "      Wild Dir = \"%s\"\n", fo->wilddir.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->wildfile.size(); k++) {
-                  Mmsg(temp, "      Wild File =  \"%s\"\n", fo->wildfile.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Wild File =  \"%s\"\n", fo->wildfile.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->wildbase.size(); k++) {
-                  Mmsg(temp, "      Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->base.size(); k++) {
-                  Mmsg(temp, "      Base = \"%s\"\n", fo->base.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->fstype.size(); k++) {
-                  Mmsg(temp, "      Fs Type =  \"%s\"\n", fo->fstype.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Fs Type =  \"%s\"\n", fo->fstype.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->drivetype.size(); k++) {
-                  Mmsg(temp, "      Drive Type = \"%s\"\n", fo->drivetype.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Drive Type = \"%s\"\n", fo->drivetype.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (k = 0; k < fo->meta.size(); k++) {
-                  Mmsg(temp, "      Meta = \"%s\"\n", fo->meta.get(k));
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                if (fo->plugin) {
-                  Mmsg(temp, "      Plugin = \"%s\"\n", fo->plugin);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Plugin = \"%s\"\n", fo->plugin);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                if (fo->reader) {
-                  Mmsg(temp, "      Reader = \"%s\"\n", fo->reader);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Reader = \"%s\"\n", fo->reader);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                if (fo->writer) {
-                  Mmsg(temp, "      Writer = \"%s\"\n", fo->writer);
-                  pm_strcat(cfg_str, temp.c_str());
+                  Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
             }
 
             if (incexe->num_opts > 0) {
-               Mmsg(temp, "      }\n");
-               pm_strcat(cfg_str, temp.c_str());
+               indent_config_item(cfg_str, 2, "}\n");
             }
          } /* end options block */
 
@@ -1936,8 +1932,8 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           */
          if (incexe->name_list.size()) {
             for (l = 0; l < incexe->name_list.size(); l++) {
-               Mmsg(temp, "      File = \"%s\"\n", incexe->name_list.get(l));
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
 
@@ -1946,8 +1942,8 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           */
          if (incexe->plugin_list.size()) {
             for (l = 0; l < incexe->plugin_list.size(); l++) {
-               Mmsg(temp, "      Plugin =  %s\n", incexe->plugin_list.get(l));
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "Plugin =  %s\n", incexe->plugin_list.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
 
@@ -1955,12 +1951,11 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           * Ignore Dir Containing = entry.
           */
          if (incexe->ignoredir) {
-            Mmsg(temp, "      Ignore Dir Containing =  \"%s\"\n", incexe->ignoredir);
-            pm_strcat(cfg_str, temp.c_str());
+            Mmsg(temp, "Ignore Dir Containing = \"%s\"\n", incexe->ignoredir);
+            indent_config_item(cfg_str, 2, temp.c_str());
          }
 
-         Mmsg(temp, "   }\n");
-         pm_strcat(cfg_str, temp.c_str());
+         indent_config_item(cfg_str, 1, "}\n");
 
          /*
           * End Include block
@@ -1976,15 +1971,14 @@ bool FILESETRES::print_config(POOL_MEM &buff)
          INCEXE *incexe = exclude_items[j];
 
          if (incexe->name_list.size()) {
-            Mmsg(temp, "   Exclude {\n");
-            pm_strcat(cfg_str, temp.c_str());
+            indent_config_item(cfg_str, 1, "Exclude {\n");
+
             for (k = 0; k < incexe->name_list.size(); k++) {
-               Mmsg(temp, "      File = \"%s\"\n", incexe->name_list.get(k));
-               pm_strcat(cfg_str, temp.c_str());
+               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(k));
+               indent_config_item(cfg_str, 2, temp.c_str());
             }
 
-            Mmsg(temp, "   }\n");
-            pm_strcat(cfg_str, temp.c_str());
+            indent_config_item(cfg_str, 1, "}\n");
          }
       } /* loop over all exclude blocks */
    }
@@ -3266,7 +3260,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
        * - int command type (ex: SHELL_CMD)
        */
       res_runscript.set_job_code_callback(job_code_callback_director);
-      while ((c=(char*)res_runscript.commands->pop()) != NULL) {
+      while ((c = (char *)res_runscript.commands->pop()) != NULL) {
          t = (intptr_t)res_runscript.commands->pop();
          RUNSCRIPT *script = new_runscript();
          memcpy(script, &res_runscript, sizeof(RUNSCRIPT));
