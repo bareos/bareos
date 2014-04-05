@@ -677,146 +677,6 @@ static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_
    pm_strcat(cfg_str, config_item);
 }
 
-static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
-{
-   POOL_MEM temp;
-   bool print_item = false;
-
-   /*
-    * convert default value string to numeric value
-    */
-   static const char *modifier[] = {
-      "g",
-      "m",
-      "k",
-      "",
-      NULL
-   };
-   const int64_t multiplier[] = {
-      1073741824,    /* gibi */
-      1048576,       /* mebi */
-      1024,          /* kibi */
-      1              /* byte */
-   };
-
-   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-      /*
-       * Always print required items or if my_config->m_omit_defaults is false
-       */
-      print_item = true;
-   } else if (item->flags & CFG_ITEM_DEFAULT) {
-      /*
-       * We have a default value
-       */
-      if (*(item->i64value) != str_to_int64(item->default_value)) {
-         /*
-          * Print if value differs from default
-          */
-         print_item = true;
-      }
-   }
-
-   if (print_item) {
-      POOL_MEM volspec;   /* vol specification string*/
-      int64_t bytes = *(item->i64value);
-      int factor;
-
-      if (bytes == 0) {
-         pm_strcat(volspec, "0");
-      } else {
-         for (int t=0; modifier[t]; t++) {
-            Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
-            factor = bytes / multiplier[t];
-            bytes  = bytes % multiplier[t];
-            if (factor > 0) {
-               Mmsg(temp, "%d %s ", factor, modifier[t]);
-               pm_strcat(volspec, temp.c_str());
-               Dmsg1(200, " volspec: %s\n", volspec.c_str());
-            }
-            if (bytes == 0) {
-               break;
-            }
-         }
-      }
-
-      Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
-      indent_config_item(cfg_str, 1, temp.c_str());
-   }
-}
-
-static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
-{
-   POOL_MEM temp;
-   bool print_item = false;
-
-   /*
-    * Reverse time formatting: 1 Month, 1 Week, etc.
-    *
-    * convert default value string to numeric value
-    */
-   static const char *modifier[] = {
-      "years",
-      "months",
-      "weeks",
-      "days",
-      "hours",
-      "minutes",
-      "seconds",
-      NULL
-   };
-   static const int32_t multiplier[] = {
-      60 * 60 * 24 * 365,
-      60 * 60 * 24 * 30,
-      60 * 60 * 24 * 7,
-      60 * 60 * 24,
-      60 * 60,
-      60,
-      1,
-      0
-   };
-
-   if ((item->flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-      /*
-       * Always print required items or if my_config->m_omit_defaults is false
-       */
-      print_item = true;
-   } else if (item->flags & CFG_ITEM_DEFAULT) {
-      /*
-       * We have a default value
-       */
-      if (*(item->i64value) != str_to_int64(item->default_value)) {
-         /*
-          * Print if value differs from default
-          */
-         print_item = true;
-      }
-   }
-
-   if (print_item) {
-      POOL_MEM timespec;
-      utime_t secs = *(item->utimevalue);
-      int factor;
-      if (secs == 0) {
-         pm_strcat(timespec, "0");
-      } else {
-         for (int t=0; modifier[t]; t++) {
-            factor = secs / multiplier[t];
-            secs   = secs % multiplier[t];
-            if (factor > 0) {
-               Mmsg(temp, "%d %s ", factor, modifier[t]);
-               pm_strcat(timespec, temp.c_str());
-            }
-            if (secs == 0) {
-               break;
-            }
-         }
-      }
-
-      Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
-      indent_config_item(cfg_str, 1, temp.c_str());
-   }
-}
-
 static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
@@ -1241,443 +1101,6 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          run = run->next;
       } // loop over runs
    }
-}
-
-bool BRSRES::print_config(POOL_MEM &buff)
-{
-   RES_ITEM *items;
-   int rindex = this->hdr.rcode - R_FIRST;
-   int i = 0;
-   POOL_MEM cfg_str;
-   POOL_MEM temp;
-
-   /*
-    * Make sure the resource class has any items.
-    */
-   if (!resources[rindex].items) {
-      return true;
-   }
-
-   memcpy(&res_all, this, resources[rindex].size);
-
-   pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
-   pm_strcat(cfg_str, " {\n");
-
-   items = resources[rindex].items;
-
-   for (i = 0; items[i].name; i++) {
-      bool print_item = false;
-
-      switch (items[i].type) {
-      case CFG_TYPE_STR:
-      case CFG_TYPE_DIR:
-      case CFG_TYPE_NAME:
-      case CFG_TYPE_STRNAME:
-         /*
-          * String types
-          */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (!bstrcmp(*(items[i].value), items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
-            }
-         }
-
-         if (print_item && *(items[i].value) != NULL) {
-            Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
-            indent_config_item(cfg_str, 1, temp.c_str());
-         }
-         break;
-      case CFG_TYPE_MD5PASSWORD:
-      case CFG_TYPE_CLEARPASSWORD:
-      case CFG_TYPE_AUTOPASSWORD: {
-         s_password *password;
-
-         password = items[i].pwdvalue;
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (!bstrcmp(password->value, items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
-            }
-         }
-
-         if (print_item && password && password->value != NULL) {
-            switch (password->encoding) {
-            case p_encoding_clear:
-               Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
-               break;
-            case p_encoding_md5:
-               Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-               Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-               break;
-            default:
-               break;
-            }
-            indent_config_item(cfg_str, 1, temp.c_str());
-         }
-         break;
-      }
-      case CFG_TYPE_LABEL: {
-         for (int j = 0; tapelabels[j].name; j++) {
-            if (*(items[i].ui32value) == tapelabels[j].token) {
-               Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
-               break;
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_INT32:
-      case CFG_TYPE_PINT32:
-      case CFG_TYPE_INT64:
-      case CFG_TYPE_SPEED:
-         /*
-          * Integer types
-          */
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * We have a default value
-             */
-            if (*(items[i].i64value) != str_to_int64(items[i].default_value)) {
-               /*
-                * Print if value differs from default
-                */
-               print_item = true;
-            }
-         }
-
-         if (print_item) {
-            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].value));
-            indent_config_item(cfg_str, 1, temp.c_str());
-         }
-         break;
-      case CFG_TYPE_SIZE64:
-      case CFG_TYPE_SIZE32:
-         print_config_size(&items[i], cfg_str);
-         break;
-      case CFG_TYPE_TIME:
-         print_config_time(&items[i], cfg_str);
-         break;
-      case CFG_TYPE_BOOL:
-         if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
-            /*
-             * Always print required items or if my_config->m_omit_defaults is false
-             */
-            print_item = true;
-         } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-            /*
-             * we have a default value
-             */
-            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
-                                 bstrcasecmp(items[i].default_value, "yes");
-
-            /*
-             * Print if value differs from default
-             */
-            if (*items[i].boolvalue != default_value) {
-               print_item = true;
-            }
-         }
-
-         if (print_item) {
-            if (*items[i].boolvalue) {
-               Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
-            } else {
-               Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
-            }
-            indent_config_item(cfg_str, 1, temp.c_str());
-         }
-         break;
-      case CFG_TYPE_RUNSCRIPT:
-         Dmsg0(200, "CFG_TYPE_RUNSCRIPT\n");
-         print_config_runscript(&items[i], cfg_str);
-         break;
-      case CFG_TYPE_SHRTRUNSCRIPT:
-         /*
-          * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT when parsed
-          */
-         break;
-      case CFG_TYPE_ALIST_STR:
-      case CFG_TYPE_ALIST_DIR: {
-        /*
-         * One line for each member of the list
-         */
-         char *value;
-         alist* list;
-         list = (alist *) *(items[i].value);
-
-         if (list != NULL) {
-            foreach_alist(value, list) {
-               Mmsg(temp, "%s = %s\n", items[i].name, value);
-               indent_config_item(cfg_str, 1, temp.c_str());
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_ACL: {
-         int cnt = 0;
-         char *value;
-         alist* list;
-         POOL_MEM acl;
-
-         list = ((alist **)items[i].value)[items[i].code] ;
-         if (list != NULL) {
-            Mmsg(temp, "%s = ", items[i].name);
-            indent_config_item(cfg_str, 1, temp.c_str());
-            foreach_alist(value, list) {
-               if (cnt) {
-                  Mmsg(temp, ",\"%s\"", value);
-               } else {
-                  Mmsg(temp, "\"%s\"", value);
-               }
-               pm_strcat(acl, temp.c_str());
-               cnt++;
-            }
-
-            pm_strcat(cfg_str, acl.c_str());
-            pm_strcat(cfg_str, "\n");
-         }
-         break;
-      }
-      case CFG_TYPE_DEVICE:
-      case CFG_TYPE_ALIST_RES: {
-         /*
-          * Each member of the list is comma-separated
-          */
-         int cnt = 0;
-         RES *res;
-         alist* list;
-         POOL_MEM res_names;
-
-         list = (alist *) *(items[i].value);
-         if (list != NULL) {
-            Mmsg(temp, "%s = ", items[i].name);
-            indent_config_item(cfg_str, 1, temp.c_str());
-
-            pm_strcpy(res_names, "");
-            foreach_alist(res, list) {
-               if (cnt) {
-                  Mmsg(temp, ",\"%s\"", res->name);
-               } else {
-                  Mmsg(temp, "\"%s\"", res->name);
-               }
-               pm_strcat(res_names, temp.c_str());
-               cnt++;
-            }
-
-            pm_strcat(cfg_str, res_names.c_str());
-            pm_strcat(cfg_str, "\n");
-         }
-         break;
-      }
-      case CFG_TYPE_RUN:
-         print_config_run(&items[i], cfg_str);
-         break;
-      case CFG_TYPE_RES: {
-         RES *res;
-
-         res = (RES*)*(items[i].value);
-         if (res != NULL && res->name != NULL) {
-            Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
-            indent_config_item(cfg_str, 1, temp.c_str());
-         }
-         break;
-      }
-      case CFG_TYPE_JOBTYPE: {
-         int32_t jobtype = *(items[i].ui32value);
-
-         if (jobtype) {
-            for (int32_t j = 0; jobtypes[j].type_name; j++) {
-               if (jobtypes[j].job_type == jobtype) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_PROTOCOLTYPE: {
-         uint32_t protocol = *(items[i].ui32value);
-
-         if (protocol) {
-            for (uint32_t j = 0; backupprotocols[j].name; j++) {
-               if (backupprotocols[j].token == protocol) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_MIGTYPE: {
-         int32_t migtype = *(items[i].ui32value);
-
-         if (migtype) {
-            for (int32_t j = 0; migtypes[j].type_name; j++) {
-               if (migtypes[j].job_type == migtype) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_REPLACE: {
-         uint32_t replace = *(items[i].ui32value);
-
-         if (replace) {
-            for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
-               if (ReplaceOptions[j].token == replace) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_LEVEL: {
-         int32_t level = *(items[i].i32value);
-
-         if (level) {
-            for (int32_t j = 0; joblevels[j].level_name; j++) {
-               if (joblevels[j].level == level) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_ACTIONONPURGE: {
-         uint32_t action = *(items[i].ui32value);
-
-         if (action) {
-            for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
-               if (ActionOnPurgeOptions[j].token == action) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_AUTHPROTOCOLTYPE: {
-         uint32_t authprotocol = *(items[i].ui32value);
-
-         if (authprotocol) {
-            for (uint32_t j = 0; authprotocols[j].name; j++) {
-               if (authprotocols[j].token == authprotocol) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_AUTHTYPE: {
-         uint32_t authtype = *(items[i].ui32value);
-
-         if (authtype) {
-            for (uint32_t j = 0; authmethods[j].name; j++) {
-               if (authprotocols[j].token == authtype) {
-                  Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
-                  indent_config_item(cfg_str, 1, temp.c_str());
-                  break;
-               }
-            }
-         }
-         break;
-      }
-      case CFG_TYPE_BIT: {
-         if (*(items[i].ui32value) & items[i].code) {
-            Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
-         } else {
-            Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
-         }
-         indent_config_item(cfg_str, 1, temp.c_str());
-         break;
-      }
-      case CFG_TYPE_MSGS:
-         /*
-          * We ignore these items as they are printed in a special way in MSGSRES::print_config()
-          */
-         break;
-      case CFG_TYPE_INCEXC:
-         /*
-          * Ignored as these items are printed  in FILESETRES::print_config()
-          */
-         break;
-      case CFG_TYPE_ADDRESSES: {
-         dlist *addrs = *items[i].dlistvalue;
-         IPADDR *adr;
-
-         Mmsg(temp, "%s = {\n", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
-         foreach_dlist(adr, addrs) {
-            char tmp[1024];
-
-            adr->build_config_str(tmp, sizeof(tmp));
-            pm_strcat(cfg_str, tmp);
-            pm_strcat(cfg_str, "\n");
-         }
-
-         indent_config_item(cfg_str, 1, "}\n");
-         break;
-      }
-
-      case CFG_TYPE_ADDRESSES_PORT:
-         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
-         break;
-
-      case CFG_TYPE_ADDRESSES_ADDRESS:
-         /* is stored in CFG_TYPE_ADDRESSES and printed there  */
-         break;
-
-      case CFG_TYPE_DEFS:
-      default:
-         Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
-         break;
-      } // switch items.type
-   } // items
-
-   pm_strcat(cfg_str, "}\n\n");
-   pm_strcat(buff, cfg_str.c_str());
-
-   return true;
 }
 
 bool FILESETRES::print_config(POOL_MEM &buff)
@@ -3447,10 +2870,215 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
+/*
+ * callback function for print_config
+ * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
+ */
+static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
+{
+   bool print_item = false;
+   POOL_MEM temp;
+
+   switch (items[i].type) {
+   case CFG_TYPE_DEVICE: {
+      /*
+       * Each member of the list is comma-separated
+       */
+      int cnt = 0;
+      RES *res;
+      alist* list;
+      POOL_MEM res_names;
+
+      list = (alist *) *(items[i].value);
+      if (list != NULL) {
+         Mmsg(temp, "%s = ", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+
+         pm_strcpy(res_names, "");
+         foreach_alist(res, list) {
+            if (cnt) {
+               Mmsg(temp, ",\"%s\"", res->name);
+            } else {
+               Mmsg(temp, "\"%s\"", res->name);
+            }
+            pm_strcat(res_names, temp.c_str());
+            cnt++;
+         }
+
+         pm_strcat(cfg_str, res_names.c_str());
+         pm_strcat(cfg_str, "\n");
+      }
+      break;
+   }
+   case CFG_TYPE_RUNSCRIPT:
+      Dmsg0(200, "CFG_TYPE_RUNSCRIPT\n");
+      print_config_runscript(&items[i], cfg_str);
+      break;
+   case CFG_TYPE_SHRTRUNSCRIPT:
+      /*
+       * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT when parsed
+       */
+      break;
+   case CFG_TYPE_ACL: {
+      int cnt = 0;
+      char *value;
+      alist* list;
+      POOL_MEM acl;
+
+      list = ((alist **)items[i].value)[items[i].code] ;
+      if (list != NULL) {
+         Mmsg(temp, "%s = ", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+         foreach_alist(value, list) {
+            if (cnt) {
+               Mmsg(temp, ",\"%s\"", value);
+            } else {
+               Mmsg(temp, "\"%s\"", value);
+            }
+            pm_strcat(acl, temp.c_str());
+            cnt++;
+         }
+
+         pm_strcat(cfg_str, acl.c_str());
+         pm_strcat(cfg_str, "\n");
+      }
+      break;
+   }
+   case CFG_TYPE_RUN:
+      print_config_run(&items[i], cfg_str);
+      break;
+   case CFG_TYPE_JOBTYPE: {
+      int32_t jobtype = *(items[i].ui32value);
+
+      if (jobtype) {
+         for (int32_t j = 0; jobtypes[j].type_name; j++) {
+            if (jobtypes[j].job_type == jobtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_PROTOCOLTYPE: {
+      uint32_t protocol = *(items[i].ui32value);
+
+      if (protocol) {
+         for (uint32_t j = 0; backupprotocols[j].name; j++) {
+            if (backupprotocols[j].token == protocol) {
+               Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_MIGTYPE: {
+      int32_t migtype = *(items[i].ui32value);
+
+      if (migtype) {
+         for (int32_t j = 0; migtypes[j].type_name; j++) {
+            if (migtypes[j].job_type == migtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_REPLACE: {
+      uint32_t replace = *(items[i].ui32value);
+
+      if (replace) {
+         for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
+            if (ReplaceOptions[j].token == replace) {
+               Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_LEVEL: {
+      int32_t level = *(items[i].i32value);
+
+      if (level) {
+         for (int32_t j = 0; joblevels[j].level_name; j++) {
+            if (joblevels[j].level == level) {
+               Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_ACTIONONPURGE: {
+      uint32_t action = *(items[i].ui32value);
+
+      if (action) {
+         for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
+            if (ActionOnPurgeOptions[j].token == action) {
+               Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_AUTHPROTOCOLTYPE: {
+      uint32_t authprotocol = *(items[i].ui32value);
+
+      if (authprotocol) {
+         for (uint32_t j = 0; authprotocols[j].name; j++) {
+            if (authprotocols[j].token == authprotocol) {
+               Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_AUTHTYPE: {
+      uint32_t authtype = *(items[i].ui32value);
+
+      if (authtype) {
+         for (uint32_t j = 0; authmethods[j].name; j++) {
+            if (authprotocols[j].token == authtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   default:
+      Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
+      break;
+   }
+}
+
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, init_resource_cb, parse_config_cb,
-                exit_code, (void *)&res_all, res_all_size, r_first, r_last,
-                resources, res_head);
+   config->init(configfile,
+                NULL,
+                NULL,
+                init_resource_cb,
+                parse_config_cb,
+                print_config_cb,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                r_first,
+                r_last,
+                resources,
+                res_head);
    return config->parse_config();
 }

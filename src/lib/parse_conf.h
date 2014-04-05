@@ -150,34 +150,35 @@ struct RES_TABLE {
 #define CFG_TYPE_DIR                2   /* Directory */
 #define CFG_TYPE_MD5PASSWORD        3   /* MD5 hashed Password */
 #define CFG_TYPE_CLEARPASSWORD      4   /* Clear text Password */
-#define CFG_TYPE_NAME               5   /* Name */
-#define CFG_TYPE_STRNAME            6   /* String Name */
-#define CFG_TYPE_RES                7   /* Resource */
-#define CFG_TYPE_ALIST_RES          8   /* List of resources */
-#define CFG_TYPE_ALIST_STR          9   /* List of strings */
-#define CFG_TYPE_ALIST_DIR          10  /* List of dirs */
-#define CFG_TYPE_INT32              11  /* 32 bits Integer */
-#define CFG_TYPE_PINT32             12  /* Positive 32 bits Integer (unsigned) */
-#define CFG_TYPE_MSGS               13  /* Message resource */
-#define CFG_TYPE_INT64              14  /* 64 bits Integer */
-#define CFG_TYPE_BIT                15  /* Bitfield */
-#define CFG_TYPE_BOOL               16  /* Boolean */
-#define CFG_TYPE_TIME               17  /* Time value */
-#define CFG_TYPE_SIZE64             18  /* 64 bits file size */
-#define CFG_TYPE_SIZE32             19  /* 32 bits file size */
-#define CFG_TYPE_SPEED              20  /* Speed limit */
-#define CFG_TYPE_DEFS               21  /* Definition */
-#define CFG_TYPE_LABEL              22  /* Label */
-#define CFG_TYPE_ADDRESSES          23  /* List of ip addresses */
-#define CFG_TYPE_ADDRESSES_ADDRESS  24  /* Ip address */
-#define CFG_TYPE_ADDRESSES_PORT     25  /* Ip port */
+#define CFG_TYPE_AUTOPASSWORD       5   /* Password stored in clear when needed otherwise hashed */
+#define CFG_TYPE_NAME               6   /* Name */
+#define CFG_TYPE_STRNAME            7   /* String Name */
+#define CFG_TYPE_RES                8   /* Resource */
+#define CFG_TYPE_ALIST_RES          9   /* List of resources */
+#define CFG_TYPE_ALIST_STR          10  /* List of strings */
+#define CFG_TYPE_ALIST_DIR          11  /* List of dirs */
+#define CFG_TYPE_INT32              12  /* 32 bits Integer */
+#define CFG_TYPE_PINT32             13  /* Positive 32 bits Integer (unsigned) */
+#define CFG_TYPE_MSGS               14  /* Message resource */
+#define CFG_TYPE_INT64              15  /* 64 bits Integer */
+#define CFG_TYPE_BIT                16  /* Bitfield */
+#define CFG_TYPE_BOOL               17  /* Boolean */
+#define CFG_TYPE_TIME               18  /* Time value */
+#define CFG_TYPE_SIZE64             19  /* 64 bits file size */
+#define CFG_TYPE_SIZE32             20  /* 32 bits file size */
+#define CFG_TYPE_SPEED              21  /* Speed limit */
+#define CFG_TYPE_DEFS               22  /* Definition */
+#define CFG_TYPE_LABEL              23  /* Label */
+#define CFG_TYPE_ADDRESSES          24  /* List of ip addresses */
+#define CFG_TYPE_ADDRESSES_ADDRESS  25  /* Ip address */
+#define CFG_TYPE_ADDRESSES_PORT     26  /* Ip port */
 
 /*
  * Base Class for all Resource Classes
  */
 class BRSRES {
-   public:
-      RES hdr;
+public:
+   RES hdr;
 
    /* Methods */
    char *name() const;
@@ -223,6 +224,7 @@ public:
 
 typedef void (INIT_RES_HANDLER)(RES_ITEM *item);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
+typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str);
 
 /*
  * New C++ configuration routines
@@ -234,6 +236,7 @@ public:
    LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
    INIT_RES_HANDLER *m_init_res;        /* Init resource handler for non default types if non-null */
    STORE_RES_HANDLER *m_store_res;      /* Store resource handler for non default types if non-null */
+   PRINT_RES_HANDLER *m_print_res;      /* Print resource handler for non default types if non-null */
 
    int32_t m_err_type;                  /* The way to terminate on failure */
    void *m_res_all;                     /* Pointer to res_all buffer */
@@ -254,6 +257,7 @@ public:
       LEX_WARNING_HANDLER *scan_warning,
       INIT_RES_HANDLER *init_res,
       STORE_RES_HANDLER *store_res,
+      PRINT_RES_HANDLER *print_res,
       int32_t err_type,
       void *vres_all,
       int32_t res_all_size,

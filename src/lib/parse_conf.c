@@ -1231,6 +1231,7 @@ void CONFIG::init(const char *cf,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
                   STORE_RES_HANDLER *store_res,
+                  PRINT_RES_HANDLER *print_res,
                   int32_t err_type,
                   void *vres_all,
                   int32_t res_all_size,
@@ -1244,6 +1245,7 @@ void CONFIG::init(const char *cf,
    m_scan_warning = scan_warning;
    m_init_res = init_res;
    m_store_res = store_res;
+   m_print_res = print_res;
    m_err_type = err_type;
    m_res_all = vres_all;
    m_res_all_size = res_all_size;

@@ -344,8 +344,18 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
-                (void *)&res_all, res_all_size, r_first,
-                r_last, resources, res_head);
+   config->init(configfile,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                r_first,
+                r_last,
+                resources,
+                res_head);
    return config->parse_config();
 }
