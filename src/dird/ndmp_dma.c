@@ -1180,20 +1180,22 @@ static inline bool build_ndmp_job(JCR *jcr,
    /*
     * The data_agent is the client being backuped or restored using NDMP.
     */
+   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,
-                               client->password)) {
+                               client->password.value)) {
       goto bail_out;
    }
 
    /*
     * The tape_agent is the storage daemon via the NDMP protocol.
     */
+   ASSERT(store->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                                store->AuthType, store->address,
                                store->SDport, store->username,
-                               store->password)) {
+                               store->password.value)) {
       goto bail_out;
    }
 
@@ -2876,10 +2878,11 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       /*
        * Query the TAPE agent of the NDMP server.
        */
+      ASSERT(store->password.encoding == p_encoding_clear);
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.tape_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password)) {
+                                  store->username, store->password.value)) {
          return;
       }
 
@@ -2889,7 +2892,7 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.robot_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password)) {
+                                  store->username, store->password.value)) {
          return;
       }
 
@@ -2911,10 +2914,11 @@ void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    /*
     * Query the DATA agent of the NDMP server.
     */
+   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.data_agent,
                                client->Protocol, client->AuthType,
                                client->address, client->FDport,
-                               client->username, client->password)) {
+                               client->username, client->password.value)) {
       return;
    }
 

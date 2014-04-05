@@ -120,9 +120,9 @@ static RES_ITEM con_font_items[] = {
  * It must have one item for each of the resources.
  */
 static RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "console", con_items, R_CONSOLE },
-   { "consolefont", con_font_items, R_CONSOLE_FONT },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "console", con_items, R_CONSOLE, sizeof(CONRES) },
+   { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
    { NULL, NULL, 0 }
 };
 
@@ -213,8 +213,8 @@ void free_resource(RES *sres, int type)
       }
       break;
    case R_CONSOLE:
-      if (res->con_res.password) {
-         free(res->con_res.password);
+      if (res->con_res.password.value) {
+         free(res->con_res.password.value);
       }
       if (res->con_res.tls_ctx) {
          free_tls_context(res->con_res.tls_ctx);
@@ -261,7 +261,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size = 0;
+   int i;
    int error = 0;
 
    /*
@@ -315,29 +315,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed during pass 1
-    */
-   switch (type) {
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   case R_CONSOLE_FONT:
-      size = sizeof(CONFONTRES);
-      break;
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   default:
-      printf(_("Unknown resource type %d\n"), type);
-      error = 1;
-      break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {

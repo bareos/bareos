@@ -115,7 +115,7 @@ static RES_ITEM store_items[] = {
 static RES_ITEM dir_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, 0, NULL },
    { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
    { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
@@ -129,7 +129,7 @@ static RES_ITEM dir_items[] = {
    { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
-   { "keyencryptionkey", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
+   { "keyencryptionkey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
@@ -140,7 +140,7 @@ static RES_ITEM ndmp_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(res_ndmp.hdr.name), 0, CFG_ITEM_REQUIRED, 0 },
    { "description", CFG_TYPE_STR, ITEM(res_ndmp.hdr.desc), 0, 0, 0 },
    { "username", CFG_TYPE_STR, ITEM(res_ndmp.username), 0, CFG_ITEM_REQUIRED, 0 },
-   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_ndmp.password), 0, CFG_ITEM_REQUIRED, 0 },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_ndmp.password), 0, CFG_ITEM_REQUIRED, 0 },
    { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_ndmp.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
    { "loglevel", CFG_TYPE_PINT32, ITEM(res_ndmp.LogLevel), 0, CFG_ITEM_DEFAULT, "4" },
    { NULL, 0, { 0 }, 0, 0, 0 }
@@ -239,12 +239,12 @@ extern RES_ITEM msgs_items[];
  * This is the master resource definition
  */
 RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "ndmp", ndmp_items, R_NDMP },
-   { "storage", store_items, R_STORAGE },
-   { "device", dev_items, R_DEVICE },
-   { "messages", msgs_items, R_MSGS },
-   { "autochanger", changer_items, R_AUTOCHANGER },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "ndmp", ndmp_items, R_NDMP, sizeof(NDMPRES) },
+   { "storage", store_items, R_STORAGE, sizeof(STORES) },
+   { "device", dev_items, R_DEVICE, sizeof(DEVRES) },
+   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
+   { "autochanger", changer_items, R_AUTOCHANGER, sizeof(AUTOCHANGERRES)  },
    { NULL, NULL, 0 }
 };
 
@@ -325,7 +325,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store password either clear if for NDMP or MD5 hashed for native.
  */
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    switch (res_all.hdr.rcode) {
    case R_DIRECTOR:
@@ -336,18 +336,18 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         store_resource(CFG_TYPE_STR, lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_NDMP:
-      store_resource(CFG_TYPE_STR, lc, item, index, pass);
+      store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
+      store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -603,8 +603,8 @@ void free_resource(RES *sres, int type)
 
    switch (type) {
    case R_DIRECTOR:
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
       }
       if (res->res_dir.address) {
          free(res->res_dir.address);
@@ -641,8 +641,8 @@ void free_resource(RES *sres, int type)
       if (res->res_ndmp.username) {
          free(res->res_ndmp.username);
       }
-      if (res->res_ndmp.password) {
-         free(res->res_ndmp.password);
+      if (res->res_ndmp.password.value) {
+         free(res->res_ndmp.password.value);
       }
       break;
    case R_AUTOCHANGER:
@@ -785,7 +785,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size;
+   int i;
    int error = 0;
 
    /*
@@ -882,39 +882,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed on pass 1
-    */
-   switch (type) {
-      case R_DIRECTOR:
-         size = sizeof(DIRRES);
-         break;
-      case R_NDMP:
-         size = sizeof(NDMPRES);
-         break;
-      case R_STORAGE:
-         size = sizeof(STORES);
-         break;
-      case R_DEVICE:
-         size = sizeof(DEVRES);
-         break;
-      case R_MSGS:
-         size = sizeof(MSGSRES);
-         break;
-      case R_AUTOCHANGER:
-         size = sizeof(AUTOCHANGERRES);
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         size = 1;
-         break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {
@@ -965,8 +937,8 @@ static void init_resource_cb(RES_ITEM *item)
 static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    switch (item->type) {
-   case CFG_TYPE_CLEARPASSWORD:
-      store_clearpassword(lc, item, index, pass);
+   case CFG_TYPE_AUTOPASSWORD:
+      store_autopassword(lc, item, index, pass);
       break;
    case CFG_TYPE_AUTHTYPE:
       store_authtype(lc, item, index, pass);

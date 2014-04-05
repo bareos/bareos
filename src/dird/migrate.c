@@ -73,7 +73,7 @@ static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
 {
    return rstore->SDport == wstore->SDport &&
           bstrcasecmp(rstore->address, wstore->address) &&
-          bstrcasecmp(rstore->password, wstore->password);
+          bstrcasecmp(rstore->password.value, wstore->password.value);
 }
 
 /*

@@ -54,6 +54,7 @@
  */
 
 #include "bareos.h"
+#include "generic_res.h"
 
 #if defined(HAVE_WIN32)
 #include "shlobj.h"
@@ -108,51 +109,6 @@ RES_ITEM msgs_items[] = {
    { "operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
    { "catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
-};
-
-struct s_mtypes {
-   const char *name;
-   int token;
-};
-/* Various message types */
-static struct s_mtypes msg_types[] = {
-   { "debug", M_DEBUG },
-   { "abort", M_ABORT },
-   { "fatal", M_FATAL },
-   { "error", M_ERROR },
-   { "warning", M_WARNING },
-   { "info", M_INFO },
-   { "saved", M_SAVED },
-   { "notsaved", M_NOTSAVED },
-   { "skipped", M_SKIPPED },
-   { "mount", M_MOUNT },
-   { "terminate", M_TERM },
-   { "restored", M_RESTORED },
-   { "security", M_SECURITY },
-   { "alert", M_ALERT },
-   { "volmgmt", M_VOLMGMT },
-   { "all", M_MAX + 1 },
-   { NULL, 0}
-};
-
-/*
- * Used for certain KeyWord tables
- */
-struct s_kw {
-   const char *name;
-   int token;
-};
-
-/*
- * Tape Label types permitted in Pool records
- *
- *   tape label      label code = token
- */
-static s_kw tapelabels[] = {
-   { "bareos", B_BAREOS_LABEL },
-   { "ansi", B_ANSI_LABEL },
-   { "ibm", B_IBM_LABEL },
-   { NULL, 0 }
 };
 
 /*
@@ -216,36 +172,36 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
             switch (items[i].type) {
             case CFG_TYPE_BIT:
                if (bstrcasecmp(items[i].default_value, "on")) {
-                  *(uint32_t *)(items[i].value) |= items[i].code;
+                  *(items[i].ui32value) |= items[i].code;
                } else if (bstrcasecmp(items[i].default_value, "off")) {
-                  *(uint32_t *)(items[i].value) &= ~(items[i].code);
+                  *(items[i].ui32value) &= ~(items[i].code);
                }
                break;
             case CFG_TYPE_BOOL:
                if (bstrcasecmp(items[i].default_value, "yes") ||
                    bstrcasecmp(items[i].default_value, "true")) {
-                  *(bool *)(items[i].value) = true;
+                  *(items[i].boolvalue) = true;
                } else if (bstrcasecmp(items[i].default_value, "no") ||
                           bstrcasecmp(items[i].default_value, "false")) {
-                  *(bool *)(items[i].value) = false;
+                  *(items[i].boolvalue) = false;
                }
                break;
             case CFG_TYPE_PINT32:
             case CFG_TYPE_INT32:
             case CFG_TYPE_SIZE32:
-               *(uint32_t *)(items[i].value) = str_to_int32(items[i].default_value);
+               *(items[i].ui32value) = str_to_int32(items[i].default_value);
                break;
             case CFG_TYPE_INT64:
-               *(int64_t *)(items[i].value) = str_to_int64(items[i].default_value);
+               *(items[i].i64value) = str_to_int64(items[i].default_value);
                break;
             case CFG_TYPE_SIZE64:
-               *(uint64_t *)(items[i].value) = str_to_uint64(items[i].default_value);
+               *(items[i].ui64value) = str_to_uint64(items[i].default_value);
                break;
             case CFG_TYPE_SPEED:
-               *(uint64_t *)(items[i].value) = str_to_uint64(items[i].default_value);
+               *(items[i].ui64value) = str_to_uint64(items[i].default_value);
                break;
             case CFG_TYPE_TIME:
-               *(utime_t *)(items[i].value) = str_to_int64(items[i].default_value);
+               *(items[i].utimevalue) = str_to_int64(items[i].default_value);
                break;
             case CFG_TYPE_STRNAME:
             case CFG_TYPE_STR:
@@ -269,7 +225,7 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
                break;
             }
             case CFG_TYPE_ADDRESSES:
-               init_default_addresses((dlist **)items[i].value, items[i].default_value);
+               init_default_addresses(items[i].dlistvalue, items[i].default_value);
                break;
             default:
                /*
@@ -353,7 +309,6 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
-
       case MD_FILE:                /* file */
       case MD_APPEND:              /* append */
          dest = get_pool_memory(PM_MESSAGE);
@@ -373,7 +328,6 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
-
       default:
          scan_err1(lc, _("Unknown item code: %d\n"), item->code);
          return;
@@ -530,26 +484,64 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
- * Store a password specified address in MD5 coding
+ * Store a password at specified address in MD5 coding
  */
-static void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   unsigned int i, j;
-   struct MD5Context md5c;
-   unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
-   char sig[100];
-
+   s_password *pwd;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
-      MD5Init(&md5c);
-      MD5Update(&md5c, (unsigned char *) (lc->str), lc->str_len);
-      MD5Final(digest, &md5c);
-      for (i = j = 0; i < sizeof(digest); i++) {
-         sprintf(&sig[j], "%02x", digest[i]);
-         j += 2;
+      pwd = item->pwdvalue;
+
+      if (pwd->value) {
+         free(pwd->value);
       }
-      *(item->value) = bstrdup(sig);
+
+      /*
+       * See if we are parsing an MD5 encoded password already.
+       */
+      if (bstrncmp(lc->str, "[md5]", 5)) {
+         pwd->encoding = p_encoding_md5;
+         pwd->value = bstrdup(lc->str + 5);
+      } else {
+         unsigned int i, j;
+         struct MD5Context md5c;
+         unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
+         char sig[100];
+
+         MD5Init(&md5c);
+         MD5Update(&md5c, (unsigned char *) (lc->str), lc->str_len);
+         MD5Final(digest, &md5c);
+         for (i = j = 0; i < sizeof(digest); i++) {
+            sprintf(&sig[j], "%02x", digest[i]);
+            j += 2;
+         }
+         pwd->encoding = p_encoding_md5;
+         pwd->value = bstrdup(sig);
+      }
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+}
+
+/*
+ * Store a password at specified address in MD5 coding
+ */
+static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   s_password *pwd;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      pwd = item->pwdvalue;
+
+      if (pwd->value) {
+         free(pwd->value);
+      }
+
+      pwd->encoding = p_encoding_clear;
+      pwd->value = bstrdup(lc->str);
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
@@ -569,15 +561,15 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
       res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
          scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
-            lc->str, lc->line_no, lc->line);
+                   lc->str, lc->line_no, lc->line);
          return;
       }
-      if (*(item->value)) {
+      if (*(item->resvalue)) {
          scan_err3(lc, _("Attempt to redefine resource \"%s\" referenced on line %d : %s\n"),
-            item->name, lc->line_no, lc->line);
+                   item->name, lc->line_no, lc->line);
          return;
       }
-      *(item->value) = (char *)res;
+      *(item->resvalue) = res;
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
@@ -651,7 +643,7 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
       if (*(item->value) == NULL) {
          list = New(alist(10, owned_by_alist));
       } else {
-         list = (alist *)(*(item->value));
+         list = *(item->alistvalue);
       }
 
       lex_get_token(lc, T_STRING);   /* scan next item */
@@ -726,7 +718,7 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_INT32);
-   *(uint32_t *)(item->value) = lc->int32_val;
+   *(item->i32value) = lc->int32_val;
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -737,7 +729,7 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_PINT32);
-   *(uint32_t *)(item->value) = lc->pint32_val;
+   *(item->ui32value) = lc->pint32_val;
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -748,16 +740,24 @@ static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_INT64);
-   *(int64_t *)(item->value) = lc->int64_val;
+   *(item->i64value) = lc->int64_val;
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
 
 /*
+ * Unit types
+ */
+enum unit_type {
+   STORE_SIZE,
+   STORE_SPEED
+};
+
+/*
  * Store a size in bytes
  */
 static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
-                           bool size32, enum store_unit_type type)
+                           bool size32, enum unit_type type)
 {
    int token;
    uint64_t uvalue;
@@ -804,9 +804,9 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
       }
 
       if (size32) {
-         *(uint32_t *)(item->value) = (uint32_t)uvalue;
+         *(item->ui32value) = (uint32_t)uvalue;
       } else {
-         *(uint64_t *)(item->value) = uvalue;
+         *(item->ui64value) = uvalue;
       }
       break;
    default:
@@ -878,7 +878,7 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
          scan_err1(lc, _("expected a time period, got: %s"), period);
          return;
       }
-      *(utime_t *)(item->value) = utime;
+      *(item->utimevalue) = utime;
       break;
    default:
       scan_err1(lc, _("expected a time period, got: %s"), lc->str);
@@ -897,9 +897,9 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      *(uint32_t *)(item->value) |= item->code;
+      *(item->ui32value) |= item->code;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      *(uint32_t *)(item->value) &= ~(item->code);
+      *(item->ui32value) &= ~(item->code);
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
       return;
@@ -915,9 +915,9 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      *(bool *)(item->value) = true;
+      *item->boolvalue = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      *(bool *)(item->value) = false;
+      *(item->boolvalue) = false;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
       return;
@@ -939,7 +939,7 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; tapelabels[i].name; i++) {
       if (bstrcasecmp(lc->str, tapelabels[i].name)) {
-         *(uint32_t *)(item->value) = tapelabels[i].token;
+         *(item->ui32value) = tapelabels[i].token;
          i = 0;
          break;
       }
@@ -1083,8 +1083,9 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
       if (token != T_EOB) {
          scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
       }
-      if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_MULTIPLE,
-          htons(port), family, hostname_str, port_str, errmsg, sizeof(errmsg))) {
+      if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_MULTIPLE,
+                                    htons(port), family, hostname_str, port_str,
+                                    errmsg, sizeof(errmsg))) {
            scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
                    hostname_str, port_str, errmsg);
       }
@@ -1105,7 +1106,7 @@ static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pa
    if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
       scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
    }
-   if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_SINGLE_ADDR,
+   if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_ADDR,
                     htons(port), AF_INET, lc->str, 0,
                     errmsg, sizeof(errmsg))) {
       scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
@@ -1122,7 +1123,7 @@ static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
    if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
       scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
    }
-   if (pass == 1 && !add_address((dlist **)(item->value), IPADDR::R_SINGLE_PORT,
+   if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_PORT,
                     htons(port), AF_INET, 0, lc->str,
                     errmsg, sizeof(errmsg))) {
       scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
@@ -1141,8 +1142,11 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    case CFG_TYPE_DIR:
       store_dir(lc, item, index, pass);
       break;
-   case CFG_TYPE_PASSWORD:
-      store_password(lc, item, index, pass);
+   case CFG_TYPE_MD5PASSWORD:
+      store_md5password(lc, item, index, pass);
+      break;
+   case CFG_TYPE_CLEARPASSWORD:
+      store_clearpassword(lc, item, index, pass);
       break;
    case CFG_TYPE_NAME:
       store_name(lc, item, index, pass);

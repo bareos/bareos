@@ -35,9 +35,45 @@ enum parse_state {
    p_resource
 };
 
-enum store_unit_type {
-   STORE_SIZE,
-   STORE_SPEED
+/*
+ * Password encodings.
+ */
+enum password_encoding {
+   p_encoding_clear,
+   p_encoding_md5
+};
+
+/*
+ * Used for message destinations.
+ */
+struct s_mdestination {
+   int code;
+   const char *destination;
+   bool where;
+};
+
+/*
+ * Used for message types.
+ */
+struct s_mtypes {
+   const char *name;
+   uint32_t token;
+};
+
+/*
+ * Used for certain KeyWord tables
+ */
+struct s_kw {
+   const char *name;
+   uint32_t token;
+};
+
+/*
+ * Used to store passwords with their encoding.
+ */
+struct s_password {
+   enum password_encoding encoding;
+   char *value;
 };
 
 /*
@@ -49,15 +85,16 @@ struct RES_ITEM {
    const int type;
    union {
       char **value;                     /* Where to store the item */
-      char **charvalue;
-      uint32_t ui32value;
-      int32_t i32value;
-      uint64_t ui64value;
-      int64_t i64value;
-      bool boolvalue;
-      utime_t utimevalue;
-      RES *resvalue;
-      RES **presvalue;
+      uint32_t *ui32value;
+      int32_t *i32value;
+      uint64_t *ui64value;
+      int64_t *i64value;
+      bool *boolvalue;
+      utime_t *utimevalue;
+      s_password *pwdvalue;
+      RES **resvalue;
+      alist **alistvalue;
+      dlist **dlistvalue;
    };
    int32_t code;                        /* item code/additional info */
    uint32_t flags;                      /* flags: See CFG_ITEM_* */
@@ -92,6 +129,7 @@ struct RES_TABLE {
    const char *name;                    /* resource name */
    RES_ITEM *items;                     /* list of resource keywords */
    uint32_t rcode;                      /* code if needed */
+   uint32_t size;                       /* Size of resource */
 };
 
 /* Common Resource definitions */
@@ -110,38 +148,52 @@ struct RES_TABLE {
  */
 #define CFG_TYPE_STR                1   /* String */
 #define CFG_TYPE_DIR                2   /* Directory */
-#define CFG_TYPE_PASSWORD           3   /* Password */
-#define CFG_TYPE_NAME               4   /* Name */
-#define CFG_TYPE_STRNAME            5   /* String Name */
-#define CFG_TYPE_RES                6   /* Resource */
-#define CFG_TYPE_ALIST_RES          7   /* List of resources */
-#define CFG_TYPE_ALIST_STR          8   /* List of strings */
-#define CFG_TYPE_ALIST_DIR          9   /* List of dirs */
-#define CFG_TYPE_INT32              10  /* 32 bits Integer */
-#define CFG_TYPE_PINT32             11  /* Positive 32 bits Integer (unsigned) */
-#define CFG_TYPE_MSGS               12  /* Message resource */
-#define CFG_TYPE_INT64              13  /* 64 bits Integer */
-#define CFG_TYPE_BIT                14  /* Bitfield */
-#define CFG_TYPE_BOOL               15  /* Boolean */
-#define CFG_TYPE_TIME               16  /* Time value */
-#define CFG_TYPE_SIZE64             17  /* 64 bits file size */
-#define CFG_TYPE_SIZE32             18  /* 32 bits file size */
-#define CFG_TYPE_SPEED              19  /* Speed limit */
-#define CFG_TYPE_DEFS               20  /* Definition */
-#define CFG_TYPE_LABEL              21  /* Label */
-#define CFG_TYPE_ADDRESSES          22  /* List of ip addresses */
-#define CFG_TYPE_ADDRESSES_ADDRESS  23  /* Ip address */
-#define CFG_TYPE_ADDRESSES_PORT     24  /* Ip port */
+#define CFG_TYPE_MD5PASSWORD        3   /* MD5 hashed Password */
+#define CFG_TYPE_CLEARPASSWORD      4   /* Clear text Password */
+#define CFG_TYPE_NAME               5   /* Name */
+#define CFG_TYPE_STRNAME            6   /* String Name */
+#define CFG_TYPE_RES                7   /* Resource */
+#define CFG_TYPE_ALIST_RES          8   /* List of resources */
+#define CFG_TYPE_ALIST_STR          9   /* List of strings */
+#define CFG_TYPE_ALIST_DIR          10  /* List of dirs */
+#define CFG_TYPE_INT32              11  /* 32 bits Integer */
+#define CFG_TYPE_PINT32             12  /* Positive 32 bits Integer (unsigned) */
+#define CFG_TYPE_MSGS               13  /* Message resource */
+#define CFG_TYPE_INT64              14  /* 64 bits Integer */
+#define CFG_TYPE_BIT                15  /* Bitfield */
+#define CFG_TYPE_BOOL               16  /* Boolean */
+#define CFG_TYPE_TIME               17  /* Time value */
+#define CFG_TYPE_SIZE64             18  /* 64 bits file size */
+#define CFG_TYPE_SIZE32             19  /* 32 bits file size */
+#define CFG_TYPE_SPEED              20  /* Speed limit */
+#define CFG_TYPE_DEFS               21  /* Definition */
+#define CFG_TYPE_LABEL              22  /* Label */
+#define CFG_TYPE_ADDRESSES          23  /* List of ip addresses */
+#define CFG_TYPE_ADDRESSES_ADDRESS  24  /* Ip address */
+#define CFG_TYPE_ADDRESSES_PORT     25  /* Ip port */
+
+/*
+ * Base Class for all Resource Classes
+ */
+class BRSRES {
+   public:
+      RES hdr;
+
+   /* Methods */
+   char *name() const;
+   bool print_config(POOL_MEM &buf);
+};
+
+inline char *BRSRES::name() const { return this->hdr.name; }
 
 /*
  * Message Resource
  */
-class MSGSRES {
+class MSGSRES : public BRSRES {
    /*
     * Members
     */
 public:
-   RES   hdr;
    char *mail_cmd;                    /* mail command */
    char *operator_cmd;                /* Operator command */
    DEST *dest_chain;                  /* chain of destinations */
@@ -155,7 +207,7 @@ public:
    /*
     * Methods
     */
-   char *name() const;
+//   char *name() const;
    void clear_in_use() { lock(); m_in_use=false; unlock(); }
    void set_in_use() { wait_not_in_use(); m_in_use=true; unlock(); }
    void set_closing() { m_closing=true; }
@@ -166,9 +218,8 @@ public:
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
+   bool print_config(POOL_MEM& buff);
 };
-
-inline char *MSGSRES::name() const { return hdr.name; }
 
 typedef void (INIT_RES_HANDLER)(RES_ITEM *item);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);

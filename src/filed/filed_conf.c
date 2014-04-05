@@ -133,7 +133,7 @@ static RES_ITEM cli_items[] = {
 static RES_ITEM dir_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "password", CFG_TYPE_PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
    { "monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, CFG_ITEM_DEFAULT, "false" },
    { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
@@ -163,10 +163,10 @@ extern RES_ITEM msgs_items[];
  * It must have one item for each of the resources.
  */
 RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "filedaemon", cli_items, R_CLIENT },
-   { "client", cli_items, R_CLIENT }, /* alias for filedaemon */
-   { "messages", msgs_items, R_MSGS },
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "filedaemon", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) }, /* alias for filedaemon */
+   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { NULL, NULL, 0}
 };
 
@@ -189,7 +189,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    switch (type) {
    case R_DIRECTOR:
       sendit(sock, "Director: name=%s password=%s\n", reshdr->name,
-             res->res_dir.password);
+             res->res_dir.password.value);
       break;
    case R_CLIENT:
       sendit(sock, "Client: name=%s FDport=%d\n", reshdr->name,
@@ -238,8 +238,8 @@ void free_resource(RES *sres, int type)
    }
    switch (type) {
    case R_DIRECTOR:
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
       }
       if (res->res_dir.address) {
          free(res->res_dir.address);
@@ -388,7 +388,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - r_first;
-   int i, size;
+   int i;
    int error = 0;
 
    /*
@@ -462,30 +462,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed on pass 1
-    */
-   switch (type) {
-      case R_DIRECTOR:
-         size = sizeof(DIRRES);
-         break;
-      case R_CLIENT:
-         size = sizeof(CLIENTRES);
-         break;
-      case R_MSGS:
-         size = sizeof(MSGSRES);
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         size = 1;
-         break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {

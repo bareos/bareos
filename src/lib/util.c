@@ -32,6 +32,44 @@
  *
  */
 
+/*
+ *  Escape special characters in bareos configuration strings
+ *  needed for dumping config strings
+ */
+void escape_string(char *snew, char *old, int len)
+{
+   char *n, *o;
+
+   n = snew;
+   o = old;
+   while (len--) {
+      switch (*o) {
+      case '\'':
+         *n++ = '\'';
+         *n++ = '\'';
+         o++;
+         break;
+      case 0:
+         *n++ = '\\';
+         *n++ = 0;
+         o++;
+         break;
+      case '(':
+      case ')':
+      case '<':
+      case '>':
+      case '"':
+         *n++ = '\\';
+         *n++ = *o++;
+         break;
+      default:
+         *n++ = *o++;
+         break;
+      }
+   }
+   *n = 0;
+}
+
 /* Return true of buffer has all zero bytes */
 bool is_buf_zero(char *buf, int len)
 {

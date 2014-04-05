@@ -1309,11 +1309,13 @@ int main(int argc, char *argv[])
     */
    if (cons) {
       name = cons->hdr.name;
-      password = cons->password;
+      ASSERT(cons->password.encoding == p_encoding_md5);
+      password = cons->password.value;
       tls_ctx = cons->tls_ctx;
    } else {
       name = "*UserAgent*";
-      password = dir->password;
+      ASSERT(dir->password.encoding == p_encoding_md5);
+      password = dir->password.value;
       tls_ctx = dir->tls_ctx;
    }
 
