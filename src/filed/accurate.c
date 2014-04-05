@@ -112,11 +112,9 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    char *fname;
    int32_t LinkFIc;
    struct stat statc;
-   int digest_stream;
    bool status = false;
    accurate_payload *payload;
 
-   digest_stream = STREAM_NONE;
    ff_pkt->delta_seq = 0;
    ff_pkt->accurate_found = false;
 
@@ -154,13 +152,12 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    }
 
    /*
-    * Loop over options supplied by user and verify the
-    * fields he requests.
+    * Loop over options supplied by user and verify the fields he requests.
     */
    for (char *p = opts; !status && *p; p++) {
       char ed1[30], ed2[30];
       switch (*p) {
-      case 'i':                /* compare INODEs */
+      case 'i':                /* Compare INODE numbers */
          if (statc.st_ino != ff_pkt->statp.st_ino) {
             Dmsg3(dbglvl-1, "%s      st_ino   differ. Cat: %s File: %s\n",
                   fname,
@@ -169,43 +166,39 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'p':                /* permissions bits */
+      case 'p':                /* Permissions bits */
          /*
           * TODO: If something change only in perm, user, group
           * Backup only the attribute stream
           */
          if (statc.st_mode != ff_pkt->statp.st_mode) {
             Dmsg3(dbglvl-1, "%s     st_mode  differ. Cat: %x File: %x\n",
-                  fname,
-                  (uint32_t)statc.st_mode, (uint32_t)ff_pkt->statp.st_mode);
+                  fname, (uint32_t)statc.st_mode, (uint32_t)ff_pkt->statp.st_mode);
             status = true;
          }
          break;
-      case 'n':                /* number of links */
+      case 'n':                /* Number of links */
          if (statc.st_nlink != ff_pkt->statp.st_nlink) {
             Dmsg3(dbglvl-1, "%s      st_nlink differ. Cat: %d File: %d\n",
-                  fname,
-                  (uint32_t)statc.st_nlink, (uint32_t)ff_pkt->statp.st_nlink);
+                  fname, (uint32_t)statc.st_nlink, (uint32_t)ff_pkt->statp.st_nlink);
             status = true;
          }
          break;
-      case 'u':                /* user id */
+      case 'u':                /* User id */
          if (statc.st_uid != ff_pkt->statp.st_uid) {
             Dmsg3(dbglvl-1, "%s      st_uid   differ. Cat: %u File: %u\n",
-                  fname,
-                  (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
+                  fname, (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
             status = true;
          }
          break;
-      case 'g':                /* group id */
+      case 'g':                /* Group id */
          if (statc.st_gid != ff_pkt->statp.st_gid) {
             Dmsg3(dbglvl-1, "%s      st_gid   differ. Cat: %u File: %u\n",
-                  fname,
-                  (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
+                  fname, (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
             status = true;
          }
          break;
-      case 's':                /* size */
+      case 's':                /* Size */
          if (statc.st_size != ff_pkt->statp.st_size) {
             Dmsg3(dbglvl-1, "%s      st_size  differ. Cat: %s File: %s\n",
                   fname,
@@ -214,25 +207,25 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'a':                /* access time */
+      case 'a':                /* Access time */
          if (statc.st_atime != ff_pkt->statp.st_atime) {
             Dmsg1(dbglvl-1, "%s      st_atime differs\n", fname);
             status = true;
          }
          break;
-      case 'm':                 /* modification time */
+      case 'm':                /* Modification time */
          if (statc.st_mtime != ff_pkt->statp.st_mtime) {
             Dmsg1(dbglvl-1, "%s      st_mtime differs\n", fname);
             status = true;
          }
          break;
-      case 'c':                /* ctime */
+      case 'c':                /* Change time */
          if (statc.st_ctime != ff_pkt->statp.st_ctime) {
             Dmsg1(dbglvl-1, "%s      st_ctime differs\n", fname);
             status = true;
          }
          break;
-      case 'd':                /* file size decrease */
+      case 'd':                /* File size decrease */
          if (statc.st_size > ff_pkt->statp.st_size) {
             Dmsg3(dbglvl-1, "%s      st_size  decrease. Cat: %s File: %s\n",
                   fname,
@@ -241,97 +234,26 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'A':                 /* Always backup a file */
+      case 'A':                /* Always backup a file */
          status = true;
          break;
-      /*
-       * TODO: cleanup and factorise this function with verify.c
-       */
-      case '5':                /* compare MD5 */
-      case '1':                /* compare SHA1 */
-        /*
-          * The remainder of the function is all about getting the checksum.
-          * First we initialise, then we read files, other streams and Finder Info.
-          */
+      case '5':                /* Compare MD5 */
+      case '1':                /* Compare SHA1 */
          if (!status && ff_pkt->type != FT_LNKSAVED &&
              (S_ISREG(ff_pkt->statp.st_mode) &&
              ff_pkt->flags & (FO_MD5 | FO_SHA1 | FO_SHA256 | FO_SHA512))) {
-
             if (!*payload->chksum && !jcr->rerunning) {
                Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"), ff_pkt->fname);
                status = true;
-               break;
-            }
-
-            /*
-             * Create our digest context. If this fails, the digest will be set
-             * to NULL and not used.
-             */
-            if (ff_pkt->flags & FO_MD5) {
-               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
-               digest_stream = STREAM_MD5_DIGEST;
-
-            } else if (ff_pkt->flags & FO_SHA1) {
-               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
-               digest_stream = STREAM_SHA1_DIGEST;
-
-            } else if (ff_pkt->flags & FO_SHA256) {
-               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
-               digest_stream = STREAM_SHA256_DIGEST;
-
-            } else if (ff_pkt->flags & FO_SHA512) {
-               digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
-               digest_stream = STREAM_SHA512_DIGEST;
-            }
-
-            /*
-             * Did digest initialization fail?
-             */
-            if (digest_stream != STREAM_NONE && digest == NULL) {
-               Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
-                    stream_to_ascii(digest_stream));
-            }
-
-            /*
-             * Compute MD5 or SHA1 hash
-             */
-            if (digest) {
-               char md[CRYPTO_DIGEST_MAX_SIZE];
-               uint32_t size;
-
-               size = sizeof(md);
-
-               if (digest_file(jcr, ff_pkt, digest) != 0) {
-                  jcr->JobErrors++;
-
-               } else if (crypto_digest_finalize(digest, (uint8_t *)md, &size)) {
-                  char *digest_buf;
-                  const char *digest_name;
-
-                  digest_buf = (char *)malloc(BASE64_SIZE(size));
-                  digest_name = crypto_digest_name(digest);
-
-                  bin_to_base64(digest_buf, BASE64_SIZE(size), md, size, true);
-
-                  if (!bstrcmp(digest_buf, payload.chksum)) {
-                     Dmsg4(dbglvl,"%s      %s chksum  diff. Cat: %s File: %s\n",
-                           fname,
-                           digest_name,
-                           payload.chksum,
-                           digest_buf);
-                     status = true;
-                  }
-
-                  free(digest_buf);
-               }
-               crypto_digest_free(digest);
+            } else {
+               status = !calculate_and_compare_file_chksum(jcr, ff_pkt, fname, payload->chksum);
             }
          }
-
          break;
       case ':':
       case 'J':
       case 'C':
+         break;
       default:
          break;
       }

@@ -98,3 +98,5 @@ void *handle_stored_connection(BSOCK *sd);
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
 void do_verify(JCR *jcr);
 void do_verify_volume(JCR *jcr);
+bool calculate_and_compare_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+                                       const char *fname, const char *chksum);
