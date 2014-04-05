@@ -37,6 +37,7 @@
 /* #define LIBBAREOSCATS_LT_RELEASE "14.1.0" */
 /* #define LIBBAREOSCATS_LT_RELEASE "14.1.0" */
 /* #define LIBBAREOSNDMP_LT_RELEASE "14.1.0" */
+/* #define LIBBAREOSLMDB_LT_RELEASE "14.1.0" */
 
 /* Debug flags */
 #undef  DEBUG
