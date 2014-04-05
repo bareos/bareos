@@ -642,18 +642,17 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
        */
       switch (plugin_option_handle_file(jcr, ff_pkt, &sp)) {
       case bRC_OK:
-         Dmsg2(10, "Option plugin %s will be used to backup %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+         Dmsg2(10, "Option plugin %s will be used to backup %s\n", ff_pkt->plugin, ff_pkt->fname);
          do_plugin_set = true;
          break;
       case bRC_Skip:
-         Dmsg2(10, "Option plugin %s decided to skip %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+         Dmsg2(10, "Option plugin %s decided to skip %s\n", ff_pkt->plugin, ff_pkt->fname);
          goto good_rtn;
-      default:
-         Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+      case bRC_Core:
+         Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n", ff_pkt->plugin, ff_pkt->fname);
          break;
+      default:
+         goto bail_out;
       }
    }
 

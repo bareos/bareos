@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the Free
@@ -294,7 +294,7 @@ static PyTypeObject PySavePacketType = {
    0,                                 /* tp_setattro */
    0,                                 /* tp_as_buffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
-   "io_pkt object",                   /* tp_doc */
+   "save_pkt object",                 /* tp_doc */
    0,                                 /* tp_traverse */
    0,                                 /* tp_clear */
    0,                                 /* tp_richcompare */
@@ -310,6 +310,97 @@ static PyTypeObject PySavePacketType = {
    0,                                 /* tp_descr_set */
    0,                                 /* tp_dictoffset */
    (initproc)PySavePacket_init,       /* tp_init */
+   0,                                 /* tp_alloc */
+   0,                                 /* tp_new */
+};
+
+/*
+ * The PyRestorePacket type
+ */
+typedef struct {
+   PyObject_HEAD
+   int32_t stream;                    /* Attribute stream id */
+   int32_t data_stream;               /* Id of data stream to follow */
+   int32_t type;                      /* File type FT */
+   int32_t file_index;                /* File index */
+   int32_t LinkFI;                    /* File index to data if hard link */
+   uint32_t uid;                      /* Userid */
+   PyObject *statp;                   /* Decoded stat packet */
+   const char *attrEx;                /* Extended attributes if any */
+   const char *ofname;                /* Output filename */
+   const char *olname;                /* Output link name */
+   const char *where;                 /* Where */
+   const char *RegexWhere;            /* Regex where */
+   int replace;                       /* Replace flag */
+   int create_status;                 /* Status from createFile() */
+} PyRestorePacket;
+
+/*
+ * Forward declarations of type specific functions.
+ */
+static void PyRestorePacket_dealloc(PyRestorePacket *self);
+static int PyRestorePacket_init(PyRestorePacket *self, PyObject *args, PyObject *kwds);
+static PyObject *PyRestorePacket_repr(PyRestorePacket *self);
+
+static PyMethodDef PyRestorePacket_methods[] = {
+   { NULL }                           /* Sentinel */
+};
+
+static PyMemberDef PyRestorePacket_members[] = {
+   { (char *)"stream", T_INT, offsetof(PyRestorePacket, stream), 0, (char *)"Attribute stream id" },
+   { (char *)"data_stream", T_INT, offsetof(PyRestorePacket, data_stream), 0, (char *)"Id of data stream to follow" },
+   { (char *)"type", T_INT, offsetof(PyRestorePacket, type), 0, (char *)"File type FT" },
+   { (char *)"file_index", T_INT, offsetof(PyRestorePacket, file_index), 0, (char *)"File index" },
+   { (char *)"linkFI", T_INT, offsetof(PyRestorePacket, LinkFI), 0, (char *)"File index to data if hard link" },
+   { (char *)"uid", T_UINT, offsetof(PyRestorePacket, uid), 0, (char *)"User Id" },
+   { (char *)"statp", T_OBJECT, offsetof(PyRestorePacket, statp), 0, (char *)"Stat Packet" },
+   { (char *)"attrEX", T_STRING, offsetof(PyRestorePacket, attrEx), 0, (char *)"Extended attributes" },
+   { (char *)"ofname", T_STRING, offsetof(PyRestorePacket, ofname), 0, (char *)"Output filename" },
+   { (char *)"olname", T_STRING, offsetof(PyRestorePacket, olname), 0, (char *)"Output link name" },
+   { (char *)"where", T_STRING, offsetof(PyRestorePacket, where), 0, (char *)"Where" },
+   { (char *)"regexwhere", T_STRING, offsetof(PyRestorePacket, RegexWhere), 0, (char *)"Regex where" },
+   { (char *)"replace", T_INT, offsetof(PyRestorePacket, replace), 0, (char *)"Replace flag" },
+   { (char *)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0, (char *)"Status from createFile()" },
+   { NULL }
+};
+
+static PyTypeObject PyRestorePacketType = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   "restore_pkt",                     /* tp_name */
+   sizeof(PyRestorePacket),           /* tp_basicsize */
+   0,                                 /* tp_itemsize */
+   (destructor)PyRestorePacket_dealloc, /* tp_dealloc */
+   0,                                 /* tp_print */
+   0,                                 /* tp_getattr */
+   0,                                 /* tp_setattr */
+   0,                                 /* tp_compare */
+   (reprfunc)PyRestorePacket_repr,    /* tp_repr */
+   0,                                 /* tp_as_number */
+   0,                                 /* tp_as_sequence */
+   0,                                 /* tp_as_mapping */
+   0,                                 /* tp_hash */
+   0,                                 /* tp_call */
+   0,                                 /* tp_str */
+   0,                                 /* tp_getattro */
+   0,                                 /* tp_setattro */
+   0,                                 /* tp_as_buffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
+   "restore_pkt object",              /* tp_doc */
+   0,                                 /* tp_traverse */
+   0,                                 /* tp_clear */
+   0,                                 /* tp_richcompare */
+   0,                                 /* tp_weaklistoffset */
+   0,                                 /* tp_iter */
+   0,                                 /* tp_iternext */
+   PyRestorePacket_methods,           /* tp_methods */
+   PyRestorePacket_members,           /* tp_members */
+   0,                                 /* tp_getset */
+   0,                                 /* tp_base */
+   0,                                 /* tp_dict */
+   0,                                 /* tp_descr_get */
+   0,                                 /* tp_descr_set */
+   0,                                 /* tp_dictoffset */
+   (initproc)PyRestorePacket_init,    /* tp_init */
    0,                                 /* tp_alloc */
    0,                                 /* tp_new */
 };
