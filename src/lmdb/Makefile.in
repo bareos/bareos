@@ -84,6 +84,7 @@ install-includes:
 
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
+	$(RMF) $(DESTDIR)$(libdir)/libbareoslmdb-*.so $(DESTDIR)$(libdir)/libbareoslmdb.la
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoslmdb.la $(DESTDIR)$(libdir)
 
 install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@

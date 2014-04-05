@@ -130,6 +130,7 @@ install-includes:
 
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
+	$(RMF) $(DESTDIR)$(libdir)/libbareosndmp-*.so $(DESTDIR)$(libdir)/libbareosndmp.la
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareosndmp.la $(DESTDIR)$(libdir)
 
 install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
