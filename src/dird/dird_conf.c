@@ -2876,7 +2876,6 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
 {
-   bool print_item = false;
    POOL_MEM temp;
 
    switch (items[i].type) {
@@ -3004,7 +3003,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       break;
    }
    case CFG_TYPE_LEVEL: {
-      int32_t level = *(items[i].i32value);
+      uint32_t level = *(items[i].ui32value);
 
       if (level) {
          for (int32_t j = 0; joblevels[j].level_name; j++) {

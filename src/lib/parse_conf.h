@@ -231,6 +231,7 @@ typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str);
  */
 class CONFIG {
 public:
+   /* members */
    const char *m_cf;                    /* Config file */
    LEX_ERROR_HANDLER *m_scan_error;     /* Error handler if non-null */
    LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
@@ -250,7 +251,7 @@ public:
    RES **m_res_head;                    /* Pointer to defined resources */
    brwlock_t m_res_lock;                /* Resource lock */
 
-   /* functions */
+   /* methods */
    void init(
       const char *cf,
       LEX_ERROR_HANDLER *scan_error,
@@ -270,6 +271,7 @@ public:
    void free_resources();
    RES **save_resources();
    RES **new_res_head();
+   void init_resource(int type, RES_ITEM *items, int pass);
 };
 
 CONFIG *new_config_parser();
