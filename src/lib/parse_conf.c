@@ -88,25 +88,25 @@ static bool find_config_file(const char *config_file, char *full_path, int max_p
 
 /*
  * Message resource directives
- * name handler value code flags default_value
+ * name config_data_type value code flags default_value
  */
 RES_ITEM msgs_items[] = {
-   { "name", store_name, ITEM(res_msgs.hdr.name), 0, 0, NULL },
-   { "description", store_str, ITEM(res_msgs.hdr.desc), 0, 0, NULL },
-   { "mailcommand", store_str, ITEM(res_msgs.mail_cmd), 0, 0, NULL },
-   { "operatorcommand", store_str, ITEM(res_msgs.operator_cmd), 0, 0, NULL },
-   { "syslog", store_msgs, ITEM(res_msgs), MD_SYSLOG, 0, NULL },
-   { "mail", store_msgs, ITEM(res_msgs), MD_MAIL, 0, NULL },
-   { "mailonerror", store_msgs, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL },
-   { "mailonsuccess", store_msgs, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL },
-   { "file", store_msgs, ITEM(res_msgs), MD_FILE, 0, NULL },
-   { "append", store_msgs, ITEM(res_msgs), MD_APPEND, 0, NULL },
-   { "stdout", store_msgs, ITEM(res_msgs), MD_STDOUT, 0, NULL },
-   { "stderr", store_msgs, ITEM(res_msgs), MD_STDERR, 0, NULL },
-   { "director", store_msgs, ITEM(res_msgs), MD_DIRECTOR, 0, NULL },
-   { "console", store_msgs, ITEM(res_msgs), MD_CONSOLE, 0, NULL },
-   { "operator", store_msgs, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
-   { "catalog", store_msgs, ITEM(res_msgs), MD_CATALOG, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL },
+   { "mailcommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL },
+   { "operatorcommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL },
+   { "syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL },
+   { "mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL },
+   { "mailonerror", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL },
+   { "mailonsuccess", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL },
+   { "file", CFG_TYPE_MSGS, ITEM(res_msgs), MD_FILE, 0, NULL },
+   { "append", CFG_TYPE_MSGS, ITEM(res_msgs), MD_APPEND, 0, NULL },
+   { "stdout", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDOUT, 0, NULL },
+   { "stderr", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDERR, 0, NULL },
+   { "director", CFG_TYPE_MSGS, ITEM(res_msgs), MD_DIRECTOR, 0, NULL },
+   { "console", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CONSOLE, 0, NULL },
+   { "operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
+   { "catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -194,32 +194,34 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
 
       for (i = 0; items[i].name; i++) {
          Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
-               (items[i].flags & ITEM_DEFAULT) ? "yes" : "no",
+               (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
                (items[i].default_value) ? items[i].default_value : "None");
 
          /*
           * Sanity check.
           *
-          * Items with a default value but without the ITEM_DEFAULT flag set
+          * Items with a default value but without the CFG_ITEM_DEFAULT flag set
           * are most of the time an indication of a programmers error.
           */
-         if (items[i].default_value != NULL && !(items[i].flags & ITEM_DEFAULT)) {
-            Pmsg1(000, _("Found config item %s which has default value but no ITEM_DEFAULT flag set\n"),
+         if (items[i].default_value != NULL && !(items[i].flags & CFG_ITEM_DEFAULT)) {
+            Pmsg1(000, _("Found config item %s which has default value but no CFG_ITEM_DEFAULT flag set\n"),
                   items[i].name);
-            items[i].flags |= ITEM_DEFAULT;
+            items[i].flags |= CFG_ITEM_DEFAULT;
          }
 
-         if (items[i].flags & ITEM_DEFAULT && items[i].default_value != NULL) {
+         if (items[i].flags & CFG_ITEM_DEFAULT && items[i].default_value != NULL) {
             /*
              * First try to handle the generic types.
              */
-            if (items[i].handler == store_bit) {
+            switch (items[i].type) {
+            case CFG_TYPE_BIT:
                if (bstrcasecmp(items[i].default_value, "on")) {
                   *(uint32_t *)(items[i].value) |= items[i].code;
                } else if (bstrcasecmp(items[i].default_value, "off")) {
                   *(uint32_t *)(items[i].value) &= ~(items[i].code);
                }
-            } else if (items[i].handler == store_bool) {
+               break;
+            case CFG_TYPE_BOOL:
                if (bstrcasecmp(items[i].default_value, "yes") ||
                    bstrcasecmp(items[i].default_value, "true")) {
                   *(bool *)(items[i].value) = true;
@@ -227,22 +229,29 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
                           bstrcasecmp(items[i].default_value, "false")) {
                   *(bool *)(items[i].value) = false;
                }
-            } else if (items[i].handler == store_pint32 ||
-                       items[i].handler == store_int32 ||
-                       items[i].handler == store_size32) {
+               break;
+            case CFG_TYPE_PINT32:
+            case CFG_TYPE_INT32:
+            case CFG_TYPE_SIZE32:
                *(uint32_t *)(items[i].value) = str_to_int32(items[i].default_value);
-            } else if (items[i].handler == store_int64) {
+               break;
+            case CFG_TYPE_INT64:
                *(int64_t *)(items[i].value) = str_to_int64(items[i].default_value);
-            } else if (items[i].handler == store_size64) {
+               break;
+            case CFG_TYPE_SIZE64:
                *(uint64_t *)(items[i].value) = str_to_uint64(items[i].default_value);
-            } else if (items[i].handler == store_speed) {
+               break;
+            case CFG_TYPE_SPEED:
                *(uint64_t *)(items[i].value) = str_to_uint64(items[i].default_value);
-            } else if (items[i].handler == store_time) {
+               break;
+            case CFG_TYPE_TIME:
                *(utime_t *)(items[i].value) = str_to_int64(items[i].default_value);
-            } else if (items[i].handler == store_strname ||
-                       items[i].handler == store_str) {
+               break;
+            case CFG_TYPE_STRNAME:
+            case CFG_TYPE_STR:
                *items[i].value = bstrdup(items[i].default_value);
-            } else if (items[i].handler == store_dir) {
+               break;
+            case CFG_TYPE_DIR: {
                char pathname[MAXSTRING];
 
                bstrncpy(pathname, items[i].default_value, sizeof(pathname));
@@ -250,15 +259,19 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
                   do_shell_expansion(pathname, sizeof(pathname));
                }
                *items[i].value = bstrdup(pathname);
-            } else if (items[i].handler == store_addresses) {
+               break;
+            }
+            case CFG_TYPE_ADDRESSES:
                init_default_addresses((dlist **)items[i].value, items[i].default_value);
-            } else {
+               break;
+            default:
                /*
                 * None of the generic types fired if there is a registered callback call that now.
                 */
                if (config->m_init_res) {
                   config->m_init_res(&items[i]);
                }
+               break;
             }
          }
 
@@ -275,7 +288,7 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
 /*
  * Store Messages Destination information
  */
-void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
    char *cmd;
@@ -421,7 +434,7 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code, char *where, char *
  * This routine is ONLY for resource names
  *  Store a name at specified address.
  */
-void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    POOLMEM *msg = get_pool_memory(PM_EMSG);
    lex_get_token(lc, T_NAME);
@@ -447,7 +460,7 @@ void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
  * Store a name string at specified address
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
-void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    /*
@@ -469,7 +482,7 @@ void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a string at specified address
  */
-void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -490,7 +503,7 @@ void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
  */
-void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -512,7 +525,7 @@ void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a password specified address in MD5 coding
  */
-void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    unsigned int i, j;
    struct MD5Context md5c;
@@ -540,7 +553,7 @@ void store_password(LEX *lc, RES_ITEM *item, int index, int pass)
  * If we are in pass 2, do a lookup of the
  * resource.
  */
-void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
 
@@ -570,7 +583,7 @@ void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
  *
  * If we are in pass 2, do a lookup of the resource.
  */
-void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
    int count = str_to_int32(item->default_value);
@@ -623,7 +636,7 @@ void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a string in an alist.
  */
-void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    alist *list;
 
@@ -650,7 +663,7 @@ void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
  * with a vertical bar (i.e. it will likely be passed to the
  * shell later).
  */
-void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    alist *list;
 
@@ -683,7 +696,7 @@ void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
 
@@ -703,7 +716,7 @@ void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store an integer at specified address
  */
-void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_INT32);
    *(uint32_t *)(item->value) = lc->int32_val;
@@ -714,7 +727,7 @@ void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a positive integer at specified address
  */
-void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_PINT32);
    *(uint32_t *)(item->value) = lc->pint32_val;
@@ -725,7 +738,7 @@ void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store an 64 bit integer at specified address
  */
-void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_INT64);
    *(int64_t *)(item->value) = lc->int64_val;
@@ -804,7 +817,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
 /*
  * Store a size in bytes
  */
-void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
 }
@@ -812,7 +825,7 @@ void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a size in bytes
  */
-void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, false /* not 32 bit */, STORE_SIZE);
 }
@@ -820,7 +833,7 @@ void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a speed in bytes/s
  */
-void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
 }
@@ -828,7 +841,7 @@ void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a time period in seconds
  */
-void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
    utime_t utime;
@@ -873,7 +886,7 @@ void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a yes/no in a bit field
  */
-void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -891,7 +904,7 @@ void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a bool in a bit field
  */
-void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -909,7 +922,7 @@ void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Tape Label Type (BAREOS, ANSI, IBM)
  */
-void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -965,7 +978,7 @@ void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }
  */
-void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
 {
    int token;
    int exist;
@@ -1075,7 +1088,7 @@ void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
    }
 }
 
-void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1092,7 +1105,7 @@ void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
    }
 }
 
-void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1109,6 +1122,91 @@ void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
    }
 }
 
+/*
+ * Generic store resource dispatcher.
+ */
+bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   switch (type) {
+   case CFG_TYPE_STR:
+      store_str(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DIR:
+      store_dir(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PASSWORD:
+      store_password(lc, item, index, pass);
+      break;
+   case CFG_TYPE_NAME:
+      store_name(lc, item, index, pass);
+      break;
+   case CFG_TYPE_STRNAME:
+      store_strname(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RES:
+      store_res(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_RES:
+      store_alist_res(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_STR:
+      store_alist_str(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_DIR:
+      store_alist_dir(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INT32:
+      store_int32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PINT32:
+      store_pint32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MSGS:
+      store_msgs(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INT64:
+      store_int64(lc, item, index, pass);
+      break;
+   case CFG_TYPE_BIT:
+      store_bit(lc, item, index, pass);
+      break;
+   case CFG_TYPE_BOOL:
+      store_bool(lc, item, index, pass);
+      break;
+   case CFG_TYPE_TIME:
+      store_time(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SIZE64:
+      store_size64(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SIZE32:
+      store_size32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SPEED:
+      store_speed(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DEFS:
+      store_defs(lc, item, index, pass);
+      break;
+   case CFG_TYPE_LABEL:
+      store_label(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES:
+      store_addresses(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES_ADDRESS:
+      store_addresses_address(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES_PORT:
+      store_addresses_port(lc, item, index, pass);
+      break;
+   default:
+      return false;
+   }
+
+   return true;
+}
+
 CONFIG *new_config_parser()
 {
    CONFIG *config;
@@ -1121,6 +1219,7 @@ void CONFIG::init(const char *cf,
                   LEX_ERROR_HANDLER *scan_error,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
+                  STORE_RES_HANDLER *store_res,
                   int32_t err_type,
                   void *vres_all,
                   int32_t res_all_size,
@@ -1133,6 +1232,7 @@ void CONFIG::init(const char *cf,
    m_scan_error = scan_error;
    m_scan_warning = scan_warning;
    m_init_res = init_res;
+   m_store_res = store_res;
    m_err_type = err_type;
    m_res_all = vres_all;
    m_res_all_size = res_all_size;
@@ -1255,10 +1355,10 @@ bool CONFIG::parse_config()
                for (i = 0; items[i].name; i++) {
                   if (bstrcasecmp(items[i].name, lc->str)) {
                      /*
-                      * If the ITEM_NO_EQUALS flag is set we do NOT
+                      * If the CFG_ITEM_NO_EQUALS flag is set we do NOT
                       *   scan for = after the keyword
                       */
-                     if (!(items[i].flags & ITEM_NO_EQUALS)) {
+                     if (!(items[i].flags & CFG_ITEM_NO_EQUALS)) {
                         token = lex_get_token(lc, T_SKIP_EOL);
                         Dmsg1 (900, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
                         if (token != T_EQUALS) {
@@ -1270,19 +1370,26 @@ bool CONFIG::parse_config()
                      /*
                       * See if we are processing a deprecated keyword if so warn the user about it.
                       */
-                     if (items[i].flags & ITEM_DEPRECATED) {
+                     if (items[i].flags & CFG_ITEM_DEPRECATED) {
                         scan_warn2(lc, _("using deprecated keyword %s on line %d"), items[i].name, lc->line_no);
                         /*
-                         * As we only want to warn we continue parsing the config.
-                         * So no goto bail_out here.
+                         * As we only want to warn we continue parsing the config. So no goto bail_out here.
                          */
                      }
 
                      Dmsg1(800, "calling handler for %s\n", items[i].name);
+
                      /*
                       * Call item handler
                       */
-                     items[i].handler(lc, &items[i], i, pass);
+                     if (!store_resource(items[i].type, lc, &items[i], i, pass)) {
+                        /*
+                         * None of the generic types fired if there is a registered callback call that now.
+                         */
+                        if (m_store_res) {
+                           m_store_res(lc, &items[i], i, pass);
+                        }
+                     }
                      i = -1;
                      break;
                   }

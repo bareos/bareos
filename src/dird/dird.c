@@ -743,8 +743,9 @@ static bool check_resources()
                Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
                      job->name(), job_items[i].name);
                offset = (char *)(job_items[i].value) - (char *)&res_all;
-               if (job_items[i].handler == store_str ||
-                   job_items[i].handler == store_dir) {
+               switch (job_items[i].type) {
+               case CFG_TYPE_STR:
+               case CFG_TYPE_DIR:
                   /*
                    * Handle strings and directory strings
                    */
@@ -757,7 +758,8 @@ static bool check_resources()
                   }
                   *svalue = bstrdup(*def_svalue);
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_res) {
+                  break;
+               case CFG_TYPE_RES:
                   /*
                    * Handle resources
                    */
@@ -770,22 +772,24 @@ static bool check_resources()
                   }
                   *svalue = *def_svalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_alist_res) {
+                  break;
+               case CFG_TYPE_ALIST_RES:
                   /*
                    * Handle alist resources
                    */
                   if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
                      set_bit(i, job->hdr.item_present);
                   }
-               } else if (job_items[i].handler == store_bit ||
-                          job_items[i].handler == store_pint32 ||
-                          job_items[i].handler == store_jobtype ||
-                          job_items[i].handler == store_protocoltype ||
-                          job_items[i].handler == store_level ||
-                          job_items[i].handler == store_int32 ||
-                          job_items[i].handler == store_size32 ||
-                          job_items[i].handler == store_migtype ||
-                          job_items[i].handler == store_replace) {
+                  break;
+               case CFG_TYPE_BIT:
+               case CFG_TYPE_PINT32:
+               case CFG_TYPE_JOBTYPE:
+               case CFG_TYPE_PROTOCOLTYPE:
+               case CFG_TYPE_LEVEL:
+               case CFG_TYPE_INT32:
+               case CFG_TYPE_SIZE32:
+               case CFG_TYPE_MIGTYPE:
+               case CFG_TYPE_REPLACE:
                   /*
                    * Handle integer fields
                    *    Note, our store_bit does not handle bitmaped fields
@@ -796,10 +800,11 @@ static bool check_resources()
                   ivalue = (uint32_t *)((char *)job + offset);
                   *ivalue = *def_ivalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_time ||
-                          job_items[i].handler == store_size64 ||
-                          job_items[i].handler == store_int64 ||
-                          job_items[i].handler == store_speed) {
+                  break;
+               case CFG_TYPE_TIME:
+               case CFG_TYPE_SIZE64:
+               case CFG_TYPE_INT64:
+               case CFG_TYPE_SPEED:
                   /*
                    * Handle 64 bit integer fields
                    */
@@ -809,7 +814,8 @@ static bool check_resources()
                   lvalue = (int64_t *)((char *)job + offset);
                   *lvalue = *def_lvalue;
                   set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_bool) {
+                  break;
+               case CFG_TYPE_BOOL:
                   /*
                    * Handle bool fields
                    */
@@ -819,6 +825,9 @@ static bool check_resources()
                   bvalue = (bool *)((char *)job + offset);
                   *bvalue = *def_bvalue;
                   set_bit(i, job->hdr.item_present);
+                  break;
+               default:
+                  break;
                }
             }
          }
@@ -828,7 +837,7 @@ static bool check_resources()
        * Ensure that all required items are present
        */
       for (int i = 0; job_items[i].name; i++) {
-         if (job_items[i].flags & ITEM_REQUIRED) {
+         if (job_items[i].flags & CFG_ITEM_REQUIRED) {
                if (!bit_is_set(i, job->hdr.item_present)) {
                   Jmsg(NULL, M_ERROR_TERM, 0,
                        _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),

@@ -73,14 +73,14 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static RES_ITEM mon_items[] = {
-   { "name", store_name, ITEM(res_monitor.hdr.name), 0, ITEM_REQUIRED, 0 },
-   { "description", store_str, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
-   { "requiressl", store_bool, ITEM(res_monitor.require_ssl), 0, ITEM_DEFAULT, "false" },
-   { "password", store_password, ITEM(res_monitor.password), 0, ITEM_REQUIRED, NULL },
-   { "refreshinterval", store_time, ITEM(res_monitor.RefreshInterval), 0, ITEM_DEFAULT, "60" },
-   { "fdconnecttimeout", store_time, ITEM(res_monitor.FDConnectTimeout), 0, ITEM_DEFAULT, "10" },
-   { "sdconnecttimeout", store_time, ITEM(res_monitor.SDConnectTimeout), 0, ITEM_DEFAULT, "10" },
-   { "dirconnecttimeout", store_time, ITEM(res_monitor.DIRConnectTimeout), 0, ITEM_DEFAULT, "10" },
+   { "name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0 },
+   { "description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
+   { "requiressl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false" },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "refreshinterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60" },
+   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
+   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
+   { "dirconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -90,11 +90,11 @@ static RES_ITEM mon_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", store_str, ITEM(res_dir.address), 0, ITEM_REQUIRED, NULL },
-   { "enablessl", store_bool, ITEM(res_dir.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "enablessl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -104,12 +104,12 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
-   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "password", store_password, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
-   { "enablessl", store_bool, ITEM(res_client.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "enablessl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -119,14 +119,14 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
-   { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
-   { "password", store_password, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
-   { "sdpassword", store_password, ITEM(res_store.password), 0, 0, NULL },
-   { "enablessl", store_bool, ITEM(res_store.enable_ssl), 0, ITEM_DEFAULT, "false" },
+   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
+   { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdaddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdpassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL },
+   { "enablessl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -136,9 +136,9 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM con_font_items[] = {
-   { "name", store_name, ITEM(con_font.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(con_font.hdr.desc), 0, 0, NULL },
-   { "font", store_str, ITEM(con_font.fontface), 0, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
+   { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
    { NULL, NULL, { 0 }, 0, 0, NULL }
 };
 
@@ -296,7 +296,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
     * Ensure that all required items are present
     */
    for (i = 0; items[i].name; i++) {
-      if (items[i].flags & ITEM_REQUIRED) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_monitor.hdr.item_present)) {
                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                   items[i].name, resources[rindex]);
@@ -402,7 +402,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, exit_code,
+   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
                 (void *)&res_all, res_all_size, r_first,
                 r_last, resources, res_head);
    return config->parse_config();

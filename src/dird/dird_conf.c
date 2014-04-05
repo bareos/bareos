@@ -59,30 +59,12 @@ RES **res_head = sres_head;
 /*
  * Imported subroutines
  */
-extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
-extern void store_finc(LEX *lc, RES_ITEM *item, int index, int pass);
 extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
+extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * Forward referenced subroutines
  */
-void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_level(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_device(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here as we are
@@ -109,48 +91,47 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "messages", store_res, ITEM(res_dir.messages), R_MSGS, 0, NULL },
-   { "dirport", store_addresses_port, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "diraddress", store_addresses_address, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "diraddresses", store_addresses, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "dirsourceaddress", store_addresses_address, ITEM(res_dir.DIRsrc_addr), 0, ITEM_DEFAULT, "0" },
-   { "queryfile", store_dir, ITEM(res_dir.query_file), 0, ITEM_REQUIRED, NULL },
-   { "workingdirectory", store_dir, ITEM(res_dir.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "plugindirectory", store_dir, ITEM(res_dir.plugin_directory), 0, 0, NULL },
-   { "pluginnames", store_str, ITEM(res_dir.plugin_names), 0, 0, NULL },
-   { "scriptsdirectory", store_dir, ITEM(res_dir.scripts_directory), 0, 0, NULL },
-   { "subscriptions", store_pint32, ITEM(res_dir.subscriptions), 0, ITEM_DEFAULT, "0" },
-   { "subsysdirectory", store_dir, ITEM(res_dir.subsys_directory), 0, 0, NULL },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_dir.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "maximumconsoleconnections", store_pint32, ITEM(res_dir.MaxConsoleConnect), 0, ITEM_DEFAULT, "20" },
-   { "password", store_clearpassword, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
-   { "fdconnecttimeout", store_time, ITEM(res_dir.FDConnectTimeout), 0, ITEM_DEFAULT, "180" /* 3 minutes */ },
-   { "sdconnecttimeout", store_time, ITEM(res_dir.SDConnectTimeout), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "tlsauthenticate", store_bool, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
-   { "statisticsretention", store_time, ITEM(res_dir.stats_retention), 0, ITEM_DEFAULT, "157680000" /* 5 years */ },
-   { "verid", store_str, ITEM(res_dir.verid), 0, 0, NULL },
-   { "optimizeforsize", store_bool, ITEM(res_dir.optimize_for_size), 0, ITEM_DEFAULT, "true" },
-   { "optimizeforspeed", store_bool, ITEM(res_dir.optimize_for_speed), 0, ITEM_DEFAULT, "false" },
-   { "nokeepalive", store_bool, ITEM(res_dir.nokeepalive), 0, ITEM_DEFAULT, "false" },
-   { "keyencryptionkey", store_clearpassword, ITEM(res_dir.keyencrkey), 1, 0, NULL },
-   { "ndmpsnooping", store_bool, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
-   { "ndmploglevel", store_pint32, ITEM(res_dir.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
-   { "absolutejobtimeout", store_pint32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "messages", CFG_TYPE_RES, ITEM(res_dir.messages), R_MSGS, 0, NULL },
+   { "dirport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "dirsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir.DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
+   { "queryfile", CFG_TYPE_DIR, ITEM(res_dir.query_file), 0, CFG_ITEM_REQUIRED, NULL },
+   { "workingdirectory", CFG_TYPE_DIR, ITEM(res_dir.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", CFG_TYPE_DIR, ITEM(res_dir.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
+   { "plugindirectory", CFG_TYPE_DIR, ITEM(res_dir.plugin_directory), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_STR, ITEM(res_dir.plugin_names), 0, 0, NULL },
+   { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_dir.scripts_directory), 0, 0, NULL },
+   { "subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0" },
+   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, 0, NULL },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maximumconsoleconnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnect), 0, CFG_ITEM_DEFAULT, "20" },
+   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */ },
+   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
+   { "statisticsretention", CFG_TYPE_TIME, ITEM(res_dir.stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */ },
+   { "verid", CFG_TYPE_STR, ITEM(res_dir.verid), 0, 0, NULL },
+   { "optimizeforsize", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_size), 0, CFG_ITEM_DEFAULT, "true" },
+   { "optimizeforspeed", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false" },
+   { "keyencryptionkey", CFG_TYPE_CLEARPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
+   { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
+   { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
+   { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -159,32 +140,32 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM con_items[] = {
-   { "name", store_name, ITEM(res_con.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_con.hdr.desc), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_con.password), 0, ITEM_REQUIRED, NULL },
-   { "jobacl", store_acl, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL },
-   { "clientacl", store_acl, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL },
-   { "storageacl", store_acl, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL },
-   { "scheduleacl", store_acl, ITEM(res_con.ACL_lists), Schedule_ACL, 0, NULL },
-   { "runacl", store_acl, ITEM(res_con.ACL_lists), Run_ACL, 0, NULL },
-   { "poolacl", store_acl, ITEM(res_con.ACL_lists), Pool_ACL, 0, NULL },
-   { "commandacl", store_acl, ITEM(res_con.ACL_lists), Command_ACL, 0, NULL },
-   { "filesetacl", store_acl, ITEM(res_con.ACL_lists), FileSet_ACL, 0, NULL },
-   { "catalogacl", store_acl, ITEM(res_con.ACL_lists), Catalog_ACL, 0, NULL },
-   { "whereacl", store_acl, ITEM(res_con.ACL_lists), Where_ACL, 0, NULL },
-   { "pluginoptionsacl", store_acl, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, NULL },
-   { "tlsauthenticate", store_bool, ITEM(res_con.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_con.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_con.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_con.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_con.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_con.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_con.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_con.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_con.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", store_dir, ITEM(res_con.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL },
+   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "jobacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL },
+   { "clientacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL },
+   { "storageacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL },
+   { "scheduleacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Schedule_ACL, 0, NULL },
+   { "runacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Run_ACL, 0, NULL },
+   { "poolacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Pool_ACL, 0, NULL },
+   { "commandacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Command_ACL, 0, NULL },
+   { "filesetacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), FileSet_ACL, 0, NULL },
+   { "catalogacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Catalog_ACL, 0, NULL },
+   { "whereacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Where_ACL, 0, NULL },
+   { "pluginoptionsacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, NULL },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_con.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_con.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_con.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_con.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_con.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_con.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_con.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_con.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -193,42 +174,42 @@ static RES_ITEM con_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "protocol", store_authprotocoltype, ITEM(res_client.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "authtype", store_authtype, ITEM(res_client.AuthType), 0, ITEM_DEFAULT, "None" },
-   { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
-   { "fdaddress", store_str, ITEM(res_client.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "username", store_str, ITEM(res_client.username), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
-   { "fdpassword", store_clearpassword, ITEM(res_client.password), 0, 0, NULL },
-   { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
-   { "passive", store_bool, ITEM(res_client.passive), 0, ITEM_DEFAULT, "false" },
-   { "hardquota", store_size64, ITEM(res_client.HardQuota), 0, ITEM_DEFAULT, "0" },
-   { "softquota", store_size64, ITEM(res_client.SoftQuota), 0, ITEM_DEFAULT, "0" },
-   { "softquotagraceperiod", store_time, ITEM(res_client.SoftQuotaGracePeriod), 0, ITEM_DEFAULT, "0" },
-   { "strictquotas", store_bool, ITEM(res_client.StrictQuotas), 0, ITEM_DEFAULT, "false" },
-   { "quotaincludefailedjobs", store_bool, ITEM(res_client.QuotaIncludeFailedJobs), 0, ITEM_DEFAULT, "true" },
-   { "fileretention", store_time, ITEM(res_client.FileRetention), 0, ITEM_DEFAULT, "5184000" /* 60 days */ },
-   { "jobretention", store_time, ITEM(res_client.JobRetention), 0, ITEM_DEFAULT, "15552000" /* 180 days */ },
-   { "heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "autoprune", store_bool, ITEM(res_client.AutoPrune), 0, ITEM_DEFAULT, "false" },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
-   { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth), 0, 0, NULL },
-   { "ndmploglevel", store_pint32, ITEM(res_client.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
-   { "ndmpblocksize", store_pint32, ITEM(res_client.ndmp_blocksize), 0, ITEM_DEFAULT, "64512" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
+   { "address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdaddress", CFG_TYPE_STR, ITEM(res_client.address), 0, 0, NULL },
+   { "port", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "username", CFG_TYPE_STR, ITEM(res_client.username), 0, 0, NULL },
+   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdpassword", CFG_TYPE_CLEARPASSWORD, ITEM(res_client.password), 0, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
+   { "passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false" },
+   { "hardquota", CFG_TYPE_SIZE64, ITEM(res_client.HardQuota), 0, CFG_ITEM_DEFAULT, "0" },
+   { "softquota", CFG_TYPE_SIZE64, ITEM(res_client.SoftQuota), 0, CFG_ITEM_DEFAULT, "0" },
+   { "softquotagraceperiod", CFG_TYPE_TIME, ITEM(res_client.SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0" },
+   { "strictquotas", CFG_TYPE_BOOL, ITEM(res_client.StrictQuotas), 0, CFG_ITEM_DEFAULT, "false" },
+   { "quotaincludefailedjobs", CFG_TYPE_BOOL, ITEM(res_client.QuotaIncludeFailedJobs), 0, CFG_ITEM_DEFAULT, "true" },
+   { "fileretention", CFG_TYPE_TIME, ITEM(res_client.FileRetention), 0, CFG_ITEM_DEFAULT, "5184000" /* 60 days */ },
+   { "jobretention", CFG_TYPE_TIME, ITEM(res_client.JobRetention), 0, CFG_ITEM_DEFAULT, "15552000" /* 180 days */ },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_client.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "autoprune", CFG_TYPE_BOOL, ITEM(res_client.AutoPrune), 0, CFG_ITEM_DEFAULT, "false" },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_client.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_client.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_client.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_client.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_client.tls_keyfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth), 0, 0, NULL },
+   { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_client.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
+   { "ndmpblocksize", CFG_TYPE_PINT32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /* Storage daemon resource
@@ -236,37 +217,37 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "protocol", store_authprotocoltype, ITEM(res_store.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "authtype", store_authtype, ITEM(res_store.AuthType), 0, ITEM_DEFAULT, "None" },
-   { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
-   { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "username", store_str, ITEM(res_store.username), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
-   { "sdpassword", store_clearpassword, ITEM(res_store.password), 0, 0, NULL },
-   { "device", store_device, ITEM(res_store.device), R_DEVICE, ITEM_REQUIRED, NULL },
-   { "mediatype", store_strname, ITEM(res_store.media_type), 0, ITEM_REQUIRED, NULL },
-   { "autochanger", store_bool, ITEM(res_store.autochanger), 0, ITEM_DEFAULT, "false" },
-   { "enabled", store_bool, ITEM(res_store.enabled), 0, ITEM_DEFAULT, "true" },
-   { "allowcompression", store_bool, ITEM(res_store.AllowCompress), 0, ITEM_DEFAULT, "true" },
-   { "heartbeatinterval", store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_store.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "maximumconcurrentreadjobs", store_pint32, ITEM(res_store.MaxConcurrentReadJobs), 0, ITEM_DEFAULT, "0" },
-   { "sddport", store_pint32, ITEM(res_store.SDDport), 0, ITEM_DEPRECATED, NULL },
-   { "tlsauthenticate", store_bool, ITEM(res_store.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_store.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_store.tls_require), 0, 0, NULL },
-   { "tlscacertificatefile", store_dir, ITEM(res_store.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_store.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_store.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_store.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_store.tls_keyfile), 0, 0, NULL },
-   { "pairedstorage", store_res, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_store.max_bandwidth), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
+   { "protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_store.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
+   { "address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdaddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL },
+   { "port", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "username", CFG_TYPE_STR, ITEM(res_store.username), 0, 0, NULL },
+   { "password", CFG_TYPE_CLEARPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdpassword", CFG_TYPE_PASSWORD, ITEM(res_store.password), 0, 0, NULL },
+   { "device", CFG_TYPE_DEVICE, ITEM(res_store.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL },
+   { "mediatype", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL },
+   { "autochanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_store.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { "allowcompression", CFG_TYPE_BOOL, ITEM(res_store.AllowCompress), 0, CFG_ITEM_DEFAULT, "true" },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maximumconcurrentreadjobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0" },
+   { "sddport", CFG_TYPE_PINT32, ITEM(res_store.SDDport), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_store.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_store.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_store.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_store.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL },
+   { "pairedstorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -275,31 +256,31 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cat_items[] = {
-   { "name", store_name, ITEM(res_cat.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_cat.hdr.desc), 0, 0, NULL },
-   { "address", store_str, ITEM(res_cat.db_address), 0, 0, NULL },
-   { "dbaddress", store_str, ITEM(res_cat.db_address), 0, 0, NULL },
-   { "dbport", store_pint32, ITEM(res_cat.db_port), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_cat.db_password), 0, 0, NULL },
-   { "dbpassword", store_str, ITEM(res_cat.db_password), 0, 0, NULL },
-   { "dbuser", store_str, ITEM(res_cat.db_user), 0, 0, NULL },
-   { "user", store_str, ITEM(res_cat.db_user), 0, 0, NULL },
-   { "dbname", store_str, ITEM(res_cat.db_name), 0, ITEM_REQUIRED, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL },
+   { "address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL },
+   { "dbaddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL },
+   { "dbport", CFG_TYPE_PINT32, ITEM(res_cat.db_port), 0, 0, NULL },
+   { "password", CFG_TYPE_STR, ITEM(res_cat.db_password), 0, 0, NULL },
+   { "dbpassword", CFG_TYPE_STR, ITEM(res_cat.db_password), 0, 0, NULL },
+   { "dbuser", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, 0, NULL },
+   { "user", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, 0, NULL },
+   { "dbname", CFG_TYPE_STR, ITEM(res_cat.db_name), 0, CFG_ITEM_REQUIRED, NULL },
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-   { "dbdriver", store_str, ITEM(res_cat.db_driver), 0, ITEM_REQUIRED, NULL },
+   { "dbdriver", CFG_TYPE_STR, ITEM(res_cat.db_driver), 0, CFG_ITEM_REQUIRED, NULL },
 #else
-   { "dbdriver", store_str, ITEM(res_cat.db_driver), 0, 0, NULL },
+   { "dbdriver", CFG_TYPE_STR, ITEM(res_cat.db_driver), 0, 0, NULL },
 #endif
-   { "dbsocket", store_str, ITEM(res_cat.db_socket), 0, 0, NULL },
+   { "dbsocket", CFG_TYPE_STR, ITEM(res_cat.db_socket), 0, 0, NULL },
    /* Turned off for the moment */
-   { "multipleconnections", store_bit, ITEM(res_cat.mult_db_connections), 0, 0, NULL },
-   { "disablebatchinsert", store_bool, ITEM(res_cat.disable_batch_insert), 0, ITEM_DEFAULT, "false" },
-   { "minconnections", store_pint32, ITEM(res_cat.pooling_min_connections), 0, ITEM_DEFAULT, "1" },
-   { "maxconnections", store_pint32, ITEM(res_cat.pooling_max_connections), 0, ITEM_DEFAULT, "5" },
-   { "incconnections", store_pint32, ITEM(res_cat.pooling_increment_connections), 0, ITEM_DEFAULT, "1" },
-   { "idletimeout", store_pint32, ITEM(res_cat.pooling_idle_timeout), 0, ITEM_DEFAULT, "30" },
-   { "validatetimeout", store_pint32, ITEM(res_cat.pooling_validate_timeout), 0, ITEM_DEFAULT, "120" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "multipleconnections", CFG_TYPE_BIT, ITEM(res_cat.mult_db_connections), 0, 0, NULL },
+   { "disablebatchinsert", CFG_TYPE_BOOL, ITEM(res_cat.disable_batch_insert), 0, CFG_ITEM_DEFAULT, "false" },
+   { "minconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_min_connections), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maxconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_max_connections), 0, CFG_ITEM_DEFAULT, "5" },
+   { "incconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_increment_connections), 0, CFG_ITEM_DEFAULT, "1" },
+   { "idletimeout", CFG_TYPE_PINT32, ITEM(res_cat.pooling_idle_timeout), 0, CFG_ITEM_DEFAULT, "30" },
+   { "validatetimeout", CFG_TYPE_PINT32, ITEM(res_cat.pooling_validate_timeout), 0, CFG_ITEM_DEFAULT, "120" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -308,87 +289,86 @@ static RES_ITEM cat_items[] = {
  * name handler value code flags default_value
  */
 RES_ITEM job_items[] = {
-   { "name", store_name, ITEM(res_job.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_job.hdr.desc), 0, 0, NULL },
-   { "type", store_jobtype, ITEM(res_job.JobType), 0, ITEM_REQUIRED, NULL },
-   { "protocol", store_protocoltype, ITEM(res_job.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "backupformat", store_str, ITEM(res_job.backup_format), 0, ITEM_DEFAULT, "Native" },
-   { "level", store_level, ITEM(res_job.JobLevel), 0, 0, NULL },
-   { "messages", store_res, ITEM(res_job.messages), R_MSGS, ITEM_REQUIRED, NULL },
-   { "storage", store_alist_res, ITEM(res_job.storage), R_STORAGE, 0, NULL },
-   { "pool", store_res, ITEM(res_job.pool), R_POOL, ITEM_REQUIRED, NULL },
-   { "fullbackuppool", store_res, ITEM(res_job.full_pool), R_POOL, 0, NULL },
-   { "incrementalbackuppool", store_res, ITEM(res_job.inc_pool), R_POOL, 0, NULL },
-   { "differentialbackuppool", store_res, ITEM(res_job.diff_pool), R_POOL, 0, NULL },
-   { "nextpool", store_res, ITEM(res_job.next_pool), R_POOL, 0, NULL },
-   { "client", store_res, ITEM(res_job.client), R_CLIENT, 0, NULL },
-   { "fileset", store_res, ITEM(res_job.fileset), R_FILESET, 0, NULL },
-   { "schedule", store_res, ITEM(res_job.schedule), R_SCHEDULE, 0, NULL },
-   { "verifyjob", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
-   { "jobtoverify", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
-   { "jobdefs", store_res, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
-   { "catalog", store_res, ITEM(res_job.catalog), R_CATALOG, 0, NULL },
-   { "run", store_alist_str, ITEM(res_job.run_cmds), 0, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL },
+   { "type", CFG_TYPE_JOBTYPE, ITEM(res_job.JobType), 0, CFG_ITEM_REQUIRED, NULL },
+   { "protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "backupformat", CFG_TYPE_STR, ITEM(res_job.backup_format), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "level", CFG_TYPE_LEVEL, ITEM(res_job.JobLevel), 0, 0, NULL },
+   { "messages", CFG_TYPE_RES, ITEM(res_job.messages), R_MSGS, CFG_ITEM_REQUIRED, NULL },
+   { "storage", CFG_TYPE_ALIST_RES, ITEM(res_job.storage), R_STORAGE, 0, NULL },
+   { "pool", CFG_TYPE_RES, ITEM(res_job.pool), R_POOL, CFG_ITEM_REQUIRED, NULL },
+   { "fullbackuppool", CFG_TYPE_RES, ITEM(res_job.full_pool), R_POOL, 0, NULL },
+   { "incrementalbackuppool", CFG_TYPE_RES, ITEM(res_job.inc_pool), R_POOL, 0, NULL },
+   { "differentialbackuppool", CFG_TYPE_RES, ITEM(res_job.diff_pool), R_POOL, 0, NULL },
+   { "nextpool", CFG_TYPE_RES, ITEM(res_job.next_pool), R_POOL, 0, NULL },
+   { "client", CFG_TYPE_RES, ITEM(res_job.client), R_CLIENT, 0, NULL },
+   { "fileset", CFG_TYPE_RES, ITEM(res_job.fileset), R_FILESET, 0, NULL },
+   { "schedule", CFG_TYPE_RES, ITEM(res_job.schedule), R_SCHEDULE, 0, NULL },
+   { "verifyjob", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, 0, NULL },
+   { "jobtoverify", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, 0, NULL },
+   { "jobdefs", CFG_TYPE_RES, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
+   { "run", CFG_TYPE_ALIST_STR, ITEM(res_job.run_cmds), 0, 0, NULL },
    /* Root of where to restore files */
-   { "where", store_dir, ITEM(res_job.RestoreWhere), 0, 0, NULL },
-   { "regexwhere", store_str, ITEM(res_job.RegexWhere), 0, 0, NULL },
-   { "stripprefix", store_str, ITEM(res_job.strip_prefix), 0, 0, NULL },
-   { "addprefix", store_str, ITEM(res_job.add_prefix), 0, 0, NULL },
-   { "addsuffix", store_str, ITEM(res_job.add_suffix), 0, 0, NULL },
+   { "where", CFG_TYPE_DIR, ITEM(res_job.RestoreWhere), 0, 0, NULL },
+   { "regexwhere", CFG_TYPE_STR, ITEM(res_job.RegexWhere), 0, 0, NULL },
+   { "stripprefix", CFG_TYPE_STR, ITEM(res_job.strip_prefix), 0, 0, NULL },
+   { "addprefix", CFG_TYPE_STR, ITEM(res_job.add_prefix), 0, 0, NULL },
+   { "addsuffix", CFG_TYPE_STR, ITEM(res_job.add_suffix), 0, 0, NULL },
    /* Where to find bootstrap during restore */
-   { "bootstrap", store_dir, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
+   { "bootstrap", CFG_TYPE_DIR, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
    /* Where to write bootstrap file during backup */
-   { "writebootstrap", store_dir, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
-   { "writeverifylist", store_dir, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
-   { "replace", store_replace, ITEM(res_job.replace), 0, ITEM_DEFAULT, "Always" },
-   { "maximumbandwidth", store_speed, ITEM(res_job.max_bandwidth), 0, 0, NULL },
-   { "maxrunschedtime", store_time, ITEM(res_job.MaxRunSchedTime), 0, 0, NULL },
-   { "maxruntime", store_time, ITEM(res_job.MaxRunTime), 0, 0, NULL },
-   { "fullmaxwaittime", store_time, ITEM(res_job.FullMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "incrementalmaxwaittime", store_time, ITEM(res_job.IncMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "differentialmaxwaittime", store_time, ITEM(res_job.DiffMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "fullmaxruntime", store_time, ITEM(res_job.FullMaxRunTime), 0, 0, NULL },
-   { "incrementalmaxruntime", store_time, ITEM(res_job.IncMaxRunTime), 0, 0, NULL },
-   { "differentialmaxruntime", store_time, ITEM(res_job.DiffMaxRunTime), 0, 0, NULL },
-   { "maxwaittime", store_time, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
-   { "maxstartdelay",store_time, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
-   { "maxfullinterval", store_time, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
-   { "maxdiffinterval", store_time, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
-   { "prefixlinks", store_bool, ITEM(res_job.PrefixLinks), 0, ITEM_DEFAULT, "false" },
-   { "prunejobs", store_bool, ITEM(res_job.PruneJobs), 0, ITEM_DEFAULT, "false" },
-   { "prunefiles", store_bool, ITEM(res_job.PruneFiles), 0, ITEM_DEFAULT, "false" },
-   { "prunevolumes",store_bool, ITEM(res_job.PruneVolumes), 0, ITEM_DEFAULT, "false" },
-   { "purgemigrationjob", store_bool, ITEM(res_job.PurgeMigrateJob), 0, ITEM_DEFAULT, "false" },
-   { "enabled", store_bool, ITEM(res_job.enabled), 0, ITEM_DEFAULT, "true" },
-   { "spoolattributes",store_bool, ITEM(res_job.SpoolAttributes), 0, ITEM_DEFAULT, "false" },
-   { "spooldata", store_bool, ITEM(res_job.spool_data), 0, ITEM_DEFAULT, "false" },
-   { "spoolsize", store_size64, ITEM(res_job.spool_size), 0, 0, NULL },
-   { "rerunfailedlevels", store_bool, ITEM(res_job.rerun_failed_levels), 0, ITEM_DEFAULT, "false" },
-   { "prefermountedvolumes", store_bool, ITEM(res_job.PreferMountedVolumes), 0, ITEM_DEFAULT, "true" },
-   { "runbeforejob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "runafterjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "runafterfailedjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "clientrunbeforejob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "clientrunafterjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_job.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "rescheduleonerror", store_bool, ITEM(res_job.RescheduleOnError), 0, ITEM_DEFAULT, "false" },
-   { "rescheduleinterval", store_time, ITEM(res_job.RescheduleInterval), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "rescheduletimes", store_pint32, ITEM(res_job.RescheduleTimes), 0, ITEM_DEFAULT, "5" },
-   { "priority", store_pint32, ITEM(res_job.Priority), 0, ITEM_DEFAULT, "10" },
-   { "allowmixedpriority", store_bool, ITEM(res_job.allow_mixed_priority), 0, ITEM_DEFAULT, "false" },
-   { "writepartafterjob", store_bool, ITEM(res_job.write_part_after_job), 0, ITEM_DEPRECATED, NULL },
-   { "selectionpattern", store_str, ITEM(res_job.selection_pattern), 0, 0, NULL },
-   { "runscript", store_runscript, ITEM(res_job.RunScripts), 0, ITEM_NO_EQUALS, NULL },
-   { "selectiontype", store_migtype, ITEM(res_job.selection_type), 0, 0, NULL },
-   { "accurate", store_bool, ITEM(res_job.accurate), 0, ITEM_DEFAULT, "false" },
-   { "allowduplicatejobs", store_bool, ITEM(res_job.AllowDuplicateJobs), 0, ITEM_DEFAULT, "true" },
-   { "allowhigherduplicates", store_bool, ITEM(res_job.AllowHigherDuplicates), 0, ITEM_DEFAULT, "true" },
-   { "cancellowerlevelduplicates", store_bool, ITEM(res_job.CancelLowerLevelDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "cancelqueuedduplicates", store_bool, ITEM(res_job.CancelQueuedDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "cancelrunningduplicates", store_bool, ITEM(res_job.CancelRunningDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "pluginoptions", store_str, ITEM(res_job.PluginOptions), 0, 0, NULL },
-   { "base", store_alist_res, ITEM(res_job.base), R_JOB, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "writebootstrap", CFG_TYPE_DIR, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
+   { "writeverifylist", CFG_TYPE_DIR, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
+   { "replace", CFG_TYPE_REPLACE, ITEM(res_job.replace), 0, CFG_ITEM_DEFAULT, "Always" },
+   { "maximumbandwidth", CFG_TYPE_SPEED, ITEM(res_job.max_bandwidth), 0, 0, NULL },
+   { "maxrunschedtime", CFG_TYPE_TIME, ITEM(res_job.MaxRunSchedTime), 0, 0, NULL },
+   { "maxruntime", CFG_TYPE_TIME, ITEM(res_job.MaxRunTime), 0, 0, NULL },
+   { "fullmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.FullMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "incrementalmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.IncMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "differentialmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.DiffMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "fullmaxruntime", CFG_TYPE_TIME, ITEM(res_job.FullMaxRunTime), 0, 0, NULL },
+   { "incrementalmaxruntime", CFG_TYPE_TIME, ITEM(res_job.IncMaxRunTime), 0, 0, NULL },
+   { "differentialmaxruntime", CFG_TYPE_TIME, ITEM(res_job.DiffMaxRunTime), 0, 0, NULL },
+   { "maxwaittime", CFG_TYPE_TIME, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
+   { "maxstartdelay",CFG_TYPE_TIME, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
+   { "maxfullinterval", CFG_TYPE_TIME, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
+   { "maxdiffinterval", CFG_TYPE_TIME, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
+   { "prefixlinks", CFG_TYPE_BOOL, ITEM(res_job.PrefixLinks), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunejobs", CFG_TYPE_BOOL, ITEM(res_job.PruneJobs), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunefiles", CFG_TYPE_BOOL, ITEM(res_job.PruneFiles), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunevolumes",CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "purgemigrationjob", CFG_TYPE_BOOL, ITEM(res_job.PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { "spoolattributes",CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "spooldata", CFG_TYPE_BOOL, ITEM(res_job.spool_data), 0, CFG_ITEM_DEFAULT, "false" },
+   { "spoolsize", CFG_TYPE_SIZE64, ITEM(res_job.spool_size), 0, 0, NULL },
+   { "rerunfailedlevels", CFG_TYPE_BOOL, ITEM(res_job.rerun_failed_levels), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prefermountedvolumes", CFG_TYPE_BOOL, ITEM(res_job.PreferMountedVolumes), 0, CFG_ITEM_DEFAULT, "true" },
+   { "runbeforejob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "runafterjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "runafterfailedjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "clientrunbeforejob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "clientrunafterjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_job.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "rescheduleonerror", CFG_TYPE_BOOL, ITEM(res_job.RescheduleOnError), 0, CFG_ITEM_DEFAULT, "false" },
+   { "rescheduleinterval", CFG_TYPE_TIME, ITEM(res_job.RescheduleInterval), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
+   { "rescheduletimes", CFG_TYPE_PINT32, ITEM(res_job.RescheduleTimes), 0, CFG_ITEM_DEFAULT, "5" },
+   { "priority", CFG_TYPE_PINT32, ITEM(res_job.Priority), 0, CFG_ITEM_DEFAULT, "10" },
+   { "allowmixedpriority", CFG_TYPE_BOOL, ITEM(res_job.allow_mixed_priority), 0, CFG_ITEM_DEFAULT, "false" },
+   { "writepartafterjob", CFG_TYPE_BOOL, ITEM(res_job.write_part_after_job), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "selectionpattern", CFG_TYPE_STR, ITEM(res_job.selection_pattern), 0, 0, NULL },
+   { "runscript", CFG_TYPE_RUNSCRIPT, ITEM(res_job.RunScripts), 0, CFG_ITEM_NO_EQUALS, NULL },
+   { "selectiontype", CFG_TYPE_MIGTYPE, ITEM(res_job.selection_type), 0, 0, NULL },
+   { "accurate", CFG_TYPE_BOOL, ITEM(res_job.accurate), 0, CFG_ITEM_DEFAULT, "false" },
+   { "allowduplicatejobs", CFG_TYPE_BOOL, ITEM(res_job.AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true" },
+   { "allowhigherduplicates", CFG_TYPE_BOOL, ITEM(res_job.AllowHigherDuplicates), 0, CFG_ITEM_DEFAULT, "true" },
+   { "cancellowerlevelduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "cancelqueuedduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "cancelrunningduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "pluginoptions", CFG_TYPE_STR, ITEM(res_job.PluginOptions), 0, 0, NULL },
+   { "base", CFG_TYPE_ALIST_RES, ITEM(res_job.base), R_JOB, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -397,13 +377,13 @@ RES_ITEM job_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM fs_items[] = {
-   { "name", store_name, ITEM(res_fs.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_fs.hdr.desc), 0, 0, NULL },
-   { "include", store_inc, { 0 }, 0, ITEM_NO_EQUALS, NULL },
-   { "exclude", store_inc, { 0 }, 1, ITEM_NO_EQUALS, NULL },
-   { "ignorefilesetchanges", store_bool, ITEM(res_fs.ignore_fs_changes), 0, ITEM_DEFAULT, "false" },
-   { "enablevss", store_bool, ITEM(res_fs.enable_vss), 0, ITEM_DEFAULT, "true" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL },
+   { "include", CFG_TYPE_INCEXC, { 0 }, 0, CFG_ITEM_NO_EQUALS, NULL },
+   { "exclude", CFG_TYPE_INCEXC, { 0 }, 1, CFG_ITEM_NO_EQUALS, NULL },
+   { "ignorefilesetchanges", CFG_TYPE_BOOL, ITEM(res_fs.ignore_fs_changes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enablevss", CFG_TYPE_BOOL, ITEM(res_fs.enable_vss), 0, CFG_ITEM_DEFAULT, "true" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -412,10 +392,10 @@ static RES_ITEM fs_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM sch_items[] = {
-   { "name", store_name, ITEM(res_sch.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_sch.hdr.desc), 0, 0, NULL },
-   { "run", store_run, ITEM(res_sch.run), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL },
+   { "run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -424,41 +404,41 @@ static RES_ITEM sch_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM pool_items[] = {
-   { "name", store_name, ITEM(res_pool.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_pool.hdr.desc), 0, 0, NULL },
-   { "pooltype", store_strname, ITEM(res_pool.pool_type), 0, ITEM_REQUIRED, NULL },
-   { "labelformat", store_strname, ITEM(res_pool.label_format), 0, 0, NULL },
-   { "labeltype", store_label, ITEM(res_pool.LabelType), 0, 0, NULL },
-   { "cleaningprefix", store_strname, ITEM(res_pool.cleaning_prefix), 0, ITEM_DEFAULT, "CLN" },
-   { "usecatalog", store_bool, ITEM(res_pool.use_catalog), 0, ITEM_DEFAULT, "true" },
-   { "usevolumeonce", store_bool, ITEM(res_pool.use_volume_once), 0, ITEM_DEPRECATED, NULL },
-   { "purgeoldestvolume", store_bool, ITEM(res_pool.purge_oldest_volume), 0, 0, NULL },
-   { "actiononpurge", store_actiononpurge, ITEM(res_pool.action_on_purge), 0, 0, NULL },
-   { "recycleoldestvolume", store_bool, ITEM(res_pool.recycle_oldest_volume), 0, 0, NULL },
-   { "recyclecurrentvolume", store_bool, ITEM(res_pool.recycle_current_volume), 0, 0, NULL },
-   { "maximumvolumes", store_pint32, ITEM(res_pool.max_volumes), 0, 0, NULL },
-   { "maximumvolumejobs", store_pint32, ITEM(res_pool.MaxVolJobs), 0, 0, NULL },
-   { "maximumvolumefiles", store_pint32, ITEM(res_pool.MaxVolFiles), 0, 0, NULL },
-   { "maximumvolumebytes", store_size64, ITEM(res_pool.MaxVolBytes), 0, 0, NULL },
-   { "catalogfiles", store_bool, ITEM(res_pool.catalog_files), 0, ITEM_DEFAULT, "true" },
-   { "volumeretention", store_time, ITEM(res_pool.VolRetention), 0, ITEM_DEFAULT, "31536000" /* 365 days */ },
-   { "volumeuseduration", store_time, ITEM(res_pool.VolUseDuration), 0, 0, NULL },
-   { "migrationtime", store_time, ITEM(res_pool.MigrationTime), 0, 0, NULL },
-   { "migrationhighbytes", store_size64, ITEM(res_pool.MigrationHighBytes), 0, 0, NULL },
-   { "migrationlowbytes", store_size64, ITEM(res_pool.MigrationLowBytes), 0, 0, NULL },
-   { "nextpool", store_res, ITEM(res_pool.NextPool), R_POOL, 0, NULL },
-   { "storage", store_alist_res, ITEM(res_pool.storage), R_STORAGE, 0, NULL },
-   { "autoprune", store_bool, ITEM(res_pool.AutoPrune), 0, ITEM_DEFAULT, "true" },
-   { "recycle", store_bool, ITEM(res_pool.Recycle), 0, ITEM_DEFAULT, "true" },
-   { "recyclepool", store_res, ITEM(res_pool.RecyclePool), R_POOL, 0, NULL },
-   { "scratchpool", store_res, ITEM(res_pool.ScratchPool), R_POOL, 0, NULL },
-   { "copypool", store_alist_res, ITEM(res_pool.CopyPool), R_POOL, 0, NULL },
-   { "catalog", store_res, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
-   { "fileretention", store_time, ITEM(res_pool.FileRetention), 0, 0, NULL },
-   { "jobretention", store_time, ITEM(res_pool.JobRetention), 0, 0, NULL },
-   { "minimumblocksize", store_pint32, ITEM(res_pool.MinBlocksize), 0, 0, NULL },
-   { "maximumblocksize", store_pint32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL },
+   { "pooltype", CFG_TYPE_STRNAME, ITEM(res_pool.pool_type), 0, CFG_ITEM_REQUIRED, NULL },
+   { "labelformat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL },
+   { "labeltype", CFG_TYPE_LABEL, ITEM(res_pool.LabelType), 0, 0, NULL },
+   { "cleaningprefix", CFG_TYPE_STRNAME, ITEM(res_pool.cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN" },
+   { "usecatalog", CFG_TYPE_BOOL, ITEM(res_pool.use_catalog), 0, CFG_ITEM_DEFAULT, "true" },
+   { "usevolumeonce", CFG_TYPE_BOOL, ITEM(res_pool.use_volume_once), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "purgeoldestvolume", CFG_TYPE_BOOL, ITEM(res_pool.purge_oldest_volume), 0, 0, NULL },
+   { "actiononpurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool.action_on_purge), 0, 0, NULL },
+   { "recycleoldestvolume", CFG_TYPE_BOOL, ITEM(res_pool.recycle_oldest_volume), 0, 0, NULL },
+   { "recyclecurrentvolume", CFG_TYPE_BOOL, ITEM(res_pool.recycle_current_volume), 0, 0, NULL },
+   { "maximumvolumes", CFG_TYPE_PINT32, ITEM(res_pool.max_volumes), 0, 0, NULL },
+   { "maximumvolumejobs", CFG_TYPE_PINT32, ITEM(res_pool.MaxVolJobs), 0, 0, NULL },
+   { "maximumvolumefiles", CFG_TYPE_PINT32, ITEM(res_pool.MaxVolFiles), 0, 0, NULL },
+   { "maximumvolumebytes", CFG_TYPE_SIZE64, ITEM(res_pool.MaxVolBytes), 0, 0, NULL },
+   { "catalogfiles", CFG_TYPE_BOOL, ITEM(res_pool.catalog_files), 0, CFG_ITEM_DEFAULT, "true" },
+   { "volumeretention", CFG_TYPE_TIME, ITEM(res_pool.VolRetention), 0, CFG_ITEM_DEFAULT, "31536000" /* 365 days */ },
+   { "volumeuseduration", CFG_TYPE_TIME, ITEM(res_pool.VolUseDuration), 0, 0, NULL },
+   { "migrationtime", CFG_TYPE_TIME, ITEM(res_pool.MigrationTime), 0, 0, NULL },
+   { "migrationhighbytes", CFG_TYPE_SIZE64, ITEM(res_pool.MigrationHighBytes), 0, 0, NULL },
+   { "migrationlowbytes", CFG_TYPE_SIZE64, ITEM(res_pool.MigrationLowBytes), 0, 0, NULL },
+   { "nextpool", CFG_TYPE_RES, ITEM(res_pool.NextPool), R_POOL, 0, NULL },
+   { "storage", CFG_TYPE_ALIST_RES, ITEM(res_pool.storage), R_STORAGE, 0, NULL },
+   { "autoprune", CFG_TYPE_BOOL, ITEM(res_pool.AutoPrune), 0, CFG_ITEM_DEFAULT, "true" },
+   { "recycle", CFG_TYPE_BOOL, ITEM(res_pool.Recycle), 0, CFG_ITEM_DEFAULT, "true" },
+   { "recyclepool", CFG_TYPE_RES, ITEM(res_pool.RecyclePool), R_POOL, 0, NULL },
+   { "scratchpool", CFG_TYPE_RES, ITEM(res_pool.ScratchPool), R_POOL, 0, NULL },
+   { "copypool", CFG_TYPE_ALIST_RES, ITEM(res_pool.CopyPool), R_POOL, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
+   { "fileretention", CFG_TYPE_TIME, ITEM(res_pool.FileRetention), 0, 0, NULL },
+   { "jobretention", CFG_TYPE_TIME, ITEM(res_pool.JobRetention), 0, 0, NULL },
+   { "minimumblocksize", CFG_TYPE_PINT32, ITEM(res_pool.MinBlocksize), 0, 0, NULL },
+   { "maximumblocksize", CFG_TYPE_PINT32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -467,13 +447,13 @@ static RES_ITEM pool_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM counter_items[] = {
-   { "name", store_name, ITEM(res_counter.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_counter.hdr.desc), 0, 0, NULL },
-   { "minimum", store_int32, ITEM(res_counter.MinValue), 0, ITEM_DEFAULT, "0" },
-   { "maximum", store_pint32, ITEM(res_counter.MaxValue), 0, ITEM_DEFAULT, "2147483647" /* INT32_MAX */ },
-   { "wrapcounter", store_res, ITEM(res_counter.WrapCounter), R_COUNTER, 0, NULL },
-   { "catalog", store_res, ITEM(res_counter.Catalog), R_CATALOG, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL },
+   { "minimum", CFG_TYPE_INT32, ITEM(res_counter.MinValue), 0, CFG_ITEM_DEFAULT, "0" },
+   { "maximum", CFG_TYPE_PINT32, ITEM(res_counter.MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */ },
+   { "wrapcounter", CFG_TYPE_RES, ITEM(res_counter.WrapCounter), R_COUNTER, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_counter.Catalog), R_CATALOG, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -523,16 +503,16 @@ static RUNSCRIPT res_runscript;
  * name handler value code flags default_value
  */
 static RES_ITEM runscript_items[] = {
- { "command", store_runscript_cmd, { (char **)&res_runscript }, SHELL_CMD, 0, NULL },
- { "console", store_runscript_cmd, { (char **)&res_runscript }, CONSOLE_CMD, 0, NULL },
- { "target", store_runscript_target, { (char **)&res_runscript }, 0, 0, NULL },
- { "runsonsuccess", store_runscript_bool, { (char **)&res_runscript.on_success }, 0, 0, NULL },
- { "runsonfailure", store_runscript_bool, { (char **)&res_runscript.on_failure }, 0, 0, NULL },
- { "failjobonerror", store_runscript_bool, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
- { "abortjobonerror",store_runscript_bool, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
- { "runswhen", store_runscript_when, { (char **)&res_runscript.when }, 0, 0, NULL },
- { "runsonclient", store_runscript_target, { (char **)&res_runscript }, 0, 0, NULL }, /* TODO */
- { NULL, NULL, { 0 }, 0, 0, NULL }
+ { "command", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, SHELL_CMD, 0, NULL },
+ { "console", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, CONSOLE_CMD, 0, NULL },
+ { "target", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL },
+ { "runsonsuccess", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_success }, 0, 0, NULL },
+ { "runsonfailure", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_failure }, 0, 0, NULL },
+ { "failjobonerror", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
+ { "abortjobonerror",CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
+ { "runswhen", CFG_TYPE_RUNSCRIPT_WHEN, { (char **)&res_runscript.when }, 0, 0, NULL },
+ { "runsonclient", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL }, /* TODO */
+ { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -1595,7 +1575,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
        * Ensure that all required items are present
        */
       for (i = 0; items[i].name; i++) {
-         if (items[i].flags & ITEM_REQUIRED) {
+         if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                 Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                     items[i].name, resources[rindex]);
@@ -1612,7 +1592,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
       /*
        * Ensure that the name item is present
        */
-      if (items[0].flags & ITEM_REQUIRED) {
+      if (items[0].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
              Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                    items[0].name, resources[rindex]);
@@ -1939,14 +1919,14 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
       scan_to_eol(lc);
       set_bit(index, res_all.hdr.item_present);
    } else {
-      store_alist_res(lc, item, index, pass);
+      store_resource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
    }
 }
 
 /*
  * Store Migration/Copy type
  */
-void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -1971,7 +1951,7 @@ void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store JobType (backup, verify, restore)
  */
-void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -1996,7 +1976,7 @@ void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Protocol (Native, NDMP)
  */
-void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -2018,7 +1998,7 @@ void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
 }
 
-void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
    lex_get_token(lc, T_NAME);
@@ -2092,7 +2072,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Job Level (Full, Incremental, ...)
  */
-void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -2128,10 +2108,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_STR, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2140,10 +2120,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_STR, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2152,18 +2132,18 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_STR, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_CATALOG:
-      store_str(lc, item, index, pass);
+      store_resource(CFG_TYPE_STR, lc, item, index, pass);
       break;
    default:
-      store_password(lc, item, index, pass);
+      store_resource(CFG_TYPE_PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -2372,7 +2352,22 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
            /*
             * Call item handler
             */
-           runscript_items[i].handler(lc, &runscript_items[i], i, pass);
+           switch (runscript_items[i].type) {
+           case CFG_TYPE_RUNSCRIPT_CMD:
+              store_runscript_cmd(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_TARGET:
+              store_runscript_target(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_BOOL:
+              store_runscript_bool(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_WHEN:
+              store_runscript_when(lc, &runscript_items[i], i, pass);
+              break;
+           default:
+              break;
+           }
            i = -1;
            break;
         }
@@ -2502,31 +2497,94 @@ static void init_resource_cb(RES_ITEM *item)
 {
    int i;
 
-   if (item->handler == store_replace) {
+   switch (item->type) {
+   case CFG_TYPE_REPLACE:
       for (i = 0; ReplaceOptions[i].name; i++) {
          if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
             *(uint32_t *)(item->value) = ReplaceOptions[i].token;
          }
       }
-   } else if (item->handler == store_authprotocoltype) {
+      break;
+   case CFG_TYPE_AUTHPROTOCOLTYPE:
       for (i = 0; authprotocols[i].name; i++) {
          if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
             *(uint32_t *)(item->value) = authprotocols[i].token;
          }
       }
-   } else if (item->handler == store_authtype) {
+      break;
+   case CFG_TYPE_AUTHTYPE:
       for (i = 0; authmethods[i].name; i++) {
          if (bstrcasecmp(item->default_value, authmethods[i].name)) {
             *(uint32_t *)(item->value) = authmethods[i].token;
          }
       }
+      break;
+   default:
+      break;
+   }
+}
+
+/*
+ * callback function for parse_config
+ * See ../lib/parse_conf.c, function parse_config, for more generic handling.
+ */
+static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   switch (item->type) {
+   case CFG_TYPE_CLEARPASSWORD:
+      store_clearpassword(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ACL:
+      store_acl(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHPROTOCOLTYPE:
+      store_authprotocoltype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHTYPE:
+      store_authtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DEVICE:
+      store_device(lc, item, index, pass);
+      break;
+   case CFG_TYPE_JOBTYPE:
+      store_jobtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PROTOCOLTYPE:
+      store_protocoltype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_LEVEL:
+      store_level(lc, item, index, pass);
+      break;
+   case CFG_TYPE_REPLACE:
+      store_replace(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SHRTRUNSCRIPT:
+      store_short_runscript(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RUNSCRIPT:
+      store_runscript(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MIGTYPE:
+      store_migtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INCEXC:
+      store_inc(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RUN:
+      store_run(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ACTIONONPURGE:
+      store_actiononpurge(lc, item, index, pass);
+      break;
+   default:
+      break;
    }
 }
 
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, init_resource_cb, exit_code,
-                (void *)&res_all, res_all_size, r_first,
-                r_last, resources, res_head);
+   config->init(configfile, NULL, NULL, init_resource_cb, parse_config_cb,
+                exit_code, (void *)&res_all, res_all_size, r_first, r_last,
+                resources, res_head);
    return config->parse_config();
 }

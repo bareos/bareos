@@ -77,44 +77,44 @@ int32_t res_all_size = sizeof(res_all);
 
 /*  Console "globals" */
 static RES_ITEM cons_items[] = {
-   { "name", store_name, ITEM(res_cons.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_cons.hdr.desc), 0, 0, NULL },
-   { "rcfile", store_dir, ITEM(res_cons.rc_file), 0, 0, NULL },
-   { "historyfile", store_dir, ITEM(res_cons.history_file), 0, 0, NULL },
-   { "historylength", store_pint32, ITEM(res_cons.history_length), 0, ITEM_DEFAULT, "100" },
-   { "password", store_password, ITEM(res_cons.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_cons.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_cons.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_cons.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_cons.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
-   { "director", store_str, ITEM(res_cons.director), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(res_cons.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL },
+   { "rcfile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL },
+   { "historyfile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL },
+   { "historylength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100" },
+   { "password", CFG_TYPE_PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_cons.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
+   { "director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", store_pint32, ITEM(res_dir.DIRport), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", store_str, ITEM(res_dir.address), 0, 0, NULL },
-   { "password", store_password, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
+   { "password", CFG_TYPE_PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -257,7 +257,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
     * Ensure that all required items are present
     */
    for (i=0; items[i].name; i++) {
-      if (items[i].flags & ITEM_REQUIRED) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex]);
@@ -335,7 +335,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, NULL, exit_code,
+   config->init(configfile, NULL, NULL, NULL, NULL, exit_code,
                 (void *)&res_all, res_all_size, r_first,
                 r_last, resources, res_head);
    return config->parse_config();
