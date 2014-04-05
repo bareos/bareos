@@ -234,34 +234,34 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
    va_list arg_ptr;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_MESSAGE);
 
    va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
+   bvsnprintf(buf.c_str(), buf.size(), msg, arg_ptr);
    va_end(arg_ptr);
 
 #ifdef TEST_PROGRAM
    printf("ERROR: Config file error: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+      buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_ERROR, 0, _("Config file error: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
 //   } else if (ini->ctx) {       /* called from plugin */
 //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_FATAL, 0,
 //                    _("Config file error: %s\n"
 //                      "            : Line %d, col %d of file %s\n%s\n"),
-//                            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+//                            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 //
    } else {                     /* called from ??? */
       e_msg(file, line, M_ERROR, 0,
             _("Config file error: %s\n"
               "            : Line %d, col %d of file %s\n%s\n"),
-            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 
@@ -272,34 +272,34 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
    va_list arg_ptr;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_NAME);
 
    va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
+   bvsnprintf(buf.c_str(), buf.size(), msg, arg_ptr);
    va_end(arg_ptr);
 
 #ifdef TEST_PROGRAM
    printf("WARNING: Config file warning: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+      buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_WARNING, 0, _("Config file warning: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
 //   } else if (ini->ctx) {       /* called from plugin */
 //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_WARNING, 0,
 //                    _("Config file warning: %s\n"
 //                      "            : Line %d, col %d of file %s\n%s\n"),
-//                            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+//                            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 //
    } else {                     /* called from ??? */
       p_msg(file, line, 0,
             _("Config file warning: %s\n"
               "            : Line %d, col %d of file %s\n%s\n"),
-            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 

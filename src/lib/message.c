@@ -1497,16 +1497,16 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
  *
  * Returns: string length of what was edited.
  */
-int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
+int vMmsg(POOLMEM **pool_buf, const char *fmt, va_list ap)
 {
-   va_list   arg_ptr;
+   va_list copy;
    int len, maxlen;
 
    for (;;) {
       maxlen = sizeof_pool_memory(*pool_buf) - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(*pool_buf, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      VA_COPY(copy, ap);
+      len = bvsnprintf(*pool_buf, maxlen, fmt, copy);
+      va_end(copy);
       if (len < 0 || len >= (maxlen - 5)) {
          *pool_buf = realloc_pool_memory(*pool_buf, maxlen + maxlen / 2);
          continue;
@@ -1516,16 +1516,16 @@ int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
    return len;
 }
 
-int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
+int vMmsg(POOLMEM *&pool_buf, const char *fmt, va_list ap)
 {
-   va_list   arg_ptr;
+   va_list copy;
    int len, maxlen;
 
    for (;;) {
       maxlen = sizeof_pool_memory(pool_buf) - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      VA_COPY(copy, ap);
+      len = bvsnprintf(pool_buf, maxlen, fmt, copy);
+      va_end(copy);
       if (len < 0 || len >= (maxlen - 5)) {
          pool_buf = realloc_pool_memory(pool_buf, maxlen + maxlen / 2);
          continue;
@@ -1535,22 +1535,58 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
    return len;
 }
 
-int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
+int vMmsg(POOL_MEM &pool_buf, const char *fmt, va_list ap)
 {
-   va_list   arg_ptr;
+   va_list copy;
    int len, maxlen;
 
    for (;;) {
       maxlen = pool_buf.max_size() - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      VA_COPY(copy, ap);
+      len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, copy);
+      va_end(copy);
       if (len < 0 || len >= (maxlen - 5)) {
          pool_buf.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
       break;
    }
+   return len;
+}
+
+int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
+{
+   int len;
+   va_list ap;
+
+   va_start(ap, fmt);
+   len = vMmsg(pool_buf, fmt, ap);
+   va_end(ap);
+
+   return len;
+}
+
+int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
+{
+   int len;
+   va_list ap;
+
+   va_start(ap, fmt);
+   len = vMmsg(pool_buf, fmt, ap);
+   va_end(ap);
+
+   return len;
+}
+
+int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
+{
+   int len;
+   va_list ap;
+
+   va_start(ap, fmt);
+   len = vMmsg(pool_buf, fmt, ap);
+   va_end(ap);
+
    return len;
 }
 

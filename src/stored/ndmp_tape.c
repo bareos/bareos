@@ -477,8 +477,8 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
    DCR *dcr = jcr->dcr;
    struct stat statp;
    time_t now = time(NULL);
-   char attribs[MAXSTRING];
-   char data[MAXSTRING];
+   POOL_MEM attribs(PM_NAME),
+            data(PM_NAME);
    int32_t size;
 
    memset(&statp, 0, sizeof(statp));
@@ -493,7 +493,7 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs, &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
+   encode_stat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
 
    /*
     * Generate a file attributes stream.
@@ -505,21 +505,22 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
     *   Encoded extended-attributes (for Win32)
     *   Delta Sequence Number
     */
-   size = bsnprintf(data, sizeof(data), "%ld %d %s%c%s%c%s%c%s%c%d%c",
-                    dcr->FileIndex,       /* File_index */
-                    FT_REG,               /* File type */
-                    filename,             /* Filename (full path) */
-                    0,
-                    attribs,              /* Encoded attributes */
-                    0,
-                    "",                   /* Link name (if type==FT_LNK or FT_LNKSAVED) */
-                    0,
-                    "",                   /* Encoded extended-attributes (for Win32) */
-                    0,
-                    0,                    /* Delta Sequence Number */
-                    0);
+   size = Mmsg(data,
+               "%ld %d %s%c%s%c%s%c%s%c%d%c",
+               dcr->FileIndex,       /* File_index */
+               FT_REG,               /* File type */
+               filename,             /* Filename (full path) */
+               0,
+               attribs.c_str(),      /* Encoded attributes */
+               0,
+               "",                   /* Link name (if type==FT_LNK or FT_LNKSAVED) */
+               0,
+               "",                   /* Encoded extended-attributes (for Win32) */
+               0,
+               0,                    /* Delta Sequence Number */
+               0);
 
-   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data, size);
+   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(), size);
 }
 
 static int bndmp_simu_flush_weof(struct ndm_session *sess)

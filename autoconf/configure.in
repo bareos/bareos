@@ -779,6 +779,9 @@ AC_SUBST(CONS_LIBS)
 AC_SUBST(CONS_LDFLAGS)
 AC_SUBST(READLINE_SRC)
 
+dnl End of readline/conio stuff
+dnl -----------------------------------------------------------------------
+
 dnl Minimal stuff for readline Makefile configuration
 MAKE_SHELL=/bin/sh
 AC_SUBST(MAKE_SHELL)
@@ -790,8 +793,19 @@ AC_CHECK_FUNCS(strcasecmp select poll setenv putenv tcgetattr lstat lchown)
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 
-dnl End of readline/conio stuff
-dnl -----------------------------------------------------------------------
+AC_MSG_CHECKING(for __builtin_va_copy)
+AC_TRY_LINK([
+   #include <stdarg.h>
+], [
+   va_list ap, ap2;
+   __builtin_va_copy(ap2, ap);
+   return 0;
+], [
+   AC_MSG_RESULT(yes)
+   AC_DEFINE(HAVE___BUILTIN_VA_COPY, 1, [Define to 1 if you have the `__builtin_va_copy' function.])
+], [
+   AC_MSG_RESULT(no)
+])
 
 dnl -----------------------------------------------------------------------
 dnl  Check for Python support

@@ -532,16 +532,19 @@ bool release_device(DCR *dcr)
 
    /* Fire off Alert command and include any output */
    if (!job_canceled(jcr) && dcr->device->alert_command) {
-      POOLMEM *alert;
       int status = 1;
+      POOLMEM *alert, *line;
       BPIPE *bpipe;
-      char line[MAXSTRING];
+
       alert = get_pool_memory(PM_FNAME);
+      line = get_pool_memory(PM_FNAME);
+
       alert = edit_device_codes(dcr, alert, dcr->device->alert_command, "");
+
       /* Wait maximum 5 minutes */
       bpipe = open_bpipe(alert, 60 * 5, "r");
       if (bpipe) {
-         while (fgets(line, sizeof(line), bpipe->rfd)) {
+         while (bfgets(line, bpipe->rfd)) {
             Jmsg(jcr, M_ALERT, 0, _("Alert: %s"), line);
          }
          status = close_bpipe(bpipe);
@@ -556,6 +559,7 @@ bool release_device(DCR *dcr)
 
       Dmsg1(400, "alert status=%d\n", status);
       free_pool_memory(alert);
+      free_pool_memory(line);
    }
    pthread_cond_broadcast(&dev->wait_next_vol);
    Dmsg2(100, "JobId=%u broadcast wait_device_release at %s\n",

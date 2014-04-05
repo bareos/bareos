@@ -1267,7 +1267,7 @@ static inline void store_attribute_record(JCR *jcr, char *fname, char *linked_fn
 }
 
 static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
-                                 int8_t *FileType, char *attribs)
+                                 int8_t *FileType, POOL_MEM &attribs)
 {
    struct stat statp;
 
@@ -1349,7 +1349,7 @@ static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs, &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
+   encode_stat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
 }
 
 extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
@@ -1357,9 +1357,9 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
 {
    NIS *nis;
    int8_t FileType = 0;
-   char attribs[MAXSTRING];
    char namebuf[NDMOS_CONST_PATH_MAX];
-   POOL_MEM pathname(PM_FNAME);
+   POOL_MEM attribs(PM_FNAME),
+            pathname(PM_FNAME);
 
    ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
@@ -1398,7 +1398,7 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
          }
       }
 
-      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs, FileType,
+      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
                             (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
    }
 
@@ -1463,7 +1463,7 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
    int attr_size;
    int8_t FileType = 0;
    N_TREE_NODE *wanted_node;
-   char attribs[MAXSTRING];
+   POOL_MEM attribs(PM_FNAME);
 
    Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
@@ -1481,7 +1481,7 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
    }
 
    convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-   attr_size = strlen(attribs) + 1;
+   attr_size = strlen(attribs.c_str()) + 1;
 
    wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
    bstrncpy(wanted_node->attr, attribs, attr_size);

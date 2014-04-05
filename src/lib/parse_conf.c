@@ -252,13 +252,20 @@ static inline void init_resource(CONFIG *config, int type, RES_ITEM *items, int 
                *items[i].value = bstrdup(items[i].default_value);
                break;
             case CFG_TYPE_DIR: {
-               char pathname[MAXSTRING];
+               POOL_MEM pathname(PM_FNAME);
 
-               bstrncpy(pathname, items[i].default_value, sizeof(pathname));
-               if (pathname[0] != '|') {
-                  do_shell_expansion(pathname, sizeof(pathname));
+               pm_strcpy(pathname, items[i].default_value);
+               if (*pathname.c_str() != '|') {
+                  int size;
+
+                  /*
+                   * Make sure we have enough room
+                   */
+                  size = pathname.size() + 1024;
+                  pathname.check_size(size);
+                  do_shell_expansion(pathname.c_str(), pathname.size());
                }
-               *items[i].value = bstrdup(pathname);
+               *items[i].value = bstrdup(pathname.c_str());
                break;
             }
             case CFG_TYPE_ADDRESSES:
