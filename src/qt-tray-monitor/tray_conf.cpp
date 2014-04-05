@@ -48,10 +48,8 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
 
 /*
  * We build the current resource here as we are
@@ -151,7 +149,7 @@ static RES_ITEM con_font_items[] = {
  *
  *  name items rcode res_head
  */
-RES_TABLE resources[] = {
+static RES_TABLE resources[] = {
    { "monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
@@ -288,7 +286,7 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
+   int rindex = type - R_FIRST;
    int i;
    int error = 0;
 
@@ -386,8 +384,8 @@ bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
                 exit_code,
                 (void *)&res_all,
                 res_all_size,
-                r_first,
-                r_last,
+                R_FIRST,
+                R_LAST,
                 resources,
                 res_head);
    return config->parse_config();
