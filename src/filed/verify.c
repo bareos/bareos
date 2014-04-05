@@ -35,6 +35,9 @@ const bool have_darwin_os = false;
 
 static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool);
 static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr);
+static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+                                  DIGEST **digest, int *digest_stream,
+                                  char **digest_buf, const char **digest_name);
 
 /*
  * Find all the requested files and send attributes
@@ -71,9 +74,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
    POOL_MEM attribs(PM_NAME),
             attribsEx(PM_NAME);
-   int digest_stream = STREAM_NONE;
    int status;
-   DIGEST *digest = NULL;
    BSOCK *dir;
 
    if (job_canceled(jcr)) {
@@ -184,7 +185,9 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
     * For a directory, link is the same as fname, but with trailing
     * slash. For a linked file, link is the link.
     */
-   /* Send file attributes to Director (note different format than for Storage) */
+   /*
+    * Send file attributes to Director (note different format than for Storage)
+    */
    Dmsg2(400, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
    if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
       status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
@@ -192,7 +195,9 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
                           0, attribs.c_str(), 0, ff_pkt->link, 0);
    } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE ||
               ff_pkt->type == FT_JUNCTION) {
-      /* Here link is the canonical filename (i.e. with trailing slash) */
+      /*
+       * Here link is the canonical filename (i.e. with trailing slash)
+       */
       status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->link,
                           0, attribs.c_str(), 0, 0);
@@ -207,74 +212,39 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       return 0;
    }
 
-   /*
-    * The remainder of the function is all about getting the checksum.
-    * First we initialise, then we read files, other streams and Finder Info.
-    */
-   if (ff_pkt->type != FT_LNKSAVED && (S_ISREG(ff_pkt->statp.st_mode) &&
-            ff_pkt->flags & (FO_MD5|FO_SHA1|FO_SHA256|FO_SHA512))) {
-      /*
-       * Create our digest context. If this fails, the digest will be set to NULL
-       * and not used.
-       */
-      if (ff_pkt->flags & FO_MD5) {
-         digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
-         digest_stream = STREAM_MD5_DIGEST;
+   if (ff_pkt->type != FT_LNKSAVED &&
+      (S_ISREG(ff_pkt->statp.st_mode) &&
+       ff_pkt->flags & (FO_MD5 | FO_SHA1 | FO_SHA256 | FO_SHA512))) {
+      int digest_stream = STREAM_NONE;
+      DIGEST *digest = NULL;
+      char *digest_buf = NULL;
+      const char *digest_name = NULL;
 
-      } else if (ff_pkt->flags & FO_SHA1) {
-         digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
-         digest_stream = STREAM_SHA1_DIGEST;
-
-      } else if (ff_pkt->flags & FO_SHA256) {
-         digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
-         digest_stream = STREAM_SHA256_DIGEST;
-
-      } else if (ff_pkt->flags & FO_SHA512) {
-         digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
-         digest_stream = STREAM_SHA512_DIGEST;
-      }
-
-      /* Did digest initialization fail? */
-      if (digest_stream != STREAM_NONE && digest == NULL) {
-         Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"),
-              stream_to_ascii(digest_stream));
-      }
-
-      /* compute MD5 or SHA1 hash */
-      if (digest) {
-         char md[CRYPTO_DIGEST_MAX_SIZE];
-         uint32_t size;
-
-         size = sizeof(md);
-
-         if (digest_file(jcr, ff_pkt, digest) != 0) {
-            jcr->JobErrors++;
-            goto good_rtn;
-         }
-
-         if (crypto_digest_finalize(digest, (uint8_t *)md, &size)) {
-            char *digest_buf;
-            const char *digest_name;
-
-            digest_buf = (char *)malloc(BASE64_SIZE(size));
-            digest_name = crypto_digest_name(digest);
-
-            bin_to_base64(digest_buf, BASE64_SIZE(size), md, size, true);
+      if (calculate_file_chksum(jcr, ff_pkt, &digest, &digest_stream, &digest_buf, &digest_name)) {
+         /*
+          * Did digest initialization fail?
+          */
+         if (digest_stream != STREAM_NONE && digest == NULL) {
+            Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"), stream_to_ascii(digest_stream));
+         } else if (digest && digest_buf) {
             Dmsg3(400, "send inx=%d %s=%s\n", jcr->JobFiles, digest_name, digest_buf);
-            dir->fsend("%d %d %s *%s-%d*", jcr->JobFiles, digest_stream, digest_buf,
-                       digest_name, jcr->JobFiles);
-            Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name,
-                  dir->msglen, dir->msg);
-
-            free(digest_buf);
+            dir->fsend("%d %d %s *%s-%d*", jcr->JobFiles, digest_stream, digest_buf, digest_name, jcr->JobFiles);
+            Dmsg3(20, "filed>dir: %s len=%d: msg=%s\n", digest_name, dir->msglen, dir->msg);
          }
+      }
+
+      /*
+       * Cleanup.
+       */
+      if (digest_buf) {
+         free(digest_buf);
+      }
+
+      if (digest) {
+         crypto_digest_free(digest);
       }
    }
 
-good_rtn:
-   if (digest) {
-      crypto_digest_free(digest);
-   }
    return 1;
 }
 
@@ -307,7 +277,9 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
    }
 
    if (have_darwin_os) {
-      /* Open resource fork if necessary */
+      /*
+       * Open resource fork if necessary
+       */
       if (ff_pkt->flags & FO_HFSPLUS && ff_pkt->hfsinfo.rsrclength > 0) {
          if (bopen_rsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
             ff_pkt->ff_errno = errno;
@@ -381,4 +353,97 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
       return -1;
    }
    return 0;
+}
+
+/*
+ * Calculate the chksum of a whole file and updates:
+ * - digest
+ * - digest_stream
+ * - digest_buffer
+ * - digest_name
+ *
+ * Returns: true   if digest calculation succeeded.
+ *          false  if digest calculation failed.
+ */
+static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt, DIGEST **digest,
+                                  int *digest_stream, char **digest_buf, const char **digest_name)
+{
+   /*
+    * Create our digest context.
+    * If this fails, the digest will be set to NULL and not used.
+    */
+   if (ff_pkt->flags & FO_MD5) {
+      *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
+      *digest_stream = STREAM_MD5_DIGEST;
+   } else if (ff_pkt->flags & FO_SHA1) {
+      *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
+      *digest_stream = STREAM_SHA1_DIGEST;
+   } else if (ff_pkt->flags & FO_SHA256) {
+      *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
+      *digest_stream = STREAM_SHA256_DIGEST;
+   } else if (ff_pkt->flags & FO_SHA512) {
+      *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
+      *digest_stream = STREAM_SHA512_DIGEST;
+   }
+
+   /*
+    * compute MD5 or SHA1 hash
+    */
+   if (*digest) {
+      uint32_t size;
+      char md[CRYPTO_DIGEST_MAX_SIZE];
+
+      size = sizeof(md);
+      if (digest_file(jcr, ff_pkt, *digest) != 0) {
+         jcr->JobErrors++;
+         return false;
+      }
+
+      if (crypto_digest_finalize(*digest, (uint8_t *)md, &size)) {
+         *digest_buf = (char *)malloc(BASE64_SIZE(size));
+         *digest_name = crypto_digest_name(*digest);
+
+         bin_to_base64(*digest_buf, BASE64_SIZE(size), md, size, true);
+      }
+   }
+
+   return true;
+}
+
+/*
+ * Compare a files chksum against a stored chksum.
+ *
+ * Returns: true   if chksum matches.
+ *          false  if chksum is different.
+ */
+bool calculate_and_compare_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+                                       const char *fname, const char *chksum)
+{
+   DIGEST *digest = NULL;
+   int digest_stream = STREAM_NONE;
+   char *digest_buf = NULL;
+   const char *digest_name;
+   bool retval = false;
+
+   if (calculate_file_chksum(jcr, ff_pkt, &digest, &digest_stream, &digest_buf, &digest_name)) {
+      if (digest_stream != STREAM_NONE && digest == NULL) {
+         Jmsg(jcr, M_WARNING, 0, _("%s digest initialization failed\n"), stream_to_ascii(digest_stream));
+      } else if (digest && digest_buf) {
+         if (!bstrcmp(digest_buf, chksum)) {
+            Dmsg4(100, "%s      %s chksum  diff. Cat: %s File: %s\n", fname, digest_name, chksum, digest_buf);
+         } else {
+            retval = true;
+         }
+      }
+
+      if (digest_buf) {
+         free(digest_buf);
+      }
+
+      if (digest) {
+         crypto_digest_free(digest);
+      }
+   }
+
+   return retval;
 }
