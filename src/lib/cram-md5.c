@@ -141,7 +141,7 @@ bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, boo
    }
    Dmsg1(99, "sending resp to challenge: %s\n", bs->msg);
    if (bs->wait_data(180) <= 0 || bs->recv() <= 0) {
-      Dmsg1(dbglvl, "Receive chanllenge response failed. ERR=%s\n", bs->bstrerror());
+      Dmsg1(dbglvl, "Receive challenge response failed. ERR=%s\n", bs->bstrerror());
       bmicrosleep(5, 0);
       return false;
    }
