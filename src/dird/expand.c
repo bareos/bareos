@@ -218,33 +218,30 @@ static var_rc_t lookup_counter_var(var_t *ctx,
                                    int *val_size)
 {
    COUNTERRES *counter;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_NAME);
    var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
-   if (var_len > (int)sizeof(buf) - 1) {
-       return VAR_ERR_OUT_OF_MEMORY;
-   }
-
-   memcpy(buf, var_ptr, var_len);
-   buf[var_len] = 0;
+   buf.check_size(var_len + 1);
+   pm_memcpy(buf, var_ptr, var_len);
+   (buf.c_str())[var_len] = 0;
 
    LockRes();
    for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
-      if (bstrcmp(counter->name(), buf)) {
-         Dmsg2(100, "Counter=%s val=%d\n", buf, counter->CurrentValue);
+      if (bstrcmp(counter->name(), buf.c_str())) {
+         Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
          /*
           * -1 => return size of array
           */
          if (var_index == -1) {
-            bsnprintf(buf, sizeof(buf), "%d", counter->CurrentValue);
-            *val_len = bsnprintf(buf, sizeof(buf), "%d", strlen(buf));
-            *val_ptr = bstrdup(buf);
+            Mmsg(buf, "%d", counter->CurrentValue);
+            *val_len = Mmsg(buf, "%d", strlen(buf.c_str()));
+            *val_ptr = bstrdup(buf.c_str());
             *val_size = 0;                  /* don't try to free val_ptr */
             return VAR_OK;
          } else {
-            bsnprintf(buf, sizeof(buf), "%d", counter->CurrentValue);
-            *val_ptr = bstrdup(buf);
-            *val_len = strlen(buf);
+            Mmsg(buf, "%d", counter->CurrentValue);
+            *val_ptr = bstrdup(buf.c_str());
+            *val_len = strlen(buf.c_str());
             *val_size = *val_len + 1;
          }
          if (var_inc) {               /* increment the variable? */
@@ -295,7 +292,8 @@ static var_rc_t lookup_var(var_t *ctx,
                            int *val_len,
                            int *val_size)
 {
-   char buf[MAXSTRING], *val, *p, *v;
+   POOL_MEM buf(PM_NAME);
+   char *val, *p, *v;
    var_rc_t status;
    int count;
 
@@ -315,15 +313,12 @@ static var_rc_t lookup_var(var_t *ctx,
    /*
     * Look in environment
     */
-   if (var_len > (int)sizeof(buf) - 1) {
-       return VAR_ERR_OUT_OF_MEMORY;
-   }
+   buf.check_size(var_len + 1);
+   pm_memcpy(buf, var_ptr, var_len);
+   (buf.c_str())[var_len] = 0;
+   Dmsg1(100, "Var=%s\n", buf.c_str());
 
-   memcpy(buf, var_ptr, var_len + 1);
-   buf[var_len] = 0;
-   Dmsg1(100, "Var=%s\n", buf);
-
-   if ((val = getenv(buf)) == NULL) {
+   if ((val = getenv(buf.c_str())) == NULL) {
        return VAR_ERR_UNDEFINED_VARIABLE;
    }
 
@@ -341,7 +336,7 @@ static var_rc_t lookup_var(var_t *ctx,
       }
    }
 
-   Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf, var_index, count);
+   Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf.c_str(), var_index, count);
 
    /*
     * -1 => return size of array
@@ -353,8 +348,8 @@ static var_rc_t lookup_var(var_t *ctx,
       } else {
          len = count;                 /* else return # array items */
       }
-      *val_len = bsnprintf(buf, sizeof(buf), "%d", len);
-      *val_ptr = bstrdup(buf);
+      *val_len = Mmsg(buf, "%d", len);
+      *val_ptr = bstrdup(buf.c_str());
       *val_size = 0;                  /* don't try to free val_ptr */
       return VAR_OK;
    }
@@ -381,11 +376,8 @@ static var_rc_t lookup_var(var_t *ctx,
       p++;
    }
 
-   if (p-val > (int)sizeof(buf) - 1) {
-       return VAR_ERR_OUT_OF_MEMORY;
-   }
-
-   Dmsg2(100, "val=%s len=%d\n", val, p-val);
+   buf.check_size(p - val);
+   Dmsg2(100, "val=%s len=%d\n", val, p - val);
 
    /*
     * Make a copy of item, and pass it back
@@ -421,7 +413,7 @@ static var_rc_t operate_var(var_t *var,
                             int *out_size)
 {
    COUNTERRES *counter;
-   char buf[MAXSTRING];
+   POOL_MEM buf(PM_NAME);
    var_rc_t status = VAR_ERR_UNDEFINED_OPERATION;
 
    Dmsg0(100, "Enter operate_var\n");
@@ -431,19 +423,19 @@ static var_rc_t operate_var(var_t *var,
    }
 
    if (op_len == 3 && bstrncmp(op_ptr, "inc", 3)) {
-      if (val_len > (int)sizeof(buf) - 1) {
-          return VAR_ERR_OUT_OF_MEMORY;
-      }
-      memcpy(buf, arg_ptr, arg_len);
-      buf[arg_len] = 0;
-      Dmsg1(100, "Arg=%s\n", buf);
-      memcpy(buf, val_ptr, val_len);
-      buf[val_len] = 0;
-      Dmsg1(100, "Val=%s\n", buf);
+      buf.check_size(val_len + 1);
+      pm_memcpy(buf, arg_ptr, val_len);
+      (buf.c_str())[val_len] = 0;
+      Dmsg1(100, "Arg=%s\n", buf.c_str());
+
+      pm_memcpy(buf, val_ptr, val_len);
+      (buf.c_str())[val_len] = 0;
+      Dmsg1(100, "Val=%s\n", buf.c_str());
+
       LockRes();
       for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
-         if (bstrcmp(counter->name(), buf)) {
-            Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf);
+         if (bstrcmp(counter->name(), buf.c_str())) {
+            Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf.c_str());
             break;
          }
       }

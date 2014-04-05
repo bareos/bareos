@@ -786,15 +786,14 @@ void add_prompt(UAContext *ua, const char *prompt)
  * Display prompts and get user's choice
  *
  *  Returns: -1 on error
- *            index base 0 on success, and choice
- *               is copied to prompt if not NULL
- *             prompt is set to the chosen prompt item string
+ *            index base 0 on success, and choice is copied to prompt if not NULL
+ *            prompt is set to the chosen prompt item string
  */
 int do_prompt(UAContext *ua, const char *automsg, const char *msg,
               char *prompt, int max_prompt)
 {
    int i, item;
-   char pmsg[MAXSTRING];
+   POOL_MEM pmsg(PM_MESSAGE);
    BSOCK *user = ua->UA_sock;
 
    if (prompt) {
@@ -846,11 +845,11 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
          }
          break;
       } else {
-         sprintf(pmsg, "%s (1-%d): ", msg, ua->num_prompts-1);
+         Mmsg(pmsg, "%s (1-%d): ", msg, ua->num_prompts - 1);
       }
       /* Either a . or an @ will get you out of the loop */
       if (ua->api) user->signal(BNET_SELECT_INPUT);
-      if (!get_pint(ua, pmsg)) {
+      if (!get_pint(ua, pmsg.c_str())) {
          item = -1;                   /* error */
          ua->info_msg(_("Selection aborted, nothing done.\n"));
          break;
