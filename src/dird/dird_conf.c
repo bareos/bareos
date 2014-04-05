@@ -335,16 +335,16 @@ RES_ITEM job_items[] = {
    { "incrementalmaxruntime", CFG_TYPE_TIME, ITEM(res_job.IncMaxRunTime), 0, 0, NULL },
    { "differentialmaxruntime", CFG_TYPE_TIME, ITEM(res_job.DiffMaxRunTime), 0, 0, NULL },
    { "maxwaittime", CFG_TYPE_TIME, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
-   { "maxstartdelay",CFG_TYPE_TIME, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
+   { "maxstartdelay", CFG_TYPE_TIME, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
    { "maxfullinterval", CFG_TYPE_TIME, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
    { "maxdiffinterval", CFG_TYPE_TIME, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
    { "prefixlinks", CFG_TYPE_BOOL, ITEM(res_job.PrefixLinks), 0, CFG_ITEM_DEFAULT, "false" },
    { "prunejobs", CFG_TYPE_BOOL, ITEM(res_job.PruneJobs), 0, CFG_ITEM_DEFAULT, "false" },
    { "prunefiles", CFG_TYPE_BOOL, ITEM(res_job.PruneFiles), 0, CFG_ITEM_DEFAULT, "false" },
-   { "prunevolumes",CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunevolumes", CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false" },
    { "purgemigrationjob", CFG_TYPE_BOOL, ITEM(res_job.PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false" },
    { "enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true" },
-   { "spoolattributes",CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "spoolattributes", CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false" },
    { "spooldata", CFG_TYPE_BOOL, ITEM(res_job.spool_data), 0, CFG_ITEM_DEFAULT, "false" },
    { "spoolsize", CFG_TYPE_SIZE64, ITEM(res_job.spool_size), 0, 0, NULL },
    { "rerunfailedlevels", CFG_TYPE_BOOL, ITEM(res_job.rerun_failed_levels), 0, CFG_ITEM_DEFAULT, "false" },
@@ -513,7 +513,7 @@ static RES_ITEM runscript_items[] = {
  { "runsonsuccess", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_success }, 0, 0, NULL },
  { "runsonfailure", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_failure }, 0, 0, NULL },
  { "failjobonerror", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
- { "abortjobonerror",CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
+ { "abortjobonerror", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
  { "runswhen", CFG_TYPE_RUNSCRIPT_WHEN, { (char **)&res_runscript.when }, 0, 0, NULL },
  { "runsonclient", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL }, /* TODO */
  { NULL, 0, { 0 }, 0, 0, NULL }
@@ -2964,6 +2964,15 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       if (protocol) {
          for (uint32_t j = 0; backupprotocols[j].name; j++) {
             if (backupprotocols[j].token == protocol) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, backupprotocols[j].name)) {
+                     break;
+                  }
+               }
+
                Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
                break;
@@ -2992,6 +3001,15 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       if (replace) {
          for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
             if (ReplaceOptions[j].token == replace) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, ReplaceOptions[j].name)) {
+                     break;
+                  }
+               }
+
                Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
                break;
