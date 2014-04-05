@@ -440,4 +440,7 @@
 /* Set if have PQisthreadsafe */
 #define HAVE_PQISTHREADSAFE 1
 
+/* Define to 1 if LMDB support should be enabled */
+#define HAVE_LMDB 1
+
 #endif /* __MINGWNCONFIG_H */

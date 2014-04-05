@@ -34,10 +34,13 @@ ifeq ($(WIN_VERSION),32)
 DEFINES = -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=$(WINDOWS_VERSION)
 QMAKE = /usr/bin/i686-w64-mingw32-qmake
 WINDRES = /usr/bin/i686-w64-mingw32-windres
+CC = /usr/bin/i686-w64-mingw32-gcc
 CXX = /usr/bin/i686-w64-mingw32-g++
 ifeq ($(WIN_DEBUG),yes)
+CFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -g
 CXXFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -fno-strict-aliasing -Wno-unknown-pragmas -g
 else
+CFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -O3
 CXXFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -O3 -fno-strict-aliasing -Wno-unknown-pragmas
 endif
 MINGW_LIB = $(MINGW_32_BASE)/sys-root/mingw/lib
@@ -45,10 +48,13 @@ else
 DEFINES = -DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=$(WINDOWS_VERSION)
 QMAKE = /usr/bin/x86_64-w64-mingw32-qmake
 WINDRES = /usr/bin/x86_64-w64-mingw32-windres
+CC = /usr/bin/x86_64-w64-mingw32-gcc
 CXX = /usr/bin/x86_64-w64-mingw32-g++
 ifeq ($(WIN_DEBUG),yes)
+CFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -g
 CXXFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -fno-strict-aliasing -Wno-unknown-pragmas -g
 else
+CFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -O3
 CXXFLAGS = $(DEFINES) $(INCLUDES) -Wall -m$(WIN_VERSION) -mwin32 -mthreads -O3 -fno-strict-aliasing -Wno-unknown-pragmas
 endif
 MINGW_LIB = $(MINGW_64_BASE)/sys-root/mingw/lib

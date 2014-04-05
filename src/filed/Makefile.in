@@ -30,12 +30,13 @@ first_rule: all
 dummy:
 
 #
-SVRSRCS = accurate.c authenticate.c backup.c compression.c \
-	  crypto.c dir_cmd.c estimate.c fd_plugins.c filed_conf.c \
-	  filed.c fileset.c heartbeat.c restore.c sd_cmds.c \
-	  status.c verify_vol.c verify.c
+SVRSRCS = accurate.c accurate_htable.c accurate_lmdb.c authenticate.c \
+	  backup.c compression.c crypto.c dir_cmd.c estimate.c \
+	  fd_plugins.c filed_conf.c filed.c fileset.c heartbeat.c \
+	  restore.c sd_cmds.c status.c verify_vol.c verify.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
+FDLIBS += @LMDB_LIBS@
 FDLIBS += @CAP_LIBS@
 FDLIBS += @ZLIB_LIBS_NONSHARED@
 FDLIBS += @LZO_LIBS_NONSHARED@
@@ -44,7 +45,7 @@ FDLIBS += @AFS_LIBS_NONSHARED@
 FDLIBS += @ACL_LIBS_NONSHARED@
 FDLIBS += @XATTR_LIBS_NONSHARED@
 
-INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/lmdb
 
 .SUFFIXES:	.c .o
 .PHONY:

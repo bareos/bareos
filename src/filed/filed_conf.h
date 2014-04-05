@@ -111,6 +111,8 @@ struct CLIENTRES {
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
+   bool always_use_lmdb;              /* Use LMDB for accurate data */
+   uint32_t lmdb_threshold;           /* Switch to using LDMD when number of accurate entries exceeds treshold. */
    X509_KEYPAIR *pki_keypair;         /* Shared PKI Public/Private Keypair */
    alist *pki_signers;                /* Shared PKI Trusted Signers */
    alist *pki_recipients;             /* Shared PKI Recipients */
