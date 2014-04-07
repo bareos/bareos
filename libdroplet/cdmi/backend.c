@@ -67,14 +67,16 @@ dpl_cdmi_get_id_scheme(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
-dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
-                     const char *bucket,
-                     const char *prefix,
-                     const char *delimiter,
-                     const int max_keys,
-                     dpl_vec_t **objectsp,
-                     dpl_vec_t **common_prefixesp,
-                     char **locationp)
+dpl_cdmi_list_bucket_attrs(dpl_ctx_t *ctx,
+                           const char *bucket,
+                           const char *prefix,
+                           const char *delimiter,
+                           const int max_keys,
+                           dpl_dict_t **metadatap,
+                           dpl_sysmd_t *sysmdp,
+                           dpl_vec_t **objectsp,
+                           dpl_vec_t **common_prefixesp,
+                           char **locationp)
 {
   int           ret, ret2;
   dpl_conn_t   *conn = NULL;
@@ -90,6 +92,7 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   dpl_req_t     *req = NULL;
   dpl_vec_t     *common_prefixes = NULL;
   dpl_vec_t     *objects = NULL;
+  dpl_value_t   *val = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -168,6 +171,27 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
+  //extract data+metadata from json
+  ret2 = dpl_cdmi_parse_json_buffer(ctx, data_buf, data_len, &val);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (DPL_VALUE_SUBDICT != val->type)
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  ret2 = dpl_cdmi_get_metadata_from_values(val->subdict, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   objects = dpl_vec_new(2, 2);
   if (NULL == objects)
     {
@@ -205,6 +229,9 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
 
  end:
 
+  if (NULL != val)
+    dpl_value_free(val);
+
   if (NULL != objects)
     dpl_vec_objects_free(objects);
 
@@ -234,6 +261,28 @@ dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
   return ret;
+}
+
+dpl_status_t
+dpl_cdmi_list_bucket(dpl_ctx_t *ctx,
+                     const char *bucket,
+                     const char *prefix,
+                     const char *delimiter,
+                     const int max_keys,
+                     dpl_vec_t **objectsp,
+                     dpl_vec_t **common_prefixesp,
+                     char **locationp)
+{
+  return dpl_cdmi_list_bucket_attrs(ctx,
+                                    bucket,
+                                    prefix,
+                                    delimiter,
+                                    max_keys,
+                                    NULL,
+                                    NULL,
+                                    objectsp,
+                                    common_prefixesp,
+                                    locationp);
 }
 
 dpl_status_t
@@ -1956,6 +2005,7 @@ dpl_backend_cdmi =
     "cdmi",
     .get_capabilities   = dpl_cdmi_get_capabilities,
     .list_bucket 	= dpl_cdmi_list_bucket,
+    .list_bucket_attrs  = dpl_cdmi_list_bucket_attrs,
     .post 		= dpl_cdmi_post,
     .put 		= dpl_cdmi_put,
     .get 		= dpl_cdmi_get,

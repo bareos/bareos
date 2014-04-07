@@ -255,10 +255,12 @@ dir_lookup(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dir_open(dpl_ctx_t *ctx,
-         const char *bucket,
-         dpl_fqn_t fqn,
-         void **dir_hdlp)
+dir_open_attrs(dpl_ctx_t *ctx,
+               const char *bucket,
+               dpl_fqn_t fqn,
+               dpl_dict_t **metadatap,
+               dpl_sysmd_t *sysmdp,
+               void **dir_hdlp)
 {
   dpl_dir_t *dir;
   int ret, ret2;
@@ -283,7 +285,15 @@ dir_open(dpl_ctx_t *ctx,
     ++skip_slashes;
 
   //AWS prefers NULL for listing the root dir
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1, &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket_attrs(ctx,
+                               bucket,
+                               !strcmp(skip_slashes, "") ? NULL : skip_slashes,
+                               "/",
+                               -1,
+                               metadatap,
+                               sysmdp,
+                               &dir->files,
+                               &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
@@ -681,7 +691,7 @@ dir_is_empty(dpl_ctx_t *ctx,
 }
 
 /**
- * open a directory
+ * open a directory and retrieves it's attrs
  *
  * @param ctx
  * @param locator [bucket:]path
@@ -690,9 +700,11 @@ dir_is_empty(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_opendir(dpl_ctx_t *ctx,
-            const char *locator,
-            void **dir_hdlp)
+dpl_opendir_attrs(dpl_ctx_t *ctx,
+                  const char *locator,
+                  dpl_dict_t **metadatap,
+                  dpl_sysmd_t *sysmdp,
+                  void **dir_hdlp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
@@ -742,7 +754,7 @@ dpl_opendir(dpl_ctx_t *ctx,
 
   fqn_append_trailing_slash(&obj_fqn);
 
-  ret2 = dir_open(ctx, bucket, obj_fqn, dir_hdlp);
+  ret2 = dir_open_attrs(ctx, bucket, obj_fqn, metadatap, sysmdp, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to open %s:%s", bucket, obj_fqn.path);
@@ -763,6 +775,23 @@ dpl_opendir(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
+}
+
+/**
+ * open a directory
+ *
+ * @param ctx
+ * @param locator [bucket:]path
+ * @param dir_hdlp
+ *
+ * @return
+ */
+dpl_status_t
+dpl_opendir(dpl_ctx_t *ctx,
+            const char *locator,
+            void **dir_hdlp)
+{
+  return dpl_opendir_attrs(ctx, locator, NULL, NULL, dir_hdlp);
 }
 
 dpl_status_t
