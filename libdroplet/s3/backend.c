@@ -418,6 +418,58 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
   return ret;
 }
 
+/* WARNING, UNTESTED */
+dpl_status_t
+dpl_s3_list_bucket_attrs(dpl_ctx_t *ctx,
+                         const char *bucket,
+                         const char *prefix,
+                         const char *delimiter,
+                         const int max_keys,
+                         dpl_dict_t **metadatap,
+                         dpl_sysmd_t *sysmdp,
+                         dpl_vec_t **objectsp,
+                         dpl_vec_t **common_prefixesp,
+                         char **locationp)
+{
+  dpl_status_t status;
+
+  status = dpl_s3_head(ctx,
+                       bucket,
+                       prefix,
+                       NULL,
+                       NULL,
+                       DPL_FTYPE_UNDEF,
+                       NULL,
+                       metadatap,
+                       sysmdp,
+                       locationp);
+  if (DPL_SUCCESS != status)
+    {
+      goto end;
+    }
+
+  status = dpl_s3_list_bucket(ctx,
+                              bucket,
+                              prefix,
+                              delimiter,
+                              max_keys,
+                              objectsp,
+                              common_prefixesp,
+                              locationp);
+  if (DPL_SUCCESS != status)
+    {
+      if (NULL != metadatap && NULL != *metadatap)
+        {
+          dpl_dict_free(*metadatap);
+          *metadatap = NULL;
+        }
+      goto end;
+    }
+
+ end:
+  return status;
+}
+
 /**
  * make a bucket
  *
@@ -1809,6 +1861,7 @@ dpl_backend_s3 =
     .get_capabilities   = dpl_s3_get_capabilities,
     .list_all_my_buckets = dpl_s3_list_all_my_buckets,
     .list_bucket 	= dpl_s3_list_bucket,
+    .list_bucket_attrs	= dpl_s3_list_bucket_attrs, /* WARNING, UNTESTED */
     .make_bucket 	= dpl_s3_make_bucket,
     .delete_bucket 	= dpl_s3_delete_bucket,
     .put 		= dpl_s3_put,

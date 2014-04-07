@@ -221,6 +221,58 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
   return ret;
 }
 
+/* WARNING, UNTESTED */
+dpl_status_t
+dpl_posix_list_bucket_attrs(dpl_ctx_t *ctx,
+                            const char *bucket,
+                            const char *prefix,
+                            const char *delimiter,
+                            const int max_keys,
+                            dpl_dict_t **metadatap,
+                            dpl_sysmd_t *sysmdp,
+                            dpl_vec_t **objectsp,
+                            dpl_vec_t **common_prefixesp,
+                            char **locationp)
+{
+  dpl_status_t status;
+
+  status = dpl_posix_head(ctx,
+                          bucket,
+                          prefix,
+                          NULL,
+                          NULL,
+                          DPL_FTYPE_UNDEF,
+                          NULL,
+                          metadatap,
+                          sysmdp,
+                          locationp);
+  if (DPL_SUCCESS != status)
+    {
+      goto end;
+    }
+
+  status = dpl_posix_list_bucket(ctx,
+                                 bucket,
+                                 prefix,
+                                 delimiter,
+                                 max_keys,
+                                 objectsp,
+                                 common_prefixesp,
+                                 locationp);
+  if (DPL_SUCCESS != status)
+    {
+      if (NULL != metadatap && NULL != *metadatap)
+        {
+          dpl_dict_free(*metadatap);
+          *metadatap = NULL;
+        }
+      goto end;
+    }
+
+ end:
+  return status;
+}
+
 dpl_status_t
 dpl_posix_put(dpl_ctx_t *ctx,
               const char *bucket,
@@ -743,7 +795,7 @@ dpl_posix_head(dpl_ctx_t *ctx,
                const char *bucket,
                const char *resource,
                const char *subresource,
-               const dpl_option_t *option, 
+               const dpl_option_t *option,
                dpl_ftype_t object_type,
                const dpl_condition_t *condition,
                dpl_dict_t **metadatap,
@@ -956,6 +1008,7 @@ dpl_backend_posix =
     "posix",
     .get_capabilities   = dpl_posix_get_capabilities,
     .list_bucket 	= dpl_posix_list_bucket,
+    .list_bucket_attrs  = dpl_posix_list_bucket_attrs, /* WARNING, UNTESTED */
     .put 		= dpl_posix_put,
     .get 		= dpl_posix_get,
     .head 		= dpl_posix_head,
