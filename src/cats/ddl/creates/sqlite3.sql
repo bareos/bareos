@@ -461,6 +461,9 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
 -- Initialize Version
+--   DELETE should not be required,
+--   but prevents errors if create script is called multiple times
+DELETE FROM Version WHERE VersionId<=2002;
 INSERT INTO Version (VersionId) VALUES (2002);
 
 PRAGMA default_cache_size = 100000;
