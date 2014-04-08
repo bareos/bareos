@@ -35,3 +35,9 @@ ALTER TABLE Pool ADD COLUMN MinBlockSize INTEGER UNSIGNED DEFAULT 0;
 ALTER TABLE Pool ADD COLUMN MaxBlockSize INTEGER UNSIGNED DEFAULT 0;
 
 UPDATE Version SET VersionId = 2002;
+
+-- remove unsecure user entry,
+-- created by older Bareos versions,
+-- if configured to run without password
+DELETE FROM mysql.user where User='bareos' and Host="%" and Password="";
+FLUSH PRIVILEGES;
