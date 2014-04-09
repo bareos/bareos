@@ -691,6 +691,9 @@ MYSQL_LIBS
 POSTGRESQL_BINDIR
 POSTGRESQL_INCLUDE
 POSTGRESQL_LIBS
+LMDB_DEPS
+LMDB_LIBS
+LMDB_DIR
 NDMP_DEPS
 NDMP_LIBS
 NDMP_DIR
@@ -894,6 +897,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+LIBBAREOSLMDB_LT_RELEASE
 LIBBAREOSNDMP_LT_RELEASE
 LIBBAREOSFIND_LT_RELEASE
 LIBBAREOSCATS_LT_RELEASE
@@ -1019,6 +1023,7 @@ with_fd_user
 with_fd_group
 with_sbin_perm
 enable_ndmp
+enable_lmdb
 enable_batch_insert
 enable_dynamic_cats_backends
 enable_sql_pooling
@@ -1700,6 +1705,7 @@ Optional Features:
   --disable-crypto        disable crypto support [default=auto]
   --disable-tls           disable TLS support [default=auto]
   --enable-ndmp           enable build of NDMP support [default=no]
+  --enable-lmdb           enable build of LMDB support [default=no]
   --enable-batch-insert   enable the DB batch insert code [default=yes]
   --enable-dynamic-cats-backends
                           enable dynamic loading of catalog backends
@@ -3340,6 +3346,9 @@ LIBBAREOSFIND_LT_RELEASE=${LIBBAREOSFIND_LT_RELEASE:-$VERSION}
 
 LIBBAREOSNDMP_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSNDMP_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 LIBBAREOSNDMP_LT_RELEASE=${LIBBAREOSNDMP_LT_RELEASE:-$VERSION}
+
+LIBBAREOSLMDB_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSLMDB_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSLMDB_LT_RELEASE=${LIBBAREOSLMDB_LT_RELEASE:-$VERSION}
 
 echo "configuring for ${BAREOS} $VERSION ($DATE)"
 
@@ -21935,6 +21944,7 @@ build_stored=yes
 db_backends=""
 batch_insert_db_backends=""
 support_lockmgr=no
+support_lmdb=no
 support_ndmp=no
 
 
@@ -22570,6 +22580,7 @@ fi
 
 
 
+
 MAKE_SHELL=/bin/sh
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether stat file-mode macros are broken" >&5
@@ -22825,6 +22836,41 @@ fi
 done
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_va_copy" >&5
+$as_echo_n "checking for __builtin_va_copy... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+   #include <stdarg.h>
+
+int
+main ()
+{
+
+   va_list ap, ap2;
+   __builtin_va_copy(ap2, ap);
+   return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE___BUILTIN_VA_COPY 1" >>confdefs.h
+
+
+else
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python support" >&5
 $as_echo_n "checking for Python support... " >&6; }
@@ -24288,6 +24334,33 @@ else
    NDMP_DIR=""
    NDMP_LIBS=""
    NDMP_DEPS=""
+fi
+
+
+
+
+# Check whether --enable-lmdb was given.
+if test "${enable_lmdb+set}" = set; then :
+  enableval=$enable_lmdb;
+       if test x$enableval = xyes; then
+
+$as_echo "#define HAVE_LMDB 1" >>confdefs.h
+
+	  support_lmdb=yes
+       fi
+
+
+fi
+
+
+if test x$support_lmdb = xyes; then
+   LMDB_DIR="src/lmdb"
+   LMDB_LIBS="-L../lmdb -lbareoslmdb"
+   LMDB_DEPS="../lmdb/libbareoslmdb\$(DEFAULT_ARCHIVE_TYPE)"
+else
+   LMDB_DIR=""
+   LMDB_LIBS=""
+   LMDB_DEPS=""
 fi
 
 
@@ -32006,7 +32079,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile manpages/Makefile debian/bareos-common.preinst debian/bareos-filedaemon.preinst debian/bareos-director.preinst debian/bareos-storage.preinst scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/findlib/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -33147,6 +33220,7 @@ do
     "src/cats/drop_bareos_database") CONFIG_FILES="$CONFIG_FILES src/cats/drop_bareos_database" ;;
     "src/cats/install-default-backend") CONFIG_FILES="$CONFIG_FILES src/cats/install-default-backend" ;;
     "src/findlib/Makefile") CONFIG_FILES="$CONFIG_FILES src/findlib/Makefile" ;;
+    "src/lmdb/Makefile") CONFIG_FILES="$CONFIG_FILES src/lmdb/Makefile" ;;
     "src/ndmp/Makefile") CONFIG_FILES="$CONFIG_FILES src/ndmp/Makefile" ;;
     "src/tests/Makefile") CONFIG_FILES="$CONFIG_FILES src/tests/Makefile" ;;
     "src/tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/tools/Makefile" ;;
@@ -34840,6 +34914,7 @@ Configuration on `date`:
    ZLIB support:            ${have_zlib}
    LZO support:             ${have_lzo}
    FASTLZ support:          ${have_fastlz}
+   LMDB support:            ${support_lmdb}
    NDMP support:            ${support_ndmp}
    enable-smartalloc:       ${support_smartalloc}
    enable-lockmgr:          ${support_lockmgr}

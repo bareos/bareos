@@ -469,6 +469,9 @@
 /* Define to 1 if you have the `llistxattr' function. */
 #undef HAVE_LLISTXATTR
 
+/* Define to 1 if LMDB support should be enabled */
+#undef HAVE_LMDB
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -972,6 +975,9 @@
 
 /* Define to 1 if you have the `__argz_stringify' function. */
 #undef HAVE___ARGZ_STRINGIFY
+
+/* Define to 1 if you have the `__builtin_va_copy' function. */
+#undef HAVE___BUILTIN_VA_COPY
 
 /* Define to 1 if you have the `__fsetlocking' function. */
 #undef HAVE___FSETLOCKING
