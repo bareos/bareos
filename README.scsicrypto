@@ -205,11 +205,13 @@ The initial setup of SCSI crypto looks something like this:
        You can also setup the extra capability on bscrypto and
        bareos-sd by running the following cmd:
 
-       # setcap cap_sys_rawio=ep bscrypto bareos-sd
+       # setcap cap_sys_rawio=ep bscrypto
+       # setcap cap_sys_rawio=ep bareos-sd
 
        Check the setting with
 
        # getcap -v bscrypto
+       # getcap -v bareos-sd
 
        getcap and setcap are part of libcap-progs which may not be
        installed on your system.
