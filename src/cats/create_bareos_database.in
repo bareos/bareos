@@ -29,8 +29,8 @@
 #
 . @scriptdir@/bareos-config-lib.sh
 
-db_name="${db_name:-@db_name@}"
-db_user="${db_user:-@db_user@}"
+db_name="${db_name:-`get_database_name @db_name@`}"
+db_user="${db_user:-`get_database_user @db_user@`}"
 dir_user=`get_user_dir`
 dir_group=`get_group_dir`
 default_db_type=`get_database_driver_default`

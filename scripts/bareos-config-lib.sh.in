@@ -1,8 +1,10 @@
 #!/bin/sh
 
+CONFIG_LIB=@scriptdir@/bareos-config-lib.sh
 DIR_CFG=@sysconfdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=@scriptdir@
+DBCHECK="@sbindir@/bareos-dbcheck -B -c ${CFG_DIR}"
 
 SEC_GROUPS="tape disk"
 
@@ -51,6 +53,24 @@ is_function()
 #         echo "function list not available"
 #     fi
 # }
+
+warn()
+{
+    echo "Warning: $@" >&2
+}
+
+error()
+{
+    echo "Error: $@" >&2
+}
+
+get_config_lib_file()
+{
+    # can be used in following way:
+    # LIB=`bareos-config get_config_lib_file`
+    # . $LIB
+    echo "${CONFIG_LIB}"
+}
 
 get_user_fd()
 {
@@ -190,33 +210,99 @@ setup_sd_user()
    exit 1
 }
 
-get_database_driver()
+get_config_param()
 {
-    if ! [ -r "${CFG_DIR}" ]; then
-        return
+    #
+    # get parameter values from a Bareos configuration file
+    #
+
+    # configuration file
+    CFG_FILE="$1"
+    # section, currently ignored
+    SECTION="$2"
+    # name of the section, currently ignored
+    NAME="$3"
+    # parameter to get from config file
+    PARAM="$4"
+    # default value, if parameter is not found
+    DEFAULT="$5"
+
+    if ! [ -r "${CFG_FILE}" ]; then
+        warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
+        # if default value is given, return it anyway
+        [ "$DEFAULT" ] && echo "$DEFAULT"
+        return 1
     fi
 
-    # get dbdriver, that is defined in director configuration.
-    # If string is still set to default, return nothing
-    DBDRIVER=`egrep -i '^[ 	]*dbdriver[ 	]*=' ${CFG_DIR} |\
+    # get parameter from configuration file
+    VALUE=`egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE} |\
               cut -d'=' -f2 | \
-              sed -e 's/[ 	]*"//' -e 's/"//' | \
-              grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"`
+              sed -e 's/[ 	]*"//' -e 's/"//'`
+    [ "$VALUE" ] || VALUE="$DEFAULT"
+    echo "$VALUE"
+}
 
-    echo "$DBDRIVER"
+get_database_param()
+{
+    PARAM="$1"
+    DEFAULT="$2"
+
+    DBCHECK_OUTPUT=`$DBCHECK`
+    rc=$?
+    if [ $rc != 0 ]; then
+        temp_log="/tmp/bareos-config.$$.log"
+        echo "executing: $DBCHECK" >> $temp_log
+        echo "${DBCHECK_OUTPUT}" >> $temp_log
+        echo "" >> $temp_log
+
+        # if default value is given, return it anyway
+        if [ -n "$DEFAULT" ]; then
+            warn "failed to get \"${PARAM}\" from config, using default value \"${DEFAULT}\", see $temp_log"
+            echo "$DEFAULT"
+        else
+            warn "failed to get \"${PARAM}\" from config, see $temp_log"
+        fi
+
+        return 1
+    fi
+
+    # DBCHECK gets the database parameter from the Director config file in a standard format,
+    # however, it writes "db_name" (like the environment variables)
+    # instead of "dbname" like in the config file.
+    # Replace "db_" by "db" to be compatible with the config file.
+    VALUE=`echo "$DBCHECK_OUTPUT" | sed "s/^db_/db/" | sed -n "s/^${PARAM}=//p"`
+
+    [ -z "$VALUE" ] && VALUE="$DEFAULT"
+    echo "$VALUE"
+    return $rc
+}
+
+get_database_driver()
+{
+    DEFAULT="$1"
+    get_database_param "dbdriver" "$DEFAULT" | grep -v "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+    return $?
 }
 
 get_database_name()
 {
-    if ! [ -r "${CFG_DIR}" ]; then
-        return
-    fi
+    DEFAULT="$1"
+    get_database_param "dbname" "$DEFAULT"
+    return $?
+}
 
-    # get dbname, that is defined in director configuration.
-    DBNAME=`egrep -i '^[ 	]*dbname[ 	]*=' ${CFG_DIR} |\
-              cut -d'=' -f2 | \
-              sed -e 's/[ 	]*"//' -e 's/"//'`
-    echo "$DBNAME"
+get_database_user()
+{
+    DEFAULT="$1"
+    get_database_param "dbuser" "$DEFAULT"
+    return $?
+}
+
+get_database_password()
+{
+    DEFAULT="$1"
+    get_database_param "dbpassword" "$DEFAULT"
+    return $?
 }
 
 get_databases_installed()
@@ -282,9 +368,10 @@ get_translated_sql_file()
     fi
 
     db_type="${db_type:-`get_database_driver_default`}"
-    db_name="${db_name:-@db_name@}"
-    db_user="${db_user:-@db_user@}"
-    db_password="${db_password:-@db_password@}"
+    db_name="${db_name:-`get_database_name @db_name@`}"
+    db_user="${db_user:-`get_database_user @db_user@`}"
+    # if $db_password is defined but empty, an empty password will be used ("-" instead of ":-")
+    db_password="${db_password-`get_database_password @db_password@`}"
     db_version=`get_database_version`
 
     case ${db_type} in
