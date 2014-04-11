@@ -1,0 +1,3 @@
+/usr/lib/bareos/plugins/python-dir.so
+/usr/lib/bareos/plugins/bareos-dir.py*
+/usr/lib/bareos/plugins/bareos_dir_consts.py*

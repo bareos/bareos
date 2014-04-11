@@ -574,7 +574,7 @@ done
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
-rm -f %{buildroot}/%{plugin_dir}/bar*.py*
+rm -f %{buildroot}/%{plugin_dir}/*.py*
 %endif
 
 %if 0%{?build_bat}
@@ -870,6 +870,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/python-fd.so
 %{plugin_dir}/bareos-fd.py*
+%{plugin_dir}/bareos-fd-local-fileset.py*
+%{plugin_dir}/bareos-fd-mock-test.py*
+%{plugin_dir}/BareosFdPluginBaseclass.py*
+%{plugin_dir}/BareosFdPluginLocalFileset.py*
+%{plugin_dir}/BareosFdWrapper.py*
 %{plugin_dir}/bareos_fd_consts.py*
 
 %files director-python-plugin
