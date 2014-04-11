@@ -47,6 +47,7 @@ override_dh_auto_configure:
   --enable-traymonitor \
   --enable-xattr \
   --enable-scsi-crypto \
+  --enable-lmdb \
   --enable-ndmp \
   --enable-ipv6 \
   --with-postgresql \

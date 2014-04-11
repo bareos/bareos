@@ -121,6 +121,7 @@ for file in \
    autoxflate-sd.dll \
    libbareos.dll \
    libbareosfind.dll \
+   libbareoslmdb.dll \
    libbareoscats*.dll \
    libcrypto-*.dll \
    libgcc_s_*-1.dll \
