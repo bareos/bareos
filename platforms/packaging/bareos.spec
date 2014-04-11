@@ -499,6 +499,7 @@ export MTX=/usr/sbin/mtx
   --enable-batch-insert \
   --enable-dynamic-cats-backends \
   --enable-scsi-crypto \
+  --enable-lmdb \
   --enable-ndmp \
   --enable-ipv6 \
   --enable-acl \
@@ -735,6 +736,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_libdir}/libbareoscfg.so
 %{_libdir}/libbareosfind-%{_libversion}.so
 %{_libdir}/libbareosfind.so
+%{_libdir}/libbareoslmdb-%{_libversion}.so
+%{_libdir}/libbareoslmdb.so
 %{_libdir}/libbareosndmp-%{_libversion}.so
 %{_libdir}/libbareosndmp.so
 # generic stuff needed from multiple bareos packages

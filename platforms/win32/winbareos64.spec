@@ -129,6 +129,7 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    cats/libbareoscats*.dll \
    lib/libbareos.dll \
    findlib/libbareosfind.dll \
+   lmdb/libbareoslmdb.dll \
    plugins/filed/bpipe-fd.dll \
    plugins/filed/mssqlvdi-fd.dll \
    plugins/stored/autoxflate-sd.dll \

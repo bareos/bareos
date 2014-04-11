@@ -8,6 +8,8 @@
 /usr/lib/libbareoscfg-*.so
 /usr/lib/libbareosfind.so
 /usr/lib/libbareosfind-*.so
+/usr/lib/libbareoslmdb.so
+/usr/lib/libbareoslmdb-*.so
 /usr/lib/libbareosndmp.so
 /usr/lib/libbareosndmp-*.so
 /usr/sbin/btraceback
