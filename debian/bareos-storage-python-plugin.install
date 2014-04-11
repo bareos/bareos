@@ -1,0 +1,3 @@
+/usr/lib/bareos/plugins/python-sd.so
+/usr/lib/bareos/plugins/bareos-sd.py*
+/usr/lib/bareos/plugins/bareos_sd_consts.py*

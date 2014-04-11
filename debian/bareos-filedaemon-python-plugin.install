@@ -1,0 +1,8 @@
+/usr/lib/bareos/plugins/python-fd.so
+/usr/lib/bareos/plugins/bareos-fd.py*
+/usr/lib/bareos/plugins/bareos-fd-local-fileset.py*
+/usr/lib/bareos/plugins/bareos-fd-mock-test.py*
+/usr/lib/bareos/plugins/BareosFdPluginBaseclass.py*
+/usr/lib/bareos/plugins/BareosFdPluginLocalFileset.py*
+/usr/lib/bareos/plugins/BareosFdWrapper.py*
+/usr/lib/bareos/plugins/bareos_fd_consts.py*
