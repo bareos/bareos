@@ -27,7 +27,17 @@
  */
 
 #include "bareos.h"
+
+#if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>
+#elif defined(HAVE_SYS_DL_H)
+#include <sys/dl.h>
+#elif defined(HAVE_DL_H)
+#include <dl.h>
+#else
+#error "Cannot load dynamic objects into program"
+#endif
+
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))
@@ -38,6 +48,39 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #ifndef RTLD_NOW
 #define RTLD_NOW 2
+#endif
+
+#if !defined(LT_LAZY_OR_NOW)
+#if defined(RTLD_LAZY)
+#define LT_LAZY_OR_NOW RTLD_LAZY
+#else
+#if defined(DL_LAZY)
+#define LT_LAZY_OR_NOW DL_LAZY
+#endif
+#endif /* !RTLD_LAZY */
+#endif
+#if !defined(LT_LAZY_OR_NOW)
+#if defined(RTLD_NOW)
+#define LT_LAZY_OR_NOW RTLD_NOW
+#else
+#if defined(DL_NOW)
+#define LT_LAZY_OR_NOW DL_NOW
+#endif
+#endif /* !RTLD_NOW */
+#endif
+
+#if !defined(LT_LAZY_OR_NOW)
+#define LT_LAZY_OR_NOW 0
+#endif /* !LT_LAZY_OR_NOW */
+
+#if !defined(LT_GLOBAL)
+#if defined(RTLD_GLOBAL)
+#define LT_GLOBAL RTLD_GLOBAL
+#else
+#if defined(DL_GLOBAL)
+#define LT_GLOBAL DL_GLOBAL
+#endif
+#endif /* !RTLD_GLOBAL */
 #endif
 
 #include "plugins.h"
@@ -93,7 +136,7 @@ static bool load_a_plugin(void *binfo,
    plugin->file = bstrdup(plugin_name);
    plugin->file_len = strstr(plugin->file, type) - plugin->file;
 
-   plugin->pHandle = dlopen(plugin_pathname, RTLD_NOW);
+   plugin->pHandle = dlopen(plugin_pathname, LT_LAZY_OR_NOW | LT_GLOBAL);
 
    if (!plugin->pHandle) {
       const char *error = dlerror();

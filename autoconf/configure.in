@@ -1988,6 +1988,8 @@ dnl CHECKING FOR HEADER FILES
 dnl --------------------------------------------------------------------------
 AC_CHECK_HEADERS( \
    assert.h \
+   dl.h \
+   dlfcn.h \
    fcntl.h \
    grp.h \
    pwd.h \
@@ -2014,6 +2016,7 @@ AC_CHECK_HEADERS( \
    sys/types.h \
    arpa/nameser.h \
    mtio.h \
+   sys/dl.h \
    sys/mtio.h \
    sys/tape.h \
    regex.h \
