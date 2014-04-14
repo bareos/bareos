@@ -1439,7 +1439,6 @@ const char *level_to_str(int level)
  */
 void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
-   RES *next;
    URES *res = (URES *)ures;
    bool recurse = true;
    POOL_MEM buf;
