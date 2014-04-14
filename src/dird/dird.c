@@ -169,6 +169,7 @@ int main (int argc, char *argv[])
 {
    int ch;
    JCR *jcr;
+   cat_op mode;
    bool no_signals = false;
    bool test_config = false;
    char *uid = NULL;
@@ -286,10 +287,12 @@ int main (int argc, char *argv[])
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+      goto bail_out;
    }
 
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    if (!test_config) {                /* we don't need to do this block in test mode */
@@ -311,11 +314,14 @@ int main (int argc, char *argv[])
 
    load_dir_plugins(me->plugin_directory, me->plugin_names);
 
-   /* If we are in testing mode, we don't try to fix the catalog */
-   cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
+   /*
+    * If we are in testing mode, we don't try to fix the catalog
+    */
+   mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
    if (!check_catalog(mode)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    if (test_config) {
@@ -324,6 +330,7 @@ int main (int argc, char *argv[])
 
    if (!initialize_sql_pooling()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    my_name_is(0, NULL, me->name());    /* set user defined name */
@@ -366,6 +373,7 @@ int main (int argc, char *argv[])
 
    terminate_dird(0);
 
+bail_out:
    return 0;
 }
 
@@ -545,6 +553,7 @@ void reload_config(int sig)
       if (rtable < 0) {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR_TERM, 0, _("Out of reload table entries. Giving up.\n"));
+         goto bail_out;
       } else {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
@@ -612,6 +621,7 @@ static bool check_resources()
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
+      goto bail_out;
    } else {
       my_config->m_omit_defaults = me->omit_defaults;
       set_working_directory(me->working_directory);
@@ -620,6 +630,7 @@ static bool check_resources()
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
+            goto bail_out;
          }
       }
 
@@ -631,12 +642,14 @@ static bool check_resources()
       } else if (me->optimize_for_size && me->optimize_for_speed) {
          Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (GetNextRes(R_DIRECTOR, (RES *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -648,6 +661,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
+            goto bail_out;
          }
       }
 
@@ -656,11 +670,13 @@ static bool check_resources()
       if (!me->tls_certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (!me->tls_keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if ((!me->tls_ca_certfile && !me->tls_ca_certdir) &&
@@ -671,6 +687,7 @@ static bool check_resources()
               " when using \"TLS Verify Peer\".\n"),
               me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -691,6 +708,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  me->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
    }
@@ -698,6 +716,7 @@ static bool check_resources()
    if (!job) {
       Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"), configfile);
       OK = false;
+      goto bail_out;
    }
 
    foreach_res(job, R_JOB) {
@@ -845,12 +864,13 @@ static bool check_resources()
        */
       for (int i = 0; job_items[i].name; i++) {
          if (job_items[i].flags & CFG_ITEM_REQUIRED) {
-               if (!bit_is_set(i, job->hdr.item_present)) {
-                  Jmsg(NULL, M_ERROR_TERM, 0,
-                       _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
-                       job_items[i].name, job->name());
-                  OK = false;
-                }
+            if (!bit_is_set(i, job->hdr.item_present)) {
+               Jmsg(NULL, M_ERROR_TERM, 0,
+                    _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
+                    job_items[i].name, job->name());
+               OK = false;
+               goto bail_out;
+            }
          }
 
          /*
@@ -858,6 +878,7 @@ static bool check_resources()
           */
          if (i >= MAX_RES_ITEMS) {
             Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
+            goto bail_out;
          }
       }
 
@@ -877,6 +898,7 @@ static bool check_resources()
                  _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"),
                  job->name());
             OK = false;
+            goto bail_out;
          }
 
          if (!job->fileset) {
@@ -884,6 +906,7 @@ static bool check_resources()
                  _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"),
                  job->name());
             OK = false;
+            goto bail_out;
          }
          break;
       }
@@ -892,6 +915,7 @@ static bool check_resources()
          Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
             job->name());
          OK = false;
+         goto bail_out;
       }
    } /* End loop over Job res */
 
@@ -910,7 +934,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
 
@@ -920,12 +944,14 @@ static bool check_resources()
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (!cons->tls_keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir)
@@ -936,6 +962,7 @@ static bool check_resources()
             " when using \"TLS Verify Peer\".\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -955,6 +982,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                cons->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
 
@@ -982,7 +1010,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
       need_tls = client->tls_enable || client->tls_authenticate;
@@ -991,6 +1019,7 @@ static bool check_resources()
             " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
             client->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -1010,6 +1039,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
    }
@@ -1028,7 +1058,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
 
@@ -1039,6 +1069,7 @@ static bool check_resources()
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -1057,6 +1088,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
    }
@@ -1066,6 +1098,8 @@ static bool check_resources()
       close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, me->messages); /* open daemon message handler */
    }
+
+bail_out:
    return OK;
 }
 
@@ -1094,10 +1128,11 @@ static bool initialize_sql_pooling(void)
          Jmsg(NULL, M_FATAL, 0, _("Could not setup sql pooling for Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
          retval = false;
-         continue;
+         goto bail_out;
       }
    }
 
+bail_out:
    return retval;
 }
 
@@ -1140,7 +1175,7 @@ static bool check_catalog(cat_op mode)
             db_close_database(NULL, db);
          }
          OK = false;
-         continue;
+         goto bail_out;
       }
 
       /* Display a message if the db max_connections is too low */
@@ -1217,6 +1252,7 @@ static bool check_catalog(cat_op mode)
             Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
                  store->name());
             OK = false;
+            goto bail_out;
          }
          store->StorageId = sr.StorageId;   /* set storage Id */
          if (!sr.created) {                 /* if not created, update it */
@@ -1225,6 +1261,7 @@ static bool check_catalog(cat_op mode)
                Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
                     store->name());
                OK = false;
+               goto bail_out;
             }
          }
       }
@@ -1266,6 +1303,8 @@ static bool check_catalog(cat_op mode)
 
       db_close_database(NULL, db);
    }
+
+bail_out:
    return OK;
 }
 

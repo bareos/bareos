@@ -1388,7 +1388,7 @@ static int check_idx_handler(void *ctx, int num_fields, char **row)
    name = (char *)ctx;
    key_name = row[2];
    col_name = row[4];
-   for(i = 0; (idx_list[i].key_name != NULL) && (i < MAXIDX); i++) {
+   for(i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)); i++) {
       if (bstrcasecmp(idx_list[i].key_name, key_name)) {
          idx_list[i].count_key++;
          found = true;
@@ -1430,7 +1430,7 @@ static bool check_idx(const char *col_name)
       if (!db_sql_query(db, query, check_idx_handler, (void *)col_name)) {
          printf("%s\n", db_strerror(db));
       }
-      for (i = 0; (idx_list[i].key_name != NULL) && (i < MAXIDX) ; i++) {
+      for (i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)) ; i++) {
          /*
           * NOTE : if (idx_list[i].count_key > 1) then index idx_list[i].key_name is "multiple-column" index
           */
