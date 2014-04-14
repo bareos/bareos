@@ -173,10 +173,13 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool r
  */
 void dump_dir_plugin(Plugin *plugin, FILE *fp)
 {
+   genpInfo *info;
+
    if (!plugin) {
       return ;
    }
-   genpInfo *info = (genpInfo *) plugin->pinfo;
+
+   info = (genpInfo *) plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));

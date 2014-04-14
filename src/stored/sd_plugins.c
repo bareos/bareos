@@ -288,10 +288,13 @@ int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value, bool re
  */
 void dump_sd_plugin(Plugin *plugin, FILE *fp)
 {
+   genpInfo *info;
+
    if (!plugin) {
       return ;
    }
-   genpInfo *info = (genpInfo *) plugin->pinfo;
+
+   info = (genpInfo *) plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));

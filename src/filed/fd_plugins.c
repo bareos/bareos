@@ -1219,12 +1219,13 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
  */
 static void dump_fd_plugin(Plugin *plugin, FILE *fp)
 {
-   genpInfo *info = (genpInfo *)plugin->pinfo;
+   genpInfo *info;
 
    if (!plugin) {
       return ;
    }
 
+   info = (genpInfo *)plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));

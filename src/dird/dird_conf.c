@@ -967,7 +967,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
 
          all_set =  true;
          pm_strcpy(temp, '\0');
-         for (int i = 0; i < 6; i++) {
+         for (int i = 0; i < 5; i++) {
             if (bit_is_set(i, run->wom)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
                   interval_start = i;        // start an interval
@@ -1007,7 +1007,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           */
          all_set =  true;
          pm_strcpy(temp, '\0');
-         for (int i = 0; i < 8; i++) {
+         for (int i = 0; i < 7; i++) {
             if (bit_is_set(i, run->wday)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
                   interval_start = i;        // start an interval
@@ -1136,7 +1136,15 @@ bool FILESETRES::print_config(POOL_MEM &buff)
             for (j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
                bool enhanced_wild = false;
-               for (p=&fo->opts[0]; *p; p++) {
+
+               for (int k = 0; fo->opts[k] != '\0'; k++) {
+                  if (fo->opts[k]=='W') {
+                     enhanced_wild = true;
+                     break;
+                  }
+               }
+
+               for (p = &fo->opts[0]; *p; p++) {
                   switch (*p) {
                      case 'a':                 /* alway replace */
                         indent_config_item(cfg_str, 3, "replace = always\n");
