@@ -56,7 +56,7 @@ protected:
 
 public:
    /* methods */
-   B_ACCURATE() {};
+   B_ACCURATE() { m_filenr = 0; m_seen_bitmap = NULL; };
    virtual ~B_ACCURATE() {};
    virtual bool init(JCR *jcr, uint32_t nbfile) = 0;
    virtual bool add_file(JCR *jcr,

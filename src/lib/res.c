@@ -390,7 +390,7 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
          free(*(item->value));
       }
       if (lc->str[0] != '|') {
-         do_shell_expansion(lc->str, sizeof(lc->str));
+         do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
       *(item->value) = bstrdup(lc->str);
    }
@@ -592,7 +592,7 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
       if (lc->str[0] != '|') {
-         do_shell_expansion(lc->str, sizeof(lc->str));
+         do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
       list->append(bstrdup(lc->str));
       *(item->value) = (char *)list;

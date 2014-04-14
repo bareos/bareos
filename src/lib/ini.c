@@ -114,7 +114,7 @@ static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_NAME) == T_ERROR) {
       return false;
    }
-   strncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
+   bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
    scan_to_eol(lc);
    return true;
 }
