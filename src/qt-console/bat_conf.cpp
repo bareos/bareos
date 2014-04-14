@@ -87,7 +87,7 @@ static RES_ITEM dir_items[] = {
    { "tlscertificate", CFG_TYPE_DIR, ITEM(dir_res.tls_certfile), 0, 0, NULL },
    { "tlskey", CFG_TYPE_DIR, ITEM(dir_res.tls_keyfile), 0, 0, NULL },
    { "heartbeatinterval", CFG_TYPE_TIME, ITEM(dir_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_items[] = {
@@ -104,14 +104,14 @@ static RES_ITEM con_items[] = {
    { "tlscertificate", CFG_TYPE_DIR, ITEM(con_res.tls_certfile), 0, 0, NULL },
    { "tlskey", CFG_TYPE_DIR, ITEM(con_res.tls_keyfile), 0, 0, NULL },
    { "heartbeatinterval", CFG_TYPE_TIME, ITEM(con_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 static RES_ITEM con_font_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
    { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -122,7 +122,7 @@ static RES_TABLE resources[] = {
    { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { "console", con_items, R_CONSOLE, sizeof(CONRES) },
    { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
-   { NULL, NULL, 0 }
+   { NULL, NULL, 0, 0 }
 };
 
 /*
