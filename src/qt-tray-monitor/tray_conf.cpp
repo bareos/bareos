@@ -79,7 +79,7 @@ static RES_ITEM mon_items[] = {
    { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
    { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
    { "dirconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -93,7 +93,7 @@ static RES_ITEM dir_items[] = {
    { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
    { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL },
    { "enablessl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -108,7 +108,7 @@ static RES_ITEM cli_items[] = {
    { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
    { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "enablessl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -125,7 +125,7 @@ static RES_ITEM store_items[] = {
    { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
    { "sdpassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL },
    { "enablessl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -137,7 +137,7 @@ static RES_ITEM con_font_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
    { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -155,7 +155,7 @@ static RES_TABLE resources[] = {
    { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
    { "storage", store_items, R_STORAGE, sizeof(STORERES) },
    { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
-   { NULL, NULL, 0 }
+   { NULL, NULL, 0, 0 }
 };
 
 /*
