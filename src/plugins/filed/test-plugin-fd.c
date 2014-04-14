@@ -97,7 +97,7 @@ static struct ini_items test_items[] = {
    { "ok", INI_CFG_TYPE_BOOL, "boolean", 0 },
 // We can also use the ITEMS_DEFAULT
 // { "ok", INI_CFG_TYPE_BOOL, "boolean", 0, ITEMS_DEFAULT },
-   { NULL, NULL, NULL, 0 }
+   { NULL, 0, NULL, 0 }
 };
 
 /*
