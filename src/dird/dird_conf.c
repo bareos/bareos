@@ -667,9 +667,7 @@ char *CATRES::display(POOLMEM *dst)
 
 static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
 {
-   int i;
-
-   for (i = 0; i < level; i++) {
+   for (int i = 0; i < level; i++) {
       pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
    }
    pm_strcat(cfg_str, config_item);
@@ -1105,7 +1103,6 @@ bool FILESETRES::print_config(POOL_MEM &buff)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
-   int i, j, k, l;
    const char *p;
 
    Dmsg0(200,"FILESETRES::print_config\n");
@@ -1120,7 +1117,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
       /*
        * Loop over all exclude blocks.
        */
-      for (i = 0;  i < num_includes; i++) {
+      for (int i = 0;  i < num_includes; i++) {
          INCEXE *incexe = include_items[i];
 
          Mmsg(temp, "Include {\n");
@@ -1133,7 +1130,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
             Mmsg(temp, "Options {\n");
             indent_config_item(cfg_str, 2, temp.c_str());
 
-            for (j = 0; j < incexe->num_opts; j++) {
+            for (int j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
                bool enhanced_wild = false;
 
@@ -1225,7 +1222,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                         /*
                          * Copy Verify Options
                          */
-                        for (l = 0; *p && *p != ':'; p++) {
+                        for (int l = 0; *p && *p != ':'; p++) {
                            Mmsg(temp, "%c", *p);
                            pm_strcat(cfg_str, temp.c_str());
                            //fo->VerifyOpts[j] = *p;
@@ -1280,57 +1277,57 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                   }
                }
 
-               for (k = 0; k < fo->regex.size(); k++) {
+               for (int k = 0; k < fo->regex.size(); k++) {
                   Mmsg(temp, "Regex =  \"%s\"\n", fo->regex.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->regexdir.size(); k++) {
+               for (int k = 0; k < fo->regexdir.size(); k++) {
                   Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->regexfile.size(); k++) {
+               for (int k = 0; k < fo->regexfile.size(); k++) {
                   Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->wild.size(); k++) {
+               for (int k = 0; k < fo->wild.size(); k++) {
                   Mmsg(temp, "Wild =  \"%s\"\n", fo->wild.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->wilddir.size(); k++) {
+               for (int k = 0; k < fo->wilddir.size(); k++) {
                   Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->wildfile.size(); k++) {
+               for (int k = 0; k < fo->wildfile.size(); k++) {
                   Mmsg(temp, "Wild File =  \"%s\"\n", fo->wildfile.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->wildbase.size(); k++) {
+               for (int k = 0; k < fo->wildbase.size(); k++) {
                   Mmsg(temp, "Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->base.size(); k++) {
+               for (int k = 0; k < fo->base.size(); k++) {
                   Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->fstype.size(); k++) {
+               for (int k = 0; k < fo->fstype.size(); k++) {
                   Mmsg(temp, "Fs Type =  \"%s\"\n", fo->fstype.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->drivetype.size(); k++) {
+               for (int k = 0; k < fo->drivetype.size(); k++) {
                   Mmsg(temp, "Drive Type = \"%s\"\n", fo->drivetype.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
-               for (k = 0; k < fo->meta.size(); k++) {
+               for (int k = 0; k < fo->meta.size(); k++) {
                   Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
@@ -1360,7 +1357,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           * File = entries.
           */
          if (incexe->name_list.size()) {
-            for (l = 0; l < incexe->name_list.size(); l++) {
+            for (int l = 0; l < incexe->name_list.size(); l++) {
                Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(l));
                indent_config_item(cfg_str, 2, temp.c_str());
             }
@@ -1370,7 +1367,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           * Plugin = entries.
           */
          if (incexe->plugin_list.size()) {
-            for (l = 0; l < incexe->plugin_list.size(); l++) {
+            for (int l = 0; l < incexe->plugin_list.size(); l++) {
                Mmsg(temp, "Plugin =  %s\n", incexe->plugin_list.get(l));
                indent_config_item(cfg_str, 2, temp.c_str());
             }
@@ -1396,13 +1393,13 @@ bool FILESETRES::print_config(POOL_MEM &buff)
       /*
        * Loop over all exclude blocks.
        */
-      for (j = 0; j < num_excludes; j++) {
+      for (int j = 0; j < num_excludes; j++) {
          INCEXE *incexe = exclude_items[j];
 
          if (incexe->name_list.size()) {
             indent_config_item(cfg_str, 1, "Exclude {\n");
 
-            for (k = 0; k < incexe->name_list.size(); k++) {
+            for (int k = 0; k < incexe->name_list.size(); k++) {
                Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(k));
                indent_config_item(cfg_str, 2, temp.c_str());
             }
@@ -1420,12 +1417,11 @@ bool FILESETRES::print_config(POOL_MEM &buff)
 
 const char *level_to_str(int level)
 {
-   int i;
    static char level_no[30];
    const char *str = level_no;
 
    bsnprintf(level_no, sizeof(level_no), "%c (%d)", level, level); /* default if not found */
-   for (i = 0; joblevels[i].level_name; i++) {
+   for (int i = 0; joblevels[i].level_name; i++) {
       if (level == (int)joblevels[i].level) {
          str = joblevels[i].level_name;
          break;
@@ -1905,7 +1901,6 @@ void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
-   int i;
    bool error = false;
 
    /*
@@ -1915,7 +1910,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
       /*
        * Ensure that all required items are present
        */
-      for (i = 0; items[i].name; i++) {
+      for (int i = 0; items[i].name; i++) {
          if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                 Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
@@ -2148,14 +2143,13 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
    uint32_t *destination = item->ui32value;
 
    lex_get_token(lc, T_NAME);
    /*
     * Scan ActionOnPurge options
     */
-   for (i = 0; ActionOnPurgeOptions[i].name; i++) {
+   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
          *destination = (*destination) | ActionOnPurgeOptions[i].token;
          i = 0;
@@ -2222,13 +2216,11 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (i = 0; migtypes[i].type_name; i++) {
+   for (int i = 0; migtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, migtypes[i].type_name)) {
          *(item->ui32value) = migtypes[i].job_type;
          i = 0;
@@ -2247,13 +2239,11 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (i = 0; jobtypes[i].type_name; i++) {
+   for (int i = 0; jobtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, jobtypes[i].type_name)) {
          *(item->ui32value) = jobtypes[i].job_type;
          i = 0;
@@ -2272,13 +2262,11 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (i = 0; backupprotocols[i].name; i++) {
+   for (int i = 0; backupprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, backupprotocols[i].name)) {
          *(item->ui32value) = backupprotocols[i].token;
          i = 0;
@@ -2294,12 +2282,11 @@ static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 
 static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
    lex_get_token(lc, T_NAME);
    /*
     * Scan Replacement options
     */
-   for (i = 0; ReplaceOptions[i].name; i++) {
+   for (int i = 0; ReplaceOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
          *(item->ui32value) = ReplaceOptions[i].token;
          i = 0;
@@ -2318,13 +2305,11 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (i = 0; authprotocols[i].name; i++) {
+   for (int i = 0; authprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, authprotocols[i].name)) {
          *(item->ui32value) = authprotocols[i].token;
          i = 0;
@@ -2343,13 +2328,11 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (i = 0; authmethods[i].name; i++) {
+   for (int i = 0; authmethods[i].name; i++) {
       if (bstrcasecmp(lc->str, authmethods[i].name)) {
          *(item->ui32value) = authmethods[i].token;
          i = 0;
@@ -2368,13 +2351,11 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int i;
-
    lex_get_token(lc, T_NAME);
    /*
     * Store the level pass 2 so that type is defined
     */
-   for (i = 0; joblevels[i].level_name; i++) {
+   for (int i = 0; joblevels[i].level_name; i++) {
       if (bstrcasecmp(lc->str, joblevels[i].level_name)) {
          *(item->ui32value) = joblevels[i].level;
          i = 0;
@@ -2610,7 +2591,7 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    char *c;
-   int token, i, t;
+   int token, t;
    alist **runscripts = (alist **)(item->value) ;
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
@@ -2636,7 +2617,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
       if (token != T_IDENTIFIER) {
         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
-      for (i = 0; runscript_items[i].name; i++) {
+      for (int i = 0; runscript_items[i].name; i++) {
         if (bstrcasecmp(runscript_items[i].name, lc->str)) {
            token = lex_get_token(lc, T_SKIP_EOL);
            if (token != T_EQUALS) {
@@ -2789,25 +2770,23 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
  */
 static void init_resource_cb(RES_ITEM *item)
 {
-   int i;
-
    switch (item->type) {
    case CFG_TYPE_REPLACE:
-      for (i = 0; ReplaceOptions[i].name; i++) {
+      for (int i = 0; ReplaceOptions[i].name; i++) {
          if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
             *(item->ui32value) = ReplaceOptions[i].token;
          }
       }
       break;
    case CFG_TYPE_AUTHPROTOCOLTYPE:
-      for (i = 0; authprotocols[i].name; i++) {
+      for (int i = 0; authprotocols[i].name; i++) {
          if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
             *(item->ui32value) = authprotocols[i].token;
          }
       }
       break;
    case CFG_TYPE_AUTHTYPE:
-      for (i = 0; authmethods[i].name; i++) {
+      for (int i = 0; authmethods[i].name; i++) {
          if (bstrcasecmp(item->default_value, authmethods[i].name)) {
             *(item->ui32value) = authmethods[i].token;
          }
@@ -2955,7 +2934,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       int32_t jobtype = *(items[i].ui32value);
 
       if (jobtype) {
-         for (int32_t j = 0; jobtypes[j].type_name; j++) {
+         for (int j = 0; jobtypes[j].type_name; j++) {
             if (jobtypes[j].job_type == jobtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
                indent_config_item(cfg_str, 1, temp.c_str());
@@ -2969,7 +2948,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t protocol = *(items[i].ui32value);
 
       if (protocol) {
-         for (uint32_t j = 0; backupprotocols[j].name; j++) {
+         for (int j = 0; backupprotocols[j].name; j++) {
             if (backupprotocols[j].token == protocol) {
                /*
                 * Supress printing default value.
@@ -2992,7 +2971,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       int32_t migtype = *(items[i].ui32value);
 
       if (migtype) {
-         for (int32_t j = 0; migtypes[j].type_name; j++) {
+         for (int j = 0; migtypes[j].type_name; j++) {
             if (migtypes[j].job_type == migtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
                indent_config_item(cfg_str, 1, temp.c_str());
@@ -3006,7 +2985,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t replace = *(items[i].ui32value);
 
       if (replace) {
-         for (uint32_t j = 0; ReplaceOptions[j].name; j++) {
+         for (int j = 0; ReplaceOptions[j].name; j++) {
             if (ReplaceOptions[j].token == replace) {
                /*
                 * Supress printing default value.
@@ -3029,7 +3008,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t level = *(items[i].ui32value);
 
       if (level) {
-         for (int32_t j = 0; joblevels[j].level_name; j++) {
+         for (int j = 0; joblevels[j].level_name; j++) {
             if (joblevels[j].level == level) {
                Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
                indent_config_item(cfg_str, 1, temp.c_str());
@@ -3043,7 +3022,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t action = *(items[i].ui32value);
 
       if (action) {
-         for (uint32_t j = 0; ActionOnPurgeOptions[j].name; j++) {
+         for (int j = 0; ActionOnPurgeOptions[j].name; j++) {
             if (ActionOnPurgeOptions[j].token == action) {
                Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
@@ -3057,7 +3036,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t authprotocol = *(items[i].ui32value);
 
       if (authprotocol) {
-         for (uint32_t j = 0; authprotocols[j].name; j++) {
+         for (int j = 0; authprotocols[j].name; j++) {
             if (authprotocols[j].token == authprotocol) {
                Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
@@ -3071,7 +3050,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       uint32_t authtype = *(items[i].ui32value);
 
       if (authtype) {
-         for (uint32_t j = 0; authmethods[j].name; j++) {
+         for (int j = 0; authmethods[j].name; j++) {
             if (authprotocols[j].token == authtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
                indent_config_item(cfg_str, 1, temp.c_str());
