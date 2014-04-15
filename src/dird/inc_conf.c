@@ -43,21 +43,6 @@
  */
 extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
 
-/*
- * We build the current resource here as we are
- * scanning the resource configuration definition,
- * then move it to allocated memory when the resource
- * scan is complete.
- */
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   extern URES res_all;
-}
-#else
-extern URES res_all;
-#endif
-extern int32_t  res_all_size;
-
 /* We build the current new Include and Exclude items here */
 static INCEXE res_incexe;
 
@@ -580,6 +565,7 @@ static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclu
 {
    int token;
    INCEXE *incexe;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    if (pass == 1) {
@@ -593,8 +579,8 @@ static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclu
             /* NOT REACHED */
          }
       case T_QUOTED_STRING:
-         if (res_all.res_fs.have_MD5) {
-            MD5Update(&res_all.res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
+         if (res_all->res_fs.have_MD5) {
+            MD5Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
          incexe = &res_incexe;
          if (incexe->name_list.size() == 0) {
@@ -619,6 +605,7 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
 {
    int token;
    INCEXE *incexe;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    if (exclude) {
       scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
@@ -636,8 +623,8 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
             /* NOT REACHED */
          }
       case T_QUOTED_STRING:
-         if (res_all.res_fs.have_MD5) {
-            MD5Update(&res_all.res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
+         if (res_all->res_fs.have_MD5) {
+            MD5Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
          incexe = &res_incexe;
          if (incexe->plugin_list.size() == 0) {
@@ -677,16 +664,17 @@ static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool 
  */
 static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   bool options;
    int token, i;
    INCEXE *incexe;
-   bool options;
+   URES *res_all = (URES *)my_config->m_res_all;
 
-   if (!res_all.res_fs.have_MD5) {
-      MD5Init(&res_all.res_fs.md5c);
-      res_all.res_fs.have_MD5 = true;
+   if (!res_all->res_fs.have_MD5) {
+      MD5Init(&res_all->res_fs.md5c);
+      res_all->res_fs.have_MD5 = true;
    }
    memset(&res_incexe, 0, sizeof(INCEXE));
-   res_all.res_fs.new_include = true;
+   res_all->res_fs.new_include = true;
    while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
       if (token == T_EOB) {
          break;
@@ -734,27 +722,27 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
       memcpy(incexe, &res_incexe, sizeof(INCEXE));
       memset(&res_incexe, 0, sizeof(INCEXE));
       if (item->code == 0) { /* include */
-         if (res_all.res_fs.num_includes == 0) {
-            res_all.res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));
+         if (res_all->res_fs.num_includes == 0) {
+            res_all->res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));
          } else {
-            res_all.res_fs.include_items = (INCEXE **)realloc(res_all.res_fs.include_items,
-                           sizeof(INCEXE *) * (res_all.res_fs.num_includes + 1));
+            res_all->res_fs.include_items = (INCEXE **)realloc(res_all->res_fs.include_items,
+                           sizeof(INCEXE *) * (res_all->res_fs.num_includes + 1));
          }
-         res_all.res_fs.include_items[res_all.res_fs.num_includes++] = incexe;
-         Dmsg1(900, "num_includes=%d\n", res_all.res_fs.num_includes);
+         res_all->res_fs.include_items[res_all->res_fs.num_includes++] = incexe;
+         Dmsg1(900, "num_includes=%d\n", res_all->res_fs.num_includes);
       } else {    /* exclude */
-         if (res_all.res_fs.num_excludes == 0) {
-            res_all.res_fs.exclude_items = (INCEXE **)malloc(sizeof(INCEXE *));
+         if (res_all->res_fs.num_excludes == 0) {
+            res_all->res_fs.exclude_items = (INCEXE **)malloc(sizeof(INCEXE *));
          } else {
-            res_all.res_fs.exclude_items = (INCEXE **)realloc(res_all.res_fs.exclude_items,
-                           sizeof(INCEXE *) * (res_all.res_fs.num_excludes + 1));
+            res_all->res_fs.exclude_items = (INCEXE **)realloc(res_all->res_fs.exclude_items,
+                           sizeof(INCEXE *) * (res_all->res_fs.num_excludes + 1));
          }
-         res_all.res_fs.exclude_items[res_all.res_fs.num_excludes++] = incexe;
-         Dmsg1(900, "num_excludes=%d\n", res_all.res_fs.num_excludes);
+         res_all->res_fs.exclude_items[res_all->res_fs.num_excludes++] = incexe;
+         Dmsg1(900, "num_excludes=%d\n", res_all->res_fs.num_excludes);
       }
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*

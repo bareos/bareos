@@ -30,13 +30,6 @@
 #include "bareos.h"
 #include "dird.h"
 
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   extern URES res_all;
-}
-#else
-extern URES res_all;
-#endif
 extern struct s_jl joblevels[];
 
 /*
@@ -177,14 +170,15 @@ static struct s_kw RunFields[] = {
  */
 void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   char *p;
    int i, j;
+   int options = lc->options;
+   int token, state, state2 = 0, code = 0, code2 = 0;
    bool found;
    utime_t utime;
-   int token, state, state2 = 0, code = 0, code2 = 0;
-   int options = lc->options;
-   RUNRES **run = (RUNRES **)(item->value);
-   char *p;
    RES *res;
+   RUNRES **run = (RUNRES **)(item->value);
+   URES *res_all = (URES *)my_config->m_res_all;
 
    lc->options |= LOPT_NO_IDENT;      /* Want only "strings" */
 
@@ -746,5 +740,5 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 
    lc->options = options;                /* Restore scanner options */
-   set_bit(index, res_all.res_sch.hdr.item_present);
+   set_bit(index, res_all->res_sch.hdr.item_present);
 }

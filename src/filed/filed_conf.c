@@ -62,14 +62,8 @@ static RES **res_head = sres_head;
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   URES res_all;
-}
-#else
-URES res_all;
-#endif
-int32_t res_all_size = sizeof(res_all);
+static URES res_all;
+static int32_t res_all_size = sizeof(res_all);
 
 /*
  * Definition of records permitted within each
@@ -156,7 +150,7 @@ static RES_ITEM dir_items[] = {
 /*
  * Message resource
  */
-extern RES_ITEM msgs_items[];
+#include "lib/msg_res.h"
 
 /*
  * This is the master resource definition.
