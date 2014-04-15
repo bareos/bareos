@@ -237,7 +237,7 @@ install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCL
 	# Make sure the DDL subdir exists.
 	#
 	@if ! test -d $(DESTDIR)$(scriptdir)/ddl; then \
-	   $(MKDIR) $(DESTDIR)$(libdir)/ddl; \
+	   $(MKDIR) $(DESTDIR)$(scriptdir)/ddl; \
 	fi;
 
 	#
