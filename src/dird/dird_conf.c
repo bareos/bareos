@@ -1222,7 +1222,8 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                         /*
                          * Copy Verify Options
                          */
-                        for (int l = 0; *p && *p != ':'; p++) {
+                        //for (int j = 0; *p && *p != ':'; p++) {
+                        for (; *p && *p != ':'; p++) {
                            Mmsg(temp, "%c", *p);
                            pm_strcat(cfg_str, temp.c_str());
                            //fo->VerifyOpts[j] = *p;
@@ -2143,22 +2144,25 @@ void save_resource(int type, RES_ITEM *items, int pass)
 
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
    uint32_t *destination = item->ui32value;
 
    lex_get_token(lc, T_NAME);
    /*
     * Scan ActionOnPurge options
     */
-   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
+   for (i = 0; ActionOnPurgeOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
          *destination = (*destination) | ActionOnPurgeOptions[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2216,20 +2220,24 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (int i = 0; migtypes[i].type_name; i++) {
+   for (i = 0; migtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, migtypes[i].type_name)) {
          *(item->ui32value) = migtypes[i].job_type;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2239,20 +2247,24 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (int i = 0; jobtypes[i].type_name; i++) {
+   for (i = 0; jobtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, jobtypes[i].type_name)) {
          *(item->ui32value) = jobtypes[i].job_type;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2262,40 +2274,48 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (int i = 0; backupprotocols[i].name; i++) {
+   for (i = 0; backupprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, backupprotocols[i].name)) {
          *(item->ui32value) = backupprotocols[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
 
 static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Scan Replacement options
     */
-   for (int i = 0; ReplaceOptions[i].name; i++) {
+   for (i = 0; ReplaceOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
          *(item->ui32value) = ReplaceOptions[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2305,17 +2325,20 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (int i = 0; authprotocols[i].name; i++) {
+   for (i = 0; authprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, authprotocols[i].name)) {
          *(item->ui32value) = authprotocols[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
    }
@@ -2328,20 +2351,24 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
-   for (int i = 0; authmethods[i].name; i++) {
+   for (i = 0; authmethods[i].name; i++) {
       if (bstrcasecmp(lc->str, authmethods[i].name)) {
          *(item->ui32value) = authmethods[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2351,20 +2378,24 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Store the level pass 2 so that type is defined
     */
-   for (int i = 0; joblevels[i].level_name; i++) {
+   for (i = 0; joblevels[i].level_name; i++) {
       if (bstrcasecmp(lc->str, joblevels[i].level_name)) {
          *(item->ui32value) = joblevels[i].level;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2591,7 +2622,7 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    char *c;
-   int token, t;
+   int token, i, t;
    alist **runscripts = (alist **)(item->value) ;
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
@@ -2614,10 +2645,12 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
       if (token == T_EOB) {
         break;
       }
+
       if (token != T_IDENTIFIER) {
         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
-      for (int i = 0; runscript_items[i].name; i++) {
+
+      for (i = 0; runscript_items[i].name; i++) {
         if (bstrcasecmp(runscript_items[i].name, lc->str)) {
            token = lex_get_token(lc, T_SKIP_EOL);
            if (token != T_EQUALS) {
