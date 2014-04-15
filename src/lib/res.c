@@ -47,14 +47,6 @@ union URES {
    RES hdr;
 };
 
-#if defined(_MSC_VER)
-// work around visual studio name mangling preventing external linkage since res_all
-// is declared as a different type when instantiated.
-extern "C" URES res_all;
-#else
-extern  URES res_all;
-#endif
-
 static int res_locked = 0;            /* resource chain lock count -- for debug */
 
 /* #define TRACE_RES */
@@ -130,30 +122,6 @@ RES *GetNextRes(int rcode, RES *res)
    return nres;
 }
 
-/*
- * Message resource directives
- * name config_data_type value code flags default_value
- */
-RES_ITEM msgs_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL },
-   { "mailcommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL },
-   { "operatorcommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL },
-   { "syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL },
-   { "mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL },
-   { "mailonerror", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL },
-   { "mailonsuccess", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL },
-   { "file", CFG_TYPE_MSGS, ITEM(res_msgs), MD_FILE, 0, NULL },
-   { "append", CFG_TYPE_MSGS, ITEM(res_msgs), MD_APPEND, 0, NULL },
-   { "stdout", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDOUT, 0, NULL },
-   { "stderr", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDERR, 0, NULL },
-   { "director", CFG_TYPE_MSGS, ITEM(res_msgs), MD_DIRECTOR, 0, NULL },
-   { "console", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CONSOLE, 0, NULL },
-   { "operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
-   { "catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
-};
-
 const char *res_to_str(int rcode)
 {
    if (rcode < my_config->m_r_first || rcode > my_config->m_r_last) {
@@ -172,6 +140,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
    char *cmd;
    POOLMEM *dest;
    int dest_len;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
    if (pass == 1) {
@@ -189,9 +158,9 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
       case MD_MAIL_ON_ERROR:       /* mail if Job errors */
       case MD_MAIL_ON_SUCCESS:     /* mail if Job succeeds */
          if (item->code == MD_OPERATOR) {
-            cmd = res_all.res_msgs.operator_cmd;
+            cmd = res_all->res_msgs.operator_cmd;
          } else {
-            cmd = res_all.res_msgs.mail_cmd;
+            cmd = res_all->res_msgs.mail_cmd;
          }
          dest = get_pool_memory(PM_MESSAGE);
          dest[0] = 0;
@@ -249,7 +218,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
    Dmsg0(900, "Done store_msgs\n");
 }
 
@@ -313,6 +282,8 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code, char *where, char *
 static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    POOLMEM *msg = get_pool_memory(PM_EMSG);
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_NAME);
    if (!is_name_valid(lc->str, &msg)) {
       scan_err1(lc, "%s\n", msg);
@@ -329,7 +300,7 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    *(item->value) = bstrdup(lc->str);
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -338,10 +309,12 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   lex_get_token(lc, T_NAME);
+   URES *res_all = (URES *)my_config->m_res_all;
+
    /*
     * Store the name
     */
+   lex_get_token(lc, T_NAME);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -352,7 +325,7 @@ static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->value) = bstrdup(lc->str);
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -360,6 +333,8 @@ static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
       /*
@@ -371,7 +346,7 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->value) = bstrdup(lc->str);
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -381,6 +356,8 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
       /*
@@ -395,7 +372,7 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->value) = bstrdup(lc->str);
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -404,6 +381,7 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    s_password *pwd;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -437,7 +415,7 @@ static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -446,6 +424,7 @@ static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    s_password *pwd;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -459,7 +438,7 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       pwd->value = bstrdup(lc->str);
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -470,6 +449,7 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_NAME);
    if (pass == 2) {
@@ -487,7 +467,7 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->resvalue) = res;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -500,9 +480,10 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
-   int count = str_to_int32(item->default_value);
    int i = 0;
    alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
+   int count = str_to_int32(item->default_value);
 
    if (pass == 2) {
       if (count == 0) {               /* always store in item->value */
@@ -544,7 +525,7 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -553,6 +534,7 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
       if (*(item->value) == NULL) {
@@ -568,7 +550,7 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->value) = (char *)list;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -580,6 +562,7 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
       if (*(item->value) == NULL) {
@@ -598,7 +581,7 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       *(item->value) = (char *)list;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -632,10 +615,12 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_INT32);
    *(item->i32value) = lc->int32_val;
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -643,10 +628,12 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_PINT32);
    *(item->ui32value) = lc->pint32_val;
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -654,10 +641,12 @@ static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_INT64);
    *(item->i64value) = lc->int64_val;
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -677,6 +666,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
    int token;
    uint64_t uvalue;
    char bsize[500];
+   URES *res_all = (URES *)my_config->m_res_all;
 
    Dmsg0(900, "Enter store_unit\n");
    token = lex_get_token(lc, T_SKIP_EOL);
@@ -739,7 +729,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
    if (token != T_EOL) {
       scan_to_eol(lc);
    }
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
    Dmsg0(900, "Leave store_unit\n");
 }
 
@@ -775,6 +765,7 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
    int token;
    utime_t utime;
    char period[500];
+   URES *res_all = (URES *)my_config->m_res_all;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    errno = 0;
@@ -809,7 +800,7 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
    if (token != T_EOL) {
       scan_to_eol(lc);
    }
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -817,6 +808,8 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       *(item->ui32value) |= item->code;
@@ -827,7 +820,7 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
       return;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -835,6 +828,8 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
+   URES *res_all = (URES *)my_config->m_res_all;
+
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       *item->boolvalue = true;
@@ -845,7 +840,7 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
       return;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -854,6 +849,7 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
+   URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_NAME);
    /*
@@ -871,7 +867,7 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
       return;
    }
    scan_to_eol(lc);
-   set_bit(index, res_all.hdr.item_present);
+   set_bit(index, res_all->hdr.item_present);
 }
 
 /*
@@ -1255,9 +1251,10 @@ bool MSGSRES::print_config(POOL_MEM &buff)
    POOLMEM *cmdbuf;
    POOL_MEM cfg_str;    /* configuration as string  */
    POOL_MEM temp;
-   MSGSRES* msgres;
+   MSGSRES *msgres;
    DEST *d;
-   msgres = this;//(MSGSRES*) *items[i].value;
+
+   msgres = this;
 
    pm_strcat(cfg_str, "Messages {\n");
    Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->name());
@@ -1328,11 +1325,11 @@ bool MSGSRES::print_config(POOL_MEM &buff)
 
 bool BRSRES::print_config(POOL_MEM &buff)
 {
-   RES_ITEM *items;
-   int rindex = this->hdr.rcode - my_config->m_r_first;
-   int i = 0;
    POOL_MEM cfg_str;
    POOL_MEM temp;
+   RES_ITEM *items;
+   int i = 0;
+   int rindex = this->hdr.rcode - my_config->m_r_first;
 
    /*
     * Make sure the resource class has any items.
@@ -1341,7 +1338,7 @@ bool BRSRES::print_config(POOL_MEM &buff)
       return true;
    }
 
-   memcpy(&res_all, this, my_config->m_resources[rindex].size);
+   memcpy(my_config->m_res_all, this, my_config->m_resources[rindex].size);
 
    pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
    pm_strcat(cfg_str, " {\n");

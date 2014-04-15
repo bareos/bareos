@@ -85,6 +85,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file);
 /* dird_conf.c */
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
+bool populate_jobdefs();
 
 /* expand.c */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);

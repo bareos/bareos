@@ -23,32 +23,29 @@
 /*
  * Master Configuration routines.
  *
- * This file contains the common parts of the BAREOS
- * configuration routines.
+ * This file contains the common parts of the BAREOS configuration routines.
  *
- * Note, the configuration file parser consists of three parts
+ * Note, the configuration file parser consists of four parts
  *
  * 1. The generic lexical scanner in lib/lex.c and lib/lex.h
  *
- * 2. The generic config  scanner in lib/parse_conf.c and
- *    lib/parse_conf.h.
- *    These files contain the parser code, some utility
- *    routines, and the common store routines (name, int,
- *    string, time, int64, size, ...).
+ * 2. The generic config scanner in lib/parse_conf.c and lib/parse_conf.h.
+ *    These files contain the parser code, some utility routines,
  *
- * 3. The daemon specific file, which contains the Resource
- *    definitions as well as any specific store routines
- *    for the resource records.
+ * 3. The generic resource functions in lib/res.c
+ *    Which form the common store routines (name, int, string, time,
+ *    int64, size, ...).
  *
- * N.B. This is a two pass parser, so if you malloc() a string
- * in a "store" routine, you must ensure to do it during
- * only one of the two passes, or to free it between.
- * Also, note that the resource record is malloced and
- * saved in save_resource() during pass 1. Anything that
- * you want saved after pass two (e.g. resource pointers)
- * must explicitly be done in save_resource. Take a look
- * at the Job resource in src/dird/dird_conf.c to see how
- * it is done.
+ * 4. The daemon specific file, which contains the Resource definitions
+ *    as well as any specific store routines for the resource records.
+ *
+ * N.B. This is a two pass parser, so if you malloc() a string in a "store" routine,
+ * you must ensure to do it during only one of the two passes, or to free it between.
+ *
+ * Also, note that the resource record is malloced and saved in save_resource()
+ * during pass 1. Anything that you want saved after pass two (e.g. resource pointers)
+ * must explicitly be done in save_resource. Take a look at the Job resource in
+ * src/dird/dird_conf.c to see how it is done.
  *
  * Kern Sibbald, January MM
  */
@@ -68,14 +65,6 @@ union URES {
    MSGSRES  res_msgs;
    RES hdr;
 };
-
-#if defined(_MSC_VER)
-// work around visual studio name mangling preventing external linkage since res_all
-// is declared as a different type when instantiated.
-extern "C" URES res_all;
-#else
-extern  URES res_all;
-#endif
 
 /* Forward referenced subroutines */
 static const char *get_default_configdir();
@@ -297,7 +286,7 @@ bool CONFIG::parse_config()
                level--;
                state = p_none;
                Dmsg0(900, "T_EOB => define new resource\n");
-               if (res_all.hdr.name == NULL) {
+               if (((URES *)m_res_all)->hdr.name == NULL) {
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
                }
@@ -467,8 +456,8 @@ RES **CONFIG::new_res_head()
 void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
 {
    memset(m_res_all, 0, m_res_all_size);
-   res_all.hdr.rcode = type;
-   res_all.hdr.refcnt = 1;
+   ((URES *)m_res_all)->hdr.rcode = type;
+   ((URES *)m_res_all)->hdr.refcnt = 1;
 
    /*
     * Set defaults in each item. We only set defaults in pass 1.

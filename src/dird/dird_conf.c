@@ -75,14 +75,8 @@ extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   URES res_all;
-}
-#else
-URES res_all;
-#endif
-int32_t res_all_size = sizeof(res_all);
+static URES res_all;
+static int32_t res_all_size = sizeof(res_all);
 
 /*
  * Definition of records permitted within each
@@ -463,7 +457,7 @@ static RES_ITEM counter_items[] = {
 /*
  * Message resource
  */
-extern RES_ITEM msgs_items[];
+#include "lib/msg_res.h"
 
 /*
  * This is the master resource definition.
@@ -2140,6 +2134,215 @@ void save_resource(int type, RES_ITEM *items, int pass)
                res->res_dir.hdr.name, rindex, pass);
       }
    }
+}
+
+bool populate_jobdefs()
+{
+   JOBRES *job;
+   bool retval = true;
+
+   foreach_res(job, R_JOB) {
+      if (job->jobdefs) {
+         /*
+          * Handle Storage alists specifically
+          */
+         JOBRES *jobdefs = job->jobdefs;
+         if (jobdefs->storage && !job->storage) {
+            STORERES *store;
+            job->storage = New(alist(10, not_owned_by_alist));
+            foreach_alist(store, jobdefs->storage) {
+               job->storage->append(store);
+            }
+         }
+
+         /*
+          * Handle RunScripts alists specifically
+          */
+         if (jobdefs->RunScripts) {
+            RUNSCRIPT *rs, *elt;
+
+            if (!job->RunScripts) {
+               job->RunScripts = New(alist(10, not_owned_by_alist));
+            }
+
+            foreach_alist(rs, jobdefs->RunScripts) {
+               elt = copy_runscript(rs);
+               job->RunScripts->append(elt); /* we have to free it */
+            }
+         }
+
+         /*
+          * Transfer default items from JobDefs Resource
+          */
+         for (int i = 0; job_items[i].name; i++) {
+            char **def_svalue, **svalue;   /* string value */
+            uint32_t *def_ivalue, *ivalue; /* integer value */
+            bool *def_bvalue, *bvalue;     /* bool value */
+            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
+            uint32_t offset;
+
+            Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
+                job->name(), job_items[i].name,
+                bit_is_set(i, job->hdr.item_present),
+                bit_is_set(i, job->jobdefs->hdr.item_present));
+
+            if (!bit_is_set(i, job->hdr.item_present) &&
+                 bit_is_set(i, job->jobdefs->hdr.item_present)) {
+               Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
+                     job->name(), job_items[i].name);
+               offset = (char *)(job_items[i].value) - (char *)&res_all;
+               switch (job_items[i].type) {
+               case CFG_TYPE_STR:
+               case CFG_TYPE_DIR:
+                  /*
+                   * Handle strings and directory strings
+                   */
+                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
+                        job->name(), job_items[i].name, *def_svalue, i, offset);
+                  svalue = (char **)((char *)job + offset);
+                  if (*svalue) {
+                     free(*svalue);
+                  }
+                  *svalue = bstrdup(*def_svalue);
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_RES:
+                  /*
+                   * Handle resources
+                   */
+                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
+                        job->name(), job_items[i].name, i, offset);
+                  svalue = (char **)((char *)job + offset);
+                  if (*svalue) {
+                     Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+                  }
+                  *svalue = *def_svalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_ALIST_RES:
+                  /*
+                   * Handle alist resources
+                   */
+                  if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
+                     set_bit(i, job->hdr.item_present);
+                  }
+                  break;
+               case CFG_TYPE_BIT:
+               case CFG_TYPE_PINT32:
+               case CFG_TYPE_JOBTYPE:
+               case CFG_TYPE_PROTOCOLTYPE:
+               case CFG_TYPE_LEVEL:
+               case CFG_TYPE_INT32:
+               case CFG_TYPE_SIZE32:
+               case CFG_TYPE_MIGTYPE:
+               case CFG_TYPE_REPLACE:
+                  /*
+                   * Handle integer fields
+                   *    Note, our store_bit does not handle bitmaped fields
+                   */
+                  def_ivalue = (uint32_t *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_ivalue, i, offset);
+                  ivalue = (uint32_t *)((char *)job + offset);
+                  *ivalue = *def_ivalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_TIME:
+               case CFG_TYPE_SIZE64:
+               case CFG_TYPE_INT64:
+               case CFG_TYPE_SPEED:
+                  /*
+                   * Handle 64 bit integer fields
+                   */
+                  def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_lvalue, i, offset);
+                  lvalue = (int64_t *)((char *)job + offset);
+                  *lvalue = *def_lvalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_BOOL:
+                  /*
+                   * Handle bool fields
+                   */
+                  def_bvalue = (bool *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_bvalue, i, offset);
+                  bvalue = (bool *)((char *)job + offset);
+                  *bvalue = *def_bvalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               default:
+                  break;
+               }
+            }
+         }
+      }
+
+      /*
+       * Ensure that all required items are present
+       */
+      for (int i = 0; job_items[i].name; i++) {
+         if (job_items[i].flags & CFG_ITEM_REQUIRED) {
+            if (!bit_is_set(i, job->hdr.item_present)) {
+               Jmsg(NULL, M_ERROR_TERM, 0,
+                    _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
+                    job_items[i].name, job->name());
+               retval = false;
+               goto bail_out;
+            }
+         }
+
+         /*
+          * If this triggers, take a look at lib/parse_conf.h
+          */
+         if (i >= MAX_RES_ITEMS) {
+            Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
+            goto bail_out;
+         }
+      }
+
+      /*
+       * For Copy and Migrate we can have Jobs without a client or fileset.
+       */
+      switch (job->JobType) {
+      case JT_COPY:
+      case JT_MIGRATE:
+         break;
+      default:
+         /*
+          * All others must have a client and fileset.
+          */
+         if (!job->client) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"),
+                 job->name());
+            retval = false;
+            goto bail_out;
+         }
+
+         if (!job->fileset) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"),
+                 job->name());
+            retval = false;
+            goto bail_out;
+         }
+         break;
+      }
+
+      if (!job->storage && !job->pool->storage) {
+         Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
+            job->name());
+         retval = false;
+         goto bail_out;
+      }
+   } /* End loop over Job res */
+
+bail_out:
+   return retval;
 }
 
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
