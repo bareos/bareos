@@ -548,6 +548,9 @@ dpl_get(dpl_ctx_t *ctx,
       goto end;
     }
 
+  if (NULL != data_lenp)
+    data_len = *data_lenp;
+
   ret2 = ctx->backend->get(ctx, bucket, path, NULL, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, &new_location);
 
   if (DPL_EREDIRECT == ret2)
@@ -556,6 +559,9 @@ dpl_get(dpl_ctx_t *ctx,
                                new_location,
                                &new_location_resource,
                                &new_location_subresource);
+
+      if (NULL != data_lenp)
+        data_len = *data_lenp;
 
       ret2 = ctx->backend->get(ctx, bucket, new_location_resource, new_location_subresource, option, object_type, condition, range, data_bufp, &data_len, metadatap, sysmdp, NULL);
 
