@@ -180,11 +180,11 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
     case DPL_STORAGE_CLASS_UNDEF:
       return NULL;
     case DPL_STORAGE_CLASS_STANDARD:
-      return "standard";
+      return "STANDARD";
     case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
-      return "reduced_redundancy";
+      return "REDUCED_REDUNDANCY";
     case DPL_STORAGE_CLASS_CUSTOM:
-      return "custom";
+      return "CUSTOM";
     }
 
   return NULL;
