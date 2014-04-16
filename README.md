@@ -1,6 +1,7 @@
 bareos-docs
 ===========
 
+
 This repository contains the main documentation for the Bareos project http://www.bareos.org/.
 
 The documentation is published as PDF and HTML at http://www.bareos.org/en/manual.html
