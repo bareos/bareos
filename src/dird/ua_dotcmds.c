@@ -1170,6 +1170,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
          ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));
          ua->send_msg("autoprune=%d", client->AutoPrune);
+         ua->send_msg("enabled=%d", client->enabled);
          ua->send_msg("catalog=%s", client->catalog->name());
       }
    } else if (bstrcmp(ua->argk[1], "storage")) {

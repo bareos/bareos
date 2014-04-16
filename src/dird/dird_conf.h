@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -287,6 +287,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
+   bool enabled;                      /* Set if client is enabled */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */

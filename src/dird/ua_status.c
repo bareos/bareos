@@ -663,7 +663,8 @@ static void do_scheduler_status(UAContext *ua)
                if (cnt++ == 0) {
                   ua->send_msg("%s\n", sched->hdr.name);
                }
-               if (job->enabled) {
+               if (job->enabled &&
+                   (!job->client || job->client->enabled)) {
                   ua->send_msg("                       %s\n", job->name());
                } else {
                   ua->send_msg("                       %s (disabled)\n", job->name());
@@ -870,8 +871,7 @@ static int my_compare(void *item1, void *item2)
 }
 
 /*
- * Find all jobs to be run in roughly the
- *  next 24 hours.
+ * Find all jobs to be run in roughly the next 24 hours.
  */
 static void list_scheduled_jobs(UAContext *ua)
 {
@@ -897,10 +897,14 @@ static void list_scheduled_jobs(UAContext *ua)
      }
    }
 
-   /* Loop through all jobs */
+   /*
+    * Loop through all jobs
+    */
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->enabled) {
+      if (!acl_access_ok(ua, Job_ACL, job->name()) ||
+          !job->enabled ||
+          (job->client && !job->client->enabled)) {
          continue;
       }
       for (run = NULL; (run = find_next_run(run, job, runtime, days)); ) {

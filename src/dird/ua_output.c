@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,10 +98,12 @@ static void show_disabled_jobs(UAContext *ua)
 {
    JOBRES *job;
    bool first = true;
+
    foreach_res(job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
+
       if (!job->enabled) {
          if (first) {
             first = false;
@@ -110,8 +112,36 @@ static void show_disabled_jobs(UAContext *ua)
          ua->send_msg("   %s\n", job->name());
      }
   }
+
   if (first) {
      ua->send_msg(_("No disabled Jobs.\n"));
+  }
+}
+
+/*
+ * Enter with Resources locked
+ */
+static void show_disabled_clients(UAContext *ua)
+{
+   CLIENTRES *client;
+   bool first = true;
+
+   foreach_res(client, R_CLIENT) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         continue;
+      }
+
+      if (!client->enabled) {
+         if (first) {
+            first = false;
+            ua->send_msg(_("Disabled Clients:\n"));
+         }
+         ua->send_msg("   %s\n", client->name());
+     }
+  }
+
+  if (first) {
+     ua->send_msg(_("No disabled Clients.\n"));
   }
 }
 
@@ -142,9 +172,11 @@ static struct showstruct avail_resources[] = {
  *  Displays Resources
  *
  *  show all
- *  show <resource-keyword-name>  e.g. show directors
- *  show <resource-keyword-name>=<name> e.g. show director=HeadMan
- *  show disabled    shows disabled jobs
+ *  show <resource-keyword-name> - e.g. show directors
+ *  show <resource-keyword-name>=<name> - e.g. show director=HeadMan
+ *  show disabled - shows disabled jobs and clients
+ *  show disabled jobs - shows disabled jobs
+ *  show disabled clients - shows disabled clients
  *
  */
 int show_cmd(UAContext *ua, const char *cmd)
@@ -157,11 +189,20 @@ int show_cmd(UAContext *ua, const char *cmd)
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
    LockRes();
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], _("disabled"))) {
-         show_disabled_jobs(ua);
+         if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
+            show_disabled_jobs(ua);
+         } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
+            show_disabled_clients(ua);
+         } else {
+            show_disabled_jobs(ua);
+            show_disabled_clients(ua);
+         }
+
          goto bail_out;
       }
+
       type = 0;
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */

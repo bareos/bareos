@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -110,10 +110,10 @@ static struct cmdstruct commands[] = {
      NT_("pool=<pool-name>"), false },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
      NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true },
-   { NT_("disable"), disable_cmd, _("Disable a job"),
-     NT_("job=<job-name>"), true },
-   { NT_("enable"), enable_cmd, _("Enable a job"),
-     NT_("job=<job-name>"), true },
+   { NT_("disable"), disable_cmd, _("Disable a job/client"),
+     NT_("job=<job-name> client=<client-name>"), true },
+   { NT_("enable"), enable_cmd, _("Enable a job/client"),
+     NT_("job=<job-name> client=<client-name>"), true },
    { NT_("estimate"), estimate_cmd, _("Performs FileSet estimate, listing gives full listing"),
      NT_("fileset=<fileset-name> client=<client-name> level=<level> accurate=<yes/no> job=<job-name> listing"), true },
    { NT_("exit"), quit_cmd, _("Terminate Bconsole session"),
@@ -932,32 +932,66 @@ get_out:
 
 static void do_en_disable_cmd(UAContext *ua, bool setting)
 {
-   JOBRES *job;
+   CLIENTRES *client = NULL;
+   JOBRES *job = NULL;
    int i;
 
-   i = find_arg_with_value(ua, NT_("job"));
-   if (i < 0) {
-      job = select_enable_disable_job_resource(ua, setting);
-      if (!job) {
+   i = find_arg(ua, NT_("client"));
+   if (i >= 0) {
+      i = find_arg_with_value(ua, NT_("client"));
+      if (i >= 0) {
+         LockRes();
+         client = GetClientResWithName(ua->argv[i]);
+         UnlockRes();
+      } else {
+         client = select_enable_disable_client_resource(ua, setting);
+         if (!client) {
+            return;
+         }
+      }
+
+      if (!client) {
+         ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
          return;
       }
    } else {
-      LockRes();
-      job = GetJobResWithName(ua->argv[i]);
-      UnlockRes();
-   }
-   if (!job) {
-      ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
-      return;
+      i = find_arg_with_value(ua, NT_("job"));
+      if (i >= 0) {
+         LockRes();
+         job = GetJobResWithName(ua->argv[i]);
+         UnlockRes();
+      } else {
+         job = select_enable_disable_job_resource(ua, setting);
+         if (!job) {
+            return;
+         }
+      }
+
+      if (!job) {
+         ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
+         return;
+      }
    }
 
-   if (!acl_access_ok(ua, Job_ACL, job->name())) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
+   if (client) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
+         return;
+      }
+
+      client->enabled = setting;
+      ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting ? "en" : "dis");
+      return;
+   } else if (job) {
+      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
+         return;
+      }
+
+      job->enabled = setting;
+      ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting ? "en" : "dis");
       return;
    }
-   job->enabled = setting;
-   ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting?"en":"dis");
-   return;
 }
 
 static int enable_cmd(UAContext *ua, const char *cmd)

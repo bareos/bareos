@@ -205,6 +205,7 @@ static RES_ITEM cli_items[] = {
    { "fdpassword", store_clearpassword, ITEM(res_client.password), 0, 0, NULL },
    { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
    { "passive", store_bool, ITEM(res_client.passive), 0, ITEM_DEFAULT, "false" },
+   { "enabled", store_bool, ITEM(res_client.enabled), 0, ITEM_DEFAULT, "true" },
    { "hardquota", store_size64, ITEM(res_client.HardQuota), 0, ITEM_DEFAULT, "0" },
    { "softquota", store_size64, ITEM(res_client.SoftQuota), 0, ITEM_DEFAULT, "0" },
    { "softquotagraceperiod", store_time, ITEM(res_client.SoftQuotaGracePeriod), 0, ITEM_DEFAULT, "0" },

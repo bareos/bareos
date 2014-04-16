@@ -289,6 +289,7 @@ JOBRES *select_job_resource(UAContext *ua);
 JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable);
 JOBRES *select_restore_job_resource(UAContext *ua);
 CLIENTRES *select_client_resource(UAContext *ua);
+CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable);
 FILESETRES *select_fileset_resource(UAContext *ua);
 int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 int select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
