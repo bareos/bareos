@@ -100,7 +100,6 @@ char *configfile = NULL;
 STORES *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static void usage()
