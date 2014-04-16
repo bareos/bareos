@@ -32,6 +32,8 @@
 
 const int dbglvl = 400;
 
+static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * Wait for SysOp to mount a tape on a specific device
  *
