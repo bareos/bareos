@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,17 +177,22 @@ again:
          schedules_invalidated = true;
       }
    }
+
    jcr = new_jcr(sizeof(JCR), dird_free_jcr);
    run = next_job->run;               /* pick up needed values */
    job = next_job->job;
-   if (job->enabled) {
+
+   if (job->enabled && (!job->client || job->client->enabled)) {
       dump_job(next_job, _("Run job"));
    }
+
    free(next_job);
-   if (!job->enabled) {
+
+   if (!job->enabled || (job->client && !job->client->enabled)) {
       free_jcr(jcr);
       goto again;                     /* ignore this job */
    }
+
    run->last_run = now;               /* mark as run now */
 
    ASSERT(job);
@@ -343,7 +348,9 @@ static void find_runs()
    LockRes();
    foreach_res(job, R_JOB) {
       sched = job->schedule;
-      if (sched == NULL || !job->enabled) { /* scheduled? or enabled? */
+      if (sched == NULL ||
+          !job->enabled ||
+          (job->client && !job->client->enabled)) { /* scheduled? or enabled? */
          continue;                    /* no, skip this job */
       }
       Dmsg1(dbglvl, "Got job: %s\n", job->hdr.name);

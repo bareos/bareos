@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -233,7 +233,6 @@ CATRES *get_catalog_resource(UAContext *ua)
    return catalog;
 }
 
-
 /*
  * Select a job to enable or disable
  */
@@ -342,6 +341,33 @@ CLIENTRES *select_client_resource(UAContext *ua)
    }
    UnlockRes();
    if (do_prompt(ua, _("Client"),  _("Select Client (File daemon) resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   client = (CLIENTRES *)GetResWithName(R_CLIENT, name);
+   return client;
+}
+
+/*
+ * Select a client to enable or disable
+ */
+CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   CLIENTRES *client;
+
+   LockRes();
+   start_prompt(ua, _("The defined Client resources are:\n"));
+   foreach_res(client, R_CLIENT) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         continue;
+      }
+      if (client->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                    /* yes, skip */
+      }
+      add_prompt(ua, client->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name)) < 0) {
       return NULL;
    }
    client = (CLIENTRES *)GetResWithName(R_CLIENT, name);
