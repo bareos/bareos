@@ -25,7 +25,12 @@
 #ifndef __DLFCN_H_
 #define __DLFCN_H_
 
-#define RTDL_NOW 2
+#define RTLD_LAZY               0x00001         /* Deferred function binding */
+#define RTLD_NOW                0x00002         /* Immediate function binding */
+#define RTLD_NOLOAD             0x00004         /* Don't load object */
+
+#define RTLD_GLOBAL             0x00100         /* Export symbols to others */
+#define RTLD_LOCAL              0x00000         /* Symbols are only available to group members */
 
 void *dlopen(const char *file, int mode);
 void *dlsym(void *handle, const char *name);
