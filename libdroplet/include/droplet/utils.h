@@ -241,7 +241,7 @@ void dpl_strlower(char *str);
 unsigned int dpl_hmac(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf, const EVP_MD *md);
 unsigned int dpl_hmac_sha1(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
 unsigned int dpl_hmac_sha256(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
-void dpl_sha256(const char *, unsigned int, char *);
+void dpl_sha256(const uint8_t *, size_t, uint8_t *);
 u_int dpl_base64_encode(const u_char *in_buf, u_int in_len, u_char *out_buf);
 u_int dpl_base64_decode(const u_char *in_buf, u_int in_len, u_char *out_buf);
 size_t dpl_url_encode(const char *str, char *str_ue);

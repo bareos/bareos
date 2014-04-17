@@ -1073,11 +1073,10 @@ dpl_pread(dpl_vfile_t *vfile,
           unsigned int len,
           unsigned long long offset,
           char **bufp,
-          int *buf_lenp)
+          unsigned int *buf_lenp)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
-  unsigned int data_len = 0;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset, offset+len);
 
@@ -1095,6 +1094,7 @@ dpl_pread(dpl_vfile_t *vfile,
                  buf_lenp,
                  NULL,
                  NULL);
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1136,7 +1136,6 @@ dpl_open(dpl_ctx_t *ctx,
 {
   dpl_status_t ret, ret2;
   dpl_vfile_t *vfile = NULL;
-  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;

@@ -562,9 +562,8 @@ dpl_hmac_sha256(const char *key_buf,
  */
 
 void
-dpl_sha256(const char *data_buf,
-           unsigned int data_len,
-           char *digest_buf)
+dpl_sha256(const uint8_t *data_buf, size_t data_len,
+           uint8_t *digest_buf)
 {
   SHA256_CTX    ctx;
 
@@ -1042,6 +1041,8 @@ dpl_log(dpl_ctx_t *ctx,
     return DPL_FAILURE;	/* sprintf output was truncated */
 
   dpl_logfunc(ctx, level, message);
+
+  return DPL_SUCCESS;
 }
 
 /**
@@ -1165,7 +1166,7 @@ dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode)
         }
       if (XATTRS_ENCODE_BASE64 == do_64encode)
         {
-          base64_len = dpl_base64_encode(buf, val_len, encoded_buf);
+          base64_len = dpl_base64_encode((u_char *)buf, val_len, (u_char *)encoded_buf);
           encoded_buf[base64_len] = '\0';
           ret = dpl_dict_add(dict, key, encoded_buf, 0);
         }

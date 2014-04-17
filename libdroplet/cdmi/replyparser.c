@@ -646,7 +646,6 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
   json_tokener *tok = NULL;
   json_object *obj = NULL;
   json_object *children = NULL;
-  json_object *metadata = NULL;
   int n_children, i;
   dpl_common_prefix_t *common_prefix = NULL;
   dpl_object_t *object = NULL;

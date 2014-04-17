@@ -110,6 +110,8 @@ dpl_swift_req_build(dpl_ctx_t *ctx,
               goto end;
             }
           break ;
+        default:
+          break;
         }
     }
   else if (DPL_METHOD_PUT == req->method)

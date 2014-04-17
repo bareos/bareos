@@ -61,7 +61,7 @@ dpl_swift_get_metadatum_from_value(const char *key,
 				   dpl_dict_t *metadata,
 				   dpl_sysmd_t *sysmdp)
 {
-  dpl_status_t ret, ret2;
+  dpl_status_t ret;
   dpl_dict_var_t *var;
   /* dpl_swift_object_id_t obj_id; */
 

@@ -42,15 +42,14 @@
 static dpl_status_t
 add_payload_signature_to_headers(const dpl_req_t *req, dpl_dict_t *headers)
 {
-  dpl_status_t  ret;
-  char          digest[SHA256_DIGEST_LENGTH];
+  uint8_t       digest[SHA256_DIGEST_LENGTH];
   char          digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
   int           i;
 
   if (req->data_enabled)
-    dpl_sha256(req->data_buf, req->data_len, digest);
+    dpl_sha256((uint8_t *) req->data_buf, req->data_len, digest);
   else
-    dpl_sha256("", 0, digest);
+    dpl_sha256((uint8_t *) "", 0, digest);
 
   for (i = 0; i < sizeof digest; i++)
     sprintf(digest_hex + 2 * i, "%02x", (u_char) digest[i]);
@@ -192,11 +191,11 @@ create_sign_request(const dpl_req_t *req,
   }
 
   {
-    char        digest[SHA256_DIGEST_LENGTH];
+    uint8_t     digest[SHA256_DIGEST_LENGTH];
     char        digest_hex[DPL_HEX_LENGTH(sizeof digest) + 1];
     int         i;
 
-    dpl_sha256(canonical_request, strlen(canonical_request), digest);
+    dpl_sha256((uint8_t *) canonical_request, strlen(canonical_request), digest);
     for (i = 0; i < sizeof digest; i++)
       sprintf(digest_hex + 2 * i, "%02x", (u_char) digest[i]);
 

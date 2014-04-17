@@ -224,7 +224,6 @@ dpl_status_t
 dpl_req_add_subresource(dpl_req_t *req,
                         const char *subresource)
 {
-  char *nstr = NULL;
   char *tmp = NULL;
 
   if (! req->subresource)

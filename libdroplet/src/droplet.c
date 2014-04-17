@@ -303,20 +303,18 @@ dpl_ctx_new(const char *droplet_dir,
 dpl_ctx_t *
 dpl_ctx_new_from_dict(const dpl_dict_t *profile)
 {
-  dpl_ctx_t *ctx;
-  int ret;
-  char *str;
+  dpl_ctx_t     *ctx;
+  int           ret;
 
   ctx = dpl_ctx_alloc();
   if (NULL == ctx)
     return NULL;
 
   ret = dpl_profile_set_from_dict(ctx, profile);
-  if (DPL_SUCCESS != ret)
-    {
-      dpl_ctx_free(ctx);
-      return NULL;
-    }
+  if (DPL_SUCCESS != ret) {
+    dpl_ctx_free(ctx);
+    return NULL;
+  }
 
   dpl_ctx_post_load(ctx);
 

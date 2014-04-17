@@ -58,6 +58,243 @@ dpl_posix_get_capabilities(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_posix_head_raw(dpl_ctx_t *ctx,
+                   const char *bucket,
+                   const char *resource,
+                   const char *subresource,
+                   const dpl_option_t *option, 
+                   dpl_ftype_t object_type,
+                   const dpl_condition_t *condition,
+                   dpl_dict_t **metadatap,
+                   char **locationp)
+{
+  dpl_status_t ret, ret2;
+  char path[MAXPATHLEN];
+  int iret;
+  struct stat st;
+  char buf[256];
+  dpl_dict_t *metadata = NULL;
+  dpl_dict_t *subdict = NULL;
+  dpl_value_t value;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+
+  iret = stat(path, &st);
+  if (-1 == iret)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  metadata = dpl_dict_new(13);
+  if (NULL == metadata)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%ld", st.st_dev);
+  ret2 = dpl_dict_add(metadata, "dev", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lX", st.st_ino);
+  ret2 = dpl_dict_add(metadata, "ino", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  snprintf(buf, sizeof (buf), "%u", st.st_mode);
+  ret2 = dpl_dict_add(metadata, "mode", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%ld", st.st_nlink);
+  ret2 = dpl_dict_add(metadata, "nlink", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%u", st.st_uid);
+  ret2 = dpl_dict_add(metadata, "uid", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%u", st.st_gid);
+  ret2 = dpl_dict_add(metadata, "gid", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_rdev);
+  ret2 = dpl_dict_add(metadata, "rdev", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_size);
+  ret2 = dpl_dict_add(metadata, "size", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_blksize);
+  ret2 = dpl_dict_add(metadata, "blksize", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_blocks);
+  ret2 = dpl_dict_add(metadata, "blocks", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_atime);
+  ret2 = dpl_dict_add(metadata, "atime", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_mtime);
+  ret2 = dpl_dict_add(metadata, "mtime", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  snprintf(buf, sizeof (buf), "%lu", st.st_ctime);
+  ret2 = dpl_dict_add(metadata, "ctime", buf, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  subdict = dpl_dict_new(13);
+  if (NULL == subdict)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  ret2 = dpl_get_xattrs(path,
+                        subdict,
+                        DPL_POSIX_XATTR_PREFIX,
+                        XATTRS_NO_ENCODING);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  value.type = DPL_VALUE_SUBDICT;
+  value.subdict = subdict;
+  subdict = NULL;
+  ret2 = dpl_dict_add_value(metadata, "xattr", &value, 0);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  if (NULL != metadatap)
+    {
+      *metadatap = metadata;
+      metadata = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  if (NULL != subdict)
+    dpl_dict_free(subdict);
+
+  if (NULL != metadata)
+    dpl_dict_free(metadata);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_head(dpl_ctx_t *ctx,
+               const char *bucket,
+               const char *resource,
+               const char *subresource,
+               const dpl_option_t *option,
+               dpl_ftype_t object_type,
+               const dpl_condition_t *condition,
+               dpl_dict_t **metadatap,
+               dpl_sysmd_t *sysmdp,
+               char **locationp)
+{
+  dpl_status_t ret, ret2;
+  dpl_dict_t *all_mds = NULL;
+  char path[MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+
+  ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
+                            object_type, condition, &all_mds, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_posix_get_metadata_from_values(all_mds, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != all_mds)
+    dpl_dict_free(all_mds);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_posix_list_bucket(dpl_ctx_t *ctx,
                       const char *bucket,
                       const char *prefix,
@@ -541,296 +778,6 @@ dpl_posix_get(dpl_ctx_t *ctx,
 
   if (-1 != fd)
     close(fd);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-struct get_conven
-{
-  dpl_metadatum_func_t metadatum_func;
-  dpl_dict_t *metadata;
-  dpl_sysmd_t *sysmdp;
-  dpl_buffer_func_t buffer_func;
-  void *cb_arg;
-};
-
-static dpl_status_t
-cb_get_value(dpl_dict_var_t *var,
-             void *cb_arg)
-{
-  struct get_conven *gc = (struct get_conven *) cb_arg;
-  dpl_status_t ret, ret2;
-  
-  ret2 = dpl_posix_get_metadatum_from_value(var->key,
-                                            var->val,
-                                            gc->metadatum_func,
-                                            gc->cb_arg,
-                                            gc->metadata,
-                                            gc->sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  return ret;
-}
-
-static dpl_status_t
-cb_get_buffer(void *cb_arg,
-              char *buf,
-              unsigned int len)
-{
-  struct get_conven *gc = (struct get_conven *) cb_arg;
-  int ret;
-
-  if (NULL != gc->buffer_func)
-    {
-      ret = gc->buffer_func(gc->cb_arg, buf, len);
-      if (DPL_SUCCESS != ret)
-        return ret;
-    }
-
-  return DPL_SUCCESS;
-}
-
-dpl_status_t
-dpl_posix_head_raw(dpl_ctx_t *ctx,
-                   const char *bucket,
-                   const char *resource,
-                   const char *subresource,
-                   const dpl_option_t *option, 
-                   dpl_ftype_t object_type,
-                   const dpl_condition_t *condition,
-                   dpl_dict_t **metadatap,
-                   char **locationp)
-{
-  dpl_status_t ret, ret2;
-  char path[MAXPATHLEN];
-  int iret;
-  struct stat st;
-  char buf[256];
-  dpl_dict_t *metadata = NULL;
-  dpl_dict_t *subdict = NULL;
-  dpl_value_t value;
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
-
-  iret = stat(path, &st);
-  if (-1 == iret)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  metadata = dpl_dict_new(13);
-  if (NULL == metadata)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%ld", st.st_dev);
-  ret2 = dpl_dict_add(metadata, "dev", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lX", st.st_ino);
-  ret2 = dpl_dict_add(metadata, "ino", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-  
-  snprintf(buf, sizeof (buf), "%u", st.st_mode);
-  ret2 = dpl_dict_add(metadata, "mode", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%ld", st.st_nlink);
-  ret2 = dpl_dict_add(metadata, "nlink", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%u", st.st_uid);
-  ret2 = dpl_dict_add(metadata, "uid", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%u", st.st_gid);
-  ret2 = dpl_dict_add(metadata, "gid", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_rdev);
-  ret2 = dpl_dict_add(metadata, "rdev", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_size);
-  ret2 = dpl_dict_add(metadata, "size", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_blksize);
-  ret2 = dpl_dict_add(metadata, "blksize", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_blocks);
-  ret2 = dpl_dict_add(metadata, "blocks", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_atime);
-  ret2 = dpl_dict_add(metadata, "atime", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_mtime);
-  ret2 = dpl_dict_add(metadata, "mtime", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  snprintf(buf, sizeof (buf), "%lu", st.st_ctime);
-  ret2 = dpl_dict_add(metadata, "ctime", buf, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  subdict = dpl_dict_new(13);
-  if (NULL == subdict)
-    {
-      ret = DPL_ENOMEM;
-      goto end;
-    }
-
-  ret2 = dpl_get_xattrs(path,
-                        subdict,
-                        DPL_POSIX_XATTR_PREFIX,
-                        XATTRS_NO_ENCODING);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  value.type = DPL_VALUE_SUBDICT;
-  value.subdict = subdict;
-  subdict = NULL;
-  ret2 = dpl_dict_add_value(metadata, "xattr", &value, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  if (NULL != metadatap)
-    {
-      *metadatap = metadata;
-      metadata = NULL;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != subdict)
-    dpl_dict_free(subdict);
-
-  if (NULL != metadata)
-    dpl_dict_free(metadata);
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
-
-  return ret;
-}
-
-dpl_status_t
-dpl_posix_head(dpl_ctx_t *ctx,
-               const char *bucket,
-               const char *resource,
-               const char *subresource,
-               const dpl_option_t *option,
-               dpl_ftype_t object_type,
-               const dpl_condition_t *condition,
-               dpl_dict_t **metadatap,
-               dpl_sysmd_t *sysmdp,
-               char **locationp)
-{
-  dpl_status_t ret, ret2;
-  dpl_dict_t *all_mds = NULL;
-  char path[MAXPATHLEN];
-
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
-
-  ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
-                            object_type, condition, &all_mds, locationp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_posix_get_metadata_from_values(all_mds, metadatap, sysmdp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-  
- end:
-
-  if (NULL != all_mds)
-    dpl_dict_free(all_mds);
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 

@@ -243,7 +243,6 @@ dpl_swift_get(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_vec_t     *common_prefixes = NULL;
   dpl_vec_t     *objects = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -463,7 +462,7 @@ dpl_swift_put(dpl_ctx_t *ctx,
 #endif
 
   //build request
-  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, (char **)&data_buf, &data_len);
+  ret2 = dpl_swift_req_build(ctx, req, 0, &headers_request, (char **)&data_buf, (int *) &data_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -580,7 +579,6 @@ dpl_swift_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_vec_t     *common_prefixes = NULL;
   dpl_vec_t     *objects = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -714,7 +712,6 @@ dpl_swift_head_get(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_vec_t     *common_prefixes = NULL;
   dpl_swift_req_mask_t req_mask = 0u;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
@@ -854,7 +851,6 @@ dpl_swift_head_raw(dpl_ctx_t *ctx,
 {
   int ret, ret2;
   char *md_buf = NULL;
-  u_int md_len;
   dpl_value_t *val = NULL;
   dpl_option_t option2;
 
