@@ -32,6 +32,7 @@
  */
 #include "bareos.h"
 #include "jcr.h"
+#include "dlfcn.h"
 #include "findlib/find.h"
 
 /*
