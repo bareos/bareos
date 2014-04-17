@@ -992,7 +992,6 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
 
       client->enabled = setting;
       ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting ? "en" : "dis");
-      return;
    } else if (job) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
@@ -1001,7 +1000,6 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
 
       job->enabled = setting;
       ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting ? "en" : "dis");
-      return;
    }
 }
 
