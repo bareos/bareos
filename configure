@@ -26349,6 +26349,8 @@ fi
 
 for ac_header in \
    assert.h \
+   dl.h \
+   dlfcn.h \
    fcntl.h \
    grp.h \
    pwd.h \
@@ -26375,6 +26377,7 @@ for ac_header in \
    sys/types.h \
    arpa/nameser.h \
    mtio.h \
+   sys/dl.h \
    sys/mtio.h \
    sys/tape.h \
    regex.h \
