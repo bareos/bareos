@@ -31,11 +31,15 @@
  *
  * https://github.com/scality/Droplet
  */
+
 #ifndef __DROPLET_S3_H__
 #define __DROPLET_S3_H__ 1
 
 #include <droplet/s3/reqbuilder.h>
 #include <droplet/s3/replyparser.h>
 #include <droplet/s3/backend.h>
+
+// #define DPRINTF(fmt,...) fprintf(stderr, "[s3] " fmt, ##__VA_ARGS__)
+#define DPRINTF(fmt,...)
 
 #endif

@@ -33,6 +33,19 @@ libdroplet_la_SOURCES = \
 	s3/reqbuilder.c \
 	s3/auth/v2.c \
 	s3/auth/v4.c \
+	s3/backend/copy.c \
+	s3/backend/delete.c \
+	s3/backend/delete_bucket.c \
+	s3/backend/genurl.c \
+	s3/backend/get.c \
+	s3/backend/get_capabilities.c \
+	s3/backend/head.c \
+	s3/backend/head_raw.c \
+	s3/backend/list_all_my_buckets.c \
+	s3/backend/list_bucket.c \
+	s3/backend/list_bucket_attrs.c \
+	s3/backend/make_bucket.c \
+	s3/backend/put.c \
 	cdmi/backend.c \
 	cdmi/replyparser.c \
 	cdmi/reqbuilder.c \

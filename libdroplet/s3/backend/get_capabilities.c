@@ -33,21 +33,14 @@
  */
 
 #include "dropletp.h"
-#include <droplet/s3/s3.h>
+#include "droplet/s3/s3.h"
 
-dpl_backend_t   dpl_backend_s3 = {
-  "s3",
-  .get_capabilities    = dpl_s3_get_capabilities,
-  .list_all_my_buckets = dpl_s3_list_all_my_buckets,
-  .list_bucket         = dpl_s3_list_bucket,
-  .list_bucket_attrs   = dpl_s3_list_bucket_attrs, /* WARNING, UNTESTED */
-  .make_bucket         = dpl_s3_make_bucket,
-  .delete_bucket       = dpl_s3_delete_bucket,
-  .put                 = dpl_s3_put,
-  .get                 = dpl_s3_get,
-  .head                = dpl_s3_head,
-  .head_raw            = dpl_s3_head_raw,
-  .deletef             = dpl_s3_delete,
-  .genurl              = dpl_s3_genurl,
-  .copy                = dpl_s3_copy
-};
+dpl_status_t
+dpl_s3_get_capabilities(dpl_ctx_t *ctx,
+                        dpl_capability_t *maskp)
+{
+  if (maskp != NULL)
+    *maskp = DPL_CAP_BUCKETS|DPL_CAP_FNAMES;
+
+  return DPL_SUCCESS;
+}

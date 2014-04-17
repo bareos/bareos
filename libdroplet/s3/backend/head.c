@@ -33,21 +33,48 @@
  */
 
 #include "dropletp.h"
-#include <droplet/s3/s3.h>
+#include "droplet/s3/s3.h"
 
-dpl_backend_t   dpl_backend_s3 = {
-  "s3",
-  .get_capabilities    = dpl_s3_get_capabilities,
-  .list_all_my_buckets = dpl_s3_list_all_my_buckets,
-  .list_bucket         = dpl_s3_list_bucket,
-  .list_bucket_attrs   = dpl_s3_list_bucket_attrs, /* WARNING, UNTESTED */
-  .make_bucket         = dpl_s3_make_bucket,
-  .delete_bucket       = dpl_s3_delete_bucket,
-  .put                 = dpl_s3_put,
-  .get                 = dpl_s3_get,
-  .head                = dpl_s3_head,
-  .head_raw            = dpl_s3_head_raw,
-  .deletef             = dpl_s3_delete,
-  .genurl              = dpl_s3_genurl,
-  .copy                = dpl_s3_copy
-};
+dpl_status_t
+dpl_s3_head(dpl_ctx_t *ctx,
+            const char *bucket,
+            const char *resource,
+            const char *subresource,
+            const dpl_option_t *option,
+            dpl_ftype_t object_type,
+            const dpl_condition_t *condition,
+            dpl_dict_t **metadatap,
+            dpl_sysmd_t *sysmdp,
+            char **locationp)
+{
+  dpl_status_t ret, ret2;
+  dpl_dict_t *headers_reply = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
+                         object_type, condition, &headers_reply, locationp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+  
+  ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+  
+ end:
+
+  if (NULL != headers_reply)
+    dpl_dict_free(headers_reply);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
