@@ -47,12 +47,10 @@ dpl_status_t dpl_s3_add_authorization_to_headers(const dpl_req_t *, dpl_dict_t *
 
 /* src/s3/auth/v2.c */
 dpl_status_t dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *, dpl_dict_t *, const dpl_dict_t *);
-dpl_status_t dpl_s3_make_signature_v2(dpl_ctx_t *,
-                                      const char *, const char *,
-                                      const char *, const char *,
-                                      dpl_dict_t *, char *, unsigned int, unsigned int *);
+dpl_status_t dpl_s3_get_authorization_v2_params(const dpl_req_t *, dpl_dict_t *, char *);
 
 /* src/s3/auth/v4.c */
 dpl_status_t dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *, dpl_dict_t *, const dpl_dict_t *);
+dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t *, dpl_dict_t *, char *);
 
 #endif

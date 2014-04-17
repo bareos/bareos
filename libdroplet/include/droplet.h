@@ -545,7 +545,6 @@ typedef enum
     DPL_BEHAVIOR_EXPECT =      (1u<<1),     /*!< Use the Expect: 100-Continue */
     DPL_BEHAVIOR_VIRTUAL_HOSTING = (1u<<2), /*!< Use virtual hosting instead of path-style access */
     DPL_BEHAVIOR_KEEP_ALIVE =  (1u<<3),     /*!< Reuse connections */
-    DPL_BEHAVIOR_QUERY_STRING = (1u<<4),    /*!< Build a query string instead of a request */
   } dpl_behavior_flag_t;
 
 typedef struct

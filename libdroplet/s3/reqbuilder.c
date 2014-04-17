@@ -31,14 +31,11 @@
  *
  * https://github.com/scality/Droplet
  */
+
 #include "dropletp.h"
-#include "droplet/s3/replyparser.h"
-#include "droplet/s3/reqbuilder.h"
+#include "droplet/s3/s3.h"
 
 /** @file */
-
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
 
 static dpl_status_t
 add_metadata_to_headers(dpl_dict_t *metadata,
@@ -533,26 +530,11 @@ dpl_s3_req_build(const dpl_req_t *req,
         }
     }
 
-  if (req->behavior_flags & DPL_BEHAVIOR_QUERY_STRING)
+  ret2 = add_date_to_headers(headers);
+  if (DPL_SUCCESS != ret2)
     {
-      char str[128];
-
-      snprintf(str, sizeof (str), "%ld", req->expires);
-      ret2 = dpl_dict_add(headers, "Expires", str, 0);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-    }
-  else
-    {
-      ret2 = add_date_to_headers(headers);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
+      ret = ret2;
+      goto end;
     }
 
   if (NULL != headersp)
@@ -578,113 +560,77 @@ dpl_s3_req_build(const dpl_req_t *req,
 dpl_status_t
 dpl_s3_req_gen_url(const dpl_req_t *req,
                    dpl_dict_t *headers,
-                   char *buf,
-                   int len,
+                   char *buf, int len,
                    unsigned int *lenp)
 {
-  int ret, ret2;
-  char *p;
-  char *host;
-  char *method = dpl_method_str(req->method);
-  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
-  char str[128];
+  int           bucket;
+  char          resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1], *p;
+  dpl_status_t  ret;
+  dpl_dict_t    *query_params;
+  unsigned char is_first_param;
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_query_string");
 
+  query_params = dpl_dict_new(32);
+  if (query_params == NULL)
+    return DPL_FAILURE;
+
+  if (req->resource[0] != '/') {
+    resource_ue[0] = '/';
+    dpl_url_encode(req->resource, resource_ue + 1);
+  } else
+    dpl_url_encode(req->resource + 1, resource_ue);
+
   p = buf;
 
-  if (1 == req->ctx->use_https)
-    {
-      DPL_APPEND_STR("https");
-    }
+  if (req->ctx->use_https)
+    DPL_APPEND_STR("https");
   else
-    {
-      DPL_APPEND_STR("http");
-    }
-
+    DPL_APPEND_STR("http");
   DPL_APPEND_STR("://");
-
-  host = dpl_dict_get_value(headers, "Host");
-  if (NULL == host)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
-
-  DPL_APPEND_STR(host);
-
-  if (((1 == req->ctx->use_https) && (strcmp(req->port, "443"))) ||
-      ((0 == req->ctx->use_https) && (strcmp(req->port, "80"))))
-    {
-      snprintf(str, sizeof(str), ":%s", req->port);
-      DPL_APPEND_STR(str);
-    }
   
-  //resource
-  if ('/' != req->resource[0])
-    {
-      resource_ue[0] = '/';
-      dpl_url_encode(req->resource, resource_ue + 1);
-    }
-  else
-    {
-      resource_ue[0] = '/'; //some servers do not like encoded slash
-      dpl_url_encode(req->resource + 1, resource_ue + 1);
-    }
+  DPL_APPEND_STR(req->host);
+
+  if (( req->ctx->use_https && strcmp(req->port, "443")) ||
+      (!req->ctx->use_https && strcmp(req->port, "80"))) {
+    DPL_APPEND_STR(":");
+    DPL_APPEND_STR(req->port);
+  }
 
   DPL_APPEND_STR(resource_ue);
 
-  DPL_APPEND_STR("?");
+  if (req->ctx->sign_version == 2)
+    ret = dpl_s3_get_authorization_v2_params(req, query_params, resource_ue);
+  else if (req->ctx->sign_version == 4)
+    ret = dpl_s3_get_authorization_v4_params(req, query_params, resource_ue);
+  else
+    ret = DPL_FAILURE;
 
-  DPL_APPEND_STR("AWSAccessKeyId=");
-  DPL_APPEND_STR(req->ctx->access_key);
+  is_first_param = 1;
+  for (bucket = 0; bucket < query_params->n_buckets; bucket++) {
+    dpl_dict_var_t    *param = query_params->buckets[bucket];
 
-  if (req->ctx->sign_version == 2) {
-    char sign_str[1024];
-    u_int sign_len;
-    char hmac_str[1024];
-    u_int hmac_len;
-    char base64_str[1024];
-    u_int base64_len;
-    char base64_ue_str[1024];
+    while (param != NULL) {
+      if (ret == DPL_SUCCESS) {
+        if (is_first_param) {
+          DPL_APPEND_STR("?");
+          is_first_param = 0;
+        } else
+          DPL_APPEND_STR("&");
 
-    DPL_APPEND_STR("&");
-
-    DPL_APPEND_STR("Signature=");
-    ret2 = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue,
-                                    req->subresource, headers,
-                                    sign_str, sizeof (sign_str), &sign_len);
-    if (DPL_SUCCESS != ret2)
-      {
-        ret = ret2;
-        goto end;
+        DPL_APPEND_STR(param->key);
+        DPL_APPEND_STR("=");
+        DPL_APPEND_STR(dpl_sbuf_get_str(param->val->string));
       }
 
-    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
-
-    hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
-    
-    base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
-    base64_str[base64_len] = 0; //XXX
-
-    dpl_url_encode(base64_str, base64_ue_str);
-    DPL_APPEND_STR(base64_ue_str);
-  } else if (req->ctx->sign_version == 4) {
-    DPRINTF("TODO: Support signing version 4 to dpl_s3_req_gen_url()\n");
+      param = param->prev;
+    }
   }
 
-  DPL_APPEND_STR("&");
-
-  DPL_APPEND_STR("Expires=");
-  snprintf(str, sizeof (str), "%ld", req->expires);
-  DPL_APPEND_STR(str);
-
-  if (NULL != lenp)
+  if (lenp != NULL)
     *lenp = (p - buf);
 
-  ret = DPL_SUCCESS;
-
- end:
+  dpl_dict_free(query_params);
 
   return ret;
 }

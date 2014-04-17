@@ -206,14 +206,14 @@ int dpl_base64_init(void);
     if (len < 1)                                                \
       return DPL_FAILURE;                                       \
     *p = (Char);p++;len--;                                      \
-  } while (0);
+  } while (0)
 
 #define DPL_APPEND_BUF(Buf, Len)                                \
   do {                                                          \
     if (len < (Len))                                            \
       return DPL_FAILURE;                                       \
     memcpy(p, (Buf), (Len)); p += (Len); len -= (Len);          \
-  } while (0);
+  } while (0)
 
 #define DPL_APPEND_STR(Str) DPL_APPEND_BUF((Str), strlen(Str))
 

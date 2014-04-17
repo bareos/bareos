@@ -33,11 +33,7 @@
  */
 
 #include "dropletp.h"
-#include "droplet/s3/replyparser.h"
-#include "droplet/s3/reqbuilder.h"
-
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#include "droplet/s3/s3.h"
 
 static int
 var_cmp(const void *p1,
@@ -54,12 +50,13 @@ var_cmp(const void *p1,
   return strcmp(var1->key, var2->key);
 }
 
-dpl_status_t
+static dpl_status_t
 dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
                          const char *method,
                          const char *bucket,
                          const char *resource,
                          const char *subresource,
+                         char *date,
                          dpl_dict_t *headers,
                          char *buf,
                          unsigned int len,
@@ -77,33 +74,28 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
   DPL_APPEND_STR("\n");
 
   //md5
-  value = dpl_dict_get_value(headers, "Content-MD5");
-  if (NULL != value)
-    DPL_APPEND_STR(value);
+  if (headers != NULL) {
+    value = dpl_dict_get_value(headers, "Content-MD5");
+    if (NULL != value)
+      DPL_APPEND_STR(value);
+  }
   DPL_APPEND_STR("\n");
 
   //content type
-  value = dpl_dict_get_value(headers, "Content-Type");
-  if (NULL != value)
-    DPL_APPEND_STR(value);
+  if (headers != NULL) {
+    value = dpl_dict_get_value(headers, "Content-Type");
+    if (NULL != value)
+      DPL_APPEND_STR(value);
+  }
   DPL_APPEND_STR("\n");
 
   //expires or date
-  value = dpl_dict_get_value(headers, "Expires");
-  if (NULL != value)
-    {
-      DPL_APPEND_STR(value);
-    }
-  else
-    {
-      value = dpl_dict_get_value(headers, "Date");
-      if (NULL != value)
-        DPL_APPEND_STR(value);
-    }
+  if (date != NULL)
+    DPL_APPEND_STR(date);
   DPL_APPEND_STR("\n");
 
   //x-amz headers
-  {
+  if (headers != NULL) {
     int bucket;
     dpl_dict_var_t *var;
     dpl_vec_t *vec;
@@ -150,23 +142,18 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
 
   //resource
 
-  if (NULL != bucket)
-    {
-      DPL_APPEND_STR("/");
-      DPL_APPEND_STR(bucket);
-    }
+  if (NULL != bucket) {
+    DPL_APPEND_STR("/");
+    DPL_APPEND_STR(bucket);
+  }
 
   if (NULL != resource)
-    {
-      //DPL_APPEND_STR("/");
       DPL_APPEND_STR(resource);
-    }
 
-  if (NULL != subresource)
-    {
-      DPL_APPEND_STR("?");
-      DPL_APPEND_STR(subresource);
-    }
+  if (NULL != subresource) {
+    DPL_APPEND_STR("?");
+    DPL_APPEND_STR(subresource);
+  }
 
   if (NULL != lenp)
     *lenp = p - buf;
@@ -189,6 +176,7 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
   char base64_str[1024];
   u_int base64_len;
   char auth_str[1024];
+  char  *date_str = NULL;
 
   //resource
   if ('/' != req->resource[0]) {
@@ -197,7 +185,10 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
   } else
     dpl_url_encode_no_slashes(req->resource, resource_ue);
 
-  ret = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue, req->subresource, headers,
+  date_str = dpl_dict_get_value(headers, "Date");
+
+  ret = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue, req->subresource,
+                                 date_str, headers,
                                  sign_str, sizeof (sign_str), &sign_len);
   if (DPL_SUCCESS != ret)
     return DPL_FAILURE;
@@ -211,4 +202,53 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
   snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
 
   return dpl_dict_add(headers, "Authorization", auth_str, 0);
+}
+
+dpl_status_t
+dpl_s3_get_authorization_v2_params(const dpl_req_t *req, dpl_dict_t *query_params, char *resource_ue)
+{
+  dpl_status_t  ret;
+  char          expires_str[128];
+
+  snprintf(expires_str, sizeof(expires_str), "%ld", req->expires);
+
+  ret = dpl_dict_add(query_params, "AWSAccessKeyId", req->ctx->access_key, 0);
+  if (ret != DPL_SUCCESS)
+    return DPL_FAILURE;
+
+  {
+    char sign_str[1024];
+    u_int sign_len;
+    char hmac_str[1024];
+    u_int hmac_len;
+    char base64_str[1024];
+    u_int base64_len;
+    char base64_ue_str[1024];
+    const char *method = dpl_method_str(req->method);
+
+    ret = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue, NULL,
+                                   expires_str, NULL,
+                                   sign_str, sizeof (sign_str), &sign_len);
+    if (ret != DPL_SUCCESS)
+      return DPL_FAILURE;
+
+    DPRINTF("sign:\n%s\n", sign_str);
+
+    hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
+
+    base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
+    base64_str[base64_len] = 0;
+
+    dpl_url_encode(base64_str, base64_ue_str);
+
+    ret = dpl_dict_add(query_params, "Signature", base64_ue_str, 0);
+    if (ret != DPL_SUCCESS)
+      return DPL_FAILURE;
+  }
+
+  ret = dpl_dict_add(query_params, "Expires", expires_str, 0);
+  if (ret != DPL_SUCCESS)
+    return DPL_FAILURE;
+
+  return DPL_SUCCESS;
 }

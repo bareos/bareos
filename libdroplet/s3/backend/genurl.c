@@ -48,6 +48,7 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
               char **locationp)
 {
   int           ret, ret2;
+  dpl_conn_t   *conn = NULL;
   dpl_dict_t    *headers_request = NULL;
   dpl_req_t     *req = NULL;
   dpl_s3_req_mask_t req_mask = 0u;
@@ -62,8 +63,6 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
     }
 
   dpl_req_set_method(req, DPL_METHOD_GET);
-
-  dpl_req_add_behavior(req, DPL_BEHAVIOR_QUERY_STRING);
 
   if (NULL == bucket)
     {
@@ -99,6 +98,20 @@ dpl_s3_genurl(dpl_ctx_t *ctx,
 
   //build request
   ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_try_connect(ctx, req, &conn);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_add_host_to_headers(req, headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

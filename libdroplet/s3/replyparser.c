@@ -34,9 +34,6 @@
 #include "dropletp.h"
 #include <droplet/s3/s3.h>
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
-
 /** 
  * parse a HTTP header into a suitable metadata or sysmd
  * 
