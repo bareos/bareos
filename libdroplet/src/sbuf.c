@@ -34,25 +34,22 @@
 #include "dropletp.h"
 
 dpl_sbuf_t *
-dpl_sbuf_new(int size)
+dpl_sbuf_new(size_t size)
 {
   dpl_sbuf_t *sb = NULL;
 
   sb = malloc(sizeof(dpl_sbuf_t));
   if (NULL == sb)
-    {
-      return NULL;
-    }
+    return NULL;
 
-  sb->buf=malloc(size);
-  if (NULL == sb->buf)
-    {
-      free(sb);
-      return NULL;
-    }
+  sb->buf = malloc(size);
+  if (NULL == sb->buf) {
+    free(sb);
+    return NULL;
+  }
   
-  sb->len=0;
-  sb->allocated=size;
+  sb->len = 0;
+  sb->allocated = size;
 
   return sb;
 }
@@ -64,17 +61,15 @@ dpl_sbuf_new_from_str(const char *str)
 
   sb = malloc(sizeof(dpl_sbuf_t));
   if (NULL == sb)
-    {
-      return NULL;
-    }
+    return NULL;
 
   sb->allocated = strlen(str) + 1;
-  sb->buf = malloc(sb->allocated);
-  if (NULL == sb->buf)
-    {
-      free(sb);
-      return NULL;
-    }
+  sb->buf       = malloc(sb->allocated);
+
+  if (NULL == sb->buf) {
+    free(sb);
+    return NULL;
+  }
   memcpy(sb->buf, str, sb->allocated);
   
   sb->len = sb->allocated - 1;
@@ -83,21 +78,41 @@ dpl_sbuf_new_from_str(const char *str)
 }
 
 dpl_status_t
-dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, int len)
+dpl_sbuf_url_encode(dpl_sbuf_t *sb)
 {
-  if (sb->len+len+1 > sb->allocated)
-    {
-      char *tmp = NULL;
+  char          *data;
+  size_t        expected_size, data_size;
+                                
+  expected_size = DPL_URL_LENGTH(sb->len) + 1;
+  
+  data = (char *) malloc(expected_size);
+  if (data == NULL)
+    return DPL_FAILURE;
 
-      tmp = realloc(sb->buf, sb->len+len+1);
-      if (NULL == tmp)
-	{
-	  return DPL_FAILURE;
-	}
+  data_size = dpl_url_encode(sb->buf, data);
 
-      sb->buf = tmp;
-      sb->allocated = sb->len+len+1;
-    }
+  free(sb->buf);
+  sb->buf = data;
+
+  sb->len       = data_size;
+  sb->allocated = expected_size;
+
+  return DPL_SUCCESS;
+}
+
+dpl_status_t
+dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, size_t len)
+{
+  if (sb->len+len+1 > sb->allocated) {
+    char *tmp = NULL;
+
+    tmp = realloc(sb->buf, sb->len+len+1);
+    if (NULL == tmp)
+      return DPL_FAILURE;
+
+    sb->buf = tmp;
+    sb->allocated = sb->len+len+1;
+  }
 
   memcpy(&sb->buf[sb->len], buf, len);
   sb->buf[sb->len+len] = '\0';
@@ -141,5 +156,5 @@ dpl_sbuf_free(dpl_sbuf_t *sb)
 void
 dpl_sbuf_print(FILE *f, dpl_sbuf_t *sb)
 {
-  fprintf(f, "%.*s", sb->len, sb->buf);
+  fprintf(f, "%.*s", (int) sb->len, sb->buf);
 }

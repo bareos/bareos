@@ -168,223 +168,44 @@ add_conditions_to_headers(const dpl_condition_t *condition,
   return ret;
 }
 
-static int
-var_cmp(const void *p1,
-        const void *p2)
-{
-  dpl_value_t *val1 = *(dpl_value_t **) p1;
-  dpl_value_t *val2 = *(dpl_value_t **) p2;
-  dpl_dict_var_t *var1 = (dpl_dict_var_t *) val1->ptr;
-  dpl_dict_var_t *var2 = (dpl_dict_var_t *) val2->ptr;
-
-  assert(var1->val->type == DPL_VALUE_STRING);
-  assert(var2->val->type == DPL_VALUE_STRING);
-
-  return strcmp(var1->key, var2->key);
-}
-
-static dpl_status_t
-make_signature(dpl_ctx_t *ctx,
-               const char *method,
-               const char *bucket,
-               const char *resource,
-               const char *subresource,
-               dpl_dict_t *headers,
-               char *buf,
-               unsigned int len,
-               unsigned int *lenp)
-{
-  char *p;
-  //char *tmp_str;
-  char *value;
-  int ret;
-
-  p = buf;
-
-  //method
-  DPL_APPEND_STR(method);
-  DPL_APPEND_STR("\n");
-
-  //md5
-  value = dpl_dict_get_value(headers, "Content-MD5");
-  if (NULL != value)
-    DPL_APPEND_STR(value);
-  DPL_APPEND_STR("\n");
-
-  //content type
-  value = dpl_dict_get_value(headers, "Content-Type");
-  if (NULL != value)
-    DPL_APPEND_STR(value);
-  DPL_APPEND_STR("\n");
-
-  //expires or date
-  value = dpl_dict_get_value(headers, "Expires");
-  if (NULL != value)
-    {
-      DPL_APPEND_STR(value);
-    }
-  else
-    {
-      value = dpl_dict_get_value(headers, "Date");
-      if (NULL != value)
-        DPL_APPEND_STR(value);
-    }
-  DPL_APPEND_STR("\n");
-
-  //x-amz headers
-  {
-    int bucket;
-    dpl_dict_var_t *var;
-    dpl_vec_t *vec;
-    int i;
-
-    vec = dpl_vec_new(2, 2);
-    if (NULL == vec)
-      return DPL_ENOMEM;
-
-    for (bucket = 0;bucket < headers->n_buckets;bucket++)
-      {
-        for (var = headers->buckets[bucket];var;var = var->prev)
-          {
-            if (!strncmp(var->key, "x-amz-", 6))
-              {
-                assert(DPL_VALUE_STRING == var->val->type);
-                DPRINTF("%s: %s\n", var->key, var->val->string);
-                ret = dpl_vec_add(vec, var);
-                if (DPL_SUCCESS != ret)
-                  {
-                    dpl_vec_free(vec);
-                    return DPL_FAILURE;
-                  }
-              }
-          }
-      }
-
-    dpl_vec_sort(vec, var_cmp);
-
-    for (i = 0;i < vec->n_items;i++)
-      {
-        var = (dpl_dict_var_t *) dpl_vec_get(vec, i);
-
-        assert(DPL_VALUE_STRING == var->val->type);
-        DPRINTF("%s:%s\n", var->key, var->val->string);
-        DPL_APPEND_STR(var->key);
-        DPL_APPEND_STR(":");
-        DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
-        DPL_APPEND_STR("\n");
-      }
-
-    dpl_vec_free(vec);
-  }
-
-  //resource
-
-  if (NULL != bucket)
-    {
-      DPL_APPEND_STR("/");
-      DPL_APPEND_STR(bucket);
-    }
-
-  if (NULL != resource)
-    {
-      //DPL_APPEND_STR("/");
-      DPL_APPEND_STR(resource);
-    }
-
-  if (NULL != subresource)
-    {
-      DPL_APPEND_STR("?");
-      DPL_APPEND_STR(subresource);
-    }
-
-  if (NULL != lenp)
-    *lenp = p - buf;
-
-  return DPL_SUCCESS;
-}
-
 static dpl_status_t
 add_date_to_headers(dpl_dict_t *headers)
 {
-  int ret, ret2;
+  int ret;
   time_t t;
   struct tm tm_buf;
   char date_str[128];
 
   (void) time(&t);
+
   ret = strftime(date_str, sizeof (date_str), "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&t, &tm_buf));
-  if (0 == ret)
+  if (ret == 0)
     return DPL_FAILURE;
-
-  ret2 = dpl_dict_add(headers, "Date", date_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
+  else
+    return dpl_dict_add(headers, "Date", date_str, 0);
 }
 
-static dpl_status_t
-add_authorization_to_headers(const dpl_req_t *req,
-                             dpl_dict_t *headers)
+dpl_status_t
+dpl_s3_add_authorization_to_headers(const dpl_req_t *req,
+                                    dpl_dict_t *headers,
+                                    const dpl_dict_t *query_params)
 {
-  int ret, ret2;
-  const char *method = dpl_method_str(req->method);
-  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
-  char sign_str[1024];
-  u_int sign_len;
-  char hmac_str[1024];
-  u_int hmac_len;
-  char base64_str[1024];
-  u_int base64_len;
-  char auth_str[1024];
+  dpl_status_t  ret;
 
-  if (NULL == req->ctx->secret_key)
-    {
-      DPL_TRACE(req->ctx, DPL_TRACE_REQ, "no secret_key, proceeding unauthenticated");
-      return DPL_SUCCESS;
-    }
+  if (NULL == req->ctx->secret_key) {
+    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "no secret_key, proceeding unauthenticated");
+    return DPL_SUCCESS;
+  }
 
-  ret = DPL_SUCCESS;
-  //resource
-  if ('/' != req->resource[0])
-    {
-      resource_ue[0] = '/';
-      dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
-    }
-  else
-    {
-      dpl_url_encode_no_slashes(req->resource, resource_ue);
-    }
-
-  ret = make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
-  if (DPL_SUCCESS != ret)
-    return DPL_FAILURE;
-
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
-
-  hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
-
-  base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
-
-  snprintf(auth_str, sizeof (auth_str), "AWS %s:%.*s", req->ctx->access_key, base64_len, base64_str);
-
-  ret2 = dpl_dict_add(headers, "Authorization", auth_str, 0);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret = DPL_SUCCESS;
-
- end:
+  if (req->ctx->sign_version == 2)
+    ret = dpl_s3_add_authorization_v2_to_headers(req, headers, query_params);
+  else if (req->ctx->sign_version == 4)
+    ret = dpl_s3_add_authorization_v4_to_headers(req, headers, query_params);
+  else {
+    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "incorrect signing version (%d)",
+              req->ctx->sign_version);
+    ret = DPL_FAILURE;
+  }
 
   return ret;
 }
@@ -734,13 +555,6 @@ dpl_s3_req_build(const dpl_req_t *req,
         }
     }
 
-  ret2 = add_authorization_to_headers(req, headers);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   if (NULL != headersp)
     {
       *headersp = headers;
@@ -757,6 +571,10 @@ dpl_s3_req_build(const dpl_req_t *req,
   return ret;
 }
 
+/**
+ * @todo Support signing version 4 to gen_url command
+ */
+
 dpl_status_t
 dpl_s3_req_gen_url(const dpl_req_t *req,
                    dpl_dict_t *headers,
@@ -769,13 +587,6 @@ dpl_s3_req_gen_url(const dpl_req_t *req,
   char *host;
   char *method = dpl_method_str(req->method);
   char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
-  char sign_str[1024];
-  u_int sign_len;
-  char hmac_str[1024];
-  u_int hmac_len;
-  char base64_str[1024];
-  u_int base64_len;
-  char base64_ue_str[1024];
   char str[128];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_gen_query_string");
@@ -828,27 +639,39 @@ dpl_s3_req_gen_url(const dpl_req_t *req,
   DPL_APPEND_STR("AWSAccessKeyId=");
   DPL_APPEND_STR(req->ctx->access_key);
 
-  DPL_APPEND_STR("&");
+  if (req->ctx->sign_version == 2) {
+    char sign_str[1024];
+    u_int sign_len;
+    char hmac_str[1024];
+    u_int hmac_len;
+    char base64_str[1024];
+    u_int base64_len;
+    char base64_ue_str[1024];
 
-  DPL_APPEND_STR("Signature=");
-  ret2 = make_signature(req->ctx, method, req->bucket, resource_ue, req->subresource, headers, sign_str, sizeof (sign_str), &sign_len);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+    DPL_APPEND_STR("&");
 
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
+    DPL_APPEND_STR("Signature=");
+    ret2 = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue,
+                                    req->subresource, headers,
+                                    sign_str, sizeof (sign_str), &sign_len);
+    if (DPL_SUCCESS != ret2)
+      {
+        ret = ret2;
+        goto end;
+      }
 
-  hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
+    DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
 
-  base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
+    hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
+    
+    base64_len = dpl_base64_encode((const u_char *) hmac_str, hmac_len, (u_char *) base64_str);
+    base64_str[base64_len] = 0; //XXX
 
-  base64_str[base64_len] = 0; //XXX
-
-  dpl_url_encode(base64_str, base64_ue_str);
-
-  DPL_APPEND_STR(base64_ue_str);
+    dpl_url_encode(base64_str, base64_ue_str);
+    DPL_APPEND_STR(base64_ue_str);
+  } else if (req->ctx->sign_version == 4) {
+    DPRINTF("TODO: Support signing version 4 to dpl_s3_req_gen_url()\n");
+  }
 
   DPL_APPEND_STR("&");
 

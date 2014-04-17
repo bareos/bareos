@@ -478,6 +478,38 @@ dpl_strlower(char *str)
 }
 
 /**
+ * compute HMAC-xxx
+ *
+ * @param key_buf
+ * @param key_len
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ * @param digest_lenp
+ *
+ * @return digest_len
+ */
+unsigned int
+dpl_hmac(const char *key_buf,
+         unsigned int key_len,
+         const char *data_buf,
+         unsigned int data_len,
+         char *digest_buf,
+         const EVP_MD *md)
+{
+  HMAC_CTX ctx;
+  u_int digest_len;
+
+  HMAC_CTX_init(&ctx);
+  HMAC_Init_ex(&ctx, key_buf, key_len, md, NULL);
+  HMAC_Update(&ctx, (u_char *) data_buf, data_len);
+  HMAC_Final(&ctx, (u_char *) digest_buf, &digest_len);
+  HMAC_CTX_cleanup(&ctx);
+
+  return digest_len;
+}
+
+/**
  * compute HMAC-SHA1
  *
  * @param key_buf
@@ -496,16 +528,49 @@ dpl_hmac_sha1(const char *key_buf,
               unsigned int data_len,
               char *digest_buf)
 {
-  HMAC_CTX ctx;
-  u_int digest_len;
+  return dpl_hmac(key_buf, key_len, data_buf, data_len, digest_buf, EVP_sha1());
+}
 
-  HMAC_CTX_init(&ctx);
-  HMAC_Init_ex(&ctx, key_buf, key_len, EVP_sha1(), NULL);
-  HMAC_Update(&ctx, (u_char *) data_buf, data_len);
-  HMAC_Final(&ctx, (u_char *) digest_buf, &digest_len);
-  HMAC_CTX_cleanup(&ctx);
+/**
+ * compute HMAC-SHA256
+ *
+ * @param key_buf
+ * @param key_len
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ * @param digest_lenp
+ *
+ * @return digest_len
+ */
+unsigned int
+dpl_hmac_sha256(const char *key_buf,
+                unsigned int key_len,
+                const char *data_buf,
+                unsigned int data_len,
+                char *digest_buf)
+{
+  return dpl_hmac(key_buf, key_len, data_buf, data_len, digest_buf, EVP_sha256());
+}
 
-  return digest_len;
+/**
+ * compute SHA256
+ *
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ */
+
+void
+dpl_sha256(const char *data_buf,
+           unsigned int data_len,
+           char *digest_buf)
+{
+  SHA256_CTX    ctx;
+
+  SHA256_Init(&ctx);
+  SHA256_Update(&ctx, data_buf, data_len);
+  SHA256_Final(digest_buf, &ctx);
 }
 
 /**/
@@ -675,42 +740,42 @@ dpl_base64_decode(const u_char *in_buf,
  *
  * @return
  */
-void
+size_t
 dpl_url_encode(const char *str,
                char *str_ue)
 {
-  int   i;
+  size_t   i;
 
-  for (i = 0;*str;str++)
-    {
-      if (isalnum(*str))
-        str_ue[i++] = *str;
-      else
-        {
-          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
-          i+=3;
-        }
+  for (i = 0; *str != '\0'; str++) {
+    if (isalnum(*str))
+      str_ue[i++] = *str;
+    else {
+      sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
+      i+=3;
     }
+  }
   str_ue[i] = 0;
+
+  return i;
 }
 
-void
+size_t
 dpl_url_encode_no_slashes(const char *str,
                           char *str_ue)
 {
-  int   i;
+  size_t   i;
 
-  for (i = 0;*str;str++)
-    {
-      if (isalnum(*str) || *str == '/')
-        str_ue[i++] = *str;
-      else
-        {
-          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
-          i+=3;
-        }
+  for (i = 0; *str != '\0'; str++) {
+    if (isalnum(*str) || *str == '/')
+      str_ue[i++] = *str;
+    else {
+      sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
+      i+=3;
     }
+  }
   str_ue[i] = 0;
+
+  return i;
 }
 
 /**

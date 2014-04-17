@@ -31,6 +31,8 @@ libdroplet_la_SOURCES = \
 	s3/backend.c \
 	s3/replyparser.c \
 	s3/reqbuilder.c \
+	s3/auth/v2.c \
+	s3/auth/v4.c \
 	cdmi/backend.c \
 	cdmi/replyparser.c \
 	cdmi/reqbuilder.c \

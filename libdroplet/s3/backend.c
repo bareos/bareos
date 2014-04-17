@@ -112,6 +112,13 @@ dpl_s3_list_all_my_buckets(dpl_ctx_t *ctx,
       goto end;
     }
 
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -309,6 +316,13 @@ dpl_s3_list_bucket(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, query_params);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -604,7 +618,15 @@ dpl_s3_make_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL,
+                                  header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -730,6 +752,13 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -905,6 +934,13 @@ dpl_s3_put(dpl_ctx_t *ctx,
       goto end;
     }
 
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -1069,6 +1105,13 @@ dpl_s3_get(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1316,6 +1359,13 @@ dpl_s3_head_raw(dpl_ctx_t *ctx,
       goto end;
     }
 
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
   ret2 = dpl_req_gen_http_request(ctx, req, headers_request, NULL, header, sizeof (header), &header_len);
   if (DPL_SUCCESS != ret2)
     {
@@ -1502,6 +1552,13 @@ dpl_s3_delete(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1790,6 +1847,13 @@ dpl_s3_copy(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

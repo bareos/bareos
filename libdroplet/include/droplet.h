@@ -63,6 +63,8 @@ extern "C" {
 #define DPL_DEFAULT_WRITE_TIMEOUT       30
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
 #define DPL_DEFAULT_MAX_REDIRECTS       10
+#define DPL_DEFAULT_SIGN_VERSION        4
+#define DPL_DEFAULT_AWS_REGION          "us-east-1"
 
 extern int dpl_header_size;
 
@@ -466,6 +468,8 @@ typedef struct dpl_ctx
   char *base_path;            /*!< or RootURI */
   char *access_key;
   char *secret_key;
+  unsigned char sign_version; /*!< S3 Auth signature version */
+  char aws_region[32];        /*!< AWS Region */
   char *ssl_cert_file;
   char *ssl_key_file;
   char *ssl_password;
