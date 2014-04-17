@@ -709,8 +709,14 @@ int umask(int)
 void *dlopen(const char *filename, int mode)
 {
    void *handle;
+   DWORD dwFlags = 0;
 
-   handle = LoadLibraryEx(filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+   dwFlags |= LOAD_WITH_ALTERED_SEARCH_PATH;
+   if (mode & RTLD_NOLOAD) {
+      dwFlags |= LOAD_LIBRARY_AS_DATAFILE;
+   }
+
+   handle = LoadLibraryEx(filename, NULL, dwFlags);
 
    return handle;
 }
