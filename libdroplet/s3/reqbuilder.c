@@ -194,13 +194,13 @@ dpl_s3_add_authorization_to_headers(const dpl_req_t *req,
     return DPL_SUCCESS;
   }
 
-  if (req->ctx->sign_version == 2)
+  if (req->ctx->aws_auth_sign_version == 2)
     ret = dpl_s3_add_authorization_v2_to_headers(req, headers, query_params);
-  else if (req->ctx->sign_version == 4)
+  else if (req->ctx->aws_auth_sign_version == 4)
     ret = dpl_s3_add_authorization_v4_to_headers(req, headers, query_params);
   else {
     DPL_TRACE(req->ctx, DPL_TRACE_REQ, "incorrect signing version (%d)",
-              req->ctx->sign_version);
+              req->ctx->aws_auth_sign_version);
     ret = DPL_FAILURE;
   }
 
@@ -599,9 +599,9 @@ dpl_s3_req_gen_url(const dpl_req_t *req,
 
   DPL_APPEND_STR(resource_ue);
 
-  if (req->ctx->sign_version == 2)
+  if (req->ctx->aws_auth_sign_version == 2)
     ret = dpl_s3_get_authorization_v2_params(req, query_params, resource_ue);
-  else if (req->ctx->sign_version == 4)
+  else if (req->ctx->aws_auth_sign_version == 4)
     ret = dpl_s3_get_authorization_v4_params(req, query_params, resource_ue);
   else
     ret = DPL_FAILURE;

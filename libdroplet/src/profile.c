@@ -308,11 +308,11 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->secret_key)
         return -1;
     }
-  else if (!strcmp(var, "sign_version"))
+  else if (!strcmp(var, "aws_auth_sign_version"))
     {
-      ctx->sign_version = atoi(value);
-      if (ctx->sign_version != 2 && ctx->sign_version != 4) {
-        DPL_LOG(ctx, DPL_ERROR, "sign_version must be set 2 or 4");
+      ctx->aws_auth_sign_version = atoi(value);
+      if (ctx->aws_auth_sign_version != 2 && ctx->aws_auth_sign_version != 4) {
+        DPL_LOG(ctx, DPL_ERROR, "aws_auth_sign_version must be set 2 or 4");
         return -1;
       }        
     }
@@ -562,7 +562,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->base_path = strdup(DPL_DEFAULT_BASE_PATH);
   if (NULL == ctx->base_path)
     return DPL_ENOMEM;
-  ctx->sign_version = DPL_DEFAULT_SIGN_VERSION;
+  ctx->aws_auth_sign_version = DPL_DEFAULT_AWS_AUTH_SIGN_VERSION;
   strncpy(ctx->aws_region, DPL_DEFAULT_AWS_REGION, sizeof(ctx->aws_region));
 
   return DPL_SUCCESS;
