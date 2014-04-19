@@ -542,18 +542,8 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
 
 /** Use our strdup with smartalloc */
-#ifndef HAVE_WXCONSOLE
 #undef strdup
 #define strdup(buf) bad_call_on_strdup_use_bstrdup(buf)
-#else
-/* Groan, WxWidgets has its own way of doing NLS so cleanup */
-#ifndef ENABLE_NLS
-#undef _
-#undef setlocale
-#undef textdomain
-#undef bindtextdomain
-#endif
-#endif
 
 /** Use our fgets which handles interrupts */
 #undef fgets
@@ -612,7 +602,7 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 #ifdef HAVE_SUN_OS
 /*
  * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the conncurrency level.
+ * so we need to explictly increase the concurrency level.
  */
 #ifdef USE_THR_SETCONCURRENCY
 #include <thread.h>
