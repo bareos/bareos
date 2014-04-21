@@ -45,7 +45,9 @@ static int max_path_len = 0;
 static int trunc_fname = 0;
 static int trunc_path = 0;
 static int attrs = 0;
-static CONFIG *config;
+
+DIRRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 
 static JCR *jcr;
 
@@ -128,8 +130,8 @@ main (int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   config = new_config_parser();
-   parse_dir_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
    MSGSRES *msg;
 
@@ -139,9 +141,9 @@ main (int argc, char *const *argv)
    }
 
    jcr = new_jcr(sizeof(JCR), NULL);
-   jcr->fileset = (FILESETRES *)GetResWithName(R_FILESET, fileset_name);
+   jcr->res.fileset = (FILESETRES *)GetResWithName(R_FILESET, fileset_name);
 
-   if (jcr->fileset == NULL) {
+   if (jcr->res.fileset == NULL) {
       fprintf(stderr, "%s: Fileset not found\n", fileset_name);
 
       FILESETRES *var;
@@ -162,10 +164,10 @@ main (int argc, char *const *argv)
    find_files(jcr, ff, print_file, NULL);
 
    free_jcr(jcr);
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    term_last_jobs_list();
@@ -345,8 +347,8 @@ static void count_files(FF_PKT *ar)
 {
    int fnl, pnl;
    char *l, *p;
-   char file[MAXSTRING];
-   char spath[MAXSTRING];
+   POOL_MEM file(PM_NAME);
+   POOL_MEM spath(PM_NAME);
 
    num_files++;
 
@@ -381,12 +383,11 @@ static void count_files(FF_PKT *ar)
       fnl = 255;
       trunc_fname++;
    }
+
    if (fnl > 0) {
-      strncpy(file, l, fnl);          /* copy filename */
-      file[fnl] = 0;
+      pm_strcpy(file, l);             /* copy filename */
    } else {
-      file[0] = ' ';                  /* blank filename */
-      file[1] = 0;
+      pm_strcpy(file, " ");           /* blank filename */
    }
 
    pnl = l - ar->fname;
@@ -398,23 +399,22 @@ static void count_files(FF_PKT *ar)
       pnl = 255;
       trunc_path++;
    }
-   strncpy(spath, ar->fname, pnl);
-   spath[pnl] = 0;
+
+   pm_strcpy(spath, ar->fname);
    if (pnl == 0) {
-      spath[0] = ' ';
-      spath[1] = 0;
+      pm_strcpy(spath, " ");
       printf(_("========== Path length is zero. File=%s\n"), ar->fname);
    }
    if (debug_level >= 10) {
-      printf(_("Path: %s\n"), spath);
-      printf(_("File: %s\n"), file);
+      printf(_("Path: %s\n"), spath.c_str());
+      printf(_("File: %s\n"), file.c_str());
    }
 
 }
 
 static bool copy_fileset(FF_PKT *ff, JCR *jcr)
 {
-   FILESETRES *jcr_fileset = jcr->fileset;
+   FILESETRES *jcr_fileset = jcr->res.fileset;
    int num;
    bool include = true;
 
