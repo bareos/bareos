@@ -37,7 +37,7 @@ extern bool GetWindowsVersionString(char *buf, int maxsiz);
 static void list_terminated_jobs(STATUS_PKT *sp);
 static void list_running_jobs(STATUS_PKT *sp);
 static void list_status_header(STATUS_PKT *sp);
-static void sendit(const char *msg, int len, STATUS_PKT *sp);
+static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp);
 static const char *level_to_str(int level);
 
 /* Static variables */
@@ -70,7 +70,7 @@ static void output_status(STATUS_PKT *sp)
    list_terminated_jobs(sp);
 }
 
-static void  list_status_header(STATUS_PKT *sp)
+static void list_status_header(STATUS_PKT *sp)
 {
    POOL_MEM msg(PM_MESSAGE);
    char b1[32], b2[32], b3[32], b4[32], b5[35];
@@ -79,79 +79,79 @@ static void  list_status_header(STATUS_PKT *sp)
 
    len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"),
               my_name, VERSION, BDATE, VSS, HOST_OS, DISTNAME, DISTVER);
-   sendit(msg.c_str(), len, sp);
+   sendit(msg, len, sp);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"),
-        dt, num_jobs_run, job_count());
-   sendit(msg.c_str(), len, sp);
+   len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d running=%d.\n"), dt, num_jobs_run, job_count());
+   sendit(msg, len, sp);
+
 #if defined(HAVE_WIN32)
    char buf[300];
    if (GetWindowsVersionString(buf, sizeof(buf))) {
       len = Mmsg(msg, "%s\n", buf);
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
    }
    if (debug_level > 0) {
       if (!privs) {
          privs = enable_backup_privileges(NULL, 1);
       }
-      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient?"enabled":"disabled", privs);
-      sendit(msg.c_str(), len, sp);
+      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient ? "enabled" : "disabled", privs);
+      sendit(msg, len, sp);
       len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
-                 p_OpenProcessToken?"":"!",
-                 p_AdjustTokenPrivileges?"":"!",
-                 p_LookupPrivilegeValue?"":"!",
-                 p_CreateFileA?"":"!",
-                 p_CreateFileW?"":"!");
-      sendit(msg.c_str(), len, sp);
+                 p_OpenProcessToken ? "" : "!",
+                 p_AdjustTokenPrivileges ? "" : "!",
+                 p_LookupPrivilegeValue ? "" : "!",
+                 p_CreateFileA ? "" : "!",
+                 p_CreateFileW ? "" : "!");
+      sendit(msg, len, sp);
       len = Mmsg(msg, " %sWUL,%sWMKD,%sGFAA,%sGFAW,%sGFAEA,%sGFAEW,%sSFAA,%sSFAW,%sBR,%sBW,%sSPSP,\n",
-                 p_wunlink?"":"!",
-                 p_wmkdir?"":"!",
-                 p_GetFileAttributesA?"":"!",
-                 p_GetFileAttributesW?"":"!",
-                 p_GetFileAttributesExA?"":"!",
-                 p_GetFileAttributesExW?"":"!",
-                 p_SetFileAttributesA?"":"!",
-                 p_SetFileAttributesW?"":"!",
-                 p_BackupRead?"":"!",
-                 p_BackupWrite?"":"!",
-                 p_SetProcessShutdownParameters?"":"!");
-      sendit(msg.c_str(), len, sp);
+                 p_wunlink ? "" : "!",
+                 p_wmkdir ? "" : "!",
+                 p_GetFileAttributesA ? "" : "!",
+                 p_GetFileAttributesW ? "" : "!",
+                 p_GetFileAttributesExA ? "" : "!",
+                 p_GetFileAttributesExW ? "" : "!",
+                 p_SetFileAttributesA ? "" : "!",
+                 p_SetFileAttributesW ? "" : "!",
+                 p_BackupRead ? "" : "!",
+                 p_BackupWrite ? "" : "!",
+                 p_SetProcessShutdownParameters ? "" : "!");
+      sendit(msg, len, sp);
       len = Mmsg(msg, " %sWC2MB,%sMB2WC,%sFFFA,%sFFFW,%sFNFA,%sFNFW,%sSCDA,%sSCDW,\n",
-                 p_WideCharToMultiByte?"":"!",
-                 p_MultiByteToWideChar?"":"!",
-                 p_FindFirstFileA?"":"!",
-                 p_FindFirstFileW?"":"!",
-                 p_FindNextFileA?"":"!",
-                 p_FindNextFileW?"":"!",
-                 p_SetCurrentDirectoryA?"":"!",
-                 p_SetCurrentDirectoryW?"":"!");
-      sendit(msg.c_str(), len, sp);
+                 p_WideCharToMultiByte ? "" : "!",
+                 p_MultiByteToWideChar ? "" : "!",
+                 p_FindFirstFileA ? "" : "!",
+                 p_FindFirstFileW ? "" : "!",
+                 p_FindNextFileA ? "" : "!",
+                 p_FindNextFileW ? "" : "!",
+                 p_SetCurrentDirectoryA ? "" : "!",
+                 p_SetCurrentDirectoryW ? "" : "!");
+      sendit(msg, len, sp);
       len = Mmsg(msg, " %sGCDA,%sGCDW,%sGVPNW,%sGVNFVMPW\n",
-                 p_GetCurrentDirectoryA?"":"!",
-                 p_GetCurrentDirectoryW?"":"!",
-                 p_GetVolumePathNameW?"":"!",
-                 p_GetVolumeNameForVolumeMountPointW?"":"!");
-     sendit(msg.c_str(), len, sp);
+                 p_GetCurrentDirectoryA ? "" : "!",
+                 p_GetCurrentDirectoryW ? "" : "!",
+                 p_GetVolumePathNameW ? "" : "!",
+                 p_GetVolumeNameForVolumeMountPointW ? "" : "!");
+      sendit(msg, len, sp);
    }
 #endif
    len = Mmsg(msg, _(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
-         edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
-         edit_uint64_with_commas(sm_bytes, b2),
-         edit_uint64_with_commas(sm_max_bytes, b3),
-         edit_uint64_with_commas(sm_buffers, b4),
-         edit_uint64_with_commas(sm_max_buffers, b5));
-   sendit(msg.c_str(), len, sp);
+              edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
+              edit_uint64_with_commas(sm_bytes, b2),
+              edit_uint64_with_commas(sm_max_bytes, b3),
+              edit_uint64_with_commas(sm_buffers, b4),
+              edit_uint64_with_commas(sm_max_buffers, b5));
+   sendit(msg, len, sp);
    len = Mmsg(msg, _(" Sizeof: boffset_t=%d size_t=%d debug=%d trace=%d "
                      "bwlimit=%skB/s\n"), sizeof(boffset_t), sizeof(size_t),
               debug_level, get_trace(), edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
-   sendit(msg.c_str(), len, sp);
+   sendit(msg, len, sp);
    len = list_fd_plugins(msg);
    if (len > 0) {
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
    }
 }
 
-static void  list_running_jobs_plain(STATUS_PKT *sp)
+static void list_running_jobs_plain(STATUS_PKT *sp)
 {
    int sec, bps;
    POOL_MEM msg(PM_MESSAGE);
@@ -165,7 +165,7 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
     */
    Dmsg0(1000, "Begin status jcr loop.\n");
    len = Mmsg(msg, _("\nRunning Jobs:\n"));
-   sendit(msg.c_str(), len, sp);
+   sendit(msg, len, sp);
    const char *vss = "";
 #ifdef WIN32_VSS
    if (g_pVSSClient && g_pVSSClient->IsInitialized()) {
@@ -179,12 +179,12 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
       } else {
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
          len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
                     vss, level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
       }
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
       if (njcr->JobId == 0) {
          continue;
       }
@@ -195,41 +195,44 @@ static void  list_running_jobs_plain(STATUS_PKT *sp)
       bps = (int)(njcr->JobBytes / sec);
       len = Mmsg(msg,  _("    Files=%s Bytes=%s Bytes/sec=%s Errors=%d\n"
                          "    Bwlimit=%s\n"),
-           edit_uint64_with_commas(njcr->JobFiles, b1),
-           edit_uint64_with_commas(njcr->JobBytes, b2),
-           edit_uint64_with_commas(bps, b3),
-           njcr->JobErrors, edit_uint64_with_commas(njcr->max_bandwidth, b4));
-      sendit(msg.c_str(), len, sp);
+                 edit_uint64_with_commas(njcr->JobFiles, b1),
+                 edit_uint64_with_commas(njcr->JobBytes, b2),
+                 edit_uint64_with_commas(bps, b3),
+                 njcr->JobErrors,
+                 edit_uint64_with_commas(njcr->max_bandwidth, b4));
+      sendit(msg, len, sp);
       len = Mmsg(msg, _("    Files Examined=%s\n"),
-           edit_uint64_with_commas(njcr->num_files_examined, b1));
-      sendit(msg.c_str(), len, sp);
+                 edit_uint64_with_commas(njcr->num_files_examined, b1));
+      sendit(msg, len, sp);
       if (njcr->JobFiles > 0) {
          njcr->lock();
          len = Mmsg(msg, _("    Processing file: %s\n"), njcr->last_fname);
          njcr->unlock();
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
       }
 
       found = true;
       if (njcr->store_bsock) {
          len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
-             njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
-         sendit(msg.c_str(), len, sp);
+                    njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
+         sendit(msg, len, sp);
       } else {
          len = Mmsg(msg, _("    SDSocket closed.\n"));
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
       }
    }
    endeach_jcr(njcr);
 
    if (!found) {
       len = Mmsg(msg, _("No Jobs running.\n"));
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
    }
-   sendit(_("====\n"), 5, sp);
+
+   len = pm_strcpy(msg, _("====\n"));
+   sendit(msg, len, sp);
 }
 
-static void  list_running_jobs_api(STATUS_PKT *sp)
+static void list_running_jobs_api(STATUS_PKT *sp)
 {
    int sec, bps;
    POOL_MEM msg(PM_MESSAGE);
@@ -253,12 +256,12 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
       } else {
          len = Mmsg(msg, "JobId=%d\n Job=%s\n",
                     njcr->JobId, njcr->Job);
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
          len = Mmsg(msg," VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
                     vss, njcr->getJobLevel(),
                     njcr->getJobType(), dt);
       }
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
       if (njcr->JobId == 0) {
          continue;
       }
@@ -273,24 +276,24 @@ static void  list_running_jobs_api(STATUS_PKT *sp)
                  edit_uint64(njcr->JobBytes, b2),
                  edit_uint64(bps, b3),
                  njcr->JobErrors, edit_int64(njcr->max_bandwidth, b4));
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
       len = Mmsg(msg, " Files Examined=%s\n",
            edit_uint64(njcr->num_files_examined, b1));
-      sendit(msg.c_str(), len, sp);
+      sendit(msg, len, sp);
       if (njcr->JobFiles > 0) {
          njcr->lock();
          len = Mmsg(msg, " Processing file=%s\n", njcr->last_fname);
          njcr->unlock();
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
       }
 
       if (njcr->store_bsock) {
          len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
              njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
       } else {
          len = Mmsg(msg, _(" SDSocket=closed\n"));
-         sendit(msg.c_str(), len, sp);
+         sendit(msg, len, sp);
       }
    }
    endeach_jcr(njcr);
@@ -307,33 +310,41 @@ static void  list_running_jobs(STATUS_PKT *sp)
 
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
+   int len;
+   POOL_MEM msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
    struct s_last_job *je;
-   const char *msg;
 
    if (!sp->api) {
-      msg =  _("\nTerminated Jobs:\n");
-      sendit(msg, strlen(msg), sp);
+      len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));
+      sendit(msg, len, sp);
    }
 
    if (last_jobs->size() == 0) {
-      if (!sp->api) sendit(_("====\n"), 5, sp);
+      if (!sp->api) {
+         len = pm_strcpy(msg, _("====\n"));
+         sendit(msg, len, sp);
+      }
       return;
    }
+
    lock_last_jobs_list();
+
    if (!sp->api) {
-      msg =  _(" JobId  Level    Files      Bytes   Status   Finished        Name \n");
-      sendit(msg, strlen(msg), sp);
-      msg = _("======================================================================\n");
-      sendit(msg, strlen(msg), sp);
+      len = pm_strcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      sendit(msg, len, sp);
+      len = pm_strcpy(msg, _("======================================================================\n"));
+      sendit(msg, len, sp);
    }
+
    foreach_dlist(je, last_jobs) {
+      char *p;
       char JobName[MAX_NAME_LENGTH];
       const char *termstat;
-      char buf[1000];
 
       bstrftime_nc(dt, sizeof(dt), je->end_time);
+
       switch (je->JobType) {
       case JT_ADMIN:
       case JT_RESTORE:
@@ -344,6 +355,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
          level[4] = 0;
          break;
       }
+
       switch (je->JobStatus) {
       case JS_Created:
          termstat = _("Created");
@@ -366,50 +378,59 @@ static void list_terminated_jobs(STATUS_PKT *sp)
          break;
       }
       bstrncpy(JobName, je->Job, sizeof(JobName));
-      /* There are three periods after the Job name */
-      char *p;
+
+      /*
+       * There are three periods after the Job name
+       */
       for (int i=0; i<3; i++) {
          if ((p=strrchr(JobName, '.')) != NULL) {
             *p = 0;
          }
       }
-      if (sp->api) {
-         bsnprintf(buf, sizeof(buf), _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
-            je->JobId,
-            level,
-            edit_uint64_with_commas(je->JobFiles, b1),
-            edit_uint64_with_suffix(je->JobBytes, b2),
-            termstat,
-            dt, JobName);
-      } else {
-         bsnprintf(buf, sizeof(buf), _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
-            je->JobId,
-            level,
-            edit_uint64_with_commas(je->JobFiles, b1),
-            edit_uint64_with_suffix(je->JobBytes, b2),
-            termstat,
-            dt, JobName);
-      }
-      sendit(buf, strlen(buf), sp);
-   }
-   if (!sp->api) sendit(_("====\n"), 5, sp);
-   unlock_last_jobs_list();
-}
 
+      if (sp->api) {
+         len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+                    je->JobId,
+                    level,
+                    edit_uint64_with_commas(je->JobFiles, b1),
+                    edit_uint64_with_suffix(je->JobBytes, b2),
+                    termstat,
+                    dt,
+                    JobName);
+      } else {
+         len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
+                    je->JobId,
+                    level,
+                    edit_uint64_with_commas(je->JobFiles, b1),
+                    edit_uint64_with_suffix(je->JobBytes, b2),
+                    termstat,
+                    dt,
+                    JobName);
+      }
+      sendit(msg, len, sp);
+   }
+
+   unlock_last_jobs_list();
+
+   if (!sp->api) {
+      len = pm_strcpy(msg, _("====\n"));
+      sendit(msg, len, sp);
+   }
+}
 
 /*
  * Send to bsock (Director or Console)
  */
-static void sendit(const char *msg, int len, STATUS_PKT *sp)
+static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
 {
-   if (sp->bs) {
-      BSOCK *user = sp->bs;
-      user->msg = check_pool_memory_size(user->msg, len+1);
-      memcpy(user->msg, msg, len+1);
-      user->msglen = len+1;
-      user->send();
+   BSOCK *bs = sp->bs;
+
+   if (bs) {
+      memcpy(bs->msg, msg.c_str(), len+1);
+      bs->msglen = len+1;
+      bs->send();
    } else {
-      sp->callback(msg, len, sp->context);
+      sp->callback(msg.c_str(), len, sp->context);
    }
 }
 
