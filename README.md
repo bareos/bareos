@@ -6,6 +6,23 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+Release 14.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* Configuration engine refactoring in preparation for configuration API.
+* Accurate mode refactoring
+  * Data storage abstraction
+  * In memory hashtable (same as previously)
+  * LMDB (Lightning Memory DB same as used in OpenLDAP.)
+* Python FD plugin base class abstraction for Python plugin writers.
+* Added missing methods to Python FD class should now have all methods and structures that C plugin has.
+* Fixed most important high level coding problems found by Coverity scans.
+* Disable a client (analog to disable job but then for all jobs of a certain client.)
+* Cleanup of more global variables.
+* Make scripting more robust for getting the database engine used.
+
 Release 14.1.x
 ==============
 
