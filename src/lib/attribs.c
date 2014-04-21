@@ -130,6 +130,7 @@ int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI)
     *  the same when compiling this library and the calling program.
     */
    ASSERT(stat_size == (int)sizeof(struct stat));
+   memset(statp, 0, stat_size);
 
    p += from_base64(&val, p);
    plug(statp->st_dev, val);

@@ -698,6 +698,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
                   be.bstrerror());
             goto bail_out;
          }
+         msg[nbytes] = '\0';
          size += nbytes;
       }
 
