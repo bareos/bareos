@@ -2445,7 +2445,7 @@ var_config(
             var_syntax_t *s;
             s = (var_syntax_t *)va_arg(ap, void *);
             if (s == NULL) {
-                rc = VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+                rc = VAR_ERR_INVALID_ARGUMENT;
                 goto bail_out;
             }
             var->syntax.escape      = s->escape;
@@ -2457,14 +2457,13 @@ var_config(
             var->syntax.index_mark  = s->index_mark;
             var->syntax.name_chars  = NULL; /* unused internally */
             if ((rc = expand_character_class(s->name_chars, var->syntax_nameclass)) != VAR_OK) {
-               VAR_RC(rc);
                goto bail_out;
             }
             if (var->syntax_nameclass[(int)var->syntax.delim_init] ||
                 var->syntax_nameclass[(int)var->syntax.delim_open] ||
                 var->syntax_nameclass[(int)var->syntax.delim_close] ||
                 var->syntax_nameclass[(int)var->syntax.escape]) {
-                rc = VAR_RC(VAR_ERR_INVALID_CONFIGURATION);
+                rc = VAR_ERR_INVALID_CONFIGURATION;
                 goto bail_out;
             }
             break;
@@ -2490,13 +2489,13 @@ var_config(
             break;
         }
         default:
-            rc = VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+            rc = VAR_ERR_INVALID_ARGUMENT;
             goto bail_out;
     }
 
 bail_out:
     va_end(ap);
-    return rc;
+    return VAR_RC(rc);
 }
 
 /* perform unescape operation on a buffer */
