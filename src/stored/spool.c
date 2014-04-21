@@ -256,7 +256,7 @@ static bool despool_data(DCR *dcr, bool commit)
    rdev = (DEVICE *)malloc(sizeof(DEVICE));
    memset(rdev, 0, sizeof(DEVICE));
    rdev->dev_name = get_memory(strlen(spool_name)+1);
-   bstrncpy(rdev->dev_name, spool_name, sizeof(rdev->dev_name));
+   bstrncpy(rdev->dev_name, spool_name, sizeof_pool_memory(rdev->dev_name));
    rdev->errmsg = get_pool_memory(PM_EMSG);
    *rdev->errmsg = 0;
    rdev->max_block_size = dcr->dev->max_block_size;

@@ -522,6 +522,7 @@ static const char *level_to_str(int level)
    switch (level) {
    case L_BASE:
       str = _("Base");
+      break;
    case L_FULL:
       str = _("Full");
       break;

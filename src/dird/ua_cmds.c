@@ -837,14 +837,14 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
    memset(Job, 0, sizeof(Job));
    i = find_arg_with_value(ua, NT_("limit"));
    if (i >= 0) {
-      limit = atoi(ua->argv[i]) * 1024;
+      limit = ((int64_t)atoi(ua->argv[i]) * 1024);
    }
 
    if (limit < 0) {
       if (!get_pint(ua, _("Enter new bandwidth limit kb/s: "))) {
          return 1;
       }
-      limit = ua->pint32_val * 1024; /* kb/s */
+      limit = ((int64_t)ua->pint32_val * 1024); /* kb/s */
    }
 
    if (find_arg_keyword(ua, lst) > 0) {

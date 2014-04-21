@@ -359,14 +359,6 @@ bool db_update_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
       UPDATE_DB(jcr, mdb, mdb->cmd);
    }
 
-   /* sanity checks for #1066 */
-   if (mr->VolReadTime < 0) {
-      mr->VolReadTime = 0;
-   }
-   if (mr->VolWriteTime < 0) {
-      mr->VolWriteTime = 0;
-   }
-
    Mmsg(mdb->cmd, "UPDATE Media SET VolJobs=%u,"
         "VolFiles=%u,VolBlocks=%u,VolBytes=%s,VolMounts=%u,VolErrors=%u,"
         "VolWrites=%u,MaxVolBytes=%s,VolStatus='%s',"
