@@ -2433,17 +2433,21 @@ var_config(
     ...)
 {
     va_list ap;
-    var_rc_t rc;
+    var_rc_t rc = VAR_OK;
 
-    if (var == NULL)
+    if (var == NULL) {
         return VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+    }
+
     va_start(ap, mode);
     switch (mode) {
         case VAR_CONFIG_SYNTAX: {
             var_syntax_t *s;
             s = (var_syntax_t *)va_arg(ap, void *);
-            if (s == NULL)
-                return VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+            if (s == NULL) {
+                rc = VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+                goto bail_out;
+            }
             var->syntax.escape      = s->escape;
             var->syntax.delim_init  = s->delim_init;
             var->syntax.delim_open  = s->delim_open;
@@ -2452,18 +2456,23 @@ var_config(
             var->syntax.index_close = s->index_close;
             var->syntax.index_mark  = s->index_mark;
             var->syntax.name_chars  = NULL; /* unused internally */
-            if ((rc = expand_character_class(s->name_chars, var->syntax_nameclass)) != VAR_OK)
-                return VAR_RC(rc);
-            if (   var->syntax_nameclass[(int)var->syntax.delim_init]
-                || var->syntax_nameclass[(int)var->syntax.delim_open]
-                || var->syntax_nameclass[(int)var->syntax.delim_close]
-                || var->syntax_nameclass[(int)var->syntax.escape])
-                return VAR_RC(VAR_ERR_INVALID_CONFIGURATION);
+            if ((rc = expand_character_class(s->name_chars, var->syntax_nameclass)) != VAR_OK) {
+               VAR_RC(rc);
+               goto bail_out;
+            }
+            if (var->syntax_nameclass[(int)var->syntax.delim_init] ||
+                var->syntax_nameclass[(int)var->syntax.delim_open] ||
+                var->syntax_nameclass[(int)var->syntax.delim_close] ||
+                var->syntax_nameclass[(int)var->syntax.escape]) {
+                rc = VAR_RC(VAR_ERR_INVALID_CONFIGURATION);
+                goto bail_out;
+            }
             break;
         }
         case VAR_CONFIG_CB_VALUE: {
             var_cb_value_t fct;
             void *ctx;
+
             fct = (var_cb_value_t)va_arg(ap, void *);
             ctx = (void *)va_arg(ap, void *);
             var->cb_value_fct = fct;
@@ -2473,6 +2482,7 @@ var_config(
         case VAR_CONFIG_CB_OPERATION: {
             var_cb_operation_t fct;
             void *ctx;
+
             fct = (var_cb_operation_t)va_arg(ap, void *);
             ctx = (void *)va_arg(ap, void *);
             var->cb_operation_fct = fct;
@@ -2480,10 +2490,13 @@ var_config(
             break;
         }
         default:
-            return VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+            rc = VAR_RC(VAR_ERR_INVALID_ARGUMENT);
+            goto bail_out;
     }
+
+bail_out:
     va_end(ap);
-    return VAR_OK;
+    return rc;
 }
 
 /* perform unescape operation on a buffer */
