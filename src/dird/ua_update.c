@@ -843,10 +843,10 @@ static int update_volume(UAContext *ua)
 static bool update_stats(UAContext *ua)
 {
    int i = find_arg_with_value(ua, NT_("days"));
-   utime_t since=0;
+   utime_t since = 0;
 
    if (i >= 0) {
-      since = atoi(ua->argv[i]) * 24*60*60;
+      since = ((int64_t)atoi(ua->argv[i]) * 24 * 60 * 60);
    }
 
    int nb = db_update_stats(ua->jcr, ua->db, since);
