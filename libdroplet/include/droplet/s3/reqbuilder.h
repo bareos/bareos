@@ -49,11 +49,11 @@ dpl_status_t dpl_s3_add_authorization_to_headers(const dpl_req_t *, dpl_dict_t *
 /* src/s3/auth/v2.c */
 dpl_status_t dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *, dpl_dict_t *,
                                                     const dpl_dict_t *, struct tm *);
-dpl_status_t dpl_s3_get_authorization_v2_params(const dpl_req_t *, dpl_dict_t *, char *, struct tm *);
+dpl_status_t dpl_s3_get_authorization_v2_params(const dpl_req_t *, dpl_dict_t *, struct tm *);
 
 /* src/s3/auth/v4.c */
 dpl_status_t dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *, dpl_dict_t *,
                                                     const dpl_dict_t *, struct tm *);
-dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t *, dpl_dict_t *, char *, struct tm *);
+dpl_status_t dpl_s3_get_authorization_v4_params(const dpl_req_t *, dpl_dict_t *, struct tm *);
 
 #endif

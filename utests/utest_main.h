@@ -17,7 +17,8 @@ extern Suite    *util_suite(void);
 extern Suite    *profile_suite(void);
 
 /* S3 backend tests */
-extern Suite    *s3_auth_suite(void);
+extern Suite    *s3_auth_v2_suite(void);
+extern Suite    *s3_auth_v4_suite(void);
 
 /* Provide versions of the <check.h> comparison assert macros which do
  * not expand their arguments twice.  This allows arguments to have side

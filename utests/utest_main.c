@@ -117,7 +117,8 @@ main(int argc, char ** argv)
 #ifdef __linux__
   srunner_add_suite(r, profile_suite());
 #endif
-  srunner_add_suite(r, s3_auth_suite());
+  /* srunner_add_suite(r, s3_auth_v2_suite()); */
+  srunner_add_suite(r, s3_auth_v4_suite());
 
   if (debug_flag)
     srunner_set_fork_status(r, CK_NOFORK);

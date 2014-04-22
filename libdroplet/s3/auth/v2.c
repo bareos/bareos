@@ -47,7 +47,7 @@ var_cmp(const void *p1,
   assert(var1->val->type == DPL_VALUE_STRING);
   assert(var2->val->type == DPL_VALUE_STRING);
 
-  return strcmp(var1->key, var2->key);
+  return strcasecmp(var1->key, var2->key);
 }
 
 static dpl_status_t
@@ -104,14 +104,13 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
     if (NULL == vec)
       return DPL_ENOMEM;
 
-    for (bucket = 0;bucket < headers->n_buckets;bucket++)
+    for (bucket = 0; bucket < headers->n_buckets; bucket++)
       {
         for (var = headers->buckets[bucket];var;var = var->prev)
           {
-            if (!strncmp(var->key, "x-amz-", 6))
+            if (!strncmp(var->key, "x-amz-", 6) && strcmp(var->key, "x-amz-date"))
               {
                 assert(DPL_VALUE_STRING == var->val->type);
-                DPRINTF("%s: %s\n", var->key, var->val->string->buf);
                 ret = dpl_vec_add(vec, var);
                 if (DPL_SUCCESS != ret)
                   {
@@ -124,30 +123,29 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
 
     dpl_vec_sort(vec, var_cmp);
 
-    for (i = 0;i < vec->n_items;i++)
-      {
-        var = (dpl_dict_var_t *) dpl_vec_get(vec, i);
+    for (i = 0;i < vec->n_items;i++) {
+      var = (dpl_dict_var_t *) dpl_vec_get(vec, i);
+      if (var == NULL)
+        continue;
 
-        assert(DPL_VALUE_STRING == var->val->type);
-        DPRINTF("%s:%s\n", var->key, var->val->string->buf);
-        DPL_APPEND_STR(var->key);
-        DPL_APPEND_STR(":");
-        DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
-        DPL_APPEND_STR("\n");
-      }
+      assert(DPL_VALUE_STRING == var->val->type);
+      DPL_APPEND_STR(var->key);
+      DPL_APPEND_STR(":");
+      DPL_APPEND_STR(dpl_sbuf_get_str(var->val->string));
+      DPL_APPEND_STR("\n");
+    }
 
     dpl_vec_free(vec);
   }
 
   //resource
-
   if (NULL != bucket) {
     DPL_APPEND_STR("/");
     DPL_APPEND_STR(bucket);
   }
 
   if (NULL != resource)
-      DPL_APPEND_STR(resource);
+    DPL_APPEND_STR(resource);
 
   if (NULL != subresource) {
     DPL_APPEND_STR("?");
@@ -185,7 +183,9 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
   } else
     dpl_url_encode_no_slashes(req->resource, resource_ue);
 
-  date_str = dpl_dict_get_value(headers, "Date");
+  date_str = dpl_dict_get_value(headers, "x-amz-date");
+  if (date_str == NULL)
+    date_str = dpl_dict_get_value(headers, "Date");
 
   ret = dpl_s3_make_signature_v2(req->ctx, method, req->bucket, resource_ue, req->subresource,
                                  date_str, headers,
@@ -206,12 +206,18 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
 
 dpl_status_t
 dpl_s3_get_authorization_v2_params(const dpl_req_t *req, dpl_dict_t *query_params,
-                                   char *resource_ue, struct tm UNUSED *tm)
+                                   struct tm UNUSED *tm)
 {
   dpl_status_t  ret;
-  char          expires_str[128];
+  char          expires_str[128], resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
 
   snprintf(expires_str, sizeof(expires_str), "%ld", req->expires);
+
+  if ('/' != req->resource[0]) {
+    resource_ue[0] = '/';
+    dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
+  } else
+    dpl_url_encode_no_slashes(req->resource, resource_ue);
 
   ret = dpl_dict_add(query_params, "AWSAccessKeyId", req->ctx->access_key, 0);
   if (ret != DPL_SUCCESS)
@@ -233,7 +239,7 @@ dpl_s3_get_authorization_v2_params(const dpl_req_t *req, dpl_dict_t *query_param
     if (ret != DPL_SUCCESS)
       return DPL_FAILURE;
 
-    DPRINTF("sign:\n%s\n", sign_str);
+    DPRINTF("%s\n", sign_str);
 
     hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 

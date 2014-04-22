@@ -25,7 +25,9 @@ alltests_SOURCES = \
 	tests/utest_utest.c \
 	tests/util_utest.c \
 	tests/vec_utest.c \
-	tests/s3/auth_utest.c \
+	tests/s3/auth_common_utest.c \
+	tests/s3/auth_v2_utest.c \
+	tests/s3/auth_v4_utest.c \
 	utest_main.c
 
 SSL_INCLUDE_FILES = \

@@ -565,7 +565,7 @@ dpl_s3_insert_signature_v4_params(const dpl_req_t *req, dpl_dict_t *query_params
 
 dpl_status_t
 dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_params,
-                                   char UNUSED *resource_ue, struct tm *i_tm)
+                                   struct tm *i_tm)
 {
   dpl_status_t  ret;
   char          date_str[32] = "";

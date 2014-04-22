@@ -601,9 +601,9 @@ dpl_s3_req_gen_url(const dpl_req_t *req,
   DPL_APPEND_STR(resource_ue);
 
   if (req->ctx->aws_auth_sign_version == 2)
-    ret = dpl_s3_get_authorization_v2_params(req, query_params, resource_ue, NULL);
+    ret = dpl_s3_get_authorization_v2_params(req, query_params, NULL);
   else if (req->ctx->aws_auth_sign_version == 4)
-    ret = dpl_s3_get_authorization_v4_params(req, query_params, resource_ue, NULL);
+    ret = dpl_s3_get_authorization_v4_params(req, query_params, NULL);
   else
     ret = DPL_FAILURE;
 
