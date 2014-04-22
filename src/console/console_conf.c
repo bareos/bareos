@@ -255,7 +255,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    /*
     * Ensure that all required items are present
     */
-   for (i=0; items[i].name; i++) {
+   for (i = 0; items[i].name; i++) {
       if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
@@ -321,8 +321,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
             last = next;
             if (bstrcmp(next->name, res->res_dir.hdr.name)) {
                Emsg2(M_ERROR_TERM, 0,
-                  _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
+                     _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
+                     resources[rindex].name, res->res_dir.hdr.name);
             }
          }
          last->next = (RES *)res;

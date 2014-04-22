@@ -413,35 +413,36 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    if (pass == 2) {
       switch (type) {
-         /*
-          * Resources not containing a resource
-          */
          case R_MSGS:
+            /*
+             * Resources not containing a resource
+             */
             break;
-
-         /*
-          * Resources containing another resource
-          */
          case R_DIRECTOR:
+            /*
+             * Resources containing another resource
+             */
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+            } else {
+               res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+               res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
+               res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             }
-            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
-            res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
-            res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             break;
          case R_CLIENT:
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
+            } else {
+               res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
+               res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
+               res->res_client.pki_signers = res_all.res_client.pki_signers;
+               res->res_client.pki_recipients = res_all.res_client.pki_recipients;
+               res->res_client.messages = res_all.res_client.messages;
+               res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
+               res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
+               res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             }
-            res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
-            res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
-            res->res_client.pki_signers = res_all.res_client.pki_signers;
-            res->res_client.pki_recipients = res_all.res_client.pki_recipients;
-            res->res_client.messages = res_all.res_client.messages;
-            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
-            res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
-            res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);

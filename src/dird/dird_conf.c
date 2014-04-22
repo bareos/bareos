@@ -1593,7 +1593,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          if (items[i].flags & ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                 Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
-                    items[i].name, resources[rindex]);
+                      items[i].name, resources[rindex]);
             }
          }
          /*
@@ -1623,135 +1623,138 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    if (pass == 2) {
       switch (type) {
-      /*
-       * Resources not containing a resource
-       */
       case R_CATALOG:
       case R_MSGS:
       case R_FILESET:
       case R_DEVICE:
+         /*
+          * Resources not containing a resource
+          */
          break;
-      /*
-       * Resources containing another resource or alist. First
-       * look up the resource which contains another resource. It
-       * was written during pass 1.  Then stuff in the pointers to
-       * the resources it contains, which were inserted this pass.
-       * Finally, it will all be stored back.
-       */
       case R_POOL:
          /*
+          * Resources containing another resource or alist. First
+          * look up the resource which contains another resource. It
+          * was written during pass 1.  Then stuff in the pointers to
+          * the resources it contains, which were inserted this pass.
+          * Finally, it will all be stored back.
+          *
           * Find resource saved in pass 1
           */
          if ((res = (URES *)GetResWithName(R_POOL, res_all.res_con.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Pool resource %s\n"), res_all.res_con.hdr.name);
-         }
-         /*
-          * Explicitly copy resource pointers from this pass (res_all)
-          */
-         res->res_pool.NextPool = res_all.res_pool.NextPool;
-         res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
-         res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
-         res->res_pool.storage = res_all.res_pool.storage;
-         if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
-            res->res_pool.catalog = res_all.res_pool.catalog;
+         } else {
+            /*
+             * Explicitly copy resource pointers from this pass (res_all)
+             */
+            res->res_pool.NextPool = res_all.res_pool.NextPool;
+            res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
+            res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
+            res->res_pool.storage = res_all.res_pool.storage;
+            if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
+               res->res_pool.catalog = res_all.res_pool.catalog;
+            }
          }
          break;
       case R_CONSOLE:
          if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.hdr.name);
+         } else {
+            res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
          }
-         res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
          break;
       case R_DIRECTOR:
          if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_dir.messages = res_all.res_dir.messages;
+            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          }
-         res->res_dir.messages = res_all.res_dir.messages;
-         res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          break;
       case R_STORAGE:
          if ((res = (URES *)GetResWithName(type, res_all.res_store.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
-                  res_all.res_dir.hdr.name);
-         }
-         res->res_store.paired_storage = res_all.res_store.paired_storage;
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_store.paired_storage = res_all.res_store.paired_storage;
 
-         /*
-          * We must explicitly copy the device alist pointer
-          */
-         res->res_store.device = res_all.res_store.device;
+            /*
+             * We must explicitly copy the device alist pointer
+             */
+            res->res_store.device = res_all.res_store.device;
+         }
          break;
       case R_JOB:
       case R_JOBDEFS:
          if ((res = (URES *)GetResWithName(type, res_all.res_dir.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"),
-                  res_all.res_dir.hdr.name);
-         }
-         res->res_job.messages = res_all.res_job.messages;
-         res->res_job.schedule = res_all.res_job.schedule;
-         res->res_job.client = res_all.res_job.client;
-         res->res_job.fileset = res_all.res_job.fileset;
-         res->res_job.storage = res_all.res_job.storage;
-         res->res_job.base = res_all.res_job.base;
-         res->res_job.pool = res_all.res_job.pool;
-         res->res_job.full_pool = res_all.res_job.full_pool;
-         res->res_job.inc_pool = res_all.res_job.inc_pool;
-         res->res_job.diff_pool = res_all.res_job.diff_pool;
-         res->res_job.next_pool = res_all.res_job.next_pool;
-         res->res_job.verify_job = res_all.res_job.verify_job;
-         res->res_job.jobdefs = res_all.res_job.jobdefs;
-         res->res_job.run_cmds = res_all.res_job.run_cmds;
-         res->res_job.RunScripts = res_all.res_job.RunScripts;
-         /*
-          * TODO: JobDefs where/regexwhere doesn't work well (but this
-          * is not very useful)
-          * We have to set_bit(index, res_all.hdr.item_present);
-          * or something like that
-          */
-         /*
-          * We take RegexWhere before all other options
-          */
-         if (!res->res_job.RegexWhere &&
-             (res->res_job.strip_prefix ||
-              res->res_job.add_suffix ||
-              res->res_job.add_prefix)) {
-            int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
-                                                   res->res_job.add_prefix,
-                                                   res->res_job.add_suffix);
-            res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
-            bregexp_build_where(res->res_job.RegexWhere, len,
-                                res->res_job.strip_prefix,
-                                res->res_job.add_prefix,
-                                res->res_job.add_suffix);
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_job.messages = res_all.res_job.messages;
+            res->res_job.schedule = res_all.res_job.schedule;
+            res->res_job.client = res_all.res_job.client;
+            res->res_job.fileset = res_all.res_job.fileset;
+            res->res_job.storage = res_all.res_job.storage;
+            res->res_job.base = res_all.res_job.base;
+            res->res_job.pool = res_all.res_job.pool;
+            res->res_job.full_pool = res_all.res_job.full_pool;
+            res->res_job.inc_pool = res_all.res_job.inc_pool;
+            res->res_job.diff_pool = res_all.res_job.diff_pool;
+            res->res_job.next_pool = res_all.res_job.next_pool;
+            res->res_job.verify_job = res_all.res_job.verify_job;
+            res->res_job.jobdefs = res_all.res_job.jobdefs;
+            res->res_job.run_cmds = res_all.res_job.run_cmds;
+            res->res_job.RunScripts = res_all.res_job.RunScripts;
+
             /*
-             * TODO: test bregexp
+             * TODO: JobDefs where/regexwhere doesn't work well (but this is not very useful)
+             * We have to set_bit(index, res_all.hdr.item_present); or something like that
+             *
+             * We take RegexWhere before all other options
              */
-         }
-         if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
-            free(res->res_job.RestoreWhere);
-            res->res_job.RestoreWhere = NULL;
+            if (!res->res_job.RegexWhere &&
+                (res->res_job.strip_prefix ||
+                 res->res_job.add_suffix ||
+                 res->res_job.add_prefix)) {
+               int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
+                                                      res->res_job.add_prefix,
+                                                      res->res_job.add_suffix);
+               res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
+               bregexp_build_where(res->res_job.RegexWhere, len,
+                                   res->res_job.strip_prefix,
+                                   res->res_job.add_prefix,
+                                   res->res_job.add_suffix);
+               /*
+                * TODO: test bregexp
+                */
+            }
+
+            if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
+               free(res->res_job.RestoreWhere);
+               res->res_job.RestoreWhere = NULL;
+            }
          }
          break;
       case R_COUNTER:
          if ((res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.hdr.name);
+         } else {
+            res->res_counter.Catalog = res_all.res_counter.Catalog;
+            res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
          }
-         res->res_counter.Catalog = res_all.res_counter.Catalog;
-         res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
          break;
       case R_CLIENT:
          if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.hdr.name);
-         }
-         if (res_all.res_client.catalog) {
-            res->res_client.catalog = res_all.res_client.catalog;
          } else {
-            /*
-             * No catalog overwrite given use the first catalog definition.
-             */
-            res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            if (res_all.res_client.catalog) {
+               res->res_client.catalog = res_all.res_client.catalog;
+            } else {
+               /*
+                * No catalog overwrite given use the first catalog definition.
+                */
+               res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            }
+            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
          }
-         res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
          break;
       case R_SCHEDULE:
          /*
@@ -1762,14 +1765,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          if ((res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.hdr.name);
+         } else {
+            res->res_sch.run = res_all.res_sch.run;
          }
-         res->res_sch.run = res_all.res_sch.run;
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
          error = true;
          break;
       }
+
       /*
        * Note, the resource name was already saved during pass 1,
        * so here, we can just release it.
@@ -1778,10 +1783,12 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.name);
          res_all.res_dir.hdr.name = NULL;
       }
+
       if (res_all.res_dir.hdr.desc) {
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
       }
+
       return;
    }
 

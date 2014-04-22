@@ -738,52 +738,53 @@ void save_resource(int type, RES_ITEM *items, int pass)
    if (pass == 2) {
       DEVRES *dev;
       int errstat;
+
       switch (type) {
-      /*
-       * Resources not containing a resource
-       */
       case R_DEVICE:
       case R_MSGS:
       case R_NDMP:
+         /*
+          * Resources not containing a resource
+          */
          break;
-      /*
-       * Resources containing a resource or an alist
-       */
       case R_DIRECTOR:
+         /*
+          * Resources containing a resource or an alist
+          */
          if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          }
-         res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          break;
       case R_STORAGE:
          if ((res = (URES *)GetResWithName(R_STORAGE, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_store.messages = res_all.res_store.messages;
+            res->res_store.tls_allowed_cns = res_all.res_store.tls_allowed_cns;
          }
-         res->res_store.messages = res_all.res_store.messages;
-         res->res_store.tls_allowed_cns = res_all.res_store.tls_allowed_cns;
          break;
       case R_AUTOCHANGER:
          if ((res = (URES *)GetResWithName(type, res_all.res_changer.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"),
-                  res_all.res_changer.hdr.name);
-         }
-         /*
-          * We must explicitly copy the device alist pointer
-          */
-         res->res_changer.device   = res_all.res_changer.device;
-         /*
-          * Now update each device in this resource to point back
-          * to the changer resource.
-          */
-         foreach_alist(dev, res->res_changer.device) {
-            dev->changer_res = (AUTOCHANGERRES *)&res->res_changer;
-         }
-         if ((errstat = rwl_init(&res->res_changer.changer_lock,
-                                 PRIO_SD_ACH_ACCESS)) != 0)
-         {
-            berrno be;
-            Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"),
-                  be.bstrerror(errstat));
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.hdr.name);
+         } else {
+            /*
+             * We must explicitly copy the device alist pointer
+             */
+            res->res_changer.device = res_all.res_changer.device;
+
+            /*
+             * Now update each device in this resource to point back to the changer resource.
+             */
+            foreach_alist(dev, res->res_changer.device) {
+               dev->changer_res = (AUTOCHANGERRES *)&res->res_changer;
+            }
+
+            if ((errstat = rwl_init(&res->res_changer.changer_lock, PRIO_SD_ACH_ACCESS)) != 0) {
+               berrno be;
+               Jmsg1(NULL, M_ERROR_TERM, 0, _("Unable to init lock: ERR=%s\n"), be.bstrerror(errstat));
+            }
          }
          break;
       default:
@@ -791,7 +792,6 @@ void save_resource(int type, RES_ITEM *items, int pass)
          error = 1;
          break;
       }
-
 
       if (res_all.res_dir.hdr.name) {
          free(res_all.res_dir.hdr.name);
@@ -801,6 +801,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
       }
+
       return;
    }
 
