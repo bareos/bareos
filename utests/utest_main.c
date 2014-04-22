@@ -102,7 +102,8 @@ main(int argc, char ** argv)
   else
     be_valground(argc, argv);
 
-  r = srunner_create(dict_suite());
+  r = srunner_create(NULL);
+  srunner_add_suite(r, dict_suite());
   srunner_add_suite(r, getdate_suite());
   srunner_add_suite(r, droplet_suite());
   srunner_add_suite(r, vec_suite());

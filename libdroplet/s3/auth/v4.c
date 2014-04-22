@@ -170,16 +170,18 @@ create_canonical_request(const dpl_req_t *req,
 }
 
 static dpl_status_t
-get_current_utc_date(struct tm *tm, char *date_str, size_t date_size)
+get_current_utc_date(struct tm *tm, struct tm *i_tm,
+                     char *date_str, size_t date_size)
 {
   int           ret;
 
-  if (tm == NULL) {
+  if (i_tm == NULL) {
     time_t        t;
 
     time(&t);
     gmtime_r(&t, tm);
-  }
+  } else
+    memcpy(tm, i_tm, sizeof(struct tm));
 
   ret = strftime(date_str, date_size, "%Y%m%dT%H%M%SZ", tm);
 
@@ -450,7 +452,7 @@ dpl_status_t
 dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
                                        dpl_dict_t *headers,
                                        const dpl_dict_t *query_params,
-                                       struct tm *tm)
+                                       struct tm *i_tm)
 {
   int           item;
   dpl_status_t  ret;
@@ -461,12 +463,13 @@ dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
   char          date_str[32] = "";
   dpl_vec_t     *canonical_headers;
   dpl_vec_t     *canonical_params;
+  struct tm     tm;
 
   ret = add_payload_signature_to_headers(req, headers);
   if (ret != DPL_SUCCESS)
     return ret;
 
-  ret = get_current_utc_date(tm, date_str, sizeof(date_str));
+  ret = get_current_utc_date(&tm, i_tm, date_str, sizeof(date_str));
   if (ret != DPL_SUCCESS)
     return ret;
 
@@ -490,18 +493,18 @@ dpl_s3_add_authorization_v4_to_headers(const dpl_req_t *req,
 
   if (ret == DPL_SUCCESS) {
     DPRINTF("Canonical request:\n%s\n", canonical_request);
-    ret = create_sign_request(req, canonical_request, tm, date_str,
+    ret = create_sign_request(req, canonical_request, &tm, date_str,
                               sign_request, sizeof(sign_request));
   }
 
   if (ret == DPL_SUCCESS) {
     DPRINTF("Signing request:\n%s\n", sign_request);
-    ret = create_signature(req, tm, sign_request, signature);
+    ret = create_signature(req, &tm, sign_request, signature);
   }
 
   if (ret == DPL_SUCCESS) {
     DPRINTF("Signature: %s\n", signature);
-    ret = create_authorization(req, tm, canonical_headers, signature,
+    ret = create_authorization(req, &tm, canonical_headers, signature,
                                authorization, sizeof(authorization));
   }
 
@@ -562,13 +565,14 @@ dpl_s3_insert_signature_v4_params(const dpl_req_t *req, dpl_dict_t *query_params
 
 dpl_status_t
 dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_params,
-                                   char UNUSED *resource_ue, struct tm *tm)
+                                   char UNUSED *resource_ue, struct tm *i_tm)
 {
   dpl_status_t  ret;
   char          date_str[32] = "";
   char          signature[DPL_HEX_LENGTH(SHA256_DIGEST_LENGTH) + 1];
+  struct tm     tm;
 
-  ret = get_current_utc_date(tm, date_str, sizeof(date_str));
+  ret = get_current_utc_date(&tm, i_tm, date_str, sizeof(date_str));
   if (ret != DPL_SUCCESS)
     return ret;
 
@@ -581,7 +585,7 @@ dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_param
     char        credentials[128], date_buf[9];
     char        credentials_ue[DPL_URL_LENGTH(sizeof(credentials)) + 1];
 
-    ret2 = strftime(date_buf, sizeof(date_buf), "%Y%m%d", tm);
+    ret2 = strftime(date_buf, sizeof(date_buf), "%Y%m%d", &tm);
     if (ret2 == 0)
       return DPL_FAILURE;
 
@@ -614,7 +618,7 @@ dpl_s3_get_authorization_v4_params(const dpl_req_t *req, dpl_dict_t *query_param
     return DPL_FAILURE;
 
   ret = dpl_s3_insert_signature_v4_params(req, query_params,
-                                          tm, date_str, signature);
+                                          &tm, date_str, signature);
   if (ret != DPL_SUCCESS)
     return DPL_FAILURE;
 
