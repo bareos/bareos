@@ -72,10 +72,13 @@ static void output_status(STATUS_PKT *sp)
 
 static void list_status_header(STATUS_PKT *sp)
 {
-   POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32], b4[32], b5[35];
    int len;
    char dt[MAX_TIME_LENGTH];
+   POOL_MEM msg(PM_MESSAGE);
+   char b1[32], b2[32], b3[32], b4[32], b5[35];
+#if defined(HAVE_WIN32)
+   char buf[300];
+#endif
 
    len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s %s\n"),
               my_name, VERSION, BDATE, VSS, HOST_OS, DISTNAME, DISTVER);
@@ -85,7 +88,6 @@ static void list_status_header(STATUS_PKT *sp)
    sendit(msg, len, sp);
 
 #if defined(HAVE_WIN32)
-   char buf[300];
    if (GetWindowsVersionString(buf, sizeof(buf))) {
       len = Mmsg(msg, "%s\n", buf);
       sendit(msg, len, sp);
@@ -153,13 +155,12 @@ static void list_status_header(STATUS_PKT *sp)
 
 static void list_running_jobs_plain(STATUS_PKT *sp)
 {
-   int sec, bps;
-   POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32], b4[32];
-   int len;
-   bool found = false;
    JCR *njcr;
-   char dt[MAX_TIME_LENGTH];
+   int len, sec, bps;
+   bool found = false;
+   POOL_MEM msg(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
+
    /*
     * List running jobs
     */
@@ -172,6 +173,7 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
       vss = "VSS ";
    }
 #endif
+
    foreach_jcr(njcr) {
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
@@ -234,12 +236,11 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
 
 static void list_running_jobs_api(STATUS_PKT *sp)
 {
-   int sec, bps;
-   POOL_MEM msg(PM_MESSAGE);
-   char b1[32], b2[32], b3[32], b4[32];
-   int len;
    JCR *njcr;
-   char dt[MAX_TIME_LENGTH];
+   int len, sec, bps;
+   POOL_MEM msg(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
+
    /*
     * List running jobs for Bat/Bweb (simple to parse)
     */
@@ -249,6 +250,7 @@ static void list_running_jobs_api(STATUS_PKT *sp)
       vss = 1;
    }
 #endif
+
    foreach_jcr(njcr) {
       bstrutime(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
@@ -311,10 +313,9 @@ static void  list_running_jobs(STATUS_PKT *sp)
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
-   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
-   char level[10];
    struct s_last_job *je;
+   POOL_MEM msg(PM_MESSAGE);
+   char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
       len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));

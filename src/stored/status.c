@@ -69,8 +69,8 @@ static const char *level_to_str(int level);
  */
 static void output_status(JCR *jcr, STATUS_PKT *sp)
 {
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
    list_status_header(sp);
 
@@ -107,6 +107,7 @@ static void output_status(JCR *jcr, STATUS_PKT *sp)
 
    list_spool_stats(sendit, (void *)sp);
    if (!sp->api) {
+      len = pm_strcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
 }
@@ -114,8 +115,8 @@ static void output_status(JCR *jcr, STATUS_PKT *sp)
 static void list_resources(STATUS_PKT *sp)
 {
 #ifdef when_working
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nSD Resources:\n"));
@@ -152,13 +153,13 @@ static find_device(char *devname)
 
 static void list_devices(JCR *jcr, STATUS_PKT *sp)
 {
-   DEVRES *device;
-   AUTOCHANGERRES *changer;
-   DEVICE *dev;
-   char b1[35], b2[35], b3[35];
-   POOL_MEM msg(PM_MESSAGE);
    int len;
    int bpb;
+   DEVICE *dev;
+   DEVRES *device;
+   AUTOCHANGERRES *changer;
+   POOL_MEM msg(PM_MESSAGE);
+   char b1[35], b2[35], b3[35];
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nDevice status:\n"));
@@ -257,10 +258,10 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
 
 static void list_status_header(STATUS_PKT *sp)
 {
+   int len;
+   POOL_MEM msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
-   POOL_MEM msg(PM_MESSAGE);
-   int len;
 
    len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"),
               my_name, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
@@ -312,8 +313,8 @@ static void trigger_device_status_hook(JCR *jcr,
 
 static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
 {
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
    if (!dev) {
       len = Mmsg(msg, _("No DEVICE structure.\n\n"));
@@ -469,15 +470,14 @@ static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
 
 static void list_running_jobs(STATUS_PKT *sp)
 {
-   bool found = false;
-   int avebps, bps, sec;
    JCR *jcr;
    DCR *dcr, *rdcr;
+   bool found = false;
+   time_t now = time(NULL);
+   POOL_MEM msg(PM_MESSAGE);
+   int len, avebps, bps, sec;
    char JobName[MAX_NAME_LENGTH];
    char b1[50], b2[50], b3[50], b4[50];
-   int len;
-   POOL_MEM msg(PM_MESSAGE);
-   time_t now = time(NULL);
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nRunning Jobs:\n"));
@@ -583,9 +583,9 @@ static void list_running_jobs(STATUS_PKT *sp)
 
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
 {
+   int len;
    JCR *jcr;
    POOL_MEM msg(PM_MESSAGE);
-   int len;
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nJobs waiting to reserve a drive:\n"));
@@ -609,10 +609,10 @@ static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
-   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
    struct s_last_job *je;
+   POOL_MEM msg(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
       len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));
@@ -767,6 +767,7 @@ static const char *level_to_str(int level)
 static void sendit(const char *msg, int len, STATUS_PKT *sp)
 {
    BSOCK *bs = sp->bs;
+
    if (bs) {
       memcpy(bs->msg, msg, len+1);
       bs->msglen = len+1;
@@ -784,6 +785,7 @@ static void sendit(const char *msg, int len, void *sp)
 static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
 {
    BSOCK *bs = sp->bs;
+
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
       bs->msglen = len+1;
