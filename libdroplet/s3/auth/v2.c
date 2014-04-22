@@ -63,7 +63,6 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
                          unsigned int *lenp)
 {
   char *p;
-  //char *tmp_str;
   char *value;
   int ret;
 
@@ -164,7 +163,8 @@ dpl_s3_make_signature_v2(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
                                        dpl_dict_t *headers,
-                                       const dpl_dict_t UNUSED *query_params)
+                                       const dpl_dict_t UNUSED *query_params,
+                                       struct tm UNUSED *tm)
 {
   int ret;
   const char *method = dpl_method_str(req->method);
@@ -205,7 +205,8 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
 }
 
 dpl_status_t
-dpl_s3_get_authorization_v2_params(const dpl_req_t *req, dpl_dict_t *query_params, char *resource_ue)
+dpl_s3_get_authorization_v2_params(const dpl_req_t *req, dpl_dict_t *query_params,
+                                   char *resource_ue, struct tm UNUSED *tm)
 {
   dpl_status_t  ret;
   char          expires_str[128];

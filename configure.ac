@@ -30,31 +30,15 @@ AC_PROG_LN_S
 
 AC_PROG_YACC
 
-AC_ARG_WITH(json_c_include_dir,
-        [  --with-json-c-include-dir=
-			  Specify json-c include dir [default=/usr/local/include/json-c]],
-        [json_c_include_dir="$withval"],[json_c_include_dir="/usr/local/include/json-c"])
-
-json_c_include_dir="$(cd $json_c_include_dir ; pwd)"
-
-JSON_CFLAGS="-I$json_c_include_dir $JSON_CFLAGS"
-
-AC_ARG_WITH(json_c_lib,
-        [  --with-json-c-lib=
-			  Specify linker cmd to link with json-c lib [default=-ljson]],
-        [json_c_lib="$withval"],[json_c_lib="-ljson"])
-
-JSON_LIBS="$json_c_lib $JSON_LIBS"
-
-AC_SUBST(JSON_CFLAGS)
-AC_SUBST(JSON_LIBS)
-
 PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
+PKG_CHECK_MODULES(JSON_C, json-c)
 
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
+
+AC_CHECK_HEADER([attr/xattr.h],[],AC_MSG_ERROR([libattr1 missing]))
 
 AC_ARG_ENABLE(coverage, AS_HELP_STRING([--enable-coverage],
 	     [Build with test coverage instrumentation]))
@@ -86,4 +70,3 @@ libdroplet.spec
 ])
 
 AC_OUTPUT
-

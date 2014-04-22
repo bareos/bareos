@@ -19,10 +19,10 @@
 static void
 be_valground(int argc, char **argv)
 {
-  struct stat sb;
-  int r;
-  char **newargv;
-  int newargc = 0;
+  struct stat   sb;
+  int           r;
+  char          **newargv;
+  int           newargc = 0;
 
   /* Note: we don't use VALGRIND_IS_RUNNING() to avoid
    * depending on the valgrind package at build time */
@@ -33,12 +33,12 @@ be_valground(int argc, char **argv)
   if (r < 0 || !S_ISREG(sb.st_mode))
     return;
 
-  newargv = (char **)malloc((argc+7) * sizeof(char **));
+  newargv = (char **) malloc((argc+7) * sizeof(char **));
   newargv[newargc++] = VALGRIND_BIN;
   newargv[newargc++] = "--tool=memcheck";
   newargv[newargc++] = "-q";
   newargv[newargc++] = "--leak-check=full";
-  newargv[newargc++] = "--suppressions=valgrind.supp";
+  newargv[newargc++] = "--suppressions=" SRCDIR "/valgrind.supp";
   newargv[newargc++] = "--num-callers=32";
   while (*argv)
     newargv[newargc++] = *argv++;
@@ -66,31 +66,36 @@ be_valground(int argc, char **argv)
 int
 main(int argc, char ** argv)
 {
-  int i;
-  SRunner *r;
-  int debug_flag = 0;
-  enum print_output output = CK_NORMAL;
-  enum { OPT_DEBUG=1, OPT_VERBOSE };
+  SRunner               *r;
+  int                   debug_flag = 0;
+  enum print_output     output = CK_NORMAL;
+
   static const struct option options[] = {
-    { "--debug", no_argument, NULL, OPT_DEBUG },
-    { "--verbose", no_argument, NULL, OPT_VERBOSE },
-    { NULL, 0, NULL, 0 }
+    { "debug",   no_argument, 0, 'd' },
+    { "verbose", no_argument, 0, 'v' },
+    { NULL,                0, 0,  0 }
   };
 
-  while (i = getopt_long(argc, argv, "", options, NULL) > 0)
-    {
-      switch (i)
-	{
-	case OPT_VERBOSE:
-	  output = CK_VERBOSE;
-	  break;
-	case OPT_DEBUG:
-	  debug_flag = 1;
-	  break;
-	default:
-	  exit(1);
-	}
+  while (1) {
+    int c, opt_idx = 0;
+
+    c = getopt_long(argc, argv, "dv", options, &opt_idx);
+    if (c == -1)
+      break;
+
+    switch (c) {
+    case 'v':
+      output = CK_VERBOSE;
+      break;
+    case 'd':
+      debug_flag = 1;
+      break;
+    case '?':
+    default:
+      fprintf(stderr, "ERROR %d %s\n", c, optarg);
+      exit(1);
     }
+  }
 
   if (debug_flag)
     putenv("CK_DEFAULT_TIMEOUT=1000000");
@@ -111,10 +116,15 @@ main(int argc, char ** argv)
 #ifdef __linux__
   srunner_add_suite(r, profile_suite());
 #endif
+  srunner_add_suite(r, s3_auth_suite());
+
   if (debug_flag)
     srunner_set_fork_status(r, CK_NOFORK);
   srunner_run_all(r, output);
+
   int number_failed = srunner_ntests_failed(r);
+
   srunner_free(r);
+
   return (0 == number_failed) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

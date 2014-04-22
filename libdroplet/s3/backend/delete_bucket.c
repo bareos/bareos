@@ -104,7 +104,7 @@ dpl_s3_delete_bucket(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL);
+  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;

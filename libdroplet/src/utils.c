@@ -746,7 +746,7 @@ dpl_url_encode(const char *str,
   size_t   i;
 
   for (i = 0; *str != '\0'; str++) {
-    if (isalnum(*str) || *str == '-' || *str == '_')
+    if (isalnum(*str) || *str == '-' || *str == '_' || *str == '.')
       str_ue[i++] = *str;
     else {
       sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
@@ -765,7 +765,7 @@ dpl_url_encode_no_slashes(const char *str,
   size_t   i;
 
   for (i = 0; *str != '\0'; str++) {
-    if (isalnum(*str) || *str == '-' || *str == '_' || *str == '/')
+    if (isalnum(*str) || *str == '-' || *str == '_' || *str == '.' || *str == '/')
       str_ue[i++] = *str;
     else {
       sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
