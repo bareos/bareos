@@ -318,17 +318,6 @@ typedef off_t     boffset_t;
 void b_memset(const char *file, int line, void *mem, int val, size_t num);
 #endif
 
-/*
- * Work around platforms without a proper va_copy.
- */
-#if defined(HAVE_VA_COPY)
-#define VA_COPY(dest, src) va_copy((dest), (src))
-#elif defined(HAVE___BUILTIN_VA_COPY)
-#define VA_COPY(dest, src) __builtin_va_copy((dest), (src));
-#else
-#define VA_COPY(dest, src) (dest) = (src);
-#endif
-
 /**
  * The digit following Dmsg and Emsg indicates the number of substitutions in
  * the message string. We need to do this kludge because non-GNU compilers
