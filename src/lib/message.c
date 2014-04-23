@@ -155,7 +155,7 @@ static void delivery_error(const char *fmt,...)
 
    i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - i - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
@@ -1430,7 +1430,7 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
    pool_buf = get_pool_memory(PM_EMSG);
    i = Mmsg(pool_buf, "%s:%d ", get_basename(file), line);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - i - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
@@ -1457,7 +1457,7 @@ int m_msg(const char *file, int line, POOLMEM **pool_buf, const char *fmt, ...)
 
    i = sprintf(*pool_buf, "%s:%d ", get_basename(file), line);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(*pool_buf) - i - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(*pool_buf+i, maxlen, fmt, arg_ptr);
@@ -1478,7 +1478,7 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
    i = sprintf(pool_buf, "%s:%d ", get_basename(file), line);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - i - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
@@ -1496,61 +1496,44 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
  * Edit a message into a Pool Memory buffer NO file:lineno
  *
  * Returns: string length of what was edited.
+ *          -1 when the buffer isn't enough to hold the edited string.
  */
 int vMmsg(POOLMEM **pool_buf, const char *fmt, va_list ap)
 {
-   va_list copy;
    int len, maxlen;
 
-   for (;;) {
-      maxlen = sizeof_pool_memory(*pool_buf) - 1;
-      VA_COPY(copy, ap);
-      len = bvsnprintf(*pool_buf, maxlen, fmt, copy);
-      va_end(copy);
-      if (len < 0 || len >= (maxlen - 5)) {
-         *pool_buf = realloc_pool_memory(*pool_buf, maxlen + maxlen / 2);
-         continue;
-      }
-      break;
+   maxlen = sizeof_pool_memory(*pool_buf) - 1;
+   len = bvsnprintf(*pool_buf, maxlen, fmt, ap);
+   if (len < 0 || len >= (maxlen - 5)) {
+      return -1;
    }
+
    return len;
 }
 
 int vMmsg(POOLMEM *&pool_buf, const char *fmt, va_list ap)
 {
-   va_list copy;
    int len, maxlen;
 
-   for (;;) {
-      maxlen = sizeof_pool_memory(pool_buf) - 1;
-      VA_COPY(copy, ap);
-      len = bvsnprintf(pool_buf, maxlen, fmt, copy);
-      va_end(copy);
-      if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + maxlen / 2);
-         continue;
-      }
-      break;
+   maxlen = sizeof_pool_memory(pool_buf) - 1;
+   len = bvsnprintf(pool_buf, maxlen, fmt, ap);
+   if (len < 0 || len >= (maxlen - 5)) {
+      return -1;
    }
+
    return len;
 }
 
 int vMmsg(POOL_MEM &pool_buf, const char *fmt, va_list ap)
 {
-   va_list copy;
    int len, maxlen;
 
-   for (;;) {
-      maxlen = pool_buf.max_size() - 1;
-      VA_COPY(copy, ap);
-      len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, copy);
-      va_end(copy);
-      if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf.realloc_pm(maxlen + maxlen / 2);
-         continue;
-      }
-      break;
+   maxlen = pool_buf.size() - 1;
+   len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
+   if (len < 0 || len >= (maxlen - 5)) {
+      return -1;
    }
+
    return len;
 }
 
@@ -1559,9 +1542,23 @@ int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
    int len;
    va_list ap;
 
-   va_start(ap, fmt);
-   len = vMmsg(pool_buf, fmt, ap);
-   va_end(ap);
+   while (1) {
+      va_start(ap, fmt);
+      len = vMmsg(pool_buf, fmt, ap);
+      va_end(ap);
+
+      if (len == -1) {
+         int cur_len, new_len;
+
+         cur_len = sizeof_pool_memory(*pool_buf);
+         new_len = cur_len + (cur_len / 2);
+
+         *pool_buf = realloc_pool_memory(*pool_buf, new_len);
+         continue;
+      } else {
+         break;
+      }
+   }
 
    return len;
 }
@@ -1571,9 +1568,23 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
    int len;
    va_list ap;
 
-   va_start(ap, fmt);
-   len = vMmsg(pool_buf, fmt, ap);
-   va_end(ap);
+   while (1) {
+      va_start(ap, fmt);
+      len = vMmsg(pool_buf, fmt, ap);
+      va_end(ap);
+
+      if (len == -1) {
+         int cur_len, new_len;
+
+         cur_len = sizeof_pool_memory(pool_buf);
+         new_len = cur_len + (cur_len / 2);
+
+         pool_buf = realloc_pool_memory(pool_buf, new_len);
+         continue;
+      } else {
+         break;
+      }
+   }
 
    return len;
 }
@@ -1583,9 +1594,23 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
    int len;
    va_list ap;
 
-   va_start(ap, fmt);
-   len = vMmsg(pool_buf, fmt, ap);
-   va_end(ap);
+   while (1) {
+      va_start(ap, fmt);
+      len = vMmsg(pool_buf, fmt, ap);
+      va_end(ap);
+
+      if (len == -1) {
+         int cur_len, new_len;
+
+         cur_len = pool_buf.size();
+         new_len = cur_len + (cur_len / 2);
+
+         pool_buf.check_size(new_len);
+         continue;
+      } else {
+         break;
+      }
+   }
 
    return len;
 }
@@ -1606,7 +1631,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 
    pool_buf = get_pool_memory(PM_EMSG);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(pool_buf, maxlen, fmt, arg_ptr);
@@ -1680,7 +1705,7 @@ void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
    pool_buf = get_pool_memory(PM_EMSG);
    i = Mmsg(pool_buf, "%s:%d ", get_basename(file), line);
 
-   for (;;) {
+   while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - i - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);

@@ -68,13 +68,26 @@ int scan_to_next_not_eol(LEX * lc)
  */
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
+   int len;
    va_list arg_ptr;
-   POOL_MEM buf(PM_NAME),
-            more(PM_NAME);
+   POOL_MEM buf(PM_NAME), more(PM_NAME);
 
-   va_start(arg_ptr, msg);
-   vMmsg(buf, msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      va_start(arg_ptr, msg);
+      len = vMmsg(buf, msg, arg_ptr);
+      va_end(arg_ptr);
+
+      if (len == -1) {
+         int cur_len, new_len;
+
+         cur_len = buf.size();
+         new_len = cur_len + (cur_len / 2);
+         buf.check_size(new_len);
+         continue;
+      } else {
+         break;
+      }
+   }
 
    if (lc->err_type == 0) {     /* M_ERROR_TERM by default */
       lc->err_type = M_ERROR_TERM;
@@ -88,8 +101,8 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 
    if (lc->line_no > 0) {
       e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"
-"            : line %d, col %d of file %s\n%s\n%s"),
-         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
+                                           "            : line %d, col %d of file %s\n%s\n%s"),
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
    } else {
       e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"), buf.c_str());
    }
@@ -100,13 +113,26 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
  */
 static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
+   int len;
    va_list arg_ptr;
-   POOL_MEM buf(PM_NAME),
-            more(PM_NAME);
+   POOL_MEM buf(PM_NAME), more(PM_NAME);
 
-   va_start(arg_ptr, msg);
-   vMmsg(buf, msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      va_start(arg_ptr, msg);
+      len = vMmsg(buf, msg, arg_ptr);
+      va_end(arg_ptr);
+
+      if (len == -1) {
+         int cur_len, new_len;
+
+         cur_len = buf.size();
+         new_len = cur_len + (cur_len / 2);
+         buf.check_size(new_len);
+         continue;
+      } else {
+         break;
+      }
+   }
 
    if (lc->line_no > lc->begin_line_no) {
       Mmsg(more, _("Problem probably begins at line %d.\n"), lc->begin_line_no);
@@ -116,8 +142,8 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 
    if (lc->line_no > 0) {
       p_msg(file, line, 0, _("Config warning: %s\n"
-"            : line %d, col %d of file %s\n%s\n%s"),
-         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
+                             "            : line %d, col %d of file %s\n%s\n%s"),
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
    } else {
       p_msg(file, line, 0, _("Config warning: %s\n"), buf.c_str());
    }
