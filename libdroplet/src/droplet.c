@@ -115,6 +115,7 @@ dpl_init()
 {
   SSL_library_init();
   SSL_load_error_strings();
+  ERR_load_crypto_strings();
 
   dpl_base64_init();
 

@@ -35,7 +35,7 @@
 
 /** @file */
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+/* #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__) */
 #define DPRINTF(fmt,...)
 
 //#define DEBUG
@@ -110,13 +110,18 @@ is_usable(dpl_conn_t *conn)
     {
     case 1:
       {
-        char buf[1];
-        /* something is waiting for us ? */
-        if (0 == recv(conn->fd, buf, 1, MSG_DONTWAIT|MSG_PEEK))
-          {
-            DPRINTF("is_usable: rv %d returning False\n", retval);
-            return 0;
-          }
+        char  buf[1];
+        int   size;
+
+        if (conn->ctx->use_https)
+          size = SSL_read(conn->ssl, buf, sizeof(buf));
+        else
+          size = recv(conn->fd, buf, sizeof(buf), MSG_DONTWAIT|MSG_PEEK);
+
+        if (size == 0) {
+          DPRINTF("is_usable: rv %d returning False\n", retval);
+          return 0;
+        }
       }
       /* fall down */
     case 0:
@@ -385,8 +390,6 @@ conn_open(dpl_ctx_t *ctx,
       goto end;
     }
 
-  DPRINTF("allocate new conn\n");
-
   conn = malloc(sizeof (*conn));
   if (NULL == conn)
     {
@@ -394,6 +397,8 @@ conn_open(dpl_ctx_t *ctx,
       conn = NULL;
       goto end;
     }
+
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "new_conn %s:%d %p", inet_ntoa(addr), port, conn);
 
   memset(conn, 0, sizeof (*conn));
 
@@ -449,6 +454,7 @@ conn_open(dpl_ctx_t *ctx,
       if (ret <= 0)
         {
 	  char msg[128];
+
 	  ERR_error_string_n(SSL_get_error(conn->ssl, ret), msg, sizeof(msg));
 	  DPL_LOG(ctx, DPL_ERROR, "SSL_connect failed with %s", msg);
           dpl_conn_free(conn);
