@@ -1,7 +1,7 @@
 [BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
 changes (highlevel):
 
-Release 13.2.x
+Release 13.2.3
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
@@ -20,6 +20,8 @@ Release 13.2.x
 * Plugin to do backup of Microsoft Sql Server (mssql) server.
 * Cleanup win api compat layer.
 
+Release 13.2.2
+==============
 * Remove hardcoded job timeout of 6 days.
 * Remove vtape autodetection
 * SD to SD replication makes SD crash
