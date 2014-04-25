@@ -8,10 +8,10 @@ endif
 TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
 
 alltests_CPPFLAGS = -I$(top_srcdir)/libdroplet/include \
-	$(LIBXML_CFLAGS) $(JSON_C_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) \
+	$(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) \
 	$(CHECK_CFLAGS) -I$(builddir)/ssldata -DSRCDIR='"$(srcdir)"'
 alltests_CFLAGS = -std=gnu99
-alltests_LDFLAGS = $(top_builddir)/libdroplet/libdroplet.la $(JSON_C_LIBS) -lcrypto $(CHECK_LIBS) -lrt -ldl
+alltests_LDFLAGS = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto $(CHECK_LIBS) -lrt -ldl
 alltests_SOURCES = \
 	tests/addrlist_utest.c \
 	tests/droplet_utest.c \

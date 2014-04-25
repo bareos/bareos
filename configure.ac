@@ -33,7 +33,9 @@ AC_PROG_YACC
 PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
-PKG_CHECK_MODULES(JSON_C, json-c)
+PKG_CHECK_MODULES(JSON, json-c, [json_pkg_mod_name="json-c"],
+                  [PKG_CHECK_MODULES(JSON, json, [json_pkg_mod_name="json"])])
+AC_SUBST(json_pkg_mod_name)
 
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
