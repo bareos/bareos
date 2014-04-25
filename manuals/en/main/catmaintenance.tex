@@ -92,6 +92,38 @@ The database preparation scripts need to have password-less administrator access
 Depending on the distribution you're using, this require additional configuration.
 See the following section about howto achieve this for the different database systems.
 
+
+To view and test the currently configured settings, use following commands:
+\begin{commands}{Show current database configuration}
+<command> </command><parameter>/usr/sbin/bareos-dbcheck -B -c /etc/bareos/bareos-dir.conf</parameter>
+catalog=MyCatalog
+db_name=bareos
+db_driver=mysql
+db_user=bareos
+db_password=YourPassword
+db_address=
+db_port=0
+db_socket=
+db_type=MySQL
+working_dir=/var/lib/bareos
+\end{commands}
+
+\begin{commands}{Test the database connection. Example: wrong password}
+<command> </command><parameter>/usr/sbin/bareos-dir -t -f -d 500</parameter>
+[...]
+bareos-dir: mysql.c:204-0 Error 1045 (28000): Access denied for user 'bareos'@'localhost' (using password: YES)
+bareos-dir: dird.c:1114-0 Could not open Catalog "MyCatalog", database "bareos".
+bareos-dir: dird.c:1119-0 mysql.c:200 Unable to connect to MySQL server.
+Database=bareos User=bareos
+MySQL connect failed either server not running or your authorization is incorrect.
+bareos-dir: mysql.c:239-0 closedb ref=0 connected=0 db=0
+25-Apr 16:25 bareos-dir ERROR TERMINATION
+Please correct configuration file: bareos-dir.conf
+\end{commands}
+
+
+
+
 \subsection{PostgreSQL}
 
 On most distributions, PostgreSQL uses ident to allow access to the database system.
