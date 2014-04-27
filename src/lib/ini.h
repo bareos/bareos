@@ -24,14 +24,16 @@
 /*
  * Standard global types with handlers defined in ini.c
  */
-#define INI_CFG_TYPE_INT32       1  /* 32 bits Integer */
-#define INI_CFG_TYPE_PINT32      2  /* Positive 32 bits Integer (unsigned) */
-#define INI_CFG_TYPE_INT64       3  /* 64 bits Integer */
-#define INI_CFG_TYPE_PINT64      4  /* Positive 64 bits Integer (unsigned) */
-#define INI_CFG_TYPE_NAME        5  /* Name */
-#define INI_CFG_TYPE_STR         6  /* String */
-#define INI_CFG_TYPE_BOOL        7  /* Boolean */
-#define INI_CFG_TYPE_ALIST_STR   8  /* List of strings */
+enum {
+   INI_CFG_TYPE_INT32 = 1,          /* 32 bits Integer */
+   INI_CFG_TYPE_PINT32 = 2,         /* Positive 32 bits Integer (unsigned) */
+   INI_CFG_TYPE_INT64 = 3,          /* 64 bits Integer */
+   INI_CFG_TYPE_PINT64 = 4,         /* Positive 64 bits Integer (unsigned) */
+   INI_CFG_TYPE_NAME = 5,           /* Name */
+   INI_CFG_TYPE_STR = 6,            /* String */
+   INI_CFG_TYPE_BOOL = 7,           /* Boolean */
+   INI_CFG_TYPE_ALIST_STR = 8       /* List of strings */
+};
 
 /*
  * Plugin has a internal C structure that describes the configuration:

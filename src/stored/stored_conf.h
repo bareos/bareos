@@ -27,11 +27,13 @@
 /*
  * Program specific config types (start at 50)
  */
-#define CFG_TYPE_AUTHTYPE           50  /* Authentication Type */
-#define CFG_TYPE_DEVTYPE            51  /* Device Type */
-#define CFG_TYPE_MAXBLOCKSIZE       52  /* Maximum Blocksize */
-#define CFG_TYPE_IODIRECTION        53  /* IO Direction */
-#define CFG_TYPE_CMPRSALGO          54  /* Compression Algorithm */
+enum {
+   CFG_TYPE_AUTHTYPE = 50,              /* Authentication Type */
+   CFG_TYPE_DEVTYPE = 51,               /* Device Type */
+   CFG_TYPE_MAXBLOCKSIZE = 52,          /* Maximum Blocksize */
+   CFG_TYPE_IODIRECTION = 53,           /* IO Direction */
+   CFG_TYPE_CMPRSALGO = 54              /* Compression Algorithm */
+};
 
 enum {
    R_DIRECTOR = 3001,

@@ -31,37 +31,39 @@
 /*
  * Program specific config types (start at 50)
  */
-#define CFG_TYPE_ACL                50  /* User Access Control List */
-#define CFG_TYPE_AUTHPROTOCOLTYPE   51  /* Authentication Protocol */
-#define CFG_TYPE_AUTHTYPE           52  /* Authentication Type */
-#define CFG_TYPE_DEVICE             53  /* Device resource */
-#define CFG_TYPE_JOBTYPE            54  /* Type of Job */
-#define CFG_TYPE_PROTOCOLTYPE       55  /* Protocol */
-#define CFG_TYPE_LEVEL              56  /* Backup Level */
-#define CFG_TYPE_REPLACE            57  /* Replace option */
-#define CFG_TYPE_SHRTRUNSCRIPT      58  /* Short Runscript definition */
-#define CFG_TYPE_RUNSCRIPT          59  /* Runscript */
-#define CFG_TYPE_RUNSCRIPT_CMD      60  /* Runscript Command */
-#define CFG_TYPE_RUNSCRIPT_TARGET   61  /* Runscript Target (Host) */
-#define CFG_TYPE_RUNSCRIPT_BOOL     62  /* Runscript Boolean */
-#define CFG_TYPE_RUNSCRIPT_WHEN     63  /* Runscript When expression */
-#define CFG_TYPE_MIGTYPE            64  /* Migration Type */
-#define CFG_TYPE_INCEXC             65  /* Include/Exclude item */
-#define CFG_TYPE_RUN                66  /* Schedule Run Command */
-#define CFG_TYPE_ACTIONONPURGE      67  /* Action to perform on Purge */
+enum {
+   CFG_TYPE_ACL = 50,                   /* User Access Control List */
+   CFG_TYPE_AUTHPROTOCOLTYPE = 51,      /* Authentication Protocol */
+   CFG_TYPE_AUTHTYPE = 52,              /* Authentication Type */
+   CFG_TYPE_DEVICE = 53,                /* Device resource */
+   CFG_TYPE_JOBTYPE = 54,               /* Type of Job */
+   CFG_TYPE_PROTOCOLTYPE = 55,          /* Protocol */
+   CFG_TYPE_LEVEL = 56,                 /* Backup Level */
+   CFG_TYPE_REPLACE = 57,               /* Replace option */
+   CFG_TYPE_SHRTRUNSCRIPT = 58,         /* Short Runscript definition */
+   CFG_TYPE_RUNSCRIPT = 59,             /* Runscript */
+   CFG_TYPE_RUNSCRIPT_CMD = 60,         /* Runscript Command */
+   CFG_TYPE_RUNSCRIPT_TARGET = 61,      /* Runscript Target (Host) */
+   CFG_TYPE_RUNSCRIPT_BOOL = 62,        /* Runscript Boolean */
+   CFG_TYPE_RUNSCRIPT_WHEN = 63,        /* Runscript When expression */
+   CFG_TYPE_MIGTYPE = 64,               /* Migration Type */
+   CFG_TYPE_INCEXC = 65,                /* Include/Exclude item */
+   CFG_TYPE_RUN = 66,                   /* Schedule Run Command */
+   CFG_TYPE_ACTIONONPURGE = 67,         /* Action to perform on Purge */
 
-#define CFG_TYPE_FNAME              80  /* Filename */
-#define CFG_TYPE_PLUGINNAME         81  /* Pluginname */
-#define CFG_TYPE_EXCLUDEDIR         82  /* Exclude directory */
-#define CFG_TYPE_OPTIONS            83  /* Options block */
-#define CFG_TYPE_OPTION             84  /* Option of Options block */
-#define CFG_TYPE_REGEX              85  /* Regular Expression */
-#define CFG_TYPE_BASE               86  /* Basejob Expression */
-#define CFG_TYPE_WILD               87  /* Wildcard Expression */
-#define CFG_TYPE_PLUGIN             88  /* Plugin definition */
-#define CFG_TYPE_FSTYPE             89  /* FileSytem match criterium (UNIX)*/
-#define CFG_TYPE_DRIVETYPE          90  /* DriveType match criterium (Windows) */
-#define CFG_TYPE_META               91  /* Meta tag */
+   CFG_TYPE_FNAME = 80,                 /* Filename */
+   CFG_TYPE_PLUGINNAME = 81,            /* Pluginname */
+   CFG_TYPE_EXCLUDEDIR = 82,            /* Exclude directory */
+   CFG_TYPE_OPTIONS = 83,               /* Options block */
+   CFG_TYPE_OPTION = 84,                /* Option of Options block */
+   CFG_TYPE_REGEX = 85,                 /* Regular Expression */
+   CFG_TYPE_BASE = 86,                  /* Basejob Expression */
+   CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
+   CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
+   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
+   CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
+   CFG_TYPE_META = 91                   /* Meta tag */
+};
 
 /*
  * Resource codes -- they must be sequential for indexing
