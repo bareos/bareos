@@ -29,7 +29,9 @@
 /*
  * Program specific config types (start at 50)
  */
-#define CFG_TYPE_CIPHER             50  /* Encryption Cipher */
+enum {
+   CFG_TYPE_CIPHER = 50               /* Encryption Cipher */
+};
 
 /*
  * Resource codes -- they must be sequential for indexing

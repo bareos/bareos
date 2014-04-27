@@ -30,54 +30,58 @@
 #ifdef SMARTALLOC
 
 #define get_pool_memory(pool) sm_get_pool_memory(__FILE__, __LINE__, pool)
-extern POOLMEM *sm_get_pool_memory(const char *file, int line, int pool);
+POOLMEM *sm_get_pool_memory(const char *file, int line, int pool);
 
 #define get_memory(size) sm_get_memory(__FILE__, __LINE__, size)
-extern POOLMEM *sm_get_memory(const char *fname, int line, int32_t size);
+POOLMEM *sm_get_memory(const char *fname, int line, int32_t size);
 
 #define sizeof_pool_memory(buf) sm_sizeof_pool_memory(__FILE__, __LINE__, buf)
-extern int32_t sm_sizeof_pool_memory(const char *fname, int line, POOLMEM *buf);
+int32_t sm_sizeof_pool_memory(const char *fname, int line, POOLMEM *buf);
 
 #define realloc_pool_memory(buf,size) sm_realloc_pool_memory(__FILE__, __LINE__, buf, size)
-extern POOLMEM  *sm_realloc_pool_memory(const char *fname, int line, POOLMEM *buf, int32_t size);
+POOLMEM *sm_realloc_pool_memory(const char *fname, int line, POOLMEM *buf, int32_t size);
 
 #define check_pool_memory_size(buf,size) sm_check_pool_memory_size(__FILE__, __LINE__, buf, size)
-extern POOLMEM  *sm_check_pool_memory_size(const char *fname, int line, POOLMEM *buf, int32_t size);
+POOLMEM *sm_check_pool_memory_size(const char *fname, int line, POOLMEM *buf, int32_t size);
 
 #define free_pool_memory(x) sm_free_pool_memory(__FILE__, __LINE__, x)
 #define free_memory(x) sm_free_pool_memory(__FILE__, __LINE__, x)
-extern void sm_free_pool_memory(const char *fname, int line, POOLMEM *buf);
+void sm_free_pool_memory(const char *fname, int line, POOLMEM *buf);
 
 #else
 
-extern POOLMEM *get_pool_memory(int pool);
-extern POOLMEM *get_memory(int32_t size);
-extern int32_t sizeof_pool_memory(POOLMEM *buf);
-extern POOLMEM  *realloc_pool_memory(POOLMEM *buf, int32_t size);
-extern POOLMEM  *check_pool_memory_size(POOLMEM *buf, int32_t size);
+POOLMEM *get_pool_memory(int pool);
+POOLMEM *get_memory(int32_t size);
+int32_t sizeof_pool_memory(POOLMEM *buf);
+POOLMEM *realloc_pool_memory(POOLMEM *buf, int32_t size);
+POOLMEM *check_pool_memory_size(POOLMEM *buf, int32_t size);
 #define free_memory(x) free_pool_memory(x)
-extern void   free_pool_memory(POOLMEM *buf);
+void free_pool_memory(POOLMEM *buf);
 
 #endif
 
-/* Macro to simplify free/reset pointers */
-#define free_and_null_pool_memory(a) do{if(a){free_pool_memory(a); (a)=NULL;}} while(0)
+/*
+ * Macro to simplify free/reset pointers
+ */
+#define free_and_null_pool_memory(a) do { if (a) { free_pool_memory(a); (a) = NULL;} } while (0)
 
-extern void garbage_collect_memory_pool();
-extern void  close_memory_pool();
-extern void  print_memory_pool_stats();
+void garbage_collect_memory_pool();
+void close_memory_pool();
+void print_memory_pool_stats();
 
-extern void garbage_collect_memory();
+void garbage_collect_memory();
 
+enum {
+   PM_NOPOOL = 0,                     /* Nonpooled memory */
+   PM_NAME = 1,                       /* BAREOS name */
+   PM_FNAME = 2,                      /* File name buffer */
+   PM_MESSAGE = 3,                    /* Daemon message */
+   PM_EMSG = 4,                       /* Error message */
+   PM_BSOCK = 5,                      /* BSOCK buffer */
+   PM_RECORD = 6                      /* DEV_RECORD buffer */
+};
 
-#define PM_NOPOOL  0                  /* Nonpooled memory */
-#define PM_NAME    1                  /* BAREOS name */
-#define PM_FNAME   2                  /* File name buffer */
-#define PM_MESSAGE 3                  /* Daemon message */
-#define PM_EMSG    4                  /* Error message */
-#define PM_BSOCK   5                  /* BSOCK buffer */
-#define PM_RECORD  6                  /* DEV_RECORD buffer */
-#define PM_MAX     PM_RECORD          /* Number of types */
+#define PM_MAX PM_RECORD              /* Number of types */
 
 class POOL_MEM {
    char *mem;
@@ -111,5 +115,4 @@ int pm_memcpy(POOLMEM **pm, const char *data, int32_t n);
 int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n);
 int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n);
 int pm_memcpy(POOLMEM *&pm, POOL_MEM &data, int32_t n);
-
 #endif

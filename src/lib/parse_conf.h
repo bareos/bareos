@@ -134,9 +134,10 @@ struct RES_TABLE {
 
 /* Common Resource definitions */
 
-#define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH-1       /* maximum resource name length */
+#define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH - 1 /* maximum resource name length */
 
 /*
+ * Config item flags.
  */
 #define CFG_ITEM_REQUIRED          0x1  /* Item required */
 #define CFG_ITEM_DEFAULT           0x2  /* Default supplied */
@@ -147,32 +148,34 @@ struct RES_TABLE {
 /*
  * Standard global types with handlers defined in res.c
  */
-#define CFG_TYPE_STR                1   /* String */
-#define CFG_TYPE_DIR                2   /* Directory */
-#define CFG_TYPE_MD5PASSWORD        3   /* MD5 hashed Password */
-#define CFG_TYPE_CLEARPASSWORD      4   /* Clear text Password */
-#define CFG_TYPE_AUTOPASSWORD       5   /* Password stored in clear when needed otherwise hashed */
-#define CFG_TYPE_NAME               6   /* Name */
-#define CFG_TYPE_STRNAME            7   /* String Name */
-#define CFG_TYPE_RES                8   /* Resource */
-#define CFG_TYPE_ALIST_RES          9   /* List of resources */
-#define CFG_TYPE_ALIST_STR          10  /* List of strings */
-#define CFG_TYPE_ALIST_DIR          11  /* List of dirs */
-#define CFG_TYPE_INT32              12  /* 32 bits Integer */
-#define CFG_TYPE_PINT32             13  /* Positive 32 bits Integer (unsigned) */
-#define CFG_TYPE_MSGS               14  /* Message resource */
-#define CFG_TYPE_INT64              15  /* 64 bits Integer */
-#define CFG_TYPE_BIT                16  /* Bitfield */
-#define CFG_TYPE_BOOL               17  /* Boolean */
-#define CFG_TYPE_TIME               18  /* Time value */
-#define CFG_TYPE_SIZE64             19  /* 64 bits file size */
-#define CFG_TYPE_SIZE32             20  /* 32 bits file size */
-#define CFG_TYPE_SPEED              21  /* Speed limit */
-#define CFG_TYPE_DEFS               22  /* Definition */
-#define CFG_TYPE_LABEL              23  /* Label */
-#define CFG_TYPE_ADDRESSES          24  /* List of ip addresses */
-#define CFG_TYPE_ADDRESSES_ADDRESS  25  /* Ip address */
-#define CFG_TYPE_ADDRESSES_PORT     26  /* Ip port */
+enum {
+   CFG_TYPE_STR = 1,                    /* String */
+   CFG_TYPE_DIR = 2,                    /* Directory */
+   CFG_TYPE_MD5PASSWORD = 3,            /* MD5 hashed Password */
+   CFG_TYPE_CLEARPASSWORD = 4,          /* Clear text Password */
+   CFG_TYPE_AUTOPASSWORD = 5,           /* Password stored in clear when needed otherwise hashed */
+   CFG_TYPE_NAME = 6,                   /* Name */
+   CFG_TYPE_STRNAME = 7,                /* String Name */
+   CFG_TYPE_RES = 8,                    /* Resource */
+   CFG_TYPE_ALIST_RES = 9,              /* List of resources */
+   CFG_TYPE_ALIST_STR = 10,             /* List of strings */
+   CFG_TYPE_ALIST_DIR = 11,             /* List of dirs */
+   CFG_TYPE_INT32 = 12,                 /* 32 bits Integer */
+   CFG_TYPE_PINT32 = 13,                /* Positive 32 bits Integer (unsigned) */
+   CFG_TYPE_MSGS = 14,                  /* Message resource */
+   CFG_TYPE_INT64 = 15,                 /* 64 bits Integer */
+   CFG_TYPE_BIT = 16,                   /* Bitfield */
+   CFG_TYPE_BOOL = 17,                  /* Boolean */
+   CFG_TYPE_TIME = 18,                  /* Time value */
+   CFG_TYPE_SIZE64 = 19,                /* 64 bits file size */
+   CFG_TYPE_SIZE32 = 20,                /* 32 bits file size */
+   CFG_TYPE_SPEED = 21,                 /* Speed limit */
+   CFG_TYPE_DEFS = 22,                  /* Definition */
+   CFG_TYPE_LABEL = 23,                 /* Label */
+   CFG_TYPE_ADDRESSES = 24,             /* List of ip addresses */
+   CFG_TYPE_ADDRESSES_ADDRESS = 25,     /* Ip address */
+   CFG_TYPE_ADDRESSES_PORT = 26         /* Ip port */
+};
 
 /*
  * Base Class for all Resource Classes

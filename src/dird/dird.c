@@ -87,42 +87,32 @@ static bool check_catalog(cat_op mode);
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
 
 /*
- * This allows the message handler to operate on the database
- * by using a pointer to this function. The pointer is
- * needed because the other daemons do not have access
- * to the database. If the pointer is not defined (other daemons),
- * then writing the database is disabled.
+ * This allows the message handler to operate on the database by using a pointer
+ * to this function. The pointer is needed because the other daemons do not have
+ * access to the database. If the pointer is not defined (other daemons), then
+ * writing the database is disabled.
  */
 static bool dir_db_log_insert(JCR *jcr, utime_t mtime, char *msg)
 {
    int length;
-   bool retval;
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
-   POOLMEM *cmd, *esc_msg;
+   POOL_MEM query(PM_MESSAGE),
+            esc_msg(PM_MESSAGE);
 
    if (!jcr || !jcr->db || !jcr->db->is_connected()) {
       return false;
    }
 
-   cmd = get_pool_memory(PM_MESSAGE);
-   esc_msg = get_pool_memory(PM_MESSAGE);
-
    length = strlen(msg) + 1;
-
-   esc_msg = check_pool_memory_size(esc_msg, length * 2 + 1);
-   db_escape_string(jcr, jcr->db, esc_msg, msg, length);
+   esc_msg.check_size(length * 2 + 1);
+   db_escape_string(jcr, jcr->db, esc_msg.c_str(), msg, length);
 
    bstrutime(dt, sizeof(dt), mtime);
-   Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-        edit_int64(jcr->JobId, ed1), dt, esc_msg);
+   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
+        edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
 
-   retval = db_sql_query(jcr->db, cmd);
-
-   free_pool_memory(cmd);
-   free_pool_memory(esc_msg);
-
-   return retval;
+   return db_sql_query(jcr->db, query.c_str());
 }
 
 static void usage()
