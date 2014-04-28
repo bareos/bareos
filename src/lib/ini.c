@@ -232,20 +232,32 @@ static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
  */
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
-   va_list arg_ptr;
+   va_list ap;
+   int len, maxlen;
+   ConfigFile *ini;
    POOL_MEM buf(PM_MESSAGE);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf.c_str(), buf.size(), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
 #ifdef TEST_PROGRAM
    printf("ERROR: Config file error: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
+          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
+   ini = (ConfigFile *)(lc->caller_ctx);
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_ERROR, 0, _("Config file error: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),
@@ -270,20 +282,32 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
  */
 static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
-   va_list arg_ptr;
-   POOL_MEM buf(PM_NAME);
+   va_list ap;
+   int len, maxlen;
+   ConfigFile *ini;
+   POOL_MEM buf(PM_MESSAGE);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf.c_str(), buf.size(), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
 #ifdef TEST_PROGRAM
    printf("WARNING: Config file warning: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
+          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
+   ini = (ConfigFile *)(lc->caller_ctx);
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_WARNING, 0, _("Config file warning: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),

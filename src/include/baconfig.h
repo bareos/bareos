@@ -524,9 +524,6 @@ m_msg(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 
 class POOL_MEM;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int vMmsg(POOLMEM **pool_buf, const char *fmt, va_list ap);
-int vMmsg(POOLMEM *&msgbuf, const char *fmt, va_list ap);
-int vMmsg(POOL_MEM &msgbuf, const char *fmt, va_list ap);
 int Mmsg(POOLMEM **msgbuf, const char *fmt, ...);
 int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
 int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
