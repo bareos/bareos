@@ -102,26 +102,23 @@ static BSR *new_bsr()
  */
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   int len;
-   va_list arg_ptr;
+   va_list ap;
+   int len, maxlen;
    POOL_MEM buf(PM_NAME);
    JCR *jcr = (JCR *)(lc->caller_ctx);
 
    while (1) {
-      va_start(arg_ptr, msg);
-      len = vMmsg(buf, msg, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
 
-      if (len == -1) {
-         int cur_len, new_len;
-
-         cur_len = buf.size();
-         new_len = cur_len + (cur_len / 2);
-         buf.check_size(new_len);
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
          continue;
-      } else {
-         break;
       }
+
+      break;
    }
 
    if (jcr) {
@@ -140,26 +137,23 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
  */
 static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   int len;
-   va_list arg_ptr;
+   va_list ap;
+   int len, maxlen;
    POOL_MEM buf(PM_NAME);
    JCR *jcr = (JCR *)(lc->caller_ctx);
 
    while (1) {
-      va_start(arg_ptr, msg);
-      len = vMmsg(buf, msg, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
 
-      if (len == -1) {
-         int cur_len, new_len;
-
-         cur_len = buf.size();
-         new_len = cur_len + (cur_len / 2);
-         buf.check_size(new_len);
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
          continue;
-      } else {
-         break;
       }
+
+      break;
    }
 
    if (jcr) {

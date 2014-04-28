@@ -140,7 +140,7 @@ void MSGSRES::wait_not_in_use()    /* leaves fides_mutex set */
  */
 static void delivery_error(const char *fmt,...)
 {
-   va_list   arg_ptr;
+   va_list ap;
    int i, len, maxlen;
    POOLMEM *pool_buf;
    char dt[MAX_TIME_LENGTH];
@@ -157,13 +157,15 @@ static void delivery_error(const char *fmt,...)
 
    while (1) {
       maxlen = sizeof_pool_memory(pool_buf) - i - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      va_start(ap, fmt);
+      len = bvsnprintf(pool_buf+i, maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
          pool_buf = realloc_pool_memory(pool_buf, maxlen + i + maxlen / 2);
          continue;
       }
+
       break;
    }
 
@@ -1498,92 +1500,44 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
  * Returns: string length of what was edited.
  *          -1 when the buffer isn't enough to hold the edited string.
  */
-int vMmsg(POOLMEM **pool_buf, const char *fmt, va_list ap)
-{
-   int len, maxlen;
-
-   maxlen = sizeof_pool_memory(*pool_buf) - 1;
-   len = bvsnprintf(*pool_buf, maxlen, fmt, ap);
-   if (len < 0 || len >= (maxlen - 5)) {
-      return -1;
-   }
-
-   return len;
-}
-
-int vMmsg(POOLMEM *&pool_buf, const char *fmt, va_list ap)
-{
-   int len, maxlen;
-
-   maxlen = sizeof_pool_memory(pool_buf) - 1;
-   len = bvsnprintf(pool_buf, maxlen, fmt, ap);
-   if (len < 0 || len >= (maxlen - 5)) {
-      return -1;
-   }
-
-   return len;
-}
-
-int vMmsg(POOL_MEM &pool_buf, const char *fmt, va_list ap)
-{
-   int len, maxlen;
-
-   maxlen = pool_buf.size() - 1;
-   len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
-   if (len < 0 || len >= (maxlen - 5)) {
-      return -1;
-   }
-
-   return len;
-}
-
 int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
 {
-   int len;
+   int len, maxlen;
    va_list ap;
 
    while (1) {
+      maxlen = sizeof_pool_memory(*pool_buf) - 1;
       va_start(ap, fmt);
-      len = vMmsg(pool_buf, fmt, ap);
+      len = bvsnprintf(*pool_buf, maxlen, fmt, ap);
       va_end(ap);
 
-      if (len == -1) {
-         int cur_len, new_len;
-
-         cur_len = sizeof_pool_memory(*pool_buf);
-         new_len = cur_len + (cur_len / 2);
-
-         *pool_buf = realloc_pool_memory(*pool_buf, new_len);
+      if (len < 0 || len >= (maxlen - 5)) {
+         *pool_buf = realloc_pool_memory(*pool_buf, maxlen + maxlen / 2);
          continue;
-      } else {
-         break;
       }
-   }
 
+      break;
+   }
    return len;
 }
 
 int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
 {
-   int len;
+   int len, maxlen;
    va_list ap;
 
    while (1) {
+      maxlen = sizeof_pool_memory(pool_buf) - 1;
       va_start(ap, fmt);
-      len = vMmsg(pool_buf, fmt, ap);
+      len = bvsnprintf(pool_buf, maxlen, fmt, ap);
       va_end(ap);
 
-      if (len == -1) {
-         int cur_len, new_len;
-
-         cur_len = sizeof_pool_memory(pool_buf);
-         new_len = cur_len + (cur_len / 2);
-
-         pool_buf = realloc_pool_memory(pool_buf, new_len);
+      if (len < 0 || len >= (maxlen - 5)) {
+         pool_buf = realloc_pool_memory(pool_buf, maxlen + maxlen / 2);
          continue;
-      } else {
-         break;
       }
+
+      break;
    }
 
    return len;
@@ -1591,25 +1545,21 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
 
 int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
 {
-   int len;
+   int len, maxlen;
    va_list ap;
 
    while (1) {
+      maxlen = pool_buf.size() - 1;
       va_start(ap, fmt);
-      len = vMmsg(pool_buf, fmt, ap);
+      len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
 
-      if (len == -1) {
-         int cur_len, new_len;
-
-         cur_len = pool_buf.size();
-         new_len = cur_len + (cur_len / 2);
-
-         pool_buf.check_size(new_len);
+      if (len < 0 || len >= (maxlen - 5)) {
+         pool_buf.realloc_pm(maxlen + maxlen / 2);
          continue;
-      } else {
-         break;
       }
+
+      break;
    }
 
    return len;
