@@ -1,13 +1,25 @@
 [BAREOS](http://www.bareos.org/) is a fork of the Bacula source code with the following
 changes (highlevel):
 
-Release 13.2.3
+Release 13.2
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
 
-* Allow to cancel multiple jobids with cancel cmd from bconsole.
+## Release 13.2.3
 
+* Remove hardcoded job timeout of 6 days.
+* Remove vtape autodetection
+* SD to SD replication makes SD crash
+* Rework database scripting.
+* Allow updates from Bacula 2.x to Bareos.
+* Fix some bugs in the NDMP implementation.
+* Some coverity warning and errors fixed.
+* Add support for setting allowed cns for passive mode.
+
+## Release 13.2.2
+
+* Allow to cancel multiple jobids with cancel cmd from bconsole.
 * Enhanced help for run and restore command.
 * Refactor windows version detection code.
 * Sortable tables in bRestore.
@@ -20,16 +32,6 @@ Release 13.2.3
 * Plugin to do backup of Microsoft Sql Server (mssql) server.
 * Cleanup win api compat layer.
 
-Release 13.2.2
-==============
-* Remove hardcoded job timeout of 6 days.
-* Remove vtape autodetection
-* SD to SD replication makes SD crash
-* Rework database scripting.
-* Allow updates from Bacula 2.x to Bareos.
-* Fix some bugs in the NDMP implementation.
-* Some coverity warning and errors fixed.
-* Add support for setting allowed cns for passive mode.
 
 Release 13.1.x
 ==============
