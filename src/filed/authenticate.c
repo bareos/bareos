@@ -188,9 +188,6 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_server(director->tls_ctx, bs, verify_list)) {
          Jmsg0(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
          auth_success = false;
@@ -334,9 +331,6 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
          verify_list = me->tls_allowed_cns;
       }
 
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
          Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
          auth_success = false;
