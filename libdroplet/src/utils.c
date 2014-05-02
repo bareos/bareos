@@ -131,6 +131,62 @@ dpl_gethostbyname_r(const char *name,
 #endif
 }
 
+int
+dpl_gethostbyname2_r(const char *name, int af,
+                     struct hostent *ret,
+                     char *buf,
+                     size_t buflen,
+                     struct hostent **result,
+                     int *h_errnop)
+{
+#if defined(SOLARIS) || defined(__sun__)
+  struct hostent *resultp;
+
+  resultp = gethostbyname2_r(name, af, ret, buf, buflen, h_errnop);
+  if (NULL == resultp)
+    return 1;
+
+  *result = resultp;
+
+  return 0;
+
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+
+  struct hostent *resultp;
+
+  resultp = gethostbyname2(name, af);
+  if (NULL == resultp)
+    return 1;
+
+  *result = resultp;
+
+  return 0;
+#else
+  //linux
+  return gethostbyname2_r(name, af, ret, buf, buflen, result, h_errnop);
+#endif
+}
+
+int
+dpl_gethostbyname3_r(const char *name,
+                     struct hostent *ret,
+                     char *buf,
+                     size_t buflen,
+                     struct hostent **result,
+                     int *h_errnop)
+{
+  int   st;
+
+  st = dpl_gethostbyname2_r(name, AF_INET6, ret, buf, buflen, result, h_errnop);
+  if (st != 0)
+    return st;
+
+  if (*result == NULL)
+    st = dpl_gethostbyname2_r(name, AF_INET, ret, buf, buflen, result, h_errnop);
+
+  return st;
+}
+
 /*
  * debug
  */

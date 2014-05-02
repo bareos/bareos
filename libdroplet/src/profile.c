@@ -671,6 +671,70 @@ dpl_profile_init(dpl_ctx_t *ctx,
   return DPL_SUCCESS;
 }
 
+static dpl_status_t
+dpl_ssl_profile_post(dpl_ctx_t *ctx)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const SSL_METHOD *method;
+#else
+  SSL_METHOD *method;
+#endif
+
+  OpenSSL_add_all_digests();
+  OpenSSL_add_all_ciphers();
+
+  ctx->ssl_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
+  if (NULL == ctx->ssl_bio_err) {
+    DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+    return DPL_FAILURE;  
+  }
+
+  method = SSLv23_method();
+  ctx->ssl_ctx = SSL_CTX_new(method);
+  if (NULL == ctx->ssl_ctx) {
+    DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+    return DPL_FAILURE;
+  }
+
+  //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
+
+  if (NULL != ctx->ssl_cert_file) {
+    if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
+      DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+      BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
+      ERR_print_errors(ctx->ssl_bio_err);
+      BIO_printf(ctx->ssl_bio_err, "\n");
+      return DPL_FAILURE;
+    }
+  }
+
+  if (NULL != ctx->ssl_password) {
+    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
+  }
+      
+  if (NULL != ctx->ssl_key_file) {
+    if (!SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)) {
+      DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+      BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
+      ERR_print_errors(ctx->ssl_bio_err);
+      BIO_printf(ctx->ssl_bio_err, "\n");
+      return DPL_FAILURE;
+    }
+  }
+
+  if (NULL != ctx->ssl_ca_list) {
+    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
+      DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+      BIO_printf(ctx->ssl_bio_err, "load_verify_location: ");
+      ERR_print_errors(ctx->ssl_bio_err);
+      BIO_printf(ctx->ssl_bio_err, "\n");
+      return DPL_FAILURE;
+    }
+  }
+
+  return DPL_SUCCESS;
+}
 
 /**
  * post processing of profile, e.g. init SSL
@@ -679,147 +743,53 @@ dpl_profile_init(dpl_ctx_t *ctx,
  *
  * @return
  */
+
 dpl_status_t
 dpl_profile_post(dpl_ctx_t *ctx)
 {
-  int ret, ret2;
+  dpl_status_t  ret;
 
   //sanity checks
-
-  if (strcmp(ctx->backend->name, "posix"))
-    {
-      if (NULL == ctx->addrlist)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
-          ret = DPL_FAILURE;
-          goto end;
-        }
+  if (strcmp(ctx->backend->name, "posix")) {
+    if (NULL == ctx->addrlist) {
+      DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
+      return DPL_FAILURE;
     }
+  }
 
   //ssl stuff
-  if (1 == ctx->use_https)
-    {
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-      const SSL_METHOD *method;
-#else
-      SSL_METHOD *method;
-#endif
-
-      ctx->ssl_bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
-      if (NULL == ctx->ssl_bio_err)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
-          ret = DPL_FAILURE;
-          goto end;
-        }
-
-      method = SSLv23_method();
-      ctx->ssl_ctx = SSL_CTX_new(method);
-      if (NULL == ctx->ssl_ctx)
-	{
-          DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
-	  ret = DPL_FAILURE;
-	  goto end;
-	}
-
-      //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
-
-      if (NULL != ctx->ssl_cert_file)
-        {
-          if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
-            {
-              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
-              BIO_printf(ctx->ssl_bio_err, "use_certificate_chain_file: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-
-      if (NULL != ctx->ssl_password)
-        {
-          SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
-          SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
-        }
-      
-      if (NULL != ctx->ssl_key_file)
-        {
-          if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
-            {
-              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
-              BIO_printf(ctx->ssl_bio_err, "use_private_key_file: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-
-      if (NULL != ctx->ssl_ca_list)
-        {
-          if (!(SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)))
-            {
-              DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
-              BIO_printf(ctx->ssl_bio_err, "load_verify_location: ");
-              ERR_print_errors(ctx->ssl_bio_err);
-              BIO_printf(ctx->ssl_bio_err, "\n");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-    }
+  if (ctx->use_https) {
+    ret = dpl_ssl_profile_post(ctx);
+    if (ret != DPL_SUCCESS)
+      return ret;
+  }
 
   //pricing
-  if (NULL != ctx->pricing)
-    {
-      ret2 = dpl_pricing_load(ctx);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-
-  //encrypt
-  OpenSSL_add_all_digests();
-  OpenSSL_add_all_ciphers();
+  if (NULL != ctx->pricing) {
+    ret = dpl_pricing_load(ctx);
+    if (DPL_SUCCESS != ret)
+      return ret;
+  }
 
   //event log
-  ret2 = dpl_open_event_log(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  ret = dpl_open_event_log(ctx);
+  if (DPL_SUCCESS != ret)
+    return ret;
 
   //connection pool
-  ret2 = dpl_conn_pool_init(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  ret = dpl_conn_pool_init(ctx);
+  if (DPL_SUCCESS != ret)
+    return ret;
 
   ctx->cwds = dpl_dict_new(13);
   if (NULL == ctx->cwds)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+    return DPL_FAILURE;
 
   ctx->cur_bucket = strdup("");
   if (NULL == ctx->cur_bucket)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+    return DPL_FAILURE;
 
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 /**
@@ -836,35 +806,24 @@ dpl_profile_load(dpl_ctx_t *ctx,
                  const char *droplet_dir,
                  const char *profile_name)
 {
-  char path[1024];
-  int ret;
+  char          path[1024];
+  dpl_status_t  ret;
 
   ret = dpl_profile_init(ctx, droplet_dir, profile_name);
-  if (DPL_SUCCESS != ret)
-    {
-      if (DPL_ENOMEM == ret)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "No memory for droplet context initialization.");
-        }
-      else
-        {
-          DPL_LOG(ctx, DPL_ERROR, "Error during droplet context initialization.");
-        }
-      goto end;
-    }
+  if (DPL_SUCCESS != ret) {
+    if (DPL_ENOMEM == ret)
+      DPL_LOG(ctx, DPL_ERROR, "No memory for droplet context initialization.");
+    else
+      DPL_LOG(ctx, DPL_ERROR, "Error during droplet context initialization.");
+    return ret;
+  }
   snprintf(path, sizeof (path), "%s/%s.profile", ctx->droplet_dir, ctx->profile_name);
 
   ret = dpl_profile_parse(ctx, path);
   if (DPL_SUCCESS != ret)
-      goto end;
+    return ret;
 
-  ret = dpl_profile_post(ctx);
-  if (DPL_SUCCESS != ret)
-      goto end;
-
- end:
-
-  return ret;
+  return dpl_profile_post(ctx);
 }
 
 static dpl_status_t
@@ -915,11 +874,11 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->pricing)
     dpl_pricing_free(ctx);
 
-  if (1 == ctx->use_https)
-    {
-      SSL_CTX_free(ctx->ssl_ctx);
-      BIO_vfree(ctx->ssl_bio_err);
-    }
+  if (ctx->ssl_bio_err != NULL)
+    BIO_free(ctx->ssl_bio_err);
+
+  if (ctx->ssl_ctx != NULL)
+    SSL_CTX_free(ctx->ssl_ctx);
 
   /*
    * profile

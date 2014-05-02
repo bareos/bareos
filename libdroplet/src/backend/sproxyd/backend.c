@@ -36,8 +36,8 @@
 #include <droplet/uks/uks.h>
 #include <sys/param.h>
 
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define DPRINTF(fmt,...)
+#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+//#define DPRINTF(fmt,...)
 
 dpl_status_t
 dpl_sproxyd_get_capabilities(dpl_ctx_t *ctx,
