@@ -147,9 +147,6 @@ bool authenticate_storage_daemon(JCR *jcr, STORERES *store)
     * Is TLS Enabled?
     */
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_client(store->tls_ctx, sd, NULL)) {
          stop_bsock_timer(tid);
          Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with SD at \"%s:%d\"\n"),
@@ -274,9 +271,6 @@ bool authenticate_file_daemon(JCR *jcr)
     * Is TLS Enabled?
     */
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_client(client->tls_ctx, fd, client->tls_allowed_cns)) {
          stop_bsock_timer(tid);
          Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with FD at \"%s:%d\".\n"),
@@ -432,9 +426,6 @@ bool authenticate_user_agent(UAContext *uac)
          tls_ctx = me->tls_ctx;
       }
 
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_server(tls_ctx, ua, verify_list)) {
          Emsg0(M_ERROR, 0, _("TLS negotiation failed.\n"));
          auth_success = false;

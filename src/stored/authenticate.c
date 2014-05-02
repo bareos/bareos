@@ -158,9 +158,6 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    }
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /*
-       * Engage TLS! Full Speed Ahead!
-       */
       if (!bnet_tls_server(director->tls_ctx, bs, verify_list)) {
          Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with DIR at \"%s:%d\"\n"),
               bs->host(), bs->port());
@@ -286,14 +283,24 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
       /*
-       * Engage TLS! Full Speed Ahead!
+       * Check if we need to be client or server.
        */
-      if (!bnet_tls_server(me->tls_ctx, bs, verify_list)) {
-         Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s daemon at \"%s:%d\"\n"),
-              what, bs->host(), bs->port());
-         auth_success = false;
-         goto auth_fatal;
+      if (initiate) {
+         if (!bnet_tls_server(me->tls_ctx, bs, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s daemon at \"%s:%d\"\n"),
+                 what, bs->host(), bs->port());
+            auth_success = false;
+            goto auth_fatal;
+         }
+      } else {
+         if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s daemon at \"%s:%d\"\n"),
+                 what, bs->host(), bs->port());
+            auth_success = false;
+            goto auth_fatal;
+         }
       }
+
       if (me->tls_authenticate) {          /* tls authenticate only? */
          bs->free_tls();                   /* yes, shut it down */
       }
