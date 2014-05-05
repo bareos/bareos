@@ -52,8 +52,6 @@ clean: clean-am
 endif
 
 EXTRA_DIST = \
-    $(builddir)/testenv.sh \
-    $(builddir)/valgrind.supp \
     $(srcdir)/testenv.sh \
     $(srcdir)/valgrind.supp \
     $(srcdir)/ssldata
