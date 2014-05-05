@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: libdroplet
 Description: Scality Droplet Library
 Version: @VERSION@
-Requires: libcrypto libxml-2.0 @json_pkg_mod_name@
+Requires: libcrypto libxml-2.0 @JSON_PKG_NAME@
 Libs: -L${libdir} -ldroplet
 Cflags: -I${includedir}/droplet-3.0

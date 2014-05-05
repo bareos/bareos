@@ -33,9 +33,34 @@ AC_PROG_YACC
 PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
-PKG_CHECK_MODULES(JSON, json-c, [json_pkg_mod_name="json-c"],
-                  [PKG_CHECK_MODULES(JSON, json, [json_pkg_mod_name="json"])])
-AC_SUBST(json_pkg_mod_name)
+
+AC_ARG_WITH([json-c-include-dir],
+    [AS_HELP_STRING([--with-json-c-include-dir=<dirpath>], [Specify json-c include dir])
+], [json_c_include_dir="$withval"])
+
+AC_ARG_WITH([json-c-lib],
+    [AS_HELP_STRING([--with-json-c-lib=<libpath>], [Specify linker cmd to link with json-c lib])
+], [json_c_lib="$withval"])
+
+AS_IF(
+  [test "x$json_c_include_dir" = "x" -a "x$json_c_lib" = "x"],
+    [PKG_CHECK_MODULES([JSON], [json-c],
+      [AC_SUBST([JSON_PKG_NAME], [json-c])],
+      [PKG_CHECK_MODULES([JSON], [json],
+          [AC_SUBST([JSON_PKG_NAME], [json])]
+      )]
+    )],
+
+  [test "x$json_c_include_dir" != "x" -a "x$json_c_lib"  = "x" -o \
+        "x$json_c_include_dir"  = "x" -a "x$json_c_lib" != "x"],
+    [AC_MSG_ERROR([Cannot not use just one option --with-json-c-include-dir or --with-json-c-lib])],
+
+  [AC_SUBST([JSON_CFLAGS],[-I"$json_c_include_dir"])
+   AC_SUBST([JSON_LIBS],[$json_c_lib])]
+)
+
+AS_ECHO("Using JSON cflags: $JSON_CFLAGS")
+AS_ECHO("Using JSON libs: $JSON_LIBS")
 
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
