@@ -1,9 +1,9 @@
 check_PROGRAMS = alltests toyserver
 TESTS = alltests
 
-TESTENV_ARGS= --top-srcdir $(top_srcdir)
+TESTENV_ARGS = --top-srcdir $(top_srcdir)
 if COVERAGE
-	TESTENV_ARGS+= --coverage
+	TESTENV_ARGS += --coverage
 endif
 TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
 
@@ -29,7 +29,10 @@ alltests_SOURCES = \
 	tests/s3/auth_common_utest.c \
 	tests/s3/auth_v2_utest.c \
 	tests/s3/auth_v4_utest.c \
-	utest_main.c
+	sproxyd_utest.c \
+	utest_main.c \
+	testutils.c testutils.h \
+	toyctl.c toyctl.h
 
 SSL_INCLUDE_FILES = \
 	$(builddir)/ssldata/client-cert.c \
@@ -48,9 +51,9 @@ clean: clean-am
 	datafiles=`find $(SUBDIRS) -type f -name \*.gcno -print` ; test -z "$$datafiles" || $(RM) $$datafiles
 endif
 
-EXTRA_DIST= \
-    testenv.sh \
-    valgrind.supp \
+EXTRA_DIST = \
+    $(builddir)/testenv.sh \
+    $(builddir)/valgrind.supp \
     $(srcdir)/testenv.sh \
     $(srcdir)/valgrind.supp \
     $(srcdir)/ssldata

@@ -267,8 +267,7 @@ do_connect(dpl_ctx_t *ctx,
     {
       if (EINPROGRESS != errno)
 	{
-	  const char *m = strerror(errno);
-	  DPL_LOG(ctx, DPL_ERROR, "Connect to server %s:%d failed: %s", inet_ntoa(addr), port, m);
+	  DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(errno));
 	  safe_close(fd);
           fd = -1;
           goto end;
@@ -462,7 +461,7 @@ conn_open(dpl_ctx_t *ctx,
       ret = SSL_connect(conn->ssl);
       if (ret <= 0)
         {
-	  DPL_SSL_PERROR(ctx, "SSL_connect");
+          DPL_SSL_PERROR(ctx, "SSL_connect");
           dpl_conn_free(conn);
           conn = NULL;
           goto end;
@@ -512,7 +511,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
       hresult->h_addrtype != AF_INET6) {
     DPL_LOG(ctx, DPL_ERROR,
             "Host \"%s\" has bad address family %d, expecting %d (AF_INET) or %d (AF_INET6)",
-            host, (int)hresult->h_addrtype, AF_INET, AF_INET6);
+            host, (int) hresult->h_addrtype, AF_INET, AF_INET6);
     goto bad;
   }
 

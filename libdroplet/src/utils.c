@@ -1139,7 +1139,6 @@ dpl_ssl_perror(dpl_ctx_t *ctx,
   ERR_print_errors_cb(dpl_ssl_log_one_error, &state);
 }
 
-
 /**
  * @addtogroup init
  * @{

@@ -206,4 +206,3 @@ sproxyd_suite()
   suite_add_tcase(s, t);
   return s;
 }
-
