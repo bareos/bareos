@@ -1,8 +1,8 @@
 lib_LTLIBRARIES = libdroplet.la
 
-AM_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined $(JSON_LIBS)
+AM_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(JSON_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
 AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
-#AM_CFLAGS = -Werror -Wall
+AM_CFLAGS = -Wall -Werror -Wno-error=deprecated-declarations # -g -ggdb3 -O0
 
 libdroplet_la_SOURCES = \
 	src/conn.c \
@@ -28,30 +28,45 @@ libdroplet_la_SOURCES = \
 	src/addrlist.c \
 	src/getdate.y \
 	src/vfs.c \
-	s3/backend.c \
-	s3/replyparser.c \
-	s3/reqbuilder.c \
-	cdmi/backend.c \
-	cdmi/replyparser.c \
-	cdmi/reqbuilder.c \
-	cdmi/crcmodel.c \
-	cdmi/object_id.c \
-	swift/backend.c \
-	swift/replyparser.c \
-	swift/reqbuilder.c \
-	srws/backend.c \
-	srws/replyparser.c \
-	srws/reqbuilder.c \
-	srws/key.c \
-	sproxyd/backend.c \
-	sproxyd/replyparser.c \
-	sproxyd/reqbuilder.c \
-	sproxyd/key.c \
-	posix/backend.c \
-	posix/reqbuilder.c \
-	posix/replyparser.c \
-	uks/uks.c \
-	scal/gc.c
+	src/uks.c \
+	src/gc.c \
+	src/backend/s3/backend.c \
+	src/backend/s3/replyparser.c \
+	src/backend/s3/reqbuilder.c \
+	src/backend/s3/auth/v2.c \
+	src/backend/s3/auth/v4.c \
+	src/backend/s3/backend/copy.c \
+	src/backend/s3/backend/delete.c \
+	src/backend/s3/backend/delete_bucket.c \
+	src/backend/s3/backend/genurl.c \
+	src/backend/s3/backend/get.c \
+	src/backend/s3/backend/get_capabilities.c \
+	src/backend/s3/backend/head.c \
+	src/backend/s3/backend/head_raw.c \
+	src/backend/s3/backend/list_all_my_buckets.c \
+	src/backend/s3/backend/list_bucket.c \
+	src/backend/s3/backend/list_bucket_attrs.c \
+	src/backend/s3/backend/make_bucket.c \
+	src/backend/s3/backend/put.c \
+	src/backend/cdmi/backend.c \
+	src/backend/cdmi/replyparser.c \
+	src/backend/cdmi/reqbuilder.c \
+	src/backend/cdmi/crcmodel.c \
+	src/backend/cdmi/object_id.c \
+	src/backend/swift/backend.c \
+	src/backend/swift/replyparser.c \
+	src/backend/swift/reqbuilder.c \
+	src/backend/srws/backend.c \
+	src/backend/srws/replyparser.c \
+	src/backend/srws/reqbuilder.c \
+	src/backend/srws/key.c \
+	src/backend/sproxyd/backend.c \
+	src/backend/sproxyd/replyparser.c \
+	src/backend/sproxyd/reqbuilder.c \
+	src/backend/sproxyd/key.c \
+	src/backend/posix/backend.c \
+	src/backend/posix/reqbuilder.c \
+	src/backend/posix/replyparser.c
 
 libdropletincludedir = $(includedir)/droplet-3.0/
 libdropletinclude_HEADERS = \

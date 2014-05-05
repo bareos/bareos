@@ -115,6 +115,7 @@ dpl_init()
 {
   SSL_library_init();
   SSL_load_error_strings();
+  ERR_load_crypto_strings();
 
   dpl_base64_init();
 
@@ -130,7 +131,13 @@ dpl_init()
 void
 dpl_free()
 {
+  ERR_clear_error();
+  ERR_remove_state(0);
+
   ERR_free_strings();
+  EVP_cleanup();
+  sk_SSL_COMP_free(SSL_COMP_get_compression_methods());
+  CRYPTO_cleanup_all_ex_data();
 }
 
 /** @} */
@@ -266,7 +273,10 @@ dpl_ctx_new(const char *droplet_dir,
 
   ctx = dpl_ctx_alloc();
   if (NULL == ctx)
-    return NULL;
+    {
+      DPL_LOG(NULL, DPL_ERROR, "No memory for droplet context creation.");
+      return NULL;
+    }
 
   ret = dpl_profile_load(ctx, droplet_dir, profile_name);
   if (DPL_SUCCESS != ret)
@@ -304,20 +314,18 @@ dpl_ctx_new(const char *droplet_dir,
 dpl_ctx_t *
 dpl_ctx_new_from_dict(const dpl_dict_t *profile)
 {
-  dpl_ctx_t *ctx;
-  int ret;
-  char *str;
+  dpl_ctx_t     *ctx;
+  int           ret;
 
   ctx = dpl_ctx_alloc();
   if (NULL == ctx)
     return NULL;
 
   ret = dpl_profile_set_from_dict(ctx, profile);
-  if (DPL_SUCCESS != ret)
-    {
-      dpl_ctx_free(ctx);
-      return NULL;
-    }
+  if (DPL_SUCCESS != ret) {
+    dpl_ctx_free(ctx);
+    return NULL;
+  }
 
   dpl_ctx_post_load(ctx);
 

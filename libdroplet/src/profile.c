@@ -127,7 +127,7 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
 
           ret = cbuf_add_char(ctx->cur_cbuf, c);
           if (-1 == ret)
-            return DPL_FAILURE;
+            goto cbuf_error;
 
 	  ctx->backslash = 0;
 	  goto cont;
@@ -147,7 +147,7 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
             {
               ret = cbuf_add_char(ctx->cur_cbuf, c);
               if (-1 == ret)
-                return DPL_FAILURE;
+                goto cbuf_error;
             }
 
 	  goto cont;
@@ -192,13 +192,18 @@ dpl_conf_parse(struct dpl_conf_ctx *ctx,
 
       ret = cbuf_add_char(ctx->cur_cbuf, c);
       if (-1 == ret)
-        return DPL_FAILURE;
+        goto cbuf_error;
 
     cont:
       i++;
     }
 
   return DPL_SUCCESS;
+
+ cbuf_error:
+  DPL_LOG(NULL, DPL_ERROR, "error appending to configuration");
+
+  return DPL_FAILURE;
 }
 
 dpl_status_t
@@ -302,6 +307,18 @@ conf_cb_func(void *cb_arg,
       ctx->secret_key = strdup(value);
       if (NULL == ctx->secret_key)
         return -1;
+    }
+  else if (!strcmp(var, "aws_auth_sign_version"))
+    {
+      ctx->aws_auth_sign_version = atoi(value);
+      if (ctx->aws_auth_sign_version != 2 && ctx->aws_auth_sign_version != 4) {
+        DPL_LOG(ctx, DPL_ERROR, "aws_auth_sign_version must be set 2 or 4");
+        return -1;
+      }        
+    }
+  else if (!strcmp(var, "aws_region"))
+    {
+      strncpy(ctx->aws_region, value, sizeof(ctx->aws_region));
     }
   else if (!strcmp(var, "ssl_cert_file"))
     {
@@ -458,14 +475,14 @@ dpl_profile_parse(dpl_ctx_t *ctx,
   conf_ctx = dpl_conf_new(conf_cb_func, ctx);
   if (NULL == conf_ctx)
     {
-      ret = DPL_FAILURE;
+      ret = DPL_ENOMEM;
       goto end;
     }
 
   fd = open(path, O_RDONLY);
   if (-1 == fd)
     {
-      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s\n",
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s",
 		path, strerror(errno));
       ret = DPL_FAILURE;
       goto end;
@@ -479,6 +496,8 @@ dpl_profile_parse(dpl_ctx_t *ctx,
 
       if (-1 == cc)
         {
+          DPL_LOG(ctx, DPL_ERROR, "error reading from '%s': %s",
+                  path, strerror(errno));
           ret = DPL_FAILURE;
           goto end;
         }
@@ -543,6 +562,8 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->base_path = strdup(DPL_DEFAULT_BASE_PATH);
   if (NULL == ctx->base_path)
     return DPL_ENOMEM;
+  ctx->aws_auth_sign_version = DPL_DEFAULT_AWS_AUTH_SIGN_VERSION;
+  strncpy(ctx->aws_region, DPL_DEFAULT_AWS_REGION, sizeof(ctx->aws_region));
 
   return DPL_SUCCESS;
 }
@@ -584,8 +605,10 @@ dpl_open_event_log(dpl_ctx_t *ctx)
 
   ctx->event_log = fopen(path, "a+");
   if (NULL == ctx->event_log)
-    return DPL_FAILURE;
-
+    {
+      DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s", path, strerror(errno));
+      return DPL_FAILURE;
+    }
   return DPL_SUCCESS;
 }
 
@@ -609,7 +632,7 @@ dpl_profile_init(dpl_ctx_t *ctx,
 
   ret = dpl_profile_default(ctx);
   if (DPL_SUCCESS != ret)
-    return DPL_FAILURE;
+    return ret;
 
   if (NULL == droplet_dir)
     {
@@ -648,6 +671,55 @@ dpl_profile_init(dpl_ctx_t *ctx,
   return DPL_SUCCESS;
 }
 
+static dpl_status_t
+dpl_ssl_profile_post(dpl_ctx_t *ctx)
+{
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const SSL_METHOD *method;
+#else
+  SSL_METHOD *method;
+#endif
+
+  OpenSSL_add_all_digests();
+  OpenSSL_add_all_ciphers();
+
+  method = SSLv23_method();
+  ctx->ssl_ctx = SSL_CTX_new(method);
+  if (NULL == ctx->ssl_ctx) {
+    DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+    return DPL_FAILURE;
+  }
+
+  //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
+
+  if (NULL != ctx->ssl_cert_file) {
+    if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
+      DPL_SSL_PERROR(ctx, "SSL_CTX_use_certificate_chain_file");
+      return DPL_FAILURE;
+    }
+  }
+
+  if (NULL != ctx->ssl_password) {
+    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
+  }
+      
+  if (NULL != ctx->ssl_key_file) {
+    if (!SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)) {
+      DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
+      return DPL_FAILURE;
+    }
+  }
+
+  if (NULL != ctx->ssl_ca_list) {
+    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
+      DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
+      return DPL_FAILURE;
+    }
+  }
+
+  return DPL_SUCCESS;
+}
 
 /**
  * post processing of profile, e.g. init SSL
@@ -656,129 +728,53 @@ dpl_profile_init(dpl_ctx_t *ctx,
  *
  * @return
  */
+
 dpl_status_t
 dpl_profile_post(dpl_ctx_t *ctx)
 {
-  int ret, ret2;
+  dpl_status_t  ret;
 
   //sanity checks
-
-  if (strcmp(ctx->backend->name, "posix"))
-    {
-      if (NULL == ctx->addrlist)
-        {
-          DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
-          ret = DPL_FAILURE;
-          goto end;
-        }
+  if (strcmp(ctx->backend->name, "posix")) {
+    if (NULL == ctx->addrlist) {
+      DPL_LOG(ctx, DPL_ERROR, "missing 'host' in profile");
+      return DPL_FAILURE;
     }
+  }
 
   //ssl stuff
-  if (1 == ctx->use_https)
-    {
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-      const SSL_METHOD *method;
-#else
-      SSL_METHOD *method;
-#endif
-
-      method = SSLv23_method();
-      ctx->ssl_ctx = SSL_CTX_new(method);
-      if (NULL == ctx->ssl_ctx)
-	{
-	  ret = DPL_FAILURE;
-	  goto end;
-	}
-
-      //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
-
-      if (NULL != ctx->ssl_cert_file)
-        {
-          if (!(SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)))
-            {
-	      DPL_SSL_PERROR(ctx, "SSL_CTX_use_certificate_chain_file");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-
-      if (NULL != ctx->ssl_password)
-        {
-          SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
-          SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
-        }
-      
-      if (NULL != ctx->ssl_key_file)
-        {
-          if (!(SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)))
-            {
-	      DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-
-      if (NULL != ctx->ssl_ca_list)
-        {
-          if (!(SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)))
-            {
-	      DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
-              ret = DPL_FAILURE;
-              goto end;
-            }
-        }
-    }
+  if (ctx->use_https) {
+    ret = dpl_ssl_profile_post(ctx);
+    if (ret != DPL_SUCCESS)
+      return ret;
+  }
 
   //pricing
-  if (NULL != ctx->pricing)
-    {
-      ret2 = dpl_pricing_load(ctx);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-
-  //encrypt
-  OpenSSL_add_all_digests();
-  OpenSSL_add_all_ciphers();
+  if (NULL != ctx->pricing) {
+    ret = dpl_pricing_load(ctx);
+    if (DPL_SUCCESS != ret)
+      return ret;
+  }
 
   //event log
-  ret2 = dpl_open_event_log(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  ret = dpl_open_event_log(ctx);
+  if (DPL_SUCCESS != ret)
+    return ret;
 
   //connection pool
-  ret2 = dpl_conn_pool_init(ctx);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+  ret = dpl_conn_pool_init(ctx);
+  if (DPL_SUCCESS != ret)
+    return ret;
 
   ctx->cwds = dpl_dict_new(13);
   if (NULL == ctx->cwds)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+    return DPL_FAILURE;
 
   ctx->cur_bucket = strdup("");
   if (NULL == ctx->cur_bucket)
-    {
-      ret = DPL_FAILURE;
-      goto end;
-    }
+    return DPL_FAILURE;
 
-  ret = DPL_SUCCESS;
-
- end:
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 /**
@@ -795,26 +791,24 @@ dpl_profile_load(dpl_ctx_t *ctx,
                  const char *droplet_dir,
                  const char *profile_name)
 {
-  char path[1024];
-  int ret;
+  char          path[1024];
+  dpl_status_t  ret;
 
   ret = dpl_profile_init(ctx, droplet_dir, profile_name);
-  if (DPL_SUCCESS != ret)
-      goto end;
-
+  if (DPL_SUCCESS != ret) {
+    if (DPL_ENOMEM == ret)
+      DPL_LOG(ctx, DPL_ERROR, "No memory for droplet context initialization.");
+    else
+      DPL_LOG(ctx, DPL_ERROR, "Error during droplet context initialization.");
+    return ret;
+  }
   snprintf(path, sizeof (path), "%s/%s.profile", ctx->droplet_dir, ctx->profile_name);
 
   ret = dpl_profile_parse(ctx, path);
   if (DPL_SUCCESS != ret)
-      goto end;
+    return ret;
 
-  ret = dpl_profile_post(ctx);
-  if (DPL_SUCCESS != ret)
-      goto end;
-
- end:
-
-  return ret;
+  return dpl_profile_post(ctx);
 }
 
 static dpl_status_t
@@ -865,10 +859,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->pricing)
     dpl_pricing_free(ctx);
 
-  if (1 == ctx->use_https)
-    {
-      SSL_CTX_free(ctx->ssl_ctx);
-    }
+  if (ctx->ssl_ctx != NULL)
+    SSL_CTX_free(ctx->ssl_ctx);
 
   /*
    * profile

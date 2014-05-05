@@ -113,8 +113,8 @@ main(int argc,
 
   fprintf(stderr, "getting partial object+MD\n");
 
-  range.start = 3;
-  range.end = 5;
+  range.start = 3LL;
+  range.end = 5LL;
   ret = dpl_get_id(ctx,           //the context
                    NULL,          //no bucket
                    sysmd.id,      //the key

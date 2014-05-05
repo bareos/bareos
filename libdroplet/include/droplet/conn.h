@@ -36,8 +36,11 @@
 
 struct dpl_hash_info
 {
-  struct in_addr addr;
-  u_short port;
+  union {
+    struct in_addr      v4;
+    struct in6_addr     v6;
+  }             addr;
+  u_short       port;
 };
 
 typedef enum

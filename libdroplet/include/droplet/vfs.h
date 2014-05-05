@@ -92,6 +92,7 @@ typedef struct
 /* PROTO vfs.c */
 dpl_fqn_t dpl_cwd(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_opendir(dpl_ctx_t *ctx, const char *locator, void **dir_hdlp);
+dpl_status_t dpl_opendir_attrs(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, void **dir_hdlp);
 dpl_status_t dpl_readdir(void *dir_hdl, dpl_dirent_t *dirent);
 dpl_status_t dpl_iterate(dpl_ctx_t *ctx, const char *locator, int (* cb)(dpl_dirent_t *dirent, void *ctx), void *cb_ctx);
 int dpl_eof(void *dir_hdl);
@@ -99,7 +100,7 @@ void dpl_closedir(void *dir_hdl);
 dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
 dpl_status_t dpl_pwrite(dpl_vfile_t *vfile, char *buf, unsigned int len, unsigned long long offset);
-dpl_status_t dpl_pread(dpl_vfile_t *vfile, unsigned int len, unsigned long long offset, char **bufp, int *buf_lenp);
+dpl_status_t dpl_pread(dpl_vfile_t *vfile, unsigned int len, unsigned long long offset, char **bufp, unsigned int *buf_lenp);
 dpl_status_t dpl_open(dpl_ctx_t *ctx,const char *locator, dpl_vfile_flag_t flag, dpl_option_t *option, dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
 dpl_status_t dpl_fput(dpl_ctx_t *ctx, const char *locator, dpl_option_t *option, dpl_condition_t *condition, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
 dpl_status_t dpl_fget(dpl_ctx_t *ctx, const char *locator, const dpl_option_t *option, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);

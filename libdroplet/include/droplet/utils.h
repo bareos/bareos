@@ -91,19 +91,21 @@
 //defines htonll() and ntohll() natively
 # include <byteswap.h>
 
-#ifndef __BYTE_ORDER
-# error "byte order is not defined"
-#endif
-
-# if __BYTE_ORDER == __BIG_ENDIAN
-#  define ntohll(x)       (x)
-#  define htonll(x)       (x)
-#  else
-#   if __BYTE_ORDER == __LITTLE_ENDIAN
-#    define ntohll(x)     bswap_64 (x)
-#    define htonll(x)     bswap_64 (x)
-#   endif
+# ifndef __BYTE_ORDER
+#  error "byte order is not defined"
 # endif
+
+# ifndef ntohll
+#  if __BYTE_ORDER == __BIG_ENDIAN
+#   define ntohll(x)       (x)
+#   define htonll(x)       (x)
+#   else
+#    if __BYTE_ORDER == __LITTLE_ENDIAN
+#     define ntohll(x)     bswap_64 (x)
+#     define htonll(x)     bswap_64 (x)
+#    endif
+#  endif
+# endif /* ndef ntohll */
 #endif
 
 #ifndef HAVE_DRAND48_R
@@ -193,6 +195,7 @@ int dpl_base64_init(void);
 #define DPL_BASE64_LENGTH(len) (((len) + 2) / 3 * 4)
 #define DPL_BASE64_ORIG_LENGTH(len) (((len) + 3) / 4 * 3)
 
+#define DPL_HEX_LENGTH(len) ((len) * 2)
 #define DPL_URL_LENGTH(len) ((len)*3+1)
 #define DPL_BCD_LENGTH(len) (2*(len))
 
@@ -203,14 +206,14 @@ int dpl_base64_init(void);
     if (len < 1)                                                \
       return DPL_FAILURE;                                       \
     *p = (Char);p++;len--;                                      \
-  } while (0);
+  } while (0)
 
 #define DPL_APPEND_BUF(Buf, Len)                                \
   do {                                                          \
     if (len < (Len))                                            \
       return DPL_FAILURE;                                       \
     memcpy(p, (Buf), (Len)); p += (Len); len -= (Len);          \
-  } while (0);
+  } while (0)
 
 #define DPL_APPEND_STR(Str) DPL_APPEND_BUF((Str), strlen(Str))
 
@@ -224,6 +227,8 @@ int dpl_base64_init(void);
 /* src/utils.c */
 pid_t dpl_gettid(void);
 int dpl_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
+int dpl_gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
+int dpl_gethostbyname3_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 void dpl_dump_init(struct dpl_dump_ctx *ctx, int binary);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);
@@ -236,11 +241,14 @@ dpl_status_t dpl_timetoiso8601(time_t t, char *buf, int buf_size);
 char *dpl_strrstr(const char *haystack, const char *needle);
 void test_strrstr(void);
 void dpl_strlower(char *str);
+unsigned int dpl_hmac(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf, const EVP_MD *md);
 unsigned int dpl_hmac_sha1(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
+unsigned int dpl_hmac_sha256(const char *key_buf, unsigned int key_len, const char *data_buf, unsigned int data_len, char *digest_buf);
+void dpl_sha256(const uint8_t *, size_t, uint8_t *);
 u_int dpl_base64_encode(const u_char *in_buf, u_int in_len, u_char *out_buf);
 u_int dpl_base64_decode(const u_char *in_buf, u_int in_len, u_char *out_buf);
-void dpl_url_encode(const char *str, char *str_ue);
-void dpl_url_encode_no_slashes(const char *str, char *str_ue);
+size_t dpl_url_encode(const char *str, char *str_ue);
+size_t dpl_url_encode_no_slashes(const char *str, char *str_ue);
 void dpl_url_decode(char *str);
 unsigned int dpl_bcd_encode(unsigned char *in_buf, unsigned int in_len, char *out_buf);
 dpl_status_t dpl_rand(char *buf, int len);
@@ -254,5 +262,9 @@ dpl_status_t dpl_log(dpl_ctx_t *ctx, dpl_log_level_t level, const char *file,
 		     const char *func, int lineno, const char *fmt, ...);
 void dpl_ssl_perror(dpl_ctx_t *ctx, const char *file, const char *func,
 		    int line, const char *str);
+dpl_status_t dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode);
+
+#define XATTRS_ENCODE_BASE64 1
+#define XATTRS_NO_ENCODING 0
 
 #endif

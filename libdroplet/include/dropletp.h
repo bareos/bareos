@@ -75,4 +75,6 @@
 #include <droplet/ntinydb.h>
 #include <droplet/task.h>
 
+#define UNUSED __attribute__((__unused__))
+
 #endif

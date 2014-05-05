@@ -35,14 +35,7 @@
 
 /** @file */
 
-/**
- * @defgroup conn Connection management
- * @addtogroup conn
- * @{
- * Connection management routines
- */
-
-//#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
+/* #define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__) */
 #define DPRINTF(fmt,...)
 
 //#define DEBUG
@@ -73,25 +66,23 @@ conn_hashcode(const unsigned char *data,
 
 static dpl_conn_t *
 dpl_conn_get_nolock(dpl_ctx_t *ctx,
-                    struct in_addr addr,
-                    u_short port)
+                    struct hostent *host, u_short port)
 {
-  u_int bucket;
-  struct dpl_hash_info hash_info;
-  dpl_conn_t *conn;
+  u_int                 bucket;
+  struct dpl_hash_info  hash_info;
+  dpl_conn_t            *conn;
 
   memset(&hash_info, 0, sizeof (hash_info));
 
-  hash_info.addr.s_addr = addr.s_addr;
+  memcpy(&hash_info.addr, host->h_addr, host->h_length);
   hash_info.port = port;
 
   bucket = conn_hashcode((unsigned char *)&hash_info, sizeof (hash_info)) % ctx->n_conn_buckets;
 
-  for (conn = ctx->conn_buckets[bucket];conn;conn = conn->prev)
-    {
-      if (!memcmp(&conn->hash_info, &hash_info, sizeof (hash_info)))
-        return conn;
-    }
+  for (conn = ctx->conn_buckets[bucket];conn;conn = conn->prev) {
+    if (!memcmp(&conn->hash_info, &hash_info, sizeof (hash_info)))
+      return conn;
+  }
 
   return NULL;
 }
@@ -117,13 +108,18 @@ is_usable(dpl_conn_t *conn)
     {
     case 1:
       {
-        char buf[1];
-        /* something is waiting for us ? */
-        if (0 == recv(conn->fd, buf, 1, MSG_DONTWAIT|MSG_PEEK))
-          {
-            DPRINTF("is_usable: rv %d returning False\n", retval);
-            return 0;
-          }
+        char  buf[1];
+        int   size;
+
+        if (conn->ctx->use_https)
+          size = SSL_read(conn->ssl, buf, sizeof(buf));
+        else
+          size = recv(conn->fd, buf, sizeof(buf), MSG_DONTWAIT|MSG_PEEK);
+
+        if (size == 0) {
+          DPRINTF("is_usable: rv %d returning False\n", retval);
+          return 0;
+        }
       }
       /* fall down */
     case 0:
@@ -223,27 +219,18 @@ dpl_conn_terminate_nolock(dpl_conn_t *conn)
 
 static int
 do_connect(dpl_ctx_t *ctx,
-           struct in_addr addr,
-           u_short port)
+           struct hostent *host, u_short port)
 {
-  struct sockaddr_in sin;
-  int   fd = -1;
-  int ret;
-  struct pollfd fds;
-  int on;
-  int error;
-  socklen_t errorlen;
+  int                   fd = -1, ret, on, error;
+  struct pollfd         fds;
+  socklen_t             errorlen;
+  char                  ident[DPL_ADDR_IDENT_STRLEN];
 
-  fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (-1 == fd)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "Failed to create socket: %s", strerror(errno));
-      goto end;
-    }
-
-  sin.sin_family = AF_INET;
-  sin.sin_port = htons(port);
-  sin.sin_addr.s_addr = addr.s_addr;
+  fd = socket(host->h_addrtype, SOCK_STREAM, 0);
+  if (fd == -1) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "socket failed");
+    goto end;
+  }
 
   on = 1;
   ret = ioctl(fd, FIONBIO, &on);
@@ -255,9 +242,26 @@ do_connect(dpl_ctx_t *ctx,
       goto end;
     }
 
-  DPL_TRACE(ctx, DPL_TRACE_CONN, "connect %s:%d", inet_ntoa(addr), port);
+  dpl_addr_get_ident(host, port, ident, sizeof(ident));
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "connect %s", ident);
 
-  ret = connect(fd, (struct sockaddr *)&sin, sizeof (sin));
+  if (host->h_addrtype == AF_INET) {
+    struct sockaddr_in    sin;
+
+    sin.sin_family = host->h_addrtype;
+    sin.sin_port   = htons(port);
+    memcpy(&sin.sin_addr, host->h_addr, host->h_length);
+
+    ret = connect(fd, (struct sockaddr *) &sin, sizeof(sin));
+  } else {
+    struct sockaddr_in6   sin;
+
+    sin.sin6_family = host->h_addrtype;
+    sin.sin6_port   = htons(port);
+    memcpy(&sin.sin6_addr, host->h_addr, host->h_length);
+
+    ret = connect(fd, (struct sockaddr *) &sin, sizeof(sin));
+  }
 
   if (-1 == ret)
     {
@@ -289,8 +293,8 @@ do_connect(dpl_ctx_t *ctx,
 
   if (0 == ret)
     {
-      DPL_LOG(ctx, DPL_ERROR, "Timed out connecting to server %s:%d after %d seconds",
-	      inet_ntoa(addr), port, ctx->conn_timeout);
+      DPL_LOG(ctx, DPL_ERROR, "Timed out connecting to server %s after %d seconds",
+	      ident, ctx->conn_timeout);
       safe_close(fd);
       fd = -1;
       goto end;
@@ -328,8 +332,7 @@ do_connect(dpl_ctx_t *ctx,
 
   if (error != 0)
     {
-      const char *m = strerror(error);
-      DPL_LOG(ctx, DPL_ERROR, "Connect to server %s:%d failed: %s", inet_ntoa(addr), port, m);
+      DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(error));
       safe_close(fd);
       fd = -1;
       goto end;
@@ -346,22 +349,25 @@ do_connect(dpl_ctx_t *ctx,
  * check an existing connection bound on (addr,port). if none is found
  * a new connection is created.
  */
+
 static dpl_conn_t *
 conn_open(dpl_ctx_t *ctx,
-          struct in_addr addr,
+          struct hostent *host,
           u_short port)
 {
-  dpl_conn_t *conn = NULL;
-  time_t now = time(0);
-  int ret;
+  dpl_conn_t    *conn = NULL;
+  time_t        now = time(0);
+  int           ret;
+  char          ident[DPL_ADDR_IDENT_STRLEN];
 
   dpl_ctx_lock(ctx);
 
-  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open %s:%d", inet_ntoa(addr), port);
+  dpl_addr_get_ident(host, port, ident, sizeof(ident));
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "conn_open %s", ident);
 
  again:
 
-  conn = dpl_conn_get_nolock(ctx, addr, port);
+  conn = dpl_conn_get_nolock(ctx, host, port);
 
   if (NULL != conn)
     {
@@ -395,8 +401,6 @@ conn_open(dpl_ctx_t *ctx,
       goto end;
     }
 
-  DPRINTF("allocate new conn\n");
-
   conn = malloc(sizeof (*conn));
   if (NULL == conn)
     {
@@ -404,6 +408,8 @@ conn_open(dpl_ctx_t *ctx,
       conn = NULL;
       goto end;
     }
+
+  DPL_TRACE(ctx, DPL_TRACE_CONN, "new_conn %s %p", ident, conn);
 
   memset(conn, 0, sizeof (*conn));
 
@@ -419,10 +425,10 @@ conn_open(dpl_ctx_t *ctx,
       goto end;
     }
 
-  conn->hash_info.addr.s_addr = addr.s_addr;
+  memcpy(&conn->hash_info.addr, host->h_addr_list[0], host->h_length);
   conn->hash_info.port = port;
 
-  conn->fd = do_connect(ctx, addr, port);
+  conn->fd = do_connect(ctx, host, port);
   if (-1 == conn->fd)
     {
       dpl_conn_free(conn);
@@ -453,8 +459,6 @@ conn_open(dpl_ctx_t *ctx,
 
       SSL_set_bio(conn->ssl, conn->bio, conn->bio);
 
-      DPL_TRACE(conn->ctx, DPL_TRACE_SSL, "SSL_connect conn=%p", conn);
-
       ret = SSL_connect(conn->ssl);
       if (ret <= 0)
         {
@@ -482,41 +486,41 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
                    const char *host,
                    const char *portstr)
 {
-  int           ret2;
-  struct hostent hret, *hresult;
-  char          hbuf[1024];
-  int           herr = 0;
-  struct in_addr addr;
-  u_short       port;
-  dpl_conn_t    *conn = NULL;
-  char          *nstr;
+  int                   ret2;
+  struct hostent        hret, *hresult;
+  char                  hbuf[1024];
+  int                   herr = 0;
+  u_short               port;
+  dpl_conn_t            *conn = NULL;
+  char                  *nstr;
 
-  ret2 = dpl_gethostbyname_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
-  if (0 != ret2 || !hresult)
-    {
-      DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s",
-		host, hstrerror(herr));
-      goto bad;
-    }
+  ret2 = dpl_gethostbyname3_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
+  if (0 != ret2) {
+    DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s",
+            host, hstrerror(herr));
+    goto bad;
+  }
 
-  if (AF_INET != hresult->h_addrtype)
-    {
-      DPL_LOG(ctx, DPL_ERROR,
-	      "Host \"%s\" has bad address family %d, expecting %d (AF_INET)",
-	      host, (int)hresult->h_addrtype, AF_INET);
-      goto bad;
-    }
-
-  memcpy(&addr, hresult->h_addr_list[0], hresult->h_length);
+  if (!hresult) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "Invalid hostname");
+    goto bad;
+  }
 
   port = atoi(portstr);
 
-  conn = conn_open(ctx, addr, port);
-  if (NULL == conn)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
-      goto bad;
-    }
+  if (hresult->h_addrtype != AF_INET &&
+      hresult->h_addrtype != AF_INET6) {
+    DPL_LOG(ctx, DPL_ERROR,
+            "Host \"%s\" has bad address family %d, expecting %d (AF_INET) or %d (AF_INET6)",
+            host, (int)hresult->h_addrtype, AF_INET, AF_INET6);
+    goto bad;
+  }
+
+  conn = conn_open(ctx, hresult, port);
+  if (NULL == conn) {
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
+    goto bad;
+  }
 
   nstr = strdup(host);
   if (NULL == nstr)
@@ -585,13 +589,11 @@ dpl_try_connect(dpl_ctx_t *ctx,
                 dpl_req_t *req,
                 dpl_conn_t **connp)
 {
-  int cur_host;
-  char *host;
-  char *portstr;
-  dpl_conn_t *conn = NULL;
-  dpl_status_t ret, ret2;
-  char virtual_host[1024];
-  char *hostp = NULL;
+  int           cur_host;
+  dpl_addr_t    *addr;
+  dpl_conn_t    *conn = NULL;
+  dpl_status_t  ret, ret2;
+  char          virtual_host[1024], *hostp = NULL;
 
  retry:
   pthread_mutex_lock(&ctx->lock);
@@ -601,62 +603,48 @@ dpl_try_connect(dpl_ctx_t *ctx,
 
   pthread_mutex_unlock(&ctx->lock);
 
-  ret2 = dpl_addrlist_get_nth(ctx->addrlist, cur_host,
-                              &host, &portstr, NULL, NULL);
-  if (DPL_SUCCESS != ret2)
-    {
-      DPL_TRACE(ctx, DPL_TRACE_CONN, "no more host to contact, giving up");
+  ret2 = dpl_addrlist_get_nth(ctx->addrlist, cur_host, &addr);
+  if (DPL_SUCCESS != ret2) {
+    DPL_TRACE(ctx, DPL_TRACE_CONN, "no more host to contact, giving up");
+    ret = DPL_FAILURE;
+    goto end;
+  }
+
+  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING) {
+    snprintf(virtual_host, sizeof (virtual_host), "%s.%s", req->bucket, addr->host);
+    hostp = virtual_host;
+  } else
+    hostp = addr->host;
+
+  conn = dpl_conn_open_host(ctx, hostp, addr->portstr);
+  if (NULL == conn) {
+    if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING) {
       ret = DPL_FAILURE;
       goto end;
+    } else {
+      dpl_blacklist_host(ctx, addr->host, addr->portstr);
+      goto retry;
     }
-
-  if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
-    {
-      snprintf(virtual_host, sizeof (virtual_host), "%s.%s", req->bucket, host);
-      hostp = virtual_host;
-      conn = dpl_conn_open_host(ctx, virtual_host, portstr);
-    }
-  else
-    {
-      hostp = host;
-      conn = dpl_conn_open_host(ctx, host, portstr);
-    }
-
-  if (NULL == conn)
-    {
-      if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-      else
-        {
-          dpl_blacklist_host(ctx, host, portstr);
-          goto retry;
-        }
-    }
+  }
 
   ret2 = dpl_req_set_host(req, hostp);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
-  ret2 = dpl_req_set_port(req, portstr);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
+  ret2 = dpl_req_set_port(req, addr->portstr);
+  if (DPL_SUCCESS != ret2) {
+    ret = ret2;
+    goto end;
+  }
 
   ret = DPL_SUCCESS;
 
-  if (NULL != connp)
-    {
-      *connp = conn;
-      conn = NULL; // consumed
-    }
+  if (NULL != connp) {
+    *connp = conn;
+    conn = NULL; // consumed
+  }
 
  end:
 

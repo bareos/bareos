@@ -255,10 +255,12 @@ dir_lookup(dpl_ctx_t *ctx,
 }
 
 static dpl_status_t
-dir_open(dpl_ctx_t *ctx,
-         const char *bucket,
-         dpl_fqn_t fqn,
-         void **dir_hdlp)
+dir_open_attrs(dpl_ctx_t *ctx,
+               const char *bucket,
+               dpl_fqn_t fqn,
+               dpl_dict_t **metadatap,
+               dpl_sysmd_t *sysmdp,
+               void **dir_hdlp)
 {
   dpl_dir_t *dir;
   int ret, ret2;
@@ -283,7 +285,15 @@ dir_open(dpl_ctx_t *ctx,
     ++skip_slashes;
 
   //AWS prefers NULL for listing the root dir
-  ret2 = dpl_list_bucket(ctx, bucket, !strcmp(skip_slashes, "") ? NULL : skip_slashes, "/", -1, &dir->files, &dir->directories);
+  ret2 = dpl_list_bucket_attrs(ctx,
+                               bucket,
+                               !strcmp(skip_slashes, "") ? NULL : skip_slashes,
+                               "/",
+                               -1,
+                               metadatap,
+                               sysmdp,
+                               &dir->files,
+                               &dir->directories);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "list_bucket failed %s:%s", bucket, skip_slashes);
@@ -302,13 +312,16 @@ dir_open(dpl_ctx_t *ctx,
 
   if (DPL_SUCCESS != ret)
     {
-      if (NULL != dir->files)
-        dpl_vec_objects_free(dir->files);
+      if (NULL != dir)
+        {
+          if (NULL != dir->files)
+            dpl_vec_objects_free(dir->files);
 
-      if (NULL != dir->directories)
-        dpl_vec_common_prefixes_free(dir->directories);
+          if (NULL != dir->directories)
+            dpl_vec_common_prefixes_free(dir->directories);
 
-      free(dir);
+          free(dir);
+        }
     }
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
@@ -678,7 +691,7 @@ dir_is_empty(dpl_ctx_t *ctx,
 }
 
 /**
- * open a directory
+ * open a directory and retrieves it's attrs
  *
  * @param ctx
  * @param locator [bucket:]path
@@ -687,9 +700,11 @@ dir_is_empty(dpl_ctx_t *ctx,
  * @return
  */
 dpl_status_t
-dpl_opendir(dpl_ctx_t *ctx,
-            const char *locator,
-            void **dir_hdlp)
+dpl_opendir_attrs(dpl_ctx_t *ctx,
+                  const char *locator,
+                  dpl_dict_t **metadatap,
+                  dpl_sysmd_t *sysmdp,
+                  void **dir_hdlp)
 {
   int ret, ret2;
   dpl_fqn_t obj_fqn;
@@ -739,7 +754,7 @@ dpl_opendir(dpl_ctx_t *ctx,
 
   fqn_append_trailing_slash(&obj_fqn);
 
-  ret2 = dir_open(ctx, bucket, obj_fqn, dir_hdlp);
+  ret2 = dir_open_attrs(ctx, bucket, obj_fqn, metadatap, sysmdp, dir_hdlp);
   if (DPL_SUCCESS != ret2)
     {
       DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to open %s:%s", bucket, obj_fqn.path);
@@ -760,6 +775,23 @@ dpl_opendir(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 
   return ret;
+}
+
+/**
+ * open a directory
+ *
+ * @param ctx
+ * @param locator [bucket:]path
+ * @param dir_hdlp
+ *
+ * @return
+ */
+dpl_status_t
+dpl_opendir(dpl_ctx_t *ctx,
+            const char *locator,
+            void **dir_hdlp)
+{
+  return dpl_opendir_attrs(ctx, locator, NULL, NULL, dir_hdlp);
 }
 
 dpl_status_t
@@ -1041,11 +1073,10 @@ dpl_pread(dpl_vfile_t *vfile,
           unsigned int len,
           unsigned long long offset,
           char **bufp,
-          int *buf_lenp)
+          unsigned int *buf_lenp)
 {
   dpl_status_t ret, ret2;
   dpl_range_t range;
-  unsigned int data_len = 0;
 
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "start=%llu end=%llu", offset, offset+len);
 
@@ -1063,6 +1094,7 @@ dpl_pread(dpl_vfile_t *vfile,
                  buf_lenp,
                  NULL,
                  NULL);
+
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -1104,7 +1136,6 @@ dpl_open(dpl_ctx_t *ctx,
 {
   dpl_status_t ret, ret2;
   dpl_vfile_t *vfile = NULL;
-  dpl_fqn_t obj_fqn;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path;
@@ -1255,7 +1286,7 @@ dpl_fput(dpl_ctx_t *ctx,
 	 char *data_buf,
 	 unsigned int data_len)
 {
-  int ret, ret2;
+  int ret = DPL_SUCCESS;
   char *nlocator = NULL;
   char *bucket = NULL;
   char *path = NULL;
@@ -1293,19 +1324,17 @@ dpl_fput(dpl_ctx_t *ctx,
       path = nlocator;
     }
 
-  ret2 = dpl_put(ctx,
-		 bucket,
-                 path,
-		 option,
-		 DPL_FTYPE_REG,
-		 condition,
-		 range,
-		 metadata,
-		 sysmd,
-		 data_buf,
-		 data_len);
-
-  ret = DPL_SUCCESS;
+  ret = dpl_put(ctx,
+                bucket,
+                path,
+                option,
+                DPL_FTYPE_REG,
+                condition,
+                range,
+                metadata,
+                sysmd,
+                data_buf,
+                data_len);
 
  end:
 
@@ -2033,13 +2062,20 @@ copy_path_to_path(dpl_ctx_t *ctx,
       dst_path = dst_nlocator;
     }
 
-  ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
-  if (DPL_SUCCESS != ret2)
+  if ((NULL == src_bucket || 0 == src_bucket[0]) /* there is no src_bucket */
+      && DPL_COPY_DIRECTIVE_SYMLINK == copy_directive)
     {
-      ret = ret2;
-      goto end;
+      strcpy(src_obj_fqn.path, src_path);
     }
-
+  else
+    {
+      ret2 = make_abs_path(ctx, src_bucket, src_path, &src_obj_fqn);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
   ret2 = make_abs_path(ctx, dst_bucket, dst_path, &dst_obj_fqn);
   if (DPL_SUCCESS != ret2)
     {

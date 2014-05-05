@@ -39,6 +39,7 @@ dpl_status_t dpl_get_capabilities(dpl_ctx_t *ctx, dpl_capability_t *maskp);
 dpl_status_t dpl_login(dpl_ctx_t *ctx);
 dpl_status_t dpl_list_all_my_buckets(dpl_ctx_t *ctx, dpl_vec_t **vecp);
 dpl_status_t dpl_list_bucket(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
+dpl_status_t dpl_list_bucket_attrs(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp);
 dpl_status_t dpl_make_bucket(dpl_ctx_t *ctx, const char *bucket, dpl_location_constraint_t location_constraint, dpl_canned_acl_t canned_acl);
 dpl_status_t dpl_delete_bucket(dpl_ctx_t *ctx, const char *bucket);
 dpl_status_t dpl_post(dpl_ctx_t *ctx, const char *bucket, const char *path, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp);

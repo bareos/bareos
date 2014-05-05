@@ -32,6 +32,9 @@
  * https://github.com/scality/Droplet
  */
 #include <dropletp.h>
+#include <linux/xattr.h>
+#include <attr/xattr.h>
+#include <errno.h>
 
 /** @file */
 
@@ -126,6 +129,62 @@ dpl_gethostbyname_r(const char *name,
   //linux
   return gethostbyname_r(name, ret, buf, buflen, result, h_errnop);
 #endif
+}
+
+int
+dpl_gethostbyname2_r(const char *name, int af,
+                     struct hostent *ret,
+                     char *buf,
+                     size_t buflen,
+                     struct hostent **result,
+                     int *h_errnop)
+{
+#if defined(SOLARIS) || defined(__sun__)
+  struct hostent *resultp;
+
+  resultp = gethostbyname2_r(name, af, ret, buf, buflen, h_errnop);
+  if (NULL == resultp)
+    return 1;
+
+  *result = resultp;
+
+  return 0;
+
+#elif defined(__APPLE__) && defined(__MACH__) || defined(__ellcc__ )
+
+  struct hostent *resultp;
+
+  resultp = gethostbyname2(name, af);
+  if (NULL == resultp)
+    return 1;
+
+  *result = resultp;
+
+  return 0;
+#else
+  //linux
+  return gethostbyname2_r(name, af, ret, buf, buflen, result, h_errnop);
+#endif
+}
+
+int
+dpl_gethostbyname3_r(const char *name,
+                     struct hostent *ret,
+                     char *buf,
+                     size_t buflen,
+                     struct hostent **result,
+                     int *h_errnop)
+{
+  int   st;
+
+  st = dpl_gethostbyname2_r(name, AF_INET6, ret, buf, buflen, result, h_errnop);
+  if (st != 0)
+    return st;
+
+  if (*result == NULL)
+    st = dpl_gethostbyname2_r(name, AF_INET, ret, buf, buflen, result, h_errnop);
+
+  return st;
 }
 
 /*
@@ -475,6 +534,38 @@ dpl_strlower(char *str)
 }
 
 /**
+ * compute HMAC-xxx
+ *
+ * @param key_buf
+ * @param key_len
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ * @param digest_lenp
+ *
+ * @return digest_len
+ */
+unsigned int
+dpl_hmac(const char *key_buf,
+         unsigned int key_len,
+         const char *data_buf,
+         unsigned int data_len,
+         char *digest_buf,
+         const EVP_MD *md)
+{
+  HMAC_CTX ctx;
+  u_int digest_len;
+
+  HMAC_CTX_init(&ctx);
+  HMAC_Init_ex(&ctx, key_buf, key_len, md, NULL);
+  HMAC_Update(&ctx, (u_char *) data_buf, data_len);
+  HMAC_Final(&ctx, (u_char *) digest_buf, &digest_len);
+  HMAC_CTX_cleanup(&ctx);
+
+  return digest_len;
+}
+
+/**
  * compute HMAC-SHA1
  *
  * @param key_buf
@@ -493,16 +584,48 @@ dpl_hmac_sha1(const char *key_buf,
               unsigned int data_len,
               char *digest_buf)
 {
-  HMAC_CTX ctx;
-  u_int digest_len;
+  return dpl_hmac(key_buf, key_len, data_buf, data_len, digest_buf, EVP_sha1());
+}
 
-  HMAC_CTX_init(&ctx);
-  HMAC_Init_ex(&ctx, key_buf, key_len, EVP_sha1(), NULL);
-  HMAC_Update(&ctx, (u_char *) data_buf, data_len);
-  HMAC_Final(&ctx, (u_char *) digest_buf, &digest_len);
-  HMAC_CTX_cleanup(&ctx);
+/**
+ * compute HMAC-SHA256
+ *
+ * @param key_buf
+ * @param key_len
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ * @param digest_lenp
+ *
+ * @return digest_len
+ */
+unsigned int
+dpl_hmac_sha256(const char *key_buf,
+                unsigned int key_len,
+                const char *data_buf,
+                unsigned int data_len,
+                char *digest_buf)
+{
+  return dpl_hmac(key_buf, key_len, data_buf, data_len, digest_buf, EVP_sha256());
+}
 
-  return digest_len;
+/**
+ * compute SHA256
+ *
+ * @param data_buf
+ * @param data_len
+ * @param digest_buf
+ */
+
+void
+dpl_sha256(const uint8_t *data_buf, size_t data_len,
+           uint8_t *digest_buf)
+{
+  SHA256_CTX    ctx;
+
+  SHA256_Init(&ctx);
+  SHA256_Update(&ctx, data_buf, data_len);
+  SHA256_Final(digest_buf, &ctx);
 }
 
 /**/
@@ -672,42 +795,42 @@ dpl_base64_decode(const u_char *in_buf,
  *
  * @return
  */
-void
+size_t
 dpl_url_encode(const char *str,
                char *str_ue)
 {
-  int   i;
+  size_t   i;
 
-  for (i = 0;*str;str++)
-    {
-      if (isalnum(*str))
-        str_ue[i++] = *str;
-      else
-        {
-          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
-          i+=3;
-        }
+  for (i = 0; *str != '\0'; str++) {
+    if (isalnum(*str) || *str == '-' || *str == '_' || *str == '.')
+      str_ue[i++] = *str;
+    else {
+      sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
+      i+=3;
     }
+  }
   str_ue[i] = 0;
+
+  return i;
 }
 
-void
+size_t
 dpl_url_encode_no_slashes(const char *str,
                           char *str_ue)
 {
-  int   i;
+  size_t   i;
 
-  for (i = 0;*str;str++)
-    {
-      if (isalnum(*str) || *str == '/')
-        str_ue[i++] = *str;
-      else
-        {
-          sprintf(str_ue + i, "%%%02X", (unsigned char)*str);
-          i+=3;
-        }
+  for (i = 0; *str != '\0'; str++) {
+    if (isalnum(*str) || *str == '-' || *str == '_' || *str == '.' || *str == '/')
+      str_ue[i++] = *str;
+    else {
+      sprintf(str_ue + i, "%%%02X", (unsigned char) *str);
+      i+=3;
     }
+  }
   str_ue[i] = 0;
+
+  return i;
 }
 
 /**
@@ -975,6 +1098,8 @@ dpl_log(dpl_ctx_t *ctx,
     return DPL_FAILURE;	/* sprintf output was truncated */
 
   dpl_logfunc(ctx, level, message);
+
+  return DPL_SUCCESS;
 }
 
 struct ssl_err_state
@@ -1045,3 +1170,118 @@ dpl_set_log_func(dpl_log_func_t logfunc)
 }
 
 /** @} */
+
+/**
+ * Fills a dictionnary with file extended attributes.
+ *
+ * @param path path to the file
+ * @param dict dict to fill, must be pre-allocated
+ * @param prefix if not null, gather only this namespace, and remove prefix from
+ * key names
+ * @param  do_64encode if set to XATTRS_ENCODE_BASE64,  values in  the dict  are
+ * base64 encoded.
+ *
+ * @return DPL_SUCCESS if OK
+ */
+dpl_status_t
+dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode)
+{
+  dpl_status_t ret;
+  char *xattr = NULL;
+  char buf[4096];
+  char encoded_buf[8192];
+  ssize_t ssize_ret, off;
+  ssize_t xattr_buf_len = 2048;
+  int retry = 0;
+
+  if (NULL == dict)
+    {
+      ret = DPL_FAILURE;
+      goto end;
+    }
+
+  do
+    {
+      retry = 0;
+      xattr = malloc(xattr_buf_len);
+      if (NULL == xattr)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      ssize_ret = llistxattr(path, xattr, xattr_buf_len);
+      if (-1 == ssize_ret)
+        {
+          if (ERANGE == errno)
+            {
+              free(xattr);
+              xattr_buf_len *= 2;
+              retry = 1;
+            }
+          else
+            {
+              ret = DPL_FAILURE;
+              goto end;
+            }
+        }
+    }
+  while (1 == retry);
+
+  off = 0;
+  while (off < ssize_ret)
+    {
+      char *key, *full_key;
+      int key_len;
+      ssize_t val_len, base64_len;
+
+      full_key = (xattr + off);
+      key_len = strlen(full_key);
+
+      val_len = lgetxattr(path, full_key, buf, sizeof (buf) - 1);
+      if (val_len == -1)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+
+      buf[val_len] = '\0';
+      if (NULL != prefix)
+        {
+          if (strncmp(full_key, prefix, strlen(prefix)))
+            {
+              off += key_len + 1;
+              continue;
+            }
+          key = full_key + strlen(prefix);
+        }
+      else
+        {
+          key = full_key;
+        }
+      if (XATTRS_ENCODE_BASE64 == do_64encode)
+        {
+          base64_len = dpl_base64_encode((u_char *)buf, val_len, (u_char *)encoded_buf);
+          encoded_buf[base64_len] = '\0';
+          ret = dpl_dict_add(dict, key, encoded_buf, 0);
+        }
+      else
+        {
+          ret = dpl_dict_add(dict, key, buf, 0);
+        }
+      if (DPL_SUCCESS != ret)
+        {
+          goto end;
+        }
+      off += key_len + 1;
+    }
+  ret = DPL_SUCCESS;
+ end:
+
+  if (NULL != xattr)
+    {
+      free(xattr);
+    }
+
+  return ret;
+}

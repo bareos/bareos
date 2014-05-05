@@ -3,37 +3,43 @@ TESTS = alltests
 
 TESTENV_ARGS= --top-srcdir $(top_srcdir)
 if COVERAGE
-TESTENV_ARGS+= --coverage
+	TESTENV_ARGS+= --coverage
 endif
 TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
 
-AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(CHECK_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include \
+	$(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) \
+	$(CHECK_CFLAGS) -I$(builddir)/ssldata -DSRCDIR='"$(srcdir)"'
 AM_CFLAGS = -std=gnu99
 
-alltests_LDADD = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto $(CHECK_LIBS) -lrt -ldl
+alltests_LDFLAGS = $(top_builddir)/libdroplet/libdroplet.la $(JSON_LIBS) -lcrypto $(CHECK_LIBS) -lrt -ldl
 alltests_SOURCES = \
-	addrlist_utest.c \
-	droplet_utest.c \
-	getdate_utest.c \
-	taskpool_utest.c \
-	ntinydb_utest.c \
-	profile_utest.c \
-	dbuf_utest.c \
-	sbuf_utest.c \
-	sproxyd_utest.c \
-	dict_utest.c \
-	utest_utest.c \
-	util_utest.c \
-	vec_utest.c \
-	utest_main.c \
-	testutils.c testutils.h \
-	toyctl.c toyctl.h
+	tests/addrlist_utest.c \
+	tests/droplet_utest.c \
+	tests/getdate_utest.c \
+	tests/taskpool_utest.c \
+	tests/ntinydb_utest.c \
+	tests/profile_utest.c \
+	tests/dbuf_utest.c \
+	tests/sbuf_utest.c \
+	tests/dict_utest.c \
+	tests/utest_utest.c \
+	tests/util_utest.c \
+	tests/vec_utest.c \
+	tests/s3/auth_common_utest.c \
+	tests/s3/auth_v2_utest.c \
+	tests/s3/auth_v4_utest.c \
+	utest_main.c
 
+SSL_INCLUDE_FILES = \
+	$(builddir)/ssldata/client-cert.c \
+	$(builddir)/ssldata/client.c \
+	$(builddir)/ssldata/demoCA/cacert.c
 
-SSL_INCLUDE_FILES =  ssldata/client-cert.c ssldata/client.c ssldata/demoCA/cacert.c
-profile_utest.c: $(SSL_INCLUDE_FILES)
-.pem.c:
-	sed -e 's|^|"|' -e 's|$$|\\n"|' <$< >$@
+tests/profile_utest.c: $(SSL_INCLUDE_FILES)
+.pem.c: 
+	@[ ! -d $(@D) ] && mkdir -p $(@D) || true
+	@sed -e 's|^|"|' -e 's|$$|\\n"|' < $< > $@
 CLEANFILES = $(SSL_INCLUDE_FILES)
 
 if COVERAGE
@@ -44,7 +50,10 @@ endif
 
 EXTRA_DIST= \
     testenv.sh \
-    valgrind.supp
+    valgrind.supp \
+    $(srcdir)/testenv.sh \
+    $(srcdir)/valgrind.supp \
+    $(srcdir)/ssldata
 
 toyserver_LDADD = -lcrypto
 toyserver_SOURCES = toyserver.c toyserver.h

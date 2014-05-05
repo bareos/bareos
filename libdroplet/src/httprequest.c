@@ -88,17 +88,17 @@ dpl_add_range_to_headers_internal(const dpl_range_t *range,
     return DPL_EINVAL;
   else if (DPL_UNDEF == range->start)
     {
-      snprintf(str, sizeof (str), "-%d", range->end);
+      snprintf(str, sizeof (str), "-%lu", range->end);
       DPL_APPEND_STR(str);
     }
   else if (DPL_UNDEF == range->end)
     {
-      snprintf(str, sizeof (str), "%d-", range->start);
+      snprintf(str, sizeof (str), "%lu-", range->start);
       DPL_APPEND_STR(str);
     }
   else
     {
-      snprintf(str, sizeof (str), "%d-%d", range->start, range->end);
+      snprintf(str, sizeof (str), "%lu-%lu", range->start, range->end);
       DPL_APPEND_STR(str);
     }
 

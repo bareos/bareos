@@ -31,52 +31,73 @@
  *
  * https://github.com/scality/Droplet
  */
+
 #ifndef __DROPLET_BACKEND_H__
 #define __DROPLET_BACKEND_H__ 1
 
-/* general */
-typedef dpl_status_t (*dpl_get_capabilities_t)(dpl_ctx_t *ctx, dpl_capability_t *maskp);
-typedef dpl_status_t (*dpl_login_t)(dpl_ctx_t *ctx);
-typedef dpl_status_t (*dpl_list_all_my_buckets_t)(dpl_ctx_t *ctx, dpl_vec_t **vecp, char **locationp);
-typedef dpl_status_t (*dpl_list_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const char *prefix, const char *delimiter, const int max_keys, dpl_vec_t **objectsp, dpl_vec_t **common_prefixesp, char **locationp);
-typedef dpl_status_t (*dpl_make_bucket_t)(dpl_ctx_t *ctx, const char *bucket, const dpl_sysmd_t *sysmd, char **locationp);
-typedef dpl_status_t (*dpl_delete_bucket_t)(dpl_ctx_t *ctx, const char *bucket, char **locationp);
-typedef dpl_status_t (*dpl_put_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const char *data_buf, unsigned int data_len, const dpl_dict_t *query_params, dpl_sysmd_t *returned_sysmdp, char **locationp);
-typedef dpl_status_t (*dpl_get_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
-typedef dpl_status_t (*dpl_head_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp, char **locationp);
-typedef dpl_status_t (*dpl_head_raw_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, dpl_dict_t **metadatap, char **locationp);
-typedef dpl_status_t (*dpl_delete_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, dpl_ftype_t object_type, const dpl_condition_t *condition, char **locationp);
-typedef dpl_status_t (*dpl_genurl_t)(dpl_ctx_t *ctx, const char *bucket, const char *resource, const char *subresource, const dpl_option_t *option, time_t expires, char *buf, unsigned int len, unsigned int *lenp, char **locationp);
-typedef dpl_status_t (*dpl_copy_t)(dpl_ctx_t *ctx, const char *src_bucket, const char *src_resource, const char *src_subresource, const char *dst_bucket, const char *dst_resource, const char *dst_subresource, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition, char **locationp);
+/**
+ * All backend fn return a @e dpl_status_t and get a @e dpl_ctx_t* as first argument.
+ */
+#define DCL_BACKEND_FN(fn, args...) dpl_status_t        (fn)(dpl_ctx_t *, ##args)
 
-typedef dpl_status_t (*dpl_get_id_scheme_t)(dpl_ctx_t *ctx, dpl_id_scheme_t **id_schemep);
+#define DCL_BACKEND_GET_CAPABILITIES_FN(fn)     DCL_BACKEND_FN(fn, dpl_capability_t *)
+#define DCL_BACKEND_LOGIN_FN(fn)                DCL_BACKEND_FN(fn)
+#define DCL_BACKEND_LIST_ALL_MY_BUCKETS_FN(fn)  DCL_BACKEND_FN(fn, dpl_vec_t **, char **)
+#define DCL_BACKEND_LIST_BUCKET_FN(fn)          DCL_BACKEND_FN(fn, const char *, const char *, const char *, const int, dpl_vec_t **, dpl_vec_t **, char **)
+#define DCL_BACKEND_LIST_BUCKET_ATTRS_FN(fn)    DCL_BACKEND_FN(fn, const char *, const char *, const char *, const int, dpl_dict_t **, dpl_sysmd_t *, dpl_vec_t **, dpl_vec_t **, char **)
+#define DCL_BACKEND_MAKE_BUCKET_FN(fn)          DCL_BACKEND_FN(fn, const char *, const dpl_sysmd_t *, char **)
+#define DCL_BACKEND_DELETE_BUCKET_FN(fn)        DCL_BACKEND_FN(fn, const char *, char **)
+#define DCL_BACKEND_PUT_FN(fn)                  DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, const dpl_range_t *, const dpl_dict_t *, const dpl_sysmd_t *, const char *, unsigned int, const dpl_dict_t *, dpl_sysmd_t *, char **)
+#define DCL_BACKEND_GET_FN(fn)                  DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, const dpl_range_t *, char **, unsigned int *, dpl_dict_t **, dpl_sysmd_t *, char **)
+#define DCL_BACKEND_HEAD_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, dpl_sysmd_t *, char **)
+#define DCL_BACKEND_HEAD_RAW_FN(fn)             DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, char **)
+#define DCL_BACKEND_DELETE_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, char **)
+#define DCL_BACKEND_GENURL_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, time_t, char *, unsigned int, unsigned int *, char **)
+#define DCL_BACKEND_COPY_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, dpl_copy_directive_t, const dpl_dict_t *, const dpl_sysmd_t *, const dpl_condition_t *, char **)
+#define DCL_BACKEND_GET_ID_SCHEME_FN(fn)        DCL_BACKEND_FN(fn, dpl_id_scheme_t **)
+
+typedef DCL_BACKEND_GET_CAPABILITIES_FN(*dpl_get_capabilities_t);
+typedef DCL_BACKEND_LOGIN_FN(*dpl_login_t);
+typedef DCL_BACKEND_LIST_ALL_MY_BUCKETS_FN(*dpl_list_all_my_buckets_t);
+typedef DCL_BACKEND_LIST_BUCKET_FN(*dpl_list_bucket_t);
+typedef DCL_BACKEND_LIST_BUCKET_ATTRS_FN(*dpl_list_bucket_attrs_t);
+typedef DCL_BACKEND_MAKE_BUCKET_FN(*dpl_make_bucket_t);
+typedef DCL_BACKEND_DELETE_BUCKET_FN(*dpl_delete_bucket_t);
+typedef DCL_BACKEND_PUT_FN(*dpl_put_t);
+typedef DCL_BACKEND_GET_FN(*dpl_get_t);
+typedef DCL_BACKEND_HEAD_FN(*dpl_head_t);
+typedef DCL_BACKEND_HEAD_RAW_FN(*dpl_head_raw_t);
+typedef DCL_BACKEND_DELETE_FN(*dpl_delete_t);
+typedef DCL_BACKEND_GENURL_FN(*dpl_genurl_t);
+typedef DCL_BACKEND_COPY_FN(*dpl_copy_t);
+typedef DCL_BACKEND_GET_ID_SCHEME_FN(*dpl_get_id_scheme_t);
 
 typedef struct dpl_backend_s
 {
-  const char *name; /*!< name of the backend */
-  dpl_get_capabilities_t get_capabilities;
-  dpl_login_t login;
-  dpl_list_all_my_buckets_t list_all_my_buckets;
-  dpl_list_bucket_t list_bucket;
-  dpl_make_bucket_t make_bucket;
-  dpl_delete_bucket_t delete_bucket;
-  dpl_put_t post;
-  dpl_put_t put;
-  dpl_get_t get;
-  dpl_head_t head;
-  dpl_head_raw_t head_raw;
-  dpl_delete_t deletef;
-  dpl_get_id_scheme_t get_id_scheme;
-  dpl_put_t post_id;
-  dpl_put_t put_id;
-  dpl_get_t get_id;
-  dpl_head_t head_id;
-  dpl_head_raw_t head_id_raw;
-  dpl_delete_t delete_id;
-  dpl_genurl_t genurl;
-  dpl_copy_t copy;
-  dpl_copy_t copy_id;
+  const char                    *name; /*!< name of the backend */
+  dpl_get_capabilities_t        get_capabilities;
+  dpl_login_t                   login;
+  dpl_list_all_my_buckets_t     list_all_my_buckets;
+  dpl_list_bucket_t             list_bucket;
+  dpl_list_bucket_attrs_t       list_bucket_attrs;
+  dpl_make_bucket_t             make_bucket;
+  dpl_delete_bucket_t           delete_bucket;
+  dpl_put_t                     post;
+  dpl_put_t                     put;
+  dpl_get_t                     get;
+  dpl_head_t                    head;
+  dpl_head_raw_t                head_raw;
+  dpl_delete_t                  deletef;
+  dpl_get_id_scheme_t           get_id_scheme;
+  dpl_put_t                     post_id;
+  dpl_put_t                     put_id;
+  dpl_get_t                     get_id;
+  dpl_head_t                    head_id;
+  dpl_head_raw_t                head_id_raw;
+  dpl_delete_t                  delete_id;
+  dpl_genurl_t                  genurl;
+  dpl_copy_t                    copy;
+  dpl_copy_t                    copy_id;
 } dpl_backend_t;
 
-/* PROTO backend.c */
 #endif

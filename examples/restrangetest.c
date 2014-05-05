@@ -71,8 +71,8 @@ main(int argc,
 #undef DATA_BUF
 #define DATA_BUF "foobarbazqux"
 
-  range.start = 0;
-  range.end = 11;
+  range.start = 0LL;
+  range.end = 11LL;
 
   ret = dpl_put(ctx,           //the context
                    NULL,          //no bucket
@@ -95,8 +95,8 @@ main(int argc,
 #undef DATA_BUF
 #define DATA_BUF "abcdef012345"
 
-  range.start = 12;
-  range.end = 23;
+  range.start = 12LL;
+  range.end = 23LL;
 
   ret = dpl_put(ctx,           //the context
                    NULL,          //no bucket
@@ -119,8 +119,8 @@ main(int argc,
 #undef DATA_BUF
 #define DATA_BUF "hello world!"
 
-  range.start = 24;
-  range.end = 35;
+  range.start = 24LL;
+  range.end = 35LL;
 
   ret = dpl_put(ctx,           //the context
                    NULL,          //no bucket

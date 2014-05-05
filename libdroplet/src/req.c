@@ -179,10 +179,17 @@ dpl_req_set_resource(dpl_req_t *req,
   char *nstr;
   char npath[DPL_MAXPATHLEN];
 
-  if (!strcmp(req->ctx->base_path, "/"))
-    snprintf(npath, sizeof (npath), "%s", resource);
-  else
-    snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, resource);
+  if (resource == NULL || *resource == '\0' || !strcmp(resource, "/")) {
+    if (!strcmp(req->ctx->base_path, "/"))
+      npath[0] = '\0';
+    else
+      strncpy(npath, req->ctx->base_path, sizeof (npath));
+  } else {
+    if (!strcmp(req->ctx->base_path, "/"))
+      snprintf(npath, sizeof (npath), "%s", resource);
+    else
+      snprintf(npath, sizeof (npath), "%s/%s", req->ctx->base_path, resource);
+  }
 
   nstr = strdup(npath);
   if (NULL == nstr)
@@ -217,7 +224,6 @@ dpl_status_t
 dpl_req_add_subresource(dpl_req_t *req,
                         const char *subresource)
 {
-  char *nstr = NULL;
   char *tmp = NULL;
 
   if (! req->subresource)
@@ -393,8 +399,8 @@ dpl_req_set_object_type(dpl_req_t *req,
 
 dpl_status_t
 dpl_req_add_range(dpl_req_t *req,
-                  int start,
-                  int end)
+                  uint64_t start,
+                  uint64_t end)
 {
   req->range.start = start;
   req->range.end = end;

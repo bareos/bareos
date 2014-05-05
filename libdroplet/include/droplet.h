@@ -63,6 +63,8 @@ extern "C" {
 #define DPL_DEFAULT_WRITE_TIMEOUT       30
 #define DPL_DEFAULT_READ_BUF_SIZE       8192
 #define DPL_DEFAULT_MAX_REDIRECTS       10
+#define DPL_DEFAULT_AWS_AUTH_SIGN_VERSION        4
+#define DPL_DEFAULT_AWS_REGION          "us-east-1"
 
 extern int dpl_header_size;
 
@@ -398,9 +400,9 @@ typedef struct
 
 typedef struct
 {
-#define DPL_UNDEF -1
-  int start;
-  int end;
+#define DPL_UNDEF -1LL
+  uint64_t start;
+  uint64_t end;
 } dpl_range_t;
 
 typedef enum
@@ -466,6 +468,8 @@ typedef struct dpl_ctx
   char *base_path;            /*!< or RootURI */
   char *access_key;
   char *secret_key;
+  unsigned char aws_auth_sign_version; /*!< S3 Auth signature version */
+  char aws_region[32];        /*!< AWS Region */
   char *ssl_cert_file;
   char *ssl_key_file;
   char *ssl_password;
@@ -540,7 +544,6 @@ typedef enum
     DPL_BEHAVIOR_EXPECT =      (1u<<1),     /*!< Use the Expect: 100-Continue */
     DPL_BEHAVIOR_VIRTUAL_HOSTING = (1u<<2), /*!< Use virtual hosting instead of path-style access */
     DPL_BEHAVIOR_KEEP_ALIVE =  (1u<<3),     /*!< Reuse connections */
-    DPL_BEHAVIOR_QUERY_STRING = (1u<<4),    /*!< Build a query string instead of a request */
   } dpl_behavior_flag_t;
 
 typedef struct
