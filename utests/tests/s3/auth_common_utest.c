@@ -55,9 +55,10 @@ create_req_for_test(dpl_ctx_t *ctx, dpl_method_t method,
                     const char *bucket, const char *resource,
                     dpl_dict_t **headers)
 {
+  dpl_addr_t    *addrp = NULL;
   dpl_status_t  ret;
   dpl_req_t     *req;
-  char          *host, *port, virtual_host[1024];
+  char          virtual_host[1024];
 
   req = dpl_req_new(ctx);
   dpl_assert_ptr_not_null(req);
@@ -75,19 +76,19 @@ create_req_for_test(dpl_ctx_t *ctx, dpl_method_t method,
   ret = dpl_s3_req_build(req, 0u, headers);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
-  ret = dpl_addrlist_get_nth(ctx->addrlist, ctx->cur_host,
-                             &host, &port, NULL, NULL);
+  ret = dpl_addrlist_get_nth(ctx->addrlist, ctx->cur_host, &addrp);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
+  dpl_assert_ptr_not_null(addrp);
 
   if (req->bucket != NULL)
-    snprintf(virtual_host, sizeof(virtual_host), "%s.%s", req->bucket, host);
+    snprintf(virtual_host, sizeof(virtual_host), "%s.%s", req->bucket, addrp->host);
   else
-    strncpy(virtual_host, host, sizeof(virtual_host));
+    strncpy(virtual_host, addrp->host, sizeof(virtual_host));
 
   ret = dpl_req_set_host(req, virtual_host);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
-  ret = dpl_req_set_port(req, port);
+  ret = dpl_req_set_port(req, addrp->portstr);
   dpl_assert_int_eq(DPL_SUCCESS, ret);
 
   ret = dpl_add_host_to_headers(req, *headers);

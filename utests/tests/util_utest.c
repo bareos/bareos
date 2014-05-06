@@ -24,7 +24,7 @@ START_TEST(xattrs_test)
   dpl_assert_int_eq(0, ret);
 
   char command[1000];
-  sprintf(command, "sh " SRCDIR "/util_utest.sh prepare %s", path);
+  sprintf(command, "sh " SRCDIR "/tools/util_utest.sh prepare %s", path);
   ret = system(command);
   dpl_assert_int_eq(0, ret);
 
@@ -76,7 +76,7 @@ START_TEST(xattrs_test)
   dpl_assert_str_eq("dmFsdWUwNDI=", value);
   dpl_dict_free(dict);
 
-  sprintf(command, "sh " SRCDIR "/util_utest.sh clean %s", path);
+  sprintf(command, "sh " SRCDIR "/tools/util_utest.sh clean %s", path);
   ret = system(command);
   dpl_assert_int_eq(0, ret);
 }

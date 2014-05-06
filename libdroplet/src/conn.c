@@ -170,31 +170,30 @@ dpl_conn_remove_nolock(dpl_ctx_t *ctx,
 }
 
 static void
-safe_close(int fd)
+safe_close(dpl_ctx_t *ctx, int fd)
 {
-  int ret;
+  int   ret;
 
   DPRINTF("closing fd=%d\n", fd);
 
- retry:
-  ret = close(fd);
-  if (-1 == ret)
-    {
-      if (EINTR == errno)
-        goto retry;
+  do {
+    ret = close(fd);
+  } while (ret == -1 && errno == EINTR);
 
-      return;
-    }
+  if (ret == -1)
+    DPL_TRACE(ctx, DPL_TRACE_WARN, "close failed: %s", strerror(errno));
 }
 
 static void
 dpl_conn_free(dpl_conn_t *conn)
 {
-  if (NULL != conn->ssl)
+  if (NULL != conn->ssl) {
+    SSL_shutdown(conn->ssl);
     SSL_free(conn->ssl);
+  }
 
   if (-1 != conn->fd)
-    safe_close(conn->fd);
+    safe_close(conn->ctx, conn->fd);
 
   if (NULL != conn->read_buf)
     free(conn->read_buf);
@@ -237,7 +236,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -268,7 +267,7 @@ do_connect(dpl_ctx_t *ctx,
       if (EINPROGRESS != errno)
 	{
 	  DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(errno));
-	  safe_close(fd);
+	  safe_close(ctx, fd);
           fd = -1;
           goto end;
         }
@@ -285,7 +284,7 @@ do_connect(dpl_ctx_t *ctx,
       if (errno == EINTR)
         goto retry;
       DPL_LOG(ctx, DPL_ERROR, "poll failed: %s", strerror(errno));
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -294,14 +293,14 @@ do_connect(dpl_ctx_t *ctx,
     {
       DPL_LOG(ctx, DPL_ERROR, "Timed out connecting to server %s after %d seconds",
 	      ident, ctx->conn_timeout);
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
   else if (!(fds.revents & POLLOUT))
     {
       DPL_LOG(ctx, DPL_ERROR, "poll returned strange results");
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -311,7 +310,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_LOG(ctx, DPL_ERROR, "ioctl(FIONBIO) failed: %s", strerror(errno));
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -324,7 +323,7 @@ do_connect(dpl_ctx_t *ctx,
   if (-1 == ret)
     {
       DPL_LOG(ctx, DPL_ERROR, "getsockopt(SO_ERROR) failed: %s", strerror(errno));
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -332,7 +331,7 @@ do_connect(dpl_ctx_t *ctx,
   if (error != 0)
     {
       DPL_LOG(ctx, DPL_ERROR, "Connect to server %s failed: %s", ident, strerror(error));
-      safe_close(fd);
+      safe_close(ctx, fd);
       fd = -1;
       goto end;
     }
@@ -342,6 +341,30 @@ do_connect(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_CONN, "connect fd=%d", fd);
 
   return fd;
+}
+
+static int
+init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
+{
+  int   ret;
+
+  conn->ssl = SSL_new(ctx->ssl_ctx);
+  if (conn->ssl == NULL)
+    return 0;
+
+  conn->bio = BIO_new_socket(conn->fd, BIO_NOCLOSE);
+  if (conn->bio == NULL)
+    return 0;
+
+  SSL_set_bio(conn->ssl, conn->bio, conn->bio);
+
+  ret = SSL_connect(conn->ssl);
+  if (ret <= 0) {
+    DPL_SSL_PERROR(ctx, "SSL_connect");
+    return 0;
+  }
+
+  return 1;
 }
 
 /*
@@ -356,7 +379,6 @@ conn_open(dpl_ctx_t *ctx,
 {
   dpl_conn_t    *conn = NULL;
   time_t        now = time(0);
-  int           ret;
   char          ident[DPL_ADDR_IDENT_STRLEN];
 
   dpl_ctx_lock(ctx);
@@ -438,36 +460,13 @@ conn_open(dpl_ctx_t *ctx,
   conn->start_time = now;
   conn->n_hits = 0;
 
-  if (1 == ctx->use_https)
-    {
-      conn->ssl = SSL_new(ctx->ssl_ctx);
-      if (NULL == conn->ssl)
-        {
-          dpl_conn_free(conn);
-          conn = NULL;
-          goto end;
-        }
-
-      conn->bio = BIO_new_socket(conn->fd, BIO_NOCLOSE);
-      if (NULL == conn->bio)
-        {
-          dpl_conn_free(conn);
-          conn = NULL;
-          goto end;
-        }
-
-      SSL_set_bio(conn->ssl, conn->bio, conn->bio);
-
-      ret = SSL_connect(conn->ssl);
-      if (ret <= 0)
-        {
-          DPL_SSL_PERROR(ctx, "SSL_connect");
-          dpl_conn_free(conn);
-          conn = NULL;
-          goto end;
-        }
-
+  if (ctx->use_https) {
+    if (!init_ssl_conn(ctx, conn)) {
+      dpl_conn_free(conn);
+      conn = NULL;
+      goto end;
     }
+  }
 
   ctx->n_conn_fds++;
 

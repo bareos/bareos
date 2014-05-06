@@ -40,7 +40,7 @@ be_valground(int argc, char **argv)
   newargv[newargc++] = "--tool=memcheck";
   newargv[newargc++] = "-q";
   newargv[newargc++] = "--leak-check=full";
-  newargv[newargc++] = "--suppressions=" SRCDIR "/valgrind.supp";
+  newargv[newargc++] = "--suppressions=" SRCDIR "/tools/valgrind.supp";
   newargv[newargc++] = "--num-callers=32";
   while (*argv)
     newargv[newargc++] = *argv++;

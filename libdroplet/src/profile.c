@@ -671,6 +671,14 @@ dpl_profile_init(dpl_ctx_t *ctx,
   return DPL_SUCCESS;
 }
 
+static int
+ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
+{
+  /* dpl_ctx_t     *ctx = (dpl_ctx_t *) arg; */
+
+  return 0;
+}
+
 static dpl_status_t
 dpl_ssl_profile_post(dpl_ctx_t *ctx)
 {
@@ -690,7 +698,7 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     return DPL_FAILURE;
   }
 
-  //SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
+  // SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
 
   if (NULL != ctx->ssl_cert_file) {
     if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
@@ -717,6 +725,8 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
       return DPL_FAILURE;
     }
   }
+
+  SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, (void *) ctx);
 
   return DPL_SUCCESS;
 }

@@ -2,19 +2,17 @@
 #include <check.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <netdb.h>
 #include "utest_main.h"
+
+dpl_status_t dpl_addrlist_get_nth(dpl_addrlist_t *addrlist, int n, dpl_addr_t **addrp);
 
 /* create an empty addrlist */
 START_TEST(empty_test)
 {
-  dpl_addrlist_t *addrlist;
-  char *hoststr = NULL;
-  char *portstr = NULL;
-  struct in_addr ipaddr;
-  u_short port = 0;
-  char *s = NULL;
-
-  memset(&ipaddr, 0, sizeof(ipaddr));
+  dpl_addrlist_t        *addrlist;
+  dpl_addr_t            *addrp = NULL;
+  char                  *s = NULL;
 
   addrlist = dpl_addrlist_create("4244");
   dpl_assert_ptr_not_null(addrlist);
@@ -23,8 +21,7 @@ START_TEST(empty_test)
   dpl_assert_int_eq(0, dpl_addrlist_count(addrlist));
 
   /* an empty addrlist has no elements to get */
-  dpl_assert_int_eq(DPL_ENOENT, dpl_addrlist_get_nth(addrlist, 0, &hoststr,
-						     &portstr, &ipaddr, &port));
+  dpl_assert_int_eq(DPL_ENOENT, dpl_addrlist_get_nth(addrlist, 0, &addrp));
 
   /* an empty addrlist is described as a non-NULL empty string */
   s = dpl_addrlist_get(addrlist);
@@ -37,9 +34,9 @@ END_TEST
 
 START_TEST(default_default_port_test)
 {
-  dpl_addrlist_t *addrlist;
-  dpl_status_t r;
-  char *s;
+  dpl_addrlist_t        *addrlist;
+  dpl_status_t          r;
+  char                  *s;
 
   /* create the addrlist */
   addrlist = dpl_addrlist_create(NULL);
@@ -60,8 +57,8 @@ END_TEST
 
 START_TEST(multiple_add_test)
 {
-  dpl_addrlist_t *addrlist;
-  dpl_status_t r;
+  dpl_addrlist_t        *addrlist;
+  dpl_status_t          r;
 
   /* create the addrlist */
   addrlist = dpl_addrlist_create(NULL);
@@ -90,13 +87,10 @@ END_TEST
 
 START_TEST(create_from_str_1_test)
 {
-  dpl_addrlist_t *addrlist;
-  char *hoststr = NULL;
-  char *portstr = NULL;
-  struct in_addr ipaddr;
-  u_short port;
-  dpl_status_t r;
-  char *s;
+  dpl_addrlist_t        *addrlist;
+  dpl_addr_t            *addrp = NULL;
+  dpl_status_t          r;
+  char                  *s, ident[INET_ADDRSTRLEN];
 
   /* create the addrlist */
   addrlist = dpl_addrlist_create_from_str("4244", "192.168.1.1");
@@ -106,39 +100,37 @@ START_TEST(create_from_str_1_test)
   dpl_assert_int_eq(1, dpl_addrlist_count(addrlist));
 
   /* verify getting elements by index */
-
-  hoststr = portstr = NULL;
-  memset(&ipaddr, 0, sizeof(ipaddr));
-  port = 0;
-  r = dpl_addrlist_get_nth(addrlist, 0, &hoststr, &portstr, &ipaddr, &port);
+  r = dpl_addrlist_get_nth(addrlist, 0, &addrp);
   dpl_assert_int_eq(DPL_SUCCESS, r);
-  dpl_assert_str_eq(hoststr, "192.168.1.1");
-  dpl_assert_str_eq(portstr, "4244");
-  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.1");
-  dpl_assert_int_eq(port, 4244);
+  dpl_assert_ptr_not_null(addrp);
+  dpl_assert_str_eq(addrp->host, "192.168.1.1");
+  dpl_assert_str_eq(addrp->portstr, "4244");
+  dpl_assert_ptr_not_null(addrp->h);
+  dpl_assert_int_eq(addrp->h->h_addrtype, AF_INET); 
+  inet_ntop(addrp->h->h_addrtype, addrp->h->h_addr, ident, sizeof(ident));
+  dpl_assert_str_eq(ident, "192.168.1.1");
+  dpl_assert_int_eq(addrp->port, 4244);
 
   /* indexes wrap modulo the count */
+  r = dpl_addrlist_get_nth(addrlist, 1, &addrp);
+  dpl_assert_ptr_not_null(addrp);
+  dpl_assert_str_eq(addrp->host, "192.168.1.1");
+  dpl_assert_str_eq(addrp->portstr, "4244");
+  dpl_assert_ptr_not_null(addrp->h);
+  dpl_assert_int_eq(addrp->h->h_addrtype, AF_INET); 
+  inet_ntop(addrp->h->h_addrtype, addrp->h->h_addr, ident, sizeof(ident));
+  dpl_assert_str_eq(ident, "192.168.1.1");
+  dpl_assert_int_eq(addrp->port, 4244);
 
-  hoststr = portstr = NULL;
-  memset(&ipaddr, 0, sizeof(ipaddr));
-  port = 0;
-  r = dpl_addrlist_get_nth(addrlist, 1, &hoststr, &portstr, &ipaddr, &port);
-  dpl_assert_int_eq(DPL_SUCCESS, r);
-  dpl_assert_str_eq(hoststr, "192.168.1.1");
-  dpl_assert_str_eq(portstr, "4244");
-  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.1");
-  dpl_assert_int_eq(port, 4244);
-
-
-  hoststr = portstr = NULL;
-  memset(&ipaddr, 0, sizeof(ipaddr));
-  port = 0;
-  r = dpl_addrlist_get_nth(addrlist, 347, &hoststr, &portstr, &ipaddr, &port);
-  dpl_assert_int_eq(DPL_SUCCESS, r);
-  dpl_assert_str_eq(hoststr, "192.168.1.1");
-  dpl_assert_str_eq(portstr, "4244");
-  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.1");
-  dpl_assert_int_eq(port, 4244);
+  r = dpl_addrlist_get_nth(addrlist, 347, &addrp);
+  dpl_assert_ptr_not_null(addrp);
+  dpl_assert_str_eq(addrp->host, "192.168.1.1");
+  dpl_assert_str_eq(addrp->portstr, "4244");
+  dpl_assert_ptr_not_null(addrp->h);
+  dpl_assert_int_eq(addrp->h->h_addrtype, AF_INET); 
+  inet_ntop(addrp->h->h_addrtype, addrp->h->h_addr, ident, sizeof(ident));
+  dpl_assert_str_eq(ident, "192.168.1.1");
+  dpl_assert_int_eq(addrp->port, 4244);
 
   /* verify the string form of the addrlist */
   s = dpl_addrlist_get(addrlist);
@@ -151,17 +143,14 @@ END_TEST
 
 START_TEST(create_from_str_3_test)
 {
-  dpl_addrlist_t *addrlist;
-  char *hoststr = NULL;
-  char *portstr = NULL;
-  struct in_addr ipaddr;
-  u_short port;
-  dpl_status_t r;
-  int i;
-  char *s;
-  int port_position[3] = { 0, 0, 0 };
-  int port_counts[3] = { 0, 0, 0 };
-  char expstr[256] = "";
+  dpl_addrlist_t        *addrlist;
+  dpl_addr_t            *addrp = NULL;
+  dpl_status_t          r;
+  int                   i;
+  char                  *s, ident[INET_ADDRSTRLEN];
+  int                   port_position[3] = { 0, 0, 0 };
+  int                   port_counts[3] = { 0, 0, 0 };
+  char                  expstr[256] = "";
 
   /* create the addrlist */
   addrlist = dpl_addrlist_create_from_str("4244",
@@ -174,42 +163,44 @@ START_TEST(create_from_str_3_test)
   /* verify getting elements by index */
   /* indexes wrap modulo the count */
 
-  for (i = 0 ; i < 12 ; i++)
+  for (i = 0; i < 12; i++)
     {
-      hoststr = portstr = NULL;
-      memset(&ipaddr, 0, sizeof(ipaddr));
-      port = 0;
-      r = dpl_addrlist_get_nth(addrlist, i, &hoststr, &portstr, &ipaddr, &port);
+      r = dpl_addrlist_get_nth(addrlist, i, &addrp);
       dpl_assert_int_eq(DPL_SUCCESS, r);
+      dpl_assert_ptr_not_null(addrp);
+      dpl_assert_ptr_not_null(addrp->h);
 
-      fail_unless(port >= 4242, NULL);
-      fail_unless(port <= 4244, NULL);
-      if (port == 4242)
+      fail_unless(addrp->port >= 4242, NULL);
+      fail_unless(addrp->port <= 4244, NULL);
+
+      inet_ntop(addrp->h->h_addrtype, addrp->h->h_addr, ident, sizeof(ident));
+
+      if (addrp->port == 4242)
 	{
-	  dpl_assert_str_eq(hoststr, "192.168.1.1");
-	  dpl_assert_str_eq(portstr, "4242");
-	  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.1");
+	  dpl_assert_str_eq(addrp->host, "192.168.1.1");
+	  dpl_assert_str_eq(addrp->portstr, "4242");
+	  dpl_assert_str_eq(ident, "192.168.1.1");
 	  port_counts[0]++;
 	}
-      else if (port == 4243)
+      else if (addrp->port == 4243)
 	{
-	  dpl_assert_str_eq(hoststr, "192.168.1.2");
-	  dpl_assert_str_eq(portstr, "4243");
-	  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.2");
+	  dpl_assert_str_eq(addrp->host, "192.168.1.2");
+	  dpl_assert_str_eq(addrp->portstr, "4243");
+	  dpl_assert_str_eq(ident, "192.168.1.2");
 	  port_counts[1]++;
 	}
       else /* 4244 */
 	{
-	  dpl_assert_str_eq(hoststr, "192.168.1.3");
-	  dpl_assert_str_eq(portstr, "4244");
-	  dpl_assert_str_eq(inet_ntoa(ipaddr), "192.168.1.3");
+	  dpl_assert_str_eq(addrp->host, "192.168.1.3");
+	  dpl_assert_str_eq(addrp->portstr, "4244");
+	  dpl_assert_str_eq(ident, "192.168.1.3");
 	  port_counts[2]++;
 	}
 
       if (port_position[i % 3])
-	dpl_assert_int_eq(port_position[i % 3], port);
+	dpl_assert_int_eq(port_position[i % 3], addrp->port);
       else
-	port_position[i % 3] = port;
+	port_position[i % 3] = addrp->port;
     }
   dpl_assert_int_eq(port_counts[0], 4);
   dpl_assert_int_eq(port_counts[1], 4);
@@ -242,19 +233,19 @@ END_TEST
 static char *
 get_nth(dpl_addrlist_t *addrlist, int i)
 {
-  dpl_status_t r;
-  char *host = NULL;
-  char *port = NULL;
-  char *addr;
+  dpl_addr_t    *addrp = NULL;
+  dpl_status_t  r;
+  char          *addr;
 
-  r = dpl_addrlist_get_nth(addrlist, i, &host, &port, NULL, NULL);
+  r = dpl_addrlist_get_nth(addrlist, i, &addrp);
   dpl_assert_int_eq(DPL_SUCCESS, r);
-  addr = malloc(strlen(host) + 1 + strlen(port) + 1);
+  dpl_assert_ptr_not_null(addrp);
+  dpl_assert_ptr_not_null(addrp->h);
+
+  addr = malloc(DPL_ADDR_IDENT_STRLEN);
   dpl_assert_ptr_not_null(addr);
-  strcpy(addr, host);
-  strcat(addr, ":");
-  strcat(addr, port);
-  return addr;
+
+  return dpl_addr_get_ident(addrp->h, addrp->port, addr, DPL_ADDR_IDENT_STRLEN);
 }
 
 static int
@@ -487,7 +478,8 @@ END_TEST
 /* Passing addrlist=null to various functions fails cleanly */
 START_TEST(null_test)
 {
-  char *s;
+  dpl_addr_t    *addrp = NULL;
+  char          *s;
 
   /* dpl_addrlist_get() has an odd return for this corner case, but whatever */
   s = dpl_addrlist_get(NULL);
@@ -502,7 +494,7 @@ START_TEST(null_test)
   dpl_assert_ptr_null(dpl_addrlist_create_from_str(NULL, NULL));
   dpl_addrlist_lock(NULL);
   dpl_addrlist_unlock(NULL);
-  dpl_assert_int_eq(DPL_ENOENT, dpl_addrlist_get_nth(NULL, 1, &s, &s, NULL, NULL));
+  dpl_assert_int_eq(DPL_ENOENT, dpl_addrlist_get_nth(NULL, 1, &addrp));
   dpl_assert_int_eq(DPL_FAILURE, dpl_addrlist_add(NULL, "192.168.1.32", "80"));
 }
 END_TEST
@@ -524,4 +516,3 @@ addrlist_suite(void)
   suite_add_tcase(s, t);
   return s;
 }
-

@@ -5,7 +5,7 @@ TESTENV_ARGS = --top-srcdir $(top_srcdir)
 if COVERAGE
 	TESTENV_ARGS += --coverage
 endif
-TESTS_ENVIRONMENT= sh $(srcdir)/testenv.sh $(TESTENV_ARGS) --
+TESTS_ENVIRONMENT= sh $(srcdir)/tools/testenv.sh $(TESTENV_ARGS) --
 
 AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include \
 	$(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS) \
@@ -26,10 +26,10 @@ alltests_SOURCES = \
 	tests/utest_utest.c \
 	tests/util_utest.c \
 	tests/vec_utest.c \
+	tests/sproxyd_utest.c \
 	tests/s3/auth_common_utest.c \
 	tests/s3/auth_v2_utest.c \
 	tests/s3/auth_v4_utest.c \
-	sproxyd_utest.c \
 	utest_main.c \
 	testutils.c testutils.h \
 	toyctl.c toyctl.h
@@ -52,9 +52,9 @@ clean: clean-am
 endif
 
 EXTRA_DIST = \
-    $(srcdir)/testenv.sh \
-    $(srcdir)/valgrind.supp \
-    $(srcdir)/ssldata
+    $(srcdir)/tools/testenv.sh \
+    $(srcdir)/tools/valgrind.supp \
+    $(srcdir)/tools/ssldata
 
 toyserver_LDADD = -lcrypto
 toyserver_SOURCES = toyserver.c toyserver.h

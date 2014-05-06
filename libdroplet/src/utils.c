@@ -177,12 +177,12 @@ dpl_gethostbyname3_r(const char *name,
 {
   int   st;
 
-  st = dpl_gethostbyname2_r(name, AF_INET6, ret, buf, buflen, result, h_errnop);
+  st = dpl_gethostbyname2_r(name, AF_INET, ret, buf, buflen, result, h_errnop);
   if (st != 0)
     return st;
 
   if (*result == NULL)
-    st = dpl_gethostbyname2_r(name, AF_INET, ret, buf, buflen, result, h_errnop);
+    st = dpl_gethostbyname2_r(name, AF_INET6, ret, buf, buflen, result, h_errnop);
 
   return st;
 }
