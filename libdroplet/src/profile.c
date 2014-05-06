@@ -674,7 +674,7 @@ dpl_profile_init(dpl_ctx_t *ctx,
 static int
 ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
 {
-  /* dpl_ctx_t     *ctx = (dpl_ctx_t *) arg; */
+  dpl_ctx_t     *ctx = (dpl_ctx_t *) arg;
 
   return 0;
 }

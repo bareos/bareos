@@ -39,7 +39,7 @@ SSL_INCLUDE_FILES = \
 	$(builddir)/ssldata/client.c \
 	$(builddir)/ssldata/demoCA/cacert.c
 
-tests/profile_utest.c: $(SSL_INCLUDE_FILES)
+$(srcdir)/tests/profile_utest.c: $(SSL_INCLUDE_FILES)
 .pem.c: 
 	@[ ! -d $(@D) ] && mkdir -p $(@D) || true
 	@sed -e 's|^|"|' -e 's|$$|\\n"|' < $< > $@
