@@ -65,6 +65,7 @@ extern "C" {
 #define DPL_DEFAULT_MAX_REDIRECTS       10
 #define DPL_DEFAULT_AWS_AUTH_SIGN_VERSION        4
 #define DPL_DEFAULT_AWS_REGION          "us-east-1"
+#define DPL_DEFAULT_SSL_METHOD          SSLv23_method()
 
 extern int dpl_header_size;
 
@@ -474,6 +475,7 @@ typedef struct dpl_ctx
   char *ssl_key_file;
   char *ssl_password;
   char *ssl_ca_list;
+  const SSL_METHOD *ssl_method;  /*!< SSL method among SSLv3,TLSv1,TLSv1_1 and SSLv23 */
   unsigned int trace_level;
   int trace_buffers;
   int trace_binary;          /*!< default is trace ascii */ 

@@ -333,6 +333,23 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->ssl_cert_file)
         return -1;
     }
+  else if (!strcmp(var, "ssl_method"))
+    {
+      if (!strcmp(value, "SSLv3"))
+        ctx->ssl_method = SSLv3_method();
+      else if (!strcmp(value, "TLSv1"))
+        ctx->ssl_method = TLSv1_method();
+      else if (!strcmp(value, "TLSv1.1"))
+        ctx->ssl_method = TLSv1_1_method();
+      else if (!strcmp(value, "TLSv1.2"))
+        ctx->ssl_method = TLSv1_2_method();
+      else if (!strcmp(value, "SSLv23"))
+        ctx->ssl_method = SSLv23_method();
+      else {
+        DPL_LOG(ctx, DPL_ERROR, "ssl_method must be defined by a value among SSLv3, TLSv1, TLSv1.1, TLSv1.2 and SSLv23");
+        return -1;
+      }
+    }
   else if (!strcmp(var, "ssl_key_file"))
     {
       free(ctx->ssl_key_file);
@@ -564,6 +581,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
     return DPL_ENOMEM;
   ctx->aws_auth_sign_version = DPL_DEFAULT_AWS_AUTH_SIGN_VERSION;
   strncpy(ctx->aws_region, DPL_DEFAULT_AWS_REGION, sizeof(ctx->aws_region));
+  ctx->ssl_method = DPL_DEFAULT_SSL_METHOD;
 
   return DPL_SUCCESS;
 }
@@ -682,17 +700,10 @@ ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
 static dpl_status_t
 dpl_ssl_profile_post(dpl_ctx_t *ctx)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-  const SSL_METHOD *method;
-#else
-  SSL_METHOD *method;
-#endif
-
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
 
-  method = SSLv23_method();
-  ctx->ssl_ctx = SSL_CTX_new(method);
+  ctx->ssl_ctx = SSL_CTX_new(ctx->ssl_method);
   if (NULL == ctx->ssl_ctx) {
     DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
     return DPL_FAILURE;
