@@ -1132,7 +1132,6 @@ bail_out:
  * CF_SKIP     -> skip processing this file
  * CF_EXTRACT  -> extract the file (i.e.call i/o routines)
  * CF_CREATED  -> created, but no content to extract (typically directories)
- *
  */
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 {
@@ -1228,8 +1227,6 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 /**
  * Reset the file attributes after all file I/O is done -- this allows the previous access time/dates
  * to be set properly, and it also allows us to properly set directory permissions.
- *
- * Not currently Implemented.
  */
 bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 {
@@ -1272,6 +1269,292 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    }
 
    return true;
+}
+
+/**
+ * Plugin specific callback for getting ACL information.
+ */
+bacl_exit_code plugin_build_acl_streams(JCR *jcr,
+                                        acl_data_t *acl_data,
+                                        FF_PKT *ff_pkt)
+{
+   Plugin *plugin = (Plugin *)jcr->plugin;
+
+   Dmsg0(dbglvl, "plugin_build_acl_streams\n");
+
+   if (!plugin || !jcr->plugin_ctx) {
+      return bacl_exit_ok;
+   }
+
+   if (plug_func(plugin)->getAcl == NULL) {
+      return bacl_exit_ok;
+   } else {
+      bacl_exit_code retval = bacl_exit_error;
+#if defined(HAVE_ACL)
+      struct acl_pkt ap;
+
+      memset(&ap, 0, sizeof(ap));
+      ap.pkt_size = ap.pkt_end = sizeof(struct acl_pkt);
+      ap.fname = acl_data->last_fname;
+
+      switch (plug_func(plugin)->getAcl(jcr->plugin_ctx, &ap)) {
+      case bRC_OK:
+         if (ap.content_length && ap.content) {
+            acl_data->u.build->content = check_pool_memory_size(acl_data->u.build->content, ap.content_length);
+            memcpy(acl_data->u.build->content, ap.content, ap.content_length);
+            acl_data->u.build->content_length = ap.content_length;
+            free(ap.content);
+            retval = send_acl_stream(jcr, acl_data, STREAM_ACL_PLUGIN);
+         } else {
+            retval = bacl_exit_ok;
+         }
+         break;
+      default:
+         break;
+      }
+#endif
+
+      return retval;
+   }
+}
+
+/**
+ * Plugin specific callback for setting ACL information.
+ */
+bacl_exit_code plugin_parse_acl_streams(JCR *jcr,
+                                        acl_data_t *acl_data,
+                                        int stream,
+                                        char *content,
+                                        uint32_t content_length)
+{
+   Plugin *plugin = (Plugin *)jcr->plugin;
+
+   Dmsg0(dbglvl, "plugin_parse_acl_streams\n");
+
+   if (!plugin || !jcr->plugin_ctx) {
+      return bacl_exit_ok;
+   }
+
+   if (plug_func(plugin)->setAcl == NULL) {
+      return bacl_exit_error;
+   } else {
+      bacl_exit_code retval = bacl_exit_error;
+#if defined(HAVE_ACL)
+      struct acl_pkt ap;
+
+      memset(&ap, 0, sizeof(ap));
+      ap.pkt_size = ap.pkt_end = sizeof(struct acl_pkt);
+      ap.fname = acl_data->last_fname;
+      ap.content = content;
+      ap.content_length = content_length;
+
+      switch (plug_func(plugin)->setAcl(jcr->plugin_ctx, &ap)) {
+      case bRC_OK:
+         retval = bacl_exit_ok;
+         break;
+      default:
+         break;
+      }
+#endif
+
+      return retval;
+   }
+}
+
+/**
+ * Plugin specific callback for getting XATTR information.
+ */
+bxattr_exit_code plugin_build_xattr_streams(JCR *jcr,
+                                            struct xattr_data_t *xattr_data,
+                                            FF_PKT *ff_pkt)
+{
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   alist *xattr_value_list = NULL;
+   bxattr_exit_code retval = bxattr_exit_error;
+
+   Dmsg0(dbglvl, "plugin_build_xattr_streams\n");
+
+   if (!plugin || !jcr->plugin_ctx) {
+      return bxattr_exit_ok;
+   }
+
+   if (plug_func(plugin)->getXattr == NULL) {
+      return bxattr_exit_ok;
+   } else {
+#if defined(HAVE_XATTR)
+      bool more;
+      int xattr_count = 0;
+      xattr_t *current_xattr;
+      struct xattr_pkt xp;
+      uint32_t expected_serialize_len = 0;
+
+      while (1) {
+         memset(&xp, 0, sizeof(xp));
+         xp.pkt_size = xp.pkt_end = sizeof(struct xattr_pkt);
+         xp.fname = xattr_data->last_fname;
+
+         switch (plug_func(plugin)->getXattr(jcr->plugin_ctx, &xp)) {
+         case bRC_OK:
+            more = false;
+            break;
+         case bRC_More:
+            more = true;
+            break;
+         default:
+            goto bail_out;
+         }
+
+         /*
+          * Make sure the plugin filled a XATTR name.
+          * The name and value returned by the plugin need to be in allocated memory
+          * and are freed by xattr_drop_internal_table() function when we are done
+          * processing the data.
+          */
+         if (xp.name_length && xp.name) {
+            /*
+             * Each xattr valuepair starts with a magic so we can parse it easier.
+             */
+            current_xattr = (xattr_t *)malloc(sizeof(xattr_t));
+            current_xattr->magic = XATTR_MAGIC;
+            expected_serialize_len += sizeof(current_xattr->magic);
+
+            current_xattr->name_length = xp.name_length;
+            current_xattr->name = xp.name;
+            expected_serialize_len += sizeof(current_xattr->name_length) + current_xattr->name_length;
+
+            current_xattr->value_length = xp.value_length;
+            current_xattr->value = xp.value;
+            expected_serialize_len += sizeof(current_xattr->value_length) + current_xattr->value_length;
+
+            if (xattr_value_list == NULL) {
+               xattr_value_list = New(alist(10, not_owned_by_alist));
+            }
+
+            xattr_value_list->append(current_xattr);
+            xattr_count++;
+
+            /*
+             * Protect ourself against things getting out of hand.
+             */
+            if (expected_serialize_len >= MAX_XATTR_STREAM) {
+               Mmsg2(jcr->errmsg,
+                     _("Xattr stream on file \"%s\" exceeds maximum size of %d bytes\n"),
+                     xattr_data->last_fname, MAX_XATTR_STREAM);
+               goto bail_out;
+            }
+         }
+
+         /*
+          * Does the plugin have more xattrs ?
+          */
+         if (!more) {
+            break;
+         }
+      }
+
+      /*
+       * If we found any xattr send them to the SD.
+       */
+      if (xattr_count > 0) {
+         /*
+          * Serialize the datastream.
+          */
+         if (serialize_xattr_stream(jcr,
+                                    xattr_data,
+                                    expected_serialize_len,
+                                    xattr_value_list) < expected_serialize_len) {
+            Mmsg1(jcr->errmsg,
+                  _("Failed to serialize extended attributes on file \"%s\"\n"),
+                  xattr_data->last_fname);
+            Dmsg1(100, "Failed to serialize extended attributes on file \"%s\"\n",
+                  xattr_data->last_fname);
+            goto bail_out;
+         }
+
+         /*
+          * Send the datastream to the SD.
+          */
+         retval = send_xattr_stream(jcr, xattr_data, STREAM_XATTR_PLUGIN);
+      } else {
+         retval = bxattr_exit_ok;
+      }
+#endif
+   }
+
+#if defined(HAVE_XATTR)
+bail_out:
+   if (xattr_value_list) {
+      xattr_drop_internal_table(xattr_value_list);
+   }
+#endif
+
+   return retval;
+}
+
+/**
+ * Plugin specific callback for setting XATTR information.
+ */
+bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
+                                            struct xattr_data_t *xattr_data,
+                                            int stream,
+                                            char *content,
+                                            uint32_t content_length)
+{
+   Plugin *plugin = (Plugin *)jcr->plugin;
+   alist *xattr_value_list = NULL;
+   bxattr_exit_code retval = bxattr_exit_error;
+
+   Dmsg0(dbglvl, "plugin_parse_xattr_streams\n");
+
+   if (!plugin || !jcr->plugin_ctx) {
+      return bxattr_exit_ok;
+   }
+
+#if defined(HAVE_XATTR)
+   if (plug_func(plugin)->setXattr != NULL) {
+      xattr_t *current_xattr;
+      struct xattr_pkt xp;
+
+      xattr_value_list = New(alist(10, not_owned_by_alist));
+
+      if (unserialize_xattr_stream(jcr,
+                                   xattr_data,
+                                   content,
+                                   content_length,
+                                   xattr_value_list) != bxattr_exit_ok) {
+         goto bail_out;
+      }
+
+      memset(&xp, 0, sizeof(xp));
+      xp.pkt_size = xp.pkt_end = sizeof(struct xattr_pkt);
+      xp.fname = xattr_data->last_fname;
+
+      foreach_alist(current_xattr, xattr_value_list) {
+         xp.name = current_xattr->name;
+         xp.name_length = current_xattr->name_length;
+         xp.value = current_xattr->value;
+         xp.value_length = current_xattr->value_length;
+
+         switch (plug_func(plugin)->setXattr(jcr->plugin_ctx, &xp)) {
+         case bRC_OK:
+            break;
+         default:
+            goto bail_out;
+         }
+      }
+
+      retval = bxattr_exit_ok;
+   }
+#endif
+
+#if defined(HAVE_XATTR)
+bail_out:
+   if (xattr_value_list) {
+      xattr_drop_internal_table(xattr_value_list);
+   }
+#endif
+
+   return retval;
 }
 
 /**

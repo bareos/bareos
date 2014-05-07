@@ -52,6 +52,10 @@ static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
+static bRC getAcl(bpContext *ctx, acl_pkt *ap);
+static bRC setAcl(bpContext *ctx, acl_pkt *ap);
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
 
 /* Pointers to Bareos functions */
 static bFuncs *bfuncs = NULL;
@@ -87,7 +91,11 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile
+   checkFile,
+   getAcl,
+   setAcl,
+   getXattr,
+   setXattr
 };
 
 static struct ini_items test_items[] = {
@@ -597,6 +605,26 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    Dmsg(ctx, dbglvl, "Creating RestoreObject len=%d oname=%s data=%.127s\n",
         sp->object_len, sp->object_name, sp->object);
    Dmsg(ctx, dbglvl,"test-plugin-fd: startBackupFile\n");
+   return bRC_OK;
+}
+
+static bRC getAcl(bpContext *ctx, acl_pkt *ap)
+{
+   return bRC_OK;
+}
+
+static bRC setAcl(bpContext *ctx, acl_pkt *ap)
+{
+   return bRC_OK;
+}
+
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   return bRC_OK;
+}
+
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
+{
    return bRC_OK;
 }
 

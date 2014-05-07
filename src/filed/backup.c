@@ -421,9 +421,18 @@ bail_out:
 
 static inline bool do_backup_acl(JCR *jcr, FF_PKT *ff_pkt)
 {
+   bacl_exit_code retval;
+
    jcr->acl_data->filetype = ff_pkt->type;
    jcr->acl_data->last_fname = jcr->last_fname;
-   switch (build_acl_streams(jcr, jcr->acl_data, ff_pkt)) {
+
+   if (jcr->cmd_plugin) {
+      retval = plugin_build_acl_streams(jcr, jcr->acl_data, ff_pkt);
+   } else {
+      retval = build_acl_streams(jcr, jcr->acl_data, ff_pkt);
+   }
+
+   switch (retval) {
    case bacl_exit_fatal:
       return false;
    case bacl_exit_error:
@@ -446,8 +455,17 @@ static inline bool do_backup_acl(JCR *jcr, FF_PKT *ff_pkt)
 
 static inline bool do_backup_xattr(JCR *jcr, FF_PKT *ff_pkt)
 {
+   bxattr_exit_code retval;
+
    jcr->xattr_data->last_fname = jcr->last_fname;
-   switch (build_xattr_streams(jcr, jcr->xattr_data, ff_pkt)) {
+
+   if (jcr->cmd_plugin) {
+      retval = plugin_build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
+   } else {
+      retval = build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
+   }
+
+   switch (retval) {
    case bxattr_exit_fatal:
       return false;
    case bxattr_exit_error:
@@ -782,10 +800,10 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
 
    /*
-    * Save ACLs when requested and available for anything not being a symlink and not being a plugin.
+    * Save ACLs when requested and available for anything not being a symlink.
     */
    if (have_acl) {
-      if (bit_is_set(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK && !ff_pkt->cmd_plugin) {
+      if (bit_is_set(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK) {
          if (!do_backup_acl(jcr, ff_pkt)) {
             goto bail_out;
          }
@@ -793,10 +811,10 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
 
    /*
-    * Save Extended Attributes when requested and available for all files not being a plugin.
+    * Save Extended Attributes when requested and available for all files.
     */
    if (have_xattr) {
-      if (bit_is_set(FO_XATTR, ff_pkt->flags) && !ff_pkt->cmd_plugin) {
+      if (bit_is_set(FO_XATTR, ff_pkt->flags)) {
          if (!do_backup_xattr(jcr, ff_pkt)) {
             goto bail_out;
          }

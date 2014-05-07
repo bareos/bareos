@@ -54,6 +54,10 @@ static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
+static bRC getAcl(bpContext *ctx, acl_pkt *ap);
+static bRC setAcl(bpContext *ctx, acl_pkt *ap);
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
 
 static char *apply_rp_codes(struct plugin_ctx * p_ctx);
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
@@ -94,7 +98,11 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile
+   checkFile,
+   getAcl,
+   setAcl,
+   getXattr,
+   setXattr
 };
 
 /*
@@ -503,6 +511,26 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
  * When using Incremental dump, all previous dumps are necessary
  */
 static bRC checkFile(bpContext *ctx, char *fname)
+{
+   return bRC_OK;
+}
+
+static bRC getAcl(bpContext *ctx, acl_pkt *ap)
+{
+   return bRC_OK;
+}
+
+static bRC setAcl(bpContext *ctx, acl_pkt *ap)
+{
+   return bRC_OK;
+}
+
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   return bRC_OK;
+}
+
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 {
    return bRC_OK;
 }

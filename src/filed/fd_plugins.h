@@ -61,63 +61,63 @@
  *  the object.
  */
 struct restore_object_pkt {
-   int32_t pkt_size;                  /* size of this packet */
+   int32_t pkt_size;                  /* Size of this packet */
    char *object_name;                 /* Object name */
-   char *object;                      /* restore object data to save */
+   char *object;                      /* Restore object data to save */
    char *plugin_name;                 /* Plugin name */
    int32_t object_type;               /* FT_xx for this file */
-   int32_t object_len;                /* restore object length */
-   int32_t object_full_len;           /* restore object uncompressed length */
-   int32_t object_index;              /* restore object index */
-   int32_t object_compression;        /* set to compression type */
-   int32_t stream;                    /* attribute stream id */
+   int32_t object_len;                /* Restore object length */
+   int32_t object_full_len;           /* Restore object uncompressed length */
+   int32_t object_index;              /* Restore object index */
+   int32_t object_compression;        /* Set to compression type */
+   int32_t stream;                    /* Attribute stream id */
    uint32_t JobId;                    /* JobId object came from */
-   int32_t pkt_end;                   /* end packet sentinel */
+   int32_t pkt_end;                   /* End packet sentinel */
 };
 
 /*
  * This packet is used for file save info transfer.
  */
 struct save_pkt {
-   int32_t pkt_size;                  /* size of this packet */
+   int32_t pkt_size;                  /* Size of this packet */
    char *fname;                       /* Full path and filename */
    char *link;                        /* Link name if any */
    struct stat statp;                 /* System stat() packet for file */
    int32_t type;                      /* FT_xx for this file */
    char flags[FOPTS_BYTES];           /* Bareos internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
-   bool portable;                     /* set if data format is portable */
+   bool portable;                     /* Set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
-   char *cmd;                         /* command */
+   char *cmd;                         /* Command */
    uint32_t delta_seq;                /* Delta sequence number */
    char *object_name;                 /* Object name to create */
-   char *object;                      /* restore object data to save */
-   int32_t object_len;                /* restore object length */
-   int32_t index;                     /* restore object index */
-   int32_t pkt_end;                   /* end packet sentinel */
+   char *object;                      /* Restore object data to save */
+   int32_t object_len;                /* Restore object length */
+   int32_t index;                     /* Restore object index */
+   int32_t pkt_end;                   /* End packet sentinel */
 };
 
 /*
  * This packet is used for file restore info transfer.
  */
 struct restore_pkt {
-   int32_t pkt_size;                  /* size of this packet */
-   int32_t stream;                    /* attribute stream id */
-   int32_t data_stream;               /* id of data stream to follow */
-   int32_t type;                      /* file type FT */
-   int32_t file_index;                /* file index */
-   int32_t LinkFI;                    /* file index to data if hard link */
-   uid_t uid;                         /* userid */
-   struct stat statp;                 /* decoded stat packet */
-   const char *attrEx;                /* extended attributes if any */
-   const char *ofname;                /* output filename */
-   const char *olname;                /* output link name */
-   const char *where;                 /* where */
-   const char *RegexWhere;            /* regex where */
-   int replace;                       /* replace flag */
-   int create_status;                 /* status from createFile() */
+   int32_t pkt_size;                  /* Size of this packet */
+   int32_t stream;                    /* Attribute stream id */
+   int32_t data_stream;               /* Id of data stream to follow */
+   int32_t type;                      /* File type FT */
+   int32_t file_index;                /* File index */
+   int32_t LinkFI;                    /* File index to data if hard link */
+   uid_t uid;                         /* Userid */
+   struct stat statp;                 /* Decoded stat packet */
+   const char *attrEx;                /* Extended attributes if any */
+   const char *ofname;                /* Output filename */
+   const char *olname;                /* Output link name */
+   const char *where;                 /* Where */
+   const char *RegexWhere;            /* Regex where */
+   int replace;                       /* Replace flag */
+   int create_status;                 /* Status from createFile() */
    uint32_t delta_seq;                /* Delta sequence number */
-   int32_t pkt_end;                   /* end packet sentinel */
+   int32_t pkt_end;                   /* End packet sentinel */
 };
 
 enum {
@@ -131,18 +131,36 @@ enum {
 struct io_pkt {
    int32_t pkt_size;                  /* Size of this packet */
    int32_t func;                      /* Function code */
-   int32_t count;                     /* read/write count */
+   int32_t count;                     /* Read/write count */
    int32_t flags;                     /* Open flags */
-   mode_t mode;                       /* permissions for created files */
-   char *buf;                         /* read/write buffer */
-   const char *fname;                 /* open filename */
-   int32_t status;                    /* return status */
-   int32_t io_errno;                  /* errno code */
+   mode_t mode;                       /* Permissions for created files */
+   char *buf;                         /* Read/write buffer */
+   const char *fname;                 /* Open filename */
+   int32_t status;                    /* Return status */
+   int32_t io_errno;                  /* Errno code */
    int32_t lerror;                    /* Win32 error code */
-   int32_t whence;                    /* lseek argument */
-   boffset_t offset;                  /* lseek argument */
+   int32_t whence;                    /* Lseek argument */
+   boffset_t offset;                  /* Lseek argument */
    bool win32;                        /* Win32 GetLastError returned */
-   int32_t pkt_end;                   /* end packet sentinel */
+   int32_t pkt_end;                   /* End packet sentinel */
+};
+
+struct acl_pkt {
+   int32_t pkt_size;                  /* Size of this packet */
+   const char *fname;                 /* Full path and filename */
+   uint32_t content_length;           /* ACL content length */
+   char *content;                     /* ACL content */
+   int32_t pkt_end;                   /* End packet sentinel */
+};
+
+struct xattr_pkt {
+   int32_t pkt_size;                  /* Size of this packet */
+   const char *fname;                 /* Full path and filename */
+   uint32_t name_length;              /* XATTR name length */
+   char *name;                        /* XATTR name */
+   uint32_t value_length;             /* XATTR value length */
+   char *value;                       /* XATTR value */
+   int32_t pkt_end;                   /* End packet sentinel */
 };
 
 /****************************************************************************
@@ -243,6 +261,13 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start);
 bool plugin_name_stream(JCR *jcr, char *name);
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace);
 bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
+bacl_exit_code plugin_build_acl_streams(JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt);
+bacl_exit_code plugin_parse_acl_streams(JCR *jcr, acl_data_t *acl_data, int stream,
+                                        char *content, uint32_t content_length);
+bxattr_exit_code plugin_build_xattr_streams(JCR *jcr, struct xattr_data_t *xattr_data,
+                                            FF_PKT *ff_pkt);
+bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr, struct xattr_data_t *xattr_data,
+                                            int stream, char *content, uint32_t content_length);
 int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 bool plugin_check_file(JCR *jcr, char *fname);
@@ -294,8 +319,7 @@ typedef enum {
 } pVariable;
 
 #define FD_PLUGIN_MAGIC  "*FDPluginData*"
-
-#define FD_PLUGIN_INTERFACE_VERSION  8
+#define FD_PLUGIN_INTERFACE_VERSION 9
 
 /*
  * This is a set of function pointers that Bareos can call
@@ -317,6 +341,10 @@ typedef struct s_pluginFuncs {
    bRC (*createFile)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*setFileAttributes)(bpContext *ctx, struct restore_pkt *rp);
    bRC (*checkFile)(bpContext *ctx, char *fname);
+   bRC (*getAcl)(bpContext *ctx, struct acl_pkt *ap);
+   bRC (*setAcl)(bpContext *ctx, struct acl_pkt *ap);
+   bRC (*getXattr)(bpContext *ctx, struct xattr_pkt *xp);
+   bRC (*setXattr)(bpContext *ctx, struct xattr_pkt *xp);
 } pFuncs;
 
 #define plug_func(plugin) ((pFuncs *)(plugin->pfuncs))

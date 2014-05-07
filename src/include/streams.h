@@ -173,6 +173,8 @@
 #define STREAM_ACL_HURD_ACCESS_ACL           1019       /* GNU HURD specific acl_t string representation
                                                          * from acl_to_text (POSIX acl) for access acls.
                                                          */
+#define STREAM_ACL_PLUGIN                    1020       /* Plugin specific acl encoding */
+#define STREAM_XATTR_PLUGIN                  1988       /* Plugin specific extended attributes */
 #define STREAM_XATTR_HURD                    1989       /* GNU HURD specific extended attributes */
 #define STREAM_XATTR_IRIX                    1990       /* IRIX specific extended attributes */
 #define STREAM_XATTR_TRU64                   1991       /* TRU64 specific extended attributes */

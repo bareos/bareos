@@ -191,8 +191,19 @@ static inline bool do_restore_acl(JCR *jcr,
                                   uint32_t content_length)
 
 {
+   bacl_exit_code retval;
+
    jcr->acl_data->last_fname = jcr->last_fname;
-   switch (parse_acl_streams(jcr, jcr->acl_data, stream, content, content_length)) {
+   switch (stream) {
+   case STREAM_ACL_PLUGIN:
+      retval = plugin_parse_acl_streams(jcr, jcr->acl_data, stream, content, content_length);
+      break;
+   default:
+      retval = parse_acl_streams(jcr, jcr->acl_data, stream, content, content_length);
+      break;
+   }
+
+   switch (retval) {
    case bacl_exit_fatal:
       return false;
    case bacl_exit_error:
@@ -208,6 +219,7 @@ static inline bool do_restore_acl(JCR *jcr,
    case bacl_exit_ok:
       break;
    }
+
    return true;
 }
 
@@ -220,8 +232,19 @@ static inline bool do_restore_xattr(JCR *jcr,
                                     char *content,
                                     uint32_t content_length)
 {
+   bxattr_exit_code retval;
+
    jcr->xattr_data->last_fname = jcr->last_fname;
-   switch (parse_xattr_streams(jcr, jcr->xattr_data, stream, content, content_length)) {
+   switch (stream) {
+   case STREAM_XATTR_PLUGIN:
+      retval = plugin_parse_xattr_streams(jcr, jcr->xattr_data, stream, content, content_length);
+      break;
+   default:
+      retval = parse_xattr_streams(jcr, jcr->xattr_data, stream, content, content_length);
+      break;
+   }
+
+   switch (retval) {
    case bxattr_exit_fatal:
       return false;
    case bxattr_exit_error:
@@ -237,6 +260,7 @@ static inline bool do_restore_xattr(JCR *jcr,
    case bxattr_exit_ok:
       break;
    }
+
    return true;
 }
 
@@ -299,6 +323,7 @@ static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
          }
          free(dds->content);
          break;
+      case STREAM_XATTR_PLUGIN:
       case STREAM_XATTR_HURD:
       case STREAM_XATTR_IRIX:
       case STREAM_XATTR_TRU64:
@@ -613,7 +638,7 @@ void do_restore(JCR *jcr)
 
             if (!rctx.extract) {
                /*
-                * set attributes now because file will not be extracted
+                * Set attributes now because file will not be extracted
                 */
                if (jcr->plugin) {
                   plugin_set_attributes(jcr, attr, &rctx.bfd);
@@ -913,6 +938,7 @@ void do_restore(JCR *jcr)
          }
          break;
 
+      case STREAM_XATTR_PLUGIN:
       case STREAM_XATTR_HURD:
       case STREAM_XATTR_IRIX:
       case STREAM_XATTR_TRU64:

@@ -493,6 +493,142 @@ static PyTypeObject PyIoPacketType = {
 };
 
 /*
+ * The PyAclPacket type
+ */
+typedef struct {
+   PyObject_HEAD
+   const char *fname;                 /* Filename */
+   PyObject *content;                 /* ACL content */
+} PyAclPacket;
+
+/*
+ * Forward declarations of type specific functions.
+ */
+static void PyAclPacket_dealloc(PyAclPacket *self);
+static int PyAclPacket_init(PyAclPacket *self, PyObject *args, PyObject *kwds);
+static PyObject *PyAclPacket_repr(PyAclPacket *self);
+
+static PyMethodDef PyAclPacket_methods[] = {
+   { NULL }                           /* Sentinel */
+};
+
+static PyMemberDef PyAclPacket_members[] = {
+   { (char *)"fname", T_STRING, offsetof(PyAclPacket, fname), 0, (char *)"Filename" },
+   { (char *)"content", T_OBJECT, offsetof(PyAclPacket, content), 0, (char *)"ACL content buffer" },
+   { NULL }
+};
+
+static PyTypeObject PyAclPacketType = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   "acl_pkt",                         /* tp_name */
+   sizeof(PyAclPacket),               /* tp_basicsize */
+   0,                                 /* tp_itemsize */
+   (destructor)PyAclPacket_dealloc,   /* tp_dealloc */
+   0,                                 /* tp_print */
+   0,                                 /* tp_getattr */
+   0,                                 /* tp_setattr */
+   0,                                 /* tp_compare */
+   (reprfunc)PyAclPacket_repr,        /* tp_repr */
+   0,                                 /* tp_as_number */
+   0,                                 /* tp_as_sequence */
+   0,                                 /* tp_as_mapping */
+   0,                                 /* tp_hash */
+   0,                                 /* tp_call */
+   0,                                 /* tp_str */
+   0,                                 /* tp_getattro */
+   0,                                 /* tp_setattro */
+   0,                                 /* tp_as_buffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
+   "acl_pkt object",                  /* tp_doc */
+   0,                                 /* tp_traverse */
+   0,                                 /* tp_clear */
+   0,                                 /* tp_richcompare */
+   0,                                 /* tp_weaklistoffset */
+   0,                                 /* tp_iter */
+   0,                                 /* tp_iternext */
+   PyAclPacket_methods,               /* tp_methods */
+   PyAclPacket_members,               /* tp_members */
+   0,                                 /* tp_getset */
+   0,                                 /* tp_base */
+   0,                                 /* tp_dict */
+   0,                                 /* tp_descr_get */
+   0,                                 /* tp_descr_set */
+   0,                                 /* tp_dictoffset */
+   (initproc)PyAclPacket_init,        /* tp_init */
+   0,                                 /* tp_alloc */
+   0,                                 /* tp_new */
+};
+
+/*
+ * The PyXattrPacket type
+ */
+typedef struct {
+   PyObject_HEAD
+   const char *fname;                 /* Filename */
+   PyObject *name;                    /* XATTR name */
+   PyObject *value;                   /* XATTR value */
+} PyXattrPacket;
+
+/*
+ * Forward declarations of type specific functions.
+ */
+static void PyXattrPacket_dealloc(PyXattrPacket *self);
+static int PyXattrPacket_init(PyXattrPacket *self, PyObject *args, PyObject *kwds);
+static PyObject *PyXattrPacket_repr(PyXattrPacket *self);
+
+static PyMethodDef PyXattrPacket_methods[] = {
+   { NULL }                           /* Sentinel */
+};
+
+static PyMemberDef PyXattrPacket_members[] = {
+   { (char *)"fname", T_STRING, offsetof(PyXattrPacket, fname), 0, (char *)"Filename" },
+   { (char *)"name", T_OBJECT, offsetof(PyXattrPacket, name), 0, (char *)"XATTR name buffer" },
+   { (char *)"value", T_OBJECT, offsetof(PyXattrPacket, value), 0, (char *)"XATTR value buffer" },
+   { NULL }
+};
+
+static PyTypeObject PyXattrPacketType = {
+   PyVarObject_HEAD_INIT(NULL, 0)
+   "xattr_pkt",                       /* tp_name */
+   sizeof(PyXattrPacket),             /* tp_basicsize */
+   0,                                 /* tp_itemsize */
+   (destructor)PyXattrPacket_dealloc, /* tp_dealloc */
+   0,                                 /* tp_print */
+   0,                                 /* tp_getattr */
+   0,                                 /* tp_setattr */
+   0,                                 /* tp_compare */
+   (reprfunc)PyXattrPacket_repr,      /* tp_repr */
+   0,                                 /* tp_as_number */
+   0,                                 /* tp_as_sequence */
+   0,                                 /* tp_as_mapping */
+   0,                                 /* tp_hash */
+   0,                                 /* tp_call */
+   0,                                 /* tp_str */
+   0,                                 /* tp_getattro */
+   0,                                 /* tp_setattro */
+   0,                                 /* tp_as_buffer */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags*/
+   "xattr_pkt object",                /* tp_doc */
+   0,                                 /* tp_traverse */
+   0,                                 /* tp_clear */
+   0,                                 /* tp_richcompare */
+   0,                                 /* tp_weaklistoffset */
+   0,                                 /* tp_iter */
+   0,                                 /* tp_iternext */
+   PyXattrPacket_methods,             /* tp_methods */
+   PyXattrPacket_members,             /* tp_members */
+   0,                                 /* tp_getset */
+   0,                                 /* tp_base */
+   0,                                 /* tp_dict */
+   0,                                 /* tp_descr_get */
+   0,                                 /* tp_descr_set */
+   0,                                 /* tp_dictoffset */
+   (initproc)PyXattrPacket_init,      /* tp_init */
+   0,                                 /* tp_alloc */
+   0,                                 /* tp_new */
+};
+
+/*
  * Callback methods from Python.
  */
 static PyObject *PyBareosGetValue(PyObject *self, PyObject *args);
@@ -525,5 +661,4 @@ static PyMethodDef BareosFDMethods[] = {
    { "NewPreInclude", PyBareosNewPreInclude, METH_VARARGS, "Add new pre include block" },
    { NULL, NULL, 0, NULL }
 };
-
 #endif /* BPYTHONFD_H */

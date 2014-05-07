@@ -65,9 +65,28 @@ def plugin_io(context, IOP):
 def create_file(context, restorepkt):
     return bareos_fd_plugin_object.create_file(context, restorepkt)
 
+def set_file_attributes(context, restorepkt):
+    return bareos_fd_plugin_object.set_file_attributes(context, restorepkt)
+
 
 def check_file(context, fname):
     return bareos_fd_plugin_object.check_file(context, fname)
+
+
+def get_acl(context, acl):
+    return bareos_fd_plugin_object.get_acl(context, acl)
+
+
+def set_acl(context, acl):
+    return bareos_fd_plugin_object.set_acl(context, acl)
+
+
+def get_xattr(context, xattr):
+    return bareos_fd_plugin_object.get_xattr(context, xattr)
+
+
+def set_xattr(context, xattr):
+    return bareos_fd_plugin_object.set_xattr(context, xattr)
 
 
 def handle_backup_file(context, savepkt):

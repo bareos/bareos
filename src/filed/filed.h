@@ -32,6 +32,7 @@
 #include "lib/htable.h"
 #include "lib/runscript.h"
 #include "findlib/find.h"
+#include "fd_plugins.h"
 #include "ch.h"
 #include "backup.h"
 #include "restore.h"
