@@ -71,8 +71,8 @@ static pFuncs pluginFuncs = {
    FD_PLUGIN_INTERFACE_VERSION,
 
    /* Entry points into plugin */
-   newPlugin,                   /* new plugin instance */
-   freePlugin,                  /* free plugin instance */
+   newPlugin,         /* new plugin instance */
+   freePlugin,        /* free plugin instance */
    getPluginValue,
    setPluginValue,
    handlePluginEvent,
@@ -83,7 +83,11 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   NULL                         /* no checkFile */
+   NULL,              /* no checkFile */
+   NULL,              /* no getAcl */
+   NULL,              /* no setAcl */
+   NULL,              /* no getXattr */
+   NULL               /* no setXattr */
 };
 
 #define get_self(x) ((delta_test*)((x)->pContext))

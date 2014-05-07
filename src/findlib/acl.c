@@ -85,9 +85,7 @@ bacl_exit_code parse_acl_streams(JCR *jcr,
 /**
  * Send an ACL stream to the SD.
  */
-static bacl_exit_code send_acl_stream(JCR *jcr,
-                                      acl_data_t *acl_data,
-                                      int stream)
+bacl_exit_code send_acl_stream(JCR *jcr, acl_data_t *acl_data, int stream)
 {
    BSOCK *sd = jcr->store_bsock;
    POOLMEM *msgsave;

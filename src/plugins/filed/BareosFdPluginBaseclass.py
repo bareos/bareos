@@ -241,9 +241,29 @@ class BareosFdPluginBaseclass(object):
             "check_file() entry point in Python called with %s\n" % (fname))
         return bRCs['bRC_OK']
 
+    def get_acl(self, context, acl):
+        bareosfd.DebugMessage(
+            context, 100, "get_acl() entry point in Python called with %s\n" % (acl))
+        return bRCs['bRC_OK'];
+
+    def set_acl(self, context, acl):
+        bareosfd.DebugMessage(
+            context, 100, "set_acl() entry point in Python called with %s\n" % (acl))
+        return bRCs['bRC_OK'];
+
+    def get_xattr(self, context, xattr):
+        bareosfd.DebugMessage(
+            context, 100, "get_xattr() entry point in Python called with %s\n" % (xattr))
+        return bRCs['bRC_OK'];
+
+    def set_xattr(self, context, xattr):
+        bareosfd.DebugMessage(
+            context, 100, "set_xattr() entry point in Python called with %s\n" % (xattr))
+        return bRCs['bRC_OK'];
+
     def handle_backup_file(self, context, savepkt):
         bareosfd.DebugMessage(
-            context, 100, "handle_backup_file called with %s\n" % (savepkt))
+            context, 100, "handle_backup_file() entry point in Python called with %s\n" % (savepkt))
         return bRCs['bRC_OK']
 
 # vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -27,7 +27,6 @@
 
 from bareosfd import *
 from bareos_fd_consts import *
-from os import O_WRONLY, O_CREAT
 
 from BareosFdPluginBaseclass import *
 from BareosFdWrapper import *

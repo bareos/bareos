@@ -25,6 +25,7 @@
  */
 
 /* acl.c */
+bacl_exit_code send_acl_stream(JCR *jcr, acl_data_t *acl_data, int stream);
 bacl_exit_code build_acl_streams(JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt);
 bacl_exit_code parse_acl_streams(JCR *jcr, acl_data_t *acl_data,
                                  int stream, char *content, uint32_t content_length);
@@ -116,6 +117,12 @@ void win32_cleanup_copy_thread(JCR *jcr);
 #endif
 
 /* xattr.c */
+bxattr_exit_code send_xattr_stream(JCR *jcr, xattr_data_t *xattr_data, int stream);
+void xattr_drop_internal_table(alist *xattr_value_list);
+uint32_t serialize_xattr_stream(JCR *jcr, xattr_data_t *xattr_data,
+                                uint32_t expected_serialize_len, alist *xattr_value_list);
+bxattr_exit_code unserialize_xattr_stream(JCR *jcr, xattr_data_t *xattr_data, char *content,
+                                          uint32_t content_length, alist *xattr_value_list);
 bxattr_exit_code build_xattr_streams(JCR *jcr, struct xattr_data_t *xattr_data, FF_PKT *ff_pkt);
 bxattr_exit_code parse_xattr_streams(JCR *jcr, struct xattr_data_t *xattr_data,
                                      int stream, char *content, uint32_t content_length);

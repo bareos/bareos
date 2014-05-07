@@ -74,9 +74,9 @@ bxattr_exit_code parse_xattr_streams(JCR *jcr,
 /**
  * Send a XATTR stream to the SD.
  */
-static bxattr_exit_code send_xattr_stream(JCR *jcr,
-                                          xattr_data_t *xattr_data,
-                                          int stream)
+bxattr_exit_code send_xattr_stream(JCR *jcr,
+                                   xattr_data_t *xattr_data,
+                                   int stream)
 {
    BSOCK *sd = jcr->store_bsock;
    POOLMEM *msgsave;
@@ -130,8 +130,7 @@ static bxattr_exit_code send_xattr_stream(JCR *jcr,
  * First some generic functions for OSes that use the same xattr encoding scheme.
  * Currently for all OSes except for Solaris.
  */
-#if !defined(HAVE_SUN_OS)
-static void xattr_drop_internal_table(alist *xattr_value_list)
+void xattr_drop_internal_table(alist *xattr_value_list)
 {
    xattr_t *current_xattr;
 
@@ -170,10 +169,10 @@ static void xattr_drop_internal_table(alist *xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-static uint32_t serialize_xattr_stream(JCR *jcr,
-                                       xattr_data_t *xattr_data,
-                                       uint32_t expected_serialize_len,
-                                       alist *xattr_value_list)
+uint32_t serialize_xattr_stream(JCR *jcr,
+                                xattr_data_t *xattr_data,
+                                uint32_t expected_serialize_len,
+                                alist *xattr_value_list)
 {
    xattr_t *current_xattr;
    ser_declare;
@@ -220,11 +219,11 @@ static uint32_t serialize_xattr_stream(JCR *jcr,
    return xattr_data->u.build->content_length;
 }
 
-static bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
-                                                 xattr_data_t *xattr_data,
-                                                 char *content,
-                                                 uint32_t content_length,
-                                                 alist *xattr_value_list)
+bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
+                                          xattr_data_t *xattr_data,
+                                          char *content,
+                                          uint32_t content_length,
+                                          alist *xattr_value_list)
 {
    unser_declare;
    xattr_t *current_xattr;
@@ -303,7 +302,6 @@ static bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
    unser_end(content, content_length);
    return bxattr_exit_ok;
 }
-#endif
 
 /*
  * This is a supported OS, See what kind of interface we should use.

@@ -42,12 +42,14 @@ static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
-#define PLUGIN_DATE         "October 2013"
-#define PLUGIN_VERSION      "2"
+#define PLUGIN_DATE         "May 2014"
+#define PLUGIN_VERSION      "3"
 #define PLUGIN_DESCRIPTION  "Python File Daemon Plugin"
 #define PLUGIN_USAGE        "python:module_path=<path-to-python-modules>:module_name=<python-module-to-load>"
 
-/* Forward referenced functions */
+/*
+ * Forward referenced functions
+ */
 static bRC newPlugin(bpContext *ctx);
 static bRC freePlugin(bpContext *ctx);
 static bRC getPluginValue(bpContext *ctx, pVariable var, void *value);
@@ -61,6 +63,10 @@ static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
+static bRC getAcl(bpContext *ctx, acl_pkt *ap);
+static bRC setAcl(bpContext *ctx, acl_pkt *ap);
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
 
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 
@@ -78,12 +84,18 @@ static bRC PyEndRestoreFile(bpContext *ctx);
 static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC PyCheckFile(bpContext *ctx, char *fname);
+static bRC PyGetAcl(bpContext *ctx, acl_pkt *ap);
+static bRC PySetAcl(bpContext *ctx, acl_pkt *ap);
+static bRC PyGetXattr(bpContext *ctx, xattr_pkt *xp);
+static bRC PySetXattr(bpContext *ctx, xattr_pkt *xp);
 static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop);
 static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp);
 
-/* Pointers to Bareos functions */
+/*
+ * Pointers to Bareos functions
+ */
 static bFuncs *bfuncs = NULL;
-static bInfo  *binfo = NULL;
+static bInfo *binfo = NULL;
 
 static genpInfo pluginInfo = {
    sizeof(pluginInfo),
@@ -114,7 +126,11 @@ static pFuncs pluginFuncs = {
    pluginIO,
    createFile,
    setFileAttributes,
-   checkFile
+   checkFile,
+   getAcl,
+   setAcl,
+   getXattr,
+   setXattr
 };
 
 /*
@@ -536,6 +552,29 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    retval = PyStartBackupFile(ctx, sp);
    PyEval_ReleaseThread(p_ctx->interpreter);
 
+   /*
+    * For Incremental and Differential backups use checkChanges method to
+    * see if we need to backup this file.
+    */
+   switch (p_ctx->backup_level) {
+   case L_INCREMENTAL:
+   case L_DIFFERENTIAL:
+      switch (bfuncs->checkChanges(ctx, sp)) {
+      case bRC_Seen:
+         switch (sp->type) {
+         case FT_DIRBEGIN:
+            sp->type = FT_DIRNOCHG;
+            break;
+         default:
+            sp->type = FT_NOCHG;
+            break;
+         }
+         break;
+      default:
+         break;
+      }
+   }
+
 bail_out:
    return retval;
 }
@@ -685,6 +724,82 @@ static bRC checkFile(bpContext *ctx, char *fname)
 
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCheckFile(ctx, fname);
+   PyEval_ReleaseThread(p_ctx->interpreter);
+
+bail_out:
+   return retval;
+}
+
+/*
+ */
+static bRC getAcl(bpContext *ctx, acl_pkt *ap)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
+   PyEval_AcquireThread(p_ctx->interpreter);
+   retval = PyGetAcl(ctx, ap);
+   PyEval_ReleaseThread(p_ctx->interpreter);
+
+bail_out:
+   return retval;
+}
+
+/*
+ */
+static bRC setAcl(bpContext *ctx, acl_pkt *ap)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
+   PyEval_AcquireThread(p_ctx->interpreter);
+   retval = PySetAcl(ctx, ap);
+   PyEval_ReleaseThread(p_ctx->interpreter);
+
+bail_out:
+   return retval;
+}
+
+/*
+ */
+static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
+   PyEval_AcquireThread(p_ctx->interpreter);
+   retval = PyGetXattr(ctx, xp);
+   PyEval_ReleaseThread(p_ctx->interpreter);
+
+bail_out:
+   return retval;
+}
+
+/*
+ */
+static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
+   PyEval_AcquireThread(p_ctx->interpreter);
+   retval = PySetXattr(ctx, xp);
    PyEval_ReleaseThread(p_ctx->interpreter);
 
 bail_out:
@@ -1024,6 +1139,22 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
    }
 
    /*
+    * Fill in the slots of PyAclPacketType
+    */
+   PyAclPacketType.tp_new = PyType_GenericNew;
+   if (PyType_Ready(&PyAclPacketType) < 0) {
+      goto bail_out;
+   }
+
+   /*
+    * Fill in the slots of PyXattrPacketType
+    */
+   PyXattrPacketType.tp_new = PyType_GenericNew;
+   if (PyType_Ready(&PyXattrPacketType) < 0) {
+      goto bail_out;
+   }
+
+   /*
     * Add the types to the module
     */
    Py_INCREF(&PyRestoreObjectType);
@@ -1040,6 +1171,12 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
 
    Py_INCREF(&PyIoPacketType);
    PyModule_AddObject(module, "IoPacket", (PyObject *)&PyIoPacketType);
+
+   Py_INCREF(&PyAclPacketType);
+   PyModule_AddObject(module, "AclPacket", (PyObject *)&PyAclPacketType);
+
+   Py_INCREF(&PyXattrPacketType);
+   PyModule_AddObject(module, "XattrPacket", (PyObject *)&PyXattrPacketType);
 
    /*
     * Try to load the Python module by name.
@@ -1773,7 +1910,7 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+      Dmsg(ctx, dbglvl, "Failed to find function named create_file()\n");
    }
 
    return retval;
@@ -1788,7 +1925,48 @@ bail_out:
 
 static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 {
-   return bRC_OK;
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!rp) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the set_file_attributes() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "set_file_attributes"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyRestorePacket *pRestorePacket;
+      PyObject *pRetVal;
+
+      pRestorePacket = NativeToPyRestorePacket(rp);
+      if (!pRestorePacket) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pRestorePacket, NULL);
+      if (!pRetVal) {
+         Py_DECREF(pRestorePacket);
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+         Py_DECREF(pRestorePacket);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named set_file_attributes()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
 }
 
 static bRC PyCheckFile(bpContext *ctx, char *fname)
@@ -1820,11 +1998,311 @@ static bRC PyCheckFile(bpContext *ctx, char *fname)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+      Dmsg(ctx, dbglvl, "Failed to find function named check_file()\n");
    }
 
    return retval;
 
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+static inline PyAclPacket *NativeToPyAclPacket(struct acl_pkt *ap)
+{
+   PyAclPacket *pAclPacket = PyObject_New(PyAclPacket, &PyAclPacketType);
+
+   if (pAclPacket) {
+      pAclPacket->fname = ap->fname;
+
+      if (ap->content_length && ap->content) {
+         pAclPacket->content = PyByteArray_FromStringAndSize(ap->content, ap->content_length);
+      } else {
+         pAclPacket->content = NULL;
+      }
+   }
+
+   return pAclPacket;
+}
+
+static inline bool PyAclPacketToNative(PyAclPacket *pAclPacket, struct acl_pkt *ap)
+{
+   if (!pAclPacket->content) {
+      return true;
+   }
+
+   if (PyByteArray_Check(pAclPacket->content)) {
+      char *buf;
+
+      ap->content_length = PyByteArray_Size(pAclPacket->content);
+      if (ap->content_length <= 0 || !(buf = PyByteArray_AsString(pAclPacket->content))) {
+         return false;
+      }
+
+      if (ap->content) {
+         free(ap->content);
+      }
+      ap->content = (char *)malloc(ap->content_length);
+      memcpy(ap->content, buf, ap->content_length);
+   }
+
+   return true;
+}
+
+static bRC PyGetAcl(bpContext *ctx, acl_pkt *ap)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!ap) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the get_acl() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "get_acl"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyAclPacket *pAclPkt;
+      PyObject *pRetVal;
+
+      pAclPkt = NativeToPyAclPacket(ap);
+      if (!pAclPkt) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pAclPkt, NULL);
+      if (!pRetVal) {
+         Py_DECREF((PyObject *)pAclPkt);
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+
+         if (!PyAclPacketToNative(pAclPkt, ap)) {
+            Py_DECREF((PyObject *)pAclPkt);
+            goto bail_out;
+         }
+         Py_DECREF(pAclPkt);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named get_acl()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+static bRC PySetAcl(bpContext *ctx, acl_pkt *ap)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!ap) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the set_acl() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "set_acl"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyAclPacket *pAclPkt;
+      PyObject *pRetVal;
+
+      pAclPkt = NativeToPyAclPacket(ap);
+      if (!pAclPkt) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pAclPkt, NULL);
+      Py_DECREF(pAclPkt);
+
+      if (!pRetVal) {
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named set_acl()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+static inline PyXattrPacket *NativeToPyXattrPacket(struct xattr_pkt *xp)
+{
+   PyXattrPacket *pXattrPacket = PyObject_New(PyXattrPacket, &PyXattrPacketType);
+
+   if (pXattrPacket) {
+      pXattrPacket->fname = xp->fname;
+
+      if (xp->name_length && xp->name) {
+         pXattrPacket->name = PyByteArray_FromStringAndSize(xp->name, xp->name_length);
+      } else {
+         pXattrPacket->name = NULL;
+      }
+      if (xp->value_length && xp->value) {
+         pXattrPacket->value = PyByteArray_FromStringAndSize(xp->value, xp->value_length);
+      } else {
+         pXattrPacket->value = NULL;
+      }
+   }
+
+   return pXattrPacket;
+}
+
+static inline bool PyXattrPacketToNative(PyXattrPacket *pXattrPacket, struct xattr_pkt *xp)
+{
+   if (!pXattrPacket->name) {
+      return true;
+   }
+
+   if (PyByteArray_Check(pXattrPacket->name)) {
+      char *buf;
+
+      xp->name_length = PyByteArray_Size(pXattrPacket->name);
+      if (xp->name_length <= 0 || !(buf = PyByteArray_AsString(pXattrPacket->name))) {
+         return false;
+      }
+
+      if (xp->name) {
+         free(xp->name);
+      }
+      xp->name = (char *)malloc(xp->name_length);
+      memcpy(xp->name, buf, xp->name_length);
+   }
+
+   if (pXattrPacket->value && PyByteArray_Check(pXattrPacket->value)) {
+      char *buf;
+
+      xp->value_length = PyByteArray_Size(pXattrPacket->value);
+      if (xp->name_length <= 0 || !(buf = PyByteArray_AsString(pXattrPacket->name))) {
+         return false;
+      }
+
+      if (xp->value) {
+         free(xp->value);
+      }
+      xp->value = (char *)malloc(xp->value_length);
+      memcpy(xp->value, buf, xp->value_length);
+   } else {
+      if (xp->value) {
+         free(xp->value);
+      }
+      xp->value = NULL;
+   }
+
+   return true;
+}
+
+static bRC PyGetXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!xp) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the get_xattr() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "get_xattr"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyXattrPacket *pXattrPkt;
+      PyObject *pRetVal;
+
+      pXattrPkt = NativeToPyXattrPacket(xp);
+      if (!pXattrPkt) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pXattrPkt, NULL);
+      if (!pRetVal) {
+         Py_DECREF((PyObject *)pXattrPkt);
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+
+         if (!PyXattrPacketToNative(pXattrPkt, xp)) {
+            Py_DECREF((PyObject *)pXattrPkt);
+            goto bail_out;
+         }
+         Py_DECREF(pXattrPkt);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named get_xattr()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+static bRC PySetXattr(bpContext *ctx, xattr_pkt *xp)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!xp) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the set_acl() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "set_xattr"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyXattrPacket *pXattrPkt;
+      PyObject *pRetVal;
+
+      pXattrPkt = NativeToPyXattrPacket(xp);
+      if (!pXattrPkt) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pXattrPkt, NULL);
+      Py_DECREF(pXattrPkt);
+
+      if (!pRetVal) {
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named set_xattr()\n");
+   }
+
+   return retval;
 bail_out:
    if (PyErr_Occurred()) {
       PyErrorHandler(ctx, M_FATAL);
@@ -2722,8 +3200,9 @@ static void PyRestorePacket_dealloc(PyRestorePacket *self)
 {
    PyObject_Del(self);
 }
+
 /*
- * Python specific handlers for PyIOPacket structure mapping.
+ * Python specific handlers for PyIoPacket structure mapping.
  */
 
 /*
@@ -2809,6 +3288,124 @@ static void PyIoPacket_dealloc(PyIoPacket *self)
 {
    if (self->buf) {
       Py_XDECREF(self->buf);
+   }
+   PyObject_Del(self);
+}
+
+/*
+ * Python specific handlers for PyAclPacket structure mapping.
+ */
+
+/*
+ * Representation.
+ */
+static PyObject *PyAclPacket_repr(PyAclPacket *self)
+{
+   PyObject *s;
+   POOL_MEM buf(PM_MESSAGE);
+
+   Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")",
+        self->fname, PyGetByteArrayValue(self->content));
+   s = PyString_FromString(buf.c_str());
+
+   return s;
+}
+
+/*
+ * Initialization.
+ */
+static int PyAclPacket_init(PyAclPacket *self, PyObject *args, PyObject *kwds)
+{
+   static char *kwlist[] = {
+      (char *)"fname",
+      (char *)"content",
+      NULL
+   };
+
+   self->fname = NULL;
+   self->content = NULL;
+
+   if (!PyArg_ParseTupleAndKeywords(args,
+                                    kwds,
+                                    "|so",
+                                    kwlist,
+                                    &self->fname,
+                                    &self->content)) {
+      return -1;
+   }
+
+   return 0;
+}
+
+/*
+ * Destructor.
+ */
+static void PyAclPacket_dealloc(PyAclPacket *self)
+{
+   if (self->content) {
+      Py_XDECREF(self->content);
+   }
+   PyObject_Del(self);
+}
+
+/*
+ * Python specific handlers for PyIOPacket structure mapping.
+ */
+
+/*
+ * Representation.
+ */
+static PyObject *PyXattrPacket_repr(PyXattrPacket *self)
+{
+   PyObject *s;
+   POOL_MEM buf(PM_MESSAGE);
+
+   Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")",
+        self->fname, PyGetByteArrayValue(self->name), PyGetByteArrayValue(self->value));
+   s = PyString_FromString(buf.c_str());
+
+   return s;
+}
+
+/*
+ * Initialization.
+ */
+static int PyXattrPacket_init(PyXattrPacket *self, PyObject *args, PyObject *kwds)
+{
+   static char *kwlist[] = {
+      (char *)"fname",
+      (char *)"name",
+      (char *)"value",
+      NULL
+   };
+
+   self->fname = NULL;
+   self->name = NULL;
+   self->value = NULL;
+
+   if (!PyArg_ParseTupleAndKeywords(args,
+                                    kwds,
+                                    "|soo",
+                                    kwlist,
+                                    &self->fname,
+                                    &self->name,
+                                    &self->value)) {
+      return -1;
+   }
+
+   return 0;
+}
+
+/*
+ * Destructor.
+ */
+static void PyXattrPacket_dealloc(PyXattrPacket *self)
+{
+   if (self->value) {
+      Py_XDECREF(self->value);
+   }
+   if (self->name) {
+      Py_XDECREF(self->name);
    }
    PyObject_Del(self);
 }
