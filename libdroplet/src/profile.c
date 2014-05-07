@@ -350,6 +350,13 @@ conf_cb_func(void *cb_arg,
         return -1;
       }
     }
+  else if (!strcmp(var, "ssl_cipher_list"))
+    {
+      free(ctx->ssl_cipher_list);
+      ctx->ssl_cipher_list = strdup(value);
+      if (ctx->ssl_cipher_list == NULL)
+        return -1;
+    }
   else if (!strcmp(var, "ssl_key_file"))
     {
       free(ctx->ssl_key_file);
@@ -582,6 +589,9 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->aws_auth_sign_version = DPL_DEFAULT_AWS_AUTH_SIGN_VERSION;
   strncpy(ctx->aws_region, DPL_DEFAULT_AWS_REGION, sizeof(ctx->aws_region));
   ctx->ssl_method = DPL_DEFAULT_SSL_METHOD;
+  ctx->ssl_cipher_list = strdup(DPL_DEFAULT_SSL_CIPHER_LIST);
+  if (NULL == ctx->ssl_cipher_list)
+    return DPL_ENOMEM;
 
   return DPL_SUCCESS;
 }
@@ -693,8 +703,17 @@ static int
 ssl_verify_cert(X509_STORE_CTX *cert, void *arg)
 {
   dpl_ctx_t     *ctx = (dpl_ctx_t *) arg;
+  char          buffer[256];
 
-  return 0;
+  DPL_TRACE(ctx, DPL_TRACE_SSL, "Server certificates:");
+
+  X509_NAME_oneline(X509_get_subject_name(cert->cert), buffer, sizeof(buffer));
+  DPL_TRACE(ctx, DPL_TRACE_SSL, "Subject: %s", buffer);
+
+  X509_NAME_oneline(X509_get_issuer_name(cert->cert), buffer, sizeof(buffer));
+  DPL_TRACE(ctx, DPL_TRACE_SSL, "Issuer: %s", buffer);
+
+  return 1;
 }
 
 static dpl_status_t
@@ -709,11 +728,24 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     return DPL_FAILURE;
   }
 
-  // SSL_CTX_set_ssl_version(ctx->ssl_ctx, TLSv1_method());
+  if (SSL_CTX_set_cipher_list(ctx->ssl_ctx, ctx->ssl_cipher_list) == 0) {
+    DPL_SSL_PERROR(ctx, "SSL_CTX_set_cipher_list");
+    return DPL_FAILURE;
+  }
 
-  if (NULL != ctx->ssl_cert_file) {
+  SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
+  SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, ctx);
+
+  if (ctx->ssl_cert_file != NULL) {
     if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
       DPL_SSL_PERROR(ctx, "SSL_CTX_use_certificate_chain_file");
+      return DPL_FAILURE;
+    }
+  }
+
+  if (ctx->ssl_key_file != NULL) {
+    if (!SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)) {
+      DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
       return DPL_FAILURE;
     }
   }
@@ -722,13 +754,6 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
   }
-      
-  if (NULL != ctx->ssl_key_file) {
-    if (!SSL_CTX_use_PrivateKey_file(ctx->ssl_ctx, ctx->ssl_key_file, SSL_FILETYPE_PEM)) {
-      DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
-      return DPL_FAILURE;
-    }
-  }
 
   if (NULL != ctx->ssl_ca_list) {
     if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
@@ -736,8 +761,6 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
       return DPL_FAILURE;
     }
   }
-
-  SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, (void *) ctx);
 
   return DPL_SUCCESS;
 }
@@ -894,6 +917,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
     free(ctx->access_key);
   if (NULL != ctx->secret_key)
     free(ctx->secret_key);
+  if (NULL != ctx->ssl_cipher_list)
+    free(ctx->ssl_cipher_list);
   if (NULL != ctx->ssl_cert_file)
     free(ctx->ssl_cert_file);
   if (NULL != ctx->ssl_key_file)

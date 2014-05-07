@@ -904,7 +904,7 @@ dpl_rand(char *buf, int len)
 {
   int ret;
 
-  ret = RAND_pseudo_bytes((u_char *) buf, len);
+  ret = RAND_bytes((u_char *) buf, len);
   if (-1 == ret)
     {
       return DPL_FAILURE;

@@ -35,6 +35,13 @@
 
 /** @file */
 
+static char     *randbuf = 
+  "this isn't a very good way to seed the PRNG but will suffice"
+  "this isn't a very good way to seed the PRNG but will suffice"
+  "this isn't a very good way to seed the PRNG but will suffice"
+  "this isn't a very good way to seed the PRNG but will suffice"
+  "this isn't a very good way to seed the PRNG but will suffice";
+
 int dpl_header_size;
 
 const char *
@@ -116,6 +123,8 @@ dpl_init()
   SSL_library_init();
   SSL_load_error_strings();
   ERR_load_crypto_strings();
+
+  RAND_seed(randbuf, strlen(randbuf));
 
   dpl_base64_init();
 

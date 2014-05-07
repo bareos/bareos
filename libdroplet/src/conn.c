@@ -363,6 +363,8 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
     DPL_SSL_PERROR(ctx, "SSL_connect");
     return 0;
   }
+   
+  DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL cipher used:%s", SSL_get_cipher(conn->ssl));
 
   return 1;
 }

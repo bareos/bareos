@@ -193,7 +193,7 @@ dpl_s3_add_authorization_v2_to_headers(const dpl_req_t *req,
   if (DPL_SUCCESS != ret)
     return DPL_FAILURE;
 
-  DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str);
+  /* DPL_TRACE(req->ctx, DPL_TRACE_REQ, "stringtosign=%.*s", sign_len, sign_str); */
 
   hmac_len = dpl_hmac_sha1(req->ctx->secret_key, strlen(req->ctx->secret_key), sign_str, sign_len, hmac_str);
 
