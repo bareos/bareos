@@ -775,6 +775,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/grant_bareos_privileges
 %{script_dir}/make_bareos_tables
 %{script_dir}/update_bareos_tables
+%{script_dir}/ddl/versions.map
 
 %files database-postgresql
 # postgresql catalog files

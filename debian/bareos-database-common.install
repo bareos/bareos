@@ -7,4 +7,6 @@
 /usr/lib/bareos/scripts/drop_bareos_tables
 /usr/lib/bareos/scripts/grant_bareos_privileges
 /usr/lib/bareos/scripts/make_bareos_tables
+/usr/lib/bareos/scripts/set_dbconfig_vars.sh
 /usr/lib/bareos/scripts/update_bareos_tables
+/usr/lib/bareos/scripts/ddl/versions.map

@@ -3731,7 +3731,8 @@ debian)
 	 platforms/debian/Makefile \
 	 platforms/debian/bareos-fd \
 	 platforms/debian/bareos-sd \
-	 platforms/debian/bareos-dir"
+	 platforms/debian/bareos-dir \
+	 platforms/debian/set_dbconfig_vars.sh"
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -3877,9 +3878,11 @@ ubuntu)
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
        platforms/ubuntu/Makefile \
-       platforms/ubuntu/bareos-fd \
-       platforms/ubuntu/bareos-sd \
-       platforms/ubuntu/bareos-dir"
+       platforms/debian/Makefile \
+       platforms/debian/bareos-fd \
+       platforms/debian/bareos-sd \
+       platforms/debian/bareos-dir \
+       platforms/debian/set_dbconfig_vars.sh"
   ;;
 univention)
    TAPEDRIVE="/dev/nst0"
@@ -3889,7 +3892,8 @@ univention)
      platforms/debian/Makefile \
      platforms/debian/bareos-fd \
      platforms/debian/bareos-sd \
-     platforms/debian/bareos-dir"
+     platforms/debian/bareos-dir \
+     platforms/debian/set_dbconfig_vars.sh"
   ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
@@ -3969,6 +3973,8 @@ autoconf/Make.common \
 Makefile \
 manpages/Makefile \
 debian/bareos-common.preinst \
+debian/bareos-database-common.config \
+debian/bareos-database-common.postinst \
 debian/bareos-filedaemon.preinst \
 debian/bareos-director.preinst \
 debian/bareos-storage.preinst \
@@ -4018,6 +4024,7 @@ src/cats/make_bareos_tables \
 src/cats/drop_bareos_tables \
 src/cats/drop_bareos_database \
 src/cats/install-default-backend \
+src/cats/ddl/versions.map \
 src/findlib/Makefile \
 src/lmdb/Makefile \
 src/ndmp/Makefile \

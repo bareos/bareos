@@ -239,6 +239,7 @@ install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCL
 	@if ! test -d $(DESTDIR)$(scriptdir)/ddl; then \
 	   $(MKDIR) $(DESTDIR)$(scriptdir)/ddl; \
 	fi;
+	$(INSTALL_DATA) ddl/versions.map $(DESTDIR)$(scriptdir)/ddl/
 
 	#
 	# Install all DDL schemas for Drop, Grant, Create and Update

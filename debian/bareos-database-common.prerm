@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+if [ -f /usr/share/dbconfig-common/dpkg/prerm ]; then
+    . /usr/share/dbconfig-common/dpkg/prerm
+    dbc_go bareos-database-common $@
+fi
+
+#DEBHELPER#

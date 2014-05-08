@@ -42,6 +42,7 @@ case "$1" in
         /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
         /usr/lib/bareos/scripts/bareos-config initialize_passwords
         /usr/lib/bareos/scripts/bareos-config initialize_database_driver
+        /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
         enable_rc_scripts
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
