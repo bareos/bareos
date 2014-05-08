@@ -1,2 +1,4 @@
 /usr/lib/libb*-mysql*.so
 /usr/lib/bareos/scripts/ddl/*/mysql*.sql
+/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
+/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/*

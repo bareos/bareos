@@ -1,2 +1,4 @@
 /usr/lib/libb*-sqlite3*.so
 /usr/lib/bareos/scripts/ddl/*/sqlite3*.sql
+/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
+/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/*

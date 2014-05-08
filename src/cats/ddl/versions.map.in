@@ -1,0 +1,19 @@
+# This file defines per release of Bareos what database version it uses.
+# Use the function get_database_version_by_release
+# from bareos-config to retrieve the matching version.
+# It is used by the dbconfig mechanismen of Debian distributions.
+
+default=@BDB_VERSION@
+
+12.4.0=2001
+12.4.1=2001
+12.4.2=2001
+12.4.3=2001
+12.4.4=2001
+12.4.5=2001
+12.4.6=2001
+
+13.2.0=2001
+13.2.1=2001
+13.2.2=2001
+13.2.3=2002

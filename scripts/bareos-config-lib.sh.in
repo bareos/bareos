@@ -107,14 +107,46 @@ get_working_dir()
     echo "${WORKING_DIR}"
 }
 
+get_database_ddl_dir()
+{
+    echo "${SQL_DDL_DIR}"
+}
+
 get_database_version()
 {
     echo "${DB_VERSION}"
 }
 
-get_database_ddl_dir()
+get_database_version_by_release()
 {
-    echo "${SQL_DDL_DIR}"
+    param="$1"
+
+    # get release from parameter by stripping everthing after the "-".
+    # Example parameter: 13.2.2-926.1
+    release=`echo "$param" | sed 's/-.*//'`
+    if [ -z "$release" ]; then
+        error "failed to get database version for release $param"
+        return 1
+    fi
+
+    MAP=${SQL_DDL_DIR}/versions.map
+    if ! [ -r "$MAP" ]; then
+        error "failed to read Bareos database versions map file $MAP"
+        return 1
+    fi
+
+    db_version=`sed -n "s/^${release}=//p" $MAP`
+    if [ -z "$db_version" ]; then
+        db_version=`sed -n "s/^default=//p" $MAP`
+        if [ "$db_version" ]; then
+            warn "no database version defined for release $release ($param). Using default version: $db_version"
+        else
+            error "neither found database version for release $release ($param), nor found default database version in map file $MAP"
+            return 1
+        fi
+    fi
+    echo "$db_version"
+    return
 }
 
 get_database_utility_path()
@@ -242,13 +274,55 @@ get_config_param()
     echo "$VALUE"
 }
 
+
+[ ${os_type} = Linux ] && \
+set_config_param()
+{
+    #
+    # set parameter values to a Bareos configuration file
+    #
+
+    # configuration file
+    CFG_FILE="${1}"
+    # section, currently ignored
+    SECTION="${2}"
+    # name of the section, currently ignored
+    NAME="${3}"
+    # parameter to set in the config file
+    PARAM="${4}"
+    # value to set
+    VALUE="${5}"
+
+    if ! [ -r "${CFG_FILE}" ]; then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't read ${CFG_FILE}"
+        return 1
+    fi
+
+    if egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE}; then
+        sed -r -i "s#^[ 	]*${PARAM}[ 	]*=.*#  ${PARAM} = \"${VALUE}\"#" ${CFG_FILE}
+        echo "$CFG_FILE: set ${SECTION} ${NAME} ${PARAM} = ${VALUE}"
+    else
+        echo "FAILED to set ${SECTION} ${NAME} ${PARAM} = ${VALUE} ($CFG_FILE)"
+        return 1
+    fi
+}
+
+[ ${os_type} != Linux ] && \
+set_config_param()
+{
+   echo "set_config_param() is not supported on this platform"
+   exit 1
+}
+
+
 get_database_param()
 {
     PARAM="${1-}"
     DEFAULT="${2-}"
 
-    DBCHECK_OUTPUT=`$DBCHECK`
-    rc=$?
+    # use || to prevent errors
+    rc=0
+    DBCHECK_OUTPUT=`$DBCHECK` || rc=$?
     if [ $rc != 0 ]; then
         temp_log="/tmp/bareos-config.$$.log"
         echo "executing: $DBCHECK" >> $temp_log
@@ -311,6 +385,7 @@ get_databases_installed()
     [ -e ${SQL_DDL_DIR}/creates/postgresql.sql ] && echo "postgresql"
     [ -e ${SQL_DDL_DIR}/creates/mysql.sql ] && echo "mysql"
     [ -e ${SQL_DDL_DIR}/creates/sqlite3.sql ] && echo "sqlite3"
+    return 0
 }
 
 get_database_driver_default()
@@ -481,6 +556,53 @@ translate_sql_files()
             rm -f $dest_file
         fi
     done
+}
+
+apply_dbconfig_settings()
+{
+    # this function is only useful on Debian Linux based distributions
+    # as dbconfig-common is only available there
+
+    # check if bareos-director configuration file already exists
+    [ -r "${CFG_DIR}" ] || return 0
+
+    # check if dbconfig configuration file exists
+    [ -r "/etc/dbconfig-common/bareos-database-common.conf" ] || return 0
+    . /etc/dbconfig-common/bareos-database-common.conf
+
+    # check if dbconfig is enabled
+    [ $dbc_upgrade = 'true' ] || return 0
+
+    case "$dbc_dbtype" in
+        pgsql)
+            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "postgresql"
+            ;;
+        mysql)
+            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "mysql"
+            ;;
+        sqlite3)
+            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "sqlite3"
+            #   dbconfig creates the db file as ${dbc_basepath}/${dbc_dbname}
+            #   while bareos expects the sqlite3 db file
+            #   as ${dbc_basepath}/${dbc_dbname}.db
+            # Therefore a link is created.
+            if [ -r "${dbc_basepath}/${dbc_dbname}" ]; then
+                BAREOS_SQLITE_DB="`get_working_dir`/`get_database_name`.db"
+                if ! [ -e $BAREOS_SQLITE_DB ]; then
+                    ln -s "${dbc_basepath}/${dbc_dbname}" "$BAREOS_SQLITE_DB"
+                    ls -a `get_working_dir`/bareos* || true
+                fi
+            fi
+            ;;
+        *)
+            error "unknown database type $dbc_dbtype in /etc/dbconfig-common/bareos-database-common.conf"
+            return 1
+    esac
+
+    if [ "$dbc_authmethod_user" != "ident" ] && [ "$dbc_dbpass" ]; then
+        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbpassword" "$dbc_dbpass"
+    fi
+
 }
 
 get_local_hostname()
