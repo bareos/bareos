@@ -1159,7 +1159,9 @@ static void update_slots(UAContext *ua)
    db_unlock(ua->db);
 
 bail_out:
-   free_vol_list(vol_list);
+   if (vol_list) {
+      free_vol_list(vol_list);
+   }
    free(slot_list);
    close_sd_bsock(ua);
 
