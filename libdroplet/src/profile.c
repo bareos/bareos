@@ -619,24 +619,25 @@ dpl_open_event_log(dpl_ctx_t *ctx)
   char *pricing_dir;
 
   pricing_dir = ctx->pricing_dir;
-  if (NULL == pricing_dir)
-    {
-      pricing_dir = ctx->droplet_dir;
-    }
-  if (0 == strlen(pricing_dir))
-    {
-      ctx->event_log = NULL;
-      return DPL_SUCCESS;
-    }
+  if (pricing_dir == NULL)
+    pricing_dir = ctx->droplet_dir;
+
+  if (*pricing_dir == '\0') {
+    ctx->event_log = NULL;
+    return DPL_SUCCESS;
+  }
 
   snprintf(path, sizeof (path), "%s/%s.csv", pricing_dir, ctx->profile_name);
 
   ctx->event_log = fopen(path, "a+");
-  if (NULL == ctx->event_log)
-    {
+  if (ctx->event_log == NULL) {
+    if (errno != ENOENT) {
       DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s", path, strerror(errno));
       return DPL_FAILURE;
-    }
+    } else
+      DPL_LOG(ctx, DPL_WARNING, "error opening '%s': %s", path, strerror(errno));
+  }
+
   return DPL_SUCCESS;
 }
 
