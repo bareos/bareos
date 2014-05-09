@@ -337,8 +337,10 @@ static bacl_exit_code aix_build_acl_streams(JCR *jcr,
    switch (type.u64) {
    case ACL_AIXC:
       retval = send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_AIXC);
+      break;
    case ACL_NFS4:
       retval = send_acl_stream(jcr, acl_data, STREAM_ACL_AIX_NFS4);
+      break;
    }
 
 bail_out:
