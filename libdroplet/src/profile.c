@@ -724,7 +724,7 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   OpenSSL_add_all_ciphers();
 
   ctx->ssl_ctx = SSL_CTX_new(ctx->ssl_method);
-  if (NULL == ctx->ssl_ctx) {
+  if (ctx->ssl_ctx == NULL) {
     DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
     return DPL_FAILURE;
   }
@@ -732,6 +732,11 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   if (SSL_CTX_set_cipher_list(ctx->ssl_ctx, ctx->ssl_cipher_list) == 0) {
     DPL_SSL_PERROR(ctx, "SSL_CTX_set_cipher_list");
     return DPL_FAILURE;
+  }
+
+  if (ctx->ssl_password != NULL) {
+    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
   }
 
   SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
@@ -751,12 +756,7 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     }
   }
 
-  if (NULL != ctx->ssl_password) {
-    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
-  }
-
-  if (NULL != ctx->ssl_ca_list) {
+  if (ctx->ssl_ca_list != NULL) {
     if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
       DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
       return DPL_FAILURE;
