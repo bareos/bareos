@@ -52,6 +52,7 @@
 #define DCL_BACKEND_HEAD_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, dpl_sysmd_t *, char **)
 #define DCL_BACKEND_HEAD_RAW_FN(fn)             DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, char **)
 #define DCL_BACKEND_DELETE_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, char **)
+#define DCL_BACKEND_DELETE_ALL_FN(fn)           DCL_BACKEND_FN(fn, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *)
 #define DCL_BACKEND_GENURL_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, time_t, char *, unsigned int, unsigned int *, char **)
 #define DCL_BACKEND_COPY_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, dpl_copy_directive_t, const dpl_dict_t *, const dpl_sysmd_t *, const dpl_condition_t *, char **)
 #define DCL_BACKEND_GET_ID_SCHEME_FN(fn)        DCL_BACKEND_FN(fn, dpl_id_scheme_t **)
@@ -68,6 +69,7 @@ typedef DCL_BACKEND_GET_FN(*dpl_get_t);
 typedef DCL_BACKEND_HEAD_FN(*dpl_head_t);
 typedef DCL_BACKEND_HEAD_RAW_FN(*dpl_head_raw_t);
 typedef DCL_BACKEND_DELETE_FN(*dpl_delete_t);
+typedef DCL_BACKEND_DELETE_ALL_FN(*dpl_delete_all_t);
 typedef DCL_BACKEND_GENURL_FN(*dpl_genurl_t);
 typedef DCL_BACKEND_COPY_FN(*dpl_copy_t);
 typedef DCL_BACKEND_GET_ID_SCHEME_FN(*dpl_get_id_scheme_t);
@@ -88,6 +90,7 @@ typedef struct dpl_backend_s
   dpl_head_t                    head;
   dpl_head_raw_t                head_raw;
   dpl_delete_t                  deletef;
+  dpl_delete_all_t              delete_all;
   dpl_get_id_scheme_t           get_id_scheme;
   dpl_put_t                     post_id;
   dpl_put_t                     put_id;

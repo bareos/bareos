@@ -39,11 +39,11 @@ dpl_status_t
 dpl_s3_delete(dpl_ctx_t *ctx,
               const char *bucket,
               const char *resource,
-              const char *subresource,
-              const dpl_option_t *option,
-              dpl_ftype_t object_type,
-              const dpl_condition_t *condition, 
-              char **locationp)
+              UNUSED const char *subresource, /* always fixed to NULL by dpl_delete */
+              UNUSED const dpl_option_t *option,
+              UNUSED dpl_ftype_t object_type,
+              UNUSED const dpl_condition_t *condition, 
+              UNUSED char **locationp /* always fixed to NULL by dpl_delete */)
 {
   int           ret, ret2;
   dpl_conn_t    *conn = NULL;
@@ -86,16 +86,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
     {
       ret = ret2;
       goto end;
-    }
-
-  if (NULL != subresource)
-    {
-      ret2 = dpl_req_set_subresource(req, subresource);
-      if (DPL_SUCCESS != ret2)
-        {
-          ret = ret2;
-          goto end;
-        }
     }
 
   ret2 = dpl_s3_req_build(req, req_mask, &headers_request);

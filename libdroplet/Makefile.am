@@ -41,6 +41,7 @@ libdroplet_la_SOURCES = \
 	src/backend/s3/auth/v4.c \
 	src/backend/s3/backend/copy.c \
 	src/backend/s3/backend/delete.c \
+	src/backend/s3/backend/delete_all.c \
 	src/backend/s3/backend/delete_bucket.c \
 	src/backend/s3/backend/genurl.c \
 	src/backend/s3/backend/get.c \

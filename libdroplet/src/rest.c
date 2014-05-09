@@ -225,7 +225,7 @@ dpl_list_all_my_buckets(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "REQUEST", "LIST", 0);
+    dpl_log_request(ctx, "REQUEST", "LIST", 0);
   
   return ret;
 }
@@ -290,7 +290,7 @@ dpl_list_bucket_attrs(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "REQUEST", "LIST", 0);
+    dpl_log_request(ctx, "REQUEST", "LIST", 0);
   
   return ret;
 }
@@ -376,7 +376,7 @@ dpl_make_bucket(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
+    dpl_log_request(ctx, "DATA", "PUT", 0);
   
   return ret;
 }
@@ -418,7 +418,7 @@ dpl_delete_bucket(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "DELETE", 0);
+    dpl_log_request(ctx, "DATA", "DELETE", 0);
   
   return ret;
 }
@@ -482,7 +482,7 @@ dpl_post(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
+    dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -544,7 +544,7 @@ dpl_put(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "IN", data_len);
+    dpl_log_request(ctx, "DATA", "IN", data_len);
   
   return ret;
 }
@@ -631,7 +631,7 @@ dpl_get(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "OUT", data_len);
+    dpl_log_request(ctx, "DATA", "OUT", data_len);
   
   return ret;
 }
@@ -702,7 +702,7 @@ dpl_head(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "GET", 0);
+    dpl_log_request(ctx, "DATA", "GET", 0);
   
   return ret;
 }
@@ -770,7 +770,7 @@ dpl_head_raw(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "GET", 0);
+    dpl_log_request(ctx, "DATA", "GET", 0);
   
   return ret;
 }
@@ -812,7 +812,7 @@ dpl_delete(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
-  
+
   ret = DPL_SUCCESS;
 
  end:
@@ -820,7 +820,52 @@ dpl_delete(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "DELETE", 0);
+    dpl_log_request(ctx, "DATA", "DELETE", 0);
+  
+  return ret;
+}
+
+/**
+ * delete multiple path
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type
+ * @param condition the optional condition
+ *
+ * @return DPL_ENOTSUPP
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_delete_all(dpl_ctx_t *ctx,
+               const char *bucket,
+               const dpl_option_t *option,
+               dpl_ftype_t object_type,
+               const dpl_condition_t *condition)
+{
+  dpl_status_t  ret;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "delete all bucket=%s", bucket);
+
+  if (ctx->backend->delete_all == NULL) {
+    ret = DPL_ENOTSUPP;
+    goto end;
+  }
+  
+  ret = ctx->backend->delete_all(ctx, bucket, option, object_type, condition);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    dpl_log_request(ctx, "DATA", "DELETE", 0);
   
   return ret;
 }
@@ -1178,7 +1223,7 @@ dpl_copy(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
+    dpl_log_request(ctx, "DATA", "PUT", 0);
   
   return ret;
 }
@@ -1220,7 +1265,7 @@ dpl_copy_id(dpl_ctx_t *ctx,
   DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
 
   if (DPL_SUCCESS == ret)
-    (void) dpl_log_request(ctx, "DATA", "PUT", 0);
+    dpl_log_request(ctx, "DATA", "PUT", 0);
   
   return ret;
 }

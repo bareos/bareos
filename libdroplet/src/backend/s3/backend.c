@@ -48,6 +48,7 @@ dpl_backend_t   dpl_backend_s3 = {
   .head                = dpl_s3_head,
   .head_raw            = dpl_s3_head_raw,
   .deletef             = dpl_s3_delete,
+  .delete_all          = dpl_s3_delete_all,
   .genurl              = dpl_s3_genurl,
   .copy                = dpl_s3_copy
 };
