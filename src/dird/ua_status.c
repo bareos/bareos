@@ -640,6 +640,10 @@ static void do_scheduler_status(UAContext *ua)
    foreach_res(sched, R_SCHEDULE) {
       int cnt = 0;
 
+      if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+         continue;
+      }
+
       if (schedulegiven) {
          if (!bstrcmp(sched->hdr.name, schedulename)) {
            continue;
@@ -655,6 +659,10 @@ static void do_scheduler_status(UAContext *ua)
          }
       } else {
          foreach_res(job, R_JOB) {
+            if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+               continue;
+            }
+
             if (client && job->client != client) {
                continue;
             }
@@ -709,6 +717,10 @@ start_again:
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
+               if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+                  continue;
+               }
+
                if (job->schedule && job->client == client) {
                   if (!show_scheduled_preview(ua, job->schedule, overview,
                                               &max_date_len, tm, time_to_check)) {
@@ -727,6 +739,10 @@ start_again:
           */
          LockRes();
          foreach_res(sched, R_SCHEDULE) {
+            if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+               continue;
+            }
+
             if (schedulegiven) {
                if (!bstrcmp(sched->hdr.name, schedulename)) {
                   continue;
