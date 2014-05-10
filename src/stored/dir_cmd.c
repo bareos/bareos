@@ -1645,10 +1645,6 @@ static bool passive_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    BSOCK *fd;                      /* file daemon bsock */
 
-   fd = New(BSOCK_TCP);
-   if (me->nokeepalive) {
-      fd->clear_keepalive();
-   }
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
       pm_strcpy(jcr->errmsg, dir->msg);
@@ -1660,6 +1656,10 @@ static bool passive_cmd(JCR *jcr)
 
    jcr->passive_client = true;
 
+   fd = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      fd->clear_keepalive();
+   }
    fd->set_source_address(me->SDsrc_addr);
 
    /*
