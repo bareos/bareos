@@ -326,6 +326,17 @@ Section -SetPasswords
 #  FileClose $R1
 SectionEnd
 
+!If ${WIN_DEBUG} == yes
+# install sourcecode if WIN_DEBUG is yes
+Section Sourcecode SEC_SOURCE
+   SectionIn 1 2 3
+   SetShellVarContext all
+   SetOutPath "C:\"
+   SetOverwrite ifnewer
+   File /r "bareos-${VERSION}"
+SectionEnd
+!Endif
+
 Section "Bareos Client (FileDaemon) and base libs" SEC_CLIENT
 SectionIn 1 2 3
   SetShellVarContext all
@@ -443,6 +454,12 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the tray Icon to monitor the Bareos client"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL} "Opens Port 9102/TCP for bareos-fd.exe (Client program) in the Windows Firewall"
+
+  ; Sourcecode
+!If ${WIN_DEBUG} == yes
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SOURCE} "Sourcecode for debugging will be installed into C:\bareos-${VERSION}"
+!Endif
+
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 Section -AdditionalIcons
@@ -991,6 +1008,9 @@ ConfDeleteSkip:
     DetailPrint  "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
     nsExec::Exec "netsh firewall delete portopening protocol=TCP port=9102 name=$\"Bareos backup client (bareos-fd) access$\""
   ${EndIf}
+
+  # remove sourcecode
+  RMDir /r "C:\bareos-${VERSION}"
 
 SectionEnd
 

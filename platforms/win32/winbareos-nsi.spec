@@ -6,6 +6,9 @@
 %define __os_install_post %{_mingw64_debug_install_post} \
                           %{_mingw64_install_post}
 
+# If versionstring contains debug, enable debug during build
+%define WIN_DEBUG %(echo %version | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
+
 #!BuildIgnore: post-build-checks
 Name:           winbareos-nsi
 Version:        13.2.3
@@ -33,6 +36,8 @@ BuildRequires:  vim, procps, bc
 
 BuildRequires:  mingw32-winbareos  = %{version}
 BuildRequires:  mingw64-winbareos  = %{version}
+BuildRequires:  mingw-debugsrc-devel = %{version}
+
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
@@ -65,16 +70,41 @@ cp %SOURCE6 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
 mkdir  $RPM_BUILD_ROOT/release32
 mkdir  $RPM_BUILD_ROOT/release64
 
+# copy the sources over if we create debug package
+%if %{WIN_DEBUG} == "yes"
+cp -av /bareos-*debug*  $RPM_BUILD_ROOT/release32
+cp -av /bareos-*debug*  $RPM_BUILD_ROOT/release64
+%endif
+
+
 for file in \
-      bareos-tray-monitor.exe bat.exe bareos-fd.exe bconsole.exe \
-      bpipe-fd.dll mssqlvdi-fd.dll libbareos.dll libbareosfind.dll \
-      libcrypto-*.dll libgcc_s_*-1.dll libhistory6.dll \
-      libreadline6.dll libssl-*.dll libstdc++-6.dll \
-      libtermcap-0.dll pthreadGCE2.dll zlib1.dll \
-      QtCore4.dll QtGui4.dll liblzo2-2.dll libfastlz.dll \
-      libpng15-15.dll openssl.exe sed.exe; do
-      cp  %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/release32
-      cp  %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/release64
+   bareos-fd.exe \
+   bconsole.exe \
+   bareos-tray-monitor.exe \
+   bat.exe \
+   bpipe-fd.dll \
+   mssqlvdi-fd.dll \
+   libbareos.dll \
+   libbareosfind.dll \
+   libcrypto-*.dll \
+   libgcc_s_*-1.dll \
+   libhistory6.dll \
+   libreadline6.dll \
+   libssl-*.dll \
+   libstdc++-6.dll \
+   libtermcap-0.dll \
+   pthreadGCE2.dll \
+   zlib1.dll \
+   QtCore4.dll \
+   QtGui4.dll \
+   liblzo2-2.dll \
+   libfastlz.dll \
+   libpng15-15.dll \
+   openssl.exe \
+   sed.exe;\
+   do
+   cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/release32
+   cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/release64
 done
 
 for cfg in /etc/mingw32-winbareos/*.conf; do
@@ -88,8 +118,9 @@ done
 cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
 cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
-makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 $RPM_BUILD_ROOT/release32/winbareos.nsi
-makensis -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 $RPM_BUILD_ROOT/release64/winbareos.nsi
+makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release32/winbareos.nsi
+makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release64/winbareos.nsi
+
 
 %install
 mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
