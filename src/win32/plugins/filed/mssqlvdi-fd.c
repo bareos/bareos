@@ -91,6 +91,7 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd);
 static bRC endRestoreFile(bpContext *ctx);
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
+static bRC checkFile(bpContext *ctx, char *fname);
 
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 static bRC end_restore_job(bpContext *ctx, void *value);
@@ -137,7 +138,8 @@ static pFuncs pluginFuncs = {
    endRestoreFile,
    pluginIO,
    createFile,
-   setFileAttributes
+   setFileAttributes,
+   checkFile
 };
 
 /*
@@ -1711,6 +1713,14 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
  * We will get here if the File is a directory after everything is written in the directory.
  */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
+{
+   return bRC_OK;
+}
+
+/*
+ * When using Incremental dump, all previous dumps are necessary
+ */
+static bRC checkFile(bpContext *ctx, char *fname)
 {
    return bRC_OK;
 }
