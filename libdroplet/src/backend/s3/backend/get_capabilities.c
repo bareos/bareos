@@ -40,7 +40,7 @@ dpl_s3_get_capabilities(dpl_ctx_t *ctx,
                         dpl_capability_t *maskp)
 {
   if (maskp != NULL)
-    *maskp = DPL_CAP_BUCKETS|DPL_CAP_FNAMES;
+    *maskp = DPL_CAP_BUCKETS | DPL_CAP_FNAMES | DPL_CAP_BATCH_DELETE;
 
   return DPL_SUCCESS;
 }

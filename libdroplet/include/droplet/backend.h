@@ -52,7 +52,7 @@
 #define DCL_BACKEND_HEAD_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, dpl_sysmd_t *, char **)
 #define DCL_BACKEND_HEAD_RAW_FN(fn)             DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, dpl_dict_t **, char **)
 #define DCL_BACKEND_DELETE_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *, char **)
-#define DCL_BACKEND_DELETE_ALL_FN(fn)           DCL_BACKEND_FN(fn, const char *, const dpl_option_t *, dpl_ftype_t, const dpl_condition_t *)
+#define DCL_BACKEND_DELETE_ALL_FN(fn)           DCL_BACKEND_FN(fn, const char *, dpl_locators_t *, const dpl_option_t *, const dpl_condition_t *, dpl_vec_t **)
 #define DCL_BACKEND_GENURL_FN(fn)               DCL_BACKEND_FN(fn, const char *, const char *, const char *, const dpl_option_t *, time_t, char *, unsigned int, unsigned int *, char **)
 #define DCL_BACKEND_COPY_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, dpl_copy_directive_t, const dpl_dict_t *, const dpl_sysmd_t *, const dpl_condition_t *, char **)
 #define DCL_BACKEND_GET_ID_SCHEME_FN(fn)        DCL_BACKEND_FN(fn, dpl_id_scheme_t **)

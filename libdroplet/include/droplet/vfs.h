@@ -108,6 +108,7 @@ dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata
 dpl_status_t dpl_mknod(dpl_ctx_t *ctx, const char *locator, dpl_ftype_t object_type, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
 dpl_status_t dpl_rmdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_unlink(dpl_ctx_t *ctx, const char *locator);
+dpl_status_t dpl_unlink_all(dpl_ctx_t *ctx, const char *bucket, dpl_locators_t *locators, dpl_vec_t **objectsp);
 dpl_status_t dpl_getattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_getattr_raw(dpl_ctx_t *ctx, const char *locator, dpl_dict_t **metadatap);
 dpl_status_t dpl_setattr(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);

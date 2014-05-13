@@ -841,20 +841,19 @@ dpl_delete(dpl_ctx_t *ctx,
 dpl_status_t
 dpl_delete_all(dpl_ctx_t *ctx,
                const char *bucket,
+               dpl_locators_t *locators,
                const dpl_option_t *option,
-               dpl_ftype_t object_type,
-               const dpl_condition_t *condition)
+               const dpl_condition_t *condition,
+               dpl_vec_t **objectsp)
 {
   dpl_status_t  ret;
-
-  DPL_TRACE(ctx, DPL_TRACE_REST, "delete all bucket=%s", bucket);
 
   if (ctx->backend->delete_all == NULL) {
     ret = DPL_ENOTSUPP;
     goto end;
   }
   
-  ret = ctx->backend->delete_all(ctx, bucket, option, object_type, condition);
+  ret = ctx->backend->delete_all(ctx, bucket, locators, option, condition, objectsp);
   if (DPL_SUCCESS != ret)
     goto end;
 
