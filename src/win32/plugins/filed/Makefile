@@ -34,6 +34,12 @@ LDLIBS = ../../lib/libbareos.dll \
          $(MINGW_LIB)/libz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
+ifeq ($(WIN_DEBUG),yes)
+OPT_CXXFLAGS = $(CXXFLAGS) -O2
+else
+OPT_CXXFLAGS = $(CXXFLAGS)
+endif
+
 all: bpipe-fd.dll mssqlvdi-fd.dll
 
 bpipe-fd.dll: DLL_USAGE = -DBUILDING_DLL
@@ -43,7 +49,7 @@ bpipe-fd.dll: bpipe-fd.o
 mssqlvdi-fd.o: CXXFLAGS += -fpermissive
 mssqlvdi-fd.o: mssqlvdi-fd.c
 	@echo "Compiling $<"
-	$(CXX) $(DLL_USAGE) $(CXXFLAGS) $(VDI_INCLUDES) -c -o $@ $<
+	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(VDI_INCLUDES) -c -o $@ $<
 
 mssqlvdi-fd.dll: DLL_USAGE = -DBUILDING_DLL
 mssqlvdi-fd.dll: mssqlvdi-fd.o
