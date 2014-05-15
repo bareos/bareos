@@ -1216,6 +1216,7 @@ static inline PyStatPacket *NativeToPyStatPacket(struct stat *statp)
       pStatp->uid = statp->st_uid;
       pStatp->gid = statp->st_gid;
       pStatp->rdev = statp->st_rdev;
+      pStatp->size = statp->st_size;
       pStatp->atime = statp->st_atime;
       pStatp->mtime = statp->st_mtime;
       pStatp->ctime = statp->st_ctime;
@@ -1231,9 +1232,11 @@ static inline void PyStatPacketToNative(PyStatPacket *pStatp, struct stat *statp
    statp->st_dev = pStatp->dev;
    statp->st_ino = pStatp->ino;
    statp->st_mode = pStatp->mode;
+   statp->st_nlink = pStatp->nlink;
    statp->st_uid = pStatp->uid;
    statp->st_gid = pStatp->gid;
    statp->st_rdev = pStatp->rdev;
+   statp->st_size = pStatp->size;
    statp->st_atime = pStatp->atime;
    statp->st_mtime = pStatp->mtime;
    statp->st_ctime = pStatp->ctime;
@@ -2345,8 +2348,8 @@ static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
    POOL_MEM buf(PM_MESSAGE);
 
    Mmsg(buf, "RestoreObject(object_name=\"%s\", object=\"%s\", plugin_name=\"%s\", "
-             "object_type=%d, object_len=%d, object_full_len=%d, "
-             "object_index=%d, object_compression=%d, stream=%d, jobid=%d)",
+             "object_type=%ld, object_len=%ld, object_full_len=%ld, "
+             "object_index=%ld, object_compression=%ld, stream=%ld, jobid=%ld)",
         self->object_name, self->object, self->plugin_name,
         self->object_type, self->object_len, self->object_full_len,
         self->object_index, self->object_compression, self->stream, self->JobId);
@@ -2425,9 +2428,9 @@ static PyObject *PyStatPacket_repr(PyStatPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "StatPacket(dev=%d, ino=%ld, mode=%d, nlink=%d, "
-             "uid=%d, gid=%d, rdev=%d, size=%ld, "
-             "atime=%d, mtime=%d, ctime=%d, blksize=%d, blocks=%ld",
+   Mmsg(buf, "StatPacket(dev=%ld, ino=%lld, mode=%d, nlink=%d, "
+             "uid=%ld, gid=%ld, rdev=%ld, size=%lld, "
+             "atime=%ld, mtime=%ld, ctime=%ld, blksize=%ld, blocks=%lld)",
         self->dev, self->ino, self->mode, self->nlink,
         self->uid, self->gid, self->rdev, self->size,
         self->atime, self->mtime, self->ctime, self->blksize, self->blocks);
@@ -2518,10 +2521,10 @@ static PyObject *PySavePacket_repr(PySavePacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%d, flags=%d, "
+   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%ld, "
              "no_read=%d, portable=%d, accurate_found=%d, "
-             "cmd=\"%s\", delta_seq=%d, object_name=\"%s\", "
-             "object=\"%s\", object_len=%d, object_index=%d)",
+             "cmd=\"%s\", delta_seq=%ld, object_name=\"%s\", "
+             "object=\"%s\", object_len=%ld, object_index=%ld)",
         PyGetStringValue(self->fname), PyGetStringValue(self->link),
         self->type, self->flags, self->no_read, self->portable,
         self->accurate_found, self->cmd, self->delta_seq,
@@ -2621,15 +2624,16 @@ static void PySavePacket_dealloc(PySavePacket *self)
  */
 static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
 {
-   PyObject *s;
+   PyObject *stat_repr, *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "RestorPacket(stream=%d, data_stream=%d, type=%d, file_index=%d, "
-             "linkFI=%d, uid=%d, attrEx=\"%s\", ofname=\"%s\", olname=\"%s\", "
-             "where=\"%s\", RegexWhere=\"%s\", replace=%d, create_status=%d)",
+   stat_repr = PyObject_Repr(self->statp);
+   Mmsg(buf, "RestorePacket(stream=%d, data_stream=%ld, type=%ld, file_index=%ld, "
+             "linkFI=%ld, uid=%ld, statp=\"%s\", attrEx=\"%s\", ofname=\"%s\", "
+             "olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d, create_status=%d)",
         self->stream, self->data_stream, self->type, self->file_index,
-        self->LinkFI, self->uid, self->attrEx, self->ofname, self->olname,
-        self->where, self->RegexWhere, self->replace, self->create_status);
+        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx, self->ofname,
+        self->olname, self->where, self->RegexWhere, self->replace, self->create_status);
 
    s = PyString_FromString(buf.c_str());
 
@@ -2717,9 +2721,9 @@ static PyObject *PyIoPacket_repr(PyIoPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "IoPacket(func=%d, count=%d, flags=%d, mode=%d, "
-             "buf=\"%s\", fname=\"%s\", status=%d, io_errno=%d, lerror=%d, "
-             "whence=%d, offset=%d, win32=%d)",
+   Mmsg(buf, "IoPacket(func=%d, count=%ld, flags=%ld, mode=%ld, "
+             "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
+             "whence=%ld, offset=%lld, win32=%d)",
         self->func, self->count, self->flags, self->mode,
         PyGetByteArrayValue(self->buf), self->fname, self->status,
         self->io_errno, self->lerror,
