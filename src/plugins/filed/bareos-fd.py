@@ -117,7 +117,7 @@ def plugin_io(context, IOP):
     return bRCs['bRC_OK'];
 
 def start_restore_file(context, cmd):
-  DebugMessage(context, 100, "start_restore_file() entry point in Python called with" + str(cmd) + "\n")
+  DebugMessage(context, 100, "start_restore_file() entry point in Python called with " + str(cmd) + "\n")
 
   return bRCs['bRC_OK'];
 
@@ -127,14 +127,14 @@ def end_restore_file(context):
   return bRCs['bRC_OK'];
 
 def create_file(context, restorepkt):
-  DebugMessage(context, 100, "create_file() entry point in Python called with" + str(restorepkt) + "\n")
+  DebugMessage(context, 100, "create_file() entry point in Python called with " + str(restorepkt) + "\n")
 
   restorepkt.create_status = bCFs['CF_EXTRACT'];
 
   return bRCs['bRC_OK'];
 
 def check_file(context, fname):
-  DebugMessage(context, 100, "check_file() entry point in Python called with" + str(fname) + "\n")
+  DebugMessage(context, 100, "check_file() entry point in Python called with " + str(fname) + "\n")
 
   return bRCs['bRC_OK'];
 
