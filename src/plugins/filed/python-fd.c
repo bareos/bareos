@@ -2636,6 +2636,7 @@ static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
         self->olname, self->where, self->RegexWhere, self->replace, self->create_status);
 
    s = PyString_FromString(buf.c_str());
+   Py_DECREF(stat_repr);
 
    return s;
 }
