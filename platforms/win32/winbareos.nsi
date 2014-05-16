@@ -330,6 +330,12 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#$DbPassword#g$\r$\n"
 
+  # backupcatalog backup scripts
+  ${StrRep} '$0' "$APPDATA" '\' '/' # replace \ with / in APPDATA
+  FileWrite $R1 "s#C:/Program Files/Bareos/make_catalog_backup.pl MyCatalog#$0/${PRODUCT_NAME}/scripts/make_catalog_backup.bat#g$\r$\n"
+  FileWrite $R1 "s#C:/Program Files/Bareos/delete_catalog_backup#$0/${PRODUCT_NAME}/scripts/delete_catalog_backup.bat#g$\r$\n"
+
+
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-dir.conf"'
@@ -569,8 +575,8 @@ SectionIn 2
   #  write database create batch file
   #
   FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat" w
-  FileWrite $R1 'rem  call this batch file to create the bareos database in postgresql $\r$\n'
-  FileWrite $R1 'rem $\r$\n'
+  FileWrite $R1 'REM  call this batch file to create the bareos database in postgresql $\r$\n'
+  FileWrite $R1 'REM $\r$\n'
   FileWrite $R1 'REM $\r$\n'
   FileWrite $R1 'REM  create postgresql database $\r$\n'
   FileWrite $R1 "SET PATH=%PATH%;$\"$PostgresBinPath$\"$\r$\n"
@@ -585,6 +591,31 @@ SectionIn 2
   FileWrite $R1 "echo granting bareos database rights$\r$\n"
   FileWrite $R1 "psql.exe -U postgres -f postgresql-grant.sql $DbName$\r$\n"
   FileClose $R1
+
+  #
+  # write database dump file
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\make_catalog_backup.bat" w
+  FileWrite $R1 '@echo off$\r$\n'
+  FileWrite $R1 'REM  call this batch file to create a db dump$\r$\n'
+  FileWrite $R1 'REM  create postgresql database dump$\r$\n'
+  FileWrite $R1 'SET PGUSER=bareos$\r$\n'
+  FileWrite $R1 'SET PGPASSWORD=bareos$\r$\n'
+  FileWrite $R1 'SET PGDATABASE=bareos$\r$\n'
+  FileWrite $R1 "SET PATH=%PATH%;$\"$PostgresBinPath$\"$\r$\n"
+  FileWrite $R1 'echo dumping bareos database$\r$\n'
+  FileWrite $R1 "$\"$PostgresBinPath\pg_dump.exe$\" -f $\"$APPDATA\${PRODUCT_NAME}\working\bareos.sql$\" -c$\r$\n"
+  FileClose $R1
+
+  #
+  # write delete sql dump file
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\delete_catalog_backup.bat" w
+  FileWrite $R1 '@echo off $\r$\n'
+  FileWrite $R1 'REM this script deletes the db dump $\r$\n'
+  FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
+  FileClose $R1
+
 
 SectionEnd
 
@@ -1421,12 +1452,6 @@ ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
 
-  RMDir "$APPDATA\${PRODUCT_NAME}\logs"
-  RMDir "$APPDATA\${PRODUCT_NAME}\working"
-  RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
-
-  RMDir  "$APPDATA\${PRODUCT_NAME}"
-
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\bareos-tray-monitor.exe"
@@ -1445,6 +1470,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
+  Delete "$INSTDIR\libbareoscats.dll"
+  Delete "$INSTDIR\libbareoscats-postgresql.dll"
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory6.dll"
@@ -1462,7 +1489,27 @@ ConfDeleteSkip:
   Delete "$INSTDIR\openssl.exe"
   Delete "$INSTDIR\sed.exe"
 
+  Delete "$INSTDIR\bsmtp.exe"
   Delete "$INSTDIR\*template"
+
+# copied stuff from postgresql install
+  Delete "$INSTDIR\libpq.dll"
+  Delete "$INSTDIR\libintl*.dll"
+  Delete "$INSTDIR\ssleay32.dll"
+  Delete "$INSTDIR\libeay32.dll"
+
+# batch scripts and sql files
+  Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
+  Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
+# log
+  Delete "$APPDATA\${PRODUCT_NAME}\logs\*.log"
+
+  RMDir "$APPDATA\${PRODUCT_NAME}\logs"
+  RMDir "$APPDATA\${PRODUCT_NAME}\working"
+  RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
+  RMDir  "$APPDATA\${PRODUCT_NAME}"
+
+
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
