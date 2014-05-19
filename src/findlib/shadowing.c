@@ -76,7 +76,9 @@ static inline bool check_include_pattern_shadowing(JCR *jcr,
          /*
           * See if one pattern shadows the other.
           */
-         if (bstrncmp(pattern1, pattern2, MIN(len1, len2))) {
+         if (((len1 < len2 && pattern1[len1] == '\0' && IsPathSeparator(pattern2[len1])) ||
+              (len1 > len2 && IsPathSeparator(pattern1[len2]) && pattern1[len1] == '\0')) &&
+             bstrncmp(pattern1, pattern2, MIN(len1, len2))) {
             /*
              * If both directories have the same st_dev they shadow
              * each other e.g. are not on seperate filesystems.
