@@ -38,6 +38,34 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+struct ssl_method_authorized {
+  const char            *name;
+  const SSL_METHOD      *(*fn)(void);
+};
+
+static struct ssl_method_authorized
+list_ssl_method_authorized[] = {
+#ifndef OPENSSL_NO_SSL2
+#ifdef SSL_TXT_SSLV2
+  { .name = SSL_TXT_SSLV2,   .fn = SSLv2_method   },
+#endif
+#endif
+#ifdef SSL_TXT_SSLV3
+  { .name = SSL_TXT_SSLV3,   .fn = SSLv3_method   },
+#endif
+  { .name = "SSLv23",        .fn = SSLv23_method  },
+#ifdef SSL_TXT_TLSV1
+  { .name = SSL_TXT_TLSV1,   .fn = TLSv1_method   },
+#endif
+#ifdef SSL_TXT_TLSV1_1
+  { .name = SSL_TXT_TLSV1_1, .fn = TLSv1_1_method },
+#endif
+#ifdef SSL_TXT_TLSV1_2
+  { .name = SSL_TXT_TLSV1_2, .fn = TLSv1_2_method },
+#endif
+  { .name = "",              .fn = NULL           }
+};
+
 static void
 cbuf_reset(struct dpl_conf_buf *cbuf)
 {
@@ -335,18 +363,32 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_method"))
     {
-      if (!strcmp(value, "SSLv3"))
-        ctx->ssl_method = SSLv3_method();
-      else if (!strcmp(value, "TLSv1"))
-        ctx->ssl_method = TLSv1_method();
-      else if (!strcmp(value, "TLSv1.1"))
-        ctx->ssl_method = TLSv1_1_method();
-      else if (!strcmp(value, "TLSv1.2"))
-        ctx->ssl_method = TLSv1_2_method();
-      else if (!strcmp(value, "SSLv23"))
-        ctx->ssl_method = SSLv23_method();
+      char                              allow_ssl_methods[128] = "";
+      unsigned char                     i;
+      struct ssl_method_authorized      *ssl_method = NULL;
+
+      i = 0;
+      while (1) {
+        ssl_method = &list_ssl_method_authorized[i];
+        if (ssl_method->fn == NULL) {
+          ssl_method = NULL;
+          break;
+        }
+
+        if (*allow_ssl_methods != '\0')
+          strcat(allow_ssl_methods, ", ");
+        strcat(allow_ssl_methods, ssl_method->name);
+
+        if (!strcmp(ssl_method->name, value))
+          break;
+
+        i++;
+      }
+
+      if (ssl_method != NULL)
+        ctx->ssl_method = (*ssl_method->fn)();
       else {
-        DPL_LOG(ctx, DPL_ERROR, "ssl_method must be defined by a value among SSLv3, TLSv1, TLSv1.1, TLSv1.2 and SSLv23");
+        DPL_LOG(ctx, DPL_ERROR, "ssl_method must be defined by a value among %s", allow_ssl_methods);
         return -1;
       }
     }
