@@ -301,8 +301,19 @@ checkName:
          bash_spaces(dev_name);
          sd->fsend("mount %s drive=%d", dev_name, drive);
          unbash_spaces(dev_name);
-         while (bnet_recv(sd) >= 0) {
+
+         /*
+          * We use bget_dirmsg here and not bnet_recv because as part of
+          * the mount request the stored can request catalog information for
+          * any plugin who listens to the bsdEventLabelVerified event.
+          * As we don't want to loose any non protocol data e.g. errors
+          * without a 3xxx prefix we set the allow_any_message of
+          * bget_dirmsg to true and as such is behaves like a normal
+          * bnet_recv for any non protocol messages.
+          */
+         while (bget_dirmsg(sd, true) >= 0) {
             ua->send_msg("%s", sd->msg);
+
             /*
              * Here we can get
              *  3001 OK mount. Device=xxx      or
@@ -319,9 +330,11 @@ checkName:
          }
       }
    }
+
    if (print_reminder) {
       ua->info_msg(_("Do not forget to mount the drive!!!\n"));
    }
+
    close_sd_bsock(ua);
 
    return 1;
