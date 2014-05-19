@@ -482,7 +482,7 @@ conn_open(dpl_ctx_t *ctx,
 }
 
 dpl_conn_t *
-dpl_conn_open_host(dpl_ctx_t *ctx,
+dpl_conn_open_host(dpl_ctx_t *ctx, int af,
                    const char *host,
                    const char *portstr)
 {
@@ -494,28 +494,19 @@ dpl_conn_open_host(dpl_ctx_t *ctx,
   dpl_conn_t            *conn = NULL;
   char                  *nstr;
 
-  ret2 = dpl_gethostbyname3_r(host, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
+  ret2 = dpl_gethostbyname2_r(host, af, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
   if (0 != ret2) {
     DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s",
             host, hstrerror(herr));
     goto bad;
   }
 
-  if (!hresult) {
+  if (hresult == NULL) {
     DPL_TRACE(ctx, DPL_TRACE_ERR, "Invalid hostname");
     goto bad;
   }
 
   port = atoi(portstr);
-
-  if (hresult->h_addrtype != AF_INET &&
-      hresult->h_addrtype != AF_INET6) {
-    DPL_LOG(ctx, DPL_ERROR,
-            "Host \"%s\" has bad address family %d, expecting %d (AF_INET) or %d (AF_INET6)",
-            host, (int) hresult->h_addrtype, AF_INET, AF_INET6);
-    goto bad;
-  }
-
   conn = conn_open(ctx, hresult, port);
   if (NULL == conn) {
     DPL_TRACE(ctx, DPL_TRACE_ERR, "connect failed");
@@ -616,7 +607,7 @@ dpl_try_connect(dpl_ctx_t *ctx,
   } else
     hostp = addr->host;
 
-  conn = dpl_conn_open_host(ctx, hostp, addr->portstr);
+  conn = dpl_conn_open_host(ctx, addr->h->h_addrtype, hostp, addr->portstr);
   if (NULL == conn) {
     if (req->behavior_flags & DPL_BEHAVIOR_VIRTUAL_HOSTING) {
       ret = DPL_FAILURE;

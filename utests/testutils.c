@@ -102,10 +102,11 @@ make_sub_directory(const char *parent, const char *child)
 void
 rmtree(const char *path)
 {
-  char cmd[PATH_MAX];
+  int   ret;
+  char  cmd[PATH_MAX];
 
   snprintf(cmd, sizeof(cmd), "/bin/rm -rf '%s'", path);
-  system(cmd);
+  ret = system(cmd);
 }
 
 char *

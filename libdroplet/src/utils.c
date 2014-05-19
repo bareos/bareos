@@ -167,24 +167,26 @@ dpl_gethostbyname2_r(const char *name, int af,
 #endif
 }
 
-int
-dpl_gethostbyname3_r(const char *name,
-                     struct hostent *ret,
-                     char *buf,
-                     size_t buflen,
-                     struct hostent **result,
-                     int *h_errnop)
+/**
+ * Warning: new_host str size must be egal or greater than host str size
+ */
+
+void
+dpl_set_addr_family_from_host(const char *host, char *new_host, int *af)
 {
-  int   st;
+  size_t        host_len;
 
-  st = dpl_gethostbyname2_r(name, AF_INET, ret, buf, buflen, result, h_errnop);
-  if (st != 0)
-    return st;
+  host_len = strlen(host);
+  if (host_len >= 2 && host[0] == '[' && host[host_len - 1] == ']') {
+    strncpy(new_host, host + 1, host_len - 2);
+    new_host[host_len - 2] = '\0';
 
-  if (*result == NULL)
-    st = dpl_gethostbyname2_r(name, AF_INET6, ret, buf, buflen, result, h_errnop);
+    *af = AF_INET6;
+  } else {
+    strncpy(new_host, host, host_len);
 
-  return st;
+    *af = AF_INET;
+  }
 }
 
 /*
