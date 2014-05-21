@@ -3,9 +3,10 @@ lib_LTLIBRARIES = libdroplet.la
 AM_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(JSON_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
 AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
 AM_CFLAGS = -Wall \
-  -Wno-error=deprecated-declarations \
-  -Wno-error=unused-variable \
-  -Wno-error=unused-function \
+  # -Werror \
+  # -Wno-error=deprecated-declarations \
+  # -Wno-error=unused-variable \
+  # -Wno-error=unused-function \
   # -g -ggdb3 -O0
 
 libdroplet_la_SOURCES = \
