@@ -76,8 +76,7 @@
 bool fixup_device_block_write_error(DCR *dcr, int retries)
 {
    char PrevVolName[MAX_NAME_LENGTH];
-   DEV_BLOCK *label_blk;
-   DEV_BLOCK *block = dcr->block;
+   DEV_BLOCK *block;
    char b1[30], b2[30];
    time_t wait_time;
    char dt[MAX_TIME_LENGTH];
@@ -104,8 +103,9 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    bstrncpy(PrevVolName, dev->getVolCatName(), sizeof(PrevVolName));
    bstrncpy(dev->VolHdr.PrevVolumeName, PrevVolName, sizeof(dev->VolHdr.PrevVolumeName));
 
-   label_blk = new_block(dev);
-   dcr->block = label_blk;
+   /* Save the old block and create a new temporary label block */
+   block = dcr->block;
+   dcr->block = new_block(dev);
 
    /* Inform User about end of medium */
    Jmsg(jcr, M_INFO, 0, _("End of medium on Volume \"%s\" Bytes=%s Blocks=%s at %s.\n"),
@@ -116,7 +116,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    Dmsg1(050, "set_unload dev=%s\n", dev->print_name());
    dev->set_unload();
    if (!dcr->mount_next_write_volume()) {
-      free_block(label_blk);
+      free_block(dcr->block);
       dcr->block = block;
       dev->Lock();
       goto bail_out;
@@ -128,7 +128,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
 
    Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
-      dcr->VolumeName, dev->print_name(), bstrftime(dt, sizeof(dt), time(NULL)));
+        dcr->VolumeName, dev->print_name(), bstrftime(dt, sizeof(dt), time(NULL)));
 
    /*
     * If this is a new tape, the label_blk will contain the
@@ -140,12 +140,12 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    if (!dcr->write_block_to_dev()) {
       berrno be;
       Pmsg1(0, _("write_block_to_device Volume label failed. ERR=%s"),
-        be.bstrerror(dev->dev_errno));
-      free_block(label_blk);
+            be.bstrerror(dev->dev_errno));
+      free_block(dcr->block);
       dcr->block = block;
       goto bail_out;
    }
-   free_block(label_blk);
+   free_block(dcr->block);
    dcr->block = block;
 
    /*
@@ -179,8 +179,8 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
       /* Note: recursive call */
       if (retries-- <= 0 || !fixup_device_block_write_error(dcr, retries)) {
          Jmsg2(jcr, M_FATAL, 0,
-              _("Catastrophic error. Cannot write overflow block to device %s. ERR=%s"),
-              dev->print_name(), be.bstrerror(dev->dev_errno));
+               _("Catastrophic error. Cannot write overflow block to device %s. ERR=%s"),
+               dev->print_name(), be.bstrerror(dev->dev_errno));
          goto bail_out;
       }
    }
