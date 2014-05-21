@@ -427,9 +427,11 @@ static void do_extract(char *devname)
 
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    setup_decompression_buffers(jcr, &decompress_buf_size);
-   memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
-   jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
-   jcr->compress.inflate_buffer_size = decompress_buf_size;
+   if (decompress_buf_size > 0) {
+      memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
+      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+      jcr->compress.inflate_buffer_size = decompress_buf_size;
+   }
 
    acl_data.last_fname = get_pool_memory(PM_FNAME);
    xattr_data.last_fname = get_pool_memory(PM_FNAME);

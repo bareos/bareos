@@ -82,8 +82,10 @@ bool adjust_decompression_buffers(JCR *jcr)
 
    setup_decompression_buffers(jcr, &decompress_buf_size);
 
-   jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
-   jcr->compress.inflate_buffer_size = decompress_buf_size;
+   if (decompress_buf_size > 0) {
+      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+      jcr->compress.inflate_buffer_size = decompress_buf_size;
+   }
 
    return true;
 }
