@@ -384,6 +384,18 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->ssl_ca_list)
         return -1;
     }
+  else if (!strcmp(var, "ssl_comp"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->ssl_comp = 0;
+      else if (!strcasecmp(value, "false"))
+        ctx->ssl_comp = DPL_DEFAULT_SSL_COMP_NONE;
+      else
+        {
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
+          return -1;
+        }
+    }
   else if (!strcmp(var, "pricing"))
     {
       free(ctx->pricing);
@@ -592,6 +604,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->ssl_cipher_list = strdup(DPL_DEFAULT_SSL_CIPHER_LIST);
   if (NULL == ctx->ssl_cipher_list)
     return DPL_ENOMEM;
+  ctx->ssl_comp = DPL_DEFAULT_SSL_COMP_NONE;
 
   return DPL_SUCCESS;
 }
@@ -771,6 +784,11 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
       DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
       return DPL_FAILURE;
     }
+  }
+
+  if (DPL_DEFAULT_SSL_COMP_NONE == ctx->ssl_comp) {
+    SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_COMPRESSION);
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "Disabling SSL compression");
   }
 
   return DPL_SUCCESS;

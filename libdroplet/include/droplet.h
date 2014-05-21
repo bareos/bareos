@@ -67,6 +67,7 @@ extern "C" {
 #define DPL_DEFAULT_AWS_REGION          "us-east-1"
 #define DPL_DEFAULT_SSL_METHOD          SSLv23_method()
 #define DPL_DEFAULT_SSL_CIPHER_LIST     "ALL:-aNULL:!LOW:!MEDIUM:!RC2:!3DES:!MD5:!DSS:!SEED:!RC4:@STRENGTH"
+#define DPL_DEFAULT_SSL_COMP_NONE       1
 
 extern int dpl_header_size;
 
@@ -478,6 +479,7 @@ typedef struct dpl_ctx
   char *ssl_ca_list;
   const SSL_METHOD *ssl_method;  /*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
   char *ssl_cipher_list;
+  int ssl_comp;              /*!< SSL compression support (default set to false) */
   unsigned int trace_level;
   int trace_buffers;
   int trace_binary;          /*!< default is trace ascii */ 
