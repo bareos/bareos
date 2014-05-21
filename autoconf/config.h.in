@@ -132,6 +132,9 @@
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
 
+/* Define to 1 if you have compressBound */
+#undef HAVE_COMPRESS_BOUND
+
 /* Define to 1 if Bareos conio support enabled */
 #undef HAVE_CONIO
 
@@ -215,6 +218,9 @@
 
 /* Set if you have an Embedded MySQL Database */
 #undef HAVE_EMBEDDED_MYSQL
+
+/* Define to 1 if OpenSSL library has ENGINE_load_pk11 available */
+#undef HAVE_ENGINE_LOAD_PK11
 
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
@@ -531,6 +537,9 @@
 
 /* Define to 1 if you have the <nl_types.h> header file. */
 #undef HAVE_NL_TYPES_H
+
+/* Define to 1 to when walkcontext does not work */
+#undef HAVE_NON_WORKING_WALKCONTEXT
 
 /* Define to 1 if you have the `nvlist_next_nvpair' function. */
 #undef HAVE_NVLIST_NEXT_NVPAIR

@@ -23168,6 +23168,32 @@ rm -f core conftest.err conftest.$ac_objext \
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+	   include <openssl/engine.h>
+
+int
+main ()
+{
+
+	   ENGINE_load_pk11();
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+
+$as_echo "#define HAVE_ENGINE_LOAD_PK11 1" >>confdefs.h
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
 	  #include <openssl/evp.h>
 
 int
@@ -29543,6 +29569,43 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for compressBound in zlib library" >&5
+$as_echo_n "checking for compressBound in zlib library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <zlib.h>
+
+int
+main ()
+{
+
+       compressBound(0);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_COMPRESS_BOUND 1" >>confdefs.h
+
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for deflate in zlib library" >&5
+$as_echo_n "checking for deflate in zlib library... " >&6; }
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
@@ -31136,10 +31199,21 @@ $as_echo "#define HAVE_OLD_SOCKOPT 1" >>confdefs.h
 
 $as_echo "#define USE_THR_SETCONCURRENCY 1" >>confdefs.h
 
+
+$as_echo "#define HAVE_NON_WORKING_WALKCONTEXT 1" >>confdefs.h
+
       ;;
    5.7|5.8)
 
 $as_echo "#define USE_THR_SETCONCURRENCY 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_NON_WORKING_WALKCONTEXT 1" >>confdefs.h
+
+      ;;
+   5.9)
+
+$as_echo "#define HAVE_NON_WORKING_WALKCONTEXT 1" >>confdefs.h
 
       ;;
    *)
