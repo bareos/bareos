@@ -498,7 +498,12 @@ typedef struct dpl_ctx
   char *ssl_key_file;
   char *ssl_password;
   char *ssl_ca_list;
-  const SSL_METHOD *ssl_method;  /*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
+/*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const SSL_METHOD *ssl_method;
+#else
+  SSL_METHOD *ssl_method;
+#endif
   char *ssl_cipher_list;
   unsigned int trace_level;
   int trace_buffers;

@@ -40,7 +40,11 @@
 
 struct ssl_method_authorized {
   const char            *name;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const SSL_METHOD      *(*fn)(void);
+#else
+  SSL_METHOD            *(*fn)(void);
+#endif
 };
 
 static struct ssl_method_authorized
