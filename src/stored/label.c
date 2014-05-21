@@ -424,11 +424,6 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       dcr->rec->Stream = 0;
       dcr->rec->maskedStream = 0;
 
-      /*
-       * Set the label blocksize to read the label
-       */
-      dev->set_label_blocksize(dcr);
-
       if (!write_record_to_block(dcr, dcr->rec)) {
          Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
          goto bail_out;

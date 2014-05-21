@@ -437,13 +437,11 @@ void DEVICE::set_blocksizes(DCR *dcr) {
 void DEVICE::set_label_blocksize(DCR *dcr)
 {
    DEVICE *dev = this;
-
    Dmsg3(100, "setting minblocksize to %u, "
               "maxblocksize to label_block_size=%u, on device %s\n",
-         0, dev->device->label_block_size, dev->print_name());
+         dev->device->label_block_size, dev->device->label_block_size, dev->print_name());
 
-   dev->min_block_size = 0;
-
+   dev->min_block_size = dev->device->label_block_size;
    dev->max_block_size = dev->device->label_block_size;
    /*
     * If blocklen is not dev->max_block_size create a new block with the right size
