@@ -623,7 +623,7 @@ retry_changercmd:
        */
       while (fgets(dir->msg, len, bpipe->rfd)) {
          dir->msglen = strlen(dir->msg);
-         Dmsg1(100, "<stored: %s\n", dir->msg);
+         Dmsg1(100, "<stored: %s", dir->msg);
          bnet_send(dir);
       }
    } else if (bstrcmp(cmd, "slots")) {
