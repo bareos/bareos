@@ -847,8 +847,9 @@ bool setup_compression_buffers(JCR *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JCR *jcr)
+bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
 {
+   *decompress_buf_size = 0;
    return true;
 }
 
