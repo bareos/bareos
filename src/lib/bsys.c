@@ -1051,6 +1051,7 @@ void stack_trace()
  * Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
  */
 #elif defined(HAVE_SUN_OS) && \
+     !defined(HAVE_NON_WORKING_WALKCONTEXT) && \
       defined(HAVE_UCONTEXT_H) && \
       defined(HAVE_DEMANGLE_H) && \
       defined(HAVE_CPLUS_DEMANGLE) && \
