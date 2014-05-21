@@ -755,6 +755,17 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
   }
 
+  if (ctx->ssl_key_file != NULL && ctx->ssl_cert_file != NULL) {
+    if (!SSL_CTX_check_private_key(ctx->ssl_ctx)) {
+      unsigned long ssl_err = ERR_get_error();
+      char buf[256];
+      ERR_error_string_n(ssl_err, buf, sizeof buf);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "Private key does not match the certificate public key: %s", buf);
+      DPL_SSL_PERROR(ctx, "SSL_CTX_check_private_key");
+      return DPL_FAILURE;
+    }
+  }
+
   if (NULL != ctx->ssl_ca_list) {
     if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
       DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
