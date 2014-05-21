@@ -53,12 +53,14 @@ AS_IF(
       )]
     )],
 
-  [test "x$json_c_include_dir" != "x" -a "x$json_c_lib"  = "x" -o \
-        "x$json_c_include_dir"  = "x" -a "x$json_c_lib" != "x"],
-    [AC_MSG_ERROR([Cannot not use just one option --with-json-c-include-dir or --with-json-c-lib])],
+  AS_IF(
+    [test "x$json_c_include_dir" != "x" -a "x$json_c_lib"  = "x" -o \
+          "x$json_c_include_dir"  = "x" -a "x$json_c_lib" != "x"],
+      [AC_MSG_ERROR([Cannot not use just one option --with-json-c-include-dir or --with-json-c-lib])],
 
-  [AC_SUBST([JSON_CFLAGS],[-I"$json_c_include_dir"])
-   AC_SUBST([JSON_LIBS],[$json_c_lib])]
+    [AC_SUBST([JSON_CFLAGS],[-I"$json_c_include_dir"])
+     AC_SUBST([JSON_LIBS],[$json_c_lib])]
+  )
 )
 
 AC_MSG_NOTICE("Using JSON cflags: $JSON_CFLAGS")
