@@ -59,8 +59,8 @@ AS_IF(
    AC_SUBST([JSON_LIBS],[$json_c_lib])]
 )
 
-AS_ECHO("Using JSON cflags: $JSON_CFLAGS")
-AS_ECHO("Using JSON libs: $JSON_LIBS")
+AC_MSG_NOTICE("Using JSON cflags: $JSON_CFLAGS")
+AC_MSG_NOTICE("Using JSON libs: $JSON_LIBS")
 
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD
