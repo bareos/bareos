@@ -1044,6 +1044,16 @@ if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
 
       AC_TRY_LINK(
          [
+	     #include <openssl/engine.h>
+         ], [
+	      ENGINE_load_pk11();
+         ], [
+	      AC_DEFINE(HAVE_ENGINE_LOAD_PK11, 1, [Define to 1 if OpenSSL library has ENGINE_load_pk11 available])
+         ]
+      )
+
+      AC_TRY_LINK(
+         [
 	     #include <openssl/ssl.h>
          ], [
 	      CRYPTO_set_id_callback(NULL);
@@ -2664,6 +2674,20 @@ CPPFLAGS="${saved_CPPFLAGS} ${ZLIB_INC}"
 
 AC_CHECK_HEADERS(zlib.h)
 
+AC_MSG_CHECKING(for compressBound in zlib library)
+AC_TRY_LINK(
+   [
+       #include <zlib.h>
+   ], [
+       compressBound(0);
+   ], [
+       AC_MSG_RESULT(yes)
+       AC_DEFINE(HAVE_COMPRESS_BOUND, 1, [Define to 1 if you have compressBound])
+   ], [
+       AC_MSG_RESULT(no)
+   ]
+)
+
 AC_MSG_CHECKING(for deflate in zlib library)
 AC_TRY_LINK(
    [
@@ -3631,9 +3655,14 @@ solaris)
    5.5|5.6)
       AC_DEFINE(HAVE_OLD_SOCKOPT, 1, [Define to 1 to use the old sockopt option])
       AC_DEFINE(USE_THR_SETCONCURRENCY, 1, [Define to 1 to use the thr_setconcurrency function])
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
       ;;
    5.7|5.8)
       AC_DEFINE(USE_THR_SETCONCURRENCY, 1, [Define to 1 to use the thr_setconcurrency function])
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
+      ;;
+   5.9)
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
       ;;
    *)
       ;;

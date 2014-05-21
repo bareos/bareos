@@ -47,6 +47,11 @@
 #endif
 
 #ifdef HAVE_LIBZ
+
+#ifndef HAVE_COMPRESS_BOUND
+#define compressBound(sourceLen) (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
+#endif
+
 /*
  * Convert ZLIB error code into an ASCII message
  */
