@@ -2056,7 +2056,7 @@ static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
    char *acl_text;
 
    n = acl(acl_data->last_fname, GETACLCNT, 0, NULL);
-   if (n < MIN_ACL_ENTRIES)
+   if (n < MIN_ACL_ENTRIES) {
       return bacl_exit_error;
    }
 
