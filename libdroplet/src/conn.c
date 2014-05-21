@@ -188,7 +188,28 @@ static void
 dpl_conn_free(dpl_conn_t *conn)
 {
   if (NULL != conn->ssl) {
-    SSL_shutdown(conn->ssl);
+    int ssl_ret;
+    char buf[256];
+    unsigned long ssl_err;
+    SSL_set_shutdown(conn->ssl, SSL_SENT_SHUTDOWN|SSL_RECEIVED_SHUTDOWN);
+    ssl_ret = SSL_shutdown(conn->ssl);
+    if (1 == ssl_ret) {
+      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was successfully completed");
+    } else if (0 == ssl_ret) {
+      ssl_err = SSL_get_error(conn->ssl, ssl_ret);
+      ERR_error_string_n(ssl_err, buf, sizeof buf);
+      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown is not yet finished, calling for a second time: %s", buf);
+      ssl_ret = SSL_shutdown(conn->ssl);
+      if (1 == ssl_ret) {
+        DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was successfully completed");
+      } else {
+        DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "SSL shutdown was not successfully completed");
+      }
+    } else if (0 > ssl_ret) {
+      ssl_err = SSL_get_error(conn->ssl, ssl_ret);
+      ERR_error_string_n(ssl_err, buf, sizeof buf);
+      DPL_TRACE(conn->ctx, DPL_TRACE_WARN, "SSL shutdown was not successful because a fatal error occurred: %s", buf);
+    }
     SSL_free(conn->ssl);
   }
 
