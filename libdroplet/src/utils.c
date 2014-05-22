@@ -902,14 +902,7 @@ dpl_bcd_encode(unsigned char *in_buf,
 dpl_status_t
 dpl_rand(char *buf, int len)
 {
-  int ret;
-
-  ret = RAND_bytes((u_char *) buf, len);
-  /* if (0 == ret)
-    {
-      return DPL_FAILURE;
-    }
-  */
+  int ret = RAND_bytes((u_char *) buf, len);
   if (0 == ret) {
     RAND_poll();
     ret = RAND_bytes((u_char *) buf, len);
