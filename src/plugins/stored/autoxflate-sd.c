@@ -452,9 +452,9 @@ static bool setup_auto_inflation(DCR *dcr)
             jcr->compress.inflate_buffer = realloc_pool_memory(jcr->compress.inflate_buffer, decompress_buf_size);
             jcr->compress.inflate_buffer_size = decompress_buf_size;
          }
-      } else {
-         return false;
       }
+   } else {
+      return false;
    }
 
    return true;
