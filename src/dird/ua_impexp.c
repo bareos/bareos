@@ -1018,7 +1018,7 @@ static int perform_move_operation(UAContext *ua, enum e_move_op operation)
    int i, max_slots;
    int retval = 0;
 
-   store.store = get_storage_resource(ua, false/*no default*/);
+   store.store = get_storage_resource(ua, false, true);
    if (!store.store) {
       return retval;
    }

@@ -353,7 +353,7 @@ static int add_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Get media type */
-   if ((store = get_storage_resource(ua, false /* no default */)) != NULL) {
+   if ((store = get_storage_resource(ua)) != NULL) {
       bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
    } else if (!get_media_type(ua, mr.MediaType, sizeof(mr.MediaType))) {
       return 1;
@@ -486,7 +486,7 @@ static inline int cancel_storage_daemon_job(UAContext *ua, const char *cmd)
    int i;
    STORERES *store;
 
-   store = get_storage_resource(ua, false /* no default */);
+   store = get_storage_resource(ua);
    if (store) {
       /*
        * See what JobId to cancel on the storage daemon.
@@ -892,7 +892,7 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 
       delete selection;
    } else if (find_arg(ua, NT_("storage")) >= 0) {
-      store = get_storage_resource(ua, false /* no default */);
+      store = get_storage_resource(ua);
    } else {
       client = get_client_resource(ua);
    }
@@ -1253,7 +1253,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
                return 1;
             }
          }
-         store = get_storage_resource(ua, false /* no default */);
+         store = get_storage_resource(ua);
          if (store) {
             switch (store->Protocol) {
             case APT_NDMPV2:
@@ -1285,7 +1285,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       set_trace(trace_flag);
       break;
    case 1:
-      store = get_storage_resource(ua, false /* no default */);
+      store = get_storage_resource(ua);
       if (store) {
          switch (store->Protocol) {
          case APT_NDMPV2:
@@ -1940,7 +1940,7 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
    }
    Dmsg2(120, "%s: %s\n", cmd, ua->UA_sock->msg);
 
-   store.store = get_storage_resource(ua, true /* arg is storage */);
+   store.store = get_storage_resource(ua, true, false);
    if (!store.store) {
       return;
    }

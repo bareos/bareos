@@ -720,7 +720,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
             store = (STORERES *)GetResWithName(R_STORAGE, ua->argv[i]);
          }
          if (!store) {
-            store = get_storage_resource(ua, false/*no default*/);
+            store = get_storage_resource(ua);
          }
       }
    }
@@ -739,7 +739,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
          dir=true;
          break;
       case 1:
-         store = get_storage_resource(ua, false/*no default*/);
+         store = get_storage_resource(ua);
          break;
       case 2:
          client = select_client_resource(ua);

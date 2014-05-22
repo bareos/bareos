@@ -721,7 +721,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    }
 
    /* Choose storage */
-   ua->jcr->res.wstore = store = get_storage_resource(ua, false);
+   ua->jcr->res.wstore = store = get_storage_resource(ua);
    if (!store) {
       goto bail_out;
    }

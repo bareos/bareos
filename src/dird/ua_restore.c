@@ -1602,7 +1602,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
    /*
     * Take command line arg, or ask user if none
     */
-   rx.store = get_storage_resource(ua, false /* don't use default */);
+   rx.store = get_storage_resource(ua);
    if (rx.store) {
       Dmsg1(200, "Set store=%s\n", rx.store->name());
    }

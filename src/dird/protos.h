@@ -286,7 +286,7 @@ JCR *new_control_jcr(const char *base_name, int job_type);
 void free_ua_context(UAContext *ua);
 
 /* ua_select.c */
-STORERES *select_storage_resource(UAContext *ua);
+STORERES *select_storage_resource(UAContext *ua, bool autochanger_only = false);
 JOBRES *select_job_resource(UAContext *ua);
 JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable);
 JOBRES *select_restore_job_resource(UAContext *ua);
@@ -302,7 +302,8 @@ void start_prompt(UAContext *ua, const char *msg);
 void add_prompt(UAContext *ua, const char *prompt);
 int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt, int max_prompt);
 CATRES *get_catalog_resource(UAContext *ua);
-STORERES *get_storage_resource(UAContext *ua, bool use_default);
+STORERES *get_storage_resource(UAContext *ua, bool use_default = false,
+                               bool autochanger_only = false);
 int get_storage_drive(UAContext *ua, STORERES *store);
 int get_storage_slot(UAContext *ua, STORERES *store);
 int get_media_type(UAContext *ua, char *MediaType, int max_media);

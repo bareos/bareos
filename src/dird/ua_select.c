@@ -143,16 +143,27 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
 /*
  * Select a Storage resource from prompt list
  */
-STORERES *select_storage_resource(UAContext *ua)
+STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
 {
    char name[MAX_NAME_LENGTH];
    STORERES *store;
 
-   start_prompt(ua, _("The defined Storage resources are:\n"));
+   if (autochanger_only) {
+      start_prompt(ua, _("The defined Autochanger Storage resources are:\n"));
+   } else {
+      start_prompt(ua, _("The defined Storage resources are:\n"));
+   }
+
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
-         add_prompt(ua, store->name());
+         if (autochanger_only) {
+            if (store->autochanger) {
+               add_prompt(ua, store->name());
+            }
+         } else {
+            add_prompt(ua, store->name());
+         }
       }
    }
    UnlockRes();
@@ -901,24 +912,28 @@ done:
 
 
 /*
- * We scan what the user has entered looking for
- *    storage=<storage-resource>
- *    job=<job_name>
- *    jobid=<jobid>
- *    ?              (prompt him with storage list)
- *    <some-error>   (prompt him with storage list)
+ * We scan what the user has entered looking for :
+ * - storage=<storage-resource>
+ * - job=<job_name>
+ * - jobid=<jobid>
+ * - ?              (prompt him with storage list)
+ * - <some-error>   (prompt him with storage list)
  *
  * If use_default is set, we assume that any keyword without a value
- *   is the name of the Storage resource wanted.
+ * is the name of the Storage resource wanted.
+ *
+ * If autochangers_only is given, we limit the output to autochangers only.
  */
-STORERES *get_storage_resource(UAContext *ua, bool use_default)
+STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochangers_only)
 {
+   int i;
+   JCR *jcr;
+   int jobid;
+   char ed1[50];
    char *store_name = NULL;
    STORERES *store = NULL;
-   int jobid;
-   JCR *jcr;
-   int i;
-   char ed1[50];
+
+   Dmsg1(100, "get_storage_resource: autochangers_only is %d\n", autochangers_only);
 
    for (i = 1; i < ua->argc; i++) {
       /*
@@ -929,14 +944,14 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
       }
       if (use_default && !ua->argv[i]) {
          /*
-          * Ignore barcode, barcodes, encrypt. scan and slots keywords.
+          * Ignore barcode, barcodes, encrypt, scan and slots keywords.
           */
          if (bstrcasecmp("barcode", ua->argk[i]) ||
              bstrcasecmp("barcodes", ua->argk[i]) ||
              bstrcasecmp("encrypt", ua->argk[i]) ||
              bstrcasecmp("scan", ua->argk[i]) ||
              bstrcasecmp("slots", ua->argk[i])) {
-            continue;
+               continue;
          }
          /*
           * Default argument is storage
@@ -1013,7 +1028,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
    }
    /* No keywords found, so present a selection list */
    if (!store) {
-      store = select_storage_resource(ua);
+      store = select_storage_resource(ua, autochangers_only);
    }
    return store;
 }
