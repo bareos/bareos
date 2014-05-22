@@ -113,7 +113,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          }
       }
    } else if (bstrcasecmp(ua->argk[1], "storage")) {
-      store = get_storage_resource(ua, false /*no default*/);
+      store = get_storage_resource(ua);
       if (store) {
          switch (store->Protocol) {
          case APT_NDMPV2:
@@ -151,6 +151,7 @@ int status_cmd(UAContext *ua, const char *cmd)
    STORERES *store;
    CLIENTRES *client;
    int item, i;
+   bool autochangers_only;
 
    Dmsg1(20, "status:%s:\n", cmd);
 
@@ -186,7 +187,12 @@ int status_cmd(UAContext *ua, const char *cmd)
             return 0;
          }
       } else {
-         store = get_storage_resource(ua, false/*no default*/);
+         /*
+          * limit storages to autochangers if slots is given
+          */
+         autochangers_only = (find_arg(ua, NT_("slots")) > 0);
+         store = get_storage_resource(ua, false, autochangers_only);
+
          if (store) {
             if (find_arg(ua, NT_("slots")) > 0) {
                switch (store->Protocol) {

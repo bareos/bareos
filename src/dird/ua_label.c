@@ -119,7 +119,7 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
       label_encrypt = true;
    }
 
-   store.store = get_storage_resource(ua, true/*use default*/);
+   store.store = get_storage_resource(ua, true, label_barcodes);
    if (!store.store) {
       return 1;
    }

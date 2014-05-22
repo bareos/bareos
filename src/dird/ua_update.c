@@ -1005,7 +1005,7 @@ static void update_slots(UAContext *ua)
    if (!open_client_db(ua)) {
       return;
    }
-   store.store = get_storage_resource(ua, true/*arg is storage*/);
+   store.store = get_storage_resource(ua, true, true);
    if (!store.store) {
       return;
    }
