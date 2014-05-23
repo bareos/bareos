@@ -268,3 +268,169 @@ dpl_sproxyd_get_metadata_from_headers(const dpl_dict_t *headers,
 
   return ret;
 }
+
+static dpl_status_t
+parse_delete_all_deleted(const dpl_ctx_t *ctx, xmlNode *elem, dpl_vec_t *objects)
+{
+  dpl_status_t          ret = DPL_SUCCESS;
+  dpl_delete_object_t   *object;
+
+  object = (dpl_delete_object_t *) malloc(sizeof(dpl_delete_object_t));
+  if (object == NULL)
+    return DPL_ENOMEM;
+
+  object->status     = DPL_SUCCESS;
+  object->name       = NULL;
+  object->version_id = NULL;
+  object->error      = NULL;
+
+  while (elem != NULL && ret == DPL_SUCCESS) {
+    if (elem->type == XML_ELEMENT_NODE) {
+      if (!strcmp((char *) elem->name, "Key")) {
+        object->name = strdup((char *) elem->children->content);
+        if (object->name == NULL)
+          ret = DPL_ENOMEM;
+      } else if (!strcmp((char *) elem->name, "VersionId")) {
+        object->version_id = strdup((char *) elem->children->content);
+        if (object->version_id == NULL)
+          ret = DPL_ENOMEM;
+      }
+    }
+    elem = elem->next;
+  }
+
+  if (ret == DPL_SUCCESS)
+    ret = dpl_vec_add(objects, object);
+
+  if (ret != DPL_SUCCESS)
+    dpl_delete_object_free(object);
+
+  return ret;
+}
+
+static dpl_status_t
+parse_delete_all_delete_error(const dpl_ctx_t *ctx, xmlNode *elem, dpl_vec_t *objects)
+{
+  dpl_status_t          ret = DPL_SUCCESS;
+  dpl_delete_object_t   *object;
+
+  object = (dpl_delete_object_t *) malloc(sizeof(dpl_delete_object_t));
+  if (object == NULL)
+    return DPL_ENOMEM;
+
+  object->status     = DPL_FAILURE;
+  object->name       = NULL;
+  object->version_id = NULL;
+  object->error      = NULL;
+
+  while (elem != NULL && ret == DPL_SUCCESS) {
+    if (elem->type == XML_ELEMENT_NODE) {
+      if (!strcmp((char *) elem->name, "Key")) {
+        object->name = strdup((char *) elem->children->content);
+        if (object->name == NULL)
+          ret = DPL_ENOMEM;
+      } else if (!strcmp((char *) elem->name, "VersionId")) {
+        object->version_id = strdup((char *) elem->children->content);
+        if (object->version_id == NULL)
+          ret = DPL_ENOMEM;
+      } else if (!strcmp((char *) elem->name, "Message")) {
+        object->error = strdup((char *) elem->children->content);
+        if (object->error == NULL)
+          ret = DPL_ENOMEM;
+      }
+    }
+    elem = elem->next;
+  }
+
+  if (ret == DPL_SUCCESS)
+    ret = dpl_vec_add(objects, object);
+
+  if (ret != DPL_SUCCESS)
+    dpl_delete_object_free(object);
+
+  return ret;
+}
+
+static dpl_status_t
+parse_delete_all_children(const dpl_ctx_t *ctx, xmlNode *elem, dpl_vec_t *objects)
+{
+  dpl_status_t  ret = DPL_SUCCESS;
+
+  while (elem != NULL) {
+    if (elem->type == XML_ELEMENT_NODE) {
+      if (!strcmp((char *) elem->name, "Deleted"))
+        ret = parse_delete_all_deleted(ctx, elem->children, objects);
+      else if (!strcmp((char *) elem->name, "Error"))
+        ret = parse_delete_all_delete_error(ctx, elem->children, objects);
+
+      if (ret != DPL_SUCCESS)
+        break;
+    }
+    elem = elem->next;
+  }
+
+  return ret;
+}
+
+static void
+parse_delete_all_error(const dpl_ctx_t *ctx, xmlNode *elem)
+{
+  char  *code = NULL, *message = NULL;
+
+  while (elem != NULL) {
+    if (elem->type == XML_ELEMENT_NODE) {
+      if (!strcmp((char *) elem->name, "Code"))
+        code = (char *) elem->children->content;
+      else if (!strcmp((char *) elem->name, "Message"))
+        message = (char *) elem->children->content;
+    }
+    elem = elem->next;
+  }
+
+  if (message == NULL)
+    return ;
+
+  if (code != NULL)
+    DPL_LOG((dpl_ctx_t *) ctx, DPL_ERROR, "Error: %s (%s)", message, code);
+  else
+    DPL_LOG((dpl_ctx_t *) ctx, DPL_ERROR, "Error: %s", message);
+}
+
+dpl_status_t
+dpl_sproxyd_parse_delete_all(const dpl_ctx_t *ctx,
+                             const char *buf, int len,
+                             dpl_vec_t *objects)
+{
+  int                   ret = DPL_SUCCESS;
+  xmlParserCtxtPtr      ctxt;
+  xmlDocPtr             doc;
+  xmlNode               *elem;
+
+  ctxt = xmlNewParserCtxt();
+  if (ctxt == NULL)
+    return DPL_FAILURE;
+
+  doc = xmlCtxtReadMemory(ctxt, buf, len, NULL, NULL, 0u);
+  if (doc == NULL) {
+    xmlFreeParserCtxt(ctxt);
+    return DPL_FAILURE;
+  }
+
+  elem = xmlDocGetRootElement(doc);
+  while (elem != NULL) {
+    if (elem->type == XML_ELEMENT_NODE) {
+      if (!strcmp((char *) elem->name, "DeleteResult")) {
+        ret = parse_delete_all_children(ctx, elem->children, objects);
+        if (ret != DPL_SUCCESS)
+          break;
+      } else if (!strcmp((char *) elem->name, "Error"))
+        parse_delete_all_error(ctx, elem->children);
+    }
+    elem = elem->next;
+  }
+
+  xmlFreeDoc(doc);
+  xmlFreeParserCtxt(ctxt);
+
+  return ret;
+}

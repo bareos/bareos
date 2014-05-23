@@ -69,6 +69,12 @@ libdroplet_la_SOURCES = \
 	src/backend/sproxyd/backend.c \
 	src/backend/sproxyd/replyparser.c \
 	src/backend/sproxyd/reqbuilder.c \
+	src/backend/sproxyd/backend/copy_id.c \
+	src/backend/sproxyd/backend/delete_all_id.c \
+	src/backend/sproxyd/backend/delete_id.c \
+	src/backend/sproxyd/backend/get_id.c \
+	src/backend/sproxyd/backend/head_id.c \
+	src/backend/sproxyd/backend/put_id.c \
 	src/backend/sproxyd/key.c \
 	src/backend/posix/backend.c \
 	src/backend/posix/reqbuilder.c \

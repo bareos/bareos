@@ -869,6 +869,52 @@ dpl_delete_all(dpl_ctx_t *ctx,
   return ret;
 }
 
+/**
+ * delete multiple id
+ * 
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param ressource path of ID (ex: /proxy/arc) for REST backend
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type
+ * @param condition the optional condition
+ *
+ * @return DPL_ENOTSUPP
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_delete_all_id(dpl_ctx_t *ctx,
+                  const char *bucket,
+                  const char *ressource,
+                  dpl_locators_t *locators,
+                  const dpl_option_t *option,
+                  const dpl_condition_t *condition,
+                  dpl_vec_t **objectsp)
+{
+  dpl_status_t  ret;
+
+  if (ctx->backend->delete_all_id == NULL) {
+    ret = DPL_ENOTSUPP;
+    goto end;
+  }
+  
+  ret = ctx->backend->delete_all_id(ctx, bucket, ressource, locators, option, condition, objectsp);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    dpl_log_request(ctx, "DATA", "DELETE", 0);
+  
+  return ret;
+}
+
 /** 
  * create or post data into a path
  *

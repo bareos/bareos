@@ -138,7 +138,8 @@ dpl_sproxyd_req_build(const dpl_req_t *req,
             }
         }
     }
-  else if (DPL_METHOD_PUT == req->method)
+  else if (DPL_METHOD_PUT == req->method ||
+           DPL_METHOD_POST == req->method)
     {
       if (req->data_enabled)
         {

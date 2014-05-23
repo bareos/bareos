@@ -516,14 +516,9 @@ dpl_conn_open_host(dpl_ctx_t *ctx, int af,
   char                  *nstr;
 
   ret2 = dpl_gethostbyname2_r(host, af, &hret, hbuf, sizeof (hbuf), &hresult, &herr);
-  if (0 != ret2) {
+  if (0 != ret2 || hresult == NULL) {
     DPL_LOG(ctx, DPL_ERROR, "Failed to lookup hostname \"%s\": %s",
             host, hstrerror(herr));
-    goto bad;
-  }
-
-  if (hresult == NULL) {
-    DPL_TRACE(ctx, DPL_TRACE_ERR, "Invalid hostname");
     goto bad;
   }
 
