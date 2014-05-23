@@ -114,7 +114,7 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-static int const dbglvl = 100;
+static int const dbglvl = 200;
 
 #ifdef __cplusplus
 extern "C" {
@@ -245,7 +245,6 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
-   Dmsg1(dbglvl, "scsicrypto-sd: handlePluginEvent event %d\n", event->eventType);
    switch (event->eventType) {
    case bsdEventLabelRead:
    case bsdEventLabelWrite:
