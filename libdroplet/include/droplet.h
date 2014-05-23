@@ -50,6 +50,11 @@ extern "C" {
 #include <openssl/md5.h>
 #include <pthread.h>
 
+/* NOTE: For fix build issue on Ubuntu 10.04 and Centos 5 */
+#ifndef SSL_OP_NO_COMPRESSION
+#define SSL_OP_NO_COMPRESSION 0
+#endif
+
 /*
  * default values
  */
