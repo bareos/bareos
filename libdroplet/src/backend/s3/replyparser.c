@@ -566,13 +566,18 @@ parse_delete_all_deleted(const dpl_ctx_t *ctx, xmlNode *elem, dpl_vec_t *objects
 
   while (elem != NULL && ret == DPL_SUCCESS) {
     if (elem->type == XML_ELEMENT_NODE) {
-      if (!strcmp((char *) elem->name, "Key")) {
-        object->name = strdup((char *) elem->children->content);
-        if (object->name == NULL)
-          ret = DPL_ENOMEM;
-      } else if (!strcmp((char *) elem->name, "VersionId")) {
-        object->version_id = strdup((char *) elem->children->content);
-        if (object->version_id == NULL)
+      char      **pstr;
+
+      if (!strcmp((char *) elem->name, "Key"))
+        pstr = &object->name;
+      else if (!strcmp((char *) elem->name, "VersionId"))
+        pstr = &object->version_id;
+      else
+        pstr = NULL;
+
+      if (pstr != NULL && elem->children != NULL) {
+        *pstr = strdup((char *) elem->children->content);
+        if (*pstr == NULL)
           ret = DPL_ENOMEM;
       }
     }
@@ -605,17 +610,20 @@ parse_delete_all_delete_error(const dpl_ctx_t *ctx, xmlNode *elem, dpl_vec_t *ob
 
   while (elem != NULL && ret == DPL_SUCCESS) {
     if (elem->type == XML_ELEMENT_NODE) {
-      if (!strcmp((char *) elem->name, "Key")) {
-        object->name = strdup((char *) elem->children->content);
-        if (object->name == NULL)
-          ret = DPL_ENOMEM;
-      } else if (!strcmp((char *) elem->name, "VersionId")) {
-        object->version_id = strdup((char *) elem->children->content);
-        if (object->version_id == NULL)
-          ret = DPL_ENOMEM;
-      } else if (!strcmp((char *) elem->name, "Message")) {
-        object->error = strdup((char *) elem->children->content);
-        if (object->error == NULL)
+      char      **pstr;
+
+      if (!strcmp((char *) elem->name, "Key"))
+        pstr = &object->name;
+      else if (!strcmp((char *) elem->name, "VersionId"))
+        pstr = &object->version_id;
+      else if (!strcmp((char *) elem->name, "Message"))
+        pstr = &object->error;
+      else
+        pstr = NULL;
+
+      if (pstr != NULL && elem->children != NULL) {
+        *pstr = strdup((char *) elem->children->content);
+        if (*pstr == NULL)
           ret = DPL_ENOMEM;
       }
     }
@@ -659,10 +667,13 @@ parse_delete_all_error(const dpl_ctx_t *ctx, xmlNode *elem)
 
   while (elem != NULL) {
     if (elem->type == XML_ELEMENT_NODE) {
-      if (!strcmp((char *) elem->name, "Code"))
-        code = (char *) elem->children->content;
-      else if (!strcmp((char *) elem->name, "Message"))
-        message = (char *) elem->children->content;
+      if (!strcmp((char *) elem->name, "Code")) {
+        if (elem->children != NULL)
+          code = (char *) elem->children->content;
+      } else if (!strcmp((char *) elem->name, "Message")) {
+        if (elem->children != NULL)
+          message = (char *) elem->children->content;
+      }
     }
     elem = elem->next;
   }

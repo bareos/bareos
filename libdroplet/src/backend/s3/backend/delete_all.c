@@ -112,10 +112,15 @@ delete_all(dpl_ctx_t *ctx, const char *bucket, dpl_locators_t *locators,
   if (ret != DPL_SUCCESS)
     return ret;
 
+  ret = dpl_req_set_subresource(dctx->req, "delete");
+  if (ret != DPL_SUCCESS)
+    return ret;
+
   dctx->query_params = dpl_dict_new(1);
   if (dctx->query_params == NULL)
     return ENOMEM;
 
+  /* Note: Juste for authentification signature calcul */
   ret = dpl_dict_add(dctx->query_params, "delete", "", 0);
   if (DPL_SUCCESS != ret)
     return ret;
@@ -147,7 +152,7 @@ delete_all(dpl_ctx_t *ctx, const char *bucket, dpl_locators_t *locators,
   if (ret != DPL_SUCCESS)
     return ret;
 
-  ret = dpl_req_gen_http_request(ctx, dctx->req, dctx->headers, dctx->query_params,
+  ret = dpl_req_gen_http_request(ctx, dctx->req, dctx->headers, NULL,
                                  header, sizeof(header), &header_len);
   if (ret != DPL_SUCCESS)
     return ret;
