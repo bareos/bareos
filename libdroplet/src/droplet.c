@@ -124,7 +124,16 @@ dpl_init()
   SSL_load_error_strings();
   ERR_load_crypto_strings();
 
-  RAND_seed(randbuf, strlen(randbuf));
+  /* RAND_seed(randbuf, strlen(randbuf)); */
+  int ret = RAND_status();
+  if (0 == ret) {
+    DPL_LOG(NULL, DPL_WARNING, "PRNG not properly seeded, seeding it...");
+    RAND_poll();
+    ret = RAND_status();
+    DPL_LOG(NULL, DPL_INFO, "PRNG state after seeding: %d", ret);
+  } else if (1 == ret) {
+    DPL_LOG(NULL, DPL_INFO, "PRNG has been seeded with enoough data");
+  }
 
   dpl_base64_init();
 
