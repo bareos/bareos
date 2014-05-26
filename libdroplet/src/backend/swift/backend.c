@@ -211,7 +211,7 @@ dpl_swift_set_directory(dpl_req_t *req,
 
   len = 6 + strlen(base) + (bucket ? strlen(bucket) : 0);
   rsrc = malloc(len);
-  if (rsrc)
+  if (rsrc == NULL)
     return DPL_ENOMEM;
   snprintf(rsrc, len, "/v1/%s/%s", base, bucket ?: "");
 
