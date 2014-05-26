@@ -74,7 +74,7 @@ dpl_swift_login(dpl_ctx_t *ctx)
   int           n_iov = 0;
   int           connection_close = 0;
 
-  dpl_swift_ctx_t *swift_ctx;
+  dpl_swift_ctx_t *swift_ctx = NULL;
   char *auth_token, *storage_url;
   
   req = dpl_req_new(ctx);
@@ -165,6 +165,7 @@ dpl_swift_login(dpl_ctx_t *ctx)
   swift_ctx->storage_url = strdup(storage_url);
 
   ctx->backend_ctx = swift_ctx;
+  swift_ctx = NULL;
 
   /*  */
   /* printf("X-auth-token: %s\n", swift_ctx->auth_token); */
@@ -191,6 +192,9 @@ dpl_swift_login(dpl_ctx_t *ctx)
 
   if (NULL != req)
     dpl_req_free(req);
+
+  if (swift_ctx != NULL)
+    free(swift_ctx);
 
   return ret;
 }
