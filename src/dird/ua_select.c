@@ -157,10 +157,8 @@ STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
-         if (autochanger_only) {
-            if (store->autochanger) {
-               add_prompt(ua, store->name());
-            }
+         if (autochanger_only && !store->autochanger) {
+            continue;
          } else {
             add_prompt(ua, store->name());
          }
@@ -951,7 +949,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochanger
              bstrcasecmp("encrypt", ua->argk[i]) ||
              bstrcasecmp("scan", ua->argk[i]) ||
              bstrcasecmp("slots", ua->argk[i])) {
-               continue;
+            continue;
          }
          /*
           * Default argument is storage
