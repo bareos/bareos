@@ -39,6 +39,7 @@ private:
    int m_serverport;
    glfs_t *m_glfs;
    glfs_fd_t *m_gfd;
+   POOLMEM *m_virtual_filename;
 
 public:
    gfapi_device();
