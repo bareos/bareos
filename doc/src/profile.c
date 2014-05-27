@@ -216,6 +216,23 @@ any security at all you should set `ssl_ca_list` to the correct
 value for your operating system.  The correct value on Ubuntu is
 `"/etc/ssl/certs/ca-certificates.crt"`.
 
+@par cert_verif = \<bool\>
+Whether to strictly validate the SSL certificate provided by the server.  
+Default is `true`.  You should *NOT* set this variable to `false`  
+except for testing purpose with self-signed SSL certificate on server
+you trust.
+
+@par ssl_method = \<string\>
+TODO
+
+@par ssl_cipher_list = \<string\>
+TODO
+
+@par ssl_comp = \<bool\>
+Whether to explicitly disable SSL compression in order to mitigate CRIME 
+attack.  Default is 'false'.  If set to 'true', you then rely on the 
+configuration of the underlaying SSL library.
+
 @par pricing = \<string\>
 Specifies the name of a pricing model.  The pricing model is read from a
 file named `<name>.pricing` in the droplet directory where `<name>` is
