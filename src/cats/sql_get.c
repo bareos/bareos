@@ -859,60 +859,70 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb)
 
 /**
  * This function returns a list of all the Media record ids for
- *     the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes
- *     VolumeName if specified
- *  The caller must free ids if non-NULL.
+ * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
+ * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
+ * over VolumeName. The caller must free ids if non-NULL.
  *
- *  Returns false: on failure
- *          true:  on success
+ * Returns false: on failure
+ *         true:  on success
  */
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, int *num_ids, uint32_t *ids[])
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t *ids[])
 {
    SQL_ROW row;
    int i = 0;
    uint32_t *id;
    char ed1[50];
    bool ok = false;
-   char buf[MAX_NAME_LENGTH*3]; /* Can contain MAX_NAME_LENGTH*2+1 + AND ....='' */
-   char esc[MAX_NAME_LENGTH*2+1];
+   char esc[MAX_NAME_LENGTH * 2 + 1];
+   bool have_volumes = false;
+   POOL_MEM buf(PM_MESSAGE);
 
    db_lock(mdb);
    *ids = NULL;
+
+   if (*volumes.c_str()) {
+      have_volumes = true;
+   }
 
    Mmsg(mdb->cmd, "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
         mr->Recycle, mr->Enabled);
 
    if (*mr->MediaType) {
       db_escape_string(jcr, mdb, esc, mr->MediaType, strlen(mr->MediaType));
-      bsnprintf(buf, sizeof(buf), "AND MediaType='%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND MediaType='%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->StorageId) {
-      bsnprintf(buf, sizeof(buf), "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->PoolId) {
-      bsnprintf(buf, sizeof(buf), "AND PoolId=%s ", edit_uint64(mr->PoolId, ed1));
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND PoolId=%s ", edit_uint64(mr->PoolId, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->VolBytes) {
-      bsnprintf(buf, sizeof(buf), "AND VolBytes > %s ", edit_uint64(mr->VolBytes, ed1));
-      pm_strcat(mdb->cmd, buf);
-   }
-
-   if (*mr->VolumeName) {
-      db_escape_string(jcr, mdb, esc, mr->VolumeName, strlen(mr->VolumeName));
-      bsnprintf(buf, sizeof(buf), "AND VolumeName = '%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND VolBytes > %s ", edit_uint64(mr->VolBytes, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (*mr->VolStatus) {
       db_escape_string(jcr, mdb, esc, mr->VolStatus, strlen(mr->VolStatus));
-      bsnprintf(buf, sizeof(buf), "AND VolStatus = '%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND VolStatus = '%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
+   }
+
+   if (*mr->VolumeName && !have_volumes) {
+      db_escape_string(jcr, mdb, esc, mr->VolumeName, strlen(mr->VolumeName));
+      Mmsg(buf, "AND VolumeName = '%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
+   }
+
+   if (have_volumes) {
+      Mmsg(buf, "AND VolumeName IN (%s) ", volumes.c_str());
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    Dmsg1(100, "q=%s\n", mdb->cmd);

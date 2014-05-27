@@ -91,7 +91,7 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb);
 int db_get_num_pool_records(JCR *jcr, B_DB *mdb);
 int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
 bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, int *num_ids, uint32_t **ids);
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t **ids);
 int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS **VolParams);
 bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr);
 bool db_get_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr);
