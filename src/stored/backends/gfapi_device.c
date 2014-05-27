@@ -302,7 +302,6 @@ static inline bool gfapi_makedir(glfs_t *glfs, const char *directory)
 int gfapi_device::d_open(const char *pathname, int flags, int mode)
 {
    int status;
-   POOL_MEM virtual_filename(PM_FNAME);
 
    /*
     * Parse the gluster URI.
@@ -365,12 +364,12 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
       /*
        * Make sure the dir exists if one is defined.
        */
-      Mmsg(virtual_filename, "/%s", m_basedir);
-      if (glfs_stat(m_glfs, virtual_filename.c_str(), &st) != 0) {
+      Mmsg(m_virtual_filename, "/%s", m_basedir);
+      if (glfs_stat(m_glfs, m_virtual_filename, &st) != 0) {
          switch (errno) {
          case ENOENT:
-            if (!gfapi_makedir(m_glfs, virtual_filename.c_str())) {
-               Mmsg1(errmsg, _("Specified glusterfs direcory %s cannot be created.\n"), virtual_filename.c_str());
+            if (!gfapi_makedir(m_glfs, m_virtual_filename)) {
+               Mmsg1(errmsg, _("Specified glusterfs direcory %s cannot be created.\n"), m_virtual_filename);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;
             }
@@ -380,24 +379,24 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          }
       } else {
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified glusterfs direcory %s is not a directory.\n"), virtual_filename.c_str());
+            Mmsg1(errmsg, _("Specified glusterfs direcory %s is not a directory.\n"), m_virtual_filename);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
       }
 
-      Mmsg(virtual_filename, "/%s/%s", m_basedir, getVolCatName());
+      Mmsg(m_virtual_filename, "/%s/%s", m_basedir, getVolCatName());
    } else {
-      Mmsg(virtual_filename, "%s", getVolCatName());
+      Mmsg(m_virtual_filename, "%s", getVolCatName());
    }
 
    /*
     * See if the O_CREAT flag is set as glfs_open doesn't support that flag and you have to call glfs_creat then.
     */
    if (flags & O_CREAT) {
-      m_gfd = glfs_creat(m_glfs, virtual_filename.c_str(), flags, mode);
+      m_gfd = glfs_creat(m_glfs, m_virtual_filename, flags, mode);
    } else {
-      m_gfd = glfs_open(m_glfs, virtual_filename.c_str(), flags);
+      m_gfd = glfs_open(m_glfs, m_virtual_filename, flags);
    }
 
    if (!m_gfd) {
@@ -504,19 +503,19 @@ bool gfapi_device::d_truncate(DCR *dcr)
 
       if (st.st_size != 0) {             /* glfs_truncate() didn't work */
          glfs_close(m_gfd);
-         glfs_unlink(m_glfs, getVolCatName());
+         glfs_unlink(m_glfs, m_virtual_filename);
 
          set_mode(CREATE_READ_WRITE);
 
          /*
           * Recreate the file -- of course, empty
           */
-         m_gfd = glfs_creat(m_glfs, getVolCatName(), oflags, st.st_mode);
+         m_gfd = glfs_creat(m_glfs, m_virtual_filename, oflags, st.st_mode);
          if (!m_gfd) {
             berrno be;
 
             dev_errno = errno;
-            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), getVolCatName(), be.bstrerror());
+            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), m_virtual_filename, be.bstrerror());
             Emsg0(M_FATAL, 0, errmsg);
 
             return false;
@@ -525,7 +524,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
          /*
           * Reset proper owner
           */
-         glfs_chown(m_glfs, getVolCatName(), st.st_uid, st.st_gid);
+         glfs_chown(m_glfs, m_virtual_filename, st.st_uid, st.st_gid);
       }
    }
 
@@ -548,6 +547,8 @@ gfapi_device::~gfapi_device()
       free(m_gfapi_volume);
       m_gfapi_volume = NULL;
    }
+
+   free_pool_memory(m_virtual_filename);
 }
 
 gfapi_device::gfapi_device()
@@ -561,5 +562,6 @@ gfapi_device::gfapi_device()
    m_serverport = 0;
    m_glfs = NULL;
    m_gfd = NULL;
+   m_virtual_filename = get_pool_memory(PM_FNAME);
 }
 #endif
