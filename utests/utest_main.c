@@ -51,6 +51,8 @@ be_valground(int argc, char **argv)
 
   execv(newargv[0], newargv);
 
+  free(newargv);
+
   perror(VALGRIND_BIN);
   exit(1);
 }
