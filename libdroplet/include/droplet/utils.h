@@ -228,7 +228,7 @@ int dpl_base64_init(void);
 pid_t dpl_gettid(void);
 int dpl_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 int dpl_gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
-int dpl_gethostbyname3_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
+void dpl_set_addr_family_from_host(const char *host, char *new_host, int *af);
 void dpl_dump_init(struct dpl_dump_ctx *ctx, int binary);
 void dpl_dump_line(struct dpl_dump_ctx *ctx, unsigned int off, unsigned char *b, unsigned int l);
 void dpl_dump(struct dpl_dump_ctx *ctx, char *buf, int len);

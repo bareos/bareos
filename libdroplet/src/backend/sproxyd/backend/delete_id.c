@@ -33,20 +33,20 @@
  */
 
 #include "dropletp.h"
-#include "droplet/s3/s3.h"
+#include "droplet/sproxyd/sproxyd.h"
 
 dpl_status_t
-dpl_s3_delete(dpl_ctx_t *ctx,
-              const char *bucket,
-              const char *resource,
-              UNUSED const char *subresource, /* always fixed to NULL by dpl_delete */
-              UNUSED const dpl_option_t *option,
-              UNUSED dpl_ftype_t object_type,
-              UNUSED const dpl_condition_t *condition, 
-              UNUSED char **locationp /* always fixed to NULL by dpl_delete */)
+dpl_sproxyd_delete_id(dpl_ctx_t *ctx,
+                      const char *bucket,
+                      const char *resource,
+                      const char *subresource,
+                      const dpl_option_t *option,
+                      dpl_ftype_t object_type,
+                      const dpl_condition_t *condition,
+                      char **locationp)
 {
   int           ret, ret2;
-  dpl_conn_t    *conn = NULL;
+  dpl_conn_t   *conn = NULL;
   char          header[dpl_header_size];
   u_int         header_len;
   struct iovec  iov[10];
@@ -55,7 +55,9 @@ dpl_s3_delete(dpl_ctx_t *ctx,
   dpl_dict_t    *headers_request = NULL;
   dpl_dict_t    *headers_reply = NULL;
   dpl_req_t     *req = NULL;
-  dpl_s3_req_mask_t req_mask = 0u;
+  dpl_sproxyd_req_mask_t req_mask = 0u;
+  dpl_dict_t    *query_params = NULL;
+  uint32_t      force_version = -1;
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
@@ -68,19 +70,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
 
   dpl_req_set_method(req, DPL_METHOD_DELETE);
 
-  if (NULL == bucket)
-    {
-      ret = DPL_EINVAL;
-      goto end;
-    }
-
-  ret2 = dpl_req_set_bucket(req, bucket);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
   ret2 = dpl_req_set_resource(req, resource);
   if (DPL_SUCCESS != ret2)
     {
@@ -88,12 +77,58 @@ dpl_s3_delete(dpl_ctx_t *ctx,
       goto end;
     }
 
-  ret2 = dpl_s3_req_build(req, req_mask, &headers_request);
+  if (NULL != subresource)
+    {
+      ret2 = dpl_req_set_subresource(req, subresource);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+    }
+
+  if (option)
+    {
+      if (option->mask & DPL_OPTION_CONSISTENT)
+        req_mask |= DPL_SPROXYD_REQ_CONSISTENT;
+
+      if (option->mask & DPL_OPTION_EXPECT_VERSION)
+        {
+          req_mask = DPL_SPROXYD_REQ_EXPECT_VERSION;
+
+          query_params = dpl_dict_new(13);
+          if (NULL == query_params)
+            {
+              ret = DPL_ENOMEM;
+              goto end;
+            }
+
+          ret2 = dpl_dict_add(query_params, "version", option->expect_version, 0);
+          if (DPL_SUCCESS != ret2)
+            {
+              ret = ret2;
+              goto end;
+            }
+        }
+
+      if (option->mask & DPL_OPTION_FORCE_VERSION)
+        {
+          req_mask = DPL_SPROXYD_REQ_FORCE_VERSION;
+
+          force_version = strtoul(option->force_version, NULL, 0);
+        }
+    }
+
+  //build request
+  ret2 = dpl_sproxyd_req_build(req, req_mask, force_version, &headers_request);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
       goto end;
     }
+
+  //contact default host
+  dpl_req_rm_behavior(req, DPL_BEHAVIOR_VIRTUAL_HOSTING);
 
   ret2 = dpl_try_connect(ctx, req, &conn);
   if (DPL_SUCCESS != ret2)
@@ -103,13 +138,6 @@ dpl_s3_delete(dpl_ctx_t *ctx,
     }
 
   ret2 = dpl_add_host_to_headers(req, headers_request);
-  if (DPL_SUCCESS != ret2)
-    {
-      ret = ret2;
-      goto end;
-    }
-
-  ret2 = dpl_s3_add_authorization_to_headers(req, headers_request, NULL, NULL);
   if (DPL_SUCCESS != ret2)
     {
       ret = ret2;
@@ -165,6 +193,9 @@ dpl_s3_delete(dpl_ctx_t *ctx,
 
   if (NULL != headers_request)
     dpl_dict_free(headers_request);
+
+  if (NULL != query_params)
+    dpl_dict_free(query_params);
 
   if (NULL != req)
     dpl_req_free(req);

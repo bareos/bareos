@@ -63,6 +63,7 @@
 #include <pwd.h>
 #include <fcntl.h>
 #include <sys/prctl.h>
+
 #include <droplet/json_adapter.h>
 #include <droplet/utils.h>
 #include <droplet/profile.h>
@@ -75,6 +76,7 @@
 #include <droplet/ntinydb.h>
 #include <droplet/task.h>
 
-#define UNUSED __attribute__((__unused__))
+#define UNUSED  __attribute__((__unused__))
+#define PRINTF(idx, chk) __attribute__((format (printf, idx, chk)))
 
 #endif

@@ -321,7 +321,8 @@ dpl_s3_req_build(const dpl_req_t *req,
           goto end;
         }
     }
-  else if (DPL_METHOD_PUT == req->method)
+  else if (DPL_METHOD_PUT == req->method ||
+           DPL_METHOD_POST == req->method)
     {
       char buf[64];
 

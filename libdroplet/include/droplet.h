@@ -111,35 +111,36 @@ typedef enum
 
 typedef enum
   {
-    DPL_TRACE_ERR   = (1u<<0),  /*!< trace errors */
-    DPL_TRACE_WARN  = (1u<<1),  /*!< trace warnings */
-    DPL_TRACE_CONN  = (1u<<2),  /*!< trace connections */
-    DPL_TRACE_IO    = (1u<<3),  /*!< trace I/O */
-    DPL_TRACE_HTTP  = (1u<<4),  /*!< trace HTTP */
-    DPL_TRACE_SSL   = (1u<<5),  /*!< trace SSL */
-    DPL_TRACE_REQ   = (1u<<6),  /*!< trace request builder */
-    DPL_TRACE_REST  = (1u<<7),  /*!< trace REST based calls */
-    DPL_TRACE_ID    = (1u<<8),  /*!< trace ID based calls */
-    DPL_TRACE_VFS   = (1u<<9),  /*!< trace VFS based calls */
-    DPL_TRACE_BACKEND = (1u<<10),  /*!< trace backend calls */
-    DPL_TRACE_ID_SCHEME = (1u<<11), /*!< trace ID scheme calls */
+    DPL_TRACE_ERR       = (1u <<  0), /*!< trace errors */
+    DPL_TRACE_WARN      = (1u <<  1), /*!< trace warnings */
+    DPL_TRACE_CONN      = (1u <<  2), /*!< trace connections */
+    DPL_TRACE_IO        = (1u <<  3), /*!< trace I/O */
+    DPL_TRACE_HTTP      = (1u <<  4), /*!< trace HTTP */
+    DPL_TRACE_SSL       = (1u <<  5), /*!< trace SSL */
+    DPL_TRACE_REQ       = (1u <<  6), /*!< trace request builder */
+    DPL_TRACE_REST      = (1u <<  7), /*!< trace REST based calls */
+    DPL_TRACE_ID        = (1u <<  8), /*!< trace ID based calls */
+    DPL_TRACE_VFS       = (1u <<  9), /*!< trace VFS based calls */
+    DPL_TRACE_BACKEND   = (1u << 10), /*!< trace backend calls */
+    DPL_TRACE_ID_SCHEME = (1u << 11), /*!< trace ID scheme calls */
   } dpl_trace_t;
 
 typedef void (*dpl_trace_func_t)(pid_t tid, dpl_trace_t, const char *file, const char *func, int lineno, char *buf);
 
 typedef enum
   {
-    DPL_CAP_BUCKETS         = (1ULL<<0), /*!< ability to manipulate buckets */
-    DPL_CAP_FNAMES          = (1ULL<<1), /*!< ability to manipulate files by name */
-    DPL_CAP_IDS             = (1ULL<<2), /*!< ability to manipulate files by ID */
-    DPL_CAP_LAZY            = (1ULL<<3), /*!< support lazy option */
-    DPL_CAP_HTTP_COMPAT     = (1ULL<<4), /*!< support HTTP compat option */
-    DPL_CAP_RAW             = (1ULL<<5), /*!< support raw operations */
-    DPL_CAP_APPEND_METADATA = (1ULL<<6), /*!< support append_metadata option */
-    DPL_CAP_CONSISTENCY     = (1ULL<<7), /*!< support consistency options */
-    DPL_CAP_VERSIONING      = (1ULL<<8), /*!< support versioning options */
-    DPL_CAP_CONDITIONS      = (1ULL<<9), /*!< support conditions */
-    DPL_CAP_PUT_RANGE       = (1ULL<<10), /*!< support PUT range */
+    DPL_CAP_BUCKETS         = (1ULL <<  0), /*!< ability to manipulate buckets */
+    DPL_CAP_FNAMES          = (1ULL <<  1), /*!< ability to manipulate files by name */
+    DPL_CAP_IDS             = (1ULL <<  2), /*!< ability to manipulate files by ID */
+    DPL_CAP_LAZY            = (1ULL <<  3), /*!< support lazy option */
+    DPL_CAP_HTTP_COMPAT     = (1ULL <<  4), /*!< support HTTP compat option */
+    DPL_CAP_RAW             = (1ULL <<  5), /*!< support raw operations */
+    DPL_CAP_APPEND_METADATA = (1ULL <<  6), /*!< support append_metadata option */
+    DPL_CAP_CONSISTENCY     = (1ULL <<  7), /*!< support consistency options */
+    DPL_CAP_VERSIONING      = (1ULL <<  8), /*!< support versioning options */
+    DPL_CAP_CONDITIONS      = (1ULL <<  9), /*!< support conditions */
+    DPL_CAP_PUT_RANGE       = (1ULL << 10), /*!< support PUT range */
+    DPL_CAP_BATCH_DELETE    = (1ULL << 11), /*!< support batch DELETE */
   } dpl_capability_t;
 
 #include <droplet/value.h>
@@ -327,6 +328,19 @@ typedef enum
     DPL_SYSMD_MASK_VERSION       = (1u<<17),
   } dpl_sysmd_mask_t;
 
+typedef struct
+{
+  char          *name;
+  char          *version_id;
+  dpl_ftype_t   type;
+} dpl_locator_t;
+
+typedef struct
+{
+  dpl_locator_t *tab;
+  unsigned int  size;
+} dpl_locators_t;
+
 #define DPL_ETAG_SIZE 64
 typedef struct
 {
@@ -441,6 +455,14 @@ typedef struct
   char *prefix;
 } dpl_common_prefix_t;
 
+typedef struct
+{
+  char          *name;
+  char          *version_id;
+  dpl_status_t  status;
+  char          *error;
+} dpl_delete_object_t;
+
 typedef struct 
 {
   uint32_t time_low;
@@ -480,7 +502,12 @@ typedef struct dpl_ctx
   char *ssl_password;         /*!< password for the SSL private key*/
   char *ssl_ca_list;          /*!< SSL certificate authority list*/
   int cert_verif;             /* !< SSL certificate verification (default to true) */
-  const SSL_METHOD *ssl_method;  /*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
+/*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const SSL_METHOD *ssl_method;
+#else
+  SSL_METHOD *ssl_method;
+#endif
   char *ssl_cipher_list;
   int ssl_comp;               /*!< SSL compression support (default to false) */
   /* log */
@@ -658,6 +685,8 @@ void dpl_object_free(dpl_object_t *object);
 void dpl_vec_objects_free(dpl_vec_t *vec);
 void dpl_common_prefix_free(dpl_common_prefix_t *common_prefix);
 void dpl_vec_common_prefixes_free(dpl_vec_t *vec);
+void dpl_delete_object_free(dpl_delete_object_t *object);
+void dpl_vec_delete_objects_free(dpl_vec_t *vec);
 dpl_option_t *dpl_option_dup(const dpl_option_t *src);
 void dpl_option_free(dpl_option_t *option);
 dpl_condition_t *dpl_condition_dup(const dpl_condition_t *src);

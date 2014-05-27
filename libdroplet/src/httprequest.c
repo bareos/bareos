@@ -265,67 +265,43 @@ dpl_req_gen_http_request(dpl_ctx_t *ctx,
   p = buf;
 
   //resource
-  if (NULL != req->resource)
-    {
-      resource_ue = malloc(DPL_URL_LENGTH(strlen(req->resource)) + 1);
-      if (NULL == resource_ue)
-        {
-          ret = DPL_ENOMEM;
-          goto end;
-        }
-
-      if (ctx->url_encoding)
-        {
-          if (ctx->encode_slashes)
-            {
-              if ('/' != req->resource[0])
-                {
-                  resource_ue[0] = '/';
-                  dpl_url_encode(req->resource, resource_ue + 1);
-                }
-              else
-                {
-                  resource_ue[0] = '/'; //some servers do not like encoded slash
-                  dpl_url_encode(req->resource + 1, resource_ue + 1);
-                }
-            }
-          else
-            {
-              if ('/' != req->resource[0])
-                {
-                  resource_ue[0] = '/';
-                  dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
-                }
-              else
-                {
-                  dpl_url_encode_no_slashes(req->resource, resource_ue);
-                }
-            }
-        }
-      else
-        {
-          //no processing
-          if ('/' != req->resource[0])
-            {
-              resource_ue[0] = '/';
-              strcpy(resource_ue + 1, req->resource);
-            }
-          else
-            {
-              strcpy(resource_ue, req->resource);
-            }
-        }
+  if (NULL != req->resource) {
+    resource_ue = malloc(DPL_URL_LENGTH(strlen(req->resource)) + 3);
+    if (resource_ue == NULL) {
+      ret = DPL_ENOMEM;
+      goto end;
     }
+
+    if (ctx->url_encoding) {
+      if (ctx->encode_slashes) {
+        resource_ue[0] = '/';
+        if (*req->resource != '/')
+          dpl_url_encode(req->resource, resource_ue + 1);
+        else
+          dpl_url_encode(req->resource + 1, resource_ue + 1);
+      } else {
+        if (*req->resource != '/') {
+          resource_ue[0] = '/';
+          dpl_url_encode_no_slashes(req->resource, resource_ue + 1);
+        } else
+          dpl_url_encode_no_slashes(req->resource, resource_ue);
+      }
+    } else {
+      if (*req->resource != '/') {
+        resource_ue[0] = '/';
+        strcpy(resource_ue + 1, req->resource);
+      } else
+        strcpy(resource_ue, req->resource);
+    }
+  }
       
   //method
   DPL_APPEND_STR(method);
 
   DPL_APPEND_STR(" ");
 
-  if (NULL != req->resource)
-    {
-      DPL_APPEND_STR(resource_ue);
-    }
+  if (resource_ue != NULL)
+    DPL_APPEND_STR(resource_ue);
 
   //subresource and query params
   if (NULL != req->subresource || NULL != query_params)

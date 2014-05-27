@@ -46,6 +46,7 @@ dpl_sbuf_t *dpl_sbuf_new(size_t size);
 dpl_sbuf_t *dpl_sbuf_new_from_str(const char *str);
 dpl_status_t dpl_sbuf_add(dpl_sbuf_t *sb, const char *buf, size_t len);
 dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t *sb, const char *str);
+dpl_status_t __attribute__((format (printf, 2, 3))) dpl_sbuf_add_str_fmt(dpl_sbuf_t *sb, const char *format, ...);
 dpl_sbuf_t *dpl_sbuf_dup(const dpl_sbuf_t *src);
 char *dpl_sbuf_get_str(dpl_sbuf_t *sbuf);
 void dpl_sbuf_free(dpl_sbuf_t *sb);

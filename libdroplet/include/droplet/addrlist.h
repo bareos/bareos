@@ -34,7 +34,9 @@
 #ifndef __DPL_ADDRLIST_H__
 #define __DPL_ADDRLIST_H__ 1
 
+#ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
 #define DPL_ADDR_IDENT_STRLEN (MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN) + \
                                1 /* : */ +                              \

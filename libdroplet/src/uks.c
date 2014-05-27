@@ -468,7 +468,7 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
   BIGNUM *bn = NULL;
   char *id_str = NULL;
   dpl_status_t ret, ret2;
-  int len;
+  int len, padding;
   int class = 0;
 
   bn = BN_new();
@@ -526,12 +526,19 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
     }
 
   len = snprintf(id_buf, max_len, "%s", id_str);
+  if (len >= max_len) {
+    ret = DPL_ENAMETOOLONG;
+    goto end;
+  }
 
-  if (len >= max_len)
-    {
-      ret = DPL_ENAMETOOLONG;
-      goto end;
-    }
+  padding = DPL_UKS_BCH_LEN - strlen(id_buf);
+  if (padding > 0) {
+    int i;
+
+    memmove(id_buf + padding, id_buf, strlen(id_buf));
+    for (i = 0; i < padding; i++)
+      id_buf[i] = '0';
+  }
 
   ret = DPL_SUCCESS;
   

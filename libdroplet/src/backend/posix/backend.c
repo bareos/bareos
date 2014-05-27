@@ -31,6 +31,7 @@
  *
  * https://github.com/scality/Droplet
  */
+
 #include "dropletp.h"
 #include <droplet/posix/posix.h>
 #include <sys/types.h>

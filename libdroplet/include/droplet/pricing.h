@@ -193,5 +193,6 @@ enum dpl_duration_type dpl_pricing_duration_type(const char *str);
 dpl_status_t dpl_pricing_parse(dpl_ctx_t *ctx, const char *path);
 dpl_status_t dpl_pricing_load(dpl_ctx_t *ctx);
 void dpl_pricing_free(dpl_ctx_t *ctx);
-dpl_status_t dpl_log_request(dpl_ctx_t *ctx, const char *type, const char *subtype, size_t size);
+void dpl_log_request(dpl_ctx_t *ctx, const char *type, const char *subtype, size_t size);
+
 #endif

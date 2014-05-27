@@ -78,8 +78,6 @@ setup(void)
 static void
 teardown(void)
 {
-  dpl_free();
-
   release_bound_port();
 
   rmtree(home);

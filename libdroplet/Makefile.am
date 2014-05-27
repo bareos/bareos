@@ -2,10 +2,11 @@ lib_LTLIBRARIES = libdroplet.la
 
 AM_LDFLAGS = $(LIBXML_LIBS) $(OPENSSL_LIBS) $(JSON_LIBS) $(PTHREAD_CFLAGS) $(PTHREAD_LIBS) -version-info $(LIBDROPLET_SO_VERSION) -no-undefined
 AM_CPPFLAGS = -I$(top_srcdir)/libdroplet/include $(LIBXML_CFLAGS) $(JSON_CFLAGS) $(OPENSSL_CFLAGS) $(PTHREAD_CFLAGS)
-AM_CFLAGS = -Wall -Werror \
-  -Wno-error=deprecated-declarations \
-  -Wno-error=unused-variable \
-  -Wno-error=unused-function \
+AM_CFLAGS = -Wall \
+  # -Werror \
+  # -Wno-error=deprecated-declarations \
+  # -Wno-error=unused-variable \
+  # -Wno-error=unused-function \
   # -g -ggdb3 -O0
 
 libdroplet_la_SOURCES = \
@@ -41,6 +42,7 @@ libdroplet_la_SOURCES = \
 	src/backend/s3/auth/v4.c \
 	src/backend/s3/backend/copy.c \
 	src/backend/s3/backend/delete.c \
+	src/backend/s3/backend/delete_all.c \
 	src/backend/s3/backend/delete_bucket.c \
 	src/backend/s3/backend/genurl.c \
 	src/backend/s3/backend/get.c \
@@ -67,6 +69,12 @@ libdroplet_la_SOURCES = \
 	src/backend/sproxyd/backend.c \
 	src/backend/sproxyd/replyparser.c \
 	src/backend/sproxyd/reqbuilder.c \
+	src/backend/sproxyd/backend/copy_id.c \
+	src/backend/sproxyd/backend/delete_all_id.c \
+	src/backend/sproxyd/backend/delete_id.c \
+	src/backend/sproxyd/backend/get_id.c \
+	src/backend/sproxyd/backend/head_id.c \
+	src/backend/sproxyd/backend/put_id.c \
 	src/backend/sproxyd/key.c \
 	src/backend/posix/backend.c \
 	src/backend/posix/reqbuilder.c \

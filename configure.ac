@@ -30,7 +30,9 @@ AC_PROG_LN_S
 
 AC_PROG_YACC
 
-PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
+dnl PKG_CHECK_MODULES(CHECK, check >= 0.9.4)
+AM_PATH_CHECK(0.9.3) dnl FIXME: It's just for fixing build on Centos 5 but this call is now deprecated
+
 PKG_CHECK_MODULES(LIBXML, libxml-2.0)
 PKG_CHECK_MODULES(OPENSSL, openssl)
 
@@ -51,16 +53,18 @@ AS_IF(
       )]
     )],
 
-  [test "x$json_c_include_dir" != "x" -a "x$json_c_lib"  = "x" -o \
-        "x$json_c_include_dir"  = "x" -a "x$json_c_lib" != "x"],
-    [AC_MSG_ERROR([Cannot not use just one option --with-json-c-include-dir or --with-json-c-lib])],
+  AS_IF(
+    [test "x$json_c_include_dir" != "x" -a "x$json_c_lib"  = "x" -o \
+          "x$json_c_include_dir"  = "x" -a "x$json_c_lib" != "x"],
+      [AC_MSG_ERROR([Cannot not use just one option --with-json-c-include-dir or --with-json-c-lib])],
 
-  [AC_SUBST([JSON_CFLAGS],[-I"$json_c_include_dir"])
-   AC_SUBST([JSON_LIBS],[$json_c_lib])]
+    [AC_SUBST([JSON_CFLAGS],[-I"$json_c_include_dir"])
+     AC_SUBST([JSON_LIBS],[$json_c_lib])]
+  )
 )
 
-AS_ECHO("Using JSON cflags: $JSON_CFLAGS")
-AS_ECHO("Using JSON libs: $JSON_LIBS")
+AC_MSG_NOTICE("Using JSON cflags: $JSON_CFLAGS")
+AC_MSG_NOTICE("Using JSON libs: $JSON_LIBS")
 
 AC_SEARCH_LIBS([sqrt], [m], [], [AC_MSG_ERROR([libm library missing])])
 AX_PTHREAD

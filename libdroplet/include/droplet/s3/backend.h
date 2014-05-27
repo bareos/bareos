@@ -46,6 +46,7 @@ DCL_BACKEND_GET_FN(dpl_s3_get);
 DCL_BACKEND_HEAD_FN(dpl_s3_head);
 DCL_BACKEND_HEAD_RAW_FN(dpl_s3_head_raw);
 DCL_BACKEND_DELETE_FN(dpl_s3_delete);
+DCL_BACKEND_DELETE_ALL_FN(dpl_s3_delete_all);
 DCL_BACKEND_GENURL_FN(dpl_s3_genurl);
 DCL_BACKEND_COPY_FN(dpl_s3_copy);
 

@@ -38,6 +38,38 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+struct ssl_method_authorized {
+  const char            *name;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const SSL_METHOD      *(*fn)(void);
+#else
+  SSL_METHOD            *(*fn)(void);
+#endif
+};
+
+static struct ssl_method_authorized
+list_ssl_method_authorized[] = {
+#ifndef OPENSSL_NO_SSL2
+#ifdef SSL_TXT_SSLV2
+  { .name = SSL_TXT_SSLV2,   .fn = SSLv2_method   },
+#endif
+#endif
+#ifdef SSL_TXT_SSLV3
+  { .name = SSL_TXT_SSLV3,   .fn = SSLv3_method   },
+#endif
+  { .name = "SSLv23",        .fn = SSLv23_method  },
+#ifdef SSL_TXT_TLSV1
+  { .name = SSL_TXT_TLSV1,   .fn = TLSv1_method   },
+#endif
+#ifdef SSL_TXT_TLSV1_1
+  { .name = SSL_TXT_TLSV1_1, .fn = TLSv1_1_method },
+#endif
+#ifdef SSL_TXT_TLSV1_2
+  { .name = SSL_TXT_TLSV1_2, .fn = TLSv1_2_method },
+#endif
+  { .name = "",              .fn = NULL           }
+};
+
 static void
 cbuf_reset(struct dpl_conf_buf *cbuf)
 {
@@ -335,18 +367,32 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_method"))
     {
-      if (!strcmp(value, "SSLv3"))
-        ctx->ssl_method = SSLv3_method();
-      else if (!strcmp(value, "TLSv1"))
-        ctx->ssl_method = TLSv1_method();
-      else if (!strcmp(value, "TLSv1.1"))
-        ctx->ssl_method = TLSv1_1_method();
-      else if (!strcmp(value, "TLSv1.2"))
-        ctx->ssl_method = TLSv1_2_method();
-      else if (!strcmp(value, "SSLv23"))
-        ctx->ssl_method = SSLv23_method();
+      char                              allow_ssl_methods[128] = "";
+      unsigned char                     i;
+      struct ssl_method_authorized      *ssl_method = NULL;
+
+      i = 0;
+      while (1) {
+        ssl_method = &list_ssl_method_authorized[i];
+        if (ssl_method->fn == NULL) {
+          ssl_method = NULL;
+          break;
+        }
+
+        if (*allow_ssl_methods != '\0')
+          strcat(allow_ssl_methods, ", ");
+        strcat(allow_ssl_methods, ssl_method->name);
+
+        if (!strcmp(ssl_method->name, value))
+          break;
+
+        i++;
+      }
+
+      if (ssl_method != NULL)
+        ctx->ssl_method = (*ssl_method->fn)();
       else {
-        DPL_LOG(ctx, DPL_ERROR, "ssl_method must be defined by a value among SSLv3, TLSv1, TLSv1.1, TLSv1.2 and SSLv23");
+        DPL_LOG(ctx, DPL_ERROR, "ssl_method must be defined by a value among %s", allow_ssl_methods);
         return -1;
       }
     }
@@ -651,24 +697,25 @@ dpl_open_event_log(dpl_ctx_t *ctx)
   char *pricing_dir;
 
   pricing_dir = ctx->pricing_dir;
-  if (NULL == pricing_dir)
-    {
-      pricing_dir = ctx->droplet_dir;
-    }
-  if (0 == strlen(pricing_dir))
-    {
-      ctx->event_log = NULL;
-      return DPL_SUCCESS;
-    }
+  if (pricing_dir == NULL)
+    pricing_dir = ctx->droplet_dir;
+
+  if (*pricing_dir == '\0') {
+    ctx->event_log = NULL;
+    return DPL_SUCCESS;
+  }
 
   snprintf(path, sizeof (path), "%s/%s.csv", pricing_dir, ctx->profile_name);
 
   ctx->event_log = fopen(path, "a+");
-  if (NULL == ctx->event_log)
-    {
+  if (ctx->event_log == NULL) {
+    if (errno != ENOENT) {
       DPL_LOG(ctx, DPL_ERROR, "error opening '%s': %s", path, strerror(errno));
       return DPL_FAILURE;
-    }
+    } else
+      DPL_LOG(ctx, DPL_WARNING, "error opening '%s': %s", path, strerror(errno));
+  }
+
   return DPL_SUCCESS;
 }
 
@@ -757,7 +804,7 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   DPL_LOG(ctx, DPL_INFO, "dpl_profile_post: ssl_cipher_list: %p", ctx->ssl_cipher_list);
 
   ctx->ssl_ctx = SSL_CTX_new(ctx->ssl_method);
-  if (NULL == ctx->ssl_ctx) {
+  if (ctx->ssl_ctx == NULL) {
     DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
     return DPL_FAILURE;
   }
@@ -765,6 +812,11 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   if (SSL_CTX_set_cipher_list(ctx->ssl_ctx, ctx->ssl_cipher_list) == 0) {
     DPL_SSL_PERROR(ctx, "SSL_CTX_set_cipher_list");
     return DPL_FAILURE;
+  }
+
+  if (ctx->ssl_password != NULL) {
+    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
+    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
   }
 
   if (DPL_DEFAULT_SSL_CERT_VERIF == ctx->cert_verif)
@@ -786,11 +838,6 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
       DPL_SSL_PERROR(ctx, "SSL_CTX_use_PrivateKey_file");
       return DPL_FAILURE;
     }
-  }
-
-  if (NULL != ctx->ssl_password) {
-    SSL_CTX_set_default_passwd_cb(ctx->ssl_ctx, passwd_cb);
-    SSL_CTX_set_default_passwd_cb_userdata(ctx->ssl_ctx, ctx);
   }
 
   if (ctx->ssl_key_file != NULL && ctx->ssl_cert_file != NULL) {

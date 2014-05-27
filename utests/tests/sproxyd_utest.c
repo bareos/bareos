@@ -47,9 +47,9 @@ teardown(void)
 {
   if (ctx)
     dpl_ctx_free(ctx);
+
   dpl_dict_free(profile);
   toyserver_stop(state);
-  dpl_free();
 }
 
 START_TEST(get_set_test)

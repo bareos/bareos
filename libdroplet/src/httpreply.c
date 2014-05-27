@@ -510,12 +510,11 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                     DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "bad header: %.*s...", 100, line);
                     break ;
                   }
-                *p++ = 0;
+                *p++ = '\0';
 
                 //skip ws
-                for (;*p;p++)
-                  if (!isspace(*p))
-                    break ;
+                while (*p != '\0' && isspace(*p))
+                  p++;
 
                 //remove '\r'
                 p2 = index(p, '\r');

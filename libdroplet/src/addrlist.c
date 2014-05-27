@@ -198,16 +198,25 @@ dpl_addrlist_get_byname_nolock(dpl_addrlist_t *addrlist,
                                const char *portstr)
 {
   struct hostent        hret, *hresult;
-  char                  hbuf[1024];
+  char                  hbuf[1024], *new_host;
   int                   herr;
   u_short               port;
-  int                   ret;
+  int                   ret, af;
 
   if (addrlist == NULL)
     return NULL;
 
-  ret = dpl_gethostbyname3_r(host, &hret, hbuf, sizeof (hbuf),
+  new_host = strdup(host);
+  if (new_host == NULL)
+    return NULL;
+
+  dpl_set_addr_family_from_host(host, new_host, &af);
+
+  ret = dpl_gethostbyname2_r(new_host, af, &hret, hbuf, sizeof (hbuf),
                              &hresult, &herr);
+
+  free(new_host);
+
   if (ret != 0)
     return NULL;
 
@@ -592,10 +601,10 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
                  const char *portstr)
 {
   struct hostent        *hret, *hresult;
-  char                  *hbuf;
+  char                  *hbuf, *new_host;
   int                   herr;
   u_short               port;
-  int                   ret;
+  int                   ret, af;
   dpl_addr_t            *addr;
 
   if (addrlist == NULL)
@@ -611,13 +620,23 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
     return DPL_FAILURE;
   }
 
-  ret = dpl_gethostbyname3_r(host, hret, hbuf, 1024,
+  new_host = strdup(host);
+  if (new_host == NULL) {
+    free(hret);
+    free(hbuf);
+    return DPL_FAILURE;
+  }
+
+  dpl_set_addr_family_from_host(host, new_host, &af);
+
+  ret = dpl_gethostbyname2_r(new_host, af, hret, hbuf, 1024,
                              &hresult, &herr);
 
   if (ret != 0 || hresult == NULL) { /* workaround for CentOS: see #5748 */
+    free(new_host);
     free(hret);
     free(hbuf);
-    DPL_LOG(NULL, DPL_ERROR, "cannot lookup host %s: %s\n", host, hstrerror(herr));
+    DPL_LOG(NULL, DPL_ERROR, "cannot lookup host %s: %s\n", new_host, hstrerror(herr));
     return DPL_FAILURE;
   }
 
@@ -627,9 +646,11 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
 
   addr = dpl_addrlist_get_byip_nolock(addrlist, hresult, port);
   if (addr != NULL) {
-    // addr already exists, reset the timestamp and silently succeeds
+    free(new_host);
     free(hret);
     free(hbuf);
+
+    // addr already exists, reset the timestamp and silently succeeds
     addr->blacklist_expire_timestamp = 0;
     dpl_addrlist_unlock(addrlist);
     return DPL_SUCCESS;
@@ -637,6 +658,7 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
 
   addr = malloc(sizeof (*addr));
   if (addr == NULL) {
+    free(new_host);
     free(hret);
     free(hbuf);
     dpl_addrlist_unlock(addrlist);
@@ -645,14 +667,14 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
 
   memset(addr, 0, sizeof (*addr));
 
-  addr->host    = strdup(host);
+  addr->host    = new_host;
   addr->portstr = strdup(portstr);
   addr->port    = port;
   addr->hbuf    = hbuf;
   addr->h       = hresult;
   addr->blacklist_expire_timestamp = 0;
 
-  if (addr->host == NULL || addr->portstr == NULL) {
+  if (addr->portstr == NULL) {
     dpl_addrlist_unlock(addrlist);
     free(addr->host);
     free(addr->portstr);

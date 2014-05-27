@@ -126,6 +126,23 @@ dpl_status_t dpl_sbuf_add_str(dpl_sbuf_t *sb, const char *str)
   return dpl_sbuf_add(sb, str, strlen(str));
 }
 
+dpl_status_t PRINTF(2, 3)
+dpl_sbuf_add_str_fmt(dpl_sbuf_t *sb, const char *format, ...)
+{
+  char          buffer[4096];
+  size_t        size;
+  va_list       args;
+
+  va_start(args, format);
+  size = vsnprintf(buffer, sizeof(buffer), format, args);
+  va_end(args);
+
+  if (size >= sizeof(buffer))
+    return DPL_ENOMEM;
+
+  return dpl_sbuf_add(sb, buffer, size);
+}
+
 dpl_sbuf_t *dpl_sbuf_dup(const dpl_sbuf_t *src)
 {
   dpl_sbuf_t *dst;

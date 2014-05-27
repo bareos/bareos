@@ -567,6 +567,31 @@ dpl_vec_objects_free(dpl_vec_t *vec)
 }
 
 void
+dpl_delete_object_free(dpl_delete_object_t *object)
+{
+  if (object->name != NULL)
+    free(object->name);
+
+  if (object->version_id != NULL)
+    free(object->version_id);
+
+  if (object->error != NULL)
+    free(object->error);
+
+  free(object);
+}
+
+void
+dpl_vec_delete_objects_free(dpl_vec_t *vec)
+{
+  int i;
+
+  for (i = 0; i < vec->n_items; i++)
+    dpl_delete_object_free((dpl_delete_object_t *) dpl_vec_get(vec, i));
+  dpl_vec_free(vec);
+}
+
+void
 dpl_common_prefix_free(dpl_common_prefix_t *common_prefix)
 {
   if (NULL != common_prefix->prefix)

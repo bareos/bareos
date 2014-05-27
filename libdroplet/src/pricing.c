@@ -1040,27 +1040,19 @@ dpl_pricing_free(dpl_ctx_t *ctx)
 }
 
 /**
- *
- *
  * @param type e.g. "request", or "data"
  * @param subtype e.g. "LIST" or "IN", "OUT", "STORAGE"
  * @param size data size
- *
- * @return
  */
-dpl_status_t
+void
 dpl_log_request(dpl_ctx_t *ctx,
                 const char *type,
                 const char *subtype,
                 size_t size)
 {
-  time_t t;
+  if (ctx->event_log == NULL)
+    return;
 
-  if (NULL != ctx->event_log)
-    {
-      t = time(0);
-      fprintf(ctx->event_log, "%ld;%s;%s;%llu\n", t, type, subtype, (unsigned long long) size);
-    }
-  return DPL_SUCCESS;
+  fprintf(ctx->event_log, "%ld;%s;%s;%llu\n",
+          time(0), type, subtype, (unsigned long long) size);
 }
-
