@@ -62,6 +62,8 @@ int purgecmd(UAContext *ua, const char *cmd)
    CLIENTRES *client;
    MEDIA_DBR mr;
    JOB_DBR  jr;
+   POOL_MEM cmd_holder(PM_MESSAGE);
+
    static const char *keywords[] = {
       NT_("files"),
       NT_("jobs"),
@@ -141,17 +143,38 @@ int purgecmd(UAContext *ua, const char *cmd)
       }
    /* Volume */
    case 2:
-      /* Perform ActionOnPurge (action=truncate) */
-      if (find_arg(ua, "action") >= 0) {
-         return action_on_purge_cmd(ua, ua->cmd);
-      }
-
+      /*
+       * Store cmd for later reuse.
+       */
+      pm_strcpy(cmd_holder, ua->cmd);
       while ((i=find_arg(ua, NT_("volume"))) >= 0) {
          if (select_media_dbr(ua, &mr)) {
             purge_jobs_from_volume(ua, &mr, /*force*/true);
          }
          *ua->argk[i] = 0;            /* zap keyword already seen */
          ua->send_msg("\n");
+
+         /*
+          * Add volume=mr.VolumeName to cmd_holder if we have a new volume name from interactive selection.
+          * In certain cases this can produce duplicates, which we don't prevent as there are no side effects.
+          */
+         if (!bstrcmp(ua->cmd, cmd_holder)) {
+            pm_strcat(cmd_holder, " volume=");
+            pm_strcat(cmd_holder, mr.VolumeName);
+         }
+      }
+
+      /*
+       * Restore ua args based on cmd_holder
+       */
+      pm_strcpy(ua->cmd, cmd_holder);
+      parse_args(ua->cmd, &ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+
+      /*
+       * Perform ActionOnPurge (action=truncate)
+       */
+      if (find_arg(ua, "action") >= 0) {
+         return action_on_purge_cmd(ua, ua->cmd);
       }
       return 1;
    /* Quota */
@@ -662,7 +685,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
 
 /*
  * Implement Bareos bconsole command  purge action
- *     purge action= pool= volume= storage= devicetype=
+ * purge action= pool= volume= storage= devicetype=
  */
 static int action_on_purge_cmd(UAContext *ua, const char *cmd)
 {
@@ -676,18 +699,28 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    MEDIA_DBR mr;
    POOL_DBR pr;
    BSOCK *sd = NULL;
+   char esc[MAX_NAME_LENGTH * 2 + 1];
+   POOL_MEM buf(PM_MESSAGE),
+            volumes(PM_MESSAGE);
 
    memset(&pr, 0, sizeof(pr));
+   pm_strcpy(volumes, "");
 
-   /* Look at arguments */
-   for (int i=1; i<ua->argc; i++) {
+   /*
+    * Look at arguments
+    */
+   for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("allpools"))) {
          allpools = true;
-
       } else if (bstrcasecmp(ua->argk[i], NT_("volume")) &&
                  is_name_valid(ua->argv[i], NULL)) {
-         bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
-
+         db_escape_string(ua->jcr, ua->db, esc, ua->argv[i], strlen(ua->argv[i]));
+         if (!*volumes.c_str()) {
+            Mmsg(buf, "'%s'", esc);
+         } else {
+            Mmsg(buf, ",'%s'", esc);
+         }
+         pm_strcat(volumes, buf.c_str());
       } else if (bstrcasecmp(ua->argk[i], NT_("devicetype")) &&
                  ua->argv[i]) {
          bstrncpy(mr.MediaType, ua->argv[i], sizeof(mr.MediaType));
@@ -701,7 +734,9 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   /* Choose storage */
+   /*
+    * Choose storage
+    */
    ua->jcr->res.wstore = store = get_storage_resource(ua, false);
    if (!store) {
       goto bail_out;
@@ -723,7 +758,9 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    }
 
    if (!allpools) {
-      /* force pool selection */
+      /*
+       * Force pool selection
+       */
       pool = get_pool_resource(ua);
       if (!pool) {
          Dmsg0(100, "Can't get pool resource\n");
@@ -738,15 +775,14 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    }
 
    /*
-    * Look for all Purged volumes that can be recycled, are enabled and
-    *  have more the 10,000 bytes.
+    * Look for all Purged volumes that can be recycled, are enabled and have more the 10,000 bytes.
     */
    mr.Recycle = 1;
    mr.Enabled = 1;
    mr.VolBytes = 10000;
    set_storageid_in_mr(store, &mr);
    bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
-   if (!db_get_media_ids(ua->jcr, ua->db, &mr, &nb, &results)) {
+   if (!db_get_media_ids(ua->jcr, ua->db, &mr, volumes, &nb, &results)) {
       Dmsg0(100, "No results from db_get_media_ids\n");
       goto bail_out;
    }
@@ -793,8 +829,8 @@ bail_out:
 }
 
 /*
- * IF volume status is Append, Full, Used, or Error, mark it Purged
- *   Purged volumes can then be recycled (if enabled).
+ * If volume status is Append, Full, Used, or Error, mark it Purged
+ * Purged volumes can then be recycled (if enabled).
  */
 bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
 {
@@ -813,6 +849,7 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
       }
       pm_strcpy(jcr->VolumeName, mr->VolumeName);
       generate_plugin_event(jcr, bDirEventVolumePurged);
+
       /*
        * If the RecyclePool is defined, move the volume there
        */
@@ -825,7 +862,9 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          if (   db_get_pool_record(jcr, ua->db, &oldpr)
              && db_get_pool_record(jcr, ua->db, &newpr))
          {
-            /* check if destination pool size is ok */
+            /*
+             * Check if destination pool size is ok
+             */
             if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
                ua->error_msg(_("Unable move recycled Volume in full "
                               "Pool \"%s\" MaxVols=%d\n"),
@@ -839,7 +878,9 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          }
       }
 
-      /* Send message to Job report, if it is a *real* job */
+      /*
+       * Send message to Job report, if it is a *real* job
+       */
       if (jcr && jcr->JobId > 0) {
          Jmsg(jcr, M_INFO, 0, _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
             mr->VolumeName);
