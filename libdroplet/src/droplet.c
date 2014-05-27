@@ -132,7 +132,7 @@ dpl_init()
     ret = RAND_status();
     DPL_LOG(NULL, DPL_INFO, "PRNG state after seeding: %d", ret);
   } else if (1 == ret) {
-    DPL_LOG(NULL, DPL_INFO, "PRNG has been seeded with enoough data");
+    DPL_LOG(NULL, DPL_INFO, "PRNG has been seeded with enough data");
   }
 
   dpl_base64_init();

@@ -352,8 +352,14 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_cipher_list"))
     {
+      DPL_LOG(ctx, DPL_INFO, "SSL CipherSuite: %s", value);
       free(ctx->ssl_cipher_list);
       ctx->ssl_cipher_list = strdup(value);
+      if (NULL == ctx->ssl_cipher_list) {
+        DPL_LOG(ctx, DPL_ERROR, "memory error");
+        return DPL_ENOMEM;
+      }
+      DPL_LOG(ctx, DPL_INFO, "duplicated SSL CipherSuite: %p: %s", ctx->ssl_cipher_list, ctx->ssl_cipher_list);
       if (ctx->ssl_cipher_list == NULL)
         return -1;
     }
@@ -384,10 +390,22 @@ conf_cb_func(void *cb_arg,
       if (NULL == ctx->ssl_ca_list)
         return -1;
     }
+  else if (!strcmp(var, "cert_verif"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->cert_verif = DPL_DEFAULT_SSL_CERT_VERIF;
+      else if (!strcasecmp(value, "false"))
+        ctx->cert_verif = 0;
+      else
+        {
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
+          return -1;
+        }
+    }
   else if (!strcmp(var, "ssl_comp"))
     {
       if (!strcasecmp(value, "true"))
-        ctx->ssl_comp = 0;
+        ctx->ssl_comp = 1;
       else if (!strcasecmp(value, "false"))
         ctx->ssl_comp = DPL_DEFAULT_SSL_COMP_NONE;
       else
@@ -605,6 +623,7 @@ dpl_profile_default(dpl_ctx_t *ctx)
   if (NULL == ctx->ssl_cipher_list)
     return DPL_ENOMEM;
   ctx->ssl_comp = DPL_DEFAULT_SSL_COMP_NONE;
+  ctx->cert_verif = DPL_DEFAULT_SSL_CERT_VERIF;
 
   return DPL_SUCCESS;
 }
@@ -735,6 +754,8 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
 
+  DPL_LOG(ctx, DPL_INFO, "dpl_profile_post: ssl_cipher_list: %p", ctx->ssl_cipher_list);
+
   ctx->ssl_ctx = SSL_CTX_new(ctx->ssl_method);
   if (NULL == ctx->ssl_ctx) {
     DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
@@ -746,8 +767,12 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     return DPL_FAILURE;
   }
 
-  SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
-  SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, ctx);
+  if (DPL_DEFAULT_SSL_CERT_VERIF == ctx->cert_verif)
+    SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
+  else if (0 == ctx->cert_verif)
+    SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+  /* SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, ctx); */
 
   if (ctx->ssl_cert_file != NULL) {
     if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
@@ -780,7 +805,11 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   }
 
   if (NULL != ctx->ssl_ca_list) {
-    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, 0)) {
+    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, NULL) || !SSL_CTX_set_default_verify_paths(ctx->ssl_ctx)) {
+      unsigned long ssl_err = ERR_get_error();
+      char buf[256];
+      ERR_error_string_n(ssl_err, buf, sizeof buf);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "Failed to load CA locations: %s", buf);
       DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
       return DPL_FAILURE;
     }
@@ -932,12 +961,14 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->pricing)
     dpl_pricing_free(ctx);
 
+  DPL_LOG(ctx, DPL_INFO, "dpl_profile_free: ssl_cipher_list: %p", ctx->ssl_cipher_list);
   if (ctx->ssl_ctx != NULL)
     SSL_CTX_free(ctx->ssl_ctx);
 
   /*
    * profile
    */
+
   if (NULL != ctx->addrlist)
     dpl_addrlist_free(ctx->addrlist);
   if (NULL != ctx->base_path)
