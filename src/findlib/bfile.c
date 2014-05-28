@@ -1159,7 +1159,7 @@ int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)
    rsrc_fname = get_pool_memory(PM_FNAME);
    pm_strcpy(rsrc_fname, fname);
    pm_strcat(rsrc_fname, _PATH_RSRCFORKSPEC);
-   bopen(bfd, rsrc_fname, flags, mode);
+   bopen(bfd, rsrc_fname, flags, mode, 0);
    free_pool_memory(rsrc_fname);
 
    return bfd->fid;
