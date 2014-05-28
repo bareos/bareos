@@ -1,16 +1,13 @@
 %%
 %%
 
-\chapter{What To Do When Bareos Crashes (Kaboom)}
-\label{KaboomChapter}
-\index[general]{Kaboom!What To Do When Bareos Crashes }
-\index[general]{What To Do When Bareos Crashes (Kaboom) }
+%\chapter{What To Do When Bareos Crashes (Kaboom)}
+\label{debug}
+\index[general]{Crash}
 
 If you are running on a Linux system, and you have a set of working
 configuration files, it is very unlikely that {\bf Bareos} will crash. As with
-all software, however, it is inevitable that someday, it may crash,
-particularly if you are running on another operating system or using a new or
-unusual feature.
+all software, however, it is inevitable that someday, it may crash.
 
 This chapter explains what you should do if one of the three {\bf Bareos}
 daemons (Director, File, Storage) crashes.  When we speak of crashing, we
@@ -23,7 +20,6 @@ Bareos will force itself to crash with a SEGFAULT. However, before
 crashing, Bareos will normally display a message indicating why.
 For more details, please read on.
 
-
 \section{Traceback}
 \index[general]{Traceback}
 
@@ -35,117 +31,59 @@ For this to work, you need to ensure that a few things are setup correctly on
 your system:
 
 \begin{enumerate}
-\item You must have a version of Bareos built with debug information turned
-   on and not stripped of debugging symbols.
+\item You must have a version of Bareos with debug information and not stripped of debugging symbols.
+  When using a packaged version of Bareos, this requires to install the Bareos debug packages 
+  (\package{bareos-debug} on RPM based systems, \package{bareos-dbg} on Debian based systems).
 
-\item You must have an installed copy of {\bf gdb} (the GNU debugger),  and it
-   must be on {\bf Bareos's} path. On some systems such as Solaris, {\bf
-   gdb} may be replaced by {\bf dbx}.
+\item On Linux, \command{gdb} (the GNU debugger) must be installed. 
+   On some systems such as Solaris, \command{gdb} may be replaced by \command{dbx}.
 
-\item The Bareos installed script file {\bf btraceback} must  be in the same
-   directory as the daemon which dies, and it must  be marked as executable.
-
-\item The script file {\bf btraceback.gdb} must  have the correct  path to it
-   specified in the {\bf btraceback} file.
-
-\item You must have a {\bf mail} program which is on {\bf Bareos's}  path.
-   By default, this {\bf mail} program is set to {\bf bsmtp}, so it must
-   be correctly configured.
-
-\item If you run either the Director or Storage daemon under a non-root
-   userid, you will most likely need to modify the {\bf btraceback} file
-   to do something like {\bf sudo} (raise to root priority) for the
-   call to {\bf gdb} so that it has the proper permissions to debug
-   Bareos.
+\item By default, btraceback uses \command{bsmtp} to send the traceback via email.
+   Therefore it expects a local mail daemon running. 
+   It send the traceback to \email{root@localhost} via \host{localhost}.
 \end{enumerate}
 
 If all the above conditions are met, the daemon that crashes will produce a
-traceback report and email it to you. If the above conditions are not true,
-you can either run the debugger by hand as described below, or you may be able
-to correct the problems by editing the {\bf btraceback} file. I recommend not
-spending too much time on trying to get the traceback to work as it can be
-very difficult.
+traceback report and email it. If the above conditions are not true,
+you can run the debugger by hand as described below.
 
-The changes that might be needed are to add a correct path to the {\bf gdb}
-program, correct the path to the {\bf btraceback.gdb} file, change the {\bf
-mail} program or its path, or change your email address. The key line in the
-{\bf btraceback} file is:
-
-\footnotesize
-\begin{verbatim}
-gdb -quiet -batch -x /home/user/bareos/bin/btraceback.gdb \
-     $1 $2 2>\&1 | bsmtp -s "Bareos traceback" your-address@xxx.com
-\end{verbatim}
-\normalsize
-
-Since each daemon has the same traceback code, a single btraceback file is
-sufficient if you are running more than one daemon on a machine.
-
-\section{Testing The Traceback}
-\index[general]{Traceback!Testing The }
-\index[general]{Testing The Traceback }
+\subsection{Testing The Traceback}
+\index[general]{Traceback!Test}
 
 To "manually" test the traceback feature, you simply start {\bf Bareos} then
 obtain the {\bf PID} of the main daemon thread (there are multiple threads).
 The output produced here will look different depending on what OS and what
 version of the kernel you are running.
-Unfortunately, the output had to be split to fit on this page:
 
-\footnotesize
-\begin{verbatim}
-[user@host]$ ps fax --columns 132 | grep bareos-dir
- 2103 ?        S      0:00 /home/user/bareos/src/dird/bareos-dir -c
-                                       /home/user/bareos/src/dird/dird.conf
- 2104 ?        S      0:00  \_ /home/user/bareos/src/dird/bareos-dir -c
-                                       /home/user/bareos/src/dird/dird.conf
- 2106 ?        S      0:00      \_ /home/user/bareos/src/dird/bareos-dir -c
-                                       /home/user/bareos/src/dird/dird.conf
- 2105 ?        S      0:00      \_ /home/user/bareos/src/dird/bareos-dir -c
-                                       /home/user/bareos/src/dird/dird.conf
-\end{verbatim}
-\normalsize
+\begin{commands}{get the process ID of a running Bareos daemon}
+<command> </command><parameter>ps fax | grep bareos-dir</parameter>
+ 2103 ?        S      0:00 /usr/sbin/bareos-dir
+\end{commands}
 
 which in this case is 2103. Then while Bareos is running, you call the program
 giving it the path to the Bareos executable and the {\bf PID}. In this case,
 it is:
 
-\footnotesize
-\begin{verbatim}
-./btraceback /home/user/bareos/src/dird 2103
-\end{verbatim}
-\normalsize
+\begin{commands}{get traceback of running Bareos director daemon}
+<command> </command><parameter>btraceback /usr/sbin/bareos-dir 2103</parameter>
+\end{commands}
 
 It should produce an email showing you the current state of the daemon (in
 this case the Director), and then exit leaving {\bf Bareos} running as if
 nothing happened. If this is not the case, you will need to correct the
 problem by modifying the {\bf btraceback} script.
 
-Typical problems might be that {\bf gdb} or {\bf dbx} for Solaris is not on
-the default path.  Fix this by specifying the full path to it in the {\bf
-btraceback} file.  Another common problem is that you haven't modified the
-script so that the {\bf bsmtp} program has an appropriate smtp server or
-the proper syntax for your smtp server.  If you use the {\bf mail} program
-and it is not on the default path, it will also fail.  On some systems, it
-is preferable to use {\bf Mail} rather than {\bf mail}.
-
-\section{Getting A Traceback On Other Systems}
-\index[general]{Getting A Traceback On Other Systems}
-\index[general]{Systems!Getting A Traceback On Other}
+\subsection{Getting A Traceback On Other Systems}
 
 It should be possible to produce a similar traceback on systems other than
 Linux, either using {\bf gdb} or some other debugger. Solaris with {\bf dbx}
 loaded works quite fine. On other systems, you will need to modify the {\bf
 btraceback} program to invoke the correct debugger, and possibly correct the
-{\bf btraceback.gdb} script to have appropriate commands for your debugger. If
-anyone succeeds in making this work with another debugger, please send us a
-copy of what you modified. Please keep in mind that for any debugger to
-work, it will most likely need to run as root, so you may need to modify
-the {\bf btraceback} script accordingly.
+{\bf btraceback.gdb} script to have appropriate commands for your debugger.
+Please keep in mind that for any debugger to
+work, it will most likely need to run as root.
 
-\label{ManuallyDebugging}
 \section{Manually Running Bareos Under The Debugger}
-\index[general]{Manually Running Bareos Under The Debugger}
-\index[general]{Debugger!Manually Running Bareos Under The}
 
 If for some reason you cannot get the automatic traceback, or if you want to
 interactively examine the variable contents after a crash, you can run Bareos
@@ -154,41 +92,15 @@ debugger (the technique is the same for the other daemons, only the name
 changes), you would do the following:
 
 \begin{enumerate}
-\item Start the Director and the File daemon. If the  Storage daemon also
-   starts, you will need to find its PID  as shown above (ps fax | grep
-   bareos-sd) and kill it  with a command like the following:
-
-\footnotesize
-\begin{verbatim}
-      kill -15 PID
-\end{verbatim}
-\normalsize
-
-where you replace {\bf PID} by the actual value.
-
-\item At this point, the Director and the File daemon should  be running but
+\item The Director and the File daemon should  be running but
    the Storage daemon should not.
-
-\item cd to the directory containing the Storage daemon
 
 \item Start the Storage daemon under the debugger:
 
-   \footnotesize
-\begin{verbatim}
-    gdb ./bareos-sd
-\end{verbatim}
-\normalsize
-
-\item Run the Storage daemon:
-
-   \footnotesize
-\begin{verbatim}
-     run -s -f -c ./bareos-sd.conf
-\end{verbatim}
-\normalsize
-
-You may replace the {\bf ./bareos-sd.conf} with the full path  to the Storage
-daemon's configuration file.
+\begin{commands}{run the Bareos Storage daemon in the debugger}
+<command>gdb</command><parameter>/usr/sbin/bareos-sd</parameter>
+<parameter>run -s -f -d 200</parameter>
+\end{commands}
 
 \item At this point, Bareos will be fully operational.
 
@@ -200,7 +112,6 @@ daemon's configuration file.
 
 \item To get a general traceback of all threads, issue the following  command:
 
-
 \footnotesize
 \begin{verbatim}
        thread apply all bt
@@ -211,22 +122,22 @@ After that you can issue any debugging command.
 \end{enumerate}
 
 \section{Getting Debug Output from Bareos}
-\index[general]{Getting Debug Output from Bareos }
+\label{debugoutput}
+\index[general]{Debug Output}
+
 Each of the daemons normally has debug compiled into the program, but
 disabled. There are two ways to enable the debug output. One is to add the
-{\bf -d nnn} option on the command line when starting the debugger. The {\bf
-nnn} is the debug level, and generally anything between 50 and 200 is
+{\bf -d nnn} option on the command line when starting the Daemon. 
+The {\bf nnn} is the debug level, and generally anything between 50 and 200 is
 reasonable. The higher the number, the more output is produced. The output is
 written to standard output.
 
 The second way of getting debug output is to dynamically turn it on using the
 Console using the {\bf setdebug} command. The full syntax of the command is:
 
-\footnotesize
-\begin{verbatim}
- setdebug level=nnn client=client-name storage=storage-name dir
-\end{verbatim}
-\normalsize
+\begin{bconsole}{set debug level}
+<input>setdebug level=nnn client=client-name storage=storage-name dir</input>
+\end{bconsole}
 
 If none of the options are given, the command will prompt you. You can
 selectively turn on/off debugging in any or all the daemons (i.e. it is not
