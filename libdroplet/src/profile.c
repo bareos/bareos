@@ -863,8 +863,20 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   }
 
   if (DPL_DEFAULT_SSL_COMP_NONE == ctx->ssl_comp) {
+#ifdef SSL_OP_NO_COMPRESSION
+    DPL_TRACE(ctx, DPL_TRACE_SSL, "disabling SSL compression for OpenSSL >= 1.0.0");
     SSL_CTX_set_options(ctx->ssl_ctx, SSL_OP_NO_COMPRESSION);
-    DPL_TRACE(ctx, DPL_TRACE_ERR, "Disabling SSL compression");
+#elif OPENSSL_VERSION_NUMBER <= 0x00909000L     /* SSL_OP_NO_COMPRESSION has been added in OpenSSL 0.9.9 */
+    STACK_OF(SSL_COMP)* comp_methods = SSL_COMP_get_compression_methods();
+    DPL_TRACE(ctx, DPL_TRACE_SSL, "disabling SSL compression for OpenSSL <= 0.9.9");
+    /* NB: Additional code for retrieving the name of the default SSL compression method
+    if (comp_methods && sk_SSL_COMP_num(comp_methods) > 0) {
+      SSL_COMP* default_compression_method = sk_SSL_COMP_pop(comp_methods);
+      DPL_TRACEctx, DPL_TRACE_SSL, "default SSL compression method: %s", SSL_COMP_get_name(default_compression_method->method));
+    } */
+    sk_SSL_COMP_zero(comp_methods);
+    assert(sk_SSL_COMP_num(comp_methods) == 0);
+#endif
   }
 
   return DPL_SUCCESS;
