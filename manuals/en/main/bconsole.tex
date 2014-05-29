@@ -1159,6 +1159,7 @@ setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
 
 
 \item [setdebug]
+    \label{bconsole_setdebug}
    \index[general]{Console!Command!setdebug}
    \index[general]{Debug!setdebug}
    \index[general]{Debug!Windows}
@@ -1167,12 +1168,27 @@ setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
    command is:
 
 \begin{bconsole}{setdebug}
-setdebug level=nn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
+setdebug level=nnn [trace=0/1 client=<client-name> | dir | director | storage=<storage-name> | all]
 \end{bconsole}
+
+   Each of the daemons normally has debug compiled into the program, but
+   disabled. There are two ways to enable the debug output.
+
+    One is to add the
+   {\bf -d nnn} option on the command line when starting the daemon. 
+   The {\bf nnn} is the debug level, and generally anything between 50 and 200 is
+   reasonable. The higher the number, the more output is produced. The output is
+   written to standard output.
+
+   The second way of getting debug output is to dynamically turn it on using the
+   Console using the \command{setdebug level=nnn} command.
+   If none of the options are given, the command will prompt you. You can
+   selectively turn on/off debugging in any or all the daemons (i.e. it is not
+   necessary to specify all the components of the above command).
 
    If trace=1 is set, then tracing will be enabled, and the daemon will be
    placed in trace mode, which means that all debug output as set by the
-   debug level will be directed to the file {\bf bareos.trace} in the
+   debug level will be directed to the file \file{bareos.trace} in the
    current directory of the daemon.  Normally, tracing is needed only for
    Windows clients where the debug output cannot be written to a terminal or
    redirected to a file.  When tracing, each debug output message is

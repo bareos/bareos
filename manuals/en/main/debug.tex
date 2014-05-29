@@ -4,6 +4,7 @@
 %\chapter{What To Do When Bareos Crashes (Kaboom)}
 \label{debug}
 \index[general]{Crash}
+\index[general]{Debug!crash}
 
 If you are running on a Linux system, and you have a set of working
 configuration files, it is very unlikely that {\bf Bareos} will crash. As with
@@ -39,15 +40,24 @@ your system:
    On some systems such as Solaris, \command{gdb} may be replaced by \command{dbx}.
 
 \item By default, btraceback uses \command{bsmtp} to send the traceback via email.
-   Therefore it expects a local mail daemon running. 
+   Therefore it expects a local mail transfer daemon running. 
    It send the traceback to \email{root@localhost} via \host{localhost}.
+
+\item Some Linux distributions, e.g. Ubuntu\index[general]{Plattfrom!Ubuntu!Debug}, 
+    disable the possibility to examine the memory of other processes.
+    While this is a good idea for hardening a system, our debug mechanismen will fail.
+    To disable this feature, run (as root):
+\begin{commands}{disable ptrace protection to enable debugging (required on Ubuntu Linux)}
+<command> </command><parameter>test -e /proc/sys/kernel/yama/ptrace_scope && echo 0 > /proc/sys/kernel/yama/ptrace_scope</parameter>
+\end{commands}
+ 
 \end{enumerate}
 
 If all the above conditions are met, the daemon that crashes will produce a
 traceback report and email it. If the above conditions are not true,
 you can run the debugger by hand as described below.
 
-\subsection{Testing The Traceback}
+\section{Testing The Traceback}
 \index[general]{Traceback!Test}
 
 To "manually" test the traceback feature, you simply start {\bf Bareos} then
@@ -71,15 +81,17 @@ it is:
 It should produce an email showing you the current state of the daemon (in
 this case the Director), and then exit leaving {\bf Bareos} running as if
 nothing happened. If this is not the case, you will need to correct the
-problem by modifying the {\bf btraceback} script.
+problem by modifying the \command{btraceback} script.
+
 
 \subsection{Getting A Traceback On Other Systems}
 
 It should be possible to produce a similar traceback on systems other than
-Linux, either using {\bf gdb} or some other debugger. Solaris with {\bf dbx}
-loaded works quite fine. On other systems, you will need to modify the {\bf
-btraceback} program to invoke the correct debugger, and possibly correct the
-{\bf btraceback.gdb} script to have appropriate commands for your debugger.
+Linux, either using \command{gdb} or some other debugger. 
+Solaris\index[general]{Plattfrom!Solaris!Debug} with \command{dbx}
+loaded works quite fine. On other systems, you will need to modify the 
+\command{btraceback} program to invoke the correct debugger, and possibly correct the
+\file{btraceback.gdb} script to have appropriate commands for your debugger.
 Please keep in mind that for any debugger to
 work, it will most likely need to run as root.
 
@@ -98,9 +110,17 @@ changes), you would do the following:
 \item Start the Storage daemon under the debugger:
 
 \begin{commands}{run the Bareos Storage daemon in the debugger}
-<command>gdb</command><parameter>/usr/sbin/bareos-sd</parameter>
-<parameter>run -s -f -d 200</parameter>
+<command>gdb</command><parameter> /usr/sbin/bareos-sd</parameter>
+(gdb) <input>run -f -s -d 200</input>
 \end{commands}
+
+Parameter:
+\begin{description}
+ \item[-f] foreground
+ \item[-s] no signals
+ \item[-d nnn] debug level 
+\end{description}
+See section \ilink{daemon command line options}{daemon-command-line-options} for a detailed list of options.
 
 \item At this point, Bareos will be fully operational.
 
@@ -112,33 +132,9 @@ changes), you would do the following:
 
 \item To get a general traceback of all threads, issue the following  command:
 
-\footnotesize
-\begin{verbatim}
-       thread apply all bt
-\end{verbatim}
-\normalsize
+\begin{commands}{run the Bareos Storage daemon in the debugger}
+(gdb) <input>thread apply all bt</input>
+\end{commands}
 
 After that you can issue any debugging command.
 \end{enumerate}
-
-\section{Getting Debug Output from Bareos}
-\label{debugoutput}
-\index[general]{Debug Output}
-
-Each of the daemons normally has debug compiled into the program, but
-disabled. There are two ways to enable the debug output. One is to add the
-{\bf -d nnn} option on the command line when starting the Daemon. 
-The {\bf nnn} is the debug level, and generally anything between 50 and 200 is
-reasonable. The higher the number, the more output is produced. The output is
-written to standard output.
-
-The second way of getting debug output is to dynamically turn it on using the
-Console using the {\bf setdebug} command. The full syntax of the command is:
-
-\begin{bconsole}{set debug level}
-<input>setdebug level=nnn client=client-name storage=storage-name dir</input>
-\end{bconsole}
-
-If none of the options are given, the command will prompt you. You can
-selectively turn on/off debugging in any or all the daemons (i.e. it is not
-necessary to specify all the components of the above command).

@@ -109,6 +109,7 @@ bls -V* /dev/nst0
 \section{Bareos Daemons}
 
 \subsection{Daemon Command Line Options}
+\label{daemon-command-line-options}
 \index[general]{Daemon!Command Line Options}
 \index[general]{Command Line Options!Daemon}
 
@@ -124,9 +125,12 @@ Console program accepts the following options:
    {\bf bareos-fd.conf} for the File daemon, and {\bf bareos-sd}  for the Storage
    daemon.
 
-\item [-d nn]
-   Set the debug level to {\bf nn}. Higher levels  of debug cause more
-   information to be displayed on STDOUT concerning  what the daemon is doing.
+\item [-d nnn]
+   Set the debug level to {\bf nnn}. 
+   Generally anything between 50 and 200 is reasonable. 
+   The higher the number, the more output is produced. The output is
+   written to standard output.
+   The debug level can also be set during runtime, see section \ilink{bconsole: setdebug}{bconsole_setdebug}.
 
 \item [-f]
    Run the daemon in the foreground. This option is  needed to run the daemon
@@ -157,6 +161,7 @@ Console program accepts the following options:
 
 
 \subsection{bareos-dir}
+\label{command-bareos-dir}
 \index[general]{Command!bareos-dir}
 \index[dir]{Command Line Options}
 
@@ -164,6 +169,7 @@ Bareos Director.
 \TODO{Bareos Director describe command line arguments}
 
 \subsection{bareos-sd}
+\label{command-bareos-sd}
 \index[general]{Command!bareos-sd}
 \index[sd]{Command Line Options}
 
@@ -172,6 +178,7 @@ Baroes Storage Daemon
 
 
 \subsection{bareos-fd}
+\label{command-bareos-fd}
 \index[general]{Command!bareos-fd}
 \index[fd]{Command Line Options}
 
