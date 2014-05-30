@@ -445,7 +445,9 @@ bool B_ACCURATE_LMDB::send_base_file_list(JCR *jcr)
    }
 
    retval = true;
+
 bail_out:
+   term_find_files(ff_pkt);
    return retval;
 }
 
@@ -512,6 +514,7 @@ bool B_ACCURATE_LMDB::send_deleted_list(JCR *jcr)
    retval = true;
 
 bail_out:
+   term_find_files(ff_pkt);
    return retval;
 }
 
