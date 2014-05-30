@@ -234,7 +234,6 @@ bool accept_file(FF_PKT *ff)
 
    Dmsg1(dbglvl, "enter accept_file: fname=%s\n", ff->fname);
    if (ff->flags & FO_ENHANCEDWILD) {
-//    match_func = enh_fnmatch;
       match_func = fnmatch;
       if ((basename = last_path_separator(ff->fname)) != NULL)
          basename++;
