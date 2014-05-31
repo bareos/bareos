@@ -1402,6 +1402,41 @@ bool BRSRES::print_config(POOL_MEM &buff)
          default:
             break;
          }
+      } else {
+         switch (items[i].type) {
+         case CFG_TYPE_STR:
+         case CFG_TYPE_DIR:
+         case CFG_TYPE_NAME:
+         case CFG_TYPE_STRNAME:
+            print_item = *(items[i].value) != NULL;
+            break;
+         case CFG_TYPE_INT32:
+            print_item = (*(items[i].i32value) > 0);
+            break;
+         case CFG_TYPE_PINT32:
+            print_item = (*(items[i].ui32value) > 0);
+            break;
+         case CFG_TYPE_INT64:
+            print_item = (*(items[i].i64value) > 0);
+            break;
+         case CFG_TYPE_SPEED:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_SIZE64:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_SIZE32:
+            print_item = (*(items[i].ui32value) > 0);
+            break;
+         case CFG_TYPE_TIME:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_BOOL:
+            print_item = (*items[i].boolvalue != false);
+            break;
+         default:
+            break;
+         }
       }
 
       switch (items[i].type) {
