@@ -72,7 +72,8 @@ extern "C" {
 #define DPL_DEFAULT_AWS_REGION          "us-east-1"
 #define DPL_DEFAULT_SSL_METHOD          SSLv23_method()
 #define DPL_DEFAULT_SSL_CIPHER_LIST     "ALL:-aNULL:!LOW:!MEDIUM:!RC2:!3DES:!MD5:!DSS:!SEED:!RC4:@STRENGTH"
-#define DPL_DEFAULT_SSL_COMP_NONE       1
+#define DPL_DEFAULT_SSL_COMP_NONE       0
+#define DPL_DEFAULT_SSL_CERT_VERIF      1
 
 extern int dpl_header_size;
 
@@ -500,10 +501,12 @@ typedef struct dpl_ctx
   char *secret_key;
   unsigned char aws_auth_sign_version; /*!< S3 Auth signature version */
   char aws_region[32];        /*!< AWS Region */
-  char *ssl_cert_file;
-  char *ssl_key_file;
-  char *ssl_password;
-  char *ssl_ca_list;
+  /* SSL */
+  char *ssl_cert_file;        /*!< SSL certificate of the client*/
+  char *ssl_key_file;         /*!< SSL private key of the client*/
+  char *ssl_password;         /*!< password for the SSL private key*/
+  char *ssl_ca_list;          /*!< SSL certificate authority list*/
+  int cert_verif;             /*!< SSL certificate verification (default to true) */
 /*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const SSL_METHOD *ssl_method;
@@ -511,7 +514,8 @@ typedef struct dpl_ctx
   SSL_METHOD *ssl_method;
 #endif
   char *ssl_cipher_list;
-  int ssl_comp;              /*!< SSL compression support (default set to false) */
+  int ssl_comp;               /*!< SSL compression support (default to false) */
+  /* log */
   unsigned int trace_level;
   int trace_buffers;
   int trace_binary;          /*!< default is trace ascii */ 

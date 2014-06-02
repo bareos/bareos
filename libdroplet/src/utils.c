@@ -911,6 +911,8 @@ dpl_rand(char *buf, int len)
     if (0 == ret) {
       return DPL_FAILURE;
     }
+  } else if (1 == ret) {
+    DPL_LOG(NULL, DPL_INFO, "PRNG has been seeded with enough data");
   }
 
   return DPL_SUCCESS;
