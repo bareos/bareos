@@ -824,8 +824,6 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   else if (0 == ctx->cert_verif)
     SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-  /* SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, ctx); */
-
   if (ctx->ssl_cert_file != NULL) {
     if (!SSL_CTX_use_certificate_chain_file(ctx->ssl_ctx, ctx->ssl_cert_file)) {
       DPL_SSL_PERROR(ctx, "SSL_CTX_use_certificate_chain_file");
@@ -851,7 +849,7 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     }
   }
 
-  if (NULL != ctx->ssl_ca_list) {
+  if (ctx->ssl_ca_list != NULL) {
     if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, NULL) || !SSL_CTX_set_default_verify_paths(ctx->ssl_ctx)) {
       unsigned long ssl_err = ERR_get_error();
       char buf[256];

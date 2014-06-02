@@ -518,7 +518,7 @@ typedef struct dpl_ctx
   /* log */
   unsigned int trace_level;
   int trace_buffers;
-  int trace_binary;          /*!< default is trace ascii */ 
+  int trace_binary;          /*!< default is trace ascii */
   char *pricing;             /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
