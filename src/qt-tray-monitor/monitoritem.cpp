@@ -142,9 +142,9 @@ bool MonitorItem::doconnect()
   JCR jcr;
   memset(&jcr, 0, sizeof(jcr));
 
-  DIRRES* dird;
-  CLIENTRES* filed;
-  STORERES* stored;
+  DIRRES *dird;
+  CLIENTRES *filed;
+  STORERES *stored;
   QString message;
 
   switch (d->type) {
@@ -208,6 +208,9 @@ bool MonitorItem::doconnect()
      emit showStatusbarMessage(message);
      emit clearText(get_name());
      emit appendText(get_name(), QString("Authentication error : %1").arg(d->DSock->msg));
+     d->DSock->signal(BNET_TERMINATE); /* send EOF */
+     d->DSock->close();
+     delete d->DSock;
      d->DSock = NULL;
      return false;
   }
