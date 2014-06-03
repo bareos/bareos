@@ -398,17 +398,15 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "ssl_cipher_list"))
     {
-      DPL_LOG(ctx, DPL_INFO, "SSL CipherSuite: %s", value);
       free(ctx->ssl_cipher_list);
       ctx->ssl_cipher_list = strdup(value);
       if (NULL == ctx->ssl_cipher_list) {
         DPL_LOG(ctx, DPL_ERROR, "memory error");
         return DPL_ENOMEM;
       }
-      DPL_LOG(ctx, DPL_INFO, "duplicated SSL CipherSuite: %p: %s", ctx->ssl_cipher_list, ctx->ssl_cipher_list);
       if (ctx->ssl_cipher_list == NULL)
         return -1;
-    }
+  }
   else if (!strcmp(var, "ssl_key_file"))
     {
       free(ctx->ssl_key_file);
@@ -434,6 +432,13 @@ conf_cb_func(void *cb_arg,
       free(ctx->ssl_ca_list);
       ctx->ssl_ca_list = strdup(value);
       if (NULL == ctx->ssl_ca_list)
+        return -1;
+    }
+  else if (!strcmp(var, "ssl_crl_list"))
+    {
+      free(ctx->ssl_crl_list);
+      ctx->ssl_crl_list = strdup(value);
+      if (NULL == ctx->ssl_crl_list)
         return -1;
     }
   else if (!strcmp(var, "cert_verif"))
@@ -801,11 +806,10 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   OpenSSL_add_all_digests();
   OpenSSL_add_all_ciphers();
 
-  DPL_LOG(ctx, DPL_INFO, "dpl_profile_post: ssl_cipher_list: %p", ctx->ssl_cipher_list);
-
   ctx->ssl_ctx = SSL_CTX_new(ctx->ssl_method);
   if (ctx->ssl_ctx == NULL) {
-    DPL_LOG(ctx, DPL_ERROR, "error in SSL initialization");
+    DPL_SSL_PERROR(ctx, "SSL_CTX_new");
+    DPL_TRACE(ctx, DPL_TRACE_ERR, "error while creating new SSL context");
     return DPL_FAILURE;
   }
 
@@ -823,6 +827,45 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_PEER, NULL);
   else if (0 == ctx->cert_verif)
     SSL_CTX_set_verify(ctx->ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+  if (NULL != ctx->ssl_crl_list) {
+    /* load CRL in the X509_STORE */
+    X509_STORE *cert_store;
+    X509_CRL *cert_crl; 
+    X509_VERIFY_PARAM *cert_verif_param;
+    BIO *in = NULL;
+    int ret = 0;
+    char *crl_issuer = NULL;
+
+    cert_store = SSL_CTX_get_cert_store(ctx->ssl_ctx);
+
+    in = BIO_new(BIO_s_file());
+    BIO_read_filename(in, ctx->ssl_crl_list);
+    cert_crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL);
+    if (NULL == cert_crl) {
+       DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to load CRL from file: %s", ctx->ssl_crl_list);
+       return DPL_FAILURE;
+    } else {
+       crl_issuer = X509_NAME_oneline(X509_CRL_get_issuer(cert_crl), 0, 0);
+       DPL_TRACE(ctx, DPL_TRACE_SSL, "sucessufuly loaded CRL from file: %s, and issued by: %s", ctx->ssl_crl_list, crl_issuer);
+       OPENSSL_free(crl_issuer);
+    }
+    ret = X509_STORE_add_crl(cert_store, cert_crl);
+    if (!ret) {
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "unable to add CRL for SSL certificate verification: %d", ret);
+      return DPL_FAILURE;
+    }
+    if (NULL != cert_crl)
+      X509_CRL_free(cert_crl);
+    if (NULL != in)
+      BIO_free(in);
+
+    /* set CRL verification */
+    cert_verif_param = X509_VERIFY_PARAM_new();
+    X509_VERIFY_PARAM_set_flags(cert_verif_param, X509_V_FLAG_CRL_CHECK);
+    SSL_CTX_set1_param(ctx->ssl_ctx, cert_verif_param);
+    X509_VERIFY_PARAM_free(cert_verif_param);
+  }
 
   /* SSL_CTX_set_cert_verify_callback(ctx->ssl_ctx, ssl_verify_cert, ctx); */
 
@@ -872,10 +915,12 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     /* NB: Additional code for retrieving the name of the default SSL compression method
     if (comp_methods && sk_SSL_COMP_num(comp_methods) > 0) {
       SSL_COMP* default_compression_method = sk_SSL_COMP_pop(comp_methods);
-      DPL_TRACEctx, DPL_TRACE_SSL, "default SSL compression method: %s", SSL_COMP_get_name(default_compression_method->method));
+      DPL_TRACE(ctx, DPL_TRACE_SSL, "default SSL compression method: %s", SSL_COMP_get_name(default_compression_method->method));
     } */
     sk_SSL_COMP_zero(comp_methods);
     assert(sk_SSL_COMP_num(comp_methods) == 0);
+    if (NULL != comp_methods)
+      sk_SSL_COMP_free(comp_methods);
 #endif
   }
 
@@ -1020,9 +1065,9 @@ dpl_profile_free(dpl_ctx_t *ctx)
   if (NULL != ctx->pricing)
     dpl_pricing_free(ctx);
 
-  DPL_LOG(ctx, DPL_INFO, "dpl_profile_free: ssl_cipher_list: %p", ctx->ssl_cipher_list);
-  if (ctx->ssl_ctx != NULL)
+  if (ctx->ssl_ctx != NULL) {
     SSL_CTX_free(ctx->ssl_ctx);
+  }
 
   /*
    * profile
@@ -1046,6 +1091,8 @@ dpl_profile_free(dpl_ctx_t *ctx)
     free(ctx->ssl_password);
   if (NULL != ctx->ssl_ca_list)
     free(ctx->ssl_ca_list);
+  if (NULL != ctx->ssl_crl_list)
+    free(ctx->ssl_crl_list);
   if (NULL != ctx->pricing)
     free(ctx->pricing);
   if (NULL != ctx->encrypt_key)
