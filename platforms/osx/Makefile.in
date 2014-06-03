@@ -13,12 +13,12 @@ BAREOS_VERSION:=@VERSION@
 BAREOS_DL_URL:=http://downloads.sourceforge.net/project/bareos/bareos/${BAREOS_VERSION}/bareos-${BAREOS_VERSION}.tar.gz
 
 # Build universal binary. Comment out when building versions of bareos < 3.0.0
-ARCHFLAGS:=-arch i386 -arch ppc
-MACOSX_SDK_SYSROOT:=/Developer/SDKs/MacOSX10.4u.sdk
-MACOSX_VERSION_FLAGS:=-mmacosx-version-min=10.4
+ARCHFLAGS:=
+MACOSX_SDK_SYSROOT:=
+MACOSX_VERSION_FLAGS:=
 
 # Tools
-PM:=/Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker
+PB:=pkgbuild
 MAKE:=/usr/bin/make
 CURL:=/usr/bin/curl
 TAR:=/usr/bin/tar
@@ -34,10 +34,10 @@ WORKING_DIR:=${BUILD_DIR}/${BAREOS_VERSION}
 BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
 BAREOS_SOURCE:=${WORKING_DIR}/bareos-${BAREOS_VERSION}
 BAREOS_DESTDIR:=${WORKING_DIR}/destdir
-BAREOS_PREFIX:=/usr/local/bareos-${BAREOS_VERSION}
-BAREOS_FD_CONF:=/Library/Preferences/bareos/bareos-fd.conf
-BAREOS_WORKING_DIR:=/private/var/bareos/working
-BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
+BAREOS_PREFIX:=/usr/local
+BAREOS_FD_CONF:=${BAREOS_PREFIX}/etc/bareos-fd.conf
+BAREOS_WORKING_DIR:=/var/run/bareos/working
+#BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
 
 # Detect whether we sit inside the bareos source tree. In this case we won't
 # download the tar from sourceforge but instead work with what its there
@@ -64,17 +64,15 @@ CONFIGFLAGS:=--enable-client-only --prefix=${BAREOS_PREFIX} \
     --with-mon-fd-password=@MON_FD_PW@ --with-mon-sd-password=@MON_SD_PW@ \
     --with-basename=@BASENAME@ --with-hostname=@HOSTNAME@ \
     --with-working-dir=${BAREOS_WORKING_DIR}
-CPPFLAGS:=-isysroot ${MACOSX_SDK_SYSROOT} ${MACOSX_VERSION_FLAGS}
-CFLAGS:=-O -g ${ARCHFLAGS}
+CPPFLAGS:=
+CFLAGS:=-O -g
 CXXFLAGS:=${CFLAGS}
-LDFLAGS:=-Wl,-syslibroot,${MACOSX_SDK_SYSROOT} ${MACOSX_VERSION_FLAGS} ${ARCHFLAGS}
+LDFLAGS:=
 
-# required on snow leopard: compiling for 10.4 requires usage of gcc 4.0
-# system defaults to version 4.2
-CC:=gcc-4.0
-CPP:=cpp-4.0
-CXX:=g++-4.0
-CXXPP:=cpp-4.0
+CC:=gcc
+CPP:=cpp
+CXX:=g++
+CXXPP:=cpp
 
 # Placeholders for *.in files
 INFILE_SUBST=\
@@ -87,26 +85,17 @@ INFILE_SUBST=\
 dmg: pkg
 	hdiutil create -srcfolder "${PACKAGE_DIR}" "${PACKAGE_DMG}"
 
-pkg: ${BAREOS_DESTDIR} ${BAREOS_PMDOC} ${WORKING_DIR}/resources
+pkg: ${BAREOS_DESTDIR} ${WORKING_DIR}/resources
 	mkdir -p "${PACKAGE_DIR}"
+	mkdir -p "${CURDIR}/${BAREOS_DESTDIR}${BAREOS_WORKING_DIR}"
+	${PB} --identifier "${PACKAGE_ID}" --root "${CURDIR}/${BAREOS_DESTDIR}" "bareos-${BAREOS_VERSION}.pkg"
 
-	${PM} --doc "${BAREOS_PMDOC}" --id "${PACKAGE_ID}" --no-recommend --out "${PACKAGE_BUNDLE}"
-
+	cp "bareos-${BAREOS_VERSION}.pkg" "${PACKAGE_DIR}"
 	cp ${WORKING_DIR}/resources/ReadMe.html "${PACKAGE_DIR}/ReadMe.html"
 
-	sed ${INFILE_SUBST} \
-		files/uninstall.command.in > "${PACKAGE_DIR}/uninstall.command";
-	chmod 0775 "${PACKAGE_DIR}/uninstall.command"
-
-${BAREOS_PMDOC}: ${BAREOS_DESTDIR} ${WORKING_DIR}/resources
-	mkdir -p "${BAREOS_PMDOC}"
-
-	for f in index.xml 01destdir.xml; do \
-		sed ${INFILE_SUBST} \
-			files/installer.pmdoc.in/$$f > "${BAREOS_PMDOC}/$$f"; \
-	done
-
-	python installer-gencontents.py ${BAREOS_DESTDIR} > ${BAREOS_PMDOC}/01destdir-contents.xml
+	# sed ${INFILE_SUBST} \
+	# 	files/uninstall.command.in > "${PACKAGE_DIR}/uninstall.command";
+	# chmod 0775 "${PACKAGE_DIR}/uninstall.command"
 
 ${WORKING_DIR}/resources: ${BAREOS_DESTDIR}
 	mkdir -p "${WORKING_DIR}/resources"
@@ -122,6 +111,8 @@ ${WORKING_DIR}/resources: ${BAREOS_DESTDIR}
 
 	cp "${BAREOS_SOURCE}/LICENSE" "${WORKING_DIR}/resources/License.txt"
 
+install:
+
 ${BAREOS_DESTDIR}: ${BAREOS_SOURCE}
 	(cd ${BAREOS_SOURCE} && ./configure ${CONFIGFLAGS} CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" CC="${CC}" CPP="${CPP}" CXX="${CXX}" CXXPP="${CXXPP}")
 	${MAKE} -C ${BAREOS_SOURCE}
@@ -133,9 +124,9 @@ ${BAREOS_DESTDIR}: ${BAREOS_SOURCE}
 		mv $$conffile $$conffile.example; \
 	done
 
-	mkdir -p "${BAREOS_DESTDIR}${BAREOS_PREFIX}/Library/LaunchDaemons"
-	sed ${INFILE_SUBST} files/org.bareos.bareos-fd.plist.in \
-		> "${BAREOS_DESTDIR}${BAREOS_PREFIX}/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
+	mkdir -p "${BAREOS_DESTDIR}/Library/LaunchDaemons"
+	sed ${INFILE_SUBST} ${CURDIR}/files/org.bareos.bareos-fd.plist.in \
+		> "${BAREOS_DESTDIR}/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
 
 ${BAREOS_SOURCE}: ${BAREOS_TAR}
 	mkdir -p "${WORKING_DIR}"
@@ -145,10 +136,9 @@ ${BAREOS_TAR}:
 	mkdir -p "${DL_DIR}"
 	${CURL} -L -o "${BAREOS_TAR}" "${BAREOS_DL_URL}"
 
-.PHONY: distclean
+.PHONY: distclean clean install
 distclean: clean
 	rm -rf "${DL_DIR}" "${PRODUCTS_DIR}"
 
-.PHONY: clean
 clean:
 	rm -rf "${BUILD_DIR}" "${PACKAGE_DIR}" "${PACKAGE_DMG}"
