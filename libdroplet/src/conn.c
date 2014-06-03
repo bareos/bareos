@@ -367,7 +367,7 @@ do_connect(dpl_ctx_t *ctx,
 static int
 init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
 {
-  int   ret;
+  int ret;
 
   conn->ssl = SSL_new(ctx->ssl_ctx);
   if (conn->ssl == NULL)
@@ -381,19 +381,22 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
 
   ret = SSL_connect(conn->ssl);
   if (ret <= 0) {
-    long ret_ssl = 0;
+    int ret_ssl = 0;
+
+    SSL_get_error(conn->ssl, ret);
+
     DPL_SSL_PERROR(ctx, "SSL_connect");
+    DPL_LOG(ctx, DPL_ERROR, "SSL connect error: %d: %d", ret, ret_ssl);
+
     ret_ssl = SSL_get_verify_result(conn->ssl);
-    DPL_LOG(ctx, DPL_ERROR, "SSL certificate verification failure: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
+    DPL_LOG(ctx, DPL_ERROR, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
     return 0;
   }
   if (0 == ctx->cert_verif) {
     long ret_ssl = 0;
     ret_ssl = SSL_get_verify_result(conn->ssl);
-    DPL_LOG(ctx, DPL_INFO, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
-    DPL_LOG(ctx, DPL_INFO, "SSL CipherSuite used: %s", SSL_get_cipher(conn->ssl));
-  }
-
+    DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
+  } 
   DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL cipher used: %s", SSL_get_cipher(conn->ssl));
 
   return 1;
