@@ -306,6 +306,7 @@ RES_ITEM job_items[] = {
    { "schedule", CFG_TYPE_RES, ITEM(res_job.schedule), R_SCHEDULE, 0, NULL },
    { "verifyjob", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, CFG_ITEM_ALIAS, NULL },
    { "jobtoverify", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_job.catalog), R_CATALOG, 0, NULL },
    { "jobdefs", CFG_TYPE_RES, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
    { "run", CFG_TYPE_ALIST_STR, ITEM(res_job.run_cmds), 0, 0, NULL },
    /* Root of where to restore files */
