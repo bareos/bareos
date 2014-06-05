@@ -1,6 +1,6 @@
 Format: 1.0
 Source: bareos
-Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-director-python-plugin, bareos-doc, bareos-filedaemon, bareos-filedaemon-python-plugin, bareos-storage, bareos-storage-python-plugin, bareos-tools, bareos-traymonitor
+Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-director-python-plugin, bareos-filedaemon, bareos-filedaemon-python-plugin, bareos-storage, bareos-storage-python-plugin, bareos-tools, bareos-traymonitor
 Architecture: any
 Version: 14.2.0
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
