@@ -1,7 +1,6 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2010-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -26,8 +25,8 @@
  * Marco van Wieringen, November 2010
  */
 
-#ifndef __CATS_DYNAMIC_H_
-#define __CATS_DYNAMIC_H_ 1
+#ifndef __CATS_BACKENDS_H_
+#define __CATS_BACKENDS_H_ 1
 
 extern "C" {
 typedef B_DB *(*t_backend_instantiate)(JCR *jcr,
@@ -81,5 +80,4 @@ static struct backend_interface_mapping_t {
    { "ingres", FALSE, SQL_INTERFACE_TYPE_INGRES },
    { NULL, FALSE, 0 }
 };
-
-#endif /* __CATS_DYNAMIC_H_ */
+#endif /* __CATS_BACKENDS_H_ */

@@ -58,14 +58,14 @@ SQLITE_LOBJS = $(SQLITE_SRCS:.c=.lo)
 DB_LIBS=@DB_LIBS@
 
 LIBBAREOSSQL_SRCS = bvfs.c cats.c sql.c sql_cmds.c sql_create.c sql_delete.c \
-                 sql_find.c sql_get.c sql_glue.c sql_list.c sql_pooling.c \
-                 sql_update.c
+		    sql_find.c sql_get.c sql_glue.c sql_list.c sql_pooling.c \
+		    sql_update.c
 LIBBAREOSSQL_OBJS = $(LIBBAREOSSQL_SRCS:.c=.o)
 LIBBAREOSSQL_LOBJS = $(LIBBAREOSSQL_SRCS:.c=.lo)
 LIBBAREOSSQL_LT_RELEASE = @LIBBAREOSSQL_LT_RELEASE@
 
 LIBBAREOSCATS_SRCS = mysql.c postgresql.c sqlite.c
-LIBBAREOSCATS_DYN_SRCS = cats_dummy.c cats_dynamic.c
+LIBBAREOSCATS_DYN_SRCS = cats_backends.c
 LIBBAREOSCATS_OBJS = $(LIBBAREOSCATS_SRCS:.c=.o)
 LIBBAREOSCATS_LOBJS = $(LIBBAREOSCATS_DYN_SRCS:.c=.lo)
 LIBBAREOSCATS_LT_RELEASE = @LIBBAREOSCATS_LT_RELEASE@
@@ -223,6 +223,7 @@ libtool-install: all
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats.la $(DESTDIR)$(libdir)
 	for db_type in @DB_BACKENDS@; do \
 	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats-$${db_type}.la $(DESTDIR)$(libdir); \
+	    $(RM) $(DESTDIR)$(libdir)/libbareoscats-$${db_type}.la; \
 	done
 
 install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCLUDE_INSTALL_TARGET@
