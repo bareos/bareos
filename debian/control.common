@@ -13,7 +13,7 @@ Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
  autotools-dev,
  bc,
- debhelper,
+ debhelper (>= 7.0.50~),
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
  libcap-dev,
@@ -46,7 +46,7 @@ Homepage: http://www.bareos.org/
 
 
 Package:        bareos
-Architecture:   all
+Architecture:   any
 Depends:        bareos-director (= ${binary:Version}), bareos-storage (= ${binary:Version}), bareos-client (= ${binary:Version}), ${misc:Depends}
 Suggests:       bareos-doc
 Description: Backup Archiving Recovery Open Sourced - metapackage
