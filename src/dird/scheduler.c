@@ -349,12 +349,14 @@ static void find_runs()
    foreach_res(job, R_JOB) {
       sched = job->schedule;
       if (sched == NULL ||
+          !sched->enabled ||
           !job->enabled ||
           (job->client && !job->client->enabled)) { /* scheduled? or enabled? */
          continue;                    /* no, skip this job */
       }
+
       Dmsg1(dbglvl, "Got job: %s\n", job->hdr.name);
-      for (run=sched->run; run; run=run->next) {
+      for (run = sched->run; run; run = run->next) {
          bool run_now, run_nh;
          /*
           * Find runs scheduled between now and the next hour.

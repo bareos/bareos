@@ -293,6 +293,7 @@ JOBRES *select_restore_job_resource(UAContext *ua);
 CLIENTRES *select_client_resource(UAContext *ua);
 CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable);
 FILESETRES *select_fileset_resource(UAContext *ua);
+SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable);
 int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 int select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
 bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk = "pool");

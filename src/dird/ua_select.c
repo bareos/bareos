@@ -410,6 +410,33 @@ CLIENTRES *get_client_resource(UAContext *ua)
    return select_client_resource(ua);
 }
 
+/*
+ * Select a schedule to enable or disable
+ */
+SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   SCHEDRES *sched;
+
+   LockRes();
+   start_prompt(ua, _("The defined Schedule resources are:\n"));
+   foreach_res(sched, R_SCHEDULE) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         continue;
+      }
+      if (sched->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                    /* yes, skip */
+      }
+      add_prompt(ua, sched->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Schedule"), _("Select Schedule resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   sched = (SCHEDRES *)GetResWithName(R_SCHEDULE, name);
+   return sched;
+}
+
 /* Scan what the user has entered looking for:
  *
  *  client=<client-name>

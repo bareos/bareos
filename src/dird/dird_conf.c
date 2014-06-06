@@ -395,6 +395,7 @@ static RES_ITEM sch_items[] = {
    { "name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
    { "description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL },
    { "run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true" },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
