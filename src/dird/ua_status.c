@@ -646,6 +646,10 @@ static void do_scheduler_status(UAContext *ua)
    foreach_res(sched, R_SCHEDULE) {
       int cnt = 0;
 
+      if (!schedulegiven && !sched->enabled) {
+         continue;
+      }
+
       if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
          continue;
       }

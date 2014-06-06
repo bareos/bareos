@@ -548,6 +548,7 @@ inline char *FILESETRES::name() const { return hdr.name; }
 class SCHEDRES: public BRSRES {
 public:
    RUNRES *run;
+   bool enabled;                      /* Set if schedule is enabled */
 };
 
 /*
@@ -665,3 +666,4 @@ public:
 #define GetJobResWithName(x) ((JOBRES *)GetResWithName(R_JOB, (x)))
 #define GetFileSetResWithName(x) ((FILESETRES *)GetResWithName(R_FILESET, (x)))
 #define GetCatalogResWithName(x) ((CATRES *)GetResWithName(R_CATALOG, (x)))
+#define GetScheduleResWithName(x) ((SCHEDRES *)GetResWithName(R_SCHEDULE, (x)))

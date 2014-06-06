@@ -111,10 +111,10 @@ static struct cmdstruct commands[] = {
      NT_("pool=<pool-name>"), false },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
      NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true },
-   { NT_("disable"), disable_cmd, _("Disable a job/client"),
-     NT_("job=<job-name> client=<client-name>"), true },
-   { NT_("enable"), enable_cmd, _("Enable a job/client"),
-     NT_("job=<job-name> client=<client-name>"), true },
+   { NT_("disable"), disable_cmd, _("Disable a job/client/schedule"),
+     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true },
+   { NT_("enable"), enable_cmd, _("Enable a job/client/schedule"),
+     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true },
    { NT_("estimate"), estimate_cmd, _("Performs FileSet estimate, listing gives full listing"),
      NT_("fileset=<fileset-name> client=<client-name> level=<level> accurate=<yes/no> job=<job-name> listing"), true },
    { NT_("exit"), quit_cmd, _("Terminate Bconsole session"),
@@ -943,48 +943,77 @@ get_out:
 
 static void do_en_disable_cmd(UAContext *ua, bool setting)
 {
+   SCHEDRES *sched = NULL;
    CLIENTRES *client = NULL;
    JOBRES *job = NULL;
    int i;
 
-   i = find_arg(ua, NT_("client"));
+   i = find_arg(ua, NT_("schedule"));
    if (i >= 0) {
-      i = find_arg_with_value(ua, NT_("client"));
+      i = find_arg_with_value(ua, NT_("schedule"));
       if (i >= 0) {
          LockRes();
-         client = GetClientResWithName(ua->argv[i]);
+         sched = GetScheduleResWithName(ua->argv[i]);
          UnlockRes();
       } else {
-         client = select_enable_disable_client_resource(ua, setting);
-         if (!client) {
+         sched = select_enable_disable_schedule_resource(ua, setting);
+         if (!sched) {
             return;
          }
       }
 
-      if (!client) {
+      if (!sched) {
          ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
          return;
       }
    } else {
-      i = find_arg_with_value(ua, NT_("job"));
+      i = find_arg(ua, NT_("client"));
       if (i >= 0) {
-         LockRes();
-         job = GetJobResWithName(ua->argv[i]);
-         UnlockRes();
+         i = find_arg_with_value(ua, NT_("client"));
+         if (i >= 0) {
+            LockRes();
+            client = GetClientResWithName(ua->argv[i]);
+            UnlockRes();
+         } else {
+            client = select_enable_disable_client_resource(ua, setting);
+            if (!client) {
+               return;
+            }
+         }
+
+         if (!client) {
+            ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
+            return;
+         }
       } else {
-         job = select_enable_disable_job_resource(ua, setting);
+         i = find_arg_with_value(ua, NT_("job"));
+         if (i >= 0) {
+            LockRes();
+            job = GetJobResWithName(ua->argv[i]);
+            UnlockRes();
+         } else {
+            job = select_enable_disable_job_resource(ua, setting);
+            if (!job) {
+               return;
+            }
+         }
+
          if (!job) {
+            ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
             return;
          }
       }
-
-      if (!job) {
-         ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
-         return;
-      }
    }
 
-   if (client) {
+   if (sched) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         ua->error_msg(_("Unauthorized command from this console.\n"));
+         return;
+      }
+
+      sched->enabled = setting;
+      ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting ? "en" : "dis");
+   } else if (client) {
       if (!acl_access_ok(ua, Client_ACL, client->name())) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
