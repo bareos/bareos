@@ -631,6 +631,9 @@ ac_includes_default="\
 
 ac_header_list=
 ac_subst_vars='LTLIBOBJS
+BUILD_DIR_PLUGINS
+BUILD_SD_PLUGINS
+BUILD_FD_PLUGINS
 COMPRESS_MANPAGES
 DISTVER
 DISTNAME
@@ -32098,6 +32101,30 @@ _ACEOF
 
 
 MCOMMON=./autoconf/Make.common
+
+
+BUILD_FD_PLUGINS=""
+BUILD_SD_PLUGINS=""
+BUILD_DIR_PLUGINS=""
+
+if test X"$support_python" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
+   BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+fi
+
+if test X"$have_scsi_crypto" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la"
+fi
+
+if test X"$have_zlib" = "Xyes" -o \
+        X"$have_lzo" = "Xyes" -o \
+        X"$have_fastlz" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+fi
+
+
+
 
 
 if test "x${subsysdir}" = "x${sbindir}" ; then
