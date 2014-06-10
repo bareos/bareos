@@ -3974,6 +3974,31 @@ dnl common parts of the Makefile
 MCOMMON=./autoconf/Make.common
 AC_SUBST_FILE(MCOMMON)
 
+dnl build a list of plugins we need to build.
+BUILD_FD_PLUGINS=""
+BUILD_SD_PLUGINS=""
+BUILD_DIR_PLUGINS=""
+
+if test X"$support_python" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
+   BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+fi
+
+if test X"$have_scsi_crypto" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la"
+fi
+
+if test X"$have_zlib" = "Xyes" -o \
+        X"$have_lzo" = "Xyes" -o \
+        X"$have_fastlz" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+fi
+
+AC_SUBST(BUILD_FD_PLUGINS)
+AC_SUBST(BUILD_SD_PLUGINS)
+AC_SUBST(BUILD_DIR_PLUGINS)
+
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "

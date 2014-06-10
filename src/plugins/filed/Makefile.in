@@ -17,13 +17,15 @@ thisdir = src/plugins/filed
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/filed
 
+BUILD_PLUGINS = @BUILD_FD_PLUGINS@
+
 .SUFFIXES:    .c .lo
 
 # inference rules
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: Makefile bpipe-fd.la python-fd.la test-plugin-fd.la test-deltaseq-fd.la
+all: Makefile bpipe-fd.la test-plugin-fd.la test-deltaseq-fd.la $(BUILD_PLUGINS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -64,9 +66,10 @@ install: all
 	$(CP) *.py $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-fd.la $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/python-fd.la
-
+	@for plugin in $(BUILD_PLUGINS); do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
+	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
+	done
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

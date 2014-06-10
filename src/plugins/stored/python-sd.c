@@ -28,13 +28,11 @@
 #include "bareos.h"
 #include "stored.h"
 
-#ifdef HAVE_PYTHON
 #undef _POSIX_C_SOURCE
 #include <Python.h>
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
-#endif
 #endif
 
 static const int dbglvl = 150;
@@ -56,13 +54,11 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
 
-#ifdef HAVE_PYTHON
 static void PyErrorHandler(bpContext *ctx, int msgtype);
 static bRC PyLoadModule(bpContext *ctx);
 static bRC PyGetPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC PySetPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC PyHandlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
-#endif
 
 /* Pointers to Bareos functions */
 static bsdFuncs *bfuncs = NULL;
@@ -96,26 +92,20 @@ static psdFuncs pluginFuncs = {
  * Plugin private context
  */
 struct plugin_ctx {
-#ifdef HAVE_PYTHON
    PyThreadState *interpreter;
    PyObject *pModule;
    PyObject *pDict;
    PyObject *bpContext;
-#endif
 };
 
-#ifdef HAVE_PYTHON
 #include "python-sd.h"
-#endif
 
 /*
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-#ifdef HAVE_PYTHON
 static PyThreadState *mainThreadState;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -139,14 +129,12 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
    *pinfo  = &pluginInfo;           /* Return pointer to our info */
    *pfuncs = &pluginFuncs;          /* Return pointer to our functions */
 
-#ifdef HAVE_PYTHON
    /*
     * Setup Python
     */
    Py_Initialize();
    PyEval_InitThreads();
    mainThreadState = PyEval_SaveThread();
-#endif
 
    return bRC_OK;
 }
@@ -156,13 +144,11 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
  */
 bRC DLL_IMP_EXP unloadPlugin()
 {
-#ifdef HAVE_PYTHON
    /*
     * Terminate Python
     */
    PyEval_RestoreThread(mainThreadState);
    Py_Finalize();
-#endif
 
    return bRC_OK;
 }
@@ -182,7 +168,6 @@ bRC DLL_IMP_EXP unloadPlugin()
 static bRC newPlugin(bpContext *ctx)
 {
    bRC retval = bRC_Error;
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx;
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
@@ -201,7 +186,6 @@ static bRC newPlugin(bpContext *ctx)
    retval = PyLoadModule(ctx);
 
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
    return retval;
 }
@@ -217,7 +201,6 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-#ifdef HAVE_PYTHON
    /*
     * Stop any sub interpreter started per plugin instance.
     */
@@ -236,7 +219,6 @@ static bRC freePlugin(bpContext *ctx)
 
    Py_EndInterpreter(p_ctx->interpreter);
    PyEval_ReleaseLock();
-#endif
 
    free(p_ctx);
    ctx->pContext = NULL;
@@ -249,7 +231,6 @@ static bRC freePlugin(bpContext *ctx)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
 
@@ -258,9 +239,6 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
    PyEval_ReleaseThread(p_ctx->interpreter);
 
    return retval;
-#else
-   return bRC_OK;
-#endif
 }
 
 /*
@@ -268,7 +246,6 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
 
@@ -277,9 +254,6 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
    PyEval_ReleaseThread(p_ctx->interpreter);
 
    return retval;
-#else
-   return bRC_OK;
-#endif
 }
 
 /*
@@ -287,7 +261,6 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
 
@@ -296,12 +269,8 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
    PyEval_ReleaseThread(p_ctx->interpreter);
 
    return retval;
-#else
-   return bRC_OK;
-#endif
 }
 
-#ifdef HAVE_PYTHON
 /*
  * Work around API changes in Python versions.
  * These function abstract the storage and retrieval of the bpContext
@@ -734,4 +703,3 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
    Py_INCREF(Py_None);
    return Py_None;
 }
-#endif
