@@ -31,13 +31,11 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-#ifdef HAVE_PYTHON
 #undef _POSIX_C_SOURCE
 #include <Python.h>
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
-#endif
 #endif
 
 static const int dbglvl = 150;
@@ -64,7 +62,6 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
 
-#ifdef HAVE_PYTHON
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
@@ -83,7 +80,6 @@ static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC PyCheckFile(bpContext *ctx, char *fname);
 static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop);
 static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp);
-#endif
 
 /* Pointers to Bareos functions */
 static bFuncs *bfuncs = NULL;
@@ -126,7 +122,6 @@ static pFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    int32_t backup_level;
-#ifdef HAVE_PYTHON
    bool python_loaded;
    char *plugin_options;
    char *module_path;
@@ -139,21 +134,16 @@ struct plugin_ctx {
    PyObject *pModule;
    PyObject *pDict;
    PyObject *bpContext;
-#endif
 };
 
-#ifdef HAVE_PYTHON
 #include "python-fd.h"
-#endif
 
 /*
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-#ifdef HAVE_PYTHON
 static PyThreadState *mainThreadState;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,14 +163,12 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
    *pinfo  = &pluginInfo;             /* Return pointer to our info */
    *pfuncs = &pluginFuncs;            /* Return pointer to our functions */
 
-#ifdef HAVE_PYTHON
    /*
     * Setup Python
     */
    Py_InitializeEx(0);
    PyEval_InitThreads();
    mainThreadState = PyEval_SaveThread();
-#endif
 
    return bRC_OK;
 }
@@ -190,13 +178,11 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
  */
 bRC unloadPlugin()
 {
-#ifdef HAVE_PYTHON
    /*
     * Terminate Python
     */
    PyEval_RestoreThread(mainThreadState);
    Py_Finalize();
-#endif
 
    return bRC_OK;
 }
@@ -214,7 +200,6 @@ bRC unloadPlugin()
  */
 static bRC newPlugin(bpContext *ctx)
 {
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx;
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
@@ -230,7 +215,6 @@ static bRC newPlugin(bpContext *ctx)
    PyEval_AcquireLock();
    p_ctx->interpreter = Py_NewInterpreter();
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
    /*
     * Always register some events the python plugin itself can register
@@ -260,7 +244,6 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-#ifdef HAVE_PYTHON
    if (p_ctx->plugin_options) {
       free(p_ctx->plugin_options);
    }
@@ -307,7 +290,6 @@ static bRC freePlugin(bpContext *ctx)
 
    Py_EndInterpreter(p_ctx->interpreter);
    PyEval_ReleaseLock();
-#endif
 
    free(p_ctx);
    ctx->pContext = NULL;
@@ -328,11 +310,9 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyGetPluginValue(ctx, var, value);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -351,11 +331,9 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
       return bRC_Error;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PySetPluginValue(ctx, var, value);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
    return retval;
 }
@@ -366,7 +344,6 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
-#ifdef HAVE_PYTHON
    bool event_dispatched = false;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
@@ -489,9 +466,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
 bail_out:
    return retval;
-#else
-   return bRC_OK;
-#endif
 }
 
 /*
@@ -510,11 +484,9 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyStartBackupFile(ctx, sp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -532,11 +504,9 @@ static bRC endBackupFile(bpContext *ctx)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyEndBackupFile(ctx);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -556,7 +526,6 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    if (!p_ctx->python_loaded) {
       goto bail_out;
    }
@@ -564,7 +533,6 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyPluginIO(ctx, io);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -582,11 +550,9 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyStartRestoreFile(ctx, cmd);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -604,11 +570,9 @@ static bRC endRestoreFile(bpContext *ctx)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyEndRestoreFile(ctx);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -630,11 +594,9 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCreateFile(ctx, rp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -653,11 +615,9 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PySetFileAttributes(ctx, rp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -675,17 +635,14 @@ static bRC checkFile(bpContext *ctx, char *fname)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCheckFile(ctx, fname);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
 }
 
-#ifdef HAVE_PYTHON
 /*
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
@@ -2800,4 +2757,3 @@ static void PyIoPacket_dealloc(PyIoPacket *self)
    }
    PyObject_Del(self);
 }
-#endif
