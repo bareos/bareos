@@ -30,7 +30,7 @@
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 
 #include "cats.h"
-#include "cats_dynamic.h"
+#include "cats_backends.h"
 #include <dlfcn.h>
 
 #ifndef RTLD_NOW
