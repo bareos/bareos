@@ -12,6 +12,8 @@
 /usr/lib/libbareoslmdb-*.so
 /usr/lib/libbareosndmp.so
 /usr/lib/libbareosndmp-*.so
+/usr/sbin/bsmtp
 /usr/sbin/btraceback
+/usr/share/man/man1/bsmtp.1.gz
 /usr/share/man/man8/btraceback.8.gz
 /var/lib/bareos/

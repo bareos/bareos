@@ -665,9 +665,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/make_catalog_backup
 %{script_dir}/make_catalog_backup.pl
 %{_sbindir}/bareos-dir
-%{_sbindir}/bsmtp
 %dir %{_docdir}/%{name}
-%{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
 %if 0%{?systemd_support}
@@ -762,7 +760,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
+%{_sbindir}/bsmtp
 %{_sbindir}/btraceback
+%{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos

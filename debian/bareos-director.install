@@ -5,7 +5,5 @@
 /usr/lib/bareos/scripts/make_catalog_backup.pl
 /usr/lib/bareos/scripts/query.sql
 /usr/sbin/bareos-dir
-/usr/sbin/bsmtp
-/usr/share/man/man1/bsmtp.1.gz
 /usr/share/man/man8/bareos-dir.8.gz
 /usr/share/man/man8/bareos.8.gz
