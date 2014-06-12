@@ -50,7 +50,7 @@ ifneq ($(CURDIR),$(CURSUB))
 #	BAREOS_VERSION:=$(shell sed -n 's,^VERSION=,,p' $(CURSUB)/autoconf/Make.common)
 endif
 
-PACKAGE_TITLE:=Bareos File Daemon ${BAREOS_VERSION}
+PACKAGE_TITLE:=macbareos-${BAREOS_VERSION}
 PACKAGE_ID:=org.bareos.bareos-fd.pkg
 PACKAGE_DIR:=${PRODUCTS_DIR}/${PACKAGE_TITLE}
 PACKAGE_BUNDLE:=${PACKAGE_DIR}/${PACKAGE_TITLE}.pkg
