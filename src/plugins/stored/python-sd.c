@@ -23,7 +23,6 @@
  * Python Storage daemon Plugin program
  *
  * Marco van Wieringen, August 2012
- *
  */
 #include "bareos.h"
 #include "stored.h"

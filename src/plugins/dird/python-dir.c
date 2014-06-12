@@ -20,10 +20,9 @@
    02110-1301, USA.
 */
 /*
- * Python Plugin
+ * Python Director Plugin program
  *
  * Marco van Wieringen, August 2012
- *
  */
 #include "bareos.h"
 #include "dird.h"
