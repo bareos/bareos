@@ -36,6 +36,7 @@ override_dh_auto_configure:
   --with-bsrdir=/var/lib/bareos \
   --with-logdir=/var/log/bareos \
   --with-subsys-dir=/var/lock \
+  --with-python \
   --enable-smartalloc \
   --disable-conio \
   --enable-readline \
