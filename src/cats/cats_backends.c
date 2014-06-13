@@ -27,9 +27,12 @@
 
 #include "bareos.h"
 
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+#if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+
 #include "cats_backends.h"
 #include <dlfcn.h>
 
@@ -243,3 +246,4 @@ void db_flush_backends(void)
 {
 }
 #endif /* HAVE_DYNAMIC_CATS_BACKENDS */
+#endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */
