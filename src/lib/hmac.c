@@ -39,7 +39,7 @@ hmac_md5(
     int   key_len,             /* length of authentication key */
     uint8_t  *hmac)            /* returned hmac-md5 */
 {
-   MD5Context md5c;
+   MD5_CTX md5c;
    uint8_t k_ipad[PAD_LEN];    /* inner padding - key XORd with ipad */
    uint8_t k_opad[PAD_LEN];    /* outer padding - key XORd with opad */
    uint8_t keysig[SIG_LEN];
@@ -47,11 +47,11 @@ hmac_md5(
 
    /* if key is longer than PAD length, reset it to key=MD5(key) */
    if (key_len > PAD_LEN) {
-      MD5Context md5key;
+      MD5_CTX md5key;
 
-      MD5Init(&md5key);
-      MD5Update(&md5key, key, key_len);
-      MD5Final(keysig, &md5key);
+      MD5_Init(&md5key);
+      MD5_Update(&md5key, key, key_len);
+      MD5_Final(keysig, &md5key);
 
       key = keysig;
       key_len = SIG_LEN;
@@ -81,16 +81,16 @@ hmac_md5(
    }
 
    /* perform inner MD5 */
-   MD5Init(&md5c);                    /* start inner hash */
-   MD5Update(&md5c, k_ipad, PAD_LEN); /* hash inner pad */
-   MD5Update(&md5c, text, text_len);  /* hash text */
-   MD5Final(hmac, &md5c);             /* store inner hash */
+   MD5_Init(&md5c);                   /* start inner hash */
+   MD5_Update(&md5c, k_ipad, PAD_LEN); /* hash inner pad */
+   MD5_Update(&md5c, text, text_len); /* hash text */
+   MD5_Final(hmac, &md5c);            /* store inner hash */
 
    /* perform outer MD5 */
-   MD5Init(&md5c);                    /* start outer hash */
-   MD5Update(&md5c, k_opad, PAD_LEN); /* hash outer pad */
-   MD5Update(&md5c, hmac, SIG_LEN);   /* hash inner hash */
-   MD5Final(hmac, &md5c);             /* store results */
+   MD5_Init(&md5c);                   /* start outer hash */
+   MD5_Update(&md5c, k_opad, PAD_LEN); /* hash outer pad */
+   MD5_Update(&md5c, hmac, SIG_LEN);  /* hash inner hash */
+   MD5_Final(hmac, &md5c);            /* store results */
 }
 /*
 Test Vectors (Trailing '\0' of a character string not included in test):

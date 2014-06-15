@@ -580,7 +580,7 @@ static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclu
          }
       case T_QUOTED_STRING:
          if (res_all->res_fs.have_MD5) {
-            MD5Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
+            MD5_Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
          incexe = &res_incexe;
          if (incexe->name_list.size() == 0) {
@@ -624,7 +624,7 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
          }
       case T_QUOTED_STRING:
          if (res_all->res_fs.have_MD5) {
-            MD5Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
+            MD5_Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
          incexe = &res_incexe;
          if (incexe->plugin_list.size() == 0) {
@@ -672,7 +672,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    if (!res_all->res_fs.have_MD5) {
-      MD5Init(&res_all->res_fs.md5c);
+      MD5_Init(&res_all->res_fs.md5c);
       res_all->res_fs.have_MD5 = true;
    }
    memset(&res_incexe, 0, sizeof(res_incexe));
