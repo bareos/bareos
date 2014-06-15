@@ -618,7 +618,7 @@ int do_shell_expansion(char *name, int name_len)
 void make_session_key(char *key, char *seed, int mode)
 {
    int j, k;
-   struct MD5Context md5c;
+   MD5_CTX md5c;
    unsigned char md5key[16], md5key1[16];
    char s[1024];
 
@@ -671,13 +671,13 @@ void make_session_key(char *key, char *seed, int mode)
    bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getuid());
    bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)getgid());
 #endif
-   MD5Init(&md5c);
-   MD5Update(&md5c, (uint8_t *)s, strlen(s));
-   MD5Final(md5key, &md5c);
+   MD5_Init(&md5c);
+   MD5_Update(&md5c, (uint8_t *)s, strlen(s));
+   MD5_Final(md5key, &md5c);
    bsnprintf(s + strlen(s), ss, "%lu", (uint32_t)((time(NULL) + 65121) ^ 0x375F));
-   MD5Init(&md5c);
-   MD5Update(&md5c, (uint8_t *)s, strlen(s));
-   MD5Final(md5key1, &md5c);
+   MD5_Init(&md5c);
+   MD5_Update(&md5c, (uint8_t *)s, strlen(s));
+   MD5_Final(md5key1, &md5c);
 #define nextrand    (md5key[j] ^ md5key1[j])
    if (mode) {
      for (j = k = 0; j < 16; j++) {
