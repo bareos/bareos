@@ -1183,10 +1183,10 @@ bool get_or_create_fileset_record(JCR *jcr)
    memset(&fsr, 0, sizeof(fsr));
    bstrncpy(fsr.FileSet, jcr->res.fileset->hdr.name, sizeof(fsr.FileSet));
    if (jcr->res.fileset->have_MD5) {
-      struct MD5Context md5c;
+      MD5_CTX md5c;
       unsigned char digest[MD5HashSize];
       memcpy(&md5c, &jcr->res.fileset->md5c, sizeof(md5c));
-      MD5Final(digest, &md5c);
+      MD5_Final(digest, &md5c);
       /*
        * Keep the flag (last arg) set to false otherwise old FileSets will
        * get new MD5 sums and the user will get Full backups on everything

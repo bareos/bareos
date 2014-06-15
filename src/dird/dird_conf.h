@@ -537,7 +537,7 @@ public:
    INCEXE **exclude_items;
    int32_t num_excludes;
    bool have_MD5;                     /* Set if MD5 initialized */
-   struct MD5Context md5c;            /* MD5 of include/exclude */
+   MD5_CTX md5c;                      /* MD5 of include/exclude */
    char MD5[30];                      /* Base 64 representation of MD5 */
    bool ignore_fs_changes;            /* Don't force Full if FS changed */
    bool enable_vss;                   /* Enable Volume Shadow Copy */
