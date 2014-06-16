@@ -9,18 +9,19 @@
 \section{General}
 
 When disaster strikes, you must have a plan, and you must have prepared in
-advance otherwise the work of recovering your system and your files will be
+advance, otherwise the work of recovering your system and your files will be
 considerably greater.  For example, if you have not previously saved the
 partitioning information for your hard disk, how can you properly rebuild
 it if the disk must be replaced?
 
 Unfortunately, many of the steps one must take before and immediately after
-a disaster are very operating system dependent.  As a consequence, this
+a disaster are very much dependent on the operating system in use.  As a
+consequence, this
 chapter will discuss in detail disaster recovery (also called Bare Metal
 Recovery) for {\bf Linux} and {\bf Solaris}.  For Solaris, the procedures
-are still quite manual.  For FreeBSD the same procedures may be used but
-they are not yet developed.  For Windows, a number of Bareos users have
-reported success using BartPE.
+still have to be undertaken mostly manually. For FreeBSD the
+same procedures may be used but they are not yet developed.  For Windows,
+a number of Bareos users have reported success using BartPE.
 
 
 \subsection{Important Considerations}
@@ -36,15 +37,13 @@ you should take into account before a disaster strikes.
    have a single machine, how will you handle unforeseen events  if your only
    machine is down?
 \item Do you want to protect your whole system and use Bareos to  recover
-   everything? or do you want to try to restore your system from  the original
-   installation disks and apply any other updates and  only restore user files?
+   everything? Or do you want to try to restore your system from  the original
+   installation disks, apply any other updates and only restore the user files?
 \end{itemize}
 
 \section{Steps to Take Before Disaster Strikes}
 \index[general]{Disaster!Before}
 \label{steps1}
-
-\TODO{describe REAR}
 
 \begin{itemize}
 \item Create a rescue or CDROM for your systems. Generally,
@@ -56,256 +55,104 @@ you should take into account before a disaster strikes.
    easily do a full restore of your system.
 \item If possible copy your catalog nightly to an alternate machine.  If you
    have a valid bootstrap file, this is not necessary, but  can be very useful if
-   you do not want to reload everything. .
+   you do not want to reload everything.
 \item Ensure that you always have a valid bootstrap file for your  catalog
    backup that is saved to an alternate machine. This will  permit you to restore
    your catalog more easily if needed.
-\item Test using the Rescue CDROM before you are forced to use it in
-   an emergency situation.
+\item Try out how to use the Rescue CDROM before you are forced to use it
+in an emergency situation.
 \item Make a copy of your Bareos .conf files, particularly your
    bareos-dir.conf, and your bareos-sd.conf files, because if your server
    goes down, these files will be needed to get it back up and running,
    and they can be difficult to rebuild from memory.
 \end{itemize}
 
+% \TODO{describe REAR}
+
 \section{Bare Metal Recovery}
 
 \subsection{Linux}
 \index[general]{Disaster!Recovery!Linux}
 
-There are a number of good rescue systems available for Linux.
-A so called "Bare Metal" recovery is one where you start with an empty hard
-disk and you restore your machine. There are also cases where you may lose a
-file or a directory and want it restored. Please see the previous chapter for
-more details for those cases.
+From the Relax-and-Recover web site
+(\elink{http://relax-and-recover.org}{http://relax-and-recover.org}):
+"Relax-and-Recover is a setup-and-forget Linux bare metal disaster recovery
+solution.
+It is easy to set up and requires no maintenance so there is no excuse for not
+using it."
+Relax-and-Recover (ReaR) is quite easy to use with Bareos.
 
-Bare Metal Recovery assumes that you have the following items for your system:
+\subsubsection{Download}
+ReaR supports Bareos as backend type since version 1.15. Make sure you get at
+least that release.
+ReaR is included in some Linux distributions.
+If you don't find ReaR \textgreater= 1.15 in your distribution, check
+the \elink{download section on the
+ReaR website}{http://relax-and-recover.org/download/}.
 
-\begin{itemize}
-\item A Rescue CDROM containing a copy of your OS.
-\item Perhaps a copy of your
-   hard disk information, as well as a statically linked version of the
-   Bareos File daemon.
-\item A full Bareos backup of your system possibly including  Incremental or
-   Differential backups since the last Full  backup
-\item A second system running the Bareos Director, the Catalog, and the
-   Storage daemon.  (this is not an absolute requirement, but how to get
-   around it is not yet documented here)
-\end{itemize}
+\subsubsection{Configuration}
+Assuming you have a working Bareos configuration on the system you want to
+protect with ReaR, the only configuration for ReaR that is needed to use Bareos
+is:
 
-\subsubsection{Restoring a Linux Client System}
-\index[general]{Restore!Linux Client}
-\label{restore_client}
+\parameter{
+BACKUP=BAREOS
+}
 
-Now, let's assume that your hard disk has just died and that you have replaced
-it with an new identical drive. In addition, we assume that you have:
+There is one important requirement for using Bareos with ReaR regarding your
+Bareos configuration: The Bareos client name (name of the file daemon resource)
+must start with the hostname of the system. This requirement will likely
+be removed in the future. In our example we use \host{myclient} as a
+hostname and \parameter{myclient-fd} as a Bareos client name.
 
-\begin{enumerate}
-\item A recent Bareos backup (Full plus Incrementals)
-\item A Rescue CDROM.
-\item Your Bareos Director, Catalog, and Storage daemon running  on another
-   machine on your local network.
-\end{enumerate}
+You also need to specify in your ReaR configuration file
+(/etc/rear/local.conf)
+where
+you want to store your recovery images. Please refer to the ReaR documentation
+for details
+(\elink{http://relax-and-recover.org/documentation/}{
+http://relax-and-recover.org/documentation/}).
 
-This is a relatively simple case, and later in this chapter, as time permits,
-we will discuss how you might recover from a situation where the machine that
-crashes is your main Bareos server (i.e. has the Director, the Catalog, and
-the Storage daemon).
+{\bf Complete Configuration Example}: For example, if you want to create an ISO
+image and store it to an NFS server
+with the IP Address 192.168.10.1, you can use the following configuration:
 
-You will take the following steps to get your system back up and running:
+\begin{config}{/etc/rear/local.conf}
+# This is default:
+#OUTPUT=ISO
+# Where to write the iso image
+# You can use NFS, if you want to write your iso image to a nfs server
+# If you leave this blank, it will
+# be written to: /var/lib/rear/output/
+OUTPUT_URL=nfs://192.168.10.1/rear
+BACKUP=BAREOS
+\end{config}
 
-\begin{enumerate}
-\item Boot with your Rescue CDROM.
-\item Start the Network (local network)
-\item Re-partition your hard disk(s) as it was before
-\item Re-format your partitions
-\item Restore the Bareos File daemon (static version)
-\item Perform a Bareos restore of all your files
-\item Re-install your boot loader
-\item Reboot
-\end{enumerate}
+\subsubsection{Backup}
+If you have installed and configured ReaR on your system, type
+\begin{commands}{Create Rescue Image}
+<command></command><parameter>rear -v mkrescue</parameter>
+\end{commands}
+to create the rescue image. If you used the configuration example above, you
+will get a bootable ISO image which can be burned onto a CD.
+This will not create a Bareos backup on your system! You will have to do that by
+other means, e.g. by a regular backup schedule or by using bconsole (the same
+applies for the "rear mkbackup" command).
 
-Now for the details ...
-
-\subsubsection{Boot with your Rescue CDROM}
-
-Each rescue disk boots somewhat differently.  Please see the
-instructions that go with your CDROM.
-
-
-\paragraph*{Start the Network:}
-
-\normalsize
-
-You can test it by pinging another machine, or pinging your broken machine
-machine from another machine. Do not proceed until your network is up.
-
-\paragraph*{Partition Your Hard Disk(s):}
-
-\paragraph*{Format Your Hard Disk(s):}
-
-\paragraph*{Mount the Newly Formatted Disks:}
-
-
-\paragraph*{Somehow get the static File daemon loaded on your system}
-Put the static file daemon and its conf file in /tmp.
-
-\paragraph*{Restore and Start the File Daemon:}
-\footnotesize
-\begin{verbatim}
-chroot /mnt/disk /tmp/bareos-fd -c /tmp/bareos-fd.conf
-\end{verbatim}
-\normalsize
-
-The above command starts the Bareos File daemon with the proper root disk
-location (i.e. {\bf /mnt/disk/tmp}. If Bareos does not start, correct the
-problem and start it. You can check if it is running by entering:
-
-\footnotesize
-\begin{verbatim}
-ps fax
-\end{verbatim}
-\normalsize
-
-You can kill Bareos by entering:
-
-\footnotesize
-\begin{verbatim}
-kill -TERM <pid>
-\end{verbatim}
-\normalsize
-
-where {\bf pid} is the first number printed in front of the first occurrence
-of {\bf bareos-fd} in the {\bf ps fax} command.
-
-Now, you should be able to use another computer with Bareos installed to check
-the status by entering:
-
-\footnotesize
-\begin{verbatim}
-status client=xxxx
-\end{verbatim}
-\normalsize
-
-into the Console program, where xxxx is the name of the client you are
-restoring.
-
-One common problem is that your {\bf bareos-dir.conf} may contain machine
-addresses that are not properly resolved on the stripped down system to be
-restored because it is not running DNS. This is particularly true for the
-address in the Storage resource of the Director, which may be very well
-resolved on the Director's machine, but not on the machine being restored and
-running the File daemon. In that case, be prepared to edit {\bf
-bareos-dir.conf} to replace the name of the Storage daemon's domain name with
-its IP address.
-
-\paragraph*{Restore Your Files:}
-
-On the computer that is running the Director, you now run a {\bf restore}
-command and select the files to be restored (normally everything), but before
-starting the restore, there is one final change you must make using the {\bf
-mod} option. You must change the {\bf Where} directory to be the root by using
-the {\bf mod} option just before running the job and selecting {\bf Where}.
-Set it to:
-
-\footnotesize
-\begin{verbatim}
-/
-\end{verbatim}
-\normalsize
-
-then run the restore.
-
-You might be tempted to avoid using {\bf chroot} and running Bareos directly
-and then using a {\bf Where} to specify a destination of {\bf /mnt/disk}. This
-is possible, however, the current version of Bareos always restores files to
-the new location, and thus any soft links that have been specified with
-absolute paths will end up with {\bf /mnt/disk} prefixed to them. In general
-this is not fatal to getting your system running, but be aware that you will
-have to fix these links if you do not use {\bf chroot}.
-
-\paragraph*{Final Step:}
-
-\footnotesize
-\begin{verbatim}
-/sbin/grub-install --root-directory=/mnt/disk /dev/hda
-\end{verbatim}
-\normalsize
-
-Note, in this case, you omit the chroot command, and you must
-replace /dev/hda with your boot device.  If you don't know what your
-boot device is, run the ./run\_grub script once and it will tell
-you.
-
-Finally, I've even run into a case where grub-install was unable to
-rewrite the boot block. In my case, it produced the following error
-message:
-
-\footnotesize
-\begin{verbatim}
-/dev/hdx does not have any corresponding BIOS drive.
-\end{verbatim}
-\normalsize
-
-The solution is to insure that all your disks are properly mounted on
-/mnt/disk, then do the following:
-
-\footnotesize
-\begin{verbatim}
-chroot /mnt/disk
-mount /dev/pts
-\end{verbatim}
-\normalsize
-
-Then edit the file {\bf /boot/grub/grub.conf} and uncomment the line
-that reads:
-
-\footnotesize
-\begin{verbatim}
-#boot=/dev/hda
-\end{verbatim}
-\normalsize
-
-So that it reads:
-
-\footnotesize
-\begin{verbatim}
-boot=/dev/hda
-\end{verbatim}
-\normalsize
-
-Note, the /dev/hda may be /dev/sda or possibly some other drive depending
-on your configuration, but in any case, it is the same as the one that
-you previously tried with {\bf grub-install}.
-
-Then, enter the following commands:
-
-\footnotesize
-\begin{verbatim}
-grub --batch --device-map=/boot/grub/device.map \
-  --config-file=/boot/grub/grub.conf --no-floppy
-root (hd0,0)
-setup (hd0)
-quit
-\end{verbatim}
-\normalsize
-
-If the {\bf grub} call worked, you will get a prompt of {\bf grub{\textgreater}}
-before the {\bf root}, {\bf setup}, and {\bf quit} commands, and after
-entering the {\bf setup} command, it should indicate that it successfully
-wrote the MBR (master boot record).
-
-
-\paragraph*{Reboot:}
-
-First unmount all your hard disks, otherwise they will not be cleanly
-shutdown, then reboot your machine by entering {\bf exit} until you get to the
-main prompt then enter {\bf Ctrl-d}. Once back to the main CDROM prompt, you
-will need to turn the power off, then back on to your machine to get it to
-reboot.
-
-If everything went well, you should now be back up and running. If not,
-re-insert the emergency boot CDROM, boot, and figure out what is wrong.
+\subsubsection{Recovery}
+After you have booted the recovery system, log in with username \user{root} and
+type
+\begin{commands}{Recovery}
+<command></command><parameter>rear recover</parameter>
+\end{commands}
+ReaR will now use the most recent backup from Bareos to restore your system.
+When the restore job has finished, ReaR will start a new shell which you can use
+to verify if the system has been restored correctly. The restored system can be
+found under the /mnt/local directory.
+When you are done with the verification, type 'exit' to leave the shell, getting
+back to the recovery process. Finally, you will be asked to confirm that
+everything is correct. Type 'yes' to continue. After that, ReaR will restore
+your bootloader. Recovery is complete.
 
 
 \subsection{FreeBSD}
