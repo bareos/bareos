@@ -16,16 +16,9 @@ it if the disk must be replaced?
 
 Unfortunately, many of the steps one must take before and immediately after
 a disaster are very much dependent on the operating system in use.  As a
-consequence, this
-chapter will discuss in detail disaster recovery (also called Bare Metal
-Recovery) for {\bf Linux} and {\bf Solaris}.  For Solaris, the procedures
-still have to be undertaken mostly manually. For FreeBSD the
-same procedures may be used but they are not yet developed.  For Windows,
-a number of Bareos users have reported success using BartPE.
-
+consequence, this chapter will discuss in detail disaster recovery only for selected operating systems.
 
 \subsection{Important Considerations}
-\label{considerations1}
 
 Here are a few important considerations concerning disaster recovery that
 you should take into account before a disaster strikes.
@@ -43,51 +36,63 @@ you should take into account before a disaster strikes.
 
 \section{Steps to Take Before Disaster Strikes}
 \index[general]{Disaster!Before}
-\label{steps1}
 
 \begin{itemize}
 \item Create a rescue or CDROM for your systems. Generally,
    they are offered by each distribution, and there are many good
-   rescue disks on the Web (Knoppix, sysrescuecd, PLD Linux rescue CD,
-   tomsrtbt, RIP ...
+   rescue disks on the Web
 \item Ensure that you always have a valid bootstrap file for your backup and
    that it is saved to an alternate machine.  This will permit you to
    easily do a full restore of your system.
 \item If possible copy your catalog nightly to an alternate machine.  If you
    have a valid bootstrap file, this is not necessary, but  can be very useful if
    you do not want to reload everything.
-\item Ensure that you always have a valid bootstrap file for your  catalog
+\item Ensure that you always have a valid \ilink{bootstrap}{BootstrapChapter} file for your  catalog
    backup that is saved to an alternate machine. This will  permit you to restore
    your catalog more easily if needed.
 \item Try out how to use the Rescue CDROM before you are forced to use it
-in an emergency situation.
+    in an emergency situation.
 \item Make a copy of your Bareos .conf files, particularly your
    bareos-dir.conf, and your bareos-sd.conf files, because if your server
    goes down, these files will be needed to get it back up and running,
    and they can be difficult to rebuild from memory.
 \end{itemize}
 
-% \TODO{describe REAR}
 
-\section{Bare Metal Recovery}
+\section{Bare Metal Recovery of Bareos Clients}
+\label{baremetal_restore_client}
+
+A so called "Bare Metal" recovery is one where you start with an empty hard
+disk and you restore your machine.
+
+Generally, following components are required for a Bare Metal Recovery:
+\begin{itemize}
+\item A rescue CDROM containing a copy of your OS and including the Bareos File daemon, including all libraries
+\item The Bareos client configuration files
+\item Useful: a copy of your hard disk information
+\item A full Bareos backup of your system
+\end{itemize}
+
 
 \subsection{Linux}
 \index[general]{Disaster!Recovery!Linux}
 
 From the Relax-and-Recover web site
 (\elink{http://relax-and-recover.org}{http://relax-and-recover.org}):
-"Relax-and-Recover is a setup-and-forget Linux bare metal disaster recovery
+\begin{quote}
+ Relax-and-Recover is a setup-and-forget Linux bare metal disaster recovery
 solution.
 It is easy to set up and requires no maintenance so there is no excuse for not
-using it."
+using it.
+\end{quote}
 Relax-and-Recover (ReaR) is quite easy to use with Bareos.
 
-\subsubsection{Download}
-ReaR supports Bareos as backend type since version 1.15. Make sure you get at
-least that release.
+\subsubsection{Installation}
+Bareos is a supported backend for ReaR since version 1.15. 
+Make sure you get at least that release.
 ReaR is included in some Linux distributions.
-If you don't find ReaR \textgreater= 1.15 in your distribution, check
-the \elink{download section on the
+If ReaR \textgreater= 1.15 is not part of your distribution, 
+check the \elink{download section on the
 ReaR website}{http://relax-and-recover.org/download/}.
 
 \subsubsection{Configuration}
@@ -99,25 +104,25 @@ is:
 BACKUP=BAREOS
 }
 
-There is one important requirement for using Bareos with ReaR regarding your
-Bareos configuration: The Bareos client name (name of the file daemon resource)
+\warning{Currently the Bareos client name (name of the file daemon resource)
 must start with the hostname of the system. This requirement will likely
-be removed in the future. In our example we use \host{myclient} as a
-hostname and \parameter{myclient-fd} as a Bareos client name.
+be removed in the future.}
+
+In our example we use \host{linux} as a
+hostname and \parameter{linux-fd} as a Bareos client name.
 
 You also need to specify in your ReaR configuration file
-(/etc/rear/local.conf)
+(\file{/etc/rear/local.conf})
 where
 you want to store your recovery images. Please refer to the ReaR documentation
 for details
-(\elink{http://relax-and-recover.org/documentation/}{
-http://relax-and-recover.org/documentation/}).
+(\elink{http://relax-and-recover.org/documentation/}{http://relax-and-recover.org/documentation/}).
 
-{\bf Complete Configuration Example}: For example, if you want to create an ISO
+For example, if you want to create an ISO
 image and store it to an NFS server
 with the IP Address 192.168.10.1, you can use the following configuration:
 
-\begin{config}{/etc/rear/local.conf}
+\begin{config}{Full Rear configuration in /etc/rear/local.conf}
 # This is default:
 #OUTPUT=ISO
 # Where to write the iso image
@@ -131,30 +136,35 @@ BACKUP=BAREOS
 \subsubsection{Backup}
 If you have installed and configured ReaR on your system, type
 \begin{commands}{Create Rescue Image}
-<command></command><parameter>rear -v mkrescue</parameter>
+<command>rear</command><parameter> -v mkrescue</parameter>
 \end{commands}
 to create the rescue image. If you used the configuration example above, you
 will get a bootable ISO image which can be burned onto a CD.
-This will not create a Bareos backup on your system! You will have to do that by
-other means, e.g. by a regular backup schedule or by using bconsole (the same
-applies for the "rear mkbackup" command).
+
+\warning{This will not create a Bareos backup on your system! You will have to do that by
+other means, e.g. by a regular Bareos backup schedule.
+Also \command{rear mkbackup} will not create a backup. 
+In this configuration it will only create the rescue ISO 
+(same as the \command{rear mkrescue} command).}
 
 \subsubsection{Recovery}
-After you have booted the recovery system, log in with username \user{root} and
-type
-\begin{commands}{Recovery}
-<command></command><parameter>rear recover</parameter>
+
+In case, you want to recover your system,
+boot it using the generated ReaR recovery ISO.
+After booting log in as user \user{root} and type
+\begin{commands}{Restore your system using Rear and Bareos}
+<command>rear</command><parameter> recover</parameter>
 \end{commands}
 ReaR will now use the most recent backup from Bareos to restore your system.
 When the restore job has finished, ReaR will start a new shell which you can use
 to verify if the system has been restored correctly. The restored system can be
-found under the /mnt/local directory.
-When you are done with the verification, type 'exit' to leave the shell, getting
+found under the \path|/mnt/local| directory.
+When you are done< with the verification, type 'exit' to leave the shell, getting
 back to the recovery process. Finally, you will be asked to confirm that
 everything is correct. Type 'yes' to continue. After that, ReaR will restore
 your bootloader. Recovery is complete.
 
-
+\hide{
 \subsection{FreeBSD}
 \label{FreeBSD1}
 \index[general]{Disaster!Recovery!FreeBSD}
@@ -204,7 +214,9 @@ remote machine.
    contents of the broken server.
 \item You must create /proc
 \end{enumerate}
+}
 
+\hide{
 \subsection{Solaris}
 \label{solaris}
 \index[general]{Solaris!Disaster Recovery}
@@ -264,7 +276,9 @@ Once you have your disks repartitioned and formatted, do the following:
 \item Re-install your boot loader using the instructions outlined  in the
    "Unix Backup \& Recovery" book  using installboot
 \end{itemize}
+}
 
+\hide{
 \subsection{Windows}
 \label{Win3233}
 \index[general]{Disaster!Recovery!Windows}
@@ -314,7 +328,7 @@ booted CD contains entries to install the file client service, start the file
 client service, and start the WX-Console. You can also open a command line
 window and CD Programs\textbackslash{}Bareos and run the command line console
 bconsole.
-
+}
 
 \section{Restoring a Bareos Server}
 \index[general]{Restore!Baroes Server}
