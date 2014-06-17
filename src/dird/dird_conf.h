@@ -477,31 +477,31 @@ inline char *JOBRES::name() const { return hdr.name; }
 
 /* File options structure */
 struct FOPTS {
-   char opts[MAX_FOPTS];              /* options string */
-   alist regex;                       /* regex string(s) */
-   alist regexdir;                    /* regex string(s) for directories */
-   alist regexfile;                   /* regex string(s) for files */
-   alist wild;                        /* wild card strings */
-   alist wilddir;                     /* wild card strings for directories */
-   alist wildfile;                    /* wild card strings for files */
-   alist wildbase;                    /* wild card strings for files without '/' */
-   alist base;                        /* list of base names */
-   alist fstype;                      /* file system type limitation */
-   alist drivetype;                   /* drive type limitation */
-   alist meta;                        /* backup meta information */
-   char *reader;                      /* reader program */
-   char *writer;                      /* writer program */
-   char *plugin;                      /* plugin program */
+   char opts[MAX_FOPTS];              /* Options string */
+   alist regex;                       /* Regex string(s) */
+   alist regexdir;                    /* Regex string(s) for directories */
+   alist regexfile;                   /* Regex string(s) for files */
+   alist wild;                        /* Wild card strings */
+   alist wilddir;                     /* Wild card strings for directories */
+   alist wildfile;                    /* Wild card strings for files */
+   alist wildbase;                    /* Wild card strings for files without '/' */
+   alist base;                        /* List of base names */
+   alist fstype;                      /* File system type limitation */
+   alist drivetype;                   /* Drive type limitation */
+   alist meta;                        /* Backup meta information */
+   char *reader;                      /* Reader program */
+   char *writer;                      /* Writer program */
+   char *plugin;                      /* Plugin program */
 };
 
 /* This is either an include item or an exclude item */
 struct INCEXE {
-   FOPTS *current_opts;               /* points to current options structure */
-   FOPTS **opts_list;                 /* options list */
-   int32_t num_opts;                  /* number of options items */
-   alist name_list;                   /* filename list -- holds char * */
-   alist plugin_list;                 /* filename list for plugins */
-   char *ignoredir;                   /* ignoredir string */
+   FOPTS *current_opts;               /* Points to current options structure */
+   FOPTS **opts_list;                 /* Options list */
+   int32_t num_opts;                  /* Number of options items */
+   alist name_list;                   /* Filename list -- holds char * */
+   alist plugin_list;                 /* Filename list for plugins */
+   alist ignoredir;                   /* Ignoredir string */
 };
 
 /*
@@ -513,13 +513,13 @@ public:
    RES hdr;
 
    bool new_include;                  /* Set if new include used */
-   INCEXE **include_items;            /* array of incexe structures */
-   int32_t num_includes;              /* number in array */
+   INCEXE **include_items;            /* Array of incexe structures */
+   int32_t num_includes;              /* Number in array */
    INCEXE **exclude_items;
    int32_t num_excludes;
-   bool have_MD5;                     /* set if MD5 initialized */
+   bool have_MD5;                     /* Set if MD5 initialized */
    struct MD5Context md5c;            /* MD5 of include/exclude */
-   char MD5[30];                      /* base 64 representation of MD5 */
+   char MD5[30];                      /* Base 64 representation of MD5 */
    bool ignore_fs_changes;            /* Don't force Full if FS changed */
    bool enable_vss;                   /* Enable Volume Shadow Copy */
 

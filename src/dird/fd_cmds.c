@@ -256,9 +256,11 @@ static bool send_fileset(JCR *jcr)
             ie = fileset->exclude_items[i];
             fd->fsend("E\n");
          }
-         if (ie->ignoredir) {
-            bnet_fsend(fd, "Z %s\n", ie->ignoredir);
+
+         for (j = 0; j < ie->ignoredir.size(); j++) {
+            bnet_fsend(fd, "Z %s\n", ie->ignoredir.get(j));
          }
+
          for (j=0; j<ie->num_opts; j++) {
             FOPTS *fo = ie->opts_list[j];
 
