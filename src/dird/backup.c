@@ -871,7 +871,6 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
               jcr->res.client->GraceTime +
               jcr->res.client->SoftQuotaGracePeriod);
 
-
    if (RunTime <= 0) {
       kbps = 0;
    } else {
