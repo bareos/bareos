@@ -12,8 +12,8 @@ JobName=backuptape
 
 require_tape_drive
 
-scripts/copy-tape-confs
-scripts/cleanup-tape
+sh -x scripts/copy-tape-confs
+sh -x scripts/cleanup-tape
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 

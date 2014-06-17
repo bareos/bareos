@@ -11,7 +11,7 @@
 #
 
 Director {
-  Name = localhost-dir
+  Name = @hostname@-dir
   DIRPort = 8101
   QueryFile = "@sbindir@/query.sql"
   WorkingDirectory = "@working_dir@"
@@ -29,7 +29,7 @@ Director {
 Job {
   Name = "NightlySave"
   Type = Backup
-  Client = localhost-fd
+  Client = @hostname@-fd
   FileSet="Full Set"
   Storage = tape
   Messages = Standard
@@ -45,7 +45,7 @@ Job {
 Job {
   Name = "NightlySave1"
   Type = Backup
-  Client = localhost-fd
+  Client = @hostname@-fd
   FileSet="Full Set"
   Storage = tape
   Messages = Standard
@@ -61,7 +61,7 @@ Job {
 Job {
   Name = "NightlySave2"
   Type = Backup
-  Client=localhost-fd
+  Client=@hostname@-fd
   FileSet="Full Set"
   Storage = tape
   Messages = Standard
@@ -77,7 +77,7 @@ Job {
   Name = "VerifyTape"
   Type = Verify
   Level = VolumeToCatalog
-  Client=localhost-fd
+  Client=@hostname@-fd
   FileSet="Verify Set"
   Storage = tape
   Messages = Standard
@@ -92,7 +92,7 @@ Job {
 Job {
   Name = "Virtual"
   Type = Backup
-  Client=localhost-fd
+  Client=@hostname@-fd
   FileSet="Full Set"
   Storage = Virtual
   Messages = Standard
@@ -110,7 +110,7 @@ Job {
 Job {
   Name = "RestoreFiles"
   Type = Restore
-  Client=localhost-fd
+  Client=@hostname@-fd
   FileSet="Full Set"
   Storage = tape
   Messages = Standard
@@ -154,8 +154,8 @@ Schedule {
 
 # Client (File Services) to backup
 Client {
-  Name = localhost-fd
-  Address = localhost
+  Name = @hostname@-fd
+  Address = @hostname@
   FDPort = 8102
   Catalog = MyCatalog
   Password = "xevrjURYoCHhn26RaJoWbeWXEY/a3VqGKp/37tgWiuHc"          # password for FileDaemon
@@ -168,7 +168,7 @@ Client {
 # Definition of File storage device
 Storage {
   Name = File
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = FileStorage                # must be same as Device in Storage daemon
@@ -179,7 +179,7 @@ Storage {
 # Definition of File2 storage device
 Storage {
   Name = File2
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = FileStorage                # must be same as Device in Storage daemon
@@ -190,7 +190,7 @@ Storage {
 # Definition of File3 storage device
 Storage {
   Name = File3
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = FileStorage                # must be same as Device in Storage daemon
@@ -201,7 +201,7 @@ Storage {
 # Definition of File4 storage device
 Storage {
   Name = File4
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = FileStorage                # must be same as Device in Storage daemon
@@ -212,7 +212,7 @@ Storage {
 # Definition of DDS tape storage device
 Storage {
   Name = tape
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = tape                      # must be same as Device in Storage daemon
@@ -224,7 +224,7 @@ Storage {
 # Definition of Virtual storage device
 Storage {
   Name = Virtual
-  Address = localhost                # N.B. Use a fully qualified name here
+  Address = @hostname@                # N.B. Use a fully qualified name here
   SDPort = 8103
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"          # password for Storage daemon
   Device = Virtual                    # must be same as Device in Storage daemon
@@ -247,8 +247,8 @@ Catalog {
 #  and to the console
 Messages {
   Name = Standard
-  mailcommand = "/root/bareos-regress/bin/bsmtp -h localhost -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: %t %e of %c %l\" %r"
-  operatorcommand = "/root/bareos-regress/bin/bsmtp -h localhost -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
+  mailcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: %t %e of %c %l\" %r"
+  operatorcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
 # MailOnError = pstorz@dass-it.de = all, !terminate
 # operator = pstorz@dass-it.de = mount
   console = all, !skipped, !terminate, !restored
@@ -265,7 +265,7 @@ Messages {
 # Message delivery for daemon messages (no job).
 Messages {
   Name = Daemon
-  mailcommand = "/root/bareos-regress/bin/bsmtp -h localhost -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
+  mailcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
 # mail = pstorz@dass-it.de = all, !skipped
   console = all, !skipped, !saved
   append = "@working_dir@/log" = all, !skipped

@@ -9,7 +9,7 @@
 #
 
 Storage {
-  Name = localhost-sd
+  Name = @hostname@-sd
   SDPort = 8103
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
@@ -22,7 +22,7 @@ Storage {
 # List Directors who are permitted to contact Storage daemon
 #
 Director {
-  Name = localhost-dir
+  Name = @hostname@-dir
   Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
 }
 
@@ -35,7 +35,7 @@ Director {
 Device {
   Name = tape
   Media Type = tape
-  Archive Device = /dev/nst0
+  Archive Device = @tape_drive@
   AutomaticMount = yes
   AlwaysOpen = yes
   RemovableMedia = yes
@@ -52,6 +52,6 @@ Device {
 #
 Messages {
   Name = Standard
-  director = localhost-dir = all, !terminate
+  director = @hostname@-dir = all, !terminate
   append = "@working_dir@/log1.sd" = all
 }
