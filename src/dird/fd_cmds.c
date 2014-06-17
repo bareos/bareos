@@ -275,8 +275,8 @@ static bool send_fileset(JCR *jcr)
             fd->fsend("E\n");
          }
 
-         if (ie->ignoredir) {
-            fd->fsend("Z %s\n", ie->ignoredir);
+         for (int j = 0; j < ie->ignoredir.size(); j++) {
+            fd->fsend("Z %s\n", ie->ignoredir.get(j));
          }
 
          for (int j = 0; j < ie->num_opts; j++) {
@@ -284,7 +284,7 @@ static bool send_fileset(JCR *jcr)
             bool enhanced_wild = false;
 
             for (int k = 0; fo->opts[k] != '\0'; k++) {
-               if (fo->opts[k]=='W') {
+               if (fo->opts[k] == 'W') {
                   enhanced_wild = true;
                   break;
                }
@@ -295,7 +295,7 @@ static bool send_fileset(JCR *jcr)
              */
             if (store && !store->AllowCompress) {
                char newopts[MAX_FOPTS];
-               bool done=false;         /* print warning only if compression enabled in FS */
+               bool done = false;       /* print warning only if compression enabled in FS */
                int l = 0;
 
                for (int k = 0; fo->opts[k] != '\0'; k++) {

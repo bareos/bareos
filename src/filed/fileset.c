@@ -431,7 +431,7 @@ void add_fileset(JCR *jcr, const char *item)
       break;
    case 'Z':                             /* Ignore dir */
       state = state_include;
-      fileset->incexe->ignoredir = bstrdup(item);
+      fileset->incexe->ignoredir.append(bstrdup(item));
       break;
    case 'D':
       current_opts = start_options(ff);
@@ -567,6 +567,7 @@ bool term_fileset(JCR *jcr)
    }
 
 #ifdef xxx_DEBUG_CODE
+   dlistString *node;
    findFILESET *fileset = ff->fileset;
    int i, j, k;
 
@@ -606,13 +607,15 @@ bool term_fileset(JCR *jcr)
             Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
          }
       }
-      if (incexe->ignoredir) {
-         Dmsg1(400, "Z %s\n", incexe->ignoredir);
+
+      for (int k = 0; k < incexe->ignoredir.size(); k++) {
+         Dmsg1(400, "Z %s\n", (char *)incexe->ignoredir.get(k));
       }
-      dlistString *node;
+
       foreach_dlist(node, &incexe->name_list) {
          Dmsg1(400, "F %s\n", node->c_str());
       }
+
       foreach_dlist(node, &incexe->plugin_list) {
          Dmsg1(400, "P %s\n", node->c_str());
       }
@@ -653,10 +656,11 @@ bool term_fileset(JCR *jcr)
             Dmsg1(400, "XD %s\n", (char *)fo->drivetype.get(k));
          }
       }
-      dlistString *node;
+
       foreach_dlist(node, &incexe->name_list) {
          Dmsg1(400, "F %s\n", node->c_str());
       }
+
       foreach_dlist(node, &incexe->plugin_list) {
          Dmsg1(400, "P %s\n", node->c_str());
       }
