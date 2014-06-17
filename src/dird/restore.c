@@ -388,16 +388,18 @@ void native_restore_cleanup(JCR *jcr, int TermCode)
 void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
-   char ec1[30], ec2[30], ec3[30];
+   char ec1[30], ec2[30], ec3[30], elapsed[50];
    char fd_term_msg[100], sd_term_msg[100];
+   utime_t RunTime;
    double kbps;
 
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
-   if (jcr->jr.EndTime - jcr->jr.StartTime > 0) {
-      kbps = (double)jcr->jr.JobBytes / (1000 * (jcr->jr.EndTime - jcr->jr.StartTime));
-   } else {
+   RunTime = jcr->jr.EndTime - jcr->jr.StartTime;
+   if (RunTime <= 0) {
       kbps = 0;
+   } else {
+      kbps = (double)jcr->jr.JobBytes / (1000 * (jcr->jr.EndTime - jcr->jr.StartTime));
    }
    if (kbps < 0.05) {
       kbps = 0;
@@ -413,6 +415,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
 "  Restore Client:         %s\n"
 "  Start time:             %s\n"
 "  End time:               %s\n"
+"  Elapsed time:           %s\n"
 "  Files Expected:         %s\n"
 "  Files Restored:         %s\n"
 "  Bytes Restored:         %s\n"
@@ -428,6 +431,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
         jcr->res.client->name(),
         sdt,
         edt,
+        edit_utime(RunTime, elapsed, sizeof(elapsed)),
         edit_uint64_with_commas((uint64_t)jcr->ExpectedFiles, ec1),
         edit_uint64_with_commas((uint64_t)jcr->jr.JobFiles, ec2),
         edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
