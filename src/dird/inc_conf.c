@@ -647,10 +647,12 @@ static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool 
    if (exclude) {
       scan_err0(lc, _("ExcludeDirContaining directive not permitted in Exclude.\n"));
       /* NOT REACHED */
+      return;
    }
+
    lex_get_token(lc, T_NAME);
    if (pass == 1) {
-      res_incexe.ignoredir = bstrdup(lc->str);
+      res_incexe.ignoredir.append(bstrdup(lc->str));
    }
    scan_to_eol(lc);
 }

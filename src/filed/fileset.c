@@ -433,7 +433,7 @@ void add_fileset(JCR *jcr, const char *item)
       break;
    case 'Z':                             /* Ignore dir */
       state = state_include;
-      fileset->incexe->ignoredir = bstrdup(item);
+      fileset->incexe->ignoredir.append(bstrdup(item));
       break;
    case 'D':
       current_opts = start_options(ff);
@@ -469,6 +469,7 @@ bool term_fileset(JCR *jcr)
 
 #ifdef xxx_DEBUG_CODE
    for (int i = 0; i < fileset->include_list.size(); i++) {
+      dlistString *node;
       findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
 
       Dmsg0(400, "I\n");
@@ -509,13 +510,15 @@ bool term_fileset(JCR *jcr)
             Dmsg1(400, "G %s\n", (char *)fo->plugin);
          }
       }
-      if (incexe->ignoredir) {
-         Dmsg1(400, "Z %s\n", incexe->ignoredir);
+
+      for (int k = 0; k < incexe->ignoredir.size(); k++) {
+         Dmsg1(400, "Z %s\n", (char *)incexe->ignoredir.get(k));
       }
-      dlistString *node;
+
       foreach_dlist(node, &incexe->name_list) {
          Dmsg1(400, "F %s\n", node->c_str());
       }
+
       foreach_dlist(node, &incexe->plugin_list) {
          Dmsg1(400, "P %s\n", node->c_str());
       }
