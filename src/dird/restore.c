@@ -524,7 +524,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
    if (RunTime <= 0) {
       kbps = 0;
    } else {
-      kbps = (double)jcr->jr.JobBytes / (1000 * (jcr->jr.EndTime - jcr->jr.StartTime));
+      kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    }
    if (kbps < 0.05) {
       kbps = 0;
