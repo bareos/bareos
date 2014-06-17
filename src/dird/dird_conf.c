@@ -1372,11 +1372,13 @@ bool FILESETRES::print_config(POOL_MEM &buff)
          }
 
          /*
-          * Ignore Dir Containing = entry.
+          * Exclude Dir Containing = entry.
           */
-         if (incexe->ignoredir) {
-            Mmsg(temp, "Ignore Dir Containing = \"%s\"\n", incexe->ignoredir);
-            indent_config_item(cfg_str, 2, temp.c_str());
+         if (incexe->ignoredir.size()) {
+            for (int l = 0; l < incexe->ignoredir.size(); l++) {
+               Mmsg(temp, "Exclude Dir Containing = \"%s\"\n", incexe->ignoredir.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
+            }
          }
 
          indent_config_item(cfg_str, 1, "}\n");
@@ -1557,9 +1559,7 @@ static void free_incexe(INCEXE *incexe)
    if (incexe->opts_list) {
       free(incexe->opts_list);
    }
-   if (incexe->ignoredir) {
-      free(incexe->ignoredir);
-   }
+   incexe->ignoredir.destroy();
    free(incexe);
 }
 

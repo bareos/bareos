@@ -363,23 +363,29 @@ static inline bool have_ignoredir(FF_PKT *ff_pkt)
    struct stat sb;
    char *ignoredir;
 
-   /* Ensure that pointers are defined */
+   /*
+    * Ensure that pointers are defined
+    */
    if (!ff_pkt->fileset || !ff_pkt->fileset->incexe) {
       return false;
    }
-   ignoredir = ff_pkt->fileset->incexe->ignoredir;
 
-   if (ignoredir) {
-      if (!ff_pkt->ignoredir_fname) {
-         ff_pkt->ignoredir_fname = get_pool_memory(PM_FNAME);
-      }
-      Mmsg(ff_pkt->ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
-      if (stat(ff_pkt->ignoredir_fname, &sb) == 0) {
-         Dmsg2(100, "Directory '%s' ignored (found %s)\n",
-               ff_pkt->fname, ignoredir);
-         return true;      /* Just ignore this directory */
+   for (int i = 0; i < ff_pkt->fileset->incexe->ignoredir.size(); i++) {
+      ignoredir = (char *)ff_pkt->fileset->incexe->ignoredir.get(i);
+
+      if (ignoredir) {
+         if (!ff_pkt->ignoredir_fname) {
+            ff_pkt->ignoredir_fname = get_pool_memory(PM_FNAME);
+         }
+         Mmsg(ff_pkt->ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
+         if (stat(ff_pkt->ignoredir_fname, &sb) == 0) {
+            Dmsg2(100, "Directory '%s' ignored (found %s)\n",
+                  ff_pkt->fname, ignoredir);
+            return true;      /* Just ignore this directory */
+         }
       }
    }
+
    return false;
 }
 

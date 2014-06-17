@@ -353,9 +353,7 @@ static inline void cleanup_fileset(JCR *jcr)
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
          incexe->plugin_list.destroy();
-         if (incexe->ignoredir) {
-            free(incexe->ignoredir);
-         }
+         incexe->ignoredir.destroy();
       }
       fileset->include_list.destroy();
 
@@ -383,9 +381,7 @@ static inline void cleanup_fileset(JCR *jcr)
          incexe->opts_list.destroy();
          incexe->name_list.destroy();
          incexe->plugin_list.destroy();
-         if (incexe->ignoredir) {
-            free(incexe->ignoredir);
-         }
+         incexe->ignoredir.destroy();
       }
       fileset->exclude_list.destroy();
       free(fileset);
