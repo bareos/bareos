@@ -49,15 +49,27 @@ install-dbconfig:
 	@echo "Installing dbconfig files ..."
 	@$(INSTALL_PROGRAM) set_dbconfig_vars.sh $(DESTDIR)/${scriptdir}/
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/
-	@ln -s    $(scriptdir)/ddl/creates/mysql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
-	@ln -s    $(scriptdir)/ddl/creates/postgresql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
-	@ln -s    $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
+	@$(SYMLINK) $(scriptdir)/ddl/creates/mysql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
+	@$(SYMLINK) $(scriptdir)/ddl/creates/postgresql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
+	@$(SYMLINK) $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/
-	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/mysql.*.sql; do BASENAME=`basename $$i`; VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; ln -s $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/$$VERSION; done
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/mysql.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/$$VERSION; \
+	done
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/
-	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/postgresql.*.sql; do BASENAME=`basename $$i`; VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; ln -s $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; done
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/postgresql.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+	done
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/
-	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/sqlite3.*.sql; do BASENAME=`basename $$i`; VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; ln -s $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/$$VERSION; done
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/sqlite3.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/$$VERSION; \
+	done
 
 clean:
 	@$(RMF) 1 2 3

@@ -86,7 +86,10 @@ install: all
 	   echo " is no longer used, and you might want to delete it."; \
 	   echo " "; \
 	fi
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bconsole $(DESTDIR)$(sbindir)/bconsole
+	$(MKDIR) $(DESTDIR)$(bindir)
+	$(MKDIR) $(DESTDIR)$(sbindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bconsole $(DESTDIR)$(bindir)/bconsole;
+	@if ! [ -r $(DESTDIR)$(sbindir)/bconsole ]; then $(SYMLINK) $(bindir)/bconsole $(DESTDIR)$(sbindir)/bconsole; fi
 	@srcconf=bconsole.conf; \
 	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
