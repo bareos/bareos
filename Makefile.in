@@ -137,9 +137,7 @@ Makefile: Makefile.in
 Makefiles:
 	$(SHELL) config.status
 	(cd scripts; \
-	 chmod 755 startmysql stopmysql bareos startit stopit btraceback; \
-	 chmod 755 mtx-changer bconsole gconsole devel_bareos; \
-	 chmod 755 dvd-handler)
+	 chmod 755 bareos btraceback mtx-changer bconsole devel_bareos; )
 
 	(cd src/cats; \
 	 chmod 755 create_bareos_database update_bareos_tables make_bareos_tables; \
@@ -153,7 +151,7 @@ Makefiles:
 	  done
 
 	(cd src/qt-console; \
-	 chmod 755 install_conf_file build-depkgs-qt-console)
+	 chmod 755 install_conf_file)
 
 clean:
 	@for I in ${all_subdirs} ; \

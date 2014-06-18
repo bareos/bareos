@@ -26,7 +26,8 @@ OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
 GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 TOOLS = bsmtp drivetype fstype bregex bwild bpluginfo bscrypto timelimit
-INSTOOLS = bsmtp bwild bregex bpluginfo bscrypto
+TOOLS_BIN = bsmtp bwild bregex
+TOOLS_SBIN = bpluginfo bscrypto
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
@@ -124,12 +125,23 @@ installall: $(TOOLS)
 	done
 	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
 
-# Allow non-root execution of bsmtp for non-root Directors
-install: $(INSTOOLS)
-	@for tool in ${INSTOOLS} ; do \
+installbin: $(TOOLS_BIN)
+	$(MKDIR) $(DESTDIR)$(bindir)
+	$(MKDIR) $(DESTDIR)$(sbindir)
+	@for tool in ${TOOLS_BIN} ; do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$tool $(DESTDIR)$(bindir)/$$tool ; \
+	   if ! [ -r $(DESTDIR)$(sbindir)/$$tool ]; then $(SYMLINK) $(bindir)/$$tool $(DESTDIR)$(sbindir)/$$tool; fi; \
+	done
+	# Allow non-root execution of bsmtp for non-root Directors
+	chmod 755 $(DESTDIR)$(bindir)/bsmtp
+
+installsbin: $(TOOLS_SBIN)
+	$(MKDIR) $(DESTDIR)$(sbindir)
+	@for tool in ${TOOLS_SBIN} ; do \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$tool $(DESTDIR)$(sbindir)/$$tool ; \
 	done
-	chmod 755 $(DESTDIR)$(sbindir)/bsmtp
+
+install: installbin installsbin
 
 # Semi-automatic generation of dependencies:
 # Use gcc -MM because X11 `makedepend' doesn't work on all systems

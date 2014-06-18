@@ -10,7 +10,7 @@
 #   * single-dir-install is not supported
 #   * Single packages for:
 #       * console package
-#       * dir package ( bsmtp )
+#       * dir package
 #       * sd package ( bls + btape + bcopy + bextract )
 #       * fd package ( )
 #       * tray monitor
@@ -641,8 +641,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
 %{script_dir}/bconsole
+%{_bindir}/bconsole
 %{_sbindir}/bconsole
-%{_mandir}/man8/bconsole.8.gz
+%{_mandir}/man1/bconsole.1.gz
 
 %files director
 # dir package (bareos-dir, bsmtp)
@@ -760,6 +761,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
+%{_bindir}/bsmtp
 %{_sbindir}/bsmtp
 %{_sbindir}/btraceback
 %{_mandir}/man1/bsmtp.1.gz
@@ -823,17 +825,19 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files tools
 # tools without link to db libs (bwild, bregex)
 %defattr(-, root, root)
+%{_bindir}/bregex
+%{_bindir}/bwild
 %{_sbindir}/bcopy
 %{_sbindir}/bextract
 %{_sbindir}/bls
 %{_sbindir}/bregex
 %{_sbindir}/bwild
 %{_sbindir}/bpluginfo
+%{_mandir}/man1/bwild.1.gz
+%{_mandir}/man1/bregex.1.gz
 %{_mandir}/man8/bcopy.8.gz
 %{_mandir}/man8/bextract.8.gz
 %{_mandir}/man8/bls.8.gz
-%{_mandir}/man8/bwild.8.gz
-%{_mandir}/man8/bregex.8.gz
 %{_mandir}/man8/bpluginfo.8.gz
 
 %if 0%{?build_qt_monitor}
@@ -841,7 +845,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-,root, root)
 %attr(-, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.conf
 %config %{_sysconfdir}/xdg/autostart/bareos-tray-monitor.desktop
-%{_sbindir}/bareos-tray-monitor
+%{_bindir}/bareos-tray-monitor
 %{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
 /usr/share/pixmaps/bareos-tray-monitor.xpm
@@ -850,7 +854,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?build_bat}
 %files bat
 %defattr(-, root, root)
-%attr(-, root, %{daemon_group}) %{_sbindir}/bat
+%attr(-, root, %{daemon_group}) %{_bindir}/bat
 %attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
 %{_prefix}/share/pixmaps/bat.png
 %{_prefix}/share/pixmaps/bat.svg

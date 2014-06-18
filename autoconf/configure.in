@@ -310,6 +310,14 @@ AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir", [Where are config files stored])
 AC_DEFINE_UNQUOTED(LOCALEDIR, "$localedir", [Where are locale files stored])
 
 dnl ------------------------------------------------------------------
+dnl If the user has not set --bindir, we set our default as /bin
+dnl ------------------------------------------------------------------
+if test x$bindir = x'${exec_prefix}/bin' ; then
+   bindir=${exec_prefix}/bin
+fi
+bindir=`eval echo ${bindir}`
+
+dnl ------------------------------------------------------------------
 dnl If the user has not set --sbindir, we set our default as /sbin
 dnl ------------------------------------------------------------------
 if test x$sbindir = x'${exec_prefix}/sbin' ; then
@@ -4187,7 +4195,8 @@ Configuration on `date`:
    Bareos version:          ${BAREOS} ${VERSION} (${DATE})
    Distribution:            ${DISTNAME}
    Source code location:    ${srcdir}
-   Install binaries:        ${sbindir}
+   Install binaries:        ${bindir}
+   Install system binaries: ${sbindir}
    Install libraries:       ${libdir}
    Install config files:    ${sysconfdir}
    Scripts directory:       ${scriptdir}

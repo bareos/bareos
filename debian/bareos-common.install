@@ -12,6 +12,7 @@
 /usr/lib/libbareoslmdb-*.so
 /usr/lib/libbareosndmp.so
 /usr/lib/libbareosndmp-*.so
+/usr/bin/bsmtp
 /usr/sbin/bsmtp
 /usr/sbin/btraceback
 /usr/share/man/man1/bsmtp.1.gz
