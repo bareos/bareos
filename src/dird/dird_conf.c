@@ -991,7 +991,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
                }
                sendit(sock, "      N\n");
             }
-            for (j = 0; i < incexe->ignoredir.size(); i++) {
+            for (j = 0; j < incexe->ignoredir.size(); j++) {
                sendit(sock, "      Z %s\n", incexe->ignoredir.get(j));
             }
             for (j = 0; j < incexe->name_list.size(); j++) {
