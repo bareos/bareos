@@ -25,7 +25,7 @@ Director {
 
 #
 # Define the main nightly save backup job
-#   By default, this job will back up to disk in /root/bareos-regress/tmp
+#   By default, this job will back up to disk in @tmpdir@
 Job {
   Name = "NightlySave"
   Type = Backup
@@ -115,7 +115,7 @@ Job {
   Storage = tape
   Messages = Standard
   Pool = Default
-  Where = /root/bareos-regress/tmp/bareos-restores
+  Where = @tmpdir@/bareos-restores
   Max Run Time = 30min
 }
 
@@ -124,7 +124,7 @@ Job {
 FileSet {
   Name = "Full Set"
   Include { Options { signature=MD5 }
-    File =  </root/bareos-regress/tmp/file-list
+    File =  <@tmpdir@/file-list
   }
 }
 
@@ -135,7 +135,7 @@ FileSet {
        signature=MD5
        verify=pins1
     }
-    File =  </root/bareos-regress/tmp/file-list
+    File =  <@tmpdir@/file-list
   }
 }
 
@@ -247,10 +247,8 @@ Catalog {
 #  and to the console
 Messages {
   Name = Standard
-  mailcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: %t %e of %c %l\" %r"
-  operatorcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
-# MailOnError = pstorz@dass-it.de = all, !terminate
-# operator = pstorz@dass-it.de = mount
+  mailcommand = "@sbindir@/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: %t %e of %c %l\" %r"
+  operatorcommand = "@sbindir@/bsmtp -h @hostname@ -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
   console = all, !skipped, !terminate, !restored
 #
 # WARNING! the following will create a file that you must cycle from
@@ -265,8 +263,7 @@ Messages {
 # Message delivery for daemon messages (no job).
 Messages {
   Name = Daemon
-  mailcommand = "/root/bareos-regress/bin/bsmtp -h @hostname@ -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
-# mail = pstorz@dass-it.de = all, !skipped
+  mailcommand = "@sbindir@/bsmtp -h @hostname@ -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
   console = all, !skipped, !saved
   append = "@working_dir@/log" = all, !skipped
   catalog = all, !skipped
