@@ -16,6 +16,7 @@ if [ -z "${CFLAGS}" ]; then
 fi
 
 ./configure \
+    --bindir=${1}/bin \
     --sbindir=${1}/bin \
     --libdir=${1}/bin \
     --sysconfdir=${1}/bin \
