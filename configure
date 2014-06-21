@@ -19104,6 +19104,11 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+if test x$bindir = x'${exec_prefix}/bin' ; then
+   bindir=${exec_prefix}/bin
+fi
+bindir=`eval echo ${bindir}`
+
 if test x$sbindir = x'${exec_prefix}/sbin' ; then
    sbindir=${exec_prefix}/sbin
 fi
@@ -34928,7 +34933,8 @@ Configuration on `date`:
    Bareos version:          ${BAREOS} ${VERSION} (${DATE})
    Distribution:            ${DISTNAME}
    Source code location:    ${srcdir}
-   Install binaries:        ${sbindir}
+   Install binaries:        ${bindir}
+   Install system binaries: ${sbindir}
    Install libraries:       ${libdir}
    Install config files:    ${sysconfdir}
    Scripts directory:       ${scriptdir}
