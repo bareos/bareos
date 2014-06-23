@@ -201,7 +201,9 @@ MONITORRES* MonitorItemThread::getMonitor() const
 MonitorItem* MonitorItemThread::getDirector() const
 {
    // search for the first occurrence of a director
-   for (int i = 0; i < items.count(); i++) {
+
+   int count = items.count();
+   for (int i = 0; i < count; i++) {
       if (items[i]->type() == R_DIRECTOR) {
          return items[i];
       }
@@ -215,7 +217,9 @@ MonitorItem* MonitorItemThread::getDirector() const
 void MonitorItemThread::dotest()
 {
    const char *cmd;
-   for (int i = 0; i < items.count(); i++) {
+   int count = items.count();
+
+   for (int i = 0; i < count; i++) {
       switch (items[i]->type()) {
       case R_DIRECTOR:
          cmd = ".jobs type=B";

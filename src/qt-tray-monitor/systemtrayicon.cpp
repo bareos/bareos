@@ -21,7 +21,6 @@
 
 #include "systemtrayicon.h"
 #include "traymenu.h"
-
 #include <QObject>
 #include <QMainWindow>
 #include <QTimer>
@@ -38,8 +37,7 @@ SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
    TrayMenu* menu = new TrayMenu(mainWindow);
    setContextMenu(menu);
 
-   icons << ":/images/bareos_1.png" << ":/images/bareos_2.png" ;
-
+   icons << ":/images/bareos_1.png" << ":/images/bareos_2.png" << ":/images/W.png";
    setIcon(QIcon(icons[iconIdx]));
    setToolTip("Bareos Tray Monitor");
 
@@ -52,12 +50,16 @@ SystemTrayIcon::~SystemTrayIcon()
    timer->stop();
 }
 
-void SystemTrayIcon::setIconInternal()
+void SystemTrayIcon::setNewIcon(int icon){
+
+   iconIdx = icon;
+   setIcon(QIcon(icons[icon]));
+}
+
+void  SystemTrayIcon::setIconInternal()
 {
-   setIcon(QIcon(icons[iconIdx]));
-   if (++iconIdx == icons.count()) {
-       iconIdx = 0;
-   }
+   setIcon(QIcon(icons[iconIdx++]));
+   iconIdx %= 2; // 0 if 1 / 1 if 0
 }
 
 void SystemTrayIcon::animateIcon(bool on)
@@ -70,7 +72,9 @@ void SystemTrayIcon::animateIcon(bool on)
       if (timer->isActive()) {
          timer->stop();
       }
-      iconIdx = 0;
-      setIconInternal();
+      if(iconIdx != 2){  // blink if there's no error
+         iconIdx = 0;
+         setIconInternal();
+      }
    }
 }
