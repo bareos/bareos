@@ -64,6 +64,10 @@ private:
    QMap<QString,MonitorTab*>* monitorTabMap;
    SystemTrayIcon* systemTrayIcon;
 
+   QStringList tabs;
+   int nTabs;
+   bool *bRefs;
+
 public slots:
    /* auto-connected slots to the UI                */
    void on_pushButton_Close_clicked();
