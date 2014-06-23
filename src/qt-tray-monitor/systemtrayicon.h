@@ -48,6 +48,7 @@ private:
 protected:
 
 public slots:
+   void setNewIcon(int icon);
    void setIconInternal();
 };
 

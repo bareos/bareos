@@ -31,8 +31,6 @@
 #include "jcr.h"
 #include "monitoritemthread.h"
 
-void senditf(const char *fmt, ...);
-void sendit(const char *buf);
 
 /* Commands sent to Director */
 static char DIRhello[]    = "Hello %s calling\n";

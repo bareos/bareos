@@ -57,79 +57,52 @@ bool MonitorItem::get_job_defaults(struct JobDefaults &job_defs)
    int stat;
    char *def;
    BSOCK *dircomm;
-   bool rtn = false;
    QString scmd = QString(".defaults job=\"%1\"").arg(job_defs.job_name);
 
-   if (job_defs.job_name == "") {
-      return rtn;
+   if (job_defs.job_name == "" || !doconnect()) {
+      return false;
    }
 
-   if (!doconnect()) {
-      return rtn;
-   }
    dircomm = d->DSock;
    dircomm->fsend("%s", scmd.toUtf8().data());
 
    while ((stat = dircomm->recv()) > 0) {
-      def = strchr(dircomm->msg, '=');
-      if (!def) {
-         continue;
-      }
-      /* Pointer to default value */
-      *def++ = 0;
-      strip_trailing_newline(def);
 
-      if (strcmp(dircomm->msg, "job") == 0) {
-         if (strcmp(def, job_defs.job_name.toUtf8().data()) != 0) {
-            goto bail_out;
+      def = strchr(dircomm->msg, '=');
+
+      if (def) {
+
+         /* Pointer to default value */
+         *def++ = 0;
+         strip_trailing_newline(def);
+
+         if (strcmp(dircomm->msg, "job") == 0) {
+
+            if (strcmp(def, job_defs.job_name.toUtf8().data()) != 0)
+               return false;
+         } else if (strcmp(dircomm->msg, "pool") == 0) {
+            job_defs.pool_name = def;
+         } else if (strcmp(dircomm->msg, "messages") == 0) {
+            job_defs.messages_name = def;
+         } else if (strcmp(dircomm->msg, "client") == 0) {
+            job_defs.client_name = def;
+         } else if (strcmp(dircomm->msg, "storage") == 0) {
+            job_defs.store_name = def;
+         } else if (strcmp(dircomm->msg, "where") == 0) {
+            job_defs.where = def;
+         } else if (strcmp(dircomm->msg, "level") == 0) {
+            job_defs.level = def;
+         } else if (strcmp(dircomm->msg, "type") == 0) {
+            job_defs.type = def;
+         } else if (strcmp(dircomm->msg, "fileset") == 0) {
+            job_defs.fileset_name = def;
+         } else if (strcmp(dircomm->msg, "catalog") == 0) {
+            job_defs.catalog_name = def;
+            job_defs.enabled = *def == '1' ? true : false;
          }
-         continue;
-      }
-      if (strcmp(dircomm->msg, "pool") == 0) {
-         job_defs.pool_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "messages") == 0) {
-         job_defs.messages_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "client") == 0) {
-         job_defs.client_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "storage") == 0) {
-         job_defs.store_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "where") == 0) {
-         job_defs.where = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "level") == 0) {
-         job_defs.level = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "type") == 0) {
-         job_defs.type = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "fileset") == 0) {
-         job_defs.fileset_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "catalog") == 0) {
-         job_defs.catalog_name = def;
-         continue;
-      }
-      if (strcmp(dircomm->msg, "enabled") == 0) {
-         job_defs.enabled = *def == '1' ? true : false;
-         continue;
       }
    }
-   rtn = true;
-   /* Fall through wanted */
-bail_out:
-   return rtn;
+   return true;
 }
 
 bool MonitorItem::doconnect()
@@ -148,6 +121,7 @@ bool MonitorItem::doconnect()
   QString message;
 
   switch (d->type) {
+
   case R_DIRECTOR:
      dird = static_cast<DIRRES*>(d->resource);
      message = QString("Connecting to Director %1:%2").arg(dird->address).arg(dird->DIRport);
@@ -156,6 +130,7 @@ bool MonitorItem::doconnect()
                              0, 0, "Director daemon", dird->address, NULL, dird->DIRport, 0);
      jcr.dir_bsock = d->DSock;
      break;
+
   case R_CLIENT:
      filed = static_cast<CLIENTRES*>(d->resource);
      message = QString("Connecting to Client %1:%2").arg(filed->address).arg(filed->FDport);
@@ -164,6 +139,7 @@ bool MonitorItem::doconnect()
                              0, 0, "File daemon", filed->address, NULL, filed->FDport, 0);
      jcr.file_bsock = d->DSock;
      break;
+
   case R_STORAGE:
      stored = static_cast<STORERES*>(d->resource);
      message = QString("Connecting to Storage %1:%2").arg(stored->address).arg(stored->SDport);
@@ -172,27 +148,32 @@ bool MonitorItem::doconnect()
                              0, 0, "Storage daemon", stored->address, NULL, stored->SDport, 0);
      jcr.store_bsock = d->DSock;
      break;
+
   default:
      printf("Error, currentitem is not a Client, a Storage or a Director..\n");
      return false;
   }
 
+  char *name = get_name();
+
   if (d->DSock == NULL) {
+
      emit showStatusbarMessage("Cannot connect to daemon.");
-     emit clearText(get_name());
-     emit appendText(get_name(), QString("Cannot connect to daemon."));
+     emit clearText(name);
+     emit appendText(name, QString("Cannot connect to daemon."));
      d->state = MonitorItem::Error;
-     emit statusChanged(get_name(), d->state);
+     emit statusChanged(name, d->state);
      return false;
   }
 
   if (!authenticate_daemon(this, &jcr)) {
+
      d->state = MonitorItem::Error;
-     emit statusChanged(get_name(), d->state);
+     emit statusChanged(name, d->state);
      message = QString("Authentication error : %1").arg(d->DSock->msg);
      emit showStatusbarMessage(message);
-     emit clearText(get_name());
-     emit appendText(get_name(), QString("Authentication error : %1").arg(d->DSock->msg));
+     emit clearText(name);
+     emit appendText(name, QString("Authentication error : %1").arg(d->DSock->msg));
      d->DSock->signal(BNET_TERMINATE); /* send EOF */
      d->DSock->close();
      d->DSock = NULL;
@@ -200,19 +181,23 @@ bool MonitorItem::doconnect()
   }
 
   switch (d->type) {
+
   case R_DIRECTOR:
      emit showStatusbarMessage("Opened connection with Director daemon.");
      break;
+
   case R_CLIENT:
      emit showStatusbarMessage("Opened connection with File daemon.");
      break;
+
   case R_STORAGE:
      emit showStatusbarMessage("Opened connection with Storage daemon.");
      break;
+
   default:
      emit showStatusbarMessage("Error, currentitem is not a Client, a Storage or a Director..\n");
      d->state = Error;
-     emit statusChanged(get_name(), d->state);
+     emit statusChanged(name, d->state);
      return false;
   }
 
@@ -221,7 +206,7 @@ bool MonitorItem::doconnect()
   }
 
   d->state = Running;
-  emit statusChanged(get_name(), d->state);
+  emit statusChanged(name, d->state);
 
   return true;
 }
@@ -265,15 +250,12 @@ bool MonitorItem::docmd(const char* command)
              if (d->type == R_CLIENT)
                 emit jobIsRunning (jobRunning);
             return true;
-         }
-         else if (d->DSock->msglen == BNET_SUB_PROMPT) {
+         } else if (d->DSock->msglen == BNET_SUB_PROMPT) {
             // qDebug() << "<< PROMPT >>";
             return false;
-         }
-         else if (d->DSock->msglen == BNET_HEARTBEAT) {
+         } else if (d->DSock->msglen == BNET_HEARTBEAT) {
             bnet_sig(d->DSock, BNET_HB_RESPONSE);
-         }
-         else {
+         } else {
             qDebug() << bnet_sig_to_ascii(d->DSock);
          }
       } else { /* BNET_HARDEOF || BNET_ERROR */
