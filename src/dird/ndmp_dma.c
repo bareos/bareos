@@ -65,7 +65,7 @@ struct ndmp_fhdb_node {
    int8_t FileType;               /* Type of File */
    int32_t FileIndex;             /* File index */
    int32_t Offset;                /* File Offset in NDMP stream */
-   int32_t inode;                 /* Inode nr */
+   uint32_t inode;                /* Inode nr */
    uint16_t fname_len;            /* Filename length */
    ndmp_fhdb_node *next;
    ndmp_fhdb_node *parent;
@@ -348,7 +348,7 @@ static int node_compare_by_id(void *item1, void *item2)
    }
 }
 
-static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, int32_t inode,
+static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, uint32_t inode,
                                                        N_TREE_ROOT *root, N_TREE_NODE *parent)
 {
    N_TREE_NODE *node, *found_node;
@@ -402,7 +402,7 @@ static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t File
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, int32_t inode)
+static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint32_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -440,7 +440,7 @@ static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, int32_t inode)
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, int32_t inode)
+static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint32_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -1756,7 +1756,7 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, NIS
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   unsigned int internal_level = level * 100;
+   int internal_level = level * 100;
    NIS *nis;
 
    /*
