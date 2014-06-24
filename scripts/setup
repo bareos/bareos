@@ -112,7 +112,7 @@ check_exit_code
 make clean
 make ${MAKEOPT}
 check_exit_code
-make install-regression
+make install
 if [ a${KEEP_SOURCE} = a ]; then
    rm -rf examples patches
    check_exit_code
