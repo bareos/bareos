@@ -14,7 +14,7 @@ SYSTEMD_TMPFILES = /etc/tmpfiles.d
 
 nothing:
 
-install: install-dir install-conf install-autostart
+install: install-dir install-conf
 
 install-dir:
 	@$(MKDIR) $(DESTDIR)/$(SYSTEMD_UNITDIR)

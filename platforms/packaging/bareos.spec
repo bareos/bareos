@@ -551,17 +551,15 @@ export MTX=/usr/sbin/mtx
 
 %install
 %if 0%{?suse_version}
-    # work-around for SLE_11
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/init.d
     %makeinstall DESTDIR=%{buildroot} install
+    %makeinstall DESTDIR=%{buildroot} install-autostart
 %else
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/rc.d/init.d
     make DESTDIR=%{buildroot} install
+    make DESTDIR=%{buildroot} install-autostart
 %endif
 
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
-
 install -d -m 755 %{buildroot}%{working_dir}
 
 #Cleaning

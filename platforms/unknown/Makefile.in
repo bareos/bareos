@@ -8,9 +8,9 @@
 #
 @MCOMMON@
 
-install: install-autostart
+install:
 
-all: install-autostart
+all:
 
 install-autostart: install-autostart-FD install-autostart-SD install-autostart-DIR
 
