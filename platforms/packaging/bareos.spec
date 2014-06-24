@@ -552,11 +552,10 @@ export MTX=/usr/sbin/mtx
 %install
 %if 0%{?suse_version}
     %makeinstall DESTDIR=%{buildroot} install
-    %makeinstall DESTDIR=%{buildroot} install-autostart
 %else
     make DESTDIR=%{buildroot} install
-    make DESTDIR=%{buildroot} install-autostart
 %endif
+make DESTDIR=%{buildroot} install-autostart
 
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps

@@ -656,7 +656,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
 %{script_dir}/bconsole
 %{_sbindir}/bconsole
-%{_mandir}/man8/bconsole.8.gz
+%{_mandir}/man8/bconsole.1.gz
 
 %if !0%{?client_only}
 
@@ -778,10 +778,14 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
+%if 0%{?client_only}
 %{_bindir}/bsmtp
 %{_sbindir}/bsmtp
+%endif
 %{_sbindir}/btraceback
+%if 0%{?client_only}
 %{_mandir}/man1/bsmtp.1.gz
+%endif
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
