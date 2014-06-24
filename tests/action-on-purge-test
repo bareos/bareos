@@ -119,6 +119,8 @@ fi
 echo "purge volume action storage=File" > $tmp/bconcmds
 run_bconsole
 
+sleep 1;
+
 perl -Mscripts::functions -e '
 check_min_volume_size(4096, "TestVolume002", "TestVolume005");
 check_max_volume_size(4096, "TestVolume001", "TestVolume003", "TestVolume004")'
