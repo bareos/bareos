@@ -158,7 +158,7 @@ int purgecmd(UAContext *ua, const char *cmd)
           * Add volume=mr.VolumeName to cmd_holder if we have a new volume name from interactive selection.
           * In certain cases this can produce duplicates, which we don't prevent as there are no side effects.
           */
-         if (!bstrcmp(ua->cmd, cmd_holder)) {
+         if (!bstrcmp(ua->cmd, cmd_holder.c_str())) {
             pm_strcat(cmd_holder, " volume=");
             pm_strcat(cmd_holder, mr.VolumeName);
          }
