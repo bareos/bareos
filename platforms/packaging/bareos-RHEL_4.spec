@@ -655,7 +655,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
 %{script_dir}/bconsole
-%{_sbindir}/bconsole
+%{_bindir}/bconsole
 %{_mandir}/man1/bconsole.1.gz
 
 %if !0%{?client_only}
