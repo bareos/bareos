@@ -13,7 +13,7 @@ SED = /usr/bin/sed
 
 nothing:
 
-install: install-autostart
+install:
 
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 

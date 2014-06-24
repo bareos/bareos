@@ -11,7 +11,7 @@ FIREWALL_DIR = /etc/sysconfig/SuSEfirewall2.d/services/
 
 nothing:
 
-install: install-autostart install-firewall install_logrotate
+install: install-firewall install_logrotate
 
 install_logrotate:
 	@$(MKDIR) $(DESTDIR)/etc/logrotate.d

@@ -15,7 +15,7 @@ ALL_INSTALL_TARGETS = install-autostart-fd install-autostart-sd install-autostar
 
 nothing:
 
-install: install-autostart
+install:
 
 install-autostart:
 	@case `uname -r` in \
