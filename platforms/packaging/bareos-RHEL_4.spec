@@ -10,7 +10,7 @@
 #   * single-dir-install is not supported
 #   * Single packages for:
 #       * console package
-#       * dir package ( bsmtp )
+#       * dir package
 #       * sd package ( bls + btape + bcopy + bextract )
 #       * fd package ( )
 #       * tray monitor
@@ -544,12 +544,11 @@ export MTX=/usr/sbin/mtx
 
 %install
 %if 0%{?suse_version}
-    # work-around for SLE_11
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/init.d
     %makeinstall DESTDIR=%{buildroot} install
+    %makeinstall DESTDIR=%{buildroot} install-autostart
 %else
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/rc.d/init.d
     make DESTDIR=%{buildroot} install
+    make DESTDIR=%{buildroot} install-autostart
 %endif
 
 install -d -m 755 %{buildroot}/usr/share/applications
@@ -569,7 +568,9 @@ for F in  \
 %{script_dir}/bareos-ctl-sd \
 %{_docdir}/%{name}/INSTALL \
 %if 0%{?client_only}
+%{_mandir}/man1/bregex.1.gz \
 %{_mandir}/man1/bsmtp.1.gz \
+%{_mandir}/man1/bwild.1.gz \
 %{_mandir}/man8/bareos-dbcheck.8.gz \
 %{_mandir}/man8/bareos-dir.8.gz \
 %{_mandir}/man8/bareos-sd.8.gz \
@@ -578,11 +579,9 @@ for F in  \
 %{_mandir}/man8/bextract.8.gz \
 %{_mandir}/man8/bls.8.gz \
 %{_mandir}/man8/bpluginfo.8.gz \
-%{_mandir}/man8/bregex.8.gz \
 %{_mandir}/man8/bscan.8.gz \
 %{_mandir}/man8/bscrypto.8.gz \
 %{_mandir}/man8/btape.8.gz \
-%{_mandir}/man8/bwild.8.gz \
 %{_sysconfdir}/logrotate.d/bareos-dir \
 %{_sysconfdir}/rc.d/init.d/bareos-dir \
 %{_sysconfdir}/rc.d/init.d/bareos-sd \
@@ -662,7 +661,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if !0%{?client_only}
 
 %files director
-# dir package (bareos-dir, bsmtp)
+# dir package (bareos-dir)
 %defattr(-, root, root)
 %if 0%{?suse_version}
 %{_sysconfdir}/init.d/bareos-dir
@@ -682,9 +681,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/make_catalog_backup
 %{script_dir}/make_catalog_backup.pl
 %{_sbindir}/bareos-dir
-%{_sbindir}/bsmtp
 %dir %{_docdir}/%{name}
-%{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
 %if 0%{?systemd_support}
@@ -781,7 +778,10 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
+%{_bindir}/bsmtp
+%{_sbindir}/bsmtp
 %{_sbindir}/btraceback
+%{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
@@ -843,17 +843,19 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files tools
 # tools without link to db libs (bwild, bregex)
 %defattr(-, root, root)
+%{_bindir}/bregex
+%{_bindir}/bwild
 %{_sbindir}/bcopy
 %{_sbindir}/bextract
 %{_sbindir}/bls
 %{_sbindir}/bregex
 %{_sbindir}/bwild
 %{_sbindir}/bpluginfo
+%{_mandir}/man1/bwild.1.gz
+%{_mandir}/man1/bregex.1.gz
 %{_mandir}/man8/bcopy.8.gz
 %{_mandir}/man8/bextract.8.gz
 %{_mandir}/man8/bls.8.gz
-%{_mandir}/man8/bwild.8.gz
-%{_mandir}/man8/bregex.8.gz
 %{_mandir}/man8/bpluginfo.8.gz
 
 %if 0%{?build_qt_monitor}
@@ -861,7 +863,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-,root, root)
 %attr(-, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.conf
 %config %{_sysconfdir}/xdg/autostart/bareos-tray-monitor.desktop
-%{_sbindir}/bareos-tray-monitor
+%{_bindir}/bareos-tray-monitor
 %{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
 /usr/share/pixmaps/bareos-tray-monitor.xpm
@@ -870,7 +872,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?build_bat}
 %files bat
 %defattr(-, root, root)
-%attr(-, root, %{daemon_group}) %{_sbindir}/bat
+%attr(-, root, %{daemon_group}) %{_bindir}/bat
 %attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
 %{_prefix}/share/pixmaps/bat.png
 %{_prefix}/share/pixmaps/bat.svg
