@@ -644,7 +644,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man1/bconsole.1.gz
 
 %files director
-# dir package (bareos-dir, bsmtp)
+# dir package (bareos-dir)
 %defattr(-, root, root)
 %if 0%{?suse_version}
 %{_sysconfdir}/init.d/bareos-dir
