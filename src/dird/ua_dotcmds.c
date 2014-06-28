@@ -1153,12 +1153,12 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
          ua->send_msg("client=%s", (job->client) ? job->client->name() : _("*None*"));
          get_job_storage(&store, job, NULL);
          ua->send_msg("storage=%s", store.store->name());
-         ua->send_msg("where=%s", job->RestoreWhere?job->RestoreWhere : "");
+         ua->send_msg("where=%s", job->RestoreWhere ? job->RestoreWhere : "");
          ua->send_msg("level=%s", level_to_str(job->JobLevel));
          ua->send_msg("type=%s", job_type_to_str(job->JobType));
          ua->send_msg("fileset=%s", (job->fileset) ? job->fileset->name() : _("*None*"));
          ua->send_msg("enabled=%d", job->enabled);
-         ua->send_msg("catalog=%s", job->client->catalog->name());
+         ua->send_msg("catalog=%s", (job->client) ? job->client->catalog->name() : _("*None*"));
       }
    } else if (bstrcmp(ua->argk[1], "client")) {
       CLIENTRES *client;
