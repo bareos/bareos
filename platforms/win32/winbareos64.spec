@@ -4,6 +4,10 @@
 # Determine Windows Version (32/64) from name (mingw32-.../ming64-...)
 %define WIN_VERSION %(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
 
+# Set what to build
+%define BUILD_QTGUI yes
+%define WIN_VISTACOMPAT yes
+
 %define __strip %{_mingw64_strip}
 %define __objdump %{_mingw64_objdump}
 %define _use_internal_dependency_generator 0
@@ -11,7 +15,6 @@
 %define __find_provides %{_mingw64_findprovides}
 #define __os_install_post #{_mingw64_debug_install_post} \
 #                          #{_mingw64_install_post}
-
 
 Name:           mingw64-winbareos
 Version:        13.2.3
@@ -92,7 +95,7 @@ tar xvf %SOURCE3
 %build
 
 cd src/win32/
-make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=yes WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
+make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=%{WIN_VISTACOMPAT} %{?jobs:-j%jobs}
 
 %install
 
