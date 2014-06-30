@@ -92,7 +92,7 @@ tar xvf %SOURCE3
 %build
 
 cd src/win32/
-make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=yes WIN_VERSION=%{WIN_VERSION} VISTACOMPAT=yes %{?jobs:-j%jobs}
+make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=yes WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
 
 %install
 
