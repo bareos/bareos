@@ -413,7 +413,7 @@ bool B_ACCURATE_LMDB::send_base_file_list(JCR *jcr)
       result = mdb_txn_commit(m_db_rw_txn);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
-         goto bail_out;
+         return false;
       }
       m_db_rw_txn = NULL;
    }
@@ -474,7 +474,7 @@ bool B_ACCURATE_LMDB::send_deleted_list(JCR *jcr)
       result = mdb_txn_commit(m_db_rw_txn);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
-         goto bail_out;
+         return false;
       }
       m_db_rw_txn = NULL;
    }
