@@ -76,7 +76,7 @@ Vendor: 	The Bareos Team
 %define install_suse_fw 1
 %endif
 
-%if 0%{?suse_version} > 1140 || 0%{?fedora_version} > 14
+%if 0%{?suse_version} > 1140 || 0%{?fedora_version} > 14 || 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
 %define systemd_support 1
 %endif
 
