@@ -5,6 +5,8 @@
 
 File Daemon plugins are configured by the \configdirective{plugin} directive of a FileSet, see the \ilink{File Set}{directive-fileset-plugin} section.
 
+\warning{Currently the plugin command is being stored as part of the backup. The restore command in your directive should be flexible enough if things might change in future, otherwise you could run into trouble.}
+
 \subsection{bpipe Plugin}
 \label{bpipe}
 
@@ -64,9 +66,12 @@ to the file. Either the path must exist, or you must explicitly do so with your 
 
 See the examples about \ilink{Backup PostgreSQL}{backup-postgresql} and \ilink{Backup MySQL}{backup-mysql}.
 
+
+\subsection{PGSQL Plugin}
+
+See chapter \ilink{Backup of a PostgreSQL Databases by using the PGSQL-Plugin}{backup-postgresql-plugin}.
+
+
 \subsection{MSSQL Plugin}
 
 See chapter \ilink{Backup Of MSSQL Databases}{MSSQL}.
-
-Even keep in mind that currently the plugin command is being stored as part of the backup. The restore command in your directive 
-should be flexible enough if things might change in future, otherwise you could run into trouble.

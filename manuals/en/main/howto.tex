@@ -1,13 +1,13 @@
 
 \section{Use a dummy device to test the backup}
-\label{testbackup}
+\label{dummydevice}
+\label{TestUsingFifoDevice}
 If your are testing your configuration, but don't want to store the backup data,
 it is possible to use a dummy FIFO device to test your configuration, see \ilink{Stored configuration}{SetupFifo}.
 
 Obviously, it can not be used to do a restore.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{FIFO Storage Device Configuration}
 Device {
   Name = NULL
   Media Type = NULL
@@ -20,8 +20,7 @@ Device {
   MaximumOpenWait = 60
   AlwaysOpen = no
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 
 
@@ -596,7 +595,7 @@ Job queued. JobId=14
 \index[general]{Database!PostgreSQL!Backup}
 \label{backup-postgresql}
 
-In this section, we describe different methods how to do a full backup of the PostgreSQL database.
+In this section, we describe different methods how to do backups of the PostgreSQL databases.
 
 
 \subsubsection{Backup of a PostgreSQL Database by using the RunBeforeJob directive}
@@ -675,6 +674,17 @@ FileSet {
   }
 }
 \end{bconfig}
+
+\subsubsection{Backup of a PostgreSQL Databases by using the PGSQL-Plugin}
+\index[general]{plugin!PostgreSQL backup}
+\label{backup-postgresql-plugin}
+
+The PGSQL-Plugin supports an online (Hot) backup of database files and database transaction logs (WAL) archiving (with pgsql-archlog) and backup. With online database and transaction logs the backup plugin can perform Poin-In-Time-Restore up to a single selected transaction or date/time. 
+
+Database recovery is performed fully automatic with dedicated pgsql-restore utility.
+
+For a full description, see \elink{https://github.com/bareos/contrib-pgsql-plugin/wiki}{https://github.com/bareos/contrib-pgsql-plugin/wiki}.
+
 
 
 \subsection{Backup of a MySQL Database}
