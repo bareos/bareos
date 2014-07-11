@@ -176,10 +176,31 @@ struct findFILESET {
    alist exclude_list;
 };
 
+/*
+ * OSX resource fork.
+ */
 struct HFSPLUS_INFO {
    unsigned long length;              /* Mandatory field */
    char fndrinfo[32];                 /* Finder Info */
    off_t rsrclength;                  /* Size of resource fork */
+};
+
+/*
+ * Structure for keeping track of hard linked files, we
+ * keep an entry for each hardlinked file that we save,
+ * which is the first one found. For all the other files that
+ * are linked to this one, we save only the directory
+ * entry so we can link it.
+ */
+struct CurLink {
+    struct hlink link;
+    dev_t dev;                        /* Device */
+    ino_t ino;                        /* Inode with device is unique */
+    uint32_t FileIndex;               /* Bareos FileIndex of this file */
+    int32_t digest_stream;            /* Digest type if needed */
+    uint32_t digest_len;              /* Digest len if needed */
+    char *digest;                     /* Checksum of the file if needed */
+    char name[1];                     /* The name */
 };
 
 /*
@@ -207,7 +228,6 @@ struct FF_PKT {
    int32_t object_index;              /* Object index */
    int32_t object_len;                /* Object length */
    int32_t object_compression;        /* Type of compression for object */
-   struct f_link *linked;             /* Set if this file is hard linked */
    int type;                          /* FT_ type from above */
    int ff_errno;                      /* Errno */
    BFILE bfd;                         /* Bareos file descriptor */
@@ -244,11 +264,12 @@ struct FF_PKT {
    /*
     * List of all hard linked files found
     */
-   struct f_link **linkhash;          /* Hard linked files */
+   htable *linkhash;                  /* Hard linked files */
+   struct CurLink *linked;            /* Set if this file is hard linked */
 
    /*
     * Darwin specific things.
-    * To avoid clutter, we always include rsrc_bfd and volhas_attrlist
+    * To avoid clutter, we always include rsrc_bfd and volhas_attrlist.
     */
    BFILE rsrc_bfd;                    /* Fd for resource forks */
    bool volhas_attrlist;              /* Volume supports getattrlist() */
