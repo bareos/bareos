@@ -1499,7 +1499,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                      "Bootstrap:     %s\n"
                      "Pool:          %s\n"
                      "NextPool:      %s\n"
-                     "Read Storage:  %s\n"
                      "Write Storage: %s\n"
                      "JobId:         %s\n"
                      "When:          %s\n"
@@ -1510,7 +1509,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
            NPRT(jcr->RestoreBootstrap),
            NPRT(jcr->res.pool->name()),
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
-           jcr->res.rstore->name(),
            jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
            (jcr->MigrateJobId == 0) ? _("*None*") : edit_uint64(jcr->MigrateJobId, ec1),
            bstrutime(dt, sizeof(dt), jcr->sched_time),
@@ -1527,7 +1525,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                      "Bootstrap:     %s\n"
                      "Pool:          %s (From %s)\n"
                      "NextPool:      %s (From %s)\n"
-                     "Read Storage:  %s (From %s)\n"
                      "Write Storage: %s (From %s)\n"
                      "JobId:         %s\n"
                      "When:          %s\n"
@@ -1539,7 +1536,6 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
            NPRT(jcr->res.pool->name()), jcr->res.pool_source,
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            NPRT(jcr->res.npool_source),
-           jcr->res.rstore->name(), jcr->res.rstore_source,
            jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
            jcr->res.wstore_source,
            jcr->MigrateJobId == 0 ? _("*None*") : edit_uint64(jcr->MigrateJobId, ec1),
@@ -1989,15 +1985,26 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    } else if (!rc.store->store) {
       get_job_storage(rc.store, rc.job, NULL); /* use default */
    }
-   if (!rc.store->store) {
-      ua->error_msg(_("No storage specified.\n"));
-      return false;
-   } else if (!acl_access_ok(ua, Storage_ACL, rc.store->store->name())) {
-      ua->error_msg(_("No authorization. Storage \"%s\".\n"),
-               rc.store->store->name());
-      return false;
+
+   /*
+    * For certain Jobs an explicit setting of the read storage is not
+    * required as its determined when the Job is executed automatically.
+    */
+   switch (rc.job->JobType) {
+   case JT_COPY:
+   case JT_MIGRATE:
+      break;
+   default:
+      if (!rc.store->store) {
+         ua->error_msg(_("No storage specified.\n"));
+         return false;
+      } else if (!acl_access_ok(ua, Storage_ACL, rc.store->store->name())) {
+         ua->error_msg(_("No authorization. Storage \"%s\".\n"), rc.store->store->name());
+         return false;
+      }
+      Dmsg1(800, "Using storage=%s\n", rc.store->store->name());
+      break;
    }
-   Dmsg1(800, "Using storage=%s\n", rc.store->store->name());
 
    if (rc.client_name) {
       rc.client = GetClientResWithName(rc.client_name);
