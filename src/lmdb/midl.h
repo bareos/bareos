@@ -1,5 +1,5 @@
 /**	@file midl.h
- *	@brief mdb ID List header file.
+ *	@brief LMDB ID List header file.
  *
  *	This file was originally part of back-bdb but has been
  *	modified for use in libmdb. Most of the macros defined
@@ -11,7 +11,7 @@
 /* $OpenLDAP$ */
 /* This work is part of OpenLDAP Software <http://www.openldap.org/>.
  *
- * Copyright 2000-2013 The OpenLDAP Foundation.
+ * Copyright 2000-2014 The OpenLDAP Foundation.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-/** @defgroup internal	MDB Internals
+/** @defgroup internal	LMDB Internals
  *	@{
  */
 
