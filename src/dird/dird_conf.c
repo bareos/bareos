@@ -2316,6 +2316,9 @@ bool populate_jobdefs()
 
       /*
        * For Copy and Migrate we can have Jobs without a client or fileset.
+       * As for a copy we use the original Job as a reference for the Read storage
+       * we also don't need to check if there is an explicit storage definition in
+       * either the Job or the Read pool.
        */
       switch (job->JobType) {
       case JT_COPY:
@@ -2327,27 +2330,24 @@ bool populate_jobdefs()
           */
          if (!job->client) {
             Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"),
-                 job->name());
+                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
             retval = false;
             goto bail_out;
          }
 
          if (!job->fileset) {
             Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"),
-                 job->name());
+                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
+            retval = false;
+            goto bail_out;
+         }
+
+         if (!job->storage && !job->pool->storage) {
+            Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), job->name());
             retval = false;
             goto bail_out;
          }
          break;
-      }
-
-      if (!job->storage && !job->pool->storage) {
-         Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
-            job->name());
-         retval = false;
-         goto bail_out;
       }
    } /* End loop over Job res */
 

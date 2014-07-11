@@ -1394,8 +1394,7 @@ void dird_free_jcr(JCR *jcr)
 
 /*
  * The Job storage definition must be either in the Job record
- *  or in the Pool record.  The Pool record overrides the Job
- *  record.
+ * or in the Pool record.  The Pool record overrides the Job record.
  */
 void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
 {
@@ -1413,8 +1412,10 @@ void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
       store->store = (STORERES *)job->pool->storage->first();
       pm_strcpy(store->store_source, _("Pool resource"));
    } else {
-      store->store = (STORERES *)job->storage->first();
-      pm_strcpy(store->store_source, _("Job resource"));
+      if (job->storage) {
+         store->store = (STORERES *)job->storage->first();
+         pm_strcpy(store->store_source, _("Job resource"));
+      }
    }
 }
 

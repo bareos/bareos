@@ -619,6 +619,7 @@ struct cpl_keywords_t {
 
 static struct cpl_keywords_t cpl_keywords[] = {
    { "pool=", ".pool", false },
+   { "nextpool=", ".pool", false },
    { "fileset=", ".fileset", false },
    { "client=", ".client", false },
    { "job=", ".jobs", false },
