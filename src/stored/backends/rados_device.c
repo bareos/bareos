@@ -36,6 +36,8 @@
 int rados_device::d_open(const char *pathname, int flags, int mode)
 {
    int status;
+   uint64_t object_size;
+   time_t object_mtime;
    berrno be;
 
    if (!m_rados_configstring) {
@@ -87,6 +89,37 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          Mmsg2(errmsg, _("Unable to create RADOS IO context for pool %s: ERR=%s\n"), m_rados_poolname, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
+      }
+   }
+
+   /*
+    * See if the object already exists.
+    */
+   status = rados_stat(m_ctx, getVolCatName(), &object_size, &object_mtime);
+
+   /*
+    * See if the O_CREAT flag is set.
+    */
+   if (flags & O_CREAT) {
+      if (status < 0) {
+         switch (status) {
+         case -ENOENT:
+            /*
+             * Create an empty object.
+             * e.g. write one byte and then truncate it to zero bytes.
+             */
+            rados_write(m_ctx, getVolCatName(), " ", 1, 0);
+            rados_trunc(m_ctx, getVolCatName(), 0);
+            break;
+         default:
+            errno = -status;
+            return -1;
+         }
+      }
+   } else {
+      if (status < 0) {
+         errno = -status;
+         return -1;
       }
    }
 
