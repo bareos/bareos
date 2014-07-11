@@ -3740,6 +3740,68 @@ AC_SUBST(RADOS_INC)
 AC_SUBST(RADOS_LIBS)
 
 dnl
+dnl Check for CEPH striping via libradosstriper.
+dnl
+RADOS_STRIPER_LIBS="-lradosstriper"
+RADOS_STRIPER_INC=""
+have_ceph_rados_striper=no
+AC_ARG_WITH(rados-striper,
+   AC_HELP_STRING([--with-rados-striper@<:@=DIR@:>@], [Directory holding RADOS striper includes/libs]),
+      with_rados_striper_directory=$withval
+)
+
+if test "x${with_rados_striper_directory}" != "xyes" && test x"${with_rados_striper_directory}" != "x"; then
+   #
+   # Make sure the $with_rados_striper_directory also makes sense
+   #
+   if test -d "${with_rados_striper_directory}/lib" -a -d "${with_rados_striper_directory}/include"; then
+      RADOS_STRIPER_LIBS="-L${with_rados_striper_directory}/lib ${RADOS_STRIPER_LIBS}"
+      RADOS_STRIPER_INC="-I${with_rados_striper_directory}/include ${RADOS_STRIPER_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${RADOS_STRIPER_LIBS}"
+CFLAGS="${saved_CFLAGS} ${RADOS_STRIPER_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${RADOS_STRIPER_INC}"
+
+AC_CHECK_HEADER(radosstriper/libradosstriper.h)
+
+AC_MSG_CHECKING(for rados_striper_create in radosstriper library)
+AC_TRY_LINK(
+   [
+       #include <radosstriper/libradosstriper.h>
+   ], [
+      rados_ioctx_t io_ctx;
+      rados_striper_t striper;
+
+      rados_striper_create(io_ctx, &striper);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_ceph_rados_striper="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_ceph_rados_striper="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_ceph_rados_striper}" = "xyes"; then
+   AC_DEFINE(HAVE_RADOS_STRIPER, 1, [Define to 1 if you have radosstriper lib])
+else
+   RADOS_STRIPER_LIBS=""
+   RADOS_STRIPER_INC=""
+fi
+
+AC_SUBST(RADOS_STRIPER_INC)
+AC_SUBST(RADOS_STRIPER_LIBS)
+
+dnl
 dnl Check for CEPH via libcephfs.
 dnl
 CEPHFS_LIBS="-lcephfs"
@@ -4511,6 +4573,7 @@ Configuration on `date`:
    GLUSTERFS support:       ${have_glusterfs}
    DROPLET support:         ${have_droplet}
    CEPH RADOS support:      ${have_ceph_rados}
+   RADOS striping support:  ${have_ceph_rados_striper}
    CEPHFS support:          ${have_cephfs}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}

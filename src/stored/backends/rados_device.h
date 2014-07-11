@@ -29,14 +29,26 @@
 
 #include <rados/librados.h>
 
+#ifdef HAVE_RADOS_STRIPER
+#include <radosstriper/libradosstriper.h>
+#endif
+
 class rados_device: public DEVICE {
 private:
    char *m_rados_configstring;
    char *m_rados_conffile;
    char *m_rados_poolname;
    bool m_cluster_initialized;
+#ifdef HAVE_RADOS_STRIPER
+   bool m_stripe_volume;
+   uint32_t m_stripe_unit;
+   uint32_t m_stripe_count;
+#endif
    rados_t m_cluster;
    rados_ioctx_t m_ctx;
+#ifdef HAVE_RADOS_STRIPER
+   rados_striper_t m_striper;
+#endif
    boffset_t m_offset;
 
 public:
