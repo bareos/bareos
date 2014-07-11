@@ -11,9 +11,9 @@ GITVERSION=$(shell git log --pretty=format:"%at" -1)
 
 # bareos version and download site
 BAREOS_VERSION:=@VERSION@.git.$(GITVERSION)
-BAREOS_DL_URL:=http://downloads.sourceforge.net/project/bareos/bareos/${BAREOS_VERSION}/bareos-${BAREOS_VERSION}.tar.gz
+BAREOS_DL_URL:=http://github.com/bareos/bareos/archive/Release/${BAREOS_VERSION}.tar.gz
 
-# Build universal binary. Comment out when building versions of bareos < 3.0.0
+# Build universal binary
 ARCHFLAGS:=
 MACOSX_SDK_SYSROOT:=
 MACOSX_VERSION_FLAGS:=
@@ -50,7 +50,7 @@ ifneq ($(CURDIR),$(CURSUB))
 #	BAREOS_VERSION:=$(shell sed -n 's,^VERSION=,,p' $(CURSUB)/autoconf/Make.common)
 endif
 
-PACKAGE_TITLE:=macbareos-${BAREOS_VERSION}
+PACKAGE_TITLE:=bareos-filedaemon-${BAREOS_VERSION}
 PACKAGE_ID:=org.bareos.bareos-fd.pkg
 PACKAGE_DIR:=${PRODUCTS_DIR}/${PACKAGE_TITLE}
 PACKAGE_BUNDLE:=${PACKAGE_DIR}/${PACKAGE_TITLE}.pkg
