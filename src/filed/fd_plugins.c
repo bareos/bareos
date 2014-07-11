@@ -564,17 +564,19 @@ bail_out:
  */
 int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
-   Plugin *plugin;
-   int len;
    int i;
-   char *cmd = ff_pkt->top_fname;
-   struct save_pkt sp;
+   int len;
+   bRC ret;
+   char *cmd;
    bEvent event;
+   Plugin *plugin;
+   struct save_pkt sp;
    bEventType eventType;
    POOL_MEM fname(PM_FNAME);
    POOL_MEM link(PM_FNAME);
    bpContext *plugin_ctx_list;
 
+   cmd = ff_pkt->top_fname;
    plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    if (!fd_plugin_list || !plugin_ctx_list || jcr->is_job_canceled()) {
       Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
@@ -644,11 +646,13 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          if (plug_func(plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
             goto bail_out;
          }
+
          if (sp.type == 0) {
             Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
                cmd);
             goto bail_out;
          }
+
          jcr->plugin_sp = &sp;
          ff_pkt = jcr->ff;
 
@@ -691,10 +695,66 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          }
 
          /*
+          * Handle hard linked files
+          *
+          * Maintain a list of hard linked files already backed up. This allows us to ensure
+          * that the data of each file gets backed up only once.
+          */
+         ff_pkt->LinkFI = 0;
+         if (!(ff_pkt->flags & FO_NO_HARDLINK) && ff_pkt->statp.st_nlink > 1) {
+            CurLink *hl;
+
+            switch (ff_pkt->statp.st_mode & S_IFMT) {
+            case S_IFREG:
+            case S_IFCHR:
+            case S_IFBLK:
+            case S_IFIFO:
+#ifdef S_IFSOCK
+            case S_IFSOCK:
+#endif
+               hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
+               if (hl) {
+                  /*
+                   * If we have already backed up the hard linked file don't do it again
+                   */
+                  if (bstrcmp(hl->name, sp.fname)) {
+                     Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex, fname.c_str());
+                     ff_pkt->no_read = true;
+                  } else {
+                     ff_pkt->link = hl->name;
+                     ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+                     ff_pkt->LinkFI = hl->FileIndex;
+                     ff_pkt->linked = NULL;
+                     ff_pkt->digest = hl->digest;
+                     ff_pkt->digest_stream = hl->digest_stream;
+                     ff_pkt->digest_len = hl->digest_len;
+
+                     Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex, hl->FileIndex, hl->name);
+
+                     ff_pkt->no_read = true;
+                  }
+               } else {
+                  /*
+                   * File not previously dumped. Chain it into our list.
+                   */
+                  hl = new_hardlink(jcr, ff_pkt, sp.fname, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
+                  ff_pkt->linked = hl;              /* Mark saved link */
+                  Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+               }
+               break;
+            default:
+               ff_pkt->linked = NULL;
+               break;
+            }
+         } else {
+            ff_pkt->linked = NULL;
+         }
+
+         /*
           * Call Bareos core code to backup the plugin's file
           */
          save_file(jcr, ff_pkt, true);
-         bRC ret = plug_func(plugin)->endBackupFile(ctx);
+         ret = plug_func(plugin)->endBackupFile(ctx);
          if (ret == bRC_More || ret == bRC_OK) {
             accurate_mark_file_as_seen(jcr, fname.c_str());
          }
@@ -1096,7 +1156,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    rp.file_index = attr->file_index;
    rp.LinkFI = attr->LinkFI;
    rp.uid = attr->uid;
-   rp.statp = attr->statp;                /* structure assignment */
+   memcpy(&rp.statp, &attr->statp, sizeof(rp.statp));
    rp.attrEx = attr->attrEx;
    rp.ofname = attr->ofname;
    rp.olname = attr->olname;
@@ -1191,7 +1251,7 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    rp.file_index = attr->file_index;
    rp.LinkFI = attr->LinkFI;
    rp.uid = attr->uid;
-   rp.statp = attr->statp;                /* structure assignment */
+   memcpy(&rp.statp, &attr->statp, sizeof(rp.statp));
    rp.attrEx = attr->attrEx;
    rp.ofname = attr->ofname;
    rp.olname = attr->olname;

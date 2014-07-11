@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,50 +48,54 @@
 typedef enum {
    KEY_TYPE_CHAR = 1,
    KEY_TYPE_UINT32 = 2,
-   KEY_TYPE_UINT64 = 3
+   KEY_TYPE_UINT64 = 3,
+   KEY_TYPE_BINARY = 4
 } key_type_t;
 
 union hlink_key {
    char *char_key;
    uint32_t uint32_key;
    uint64_t uint64_key;
+   uint8_t *binary_key;
 };
 
 struct hlink {
-   void *next;                        /* next hash item */
-   key_type_t key_type;               /* type of key used to hash */
-   union hlink_key key;               /* key for this item */
-   uint64_t hash;                     /* hash for this key */
+   void *next;                        /* Next hash item */
+   key_type_t key_type;               /* Type of key used to hash */
+   union hlink_key key;               /* Key for this item */
+   uint32_t key_len;                  /* Length of key for this item */
+   uint64_t hash;                     /* Hash for this key */
 };
 
 struct h_mem {
-   struct h_mem *next;                /* next buffer */
-   int32_t rem;                       /* remaining bytes in big_buffer */
-   char *mem;                         /* memory pointer */
-   char first[1];                     /* first byte */
+   struct h_mem *next;                /* Next buffer */
+   int32_t rem;                       /* Remaining bytes in big_buffer */
+   char *mem;                         /* Memory pointer */
+   char first[1];                     /* First byte */
 };
 
 class htable : public SMARTALLOC {
-   hlink **table;                     /* hash table */
-   int loffset;                       /* link offset in item */
-   hlink *walkptr;                    /* table walk pointer */
-   uint64_t hash;                     /* temp storage */
-   uint64_t total_size;               /* total bytes malloced */
-   uint32_t extend_length;            /* number of bytes to allocate when extending buffer */
-   uint32_t walk_index;               /* table walk index */
-   uint32_t num_items;                /* current number of items */
-   uint32_t max_items;                /* maximum items before growing */
-   uint32_t buckets;                  /* size of hash table */
-   uint32_t index;                    /* temp storage */
-   uint32_t mask;                     /* "remainder" mask */
-   uint32_t rshift;                   /* amount to shift down */
-   uint32_t blocks;                   /* blocks malloced */
-   struct h_mem *mem_block;           /* malloc'ed memory block chain */
+   hlink **table;                     /* Hash table */
+   int loffset;                       /* Link offset in item */
+   hlink *walkptr;                    /* Table walk pointer */
+   uint64_t hash;                     /* Temp storage */
+   uint64_t total_size;               /* Total bytes malloced */
+   uint32_t extend_length;            /* Number of bytes to allocate when extending buffer */
+   uint32_t walk_index;               /* Table walk index */
+   uint32_t num_items;                /* Current number of items */
+   uint32_t max_items;                /* Maximum items before growing */
+   uint32_t buckets;                  /* Size of hash table */
+   uint32_t index;                    /* Temp storage */
+   uint32_t mask;                     /* "Remainder" mask */
+   uint32_t rshift;                   /* Amount to shift down */
+   uint32_t blocks;                   /* Blocks malloced */
+   struct h_mem *mem_block;           /* Malloc'ed memory block chain */
    void malloc_big_buf(int size);     /* Get a big buffer */
-   void hash_index(char *key);        /* produce hash key,index */
-   void hash_index(uint32_t key);     /* produce hash key,index */
-   void hash_index(uint64_t key);     /* produce hash key,index */
-   void grow_table();                 /* grow the table */
+   void hash_index(char *key);        /* Produce hash key,index */
+   void hash_index(uint32_t key);     /* Produce hash key,index */
+   void hash_index(uint64_t key);     /* Produce hash key,index */
+   void hash_index(uint8_t *key, uint32_t key_len); /* Produce hash key,index */
+   void grow_table();                 /* Grow the table */
 
 public:
    htable(void *item, void *link, int tsize = 31, int nr_pages = 0);
@@ -99,16 +104,17 @@ public:
    bool insert(char *key, void *item);
    bool insert(uint32_t key, void *item);
    bool insert(uint64_t key, void *item);
+   bool insert(uint8_t *key, uint32_t key_len, void *item);
    void *lookup(char *key);
    void *lookup(uint32_t key);
    void *lookup(uint64_t key);
-   void *first();                     /* get first item in table */
-   void *next();                      /* get next item in table */
+   void *lookup(uint8_t *key, uint32_t key_len);
+   void *first();                     /* Get first item in table */
+   void *next();                      /* Get next item in table */
    void destroy();
-   void stats();                      /* print stats about the table */
-   uint32_t size();                   /* return size of table */
-   char *hash_malloc(int size);       /* malloc bytes for a hash entry */
-   void hash_big_free();              /* free all hash allocated big buffers */
+   void stats();                      /* Print stats about the table */
+   uint32_t size();                   /* Return size of table */
+   char *hash_malloc(int size);       /* Malloc bytes for a hash entry */
+   void hash_big_free();              /* Free all hash allocated big buffers */
 };
-
 #endif  /* HTABLE_H */
