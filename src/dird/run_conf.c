@@ -236,6 +236,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                break;
             case 'P':                 /* Pool */
             case 'f':                 /* FullPool */
+            case 'v':                 /* VFullPool */
             case 'i':                 /* IncPool */
             case 'd':                 /* DiffPool */
             case 'n':                 /* NextPool */
@@ -253,6 +254,9 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                      break;
                   case 'f':
                      lrun.full_pool = (POOLRES *)res;
+                     break;
+                  case 'v':
+                     lrun.vfull_pool = (POOLRES *)res;
                      break;
                   case 'i':
                      lrun.inc_pool = (POOLRES *)res;

@@ -911,6 +911,7 @@ bool get_level_since_time(JCR *jcr)
    int JobLevel;
    bool have_full;
    bool do_full = false;
+   bool do_vfull = false;
    bool do_diff = false;
    bool pool_updated = false;
    utime_t now;
@@ -1003,10 +1004,12 @@ bool get_level_since_time(JCR *jcr)
       }
 
       /*
-       * Note, do_full takes precedence over do_diff
+       * Note, do_full takes precedence over do_vfull and do_diff
        */
       if (have_full && jcr->res.job->MaxFullInterval > 0) {
          do_full = ((now - last_full_time) >= jcr->res.job->MaxFullInterval);
+      } else if (have_full && jcr->res.job->MaxVFullInterval > 0) {
+         do_vfull = ((now - last_full_time) >= jcr->res.job->MaxVFullInterval);
       }
       free_pool_memory(stime);
 
@@ -1019,7 +1022,24 @@ bool get_level_since_time(JCR *jcr)
          bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
          pool_updated = true;
-       } else if (do_diff) {
+      } else if (do_vfull) {
+         /*
+          * No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full
+          */
+         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
+         bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(jcr->getJobLevel()));
+         jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
+         pool_updated = true;
+
+         /*
+          * If we get upgraded to a Virtual Full we will be using a read pool so make sure we have a rpool_source.
+          */
+         if (!jcr->res.rpool_source) {
+            jcr->res.rpool_source = get_pool_memory(PM_MESSAGE);
+            pm_strcpy(jcr->res.rpool_source, _("unknown source"));
+         }
+      } else if (do_diff) {
          /*
           * No recent diff job found, so upgrade this one to Diff
           */
@@ -1080,6 +1100,7 @@ void apply_pool_overrides(JCR *jcr, bool force)
     */
    if (jcr->res.run_pool_override &&
       !jcr->res.run_full_pool_override &&
+      !jcr->res.run_vfull_pool_override &&
       !jcr->res.run_inc_pool_override &&
       !jcr->res.run_diff_pool_override) {
       pm_strcpy(jcr->res.pool_source, _("Run Pool override"));
@@ -1095,10 +1116,23 @@ void apply_pool_overrides(JCR *jcr, bool force)
             pool_override = true;
             if (jcr->res.run_full_pool_override) {
                pm_strcpy(jcr->res.pool_source, _("Run FullPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run FullPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Run FullPool override\n");
             } else {
                pm_strcpy(jcr->res.pool_source, _("Job FullPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job FullPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Job FullPool override\n");
+            }
+         }
+         break;
+      case L_VIRTUAL_FULL:
+         if (jcr->res.vfull_pool) {
+            jcr->res.pool = jcr->res.vfull_pool;
+            pool_override = true;
+            if (jcr->res.run_vfull_pool_override) {
+               pm_strcpy(jcr->res.pool_source, _("Run VFullPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.vfull_pool->name(), "Run VFullPool override\n");
+            } else {
+               pm_strcpy(jcr->res.pool_source, _("Job VFullPool override"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.vfull_pool->name(), "Job VFullPool override\n");
             }
          }
          break;
@@ -1108,10 +1142,10 @@ void apply_pool_overrides(JCR *jcr, bool force)
             pool_override = true;
             if (jcr->res.run_inc_pool_override) {
                pm_strcpy(jcr->res.pool_source, _("Run IncPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run IncPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Run IncPool override\n");
             } else {
                pm_strcpy(jcr->res.pool_source, _("Job IncPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job IncPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Job IncPool override\n");
             }
          }
          break;
@@ -1121,10 +1155,10 @@ void apply_pool_overrides(JCR *jcr, bool force)
             pool_override = true;
             if (jcr->res.run_diff_pool_override) {
                pm_strcpy(jcr->res.pool_source, _("Run DiffPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Run DiffPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Run DiffPool override\n");
             } else {
                pm_strcpy(jcr->res.pool_source, _("Job DiffPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), _("Job DiffPool override\n"));
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Job DiffPool override\n");
             }
          }
          break;

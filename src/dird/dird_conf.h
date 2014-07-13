@@ -394,6 +394,7 @@ public:
    utime_t MaxRunSchedTime;           /* max run time in seconds from Scheduled time*/
    utime_t RescheduleInterval;        /* Reschedule interval */
    utime_t MaxFullInterval;           /* Maximum time interval between Fulls */
+   utime_t MaxVFullInterval;          /* Maximum time interval between Virtual Fulls */
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    int64_t spool_size;                /* Size of spool file for this job */
@@ -409,6 +410,7 @@ public:
    alist *storage;                    /* Where is device -- list of Storage to be used */
    POOLRES *pool;                     /* Where is media -- Media Pool */
    POOLRES *full_pool;                /* Pool for Full backups */
+   POOLRES *vfull_pool;               /* Pool for Virtual Full backups */
    POOLRES *inc_pool;                 /* Pool for Incremental backups */
    POOLRES *diff_pool;                /* Pool for Differental backups */
    POOLRES *next_pool;                /* Next Pool for Copy/Migration Jobs and Virtual backups */
@@ -605,6 +607,7 @@ public:
 
    POOLRES *pool;                     /* Pool override */
    POOLRES *full_pool;                /* Full Pool override */
+   POOLRES *vfull_pool;               /* Virtual Full Pool override */
    POOLRES *inc_pool;                 /* Incr Pool override */
    POOLRES *diff_pool;                /* Diff Pool override */
    POOLRES *next_pool;                /* Next Pool override */

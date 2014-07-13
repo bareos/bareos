@@ -307,6 +307,7 @@ RES_ITEM job_items[] = {
    { "Storage", CFG_TYPE_ALIST_RES, ITEM(res_job.storage), R_STORAGE, 0, NULL },
    { "Pool", CFG_TYPE_RES, ITEM(res_job.pool), R_POOL, CFG_ITEM_REQUIRED, NULL },
    { "FullBackupPool", CFG_TYPE_RES, ITEM(res_job.full_pool), R_POOL, 0, NULL },
+   { "VirtualFullBackupPool", CFG_TYPE_RES, ITEM(res_job.vfull_pool), R_POOL, 0, NULL },
    { "IncrementalBackupPool", CFG_TYPE_RES, ITEM(res_job.inc_pool), R_POOL, 0, NULL },
    { "DifferentialBackupPool", CFG_TYPE_RES, ITEM(res_job.diff_pool), R_POOL, 0, NULL },
    { "NextPool", CFG_TYPE_RES, ITEM(res_job.next_pool), R_POOL, 0, NULL },
@@ -342,6 +343,7 @@ RES_ITEM job_items[] = {
    { "MaxWaitTime", CFG_TYPE_TIME, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
    { "MaxStartDelay", CFG_TYPE_TIME, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
    { "MaxFullInterval", CFG_TYPE_TIME, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
+   { "MaxVirtualFullInterval", CFG_TYPE_TIME, ITEM(res_job.MaxVFullInterval), 0, 0, NULL },
    { "MaxDiffInterval", CFG_TYPE_TIME, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
    { "PrefixLinks", CFG_TYPE_BOOL, ITEM(res_job.PrefixLinks), 0, CFG_ITEM_DEFAULT, "false" },
    { "PruneJobs", CFG_TYPE_BOOL, ITEM(res_job.PruneJobs), 0, CFG_ITEM_DEFAULT, "false" },
@@ -867,6 +869,11 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
 
          if (run->full_pool) {
             Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->vfull_pool) {
+            Mmsg(temp, "virtualfullpool=\"%s\" ", run->vfull_pool->name());
             pm_strcat(run_str, temp.c_str());
          }
 
@@ -2122,6 +2129,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             res->res_job.base = res_all.res_job.base;
             res->res_job.pool = res_all.res_job.pool;
             res->res_job.full_pool = res_all.res_job.full_pool;
+            res->res_job.vfull_pool = res_all.res_job.vfull_pool;
             res->res_job.inc_pool = res_all.res_job.inc_pool;
             res->res_job.diff_pool = res_all.res_job.diff_pool;
             res->res_job.next_pool = res_all.res_job.next_pool;

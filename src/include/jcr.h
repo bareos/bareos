@@ -220,6 +220,7 @@ struct RESOURCES {
    POOLRES *pool;                         /* Pool resource = write for migration */
    POOLRES *rpool;                        /* Read pool. Used only in migration */
    POOLRES *full_pool;                    /* Full backup pool resource */
+   POOLRES *vfull_pool;                   /* Virtual Full backup pool resource */
    POOLRES *inc_pool;                     /* Incremental backup pool resource */
    POOLRES *diff_pool;                    /* Differential backup pool resource */
    POOLRES *next_pool;                    /* Next Pool used for migration/copy and virtual backup */
@@ -234,6 +235,7 @@ struct RESOURCES {
    POOLMEM *catalog_source;               /* Where catalog came from */
    bool run_pool_override;                /* Pool override was given on run cmdline */
    bool run_full_pool_override;           /* Full pool override was given on run cmdline */
+   bool run_vfull_pool_override;          /* Virtual Full pool override was given on run cmdline */
    bool run_inc_pool_override;            /* Incremental pool override was given on run cmdline */
    bool run_diff_pool_override;           /* Differential pool override was given on run cmdline */
    bool run_next_pool_override;           /* Next pool override was given on run cmdline */
