@@ -1152,81 +1152,93 @@ const char *get_basename(const char *pathname)
  */
 static void pt_out(char *buf)
 {
-    /*
-     * Used the "trace on" command in the console to turn on
-     * output to the trace file.  "trace off" will close the file.
-     */
-    if (trace) {
-       if (!trace_fd) {
-          char fn[200];
-          bsnprintf(fn, sizeof(fn), "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
-          trace_fd = fopen(fn, "a+b");
-       }
-       if (trace_fd) {
-          fputs(buf, trace_fd);
-          fflush(trace_fd);
-          return;
-       } else {
-          /* Some problem, turn off tracing */
-          trace = false;
-       }
-    }
-    /* not tracing */
-    fputs(buf, stdout);
-    fflush(stdout);
+   /*
+    * Used the "trace on" command in the console to turn on
+    * output to the trace file.  "trace off" will close the file.
+    */
+   if (trace) {
+      if (!trace_fd) {
+         POOL_MEM fn(PM_FNAME);
+
+         Mmsg(fn, "%s/%s.trace", working_directory ? working_directory : "c:", my_name);
+         trace_fd = fopen(fn.c_str(), "a+b");
+      }
+      if (trace_fd) {
+         fputs(buf, trace_fd);
+         fflush(trace_fd);
+         return;
+      } else {
+         /*
+          * Some problem, turn off tracing
+          */
+         trace = false;
+      }
+   }
+
+   /*
+    * Not tracing
+    */
+   fputs(buf, stdout);
+   fflush(stdout);
 }
 
 /*
- *  This subroutine prints a debug message if the level number
- *  is less than or equal the debug_level. File and line numbers
- *  are included for more detail if desired, but not currently
- *  printed.
+ *  This subroutine prints a debug message if the level number is less than or
+ *  equal the debug_level. File and line numbers are included for more detail if
+ *  desired, but not currently printed.
  *
- *  If the level is negative, the details of file and line number
- *  are not printed.
+ *  If the level is negative, the details of file and line number are not printed.
  */
 void d_msg(const char *file, int line, int level, const char *fmt,...)
 {
-    char      buf[5000];
-    int       len;
-    va_list   arg_ptr;
-    bool      details = true;
-    char      ed1[50];
-    btime_t    mtime;
-    uint32_t  usecs;
+   va_list ap;
+   int len, maxlen;
+   utime_t mtime;
+   bool details = true;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-    if (level < 0) {
-       details = false;
-       level = -level;
-    }
+   if (level < 0) {
+      details = false;
+      level = -level;
+   }
 
-    if (level <= debug_level) {
-       if (dbg_timestamp) {
-          mtime = get_current_btime();
-          usecs = mtime % 1000000;
-          bsnprintf(buf, sizeof(buf), "%s.%06d ", bstrftimes(ed1, sizeof(ed1), btime_to_utime(mtime)), usecs);
-          len = strlen(buf);
-          buf[len++] = ' ';
-          buf[len] = 0;
-          pt_out(buf);
-       }
+   if (level <= debug_level) {
+      if (dbg_timestamp) {
+         mtime = time(NULL);
+         bstrftimes(buf.c_str(), buf.size(), mtime);
+         pm_strcat(buf, " ");
+         pt_out(buf.c_str());
+      }
 
 #ifdef FULL_LOCATION
-       if (details) {
-          len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
-                my_name, get_basename(file), line, get_jobid_from_tsd());
-       } else {
-          len = 0;
-       }
-#else
-       len = 0;
+      if (details) {
+         Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+      }
 #endif
-       va_start(arg_ptr, fmt);
-       bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
-       va_end(arg_ptr);
 
-       pt_out(buf);
-    }
+      while (1) {
+         maxlen = more.size() - 1;
+         va_start(ap, fmt);
+         len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+         va_end(ap);
+
+         if (len < 0 || len >= (maxlen - 5)) {
+            more.realloc_pm(maxlen + maxlen / 2);
+            continue;
+         }
+
+         break;
+      }
+
+#ifdef FULL_LOCATION
+      if (details) {
+         pt_out(buf.c_str());
+      }
+#endif
+
+      pt_out(more.c_str());
+   }
 }
 
 /*
@@ -1288,78 +1300,128 @@ bool get_timestamp(void)
 /*
  * This subroutine prints a message regardless of the debug level
  *
- * If the level is negative, the details of file and line number
- * are not printed.
+ * If the level is negative, the details of file and line number are not printed.
  */
 void p_msg(const char *file, int line, int level, const char *fmt,...)
 {
-    char      buf[5000];
-    int       len;
-    va_list   arg_ptr;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
 #ifdef FULL_LOCATION
-    if (level >= 0) {
-       len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
-                       my_name, get_basename(file), line,
-                       get_jobid_from_tsd());
-    } else {
-       len = 0;
-    }
-#else
-    len = 0;
+   if (level >= 0) {
+      Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+   }
 #endif
 
-    va_start(arg_ptr, fmt);
-    bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
-    va_end(arg_ptr);
+   while (1) {
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
 
-    pt_out(buf);
+      if (len < 0 || len >= (maxlen - 5)) {
+         more.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
+
+#ifdef FULL_LOCATION
+   if (level >= 0) {
+      pt_out(buf.c_str());
+   }
+#endif
+
+   pt_out(more.c_str());
 }
 
+/*
+ * This subroutine prints a message regardless of the debug level
+ *
+ * If the level is negative, the details of file and line number are not printed.
+ * Special version of p_msg used with fixed buffers.
+ */
+void p_msg_fb(const char *file, int line, int level, const char *fmt,...)
+{
+   char buf[256];
+   int len = 0;
+   va_list arg_ptr;
+
+#ifdef FULL_LOCATION
+   if (level >= 0) {
+      len = bsnprintf(buf, sizeof(buf), "%s: %s:%d-%u ",
+                      my_name, get_basename(file), line,
+                      get_jobid_from_tsd());
+   }
+#endif
+
+   va_start(arg_ptr, fmt);
+   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   pt_out(buf);
+}
 
 /*
- * subroutine writes a debug message to the trace file if the level number
- * is less than or equal the debug_level. File and line numbers
- * are included for more detail if desired, but not currently
- * printed.
+ * Subroutine writes a debug message to the trace file if the level number is less than
+ * or equal the debug_level. File and line numbers are included for more detail if desired,
+ * but not currently printed.
  *
- * If the level is negative, the details of file and line number
- * are not printed.
+ * If the level is negative, the details of file and line number are not printed.
  */
 void t_msg(const char *file, int line, int level, const char *fmt,...)
 {
-    char      buf[5000];
-    int       len;
-    va_list   arg_ptr;
-    int       details = TRUE;
+   va_list ap;
+   int len, maxlen;
+   bool details = true;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-    if (level < 0) {
-       details = FALSE;
-       level = -level;
-    }
+   if (level < 0) {
+      details = false;
+      level = -level;
+   }
 
-    if (level <= debug_level) {
-       if (!trace_fd) {
-          bsnprintf(buf, sizeof(buf), "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
-          trace_fd = fopen(buf, "a+b");
-       }
+   if (level <= debug_level) {
+      if (!trace_fd) {
+         POOL_MEM fn(PM_FNAME);
+
+         Mmsg(fn, "%s/%s.trace", working_directory ? working_directory : "c:", my_name);
+         trace_fd = fopen(fn.c_str(), "a+b");
+      }
 
 #ifdef FULL_LOCATION
-       if (details) {
-          len = bsnprintf(buf, sizeof(buf), "%s: %s:%d ", my_name, get_basename(file), line);
-       } else {
-          len = 0;
-       }
-#else
-       len = 0;
+      if (details) {
+         Mmsg(buf,  "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+      }
 #endif
-       va_start(arg_ptr, fmt);
-       bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
-       va_end(arg_ptr);
-       if (trace_fd != NULL) {
-           fputs(buf, trace_fd);
-           fflush(trace_fd);
-       }
+
+      while (1) {
+         maxlen = more.size() - 1;
+         va_start(ap, fmt);
+         len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+         va_end(ap);
+
+         if (len < 0 || len >= (maxlen - 5)) {
+            more.realloc_pm(maxlen + maxlen / 2);
+            continue;
+         }
+
+         break;
+      }
+
+      if (trace_fd != NULL) {
+#ifdef FULL_LOCATION
+         if (details) {
+            fputs(buf.c_str(), trace_fd);
+         }
+#endif
+         fputs(more.c_str(), trace_fd);
+         fflush(trace_fd);
+      }
    }
 }
 
@@ -1368,63 +1430,75 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
  */
 void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
 {
-    char     buf[5000];
-    va_list   arg_ptr;
-    int len;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-    /*
-     * Check if we have a message destination defined.
-     * We always report M_ABORT and M_ERROR_TERM
-     */
-    if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
-                         !bit_is_set(type, daemon_msgs->send_msg))) {
-       return;                        /* no destination */
-    }
-    switch (type) {
-    case M_ABORT:
-       len = bsnprintf(buf, sizeof(buf), _("%s: ABORTING due to ERROR in %s:%d\n"),
-               my_name, get_basename(file), line);
-       break;
-    case M_ERROR_TERM:
-       len = bsnprintf(buf, sizeof(buf), _("%s: ERROR TERMINATION at %s:%d\n"),
-               my_name, get_basename(file), line);
-       break;
-    case M_FATAL:
-       if (level == -1)            /* skip details */
-          len = bsnprintf(buf, sizeof(buf), _("%s: Fatal Error because: "), my_name);
-       else
-          len = bsnprintf(buf, sizeof(buf), _("%s: Fatal Error at %s:%d because:\n"), my_name, get_basename(file), line);
-       break;
-    case M_ERROR:
-       if (level == -1)            /* skip details */
-          len = bsnprintf(buf, sizeof(buf), _("%s: ERROR: "), my_name);
-       else
-          len = bsnprintf(buf, sizeof(buf), _("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
-       break;
-    case M_WARNING:
-       len = bsnprintf(buf, sizeof(buf), _("%s: Warning: "), my_name);
-       break;
-    case M_SECURITY:
-       len = bsnprintf(buf, sizeof(buf), _("%s: Security violation: "), my_name);
-       break;
-    default:
-       len = bsnprintf(buf, sizeof(buf), "%s: ", my_name);
-       break;
-    }
+   /*
+    * Check if we have a message destination defined.
+    * We always report M_ABORT and M_ERROR_TERM
+    */
+   if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
+                        !bit_is_set(type, daemon_msgs->send_msg))) {
+      return;                        /* no destination */
+   }
 
-    va_start(arg_ptr, fmt);
-    bvsnprintf(buf+len, sizeof(buf)-len, (char *)fmt, arg_ptr);
-    va_end(arg_ptr);
+   switch (type) {
+   case M_ABORT:
+      Mmsg(buf, _("%s: ABORTING due to ERROR in %s:%d\n"), my_name, get_basename(file), line);
+      break;
+   case M_ERROR_TERM:
+      Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name, get_basename(file), line);
+      break;
+   case M_FATAL:
+      if (level == -1)            /* skip details */
+         Mmsg(buf, _("%s: Fatal Error because: "), my_name);
+      else
+         Mmsg(buf, _("%s: Fatal Error at %s:%d because:\n"), my_name, get_basename(file), line);
+      break;
+   case M_ERROR:
+      if (level == -1)            /* skip details */
+         Mmsg(buf, _("%s: ERROR: "), my_name);
+      else
+         Mmsg(buf, _("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
+      break;
+   case M_WARNING:
+      Mmsg(buf, _("%s: Warning: "), my_name);
+      break;
+   case M_SECURITY:
+      Mmsg(buf, _("%s: Security violation: "), my_name);
+      break;
+   default:
+      Mmsg(buf, "%s: ", my_name);
+      break;
+   }
 
-    dispatch_message(NULL, type, 0, buf);
+   while (1) {
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
 
-    if (type == M_ABORT) {
-       char *p = 0;
-       p[0] = 0;                      /* generate segmentation violation */
-    }
-    if (type == M_ERROR_TERM) {
-       exit(1);
-    }
+      if (len < 0 || len >= (maxlen - 5)) {
+         more.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
+
+   pm_strcat(buf, more.c_str());
+   dispatch_message(NULL, type, 0, buf.c_str());
+
+   if (type == M_ABORT) {
+      char *p = 0;
+      p[0] = 0;                      /* generate segmentation violation */
+   }
+
+   if (type == M_ERROR_TERM) {
+      exit(1);
+   }
 }
 
 /*
@@ -1432,11 +1506,12 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
  */
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 {
-   int len;
+   va_list ap;
    MSGSRES *msgs;
-   char rbuf[5000];
-   va_list arg_ptr;
+   int len, maxlen;
    uint32_t JobId = 0;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
    Dmsg1(850, "Enter Jmsg type=%d\n", type);
 
@@ -1447,11 +1522,12 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     */
    if (jcr && jcr->JobId == 0 && jcr->dir_bsock) {
       BSOCK *dir = jcr->dir_bsock;
-      va_start(arg_ptr, fmt);
-      dir->msglen = bvsnprintf(dir->msg, sizeof_pool_memory(dir->msg),
-                               fmt, arg_ptr);
-      va_end(arg_ptr);
+
+      va_start(ap, fmt);
+      dir->msglen = bvsnprintf(dir->msg, sizeof_pool_memory(dir->msg), fmt, ap);
+      va_end(ap);
       jcr->dir_bsock->send();
+
       return;
    }
 
@@ -1459,10 +1535,21 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     * The watchdog thread can't use Jmsg directly, we always queued it
     */
    if (is_watchdog()) {
-      va_start(arg_ptr, fmt);
-      bvsnprintf(rbuf,  sizeof(rbuf), fmt, arg_ptr);
-      va_end(arg_ptr);
-      Qmsg(jcr, type, mtime, "%s", rbuf);
+      while (1) {
+         maxlen = buf.size()- 1;
+         va_start(ap, fmt);
+         len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
+         va_end(ap);
+
+         if (len < 0 || len >= (maxlen - 5)) {
+            buf.realloc_pm(maxlen + maxlen / 2);
+            continue;
+         }
+
+         break;
+      }
+      Qmsg(jcr, type, mtime, "%s", buf.c_str());
+
       return;
    }
 
@@ -1490,20 +1577,19 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     * Check if we have a message destination defined.
     * We always report M_ABORT and M_ERROR_TERM
     */
-   if (msgs && (type != M_ABORT && type != M_ERROR_TERM) &&
-        !bit_is_set(type, msgs->send_msg)) {
+   if (msgs && (type != M_ABORT && type != M_ERROR_TERM) && !bit_is_set(type, msgs->send_msg)) {
       return;                        /* no destination */
    }
 
    switch (type) {
    case M_ABORT:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s ABORTING due to ERROR\n"), my_name);
+      Mmsg(buf, _("%s ABORTING due to ERROR\n"), my_name);
       break;
    case M_ERROR_TERM:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s ERROR TERMINATION\n"), my_name);
+      Mmsg(buf, _("%s ERROR TERMINATION\n"), my_name);
       break;
    case M_FATAL:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Fatal error: "), my_name, JobId);
+      Mmsg(buf, _("%s JobId %u: Fatal error: "), my_name, JobId);
       if (jcr) {
          jcr->setJobStatus(JS_FatalError);
       }
@@ -1512,36 +1598,46 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
       }
       break;
    case M_ERROR:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Error: "), my_name, JobId);
+      Mmsg(buf, _("%s JobId %u: Error: "), my_name, JobId);
       if (jcr) {
          jcr->JobErrors++;
       }
       break;
    case M_WARNING:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Warning: "), my_name, JobId);
+      Mmsg(buf, _("%s JobId %u: Warning: "), my_name, JobId);
       if (jcr) {
          jcr->JobWarnings++;
       }
       break;
    case M_SECURITY:
-      len = bsnprintf(rbuf, sizeof(rbuf), _("%s JobId %u: Security violation: "),
-              my_name, JobId);
+      Mmsg(buf, _("%s JobId %u: Security violation: "), my_name, JobId);
       break;
    default:
-      len = bsnprintf(rbuf, sizeof(rbuf), "%s JobId %u: ", my_name, JobId);
+      Mmsg(buf, "%s JobId %u: ", my_name, JobId);
       break;
    }
 
-   va_start(arg_ptr, fmt);
-   bvsnprintf(rbuf+len,  sizeof(rbuf)-len, fmt, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
 
-   dispatch_message(jcr, type, mtime, rbuf);
+      if (len < 0 || len >= (maxlen - 5)) {
+         more.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
+
+   pm_strcat(buf, more.c_str());
+   dispatch_message(jcr, type, mtime, buf.c_str());
 
    if (type == M_ABORT){
       char *p = 0;
       printf("BAREOS forced SEG FAULT to obtain traceback.\n");
-      syslog(LOG_DAEMON|LOG_ERR, "BAREOS forced SEG FAULT to obtain traceback.\n");
+      syslog(LOG_DAEMON | LOG_ERR, "BAREOS forced SEG FAULT to obtain traceback.\n");
       p[0] = 0;                      /* generate segmentation violation */
    }
 
@@ -1556,72 +1652,87 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
  */
 void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 {
-   va_list   arg_ptr;
-   int i, len, maxlen;
-   POOLMEM *pool_buf;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-   pool_buf = get_pool_memory(PM_EMSG);
-   i = Mmsg(pool_buf, "%s:%d ", get_basename(file), line);
-
+   Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - i - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + i + maxlen / 2);
+         more.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
+
       break;
    }
 
-   Jmsg(jcr, type, mtime, "%s", pool_buf);
-   free_memory(pool_buf);
-}
+   pm_strcat(buf, more.c_str());
 
+   Jmsg(jcr, type, mtime, "%s", buf.c_str());
+}
 
 /*
  * Edit a message into a Pool memory buffer, with file:lineno
  */
 int m_msg(const char *file, int line, POOLMEM **pool_buf, const char *fmt, ...)
 {
-   va_list   arg_ptr;
-   int i, len, maxlen;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-   i = sprintf(*pool_buf, "%s:%d ", get_basename(file), line);
-
+   Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = sizeof_pool_memory(*pool_buf) - i - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(*pool_buf+i, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
-         *pool_buf = realloc_pool_memory(*pool_buf, maxlen + i + maxlen / 2);
+         more.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
+
       break;
    }
+
+   pm_strcpy(*pool_buf, buf.c_str());
+   len = pm_strcat(*pool_buf, more.c_str());
+
    return len;
 }
 
 int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 {
-   va_list   arg_ptr;
-   int i, len, maxlen;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-   i = sprintf(pool_buf, "%s:%d ", get_basename(file), line);
-
+   Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - i - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + i + maxlen / 2);
+         more.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
+
       break;
    }
+
+   pm_strcpy(pool_buf, buf.c_str());
+   len = pm_strcat(pool_buf, more.c_str());
+
    return len;
 }
 
@@ -1705,29 +1816,30 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
  */
 void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 {
-   va_list   arg_ptr;
+   va_list ap;
    int len, maxlen;
-   POOLMEM *pool_buf;
+   POOL_MEM buf(PM_EMSG);
    MQUEUE_ITEM *item;
 
-   pool_buf = get_pool_memory(PM_EMSG);
-
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = buf.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + maxlen / 2);
+         buf.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
+
       break;
    }
 
-   item = (MQUEUE_ITEM *)malloc(sizeof(MQUEUE_ITEM) + strlen(pool_buf) + 1);
+   item = (MQUEUE_ITEM *)malloc(sizeof(MQUEUE_ITEM) + len + 1);
    item->type = type;
    item->mtime = time(NULL);
-   strcpy(item->msg, pool_buf);
+   strcpy(item->msg, buf.c_str());
+
    if (!jcr) {
       jcr = get_jcr_from_tsd();
    }
@@ -1746,8 +1858,6 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
       jcr->msg_queue->append(item);
       V(jcr->msg_queue_mutex);
    }
-
-   free_memory(pool_buf);
 }
 
 /*
@@ -1756,9 +1866,11 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 void dequeue_messages(JCR *jcr)
 {
    MQUEUE_ITEM *item;
+
    if (!jcr->msg_queue) {
       return;
    }
+
    P(jcr->msg_queue_mutex);
    jcr->dequeuing_msgs = true;
    foreach_dlist(item, jcr->msg_queue) {
@@ -1779,25 +1891,27 @@ void dequeue_messages(JCR *jcr)
  */
 void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 {
-   va_list   arg_ptr;
-   int i, len, maxlen;
-   POOLMEM *pool_buf;
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_EMSG),
+            more(PM_EMSG);
 
-   pool_buf = get_pool_memory(PM_EMSG);
-   i = Mmsg(pool_buf, "%s:%d ", get_basename(file), line);
-
+   Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = sizeof_pool_memory(pool_buf) - i - 1;
-      va_start(arg_ptr, fmt);
-      len = bvsnprintf(pool_buf+i, maxlen, fmt, arg_ptr);
-      va_end(arg_ptr);
+      maxlen = more.size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
       if (len < 0 || len >= (maxlen - 5)) {
-         pool_buf = realloc_pool_memory(pool_buf, maxlen + i + maxlen / 2);
+         more.realloc_pm(maxlen + maxlen / 2);
          continue;
       }
+
       break;
    }
 
-   Qmsg(jcr, type, mtime, "%s", pool_buf);
-   free_memory(pool_buf);
+   pm_strcat(buf, more.c_str());
+
+   Qmsg(jcr, type, mtime, "%s", buf.c_str());
 }

@@ -145,8 +145,6 @@ extern "C" {
    typedef char *(*job_code_callback_t)(JCR *, const char *);
 }
 
-void d_msg(const char *file, int line, int level, const char *fmt,...);
-void e_msg(const char *file, int line, int type, int level, const char *fmt,...);
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 bool get_trace(void);
