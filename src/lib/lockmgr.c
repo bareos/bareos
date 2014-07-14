@@ -55,12 +55,12 @@
 #undef ASSERT
 #define ASSERT(x) if (!(x)) { \
    char *jcr = NULL; \
-   Pmsg3(000, _("ASSERT failed at %s:%i: %s\n"), __FILE__, __LINE__, #x); \
+   FPmsg3(000, _("ASSERT failed at %s:%i: %s\n"), __FILE__, __LINE__, #x); \
    jcr[0] = 0; }
 
 #define ASSERT_p(x,f,l) if (!(x)) {              \
    char *jcr = NULL; \
-   Pmsg3(000, _("ASSERT failed at %s:%i: %s \n"), f, l, #x); \
+   FPmsg3(000, _("ASSERT failed at %s:%i: %s \n"), f, l, #x); \
    jcr[0] = 0; }
 
 /*
@@ -255,8 +255,8 @@ class lmgr_thread_t: public SMARTALLOC
 public:
    dlink link;
    pthread_mutex_t mutex;
-   pthread_t       thread_id;
-   lmgr_lock_t     lock_list[LMGR_MAX_LOCK];
+   pthread_t thread_id;
+   lmgr_lock_t lock_list[LMGR_MAX_LOCK];
    int current;
    int max;
    int max_priority;
@@ -265,8 +265,7 @@ public:
       int status;
       if ((status = pthread_mutex_init(&mutex, NULL)) != 0) {
          berrno be;
-         Pmsg1(000, _("pthread key create failed: ERR=%s\n"),
-                 be.bstrerror(status));
+         FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
          ASSERT(0);
       }
       thread_id = pthread_self();
@@ -359,15 +358,15 @@ public:
             current--;
          } else {
             ASSERT(current > 0);
-            Pmsg3(0, "ERROR: wrong P/V order search lock=%p %s:%i\n", m, f, l);
-            Pmsg4(000, "ERROR: wrong P/V order pos=%i lock=%p %s:%i\n",
-                    current, lock_list[current].lock, lock_list[current].file,
-                    lock_list[current].line);
+            FPmsg3(0, "ERROR: wrong P/V order search lock=%p %s:%i\n", m, f, l);
+            FPmsg4(0, "ERROR: wrong P/V order pos=%i lock=%p %s:%i\n",
+                   current, lock_list[current].lock, lock_list[current].file,
+                   lock_list[current].line);
             for (int i=current-1; i >= 0; i--) { /* already seen current */
-               Pmsg4(000, "ERROR: wrong P/V order pos=%i lock=%p %s:%i\n",
-                     i, lock_list[i].lock, lock_list[i].file, lock_list[i].line);
+               FPmsg4(0, "ERROR: wrong P/V order pos=%i lock=%p %s:%i\n",
+                      i, lock_list[i].lock, lock_list[i].file, lock_list[i].line);
                if (lock_list[i].lock == m) {
-                  Pmsg3(000, "ERROR: FOUND P pos=%i %s:%i\n", i, f, l);
+                  FPmsg3(0, "ERROR: FOUND P pos=%i %s:%i\n", i, f, l);
                   shift_list(i);
                   current--;
                   break;
@@ -573,7 +572,6 @@ void *check_deadlock(void *)
       pthread_setcancelstate(old, NULL);
       pthread_testcancel();
    }
-   Dmsg0(100, "Exit check_deadlock.\n");
    pthread_cleanup_pop(1);
    return NULL;
 }
@@ -601,8 +599,7 @@ void create_lmgr_key()
    int status = pthread_key_create(&lmgr_key, NULL);
    if (status != 0) {
       berrno be;
-      Pmsg1(000, _("pthread key create failed: ERR=%s\n"),
-            be.bstrerror(status));
+      FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
       ASSERT(0);
    }
 
@@ -613,8 +610,7 @@ void create_lmgr_key()
       status = pthread_create(&undertaker, NULL, check_deadlock, NULL);
       if (status != 0) {
          berrno be;
-         Pmsg1(000, _("pthread_create failed: ERR=%s\n"),
-               be.bstrerror(status));
+         FPmsg1(000, _("pthread_create failed: ERR=%s\n"), be.bstrerror(status));
          ASSERT(0);
       }
    }
@@ -629,8 +625,7 @@ void lmgr_init_thread()
    int status = pthread_once(&key_lmgr_once, create_lmgr_key);
    if (status != 0) {
       berrno be;
-      Pmsg1(000, _("pthread key create failed: ERR=%s\n"),
-            be.bstrerror(status));
+      FPmsg1(000, _("pthread key create failed: ERR=%s\n"), be.bstrerror(status));
       ASSERT(0);
    }
    lmgr_thread_t *l = New(lmgr_thread_t());
@@ -734,7 +729,6 @@ int bthread_kill(pthread_t thread, int sig,
     */
    ASSERT(thread_found_in_process == true);
 
-   Dmsg3(100, "%s:%d send kill to existing thread %p\n", file, line, thread);
    return pthread_kill(thread, sig);
 }
 
@@ -956,7 +950,7 @@ int lmgr_thread_create(pthread_t *thread,
  */
 void dbg_print_lock(FILE *fp)
 {
-   Pmsg0(000, "lockmgr disabled\n");
+   FPmsg0(000, "lockmgr disabled\n");
 }
 
 #endif  /* _USE_LOCKMGR */
