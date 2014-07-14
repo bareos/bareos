@@ -362,7 +362,7 @@ if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a
 #define Dmsg1(lvl, msg, a1)
 #define Dmsg2(lvl, msg, a1, a2)
 #define Dmsg3(lvl, msg, a1, a2, a3)
-#define Dmsg4(lvl, msg, arg1, arg2, arg3, arg4)
+#define Dmsg4(lvl, msg, a1, a2, a3, a4)
 #define Dmsg5(lvl, msg, a1, a2, a3, a4, a5)
 #define Dmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
 #define Dmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
@@ -381,8 +381,8 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1)
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
 #define Tmsg3(lvl, msg, a1, a2, a3) \
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, arg1, arg2, arg3, arg4) \
-t_msg(__FILE__, __LINE__, lvl, msg, arg1, arg2, arg3, arg4)
+#define Tmsg4(lvl, msg, a1, a2, a3, a4) \
+t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
 #define Tmsg5(lvl, msg, a1, a2, a3, a4, a5) \
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
 #define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
@@ -406,7 +406,7 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 #define Tmsg1(lvl, msg, a1)
 #define Tmsg2(lvl, msg, a1, a2)
 #define Tmsg3(lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, arg1, arg2, arg3, arg4)
+#define Tmsg4(lvl, msg, a1, a2, a3, a4)
 #define Tmsg5(lvl, msg, a1, a2, a3, a4, a5)
 #define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
 #define Tmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
@@ -418,7 +418,7 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 #define Tmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 #endif /* TRACE_FILE */
 
-/** Messages that are printed (uses d_msg) */
+/** Messages that are printed (uses p_msg) */
 #define Pmsg0(lvl, msg) \
 p_msg(__FILE__, __LINE__, lvl, msg)
 #define Pmsg1(lvl, msg, a1) \
@@ -427,8 +427,8 @@ p_msg(__FILE__, __LINE__, lvl, msg, a1)
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
 #define Pmsg3(lvl, msg, a1, a2, a3) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Pmsg4(lvl, msg, arg1, arg2, arg3, arg4) \
-p_msg(__FILE__, __LINE__, lvl, msg, arg1, arg2, arg3, arg4)
+#define Pmsg4(lvl, msg, a1, a2, a3, a4) \
+p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
 #define Pmsg5(lvl, msg, a1, a2, a3, a4, a5) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
 #define Pmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
@@ -449,6 +449,22 @@ p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 #define Pmsg14(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+
+/** Messages that are printed using fixed size buffers (uses p_msg_fb) */
+#define FPmsg0(lvl, msg) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg)
+#define FPmsg1(lvl, msg, a1) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1)
+#define FPmsg2(lvl, msg, a1, a2) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2)
+#define FPmsg3(lvl, msg, a1, a2, a3) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
+#define FPmsg4(lvl, msg, a1, a2, a3, a4) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
+#define FPmsg5(lvl, msg, a1, a2, a3, a4, a5) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
+#define FPmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
 
 /** Daemon Error Messages that are delivered according to the message resource */
 #define Emsg0(typ, lvl, msg) \
@@ -535,6 +551,7 @@ int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
 class JCR;
 void d_msg(const char *file, int line, int level, const char *fmt, ...);
 void p_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
 void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
 void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
 void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
