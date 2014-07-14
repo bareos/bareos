@@ -220,6 +220,17 @@ bool do_migration_init(JCR *jcr)
     * and set the jcr suppress_output boolean to true).
     */
    set_jcr_defaults(mig_jcr, prev_job);
+
+   /*
+    * Don't let WatchDog checks Max*Time value on this Job
+    */
+   mig_jcr->no_maxtime = true;
+
+   /*
+    * Don't check for duplicates on migration and copy jobs
+    */
+   mig_jcr->IgnoreDuplicateJobChecking = true;
+
    if (!setup_job(mig_jcr, true)) {
       Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
       return false;
@@ -241,19 +252,9 @@ bool do_migration_init(JCR *jcr)
    mig_jcr->jr.PoolId = jcr->jr.PoolId;
    mig_jcr->jr.JobId = mig_jcr->JobId;
 
-   /*
-    * Don't let WatchDog checks Max*Time value on this Job
-    */
-   mig_jcr->no_maxtime = true;
-
-   /*
-    * Don't check for duplicates on migration and copy jobs
-    */
-   mig_jcr->res.job->IgnoreDuplicateJobChecking = true;
-
    Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
-      mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
-      mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
+         mig_jcr->jr.Name, (int)mig_jcr->jr.JobId, mig_jcr->jr.JobType,
+         mig_jcr->jr.JobLevel);
 
    if (set_migration_next_pool(jcr, &pool)) {
       /*
