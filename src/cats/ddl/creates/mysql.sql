@@ -344,12 +344,6 @@ CREATE TABLE Counters (
    PRIMARY KEY (Counter(128))
 );
 
-CREATE TABLE CDImages (
-   MediaId INTEGER UNSIGNED NOT NULL,
-   LastBurn DATETIME NOT NULL,
-   PRIMARY KEY (MediaId)
-);
-
 CREATE TABLE Status (
    JobStatus CHAR(1) BINARY NOT NULL,
    JobStatusLong BLOB,
@@ -406,14 +400,15 @@ CREATE TABLE NDMPJobEnvironment (
 );
 
 CREATE TABLE DeviceStats (
+   DeviceId INTEGER UNSIGNED DEFAULT 0 REFERENCES Device,
    SampleTime DATETIME NOT NULL,
    ReadTime BIGINT UNSIGNED DEFAULT 0,
    WriteTime BIGINT UNSIGNED DEFAULT 0,
    ReadBytes BIGINT UNSIGNED DEFAULT 0,
    WriteBytes BIGINT UNSIGNED DEFAULT 0,
-   Spool INTEGER UNSIGNED DEFAULT 0,
-   Waiting INTEGER DEFAULT 0,
-   Writers INTEGER DEFAULT 0,
+   SpoolSize BIGINT UNSIGNED DEFAULT 0,
+   NumWaiting INTEGER DEFAULT 0,
+   NumWriters INTEGER DEFAULT 0,
    MediaId INTEGER UNSIGNED DEFAULT 0 REFERENCES Media,
    VolCatBytes BIGINT UNSIGNED DEFAULT 0,
    VolCatFiles BIGINT UNSIGNED DEFAULT 0,
@@ -421,10 +416,17 @@ CREATE TABLE DeviceStats (
 );
 
 CREATE TABLE JobStats (
+   DeviceId INTEGER UNSIGNED DEFAULT 0 REFERENCES Device,
    SampleTime DATETIME NOT NULL,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    JobFiles INTEGER UNSIGNED DEFAULT 0,
    JobBytes BIGINT UNSIGNED DEFAULT 0
+);
+
+CREATE TABLE TapeAlerts (
+   DeviceId INTEGER UNSIGNED DEFAULT 0 REFERENCES Device,
+   SampleTime DATETIME NOT NULL,
+   AlertFlags BIGINT UNSIGNED DEFAULT 0
 );
 
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
@@ -453,5 +455,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2002;
-INSERT INTO Version (VersionId) VALUES (2002);
+DELETE FROM Version WHERE VersionId<=2003;
+INSERT INTO Version (VersionId) VALUES (2003);

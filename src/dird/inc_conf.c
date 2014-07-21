@@ -675,7 +675,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
       MD5Init(&res_all->res_fs.md5c);
       res_all->res_fs.have_MD5 = true;
    }
-   memset(&res_incexe, 0, sizeof(INCEXE));
+   memset(&res_incexe, 0, sizeof(res_incexe));
    res_all->res_fs.new_include = true;
    while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
       if (token == T_EOB) {
@@ -722,7 +722,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 1) {
       incexe = (INCEXE *)malloc(sizeof(INCEXE));
       memcpy(incexe, &res_incexe, sizeof(INCEXE));
-      memset(&res_incexe, 0, sizeof(INCEXE));
+      memset(&res_incexe, 0, sizeof(res_incexe));
       if (item->code == 0) { /* include */
          if (res_all->res_fs.num_includes == 0) {
             res_all->res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));

@@ -1484,6 +1484,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
    JCR *mig_jcr = jcr->mig_jcr;
    POOL_MEM query(PM_MESSAGE);
 
+   memset(&mr, 0, sizeof(mr));
    Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
    update_job_end(jcr, TermCode);
 

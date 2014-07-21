@@ -46,8 +46,8 @@ SVRSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
 	  autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
 	  dir_cmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c mount.c \
 	  ndmp_tape.c read_record.c read.c record.c reserve.c scan.c sd_cmds.c \
-	  sd_plugins.c spool.c status.c stored_conf.c stored.c vol_mgr.c \
-	  wait.c service.c main.c $(DEVICE_API_SRCS)
+	  sd_plugins.c sd_stats.c spool.c status.c stored_conf.c stored.c \
+          vol_mgr.c wait.c service.c main.c $(DEVICE_API_SRCS)
 SVROBJS = $(SVRSRCS:.c=.o)
 
 TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \

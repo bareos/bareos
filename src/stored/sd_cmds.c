@@ -323,6 +323,14 @@ static bool replicate_data(JCR *jcr)
 
    Dmsg1(120, "Replicate data: %s", sd->msg);
    if (jcr->session_opened) {
+      utime_t now;
+
+      /*
+       * Update the initial Job Statistics.
+       */
+      now = (utime_t)time(NULL);
+      update_job_statistics(jcr, now);
+
       Dmsg1(110, "<stored: %s", sd->msg);
       if (do_append_data(jcr, sd, "SD")) {
          return true;

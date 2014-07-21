@@ -266,6 +266,12 @@ bool do_listen_run(JCR *jcr);
 /* sd_plugins.c */
 char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd);
 
+/* sd_stats.c */
+int start_statistics_thread(void);
+void stop_statistics_thread();
+void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
+void update_job_statistics(JCR *jcr, utime_t now);
+
 /* spool.c */
 bool begin_data_spool (DCR *dcr);
 bool discard_data_spool (DCR *dcr);

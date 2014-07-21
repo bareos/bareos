@@ -185,7 +185,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    /*
     * Clear local copy of run record
     */
-   memset(&lrun, 0, sizeof(RUNRES));
+   memset(&lrun, 0, sizeof(lrun));
 
    /*
     * Scan for Job level "full", "incremental", ...

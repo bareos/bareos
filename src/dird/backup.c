@@ -99,7 +99,7 @@ static bool get_base_jobids(JCR *jcr, db_list_ctx *jobids)
       return false;             /* no base job, stop accurate */
    }
 
-   memset(&jr, 0, sizeof(JOB_DBR));
+   memset(&jr, 0, sizeof(jr));
    jr.StartTime = jcr->jr.StartTime;
 
    foreach_alist(job, jcr->res.job->base) {
@@ -856,6 +856,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
             daemon_status,
             compress_algo_list;
 
+   memset(&mr, 0, sizeof(mr));
    bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);

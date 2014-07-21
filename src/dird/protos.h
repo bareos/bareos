@@ -229,6 +229,11 @@ JCR *wait_for_next_job(char *one_shot_job_to_run);
 bool is_doy_in_last_week(int year, int doy);
 void term_scheduler();
 
+/* stats.c */
+int start_statistics_thread(void);
+void stop_statistics_thread();
+void stats_job_started();
+
 /* ua_acl.c */
 bool acl_access_ok(UAContext *ua, int acl, const char *item);
 bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);

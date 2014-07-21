@@ -14,7 +14,6 @@ GRANT ALL ON Path TO @DB_USER@;
 GRANT ALL ON Filename TO @DB_USER@;
 GRANT ALL ON Counters TO @DB_USER@;
 GRANT ALL ON Version TO @DB_USER@;
-GRANT ALL ON CdImages TO @DB_USER@;
 GRANT ALL ON MediaType TO @DB_USER@;
 GRANT ALL ON Storage TO @DB_USER@;
 GRANT ALL ON Device TO @DB_USER@;
@@ -31,6 +30,7 @@ GRANT ALL ON NDMPLevelMap TO @DB_USER@;
 GRANT ALL ON NDMPJobEnvironment TO @DB_USER@;
 GRANT ALL ON DeviceStats TO @DB_USER@;
 GRANT ALL ON JobStats TO @DB_USER@;
+GRANT ALL ON TapeAlerts TO @DB_USER@;
 
 -- For sequences ON those tables
 GRANT SELECT, UPDATE ON filename_filenameid_seq TO @DB_USER@;

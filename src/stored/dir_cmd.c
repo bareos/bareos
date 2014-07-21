@@ -34,7 +34,7 @@
  * thread has the device blocked. In some "safe" cases,
  * we can do things to a blocked device. CAREFUL!!!!
  *
- * File daemon commands are handled in fdcmd.c
+ * File daemon commands are handled in fd_cmds.c
  *
  * Kern Sibbald, May MMI
  */
@@ -111,6 +111,7 @@ extern bool qstatus_cmd(JCR *jcr);
 //extern bool query_cmd(JCR *jcr);
 extern bool status_cmd(JCR *sjcr);
 extern bool use_cmd(JCR *jcr);
+extern bool stats_cmd(JCR *jcr);
 
 extern bool do_job_run(JCR *jcr);
 extern bool do_mac_run(JCR *jcr);
@@ -177,6 +178,7 @@ static struct s_cmds cmds[] = {
    { "run", run_cmd, false },               /* Start of Job */
    { "setbandwidth=", setbandwidth_cmd, false },
    { "setdebug=", setdebug_cmd, false },    /* Set debug level */
+   { "stats", stats_cmd, false },
    { "status", status_cmd, true },
    { ".status", qstatus_cmd, true },
    { "unmount", unmount_cmd, false },
@@ -301,8 +303,6 @@ bail_out:
  * Director, Storage Daemon or a Client (File daemon).
  *
  * Note, we are running as a seperate thread of the Storage daemon.
- * and it is because a Director has made a connection with
- * us on the "Message" channel.
  *
  * Basic tasks done here:
  *  - If it was a connection from the FD, call handle_filed_connection()
@@ -357,8 +357,7 @@ void *handle_connection_request(void *arg)
 }
 
 /*
- * Force SD to die, and hopefully dump itself.  Turned on only
- *  in development version.
+ * Force SD to die, and hopefully dump itself.  Turned on only in development version.
  */
 static bool die_cmd(JCR *jcr)
 {
@@ -1688,8 +1687,17 @@ static bool passive_cmd(JCR *jcr)
       delete fd;
       jcr->file_bsock = NULL;
       goto bail_out;
+   } else {
+      utime_t now;
+
+      Dmsg0(110, "Authenticated with FD.\n");
+
+      /*
+       * Update the initial Job Statistics.
+       */
+      now = (utime_t)time(NULL);
+      update_job_statistics(jcr, now);
    }
-   Dmsg0(110, "Authenticated with FD.\n");
 
    /*
     * Send OK to Director

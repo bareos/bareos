@@ -329,6 +329,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
    memset(&jr, 0, sizeof(jr));
    memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
 
    Dmsg1(20, "list: %s\n", cmd);
 
@@ -574,6 +575,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
 static bool list_nextvol(UAContext *ua, int ndays)
 {
+   int i;
    JOBRES *job;
    JCR *jcr;
    USTORERES store;
@@ -583,7 +585,9 @@ static bool list_nextvol(UAContext *ua, int ndays)
    MEDIA_DBR mr;
    POOL_DBR pr;
 
-   int i = find_arg_with_value(ua, "job");
+   memset(&mr, 0, sizeof(mr));
+
+   i = find_arg_with_value(ua, "job");
    if (i <= 0) {
       if ((job = select_job_resource(ua)) == NULL) {
          return false;
@@ -742,7 +746,7 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   memset(&pr, 0, sizeof(pr));
    set_jcr_defaults(jcr, job);
    if (pool) {
       jcr->res.pool = pool;           /* override */

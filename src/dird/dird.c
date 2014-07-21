@@ -343,6 +343,8 @@ int main (int argc, char *argv[])
 
 //   init_device_resources();
 
+   start_statistics_thread();
+
    Dmsg0(200, "wait for next job\n");
    /* Main loop -- call scheduler to get next job to run */
    while ( (jcr = wait_for_next_job(runjob)) ) {
@@ -369,8 +371,11 @@ void terminate_dird(int sig)
       bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
+
    already_here = true;
    debug_level = 0;                   /* turn off debug */
+
+   stop_statistics_thread();
    stop_watchdog();
    db_sql_pool_destroy();
    db_flush_backends();
@@ -379,6 +384,7 @@ void terminate_dird(int sig)
    delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
    term_scheduler();
    term_job_server();
+
    if (runjob) {
       free(runjob);
    }
@@ -393,12 +399,14 @@ void terminate_dird(int sig)
       free(my_config);
       my_config = NULL;
    }
+
    stop_UA_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
+
    exit(sig);
 }
 
@@ -581,6 +589,21 @@ bail_out:
    signal(SIGHUP, reload_config);
 #endif
    already_here = false;
+}
+
+/*
+ * See if two storage definitions point to the same Storage Daemon.
+ *
+ * We compare:
+ *  - address
+ *  - SDport
+ *  - password
+ */
+static inline bool is_same_storage_daemon(STORERES *store1, STORERES *store2)
+{
+   return store1->SDport == store2->SDport &&
+          bstrcasecmp(store1->address, store2->address) &&
+          bstrcasecmp(store1->password.value, store2->password.value);
 }
 
 /*
@@ -834,7 +857,7 @@ static bool check_resources()
    /*
     * Loop over Storages
     */
-   STORERES *store;
+   STORERES *store, *nstore;
    foreach_res(store, R_STORAGE) {
       /*
        * tls_require implies tls_enable
@@ -876,6 +899,21 @@ static bool check_resources()
                  store->name(), configfile);
             OK = false;
             goto bail_out;
+         }
+      }
+
+      /*
+       * If we collect statistics on this SD make sure any other entry pointing to the same SD does not
+       * collect statistics otherwise we collect the same data multiple times.
+       */
+      if (store->collectstats) {
+         nstore = store;
+         while ((nstore = (STORERES *)GetNextRes(R_STORAGE, (RES *)nstore))) {
+            if (is_same_storage_daemon(store, nstore) && nstore->collectstats) {
+               nstore->collectstats = false;
+               Dmsg1(200, _("Disabling collectstats for storage \"%s\""
+                            " as other storage already collects from this SD.\n"), nstore->name());
+            }
          }
       }
    }

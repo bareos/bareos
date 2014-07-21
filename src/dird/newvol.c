@@ -64,7 +64,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
       goto bail_out;
    }
    if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
-      mr->clear();
+      memset(mr, 0, sizeof(MEDIA_DBR));
       set_pool_dbr_defaults_in_media_dbr(mr, &pr);
       jcr->VolumeName[0] = 0;
       bstrncpy(mr->MediaType, jcr->res.wstore->media_type, sizeof(mr->MediaType));
@@ -137,6 +137,8 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
    }
    for (int i=(int)ctx.value+1; i<(int)ctx.value+100; i++) {
       MEDIA_DBR tmr;
+
+      memset(&tmr, 0, sizeof(tmr));
       sprintf(num, "%04d", i);
       bstrncpy(tmr.VolumeName, name.c_str(), sizeof(tmr.VolumeName));
       bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));

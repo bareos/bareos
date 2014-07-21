@@ -59,7 +59,6 @@ bool do_admin(JCR *jcr)
    return true;
 }
 
-
 /*
  * Release resources allocated during backup.
  */
@@ -69,7 +68,6 @@ void admin_cleanup(JCR *jcr, int TermCode)
    char term_code[100];
    const char *term_msg;
    int msg_type;
-   MEDIA_DBR mr;
 
    Dmsg0(100, "Enter backup_cleanup()\n");
 

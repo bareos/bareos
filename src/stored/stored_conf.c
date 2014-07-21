@@ -90,14 +90,17 @@ static RES_ITEM store_items[] = {
    { "compatible", CFG_TYPE_BOOL, ITEM(res_store.compatible), 0, CFG_ITEM_DEFAULT, "true" },
    { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth_per_job), 0, 0, NULL },
    { "allowbandwidthbursting", CFG_TYPE_BOOL, ITEM(res_store.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false" },
-   { "ndmpenable", CFG_TYPE_BOOL, ITEM(res_store.ndmp_enable), 0, 0, NULL },
-   { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_store.ndmp_snooping), 0, 0, NULL },
+   { "ndmpenable", CFG_TYPE_BOOL, ITEM(res_store.ndmp_enable), 0, CFG_ITEM_DEFAULT, "false" },
+   { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_store.ndmp_snooping), 0, CFG_ITEM_DEFAULT, "false" },
    { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_store.ndmploglevel), 0, CFG_ITEM_DEFAULT, "4" },
    { "ndmpaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
    { "ndmpaddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
    { "ndmpport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
    { "autoxflateonreplication", CFG_TYPE_BOOL, ITEM(res_store.autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false" },
    { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_store.jcr_watchdog_time), 0, 0, NULL },
+   { "collectdevicestatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false" },
+   { "collectjobstatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_job_stats), 0, CFG_ITEM_DEFAULT, "false" },
+   { "statisticscollectinterval", CFG_TYPE_PINT32, ITEM(res_store.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30" },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
@@ -206,6 +209,7 @@ static RES_ITEM dev_items[] = {
    { "autodeflatealgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL },
    { "autodeflatelevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6" },
    { "autoinflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL },
+   { "collectstatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true" },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 

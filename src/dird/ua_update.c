@@ -283,7 +283,7 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   memset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
    if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
       ua->error_msg("%s", db_strerror(ua->db));
@@ -408,6 +408,7 @@ static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
    MEDIA_DBR mr;
 
    memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
 
    bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
    if (!get_pool_dbr(ua, &pr)) {
@@ -431,6 +432,7 @@ static void update_all_vols(UAContext *ua)
    MEDIA_DBR mr;
 
    memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
 
    if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
       ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
@@ -500,9 +502,7 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
  */
 static int update_volume(UAContext *ua)
 {
-   MEDIA_DBR mr;
    POOLRES *pool;
-   POOL_DBR pr;
    POOLMEM *query;
    POOL_MEM ret;
    char buf[1000];
@@ -533,8 +533,12 @@ static int update_volume(UAContext *ua)
    for (i = 0; kw[i]; i++) {
       int j;
       POOL_DBR pr;
+      MEDIA_DBR mr;
 
-      if ((j=find_arg_with_value(ua, kw[i])) > 0) {
+      memset(&pr, 0, sizeof(pr));
+      memset(&mr, 0, sizeof(mr));
+
+      if ((j = find_arg_with_value(ua, kw[i])) > 0) {
          /* If all from pool don't select a media record */
          if (i != AllFromPool && !select_media_dbr(ua, &mr)) {
             return 0;
@@ -568,7 +572,6 @@ static int update_volume(UAContext *ua)
             update_volslot(ua, ua->argv[j], &mr);
             break;
          case 9:
-            memset(&pr, 0, sizeof(POOL_DBR));
             pr.PoolId = mr.PoolId;
             if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
                ua->error_msg("%s", db_strerror(ua->db));
@@ -603,6 +606,12 @@ static int update_volume(UAContext *ua)
    }
 
    for ( ; !done; ) {
+      POOL_DBR pr;
+      MEDIA_DBR mr;
+
+      memset(&pr, 0, sizeof(pr));
+      memset(&mr, 0, sizeof(mr));
+
       start_prompt(ua, _("Parameters to modify:\n"));
       add_prompt(ua, _("Volume Status"));              /* 0 */
       add_prompt(ua, _("Volume Retention Period"));    /* 1 */
@@ -760,7 +769,6 @@ static int update_volume(UAContext *ua)
          break;
 
       case 10:                        /* Volume's Pool */
-         memset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.PoolId;
          if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
             ua->error_msg("%s", db_strerror(ua->db));
@@ -805,7 +813,6 @@ static int update_volume(UAContext *ua)
          break;
 
       case 15:
-         memset(&pr, 0, sizeof(POOL_DBR));
          pr.PoolId = mr.RecyclePoolId;
          if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
             ua->info_msg(_("Current RecyclePool is: %s\n"), pr.Name);
@@ -860,7 +867,7 @@ static bool update_stats(UAContext *ua)
  */
 static bool update_pool(UAContext *ua)
 {
-   POOL_DBR  pr;
+   POOL_DBR pr;
    int id;
    POOLRES *pool;
    POOLMEM *query;
@@ -1054,10 +1061,10 @@ static void update_slots(UAContext *ua)
    /*
     * Walk through the list updating the media records
     */
+   memset(&mr, 0, sizeof(mr));
    foreach_dlist(vl, vol_list) {
       if (vl->Slot > max_slots) {
-         ua->warning_msg(_("Slot %d greater than max %d ignored.\n"),
-            vl->Slot, max_slots);
+         ua->warning_msg(_("Slot %d greater than max %d ignored.\n"), vl->Slot, max_slots);
          continue;
       }
       /*
@@ -1113,7 +1120,9 @@ static void update_slots(UAContext *ua)
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
          Dmsg4(100, "After get MR: Vol=%s slot=%d inchanger=%d sid=%d\n",
             mr.VolumeName, mr.Slot, mr.InChanger, mr.StorageId);
-         /* If Slot, Inchanger, and StorageId have changed, update the Media record */
+         /*
+          * If Slot, Inchanger, and StorageId have changed, update the Media record
+          */
          if (mr.Slot != vl->Slot || !mr.InChanger || mr.StorageId != store.store->StorageId) {
             mr.Slot = vl->Slot;
             mr.InChanger = 1;
@@ -1124,22 +1133,20 @@ static void update_slots(UAContext *ua)
             if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
                ua->error_msg("%s", db_strerror(ua->db));
             } else {
-               ua->info_msg(_(
-                 "Catalog record for Volume \"%s\" updated to reference slot %d.\n"),
-                 mr.VolumeName, mr.Slot);
+               ua->info_msg(_("Catalog record for Volume \"%s\" updated to reference slot %d.\n"),
+                            mr.VolumeName, mr.Slot);
             }
          } else {
-            ua->info_msg(_("Catalog record for Volume \"%s\" is up to date.\n"),
-               mr.VolumeName);
+            ua->info_msg(_("Catalog record for Volume \"%s\" is up to date.\n"), mr.VolumeName);
          }
       } else {
          ua->warning_msg(_("Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"),
-             mr.VolumeName, vl->Slot);
+                         mr.VolumeName, vl->Slot);
       }
       db_unlock(ua->db);
    }
 
-   mr.clear();
+   memset(&mr, 0, sizeof(mr));
    mr.InChanger = 1;
    set_storageid_in_mr(store.store, &mr);
 
@@ -1212,7 +1219,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list,
       /*
        * Set InChanger to zero for this Slot
        */
-      mr.clear();
+      memset(&mr, 0, sizeof(mr));
       mr.Slot = vl->Slot;
       mr.InChanger = 1;
       mr.MediaId = 0;                 /* Get by VolumeName */
@@ -1317,7 +1324,7 @@ void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list
       /*
        * Set InChanger to zero for this Slot
        */
-      mr.clear();
+      memset(&mr, 0, sizeof(mr));
       mr.Slot = vl->Slot;
       mr.InChanger = 1;
       mr.MediaId = 0;                 /* Get by VolumeName */

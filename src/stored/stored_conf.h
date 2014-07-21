@@ -106,6 +106,7 @@ public:
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
    uint32_t ndmploglevel;             /* Initial NDMP log level */
    uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
+   uint32_t stats_collect_interval;   /* Statistics collect interval in seconds */
    MSGSRES *messages;                 /* Daemon message handler */
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t FDConnectTimeout;          /* Timeout in seconds */
@@ -122,6 +123,8 @@ public:
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
+   bool collect_dev_stats;            /* Collect Device Statistics */
+   bool collect_job_stats;            /* Collect Job Statistics */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
@@ -164,6 +167,7 @@ public:
    bool drive_tapealert_enabled;      /* Enable Tape Alert monitoring */
    bool drive_crypto_enabled;         /* Enable hardware crypto */
    bool query_crypto_status;          /* Query device for crypto status */
+   bool collectstats;                 /* Set if statistics should be collected */
    uint32_t drive_index;              /* Autochanger drive index */
    uint32_t cap_bits;                 /* Capabilities of this device */
    utime_t max_changer_wait;          /* Changer timeout */

@@ -364,15 +364,20 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
    bool ok = false;
    bool found = false;
 
-   /* Only one thread at a time can pull from the scratch pool */
+   /*
+    * Only one thread at a time can pull from the scratch pool
+    */
    P(mutex);
+
    /*
     * Get Pool record for Scratch Pool
     * choose between ScratchPoolId and Scratch
     * db_get_pool_record will first try ScratchPoolId,
     * and then try the pool named Scratch
     */
+   memset(&smr, 0, sizeof(smr));
    memset(&spr, 0, sizeof(spr));
+
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
    spr.PoolId = mr->ScratchPoolId;
    if (db_get_pool_record(jcr, jcr->db, &spr)) {
@@ -422,7 +427,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
             goto bail_out;
          }
 
-         mr->copy(&smr);
+         memcpy(mr, &smr, sizeof(MEDIA_DBR));
          set_storageid_in_mr(store, mr);
 
          /* Set default parameters from current pool */

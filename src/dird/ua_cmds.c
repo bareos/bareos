@@ -336,6 +336,7 @@ static int add_cmd(UAContext *ua, const char *cmd)
    }
 
    memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
 
    if (!get_pool_dbr(ua, &pr)) {
       return 1;
@@ -601,13 +602,13 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
 /* set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog */
 int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)
 {
-   POOL_DBR  pr;
+   POOL_DBR pr;
 
    if (!pool->RecyclePool && !pool->ScratchPool) {
       return 1;
    }
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   memset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
    if (!db_get_pool_record(jcr, db, &pr)) {
@@ -635,7 +636,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
    bool ret = true;
 
    if (pool->RecyclePool) {
-      memset(&rpool, 0, sizeof(POOL_DBR));
+      memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
       if (db_get_pool_record(jcr, db, &rpool)) {
@@ -653,7 +654,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
    }
 
    if (pool->ScratchPool) {
-      memset(&rpool, 0, sizeof(POOL_DBR));
+      memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
       if (db_get_pool_record(jcr, db, &rpool)) {
@@ -685,7 +686,7 @@ int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
 {
    POOL_DBR  pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   memset(&pr, 0, sizeof(pr));
 
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
@@ -1884,6 +1885,7 @@ static int delete_volume(UAContext *ua)
    char buf[1000];
    db_list_ctx lst;
 
+   memset(&mr, 0, sizeof(mr));
    if (!select_media_dbr(ua, &mr)) {
       return 1;
    }

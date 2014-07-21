@@ -101,7 +101,7 @@ bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags)
             for (int j = 0; tapealert_mappings[j].alert_msg; j++) {
                if (result_index == tapealert_mappings[j].flag) {
                   Dmsg2(100, "TapeAlert [%d] set ==> %s\n", result_index, tapealert_mappings[j].alert_msg);
-                  set_bit(result_index, flags);
+                  set_bit(result_index, (char *)flags);
                }
             }
          }

@@ -63,6 +63,9 @@ bool db_create_base_file_list(JCR *jcr, B_DB *mdb, char *jobids);
 bool db_create_quota_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr);
 bool db_create_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem);
 bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *name, char *value);
+bool db_create_job_statistics(JCR *jcr, B_DB *mdb, JOB_STATS_DBR *jsr);
+bool db_create_device_statistics(JCR *jcr, B_DB *mdb, DEVICE_STATS_DBR *dsr);
+bool db_create_tapealert_statistics(JCR *jcr, B_DB *mdb, TAPEALERT_STATS_DBR *tsr);
 
 /* sql_delete.c */
 bool db_delete_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pool_dbr);
