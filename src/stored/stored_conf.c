@@ -199,6 +199,7 @@ static RES_ITEM dev_items[] = {
    { "freespacecommand", CFG_TYPE_STRNAME, ITEM(res_dev.free_space_command), 0, CFG_ITEM_DEPRECATED, NULL },
    { "labeltype", CFG_TYPE_LABEL, ITEM(res_dev.label_type), 0, 0, NULL },
    { "norewindonclose", CFG_TYPE_BOOL, ITEM(res_dev.norewindonclose), 0, CFG_ITEM_DEFAULT, "true" },
+   { "drivetapealertenabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_tapealert_enabled), 0, 0, NULL },
    { "drivecryptoenabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_crypto_enabled), 0, 0, NULL },
    { "querycryptostatus", CFG_TYPE_BOOL, ITEM(res_dev.query_crypto_status), 0, 0, NULL },
    { "autodeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL },

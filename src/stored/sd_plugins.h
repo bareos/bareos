@@ -115,7 +115,8 @@ typedef enum {
   bsdEventVolumeStatus = 17,
   bsdEventSetupRecordTranslation = 18,
   bsdEventReadRecordTranslation = 19,
-  bsdEventWriteRecordTranslation = 20
+  bsdEventWriteRecordTranslation = 20,
+  bsdEventDeviceReleased = 21
 } bsdEventType;
 
 #define SD_NR_EVENTS bsdEventWriteRecordTranslation /* keep this updated ! */

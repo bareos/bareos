@@ -4101,7 +4101,7 @@ if test X"$support_python" = "Xyes" ; then
 fi
 
 if test X"$have_scsi_crypto" = "Xyes" ; then
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la"
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
 fi
 
 if test X"$have_zlib" = "Xyes" -o \
