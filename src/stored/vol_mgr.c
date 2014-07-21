@@ -29,12 +29,15 @@
 #include "bareos.h"
 #include "stored.h"
 
-const int dbglvl =  150;
+const int dbglvl = 150;
 
 static dlist *vol_list = NULL;
 static brwlock_t vol_list_lock;
 static dlist *read_vol_list = NULL;
 static bthread_mutex_t read_vol_lock = BTHREAD_MUTEX_PRIORITY(PRIO_SD_READ_VOL_LIST);
+
+/* Global static variables */
+int vol_list_lock_count = 0;
 
 /* Forward referenced functions */
 static void free_vol_item(VOLRES *vol);
@@ -66,13 +69,10 @@ static int read_compare(void *item1, void *item2)
    return 1;
 }
 
-
 bool is_vol_list_empty()
 {
    return vol_list->empty();
 }
-
-int vol_list_lock_count = 0;
 
 /*
  *  Initialized the main volume list. Note, we are using a recursive lock.
@@ -117,12 +117,13 @@ void _unlock_volumes()
    }
 }
 
-void lock_read_volumes(const char *file="**Unknown", int line=0)
+#define lock_read_volumes() lock_read_volumes_p(__FILE__, __LINE__)
+static void lock_read_volumes_p(const char *file, int line)
 {
    bthread_mutex_lock_p(&read_vol_lock, file, line);
 }
 
-void unlock_read_volumes()
+static void unlock_read_volumes()
 {
    bthread_mutex_unlock(&read_vol_lock);
 }
@@ -143,15 +144,16 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
 
    nvol = new_vol_item(NULL, VolumeName);
    nvol->set_jobid(jcr->JobId);
+   nvol->set_reading();
    lock_read_volumes();
    vol = (VOLRES *)read_vol_list->binary_insert(nvol, read_compare);
-   unlock_read_volumes();
    if (vol != nvol) {
       free_vol_item(nvol);
       Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
    } else {
       Dmsg2(dbglvl, "add read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
    }
+   unlock_read_volumes();
 }
 
 /*
@@ -160,6 +162,7 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
 void remove_read_volume(JCR *jcr, const char *VolumeName)
 {
    VOLRES vol, *fvol;
+
    lock_read_volumes();
    vol.vol_name = bstrdup(VolumeName);
    vol.set_jobid(jcr->JobId);
@@ -174,6 +177,22 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
    }
    unlock_read_volumes();
 // pthread_cond_broadcast(&wait_next_vol);
+}
+
+/*
+ * Check if volume name is on read volume list.
+ */
+bool is_on_read_volume_list(JCR *jcr, const char *VolumeName)
+{
+   VOLRES vol, *fvol;
+
+   lock_read_volumes();
+   vol.vol_name = bstrdup(VolumeName);
+   fvol = (VOLRES *)read_vol_list->binary_search(&vol, compare_by_volumename);
+   free(vol.vol_name);
+   unlock_read_volumes();
+
+   return fvol != NULL;
 }
 
 /*
@@ -351,18 +370,29 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
    }
    ASSERT(dev != NULL);
 
-   Dmsg2(dbglvl, "enter reserve_volume=%s drive=%s\n", VolumeName,
-      dcr->dev->print_name());
+   Dmsg2(dbglvl, "enter reserve_volume=%s drive=%s\n", VolumeName, dcr->dev->print_name());
+
    /*
-    * We lock the reservations system here to ensure
-    *  when adding a new volume that no newly scheduled
-    *  job can reserve it.
+    * If aquiring a volume for writing it may not be on the read volume list.
+    */
+   if (dcr->is_writing() && is_on_read_volume_list(dcr->jcr, VolumeName)) {
+      Mmsg(dcr->jcr->errmsg,
+           _("Could not reserve volume \"%s\" for append, because it is read by an other Job.\n"),
+           dev->VolHdr.VolumeName);
+      return NULL;
+   }
+
+   /*
+    * We lock the reservations system here to ensure when adding a new volume that no newly
+    * scheduled job can reserve it.
     */
    lock_volumes();
-   debug_list_volumes("begin reserve_volume");
+   if (debug_level >= dbglvl) {
+      debug_list_volumes("begin reserve_volume");
+   }
+
    /*
-    * First, remove any old volume attached to this device as it
-    *  is no longer used.
+    * First, remove any old volume attached to this device as it is no longer used.
     */
    if (dev->vol) {
       vol = dev->vol;
@@ -391,7 +421,10 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
             dev->set_unload();          /* have to unload current volume */
          }
          free_volume(dev);              /* Release old volume entry */
-         debug_list_volumes("reserve_vol free");
+
+         if (debug_level >= dbglvl) {
+            debug_list_volumes("reserve_vol free");
+         }
       }
    }
 
@@ -399,9 +432,26 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
    nvol = new_vol_item(dcr, VolumeName);
 
    /*
-    * Now try to insert the new Volume
+    * See if this is a request for reading a file type device which can be
+    * accesses by multiple readers at once without disturbing each other.
     */
-   vol = (VOLRES *)vol_list->binary_insert(nvol, compare_by_volumename);
+   if (!dcr->is_writing() && dev->is_file()) {
+      nvol->set_jobid(dcr->jcr->JobId);
+      nvol->set_reading();
+      vol = nvol;
+      dev->vol = vol;
+
+      /*
+       * Read volumes on file based devices are not inserted into the write volume list.
+       */
+      goto get_out;
+   } else {
+      /*
+       * Now try to insert the new Volume
+       */
+      vol = (VOLRES *)vol_list->binary_insert(nvol, compare_by_volumename);
+   }
+
    if (vol != nvol) {
       Dmsg2(dbglvl, "Found vol=%s dev-same=%d\n", vol->vol_name, dev==vol->dev);
       /*
@@ -462,7 +512,11 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
                Dmsg3(dbglvl, "Swap failed vol=%s from=%p to dev=%s\n",
                      vol->vol_name, dev->swap_dev, dev->print_name());
             }
-            debug_list_volumes("failed swap");
+
+            if (debug_level >= dbglvl) {
+               debug_list_volumes("failed swap");
+            }
+
             vol = NULL;                  /* device busy */
             goto get_out;
          }
@@ -481,7 +535,11 @@ get_out:
       dcr->reserved_volume = true;
       bstrncpy(dcr->VolumeName, vol->vol_name, sizeof(dcr->VolumeName));
    }
-   debug_list_volumes("end new volume");
+
+   if (debug_level >= dbglvl) {
+      debug_list_volumes("end new volume");
+   }
+
    unlock_volumes();
    return vol;
 }
@@ -513,6 +571,7 @@ VOLRES *vol_walk_start()
             vol->use_count(), vol->vol_name);
    }
    unlock_volumes();
+
    return vol;
 }
 
@@ -530,10 +589,11 @@ VOLRES *vol_walk_next(VOLRES *prev_vol)
       Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
    }
-   unlock_volumes();
    if (prev_vol) {
       free_vol_item(prev_vol);
    }
+   unlock_volumes();
+
    return vol;
 }
 
@@ -543,9 +603,11 @@ VOLRES *vol_walk_next(VOLRES *prev_vol)
 void vol_walk_end(VOLRES *vol)
 {
    if (vol) {
+      lock_volumes();
       Dmsg2(dbglvl, "Free walk_end use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
       free_vol_item(vol);
+      unlock_volumes();
    }
 }
 
@@ -555,7 +617,7 @@ void vol_walk_end(VOLRES *vol)
  *  Returns: VOLRES entry on success
  *           NULL if the Volume is not in the list
  */
-VOLRES *find_volume(const char *VolumeName)
+static VOLRES *find_volume(const char *VolumeName)
 {
    VOLRES vol, *fvol;
 
@@ -568,7 +630,11 @@ VOLRES *find_volume(const char *VolumeName)
    fvol = (VOLRES *)vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
    Dmsg2(dbglvl, "find_vol=%s found=%d\n", VolumeName, fvol!=NULL);
-   debug_list_volumes("find_volume");
+
+   if (debug_level >= dbglvl) {
+      debug_list_volumes("find_volume");
+   }
+
    unlock_volumes();
    return fvol;
 }
@@ -615,7 +681,10 @@ bool volume_unused(DCR *dcr)
 
    if (!dev->vol) {
       Dmsg1(dbglvl, "vol_unused: no vol on %s\n", dev->print_name());
-      debug_list_volumes("null vol cannot unreserve_volume");
+      if (debug_level >= dbglvl) {
+         debug_list_volumes("null vol cannot unreserve_volume");
+      }
+
       return false;
    }
 
@@ -624,7 +693,10 @@ bool volume_unused(DCR *dcr)
 
    if (dev->vol->is_swapping()) {
       Dmsg1(dbglvl, "vol_unused: vol being swapped on %s\n", dev->print_name());
-      debug_list_volumes("swapping vol cannot free_volume");
+
+      if (debug_level >= dbglvl) {
+         debug_list_volumes("swapping vol cannot free_volume");
+      }
       return false;
    }
 
@@ -665,10 +737,15 @@ bool free_volume(DEVICE *dev)
    if (!vol->is_swapping()) {
       Dmsg1(dbglvl, "=== clear in_use vol=%s\n", vol->vol_name);
       dev->vol = NULL;
-      vol_list->remove(vol);
+      if (vol->is_writing()) {
+         vol_list->remove(vol);
+      }
       Dmsg2(dbglvl, "=== remove volume %s dev=%s\n", vol->vol_name, dev->print_name());
       free_vol_item(vol);
-      debug_list_volumes("free_volume");
+
+      if (debug_level >= dbglvl) {
+         debug_list_volumes("free_volume");
+      }
    } else {
       Dmsg1(dbglvl, "=== cannot clear swapping vol=%s\n", vol->vol_name);
    }
@@ -848,5 +925,8 @@ void free_temp_vol_list(dlist *temp_vol_list)
    Dmsg0(dbglvl, "deleted temp vol list\n");
    Dmsg0(dbglvl, "unlock volumes\n");
    unlock_volumes();
-   debug_list_volumes("after free temp table");
+
+   if (debug_level >= dbglvl) {
+      debug_list_volumes("after free temp table");
+   }
 }

@@ -305,7 +305,7 @@ int main (int argc, char *argv[])
          working_directory);
    }
 
-   bjcr = setup_jcr("bscan", argv[0], bsr, director, VolumeName, 1); /* read device */
+   bjcr = setup_jcr("bscan", argv[0], bsr, director, VolumeName, true); /* read device */
    if (!bjcr) {
       exit(1);
    }

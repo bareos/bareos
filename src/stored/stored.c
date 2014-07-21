@@ -586,8 +586,7 @@ get_out2:
 
 
 /*
- * Here we attempt to init and open each device. This is done
- *  once at startup in a separate thread.
+ * Here we attempt to init and open each device. This is done once at startup in a separate thread.
  */
 extern "C"
 void *device_initialization(void *arg)
@@ -633,9 +632,12 @@ void *device_initialization(void *arg)
       }
 
       jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
+      jcr->dcr->set_will_write();
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
       if (dev->is_autochanger()) {
-         /* If autochanger set slot in dev structure */
+         /*
+          * If autochanger set slot in dev structure
+          */
          get_autochanger_loaded_slot(dcr);
       }
 
@@ -677,8 +679,9 @@ void *device_initialization(void *arg)
    return NULL;
 }
 
-
-/* Clean up and then exit */
+/*
+ * Clean up and then exit
+ */
 void terminate_stored(int sig)
 {
    static bool in_here = false;

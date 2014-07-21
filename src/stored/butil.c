@@ -35,8 +35,8 @@
 #include "stored.h"
 
 /* Forward referenced functions */
-static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, int mode);
-static DEVRES *find_device_res(char *device_name, int mode);
+static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, bool readonly);
+static DEVRES *find_device_res(char *device_name, bool readonly);
 static void my_free_jcr(JCR *jcr);
 
 /* Imported variables -- eliminate some day */
@@ -75,7 +75,7 @@ char *rec_state_bits_to_str(DEV_RECORD *rec)
  */
 JCR *setup_jcr(const char *name, char *dev_name,
                BSR *bsr, DIRRES *director,
-               const char *VolumeName, int mode)
+               const char *VolumeName, bool readonly)
 {
    DCR *dcr;
    JCR *jcr = new_jcr(sizeof(JCR), my_free_jcr);
@@ -105,7 +105,7 @@ JCR *setup_jcr(const char *name, char *dev_name,
    init_autochangers();
    create_volume_lists();
 
-   dcr = setup_to_access_device(jcr, dev_name, VolumeName, mode);
+   dcr = setup_to_access_device(jcr, dev_name, VolumeName, readonly);
    if (!dcr) {
       return NULL;
    }
@@ -122,8 +122,7 @@ JCR *setup_jcr(const char *name, char *dev_name,
  *   If the caller wants read access, acquire the device, otherwise,
  *     the caller will do it.
  */
-static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
-              const char *VolumeName, int mode)
+static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, bool readonly)
 {
    DEVICE *dev;
    char *p;
@@ -159,7 +158,7 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
       }
    }
 
-   if ((device=find_device_res(dev_name, mode)) == NULL) {
+   if ((device = find_device_res(dev_name, readonly)) == NULL) {
       Jmsg2(jcr, M_FATAL, 0, _("Cannot find device \"%s\" in config file %s.\n"),
            dev_name, configfile);
       return NULL;
@@ -172,6 +171,10 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
    }
    device->dev = dev;
    jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
+   if (!readonly) {
+      dcr->set_will_write();
+   }
+
    if (VolName[0]) {
       bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
    }
@@ -179,7 +182,7 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name,
 
    create_restore_volume_list(jcr);
 
-   if (mode) {                        /* read only access? */
+   if (readonly) {                    /* read only access? */
       Dmsg0(100, "Acquire device for read\n");
       if (!acquire_device_for_read(dcr)) {
          return NULL;
@@ -239,7 +242,6 @@ static void my_free_jcr(JCR *jcr)
    return;
 }
 
-
 /*
  * Search for device resource that corresponds to
  * device name on command line (or default).
@@ -247,7 +249,7 @@ static void my_free_jcr(JCR *jcr)
  * Returns: NULL on failure
  *          Device resource pointer on success
  */
-static DEVRES *find_device_res(char *device_name, int read_access)
+static DEVRES *find_device_res(char *device_name, bool readonly)
 {
    bool found = false;
    DEVRES *device;
@@ -261,6 +263,7 @@ static DEVRES *find_device_res(char *device_name, int read_access)
          break;
       }
    }
+
    if (!found) {
       /* Search for name of Device resource rather than archive name */
       if (device_name[0] == '"') {
@@ -280,20 +283,22 @@ static DEVRES *find_device_res(char *device_name, int read_access)
       }
    }
    UnlockRes();
+
    if (!found) {
       Pmsg2(0, _("Could not find device \"%s\" in config file %s.\n"), device_name,
             configfile);
       return NULL;
    }
-   if (read_access) {
+
+   if (readonly) {
       Pmsg1(0, _("Using device: \"%s\" for reading.\n"), device_name);
    }
    else {
       Pmsg1(0, _("Using device: \"%s\" for writing.\n"), device_name);
    }
+
    return device;
 }
-
 
 /*
  * Device got an error, attempt to analyse it

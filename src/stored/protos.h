@@ -84,7 +84,7 @@ void ser_block_header(DEV_BLOCK *block);
 void print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
 JCR *setup_jcr(const char *name, char *dev_name,
                BSR *bsr, DIRRES *director,
-               const char *VolumeName, int mode);
+               const char *VolumeName, bool readonly);
 void display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 /* crc32.c */
@@ -278,7 +278,6 @@ void list_spool_stats (void sendit(const char *msg, int len, void *sarg), void *
 void init_vol_list_lock();
 void term_vol_list_lock();
 VOLRES *reserve_volume(DCR *dcr, const char *VolumeName);
-VOLRES *find_volume(const char *VolumeName);
 bool free_volume(DEVICE *dev);
 bool is_vol_list_empty();
 dlist *dup_vol_list(JCR *jcr);

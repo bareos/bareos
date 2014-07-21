@@ -247,19 +247,23 @@ static bool use_device_cmd(JCR *jcr)
 #endif
 
    init_jcr_device_wait_timers(jcr);
-   jcr->dcr = new_dcr(jcr, NULL, NULL, NULL);         /* get a dcr */
+   jcr->dcr = new_dcr(jcr, NULL, NULL, NULL);
+   if (rctx.append) {
+      jcr->dcr->set_will_write();
+   }
+
    if (!jcr->dcr) {
       BSOCK *dir = jcr->dir_bsock;
       dir->fsend(_("3939 Could not get dcr\n"));
       Dmsg1(dbglvl, ">dird: %s", dir->msg);
       ok = false;
    }
+
    /*
-    * At this point, we have a list of all the Director's Storage
-    *  resources indicated for this Job, which include Pool, PoolType,
-    *  storage name, and Media type.
-    * Then for each of the Storage resources, we have a list of
-    *  device names that were given.
+    * At this point, we have a list of all the Director's Storage resources indicated
+    * for this Job, which include Pool, PoolType, storage name, and Media type.
+    *
+    * Then for each of the Storage resources, we have a list of device names that were given.
     *
     * Wiffle through them and find one that can do the backup.
     */
@@ -644,17 +648,25 @@ static int reserve_device(RCTX &rctx)
 
    rctx.suitable_device = true;
    Dmsg1(dbglvl, "try reserve %s\n", rctx.device->hdr.name);
+
    if (rctx.store->append) {
       dcr = new_dcr(rctx.jcr, rctx.jcr->dcr, rctx.device->dev, NULL);
    } else {
       dcr = new_dcr(rctx.jcr, rctx.jcr->read_dcr, rctx.device->dev, NULL);
    }
+
    if (!dcr) {
       BSOCK *dir = rctx.jcr->dir_bsock;
+
       dir->fsend(_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
       Dmsg1(dbglvl, ">dird: %s", dir->msg);
       return -1;
    }
+
+   if (rctx.store->append) {
+      dcr->set_will_write();
+   }
+
    bstrncpy(dcr->pool_name, rctx.store->pool_name, name_len);
    bstrncpy(dcr->pool_type, rctx.store->pool_type, name_len);
    bstrncpy(dcr->media_type, rctx.store->media_type, name_len);

@@ -21,8 +21,7 @@
    02110-1301, USA.
 */
 /*
- * Definitions for using the Device functions in Bareos
- * Tape and File storage access
+ * Definitions for using the Device functions in Bareos Tape and File storage access
  *
  * Kern Sibbald, MM
  */
@@ -205,13 +204,14 @@ struct BLOCKSIZES {
 };
 
 class DEVRES; /* Device resource defined in stored_conf.h */
-class DCR; /* forward reference */
-class VOLRES; /* forward reference */
+class DCR; /* Forward reference */
+class VOLRES; /* Forward reference */
 
 /*
- * Device structure definition. There is one of these for
- *  each physical device. Everything here is "global" to
- *  that device and effects all jobs using the device.
+ * Device structure definition.
+ *
+ * There is one of these for each physical device. Everything here is "global" to
+ * that device and effects all jobs using the device.
  */
 class DEVICE: public SMARTALLOC {
 protected:
@@ -454,7 +454,7 @@ public:
     * Locking and blocking calls
     */
 #ifdef  SD_DEBUG_LOCK
-   void dbg_rLock(const char *, int, bool locked=false);    /* in lock.c */
+   void dbg_rLock(const char *, int, bool locked = false);  /* in lock.c */
    void dbg_rUnlock(const char *, int);                     /* in lock.c */
    void dbg_Lock(const char *, int);                        /* in lock.c */
    void dbg_Unlock(const char *, int);                      /* in lock.c */
@@ -481,7 +481,7 @@ public:
    void set_mutex_priorities();           /* in lock.c */
    int next_vol_timedwait(const struct timespec *timeout);  /* in lock.c */
    void dblock(int why);                  /* in lock.c */
-   void dunblock(bool locked=false);      /* in lock.c */
+   void dunblock(bool locked = false);    /* in lock.c */
    bool is_device_unmounted();            /* in lock.c */
    void set_blocked(int block) { m_blocked = block; };
    int blocked() const { return m_blocked; };
@@ -502,20 +502,22 @@ inline const char *DEVICE::archive_name() const { return dev_name; }
 inline const char *DEVICE::print_name() const { return prt_name; }
 
 
-#define CHECK_BLOCK_NUMBERS    true
-#define NO_BLOCK_NUMBER_CHECK  false
+#define CHECK_BLOCK_NUMBERS true
+#define NO_BLOCK_NUMBER_CHECK false
 
 /*
  * Device Context (or Control) Record.
- *  There is one of these records for each Job that is using
- *  the device. Items in this record are "local" to the Job and
- *  do not affect other Jobs. Note, a job can have multiple
- *  DCRs open, each pointing to a different device.
+ *
+ * There is one of these records for each Job that is using
+ * the device. Items in this record are "local" to the Job and
+ * do not affect other Jobs. Note, a job can have multiple
+ * DCRs open, each pointing to a different device.
+ *
  * Normally, there is only one JCR thread per DCR. However, the
- *  big and important exception to this is when a Job is being
- *  canceled. At that time, there may be two threads using the
- *  same DCR. Consequently, when creating/attaching/detaching
- *  and freeing the DCR we must lock it (m_mutex).
+ * big and important exception to this is when a Job is being
+ * canceled. At that time, there may be two threads using the
+ * same DCR. Consequently, when creating/attaching/detaching
+ * and freeing the DCR we must lock it (m_mutex).
  */
 class DCR {
 private:
@@ -523,6 +525,7 @@ private:
    int m_dev_lock;                    /* Non-zero if rLock already called */
    bool m_reserved;                   /* Set if reserved device */
    bool m_found_in_use;               /* Set if a volume found in use */
+   bool m_will_write;                 /* Set if DCR will be used for writing */
 
 public:
    dlink dev_link;                    /* Link to attach to dev */
@@ -573,14 +576,21 @@ public:
 
    /* Methods */
    void set_dev(DEVICE *ndev) { dev = ndev; };
+   void set_found_in_use() { m_found_in_use = true; };
+   void set_will_write() { m_will_write = true; };
+   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
+
+   void clear_found_in_use() { m_found_in_use = false; };
+   void clear_will_write() { m_will_write = false; };
+
+   bool is_reserved() const { return m_reserved; };
+   bool is_dev_locked() { return m_dev_locked; }
+   bool is_writing() const { return m_will_write; };
+
    void inc_dev_lock() { m_dev_lock++; };
    void dec_dev_lock() { m_dev_lock--; };
    bool found_in_use() const { return m_found_in_use; };
-   void set_found_in_use() { m_found_in_use = true; };
-   void clear_found_in_use() { m_found_in_use = false; };
-   bool is_reserved() const { return m_reserved; };
-   bool is_dev_locked() { return m_dev_locked; }
-   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
+
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
      bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
@@ -636,12 +646,11 @@ public:
    bool rewrite_volume_label(bool recycle);
 };
 
-/* Get some definition of function to position
- *  to the end of the medium in MTEOM. System
- *  dependent. Arrgggg!
+/*
+ * Get some definition of function to position to the end of the medium in MTEOM. System dependent.
  */
 #ifndef MTEOM
-#ifdef  MTSEOD
+#ifdef MTSEOD
 #define MTEOM MTSEOD
 #endif
 #ifdef MTEOD
