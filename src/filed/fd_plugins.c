@@ -1859,7 +1859,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
    }
 
    if (!bctx->exclude) {
-      bctx->exclude = new_exclude(jcr);
+      bctx->exclude = new_exclude(jcr->ff->fileset);
    }
 
    /*
@@ -1987,7 +1987,7 @@ static bRC bareosNewOptions(bpContext *ctx)
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
    }
-   (void)new_options(jcr, NULL);
+   (void)new_options(jcr->ff, jcr->ff->fileset->incexe);
 
    return bRC_OK;
 }
@@ -2000,7 +2000,7 @@ static bRC bareosNewInclude(bpContext *ctx)
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
    }
-   (void)new_include(jcr);
+   (void)new_include(jcr->ff->fileset);
 
    return bRC_OK;
 }
@@ -2014,8 +2014,8 @@ static bRC bareosNewPreInclude(bpContext *ctx)
       return bRC_Error;
    }
 
-   bctx->include = new_preinclude(jcr);
-   new_options(jcr, bctx->include);
+   bctx->include = new_preinclude(jcr->ff->fileset);
+   new_options(jcr->ff, bctx->include);
    set_incexe(jcr, bctx->include);
 
    return bRC_OK;

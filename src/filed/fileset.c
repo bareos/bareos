@@ -157,6 +157,7 @@ findINCEXE *get_incexe(JCR *jcr)
    if (jcr->ff && jcr->ff->fileset) {
       return jcr->ff->fileset->incexe;
    }
+
    return NULL;
 }
 
@@ -164,116 +165,6 @@ void set_incexe(JCR *jcr, findINCEXE *incexe)
 {
    findFILESET *fileset = jcr->ff->fileset;
    fileset->incexe = incexe;
-}
-
-static findINCEXE *allocate_new_incexe(void)
-{
-   findINCEXE *incexe;
-
-   incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(incexe, 0, sizeof(findINCEXE));
-   incexe->opts_list.init(1, true);
-   incexe->name_list.init();
-   incexe->plugin_list.init();
-
-   return incexe;
-}
-
-/**
- * Define a new Exclude block in the FileSet
- */
-findINCEXE *new_exclude(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /*
-    * New exclude
-    */
-   fileset->incexe = allocate_new_incexe();
-   fileset->exclude_list.append(fileset->incexe);
-   return fileset->incexe;
-}
-
-/**
- * Define a new Include block in the FileSet
- */
-findINCEXE *new_include(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /*
-    * New include
-    */
-   fileset->incexe = allocate_new_incexe();
-   fileset->include_list.append(fileset->incexe);
-   return fileset->incexe;
-}
-
-/**
- * Define a new preInclude block in the FileSet
- *   That is the include is prepended to the other
- *   Includes.  This is used for plugin exclusions.
- */
-findINCEXE *new_preinclude(JCR *jcr)
-{
-   findFILESET *fileset = jcr->ff->fileset;
-
-   /*
-    * New pre-include
-    */
-   fileset->incexe = allocate_new_incexe();
-   fileset->include_list.prepend(fileset->incexe);
-   return fileset->incexe;
-}
-
-static findFOPTS *start_options(FF_PKT *ff)
-{
-   int state = ff->fileset->state;
-   findINCEXE *incexe = ff->fileset->incexe;
-
-   if (state != state_options) {
-      ff->fileset->state = state_options;
-      findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-      memset(fo, 0, sizeof(findFOPTS));
-      fo->regex.init(1, true);
-      fo->regexdir.init(1, true);
-      fo->regexfile.init(1, true);
-      fo->wild.init(1, true);
-      fo->wilddir.init(1, true);
-      fo->wildfile.init(1, true);
-      fo->wildbase.init(1, true);
-      fo->base.init(1, true);
-      fo->fstype.init(1, true);
-      fo->drivetype.init(1, true);
-      incexe->current_opts = fo;
-      incexe->opts_list.append(fo);
-   }
-   return incexe->current_opts;
-}
-
-/*
- * Used by plugins to define a new options block
- */
-void new_options(JCR *jcr, findINCEXE *incexe)
-{
-   if (!incexe) {
-      incexe = jcr->ff->fileset->incexe;
-   }
-   findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
-   memset(fo, 0, sizeof(findFOPTS));
-   fo->regex.init(1, true);
-   fo->regexdir.init(1, true);
-   fo->regexfile.init(1, true);
-   fo->wild.init(1, true);
-   fo->wilddir.init(1, true);
-   fo->wildfile.init(1, true);
-   fo->wildbase.init(1, true);
-   fo->base.init(1, true);
-   fo->fstype.init(1, true);
-   fo->drivetype.init(1, true);
-   incexe->current_opts = fo;
-   incexe->opts_list.prepend(fo);
-   jcr->ff->fileset->state = state_options;
 }
 
 /**
@@ -308,6 +199,7 @@ int add_regex_to_fileset(JCR *jcr, const char *item, int type)
    } else {
       return state_error;
    }
+
    return state_options;
 }
 
@@ -329,6 +221,7 @@ int add_wild_to_fileset(JCR *jcr, const char *item, int type)
    } else {
       return state_error;
    }
+
    return state_options;
 }
 
@@ -340,6 +233,7 @@ int add_options_to_fileset(JCR *jcr, const char *item)
    findFOPTS *current_opts = start_options(jcr->ff);
 
    set_options(current_opts, item);
+
    return state_options;
 }
 
@@ -390,10 +284,10 @@ void add_fileset(JCR *jcr, const char *item)
    }
    switch (code) {
    case 'I':
-      (void)new_include(jcr);
+      (void)new_include(jcr->ff->fileset);
       break;
    case 'E':
-      (void)new_exclude(jcr);
+      (void)new_exclude(jcr->ff->fileset);
       break;
    case 'N':                             /* Null */
       state = state_none;
@@ -458,11 +352,21 @@ void add_fileset(JCR *jcr, const char *item)
 
 bool term_fileset(JCR *jcr)
 {
-   FF_PKT *ff = jcr->ff;
-   findFILESET *fileset = ff->fileset;
+   findFILESET *fileset;
 
+   fileset = jcr->ff->fileset;
 #ifdef HAVE_WIN32
-   if (!expand_win32_fileset(fileset)) {
+   /*
+    * Expand the fileset to include all drive letters when the fileset includes a File = / entry.
+    */
+   if (!expand_win32_fileset(jcr->ff->fileset)) {
+      return false;
+   }
+
+   /*
+    * Exclude entries in NotToBackup registry key
+    */
+   if (!exclude_win32_not_to_backup_registry_entries(jcr, jcr->ff)) {
       return false;
    }
 #endif
@@ -585,7 +489,7 @@ bool term_fileset(JCR *jcr)
       }
    }
 
-   return ff->fileset->state != state_error;
+   return jcr->ff->fileset->state != state_error;
 }
 
 /**
@@ -814,5 +718,6 @@ static int set_options(findFOPTS *fo, const char *opts)
          break;
       }
    }
+
    return state_options;
 }
