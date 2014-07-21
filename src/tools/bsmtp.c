@@ -65,14 +65,6 @@
 #include <lmcons.h>
 #endif
 
-/*
- * Dummy functions
- */
-int generate_daemon_event(JCR *jcr, const char *event)
-{
-   return 1;
-}
-
 #ifndef MAXSTRING
 #define MAXSTRING 254
 #endif
