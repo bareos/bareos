@@ -35,12 +35,6 @@
 #include "stored.h"
 #include "lib/crypto_cache.h"
 
-/* TODO: fix problem with bls, bextract
- * that use findlib and already declare
- * filed plugins
- */
-#include "sd_plugins.h"
-
 /* Imported functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
