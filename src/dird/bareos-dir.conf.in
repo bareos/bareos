@@ -251,11 +251,11 @@ Messages {
   Name = Standard
   mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
   operatorcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
-  mail = @job_email@ = all, !skipped # (#02)
+  mail = @job_email@ = all, !skipped, !audit # (#02)
   operator = @job_email@ = mount     # (#03)
-  console = all, !skipped, !saved
-  append = "@logdir@/bareos.log" = all, !skipped
-  catalog = all
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !audit
+  catalog = all, !audit
 }
 
 #
@@ -264,11 +264,11 @@ Messages {
 Messages {
   Name = Daemon
   mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
-  mail = @job_email@ = all, !skipped # (#02)
-  console = all, !skipped, !saved
-  append = "@logdir@/bareos.log" = all, !skipped
+  mail = @job_email@ = all, !skipped, !audit # (#02)
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !audit
+  append = "@logdir@/bareos-audit.log" = audit
 }
-
 
 #
 # Full Pool definition

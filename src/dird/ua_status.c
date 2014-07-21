@@ -71,8 +71,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          ua->send_msg(OKqstatus, ua->argk[2]);
          foreach_jcr(njcr) {
             if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->res.job->name())) {
-               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1),
-                        njcr->JobStatus, njcr->JobErrors);
+               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1), njcr->JobStatus, njcr->JobErrors);
             }
          }
          endeach_jcr(njcr);
@@ -81,8 +80,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
             if (acl_access_ok(ua, Job_ACL, job->Job)) {
-               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1),
-                     job->JobStatus, job->Errors);
+               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1), job->JobStatus, job->Errors);
             }
          }
       } else if (bstrcasecmp(ua->argk[2], "header")) {

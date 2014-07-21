@@ -33,23 +33,24 @@
  */
 enum {
    CFG_TYPE_ACL = 50,                   /* User Access Control List */
-   CFG_TYPE_AUTHPROTOCOLTYPE = 51,      /* Authentication Protocol */
-   CFG_TYPE_AUTHTYPE = 52,              /* Authentication Type */
-   CFG_TYPE_DEVICE = 53,                /* Device resource */
-   CFG_TYPE_JOBTYPE = 54,               /* Type of Job */
-   CFG_TYPE_PROTOCOLTYPE = 55,          /* Protocol */
-   CFG_TYPE_LEVEL = 56,                 /* Backup Level */
-   CFG_TYPE_REPLACE = 57,               /* Replace option */
-   CFG_TYPE_SHRTRUNSCRIPT = 58,         /* Short Runscript definition */
-   CFG_TYPE_RUNSCRIPT = 59,             /* Runscript */
-   CFG_TYPE_RUNSCRIPT_CMD = 60,         /* Runscript Command */
-   CFG_TYPE_RUNSCRIPT_TARGET = 61,      /* Runscript Target (Host) */
-   CFG_TYPE_RUNSCRIPT_BOOL = 62,        /* Runscript Boolean */
-   CFG_TYPE_RUNSCRIPT_WHEN = 63,        /* Runscript When expression */
-   CFG_TYPE_MIGTYPE = 64,               /* Migration Type */
-   CFG_TYPE_INCEXC = 65,                /* Include/Exclude item */
-   CFG_TYPE_RUN = 66,                   /* Schedule Run Command */
-   CFG_TYPE_ACTIONONPURGE = 67,         /* Action to perform on Purge */
+   CFG_TYPE_AUDIT = 51,                 /* Auditing Command List */
+   CFG_TYPE_AUTHPROTOCOLTYPE = 52,      /* Authentication Protocol */
+   CFG_TYPE_AUTHTYPE = 53,              /* Authentication Type */
+   CFG_TYPE_DEVICE = 54,                /* Device resource */
+   CFG_TYPE_JOBTYPE = 55,               /* Type of Job */
+   CFG_TYPE_PROTOCOLTYPE = 56,          /* Protocol */
+   CFG_TYPE_LEVEL = 57,                 /* Backup Level */
+   CFG_TYPE_REPLACE = 58,               /* Replace option */
+   CFG_TYPE_SHRTRUNSCRIPT = 59,         /* Short Runscript definition */
+   CFG_TYPE_RUNSCRIPT = 60,             /* Runscript */
+   CFG_TYPE_RUNSCRIPT_CMD = 61,         /* Runscript Command */
+   CFG_TYPE_RUNSCRIPT_TARGET = 62,      /* Runscript Target (Host) */
+   CFG_TYPE_RUNSCRIPT_BOOL = 63,        /* Runscript Boolean */
+   CFG_TYPE_RUNSCRIPT_WHEN = 64,        /* Runscript When expression */
+   CFG_TYPE_MIGTYPE = 65,               /* Migration Type */
+   CFG_TYPE_INCEXC = 66,                /* Include/Exclude item */
+   CFG_TYPE_RUN = 67,                   /* Schedule Run Command */
+   CFG_TYPE_ACTIONONPURGE = 68,         /* Action to perform on Purge */
 
    CFG_TYPE_FNAME = 80,                 /* Filename */
    CFG_TYPE_PLUGINNAME = 81,            /* Pluginname */
@@ -166,6 +167,8 @@ public:
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool omit_defaults;                /* Omit config variables with default values when dumping the config */
    bool ndmp_snooping;                /* NDMP Protocol specific snooping enabled */
+   bool auditing;                     /* Auditing enabled */
+   alist *audit_events;               /* Specific audit events to enable */
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
    uint32_t subscriptions;            /* Number of subscribtions available */
    uint32_t subscriptions_used;       /* Number of subscribtions used */

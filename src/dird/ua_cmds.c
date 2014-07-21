@@ -92,48 +92,49 @@ int quit_cmd(UAContext *ua, const char *cmd);
  * to prevent breakage of existing user scripts.
  */
 struct cmdstruct {
-   const char *key; /* command */
-   int (*func)(UAContext *ua, const char *cmd); /* handler */
-   const char *help; /* main purpose */
-   const char *usage; /* all arguments to build usage */
+   const char *key; /* Command */
+   int (*func)(UAContext *ua, const char *cmd); /* Handler */
+   const char *help; /* Main purpose */
+   const char *usage; /* All arguments to build usage */
    const bool use_in_rs; /* Can use it in Console RunScript */
+   const bool audit_event; /* Log an audit event when this Command is executed */
 };
 static struct cmdstruct commands[] = {
    { NT_("add"), add_cmd, _("Add media to a pool"),
-     NT_("pool=<pool-name> storage=<storage-name> jobid=<jobid>"), false },
+     NT_("pool=<pool-name> storage=<storage-name> jobid=<jobid>"), false, true },
    { NT_("autodisplay"), autodisplay_cmd,_("Autodisplay console messages"),
-     NT_("on | off"), false },
+     NT_("on | off"), false, false },
    { NT_("automount"), automount_cmd, _("Automount after label"),
-     NT_("on | off"), false },
+     NT_("on | off"), false, true },
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
-     NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false },
+     NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false, true },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
-     NT_("pool=<pool-name>"), false },
+     NT_("pool=<pool-name>"), false, true },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
-     NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true },
+     NT_("volume=<vol-name> pool=<pool-name> jobid=<jobid>"), true, true },
    { NT_("disable"), disable_cmd, _("Disable a job/client/schedule"),
-     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true },
+     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true, true },
    { NT_("enable"), enable_cmd, _("Enable a job/client/schedule"),
-     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true },
+     NT_("job=<job-name> client=<client-name> schedule=<schedule-name>"), true, true },
    { NT_("estimate"), estimate_cmd, _("Performs FileSet estimate, listing gives full listing"),
-     NT_("fileset=<fileset-name> client=<client-name> level=<level> accurate=<yes/no> job=<job-name> listing"), true },
+     NT_("fileset=<fileset-name> client=<client-name> level=<level> accurate=<yes/no> job=<job-name> listing"), true, true },
    { NT_("exit"), quit_cmd, _("Terminate Bconsole session"),
-     NT_(""), false },
-   { NT_("export"), export_cmd, _("Export volumes from normal slots to import/export slots"),
-     NT_("storage=<storage-name> srcslots=<slot-selection> [ dstslots=<slot-selection> volume=<volume-name> scan ]"), true },
+     NT_(""), false, false },
+   { NT_("export"), export_cmd,_("Export volumes from normal slots to import/export slots"),
+     NT_("storage=<storage-name> srcslots=<slot-selection> [ dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
    { NT_("gui"), gui_cmd, _("Non-interactive gui mode"),
-     NT_("on | off"), false },
+     NT_("on | off"), false, false },
    { NT_("help"), help_cmd, _("Print help on specific command"),
      NT_("add autodisplay automount cancel create delete disable\n"
          "\tenable estimate exit gui label list llist\n"
          "\tmessages memory mount prune purge quit query\n"
          "\trestore relabel release reload run status\n"
          "\tsetbandwidth setdebug setip show sqlquery time trace unmount\n"
-         "\tumount update use var version wait"), false },
+         "\tumount update use var version wait"), false, false },
    { NT_("import"), import_cmd, _("Import volumes from import/export slots to normal slots"),
-     NT_("storage=<storage-name> [ srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan ]"), true },
+     NT_("storage=<storage-name> [ srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
    { NT_("label"), label_cmd, _("Label a tape"),
-     NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ barcodes ] [ encrypt ]"), false },
+     NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ barcodes ] [ encrypt ]"), false, true },
    { NT_("list"), list_cmd, _("List objects from catalog"),
      NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
          "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
@@ -141,7 +142,7 @@ static struct cmdstruct commands[] = {
          "\tfiles jobid=<jobid> | files ujobid=<complete_name> | pools | jobtotals |\n"
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
-         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true },
+         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
          "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
@@ -149,25 +150,25 @@ static struct cmdstruct commands[] = {
          "\tfiles jobid=<jobid> | files ujobid=<complete_name> | pools | jobtotals |\n"
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
-         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true },
+         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true, true },
    { NT_("messages"), messages_cmd, _("Display pending messages"),
-     NT_(""), false },
+     NT_(""), false, false },
    { NT_("memory"), memory_cmd, _("Print current memory usage"),
-     NT_(""), true },
+     NT_(""), true, false },
    { NT_("mount"), mount_cmd, _("Mount storage"),
      NT_("storage=<storage-name> slot=<num> drive=<num>\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false },
+         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
-     NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true },
+     NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true, true },
    { NT_("prune"), prune_cmd, _("Prune records from catalog"),
-     NT_("files | jobs | jobtype=<jobtype> | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true },
+     NT_("files | jobs | jobtype=<jobtype> | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true, true },
    { NT_("purge"), purge_cmd, _("Purge records from catalog"),
      NT_("files jobs volume=<volume-name> [ action=<action> devicetype=<type> pool=<pool-name>\n"
-         "\tallpools storage=<storage-name> drive=<num> ]"), true },
+         "\tallpools storage=<storage-name> drive=<num> ]"), true, true },
    { NT_("quit"), quit_cmd, _("Terminate Bconsole session"),
-     NT_(""), false },
+     NT_(""), false, false },
    { NT_("query"), query_cmd, _("Query catalog"),
-     NT_(""), false },
+     NT_(""), false, true },
    { NT_("restore"), restore_cmd, _("Restore files"),
      NT_("where=</path> client=<client-name> storage=<storage-name> bootstrap=<file>\n"
          "\trestorejob=<job-name> comment=<text> jobid=<jobid> fileset=<fileset-name>\n"
@@ -175,16 +176,16 @@ static struct cmdstruct commands[] = {
          "\tregexwhere=<regex> restoreclient=<client-name> backupformat=<format>\n"
          "\tpool=<pool-name> file=<filename> directory=<directory> before=<date>\n"
          "\tstrip_prefix=<prefix> add_prefix=<prefix> add_suffix=<suffix>\n"
-         "\tselect=<date> select before current copies done all"), false },
+         "\tselect=<date> select before current copies done all"), false, true },
    { NT_("relabel"), relabel_cmd, _("Relabel a tape"),
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
-         "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false },
+         "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false, true },
    { NT_("release"), release_cmd, _("Release storage"),
-     NT_("storage=<storage-name> [ drive=<num> ] [ alldrives ]"), false },
+     NT_("storage=<storage-name> [ drive=<num> ] [ alldrives ]"), false, true },
    { NT_("reload"), reload_cmd, _("Reload conf file"),
-     NT_(""), true },
+     NT_(""), true, true },
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
-     NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false },
+     NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false, true },
    { NT_("run"), run_cmd, _("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> level=<level>\n"
          "\tstorage=<storage-name> where=<directory-prefix> when=<universal-time-specification>\n"
@@ -192,36 +193,36 @@ static struct cmdstruct commands[] = {
          "\tspooldata=<yes|no> priority=<number> jobid=<jobid> catalog=<catalog> migrationjob=<>\n"
          "\tbackupclient=<client-name> backupformat=<format> nextpool=<pool-name>\n"
          "\tsince=<universal-time-specification> verifyjob=<job-name> verifylist=<verify-list>\n"
-         "\tmigrationjob=<complete_name> yes"), false },
+         "\tmigrationjob=<complete_name> yes"), false, true },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
          "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |\n"
-         "\tsubscriptions" ), true },
+         "\tsubscriptions" ), true, true },
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
-         "\tlimit=<nn-kbs> yes"), true },
+         "\tlimit=<nn-kbs> yes"), true, true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
-     NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true },
+     NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true, true },
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
-     NT_(""), false },
+     NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("job=<job-name> | pool=<pool-name> | fileset=<fileset-name> | schedule=<schedule-name> |\n"
-         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true },
+         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true, true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
-     NT_(""), false },
+     NT_(""), false, true },
    { NT_("time"), time_cmd, _("Print current time"),
-     NT_(""), true },
+     NT_(""), true, false },
    { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
-     NT_("on | off"), true },
+     NT_("on | off"), true, true },
    { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
-     NT_("client=<client-name> | storage=<storage-name> <host-name>"), false },
+     NT_("client=<client-name> | storage=<storage-name> <host-name>"), false, true },
    { NT_("unmount"), unmount_cmd, _("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<num> ]\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false },
+         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("umount"), unmount_cmd, _("Umount - for old-time Unix guys, see unmount"),
      NT_("storage=<storage-name> [ drive=<num> ]\n"
-         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false },
+         "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("update"), update_cmd, _("Update volume, pool or stats"),
      NT_("stats\n"
          "\tpool=<pool-name>\n"
@@ -230,15 +231,15 @@ static struct cmdstruct commands[] = {
          "\tpool=<pool-name> recycle=<yes/no> slot=<number>\n"
          "\tinchanger=<yes/no>\n"
          "\tmaxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>\n"
-         "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>"), true },
+         "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>"), true, true },
    { NT_("use"), use_cmd, _("Use specific catalog"),
-     NT_("catalog=<catalog>"), false },
+     NT_("catalog=<catalog>"), false, true },
    { NT_("var"), var_cmd, _("Does variable expansion"),
-     NT_(""), false },
+     NT_(""), false, true },
    { NT_("version"), version_cmd, _("Print Director version"),
-     NT_(""), true },
+     NT_(""), true, false },
    { NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
-     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name>"), false }
+     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name>"), false, false }
 };
 
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
@@ -254,7 +255,6 @@ bool do_a_command(UAContext *ua)
    bool found = false;
    BSOCK *user = ua->UA_sock;
 
-
    Dmsg1(900, "Command: %s\n", ua->argk[0]);
    if (ua->argc == 0) {
       return false;
@@ -265,29 +265,49 @@ bool do_a_command(UAContext *ua)
    }
 
    len = strlen(ua->argk[0]);
-   for (i=0; i<comsize; i++) {     /* search for command */
-      if (bstrncasecmp(ua->argk[0],  commands[i].key, len)) {
-         /* Check if command permitted, but "quit" is always OK */
+   for (i = 0; i < comsize; i++) { /* search for command */
+      if (bstrncasecmp(ua->argk[0], commands[i].key, len)) {
+         /*
+          * Check if command permitted, but "quit" is always OK
+          */
          if (!bstrcmp(ua->argk[0], NT_("quit")) &&
-             !acl_access_ok(ua, Command_ACL, ua->argk[0], len)) {
+             !acl_access_ok(ua, Command_ACL, ua->argk[0], len, true)) {
             break;
          }
-         /* Check if this command is authorized in RunScript */
+
+         /*
+          * Check if this command is authorized in RunScript
+          */
          if (ua->runscript && !commands[i].use_in_rs) {
             ua->error_msg(_("Can't use %s command in a runscript"), ua->argk[0]);
             break;
          }
-         if (ua->api) user->signal(BNET_CMD_BEGIN);
+
+         /*
+          * If we need to audit this event do it now.
+          */
+         if (audit_event_wanted(ua, commands[i].audit_event)) {
+            log_audit_event_cmdline(ua);
+         }
+
+         if (ua->api) {
+            user->signal(BNET_CMD_BEGIN);
+         }
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
-         if (ua->api) user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
+         if (ua->api) {
+            user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
+         }
+
          found = true;
          break;
       }
    }
+
    if (!found) {
       ua->error_msg(_("%s: is an invalid command.\n"), ua->argk[0]);
       ok = false;
    }
+
    return ok;
 }
 
@@ -911,17 +931,19 @@ static int setbwlimit_cmd(UAContext *ua, const char *cmd)
 
 /*
  * Set a new address in a Client resource. We do this only
- *  if the Console name is the same as the Client name
- *  and the Console can access the client.
+ * if the Console name is the same as the Client name
+ * and the Console can access the client.
  */
 static int setip_cmd(UAContext *ua, const char *cmd)
 {
    CLIENTRES *client;
    char buf[1024];
-   if (!ua->cons || !acl_access_ok(ua, Client_ACL, ua->cons->name())) {
+
+   if (!ua->cons || !acl_access_ok(ua, Client_ACL, ua->cons->name(), true)) {
       ua->error_msg(_("Unauthorized command from this console.\n"));
       return 1;
    }
+
    LockRes();
    client = GetClientResWithName(ua->cons->name());
 
@@ -929,14 +951,15 @@ static int setip_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("Client \"%s\" not found.\n"), ua->cons->name());
       goto get_out;
    }
+
    if (client->address) {
       free(client->address);
    }
-   /* MA Bug 6 remove ifdef */
+
    sockaddr_to_ascii(&(ua->UA_sock->client_addr), buf, sizeof(buf));
    client->address = bstrdup(buf);
-   ua->send_msg(_("Client \"%s\" address set to %s\n"),
-            client->name(), client->address);
+   ua->send_msg(_("Client \"%s\" address set to %s\n"), client->name(), client->address);
+
 get_out:
    UnlockRes();
    return 1;
@@ -1007,7 +1030,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
    }
 
    if (sched) {
-      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name(), true)) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
@@ -1015,7 +1038,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
       sched->enabled = setting;
       ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting ? "en" : "dis");
    } else if (client) {
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
@@ -1023,7 +1046,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
       client->enabled = setting;
       ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting ? "en" : "dis");
    } else if (job) {
-      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+      if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
          ua->error_msg(_("Unauthorized command from this console.\n"));
          return;
       }
@@ -1362,7 +1385,7 @@ static int resolve_cmd(UAContext *ua, const char *cmd)
                return 1;
             }
 
-            if (!acl_access_ok(ua, Client_ACL, client->name())) {
+            if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
                ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
                return 1;
             }
@@ -1381,7 +1404,7 @@ static int resolve_cmd(UAContext *ua, const char *cmd)
                return 1;
             }
 
-            if (!acl_access_ok(ua, Storage_ACL, storage->name())) {
+            if (!acl_access_ok(ua, Storage_ACL, storage->name(), true)) {
                ua->error_msg(_("No authorization for Storage \"%s\"\n"), storage->name());
                return 1;
             }
@@ -1488,7 +1511,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
                ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
                return 1;
             }
-            if (!acl_access_ok(ua, Client_ACL, client->name())) {
+            if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
                ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
                return 1;
             }
@@ -1505,7 +1528,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
                ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
                return 1;
             }
-            if (!acl_access_ok(ua, Job_ACL, job->name())) {
+            if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
                ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
                return 1;
             }
@@ -1523,7 +1546,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
                ua->error_msg(_("Fileset \"%s\" not found.\n"), ua->argv[i]);
                return 1;
             }
-            if (!acl_access_ok(ua, FileSet_ACL, fileset->name())) {
+            if (!acl_access_ok(ua, FileSet_ACL, fileset->name(), true)) {
                ua->error_msg(_("No authorization for FileSet \"%s\"\n"), fileset->name());
                return 1;
             }
@@ -1572,7 +1595,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          ua->error_msg(_("No job specified.\n"));
          return 1;
       }
-      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+      if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
          ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
          return 1;
       }
@@ -1726,9 +1749,8 @@ static int delete_cmd(UAContext *ua, const char *cmd)
       break;
    }
 
-   ua->warning_msg(_(
-"In general it is not a good idea to delete either a\n"
-"Pool or a Volume since they may contain data.\n\n"));
+   ua->warning_msg(_("In general it is not a good idea to delete either a\n"
+                     "Pool or a Volume since they may contain data.\n\n"));
 
    switch (do_keyword_prompt(ua, _("Choose catalog item to delete"), keywords)) {
    case 0:
@@ -2391,7 +2413,7 @@ bool open_client_db(UAContext *ua, bool use_private)
    /* Try for catalog keyword */
    i = find_arg_with_value(ua, NT_("catalog"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Catalog_ACL, ua->argv[i])) {
+      if (!acl_access_ok(ua, Catalog_ACL, ua->argv[i], true)) {
          ua->error_msg(_("No authorization for Catalog \"%s\"\n"), ua->argv[i]);
          return false;
       }
@@ -2408,7 +2430,7 @@ bool open_client_db(UAContext *ua, bool use_private)
    /* Try for client keyword */
    i = find_arg_with_value(ua, NT_("client"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[i])) {
+      if (!acl_access_ok(ua, Client_ACL, ua->argv[i]), true) {
          ua->error_msg(_("No authorization for Client \"%s\"\n"), ua->argv[i]);
          return false;
       }
@@ -2418,7 +2440,7 @@ bool open_client_db(UAContext *ua, bool use_private)
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);
          }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name())) {
+         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
             ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
@@ -2430,7 +2452,7 @@ bool open_client_db(UAContext *ua, bool use_private)
    /* Try for Job keyword */
    i = find_arg_with_value(ua, NT_("job"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Job_ACL, ua->argv[i])) {
+      if (!acl_access_ok(ua, Job_ACL, ua->argv[i], true)) {
          ua->error_msg(_("No authorization for Job \"%s\"\n"), ua->argv[i]);
          return false;
       }
@@ -2440,7 +2462,7 @@ bool open_client_db(UAContext *ua, bool use_private)
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);
          }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name())) {
+         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
             ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }

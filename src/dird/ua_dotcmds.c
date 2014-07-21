@@ -87,44 +87,45 @@ static int one_handler(void *ctx, int num_field, char **row);
 struct cmdstruct {
    const char *key;
    bool (*func)(UAContext *ua, const char *cmd);
-   const char *help;     /* help */
-   const bool use_in_rs; /* can be used in runscript */
+   const char *help;     /* Help */
+   const bool use_in_rs; /* Can be used in runscript */
+   const bool audit_event; /* Log an audit event when this Command is executed */
 };
 static struct cmdstruct commands[] = {
-   { NT_(".api"), api_cmd, NULL, false },
-   { NT_(".backups"), backupscmd, NULL, false },
-   { NT_(".clients"), clientscmd, NULL, true },
-   { NT_(".catalogs"), catalogscmd, NULL, false },
-   { NT_(".defaults"), defaultscmd, NULL, false },
-   { NT_(".die"), admin_cmds, NULL, false },
-   { NT_(".dump"), admin_cmds, NULL, false },
-   { NT_(".exit"), admin_cmds, NULL, false },
-   { NT_(".filesets"), filesetscmd, NULL, false },
-   { NT_(".help"), dot_help_cmd, NULL, false },
-   { NT_(".jobs"), jobscmd, NULL, true },
-   { NT_(".levels"), levelscmd, NULL, false },
-   { NT_(".messages"), getmsgscmd, NULL, false },
-   { NT_(".msgs"), msgscmd, NULL, false },
-   { NT_(".pools"), poolscmd, NULL, true },
-   { NT_(".quit"), dot_quit_cmd, NULL, false },
-   { NT_(".sql"), sql_cmd, NULL, false },
-   { NT_(".schedule"), schedulecmd, NULL, false },
-   { NT_(".status"), dot_status_cmd, NULL, false },
-   { NT_(".storage"), storagecmd, NULL, true },
-   { NT_(".volstatus"), volstatuscmd, NULL, true },
-   { NT_(".media"), mediacmd, NULL, true },
-   { NT_(".mediatypes"), mediatypescmd, NULL, true },
-   { NT_(".locations"), locationscmd, NULL, true },
-   { NT_(".actiononpurge"),aopcmd, NULL, true },
-   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, true },
-   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, true },
-   { NT_(".bvfs_update"), dot_bvfs_update, NULL, true },
-   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL, true },
-   { NT_(".bvfs_versions"), dot_bvfs_versions, NULL, true },
-   { NT_(".bvfs_restore"), dot_bvfs_restore, NULL, true },
-   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup, NULL, true },
-   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, false },
-   { NT_(".types"), typescmd, NULL, false }
+   { NT_(".api"), api_cmd, NULL, false, false },
+   { NT_(".backups"), backupscmd, NULL, false, false },
+   { NT_(".clients"), clientscmd, NULL, true, false },
+   { NT_(".catalogs"), catalogscmd, NULL, false, false },
+   { NT_(".defaults"), defaultscmd, NULL, false, false },
+   { NT_(".die"), admin_cmds, NULL, false, true },
+   { NT_(".dump"), admin_cmds, NULL, false, true },
+   { NT_(".exit"), admin_cmds, NULL, false, false },
+   { NT_(".filesets"), filesetscmd, NULL, false, false },
+   { NT_(".help"), dot_help_cmd, NULL, false, false },
+   { NT_(".jobs"), jobscmd, NULL, true, false },
+   { NT_(".levels"), levelscmd, NULL, false, false },
+   { NT_(".messages"), getmsgscmd, NULL, false, false },
+   { NT_(".msgs"), msgscmd, NULL, false, false },
+   { NT_(".pools"), poolscmd, NULL, true, false },
+   { NT_(".quit"), dot_quit_cmd, NULL, false, false },
+   { NT_(".sql"), sql_cmd, NULL, false, true },
+   { NT_(".schedule"), schedulecmd, NULL, false, false },
+   { NT_(".status"), dot_status_cmd, NULL, false, true },
+   { NT_(".storage"), storagecmd, NULL, true, false },
+   { NT_(".volstatus"), volstatuscmd, NULL, true, false },
+   { NT_(".media"), mediacmd, NULL, true, false },
+   { NT_(".mediatypes"), mediatypescmd, NULL, true, false },
+   { NT_(".locations"), locationscmd, NULL, true, false },
+   { NT_(".actiononpurge"),aopcmd, NULL, true, false },
+   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, true, true },
+   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, true, true },
+   { NT_(".bvfs_update"), dot_bvfs_update, NULL, true, true },
+   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL, true, true },
+   { NT_(".bvfs_versions"), dot_bvfs_versions, NULL, true, true },
+   { NT_(".bvfs_restore"), dot_bvfs_restore, NULL, true, true },
+   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup, NULL, true, true },
+   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, false, true },
+   { NT_(".types"), typescmd, NULL, false, false }
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
@@ -146,37 +147,64 @@ bool do_a_dot_command(UAContext *ua)
 
    len = strlen(ua->argk[0]);
    if (len == 1) {
-      if (ua->api) user->signal(BNET_CMD_BEGIN);
-      if (ua->api) user->signal(BNET_CMD_OK);
+      if (ua->api) {
+         user->signal(BNET_CMD_BEGIN);
+      }
+
+      if (ua->api) {
+         user->signal(BNET_CMD_OK);
+      }
+
       return true;                    /* no op */
    }
-   for (i=0; i<comsize; i++) {     /* search for command */
+
+   for (i = 0; i < comsize; i++) { /* search for command */
       if (bstrncasecmp(ua->argk[0],  _(commands[i].key), len)) {
-         /* Check if this command is authorized in RunScript */
+         bool gui = ua->gui;
+
+         /*
+          * Check if this command is authorized in RunScript
+          */
          if (ua->runscript && !commands[i].use_in_rs) {
             ua->error_msg(_("Can't use %s command in a runscript"), ua->argk[0]);
             break;
          }
-         bool gui = ua->gui;
-         /* Check if command permitted, but "quit" is always OK */
+
+         /*
+          * If we need to audit this event do it now.
+          */
+         if (audit_event_wanted(ua, commands[i].audit_event)) {
+            log_audit_event_cmdline(ua);
+         }
+
+         /*
+          * Check if command permitted, but "quit" is always OK
+          */
          if (!bstrcmp(ua->argk[0], NT_(".quit")) &&
-             !acl_access_ok(ua, Command_ACL, ua->argk[0], len)) {
+             !acl_access_ok(ua, Command_ACL, ua->argk[0], len, true)) {
             break;
          }
          Dmsg1(100, "Cmd: %s\n", ua->cmd);
+
          ua->gui = true;
-         if (ua->api) user->signal(BNET_CMD_BEGIN);
+         if (ua->api) {
+            user->signal(BNET_CMD_BEGIN);
+         }
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
-         if (ua->api) user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
+         if (ua->api) {
+            user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
+         }
          ua->gui = gui;
          found = true;
          break;
       }
    }
+
    if (!found) {
       ua->error_msg("%s%s", ua->argk[0], _(": is an invalid command.\n"));
       ok = false;
    }
+
    return ok;
 }
 
@@ -947,8 +975,7 @@ static int client_backups_handler(void *ctx, int num_field, char **row)
 /*
  * Return the backups for this client
  *
- *  .backups client=xxx fileset=yyy
- *
+ * .backups client=xxx fileset=yyy
  */
 static bool backupscmd(UAContext *ua, const char *cmd)
 {
@@ -960,16 +987,19 @@ static bool backupscmd(UAContext *ua, const char *cmd)
        !bstrcmp(ua->argk[2], "fileset")) {
       return true;
    }
-   if (!acl_access_ok(ua, Client_ACL, ua->argv[1]) ||
-       !acl_access_ok(ua, FileSet_ACL, ua->argv[2])) {
+
+   if (!acl_access_ok(ua, Client_ACL, ua->argv[1], true) ||
+       !acl_access_ok(ua, FileSet_ACL, ua->argv[2], true)) {
       ua->error_msg(_("Access to specified Client or FileSet not allowed.\n"));
       return true;
    }
+
    Mmsg(ua->cmd, client_backups, ua->argv[1], ua->argv[2]);
    if (!db_sql_query(ua->db, ua->cmd, client_backups_handler, (void *)ua)) {
       ua->error_msg(_("Query failed: %s. ERR=%s\n"), ua->cmd, db_strerror(ua->db));
       return true;
    }
+
    return true;
 }
 
@@ -1139,7 +1169,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       /*
        * Job defaults
        */
-      if (!acl_access_ok(ua, Job_ACL, ua->argv[1])) {
+      if (!acl_access_ok(ua, Job_ACL, ua->argv[1], true)) {
          return true;
       }
 
@@ -1166,7 +1196,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       /*
        * Client defaults
        */
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[1])) {
+      if (!acl_access_ok(ua, Client_ACL, ua->argv[1], true)) {
          return true;
       }
 
@@ -1188,7 +1218,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       /*
        * Storage defaults
        */
-      if (!acl_access_ok(ua, Storage_ACL, ua->argv[1])) {
+      if (!acl_access_ok(ua, Storage_ACL, ua->argv[1], true)) {
          return true;
       }
 
@@ -1213,7 +1243,7 @@ static bool defaultscmd(UAContext *ua, const char *cmd)
       /*
        * Pool defaults
        */
-      if (!acl_access_ok(ua, Pool_ACL, ua->argv[1])) {
+      if (!acl_access_ok(ua, Pool_ACL, ua->argv[1], true)) {
          return true;
       }
 

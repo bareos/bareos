@@ -123,7 +123,6 @@ JCR *new_control_jcr(const char *base_name, int job_type)
 
 /*
  * Handle Director User Agent commands
- *
  */
 static void *handle_UA_client_request(void *arg)
 {
@@ -146,19 +145,25 @@ static void *handle_UA_client_request(void *arg)
    }
 
    while (!ua->quit) {
-      if (ua->api) user->signal(BNET_MAIN_PROMPT);
+      if (ua->api) {
+         user->signal(BNET_MAIN_PROMPT);
+      }
+
       status = user->recv();
       if (status >= 0) {
          pm_strcpy(ua->cmd, ua->UA_sock->msg);
          parse_ua_args(ua);
+
          if (ua->argc > 0 && ua->argk[0][0] == '.') {
             do_a_dot_command(ua);
          } else {
             do_a_command(ua);
          }
+
          dequeue_messages(ua->jcr);
+
          if (!ua->quit) {
-            if (console_msg_pending && acl_access_ok(ua, Command_ACL, "messages", 8)) {
+            if (console_msg_pending && acl_access_ok(ua, Command_ACL, "messages")) {
                if (ua->auto_display_messages) {
                   pm_strcpy(ua->cmd, "messages");
                   qmessages_cmd(ua, ua->cmd);
@@ -172,7 +177,9 @@ static void *handle_UA_client_request(void *arg)
                   ua->user_notified_msg_pending = true;
                }
             }
-            if (!ua->api) user->signal(BNET_EOD);     /* send end of command */
+            if (!ua->api) {
+               user->signal(BNET_EOD); /* send end of command */
+            }
          }
       } else if (is_bnet_stop(user)) {
          ua->quit = true;

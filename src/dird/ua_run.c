@@ -1683,7 +1683,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
                   return false;
                }
                rc.regexwhere = ua->argv[i];
-               if (!acl_access_ok(ua, Where_ACL, rc.regexwhere)) {
+               if (!acl_access_ok(ua, Where_ACL, rc.regexwhere, true)) {
                   ua->send_msg(_("No authorization for \"regexwhere\" specification.\n"));
                   return false;
                }
@@ -1695,7 +1695,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
                   return false;
                }
                rc.where = ua->argv[i];
-               if (!acl_access_ok(ua, Where_ACL, rc.where)) {
+               if (!acl_access_ok(ua, Where_ACL, rc.where, true)) {
                   ua->send_msg(_("No authoriztion for \"where\" specification.\n"));
                   return false;
                }
@@ -1814,7 +1814,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
                   return false;
                }
                rc.plugin_options = ua->argv[i];
-               if (!acl_access_ok(ua, PluginOptions_ACL, rc.plugin_options)) {
+               if (!acl_access_ok(ua, PluginOptions_ACL, rc.plugin_options, true)) {
                   ua->send_msg(_("No authorization for \"PluginOptions\" specification.\n"));
                   return false;
                }
@@ -1905,7 +1905,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
             ua->error_msg(_("Catalog \"%s\" not found\n"), rc.catalog_name);
            return false;
        }
-       if (!acl_access_ok(ua, Catalog_ACL, rc.catalog->name())) {
+       if (!acl_access_ok(ua, Catalog_ACL, rc.catalog->name(), true)) {
           ua->error_msg(_("No authorization. Catalog \"%s\".\n"), rc.catalog->name());
           return false;
        }
@@ -1929,7 +1929,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    }
    if (!rc.job) {
       return false;
-   } else if (!acl_access_ok(ua, Job_ACL, rc.job->name())) {
+   } else if (!acl_access_ok(ua, Job_ACL, rc.job->name(), true)) {
       ua->error_msg( _("No authorization. Job \"%s\".\n"), rc.job->name());
       return false;
    }
@@ -1947,7 +1947,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    }
    if (!rc.pool) {
       return false;
-   } else if (!acl_access_ok(ua, Pool_ACL, rc.pool->name())) {
+   } else if (!acl_access_ok(ua, Pool_ACL, rc.pool->name(), true)) {
       ua->error_msg(_("No authorization. Pool \"%s\".\n"), rc.pool->name());
       return false;
    }
@@ -1965,7 +1965,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.next_pool = rc.pool->NextPool;     /* use default */
    }
    if (rc.next_pool) {
-      if (!acl_access_ok(ua, Pool_ACL, rc.pool->name())) {
+      if (!acl_access_ok(ua, Pool_ACL, rc.pool->name(), true)) {
          ua->error_msg(_("No authorization. Pool \"%s\".\n"), rc.next_pool->name());
          return false;
       }
@@ -1998,7 +1998,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       if (!rc.store->store) {
          ua->error_msg(_("No storage specified.\n"));
          return false;
-      } else if (!acl_access_ok(ua, Storage_ACL, rc.store->store->name())) {
+      } else if (!acl_access_ok(ua, Storage_ACL, rc.store->store->name(), true)) {
          ua->error_msg(_("No authorization. Storage \"%s\".\n"), rc.store->store->name());
          return false;
       }
@@ -2018,9 +2018,8 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.client = rc.job->client;           /* use default */
    }
 
-   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name())) {
-      ua->error_msg(_("No authorization. Client \"%s\".\n"),
-               rc.client->name());
+   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
+      ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
       return false;
    }
    Dmsg1(800, "Using client=%s\n", rc.client->name());
@@ -2037,9 +2036,8 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.client = rc.job->client;           /* use default */
    }
 
-   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name())) {
-      ua->error_msg(_("No authorization. Client \"%s\".\n"),
-               rc.client->name());
+   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
+      ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
       return false;
    }
 
@@ -2055,9 +2053,8 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.fileset = rc.job->fileset;           /* use default */
    }
 
-   if (rc.fileset && !acl_access_ok(ua, FileSet_ACL, rc.fileset->name())) {
-      ua->send_msg(_("No authorization. FileSet \"%s\".\n"),
-               rc.fileset->name());
+   if (rc.fileset && !acl_access_ok(ua, FileSet_ACL, rc.fileset->name(), true)) {
+      ua->send_msg(_("No authorization. FileSet \"%s\".\n"), rc.fileset->name());
       return false;
    }
 

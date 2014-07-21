@@ -472,8 +472,7 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
 
 /*
  * Store a resource pointer in an alist. default_value indicates how many
- * times this routine can be called -- i.e. how many alists
- * there are.
+ * times this routine can be called -- i.e. how many alists there are.
  *
  * If we are in pass 2, do a lookup of the resource.
  */
@@ -488,10 +487,8 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 2) {
       if (count == 0) {               /* always store in item->value */
          i = 0;
-         if ((item->value)[i] == NULL) {
-            list = New(alist(10, not_owned_by_alist));
-         } else {
-            list = (alist *)(item->value)[i];
+         if (!item->alistvalue[i]) {
+            item->alistvalue[i] = New(alist(10, not_owned_by_alist));
          }
       } else {
          /*
@@ -500,24 +497,23 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
          while ((item->value)[i] != NULL && i++ < count) { }
          if (i >= count) {
             scan_err4(lc, _("Too many %s directives. Max. is %d. line %d: %s\n"),
-               lc->str, count, lc->line_no, lc->line);
+                      lc->str, count, lc->line_no, lc->line);
             return;
          }
-         list = New(alist(10, not_owned_by_alist));
+         item->alistvalue[i] = New(alist(10, not_owned_by_alist));
       }
+      list = item->alistvalue[i];
 
       for (;;) {
          lex_get_token(lc, T_NAME);   /* scan next item */
          res = GetResWithName(item->code, lc->str);
          if (res == NULL) {
             scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
-               item->name, lc->line_no, lc->line);
+                      item->name, lc->line_no, lc->line);
             return;
          }
-         Dmsg5(900, "Append %p to alist %p size=%d i=%d %s\n",
-               res, list, list->size(), i, item->name);
+         Dmsg5(900, "Append %p to alist %p size=%d i=%d %s\n", res, list, list->size(), i, item->name);
          list->append(res);
-         (item->value)[i] = (char *)list;
          if (lc->ch != ',') {         /* if no other item follows */
             break;                    /* get out */
          }
@@ -537,17 +533,15 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
-      if (*(item->value) == NULL) {
-         list = New(alist(10, owned_by_alist));
-      } else {
-         list = *(item->alistvalue);
+      if (!*(item->value)) {
+         *item->alistvalue = New(alist(10, owned_by_alist));
       }
+      list = *item->alistvalue;
 
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
       list->append(bstrdup(lc->str));
-      *(item->value) = (char *)list;
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -565,11 +559,10 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
-      if (*(item->value) == NULL) {
-         list = New(alist(10, owned_by_alist));
-      } else {
-         list = (alist *)(*(item->value));
+      if (!*item->alistvalue) {
+         *item->alistvalue = New(alist(10, owned_by_alist));
       }
+      list = *item->alistvalue;
 
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
@@ -578,7 +571,6 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
          do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
       list->append(bstrdup(lc->str));
-      *(item->value) = (char *)list;
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -599,13 +591,13 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    if (pass == 2) {
-     Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
-     res = GetResWithName(item->code, lc->str);
-     if (res == NULL) {
-        scan_err3(lc, _("Missing config Resource \"%s\" referenced on line %d : %s\n"),
-           lc->str, lc->line_no, lc->line);
-        return;
-     }
+      Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
+      res = GetResWithName(item->code, lc->str);
+      if (res == NULL) {
+         scan_err3(lc, _("Missing config Resource \"%s\" referenced on line %d : %s\n"),
+                   lc->str, lc->line_no, lc->line);
+         return;
+      }
    }
    scan_to_eol(lc);
 }
