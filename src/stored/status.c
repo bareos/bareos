@@ -186,12 +186,38 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
       dev = device->dev;
       if (dev && dev->is_open()) {
          if (dev->is_labeled()) {
+            const char *state;
+
+            switch (dev->blocked()) {
+            case BST_NOT_BLOCKED:
+            case BST_DESPOOLING:
+            case BST_RELEASING:
+               state = _("mounted with");
+               break;
+            case BST_MOUNT:
+               state = _("waiting for");
+               break;
+            case BST_WRITING_LABEL:
+               state = _("being labeled with");
+               break;
+            case BST_DOING_ACQUIRE:
+               state = _("being acquired with");
+               break;
+            case BST_UNMOUNTED:
+            case BST_WAITING_FOR_SYSOP:
+            case BST_UNMOUNTED_WAITING_FOR_SYSOP:
+               state = _("waiting for sysop intervention");
+               break;
+            default:
+               state = _("unknown state");
+               break;
+            }
+
             len = Mmsg(msg, _("\nDevice %s is %s:\n"
                               "    Volume:      %s\n"
                               "    Pool:        %s\n"
                               "    Media type:  %s\n"),
-                       dev->print_name(),
-                       dev->blocked() ? _("waiting for") : _("mounted with"),
+                       dev->print_name(), state,
                        dev->VolHdr.VolumeName,
                        dev->pool_name[0] ? dev->pool_name : "*unknown*",
                        dev->device->media_type);
