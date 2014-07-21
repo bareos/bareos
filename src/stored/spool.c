@@ -223,8 +223,8 @@ static bool despool_data(DCR *dcr, bool commit)
 
    /*
     * Commit means that the job is done, so we commit, otherwise, we
-    *  are despooling because of user spool size max or some error
-    *  (e.g. filesystem full).
+    * are despooling because of user spool size max or some error
+    * (e.g. filesystem full).
     */
    if (commit) {
       Jmsg(jcr, M_INFO, 0, _("Committing spooled data to Volume \"%s\". Despooling %s bytes ...\n"),
@@ -240,9 +240,8 @@ static bool despool_data(DCR *dcr, bool commit)
    dcr->despool_wait = true;
    dcr->spooling = false;
    /*
-    * We work with device blocked, but not locked so that
-    *  other threads -- e.g. reservations can lock the device
-    *  structure.
+    * We work with device blocked, but not locked so that other threads
+    * e.g. reservations can lock the device structure.
     */
    dcr->dblock(BST_DESPOOLING);
    dcr->despool_wait = false;

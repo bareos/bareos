@@ -203,9 +203,11 @@ int main (int argc, char *argv[])
    read_crypto_cache(me->working_directory, "bareos-sd",
                      get_first_port_host_order(me->SDaddrs));
 
-   /* Setup and acquire input device for reading */
+   /*
+    * Setup and acquire input device for reading
+    */
    Dmsg0(100, "About to setup input jcr\n");
-   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, iVolumeName, 1); /* read device */
+   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, iVolumeName, true); /* read device */
    if (!in_jcr) {
       exit(1);
    }
@@ -215,9 +217,11 @@ int main (int argc, char *argv[])
       exit(1);
    }
 
-   /* Setup output device for writing */
+   /*
+    * Setup output device for writing
+    */
    Dmsg0(100, "About to setup output jcr\n");
-   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, oVolumeName, 0); /* no acquire */
+   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, oVolumeName, false); /* write device */
    if (!out_jcr) {
       exit(1);
    }
@@ -226,7 +230,10 @@ int main (int argc, char *argv[])
       exit(1);
    }
    Dmsg0(100, "About to acquire device for writing\n");
-   /* For we must now acquire the device for writing */
+
+   /*
+    * For we must now acquire the device for writing
+    */
    out_dev->rLock(false);
    if (!out_dev->open(out_jcr->dcr, OPEN_READ_WRITE)) {
       Emsg1(M_FATAL, 0, _("dev open failed: %s\n"), out_dev->errmsg);

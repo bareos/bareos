@@ -399,7 +399,7 @@ static void do_extract(char *devname)
 
    enable_backup_privileges(NULL, 1);
 
-   jcr = setup_jcr("bextract", devname, bsr, director, VolumeName, 1); /* acquire for read */
+   jcr = setup_jcr("bextract", devname, bsr, director, VolumeName, true); /* read device */
    if (!jcr) {
       exit(1);
    }

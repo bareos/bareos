@@ -254,7 +254,7 @@ int main (int argc, char *argv[])
       if (bsrName) {
          bsr = parse_bsr(NULL, bsrName);
       }
-      jcr = setup_jcr("bls", argv[i], bsr, director, VolumeName, 1); /* acquire for read */
+      jcr = setup_jcr("bls", argv[i], bsr, director, VolumeName, true); /* read device */
       if (!jcr) {
          exit(1);
       }

@@ -305,7 +305,7 @@ int main(int margc, char *margv[])
       exit(1);
    }
 
-   jcr = setup_jcr("btape", margv[0], bsr, director, NULL, 0); /* write */
+   jcr = setup_jcr("btape", margv[0], bsr, director, NULL, false); /* write device */
    if (!jcr) {
       exit(1);
    }

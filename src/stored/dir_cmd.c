@@ -875,6 +875,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
    if (found) {
       Dmsg1(100, "Found device %s\n", device->hdr.name);
       dcr = new_dcr(jcr, NULL, device->dev, blocksizes);
+      dcr->set_will_write();
       dcr->device = device;
    }
    return dcr;
