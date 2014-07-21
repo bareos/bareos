@@ -27,10 +27,6 @@
 #include "bareos.h"
 #include "findlib/find.h"
 
-/* Dummy functions */
-int generate_daemon_event(JCR *jcr, const char *event)
-   { return 1; }
-
 static void usage()
 {
    fprintf(stderr, _(
