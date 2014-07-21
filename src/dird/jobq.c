@@ -463,7 +463,18 @@ void *jobq_server(void *arg)
             dec_read_store(jcr);
             dec_write_store(jcr);
             if (jcr->res.client) {
-               jcr->res.client->NumConcurrentJobs--;
+               /*
+                * Some Job Types are excluded from the client concurrency as they have no
+                * interaction with the client at all.
+                */
+               switch (jcr->getJobType()) {
+               case JT_MIGRATE:
+               case JT_COPY:
+                  break;
+               default:
+                  jcr->res.client->NumConcurrentJobs--;
+                  break;
+               }
             }
             jcr->res.job->NumConcurrentJobs--;
             jcr->acquired_resource_locks = false;
@@ -776,16 +787,27 @@ static bool acquire_resources(JCR *jcr)
       return false;
    }
 
-   if (jcr->res.client) {
-      if (jcr->res.client->NumConcurrentJobs < jcr->res.client->MaxConcurrentJobs) {
-         jcr->res.client->NumConcurrentJobs++;
-      } else {
-         /* Back out previous locks */
-         dec_write_store(jcr);
-         dec_read_store(jcr);
-         jcr->setJobStatus(JS_WaitClientRes);
-         return false;
+   /*
+    * Some Job Types are excluded from the client concurrency as they have no
+    * interaction with the client at all.
+    */
+   switch (jcr->getJobType()) {
+   case JT_MIGRATE:
+   case JT_COPY:
+      break;
+   default:
+      if (jcr->res.client) {
+         if (jcr->res.client->NumConcurrentJobs < jcr->res.client->MaxConcurrentJobs) {
+            jcr->res.client->NumConcurrentJobs++;
+         } else {
+            /* Back out previous locks */
+            dec_write_store(jcr);
+            dec_read_store(jcr);
+            jcr->setJobStatus(JS_WaitClientRes);
+            return false;
+         }
       }
+      break;
    }
 
    if (jcr->res.job->NumConcurrentJobs < jcr->res.job->MaxConcurrentJobs) {
