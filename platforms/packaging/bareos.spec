@@ -38,8 +38,9 @@ Vendor: 	The Bareos Team
 
 %define _libversion    14.2.0
 
-%define backend_dir    %_libdir/bareos/backends
-%define plugin_dir     %_libdir/bareos/plugins
+%define library_dir    %{_libdir}/bareos
+%define backend_dir    %{_libdir}/bareos/backends
+%define plugin_dir     %{_libdir}/bareos/plugins
 %define script_dir     /usr/lib/bareos/scripts
 %define working_dir    /var/lib/bareos
 %define pid_dir        /var/lib/bareos
@@ -507,6 +508,7 @@ export MTX=/usr/sbin/mtx
 # Notice keep the upstream order of ./configure --help
 %configure \
   --prefix=%{_prefix} \
+  --libdir=%{library_dir} \
   --sbindir=%{_sbindir} \
   --with-sbin-perm=755 \
   --sysconfdir=%{_sysconfdir}/bareos \
@@ -631,9 +633,8 @@ done
 
 # remove links to libraries
 # for i in #{buildroot}/#{_libdir}/libbareos*; do printf "$i: "; readelf -a $i | grep SONAME; done
-#find #{buildroot}/#{_libdir} -type l -exec rm {} \;
-find %{buildroot}/%{_libdir} -type l -name "libbareos*.so" ! -regex ".*libbareoscats-[a-z]+.*.so" -exec rm {} \;
-ls -la %{buildroot}/%{_libdir}
+find %{buildroot}/%{library_dir} -type l -name "libbareos*.so" -maxdepth 1 -exec rm {} \;
+ls -la %{buildroot}/%{library_dir}
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
@@ -802,13 +803,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %dir %{backend_dir}
-%{_libdir}/libbareos-%{_libversion}.so
-%{_libdir}/libbareoscfg-%{_libversion}.so
-%{_libdir}/libbareosfind-%{_libversion}.so
-%{_libdir}/libbareoslmdb-%{_libversion}.so
+%{library_dir}/libbareos-%{_libversion}.so
+%{library_dir}/libbareoscfg-%{_libversion}.so
+%{library_dir}/libbareosfind-%{_libversion}.so
+%{library_dir}/libbareoslmdb-%{_libversion}.so
 %if !0%{?client_only}
-%{_libdir}/libbareosndmp-%{_libversion}.so
-%{_libdir}/libbareossd-%{_libversion}.so
+%{library_dir}/libbareosndmp-%{_libversion}.so
+%{library_dir}/libbareossd-%{_libversion}.so
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
@@ -817,7 +818,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/bareos-config-lib.sh
 %{script_dir}/bareos-explorer
 %{script_dir}/btraceback.gdb
-%if "%{_libdir}/bareos/" != "/usr/lib/bareos/"
+%if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
@@ -839,13 +840,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files database-common
 # catalog independent files
 %defattr(-, root, root)
+%{library_dir}/libbareossql-%{_libversion}.so
+%{library_dir}/libbareoscats-%{_libversion}.so
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops
 %dir %{script_dir}/ddl/grants
 %dir %{script_dir}/ddl/updates
-%{_libdir}/libbareossql-%{_libversion}.so
-%{_libdir}/libbareoscats-%{_libversion}.so
 %{script_dir}/create_bareos_database
 %{script_dir}/drop_bareos_database
 %{script_dir}/drop_bareos_tables
@@ -933,7 +934,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files devel
 %defattr(-, root, root)
 /usr/include/bareos
-%{_libdir}/*.la
+%{library_dir}/*.la
 
 
 %if 0%{?python_plugins}

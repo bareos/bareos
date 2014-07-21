@@ -27,6 +27,7 @@ WORKING_DIR = /var/lib/bareos
 override_dh_auto_configure:
 	dh_auto_configure -- \
   --with-sbin-perm=755 \
+  --libdir=/usr/lib/bareos \
   --sysconfdir=/etc/bareos \
   --with-archivedir=/var/lib/bareos/storage \
   --with-backenddir=/usr/lib/bareos/backends \

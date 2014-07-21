@@ -1,7 +1,0 @@
-/etc/bareos/mtx-changer.conf
-/usr/lib/bareos/backends/libbareossd-gentape*.so
-/usr/lib/bareos/backends/libbareossd-tape*.so
-/usr/lib/bareos/plugins/scsitapealert-sd.so
-/usr/lib/bareos/scripts/mtx-changer
-/usr/share/man/man8/btape.8.gz
-/usr/sbin/btape

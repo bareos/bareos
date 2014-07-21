@@ -3880,12 +3880,52 @@ osx)
    PFILES="${PFILES} \
       platforms/osx/Makefile"
   ;;
-debian)
+debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
-    platforms/debian/Makefile \
-    platforms/debian/set_dbconfig_vars.sh"
+      debian/bareos-bat.install \
+      debian/bareos-bconsole.install \
+      debian/bareos-common.install \
+      debian/bareos-common.preinst \
+      debian/bareos-database-common.config \
+      debian/bareos-database-common.install \
+      debian/bareos-database-common.postinst \
+      debian/bareos-database-mysql.install \
+      debian/bareos-database-postgresql.install \
+      debian/bareos-database-sqlite3.install \
+      debian/bareos-database-tools.install \
+      debian/bareos-devel.install \
+      debian/bareos-director-python-plugin.install \
+      debian/bareos-director.bareos-dir.init \
+      debian/bareos-director.install \
+      debian/bareos-director.preinst \
+      debian/bareos-filedaemon-python-plugin.install \
+      debian/bareos-filedaemon.bareos-fd.init \
+      debian/bareos-filedaemon.install \
+      debian/bareos-filedaemon.preinst \
+      debian/bareos-storage-fifo.install \
+      debian/bareos-storage-python-plugin.install \
+      debian/bareos-storage-tape.install \
+      debian/bareos-storage.bareos-sd.init \
+      debian/bareos-storage.install \
+      debian/bareos-storage.preinst \
+      debian/bareos-tools.install \
+      debian/bareos-traymonitor.install \
+      platforms/debian/Makefile \
+      platforms/debian/set_dbconfig_vars.sh"
+   case "$DISTNAME" in
+      ubuntu)
+         PFILES="${PFILES} \
+            platforms/ubuntu/Makefile"
+         ;;
+      univention)
+         PFILES="${PFILES} \
+            debian/univention-bareos-schema.install \
+            debian/univention-bareos.install \
+            platforms/univention/Makefile"
+         ;;
+   esac
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -4031,22 +4071,6 @@ suse)
        platforms/suse/bareos-dir \
        platforms/suse/bareos"
   ;;
-ubuntu)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   PFILES="${PFILES} \
-    platforms/ubuntu/Makefile \
-    platforms/debian/Makefile \
-    platforms/debian/set_dbconfig_vars.sh"
-  ;;
-univention)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   PFILES="${PFILES} \
-     platforms/univention/Makefile \
-     platforms/debian/Makefile \
-     platforms/debian/set_dbconfig_vars.sh"
-  ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
   ;;
@@ -4174,15 +4198,6 @@ AC_CONFIG_FILES([
 autoconf/Make.common \
 Makefile \
 manpages/Makefile \
-debian/bareos-common.preinst \
-debian/bareos-database-common.config \
-debian/bareos-database-common.postinst \
-debian/bareos-filedaemon.bareos-fd.init \
-debian/bareos-filedaemon.preinst \
-debian/bareos-director.bareos-dir.init \
-debian/bareos-director.preinst \
-debian/bareos-storage.bareos-sd.init \
-debian/bareos-storage.preinst \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \
 scripts/bareos-explorer \
