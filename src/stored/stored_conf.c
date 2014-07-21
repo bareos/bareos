@@ -264,6 +264,7 @@ static s_kw dev_types[] = {
    { "gfapi", B_GFAPI_DEV },
    { "object", B_OBJECT_STORE_DEV },
    { "rados", B_RADOS_DEV },
+   { "cephfs", B_CEPHFS_DEV },
    { NULL, 0 }
 };
 

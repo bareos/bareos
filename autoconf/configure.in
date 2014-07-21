@@ -3578,7 +3578,7 @@ dnl Check for CEPH via librados.
 dnl
 RADOS_LIBS="-lrados"
 RADOS_INC=""
-have_ceph=no
+have_ceph_rados=no
 AC_ARG_WITH(rados,
    AC_HELP_STRING([--with-rados@<:@=DIR@:>@], [Directory holding RADOS includes/libs]),
       with_rados_directory=$withval
@@ -3603,7 +3603,7 @@ CPPFLAGS="${saved_CPPFLAGS} ${RADOS_INC}"
 
 AC_CHECK_HEADER(rados/librados.h)
 
-AC_MSG_CHECKING(for glfs_init in gfapi library)
+AC_MSG_CHECKING(for rados_create in rados library)
 AC_TRY_LINK(
    [
        #include <rados/librados.h>
@@ -3613,10 +3613,10 @@ AC_TRY_LINK(
       rados_create(&cluster, NULL);
    ], [
        AC_MSG_RESULT(yes)
-       have_ceph="yes"
+       have_ceph_rados="yes"
    ], [
        AC_MSG_RESULT(no)
-       have_ceph="no"
+       have_ceph_rados="no"
    ]
 )
 
@@ -3624,7 +3624,7 @@ LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
 
-if test "x${have_ceph}" = "xyes"; then
+if test "x${have_ceph_rados}" = "xyes"; then
    AC_DEFINE(HAVE_RADOS, 1, [Define to 1 if you have rados lib])
 else
    RADOS_LIBS=""
@@ -3633,6 +3633,70 @@ fi
 
 AC_SUBST(RADOS_INC)
 AC_SUBST(RADOS_LIBS)
+
+dnl
+dnl Check for CEPH via libcephfs.
+dnl
+CEPHFS_LIBS="-lcephfs"
+CEPHFS_INC=""
+have_cephfs=no
+AC_ARG_WITH(cephfs,
+   AC_HELP_STRING([--with-cephfs@<:@=DIR@:>@], [Directory holding CEPHFS includes/libs]),
+      with_cephfs_directory=$withval
+)
+
+if test "x${with_cephfs_directory}" != "xyes" && test x"${with_cephfs_directory}" != "x"; then
+   #
+   # Make sure the $with_cephfs_directory also makes sense
+   #
+   if test -d "${with_cephfs_directory}/lib" -a -d "${with_cephfs_directory}/include"; then
+      CEPHFS_LIBS="-L${with_cephfs_directory}/lib ${CEPHFS_LIBS}"
+      CEPHFS_INC="-I${with_cephfs_directory}/include ${CEPHFS_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${CEPHFS_LIBS}"
+CFLAGS="${saved_CFLAGS} ${CEPHFS_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${CEPHFS_INC}"
+
+AC_LANG_PUSH(C++)
+AC_CHECK_HEADER(cephfs/libcephfs.h)
+
+AC_MSG_CHECKING(for ceph_create in cephfs library)
+AC_TRY_LINK(
+   [
+       #include <stdio.h>
+       #include <cephfs/libcephfs.h>
+   ], [
+      struct ceph_mount_info *cmount;
+
+      ceph_create(&cmount, NULL);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_cephfs="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_cephfs="no"
+   ]
+)
+AC_LANG_POP(C++)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_cephfs}" = "xyes"; then
+   AC_DEFINE(HAVE_CEPHFS, 1, [Define to 1 if you have cephfs lib])
+else
+   CEPHFS_LIBS=""
+   CEPHFS_INC=""
+fi
+
+AC_SUBST(CEPHFS_INC)
+AC_SUBST(CEPHFS_LIBS)
 
 dnl
 dnl Check for pthread libraries
@@ -4265,7 +4329,8 @@ Configuration on `date`:
    SCSI Crypto support:     ${have_scsi_crypto}
    GLUSTERFS support:       ${have_glusterfs}
    DROPLET support:         ${have_droplet}
-   CEPH support:            ${have_ceph}
+   CEPH RADOS support:      ${have_ceph_rados}
+   CEPHFS support:          ${have_cephfs}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}

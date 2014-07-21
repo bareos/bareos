@@ -84,6 +84,9 @@
 #ifdef HAVE_RADOS
 #include "backends/rados_device.h"
 #endif
+#ifdef HAVE_CEPHFS
+#include "backends/cephfs_device.h"
+#endif
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
 #include "backends/win32_file_device.h"
@@ -176,6 +179,11 @@ m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 #ifdef HAVE_RADOS
    case B_RADOS_DEV:
       dev = New(rados_device);
+      break;
+#endif
+#ifdef HAVE_CEPHFS
+   case B_CEPHFS_DEV:
+      dev = New(cephfs_device);
       break;
 #endif
 #ifdef HAVE_WIN32
@@ -1982,6 +1990,8 @@ bool DEVICE::mount(DCR *dcr, int timeout)
       break;
    case B_RADOS_DEV:
       break;
+   case B_CEPHFS_DEV:
+      break;
    default:
       break;
    }
@@ -2054,6 +2064,8 @@ bool DEVICE::unmount(DCR *dcr, int timeout)
    case B_OBJECT_STORE_DEV:
       break;
    case B_RADOS_DEV:
+      break;
+   case B_CEPHFS_DEV:
       break;
    default:
       break;
