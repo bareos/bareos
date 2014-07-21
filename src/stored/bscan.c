@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -74,6 +74,7 @@ static ATTR *attr;
 
 static time_t lasttime = 0;
 
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 static const char *db_driver = "NULL";
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
@@ -108,14 +109,15 @@ static void usage()
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bscan [ options ] <bareos-archive>\n"
-"       -B <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>\n"
-"       -b bootstrap      specify a bootstrap file\n"
-"       -c <file>         specify configuration file\n"
-"       -d <nn>           set debug level to <nn>\n"
+"       -B <drivername>   specify the database driver name (default NULL) <postgresql|mysql|sqlite3>\n"
+"       -b <bootstrap>    specify a bootstrap file\n"
+"       -c <file>         specify storage daemon configuration file (default: %s)\n"
+"       -d <nnn>          set debug level to <nnn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -m                update media info in database\n"
-"       -D <director>     specify a director name specified in the Storage\n"
+"       -D <director>     specify a director name specified in the storage daemon\n"
 "                         configuration file for the Key Encryption Key selection\n"
+"       -a <directory>    specify the database backend directory (default %s)\n"
 "       -n <name>         specify the database name (default bareos)\n"
 "       -u <user>         specify database user name (default bareos)\n"
 "       -P <password>     specify database password (default none)\n"
@@ -127,8 +129,8 @@ PROG_COPYRIGHT
 "       -S                show scan progress periodically\n"
 "       -v                verbose\n"
 "       -V <Volumes>      specify Volume names (separated by |)\n"
-"       -w <dir>          specify working directory (default from conf file)\n"
-"       -?                print this message\n\n"), 2001, VERSION, BDATE);
+"       -w <directory>    specify working directory (default from configuration file)\n"
+"       -?                print this message\n\n"), 2001, VERSION, BDATE, CONFIG_FILE, backend_directory);
    exit(1);
 }
 
@@ -139,6 +141,7 @@ int main (int argc, char *argv[])
    char *VolumeName = NULL;
    char *DirectorName = NULL;
    DIRRES *director = NULL;
+   alist* backend_directories = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -151,8 +154,12 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "B:b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
+      case 'a':
+         backend_directory = optarg;
+         break;
+
       case 'B':
          db_driver = optarg;
          break;
@@ -259,15 +266,6 @@ int main (int argc, char *argv[])
    my_config = new_config_parser();
    parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
-   LockRes();
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      UnlockRes();
-      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-         configfile);
-   }
-   UnlockRes();
-
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
@@ -318,6 +316,13 @@ int main (int argc, char *argv[])
       Pmsg1(000, _("First Volume Size = %s\n"),
          edit_uint64(currentVolumeSize, ed1));
    }
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   backend_directories = New(alist(10, owned_by_alist));
+   backend_directories->append((char *)backend_directory);
+
+   db_set_backend_dirs( backend_directories );
+#endif
 
    if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host, db_port, NULL)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));

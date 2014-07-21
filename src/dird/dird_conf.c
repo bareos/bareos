@@ -101,6 +101,9 @@ static RES_ITEM dir_items[] = {
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_dir.plugin_directory), 0, 0, NULL },
    { "pluginnames", CFG_TYPE_STR, ITEM(res_dir.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_dir.scripts_directory), 0, 0, NULL },
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
+#endif
    { "subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0" },
    { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
@@ -1614,6 +1617,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.subsys_directory) {
          free(res->res_dir.subsys_directory);
       }
+      if (res->res_dir.backend_directories) {
+         delete res->res_dir.backend_directories;
+      }
       if (res->res_dir.password.value) {
          free(res->res_dir.password.value);
       }
@@ -1994,6 +2000,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
          } else {
             res->res_dir.messages = res_all.res_dir.messages;
+            res->res_dir.backend_directories = res_all.res_dir.backend_directories;
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          }
          break;
@@ -3055,28 +3062,34 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item)
+static void init_resource_cb(RES_ITEM *item, int pass)
 {
-   switch (item->type) {
-   case CFG_TYPE_REPLACE:
-      for (int i = 0; ReplaceOptions[i].name; i++) {
-         if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
-            *(item->ui32value) = ReplaceOptions[i].token;
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_REPLACE:
+         for (int i = 0; ReplaceOptions[i].name; i++) {
+            if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
+               *(item->ui32value) = ReplaceOptions[i].token;
+            }
          }
-      }
-      break;
-   case CFG_TYPE_AUTHPROTOCOLTYPE:
-      for (int i = 0; authprotocols[i].name; i++) {
-         if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
-            *(item->ui32value) = authprotocols[i].token;
+         break;
+      case CFG_TYPE_AUTHPROTOCOLTYPE:
+         for (int i = 0; authprotocols[i].name; i++) {
+            if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
+               *(item->ui32value) = authprotocols[i].token;
+            }
          }
-      }
-      break;
-   case CFG_TYPE_AUTHTYPE:
-      for (int i = 0; authmethods[i].name; i++) {
-         if (bstrcasecmp(item->default_value, authmethods[i].name)) {
-            *(item->ui32value) = authmethods[i].token;
+         break;
+      case CFG_TYPE_AUTHTYPE:
+         for (int i = 0; authmethods[i].name; i++) {
+            if (bstrcasecmp(item->default_value, authmethods[i].name)) {
+               *(item->ui32value) = authmethods[i].token;
+            }
          }
+         break;
+      default:
+         break;
       }
       break;
    default:

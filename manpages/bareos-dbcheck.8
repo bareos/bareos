@@ -44,22 +44,25 @@ If specified, dbcheck will run in batch mode, and it will proceed to examine
 and fix (if \-f is set) all programmed inconsistency checks. By default,
 dbcheck will enter interactive mode (see below).
 .TP
-.BI \-C\  catalog
-catalog name in the director conf file.
+.BI \-B
+print catalog configuration and exit.
 .TP
 .BI \-c\  config
 If the \-c option is given with the Director's conf file, there is no need to
 enter any of the command line arguments, in particular the working directory
 as dbcheck will read them from the file.
 .TP
-.BI \-B
-print catalog configuration and exit.
+.BI \-C\  catalog
+catalog name in the director conf file.
 .TP
-.BI -d\  nn
-set debug level to \fInn\fP.
+.BI \-d\  nnn
+set debug level to \fInnn\fP.
 .TP
 .BI \-dt
 print timestamp in debug output.
+.TP
+.BI \-D\ drivername
+Specify the database driver name (default NULL) <postgresql|mysql|sqlite3>.
 .TP
 .BI \-f
 If specified, dbcheck will repair (fix) the inconsistencies it finds.

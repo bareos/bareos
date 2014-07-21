@@ -450,8 +450,7 @@ RES **CONFIG::new_res_head()
 }
 
 /*
- * Initialize the static structure to zeros, then
- *  apply all the default values.
+ * Initialize the static structure to zeros, then apply all the default values.
  */
 void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
 {
@@ -460,9 +459,13 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
    ((URES *)m_res_all)->hdr.refcnt = 1;
 
    /*
-    * Set defaults in each item. We only set defaults in pass 1.
+    * See what pass of the config parsing this is.
     */
-   if (pass == 1) {
+   switch (pass) {
+   case 1: {
+      /*
+       * Set all defaults for types that are filled in pass 1 of the config parser.
+       */
       int i;
 
       for (i = 0; items[i].name; i++) {
@@ -482,6 +485,9 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
             items[i].flags |= CFG_ITEM_DEFAULT;
          }
 
+         /*
+          * See if the CFG_ITEM_DEFAULT flag is set and a default value is available.
+          */
          if (items[i].flags & CFG_ITEM_DEFAULT && items[i].default_value != NULL) {
             /*
              * First try to handle the generic types.
@@ -522,7 +528,7 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
                break;
             case CFG_TYPE_STRNAME:
             case CFG_TYPE_STR:
-               *items[i].value = bstrdup(items[i].default_value);
+               *(items[i].value) = bstrdup(items[i].default_value);
                break;
             case CFG_TYPE_DIR: {
                POOL_MEM pathname(PM_FNAME);
@@ -549,7 +555,7 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
                 * None of the generic types fired if there is a registered callback call that now.
                 */
                if (m_init_res) {
-                  m_init_res(&items[i]);
+                  m_init_res(&items[i], pass);
                }
                break;
             }
@@ -562,5 +568,75 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
             Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first]);
          }
       }
+      break;
+   }
+   case 2: {
+      /*
+       * Set all defaults for types that are filled in pass 2 of the config parser.
+       */
+      int i;
+
+      for (i = 0; items[i].name; i++) {
+         Dmsg3(900, "Item=%s def=%s defval=%s\n", items[i].name,
+               (items[i].flags & CFG_ITEM_DEFAULT) ? "yes" : "no",
+               (items[i].default_value) ? items[i].default_value : "None");
+
+         /*
+          * See if the CFG_ITEM_DEFAULT flag is set and a default value is available.
+          */
+         if (items[i].flags & CFG_ITEM_DEFAULT && items[i].default_value != NULL) {
+            /*
+             * First try to handle the generic types.
+             */
+            switch (items[i].type) {
+            case CFG_TYPE_ALIST_STR:
+               if (!*items[i].alistvalue) {
+                  *(items[i].alistvalue) = New(alist(10, owned_by_alist));
+               }
+               (*(items[i].alistvalue))->append(bstrdup(items[i].default_value));
+               break;
+            case CFG_TYPE_ALIST_DIR: {
+               POOL_MEM pathname(PM_FNAME);
+
+               if (!*items[i].alistvalue) {
+                  *(items[i].alistvalue) = New(alist(10, owned_by_alist));
+               }
+
+               pm_strcpy(pathname, items[i].default_value);
+               if (*items[i].default_value != '|') {
+                  int size;
+
+                  /*
+                   * Make sure we have enough room
+                   */
+                  size = pathname.size() + 1024;
+                  pathname.check_size(size);
+                  do_shell_expansion(pathname.c_str(), pathname.size());
+               }
+               (*(items[i].alistvalue))->append(bstrdup(pathname.c_str()));
+               break;
+            }
+            default:
+               /*
+                * None of the generic types fired if there is a registered callback call that now.
+                */
+               if (m_init_res) {
+                  m_init_res(&items[i], pass);
+               }
+               break;
+            }
+         }
+
+         /*
+          * If this triggers, take a look at lib/parse_conf.h
+          */
+         if (i >= MAX_RES_ITEMS) {
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first]);
+         }
+      }
+      break;
+   }
+   default:
+      break;
    }
 }

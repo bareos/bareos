@@ -22,14 +22,12 @@ corruption problem.
 
 .LP
 Normally, it should not be necessary to run the bscan command because
-the database is self maintaining, and most corrupted databases can be
-repaired by the tools provided by the database vendors.
+the database is self maintaining.
+Logical inconsistencies in the Bareos database can be found by bareos-dbcheck.
 In addition, if you have maintained bootstrap files during backups, you
 should be able to recover all your data from the bootstrap file
 without needed an up to date catalog.
 
-.B bscan
-command.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invoke bold face and italics,
@@ -40,11 +38,14 @@ A summary of options is included below.
 .B \-?
 Show version and usage of program.
 .TP
+.BI \-B\  drivername
+Specify the database driver name (default NULL) <postgresql|mysql|sqlite3>.
+.TP
 .BI \-b\  bootstrap
 Specify a bootstrap file.
 .TP
-.BI \-c\  config
-Specify configuration file.
+.BI \-c\  configfile
+Specify storage daemon configuration file.
 .TP
 .BI \-d\  nn
 Set debug level to \fInn\fP.
@@ -52,11 +53,14 @@ Set debug level to \fInn\fP.
 .BI \-dt
 Print timestamp in debug output.
 .TP
+.BI \-D\  director
+Specify a director name specified in the storage daemon configuration file for the Key Encryption Key selection.
+.TP
+.BI \-a\  directory
+Specify the database backend directory
+.TP
 .B \-m
 Update media info in database.
-.TP
-.B \-D
-Specify the driver database name (default: \fINULL\fP)
 .TP
 .BI \-n\  name
 Specify the database name (default: \fIbareos\fP)
@@ -80,7 +84,7 @@ Proceed in spite of I/O errors.
 List records.
 .TP
 .B \-s
-Synchronize or store in Database.
+Synchronize or store in database.
 .TP
 .B \-S
 Show scan progress periodically.
@@ -91,11 +95,12 @@ Verbose output mode.
 .BI \-V\  volume
 Specify volume names (separated by '|')
 .TP
-.BI \-w\  dir
-Specify working directory (default from conf file)
+.BI \-w\  directory
+Specify working directory (default from configuration file)
 .SH SEE ALSO
 .BR bls (8),
-.BR bextract (8).
+.BR bextract (8),
+.BR bareos-dbcheck (8).
 .br
 .SH AUTHOR
 This manual page was written by Jose Luis Tallon

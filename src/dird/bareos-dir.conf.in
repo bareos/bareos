@@ -54,6 +54,9 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
 
+  # remove comment in next line to load dynamic backends from specified directory
+  # Backend Directory = @backenddir@
+
   # remove comment in next line to load plugins from specified directory
   # Plugin Directory = @plugindir@
 }
@@ -103,7 +106,7 @@ Job {
 
   # This sends the bootstrap via mail for disaster recovery.
   # Should be sent to another system, please change recipient accordingly
-  Write Bootstrap = "|@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" @job_email@" # (#01)
+  Write Bootstrap = "|@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" @job_email@" # (#01)
   Priority = 11                   # run after main backup
 }
 
@@ -249,8 +252,8 @@ Catalog {
 #
 Messages {
   Name = Standard
-  mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
-  operatorcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  operatorcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
   mail = @job_email@ = all, !skipped, !audit # (#02)
   operator = @job_email@ = mount     # (#03)
   console = all, !skipped, !saved, !audit
@@ -263,7 +266,7 @@ Messages {
 #
 Messages {
   Name = Daemon
-  mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
+  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
   mail = @job_email@ = all, !skipped, !audit # (#02)
   console = all, !skipped, !saved, !audit
   append = "@logdir@/bareos.log" = all, !skipped, !audit

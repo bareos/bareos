@@ -259,6 +259,13 @@ extern int reservations_lock_count;
 DEVICE *init_backend_dev(JCR *jcr, int device_type);
 void dev_flush_backends();
 
+/* sd_backends.c */
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+void sd_set_backend_dirs(alist *new_backend_dirs);
+DEVICE *init_backend_dev(JCR *jcr, int device_type);
+void dev_flush_backends();
+#endif
+
 /* sd_cmds.c */
 void *handle_stored_connection(BSOCK *sd, char *job_name);
 bool do_listen_run(JCR *jcr);

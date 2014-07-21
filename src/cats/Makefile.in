@@ -219,12 +219,13 @@ libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
 	$(RMF) $(DESTDIR)$(libdir)/libbareossql-[0-9]*.so $(DESTDIR)$(libdir)/libbareossql.la
 	$(RMF) $(DESTDIR)$(libdir)/libbareoscats-[0-9]*.so $(DESTDIR)$(libdir)/libbareoscats.la
+	$(RMF) $(DESTDIR)$(backenddir)/libbareoscats-*.so
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareossql.la $(DESTDIR)$(libdir)
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats.la $(DESTDIR)$(libdir)
+	$(MKDIR) $(DESTDIR)$(backenddir)/
 	for db_type in @DB_BACKENDS@; do \
-	    $(RMF) $(DESTDIR)$(libdir)/libbareoscats-$${db_type}-[0-9]*.so; \
-	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats-$${db_type}.la $(DESTDIR)$(libdir); \
-	    $(RM) $(DESTDIR)$(libdir)/libbareoscats-$${db_type}.la; \
+	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats-$${db_type}.la $(DESTDIR)$(backenddir); \
+	    $(RM) $(DESTDIR)$(backenddir)/libbareoscats-$${db_type}.la; \
 	done
 
 install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCLUDE_INSTALL_TARGET@

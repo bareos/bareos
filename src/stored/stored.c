@@ -324,13 +324,6 @@ static int check_resources()
    bool OK = true;
    bool tls_needed;
 
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      Jmsg1(NULL, M_ERROR, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-         configfile);
-      OK = false;
-   }
-
    if (GetNextRes(R_STORAGE, (RES *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
          configfile);

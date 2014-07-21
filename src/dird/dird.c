@@ -295,6 +295,16 @@ int main (int argc, char *argv[])
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   char *backend_dir;
+
+   foreach_alist(backend_dir, me->backend_directories) {
+        Dmsg1(100, "backend path: %s\n", backend_dir);
+   }
+
+   db_set_backend_dirs(me->backend_directories);
+#endif
+
    load_dir_plugins(me->plugin_directory, me->plugin_names);
 
    /*
@@ -347,7 +357,7 @@ int main (int argc, char *argv[])
 
    Dmsg0(200, "wait for next job\n");
    /* Main loop -- call scheduler to get next job to run */
-   while ( (jcr = wait_for_next_job(runjob)) ) {
+   while ((jcr = wait_for_next_job(runjob))) {
       run_job(jcr);                   /* run job */
       free_jcr(jcr);                  /* release jcr */
       set_jcr_in_tsd(INVALID_JCR);
@@ -975,6 +985,7 @@ static bool check_catalog(cat_op mode)
    CATRES *catalog;
    foreach_res(catalog, R_CATALOG) {
       B_DB *db;
+
       /*
        * Make sure we can open catalog, otherwise print a warning
        * message because the server is probably not running.
