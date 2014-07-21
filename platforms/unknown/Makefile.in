@@ -8,6 +8,8 @@
 #
 @MCOMMON@
 
+nothing:
+
 install:
 
 all:

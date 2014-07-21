@@ -832,7 +832,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
-%doc AGPL-3.0.txt AUTHORS LICENSE README.* debian/copyright
+%doc AGPL-3.0.txt AUTHORS LICENSE README.*
 
 %if !0%{?client_only}
 

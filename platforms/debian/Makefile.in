@@ -8,7 +8,11 @@
 #
 @MCOMMON@
 
-nothing:
+all:
+	$(INSTALL) ../../debian/copyright.header ../../debian/copyright
+	$(SED) -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../../LICENSE >> ../../debian/copyright
+	cat ../../debian/copyright.footer >> ../../debian/copyright
+
 
 install: install_logrotate install-dbconfig
 
