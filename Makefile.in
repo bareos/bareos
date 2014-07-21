@@ -24,7 +24,7 @@ fd_subdirs = src scripts src/lib src/findlib @LMDB_DIR@ src/filed \
 # Non-client-only directores
 subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
 
-all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages
+all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages platforms
 
 DIST =	INSTALL README.configure configure Makefile Makefile.in ChangeLog
 
