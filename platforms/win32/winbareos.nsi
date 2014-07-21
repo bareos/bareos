@@ -861,7 +861,10 @@ Function .onInit
       MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64 Bit OS.$\r$\nPlease use the 64 Bit installer."
       Abort
     ${EndIf}
+    # if instdir was not altered, change installdir to  $PROGRAMFILES64\${PRODUCT_NAME}, else use what was explicitly set
+    StrCmp $INSTDIR "$PROGRAMFILES\${PRODUCT_NAME}" 0 dontset64bitinstdir
     StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
+    dontset64bitinstdir:
     SetRegView 64
     ${EnableX64FSRedirection}
   ${Else} # 32Bit OS
@@ -1405,7 +1408,6 @@ Section Uninstall
 
   # on 64Bit Systems, change the INSTDIR and Registry view to remove the right entries
   ${If} ${RunningX64} # 64Bit OS
-    StrCpy $INSTDIR "$PROGRAMFILES64\${PRODUCT_NAME}"
     SetRegView 64
     ${EnableX64FSRedirection}
   ${EndIf}
