@@ -480,8 +480,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
       if (glfs_ftruncate(m_gfd, 0) != 0) {
          berrno be;
 
-         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
-               print_name(), be.bstrerror());
+         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
          Emsg0(M_FATAL, 0, errmsg);
          return false;
       }
@@ -497,7 +496,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
       if (glfs_fstat(m_gfd, &st) != 0) {
          berrno be;
 
-         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(), be.bstrerror());
+         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
          return false;
       }
 
@@ -505,11 +504,10 @@ bool gfapi_device::d_truncate(DCR *dcr)
          glfs_close(m_gfd);
          glfs_unlink(m_glfs, m_virtual_filename);
 
-         set_mode(CREATE_READ_WRITE);
-
          /*
           * Recreate the file -- of course, empty
           */
+         oflags = O_CREAT | O_RDWR | O_BINARY;
          m_gfd = glfs_creat(m_glfs, m_virtual_filename, oflags, st.st_mode);
          if (!m_gfd) {
             berrno be;
@@ -564,4 +562,26 @@ gfapi_device::gfapi_device()
    m_gfd = NULL;
    m_virtual_filename = get_pool_memory(PM_FNAME);
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_GFAPI_DEV:
+      dev = New(gfapi_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
 #endif
+#endif /* HAVE_GFAPI */

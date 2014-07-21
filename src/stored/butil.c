@@ -307,7 +307,7 @@ void display_tape_error_status(JCR *jcr, DEVICE *dev)
 {
    uint32_t status;
 
-   status = status_dev(dev);
+   status = dev->status_dev();
    Dmsg1(20, "Device status: %x\n", status);
    if (status & BMT_EOD)
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Data\n"));

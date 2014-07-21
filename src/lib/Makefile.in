@@ -245,8 +245,8 @@ install-includes:
 
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
-	$(RMF) $(DESTDIR)$(libdir)/libbareos-*.so $(DESTDIR)$(libdir)/libbareos.la
-	$(RMF) $(DESTDIR)$(libdir)/libbareoscfg-*.so $(DESTDIR)$(libdir)/libbareoscfg.la
+	$(RMF) $(DESTDIR)$(libdir)/libbareos-[0-9]*.so $(DESTDIR)$(libdir)/libbareos.la
+	$(RMF) $(DESTDIR)$(libdir)/libbareoscfg-[0-9]*.so $(DESTDIR)$(libdir)/libbareoscfg.la
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareos.la $(DESTDIR)$(libdir)
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscfg.la $(DESTDIR)$(libdir)
 

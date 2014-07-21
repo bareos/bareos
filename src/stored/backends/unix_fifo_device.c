@@ -20,7 +20,7 @@
    02110-1301, USA.
 */
 /*
- * UNIX FILE API device abstraction.
+ * UNIX FIFO API device abstraction.
  *
  * Kern Sibbald, MM
  *
@@ -29,7 +29,115 @@
 
 #include "bareos.h"
 #include "stored.h"
-#include "unix_file_device.h"
+#include "unix_fifo_device.h"
+
+/*
+ * Open a fifo device
+ */
+void unix_fifo_device::open_device(DCR *dcr, int omode)
+{
+   file_size = 0;
+   int timeout = max_open_wait;
+   utime_t start_time = time(NULL);
+
+   mount(dcr, 1);                     /* do mount if required */
+
+   Dmsg0(100, "Open dev: device is fifo\n");
+
+   get_autochanger_loaded_slot(dcr);
+
+   open_mode = omode;
+   set_mode(omode);
+
+   if (timeout < 1) {
+      timeout = 1;
+   }
+   errno = 0;
+
+   if (timeout) {
+      /*
+       * Set open timer
+       */
+      tid = start_thread_timer(dcr->jcr, pthread_self(), timeout);
+   }
+
+   Dmsg2(100, "Try open %s mode=%s\n", prt_name, mode_to_str(omode));
+
+   /*
+    * If busy retry each second for max_open_wait seconds
+    */
+   for ( ;; ) {
+      /*
+       * Try non-blocking open
+       */
+      m_fd = d_open(dev_name, oflags | O_NONBLOCK, 0);
+      if (m_fd < 0) {
+         berrno be;
+         dev_errno = errno;
+         Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+               prt_name, omode, oflags, errno, be.bstrerror());
+      } else {
+         d_close(m_fd);
+         m_fd = d_open(dev_name, oflags, 0); /* open normally */
+         if (m_fd < 0) {
+            berrno be;
+            dev_errno = errno;
+            Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
+                  prt_name, omode, oflags, errno, be.bstrerror());
+            break;
+         }
+         dev_errno = 0;
+         lock_door();
+         break;                               /* Successfully opened and rewound */
+      }
+      bmicrosleep(5, 0);
+
+      /*
+       * Exceed wait time ?
+       */
+      if (time(NULL) - start_time >= max_open_wait) {
+         break;                       /* yes, get out */
+      }
+   }
+
+   if (!is_open()) {
+      berrno be;
+      Mmsg2(errmsg, _("Unable to open device %s: ERR=%s\n"),
+            prt_name, be.bstrerror(dev_errno));
+      Dmsg1(100, "%s", errmsg);
+   }
+
+   /*
+    * Stop any open() timer we started
+    */
+   if (tid) {
+      stop_thread_timer(tid);
+      tid = 0;
+   }
+
+   Dmsg1(100, "open dev: fifo %d opened\n", m_fd);
+}
+
+bool unix_fifo_device::eod(DCR *dcr)
+{
+   if (m_fd < 0) {
+      dev_errno = EBADF;
+      Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
+      return false;
+   }
+
+   Dmsg0(100, "Enter eod\n");
+   if (at_eot()) {
+      return true;
+   }
+
+   clear_eof();         /* remove EOF flag */
+
+   block_num = file = 0;
+   file_size = 0;
+   file_addr = 0;
+   return true;
+}
 
 /*
  * (Un)mount the device (For a FILE device)
@@ -157,7 +265,7 @@ get_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool unix_file_device::mount_backend(DCR *dcr, int timeout)
+bool unix_fifo_device::mount_backend(DCR *dcr, int timeout)
 {
    bool retval = true;
 
@@ -174,7 +282,7 @@ bool unix_file_device::mount_backend(DCR *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool unix_file_device::unmount_backend(DCR *dcr, int timeout)
+bool unix_fifo_device::unmount_backend(DCR *dcr, int timeout)
 {
    bool retval = true;
 
@@ -185,109 +293,68 @@ bool unix_file_device::unmount_backend(DCR *dcr, int timeout)
    return retval;
 }
 
-int unix_file_device::d_open(const char *pathname, int flags, int mode)
+int unix_fifo_device::d_open(const char *pathname, int flags, int mode)
 {
    return ::open(pathname, flags, mode);
 }
 
-ssize_t unix_file_device::d_read(int fd, void *buffer, size_t count)
+ssize_t unix_fifo_device::d_read(int fd, void *buffer, size_t count)
 {
    return ::read(fd, buffer, count);
 }
 
-ssize_t unix_file_device::d_write(int fd, const void *buffer, size_t count)
+ssize_t unix_fifo_device::d_write(int fd, const void *buffer, size_t count)
 {
    return ::write(fd, buffer, count);
 }
 
-int unix_file_device::d_close(int fd)
+int unix_fifo_device::d_close(int fd)
 {
    return ::close(fd);
 }
 
-int unix_file_device::d_ioctl(int fd, ioctl_req_t request, char *op)
+int unix_fifo_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 {
    return -1;
 }
 
-boffset_t unix_file_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t unix_fifo_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 {
-   return ::lseek(m_fd, offset, whence);
+   return -1;
 }
 
-bool unix_file_device::d_truncate(DCR *dcr)
+bool unix_fifo_device::d_truncate(DCR *dcr)
 {
-   struct stat st;
-
-   if (ftruncate(m_fd, 0) != 0) {
-      berrno be;
-
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
-      return false;
-   }
-
-   /*
-    * Check for a successful ftruncate() and issue a work-around for devices
-    * (mostly cheap NAS) that don't support truncation.
-    * Workaround supplied by Martin Schmid as a solution to bug #1011.
-    * 1. close file
-    * 2. delete file
-    * 3. open new file with same mode
-    * 4. change ownership to original
-    */
-   if (fstat(m_fd, &st) != 0) {
-      berrno be;
-
-      Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
-      return false;
-   }
-
-   if (st.st_size != 0) {             /* ftruncate() didn't work */
-      POOL_MEM archive_name(PM_FNAME);
-
-      pm_strcpy(archive_name, dev_name);
-      if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
-         pm_strcat(archive_name, "/");
-      }
-      pm_strcat(archive_name, dcr->VolumeName);
-
-      Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
-            prt_name, archive_name.c_str());
-
-      /*
-       * Close file and blow it away
-       */
-      ::close(m_fd);
-      ::unlink(archive_name.c_str());
-
-      /*
-       * Recreate the file -- of course, empty
-       */
-      oflags = O_CREAT | O_RDWR | O_BINARY;
-      if ((m_fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
-         berrno be;
-
-         dev_errno = errno;
-         Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(), be.bstrerror());
-         Dmsg1(100, "reopen failed: %s", errmsg);
-         Emsg0(M_FATAL, 0, errmsg);
-         return false;
-      }
-
-      /*
-       * Reset proper owner
-       */
-      chown(archive_name.c_str(), st.st_uid, st.st_gid);
-   }
-
    return true;
 }
 
-unix_file_device::~unix_file_device()
+unix_fifo_device::~unix_fifo_device()
 {
 }
 
-unix_file_device::unix_file_device()
+unix_fifo_device::unix_fifo_device()
 {
    m_fd = -1;
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_FIFO_DEV:
+      dev = New(unix_fifo_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
+#endif

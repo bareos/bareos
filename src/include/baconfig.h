@@ -105,12 +105,15 @@ void InitWinAPIWrapper();
 #if defined(BUILDING_DLL)
 #define DLL_IMP_EXP _declspec(dllexport)
 #define CATS_IMP_EXP _declspec(dllexport)
+#define SD_IMP_EXP _declspec(dllexport)
 #elif defined(USING_DLL)
 #define DLL_IMP_EXP _declspec(dllimport)
 #define CATS_IMP_EXP _declspec(dllimport)
+#define SD_IMP_EXP _declspec(dllimport)
 #else
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
+#define SD_IMP_EXP
 #endif
 
 #else  /* HAVE_WIN32 */
@@ -119,6 +122,7 @@ void InitWinAPIWrapper();
 
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
+#define SD_IMP_EXP
 
 #define  OSDependentInit()
 

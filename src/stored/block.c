@@ -671,8 +671,8 @@ bool DCR::write_block_to_dev()
    /*
     * We successfully wrote the block, now do housekeeping
     */
-   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n", (int)dev->VolCatInfo.VolCatBytes,
-      (int)(dev->VolCatInfo.VolCatBytes+wlen));
+   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n",
+         (int)dev->VolCatInfo.VolCatBytes, (int)(dev->VolCatInfo.VolCatBytes+wlen));
    dev->VolCatInfo.VolCatBytes += wlen;
    dev->VolCatInfo.VolCatBlocks++;
    dev->EndBlock = dev->block_num;
@@ -799,8 +799,7 @@ static void reread_last_block(DCR *dcr)
 
 /*
  * If this routine is called, we do our bookkeeping and
- *   then assure that the volume will not be written any
- *   more.
+ * then assure that the volume will not be written any more.
  */
 static bool terminate_writing_volume(DCR *dcr)
 {

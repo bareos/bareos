@@ -27,21 +27,11 @@
 #ifndef UNIX_TAPE_DEVICE_H
 #define UNIX_TAPE_DEVICE_H
 
-class unix_tape_device: public DEVICE {
+class unix_tape_device: public generic_tape_device {
 public:
    unix_tape_device();
    ~unix_tape_device();
 
-   /*
-    * Interface from DEVICE
-    */
-   int d_close(int);
-   int d_open(const char *pathname, int flags, int mode);
-   int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
-   ssize_t d_read(int fd, void *buffer, size_t count);
-   ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DCR *dcr);
+   int d_ioctl(int fd, ioctl_req_t request, char *op);
 };
-
 #endif /* UNIX_TAPE_DEVICE_H */

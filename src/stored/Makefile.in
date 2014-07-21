@@ -27,56 +27,55 @@ GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 first_rule: all
 dummy:
 
-DEVICE_API_SRCS = cephfs_device.c \
-		  gfapi_device.c \
-		  object_store_device.c \
-		  rados_device.c \
-		  unix_file_device.c \
-		  unix_tape_device.c \
-		  vtape.c
+AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
+			    gfapi_device.c \
+			    object_store_device.c \
+			    rados_device.c \
+			    generic_tape_device.c \
+			    unix_fifo_device.c \
+			    unix_tape_device.c
+NEEDED_DEVICE_API_SRCS = unix_file_device.c @NEEDED_DEVICE_API_SRCS@
+
+CEPHFS_LIBS = @CEPHFS_LIBS@
+DROPLET_LIBS = @DROPLET_LIBS@
+GLUSTER_LIBS = @GLUSTER_LIBS@
+RADOS_LIBS = @RADOS_LIBS@
+AVAILABLE_BACKEND_LIBS = $(CEPHFS_LIBS) $(DROPLET_LIBS) $(GLUSTER_LIBS) $(RADOS_LIBS)
+LIBS += @NEEDED_BACKEND_LIBS@
+
+# objects used in all daemons collected in (shared) library.
+LIBBAREOSSD_SRCS = acquire.c ansi_label.c autochanger.c block.c bsr.c butil.c \
+		   crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
+		   read_record.c record.c reserve.c scan.c sd_backends.c \
+		   sd_plugins.c spool.c stored_conf.c vol_mgr.c wait.c \
+		   $(NEEDED_DEVICE_API_SRCS)
+LIBBAREOSSD_OBJS = $(LIBBAREOSSD_SRCS:.c=.o)
+LIBBAREOSSD_LOBJS = $(LIBBAREOSSD_SRCS:.c=.lo)
+LIBBAREOSSD_LT_RELEASE = @LIBBAREOSSD_LT_RELEASE@
 
 # bareos-sd
-SDSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
-         autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \
-	 dir_cmd.c ebcdic.c fd_cmds.c job.c label.c lock.c mac.c mount.c \
-	 ndmp_tape.c read_record.c read.c record.c reserve.c scan.c sd_cmds.c \
-	 sd_plugins.c spool.c status.c stored_conf.c stored.c vol_mgr.c \
-	 wait.c $(DEVICE_API_SRCS)
+SDSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c \
+	 ndmp_tape.c read.c sd_cmds.c status.c stored.c
 SDOBJS = $(SDSRCS:.c=.o)
 
 # btape
-TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \
-           butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+TAPESRCS = btape.c
 TAPEOBJS = $(TAPESRCS:.c=.o)
 
 # bls
-BLSSRCS = acquire.c ansi_label.c autochanger.c block.c bls.c bsr.c \
-	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	  stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+BLSSRCS = bls.c
 BLSOBJS = $(BLSSRCS:.c=.o)
 
 # bextract
-BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c bsr.c \
-	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+BEXTSRCS = bextract.c
 BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 # bscan
-SCNSRCS = acquire.c ansi_label.c autochanger.c block.c bscan.c bsr.c \
-	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	  stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+SCNSRCS = bscan.c
 SCNOBJS = $(SCNSRCS:.c=.o)
 
 # bcopy
-COPYSRCS = acquire.c ansi_label.c autochanger.c bcopy.c block.c bsr.c \
-	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+COPYSRCS = bcopy.c
 COPYOBJS = $(COPYSRCS:.c=.o)
 
 SD_LIBS += @CAP_LIBS@
@@ -84,14 +83,10 @@ BEXTRACT_LIBS += @ZLIB_LIBS_NONSHARED@
 BEXTRACT_LIBS += @LZO_LIBS_NONSHARED@
 BEXTRACT_LIBS += @FASTLZ_LIBS_NONSHARED@
 
-GLUSTER_INC = @GLUSTER_INC@
-DROPLET_INC = @DROPLET_INC@
-RADOS_INC = @RADOS_INC@
 CEPHFS_INC = @CEPHFS_INC@
-LIBS += @GLUSTER_LIBS@
-LIBS += @DROPLET_LIBS@
-LIBS += @RADOS_LIBS@
-LIBS += @CEPHFS_LIBS@
+DROPLET_INC = @DROPLET_INC@
+GLUSTER_INC = @GLUSTER_INC@
+RADOS_INC = @RADOS_INC@
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
 DEBUG = @DEBUG@
@@ -101,7 +96,7 @@ ACL_LIBS = @ACL_LIBS@
 XATTR_LIBS = @XATTR_LIBS@
 NDMP_LIBS = @NDMP_LIBS@
 
-.SUFFIXES:	.c .o
+.SUFFIXES:	.c .o .lo
 .PHONY:
 .DONTCARE:
 
@@ -109,49 +104,62 @@ NDMP_LIBS = @NDMP_LIBS@
 .c.o:
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+.c.lo:
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 #-------------------------------------------------------------------------
 
-dev.o: dev.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) $(DROPLET_INC) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-cephfs_device.o: cephfs_device.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-gfapi_device.o: gfapi_device.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-object_storage_device.o: object_storage_device.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(DROPLET_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-rados_device.o: rados_device.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-
-all: Makefile bareos-sd @STATIC_SD@ bls bextract bscan btape bcopy
+all: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) bareos-sd @STATIC_SD@ bls bextract bscan btape bcopy
 	@echo "===== Make of stored is good ===="
 	@echo " "
 
-bareos-sd: Makefile $(SDOBJS) \
+libbareossd.a: $(LIBBAREOSSD_OBJS)
+	@echo "Making $@ ..."
+	$(AR) rc $@ $(LIBBAREOSSD_OBJS)
+	$(RANLIB) $@
+
+libbareossd.la: Makefile $(LIBBAREOSSD_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOSSD_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE)
+
+dev.lo: dev.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) $(GLUSTER_INC) $(DROPLET_INC) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+cephfs_device.lo: cephfs_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+gfapi_device.lo: gfapi_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+object_storage_device.lo: object_storage_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(DROPLET_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+rados_device.lo: rados_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+bareos-sd: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(SDOBJS) \
 	   ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	   @NDMP_DEPS@
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -o $@ $(SDOBJS) \
-	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L. -L../lib -o $@ $(SDOBJS) \
+	   $(NDMP_LIBS) -lbareossd -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
 	   $(SD_LIBS) $(GETTEXT_LIBS) $(COMPRESS_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-static-bareos-sd: Makefile $(SDOBJS) \
+static-bareos-sd: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(SDOBJS) \
 	          ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	          ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
 	          @NDMP_DEPS@
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -o $@ $(SDOBJS) \
-	   $(NDMP_LIBS) -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L. -L../lib -o $@ $(SDOBJS) \
+	   $(NDMP_LIBS) -lbareossd -lbareoscfg -lbareos -lm $(DLIB) $(LIBS) $(WRAPLIBS) \
 	   $(SD_LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(COMPRESS_LIBS)
 	strip $@
 
@@ -159,52 +167,58 @@ ndmp_tape.o: ndmp_tape.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) -I../lib $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
-btape: Makefile  $(TAPEOBJS) \
+btape: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(TAPEOBJS) \
        ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
        ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(TAPEOBJS) \
-	   -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L. -L../lib -o $@ $(TAPEOBJS) \
+	   -lbareossd -lbareoscfg -lbareos $(DLIB) -lm $(LIBS) $(GETTEXT_LIBS) \
 	   $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bls: Makefile $(BLSOBJS) \
+bls: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(BLSOBJS) \
      ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
      ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
      ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L. -L../lib -L../findlib -o $@ $(BLSOBJS) $(DLIB) \
+	   -lbareossd -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
 	   $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bextract: Makefile $(BEXTOBJS) \
+bextract: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(BEXTOBJS) \
           ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	  ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
           ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
-	   -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L. -L../lib -L../findlib -o $@ $(BEXTOBJS) $(DLIB) \
+	   -lbareossd -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) $(BEXTRACT_LIBS) \
 	   $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bscan:	Makefile $(SCNOBJS) \
+bscan:	Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(SCNOBJS) \
         ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
 	../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
-	   -lbareossql -lbareoscats $(DB_LIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L. -L../lib -L../cats -L../findlib -o $@ $(SCNOBJS) \
+	   -lbareossql -lbareoscats $(DB_LIBS) -lbareossd -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) $(SD_LIBS) \
 	   $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
-bcopy:	Makefile $(COPYOBJS) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+bcopy:	Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(COPYOBJS) \
+	../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L../lib -o $@ $(COPYOBJS) \
-	   -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
+	$(LIBTOOL_LINK) $(CXX) $(TTOOL_LDFLAGS) $(LDFLAGS) -L. -L../lib -o $@ $(COPYOBJS) \
+	   -lbareossd -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-install: all
+libtool-install: all
+	$(MKDIR) $(DESTDIR)$(libdir)
+	$(RMF) $(DESTDIR)$(libdir)/libbareossd-[0-9]*.so $(DESTDIR)$(libdir)/libbareossd.la
+	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareossd.la $(DESTDIR)$(libdir)
+
+install: all @LIBTOOL_INSTALL_TARGET@
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-sd $(DESTDIR)$(sbindir)/bareos-sd
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bls $(DESTDIR)$(sbindir)/bls
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bextract $(DESTDIR)$(sbindir)/bextract
@@ -228,7 +242,8 @@ install: all
 	fi
 
 libtool-clean:
-	@$(RMF) -r .libs _libs
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
 
 clean:	libtool-clean
 	@$(RMF) bareos-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3

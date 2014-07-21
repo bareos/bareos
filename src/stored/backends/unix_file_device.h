@@ -21,7 +21,7 @@
 /*
  * UNIX File API device abstraction.
  *
- * Marco van Wieringen, December 2013
+ * Marco van Wieringen, June 2014
  */
 
 #ifndef UNIX_FILE_DEVICE_H
@@ -35,6 +35,8 @@ public:
    /*
     * Interface from DEVICE
     */
+   bool mount_backend(DCR *dcr, int timeout);
+   bool unmount_backend(DCR *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
@@ -43,5 +45,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DCR *dcr);
 };
-
 #endif /* UNIX_FILE_DEVICE_H */
