@@ -95,7 +95,6 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device);
 bool can_open_mounted_dev(DEVICE *dev);
 bool load_dev(DEVICE *dev);
 int write_block(DEVICE *dev);
-uint32_t status_dev(DEVICE *dev);
 void attach_jcr_to_device(DEVICE *dev, JCR *jcr);
 void detach_jcr_from_device(DEVICE *dev, JCR *jcr);
 JCR *next_attached_jcr(DEVICE *dev, JCR *jcr);
@@ -255,6 +254,10 @@ extern int reservations_lock_count;
 #define lock_volumes() _lock_volumes(__FILE__, __LINE__)
 #define unlock_volumes() _unlock_volumes()
 #endif
+
+/* sd_backends.c */
+DEVICE *init_backend_dev(JCR *jcr, int device_type);
+void dev_flush_backends();
 
 /* sd_cmds.c */
 void *handle_stored_connection(BSOCK *sd, char *job_name);

@@ -238,8 +238,7 @@ bool rados_device::d_truncate(DCR *dcr)
 
       status = rados_trunc(m_ctx, getVolCatName(), 0);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
-               print_name(), be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          return false;
       }
@@ -290,4 +289,26 @@ rados_device::rados_device()
    m_cluster_initialized = false;
    m_ctx = NULL;
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_RADOS_DEV:
+      dev = New(rados_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
 #endif
+#endif /* HAVE_RADOS */

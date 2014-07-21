@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../stored:../generic:backends
+VPATH = .:../../stored:../../stored/backends:../generic:backends
 
 include ../Makefile.inc
 
@@ -26,6 +26,7 @@ INCLUDES = -I. \
 	   -I../.. \
 	   -I../../include \
 	   -I../../stored \
+	   -I../../stored/backends \
 	   -I../include \
 	   -I../compat/include
 LDLIBS = ../lib/libbareos.a \
@@ -39,7 +40,7 @@ LDLIBS_FIND = ../lib/libbareos.a \
 	      $(MINGW_LIB)/libpthreadGCE2.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-DEVICE_API_SRCS = win32_tape_device.c win32_file_device.c
+DEVICE_API_SRCS = generic_tape_device.c win32_tape_device.c win32_file_device.c
 
 SVRSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
 	  autochanger.c block.c bsr.c butil.c crc32.c dev.c device.c \

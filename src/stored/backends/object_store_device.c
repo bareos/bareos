@@ -473,4 +473,26 @@ object_store_device::object_store_device()
    m_object_bucketname = NULL;
    m_ctx = NULL;
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_OBJECT_STORE_DEV:
+      dev = New(object_store_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
 #endif
+#endif /* HAVE_OBJECTSTORE */

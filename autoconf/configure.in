@@ -72,6 +72,12 @@ LIBBAREOSLMDB_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSLMDB_LT_RELEASE.*"\(.*\)"$/\
 LIBBAREOSLMDB_LT_RELEASE=${LIBBAREOSLMDB_LT_RELEASE:-$VERSION}
 AC_SUBST(LIBBAREOSLMDB_LT_RELEASE)dnl
 
+dnl src/stored/backends
+dnl can be overwritten by specific values from version.h
+LIBBAREOSSD_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSCATS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSSD_LT_RELEASE=${LIBBAREOSLMDB_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSSD_LT_RELEASE)dnl
+
 echo "configuring for ${BAREOS} $VERSION ($DATE)"
 
 dnl -------------------------------------------------------
@@ -637,6 +643,44 @@ fi
 AC_SUBST(STORED_DIR)
 AC_SUBST(SD_PLUGIN_DIR)
 
+dnl --------------------------------------------------
+dnl dynamic loading of storage backends
+dnl --------------------------------------------------
+use_dynamic_storage_backends=no
+AC_ARG_ENABLE(dynamic-storage_backends,
+   AC_HELP_STRING([--enable-dynamic-storage-backends], [enable dynamic loading of storage backends @<:@default=no@:>@]),
+   [
+       if test x$enableval = xyes; then
+          use_dynamic_storage_backends=yes
+          AC_DEFINE(HAVE_DYNAMIC_SD_BACKENDS, 1, [Define to 1 if dynamic loading of storage backends is enabled])
+       fi
+   ]
+)
+
+if test "x$use_libtool" != "xyes" -a "x$use_dynamic_storage_backends" = "xyes"; then
+   echo ""
+   echo "You specified --enable-dynamic-storage-plugins but disabled libtool with --disable-libtool"
+   echo "We only support dynamic loading using libtool so either disable dynamic loading or enable libtool"
+   echo ""
+   echo "Aborting the configuration ..."
+   echo " "
+   echo " "
+   exit 1
+fi
+
+if test x$use_dynamic_storage_backends = xyes; then
+   NEEDED_DEVICE_API_SRCS=""
+   NEEDED_BACKEND_LIBS=""
+   SD_BACKENDS_DIR="src/stored/backends"
+else
+   NEEDED_DEVICE_API_SRCS="\$(AVAILABLE_DEVICE_API_SRCS)"
+   NEEDED_BACKEND_LIBS="\$(AVAILABLE_BACKEND_LIBS)"
+   SD_BACKENDS_DIR=""
+fi
+AC_SUBST(NEEDED_DEVICE_API_SRCS)
+AC_SUBST(NEEDED_BACKEND_LIBS)
+AC_SUBST(SD_BACKENDS_DIR)
+
 dnl ---------------------------------------------------
 dnl Check for conio (Bareos readline substitute)(
 dnl ---------------------------------------------------
@@ -649,7 +693,6 @@ AC_ARG_ENABLE(conio,
        fi
    ]
 )
-
 
 dnl ---------------------------------------------------
 dnl Check for IPv6 support
@@ -4071,6 +4114,31 @@ AC_SUBST(BUILD_FD_PLUGINS)
 AC_SUBST(BUILD_SD_PLUGINS)
 AC_SUBST(BUILD_DIR_PLUGINS)
 
+dnl build a list of storage backend  we need to build.
+if test x$use_libtool != xno; then
+   BUILD_SD_BACKENDS="libbareossd-fifo.la libbareossd-gentape.la libbareossd-tape.la"
+
+   if test X"$have_glusterfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gfapi.la"
+   fi
+
+   if test X"$have_droplet" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-object.la"
+   fi
+
+   if test X"$have_ceph_rados" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-rados.la"
+   fi
+
+   if test X"$have_cephfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
+   fi
+else
+   BUILD_SD_BACKENDS=""
+fi
+
+AC_SUBST(BUILD_SD_BACKENDS)
+
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "
@@ -4131,6 +4199,7 @@ src/dird/bareos-dir.conf \
 src/lib/Makefile \
 src/stored/Makefile \
 src/stored/bareos-sd.conf \
+src/stored/backends/Makefile \
 src/filed/Makefile \
 src/filed/bareos-fd.conf \
 src/cats/Makefile \

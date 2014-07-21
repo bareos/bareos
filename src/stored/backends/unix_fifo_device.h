@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,35 +19,26 @@
    02110-1301, USA.
 */
 /*
- * Gluster Filesystem API device abstraction.
+ * UNIX File API device abstraction.
  *
- * Marco van Wieringen, February 2014
+ * Marco van Wieringen, June 2014
  */
 
-#ifndef GFAPI_DEVICE_H
-#define GFAPI_DEVICE_H
+#ifndef UNIX_FIFO_DEVICE_H
+#define UNIX_FIFO_DEVICE_H
 
-#include <api/glfs.h>
-
-class gfapi_device: public DEVICE {
-private:
-   char *m_gfapi_volume;
-   char *m_transport;
-   char *m_servername;
-   char *m_volumename;
-   char *m_basedir;
-   int m_serverport;
-   glfs_t *m_glfs;
-   glfs_fd_t *m_gfd;
-   POOLMEM *m_virtual_filename;
-
+class unix_fifo_device: public DEVICE {
 public:
-   gfapi_device();
-   ~gfapi_device();
+   unix_fifo_device();
+   ~unix_fifo_device();
 
    /*
     * Interface from DEVICE
     */
+   void open_device(DCR *dcr, int omode);
+   bool eod(DCR *dcr);
+   bool mount_backend(DCR *dcr, int timeout);
+   bool unmount_backend(DCR *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
@@ -56,4 +47,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DCR *dcr);
 };
-#endif /* GFAPI_DEVICE_H */
+#endif /* UNIX_FIFO_DEVICE_H */

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2006-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -20,13 +20,19 @@
    02110-1301, USA.
 */
 /*
- * win32_tape_device.c - Emulate the Linux st (scsi tape) driver on Microsoft Windows.
+ * Windows Tape API device abstraction.
  *
- * Author: Robert Nelson, May, 2006 <robertn@the-nelsons.org>
+ * Kern Sibbald, MM
+ *
+ * Emulate the Linux st (scsi tape) driver on Microsoft Windows.
+ * Robert Nelson, May, 2006 <robertn@the-nelsons.org>
+ *
+ * Extracted from other source files Marco van Wieringen, December 2013
  */
 
 #include "bareos.h"
 #include "stored.h"
+#include "generic_tape_device.h"
 #include "win32_tape_device.h"
 
 #include "sys/mtio.h"
@@ -395,16 +401,6 @@ int win32_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    }
 
    return result;
-}
-
-boffset_t win32_tape_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
-{
-   return -1;
-}
-
-bool win32_tape_device::d_truncate(DCR *dcr)
-{
-   return true;                    /* we don't really truncate tapes */
 }
 
 int win32_tape_device::tape_op(struct mtop *mt_com)

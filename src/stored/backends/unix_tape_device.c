@@ -1,6 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -26,44 +27,12 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "generic_tape_device.h"
 #include "unix_tape_device.h"
-
-int unix_tape_device::d_open(const char *pathname, int flags, int mode)
-{
-   return ::open(pathname, flags, mode);
-}
-
-ssize_t unix_tape_device::d_read(int fd, void *buffer, size_t count)
-{
-   return ::read(fd, buffer, count);
-}
-
-ssize_t unix_tape_device::d_write(int fd, const void *buffer, size_t count)
-{
-   return ::write(fd, buffer, count);
-}
-
-int unix_tape_device::d_close(int fd)
-{
-   return ::close(fd);
-}
 
 int unix_tape_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 {
    return ::ioctl(fd, request, op);
-}
-
-boffset_t unix_tape_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
-{
-   return -1;
-}
-
-bool unix_tape_device::d_truncate(DCR *dcr)
-{
-  /*
-   * Maybe we should rewind and write and eof ????
-   */
-  return true;                    /* We don't really truncate tapes */
 }
 
 unix_tape_device::~unix_tape_device()
@@ -74,3 +43,25 @@ unix_tape_device::unix_tape_device()
 {
    m_fd = -1;
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_TAPE_DEV:
+      dev = New(unix_tape_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
+#endif

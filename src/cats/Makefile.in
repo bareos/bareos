@@ -217,11 +217,12 @@ libtool-install-default-backend:
 
 libtool-install: all
 	$(MKDIR) $(DESTDIR)$(libdir)
-	$(RMF) $(DESTDIR)$(libdir)/libbareossql-*.so $(DESTDIR)$(libdir)/libbareossql.la
-	$(RMF) $(DESTDIR)$(libdir)/libbareoscats-*.so $(DESTDIR)$(libdir)/libbareoscats.la
+	$(RMF) $(DESTDIR)$(libdir)/libbareossql-[0-9]*.so $(DESTDIR)$(libdir)/libbareossql.la
+	$(RMF) $(DESTDIR)$(libdir)/libbareoscats-[0-9]*.so $(DESTDIR)$(libdir)/libbareoscats.la
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareossql.la $(DESTDIR)$(libdir)
 	$(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats.la $(DESTDIR)$(libdir)
 	for db_type in @DB_BACKENDS@; do \
+	    $(RMF) $(DESTDIR)$(libdir)/libbareoscats-$${db_type}-[0-9]*.so; \
 	    $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) libbareoscats-$${db_type}.la $(DESTDIR)$(libdir); \
 	    $(RM) $(DESTDIR)$(libdir)/libbareoscats-$${db_type}.la; \
 	done

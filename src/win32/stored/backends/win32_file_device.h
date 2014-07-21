@@ -35,6 +35,8 @@ public:
    /*
     * Interface from DEVICE
     */
+   bool mount_backend(DCR *dcr, int timeout);
+   bool unmount_backend(DCR *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
@@ -43,5 +45,4 @@ public:
    boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
    bool d_truncate(DCR *dcr);
 };
-
 #endif /* WIN32_FILE_DEVICE_H */

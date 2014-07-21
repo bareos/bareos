@@ -579,7 +579,7 @@ static void readlabelcmd()
 static void loadcmd()
 {
 
-   if (!load_dev(dev)) {
+   if (!dev->load_dev()) {
       Pmsg1(0, _("Bad status from load. ERR=%s\n"), dev->bstrerror());
    } else
       Pmsg1(0, _("Loaded %s\n"), dev->print_name());
@@ -2161,7 +2161,7 @@ static void statcmd()
 {
    int debug = debug_level;
    debug_level = 30;
-   Pmsg2(0, _("Device status: %u. ERR=%s\n"), status_dev(dev), dev->bstrerror());
+   Pmsg2(0, _("Device status: %u. ERR=%s\n"), dev->status_dev(), dev->bstrerror());
 #ifdef xxxx
    dump_volume_label(dev);
 #endif

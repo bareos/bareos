@@ -215,8 +215,7 @@ bool cephfs_device::d_truncate(DCR *dcr)
       if (status < 0) {
          berrno be;
 
-         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"),
-               print_name(), be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          return false;
       }
@@ -233,7 +232,7 @@ bool cephfs_device::d_truncate(DCR *dcr)
       if (status < 0) {
          berrno be;
 
-         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(), be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
          return false;
       }
 
@@ -241,11 +240,10 @@ bool cephfs_device::d_truncate(DCR *dcr)
          ceph_close(m_cmount, m_fd);
          ceph_unlink(m_cmount, m_virtual_filename);
 
-         set_mode(CREATE_READ_WRITE);
-
          /*
           * Recreate the file -- of course, empty
           */
+         oflags = O_CREAT | O_RDWR | O_BINARY;
          m_fd = ceph_open(m_cmount, m_virtual_filename, oflags, st.st_mode);
          if (m_fd < 0) {
             berrno be;
@@ -297,4 +295,26 @@ cephfs_device::cephfs_device()
    m_cmount = NULL;
    m_virtual_filename = get_pool_memory(PM_FNAME);
 }
+
+#ifdef HAVE_DYNAMIC_SD_BACKENDS
+extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+{
+   DEVICE *dev = NULL;
+
+   switch (device_type) {
+   case B_CEPHFS_DEV:
+      dev = New(cephfs_device);
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);
+      break;
+   }
+
+   return dev;
+}
+
+extern "C" void SD_IMP_EXP flush_backend(void)
+{
+}
 #endif
+#endif /* HAVE_CEPHFS */

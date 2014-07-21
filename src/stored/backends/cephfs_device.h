@@ -52,5 +52,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DCR *dcr);
 };
-
 #endif /* CEPHFS_DEVICE_H */
