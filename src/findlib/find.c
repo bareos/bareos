@@ -446,3 +446,127 @@ int term_find_files(FF_PKT *ff)
    free(ff);
    return hard_links;
 }
+
+/**
+ * Allocate a new include/exclude block.
+ */
+findINCEXE *allocate_new_incexe(void)
+{
+   findINCEXE *incexe;
+
+   incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
+   memset(incexe, 0, sizeof(findINCEXE));
+   incexe->opts_list.init(1, true);
+   incexe->name_list.init();
+   incexe->plugin_list.init();
+
+   return incexe;
+}
+
+/**
+ * Define a new Exclude block in the FileSet
+ */
+findINCEXE *new_exclude(findFILESET *fileset)
+{
+   /*
+    * New exclude
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->exclude_list.append(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/**
+ * Define a new Include block in the FileSet
+ */
+findINCEXE *new_include(findFILESET *fileset)
+{
+   /*
+    * New include
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->include_list.append(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/**
+ * Define a new preInclude block in the FileSet.
+ * That is the include is prepended to the other
+ * Includes. This is used for plugin exclusions.
+ */
+findINCEXE *new_preinclude(findFILESET *fileset)
+{
+   /*
+    * New pre-include
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->include_list.prepend(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/*
+ * Create a new exclude block and prepend it to the list of exclude blocks.
+ */
+findINCEXE *new_preexclude(findFILESET *fileset)
+{
+   /*
+    * New pre-exclude
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->exclude_list.prepend(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+findFOPTS *start_options(FF_PKT *ff)
+{
+   int state = ff->fileset->state;
+   findINCEXE *incexe = ff->fileset->incexe;
+
+   if (state != state_options) {
+      ff->fileset->state = state_options;
+      findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
+      memset(fo, 0, sizeof(findFOPTS));
+      fo->regex.init(1, true);
+      fo->regexdir.init(1, true);
+      fo->regexfile.init(1, true);
+      fo->wild.init(1, true);
+      fo->wilddir.init(1, true);
+      fo->wildfile.init(1, true);
+      fo->wildbase.init(1, true);
+      fo->base.init(1, true);
+      fo->fstype.init(1, true);
+      fo->drivetype.init(1, true);
+      incexe->current_opts = fo;
+      incexe->opts_list.append(fo);
+   }
+
+   return incexe->current_opts;
+}
+
+/*
+ * Used by plugins to define a new options block
+ */
+void new_options(FF_PKT *ff, findINCEXE *incexe)
+{
+   findFOPTS *fo;
+
+   fo = (findFOPTS *)malloc(sizeof(findFOPTS));
+   memset(fo, 0, sizeof(findFOPTS));
+   fo->regex.init(1, true);
+   fo->regexdir.init(1, true);
+   fo->regexfile.init(1, true);
+   fo->wild.init(1, true);
+   fo->wilddir.init(1, true);
+   fo->wildfile.init(1, true);
+   fo->wildbase.init(1, true);
+   fo->base.init(1, true);
+   fo->fstype.init(1, true);
+   fo->drivetype.init(1, true);
+   incexe->current_opts = fo;
+   incexe->opts_list.prepend(fo);
+   ff->fileset->state = state_options;
+}

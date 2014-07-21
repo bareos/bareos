@@ -2,7 +2,7 @@
 # If no version is forced from the outside set a default.
 #
 ifeq ($(WIN_VERSION),)
-WIN_VERSION = 32
+WIN_VERSION = 64
 endif
 
 #
