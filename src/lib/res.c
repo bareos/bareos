@@ -541,6 +541,23 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
+
+      /*
+       * See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+         char *entry;
+
+         entry = (char *)list->first();
+         if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+         }
+      }
+
       list->append(bstrdup(lc->str));
    }
    scan_to_eol(lc);
@@ -567,9 +584,27 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
+
       if (lc->str[0] != '|') {
          do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
+
+      /*
+       * See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+         char *entry;
+
+         entry = (char *)list->first();
+         if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+         }
+      }
+
       list->append(bstrdup(lc->str));
    }
    scan_to_eol(lc);
@@ -1540,6 +1575,14 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
          if (list != NULL) {
             foreach_alist(value, list) {
+               /*
+                * If this is the default value skip it.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcmp(value, items[i].default_value)) {
+                     continue;
+                  }
+               }
                Mmsg(temp, "%s = %s\n", items[i].name, value);
                indent_config_item(cfg_str, 1, temp.c_str());
             }

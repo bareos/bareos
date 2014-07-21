@@ -1367,6 +1367,23 @@ AC_ARG_WITH(scriptdir,
 AC_SUBST(scriptdir)
 
 
+# ------------------------------------------
+# Where to place backenddir (backend library files)
+# ------------------------------------------
+backenddir=`eval echo ${libdir}`
+AC_ARG_WITH(backenddir,
+   AC_HELP_STRING([--with-backenddir=PATH], [specify path of Bareos backends directory]),
+   [
+       if test "x$withval" != "xno" ; then
+	  backenddir=$withval
+       fi
+   ]
+)
+
+AC_DEFINE_UNQUOTED(_PATH_BAREOS_BACKENDDIR, "$backenddir", [Directory for backend files])
+AC_SUBST(backenddir)
+
+
 dnl ------------------------------------------
 dnl Where to place bsrdir (bsr files)
 dnl ------------------------------------------
@@ -4339,6 +4356,7 @@ Configuration on `date`:
    Subsys directory:        ${subsysdir}
    Man directory:           ${mandir}
    Data directory:          ${datarootdir}
+   Backend directory:       ${backenddir}
    Plugin directory:        ${plugindir}
    C Compiler:              ${CC} ${CCVERSION}
    C++ Compiler:            ${CXX} ${CXXVERSION}

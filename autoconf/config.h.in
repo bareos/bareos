@@ -1132,6 +1132,9 @@
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
 
+/* Directory for backend files */
+#undef _PATH_BAREOS_BACKENDDIR
+
 /* Directory for PID files */
 #undef _PATH_BAREOS_PIDDIR
 

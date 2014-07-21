@@ -1,4 +1,4 @@
-/usr/lib/libb*-postgresql*.so
+/usr/lib/bareos/backends/libbareoscats-postgresql*.so
 /usr/lib/bareos/scripts/ddl/*/postgresql*.sql
 /usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
 /usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/*

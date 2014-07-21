@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,12 @@
  * All loaded backends.
  */
 static alist *loaded_backends = NULL;
+static alist *backend_dirs = NULL;
+
+void db_set_backend_dirs(alist *new_backend_dirs)
+{
+   backend_dirs = new_backend_dirs;
+}
 
 static inline backend_interface_mapping_t *lookup_backend_interface_mapping(const char *interface_name)
 {
@@ -86,12 +92,21 @@ B_DB *db_init_database(JCR *jcr,
                        bool disable_batch_insert,
                        bool need_private)
 {
-   void *dl_handle;
-   char shared_library_name[1024];
+   struct stat st;
+   char *backend_dir;
+   void *dl_handle = NULL;
+   POOL_MEM shared_library_name(PM_FNAME);
    backend_interface_mapping_t *backend_interface_mapping;
    backend_shared_library_t *backend_shared_library;
    t_backend_instantiate backend_instantiate;
    t_flush_backend flush_backend;
+
+   /*
+    * For dynamic loading catalog backends there must be a list of backend dirs set.
+    */
+   if (!backend_dirs) {
+      Jmsg(jcr, M_ABORT, 0, _("Catalog Backends Dir not configured.\n"));
+   }
 
    /*
     * A db_driver is mandatory for dynamic loading of backends to work.
@@ -134,68 +149,88 @@ B_DB *db_init_database(JCR *jcr,
    /*
     * This is a new backend try to use dynamic loading to load the backend library.
     */
-#if defined(HAVE_WIN32)
-   bsnprintf(shared_library_name, sizeof(shared_library_name), "libbareoscats-%s%s",
-             backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-#else
-   bsnprintf(shared_library_name, sizeof(shared_library_name), "%s/libbareoscats-%s%s",
-             LIBDIR, backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-#endif
+   foreach_alist(backend_dir, backend_dirs) {
+      Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir,
+           backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
+      Dmsg3(100, "db_init_database: testing backend %s/libbareoscats-%s%s\n",
+            backend_dir, backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
 
-   dl_handle = dlopen(shared_library_name, RTLD_NOW);
-   if (!dl_handle) {
-      Jmsg(jcr, M_ABORT, 0, _("Unable to load shared library: %s ERR=%s\n"),
-           shared_library_name, NPRT(dlerror()));
+      /*
+       * Make sure the shared library with this name exists.
+       */
+      if (stat(shared_library_name.c_str(), &st) == 0) {
+         dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
+         if (!dl_handle) {
+            Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
+                 shared_library_name.c_str(), NPRT(dlerror()));
+            continue;
+         }
+
+         /*
+          * Lookup the backend_instantiate function.
+          */
+         backend_instantiate = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
+         if (backend_instantiate == NULL) {
+            Jmsg(jcr, M_ERROR, 0, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
+                 shared_library_name.c_str(), NPRT(dlerror()));
+            dlclose(dl_handle);
+            dl_handle = NULL;
+            continue;
+         }
+
+         /*
+          * Lookup the flush_backend function.
+          */
+         flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
+         if (flush_backend == NULL) {
+            Jmsg(jcr, M_ERROR, 0, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
+                 shared_library_name.c_str(), NPRT(dlerror()));
+            dlclose(dl_handle);
+            dl_handle = NULL;
+            continue;
+         }
+
+         /*
+          * We found the shared library and it has the right entry points.
+          */
+         break;
+      }
+   }
+
+   if (dl_handle) {
+      /*
+       * Create a new loaded shared library entry and tack it onto the list of loaded backend shared libs.
+       */
+      backend_shared_library = (backend_shared_library_t *)malloc(sizeof(backend_shared_library_t));
+      backend_shared_library->interface_type_id = backend_interface_mapping->interface_type_id;
+      backend_shared_library->handle = dl_handle;
+      backend_shared_library->backend_instantiate = backend_instantiate;
+      backend_shared_library->flush_backend = flush_backend;
+
+      if (loaded_backends == NULL) {
+         loaded_backends = New(alist(10, not_owned_by_alist));
+      }
+      loaded_backends->append(backend_shared_library);
+
+      Dmsg1(100, "db_init_database: loaded backend %s\n",
+            shared_library_name.c_str() );
+
+      return backend_shared_library->backend_instantiate(jcr,
+                                                         db_driver,
+                                                         db_name,
+                                                         db_user,
+                                                         db_password,
+                                                         db_address,
+                                                         db_port,
+                                                         db_socket,
+                                                         mult_db_connections,
+                                                         disable_batch_insert,
+                                                         need_private);
+   } else {
+      Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for libbareoscats-%s%s\n"),
+           backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
       return (B_DB *)NULL;
    }
-
-   /*
-    * Lookup the backend_instantiate function.
-    */
-   backend_instantiate = (t_backend_instantiate)dlsym(dl_handle, "backend_instantiate");
-   if (backend_instantiate == NULL) {
-      Jmsg(jcr, M_ABORT, 0, _("Lookup of backend_instantiate in shared library %s failed: ERR=%s\n"),
-           shared_library_name, NPRT(dlerror()));
-      dlclose(dl_handle);
-      return (B_DB *)NULL;
-   }
-
-   /*
-    * Lookup the flush_backend function.
-    */
-   flush_backend = (t_flush_backend)dlsym(dl_handle, "flush_backend");
-   if (flush_backend == NULL) {
-      Jmsg(jcr, M_ABORT, 0, _("Lookup of flush_backend in shared library %s failed: ERR=%s\n"),
-           shared_library_name, NPRT(dlerror()));
-      dlclose(dl_handle);
-      return (B_DB *)NULL;
-   }
-
-   /*
-    * Create a new loaded shared library entry and tack it onto the list of loaded backend shared libs.
-    */
-   backend_shared_library = (backend_shared_library_t *)malloc(sizeof(backend_shared_library_t));
-   backend_shared_library->interface_type_id = backend_interface_mapping->interface_type_id;
-   backend_shared_library->handle = dl_handle;
-   backend_shared_library->backend_instantiate = backend_instantiate;
-   backend_shared_library->flush_backend = flush_backend;
-
-   if (loaded_backends == NULL) {
-      loaded_backends = New(alist(10, not_owned_by_alist));
-   }
-   loaded_backends->append(backend_shared_library);
-
-   return backend_shared_library->backend_instantiate(jcr,
-                                                      db_driver,
-                                                      db_name,
-                                                      db_user,
-                                                      db_password,
-                                                      db_address,
-                                                      db_port,
-                                                      db_socket,
-                                                      mult_db_connections,
-                                                      disable_batch_insert,
-                                                      need_private);
 }
 
 void db_flush_backends(void)

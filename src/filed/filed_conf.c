@@ -523,16 +523,20 @@ static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item)
+static void init_resource_cb(RES_ITEM *item, int pass)
 {
-   int i;
-
-   switch (item->type) {
-   case CFG_TYPE_CIPHER:
-      for (i = 0; CryptoCiphers[i].name; i++) {
-         if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
-            *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_CIPHER:
+         for (int i = 0; CryptoCiphers[i].name; i++) {
+            if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
+               *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+            }
          }
+         break;
+      default:
+         break;
       }
       break;
    default:

@@ -65,6 +65,9 @@ static RES_ITEM store_items[] = {
    { "workingdirectory", CFG_TYPE_DIR, ITEM(res_store.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", CFG_TYPE_DIR, ITEM(res_store.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_store.subsys_directory), 0, 0, NULL },
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+   { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
+#endif
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_store.plugin_directory), 0, 0, NULL },
    { "pluginnames", CFG_TYPE_STR, ITEM(res_store.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_store.scripts_directory), 0, 0, NULL },
@@ -682,6 +685,9 @@ void free_resource(RES *sres, int type)
       if (res->res_store.scripts_directory) {
          free(res->res_store.scripts_directory);
       }
+      if (res->res_store.backend_directories) {
+         delete res->res_store.backend_directories;
+      }
       if (res->res_store.tls_ctx) {
          free_tls_context(res->res_store.tls_ctx);
       }
@@ -836,6 +842,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
          } else {
             res->res_store.messages = res_all.res_store.messages;
+            res->res_store.backend_directories = res_all.res_store.backend_directories;
             res->res_store.tls_allowed_cns = res_all.res_store.tls_allowed_cns;
          }
          break;
@@ -911,16 +918,20 @@ void save_resource(int type, RES_ITEM *items, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item)
+static void init_resource_cb(RES_ITEM *item, int pass)
 {
-   int i;
-
-   switch (item->type) {
-   case CFG_TYPE_AUTHTYPE:
-      for (i = 0; authmethods[i].name; i++) {
-         if (bstrcasecmp(item->default_value, authmethods[i].name)) {
-            *(uint32_t *)(item->value) = authmethods[i].token;
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_AUTHTYPE:
+         for (int i = 0; authmethods[i].name; i++) {
+            if (bstrcasecmp(item->default_value, authmethods[i].name)) {
+               *(uint32_t *)(item->value) = authmethods[i].token;
+            }
          }
+         break;
+      default:
+         break;
       }
       break;
    default:
@@ -960,6 +971,8 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
 
 bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
 {
+   bool retval;
+
    config->init(configfile,
                 NULL,
                 NULL,
@@ -973,5 +986,19 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
-   return config->parse_config();
+   retval = config->parse_config();
+
+   if (retval) {
+      me = (STORES *)GetNextRes(R_STORAGE, NULL);
+      if (!me) {
+         Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
+         return retval;
+      }
+
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+      sd_set_backend_dirs(me->backend_directories);
+#endif
+   }
+
+   return retval;
 }

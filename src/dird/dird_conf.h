@@ -143,6 +143,7 @@ public:
    char *plugin_names;                /* Plugin names to load */
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
+   alist *backend_directories;        /* Backend Directories */
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxConsoleConnect;        /* Max concurrent console session */

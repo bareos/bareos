@@ -26,7 +26,6 @@
 #
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
-Summary: 	The Network Backup Solution
 Name: 		bareos
 Version: 	14.2.0
 Release: 	1.0
@@ -39,6 +38,7 @@ Vendor: 	The Bareos Team
 
 %define _libversion    14.2.0
 
+%define backend_dir    %_libdir/bareos/backends
 %define plugin_dir     %_libdir/bareos/plugins
 %define script_dir     /usr/lib/bareos/scripts
 %define working_dir    /var/lib/bareos
@@ -189,7 +189,7 @@ BuildRequires: lsb-release
 %endif
 
 
-Summary:  Bareos All-In-One package (dir,sd,fd)
+Summary:  Meta-All-In-One package (director, storage-daemon, client daemon and tools)
 Requires: %{name}-director = %{version}
 Requires: %{name}-storage = %{version}
 Requires: %{name}-client = %{version}
@@ -481,6 +481,7 @@ export MTX=/usr/sbin/mtx
   --docdir=%{_docdir}/%{name} \
   --htmldir=%{_docdir}/%{name}/html \
   --with-archivedir=/var/lib/bareos/storage \
+  --with-backenddir=%{backend_dir} \
   --with-scriptdir=%{script_dir} \
   --with-working-dir=%{working_dir} \
   --with-plugindir=%{plugin_dir} \
@@ -545,54 +546,60 @@ export MTX=/usr/sbin/mtx
 %install
 %if 0%{?suse_version}
     %makeinstall DESTDIR=%{buildroot} install
-    %makeinstall DESTDIR=%{buildroot} install-autostart
 %else
     make DESTDIR=%{buildroot} install
-    make DESTDIR=%{buildroot} install-autostart
 %endif
+make DESTDIR=%{buildroot} install-autostart
 
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
-
+install -d -m 755 %{buildroot}%{backend_dir}
 install -d -m 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}%{plugin_dir}
 
 #Cleaning
 for F in  \
-%{script_dir}/bareos \
-%{script_dir}/bareos_config \
-%{script_dir}/btraceback.dbx \
-%{script_dir}/btraceback.mdb \
-%{script_dir}/bareos-ctl-funcs \
-%{script_dir}/bareos-ctl-dir \
-%{script_dir}/bareos-ctl-fd \
-%{script_dir}/bareos-ctl-sd \
-%{_docdir}/%{name}/INSTALL \
 %if 0%{?client_only}
-%{_mandir}/man1/bregex.1.gz \
-%{_mandir}/man1/bsmtp.1.gz \
-%{_mandir}/man1/bwild.1.gz \
-%{_mandir}/man8/bareos-dbcheck.8.gz \
-%{_mandir}/man8/bareos-dir.8.gz \
-%{_mandir}/man8/bareos-sd.8.gz \
-%{_mandir}/man8/bareos.8.gz \
-%{_mandir}/man8/bcopy.8.gz \
-%{_mandir}/man8/bextract.8.gz \
-%{_mandir}/man8/bls.8.gz \
-%{_mandir}/man8/bpluginfo.8.gz \
-%{_mandir}/man8/bscan.8.gz \
-%{_mandir}/man8/bscrypto.8.gz \
-%{_mandir}/man8/btape.8.gz \
-%{_sysconfdir}/logrotate.d/bareos-dir \
-%{_sysconfdir}/rc.d/init.d/bareos-dir \
-%{_sysconfdir}/rc.d/init.d/bareos-sd \
-%{script_dir}/disk-changer \
-%{script_dir}/mtx-changer \
-%{_sysconfdir}/bareos/mtx-changer.conf \
+    %{_mandir}/man1/bregex.1.gz \
+    %{_mandir}/man1/bsmtp.1.gz \
+    %{_mandir}/man1/bwild.1.gz \
+    %{_mandir}/man8/bareos-dbcheck.8.gz \
+    %{_mandir}/man8/bareos-dir.8.gz \
+    %{_mandir}/man8/bareos-sd.8.gz \
+    %{_mandir}/man8/bareos.8.gz \
+    %{_mandir}/man8/bcopy.8.gz \
+    %{_mandir}/man8/bextract.8.gz \
+    %{_mandir}/man8/bls.8.gz \
+    %{_mandir}/man8/bpluginfo.8.gz \
+    %{_mandir}/man8/bscan.8.gz \
+    %{_mandir}/man8/bscrypto.8.gz \
+    %{_mandir}/man8/btape.8.gz \
+    %{_sysconfdir}/logrotate.d/bareos-dir \
+    %{_sysconfdir}/rc.d/init.d/bareos-dir \
+    %{_sysconfdir}/rc.d/init.d/bareos-sd \
+    %{script_dir}/disk-changer \
+    %{script_dir}/mtx-changer \
+    %{_sysconfdir}/bareos/mtx-changer.conf \
 %endif
-%{_sbindir}/%{name}
+    %{script_dir}/bareos \
+    %{script_dir}/bareos_config \
+    %{script_dir}/btraceback.dbx \
+    %{script_dir}/btraceback.mdb \
+    %{script_dir}/bareos-ctl-funcs \
+    %{script_dir}/bareos-ctl-dir \
+    %{script_dir}/bareos-ctl-fd \
+    %{script_dir}/bareos-ctl-sd \
+    %{_docdir}/%{name}/INSTALL \
+    %{_sbindir}/%{name}
 do
 rm -f "%{buildroot}/$F"
 done
+
+# remove links to libraries
+# for i in #{buildroot}/#{_libdir}/libbareos*; do printf "$i: "; readelf -a $i | grep SONAME; done
+#find #{buildroot}/#{_libdir} -type l -exec rm {} \;
+find %{buildroot}/%{_libdir} -type l -name "libbareos*.so" ! -regex ".*libbareoscats-[a-z]+.*.so" -exec rm {} \;
+ls -la %{buildroot}/%{_libdir}
 
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
@@ -606,16 +613,13 @@ rm -f %{buildroot}/%{plugin_dir}/*.py*
 %endif
 
 # install tray monitor
-# %if 0%{?build_qt_monitor}
-# %if 0%{?suse_version} > 1010
+# #if 0#{?build_qt_monitor}
+# #if 0#{?suse_version} > 1010
 # disables, because suse_update_desktop_file complains
 # that there are two desktop file (applications and autostart)
 # ##suse_update_desktop_file bareos-tray-monitor System Backup
-# %endif
-# %endif
-
-# install the sample-query.sql file as default query file
-#install -m 644 examples/sample-query.sql %{buildroot}%{script_dir}/query.sql
+# #endif
+# #endif
 
 # remove man page if bat is not built
 %if !0%{?build_bat}
@@ -656,6 +660,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
 %{script_dir}/bconsole
 %{_bindir}/bconsole
+%{_sbindir}/bconsole
 %{_mandir}/man1/bconsole.1.gz
 
 %if !0%{?client_only}
@@ -688,8 +693,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_unitdir}/bareos-dir.service
 %endif
 
-# This is not a config file, but we need what %config is able to do
-# the query.sql can be personalized by end user.
+# query.sql is not a config file,
+# but can be personalized by end user.
 # a rpmlint rule is add to filter the warning
 %config(noreplace) %{script_dir}/query.sql
 
@@ -756,16 +761,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %{_libdir}/libbareos-%{_libversion}.so
-%{_libdir}/libbareos.so
 %{_libdir}/libbareoscfg-%{_libversion}.so
-%{_libdir}/libbareoscfg.so
 %{_libdir}/libbareosfind-%{_libversion}.so
-%{_libdir}/libbareosfind.so
 %{_libdir}/libbareoslmdb-%{_libversion}.so
-%{_libdir}/libbareoslmdb.so
 %if !0%{?client_only}
 %{_libdir}/libbareosndmp-%{_libversion}.so
-%{_libdir}/libbareosndmp.so
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
@@ -777,6 +777,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if "%{_libdir}/bareos/" != "/usr/lib/bareos/"
 %dir %{_libdir}/bareos/
 %endif
+%dir %{backend_dir}
 %dir %{plugin_dir}
 %if !0%{?client_only}
 %{_bindir}/bsmtp
@@ -801,8 +802,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{script_dir}/ddl/drops
 %dir %{script_dir}/ddl/grants
 %dir %{script_dir}/ddl/updates
-%{_libdir}/libbareossql.so
-%{_libdir}/libbareoscats.so
 %{_libdir}/libbareossql-%{_libversion}.so
 %{_libdir}/libbareoscats-%{_libversion}.so
 %{script_dir}/create_bareos_database
@@ -817,23 +816,23 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # postgresql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
-%{_libdir}/libbareoscats-postgresql.so
-%{_libdir}/libbareoscats-postgresql-%{_libversion}.so
+%{backend_dir}/libbareoscats-postgresql.so
+%{backend_dir}/libbareoscats-postgresql-%{_libversion}.so
 
 %files database-mysql
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
-%{_libdir}/libbareoscats-mysql.so
-%{_libdir}/libbareoscats-mysql-%{_libversion}.so
+%{backend_dir}/libbareoscats-mysql.so
+%{backend_dir}/libbareoscats-mysql-%{_libversion}.so
 
 %if 0%{?build_sqlite3}
 %files database-sqlite3
 # sqlite3 catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/sqlite3*.sql
-%{_libdir}/libbareoscats-sqlite3.so
-%{_libdir}/libbareoscats-sqlite3-%{_libversion}.so
+%{backend_dir}/libbareoscats-sqlite3.so
+%{backend_dir}/libbareoscats-sqlite3-%{_libversion}.so
 %endif
 
 %files database-tools
@@ -924,8 +923,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 
 #
 # Define some macros for updating the system settings.
-# SUSE has most macros by default others have not so we
-# define the missing here.
 #
 %define add_service_start() ( /sbin/chkconfig --add %1 ; %nil )
 %define stop_on_removal() ( /sbin/service %1 stop >/dev/null 2>&1 ||  /sbin/chkconfig --del %1 || true; %nil)

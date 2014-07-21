@@ -268,16 +268,7 @@ int main(int margc, char *margv[])
    my_config = new_config_parser();
    parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
-   LockRes();
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      UnlockRes();
-      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-         configfile);
-   }
-   UnlockRes();
-
-  if (DirectorName) {
+   if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
             break;

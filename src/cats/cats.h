@@ -29,24 +29,6 @@
  * this file.
  */
 
-/*
-   Here is how database versions work.
-
-   While I am working on a new release with database changes, the
-   update scripts are in the src/cats directory under the names
-   update_xxx_tables.in.  Most of the time, I make database updates
-   in one go and immediately update the version, but not always.  If
-   there are going to be several updates as is the case with version
-   1.37, then I will often forgo changing the version until the last
-   update otherwise I will end up with too many versions and a lot
-   of confusion.
-
-   When I am pretty sure there will be no more updates, I will
-   change the version from 8 to 9 (in the present case), and when I
-   am 100% sure there will be no more changes, the update script
-   will be copied to the updatedb directory with the correct name
-   (in the present case 8 to 9).
- */
 #ifndef __CATS_H_
 #define __CATS_H_ 1
 

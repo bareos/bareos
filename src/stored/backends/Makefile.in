@@ -90,37 +90,37 @@ all: Makefile $(BUILD_BACKENDS)
 
 libbareossd-cephfs.la: Makefile $(CHEPHFS_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(CHEPHFS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(CHEPHFS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-cephfs-$(LIBBAREOSSD_LT_RELEASE).so $(CEPHFS_LIBS)
 
 libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-gfapi-$(LIBBAREOSSD_LT_RELEASE).so $(GLUSTER_LIBS)
 
 libbareossd-object.la: Makefile $(OBJECT_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(OBJECT_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(OBJECT_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-object-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS)
 
 libbareossd-rados.la: Makefile $(RADOS_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(RADOS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(RADOS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-rados-$(LIBBAREOSSD_LT_RELEASE).so $(RADOS_LIBS)
 
 libbareossd-fifo.la: Makefile $(FIFO_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(FIFO_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(FIFO_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-fifo-$(LIBBAREOSSD_LT_RELEASE).so
 
 libbareossd-gentape.la: Makefile $(GEN_TAPE_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(GEN_TAPE_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(GEN_TAPE_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-gentape-$(LIBBAREOSSD_LT_RELEASE).so
 
 libbareossd-tape.la: Makefile libbareossd-gentape.la $(TAPE_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(TAPE_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(TAPE_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-tape-$(LIBBAREOSSD_LT_RELEASE).so libbareossd-gentape.la
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
@@ -147,10 +147,10 @@ devclean: realclean
 	(cd $(srcdir); $(RMF) Makefile)
 
 libtool-install: all
-	$(MKDIR) $(DESTDIR)$(libdir)
+	$(MKDIR) $(DESTDIR)$(backenddir)
 	@for backend in $(BUILD_BACKENDS); do \
-	   $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) $$backend $(DESTDIR)$(libdir); \
-	   $(RM) $(DESTDIR)$(libdir)/$$backend; \
+	   $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) $$backend $(DESTDIR)$(backenddir); \
+	   $(RM) $(DESTDIR)$(backenddir)/$$backend; \
 	done
 
 install: @LIBTOOL_INSTALL_TARGET@

@@ -32,6 +32,12 @@
 
 /* Database prototypes */
 
+/* cats_backends.c */
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+void db_set_backend_dirs(alist *new_backend_dirs);
+#endif
+void db_flush_backends(void);
+
 /* sql.c */
 bool db_open_batch_connection(JCR *jcr, B_DB *mdb);
 char *db_strerror(B_DB *mdb);
@@ -181,7 +187,5 @@ bool db_add_digest_to_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, char *di
 bool db_mark_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, JobId_t JobId);
 void db_make_inchanger_unique(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr);
 int db_update_stats(JCR *jcr, B_DB *mdb, utime_t age);
-
-void db_flush_backends(void);
 
 #endif /* __SQL_PROTOS_H */

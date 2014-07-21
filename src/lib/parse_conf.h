@@ -226,7 +226,7 @@ public:
    bool print_config(POOL_MEM& buff);
 };
 
-typedef void (INIT_RES_HANDLER)(RES_ITEM *item);
+typedef void (INIT_RES_HANDLER)(RES_ITEM *item, int pass);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
 typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str);
 

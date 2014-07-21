@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,6 +61,7 @@ static NAME_LIST name_list;
 static char buf[20000];
 static bool quit = false;
 static const char *idx_tmp_name;
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 
 DIRRES *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
@@ -101,14 +102,14 @@ static int check_idx_handler(void *ctx, int num_fields, char **row);
 static void usage()
 {
    fprintf(stderr,
-"Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]\n"
+"Usage: dbcheck [ options ] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]\n"
 "       -b                batch mode\n"
-"       -C                catalog name in the director conf file\n"
-"       -c                Director conf filename\n"
 "       -B                print catalog configuration and exit\n"
-"       -d <nn>           set debug level to <nn>\n"
+"       -c  <config>      Director configuration filename\n"
+"       -C  <catalog>     catalog name in the director configuration file\n"
+"       -d  <nnn>         set debug level to <nnn>\n"
 "       -dt               print a timestamp in debug output\n"
-"       -D <driver name>  specify the database driver name (default NULL) <postgresql|mysql|sqlite>\n"
+"       -D  <driver name> specify the database driver name (default NULL) <postgresql|mysql|sqlite3>\n"
 "       -f                fix inconsistencies\n"
 "       -v                verbose\n"
 "       -?                print this message\n\n");
@@ -118,13 +119,14 @@ static void usage()
 int main (int argc, char *argv[])
 {
    int ch;
-   const char *user, *password, *db_name, *dbhost;
    const char *db_driver = NULL;
+   const char *user, *password, *db_name, *dbhost;
    int dbport = 0;
    bool print_catalog=false;
    char *configfile = NULL;
    char *catalogname = NULL;
    char *endptr;
+   alist* backend_directories = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -215,7 +217,11 @@ int main (int argc, char *argv[])
             Pmsg0(0, _("Error no Director resource defined.\n"));
             exit(1);
          }
+
          set_working_directory(me->working_directory);
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+         db_set_backend_dirs(me->backend_directories);
+#endif
 
          /*
           * Print catalog information and exit (-B)
@@ -285,6 +291,13 @@ int main (int argc, char *argv[])
             exit(1);
          }
       }
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+      backend_directories = New(alist(10, owned_by_alist));
+      backend_directories->append((char *)backend_directory);
+
+      db_set_backend_dirs( backend_directories );
+#endif
    }
 
    /*
