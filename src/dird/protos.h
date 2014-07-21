@@ -235,8 +235,14 @@ void stop_statistics_thread();
 void stats_job_started();
 
 /* ua_acl.c */
-bool acl_access_ok(UAContext *ua, int acl, const char *item);
-bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);
+bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);
+bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event = false);
+
+/* ua_audit.c */
+bool audit_event_wanted(UAContext *ua, bool audit_event_enabled);
+void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item);
+void log_audit_event_acl_success(UAContext *ua, int acl, const char *item);
+void log_audit_event_cmdline(UAContext *ua);
 
 /* ua_cmds.c */
 bool do_a_command(UAContext *ua);

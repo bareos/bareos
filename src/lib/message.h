@@ -27,19 +27,20 @@
  */
 #include "bits.h"
 
-#undef  M_DEBUG
-#undef  M_ABORT
-#undef  M_FATAL
-#undef  M_ERROR
-#undef  M_WARNING
-#undef  M_INFO
-#undef  M_MOUNT
-#undef  M_ERROR_TERM
-#undef  M_TERM
-#undef  M_RESTORED
-#undef  M_SECURITY
-#undef  M_ALERT
-#undef  M_VOLMGMT
+#undef M_DEBUG
+#undef M_ABORT
+#undef M_FATAL
+#undef M_ERROR
+#undef M_WARNING
+#undef M_INFO
+#undef M_MOUNT
+#undef M_ERROR_TERM
+#undef M_TERM
+#undef M_RESTORED
+#undef M_SECURITY
+#undef M_ALERT
+#undef M_VOLMGMT
+#undef M_AUDIT
 
 /*
  * Most of these message levels are more or less obvious.
@@ -67,15 +68,18 @@
  *                (note, this is currently being implemented in 1.33).
  *  M_ALERT       For Tape Alert messages.
  *  M_VOLMGMT     Volume Management message
+ *  M_AUDIT       Auditing message
  */
 
 enum {
-   /* Keep M_ABORT=1 for dlist.h */
+   /*
+    * Keep M_ABORT=1 for dlist.h
+    */
    M_ABORT = 1,                       /* MUST abort immediately */
-   M_DEBUG,                           /* debug message */
+   M_DEBUG,                           /* Debug message */
    M_FATAL,                           /* Fatal error, stopping job */
    M_ERROR,                           /* Error, but recoverable */
-   M_WARNING,                         /* Warning message */
+   M_WARNING,                         /* warning message */
    M_INFO,                            /* Informational message */
    M_SAVED,                           /* Info on saved file */
    M_NOTSAVED,                        /* Info on notsaved file */
@@ -84,44 +88,51 @@ enum {
    M_ERROR_TERM,                      /* Error termination request (no dump) */
    M_TERM,                            /* Terminating daemon normally */
    M_RESTORED,                        /* ls -l of restored files */
-   M_SECURITY,                        /* security violation */
-   M_ALERT,                           /* tape alert messages */
-   M_VOLMGMT                          /* Volume management messages */
+   M_SECURITY,                        /* Security violation */
+   M_ALERT,                           /* Tape alert messages */
+   M_VOLMGMT,                         /* Volume management messages */
+   M_AUDIT                            /* Auditing message */
 };
 
-#define M_MAX M_VOLMGMT               /* keep this updated ! */
+#define M_MAX M_AUDIT                 /* keep this updated ! */
 #define NR_MSG_TYPES nbytes_for_bits(M_MAX + 1)
 
-/* Define message destination structure */
+/*
+ * Define message destination structure
+ */
 /* *** FIXME **** where should be extended to handle multiple values */
 typedef struct s_dest {
    struct s_dest *next;
-   int dest_code;                     /* destination (one of the MD_ codes) */
-   int max_len;                       /* max mail line length */
-   FILE *fd;                          /* file descriptor */
-   char msg_types[NR_MSG_TYPES];      /* message type mask */
-   char *where;                       /* filename/program name */
-   char *mail_cmd;                    /* mail command */
-   POOLMEM *mail_filename;            /* unique mail filename */
+   int dest_code;                     /* Destination (one of the MD_ codes) */
+   int max_len;                       /* Max mail line length */
+   FILE *fd;                          /* File descriptor */
+   char msg_types[NR_MSG_TYPES];      /* Message type mask */
+   char *where;                       /* Filename/program name */
+   char *mail_cmd;                    /* Mail command */
+   POOLMEM *mail_filename;            /* Unique mail filename */
 } DEST;
 
-/* Message Destination values for dest field of DEST */
+/*
+ * Message Destination values for dest field of DEST
+ */
 enum {
-   MD_SYSLOG = 1,                     /* send msg to syslog */
-   MD_MAIL,                           /* email group of messages */
-   MD_FILE,                           /* write messages to a file */
-   MD_APPEND,                         /* append messages to a file */
-   MD_STDOUT,                         /* print messages */
-   MD_STDERR,                         /* print messages to stderr */
-   MD_DIRECTOR,                       /* send message to the Director */
-   MD_OPERATOR,                       /* email a single message to the operator */
-   MD_CONSOLE,                        /* send msg to UserAgent or console */
-   MD_MAIL_ON_ERROR,                  /* email messages if job errors */
-   MD_MAIL_ON_SUCCESS,                /* email messages if job succeeds */
-   MD_CATALOG                         /* sent to catalog Log table */
+   MD_SYSLOG = 1,                     /* Send msg to syslog */
+   MD_MAIL,                           /* Email group of messages */
+   MD_FILE,                           /* Write messages to a file */
+   MD_APPEND,                         /* Append messages to a file */
+   MD_STDOUT,                         /* Print messages */
+   MD_STDERR,                         /* Print messages to stderr */
+   MD_DIRECTOR,                       /* Send message to the Director */
+   MD_OPERATOR,                       /* Email a single message to the operator */
+   MD_CONSOLE,                        /* Send msg to UserAgent or console */
+   MD_MAIL_ON_ERROR,                  /* Email messages if job errors */
+   MD_MAIL_ON_SUCCESS,                /* Email messages if job succeeds */
+   MD_CATALOG                         /* Sent to catalog Log table */
 };
 
-/* Queued message item */
+/*
+ * Queued message item
+ */
 struct MQUEUE_ITEM {
    dlink link;
    int type;

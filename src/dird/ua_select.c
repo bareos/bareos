@@ -304,8 +304,7 @@ JOBRES *get_restore_job(UAContext *ua)
       if (job && job->JobType == JT_RESTORE) {
          return job;
       }
-      ua->error_msg(_("Error: Restore Job resource \"%s\" does not exist.\n"),
-                    ua->argv[i]);
+      ua->error_msg(_("Error: Restore Job resource \"%s\" does not exist.\n"), ua->argv[i]);
    }
    return select_restore_job_resource(ua);
 }
@@ -569,8 +568,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
           acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
          bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
          if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
-            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
-                     db_strerror(ua->db));
+            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i], db_strerror(ua->db));
             pr->PoolId = 0;
             break;
          }
@@ -638,7 +636,7 @@ int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
       ua->error_msg("%s", db_strerror(ua->db));
       return 0;
    }
-   if (!acl_access_ok(ua, Pool_ACL, pr->Name)) {
+   if (!acl_access_ok(ua, Pool_ACL, pr->Name, true)) {
       ua->error_msg(_("No access to Pool \"%s\"\n"), pr->Name);
       return 0;
    }
@@ -1282,7 +1280,7 @@ alist *select_jobs(UAContext *ua, const char *reason)
          }
 
          if (jcr) {
-            if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+            if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name(), true)) {
                ua->error_msg(_("Unauthorized command from this console.\n"));
                goto bail_out;
             }

@@ -130,6 +130,8 @@ static RES_ITEM dir_items[] = {
    { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
    { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
+   { "auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "true" },
+   { "auditevents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
@@ -676,9 +678,9 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
    RUNSCRIPT* runscript;
-   alist* list;
-   list = (alist *) *(item->value);
+   alist *list;
 
+   list = *item->alistvalue;
    if (bstrcmp(item->name, "runscript")) {
       if (list != NULL) {
          foreach_alist(runscript, list) {
@@ -1654,6 +1656,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.keyencrkey) {
          free(res->res_dir.keyencrkey);
       }
+      if (res->res_dir.audit_events) {
+         delete res->res_dir.audit_events;
+      }
       break;
    case R_DEVICE:
    case R_COUNTER:
@@ -2161,6 +2166,7 @@ bool populate_jobdefs()
          JOBRES *jobdefs = job->jobdefs;
          if (jobdefs->storage && !job->storage) {
             STORERES *store;
+
             job->storage = New(alist(10, not_owned_by_alist));
             foreach_alist(store, jobdefs->storage) {
                job->storage->append(store);
@@ -2675,15 +2681,20 @@ static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
+   alist *list;
+
+   if (pass == 1) {
+      if (!item->alistvalue[item->code]) {
+         item->alistvalue[item->code] = New(alist(10, owned_by_alist));
+         Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
+      }
+   }
+   list = item->alistvalue[item->code];
 
    for (;;) {
       lex_get_token(lc, T_STRING);
       if (pass == 1) {
-         if (((alist **)item->value)[item->code] == NULL) {
-            ((alist **)item->value)[item->code] = New(alist(10, owned_by_alist));
-            Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
-         }
-         ((alist **)item->value)[item->code]->append(bstrdup(lc->str));
+         list->append(bstrdup(lc->str));
          Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
       }
       token = lex_get_token(lc, T_ALL);
@@ -2696,6 +2707,34 @@ static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * Store Audit event.
+ */
+static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+   alist *list;
+
+   if (pass == 1) {
+      if (!*item->alistvalue) {
+         *(item->alistvalue) = New(alist(10, owned_by_alist));
+      }
+   }
+   list = *item->alistvalue;
+
+   for (;;) {
+      lex_get_token(lc, T_STRING);
+      if (pass == 1) {
+         list->append(bstrdup(lc->str));
+      }
+      token = lex_get_token(lc, T_ALL);
+      if (token == T_COMMA) {
+         continue;
+      }
+      break;
+   }
+   set_bit(index, res_all.hdr.item_present);
+}
+/*
  * Store a runscript->when in a bit field
  */
 static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -2703,7 +2742,7 @@ static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
    lex_get_token(lc, T_NAME);
 
    if (bstrcasecmp(lc->str, "before")) {
-      *(item->ui32value) = SCRIPT_Before ;
+      *(item->ui32value) = SCRIPT_Before;
    } else if (bstrcasecmp(lc->str, "after")) {
       *(item->ui32value) = SCRIPT_After;
    } else if (bstrcasecmp(lc->str, "aftervss")) {
@@ -2766,7 +2805,7 @@ static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
-   alist **runscripts = (alist **)(item->value) ;
+   alist **runscripts = item->alistvalue;
 
    if (pass == 2) {
       RUNSCRIPT *script = new_runscript();
@@ -2838,7 +2877,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    char *c;
    int token, i, t;
-   alist **runscripts = (alist **)(item->value) ;
+   alist **runscripts = item->alistvalue;
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
 
@@ -3058,6 +3097,9 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
    case CFG_TYPE_ACL:
       store_acl(lc, item, index, pass);
       break;
+   case CFG_TYPE_AUDIT:
+      store_audit(lc, item, index, pass);
+      break;
    case CFG_TYPE_AUTHPROTOCOLTYPE:
       store_authprotocoltype(lc, item, index, pass);
       break;
@@ -3120,7 +3162,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       alist* list;
       POOL_MEM res_names;
 
-      list = (alist *) *(items[i].value);
+      list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
          indent_config_item(cfg_str, 1, temp.c_str());
@@ -3153,10 +3195,10 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
    case CFG_TYPE_ACL: {
       int cnt = 0;
       char *value;
-      alist* list;
+      alist *list;
       POOL_MEM acl;
 
-      list = ((alist **)items[i].value)[items[i].code] ;
+      list = items[i].alistvalue[items[i].code];
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
          indent_config_item(cfg_str, 1, temp.c_str());
