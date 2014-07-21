@@ -425,8 +425,7 @@ DCR *acquire_device_for_append(DCR *dcr)
    }
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
    Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n",
-      dev->num_writers, dev->num_reserved(), dev->VolCatInfo.VolCatJobs,
-      dev->print_name());
+         dev->num_writers, dev->num_reserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
    dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
    ok = true;
 
@@ -466,7 +465,9 @@ bool release_device(DCR *dcr)
    lock_volumes();
    Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape()?"tape":"disk");
 
-   /* if device is reserved, job never started, so release the reserve here */
+   /*
+    * If device is reserved, job never started, so release the reserve here
+    */
    dcr->clear_reserved();
 
    if (dev->can_read()) {
@@ -481,10 +482,9 @@ bool release_device(DCR *dcr)
       }
    } else if (dev->num_writers > 0) {
       /*
-       * Note if WEOT is set, we are at the end of the tape
-       *   and may not be positioned correctly, so the
-       *   job_media_record and update_vol_info have already been
-       *   done, which means we skip them here.
+       * Note if WEOT is set, we are at the end of the tape and may not be positioned correctly,
+       * so the job_media_record and update_vol_info have already been done,
+       * which means we skip them here.
        */
       dev->num_writers--;
       Dmsg1(100, "There are %d writers in release_device\n", dev->num_writers);
@@ -495,14 +495,20 @@ bool release_device(DCR *dcr)
             Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
                dcr->getVolCatName(), jcr->Job);
          }
-         /* If no more writers, and no errors, and wrote something, write an EOF */
+
+         /*
+          * If no more writers, and no errors, and wrote something, write an EOF
+          */
          if (!dev->num_writers && dev->can_write() && dev->block_num > 0) {
             dev->weof(1);
             write_ansi_ibm_labels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName);
          }
          if (!dev->at_weot()) {
             dev->VolCatInfo.VolCatFiles = dev->file;   /* set number of files */
-            /* Note! do volume update before close, which zaps VolCatInfo */
+
+            /*
+             * Note! do volume update before close, which zaps VolCatInfo
+             */
             dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
             Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
                   dev->getVolCatName(), dev->print_name());
@@ -514,53 +520,69 @@ bool release_device(DCR *dcr)
 
    } else {
       /*
-       * If we reach here, it is most likely because the job
-       *   has failed, since the device is not in read mode and
-       *   there are no writers. It was probably reserved.
+       * If we reach here, it is most likely because the job has failed,
+       * since the device is not in read mode and there are no writers.
+       * It was probably reserved.
        */
       volume_unused(dcr);
    }
-   Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers, dev->num_reserved(),
-         dev->print_name());
 
-   /* If no writers, close if file or !CAP_ALWAYS_OPEN */
+   Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers, dev->num_reserved(), dev->print_name());
+
+   /*
+    * If no writers, close if file or !CAP_ALWAYS_OPEN
+    */
    if (dev->num_writers == 0 && (!dev->is_tape() || !dev->has_cap(CAP_ALWAYSOPEN))) {
       dev->close(dcr);
       free_volume(dev);
    }
+
    unlock_volumes();
 
-   /* Fire off Alert command and include any output */
-   if (!job_canceled(jcr) && dcr->device->alert_command) {
-      int status = 1;
-      POOLMEM *alert, *line;
-      BPIPE *bpipe;
+   /*
+    * Fire off Alert command and include any output
+    */
+   if (!job_canceled(jcr)) {
+      if (!dcr->device->drive_tapealert_enabled && dcr->device->alert_command) {
+         int status = 1;
+         POOLMEM *alert, *line;
+         BPIPE *bpipe;
 
-      alert = get_pool_memory(PM_FNAME);
-      line = get_pool_memory(PM_FNAME);
+         alert = get_pool_memory(PM_FNAME);
+         line = get_pool_memory(PM_FNAME);
 
-      alert = edit_device_codes(dcr, alert, dcr->device->alert_command, "");
+         alert = edit_device_codes(dcr, alert, dcr->device->alert_command, "");
 
-      /* Wait maximum 5 minutes */
-      bpipe = open_bpipe(alert, 60 * 5, "r");
-      if (bpipe) {
-         while (bfgets(line, bpipe->rfd)) {
-            Jmsg(jcr, M_ALERT, 0, _("Alert: %s"), line);
+         /*
+          * Wait maximum 5 minutes
+          */
+         bpipe = open_bpipe(alert, 60 * 5, "r");
+         if (bpipe) {
+            while (bfgets(line, bpipe->rfd)) {
+               Jmsg(jcr, M_ALERT, 0, _("Alert: %s"), line);
+            }
+            status = close_bpipe(bpipe);
+         } else {
+            status = errno;
          }
-         status = close_bpipe(bpipe);
-      } else {
-         status = errno;
-      }
-      if (status != 0) {
-         berrno be;
-         Jmsg(jcr, M_ALERT, 0, _("3997 Bad alert command: %s: ERR=%s.\n"),
-              alert, be.bstrerror(status));
-      }
+         if (status != 0) {
+            berrno be;
+            Jmsg(jcr, M_ALERT, 0, _("3997 Bad alert command: %s: ERR=%s.\n"), alert, be.bstrerror(status));
+         }
 
-      Dmsg1(400, "alert status=%d\n", status);
-      free_pool_memory(alert);
-      free_pool_memory(line);
+         Dmsg1(400, "alert status=%d\n", status);
+         free_pool_memory(alert);
+         free_pool_memory(line);
+      } else {
+         /*
+          * If all reservations are cleared for this device raise an event that SD plugins can register to.
+          */
+         if (dev->num_reserved() == 0) {
+            generate_plugin_event(jcr, bsdEventDeviceReleased, dcr);
+         }
+      }
    }
+
    pthread_cond_broadcast(&dev->wait_next_vol);
    Dmsg2(100, "JobId=%u broadcast wait_device_release at %s\n",
          (uint32_t)jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
@@ -572,7 +594,9 @@ bool release_device(DCR *dcr)
    if (pthread_equal(dev->no_wait_id, pthread_self())) {
       dev->dunblock(true);
    } else {
-      /* Otherwise, reset the prior block status and unlock */
+      /*
+       * Otherwise, reset the prior block status and unlock
+       */
       dev->set_blocked(was_blocked);
       dev->Unlock();
    }
@@ -582,8 +606,9 @@ bool release_device(DCR *dcr)
    } else {
       free_dcr(dcr);
    }
-   Dmsg2(100, "Device %s released by JobId=%u\n", dev->print_name(),
-         (uint32_t)jcr->JobId);
+
+   Dmsg2(100, "Device %s released by JobId=%u\n", dev->print_name(), (uint32_t)jcr->JobId);
+
    return ok;
 }
 

@@ -773,7 +773,7 @@ void DCR::mark_volume_in_error()
 
 /*
  * The Volume is not in the correct slot, so mark this
- *   Volume as not being in the Changer.
+ * Volume as not being in the Changer.
  */
 void DCR::mark_volume_not_inchanger()
 {
@@ -791,13 +791,15 @@ void DCR::mark_volume_not_inchanger()
 
 /*
  * Either because we are going to hang a new volume, or because
- *  of explicit user request, we release the current volume.
+ * of explicit user request, we release the current volume.
  */
 void DCR::release_volume()
 {
    DCR *dcr = this;
 
    unload_autochanger(dcr, -1);
+
+   generate_plugin_event(jcr, bsdEventVolumeUnload, dcr);
 
    if (WroteVol) {
       Jmsg0(jcr, M_ERROR, 0, _("Hey!!!!! WroteVol non-zero !!!!!\n"));
@@ -811,7 +813,10 @@ void DCR::release_volume()
    dev->EndBlock = dev->EndFile = 0;
    memset(&dev->VolCatInfo, 0, sizeof(dev->VolCatInfo));
    dev->clear_volhdr();
-   /* Force re-read of label */
+
+   /*
+    * Force re-read of label
+    */
    dev->clear_labeled();
    dev->clear_read();
    dev->clear_append();
@@ -822,7 +827,9 @@ void DCR::release_volume()
       dev->close(dcr);
    }
 
-   /* If we have not closed the device, then at least rewind the tape */
+   /*
+    * If we have not closed the device, then at least rewind the tape
+    */
    if (dev->is_open()) {
       dev->offline_or_rewind();
    }

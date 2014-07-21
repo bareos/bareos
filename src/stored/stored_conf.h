@@ -161,6 +161,7 @@ public:
    uint32_t label_type;               /* label type */
    bool autoselect;                   /* Automatically select from AutoChanger */
    bool norewindonclose;              /* Don't rewind tape drive on close */
+   bool drive_tapealert_enabled;      /* Enable Tape Alert monitoring */
    bool drive_crypto_enabled;         /* Enable hardware crypto */
    bool query_crypto_status;          /* Query device for crypto status */
    uint32_t drive_index;              /* Autochanger drive index */

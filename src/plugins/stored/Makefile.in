@@ -59,6 +59,11 @@ scsicrypto-sd.la: Makefile \
 		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsicrypto-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
 
+scsitapealert-sd.la: Makefile \
+		     scsitapealert-sd$(DEFAULT_OBJECT_TYPE) \
+		     ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsitapealert-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
+
 plugtest: Makefile sd_plugins.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c

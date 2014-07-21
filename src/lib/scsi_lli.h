@@ -30,7 +30,7 @@
 /*
  * Device Inquiry Response
  */
-typedef struct{
+typedef struct {
 #if HAVE_BIG_ENDIAN
    uint8_t peripheralQualifier:3;
    uint8_t periphrealDeviceType:5;
