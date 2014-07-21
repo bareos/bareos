@@ -167,7 +167,7 @@ bool db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    (void)localtime_r(&ttime, &tm);
    strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
 
-   if (jr->RealEndTime == 0) {
+   if (jr->RealEndTime < jr->EndTime) {
       jr->RealEndTime = jr->EndTime;
    }
    ttime = jr->RealEndTime;

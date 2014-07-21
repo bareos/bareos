@@ -619,32 +619,42 @@ void *jobq_server(void *arg)
  */
 static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
 {
-   bool resched = false;
+   bool resched = false,
+        retval = false;
+
    /*
     * Reschedule the job if requested and possible
     */
-   /* Basic condition is that more reschedule times remain */
+
+   /*
+    * Basic condition is that more reschedule times remain
+    */
    if (jcr->res.job->RescheduleTimes == 0 ||
        jcr->reschedule_count < jcr->res.job->RescheduleTimes) {
       resched =
-         /* Check for incomplete jobs */
+         /*
+          * Check for incomplete jobs
+          */
          (jcr->res.job->RescheduleIncompleteJobs &&
           jcr->is_incomplete() && jcr->is_JobType(JT_BACKUP) &&
           !jcr->is_JobLevel(L_BASE)) ||
-         /* Check for failed jobs */
+         /*
+          * Check for failed jobs
+          */
          (jcr->res.job->RescheduleOnError &&
           !jcr->is_terminated_ok() &&
           !jcr->is_JobStatus(JS_Canceled) &&
           jcr->is_JobType(JT_BACKUP));
    }
+
    if (resched) {
-       char dt[50], dt2[50];
+      char dt[50], dt2[50];
+      time_t now;
 
        /*
-        * Reschedule this job by cleaning it up, but
-        *  reuse the same JobId if possible.
+        * Reschedule this job by cleaning it up, but reuse the same JobId if possible.
         */
-      time_t now = time(NULL);
+      now = time(NULL);
       jcr->reschedule_count++;
       jcr->sched_time = now + jcr->res.job->RescheduleInterval;
       bstrftime(dt, sizeof(dt), now);
@@ -661,7 +671,10 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
       if (!allow_duplicate_job(jcr)) {
          return false;
       }
-      /* Only jobs with no output or Incomplete jobs can run on same JCR */
+
+      /*
+       * Only jobs with no output or Incomplete jobs can run on same JCR
+       */
       if (jcr->JobBytes == 0) {
          Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->use_count());
          V(jq->mutex);
@@ -672,64 +685,69 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
          if (jcr->wasVirtualFull) {
             jcr->setJobLevel(L_VIRTUAL_FULL);
          }
+         jcr->jr.RealEndTime = 0;
          jobq_add(jq, jcr);     /* queue the job to run again */
          P(jq->mutex);
          free_jcr(jcr);         /* release jcr */
          free(je);              /* free the job entry */
-         return true;           /* we already cleaned up */
-      }
-      /*
-       * Something was actually backed up, so we cannot reuse
-       *   the old JobId or there will be database record
-       *   conflicts.  We now create a new job, copying the
-       *   appropriate fields.
-       */
-      JCR *njcr = new_jcr(sizeof(JCR), dird_free_jcr);
-      set_jcr_defaults(njcr, jcr->res.job);
-      njcr->reschedule_count = jcr->reschedule_count;
-      njcr->sched_time = jcr->sched_time;
-      njcr->initial_sched_time = jcr->initial_sched_time;
-      /*
-       * Special test here since a Virtual Full gets marked
-       *  as a Full, so we look at the resource record
-       */
-      if (jcr->wasVirtualFull) {
-         njcr->setJobLevel(L_VIRTUAL_FULL);
+         retval = true;         /* we already cleaned up */
       } else {
-         njcr->setJobLevel(jcr->getJobLevel());
+         JCR *njcr;
+
+         /*
+          * Something was actually backed up, so we cannot reuse
+          * the old JobId or there will be database record
+          * conflicts.  We now create a new job, copying the
+          * appropriate fields.
+          */
+         njcr = new_jcr(sizeof(JCR), dird_free_jcr);
+         set_jcr_defaults(njcr, jcr->res.job);
+         njcr->reschedule_count = jcr->reschedule_count;
+         njcr->sched_time = jcr->sched_time;
+         njcr->initial_sched_time = jcr->initial_sched_time;
+
+         /*
+          * Special test here since a Virtual Full gets marked as a Full, so we look at the resource record
+          */
+         if (jcr->wasVirtualFull) {
+            njcr->setJobLevel(L_VIRTUAL_FULL);
+         } else {
+            njcr->setJobLevel(jcr->getJobLevel());
+         }
+         njcr->res.pool = jcr->res.pool;
+         njcr->res.run_pool_override = jcr->res.run_pool_override;
+         njcr->res.full_pool = jcr->res.full_pool;
+         njcr->res.run_full_pool_override = jcr->res.run_full_pool_override;
+         njcr->res.inc_pool = jcr->res.inc_pool;
+         njcr->res.run_inc_pool_override = jcr->res.run_inc_pool_override;
+         njcr->res.diff_pool = jcr->res.diff_pool;
+         njcr->res.run_diff_pool_override = jcr->res.run_diff_pool_override;
+         njcr->res.next_pool = jcr->res.next_pool;
+         njcr->res.run_next_pool_override = jcr->res.run_next_pool_override;
+         njcr->JobStatus = -1;
+         njcr->setJobStatus(jcr->JobStatus);
+         if (jcr->res.rstore) {
+            copy_rstorage(njcr, jcr->rstorage, _("previous Job"));
+         } else {
+            free_rstorage(njcr);
+         }
+         if (jcr->res.wstore) {
+            copy_wstorage(njcr, jcr->wstorage, _("previous Job"));
+         } else {
+            free_wstorage(njcr);
+         }
+         njcr->res.messages = jcr->res.messages;
+         njcr->spool_data = jcr->spool_data;
+         Dmsg0(2300, "Call to run new job\n");
+         V(jq->mutex);
+         run_job(njcr);            /* This creates a "new" job */
+         free_jcr(njcr);           /* release "new" jcr */
+         P(jq->mutex);
+         Dmsg0(2300, "Back from running new job.\n");
       }
-      njcr->res.pool = jcr->res.pool;
-      njcr->res.run_pool_override = jcr->res.run_pool_override;
-      njcr->res.full_pool = jcr->res.full_pool;
-      njcr->res.run_full_pool_override = jcr->res.run_full_pool_override;
-      njcr->res.inc_pool = jcr->res.inc_pool;
-      njcr->res.run_inc_pool_override = jcr->res.run_inc_pool_override;
-      njcr->res.diff_pool = jcr->res.diff_pool;
-      njcr->res.run_diff_pool_override = jcr->res.run_diff_pool_override;
-      njcr->res.next_pool = jcr->res.next_pool;
-      njcr->res.run_next_pool_override = jcr->res.run_next_pool_override;
-      njcr->JobStatus = -1;
-      njcr->setJobStatus(jcr->JobStatus);
-      if (jcr->res.rstore) {
-         copy_rstorage(njcr, jcr->rstorage, _("previous Job"));
-      } else {
-         free_rstorage(njcr);
-      }
-      if (jcr->res.wstore) {
-         copy_wstorage(njcr, jcr->wstorage, _("previous Job"));
-      } else {
-         free_wstorage(njcr);
-      }
-      njcr->res.messages = jcr->res.messages;
-      njcr->spool_data = jcr->spool_data;
-      Dmsg0(2300, "Call to run new job\n");
-      V(jq->mutex);
-      run_job(njcr);            /* This creates a "new" job */
-      free_jcr(njcr);           /* release "new" jcr */
-      P(jq->mutex);
-      Dmsg0(2300, "Back from running new job.\n");
    }
-   return false;
+
+   return retval;
 }
 
 /*
