@@ -68,6 +68,7 @@ configure: autoconf/configure.in autoconf/aclocal.m4 autoconf/config.h.in
 	cd $(srcdir);
 	${RMF} config.cache config.log config.out config.status src/config.h
 	${RMF} -r autoconf/autom4te.cache autom4te.cache
+	touch config.status
 	autoconf --prepend-include=$(srcdir)/autoconf \
 	autoconf/configure.in > configure
 	chmod 755 configure

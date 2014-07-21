@@ -1,0 +1,3 @@
+@plugindir@/python-dir.so
+@plugindir@/bareos-dir.py*
+@plugindir@/bareos_dir_consts.py*
