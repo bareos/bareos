@@ -27,7 +27,8 @@ GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 first_rule: all
 dummy:
 
-DEVICE_API_SRCS = gfapi_device.c \
+DEVICE_API_SRCS = cephfs_device.c \
+		  gfapi_device.c \
 		  object_store_device.c \
 		  rados_device.c \
 		  unix_file_device.c \
@@ -86,9 +87,11 @@ BEXTRACT_LIBS += @FASTLZ_LIBS_NONSHARED@
 GLUSTER_INC = @GLUSTER_INC@
 DROPLET_INC = @DROPLET_INC@
 RADOS_INC = @RADOS_INC@
+CEPHFS_INC = @CEPHFS_INC@
 LIBS += @GLUSTER_LIBS@
 LIBS += @DROPLET_LIBS@
 LIBS += @RADOS_LIBS@
+LIBS += @CEPHFS_LIBS@
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
 DEBUG = @DEBUG@
@@ -112,6 +115,10 @@ dev.o: dev.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) $(DROPLET_INC) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
+cephfs_device.o: cephfs_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 gfapi_device.o: gfapi_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
@@ -123,6 +130,7 @@ object_storage_device.o: object_storage_device.c
 rados_device.o: rados_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 
 all: Makefile bareos-sd @STATIC_SD@ bls bextract bscan btape bcopy
 	@echo "===== Make of stored is good ===="
