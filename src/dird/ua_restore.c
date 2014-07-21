@@ -818,7 +818,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
             return 0;
          }
 
-         memset(&jr, 0, sizeof(JOB_DBR));
+         memset(&jr, 0, sizeof(jr));
          jr.JobId = str_to_int64(ua->cmd);
          if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
             ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -839,7 +839,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       }
    }
 
-   memset(&jr, 0, sizeof(JOB_DBR));
+   memset(&jr, 0, sizeof(jr));
    POOLMEM *JobIds = get_pool_memory(PM_FNAME);
    *JobIds = 0;
    rx->TotalFiles = 0;
@@ -861,7 +861,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       if (jr.JobId == JobId) {
          continue;                    /* duplicate of last JobId */
       }
-      memset(&jr, 0, sizeof(JOB_DBR));
+      memset(&jr, 0, sizeof(jr));
       jr.JobId = JobId;
       if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
          ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -1151,7 +1151,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    bool OK = true;
    char ed1[50];
 
-   memset(&tree, 0, sizeof(TREE_CTX));
+   memset(&tree, 0, sizeof(tree));
 
    /*
     * Build the directory tree containing JobIds user selected

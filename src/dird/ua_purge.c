@@ -102,6 +102,10 @@ int purge_cmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua, true)) {
       return 1;
    }
+
+   memset(&jr, 0, sizeof(jr));
+   memset(&mr, 0, sizeof(mr));
+
    switch (find_arg_keyword(ua, keywords)) {
    /* Files */
    case 0:
@@ -506,6 +510,10 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    db_sql_query(ua->db, query.c_str());
    Dmsg1(050, "Delete NDMPJobEnvironment sql=%s\n", query.c_str());
 
+   Mmsg(query, "DELETE FROM JobStats WHERE JobId IN (%s)", jobs);
+   db_sql_query(ua->db, query.c_str());
+   Dmsg1(050, "Delete JobStats sql=%s\n", query.c_str());
+
    upgrade_copies(ua, jobs);
 
    /* Now remove the Job record itself */
@@ -722,6 +730,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    POOL_MEM buf(PM_MESSAGE),
             volumes(PM_MESSAGE);
 
+   memset(&mr, 0, sizeof(mr));
    memset(&pr, 0, sizeof(pr));
    pm_strcpy(volumes, "");
 
@@ -819,8 +828,8 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
    /*
     * Loop over the candidate Volumes and actually truncate them
     */
-   for (int i=0; i < nb; i++) {
-      mr.clear();
+   for (int i = 0; i < nb; i++) {
+      memset(&mr, 0, sizeof(mr));
       mr.MediaId = results[i];
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
          /* TODO: ask for drive and change Pool */
@@ -875,8 +884,8 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
        */
       if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
          POOL_DBR oldpr, newpr;
-         memset(&oldpr, 0, sizeof(POOL_DBR));
-         memset(&newpr, 0, sizeof(POOL_DBR));
+         memset(&oldpr, 0, sizeof(oldpr));
+         memset(&newpr, 0, sizeof(newpr));
          newpr.PoolId = mr->RecyclePoolId;
          oldpr.PoolId = mr->PoolId;
          if (   db_get_pool_record(jcr, ua->db, &oldpr)

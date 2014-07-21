@@ -119,6 +119,9 @@ int prune_cmd(UAContext *ua, const char *cmd)
       return false;
    }
 
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+
    /*
     * First search args
     */
@@ -397,6 +400,7 @@ bail_out:
 static bool prune_stats(UAContext *ua, utime_t retention)
 {
    char ed1[50];
+   char dt[MAX_TIME_LENGTH];
    POOL_MEM query(PM_MESSAGE);
    utime_t now = (utime_t)time(NULL);
 
@@ -406,7 +410,23 @@ static bool prune_stats(UAContext *ua, utime_t retention)
    db_sql_query(ua->db, query.c_str());
    db_unlock(ua->db);
 
-   ua->info_msg(_("Pruned Jobs from JobHisto catalog.\n"));
+   ua->info_msg(_("Pruned Jobs from JobHisto in catalog.\n"));
+
+   bstrutime(dt, sizeof(dt), now - retention);
+
+   db_lock(ua->db);
+   Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
+   db_sql_query(ua->db, query.c_str());
+   db_unlock(ua->db);
+
+   ua->info_msg(_("Pruned Statistics from DeviceStats in catalog.\n"));
+
+   db_lock(ua->db);
+   Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
+   db_sql_query(ua->db, query.c_str());
+   db_unlock(ua->db);
+
+   ua->info_msg(_("Pruned Statistics from JobStats in catalog.\n"));
 
    return true;
 }

@@ -50,7 +50,7 @@ struct spool_stats_t {
 };
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-spool_stats_t spool_stats;
+static spool_stats_t spool_stats;
 
 /*
  * Header for data spool record */

@@ -224,12 +224,22 @@ static bRC handle_tapealert_readout(void *value)
     * See if drive tapealert is enabled.
     */
    if (!device->drive_tapealert_enabled) {
+      Dmsg1(dbglvl, "scsitapealert-sd: tapealert is not enabled on device %s\n", dev->dev_name);
       return bRC_OK;
    }
 
+   Dmsg1(dbglvl, "scsitapealert-sd: checking for tapealerts on device %s\n", dev->dev_name);
    P(tapealert_operation_mutex);
    get_tapealert_flags(dev->fd(), dev->dev_name, &flags);
    V(tapealert_operation_mutex);
+
+   Dmsg1(dbglvl, "scsitapealert-sd: checking for tapealerts on device %s DONE\n", dev->dev_name);
+   Dmsg1(dbglvl, "scsitapealert-sd: flags: %ld \n", flags);
+
+   if (flags) {
+      Dmsg1(dbglvl, "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n", dev->dev_name);
+      bfuncs->UpdateTapeAlert(dcr, flags);
+   }
 
    return bRC_OK;
 }

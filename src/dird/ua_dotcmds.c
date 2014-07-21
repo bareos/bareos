@@ -542,7 +542,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
       return true;
    }
 
-   memset(&jr, 0, sizeof(JOB_DBR));
+   memset(&jr, 0, sizeof(jr));
 
    if ((pos = find_arg_with_value(ua, "ujobid")) >= 0) {
       bstrncpy(jr.Job, ua->argv[pos], sizeof(jr.Job));

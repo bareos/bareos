@@ -156,7 +156,7 @@ public:
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
-   utime_t stats_retention;           /* Stats retention period in seconds */
+   utime_t stats_retention;           /* Statistics retention period in seconds */
    bool tls_authenticate;             /* Authenticated with TLS */
    bool tls_enable;                   /* Enable TLS */
    bool tls_require;                  /* Require TLS */
@@ -170,6 +170,7 @@ public:
    uint32_t subscriptions;            /* Number of subscribtions available */
    uint32_t subscriptions_used;       /* Number of subscribtions used */
    uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
+   uint32_t stats_collect_interval;   /* Statistics collect interval in seconds */
    char *verid;                       /* Custom Id to print in version command */
    char *keyencrkey;                  /* Key Encryption Key */
 };
@@ -341,6 +342,7 @@ public:
    bool tls_require;                  /* Require TLS */
    bool enabled;                      /* Set if device is enabled */
    bool autochanger;                  /* Set if autochanger */
+   bool collectstats;                 /* Set if statistics should be collected of this SD */
    bool AllowCompress;                /* Set if this Storage should allow jobs to enable compression */
    int64_t StorageId;                 /* Set from Storage DB record */
    int64_t max_bandwidth;             /* Limit speed on this storage daemon for replication */

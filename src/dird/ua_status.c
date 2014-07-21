@@ -830,6 +830,8 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    MEDIA_DBR mr;
    int orig_jobtype;
 
+   memset(&mr, 0, sizeof(mr));
+
    orig_jobtype = jcr->getJobType();
    if (sp->job->JobType == JT_BACKUP) {
       jcr->db = NULL;
@@ -1294,9 +1296,11 @@ static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name
    /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
    const char *slot_api_full_format="%c|%d|%d|%s|%s|%s|%s|%s|%s|%s\n";
 
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+
    bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
    if (db_get_media_record(ua->jcr, ua->db, &mr)) {
-      memset(&pr, 0, sizeof(POOL_DBR));
       pr.PoolId = mr.PoolId;
       if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
          strcpy(pr.Name, "?");
@@ -1495,6 +1499,8 @@ static void status_slots(UAContext *ua, STORERES *store_r)
       return;
    }
 
+   memset(&mr, 0, sizeof(mr));
+
    store.store = store_r;
    pm_strcpy(store.store_source, _("command line"));
    set_wstorage(ua->jcr, &store);
@@ -1599,7 +1605,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   continue;
                }
 
-               mr.clear();
+               memset(&mr, 0, sizeof(mr));
                bstrncpy(mr.VolumeName, vl1->VolName, sizeof(mr.VolumeName));
             } else {
                if (!vl2 || !vl2->VolName) {
@@ -1611,12 +1617,12 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   continue;
                }
 
-               mr.clear();
+               memset(&mr, 0, sizeof(mr));
                bstrncpy(mr.VolumeName, vl2->VolName, sizeof(mr.VolumeName));
             }
 
             if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
-               memset(&pr, 0, sizeof(POOL_DBR));
+               memset(&pr, 0, sizeof(pr));
                pr.PoolId = mr.PoolId;
                if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
                   strcpy(pr.Name, "?");

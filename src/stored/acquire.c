@@ -449,11 +449,18 @@ get_out:
  */
 bool release_device(DCR *dcr)
 {
+   utime_t now;
    JCR *jcr = dcr->jcr;
    DEVICE *dev = dcr->dev;
    bool ok = true;
    char tbuf[100];
    int was_blocked = BST_NOT_BLOCKED;
+
+   /*
+    * Capture job statistics now that we are done using this device.
+    */
+   now = (utime_t)time(NULL);
+   update_job_statistics(jcr, now);
 
    dev->Lock();
    if (!dev->is_blocked()) {
@@ -463,7 +470,7 @@ bool release_device(DCR *dcr)
       dev->set_blocked(BST_RELEASING);
    }
    lock_volumes();
-   Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape()?"tape":"disk");
+   Dmsg2(100, "release_device device %s is %s\n", dev->print_name(), dev->is_tape() ? "tape" : "disk");
 
    /*
     * If device is reserved, job never started, so release the reserve here

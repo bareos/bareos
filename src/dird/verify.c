@@ -629,7 +629,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    int do_Digest = CRYPTO_DIGEST_NONE;
    int32_t file_index = 0;
 
-   memset(&fdbr, 0, sizeof(FILE_DBR));
+   memset(&fdbr, 0, sizeof(fdbr));
    fd = jcr->file_bsock;
    fdbr.JobId = JobId;
    jcr->FileIndex = 0;

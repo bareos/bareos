@@ -121,6 +121,7 @@ static RES_ITEM dir_items[] = {
    { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
    { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
    { "statisticsretention", CFG_TYPE_TIME, ITEM(res_dir.stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */ },
+   { "statisticscollectinterval", CFG_TYPE_PINT32, ITEM(res_dir.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "150" },
    { "verid", CFG_TYPE_STR, ITEM(res_dir.verid), 0, 0, NULL },
    { "optimizeforsize", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_size), 0, CFG_ITEM_DEFAULT, "false" },
    { "optimizeforspeed", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false" },
@@ -246,6 +247,7 @@ static RES_ITEM store_items[] = {
    { "tlskey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL },
    { "pairedstorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
    { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL },
+   { "collectstatistics", CFG_TYPE_BOOL, ITEM(res_store.collectstats), 0, CFG_ITEM_DEFAULT, "false" },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 

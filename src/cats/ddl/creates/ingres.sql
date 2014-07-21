@@ -403,13 +403,6 @@ CREATE TABLE UnsavedFiles
    PRIMARY KEY (UnsavedId)
 );
 
-CREATE TABLE CDImages
-(
-   MediaId		INTEGER 	NOT NULL,
-   LastBurn		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-   PRIMARY KEY (MediaId)
-);
-
 CREATE TABLE PathHierarchy
 (
    PathId		INTEGER 	NOT NULL,
@@ -468,14 +461,15 @@ CREATE TABLE NDMPJobEnvironment
 );
 
 CREATE TABLE DeviceStats (
+   DeviceId		INTEGER 	DEFAULT 0,
    SampleTime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
    ReadTime		BIGINT		DEFAULT 0,
    WriteTime		BIGINT		DEFAULT 0,
    ReadBytes		BIGINT		DEFAULT 0,
    WriteBytes		BIGINT		DEFAULT 0,
-   Spool		INTEGER 	DEFAULT 0,
-   Waiting		INTEGER 	DEFAULT 0,
-   Writers		INTEGER 	DEFAULT 0,
+   SpoolSize		BIGINT  	DEFAULT 0,
+   NumWaiting		INTEGER 	DEFAULT 0,
+   NumWriters		INTEGER 	DEFAULT 0,
    MediaId		INTEGER 	DEFAULT 0,
    VolCatBytes		BIGINT		DEFAULT 0,
    VolCatFiles		BIGINT		DEFAULT 0,
@@ -483,10 +477,17 @@ CREATE TABLE DeviceStats (
 );
 
 CREATE TABLE JobStats (
+   DeviceId		INTEGER 	DEFAULT 0,
    SampleTime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
    JobId		INTEGER 	NOT NULL,
    JobFiles		INTEGER 	DEFAULT 0,
    JobBytes		BIGINT		DEFAULT 0
+);
+
+CREATE TABLE TapeAlerts (
+   DeviceId		INTEGER 	DEFAULT 0,
+   SampleTime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+   AlertFlags		BIGINT		DEFAULT 0
 );
 \g
 
@@ -533,7 +534,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-INSERT INTO Version (VersionId) VALUES (2002);
+INSERT INTO Version (VersionId) VALUES (2003);
 
 -- Make sure we have appropriate permissions
 \g

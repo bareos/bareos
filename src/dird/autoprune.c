@@ -71,10 +71,8 @@ void do_autoprune(JCR *jcr)
 }
 
 /*
- * Prune at least one Volume in current Pool. This is called from
- *   catreq.c => next_vol.c when the Storage daemon is asking for another
- *   volume and no appendable volumes are available.
- *
+ * Prune at least one Volume in current Pool. This is called from catreq.c => next_vol.c
+ * when the Storage daemon is asking for another volume and no appendable volumes are available.
  */
 void prune_volumes(JCR *jcr, bool InChanger,
                    MEDIA_DBR *mr, STORERES *store)
@@ -101,8 +99,11 @@ void prune_volumes(JCR *jcr, bool InChanger,
    ua = new_ua_context(jcr);
    db_lock(jcr->db);
 
-   /* Edit PoolId */
+   /*
+    * Edit PoolId
+    */
    edit_int64(mr->PoolId, ed1);
+
    /*
     * Get Pool record for Scratch Pool
     */
@@ -157,6 +158,8 @@ void prune_volumes(JCR *jcr, bool InChanger,
    /* Visit each Volume and Prune it until we find one that is purged */
    for (i=0; i<ids.num_ids; i++) {
       MEDIA_DBR lmr;
+
+      memset(&lmr, 0, sizeof(lmr));
       lmr.MediaId = ids.DBId[i];
       Dmsg1(100, "Get record MediaId=%d\n", (int)lmr.MediaId);
       if (!db_get_media_record(jcr, jcr->db, &lmr)) {
@@ -186,9 +189,9 @@ void prune_volumes(JCR *jcr, bool InChanger,
          Dmsg1(050, "Vol=%s is purged\n", lmr.VolumeName);
 
          /*
-          * Since we are also pruning the Scratch pool, continue
-          *   until and check if this volume is available (InChanger + StorageId)
-          * If not, just skip this volume and try the next one
+          * Since we are also pruning the Scratch pool, continue until and check if
+          * this volume is available (InChanger + StorageId) If not, just skip this
+          * volume and try the next one
           */
          if (InChanger) {
             if (!lmr.InChanger || (lmr.StorageId != mr->StorageId)) {
@@ -207,12 +210,11 @@ void prune_volumes(JCR *jcr, bool InChanger,
          }
 
          /*
-          * If purged and not moved to another Pool,
-          *   then we stop pruning and take this volume.
+          * If purged and not moved to another Pool, then we stop pruning and take this volume.
           */
          if (lmr.PoolId == mr->PoolId) {
             Dmsg2(100, "Got Vol=%s MediaId=%d purged.\n", lmr.VolumeName, (int)lmr.MediaId);
-            mr->copy(&lmr);
+            memcpy(mr, &lmr, sizeof(MEDIA_DBR));
             set_storageid_in_mr(store, mr);
             break;                        /* got a volume */
          }

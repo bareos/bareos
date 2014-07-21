@@ -645,7 +645,9 @@ int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
    return 1;
 }
 
-/* Select a Media (Volume) record from the database */
+/*
+ * Select a Media (Volume) record from the database
+ */
 int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
 {
    int i;
@@ -653,7 +655,7 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    POOLMEM *err = get_pool_memory(PM_FNAME);
    *err=0;
 
-   mr->clear();
+   memset(mr, 0, sizeof(MEDIA_DBR));
    i = find_arg_with_value(ua, NT_("volume"));
    if (i >= 0) {
       if (is_name_valid(ua->argv[i], &err)) {
@@ -662,10 +664,14 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
          goto bail_out;
       }
    }
+
    if (mr->VolumeName[0] == 0) {
       POOL_DBR pr;
+
       memset(&pr, 0, sizeof(pr));
-      /* Get the pool from pool=<pool-name> */
+      /*
+       * Get the pool from pool=<pool-name>
+       */
       if (!get_pool_dbr(ua, &pr)) {
          goto bail_out;
       }
@@ -697,7 +703,6 @@ bail_out:
    return ret;
 }
 
-
 /*
  * Select a pool resource from prompt list
  */
@@ -720,7 +725,6 @@ POOLRES *select_pool_resource(UAContext *ua)
    pool = (POOLRES *)GetResWithName(R_POOL, name);
    return pool;
 }
-
 
 /*
  *  If you are thinking about using it, you
@@ -761,16 +765,16 @@ int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 
 }
 
-
-/* Scan what the user has entered looking for:
+/*
+ * Scan what the user has entered looking for:
  *
- *  jobid=nn
+ * jobid=nn
  *
- *  if error or not found, put up a list of Jobs
- *  to choose from.
+ * if error or not found, put up a list of Jobs
+ * to choose from.
  *
- *   returns: 0 on error
- *            JobId on success and fills in JOB_DBR
+ * returns: 0 on error
+ *          JobId on success and fills in JOB_DBR
  */
 int get_job_dbr(UAContext *ua, JOB_DBR *jr)
 {

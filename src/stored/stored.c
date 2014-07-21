@@ -284,6 +284,8 @@ int main (int argc, char *argv[])
       init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
    }
 
+   start_statistics_thread();
+
 #if HAVE_NDMP
    /* Seperate thread that handles NDMP connections */
    if (me->ndmp_enable) {
@@ -688,6 +690,7 @@ void terminate_stored(int sig)
    }
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
+   stop_statistics_thread();
 #if HAVE_NDMP
    if (me->ndmp_enable) {
       stop_ndmp_thread_server();

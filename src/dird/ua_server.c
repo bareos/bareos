@@ -95,8 +95,7 @@ void *connect_thread(void *arg)
 }
 
 /*
- * Create a Job Control Record for a control "job",
- *   filling in all the appropriate fields.
+ * Create a Job Control Record for a control "job", filling in all the appropriate fields.
  */
 JCR *new_control_jcr(const char *base_name, int job_type)
 {
@@ -118,6 +117,7 @@ JCR *new_control_jcr(const char *base_name, int job_type)
    jcr->setJobLevel(L_NONE);
    jcr->setJobStatus(JS_Running);
    jcr->JobId = 0;
+
    return jcr;
 }
 

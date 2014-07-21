@@ -114,6 +114,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
 
    memset(&sdmr, 0, sizeof(sdmr));
    memset(&jm, 0, sizeof(jm));
+   memset(&mr, 0, sizeof(mr));
    Dsm_check(100);
 
    /*
