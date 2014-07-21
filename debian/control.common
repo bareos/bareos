@@ -141,7 +141,8 @@ Description: Backup Archiving Recovery Open Sourced - PostgreSQL backend
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides the functionality to connect the Bareos Director daemon to a PostgreSQL database.
+ This package provides the functionality to connect the Bareos Director
+ daemon to a PostgreSQL database.
 
 
 Package:        bareos-database-mysql
@@ -153,7 +154,8 @@ Description: Backup Archiving Recovery Open Sourced - MySQL backend
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides the functionality to connect the Bareos Director daemon to a MySQL database.
+ This package provides the functionality to connect the Bareos Director
+ daemon to a MySQL database.
 
 
 Package:        bareos-database-sqlite3
@@ -164,7 +166,8 @@ Description: Backup Archiving Recovery Open Sourced - SQLite backend
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides the functionality to connect the Bareos Director daemon to a SQLite database.
+ This package provides the functionality to connect the Bareos Director
+ daemon to a SQLite database.
 
 
 Package:        bareos-database-tools
@@ -186,6 +189,10 @@ Depends:
     bareos-storage (= ${binary:Version}) | bareos-bconsole (= ${binary:Version}) | bareos-common (= ${binary:Version}) | bareos-database-common (= ${binary:Version}) | bareos-database-mysql (= ${binary:Version}) | bareos-database-postgresql (= ${binary:Version}) | bareos-database-sqlite3 (= ${binary:Version}) | bareos-database-tools (= ${binary:Version}) | bareos-director (= ${binary:Version}) | bareos-filedaemon (= ${binary:Version}) | bareos-storage (= ${binary:Version}) | bareos-storage-tape (= ${binary:Version}) | bareos-storage-fifo (= ${binary:Version}) | bareos-tools (= ${binary:Version}),
     ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - debugging symbols
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides debugging symbols for Bareos.
 
 
 Package:        bareos-devel
@@ -305,7 +312,8 @@ Description: Backup Archiving Recovery Open Sourced - common tools
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
- This package provides some additional tools, mostly to work directly with Bareos storage volumes.
+ This package provides some additional tools, mostly to work directly with
+ Bareos storage volumes.
 
 
 Package:        bareos-traymonitor
