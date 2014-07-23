@@ -20,8 +20,47 @@ Release 14.2.x
 * Added missing methods to Python FD class should now have all methods and structures that C plugin has.
 * Fixed most important high level coding problems found by Coverity scans.
 * Disable a client (analog to disable job but then for all jobs of a certain client.)
+* Disable a schedule (analog to disable job but then for all jobs triggered by that schedule.)
 * Cleanup of more global variables.
 * Make scripting more robust for getting the database engine used.
+* Debian packaging got major overhaul.
+  * dbconfig used for database configuration on debian based distributions.
+  * dh_installinit used for init scripts on debian based distributions.
+  * The LICENSE text is more inline with what debian requires for the debian packaging.
+* Bug fixes to bugs found by Coverity scans.
+* Added prototype of CRL (Certificate Revocation List) reload logic for openssl.
+* Limit storage list to autochangers automatically when a command makes sense only on autochangers.
+* Exclude Dir containting extended to allow multiple settings.
+* Added elapsed time printing in restore jobs.
+* Some tools are installed into bindir instead of sbindir now.
+* Traymonitor now shows a red icon when there are connection or authentication problems with a server.
+* CentOS 7 and RHEL7 support added to build system.
+* Fixed several problems with copy and migration jobs to make them work better.
+  * Do not cancel the copy/migration job on certain events.
+  * When you configure your Copy and Migration Jobs now without a dummy client/fileset you get the following:
+    * Jobs now show the actual client of the original job.
+    * Jobs now show the actual level of the the original job.
+    * Jobs now show the actual fileset of the original job.
+  * The jobs data spooling setting is now only used when its not enabled already.
+    * In the old situation the disabling of data spooling in the Job would disable a command line override to enable spooling.
+  * The printing of Client and FileSet and Level is restored now they are set with sensible info.
+  * Disabled checking client concurrency for Copy and Migration Jobs.
+    * As the client is not contacted anyway we are now only limited by the storage concurrency.
+  * Allow to read from file type devices multiple times
+    * A read volume on a file type device can now be reserved by multiple jobs and when the jobs
+      use the same volume they can execute at the same time when the right concurrency is met on the other resources.
+* Added a prototype of a CEPHFS storage backend.
+* Added support for dynamic loading of storage backends in the storage daemon.
+  * File storage is always loaded.
+  * Tape/GFAPI/RADOS/... can be loaded dynamically (simular to what we alread had for database backends.)
+* All shared code between the different storage programs (bareos-sd, btape, ...) is now in a new shared library.
+* VTAPE is removed from the code base (Use MHVTL).
+* Initial support for TAPEALERT is added.
+* Storage daemon statistics gathering.
+* Some preliminary work for allowing to have audit events.
+* Use a special backend dir to store both catalog and storage backends.
+* Support for NotToBackup Registry Key on windows.
+* On the packaging side we now store the bareos libs in a subdir. (e.g. /usr/lib/bareos, /usr/lib64/bareos)
 
 Release 14.1.x
 ==============
