@@ -101,12 +101,11 @@ int
 ndmca_control_agent (struct ndm_session *sess)
 {
 	struct ndm_job_param *	job = &sess->control_acb->job;
-	int			rc;
+	int			rc = -1;
 
 	switch (job->operation) {
 	default:
 		ndmalogf (sess, 0, 0, "Job operation invalid");
-		rc = -1;
 		break;
 
 	case NDM_JOB_OP_INIT_LABELS:
