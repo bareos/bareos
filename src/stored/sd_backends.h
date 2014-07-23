@@ -66,6 +66,6 @@ static struct backend_interface_mapping_t {
    { B_OBJECT_STORE_DEV, "object" },
    { B_RADOS_DEV, "rados" },
    { B_CEPHFS_DEV, "cephfs" },
-   { NULL, 0 }
+   { 0, NULL }
 };
 #endif /* __SD_DYNAMIC_H_ */
