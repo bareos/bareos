@@ -113,14 +113,14 @@ Messages {
   operatorcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bareos regression Job %j\) %r\" -s \"Regression: Intervention needed for %j\" %r"
 # MailOnError = @job_email@ = all, !terminate
 # operator = @job_email@ = mount
-  console = all, !skipped, !terminate, !restored
+  console = all, !skipped, !terminate, !restored, !audit
 #
 # WARNING! the following will create a file that you must cycle from
 #          time to time as it will grow indefinitely. However, it will
 #          also keep all your messages if the scroll off the console.
 #
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !audit
 }
 
 #
@@ -128,10 +128,10 @@ Messages {
 Messages {
   Name = Daemon
   mailcommand = "@sbindir@/bsmtp -h @smtp_host@ -f \"\(Bareos regression\) %r\" -s \"Regression daemon message\" %r"
-# mail = @job_email@ = all, !skipped
-  console = all, !skipped, !saved
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped
+# mail = @job_email@ = all, !skipped, !audit
+  console = all, !skipped, !saved, !audit
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !audit
 }
 
 

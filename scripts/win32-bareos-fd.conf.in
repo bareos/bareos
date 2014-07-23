@@ -27,5 +27,5 @@ FileDaemon {                          # this is me
 # Send all messages except skipped files back to Director
 Messages {
   Name = Standard
-  director = rufus-dir = all, !terminate, !restored
+  director = rufus-dir = all, !terminate, !restored, !audit
 }

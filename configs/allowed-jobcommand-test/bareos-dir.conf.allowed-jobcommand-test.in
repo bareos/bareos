@@ -90,8 +90,8 @@ Catalog {
 
 Messages {
   Name = Standard
-  console = all, !skipped, !saved
-  catalog = all, !skipped
+  console = all, !skipped, !saved, !audit
+  catalog = all, !skipped, !audit
 }
 
 # Default pool definition

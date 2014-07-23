@@ -476,27 +476,27 @@ Messages {
   operatorcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bareos regression\) %r\" -s \"Regression: Intervention needed for %j\" %r"
 # MailOnError = @job_email@ = all
 # operator = @job_email@ = mount
-  console = all, !skipped, !terminate, !restored
+  console = all, !skipped, !terminate, !restored, !audit
 #
 # WARNING! the following will create a file that you must cycle from
 #          time to time as it will grow indefinitely. However, it will
 #          also keep all your messages if the scroll off the console.
 #
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !audit
 }
 
 Messages {
   Name = NoEmail
   mailcommand = "@sbindir@/bsmtp -h localhost -f \"\(Bareos regression\) %r\" -s \"Regression: %t %e of %c %l\" %r"
-  console = all, !skipped, !terminate
+  console = all, !skipped, !terminate, !audit
 #
 # WARNING! the following will create a file that you must cycle from
 #          time to time as it will grow indefinitely. However, it will
 #          also keep all your messages if the scroll off the console.
 #
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !audit
 }
 
 

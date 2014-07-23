@@ -314,18 +314,18 @@ Catalog {
 #  and to the console
 Messages {
   Name = Standard
-  console = all, !skipped, !terminate, !restored
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped, !saved
+  console = all, !skipped, !terminate, !restored, !audit
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !saved, !audit
 }
 
 #
 # Message delivery for daemon messages (no job).
 Messages {
   Name = Daemon
-  console = all, !skipped, !saved
-  append = "@working_dir@/log" = all, !skipped
-  catalog = all, !skipped, !saved
+  console = all, !skipped, !saved, !audit
+  append = "@working_dir@/log" = all, !skipped, !audit
+  catalog = all, !skipped, !saved, !audit
 }
 
 
