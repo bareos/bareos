@@ -104,7 +104,9 @@ static int list_handler(void *ctx, int num_fields, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
-   alist* backend_directories = NULL;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
    bool disable_batch = false;
    char *restore_list=NULL;
    setlocale(LC_ALL, "");
