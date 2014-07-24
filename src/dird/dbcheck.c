@@ -61,7 +61,9 @@ static NAME_LIST name_list;
 static char buf[20000];
 static bool quit = false;
 static const char *idx_tmp_name;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+#endif
 
 DIRRES *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
@@ -126,7 +128,9 @@ int main (int argc, char *argv[])
    char *configfile = NULL;
    char *catalogname = NULL;
    char *endptr;
-   alist* backend_directories = NULL;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);

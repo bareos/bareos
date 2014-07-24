@@ -141,7 +141,9 @@ int main (int argc, char *argv[])
    char *VolumeName = NULL;
    char *DirectorName = NULL;
    DIRRES *director = NULL;
-   alist* backend_directories = NULL;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -321,7 +323,7 @@ int main (int argc, char *argv[])
    backend_directories = New(alist(10, owned_by_alist));
    backend_directories->append((char *)backend_directory);
 
-   db_set_backend_dirs( backend_directories );
+   db_set_backend_dirs(backend_directories);
 #endif
 
    if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host, db_port, NULL)) == NULL) {
