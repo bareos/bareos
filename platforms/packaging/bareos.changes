@@ -1,3 +1,9 @@
+bareos (14.3.0-1) unstable; urgency=low
+
+  * Switch version number
+
+ -- Marco van Wieringen <marco.van.wieringen@bareos.com>  Thu, 24 Jul 2014 10:40:52 +0200
+
 bareos (14.2.0-1) unstable; urgency=low
 
   * Switch version number
