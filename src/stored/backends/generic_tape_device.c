@@ -381,7 +381,8 @@ bool generic_tape_device::weof(int num)
       file_addr = 0;
    } else {
       berrno be;
-      clrerror(MTWEOF);
+
+      clrerror(mt_com.mt_op);
       if (status == -1) {
          Mmsg2(errmsg, _("ioctl MTWEOF error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
        }
@@ -441,9 +442,10 @@ bool generic_tape_device::fsf(int num)
       }
       if (my_errno != 0) {
          berrno be;
+
          set_eot();
          Dmsg0(200, "Set ST_EOT\n");
-         clrerror(MTFSF);
+         clrerror(mt_com.mt_op);
          Mmsg2(errmsg, _("ioctl MTFSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror(my_errno));
          Dmsg1(200, "%s", errmsg);
          return false;
@@ -533,9 +535,10 @@ bool generic_tape_device::fsf(int num)
          status = d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com);
          if (status < 0) {                 /* error => EOT */
             berrno be;
+
             set_eot();
             Dmsg0(100, "Set ST_EOT\n");
-            clrerror(MTFSF);
+            clrerror(mt_com.mt_op);
             Mmsg2(errmsg, _("ioctl MTFSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
             Dmsg0(100, "Got < 0 for MTFSF\n");
             Dmsg1(100, "%s", errmsg);
@@ -603,7 +606,8 @@ bool generic_tape_device::bsf(int num)
    status = d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com);
    if (status < 0) {
       berrno be;
-      clrerror(MTBSF);
+
+      clrerror(mt_com.mt_op);
       Mmsg2(errmsg, _("ioctl MTBSF error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
    }
 
@@ -652,7 +656,8 @@ bool generic_tape_device::fsr(int num)
    } else {
       berrno be;
       struct mtget mt_stat;
-      clrerror(MTFSR);
+
+      clrerror(mt_com.mt_op);
       Dmsg1(100, "FSF fail: ERR=%s\n", be.bstrerror());
       if (dev_get_os_pos(this, &mt_stat)) {
          Dmsg4(100, "Adjust from %d:%d to %d:%d\n", file,
@@ -705,7 +710,8 @@ bool generic_tape_device::bsr(int num)
    status = d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com);
    if (status < 0) {
       berrno be;
-      clrerror(MTBSR);
+
+      clrerror(mt_com.mt_op);
       Mmsg2(errmsg, _("ioctl MTBSR error on %s. ERR=%s.\n"), prt_name, be.bstrerror());
    }
 
@@ -758,9 +764,12 @@ void generic_tape_device::lock_door()
 {
 #ifdef MTLOCK
    struct mtop mt_com;
+
    mt_com.mt_op = MTLOCK;
    mt_com.mt_count = 1;
-   d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com);
+   if (d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com) < 0) {
+      clrerror(mt_com.mt_op);
+   }
 #endif
 }
 
@@ -768,9 +777,12 @@ void generic_tape_device::unlock_door()
 {
 #ifdef MTUNLOCK
    struct mtop mt_com;
+
    mt_com.mt_op = MTUNLOCK;
    mt_com.mt_count = 1;
-   d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com);
+   if (d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com) < 0) {
+      clrerror(mt_com.mt_op);
+   }
 #endif
 }
 
@@ -780,7 +792,9 @@ void generic_tape_device::unlock_door()
  */
 static inline void os_clrerror(DEVICE *dev)
 {
-   dev->d_ioctl(dev->fd(), MTIOCLRERR);
+   if (dev->d_ioctl(dev->fd(), MTIOCLRERR) < 0) {
+      dev->clrerror(MTIOCLRERR);
+   }
    Dmsg0(200, "Did MTIOCLRERR\n");
 }
 #elif defined(MTIOCERRSTAT)
@@ -796,7 +810,9 @@ static inline void os_clrerror(DEVICE *dev)
     * Read and clear SCSI error status
     */
    Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev_errno, be.bstrerror(dev_errno));
-   dev->d_ioctl(dev->fd(), MTIOCERRSTAT, (char *)&mt_errstat);
+   if (dev->d_ioctl(dev->fd(), MTIOCERRSTAT, (char *)&mt_errstat) < 0) {
+      dev->clrerror(MTIOCERRSTAT);
+   }
 }
 #elif defined(MTCSE)
 /*
@@ -811,7 +827,9 @@ static inline void os_clrerror(DEVICE *dev)
     */
    mt_com.mt_op = MTCSE;
    mt_com.mt_count = 1;
-   dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com);
+   if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
+      dev->clrerror(mt_com.mt_op);
+   }
    Dmsg0(200, "Did MTCSE\n");
 }
 #else
@@ -897,6 +915,11 @@ void generic_tape_device::clrerror(int func)
          msg = "MTLOAD";
          break;
 #endif
+#ifdef MTLOCK
+      case MTLOCK:
+         msg = "MTLOCK";
+         break;
+#endif
 #ifdef MTUNLOCK
       case MTUNLOCK:
          msg = "MTUNLOCK";
@@ -905,6 +928,21 @@ void generic_tape_device::clrerror(int func)
       case MTOFFL:
          msg = "MTOFFL";
          break;
+#ifdef MTIOCLRERR
+      case MTIOCLRERR:
+         msg = "MTIOCLRERR";
+         break;
+#endif
+#ifdef MTIOCERRSTAT
+      case MTIOCERRSTAT:
+         msg = "MTIOCERRSTAT";
+         break;
+#endif
+#ifdef MTCSE
+      case MTCSE:
+         msg = "MTCSE";
+         break;
+#endif
       default:
          bsnprintf(buf, sizeof(buf), _("unknown func code %d"), func);
          msg = buf;
@@ -952,7 +990,7 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
       mt_com.mt_count = 0;
       Dmsg0(100, "Set block size to zero\n");
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTSETBLK);
+         dev->clrerror(mt_com.mt_op);
       }
    }
 #endif
@@ -968,7 +1006,7 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
       }
       Dmsg0(100, "MTSETDRVBUFFER\n");
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTSETDRVBUFFER);
+         dev->clrerror(mt_com.mt_op);
       }
    }
 #endif
@@ -982,13 +1020,13 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
       mt_com.mt_op = MTSETBSIZ;
       mt_com.mt_count = 0;
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTSETBSIZ);
+         dev->clrerror(mt_com.mt_op);
       }
       /* Get notified at logical end of tape */
       mt_com.mt_op = MTEWARN;
       mt_com.mt_count = 1;
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTEWARN);
+         dev->clrerror(mt_com.mt_op);
       }
    }
    return;
@@ -1001,7 +1039,7 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
       mt_com.mt_op = MTSETBSIZ;
       mt_com.mt_count = 0;
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTSETBSIZ);
+         dev->clrerror(mt_com.mt_op);
       }
    }
 #if defined(MTIOCSETEOTMODEL)
@@ -1029,7 +1067,7 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
       mt_com.mt_op = MTSRSZ;
       mt_com.mt_count = 0;
       if (dev->d_ioctl(dev->fd(), MTIOCTOP, (char *)&mt_com) < 0) {
-         dev->clrerror(MTSRSZ);
+         dev->clrerror(mt_com.mt_op);
       }
    }
    return;
@@ -1083,7 +1121,8 @@ bool generic_tape_device::rewind(DCR *dcr)
    for (i = max_rewind_wait; ; i -= 5) {
       if (d_ioctl(m_fd, MTIOCTOP, (char *)&mt_com) < 0) {
          berrno be;
-         clrerror(MTREW);
+
+         clrerror(mt_com.mt_op);
          if (i == max_rewind_wait) {
             Dmsg1(200, "Rewind error, %s. retrying ...\n", be.bstrerror());
          }
