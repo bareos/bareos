@@ -32,7 +32,3 @@ if [ -d ${bin} ] ; then
   ./grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
   cd ${cwd}
 fi
-
-if [ x$USE_VTAPE = xyes ]; then
-   rm -rf ${working}/ach
-fi

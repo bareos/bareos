@@ -8,11 +8,6 @@
 
 scripts/cleanup
 
-
-# with disk-changer, we have to initialize slots
-init_slot @tape_drive@ $SLOT1
-init_slot @tape_drive@ $SLOT2
-
 #
 # init first of two slots
 # optimize so we don't unnecessarily unload and load slots

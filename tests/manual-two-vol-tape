@@ -16,12 +16,7 @@ scripts/copy-tape-confs
 echo "${cwd}/build" >${cwd}/tmp/file-list
 MTX=$AUTOCHANGER_SCRIPT
 
-# Sleep longer if real tape
-if [ x${USE_VTAPE} = xyes ] ; then
-   sleep=20
-else
-   sleep=90
-fi
+sleep=90
 
 slot=0
 export slot

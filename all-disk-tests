@@ -70,7 +70,6 @@ rm -f dumps/*
 ./run tests/maxvol-test
 ./run tests/maxvol2-test
 ./run tests/messages-test
-./run tests/next-vol-test
 ./run tests/sparse-compressed-test
 ./run tests/sparse-lzo-test
 ./run tests/sparse-test
@@ -133,7 +132,5 @@ echo "Start non-root virtual disk autochanger tests" >>test.out
 ./run tests/three-pool-test
 ./run tests/2drive-3pool-test
 ./run tests/2drive-swap-test
-# Turn back on after next_vol.c bug is fixed
-#  ./run tests/next-vol-test
 echo "End non-root virtual disk autochanger tests"
 echo "End non-root virtual disk autochanger tests" >>test.out

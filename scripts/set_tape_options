@@ -5,6 +5,3 @@ cp -f ${rscripts}/linux_tape_options ${conf}/tape_options
 if test x`uname` = xFreeBSD ; then
    cp -f ${rscripts}/freebsd_tape_options ${conf}/tape_options
 fi
-if test x${USE_VTAPE} = xyes ; then
-  echo "  Device Type = vtape" >>${conf}/tape_options
-fi

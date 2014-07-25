@@ -38,7 +38,6 @@ rm -f dumps/*
 ./run tests/restore2-by-file-test
 ./run tests/restore-by-file-test
 ./run tests/restore-disk-seek-test
-./run tests/next-vol-test
 ./run tests/strip-test
 ./run tests/two-vol-test
 ./run tests/verify-vol-test

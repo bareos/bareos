@@ -73,14 +73,6 @@ if test x${AUTOCHANGER} = x/dev/null ; then
 fi
 }
 
-require_vtape()
-{
-if test x${USE_VTAPE} = x ; then
-   echo "$TestName test needs the vtape driver."
-   exit 0
-fi
-}
-
 require_linux()
 {
 os=`uname`
@@ -418,36 +410,15 @@ debug_wait()
   fi
 }
 
-init_slot()
-{
-   DRIVE=$1
-   SLOT=$2
-   if test -n "$DRIVE" -a -n "$SLOT"; then
-      if test ! -c $DRIVE -a ! -b $DRIVE -a x$USE_VTAPE != x ; then
-         dir=`dirname $DRIVE`
-         if [ ! -d "$dir" ]; then
-            mkdir -p "$dir"
-         fi
-         touch $dir/slot$SLOT
-      fi
-   fi
-}
-
 init_drive()
 {
-  if test a$USE_VTAPE = a; then
-    mt -f $1 rewind
-    mt -f $1 weof
-  else
-    cp /dev/null $1
-  fi
+  mt -f $1 rewind
+  mt -f $1 weof
 }
 
 rewind_drive()
 {
-  if test a$USE_VTAPE = a; then
-    mt -f $1 rewind
-  fi
+  mt -f $1 rewind
 }
 
 load_slot1()
@@ -557,24 +528,6 @@ mkdir -p ${tmp}
 touch ${tmp}/dir.out ${tmp}/fd.out ${tmp}/sd.out
 
 CLIENT=${HOST}-fd
-
-if [ x$USE_VTAPE = xyes ]; then
-   mkdir -p $working/ach
-   SLOT1=1
-   SLOT2=2
-   TAPE_DRIVE=$working/ach/drive0
-   TAPE_DRIVE1=$working/ach/drive1
-   AUTOCHANGER=$working/ach/config
-   AUTOCHANGER_SCRIPT=disk-changer
-   DRIVE1=0
-   DRIVE2=1
-   cp /dev/null $working/ach/slot$SLOT1
-   cp /dev/null $working/ach/slot$SLOT2
-   cat > $AUTOCHANGER <<EOF
-maxdrive=8
-maxslot=80
-EOF
-fi
 
 AUTOCHANGER_SCRIPT=${AUTOCHANGER_SCRIPT:-mtx-changer}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
