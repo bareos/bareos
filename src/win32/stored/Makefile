@@ -51,21 +51,21 @@ SVRSRCS = acquire.c ansi_label.c append.c askdir.c authenticate.c \
 SVROBJS = $(SVRSRCS:.c=.o)
 
 TAPESRCS = acquire.c ansi_label.c autochanger.c block.c btape.c bsr.c \
-	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+	   butil.c crc32.c dev.c device.c dummy.c ebcdic.c label.c lock.c \
+	   mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	   spool.c stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 TAPEOBJS = $(TAPESRCS:.c=.o)
 
 BLSSRCS = acquire.c ansi_label.c autochanger.c block.c bls.c bsr.c \
-	  butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	  read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	  stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+	  butil.c crc32.c dev.c device.c dummy.c ebcdic.c label.c lock.c \
+	  mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	  spool.c stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 BLSOBJS = $(BLSSRCS:.c=.o)
 
 BEXTSRCS = acquire.c ansi_label.c autochanger.c bextract.c block.c bsr.c \
-	   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-	   read_record.c record.c reserve.c scan.c sd_plugins.c spool.c \
-	   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
+	   butil.c crc32.c dev.c device.c dummy.c ebcdic.c label.c lock.c \
+	   mount.c read_record.c record.c reserve.c scan.c sd_plugins.c \
+	   spool.c stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
 BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 WINDRESSRCS = storedres.rc
