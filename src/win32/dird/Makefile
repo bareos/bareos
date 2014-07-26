@@ -45,7 +45,7 @@ SVRSRCS = admin.c authenticate.c autoprune.c backup.c bsr.c catreq.c \
 	  ua_update.c vbackup.c verify.c service.c main.c
 SVROBJS = $(SVRSRCS:.c=.o)
 
-DBCHKSRCS = dbcheck.c dird_conf.c ua_acl.c run_conf.c inc_conf.c
+DBCHKSRCS = dbcheck.c dird_conf.c ua_acl.c ua_audit.c run_conf.c inc_conf.c
 DBCHKOBJS = $(DBCHKSRCS:.c=.o)
 
 WINDRESSRCS = dirdres.rc
