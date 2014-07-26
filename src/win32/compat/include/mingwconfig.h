@@ -421,6 +421,9 @@
 /* Directory for daemon files */
 #define _PATH_BAREOS_WORKINGDIR "%TEMP%"
 
+/* Directory for backend drivers */
+#define _PATH_BAREOS_BACKENDDIR "."
+
 /* Define to 1 if dynamic loading of catalog backends is enabled */
 #define HAVE_DYNAMIC_CATS_BACKENDS 1
 
