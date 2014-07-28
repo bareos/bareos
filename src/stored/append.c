@@ -363,7 +363,7 @@ bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec)
             dir->set_spooling();
          }
          Dmsg0(850, "Send attributes to dir.\n");
-         if (!dir_update_file_attributes(jcr->dcr, rec)) {
+         if (!jcr->dcr->dir_update_file_attributes(rec)) {
             Jmsg(jcr, M_FATAL, 0, _("Error updating file attributes. ERR=%s\n"),
                dir->bstrerror());
             dir->clear_spooling();

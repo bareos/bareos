@@ -502,13 +502,13 @@ static bool cancel_cmd(JCR *cjcr)
    if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->waiting_for_mount()) {
       pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
       Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-      pthread_cond_broadcast(&wait_device_release);
+      release_device_cond();
    }
 
    if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->waiting_for_mount()) {
       pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
       Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-      pthread_cond_broadcast(&wait_device_release);
+      release_device_cond();
    }
 
    /*
@@ -873,7 +873,8 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
 
    if (found) {
       Dmsg1(100, "Found device %s\n", device->hdr.name);
-      dcr = new_dcr(jcr, NULL, device->dev, blocksizes);
+      dcr = New(SD_DCR);
+      setup_new_dcr_device(jcr, dcr, device->dev, blocksizes);
       dcr->set_will_write();
       dcr->device = device;
    }
@@ -916,7 +917,7 @@ static bool mount_cmd(JCR *jcr)
                        dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
-            pthread_cond_broadcast(&wait_device_release);
+            release_device_cond();
             break;
 
          /* In both of these two cases, we (the user) unmounted the Volume */
@@ -957,7 +958,7 @@ static bool mount_cmd(JCR *jcr)
             }
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
-            pthread_cond_broadcast(&wait_device_release);
+            release_device_cond();
             break;
 
          case BST_DOING_ACQUIRE:
@@ -1013,7 +1014,7 @@ static bool mount_cmd(JCR *jcr)
                   dev->print_name());
                pthread_cond_broadcast(&dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
-               pthread_cond_broadcast(&wait_device_release);
+               release_device_cond();
             }
             break;
 

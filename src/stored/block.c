@@ -46,6 +46,8 @@ static bool terminate_writing_volume(DCR *dcr);
 static bool do_new_file_bookkeeping(DCR *dcr);
 static void reread_last_block(DCR *dcr);
 
+bool forge_on = false;                /* proceed inspite of I/O errors */
+
 /*
  * Dump the block header, then walk through
  * the block printing out the record headers.
@@ -380,7 +382,7 @@ bool DCR::write_block_to_device()
          goto bail_out;
       }
       /* Create a jobmedia record for this job */
-      if (!dir_create_jobmedia_record(dcr)) {
+      if (!dcr->dir_create_jobmedia_record(false)) {
          dev->dev_errno = EIO;
          Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
             dcr->getVolCatName(), jcr->Job);
@@ -808,7 +810,7 @@ static bool terminate_writing_volume(DCR *dcr)
 
    /* Create a JobMedia record to indicated end of tape */
    dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Dmsg0(50, "Error from create JobMedia\n");
       dev->dev_errno = EIO;
         Mmsg2(dev->errmsg, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
@@ -830,7 +832,7 @@ static bool terminate_writing_volume(DCR *dcr)
    bstrncpy(dev->VolCatInfo.VolCatStatus, "Full", sizeof(dev->VolCatInfo.VolCatStatus));
    dev->VolCatInfo.VolCatFiles = dev->file;   /* set number of files */
 
-   if (!dir_update_volume_info(dcr, false, true)) {
+   if (!dcr->dir_update_volume_info(false, true)) {
       Mmsg(dev->errmsg, _("Error sending Volume info to Director.\n"));
       ok = false;
       Dmsg0(50, "Error updating volume info.\n");
@@ -880,7 +882,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
    /*
     * Create a JobMedia record so restore can seek
     */
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Dmsg0(50, "Error from create_job_media.\n");
       dev->dev_errno = EIO;
       Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
@@ -890,7 +892,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
       return false;
    }
    dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dir_update_volume_info(dcr, false, false)) {
+   if (!dcr->dir_update_volume_info(false, false)) {
       Dmsg0(50, "Error from update_vol_info.\n");
       terminate_writing_volume(dcr);
       dev->dev_errno = EIO;

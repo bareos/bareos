@@ -109,7 +109,7 @@ void update_device_tapealert(const char *devname, uint64_t flags, utime_t now)
    struct device_statistics *dev_stats = NULL;
    struct device_tapealert *tape_alert = NULL;
 
-   if (!me->collect_dev_stats || !device_statistics) {
+   if (!me || !me->collect_dev_stats || !device_statistics) {
       return;
    }
 
@@ -157,7 +157,7 @@ static inline void update_device_statistics(const char *devname, DEVICE *dev, ut
    struct device_statistics *dev_stats = NULL;
    struct device_statistic *dev_stat = NULL;
 
-   if (!me->collect_dev_stats || !device_statistics) {
+   if (!me || !me->collect_dev_stats || !device_statistics) {
       return;
    }
 
@@ -240,7 +240,7 @@ void update_job_statistics(JCR *jcr, utime_t now)
    struct job_statistics *job_stats = NULL;
    struct job_statistic *job_stat = NULL;
 
-   if (!me->collect_job_stats || !job_statistics) {
+   if (!me || !me->collect_job_stats || !job_statistics) {
       return;
    }
 

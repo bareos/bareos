@@ -261,7 +261,8 @@ static bool despool_data(DCR *dcr, bool commit)
    rdev->max_block_size = dcr->dev->max_block_size;
    rdev->min_block_size = dcr->dev->min_block_size;
    rdev->device = dcr->dev->device;
-   rdcr = new_dcr(jcr, NULL, rdev, NULL);
+   rdcr = dcr->get_new_spooling_dcr();
+   setup_new_dcr_device(jcr, rdcr, rdev, NULL);
    rdcr->spool_fd = dcr->spool_fd;
    block = dcr->block;                /* save block */
    dcr->block = rdcr->block;          /* make read and write block the same */
@@ -312,7 +313,7 @@ static bool despool_data(DCR *dcr, bool commit)
       Dmsg1(100, "======= Set FI=%ld\n", dir->get_FileIndex());
    }
 
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
          dcr->getVolCatName(), jcr->Job);
       jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */

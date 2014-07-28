@@ -107,7 +107,7 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
        */
       /* Check if this is a valid Volume in the pool */
       bstrncpy(dcr->VolumeName, result->d_name, sizeof(dcr->VolumeName));
-      if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+      if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
          continue;
       }
       /* This was not the volume we expected, but it is OK with

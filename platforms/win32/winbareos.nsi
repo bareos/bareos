@@ -470,6 +470,7 @@ SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
+  File "libbareossd.dll"
   File "bareos-sd.exe"
   File "btape.exe"
   File "bls.exe"

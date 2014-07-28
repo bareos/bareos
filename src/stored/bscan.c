@@ -97,12 +97,6 @@ static int num_files = 0;
 
 #define CONFIG_FILE "bareos-sd.conf"
 
-char *configfile = NULL;
-STORES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
-
 static void usage()
 {
    fprintf(stderr, _(
@@ -1398,35 +1392,8 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
    jobjcr->VolSessionId = rec->VolSessionId;
    jobjcr->VolSessionTime = rec->VolSessionTime;
    jobjcr->ClientId = jr->ClientId;
-   jobjcr->dcr = jobjcr->read_dcr = new_dcr(jobjcr, NULL, dev, NULL);
+   jobjcr->dcr = jobjcr->read_dcr = New(DCR);
+   setup_new_dcr_device(jobjcr, jobjcr->dcr, dev, NULL);
 
    return jobjcr;
-}
-
-/* Dummies to replace askdir.c */
-bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool dir_send_job_status(JCR *jcr) {return 1;}
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
-{
-   DEVICE *dev = dcr->dev;
-   Dmsg0(20, "Enter dir_ask_sysop_to_mount_volume\n");
-   /* Close device so user can use autochanger if desired */
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-         dcr->VolumeName, dev->print_name());
-   dev->close(dcr);
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg1(500, "Vol=%s\n", dcr->getVolCatName());
-   return 1;
 }
