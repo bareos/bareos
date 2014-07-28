@@ -189,7 +189,7 @@ bool acquire_device_for_read(DCR *dcr)
 
    /* Volume info is always needed because of VolParts */
    Dmsg1(rdbglvl, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
-   if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
+   if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ)) {
       Dmsg2(rdbglvl, "dir_get_vol_info failed for vol=%s: %s\n",
             dcr->VolumeName, jcr->errmsg);
       Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
@@ -291,13 +291,13 @@ default_path:
 
          /* Mount a specific volume and no other */
          Dmsg0(rdbglvl, "calling dir_ask_sysop\n");
-         if (!dir_ask_sysop_to_mount_volume(dcr, ST_READREADY)) {
+         if (!dcr->dir_ask_sysop_to_mount_volume(ST_READREADY)) {
             goto get_out;             /* error return */
          }
 
          /* Volume info is always needed because of VolParts */
          Dmsg1(150, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
-         if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
+         if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ)) {
             Dmsg2(150, "dir_get_vol_info failed for vol=%s: %s\n",
                   dcr->VolumeName, jcr->errmsg);
             Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
@@ -426,7 +426,7 @@ DCR *acquire_device_for_append(DCR *dcr)
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
    Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n",
          dev->num_writers, dev->num_reserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
-   dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
+   dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
    ok = true;
 
 get_out:
@@ -483,7 +483,7 @@ bool release_device(DCR *dcr)
       Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n",
          dev->is_labeled(), vol->VolCatName);
       if (dev->is_labeled() && vol->VolCatName[0] != 0) {
-         dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
+         dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
          remove_read_volume(jcr, dcr->VolumeName);
          volume_unused(dcr);
       }
@@ -498,7 +498,7 @@ bool release_device(DCR *dcr)
       if (dev->is_labeled()) {
          Dmsg2(200, "dir_create_jobmedia. Release vol=%s dev=%s\n",
                dev->getVolCatName(), dev->print_name());
-         if (!dev->at_weot() && !dir_create_jobmedia_record(dcr)) {
+         if (!dev->at_weot() && !dcr->dir_create_jobmedia_record(false)) {
             Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
                dcr->getVolCatName(), jcr->Job);
          }
@@ -516,7 +516,7 @@ bool release_device(DCR *dcr)
             /*
              * Note! do volume update before close, which zaps VolCatInfo
              */
-            dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
+            dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
             Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
                   dev->getVolCatName(), dev->print_name());
          }
@@ -593,7 +593,7 @@ bool release_device(DCR *dcr)
    pthread_cond_broadcast(&dev->wait_next_vol);
    Dmsg2(100, "JobId=%u broadcast wait_device_release at %s\n",
          (uint32_t)jcr->JobId, bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-   pthread_cond_broadcast(&wait_device_release);
+   release_device_cond();
 
    /*
     * If we are the thread that blocked the device, then unblock it
@@ -632,39 +632,35 @@ bool clean_device(DCR *dcr)
 }
 
 /*
- * Create a new Device Control Record and attach
- *   it to the device (if this is a real job).
- * Note, this has been updated so that it can be called first
- *   without a DEVICE, then a second or third time with a DEVICE,
- *   and each time, it should cleanup and point to the new device.
- *   This should facilitate switching devices.
- * Note, each dcr must point to the controlling job (jcr).  However,
- *   a job can have multiple dcrs, so we must not store in the jcr's
- *   structure as previously. The higher level routine must store
- *   this dcr in the right place
- *
+ * DCR Constructor.
  */
-DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
+DCR::DCR()
 {
-   if (!dcr) {
-      int errstat;
-      dcr = (DCR *)malloc(sizeof(DCR));
-      memset(dcr, 0, sizeof(DCR));
-      dcr->tid = pthread_self();
-      dcr->spool_fd = -1;
-      if ((errstat = pthread_mutex_init(&dcr->m_mutex, NULL)) != 0) {
-         berrno be;
-         dev->dev_errno = errstat;
-         Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-         Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-      }
-      if ((errstat = pthread_mutex_init(&dcr->r_mutex, NULL)) != 0) {
-         berrno be;
-         dev->dev_errno = errstat;
-         Mmsg1(dev->errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-         Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
-      }
+   int errstat;
+
+   tid = pthread_self();
+   spool_fd = -1;
+   if ((errstat = pthread_mutex_init(&m_mutex, NULL)) != 0) {
+      berrno be;
+
+      dev->dev_errno = errstat;
+      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
    }
+   if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
+      berrno be;
+
+      dev->dev_errno = errstat;
+      Mmsg1(dev->errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+   }
+}
+
+/*
+ * Setup DCR with a new device.
+ */
+void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
+{
    dcr->jcr = jcr;                 /* point back to jcr */
 
    /*
@@ -717,8 +713,6 @@ DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
       dcr->autodeflate = dcr->device->autodeflate;
       dcr->autoinflate = dcr->device->autoinflate;
    }
-
-   return dcr;
 }
 
 /*
@@ -837,7 +831,7 @@ void free_dcr(DCR *dcr)
    pthread_mutex_destroy(&dcr->m_mutex);
    pthread_mutex_destroy(&dcr->r_mutex);
 
-   free(dcr);
+   delete dcr;
 }
 
 static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol)

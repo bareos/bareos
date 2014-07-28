@@ -44,10 +44,6 @@ int quit = 0;
 char buf[100000];
 int bsize = TAPE_BSIZE;
 char VolName[MAX_NAME_LENGTH];
-STORES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 /*
  * If you change the format of the state file,
@@ -90,10 +86,8 @@ static bool do_unfill();
 /* Static variables */
 
 #define CONFIG_FILE "bareos-sd.conf"
-
-char *configfile = NULL;
-
 #define MAX_CMD_ARGS 30
+
 static POOLMEM *cmd;
 static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
@@ -130,7 +124,7 @@ static uint32_t last_block_num = 0;
 static uint32_t BlockNumber = 0;
 static bool simple = true;
 
-static const char *VolumeName = NULL;
+static const char *volumename = NULL;
 static int vol_num = 0;
 
 static JCR *jcr = NULL;
@@ -503,8 +497,8 @@ void quitcmd()
  */
 static void labelcmd()
 {
-   if (VolumeName) {
-      pm_strcpy(cmd, VolumeName);
+   if (volumename) {
+      pm_strcpy(cmd, volumename);
    } else {
       if (!get_cmd(_("Enter Volume Name: "))) {
          return;
@@ -2226,7 +2220,7 @@ static void fillcmd()
    ASSERT(write_eof > 0);
 
    set_volume_name("TestVolume1", 1);
-   dir_ask_sysop_to_create_appendable_volume(dcr);
+   dcr->dir_ask_sysop_to_create_appendable_volume();
    dev->set_append();                 /* force volume to be relabeled */
 
    /*
@@ -2999,8 +2993,7 @@ PROG_COPYRIGHT
  * routine is REALLY primitive, and should be enhanced
  * to have correct backspacing, etc.
  */
-int
-get_cmd(const char *prompt)
+int get_cmd(const char *prompt)
 {
    int i = 0;
    int ch;
@@ -3029,57 +3022,46 @@ get_cmd(const char *prompt)
    return 0;
 }
 
-/* Dummies to replace askdir.c */
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-
-bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten)
+bool BTAPE_DCR::dir_create_jobmedia_record(bool zero)
 {
+   WroteVol = false;
    return 1;
 }
 
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(20, "Enter dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   return 1;
-}
-
-bool dir_create_jobmedia_record(DCR *dcr, bool zero)
-{
-   dcr->WroteVol = false;
-   return 1;
-}
-
-bool dir_find_next_appendable_volume(DCR *dcr)
+bool BTAPE_DCR::dir_find_next_appendable_volume()
 {
    Dmsg1(20, "Enter dir_find_next_appendable_volume. stop=%d\n", stop);
-   return dcr->VolumeName[0] != 0;
+   return VolumeName[0] != 0;
 }
 
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /* mode */)
+bool BTAPE_DCR::dir_ask_sysop_to_mount_volume(int mode)
 {
-   DEVICE *dev = dcr->dev;
    Dmsg0(20, "Enter dir_ask_sysop_to_mount_volume\n");
-   if (dcr->VolumeName[0] == 0) {
-      return dir_ask_sysop_to_create_appendable_volume(dcr);
+   if (VolumeName[0] == 0) {
+      return dir_ask_sysop_to_create_appendable_volume();
    }
    Pmsg1(-1, "%s", dev->errmsg);           /* print reason */
-   if (dcr->VolumeName[0] == 0 || bstrcmp(dcr->VolumeName, "TestVolume2")) {
-      fprintf(stderr, _("Mount second Volume on device %s and press return when ready: "),
-         dev->print_name());
+
+   if (VolumeName[0] == 0 || bstrcmp(VolumeName, "TestVolume2")) {
+      fprintf(stderr,
+              _("Mount second Volume on device %s and press return when ready: "),
+              dev->print_name());
    } else {
-      fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-         dcr->VolumeName, dev->print_name());
+      fprintf(stderr,
+              _("Mount Volume \"%s\" on device %s and press return when ready: "),
+              VolumeName, dev->print_name());
    }
-   dev->close(dcr);
+
+   dev->close(this);
    getchar();
+
    return true;
 }
 
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
+bool BTAPE_DCR::dir_ask_sysop_to_create_appendable_volume()
 {
    int autochanger;
-   DEVICE *dev = dcr->dev;
+
    Dmsg0(20, "Enter dir_ask_sysop_to_create_appendable_volume\n");
    if (stop == 0) {
       set_volume_name("TestVolume1", 1);
@@ -3090,19 +3072,29 @@ bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr)
    if (dev->has_cap(CAP_OFFLINEUNMOUNT)) {
       dev->offline();
    }
-   autochanger = autoload_device(dcr, 1, NULL);
+   autochanger = autoload_device(this, 1, NULL);
    if (autochanger != 1) {
       Pmsg1(100, "Autochanger returned: %d\n", autochanger);
       fprintf(stderr, _("Mount blank Volume on device %s and press return when ready: "),
          dev->print_name());
-      dev->close(dcr);
+      dev->close(this);
       getchar();
       Pmsg0(000, "\n");
    }
    labelcmd();
-   VolumeName = NULL;
+   volumename = NULL;
    BlockNumber = 0;
+
    return true;
+}
+
+DCR *BTAPE_DCR::get_new_spooling_dcr()
+{
+   DCR *dcr;
+
+   dcr = New(BTAPE_DCR);
+
+   return dcr;
 }
 
 static bool my_mount_next_read_volume(DCR *dcr)
@@ -3149,7 +3141,7 @@ static bool my_mount_next_read_volume(DCR *dcr)
 static void set_volume_name(const char *VolName, int volnum)
 {
    DCR *dcr = jcr->dcr;
-   VolumeName = VolName;
+   volumename = VolName;
    vol_num = volnum;
    dev->setVolCatName(VolName);
    dcr->setVolCatName(VolName);

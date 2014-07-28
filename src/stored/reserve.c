@@ -247,7 +247,8 @@ static bool use_device_cmd(JCR *jcr)
 #endif
 
    init_jcr_device_wait_timers(jcr);
-   jcr->dcr = new_dcr(jcr, NULL, NULL, NULL);
+   jcr->dcr = New(SD_DCR);
+   setup_new_dcr_device(jcr, jcr->dcr, NULL, NULL);
    if (rctx.append) {
       jcr->dcr->set_will_write();
    }
@@ -450,7 +451,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
          }
          /* Check with Director if this Volume is OK */
          bstrncpy(dcr->VolumeName, vol->vol_name, sizeof(dcr->VolumeName));
-         if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+         if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
             continue;
          }
 
@@ -650,9 +651,11 @@ static int reserve_device(RCTX &rctx)
    Dmsg1(dbglvl, "try reserve %s\n", rctx.device->hdr.name);
 
    if (rctx.store->append) {
-      dcr = new_dcr(rctx.jcr, rctx.jcr->dcr, rctx.device->dev, NULL);
+      setup_new_dcr_device(rctx.jcr, rctx.jcr->dcr, rctx.device->dev, NULL);
+      dcr = rctx.jcr->dcr;
    } else {
-      dcr = new_dcr(rctx.jcr, rctx.jcr->read_dcr, rctx.device->dev, NULL);
+      setup_new_dcr_device(rctx.jcr, rctx.jcr->read_dcr, rctx.device->dev, NULL);
+      dcr = rctx.jcr->read_dcr;
    }
 
    if (!dcr) {
@@ -695,7 +698,7 @@ static int reserve_device(RCTX &rctx)
       } else {
          dcr->any_volume = true;
          Dmsg0(dbglvl, "no vol, call find_next_appendable_vol.\n");
-         if (dir_find_next_appendable_volume(dcr)) {
+         if (dcr->dir_find_next_appendable_volume()) {
             bstrncpy(rctx.VolumeName, dcr->VolumeName, sizeof(rctx.VolumeName));
             rctx.have_volume = true;
             Dmsg1(dbglvl, "looking for Volume=%s\n", rctx.VolumeName);

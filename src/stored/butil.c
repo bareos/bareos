@@ -39,8 +39,10 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
 static DEVRES *find_device_res(char *device_name, bool readonly);
 static void my_free_jcr(JCR *jcr);
 
-/* Imported variables -- eliminate some day */
-extern char *configfile;
+/* Global variables */
+char SD_IMP_EXP *configfile;
+STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
+CONFIG SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
 #ifdef DEBUG
 char *rec_state_bits_to_str(DEV_RECORD *rec)
@@ -170,7 +172,8 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
       return NULL;
    }
    device->dev = dev;
-   jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
+   jcr->dcr = dcr = New(DCR);
+   setup_new_dcr_device(jcr, jcr->dcr, dev, NULL);
    if (!readonly) {
       dcr->set_will_write();
    }

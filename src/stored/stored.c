@@ -51,16 +51,10 @@ extern "C" void *device_initialization(void *arg);
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
 
-STORES *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
-
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 void *start_heap;
 
 static uint32_t VolSessionId = 0;
 uint32_t VolSessionTime;
-char *configfile = NULL;
 bool init_done = false;
 
 /* Global static variables */
@@ -620,7 +614,8 @@ void *device_initialization(void *arg)
          continue;
       }
 
-      jcr->dcr = dcr = new_dcr(jcr, NULL, dev, NULL);
+      jcr->dcr = dcr = New(SD_DCR);
+      setup_new_dcr_device(jcr, dcr, dev, NULL);
       jcr->dcr->set_will_write();
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
       if (dev->is_autochanger()) {
@@ -718,11 +713,12 @@ void terminate_stored(int sig)
             if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-               pthread_cond_broadcast(&wait_device_release);
+               release_device_cond();
             }
             if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
-               pthread_cond_broadcast(&wait_device_release);
+               Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
+               release_device_cond();
             }
             bmicrosleep(0, 50000);
          }

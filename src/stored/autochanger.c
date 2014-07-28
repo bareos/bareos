@@ -118,7 +118,7 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
          return 0;                    /* For user, bail out right now */
       }
       /* ***FIXME*** this really should not be here */
-      if (dir_find_next_appendable_volume(dcr)) {
+      if (dcr->dir_find_next_appendable_volume()) {
          slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
       } else {
          slot = 0;

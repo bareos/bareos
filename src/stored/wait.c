@@ -33,6 +33,7 @@
 const int dbglvl = 400;
 
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 /*
  * Wait for SysOp to mount a tape on a specific device
@@ -206,10 +207,10 @@ int wait_for_sysop(DCR *dcr)
 
 /*
  * Wait for any device to be released, then we return, so
- *  higher level code can rescan possible devices.  Since there
- *  could be a job waiting for a drive to free up, we wait a maximum
- *  of 1 minute then retry just in case a broadcast was lost, and
- *  we return to rescan the devices.
+ * higher level code can rescan possible devices.  Since there
+ * could be a job waiting for a drive to free up, we wait a maximum
+ * of 1 minute then retry just in case a broadcast was lost, and
+ * we return to rescan the devices.
  *
  * Returns: true  if a device has changed state
  *          false if the total wait time has expired.
@@ -246,6 +247,14 @@ bool wait_for_device(JCR *jcr, int &retries)
    V(device_release_mutex);
    Dmsg1(dbglvl, "Return from wait_device ok=%d\n", ok);
    return ok;
+}
+
+/*
+ * Signal the above wait_for_device function.
+ */
+void release_device_cond()
+{
+   pthread_cond_broadcast(&wait_device_release);
 }
 
 #ifdef xxx

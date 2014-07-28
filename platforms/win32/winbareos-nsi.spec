@@ -123,6 +123,7 @@ for file in \
    libbareosfind.dll \
    libbareoslmdb.dll \
    libbareoscats*.dll \
+   libbareossd*.dll \
    libcrypto-*.dll \
    libgcc_s_*-1.dll \
    libhistory6.dll \

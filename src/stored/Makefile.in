@@ -44,11 +44,11 @@ AVAILABLE_BACKEND_LIBS = $(CEPHFS_LIBS) $(DROPLET_LIBS) $(GLUSTER_LIBS) $(RADOS_
 LIBS += @NEEDED_BACKEND_LIBS@
 
 # objects used in all daemons collected in (shared) library.
-LIBBAREOSSD_SRCS = acquire.c ansi_label.c autochanger.c block.c bsr.c butil.c \
-		   crc32.c dev.c device.c ebcdic.c label.c lock.c mount.c \
-		   read_record.c record.c reserve.c scan.c sd_backends.c \
-		   sd_plugins.c spool.c stored_conf.c vol_mgr.c wait.c \
-		   $(NEEDED_DEVICE_API_SRCS)
+LIBBAREOSSD_SRCS = acquire.c ansi_label.c askdir.c autochanger.c block.c bsr.c \
+		   butil.c crc32.c dev.c device.c ebcdic.c label.c lock.c \
+		   mount.c read_record.c record.c reserve.c scan.c \
+		   sd_backends.c sd_plugins.c sd_stats.c spool.c \
+		   stored_conf.c vol_mgr.c wait.c $(NEEDED_DEVICE_API_SRCS)
 LIBBAREOSSD_OBJS = $(LIBBAREOSSD_SRCS:.c=.o)
 LIBBAREOSSD_LOBJS = $(LIBBAREOSSD_SRCS:.c=.lo)
 LIBBAREOSSD_LT_RELEASE = @LIBBAREOSSD_LT_RELEASE@
@@ -59,23 +59,23 @@ SDSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c \
 SDOBJS = $(SDSRCS:.c=.o)
 
 # btape
-TAPESRCS = btape.c dummy.c
+TAPESRCS = btape.c
 TAPEOBJS = $(TAPESRCS:.c=.o)
 
 # bls
-BLSSRCS = bls.c dummy.c
+BLSSRCS = bls.c
 BLSOBJS = $(BLSSRCS:.c=.o)
 
 # bextract
-BEXTSRCS = bextract.c dummy.c
+BEXTSRCS = bextract.c
 BEXTOBJS = $(BEXTSRCS:.c=.o)
 
 # bscan
-SCNSRCS = bscan.c dummy.c
+SCNSRCS = bscan.c
 SCNOBJS = $(SCNSRCS:.c=.o)
 
 # bcopy
-COPYSRCS = bcopy.c dummy.c
+COPYSRCS = bcopy.c
 COPYOBJS = $(COPYSRCS:.c=.o)
 
 SD_LIBS += @CAP_LIBS@

@@ -526,9 +526,13 @@ inline const char *DEVICE::strerror() const { return errmsg; }
 inline const char *DEVICE::archive_name() const { return dev_name; }
 inline const char *DEVICE::print_name() const { return prt_name; }
 
-
 #define CHECK_BLOCK_NUMBERS true
 #define NO_BLOCK_NUMBER_CHECK false
+
+enum get_vol_info_rw {
+   GET_VOL_INFO_FOR_WRITE,
+   GET_VOL_INFO_FOR_READ
+};
 
 /*
  * Device Context (or Control) Record.
@@ -544,7 +548,7 @@ inline const char *DEVICE::print_name() const { return prt_name; }
  * same DCR. Consequently, when creating/attaching/detaching
  * and freeing the DCR we must lock it (m_mutex).
  */
-class DCR {
+class SD_IMP_EXP DCR : public SMARTALLOC {
 private:
    bool m_dev_locked;                 /* Set if dev already locked */
    int m_dev_lock;                    /* Non-zero if rLock already called */
@@ -600,6 +604,12 @@ public:
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
 
    /*
+    * Constructor/Destructor.
+    */
+   DCR();
+   virtual ~DCR() {};
+
+   /*
     * Methods
     */
    void set_dev(DEVICE *ndev) { dev = ndev; };
@@ -624,6 +634,18 @@ public:
      setVolCatInfo(false);
    };
    char *getVolCatName() { return VolCatInfo.VolCatName; };
+
+   /*
+    * Methods in askdir.c
+    */
+   virtual DCR *get_new_spooling_dcr();
+   virtual bool dir_find_next_appendable_volume() { return true; };
+   virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; };
+   virtual bool dir_create_jobmedia_record(bool zero) { return true; };
+   virtual bool dir_update_file_attributes(DEV_RECORD *record) { return true; };
+   virtual bool dir_ask_sysop_to_mount_volume(int mode);
+   virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; };
+   virtual bool dir_get_volume_info(enum get_vol_info_rw writing);
 
    /*
     * Methods in lock.c
@@ -685,6 +707,43 @@ public:
     * Methods in label.c
     */
    bool rewrite_volume_label(bool recycle);
+};
+
+class SD_IMP_EXP SD_DCR : public DCR {
+public:
+   /*
+    * Virtual Destructor.
+    */
+   ~SD_DCR() {};
+
+   /*
+    * Methods overriding default implementations.
+    */
+   bool dir_find_next_appendable_volume();
+   bool dir_update_volume_info(bool label, bool update_LastWritten);
+   bool dir_create_jobmedia_record(bool zero);
+   bool dir_update_file_attributes(DEV_RECORD *record);
+   bool dir_ask_sysop_to_mount_volume(int mode);
+   bool dir_ask_sysop_to_create_appendable_volume();
+   bool dir_get_volume_info(enum get_vol_info_rw writing);
+   DCR *get_new_spooling_dcr();
+};
+
+class BTAPE_DCR : public DCR {
+public:
+   /*
+    * Virtual Destructor.
+    */
+   ~BTAPE_DCR() {};
+
+   /*
+    * Methods overriding default implementations.
+    */
+   bool dir_find_next_appendable_volume();
+   bool dir_create_jobmedia_record(bool zero);
+   bool dir_ask_sysop_to_mount_volume(int mode);
+   bool dir_ask_sysop_to_create_appendable_volume();
+   DCR *get_new_spooling_dcr();
 };
 
 /*

@@ -627,7 +627,7 @@ static char *bareosLookupCryptoKey(const char *VolumeName)
 
 static bool bareosUpdateVolumeInfo(DCR *dcr)
 {
-   return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ);
+   return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ);
 }
 
 static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags)

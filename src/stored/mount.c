@@ -91,7 +91,7 @@ mount_next_vol:
        */
       VolCatInfo.Slot = 0;
       V(mount_mutex);
-      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPENDREADY)) {
+      if (!dcr->dir_ask_sysop_to_mount_volume(ST_APPENDREADY)) {
          Jmsg(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s.\n"),
               dev->print_name());
          goto no_lock_bail_out;
@@ -162,7 +162,7 @@ mount_next_vol:
    if (ask) {
       V(mount_mutex);
       dcr->setVolCatInfo(false);   /* out of date when Vols unlocked */
-      if (!dir_ask_sysop_to_mount_volume(dcr, ST_APPENDREADY)) {
+      if (!dcr->dir_ask_sysop_to_mount_volume(ST_APPENDREADY)) {
          Dmsg0(150, "Error return ask_sysop ...\n");
          goto no_lock_bail_out;
       }
@@ -299,7 +299,7 @@ read_volume:
 
       dev->VolCatInfo.VolCatMounts++;      /* Update mounts */
       Dmsg1(150, "update volinfo mounts=%d\n", dev->VolCatInfo.VolCatMounts);
-      if (!dir_update_volume_info(dcr, false, false)) {
+      if (!dcr->dir_update_volume_info(false, false)) {
          goto bail_out;
       }
 
@@ -336,7 +336,7 @@ bool DCR::find_a_volume()
       /* Do we have a candidate volume? */
       if (dev->vol) {
          bstrncpy(VolumeName, dev->vol->vol_name, sizeof(VolumeName));
-         have_vol = dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE);
+         have_vol = dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
       }
       /*
        * Get Director's idea of what tape we should have mounted.
@@ -344,13 +344,13 @@ bool DCR::find_a_volume()
        */
       if (!have_vol) {
          Dmsg0(200, "Before dir_find_next_appendable_volume.\n");
-         while (!dir_find_next_appendable_volume(dcr)) {
+         while (!dcr->dir_find_next_appendable_volume()) {
             Dmsg0(200, "not dir_find_next\n");
             if (job_canceled(jcr)) {
                return false;
             }
             V(mount_mutex);
-            if (!dir_ask_sysop_to_create_appendable_volume(dcr)) {
+            if (!dcr->dir_ask_sysop_to_create_appendable_volume()) {
                P(mount_mutex);
                return false;
              }
@@ -365,7 +365,7 @@ bool DCR::find_a_volume()
    if (dcr->haveVolCatInfo()) {
       return true;
    }
-   return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE);
+   return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
 }
 
 int DCR::check_volume_label(bool &ask, bool &autochanger)
@@ -429,13 +429,13 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
       /* Check if this is a valid Volume in the pool */
       bstrncpy(saveVolumeName, VolumeName, sizeof(saveVolumeName));
       bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
-      if (!dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+      if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
          POOL_MEM vol_info_msg;
          pm_strcpy(vol_info_msg, jcr->dir_bsock->msg);  /* save error message */
          /* Restore desired volume name, note device info out of sync */
          /* This gets the info regardless of the Pool */
          bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
-         if (autochanger && !dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ)) {
+         if (autochanger && !dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ)) {
             /*
              * If we get here, we know we cannot write on the Volume,
              *  and we know that we cannot read it either, so it
@@ -522,14 +522,12 @@ check_read_volume:
 
 bool DCR::is_suitable_volume_mounted()
 {
-   DCR *dcr = this;
-
    /* Volume mounted? */
    if (dev->VolHdr.VolumeName[0] == 0 || dev->swap_dev || dev->must_unload()) {
       return false;                      /* no */
    }
    bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
-   return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE);
+   return dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
 }
 
 bool DCR::do_unload()
@@ -629,7 +627,7 @@ bool DCR::is_eod_valid()
               VolumeName, dev->get_file(), dev->VolCatInfo.VolCatFiles);
          dev->VolCatInfo.VolCatFiles = dev->get_file();
          dev->VolCatInfo.VolCatBlocks = dev->get_block_num();
-         if (!dir_update_volume_info(dcr, false, true)) {
+         if (!dcr->dir_update_volume_info(false, true)) {
             Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
             mark_volume_in_error();
             return false;
@@ -658,7 +656,7 @@ bool DCR::is_eod_valid()
               edit_uint64(dev->VolCatInfo.VolCatBytes, ed2));
          dev->VolCatInfo.VolCatBytes = (uint64_t)pos;
          dev->VolCatInfo.VolCatFiles = (uint32_t)(pos >> 32);
-         if (!dir_update_volume_info(dcr, false, true)) {
+         if (!dcr->dir_update_volume_info(false, true)) {
             Jmsg(jcr, M_WARNING, 0, _("Error updating Catalog\n"));
             mark_volume_in_error();
             return false;
@@ -732,7 +730,7 @@ int DCR::try_autolabel(bool opened)
       Dmsg0(150, "dir_update_vol_info. Set Append\n");
       /* Copy Director's info into the device info */
       dev->VolCatInfo = VolCatInfo;    /* structure assignment */
-      if (!dir_update_volume_info(dcr, true, true)) {  /* indicate tape labeled */
+      if (!dcr->dir_update_volume_info(true, true)) {  /* indicate tape labeled */
          return try_error;
       }
       Jmsg(dcr->jcr, M_INFO, 0, _("Labeled new Volume \"%s\" on device %s.\n"),
@@ -765,7 +763,7 @@ void DCR::mark_volume_in_error()
    dev->VolCatInfo = VolCatInfo;       /* structure assignment */
    bstrncpy(dev->VolCatInfo.VolCatStatus, "Error", sizeof(dev->VolCatInfo.VolCatStatus));
    Dmsg0(150, "dir_update_vol_info. Set Error.\n");
-   dir_update_volume_info(dcr, false, false);
+   dcr->dir_update_volume_info(false, false);
    volume_unused(dcr);
    Dmsg0(50, "set_unload\n");
    dev->set_unload();                 /* must get a new volume */
@@ -786,7 +784,7 @@ void DCR::mark_volume_not_inchanger()
    VolCatInfo.InChanger = false;
    dev->VolCatInfo.InChanger = false;
    Dmsg0(400, "update vol info in mount\n");
-   dir_update_volume_info(dcr, true, false);  /* set new status */
+   dcr->dir_update_volume_info(true, false);  /* set new status */
 }
 
 /*
