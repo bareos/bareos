@@ -125,7 +125,7 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
    dev->Lock();                     /* lock again */
 
    dev->VolCatInfo.VolCatJobs++;              /* increment number of jobs on vol */
-   dir_update_volume_info(dcr, false, false); /* send Volume info to Director */
+   dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
 
    Jmsg(jcr, M_INFO, 0, _("New volume \"%s\" mounted on device %s at %s.\n"),
         dcr->VolumeName, dev->print_name(), bstrftime(dt, sizeof(dt), time(NULL)));
@@ -220,7 +220,7 @@ void set_start_vol_position(DCR *dcr)
 void set_new_volume_parameters(DCR *dcr)
 {
    JCR *jcr = dcr->jcr;
-   if (dcr->NewVol && !dir_get_volume_info(dcr, GET_VOL_INFO_FOR_WRITE)) {
+   if (dcr->NewVol && !dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
       Jmsg1(jcr, M_ERROR, 0, "%s", jcr->errmsg);
    }
    set_new_file_parameters(dcr);

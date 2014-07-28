@@ -580,7 +580,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    if (recycle) {
       dev->VolCatInfo.VolCatMounts++;
       dev->VolCatInfo.VolCatRecycles++;
-      dir_create_jobmedia_record(dcr, true);
+      dcr->dir_create_jobmedia_record(true);
    } else {
       dev->VolCatInfo.VolCatMounts = 1;
       dev->VolCatInfo.VolCatRecycles = 0;
@@ -591,7 +591,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    dev->VolCatInfo.VolFirstWritten = time(NULL);
    bstrncpy(dev->VolCatInfo.VolCatStatus, "Append", sizeof(dev->VolCatInfo.VolCatStatus));
    dev->setVolCatName(dcr->VolumeName);
-   if (!dir_update_volume_info(dcr, true, true)) {  /* indicate doing relabel */
+   if (!dcr->dir_update_volume_info(true, true)) {  /* indicate doing relabel */
       return false;
    }
    if (recycle) {

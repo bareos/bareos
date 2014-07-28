@@ -360,7 +360,7 @@ static inline bool bndmp_write_data_to_block(JCR *jcr,
    }
 
    if (stream == STREAM_UNIX_ATTRIBUTES) {
-      dir_update_file_attributes(dcr, dcr->rec);
+      dcr->dir_update_file_attributes(dcr->rec);
    }
 
    retval = true;

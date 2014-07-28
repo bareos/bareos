@@ -32,27 +32,12 @@ DCR *acquire_device_for_append(DCR *dcr);
 bool acquire_device_for_read(DCR *dcr);
 bool release_device(DCR *dcr);
 bool clean_device(DCR *dcr);
-DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes);
+void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes);
 void free_dcr(DCR *dcr);
 
 /* append.c */
 bool do_append_data(JCR *jcr, BSOCK *bs, const char *what);
 bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec);
-
-/* askdir.c */
-enum get_vol_info_rw {
-   GET_VOL_INFO_FOR_WRITE,
-   GET_VOL_INFO_FOR_READ
-};
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw);
-bool dir_find_next_appendable_volume(DCR *dcr);
-bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten);
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr);
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode);
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec);
-bool dir_create_jobmedia_record(DCR *dcr, bool zero = false);
-bool dir_update_device(JCR *jcr, DEVICE *dev);
-bool dir_update_changer(JCR *jcr, AUTOCHANGERRES *changer);
 
 /* authenticate.c */
 bool authenticate_director(JCR *jcr);
@@ -278,6 +263,9 @@ int start_statistics_thread(void);
 void stop_statistics_thread();
 void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
 void update_job_statistics(JCR *jcr, utime_t now);
+void setup_sd_stats_parameters(uint32_t statistics_collect_interval,
+                               bool collect_job_statistics,
+                               bool collect_dev_statistics);
 
 /* spool.c */
 bool begin_data_spool (DCR *dcr);
@@ -310,3 +298,4 @@ void remove_read_volume(JCR *jcr, const char *VolumeName);
 /* wait.c */
 int wait_for_sysop(DCR *dcr);
 bool wait_for_device(JCR *jcr, int &retries);
+void release_device_cond();
