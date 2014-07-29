@@ -6,6 +6,7 @@ use Log\Model\Log;
 use Log\Model\LogTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module 
 {
@@ -23,7 +24,9 @@ class Module
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
 					$resultSetPrototype->setArrayObjectPrototype(new Log());
-					return new TableGateway('log', $dbAdapter, null, $resultSetPrototype);
+					$config = $sm->get('Config');
+					$bsqlch = new BareosSqlCompatHelper($config['db']['driver']);
+					return new TableGateway($bsqlch->strdbcompat("Log"), $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

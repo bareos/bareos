@@ -6,6 +6,7 @@ use Storage\Model\Storage;
 use Storage\Model\StorageTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module
 {
@@ -42,7 +43,9 @@ class Module
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
 					$resultSetPrototype->setArrayObjectPrototype(new Storage());
-					return new TableGateway('storage', $dbAdapter, null, $resultSetPrototype);
+					$config = $sm->get('Config');
+					$bsqlch = new BareosSqlCompatHelper($config['db']['driver']);
+					return new TableGateway($bsqlch->strdbcompat("Storage"), $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

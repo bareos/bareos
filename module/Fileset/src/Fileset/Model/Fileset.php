@@ -35,6 +35,8 @@ class Fileset
 
 	public function exchangeArray($data)
 	{
+		$data = array_change_key_case($data, CASE_LOWER);		
+
 		$this->filesetid = (!empty($data['filesetid'])) ? $data['filesetid'] : null;
 		$this->fileset = (!empty($data['fileset'])) ? $data['fileset'] : null;
 		$this->md5 = (!empty($data['md5'])) ? $data['md5'] : null;

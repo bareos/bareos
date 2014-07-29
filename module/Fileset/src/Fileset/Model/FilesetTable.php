@@ -30,8 +30,11 @@ use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class FilesetTable
+class FilesetTable implements ServiceLocatorAwareInterface
 {
 
 	protected $tableGateway;
@@ -41,11 +44,24 @@ class FilesetTable
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+        public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
+
 	public function fetchAll($paginated=false) 
 	{
-	
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('fileset');
+		$select->from($bsqlch->strdbcompat("FileSet"));
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -66,8 +82,10 @@ class FilesetTable
 
 	public function getFileset($id)
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$id = (int) $id;
-		$rowset = $this->tableGateway->select(array('filesetid' => $id));
+		$rowset = $this->tableGateway->select(array(
+			$bsqlch->strdbcompat("FileSetId") => $id));
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $id");
@@ -78,11 +96,11 @@ class FilesetTable
 	public function getFilesetHistory($id)
 	{
 		$fset = $this->getFileSet($id);
-                  
+                $bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());  
                 $select = new Select();
-                $select->from('fileset');
-                $select->where("fileset = '". $fset->fileset ."'");
-                $select->order('createtime DESC');
+                $select->from($bsqlch->strdbcompat("FileSet"));
+                $select->where($bsqlch->strdbcompat("FileSet") . " = '". $fset->fileset . "'");
+                $select->order($bsqlch->strdbcompat("CreateTime") . " DESC");
                 
                 $resultSet = $this->tableGateway->selectWith($select);
                   
@@ -91,8 +109,9 @@ class FilesetTable
 	
 	public function getFilesetNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('fileset');
+		$select->from($bsqlch->strdbcompat("FileSet"));
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Fileset());
 		$rowset = new DbSelect(

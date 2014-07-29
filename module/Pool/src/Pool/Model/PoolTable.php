@@ -29,19 +29,37 @@ use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class PoolTable
+class PoolTable implements ServiceLocatorAwareInterface
 {
 
 	protected $tableGateway;
+	protected $serviceLocator;
 
 	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+	public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
+
 	public function fetchAll() 
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$resultSet = $this->tableGateway->select();
 		return $resultSet;
 	}
@@ -49,7 +67,12 @@ class PoolTable
 	public function getPool($id)
 	{
 		$id = (int) $id;
-		$rowset = $this->tableGateway->select(array('poolid' => $id));
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+		$rowset = $this->tableGateway->select(
+			array(
+				$bsqlch->strdbcompat("PoolId") => $id
+			)
+		);
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $id");
@@ -59,8 +82,9 @@ class PoolTable
 
 	public function getPoolNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('pool');
+		$select->from($bsqlch->strdbcompat("Pool"));
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Pool());
 		$rowset = new DbSelect(

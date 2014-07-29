@@ -73,6 +73,8 @@ class Media
 
 	public function exchangeArray($data)
 	{
+		$data = array_change_key_case($data, CASE_LOWER);
+
 		$this->mediaid = (!empty($data['mediaid'])) ? $data['mediaid'] : null;
 		$this->volumename = (!empty($data['volumename'])) ? $data['volumename'] : null;
 		$this->slot = (!empty($data['slot'])) ? $data['slot'] : null;
