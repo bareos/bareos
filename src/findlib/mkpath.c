@@ -36,6 +36,20 @@
 
 #define dbglvl 50
 
+/*
+ *  * For old systems that don't have lchown() use chown()
+ *   */
+#ifndef HAVE_LCHOWN
+#define lchown chown
+#endif
+
+/*
+ *  * For old systems that don't have lchmod() use chmod()
+ *   */
+#ifndef HAVE_LCHMOD
+#define lchmod chmod
+#endif
+
 typedef struct PrivateCurDir {
    hlink link;
    char fname[1];
@@ -147,7 +161,7 @@ static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
 
 static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t mode)
 {
-   if (chown(path, owner, group) != 0 && attr->uid == 0
+   if (lchown(path, owner, group) != 0 && attr->uid == 0
 #ifdef AFS
         && errno != EPERM
 #endif
@@ -159,7 +173,7 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
 #if defined(HAVE_WIN32)
    if (win32_chmod(path, mode, 0) != 0 && attr->uid == 0) {
 #else
-   if (chmod(path, mode) != 0 && attr->uid == 0) {
+   if (lchmod(path, mode) != 0 && attr->uid == 0) {
 #endif
       berrno be;
       Jmsg2(attr->jcr, M_WARNING, 0, _("Cannot change permissions of %s: ERR=%s\n"),
@@ -178,7 +192,7 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
  * keep_dir_modes if set means don't change mode bits if dir exists
  */
 bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
-            uid_t owner, gid_t group, int keep_dir_modes)
+              uid_t owner, gid_t group, bool keep_dir_modes)
 {
    struct stat statp;
    mode_t omask, tmode;

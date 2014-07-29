@@ -85,7 +85,7 @@ int enable_backup_privileges(JCR *jcr, int ignore_errors);
 /* makepath.c */
 bool makepath(ATTR *attr, const char *path, mode_t mode,
               mode_t parent_mode, uid_t owner, gid_t group,
-              int keep_dir_modes);
+              bool keep_dir_modes);
 void free_path_list(JCR *jcr);
 bool path_list_lookup(JCR *jcr, char *fname);
 bool path_list_add(JCR *jcr, uint32_t len, char *fname);
