@@ -22864,7 +22864,19 @@ $as_echo "#define HAVE_SYS_POLL_H 1" >>confdefs.h
 fi
 
 
-for ac_func in strcasecmp select poll setenv putenv tcgetattr lstat lchown
+for ac_func in strcasecmp select poll setenv putenv tcgetattr
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+for ac_func in lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
