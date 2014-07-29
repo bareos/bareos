@@ -43,9 +43,18 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
 void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
 #endif /* HAVE_WIN32 */
 
-/* For old systems that don't have lchown() use chown() */
+/*
+ * For old systems that don't have lchown() use chown()
+ */
 #ifndef HAVE_LCHOWN
 #define lchown chown
+#endif
+
+/*
+ * For old systems that don't have lchmod() use chmod()
+ */
+#ifndef HAVE_LCHMOD
+#define lchmod chmod
 #endif
 
 /*=============================================================*/
@@ -189,6 +198,161 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
    return stream;
 }
 
+/*
+ * Restore all file attributes like owner, mode and file times.
+ */
+static inline bool restore_file_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
+{
+   bool ok = true;
+   bool suppress_errors;
+#if defined(HAVE_FCHOWN) || defined(HAVE_FCHMOD) || defined(HAVE_FUTIMES) || defined(FUTIMENS)
+   bool file_is_open;
+
+   /*
+    * Save if we are working on an open file.
+    */
+   file_is_open = is_bopen(ofd);
+#endif
+
+   /*
+    * See if we want to print errors.
+    */
+   suppress_errors = (debug_level >= 100 || my_uid != 0);
+
+   /*
+    * Restore owner and group.
+    */
+#ifdef HAVE_FCHOWN
+   if (file_is_open) {
+      if (fchown(ofd->fid, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   } else {
+#else
+   {
+#endif
+      if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   }
+
+   /*
+    * Restore filemode.
+    */
+#ifdef HAVE_FCHMOD
+   if (file_is_open) {
+      if (fchmod(ofd->fid, attr->statp.st_mode) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   } else {
+#else
+   {
+#endif
+#if defined(HAVE_WIN32)
+      if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) < 0 && !suppress_errors) {
+#else
+      if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
+#endif
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   }
+
+   /*
+    * Reset file times.
+    */
+#if defined(HAVE_FUTIMES)
+   if (file_is_open) {
+      struct timeval restore_times[2];
+
+      restore_times[0].tv_sec = attr->statp.st_atime;
+      restore_times[0].tv_usec = 0;
+      restore_times[1].tv_sec = attr->statp.st_mtime;
+      restore_times[1].tv_usec = 0;
+
+      if (futimes(ofd->fid, restore_times) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   } else {
+#elif defined(HAVE_FUTIMENS)
+   if (file_is_open) {
+      struct timespec restore_times[2];
+
+      restore_times[0].tv_sec = attr->statp.st_atime;
+      restore_times[0].tv_nsec = 0;
+      restore_times[1].tv_sec = attr->statp.st_mtime;
+      restore_times[1].tv_nsec = 0;
+
+      if (futimens(ofd->fid, restore_times) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+   } else {
+#else
+   {
+#endif
+#if defined(HAVE_LUTIMES)
+      struct timeval restore_times[2];
+
+      restore_times[0].tv_sec = attr->statp.st_atime;
+      restore_times[0].tv_usec = 0;
+      restore_times[1].tv_sec = attr->statp.st_mtime;
+      restore_times[1].tv_usec = 0;
+
+      if (lutimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#elif defined(HAVE_UTIMES)
+      struct timeval restore_times[2];
+
+      restore_times[0].tv_sec = attr->statp.st_atime;
+      restore_times[0].tv_usec = 0;
+      restore_times[1].tv_sec = attr->statp.st_mtime;
+      restore_times[1].tv_usec = 0;
+
+      if (utimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#else
+      struct utimbuf restore_times;
+
+      restore_times.actime = attr->statp.st_atime;
+      restore_times.modtime = attr->statp.st_mtime;
+
+      if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#endif /* HAVE_LUTIMES */
+   }
+
+   return ok;
+}
+
 /**
  * Set file modes, permissions and times
  *
@@ -200,16 +364,20 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
  */
 bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 {
-   struct utimbuf ut;
    mode_t old_mask;
    bool ok = true;
-   boffset_t fsize;
+   bool suppress_errors;
 
    if (uid_set) {
       my_uid = getuid();
       my_gid = getgid();
       uid_set = true;
    }
+
+   /*
+    * See if we want to print errors.
+    */
+   suppress_errors = (debug_level >= 100 || my_uid != 0);
 
 #if defined(HAVE_WIN32)
    if (attr->stream == STREAM_UNIX_ATTRIBUTES_EX &&
@@ -220,6 +388,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
        pm_strcpy(attr->ofname, "*none*");
        return true;
    }
+
    if (attr->data_stream == STREAM_WIN32_DATA ||
        attr->data_stream == STREAM_WIN32_GZIP_DATA ||
        attr->data_stream == STREAM_WIN32_COMPRESSED_DATA) {
@@ -231,97 +400,98 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    }
 
    /**
-    * If Windows stuff failed, e.g. attempt to restore Unix file
-    *  to Windows, simply fall through and we will do it the
-    *  universal way.
+    * If Windows stuff failed, e.g. attempt to restore Unix file to Windows, simply fall
+    * through and we will do it the universal way.
     */
 #endif
 
    old_mask = umask(0);
    if (is_bopen(ofd)) {
+      boffset_t fsize;
       char ec1[50], ec2[50];
+
       fsize = blseek(ofd, 0, SEEK_END);
-      bclose(ofd);                    /* first close file */
-      if (attr->type == FT_REG && fsize > 0 && attr->statp.st_size > 0 &&
-                        fsize != (boffset_t)attr->statp.st_size) {
+      if (attr->type == FT_REG &&
+          fsize > 0 &&
+          attr->statp.st_size > 0 &&
+          fsize != (boffset_t)attr->statp.st_size) {
          Jmsg3(jcr, M_ERROR, 0, _("File size of restored file %s not correct. Original %s, restored %s.\n"),
-            attr->ofname, edit_uint64(attr->statp.st_size, ec1),
-            edit_uint64(fsize, ec2));
+               attr->ofname, edit_uint64(attr->statp.st_size, ec1), edit_uint64(fsize, ec2));
+      }
+   } else {
+      struct stat st;
+      char ec1[50], ec2[50];
+
+      if (lstat(attr->ofname, &st) == 0) {
+         if (attr->type == FT_REG &&
+             st.st_size > 0 &&
+             attr->statp.st_size > 0 &&
+             st.st_size != attr->statp.st_size) {
+            Jmsg3(jcr, M_ERROR, 0, _("File size of restored file %s not correct. Original %s, restored %s.\n"),
+                  attr->ofname, edit_uint64(attr->statp.st_size, ec1), edit_uint64(st.st_size, ec2));
+         }
       }
    }
 
    /**
-    * We do not restore sockets, so skip trying to restore their
-    *   attributes.
+    * We do not restore sockets, so skip trying to restore their attributes.
     */
    if (attr->type == FT_SPEC && S_ISSOCK(attr->statp.st_mode)) {
       goto bail_out;
    }
 
-   ut.actime = attr->statp.st_atime;
-   ut.modtime = attr->statp.st_mtime;
-
    /* ***FIXME**** optimize -- don't do if already correct */
    /**
-    * For link, change owner of link using lchown, but don't
-    *   try to do a chmod as that will update the file behind it.
+    * For link, change owner of link using lchown, but don't try to do a chmod as that will update the file behind it.
     */
    if (attr->type == FT_LNK) {
-      /** Change owner of link, not of real file */
-      if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && my_uid == 0) {
+      /*
+       * Change owner of link, not of real file
+       */
+      if (lchown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && !suppress_errors) {
          berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"), attr->ofname, be.bstrerror());
          ok = false;
       }
+
+#ifdef HAVE_LCHMOD
+      if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
+         berrno be;
+
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+         ok = false;
+      }
+#endif
    } else {
-      if (chown(attr->ofname, attr->statp.st_uid, attr->statp.st_gid) < 0 && my_uid == 0) {
-         berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file owner %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-         ok = false;
-      }
+      if (!ofd->cmd_plugin) {
+         ok = restore_file_attributes(jcr, attr, ofd);
 
-#if defined(HAVE_WIN32)
-      if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) < 0 && my_uid == 0) {
-#else
-      if (chmod(attr->ofname, attr->statp.st_mode) < 0 && my_uid == 0) {
-#endif
-         berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file modes %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-         ok = false;
-      }
-
-      /**
-       * Reset file times.
-       */
-      if (utime(attr->ofname, &ut) < 0 && my_uid == 0) {
-         berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file times %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-         ok = false;
-      }
 #ifdef HAVE_CHFLAGS
-      /**
-       * FreeBSD user flags
-       *
-       * Note, this should really be done before the utime() above,
-       *  but if the immutable bit is set, it will make the utimes()
-       *  fail.
-       */
-      if (chflags(attr->ofname, attr->statp.st_flags) < 0 && my_uid == 0) {
-         berrno be;
-         Jmsg2(jcr, M_ERROR, 0, _("Unable to set file flags %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-         ok = false;
-      }
+         /**
+          * FreeBSD user flags
+          *
+          * Note, this should really be done before the utime() above,
+          * but if the immutable bit is set, it will make the utimes()
+          * fail.
+          */
+         if (chflags(attr->ofname, attr->statp.st_flags) < 0 && !suppress_errors) {
+            berrno be;
+            Jmsg2(jcr, M_ERROR, 0, _("Unable to set file flags %s: ERR=%s\n"), attr->ofname, be.bstrerror());
+            ok = false;
+         }
 #endif
+      }
    }
 
 bail_out:
+   if (is_bopen(ofd)) {
+      bclose(ofd);
+   }
+
    pm_strcpy(attr->ofname, "*none*");
    umask(old_mask);
+
    return ok;
 }
 
