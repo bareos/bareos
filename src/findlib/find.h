@@ -43,6 +43,8 @@
 #if !defined(HAVE_WIN32) || defined(HAVE_MINGW)
 #include <sys/param.h>
 #endif
+
+#if !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
 #if HAVE_UTIME_H
 #include <utime.h>
 #else
@@ -50,6 +52,7 @@ struct utimbuf {
    long actime;
    long modtime;
 };
+#endif
 #endif
 
 #define MODE_RALL (S_IRUSR|S_IRGRP|S_IROTH)

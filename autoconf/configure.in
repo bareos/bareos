@@ -847,7 +847,8 @@ AC_HEADER_STAT
 AC_HEADER_DIRENT
 AC_CHECK_HEADER(poll.h, [AC_DEFINE(HAVE_POLL_H, 1, [Define to 1 if you have the <poll.h> header file.])] , )
 AC_CHECK_HEADER(sys/poll.h, [AC_DEFINE(HAVE_SYS_POLL_H, 1, [Define to 1 if you have the <sys/poll.h> header file.])] , )
-AC_CHECK_FUNCS(strcasecmp select poll setenv putenv tcgetattr lstat lchown)
+AC_CHECK_FUNCS(strcasecmp select poll setenv putenv tcgetattr)
+AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown)
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 

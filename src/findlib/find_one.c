@@ -404,6 +404,39 @@ void ff_pkt_set_link_digest(FF_PKT *ff_pkt, int32_t digest_stream,
    }
 }
 
+/*
+ * Restore file times.
+ */
+static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
+{
+#if defined(HAVE_LUTIMES)
+   struct timeval restore_times[2];
+
+   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
+   restore_times[0].tv_usec = 0;
+   restore_times[1].tv_sec = ff_pkt->statp.st_mtime;
+   restore_times[1].tv_usec = 0;
+
+   lutimes(fname, restore_times);
+#elif defined(HAVE_UTIMES)
+   struct timeval restore_times[2];
+
+   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
+   restore_times[0].tv_usec = 0;
+   restore_times[1].tv_sec = ff_pkt->statp.st_mtime;
+   restore_times[1].tv_usec = 0;
+
+   utimes(fname, restore_times);
+#else
+   struct utimbuf restore_times;
+
+   restore_times.actime = ff_pkt->statp.st_atime;
+   restore_times.modtime = ff_pkt->statp.st_mtime;
+
+   utime(fname, &restore_times);
+#endif
+}
+
 #ifdef HAVE_DARWIN_OS
 /*
  * Handling of a HFS+ attributes.
@@ -503,8 +536,7 @@ static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
  */
 static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
                                        int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
-                                       char *fname, bool top_level,
-                                       struct utimbuf *restore_times)
+                                       char *fname, bool top_level)
 {
    int rtn_stat;
    boffset_t sizeleft;
@@ -528,7 +560,7 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
    Dmsg3(400, "FT_REG FI=%d linked=%d file=%s\n",
          ff_pkt->FileIndex, ff_pkt->linked ? 1 : 0, fname);
    if (ff_pkt->flags & FO_KEEPATIME) {
-      utime(fname, restore_times);
+      restore_file_times(ff_pkt, fname);
    }
    return rtn_stat;
 }
@@ -572,8 +604,7 @@ static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
  */
 static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
                                     int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
-                                    char *fname, dev_t parent_device, bool top_level,
-                                    struct utimbuf *restore_times)
+                                    char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
    DIR *directory;
@@ -702,7 +733,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
       free_dir_ff_pkt(dir_ff_pkt);
       ff_pkt->link = ff_pkt->fname;     /* reset "link" */
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
       return rtn_stat;
    }
@@ -805,7 +836,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    free_dir_ff_pkt(dir_ff_pkt);
 
    if (ff_pkt->flags & FO_KEEPATIME) {
-      utime(fname, restore_times);
+      restore_file_times(ff_pkt, fname);
    }
    ff_pkt->volhas_attrlist = volhas_attrlist;      /* Restore value in case it changed. */
    return rtn_stat;
@@ -858,14 +889,12 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
 /*
  * See if we need to perform any processing for a given file.
  */
-static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt,
-                                   char *fname,
-                                   struct utimbuf *restore_times)
+static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
 {
    if (!accept_fstype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDFS;
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
 
       char fs[100];
@@ -880,7 +909,7 @@ static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt,
    if (!accept_drivetype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDDT;
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
 
       char dt[100];
@@ -911,7 +940,6 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
 {
    int rtn_stat;
    bool done = false;
-   struct utimbuf restore_times;
 
    ff_pkt->fname = ff_pkt->link = fname;
    if (lstat(fname, &ff_pkt->statp) != 0) {
@@ -926,17 +954,10 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    Dmsg1(300, "File ----: %s\n", fname);
 
    /*
-    * Save current times of this directory in case we need to
-    * reset them because the user doesn't want them changed.
-    */
-   restore_times.actime = ff_pkt->statp.st_atime;
-   restore_times.modtime = ff_pkt->statp.st_mtime;
-
-   /*
     * We check for allowed fstypes and drivetypes at top_level and fstype change (below).
     */
    if (top_level) {
-      if (needs_processing(jcr, ff_pkt, fname, &restore_times) == 1)
+      if (needs_processing(jcr, ff_pkt, fname) == 1)
          return 1;
    }
 
@@ -1025,13 +1046,13 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     */
    switch (ff_pkt->statp.st_mode & S_IFMT) {
    case S_IFREG:
-      return process_regular_file(jcr, ff_pkt, handle_file, fname, top_level, &restore_times);
+      return process_regular_file(jcr, ff_pkt, handle_file, fname, top_level);
 #ifdef S_IFLNK
    case S_IFLNK:
       return process_symlink(jcr, ff_pkt, handle_file, fname, top_level);
 #endif
    case S_IFDIR:
-      return process_directory(jcr, ff_pkt, handle_file, fname, parent_device, top_level, &restore_times);
+      return process_directory(jcr, ff_pkt, handle_file, fname, parent_device, top_level);
    default:
       return process_special_file(jcr, ff_pkt, handle_file, fname, top_level);
    }
