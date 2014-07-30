@@ -7,21 +7,39 @@ use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class LogTable
+class LogTable implements ServiceLocatorAwareInterface
 {
 	protected $tableGateway;
+	protected $serviceLocator;
 
 	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+        public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
+
 	public function fetchAll($paginated=false)
 	{
 		if($paginated) {
-			$select = new Select('log');
-			$select->order('logid DESC');
+			$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+			$select = new Select($bsqlch->strdbcompat("Log"));
+			$select->order($bsqlch->strdbcompat("LogId") . " DESC");
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Log());
 			$paginatorAdapter = new DbSelect(
@@ -40,7 +58,10 @@ class LogTable
 	public function getLog($logid)
 	{
 		$logid = (int) $logid;
-		$rowset = $this->tableGateway->select(array('logid' => $logid));
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());	
+		$rowset = $this->tableGateway->select(array(
+			$bsqlch->strdbcompat("LogId") => $logid)
+		);
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $logid");
@@ -53,10 +74,11 @@ class LogTable
 
 		$jobid = (int) $id;
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('log');
-		$select->where('jobid = ' . $jobid);
-		$select->order('logid DESC');
+		$select->from($bsqlch->strdbcompat("Log"));
+		$select->where($bsqlch->strdbcompat("JobId") . " = " . $jobid);
+		$select->order($bsqlch->strdbcompat("LogId") . " DESC");
 
 		$resultSet = $this->tableGateway->selectWith($select);
 
@@ -66,8 +88,9 @@ class LogTable
 	
 	public function getLogNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('log');
+		$select->from($bsqlch->strdbcompat("Log"));
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Log());
 		$rowset = new DbSelect(

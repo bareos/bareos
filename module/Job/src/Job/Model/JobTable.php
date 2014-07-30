@@ -30,22 +30,44 @@ use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class JobTable
+class JobTable implements ServiceLocatorAwareInterface
 {
 	protected $tableGateway;
+	protected $serviceLocator;
 
 	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+    		$this->serviceLocator = $serviceLocator;
+  	}
+
+  	public function getServiceLocator() {
+    		return $this->serviceLocator;
+  	}
+
+	public function getDbDriverConfig() {
+		$config = $this->getServiceLocator()->get('Config');
+		return $config['db']['driver'];
+	}
+
 	public function fetchAll($paginated=false)
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->order('job.jobid DESC');
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"), 
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->order($bsqlch->strdbcompat("Job.JobId")  . " DESC");
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -67,10 +89,17 @@ class JobTable
 	{
 		$jobid = (int) $jobid;
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->where('jobid =' . $jobid);
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"),
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"),
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->where(
+			$bsqlch->strdbcompat("JobId") . "=" . $jobid
+		);
 		
 		$rowset = $this->tableGateway->selectWith($select);
 		$row = $rowset->current();
@@ -82,11 +111,16 @@ class JobTable
 
 	public function getRunningJobs($paginated=false)
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->order('job.jobid DESC');
-		$select->where("jobstatus = 'R'");
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"),
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		$select->where($bsqlch->strdbcompat("JobStatus") . " = 'R'");
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -107,21 +141,28 @@ class JobTable
 	
 	public function getWaitingJobs($paginated=false) 
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->order('job.jobid DESC');
-		$select->where("jobstatus = 'F' OR 
-				jobstatus = 'S' OR 
-				jobstatus = 'm' OR 
-				jobstatus = 'M' OR 
-				jobstatus = 's' OR 
-				jobstatus = 'j' OR 
-				jobstatus = 'c' OR 
-				jobstatus = 'd' OR 
-				jobstatus = 't' OR 
-				jobstatus = 'p' OR
-				jobstatus = 'C'");
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"), 
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		$select->where(
+			$bsqlch->strdbcompat("JobStatus") . " = 'F' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 'S' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'm' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'M' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 's' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 'j' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'c' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 'd' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 't' OR " . 
+			$bsqlch->strdbcompat("JobStatus") . " = 'p' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'C'"
+		);
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -145,12 +186,21 @@ class JobTable
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->order('job.jobid DESC');
-		$select->where("jobstatus = 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
-						
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"), 
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		$select->where(
+			$bsqlch->strdbcompat("JobStatus") . " = 'T' AND " .
+			$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+			$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+		);
+
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
@@ -173,12 +223,21 @@ class JobTable
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->join('client', 'job.clientid = client.clientid', array('clientname' => 'name'));
-		$select->order('job.jobid DESC');
-		$select->where("jobstatus != 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
-				
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->join(
+			$bsqlch->strdbcompat("Client"), 
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
+		);
+		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		$select->where(
+			$bsqlch->strdbcompat("JobStatus") . " != 'T' AND " .
+                        $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                        $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+		);		
+
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
@@ -201,92 +260,176 @@ class JobTable
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
 	
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
+		$select->from($bsqlch->strdbcompat("Job"));
 		
 		if($status == "C")
 		{
-			$select->where("jobstatus = 'C' AND schedtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'C' AND " .
+				$bsqlch->strdbcompat("SchedTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "B")
 		{
-			$select->where("jobstatus = 'B' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'B' AND " . 
+				$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+				$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "T")
 		{
-			$select->where("jobstatus = 'T' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'T' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "R")
 		{
-			$select->where("jobstatus = 'R' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'R' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "E")
 		{
-			$select->where("jobstatus = 'E' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'E' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "e")
 		{
-			$select->where("jobstatus = 'e' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'e' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "f")
 		{
-			$select->where("jobstatus = 'f' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'f' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "A")
 		{
-			$select->where("jobstatus = 'A' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'A' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "D")
 		{
-			$select->where("jobstatus = 'D' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'D' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "F")
 		{
-			$select->where("jobstatus = 'F' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'F' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "S")
 		{
-			$select->where("jobstatus = 'S' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'S' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "m")
 		{
-			$select->where("jobstatus = 'm' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'm' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "M")
 		{
-			$select->where("jobstatus = 'M' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'M' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "s")
 		{
-			$select->where("jobstatus = 's' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 's' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "j")
 		{
-			$select->where("jobstatus = 'j' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'j' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "c")
 		{
-			$select->where("jobstatus = 'c' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'c' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "d")
 		{
-			$select->where("jobstatus = 'd' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'd' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "t")
 		{
-			$select->where("jobstatus = 't' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 't' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "p")
 		{
-			$select->where("jobstatus = 'p' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'p' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "a")
 		{
-			$select->where("jobstatus = 'a' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'a' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 		if($status == "i")
 		{
-			$select->where("jobstatus = 'i' AND starttime >= '" . $back24h_time . "' AND endtime >= '" . $back24h_time . "'");
+			$select->where(
+				$bsqlch->strdbcompat("JobStatus") . " = 'i' AND " . 
+                                $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
+                                $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			);
 		}
 				
 		$resultSetPrototype = new ResultSet();
@@ -303,8 +446,9 @@ class JobTable
 	
 	public function getJobNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
+		$select->from($bsqlch->strdbcompat("Job"));
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Job());
 		$rowset = new DbSelect(
@@ -318,10 +462,14 @@ class JobTable
 	
 	public function getLastSuccessfulClientJob($id) 
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->where("clientid = " . $id . " AND jobstatus = 'T'");
-		$select->order('jobid DESC');
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->where(	
+			$bsqlch->strdbcompat("ClientId") . " = " . $id . " AND " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'T'"
+		);
+		$select->order($bsqlch->strdbcompat("JobId") . " DESC");
 		$select->limit(1);
 		
 		$rowset = $this->tableGateway->selectWith($select);
@@ -339,11 +487,20 @@ class JobTable
 		$end = date("Y-m-d H:i:s",time());
 		$start = date("Y-m-d H:i:s",time() - (60*60*23*7));
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		$select->columns(array('endtime','jobbytes'), true);
-		$select->where("endtime >= '" . $start . "' AND endtime <= '" . $end . "'");
-		$select->order('endtime ASC');
+		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+					$bsqlch->strdbcompat("EndTime"),
+					$bsqlch->strdbcompat("JobBytes"), 
+					true
+				)
+		);
+		$select->where(
+				$bsqlch->strdbcompat("EndTime") . " >= '" . $start . "' AND " .
+				$bsqlch->strdbcomapt("EndTime") . " <= '" . $end . "'"
+		);
+		$select->order($bsqlch->strdbcompat("EndTime" . " ASC"));
 		
 		$resultSet = $this->tableGateway->selectWith($select);
 		return $resultSet;
@@ -351,9 +508,9 @@ class JobTable
 	
 	public function getStoredBytes14Days() 
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('job');
-		
+		$select->from($bsqlch->strdbcompat("Job"));
 		
 		$resultSet = $this->tableGateway->selectWith($select);
 		return $resultSet;

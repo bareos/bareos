@@ -31,22 +31,40 @@ use Zend\Db\Sql\Select;
 use Zend\Db\Sql\Sql;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class MediaTable
+class MediaTable implements ServiceLocatorAwareInterface
 {
 
 	protected $tableGateway;
+	protected $serviceLocator;
 
 	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+        public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
+
 	public function fetchAll($paginated=false) 
 	{
 		if($paginated) {
-			$select = new Select('media');
-			$select->order('mediaid ASC');
+			$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+			$select = new Select($bsqlch->strdbcompat("Media"));
+			$select->order($bsqlch->strdbcompat("MediaId") . " ASC");
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Media());
 			$paginatorAdapter = new DbSelect(
@@ -65,9 +83,10 @@ class MediaTable
 	{
 		$mediaid = (int) $id;
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('media');
-		$select->where('mediaid = ' . $mediaid);
+		$select->from($bsqlch->strdbcompat("Media"));
+		$select->where($bsqlch->strdbcompat("MediaId") . " = " . $mediaid);
 		
 		$resultSet = $this->tableGateway->selectWith($select);
 		$row = $resultSet->current();
@@ -77,8 +96,10 @@ class MediaTable
 
 	public function getMediaNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('media');
+		$select->from($bsqlch->strdbcompat("Media"));
+
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Media());
 		$rowset = new DbSelect(
@@ -87,6 +108,7 @@ class MediaTable
 			$resultSetPrototype
 		);
 		$num = $rowset->count();		  
+
 		return $num;
 	}
 	
@@ -94,10 +116,11 @@ class MediaTable
 	{
 		$poolid = (int) $id;
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('media');
-		$select->where('poolid = ' . $poolid);
-		$select->order('mediaid ASC');
+		$select->from($bsqlch->strdbcompat("Media"));
+		$select->where($bsqlch->strdbcompat("PoolId") . " = " . $poolid);
+		$select->order($bsqlch->strdbcompat("MediaId") . " ASC");
 		
 		$resultSet = $this->tableGateway->selectWith($select);
 		

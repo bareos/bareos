@@ -6,6 +6,7 @@ use File\Model\File;
 use File\Model\FileTable;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module
 {
@@ -42,7 +43,9 @@ class Module
 					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
 					$resultSetPrototype = new ResultSet();
 					$resultSetPrototype->setArrayObjectPrototype(new File());
-					return new TableGateway('file', $dbAdapter, null, $resultSetPrototype);
+					$config = $sm->get('Config');
+					$bsqlch = new BareosSqlCompatHelper($config['db']['driver']);
+					return new TableGateway($bsqlch->strdbcompat("File"), $dbAdapter, null, $resultSetPrototype);
 				},
 			),
 		);

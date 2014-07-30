@@ -7,8 +7,11 @@ use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class ClientTable
+class ClientTable implements ServiceLocatorAwareInterface
 {
 
 	protected $tableGateway;
@@ -18,10 +21,24 @@ class ClientTable
 		$this->tableGateway = $tableGateway;
 	}
 
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+        public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
+
 	public function fetchAll($paginated=false) 
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('client');
+		$select->from($bsqlch->strdbcompat("Client"));
 	
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -43,9 +60,10 @@ class ClientTable
 	{
 		$id = (int) $id;
 		
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());	
 		$select = new Select();
-		$select->from('client');
-		$select->where('clientid = ' . $id);
+		$select->from($bsqlch->strdbcompat("Client"));
+		$select->where($bsqlch->strdbcompat("ClientId") . " = " . $id);
 		
 		$rowset = $this->tableGateway->selectWith($select);
 		$row = $rowset->current();
@@ -59,8 +77,9 @@ class ClientTable
 
 	public function getClientNum()
 	{
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
-		$select->from('client');
+		$select->from($bsqlch->strdbcompat("Client"));
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Client());
 		$rowset = new DbSelect(

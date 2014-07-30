@@ -59,6 +59,8 @@ class Job
 	
 	public function exchangeArray($data) 
 	{
+		$data = array_change_key_case($data, CASE_LOWER);
+
 		$this->jobid = (!empty($data['jobid'])) ? $data['jobid'] : null;
 		$this->job = (!empty($data['job'])) ? $data['job'] : null;
 		$this->jobname = (!empty($data['name'])) ? $data['name'] : null;

@@ -56,6 +56,8 @@ class Pool
 
 	public function exchangeArray($data)
 	{
+		$data = array_change_key_case($data, CASE_LOWER);
+
 		$this->poolid = (!empty($data['poolid'])) ? $data['poolid'] : null;
 		$this->name = (!empty($data['name'])) ? $data['name'] : null;
 		$this->numvols = (!empty($data['numvols'])) ? $data['numvols'] : null;
