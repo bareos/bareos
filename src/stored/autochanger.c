@@ -575,8 +575,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
       if (bstrcmp(cmd, "drives")) {
          dir->fsend("drives=1\n");
       }
-      dir->fsend(_("3993 Device %s not an autochanger device.\n"),
-         dev->print_name());
+      dir->fsend(_("3993 Device %s not an autochanger device.\n"), dev->print_name());
       return false;
    }
 

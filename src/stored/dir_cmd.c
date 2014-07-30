@@ -913,8 +913,7 @@ static bool mount_cmd(JCR *jcr)
             Dmsg0(100, "Waiting for mount. Attempting to wake thread\n");
             dev->set_blocked(BST_MOUNT);
             dir->fsend("3001 OK mount requested. %sDevice=%s\n",
-                      (slot > 0) ? _("Specified slot ignored. ") : "",
-                       dev->print_name());
+                      (slot > 0) ? _("Specified slot ignored. ") : "", dev->print_name());
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
             release_device_cond();
@@ -929,8 +928,7 @@ static bool mount_cmd(JCR *jcr)
             }
             /* We freed the device, so reopen it and wake any waiting threads */
             if (!dev->open(dcr, OPEN_READ_ONLY)) {
-               dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"),
-                  dev->print_name(), dev->bstrerror());
+               dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"), dev->print_name(), dev->bstrerror());
                if (dev->blocked() == BST_UNMOUNTED) {
                   /* We blocked the device, so unblock it */
                   Dmsg0(100, "Unmounted. Unblocking device\n");
@@ -949,12 +947,10 @@ static bool mount_cmd(JCR *jcr)
                dev->set_blocked(BST_MOUNT);
             }
             if (dev->is_labeled()) {
-               dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"),
-                  dev->print_name(), dev->VolHdr.VolumeName);
+               dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"), dev->print_name(), dev->VolHdr.VolumeName);
             } else {
                dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
-                                 "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
-                          dev->print_name());
+                            "If this is not a blank tape, try unmounting and remounting the Volume.\n"), dev->print_name());
             }
             pthread_cond_broadcast(&dev->wait_next_vol);
             Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
@@ -962,13 +958,11 @@ static bool mount_cmd(JCR *jcr)
             break;
 
          case BST_DOING_ACQUIRE:
-            dir->fsend(_("3001 Device \"%s\" is doing acquire.\n"),
-                       dev->print_name());
+            dir->fsend(_("3001 Device \"%s\" is doing acquire.\n"), dev->print_name());
             break;
 
          case BST_WRITING_LABEL:
-            dir->fsend(_("3903 Device \"%s\" is being labeled.\n"),
-               dev->print_name());
+            dir->fsend(_("3903 Device \"%s\" is being labeled.\n"), dev->print_name());
             break;
 
          case BST_NOT_BLOCKED:
@@ -978,27 +972,22 @@ static bool mount_cmd(JCR *jcr)
             }
             if (dev->is_open()) {
                if (dev->is_labeled()) {
-                  dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"),
-                     dev->print_name(), dev->VolHdr.VolumeName);
+                  dir->fsend(_("3001 Device \"%s\" is mounted with Volume \"%s\"\n"), dev->print_name(), dev->VolHdr.VolumeName);
                } else {
                   dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
-                                 "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
-                             dev->print_name());
+                               "If this is not a blank tape, try unmounting and remounting the Volume.\n"), dev->print_name());
                }
             } else if (dev->is_tape()) {
                if (!dev->open(dcr, OPEN_READ_ONLY)) {
-                  dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"),
-                     dev->print_name(), dev->bstrerror());
+                  dir->fsend(_("3901 Unable to open device \"%s\": ERR=%s\n"), dev->print_name(), dev->bstrerror());
                   break;
                }
                read_label(dcr);
                if (dev->is_labeled()) {
-                  dir->fsend(_("3001 Device \"%s\" is already mounted with Volume \"%s\"\n"),
-                     dev->print_name(), dev->VolHdr.VolumeName);
+                  dir->fsend(_("3001 Device \"%s\" is already mounted with Volume \"%s\"\n"), dev->print_name(), dev->VolHdr.VolumeName);
                } else {
                   dir->fsend(_("3905 Device \"%s\" open but no Bareos volume is mounted.\n"
-                                    "If this is not a blank tape, try unmounting and remounting the Volume.\n"),
-                             dev->print_name());
+                               "If this is not a blank tape, try unmounting and remounting the Volume.\n"), dev->print_name());
                }
                if (dev->is_open() && !dev->has_cap(CAP_ALWAYSOPEN)) {
                   dev->close(dcr);
@@ -1010,8 +999,7 @@ static bool mount_cmd(JCR *jcr)
                   dir->fsend(_("3907 %s"), dev->bstrerror());
                }
             } else { /* must be file */
-               dir->fsend(_("3906 File device \"%s\" is always mounted.\n"),
-                  dev->print_name());
+               dir->fsend(_("3906 File device \"%s\" is always mounted.\n"), dev->print_name());
                pthread_cond_broadcast(&dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)dcr->jcr->JobId);
                release_device_cond();
@@ -1061,8 +1049,7 @@ static bool unmount_cmd(JCR *jcr)
             }
             if (dev->is_unmountable()) {
                if (dev->unmount(dcr, 0)) {
-                  dir->fsend(_("3002 Device \"%s\" unmounted.\n"),
-                     dev->print_name());
+                  dir->fsend(_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
                } else {
                   dir->fsend(_("3907 %s"), dev->bstrerror());
                }
@@ -1083,17 +1070,14 @@ static bool unmount_cmd(JCR *jcr)
                dir->fsend(_("3907 %s"), dev->bstrerror());
             } else {
                dev->set_blocked(BST_UNMOUNTED_WAITING_FOR_SYSOP);
-               dir->fsend(_("3001 Device \"%s\" unmounted.\n"),
-                  dev->print_name());
+               dir->fsend(_("3001 Device \"%s\" unmounted.\n"), dev->print_name());
             }
 
          } else if (dev->blocked() == BST_DOING_ACQUIRE) {
-            dir->fsend(_("3902 Device \"%s\" is busy in acquire.\n"),
-               dev->print_name());
+            dir->fsend(_("3902 Device \"%s\" is busy in acquire.\n"), dev->print_name());
 
          } else if (dev->blocked() == BST_WRITING_LABEL) {
-            dir->fsend(_("3903 Device \"%s\" is being labeled.\n"),
-               dev->print_name());
+            dir->fsend(_("3903 Device \"%s\" is being labeled.\n"), dev->print_name());
 
          } else if (dev->is_busy()) {
             send_dir_busy_message(dir, dev);
@@ -1114,8 +1098,7 @@ static bool unmount_cmd(JCR *jcr)
             if (dev->is_unmountable() && !dev->unmount(dcr, 0)) {
                dir->fsend(_("3907 %s"), dev->bstrerror());
             } else {
-               dir->fsend(_("3002 Device \"%s\" unmounted.\n"),
-                  dev->print_name());
+               dir->fsend(_("3002 Device \"%s\" unmounted.\n"), dev->print_name());
             }
          }
          dev->Unlock();
@@ -1346,8 +1329,7 @@ static bool changer_cmd(JCR *jcr)
          dev = dcr->dev;
          dev->Lock();                 /* Use P to avoid indefinite block */
          if (!dev->device->changer_res) {
-            dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"),
-                       dev->print_name());
+            dir->fsend(_("3998 Device \"%s\" is not an autochanger.\n"), dev->print_name());
          /* Under certain "safe" conditions, we can steal the lock */
          } else if (safe_cmd || !dev->is_open() || dev->can_steal_lock()) {
             if (is_transfer) {
@@ -1371,8 +1353,7 @@ static bool changer_cmd(JCR *jcr)
       }
    } else {  /* error on scanf */
       pm_strcpy(jcr->errmsg, dir->msg);
-      dir->fsend(_("3908 Error scanning autochanger drives/list/slots command: %s\n"),
-         jcr->errmsg);
+      dir->fsend(_("3908 Error scanning autochanger drives/list/slots command: %s\n"), jcr->errmsg);
    }
    dir->signal(BNET_EOD);
    return true;
@@ -1444,8 +1425,7 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, int Slot)
       Dmsg1(100, "Volume: %s\n", dev->VolHdr.VolumeName);
       break;
    default:
-      dir->fsend(_("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"),
-                 dev->print_name(), jcr->errmsg);
+      dir->fsend(_("3902 Cannot mount Volume on Storage Device \"%s\" because:\n%s"), dev->print_name(), jcr->errmsg);
       break;
    }
 
@@ -1472,16 +1452,13 @@ static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)
    if (dev->is_blocked()) {
       switch (dev->blocked()) {
       case BST_UNMOUNTED:
-         dir->fsend(_("3931 Device \"%s\" is BLOCKED. user unmounted.\n"),
-            dev->print_name());
+         dir->fsend(_("3931 Device \"%s\" is BLOCKED. user unmounted.\n"), dev->print_name());
          break;
       case BST_UNMOUNTED_WAITING_FOR_SYSOP:
-         dir->fsend(_("3932 Device \"%s\" is BLOCKED. user unmounted during wait for media/mount.\n"),
-             dev->print_name());
+         dir->fsend(_("3932 Device \"%s\" is BLOCKED. user unmounted during wait for media/mount.\n"), dev->print_name());
          break;
       case BST_WAITING_FOR_SYSOP:
-         dir->fsend(_("3933 Device \"%s\" is BLOCKED waiting for media.\n"),
-            dev->print_name());
+         dir->fsend(_("3933 Device \"%s\" is BLOCKED waiting for media.\n"), dev->print_name());
          break;
       case BST_DOING_ACQUIRE:
          dir->fsend(_("3934 Device \"%s\" is being initialized.\n"),
@@ -1497,11 +1474,9 @@ static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)
          break;
       }
    } else if (dev->can_read()) {
-       dir->fsend(_("3936 Device \"%s\" is busy reading.\n"),
-                   dev->print_name());
+       dir->fsend(_("3936 Device \"%s\" is busy reading.\n"), dev->print_name());
    } else {
-       dir->fsend(_("3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"),
-          dev->print_name(), dev->num_writers, dev->num_reserved());
+       dir->fsend(_("3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"), dev->print_name(), dev->num_writers, dev->num_reserved());
    }
 }
 
