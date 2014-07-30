@@ -263,9 +263,6 @@ int start_statistics_thread(void);
 void stop_statistics_thread();
 void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
 void update_job_statistics(JCR *jcr, utime_t now);
-void setup_sd_stats_parameters(uint32_t statistics_collect_interval,
-                               bool collect_job_statistics,
-                               bool collect_dev_statistics);
 
 /* spool.c */
 bool begin_data_spool (DCR *dcr);

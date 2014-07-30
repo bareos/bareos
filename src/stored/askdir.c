@@ -421,7 +421,7 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
    if (zero) {
       /* Send dummy place holder to avoid purging */
       dir->fsend(Create_job_media, jcr->Job,
-         0 , 0, 0, 0, 0, 0, 0, 0, edit_uint64(VolMediaId, ed1));
+                 0 , 0, 0, 0, 0, 0, 0, 0, edit_uint64(VolMediaId, ed1));
    } else {
       dir->fsend(Create_job_media, jcr->Job,
                  VolFirstIndex, VolLastIndex,
