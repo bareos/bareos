@@ -31,7 +31,6 @@ private:
              int port, utime_t heart_beat, int *fatal);
 
 public:
-   BSOCK_TCP();
    ~BSOCK_TCP();
 
    /* methods -- in bsock_tcp.c */

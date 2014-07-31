@@ -31,11 +31,9 @@ private:
              int port, utime_t heart_beat, int *fatal);
 
 public:
-   BSOCK_UDT();
    ~BSOCK_UDT();
 
    /* methods -- in bsock_udt.c */
-   void init();
    BSOCK *clone();
    bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                 utime_t heart_beat, const char *name, char *host,
