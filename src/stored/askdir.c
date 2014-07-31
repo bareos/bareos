@@ -598,7 +598,7 @@ bool SD_DCR::dir_ask_sysop_to_mount_volume(int mode)
       return false;
    }
    ASSERT(dev->blocked());
-   for ( ;; ) {
+   while (1) {
       if (job_canceled(jcr)) {
          Mmsg(dev->errmsg, _("Job %s canceled while waiting for mount on Storage Device %s.\n"),
               jcr->Job, dev->print_name());
