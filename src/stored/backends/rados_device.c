@@ -282,7 +282,6 @@ rados_device::~rados_device()
 
 rados_device::rados_device()
 {
-   m_fd = -1;
    m_rados_configstring = NULL;
    m_rados_conffile = NULL;
    m_rados_poolname = NULL;

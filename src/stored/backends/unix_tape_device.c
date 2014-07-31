@@ -41,7 +41,6 @@ unix_tape_device::~unix_tape_device()
 
 unix_tape_device::unix_tape_device()
 {
-   m_fd = -1;
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

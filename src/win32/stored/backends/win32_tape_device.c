@@ -1071,5 +1071,4 @@ win32_tape_device::~win32_tape_device()
 
 win32_tape_device::win32_tape_device()
 {
-   m_fd = -1;
 }
