@@ -242,7 +242,7 @@ private:
    bool m_load;                       /* Set when Volume must be loaded */
 
 public:
-   DEVICE() {};
+   DEVICE();
    virtual ~DEVICE() {};
    DEVICE * volatile swap_dev;        /* Swap vol from this device */
    dlist *attached_dcrs;              /* Attached DCR list */

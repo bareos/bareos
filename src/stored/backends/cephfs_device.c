@@ -288,7 +288,6 @@ cephfs_device::~cephfs_device()
 
 cephfs_device::cephfs_device()
 {
-   m_fd = -1;
    m_cephfs_configstring = NULL;
    m_cephfs_conffile = NULL;
    m_basedir = NULL;

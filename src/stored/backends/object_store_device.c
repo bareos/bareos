@@ -468,7 +468,6 @@ object_store_device::~object_store_device()
 
 object_store_device::object_store_device()
 {
-   m_fd = -1;
    m_object_configstring = NULL;
    m_object_bucketname = NULL;
    m_ctx = NULL;
