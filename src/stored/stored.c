@@ -614,7 +614,8 @@ void *device_initialization(void *arg)
          continue;
       }
 
-      jcr->dcr = dcr = New(SD_DCR);
+      dcr = New(SD_DCR);
+      jcr->dcr = dcr;
       setup_new_dcr_device(jcr, dcr, dev, NULL);
       jcr->dcr->set_will_write();
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
