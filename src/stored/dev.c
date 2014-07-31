@@ -1225,3 +1225,8 @@ bool double_dev_wait_time(DEVICE *dev)
    }
    return true;
 }
+
+DEVICE::DEVICE()
+{
+   m_fd = -1;
+}

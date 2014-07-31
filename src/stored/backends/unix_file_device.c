@@ -289,5 +289,4 @@ unix_file_device::~unix_file_device()
 
 unix_file_device::unix_file_device()
 {
-   m_fd = -1;
 }

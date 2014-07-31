@@ -334,7 +334,6 @@ unix_fifo_device::~unix_fifo_device()
 
 unix_fifo_device::unix_fifo_device()
 {
-   m_fd = -1;
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS

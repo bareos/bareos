@@ -289,5 +289,4 @@ win32_file_device::~win32_file_device()
 
 win32_file_device::win32_file_device()
 {
-   m_fd = -1;
 }

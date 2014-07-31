@@ -551,7 +551,6 @@ gfapi_device::~gfapi_device()
 
 gfapi_device::gfapi_device()
 {
-   m_fd = -1;
    m_gfapi_volume = NULL;
    m_transport = NULL;
    m_servername = NULL;
