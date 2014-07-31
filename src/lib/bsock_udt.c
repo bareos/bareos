@@ -28,55 +28,9 @@
 #include "jcr.h"
 #include "bsock_udt.h"
 
-BSOCK_UDT::BSOCK_UDT()
-{
-   init();
-}
-
 BSOCK_UDT::~BSOCK_UDT()
 {
    destroy();
-}
-
-void BSOCK_UDT::init()
-{
-   /*
-    * We cannot memset the class as then we would kill the virtual member pointers etc.
-    */
-   m_fd = -1;
-   read_seqno = 0;
-   msg = get_pool_memory(PM_BSOCK);
-   errmsg = get_pool_memory(PM_MESSAGE);
-   res = NULL;
-   m_spool_fd = NULL;
-   tls = NULL;
-   src_addr = NULL;
-   in_msg_no = 0;
-   out_msg_no = 0;
-   msglen = 0;
-   timer_start = 0;
-   b_errno = 0;
-   m_blocking = true;
-   errors = 0;
-   m_suppress_error_msgs = false;
-   memset(&client_addr, 0, sizeof(client_addr));
-   memset(&peer_addr, 0, sizeof(peer_addr));
-   m_who = NULL;
-   m_host = NULL;
-   m_port = 0;
-   m_tid = 0;
-   m_data_end = 0;
-   m_FileIndex = 0;
-   m_timed_out = false;
-   m_terminated = false;
-   m_cloned = false;
-   m_spool = false;
-   m_use_locking = false;
-   m_use_bursting = false;
-   m_use_keepalive = true;
-   m_bwlimit = 0;
-   m_nb_bytes = 0;
-   m_last_tick = 0;
 }
 
 BSOCK *BSOCK_UDT::clone()

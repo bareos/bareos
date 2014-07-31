@@ -29,9 +29,18 @@
 #include "bareos.h"
 #include "jcr.h"
 
+BSOCK::BSOCK()
+{
+   m_fd = -1;
+   msg = get_pool_memory(PM_BSOCK);
+   errmsg = get_pool_memory(PM_MESSAGE);
+   m_blocking = true;
+   m_use_keepalive = true;
+}
+
 /*
  * This is our "class destructor" that ensures that we use
- *   smartalloc rather than the system free().
+ * smartalloc rather than the system free().
  */
 void BSOCK::free_bsock()
 {
