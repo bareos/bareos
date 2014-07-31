@@ -172,8 +172,9 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
       return NULL;
    }
    device->dev = dev;
-   jcr->dcr = dcr = New(DCR);
-   setup_new_dcr_device(jcr, jcr->dcr, dev, NULL);
+   dcr = New(DCR);
+   jcr->dcr = dcr;
+   setup_new_dcr_device(jcr, dcr, dev, NULL);
    if (!readonly) {
       dcr->set_will_write();
    }
@@ -196,8 +197,8 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
          Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
          return NULL;
       }
-      jcr->dcr = dcr;        /* write dcr */
    }
+
    return dcr;
 }
 
