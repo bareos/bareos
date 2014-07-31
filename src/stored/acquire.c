@@ -636,6 +636,7 @@ bool clean_device(DCR *dcr)
  */
 DCR::DCR()
 {
+   POOL_MEM errmsg(PM_MESSAGE);
    int errstat;
 
    tid = pthread_self();
@@ -643,16 +644,15 @@ DCR::DCR()
    if ((errstat = pthread_mutex_init(&m_mutex, NULL)) != 0) {
       berrno be;
 
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+      Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(jcr, M_ERROR_TERM, 0, errmsg.c_str());
    }
+
    if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
       berrno be;
 
-      dev->dev_errno = errstat;
-      Mmsg1(dev->errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, dev->errmsg);
+      Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
+      Jmsg0(jcr, M_ERROR_TERM, 0, errmsg.c_str());
    }
 }
 
