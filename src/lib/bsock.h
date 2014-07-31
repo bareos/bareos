@@ -93,10 +93,10 @@ protected:
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 public:
-   BSOCK() {};
+   BSOCK();
    virtual ~BSOCK() {};
-   /* methods -- in bsock.c */
-   virtual void init() = 0;
+
+   /* Methods -- in bsock.c */
    void free_bsock();
    void free_tls();
    virtual BSOCK *clone() = 0;
