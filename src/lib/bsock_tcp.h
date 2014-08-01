@@ -31,10 +31,10 @@ private:
              int port, utime_t heart_beat, int *fatal);
 
 public:
+   BSOCK_TCP();
    ~BSOCK_TCP();
 
    /* methods -- in bsock_tcp.c */
-   void init();
    BSOCK *clone();
    bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
                 utime_t heart_beat, const char *name, char *host,
