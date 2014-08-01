@@ -38,6 +38,10 @@ BSOCK::BSOCK()
    m_use_keepalive = true;
 }
 
+BSOCK::~BSOCK()
+{
+}
+
 /*
  * This is our "class destructor" that ensures that we use
  * smartalloc rather than the system free().

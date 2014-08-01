@@ -50,6 +50,10 @@
 #define socketClose(fd)           ::close(fd)
 #endif
 
+BSOCK_TCP::BSOCK_TCP()
+{
+}
+
 BSOCK_TCP::~BSOCK_TCP()
 {
    destroy();
