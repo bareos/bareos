@@ -28,6 +28,10 @@
 #include "jcr.h"
 #include "bsock_udt.h"
 
+BSOCK_UDT::BSOCK_UDT()
+{
+}
+
 BSOCK_UDT::~BSOCK_UDT()
 {
    destroy();

@@ -28,6 +28,10 @@
 #include "jcr.h"
 #include "bsock_sctp.h"
 
+BSOCK_SCTP::BSOCK_SCTP()
+{
+}
+
 BSOCK_SCTP::~BSOCK_SCTP()
 {
    destroy();
