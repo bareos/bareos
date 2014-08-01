@@ -94,7 +94,7 @@ protected:
 
 public:
    BSOCK();
-   virtual ~BSOCK() {};
+   virtual ~BSOCK();
 
    /* Methods -- in bsock.c */
    void free_bsock();
