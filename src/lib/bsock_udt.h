@@ -31,7 +31,7 @@ private:
              int port, utime_t heart_beat, int *fatal);
 
 public:
-   BSOCK_UDT() {};
+   BSOCK_UDT();
    ~BSOCK_UDT();
 
    /* methods -- in bsock_udt.c */
