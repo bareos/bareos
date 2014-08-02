@@ -48,6 +48,10 @@ void scan_to_eol(LEX *lc)
          lex_unget_char(lc);
          return;
       }
+
+      if (token == T_EOF) {
+         return;
+      }
    }
 }
 
@@ -183,7 +187,7 @@ LEX *lex_close_file(LEX *lf)
    if (lf->bpipe) {
       close_bpipe(lf->bpipe);
       lf->bpipe = NULL;
-   } else {
+   } else if (lf->fd) {
       fclose(lf->fd);
    }
    Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
@@ -199,7 +203,11 @@ LEX *lex_close_file(LEX *lf)
       of = lf;
       lf = NULL;
    }
-   free(of);
+
+   if (of) {
+      free(of);
+   }
+
    return lf;
 }
 

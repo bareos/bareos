@@ -510,6 +510,7 @@ static bool cancel_cmd(JCR *cjcr)
       Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
       release_device_cond();
    }
+   jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
 
    /*
     * See if the Job has a certain protocol.

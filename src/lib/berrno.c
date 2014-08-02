@@ -74,7 +74,7 @@ const char *berrno::bstrerror()
    }
 #endif
    /* Normal errno */
-   if (b_strerror(m_berrno, m_buf, 1024) < 0) {
+   if (b_strerror(m_berrno, m_buf, sizeof_pool_memory(m_buf)) < 0) {
       return _("Invalid errno. No error message possible.");
    }
    return m_buf;

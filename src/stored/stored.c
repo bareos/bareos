@@ -65,6 +65,8 @@ static workq_t dird_workq;            /* queue for processing connections */
 static workq_t ndmp_workq;            /* queue for processing NDMP connections */
 #endif
 static alist *sock_fds;
+static pthread_t server_tid;
+static bool server_tid_valid = false;
 
 static void usage()
 {
@@ -256,8 +258,8 @@ int main (int argc, char *argv[])
 
    cleanup_old_files();
 
-   /* Ensure that Volume Session Time and Id are both
-    * set and are both non-zero.
+   /*
+    * Ensure that Volume Session Time and Id are both set and are both non-zero.
     */
    VolSessionTime = (uint32_t)daemon_start_time;
    if (VolSessionTime == 0) { /* paranoid */
@@ -281,7 +283,9 @@ int main (int argc, char *argv[])
    start_statistics_thread();
 
 #if HAVE_NDMP
-   /* Seperate thread that handles NDMP connections */
+   /*
+    * Seperate thread that handles NDMP connections
+    */
    if (me->ndmp_enable) {
       start_ndmp_thread_server(me->NDMPaddrs,
                                me->max_concurrent_jobs * 2 + 1,
@@ -289,7 +293,11 @@ int main (int argc, char *argv[])
    }
 #endif
 
-   /* Single server used for Director/Storage and File daemon */
+   /*
+    * Single server used for Director/Storage and File daemon
+    */
+   server_tid = pthread_self();
+   server_tid_valid = true;
    sock_fds = New(alist(10, not_owned_by_alist));
    bnet_thread_server_tcp(me->SDaddrs,
                       me->max_concurrent_jobs * 2 + 1,
@@ -297,6 +305,7 @@ int main (int argc, char *argv[])
                       &dird_workq,
                       me->nokeepalive,
                       handle_connection_request);
+
    exit(1);                           /* to keep compiler quiet */
 }
 
@@ -746,6 +755,10 @@ void terminate_stored(int sig)
       } else {
          Dmsg1(10, "No dev structure %s\n", device->device_name);
       }
+   }
+
+   if (server_tid_valid) {
+      bnet_stop_thread_server_tcp(server_tid);
    }
 
    if (configfile) {

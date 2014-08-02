@@ -295,7 +295,7 @@ static void do_blocks(char *infname)
    char buf1[100], buf2[100];
    for ( ;; ) {
       if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
-         Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+         Dmsg1(100, "!read_block(): ERR=%s\n", dev->print_errmsg());
          if (dev->at_eot()) {
             if (!mount_next_read_volume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
@@ -316,7 +316,7 @@ static void do_blocks(char *infname)
             Dmsg0(20, "read_record got eof. try again\n");
             continue;
          } else if (dev->is_short_block()) {
-            Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+            Jmsg(jcr, M_INFO, 0, "%s", dev->print_errmsg());
             continue;
          } else {
             /* I/O error */

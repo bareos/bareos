@@ -66,7 +66,7 @@ IPADDR::IPADDR(int af) : type(R_EMPTY)
      saddr4->sin_port = 0xffff;
   }
 #ifdef HAVE_IPV6
-  else {
+  else if (af  == AF_INET6) {
      saddr6->sin6_port = 0xffff;
   }
 #endif
@@ -97,11 +97,11 @@ unsigned short IPADDR::get_port_net_order() const
       port = saddr4->sin_port;
    }
 #ifdef HAVE_IPV6
-   else {
+   else if (saddr->sa_family == AF_INET6) {
       port = saddr6->sin6_port;
    }
 #endif
-    return port;
+   return port;
 }
 
 void IPADDR::set_port_net(unsigned short port)
@@ -110,7 +110,7 @@ void IPADDR::set_port_net(unsigned short port)
       saddr4->sin_port = port;
    }
 #ifdef HAVE_IPV6
-   else {
+   else if (saddr->sa_family == AF_INET6) {
       saddr6->sin6_port = port;
    }
 #endif
@@ -208,15 +208,24 @@ const char *IPADDR::build_config_str(char *buf, int blen)
 const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=true*/)
 {
    char tmp[1024];
-   if (print_port) {
-      bsnprintf(buf, blen, "host[%s;%s;%hu] ",
-            get_family() == AF_INET ? "ipv4" : "ipv6",
-            get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
-   } else {
-      bsnprintf(buf, blen, "host[%s;%s] ",
-            get_family() == AF_INET ? "ipv4" : "ipv6",
-            get_address(tmp, sizeof(tmp) - 1));
 
+   *buf = 0;
+   if (print_port) {
+      if (get_family() == AF_INET) {
+         bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
+                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+      } else if (get_family() == AF_INET6) {
+         bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
+                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+      }
+   } else {
+      if (get_family() == AF_INET) {
+         bsnprintf(buf, blen, "host[ipv4;%s] ",
+                   get_address(tmp, sizeof(tmp) - 1));
+      } else if (get_family() == AF_INET6) {
+         bsnprintf(buf, blen, "host[ipv6;%s] ",
+                   get_address(tmp, sizeof(tmp) - 1));
+      }
    }
    return buf;
 }
@@ -390,7 +399,7 @@ int sockaddr_get_port_net_order(const struct sockaddr *client_addr)
       return ((struct sockaddr_in *)client_addr)->sin_port;
    }
 #ifdef HAVE_IPV6
-   else {
+   else if (client_addr->sa_family == AF_INET6) {
       return ((struct sockaddr_in6 *)client_addr)->sin6_port;
    }
 #endif
@@ -403,7 +412,7 @@ int sockaddr_get_port(const struct sockaddr *client_addr)
       return ntohs(((struct sockaddr_in *)client_addr)->sin_port);
    }
 #ifdef HAVE_IPV6
-   else {
+   else if (client_addr->sa_family == AF_INET6) {
       return ntohs(((struct sockaddr_in6 *)client_addr)->sin6_port);
    }
 #endif
