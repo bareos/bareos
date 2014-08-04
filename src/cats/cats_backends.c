@@ -150,6 +150,7 @@ B_DB *db_init_database(JCR *jcr,
     * This is a new backend try to use dynamic loading to load the backend library.
     */
    foreach_alist(backend_dir, backend_dirs) {
+#ifndef HAVE_WIN32
       Mmsg(shared_library_name, "%s/libbareoscats-%s%s", backend_dir,
            backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
       Dmsg3(100, "db_init_database: testing backend %s/libbareoscats-%s%s\n",
@@ -159,6 +160,11 @@ B_DB *db_init_database(JCR *jcr,
        * Make sure the shared library with this name exists.
        */
       if (stat(shared_library_name.c_str(), &st) == 0) {
+#else
+      Mmsg(shared_library_name, "libbareoscats-%s%s",
+           backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
+      {
+#endif
          dl_handle = dlopen(shared_library_name.c_str(), RTLD_NOW);
          if (!dl_handle) {
             Jmsg(jcr, M_ERROR, 0, _("Unable to load shared library: %s ERR=%s\n"),
