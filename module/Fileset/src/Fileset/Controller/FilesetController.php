@@ -27,12 +27,12 @@ namespace Fileset\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Bareos\BConsole\BConsoleConnector;
 
 class FilesetController extends AbstractActionController
 {
 
 	protected $filesetTable;
-	protected $bconsoleOutput = array();
 
 	public function indexAction()
 	{
@@ -46,7 +46,11 @@ class FilesetController extends AbstractActionController
 	public function detailsAction() 
 	{
 		$id = (int) $this->params()->fromRoute('id', 0);
-		
+		$fset = $this->getFilesetTable()->getFileSet($id);
+                $cmd = 'show fileset="' . $fset->fileset . '"';
+		$config = $this->getServiceLocator()->get('Config');
+                $bcon = new BConsoleConnector($config['bconsole']);		
+	
 		if (!$id) {
 		    return $this->redirect()->toRoute('fileset');
 		}
@@ -55,7 +59,7 @@ class FilesetController extends AbstractActionController
 			array(
 				'fileset' => $this->getFilesetTable()->getFileset($id),
 				'history' => $this->getFilesetTable()->getFilesetHistory($id),
-				'configuration' => $this->getFilesetConfig($id),
+				'configuration' => $bcon->getBConsoleOutput($cmd),
 			)
 		);
 	}
@@ -67,42 +71,6 @@ class FilesetController extends AbstractActionController
 			$this->filesetTable = $sm->get('Fileset\Model\FilesetTable');
 		}
 		return $this->filesetTable;
-	}
-
-	public function getFilesetConfig($id) 
-	{	
-
-		$fset = $this->getFilesetTable()->getFileSet($id);
-		$cmd = "show fileset=" . $fset->fileset;
-
-		$descriptorspec = array(
-			0 => array("pipe", "r"),
-			1 => array("pipe", "w"),
-			2 => array("pipe", "r")
-		);
-
-		$cwd = '/usr/sbin';
-		$env = array('/usr/sbin');
-
-		$process = proc_open('sudo /usr/sbin/bconsole', $descriptorspec, $pipes, $cwd, $env);
-
-		if(!is_resource($process)) {
-			throw new \Exception("proc_open error");
-		}
-
-		if(is_resource($process)) {
-			fwrite($pipes[0], $cmd);
-			fclose($pipes[0]);
-			while(!feof($pipes[1])) {
-				array_push($this->bconsoleOutput, fread($pipes[1], 8192));
-			}
-			fclose($pipes[1]);
-		}
-		
-		$return_value = proc_close($process);
-
-		return $this->bconsoleOutput;
-
 	}
 
 }
