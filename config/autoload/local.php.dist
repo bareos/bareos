@@ -52,5 +52,13 @@ return array(
 		'password' => '',
 
 	),
+	'bconsole' => array(
+                // Set full path to bconsole command
+                'exec_path' => '/usr/sbin/bconsole',
+                // Use sudo to execute bconsole command: true or false
+                'sudo' => 'true',
+                // Set full path to bconsole configuration file
+                'config_path' => '/etc/bareos/bconsole.conf',
+        ),
 
 );
