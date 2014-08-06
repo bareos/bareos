@@ -9,6 +9,10 @@
     "homepage": "http://bareos.github.io/bareos-webui",
     "require": {
         "php": ">=5.3.3",
-        "zendframework/zendframework": "2.2.*"
+        "zendframework/zendframework": "2.2.*",
+        "zendframework/zend-developer-tools": "dev-master"
+    },
+    "autoload": {
+        "psr-0": {"Bareos\\": "vendor/Bareos/library/"}
     }
 }
