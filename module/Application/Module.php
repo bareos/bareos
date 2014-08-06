@@ -35,6 +35,7 @@ class Module
             'Zend\Loader\StandardAutoloader' => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+		    'Bareos' => __DIR__ .'/../../vendor/Bareos/library/Bareos',
                 ),
             ),
         );
