@@ -2430,7 +2430,7 @@ bool open_client_db(UAContext *ua, bool use_private)
    /* Try for client keyword */
    i = find_arg_with_value(ua, NT_("client"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[i]), true) {
+      if (!acl_access_ok(ua, Client_ACL, ua->argv[i], true)) {
          ua->error_msg(_("No authorization for Client \"%s\"\n"), ua->argv[i]);
          return false;
       }
