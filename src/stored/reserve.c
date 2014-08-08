@@ -514,7 +514,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
     * No reserved volume we can use, so now search for an available device.
     *
     * For each storage device that the user specified, we
-    *  search and see if there is a resource for that device.
+    * search and see if there is a resource for that device.
     */
    foreach_alist(store, dirstore) {
       rctx.store = store;
@@ -522,11 +522,11 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
          int status;
          rctx.device_name = device_name;
          status = search_res_for_device(rctx);
-         if (status == 1) {             /* found available device */
+         if (status == 1) {                   /* found available device */
             Dmsg1(dbglvl, "available device found=%s\n", device_name);
             ok = true;
             break;
-         } else if (status == 0) {      /* device busy */
+         } else if (status == 0) {            /* device busy */
             Dmsg1(dbglvl, "No usable device=%s, busy: not use\n", device_name);
          } else {
             /* otherwise error */
@@ -546,8 +546,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
 }
 
 /*
- * Search for a particular storage device with particular storage
- *  characteristics (MediaType).
+ * Search for a particular storage device with particular storage characteristics (MediaType).
  */
 int search_res_for_device(RCTX &rctx)
 {
@@ -555,24 +554,34 @@ int search_res_for_device(RCTX &rctx)
    int status;
 
    Dmsg1(dbglvl, "search res for %s\n", rctx.device_name);
-   /* Look through Autochangers first */
+
+   /*
+    * Look through Autochangers first
+    */
    foreach_res(changer, R_AUTOCHANGER) {
       Dmsg1(dbglvl, "Try match changer res=%s\n", changer->hdr.name);
-      /* Find resource, and make sure we were able to open it */
+      /*
+       * Find resource, and make sure we were able to open it
+       */
       if (bstrcmp(rctx.device_name, changer->hdr.name)) {
-         /* Try each device in this AutoChanger */
+         /*
+          * Try each device in this AutoChanger
+          */
          foreach_alist(rctx.device, changer->device) {
             Dmsg1(dbglvl, "Try changer device %s\n", rctx.device->hdr.name);
             if (!rctx.device->autoselect) {
                Dmsg1(100, "Device %s not autoselect skipped.\n",
                rctx.device->hdr.name);
-               continue;              /* device is not available */
+               continue;                      /* Device is not available */
             }
             status = reserve_device(rctx);
-            if (status != 1) {             /* try another device */
+            if (status != 1) {                /* Try another device */
                continue;
             }
-            /* Debug code */
+
+            /*
+             * Debug code
+             */
             if (rctx.store->append == SD_APPEND) {
                Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
                   rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
@@ -585,17 +594,40 @@ int search_res_for_device(RCTX &rctx)
       }
    }
 
-   /* Now if requested look through regular devices */
+   /*
+    * Now if requested look through regular devices
+    */
    if (!rctx.autochanger_only) {
       foreach_res(rctx.device, R_DEVICE) {
          Dmsg1(dbglvl, "Try match res=%s\n", rctx.device->hdr.name);
-         /* Find resource, and make sure we were able to open it */
+         /*
+          * Find resource, and make sure we were able to open it
+          */
          if (bstrcmp(rctx.device_name, rctx.device->hdr.name)) {
             status = reserve_device(rctx);
-            if (status != 1) {             /* try another device */
+            if (status != 1) {                /* Try another device */
                continue;
             }
-            /* Debug code */
+            /*
+             * Debug code
+             */
+            if (rctx.store->append == SD_APPEND) {
+               Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
+                  rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
+            } else {
+               Dmsg2(dbglvl, "Device %s reserved=%d for read.\n",
+                  rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
+            }
+            return status;
+         } else if (bstrcmp(rctx.store->media_type, rctx.device->media_type)) {
+            status = reserve_device(rctx);
+            if (status != 1) {                /* Try another device */
+               continue;
+            }
+
+            /*
+             * Debug code
+             */
             if (rctx.store->append == SD_APPEND) {
                Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
                   rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
@@ -607,7 +639,8 @@ int search_res_for_device(RCTX &rctx)
          }
       }
    }
-   return -1;                    /* nothing found */
+
+   return -1;                                 /* Nothing found */
 }
 
 /*
