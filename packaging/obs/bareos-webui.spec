@@ -80,6 +80,12 @@ make
 # makeinstall macro does not work on RedHat
 #makeinstall
 make DESTDIR=%{buildroot} install
+# /etc/sudoers.d/ should not belong to this package,
+# but is does currently not exist on most distributions
+touch filelist
+if ! [ -x /etc/sudoers.d/ ]; then
+  echo "%dir %attr(640,root,root) /etc/sudoers.d/" > filelist
+fi
 
 
 %post
@@ -108,8 +114,5 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 #/usr/sbin/bareos-webui-config
 
-# /etc/sudoers.d/ should not belong to this package,
-# but is does currently not exist on most distributions
-%dir /etc/sudoers.d/
 # sudo requires permissions 440 and config files without any "."
 %attr(440,root,root) %config(noreplace) /etc/sudoers.d/bareos-webui-bconsole
