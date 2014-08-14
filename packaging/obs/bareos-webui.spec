@@ -83,7 +83,7 @@ make DESTDIR=%{buildroot} install
 # but is does currently not exist on most distributions
 touch filelist
 if ! [ -x /etc/sudoers.d/ ]; then
-  echo "%dir %attr(640,root,root) /etc/sudoers.d/" > filelist
+  echo "%dir %attr(750,root,root) /etc/sudoers.d/" > filelist
 fi
 
 
