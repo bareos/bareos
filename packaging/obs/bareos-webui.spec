@@ -1,7 +1,6 @@
 
 Name:          bareos-webui
 Provides:      bareos-console-web
-Provides:      barrossa
 Version:       0.1
 Release:       0%{?dist}
 Summary:       Bareos Web User Interface
@@ -104,7 +103,7 @@ export BAREOS_WEBUI_INTERACTIVE="no"
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files
+%files -f filelist
 %defattr(-,root,root,-)
 %doc AUTHORS.txt CONTRIBUTE.md README.md LICENSE.txt
 %doc doc/
