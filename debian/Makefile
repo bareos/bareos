@@ -4,7 +4,7 @@
 
 all: copyright
 
-copyright:
+copyright: copyright.header copyright.footer
 	@install copyright.header copyright
 	@sed -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../LICENSE >> copyright
 	@cat copyright.footer >> copyright

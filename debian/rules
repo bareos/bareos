@@ -69,7 +69,8 @@ define CONFIGURE_COMMON
   --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
   --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-  --enable-includes
+  --enable-includes \
+  --disable-rpath
 endef
 
 #  --docdir="\$(_docdir)/bareos" \
@@ -97,10 +98,24 @@ override_dh_fixperms:
 override_dh_strip:
 	dh_strip --dbg-package=bareos-dbg
 
+override_dh_install:
+	chrpath -d $(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-mysql* \
+		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-postgresql* \
+		$(CURDIR)/debian/tmp/usr/lib/bareos/backends/libbareoscats-sqlite3*
+	dh_install
+
 override_dh_installinit:
 	dh_installinit --package=bareos-director   --name=bareos-dir --no-start
 	dh_installinit --package=bareos-storage    --name=bareos-sd  --no-start
 	dh_installinit --package=bareos-filedaemon --name=bareos-fd
 
+override_dh_makeshlibs:
+	dh_makeshlibs -n
+
 %:
-	dh $@
+	PARALLEL="--parallel"; \
+	if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then PARALLEL=""; fi; \
+	dh $@ $$PARALLEL
+
+gen-debian-copyright:
+	(cd debian; make copyright)

@@ -15,6 +15,7 @@ Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
  autotools-dev,
  bc,
+ chrpath,
  debhelper (>= 7.0.50~),
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
