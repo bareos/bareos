@@ -1,6 +1,11 @@
 #
-# debian/control.in is a template file for debian/control.
-# Additional settings get applied during configure.
+# debian/control is generated from debian/control.in by configure.
+# However, the debian/control must already exist
+# at the beginning of the build process,
+# therefore a initial version is delivered.
+# It will be replaced during configure.
+# The build process checks "Source" for build dependencies
+# and that at least one "Package" is defined.
 #
 
 Source: bareos
@@ -10,6 +15,7 @@ Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
  autotools-dev,
  bc,
+ chrpath,
  debhelper (>= 7.0.50~),
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
