@@ -3,6 +3,7 @@ SET(CTEST_CUSTOM_ERROR_EXCEPTION
   ${CTEST_CUSTOM_ERROR_EXCEPTION}
   "ERROR: *database \".*\" already exists"
   "ERROR: *table \".*\" does not exist"
+  "NOTICE: *table \".*\" does not exist, skipping"
   "NOTICE: .*will create implicit sequence"
   "NOTICE: .*will create implicit index"
   "ERROR: *role \".*\" already exists"
