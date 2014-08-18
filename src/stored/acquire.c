@@ -645,14 +645,14 @@ DCR::DCR()
       berrno be;
 
       Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, errmsg.c_str());
+      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
    }
 
    if ((errstat = pthread_mutex_init(&r_mutex, NULL)) != 0) {
       berrno be;
 
       Mmsg(errmsg, _("Unable to init r_mutex: ERR=%s\n"), be.bstrerror(errstat));
-      Jmsg0(jcr, M_ERROR_TERM, 0, errmsg.c_str());
+      Jmsg0(NULL, M_ERROR_TERM, 0, errmsg.c_str());
    }
 }
 
