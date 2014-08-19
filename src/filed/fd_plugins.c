@@ -663,7 +663,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
           * that the data of each file gets backed up only once.
           */
          ff_pkt->LinkFI = 0;
-         if (!(ff_pkt->flags & FO_NO_HARDLINK) && ff_pkt->statp.st_nlink > 1) {
+         if (!bit_is_set(FO_NO_HARDLINK, ff_pkt->flags) && ff_pkt->statp.st_nlink > 1) {
             CurLink *hl;
 
             switch (ff_pkt->statp.st_mode & S_IFMT) {
