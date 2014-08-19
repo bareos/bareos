@@ -12,6 +12,7 @@ SET(CTEST_CUSTOM_WARNING_EXCEPTION
   ${CTEST_CUSTOM_WARNING_EXCEPTION}
   "libtool: install: warning: relinking .*"
   "libtool: link: warning: .* seems to be moved"
+  "libtool: relink: warning: .* seems to be moved"
   )
 
 SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 100000)
