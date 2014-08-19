@@ -27,7 +27,7 @@
 #define MD5HashSize 16
 #endif
 
-#ifdef HAVE_OPENSSL
+#if defined(HAVE_OPENSSL) && !defined(HAVE_WIN32)
 #include <openssl/md5.h>
 #elif !defined(_MD5_H)
 #define _MD5_H
