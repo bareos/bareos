@@ -26,16 +26,33 @@
 namespace Storage\Model;
 
 use Zend\Db\TableGateway\TableGateway;
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 
-class StorageTable
+class StorageTable implements ServiceLocatorAwareInterface
 {
 
 	protected $tableGateway;
+	protected $serviceLocator;
 
 	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
+
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator) {
+                $this->serviceLocator = $serviceLocator;
+        }
+
+        public function getServiceLocator() {
+                return $this->serviceLocator;
+        }
+
+        public function getDbDriverConfig() {
+                $config = $this->getServiceLocator()->get('Config');
+                return $config['db']['driver'];
+        }
 
 	public function fetchAll() 
 	{
@@ -46,7 +63,9 @@ class StorageTable
 	public function getStorage($id)
 	{
 		$id = (int) $id;
-		$rowset = $this->tableGateway->select(array('storageid' => $id));
+
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+		$rowset = $this->tableGateway->select(array($bsqlch->strdbcompat("StorageId") => $id));
 		$row = $rowset->current();
 		if(!$row) {
 			throw new \Exception("Could not find row $id");

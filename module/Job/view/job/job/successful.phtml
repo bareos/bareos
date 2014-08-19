@@ -57,7 +57,7 @@ $flash->setMessageOpenFormat('
 	<li><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li>
+	<!-- <li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li> -->
 </ul>
 
 <br />
@@ -112,7 +112,7 @@ $flash->setMessageOpenFormat('
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
+			<!-- <li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li> -->
 		</ul>
 	</div>
 	</td>
