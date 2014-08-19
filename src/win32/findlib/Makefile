@@ -33,7 +33,7 @@ LDLIBS = ../lib/libbareos.dll \
 
 LIBBAREOSFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
                      drivetype.c enable_priv.c find_one.c \
-                     find.c fstype.c match.c mkpath.c \
+                     find.c fstype.c hardlink.c match.c mkpath.c \
                      shadowing.c win32.c xattr.c
 LIBBAREOSFIND_OBJS = $(LIBBAREOSFIND_SRCS:.c=.o)
 
