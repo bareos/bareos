@@ -47,7 +47,7 @@ class BConsoleConnector
                 $env = array('/usr/sbin');
 
                 if($this->bconsole_sudo == "true") {
-                        $process = proc_open('sudo ' . $this->bconsole_exec_path, $descriptorspec, $pipes, $cwd, $env);
+                        $process = proc_open('sudo ' . $this->bconsole_exec_path . ' -c ' . $this->bconsole_config_path, $descriptorspec, $pipes, $cwd, $env);
                 }
                 else {
                         $process = proc_open($this->bconsole_exec_path, $descriptorspec, $pipes, $cwd, $env);
@@ -58,7 +58,7 @@ class BConsoleConnector
 
                 if(is_resource($process))
                 {
-                        fwrite($pipes[0], $cmd . ' -c ' . $this->bconsole_config_path);
+                        fwrite($pipes[0], $cmd);
                         fclose($pipes[0]);
                         while(!feof($pipes[1])) {
                           array_push($this->bconsole_output, fread($pipes[1],8192));

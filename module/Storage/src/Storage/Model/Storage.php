@@ -34,6 +34,8 @@ class Storage
 
 	public function exchangeArray($data)
 	{
+		$data = array_change_key_case($data, CASE_LOWER);
+
 		$this->storageid = (!empty($data['storageid'])) ? $data['storageid'] : null;
 		$this->name = (!empty($data['name'])) ? $data['name'] : null;
 		$this->autochanger = (!empty($data['autochanger'])) ? $data['autochanger'] : null;

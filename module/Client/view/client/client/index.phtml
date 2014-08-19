@@ -24,7 +24,7 @@ $this->headTitle($title);
 	<th>Autoprune</th>
 	<th>Fileretention</th>
 	<th>Jobretention</th>
-	<th>Online status</th>
+	<!-- <th>Online status</th> -->
 </tr>
 
 <?php foreach($this->paginator as $client) : ?>
@@ -37,7 +37,7 @@ $this->headTitle($title);
 	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
 	<td><?php echo $this->printRetention($client->fileretention) . " days"; ?></td>
 	<td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td>
-	<td></td>
+	<!-- <td></td> -->
 
 </tr>
 

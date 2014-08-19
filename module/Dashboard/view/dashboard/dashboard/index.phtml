@@ -345,8 +345,8 @@ $flash->setMessageOpenFormat('
 	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobSuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobSuccess->jobid); ?></a></td>
 	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
 	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $jobSuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobSuccess->clientname); ?></a></td>
-	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
 	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
+	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
 	      <td><?php echo $this->printDate($jobSuccess->starttime); ?></td>
 	      <td><?php echo $this->printDate($jobSuccess->endtime); ?></td>
 	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
