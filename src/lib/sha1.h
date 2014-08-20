@@ -6,10 +6,10 @@
  * 100% Public Domain
  */
 
-#ifndef _SHA1_H_
+#if defined(HAVE_OPENSSL) && !defined(HAVE_WIN32)
+#include <openssl/sha.h>
+#elif !defined(_SHA1_H_)
 #define _SHA1_H_
-
-#include "bareos.h"
 
 #define	SHA1_BLOCK_LENGTH		64
 #define	SHA1_DIGEST_LENGTH		20

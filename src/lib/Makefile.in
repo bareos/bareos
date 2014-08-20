@@ -216,13 +216,6 @@ md5sum: Makefile md5.o
 	$(RMF) md5.o
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) md5.c
 
-sha1sum: Makefile sha1.o
-	$(RMF) sha1.o
-	$(CXX) -DSHA1_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) sha1.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ sha1.o $(DLIB) -lbareos -lm $(LIBS)
-	$(RMF) sha1.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) sha1.c
-
 bsnprintf: Makefile bsnprintf.o
 	$(RMF) bsnprintf.o
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) bsnprintf.c
@@ -259,7 +252,7 @@ libtool-clean:
 
 clean:	libtool-clean
 	@$(RMF) core a.out *.o *.bak *.tex *.pdf *~ *.intpro *.extpro 1 2 3
-	@$(RMF) rwlock_test md5sum sha1sum
+	@$(RMF) rwlock_test md5sum
 
 realclean: clean
 	@$(RMF) tags

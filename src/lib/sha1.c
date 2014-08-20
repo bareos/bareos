@@ -12,14 +12,15 @@ A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 */
 
+#include "bareos.h"
+
+#if !defined(HAVE_OPENSSL) || defined(HAVE_WIN32)
+
 /* #define LITTLE_ENDIAN * This should be #define'd if true. */
 #if __LITTLE_ENDIAN__
 #define LITTLE_ENDIAN
 #endif
 /* #define SHA1HANDSOFF * Copies data before messing with it. */
-
-#include <stdio.h>
-#include <string.h>
 
 #include "sha1.h"
 
@@ -167,3 +168,4 @@ u_int8_t finalcount[8];
     SHA1Transform(context->state, context->buffer);
 #endif
 }
+#endif /* !defined(HAVE_OPENSSL) || defined(HAVE_WIN32) */

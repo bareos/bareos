@@ -35,9 +35,9 @@
  * compile-time configuration.
  */
 
-#if !defined(HAVE_OPENSSL) || defined(HAVE_WIN32)
+#include "bareos.h"
 
-#include <string.h>
+#if !defined(HAVE_OPENSSL) || defined(HAVE_WIN32)
 
 #include "md5.h"
 
