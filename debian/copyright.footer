@@ -120,9 +120,14 @@ Copyright: 1989,1992,1993,1994 The Regents of the University of California
 License: BSD-3-clause
 
 
+Files: src/lib/md5.h src/lib/md5.c
+Copyright: 2001 Alexander Peslyak
+License: public-domain
+
+
 Files: src/lib/sha1.h src/lib/sha1.c
-Copyright: 2001 The Internet Society
-License: SHA
+Copyright: Steve Reid <steve@edmweb.com>
+License: public-domain
 
 
 Files: src/lib/var.h src/lib/var.c
