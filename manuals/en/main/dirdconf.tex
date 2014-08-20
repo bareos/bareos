@@ -2416,12 +2416,14 @@ The default is 180 days.
 \item [AutoPrune = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[dir]{AutoPrune}
 \index[dir]{Directive!AutoPrune}
-If AutoPrune is set to  {\bf yes} (default), Bareos (version 1.20 or greater)
+If AutoPrune is set to  {\bf yes} (default is no), Bareos
 will  automatically apply the File retention period and the Job  retention
-period for the Client at the end of the Job.  If you set {\bf AutoPrune = no},
-pruning will not be done,  and your Catalog will grow in size each time you
+period for the Client at the end of the Job.  If you leave the default {\bf AutoPrune = no},
+pruning will not be done, and your Catalog will grow in size each time you
 run a Job.  Pruning affects only information in the catalog and not data
-stored in the backup archives (on Volumes).
+stored in the backup archives (on Volumes), but if pruning deletes all data
+referring to a certain volume, the volume is regarded as empty and will possibly
+be overwritten before the volume retention has expired.
 
 \item [Maximum Concurrent Jobs = {\textless}number{\textgreater}] \hfill \\
 \index[dir]{Maximum Concurrent Jobs}
