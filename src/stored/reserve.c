@@ -550,16 +550,15 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
  */
 int search_res_for_device(RCTX &rctx)
 {
-   AUTOCHANGERRES *changer;
    int status;
-
-   Dmsg1(dbglvl, "search res for %s\n", rctx.device_name);
+   AUTOCHANGERRES *changer;
 
    /*
     * Look through Autochangers first
     */
    foreach_res(changer, R_AUTOCHANGER) {
-      Dmsg1(dbglvl, "Try match changer res=%s\n", changer->hdr.name);
+      Dmsg2(dbglvl, "Try match changer res=%s, wanted %s\n",
+            changer->hdr.name, rctx.device_name);
       /*
        * Find resource, and make sure we were able to open it
        */
@@ -584,10 +583,10 @@ int search_res_for_device(RCTX &rctx)
              */
             if (rctx.store->append == SD_APPEND) {
                Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
-                  rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
+                     rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
             } else {
                Dmsg2(dbglvl, "Device %s reserved=%d for read.\n",
-                  rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
+                     rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
             }
             return status;
          }
@@ -599,7 +598,9 @@ int search_res_for_device(RCTX &rctx)
     */
    if (!rctx.autochanger_only) {
       foreach_res(rctx.device, R_DEVICE) {
-         Dmsg1(dbglvl, "Try match res=%s\n", rctx.device->hdr.name);
+         Dmsg2(dbglvl, "Try match res=%s wanted %s\n",
+               rctx.device->hdr.name, rctx.device_name);
+
          /*
           * Find resource, and make sure we were able to open it
           */
@@ -613,29 +614,42 @@ int search_res_for_device(RCTX &rctx)
              */
             if (rctx.store->append == SD_APPEND) {
                Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
-                  rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
+                     rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
             } else {
                Dmsg2(dbglvl, "Device %s reserved=%d for read.\n",
-                  rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
+                     rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
             }
             return status;
-         } else if (bstrcmp(rctx.store->media_type, rctx.device->media_type)) {
-            status = reserve_device(rctx);
-            if (status != 1) {                /* Try another device */
-               continue;
-            }
+         }
+      }
 
-            /*
-             * Debug code
-             */
-            if (rctx.store->append == SD_APPEND) {
-               Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
-                  rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
-            } else {
-               Dmsg2(dbglvl, "Device %s reserved=%d for read.\n",
-                  rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
+      /*
+       * If we haven't found a available device and the devicereservebymediatype option
+       * is set we try one more time where we allow any device with a matching mediatype.
+       */
+      if (me->device_reserve_by_mediatype) {
+         foreach_res(rctx.device, R_DEVICE) {
+            Dmsg3(dbglvl, "Try match res=%s, mediatype=%s wanted mediatype=%s\n",
+                  rctx.device->hdr.name, rctx.store->media_type, rctx.store->media_type);
+
+            if (bstrcmp(rctx.store->media_type, rctx.device->media_type)) {
+               status = reserve_device(rctx);
+               if (status != 1) {                /* Try another device */
+                  continue;
+               }
+
+               /*
+                * Debug code
+                */
+               if (rctx.store->append == SD_APPEND) {
+                  Dmsg2(dbglvl, "Device %s reserved=%d for append.\n",
+                        rctx.device->hdr.name, rctx.jcr->dcr->dev->num_reserved());
+               } else {
+                  Dmsg2(dbglvl, "Device %s reserved=%d for read.\n",
+                        rctx.device->hdr.name, rctx.jcr->read_dcr->dev->num_reserved());
+               }
+               return status;
             }
-            return status;
          }
       }
    }

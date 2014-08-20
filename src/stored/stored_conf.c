@@ -104,6 +104,7 @@ static RES_ITEM store_items[] = {
    { "collectdevicestatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false" },
    { "collectjobstatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_job_stats), 0, CFG_ITEM_DEFAULT, "false" },
    { "statisticscollectinterval", CFG_TYPE_PINT32, ITEM(res_store.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30" },
+   { "devicereservebymediatype", CFG_TYPE_BOOL, ITEM(res_store.device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false" },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 

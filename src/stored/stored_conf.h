@@ -126,6 +126,7 @@ public:
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool collect_dev_stats;            /* Collect Device Statistics */
    bool collect_job_stats;            /* Collect Job Statistics */
+   bool device_reserve_by_mediatype;  /* Allow device reservation based on a matching mediatype */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
