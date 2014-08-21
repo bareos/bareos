@@ -83,6 +83,7 @@ void catalog_update(JCR *jcr, BSOCK *bs);
 bool despool_attributes_from_file(JCR *jcr, const char *file);
 
 /* dird_conf.c */
+const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
 

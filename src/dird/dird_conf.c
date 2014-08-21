@@ -676,6 +676,17 @@ char *CATRES::display(POOLMEM *dst) {
    return dst;
 }
 
+const char *auth_protocol_to_str(uint32_t auth_protocol)
+{
+   for (int i = 0; authprotocols[i].name; i++) {
+      if (authprotocols[i].token == auth_protocol) {
+         return authprotocols[i].name;
+      }
+   }
+
+   return "Unknown";
+}
+
 const char *level_to_str(int level)
 {
    int i;
