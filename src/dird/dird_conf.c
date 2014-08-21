@@ -373,6 +373,7 @@ RES_ITEM job_items[] = {
    { "cancellowerlevelduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
    { "cancelqueuedduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
    { "cancelrunningduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "savefilehistory", CFG_TYPE_BOOL, ITEM(res_job.SaveFileHist), 0, CFG_ITEM_DEFAULT, "true" },
    { "pluginoptions", CFG_TYPE_STR, ITEM(res_job.PluginOptions), 0, 0, NULL },
    { "base", CFG_TYPE_ALIST_RES, ITEM(res_job.base), R_JOB, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
