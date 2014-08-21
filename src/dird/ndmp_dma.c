@@ -111,6 +111,7 @@ struct ndmp_internal_state {
    char *filesystem;
    int32_t FileIndex;
    char *virtual_filename;
+   bool save_filehist;
    N_TREE_ROOT *fhdb_root;
 };
 typedef struct ndmp_internal_state NIS;
@@ -1412,50 +1413,53 @@ extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
                               ndmp9_file_stat *fstat)
 {
    NIS *nis;
-   int8_t FileType = 0;
-   char namebuf[NDMOS_CONST_PATH_MAX];
-   POOL_MEM attribs(PM_FNAME),
-            pathname(PM_FNAME);
-
-   ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
    nis = (NIS *)ixlog->ctx;
    nis->jcr->lock();
    nis->jcr->JobFiles++;
    nis->jcr->unlock();
 
-   /*
-    * Every file entry is releative from the filesystem currently being backuped.
-    */
-   Dmsg2(100, "bndmp_add_file: New filename ==> %s/%s\n", nis->filesystem, namebuf);
+   if (nis->save_filehist) {
+      int8_t FileType = 0;
+      char namebuf[NDMOS_CONST_PATH_MAX];
+      POOL_MEM attribs(PM_FNAME),
+               pathname(PM_FNAME);
 
-   if (nis->jcr->ar) {
+      ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
+
       /*
-       * See if this is the top level entry of the tree e.g. len == 0
+       * Every file entry is releative from the filesystem currently being backuped.
        */
-      if (strlen(namebuf) == 0) {
-         convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      Dmsg2(100, "bndmp_add_file: New filename ==> %s/%s\n", nis->filesystem, namebuf);
 
-         pm_strcpy(pathname, nis->filesystem);
-         pm_strcat(pathname, "/");
-         return 0;
-      } else {
-         convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      if (nis->jcr->ar) {
+         /*
+          * See if this is the top level entry of the tree e.g. len == 0
+          */
+         if (strlen(namebuf) == 0) {
+            convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
-         pm_strcpy(pathname, nis->filesystem);
-         pm_strcat(pathname, "/");
-         pm_strcat(pathname, namebuf);
-
-         if (FileType == FT_DIREND) {
-            /*
-             * A directory needs to end with a slash.
-             */
+            pm_strcpy(pathname, nis->filesystem);
             pm_strcat(pathname, "/");
-         }
-      }
+            return 0;
+         } else {
+            convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
-      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
-                            (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
+            pm_strcpy(pathname, nis->filesystem);
+            pm_strcat(pathname, "/");
+            pm_strcat(pathname, namebuf);
+
+            if (FileType == FT_DIREND) {
+               /*
+                * A directory needs to end with a slash.
+                */
+               pm_strcat(pathname, "/");
+            }
+         }
+
+         store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
+                               (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
+      }
    }
 
    return 0;
@@ -1476,36 +1480,38 @@ extern "C" int bndmp_add_dir(struct ndmlog *ixlog, int tagc, char *raw_name,
       return 0;
    }
 
-   Dmsg3(100, "bndmp_add_dir: New filename ==> %s [%llu] - [%llu]\n", namebuf, dir_node, node);
-
    nis = (NIS *)ixlog->ctx;
    nis->jcr->lock();
    nis->jcr->JobFiles++;
    nis->jcr->unlock();
 
-   if (!nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"));
-      return 1;
-   }
+   if (nis->save_filehist) {
+      Dmsg3(100, "bndmp_add_dir: New filename ==> %s [%llu] - [%llu]\n", namebuf, dir_node, node);
 
-   /*
-    * See if this entry is in the cached parent.
-    */
-   if (nis->fhdb_root->cached_parent &&
-       nis->fhdb_root->cached_parent->inode == dir_node) {
-      search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
-                                  nis->fhdb_root, nis->fhdb_root->cached_parent);
-   } else {
+      if (!nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"));
+         return 1;
+      }
+
       /*
-       * Not the cached parent search the tree where it need to be put.
+       * See if this entry is in the cached parent.
        */
-      nis->fhdb_root->cached_parent = find_tree_node(nis->fhdb_root, dir_node);
-      if (nis->fhdb_root->cached_parent) {
+      if (nis->fhdb_root->cached_parent &&
+          nis->fhdb_root->cached_parent->inode == dir_node) {
          search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
                                      nis->fhdb_root, nis->fhdb_root->cached_parent);
       } else {
-         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"), dir_node);
-         return 1;
+         /*
+          * Not the cached parent search the tree where it need to be put.
+          */
+         nis->fhdb_root->cached_parent = find_tree_node(nis->fhdb_root, dir_node);
+         if (nis->fhdb_root->cached_parent) {
+            search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
+                                        nis->fhdb_root, nis->fhdb_root->cached_parent);
+         } else {
+            Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"), dir_node);
+            return 1;
+         }
       }
    }
 
@@ -1516,41 +1522,44 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
                               ndmp9_u_quad node, ndmp9_file_stat *fstat)
 {
    NIS *nis;
-   int attr_size;
-   int8_t FileType = 0;
-   N_TREE_NODE *wanted_node;
-   POOL_MEM attribs(PM_FNAME);
-
-   Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
    nis = (NIS *)ixlog->ctx;
 
-   if (!nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node call before add_dir.\n"));
-      return 1;
-   }
+   if (nis->save_filehist) {
+      int attr_size;
+      int8_t FileType = 0;
+      N_TREE_NODE *wanted_node;
+      POOL_MEM attribs(PM_FNAME);
 
-   wanted_node = find_tree_node(nis->fhdb_root, node);
-   if (!wanted_node) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node request for unknown node %llu.\n"), node);
-      return 1;
-   }
+      Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
-   convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-   attr_size = strlen(attribs.c_str()) + 1;
+      if (!nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node call before add_dir.\n"));
+         return 1;
+      }
 
-   wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
-   bstrncpy(wanted_node->attr, attribs, attr_size);
-   wanted_node->FileType = FileType;
-   if (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) {
-      wanted_node->Offset = fstat->fh_info.value;
-   }
+      wanted_node = find_tree_node(nis->fhdb_root, node);
+      if (!wanted_node) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node request for unknown node %llu.\n"), node);
+         return 1;
+      }
 
-   if (FileType == FT_DIREND) {
-      /*
-       * A directory needs to end with a slash.
-       */
-      strcat(wanted_node->fname, "/");
+      convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      attr_size = strlen(attribs.c_str()) + 1;
+
+      wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
+      bstrncpy(wanted_node->attr, attribs, attr_size);
+      wanted_node->FileType = FileType;
+      if (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) {
+         wanted_node->Offset = fstat->fh_info.value;
+      }
+
+      if (FileType == FT_DIREND) {
+         /*
+          * A directory needs to end with a slash.
+          */
+         strcat(wanted_node->fname, "/");
+      }
    }
 
    return 0;
@@ -1561,27 +1570,29 @@ extern "C" int bndmp_add_dirnode_root(struct ndmlog *ixlog, int tagc,
 {
    NIS *nis;
 
-   Dmsg1(100, "bndmp_add_dirnode_root: New root node [%llu]\n", root_node);
-
    nis = (NIS *)ixlog->ctx;
 
-   if (nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dirnode_root call more then once.\n"));
-      return 1;
+   if (nis->save_filehist) {
+      Dmsg1(100, "bndmp_add_dirnode_root: New root node [%llu]\n", root_node);
+
+      if (nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dirnode_root call more then once.\n"));
+         return 1;
+      }
+
+      nis->fhdb_root = ndmp_fhdb_new_tree();
+
+      /*
+       * Allocate a new entry with 2 bytes extra e.g. the extra slash
+       * needed for directories and the \0.
+       */
+      nis->fhdb_root->fname_len = strlen(nis->filesystem);
+      nis->fhdb_root->fname = ndmp_fhdb_tree_alloc(nis->fhdb_root, nis->fhdb_root->fname_len + 2);
+      bstrncpy(nis->fhdb_root->fname, nis->filesystem, nis->fhdb_root->fname_len + 1);
+      nis->fhdb_root->inode = root_node;
+      nis->fhdb_root->FileIndex = nis->FileIndex;
+      nis->fhdb_root->cached_parent = (N_TREE_NODE *)nis->fhdb_root;
    }
-
-   nis->fhdb_root = ndmp_fhdb_new_tree();
-
-   /*
-    * Allocate a new entry with 2 bytes extra e.g. the extra slash
-    * needed for directories and the \0.
-    */
-   nis->fhdb_root->fname_len = strlen(nis->filesystem);
-   nis->fhdb_root->fname = ndmp_fhdb_tree_alloc(nis->fhdb_root, nis->fhdb_root->fname_len + 2);
-   bstrncpy(nis->fhdb_root->fname, nis->filesystem, nis->fhdb_root->fname_len + 1);
-   nis->fhdb_root->inode = root_node;
-   nis->fhdb_root->FileIndex = nis->FileIndex;
-   nis->fhdb_root->cached_parent = (N_TREE_NODE *)nis->fhdb_root;
 
    return 0;
 }
@@ -2079,6 +2090,7 @@ bool do_ndmp_backup(JCR *jcr)
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
          nis->jcr = jcr;
+         nis->save_filehist = jcr->res.job->SaveFileHist;
 
          /*
           * The full ndmp archive has a virtual filename, we need it to hardlink the individual
