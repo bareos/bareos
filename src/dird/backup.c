@@ -55,9 +55,38 @@ static char EndJob[] =
    "ReadBytes=%llu JobBytes=%llu Errors=%u "
    "VSS=%d Encrypt=%d\n";
 
+static inline bool validate_client(JCR *jcr)
+{
+   switch (jcr->res.client->Protocol) {
+   case APT_NATIVE:
+      return true;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Client %s has illegal backup protocol %s for Native backup\n"),
+           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
+      return false;
+   }
+}
+
+static inline bool validate_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   foreach_alist(store, jcr->wstorage) {
+      switch (store->Protocol) {
+      case APT_NATIVE:
+         continue;
+      default:
+         Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for Native backup\n"),
+              store->name(), auth_protocol_to_str(store->Protocol));
+         return false;
+      }
+   }
+
+   return true;
+}
+
 /*
- * Called here before the job is run to do the job
- *   specific setup.
+ * Called here before the job is run to do the job specific setup.
  */
 bool do_native_backup_init(JCR *jcr)
 {
@@ -72,11 +101,20 @@ bool do_native_backup_init(JCR *jcr)
       return false;
    }
 
-   /* If pool storage specified, use it instead of job storage */
+   /*
+    * If pool storage specified, use it instead of job storage
+    */
    copy_wstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
 
    if (!jcr->wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
+      return false;
+   }
+
+   /*
+    * Validate that we have a native client and storage(s).
+    */
+   if (!validate_client(jcr) || !validate_storage(jcr)) {
       return false;
    }
 
@@ -85,8 +123,8 @@ bool do_native_backup_init(JCR *jcr)
    return true;
 }
 
-/* Take all base jobs from job resource and find the
- * last L_BASE jobid.
+/*
+ * Take all base jobs from job resource and find the last L_BASE jobid.
  */
 static bool get_base_jobids(JCR *jcr, db_list_ctx *jobids)
 {
