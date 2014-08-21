@@ -2090,7 +2090,7 @@ bool do_ndmp_backup(JCR *jcr)
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
          nis->jcr = jcr;
-         nis->save_filehist = jcr->res.job.SaveFileHist;
+         nis->save_filehist = jcr->res.job->SaveFileHist;
 
          /*
           * The full ndmp archive has a virtual filename, we need it to hardlink the individual
