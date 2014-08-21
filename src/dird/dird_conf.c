@@ -1422,6 +1422,17 @@ bool FILESETRES::print_config(POOL_MEM &buff)
    return true;
 }
 
+const char *auth_protocol_to_str(uint32_t auth_protocol)
+{
+   for (int i = 0; authprotocols[i].name; i++) {
+      if (authprotocols[i].token == auth_protocol) {
+         return authprotocols[i].name;
+      }
+   }
+
+   return "Unknown";
+}
+
 const char *level_to_str(int level)
 {
    static char level_no[30];
@@ -1434,6 +1445,7 @@ const char *level_to_str(int level)
          break;
       }
    }
+
    return str;
 }
 

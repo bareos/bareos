@@ -492,6 +492,60 @@ static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint32_t inode)
    return (N_TREE_NODE *)NULL;
 }
 
+static inline bool validate_client(JCR *jcr)
+{
+   switch (jcr->res.client->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0,
+           _("Client %s, with backup protocol %s  not compatible for running NDMP backup.\n"),
+           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
+      return false;
+   }
+
+   return true;
+}
+
+static inline bool validate_storage(JCR *jcr, STORERES *store)
+{
+   switch (store->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
+           store->name(), auth_protocol_to_str(store->Protocol));
+      return false;
+   }
+
+   return true;
+}
+
+static inline bool validate_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   if (jcr->wstorage) {
+      foreach_alist(store, jcr->wstorage) {
+         if (!validate_storage(jcr, store)) {
+            return false;
+         }
+      }
+   } else {
+      foreach_alist(store, jcr->rstorage) {
+         if (!validate_storage(jcr, store)) {
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
 /*
  * Fill a ndmagent structure with the correct info. Instead of calling ndmagent_from_str
  * we fill the structure ourself from info provides in a resource.
@@ -1861,6 +1915,17 @@ bool do_ndmp_backup_init(JCR *jcr)
    }
 
    /*
+    * Validate the Job to have a NDMP client and NDMP storage.
+    */
+   if (!validate_client(jcr)) {
+      return false;
+   }
+
+   if (!validate_storage(jcr)) {
+      return false;
+   }
+
+   /*
     * For now we only allow NDMP backups to bareos SD's
     * so we need a paired storage definition.
     */
@@ -2668,6 +2733,13 @@ bool do_ndmp_restore(JCR *jcr)
    Dmsg0(20, "Updated job start record\n");
 
    Dmsg1(20, "RestoreJobId=%d\n", jcr->res.job->RestoreJobId);
+
+   /*
+    * Validate the Job to have a NDMP client.
+    */
+   if (!validate_client(jcr)) {
+      return false;
+   }
 
    if (!jcr->RestoreBootstrap) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot restore without a bootstrap file.\n"
