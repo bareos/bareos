@@ -480,6 +480,7 @@ public:
    bool CancelRunningDuplicates;      /* Cancel Running jobs */
    bool PurgeMigrateJob;              /* Purges source job on completion */
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
+   bool SaveFileHist;                 /* Ability to disable File history saving for certain protocols */
 
    alist *base;                       /* Base jobs */
    int64_t max_bandwidth;             /* Speed limit on this job */
