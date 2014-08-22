@@ -89,7 +89,7 @@ static void print_bsr_item(POOL_MEM *pool_buf, const char *fmt, ...)
    POOL_MEM item(PM_MESSAGE);
 
    while (1) {
-      maxlen = item.size() - 1;
+      maxlen = item.max_size() - 1;
       va_start(arg_ptr, fmt);
       len = bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
       va_end(arg_ptr);

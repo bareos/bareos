@@ -1549,7 +1549,7 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
    va_list ap;
 
    while (1) {
-      maxlen = pool_buf.size() - 1;
+      maxlen = pool_buf.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
