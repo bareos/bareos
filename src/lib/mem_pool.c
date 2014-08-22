@@ -645,6 +645,20 @@ int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n)
 
 /* ==============  CLASS POOL_MEM   ============== */
 
+/*
+ * Return the size of a memory buffer
+ */
+int32_t POOL_MEM::max_size()
+{
+   int32_t size;
+   char *cp = mem;
+
+   cp -= HEAD_SIZE;
+   size = ((struct abufhead *)cp)->ablen;
+
+   return size;
+}
+
 void POOL_MEM::realloc_pm(int32_t size)
 {
    char *cp = mem;
@@ -653,7 +667,7 @@ void POOL_MEM::realloc_pm(int32_t size)
 
    P(mutex);
    cp -= HEAD_SIZE;
-   buf = (char *)realloc(cp, size+HEAD_SIZE);
+   buf = (char *)realloc(cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
       smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);

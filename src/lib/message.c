@@ -1095,7 +1095,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
    if (level <= debug_level) {
       if (dbg_timestamp) {
          mtime = time(NULL);
-         bstrftimes(buf.c_str(), buf.size(), mtime);
+         bstrftimes(buf.c_str(), buf.max_size(), mtime);
          pm_strcat(buf, " ");
          pt_out(buf.c_str());
       }
@@ -1107,7 +1107,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 #endif
 
       while (1) {
-         maxlen = more.size() - 1;
+         maxlen = more.max_size() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
@@ -1188,7 +1188,7 @@ void p_msg(const char *file, int line, int level, const char *fmt,...)
 #endif
 
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1272,7 +1272,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
 #endif
 
       while (1) {
-         maxlen = more.size() - 1;
+         maxlen = more.max_size() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
          va_end(ap);
@@ -1347,7 +1347,7 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
    }
 
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1408,7 +1408,7 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     */
    if (is_watchdog()) {
       while (1) {
-         maxlen = buf.size()- 1;
+         maxlen = buf.max_size() - 1;
          va_start(ap, fmt);
          len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
          va_end(ap);
@@ -1490,7 +1490,7 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    }
 
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1531,7 +1531,7 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1561,7 +1561,7 @@ int m_msg(const char *file, int line, POOLMEM **pool_buf, const char *fmt, ...)
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1589,7 +1589,7 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1663,7 +1663,7 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
    va_list ap;
 
    while (1) {
-      maxlen = pool_buf.size() - 1;
+      maxlen = pool_buf.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1694,7 +1694,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    MQUEUE_ITEM *item;
 
    while (1) {
-      maxlen = buf.size() - 1;
+      maxlen = buf.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(buf.c_str(), maxlen, fmt, ap);
       va_end(ap);
@@ -1770,7 +1770,7 @@ void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
    while (1) {
-      maxlen = more.size() - 1;
+      maxlen = more.max_size() - 1;
       va_start(ap, fmt);
       len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
       va_end(ap);
