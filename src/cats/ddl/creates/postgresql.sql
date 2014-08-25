@@ -449,6 +449,16 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('A', 'Canceled by user',90);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('I', 'Incomplete job', 15);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('L', 'Committing data', 15);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('W', 'Terminated with warnings', 20);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('l', 'Doing data despooling', 15);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('q', 'Queued waiting for device', 15);
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('F', 'Waiting for Client',15);
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('S', 'Waiting for Storage daemon',15);
