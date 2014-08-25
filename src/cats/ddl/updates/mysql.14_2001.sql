@@ -16,4 +16,11 @@ CREATE TABLE NDMPLevelMap (
 ALTER TABLE Media DROP COLUMN VolParts;
 ALTER TABLE Media ADD COLUMN EncryptionKey TINYBLOB;
 
+INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
+   ('I', 'Incomplete job', 15),
+   ('L', 'Committing data', 15),
+   ('W', 'Terminated with warnings', 20),
+   ('l', 'Doing data despooling', 15),
+   ('q', 'Queued waiting for device', 15);
+
 UPDATE Version SET VersionId = 2001;
