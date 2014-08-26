@@ -96,6 +96,21 @@ class JobStatus extends AbstractHelper
 	    case 'i':
 	      $output = '<span class="label label-info">Doing batch insert file records</span>';
 	      break;
+	    case 'I':
+              $output = '<span class="label label-primary">Incomplete</span>';
+              break;
+	    case 'L':
+              $output = '<span class="label label-info">Committing data</span>';
+              break;
+	    case 'W':
+              $output = '<span class="label label-warning">Terminated with warnings</span>';
+              break;
+	    case 'l':
+              $output = '<span class="label label-info">Doing data despooling</span>';
+              break;
+	    case 'q':
+              $output = '<span class="label label-default">Queued waiting for device</span>';
+              break;
 	    default:
 	      $output = '<span class="label label-primary">' . $jobStatus . '</span>';
 	      break;
