@@ -120,7 +120,10 @@ class JobTable implements ServiceLocatorAwareInterface
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
 		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
-		$select->where($bsqlch->strdbcompat("JobStatus") . " = 'R'");
+		$select->where(
+			$bsqlch->strdbcompat("JobStatus") . " = 'R' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'l'"
+		);
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -161,6 +164,7 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("JobStatus") . " = 'd' OR " . 
 			$bsqlch->strdbcompat("JobStatus") . " = 't' OR " . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'p' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'q' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'C'"
 		);
 		
@@ -196,7 +200,8 @@ class JobTable implements ServiceLocatorAwareInterface
 		);
 		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
-			$bsqlch->strdbcompat("JobStatus") . " = 'T' AND " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'W' AND " .
 			$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
 			$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);
@@ -233,7 +238,10 @@ class JobTable implements ServiceLocatorAwareInterface
 		);
 		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
-			$bsqlch->strdbcompat("JobStatus") . " != 'T' AND " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'A' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'E' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'e' OR " .
+                        $bsqlch->strdbcompat("JobStatus") . " = 'f' AND " .
                         $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
                         $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);		

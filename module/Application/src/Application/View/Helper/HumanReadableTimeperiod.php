@@ -45,7 +45,7 @@ class HumanReadableTimeperiod extends AbstractHelper
     public function __invoke($time, $format="short")
     {
 
-	if(empty($time)) {
+	if($time == "0000-00-00 00:00:00" || empty($time)) {
 		return $this->result = "never";
 	}
 	else {
@@ -116,7 +116,7 @@ class HumanReadableTimeperiod extends AbstractHelper
 				$this->result = "about " . $interval . " month ago";
 			}
 			elseif($interval > 365) {
-				$interval = round($interval / 12, 1, PHP_ROUND_HALF_UP);
+				$interval = round($interval / 365, 1, PHP_ROUND_HALF_UP);
 				$this->result = "about " . $interval . " year(s) ago";
 			}
 
