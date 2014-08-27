@@ -192,7 +192,7 @@ int main (int argc, char *argv[])
    argv += optind;
 
    if (argc != 2) {
-      Pmsg0(0, _("Wrong number of arguments: \n"));
+      Pmsg0(0, _("Wrong number of arguments. Make sure the last two parameters are <bareos-archive-device-name> <directory-to-store-files>\n"));
       usage();
    }
 
