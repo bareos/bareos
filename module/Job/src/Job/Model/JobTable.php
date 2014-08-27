@@ -200,8 +200,9 @@ class JobTable implements ServiceLocatorAwareInterface
 		);
 		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
+			"(" . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
-			$bsqlch->strdbcompat("JobStatus") . " = 'W' AND " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'W' ) AND " .
 			$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
 			$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);
@@ -238,10 +239,11 @@ class JobTable implements ServiceLocatorAwareInterface
 		);
 		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
+			"(" . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'A' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'E' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'e' OR " .
-                        $bsqlch->strdbcompat("JobStatus") . " = 'f' AND " .
+                        $bsqlch->strdbcompat("JobStatus") . " = 'f' ) AND " .
                         $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
                         $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);		
@@ -474,8 +476,9 @@ class JobTable implements ServiceLocatorAwareInterface
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
 		$select->where(	
-			$bsqlch->strdbcompat("ClientId") . " = " . $id . " AND " .
-			$bsqlch->strdbcompat("JobStatus") . " = 'T'"
+			$bsqlch->strdbcompat("ClientId") . " = " . $id . " AND (" .
+			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
+			$bsqlch->strdbcompat("JobStatus") . " = 'W')"
 		);
 		$select->order($bsqlch->strdbcompat("JobId") . " DESC");
 		$select->limit(1);
