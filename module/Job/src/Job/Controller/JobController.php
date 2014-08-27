@@ -28,6 +28,7 @@ namespace Job\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Bareos\BConsole\BConsoleConnector;
 
 class JobController extends AbstractActionController
 {
@@ -41,9 +42,14 @@ class JobController extends AbstractActionController
 
 		$paginator = $this->getJobTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
-		return new ViewModel(array('paginator' => $paginator));
+		return new ViewModel(
+			array(
+				'paginator' => $paginator,
+				'allJobs' => $this->getJobTable()->fetchAll()
+				)
+			);
 
 	}
 
@@ -64,7 +70,7 @@ class JobController extends AbstractActionController
 	{
 		$paginator = $this->getJobTable()->getRunningJobs(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(
 			array(
@@ -78,7 +84,7 @@ class JobController extends AbstractActionController
 	{
 		$paginator = $this->getJobTable()->getWaitingJobs(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(
 			array(
@@ -92,7 +98,7 @@ class JobController extends AbstractActionController
 	{
 		$paginator = $this->getJobTable()->getLast24HoursUnsuccessfulJobs(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(
 			array(
@@ -106,7 +112,7 @@ class JobController extends AbstractActionController
 	{
 		$paginator = $this->getJobTable()->getLast24HoursSuccessfulJobs(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(
 			array(
@@ -126,9 +132,11 @@ class JobController extends AbstractActionController
 	{
 		$jobid = (int) $this->params()->fromRoute('id', 0);
 		$cmd = "rerun jobid=" . $jobid . " yes";
+		$config = $this->getServiceLocator()->get('Config');
+		$bcon = new BConsoleConnector($config['bconsole']);
 		return new ViewModel(
 			array(
-				'bconsoleOutput' => $this->getBConsoleOutput($cmd),
+				'bconsoleOutput' => $bcon->getBConsoleOutput($cmd),
 				'jobid' => $jobid,
 			)
 		);
@@ -137,11 +145,13 @@ class JobController extends AbstractActionController
 	public function cancelAction()
 	{
 		$jobid = (int) $this->params()->fromRoute('id', 0);
-
                 $cmd = "cancel jobid=" . $jobid . " yes";
-
+		$config = $this->getServiceLocator()->get('Config');
+		$bcon = new BConsoleConnector($config['bconsole']);
                 return new ViewModel(
-                        array('bconsoleOutput' => $this->getBConsoleOutput($cmd))
+                        array(
+				'bconsoleOutput' => $bcon->getBConsoleOutput($cmd)
+			)
                 );	
 	}
 
@@ -163,39 +173,6 @@ class JobController extends AbstractActionController
 			$this->logTable = $sm->get('Log\Model\LogTable');
 		}
 		return $this->logTable;
-	}
-
-	public function getBConsoleOutput($cmd)
-	{
-		$descriptorspec = array(
-			0 => array("pipe", "r"),
-			1 => array("pipe", "w"),
-			2 => array("pipe", "r")
-		);
-	
-		$cwd = '/usr/sbin';
-		$env = array('/usr/sbin');
-	
-		$process = proc_open('sudo /usr/sbin/bconsole', $descriptorspec, $pipes, $cwd, $env);
-
-		if(!is_resource($process))
-			throw new \Exception("proc_open error");	
-
-		if(is_resource($process))
-		{
-			fwrite($pipes[0], $cmd);
-			fclose($pipes[0]);
-			while(!feof($pipes[1])) {
-                        	array_push($this->bconsoleOutput, fread($pipes[1],8192));
-			}
-			fclose($pipes[1]);
-
-		}
-	
-		$return_value = proc_close($process);
-	 
-		return $this->bconsoleOutput;
-
 	}
 	
 }

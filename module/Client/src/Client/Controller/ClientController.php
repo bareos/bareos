@@ -16,7 +16,7 @@ class ClientController extends AbstractActionController
 	{
 		$paginator = $this->getClientTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(array('paginator' => $paginator));
 	}
