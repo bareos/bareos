@@ -32,8 +32,6 @@ $this->headTitle($title);
 <h3 class="text-muted"><?php echo $this->translate($title); ?></h3>
 <hr />
 
-
-
 <?php
 
 $flash = $this->flashMessenger();
@@ -363,7 +361,7 @@ $flash->setMessageOpenFormat('
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid));?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
+			<!-- <li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li> -->
 		</ul>
 	      </div>
 	      <?php endif; ?>
