@@ -42,10 +42,11 @@ static const bool no_tape_write_test = true;
 static const bool no_tape_write_test = false;
 #endif
 
-
 static bool terminate_writing_volume(DCR *dcr);
 static bool do_new_file_bookkeeping(DCR *dcr);
 static void reread_last_block(DCR *dcr);
+
+bool forge_on = false;                /* proceed inspite of I/O errors */
 
 /*
  * Dump the block header, then walk through
@@ -121,13 +122,12 @@ DEV_BLOCK *new_block(DEVICE *dev)
 
    memset(block, 0, sizeof(DEV_BLOCK));
 
-   /*
-    * If the user has specified a max_block_size, use it as the default
-    */
    if (dev->max_block_size == 0) {
-      block->buf_len = DEFAULT_BLOCK_SIZE;
+      block->buf_len = dev->device->label_block_size;
+      Dmsg1(100, "created new block of blocksize %d (dev->device->label_block_size) as dev->max_block_size is zero\n", block->buf_len);
    } else {
       block->buf_len = dev->max_block_size;
+      Dmsg1(100, "created new block of blocksize %d (dev->max_block_size)\n", block->buf_len);
    }
    block->dev = dev;
    block->block_len = block->buf_len;  /* default block size */
@@ -357,7 +357,6 @@ bool DCR::write_block_to_device()
    DCR *dcr = this;
 
    if (dcr->spooling) {
-      Dmsg0(100, "Write to spool\n");
       status = write_block_to_spool_file(dcr);
       return status;
    }
@@ -383,7 +382,7 @@ bool DCR::write_block_to_device()
          goto bail_out;
       }
       /* Create a jobmedia record for this job */
-      if (!dir_create_jobmedia_record(dcr)) {
+      if (!dcr->dir_create_jobmedia_record(false)) {
          dev->dev_errno = EIO;
          Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
             dcr->getVolCatName(), jcr->Job);
@@ -503,10 +502,18 @@ bool DCR::write_block_to_dev()
             wlen = ((wlen + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
          }
       }
+
+      Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+
       if (wlen-blen > 0) {
          memset(block->bufp, 0, wlen-blen); /* clear garbage */
       }
    }
+
+   Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+
 
    checksum = ser_block_header(block, dev->do_checksum());
 
@@ -666,8 +673,8 @@ bool DCR::write_block_to_dev()
    /*
     * We successfully wrote the block, now do housekeeping
     */
-   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n", (int)dev->VolCatInfo.VolCatBytes,
-      (int)(dev->VolCatInfo.VolCatBytes+wlen));
+   Dmsg2(1300, "VolCatBytes=%d newVolCatBytes=%d\n",
+         (int)dev->VolCatInfo.VolCatBytes, (int)(dev->VolCatInfo.VolCatBytes+wlen));
    dev->VolCatInfo.VolCatBytes += wlen;
    dev->VolCatInfo.VolCatBlocks++;
    dev->EndBlock = dev->block_num;
@@ -794,8 +801,7 @@ static void reread_last_block(DCR *dcr)
 
 /*
  * If this routine is called, we do our bookkeeping and
- *   then assure that the volume will not be written any
- *   more.
+ * then assure that the volume will not be written any more.
  */
 static bool terminate_writing_volume(DCR *dcr)
 {
@@ -804,7 +810,7 @@ static bool terminate_writing_volume(DCR *dcr)
 
    /* Create a JobMedia record to indicated end of tape */
    dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Dmsg0(50, "Error from create JobMedia\n");
       dev->dev_errno = EIO;
         Mmsg2(dev->errmsg, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
@@ -826,7 +832,7 @@ static bool terminate_writing_volume(DCR *dcr)
    bstrncpy(dev->VolCatInfo.VolCatStatus, "Full", sizeof(dev->VolCatInfo.VolCatStatus));
    dev->VolCatInfo.VolCatFiles = dev->file;   /* set number of files */
 
-   if (!dir_update_volume_info(dcr, false, true)) {
+   if (!dcr->dir_update_volume_info(false, true)) {
       Mmsg(dev->errmsg, _("Error sending Volume info to Director.\n"));
       ok = false;
       Dmsg0(50, "Error updating volume info.\n");
@@ -876,7 +882,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
    /*
     * Create a JobMedia record so restore can seek
     */
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Dmsg0(50, "Error from create_job_media.\n");
       dev->dev_errno = EIO;
       Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
@@ -886,7 +892,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
       return false;
    }
    dev->VolCatInfo.VolCatFiles = dev->file;
-   if (!dir_update_volume_info(dcr, false, false)) {
+   if (!dcr->dir_update_volume_info(false, false)) {
       Dmsg0(50, "Error from update_vol_info.\n");
       terminate_writing_volume(dcr);
       dev->dev_errno = EIO;

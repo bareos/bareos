@@ -642,18 +642,17 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
        */
       switch (plugin_option_handle_file(jcr, ff_pkt, &sp)) {
       case bRC_OK:
-         Dmsg2(10, "Option plugin %s will be used to backup %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+         Dmsg2(10, "Option plugin %s will be used to backup %s\n", ff_pkt->plugin, ff_pkt->fname);
          do_plugin_set = true;
          break;
       case bRC_Skip:
-         Dmsg2(10, "Option plugin %s decided to skip %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+         Dmsg2(10, "Option plugin %s decided to skip %s\n", ff_pkt->plugin, ff_pkt->fname);
          goto good_rtn;
-      default:
-         Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n",
-               ff_pkt->plugin, ff_pkt->fname);
+      case bRC_Core:
+         Dmsg2(10, "Option plugin %s decided to let bareos handle %s\n", ff_pkt->plugin, ff_pkt->fname);
          break;
+      default:
+         goto bail_out;
       }
    }
 
@@ -1252,8 +1251,8 @@ bail_out:
 bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 {
    BSOCK *sd = jcr->store_bsock;
-   char attribs[MAXSTRING];
-   char attribsExBuf[MAXSTRING];
+   POOL_MEM attribs(PM_NAME),
+            attribsExBuf(PM_NAME);
    char *attribsEx = NULL;
    int attr_stream;
    int comp_len;
@@ -1270,17 +1269,17 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;
    }
-   encode_stat(attribs, &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
+   encode_stat(attribs.c_str(), &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
 
    /** Now possibly extend the attributes */
    if (IS_FT_OBJECT(ff_pkt->type)) {
       attr_stream = STREAM_RESTORE_OBJECT;
    } else {
-      attribsEx = attribsExBuf;
+      attribsEx = attribsExBuf.c_str();
       attr_stream = encode_attribsEx(jcr, attribsEx, ff_pkt);
    }
 
-   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname, attribs, attribsEx);
+   Dmsg3(300, "File %s\nattribs=%s\nattribsEx=%s\n", ff_pkt->fname, attribs.c_str(), attribsEx);
 
    jcr->lock();
    jcr->JobFiles++;                    /* increment number of files sent */
@@ -1342,7 +1341,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname, ff_pkt->link);
       status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
                          ff_pkt->link, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    case FT_DIREND:
@@ -1350,7 +1349,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
    case FT_JUNCTION:
       /* Here link is the canonical filename (i.e. with trailing slash) */
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->link, 0, attribs, 0, 0,
+                         ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    case FT_PLUGIN_CONFIG:
@@ -1398,12 +1397,12 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       break;
    case FT_REG:
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0, 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    default:
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->fname, 0, attribs, 0, 0,
+                         ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
                          attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
    }

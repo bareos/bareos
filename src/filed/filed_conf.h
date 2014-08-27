@@ -27,6 +27,13 @@
  */
 
 /*
+ * Program specific config types (start at 50)
+ */
+enum {
+   CFG_TYPE_CIPHER = 50               /* Encryption Cipher */
+};
+
+/*
  * Resource codes -- they must be sequential for indexing
  */
 enum {
@@ -47,17 +54,11 @@ enum {
    R_TYPE
 };
 
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   uint32_t token;
-};
-
 /* Definition of the contents of each Resource */
 struct DIRRES {
    RES hdr;
 
-   char *password;                    /* Director password */
+   s_password password;               /* Director password */
    char *address;                     /* Director address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TSL */
@@ -93,6 +94,7 @@ struct CLIENTRES {
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t max_network_buffer_size;  /* Max network buf size */
+   uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
    bool compatible;                   /* Support old protocol keywords */
    bool allow_bw_bursting;            /* Allow bursting with bandwidth limiting */
    bool pki_sign;                     /* Enable Data Integrity Verification via Digital Signatures */
@@ -111,6 +113,8 @@ struct CLIENTRES {
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
+   bool always_use_lmdb;              /* Use LMDB for accurate data */
+   uint32_t lmdb_threshold;           /* Switch to using LDMD when number of accurate entries exceeds treshold. */
    X509_KEYPAIR *pki_keypair;         /* Shared PKI Public/Private Keypair */
    alist *pki_signers;                /* Shared PKI Trusted Signers */
    alist *pki_recipients;             /* Shared PKI Recipients */

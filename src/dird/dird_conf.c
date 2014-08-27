@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,38 +51,23 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
+
+/*
+ * Set default indention e.g. 2 spaces.
+ */
+#define DEFAULT_INDENT_STRING "  "
 
 /*
  * Imported subroutines
  */
-extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
-extern void store_finc(LEX *lc, RES_ITEM *item, int index, int pass);
 extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
+extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * Forward referenced subroutines
  */
-void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_level(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_replace(LEX *lc, RES_ITEM *item, int index, int pass);
-void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_device(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass);
-static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here as we are
@@ -90,14 +75,8 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass);
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   URES res_all;
-}
-#else
-URES res_all;
-#endif
-int32_t res_all_size = sizeof(res_all);
+static URES res_all;
+static int32_t res_all_size = sizeof(res_all);
 
 /*
  * Definition of records permitted within each
@@ -109,47 +88,54 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "messages", store_res, ITEM(res_dir.messages), R_MSGS, 0, NULL },
-   { "dirport", store_addresses_port, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "diraddress", store_addresses_address, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "diraddresses", store_addresses, ITEM(res_dir.DIRaddrs), 0, ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "dirsourceaddress", store_addresses_address, ITEM(res_dir.DIRsrc_addr), 0, ITEM_DEFAULT, "0" },
-   { "queryfile", store_dir, ITEM(res_dir.query_file), 0, ITEM_REQUIRED, NULL },
-   { "workingdirectory", store_dir, ITEM(res_dir.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_dir.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "plugindirectory", store_dir, ITEM(res_dir.plugin_directory), 0, 0, NULL },
-   { "pluginnames", store_str, ITEM(res_dir.plugin_names), 0, 0, NULL },
-   { "scriptsdirectory", store_dir, ITEM(res_dir.scripts_directory), 0, 0, NULL },
-   { "subscriptions", store_pint32, ITEM(res_dir.subscriptions), 0, ITEM_DEFAULT, "0" },
-   { "subsysdirectory", store_dir, ITEM(res_dir.subsys_directory), 0, 0, NULL },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_dir.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "maximumconsoleconnections", store_pint32, ITEM(res_dir.MaxConsoleConnect), 0, ITEM_DEFAULT, "20" },
-   { "password", store_clearpassword, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
-   { "fdconnecttimeout", store_time, ITEM(res_dir.FDConnectTimeout), 0, ITEM_DEFAULT, "180" /* 3 minutes */ },
-   { "sdconnecttimeout", store_time, ITEM(res_dir.SDConnectTimeout), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "heartbeatinterval", store_time, ITEM(res_dir.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "tlsauthenticate", store_bool, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
-   { "statisticsretention", store_time, ITEM(res_dir.stats_retention), 0, ITEM_DEFAULT, "157680000" /* 5 years */ },
-   { "verid", store_str, ITEM(res_dir.verid), 0, 0, NULL },
-   { "optimizeforsize", store_bool, ITEM(res_dir.optimize_for_size), 0, ITEM_DEFAULT, "true" },
-   { "optimizeforspeed", store_bool, ITEM(res_dir.optimize_for_speed), 0, ITEM_DEFAULT, "false" },
-   { "nokeepalive", store_bool, ITEM(res_dir.nokeepalive), 0, ITEM_DEFAULT, "false" },
-   { "keyencryptionkey", store_clearpassword, ITEM(res_dir.keyencrkey), 1, 0, NULL },
-   { "ndmpsnooping", store_bool, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
-   { "ndmploglevel", store_pint32, ITEM(res_dir.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "messages", CFG_TYPE_RES, ITEM(res_dir.messages), R_MSGS, 0, NULL },
+   { "dirport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "diraddresses", CFG_TYPE_ADDRESSES, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
+   { "dirsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_dir.DIRsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
+   { "queryfile", CFG_TYPE_DIR, ITEM(res_dir.query_file), 0, CFG_ITEM_REQUIRED, NULL },
+   { "workingdirectory", CFG_TYPE_DIR, ITEM(res_dir.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", CFG_TYPE_DIR, ITEM(res_dir.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
+   { "plugindirectory", CFG_TYPE_DIR, ITEM(res_dir.plugin_directory), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_STR, ITEM(res_dir.plugin_names), 0, 0, NULL },
+   { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_dir.scripts_directory), 0, 0, NULL },
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
+#endif
+   { "subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0" },
+   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, 0, NULL },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maximumconsoleconnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnect), 0, CFG_ITEM_DEFAULT, "20" },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */ },
+   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_dir.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
+   { "statisticsretention", CFG_TYPE_TIME, ITEM(res_dir.stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */ },
+   { "statisticscollectinterval", CFG_TYPE_PINT32, ITEM(res_dir.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "150" },
+   { "verid", CFG_TYPE_STR, ITEM(res_dir.verid), 0, 0, NULL },
+   { "optimizeforsize", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_size), 0, CFG_ITEM_DEFAULT, "false" },
+   { "optimizeforspeed", CFG_TYPE_BOOL, ITEM(res_dir.optimize_for_speed), 0, CFG_ITEM_DEFAULT, "false" },
+   { "omitdefaults", CFG_TYPE_BOOL, ITEM(res_dir.omit_defaults), 0, CFG_ITEM_DEFAULT, "true" },
+   { "keyencryptionkey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
+   { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
+   { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
+   { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
+   { "auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "true" },
+   { "auditevents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -158,32 +144,32 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM con_items[] = {
-   { "name", store_name, ITEM(res_con.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_con.hdr.desc), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_con.password), 0, ITEM_REQUIRED, NULL },
-   { "jobacl", store_acl, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL },
-   { "clientacl", store_acl, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL },
-   { "storageacl", store_acl, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL },
-   { "scheduleacl", store_acl, ITEM(res_con.ACL_lists), Schedule_ACL, 0, NULL },
-   { "runacl", store_acl, ITEM(res_con.ACL_lists), Run_ACL, 0, NULL },
-   { "poolacl", store_acl, ITEM(res_con.ACL_lists), Pool_ACL, 0, NULL },
-   { "commandacl", store_acl, ITEM(res_con.ACL_lists), Command_ACL, 0, NULL },
-   { "filesetacl", store_acl, ITEM(res_con.ACL_lists), FileSet_ACL, 0, NULL },
-   { "catalogacl", store_acl, ITEM(res_con.ACL_lists), Catalog_ACL, 0, NULL },
-   { "whereacl", store_acl, ITEM(res_con.ACL_lists), Where_ACL, 0, NULL },
-   { "pluginoptionsacl", store_acl, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, NULL },
-   { "tlsauthenticate", store_bool, ITEM(res_con.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_con.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_con.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_con.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_con.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_con.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_con.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_con.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_con.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", store_dir, ITEM(res_con.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "jobacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL },
+   { "clientacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL },
+   { "storageacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL },
+   { "scheduleacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Schedule_ACL, 0, NULL },
+   { "runacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Run_ACL, 0, NULL },
+   { "poolacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Pool_ACL, 0, NULL },
+   { "commandacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Command_ACL, 0, NULL },
+   { "filesetacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), FileSet_ACL, 0, NULL },
+   { "catalogacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Catalog_ACL, 0, NULL },
+   { "whereacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Where_ACL, 0, NULL },
+   { "pluginoptionsacl", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, NULL },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_con.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_con.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_con.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_con.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_con.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_con.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_con.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_con.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -192,42 +178,43 @@ static RES_ITEM con_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "protocol", store_authprotocoltype, ITEM(res_client.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "authtype", store_authtype, ITEM(res_client.AuthType), 0, ITEM_DEFAULT, "None" },
-   { "address", store_str, ITEM(res_client.address), 0, ITEM_REQUIRED, NULL },
-   { "fdaddress", store_str, ITEM(res_client.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "fdport", store_pint32, ITEM(res_client.FDport), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "username", store_str, ITEM(res_client.username), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_client.password), 0, ITEM_REQUIRED, NULL },
-   { "fdpassword", store_clearpassword, ITEM(res_client.password), 0, 0, NULL },
-   { "catalog", store_res, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
-   { "passive", store_bool, ITEM(res_client.passive), 0, ITEM_DEFAULT, "false" },
-   { "hardquota", store_size64, ITEM(res_client.HardQuota), 0, ITEM_DEFAULT, "0" },
-   { "softquota", store_size64, ITEM(res_client.SoftQuota), 0, ITEM_DEFAULT, "0" },
-   { "softquotagraceperiod", store_time, ITEM(res_client.SoftQuotaGracePeriod), 0, ITEM_DEFAULT, "0" },
-   { "strictquotas", store_bool, ITEM(res_client.StrictQuotas), 0, ITEM_DEFAULT, "false" },
-   { "quotaincludefailedjobs", store_bool, ITEM(res_client.QuotaIncludeFailedJobs), 0, ITEM_DEFAULT, "true" },
-   { "fileretention", store_time, ITEM(res_client.FileRetention), 0, ITEM_DEFAULT, "5184000" /* 60 days */ },
-   { "jobretention", store_time, ITEM(res_client.JobRetention), 0, ITEM_DEFAULT, "15552000" /* 180 days */ },
-   { "heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "autoprune", store_bool, ITEM(res_client.AutoPrune), 0, ITEM_DEFAULT, "false" },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
-   { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth), 0, 0, NULL },
-   { "ndmploglevel", store_pint32, ITEM(res_client.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
-   { "ndmpblocksize", store_pint32, ITEM(res_client.ndmp_blocksize), 0, ITEM_DEFAULT, "64512" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
+   { "address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdaddress", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_ALIAS, NULL },
+   { "port", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, FD_DEFAULT_PORT },
+   { "username", CFG_TYPE_STR, ITEM(res_client.username), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "fdpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_ALIAS, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL },
+   { "passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_client.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { "hardquota", CFG_TYPE_SIZE64, ITEM(res_client.HardQuota), 0, CFG_ITEM_DEFAULT, "0" },
+   { "softquota", CFG_TYPE_SIZE64, ITEM(res_client.SoftQuota), 0, CFG_ITEM_DEFAULT, "0" },
+   { "softquotagraceperiod", CFG_TYPE_TIME, ITEM(res_client.SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0" },
+   { "strictquotas", CFG_TYPE_BOOL, ITEM(res_client.StrictQuotas), 0, CFG_ITEM_DEFAULT, "false" },
+   { "quotaincludefailedjobs", CFG_TYPE_BOOL, ITEM(res_client.QuotaIncludeFailedJobs), 0, CFG_ITEM_DEFAULT, "true" },
+   { "fileretention", CFG_TYPE_TIME, ITEM(res_client.FileRetention), 0, CFG_ITEM_DEFAULT, "5184000" /* 60 days */ },
+   { "jobretention", CFG_TYPE_TIME, ITEM(res_client.JobRetention), 0, CFG_ITEM_DEFAULT, "15552000" /* 180 days */ },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_client.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "autoprune", CFG_TYPE_BOOL, ITEM(res_client.AutoPrune), 0, CFG_ITEM_DEFAULT, "false" },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_client.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_client.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_client.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_client.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_client.tls_keyfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth), 0, 0, NULL },
+   { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_client.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
+   { "ndmpblocksize", CFG_TYPE_PINT32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /* Storage daemon resource
@@ -235,37 +222,38 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "name", store_name, ITEM(res_store.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "protocol", store_authprotocoltype, ITEM(res_store.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "authtype", store_authtype, ITEM(res_store.AuthType), 0, ITEM_DEFAULT, "None" },
-   { "address", store_str, ITEM(res_store.address), 0, ITEM_REQUIRED, NULL },
-   { "sdaddress", store_str, ITEM(res_store.address), 0, 0, NULL },
-   { "port", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdport", store_pint32, ITEM(res_store.SDport), 0, ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "username", store_str, ITEM(res_store.username), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_store.password), 0, ITEM_REQUIRED, NULL },
-   { "sdpassword", store_clearpassword, ITEM(res_store.password), 0, 0, NULL },
-   { "device", store_device, ITEM(res_store.device), R_DEVICE, ITEM_REQUIRED, NULL },
-   { "mediatype", store_strname, ITEM(res_store.media_type), 0, ITEM_REQUIRED, NULL },
-   { "autochanger", store_bool, ITEM(res_store.autochanger), 0, ITEM_DEFAULT, "false" },
-   { "enabled", store_bool, ITEM(res_store.enabled), 0, ITEM_DEFAULT, "true" },
-   { "allowcompression", store_bool, ITEM(res_store.AllowCompress), 0, ITEM_DEFAULT, "true" },
-   { "heartbeatinterval", store_time, ITEM(res_store.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_store.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "maximumconcurrentreadjobs", store_pint32, ITEM(res_store.MaxConcurrentReadJobs), 0, ITEM_DEFAULT, "0" },
-   { "sddport", store_pint32, ITEM(res_store.SDDport), 0, ITEM_DEPRECATED, NULL },
-   { "tlsauthenticate", store_bool, ITEM(res_store.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_store.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_store.tls_require), 0, 0, NULL },
-   { "tlscacertificatefile", store_dir, ITEM(res_store.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_store.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_store.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_store.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_store.tls_keyfile), 0, 0, NULL },
-   { "pairedstorage", store_res, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_store.max_bandwidth), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
+   { "protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_store.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
+   { "address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdaddress", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_ALIAS, NULL },
+   { "port", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
+   { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, SD_DEFAULT_PORT },
+   { "username", CFG_TYPE_STR, ITEM(res_store.username), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "sdpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_store.password), 0, CFG_ITEM_ALIAS, NULL },
+   { "device", CFG_TYPE_DEVICE, ITEM(res_store.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL },
+   { "mediatype", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL },
+   { "autochanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_store.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { "allowcompression", CFG_TYPE_BOOL, ITEM(res_store.AllowCompress), 0, CFG_ITEM_DEFAULT, "true" },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maximumconcurrentreadjobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0" },
+   { "sddport", CFG_TYPE_PINT32, ITEM(res_store.SDDport), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_store.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_store.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_store.tls_require), 0, 0, NULL },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_store.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL },
+   { "pairedstorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL },
+   { "collectstatistics", CFG_TYPE_BOOL, ITEM(res_store.collectstats), 0, CFG_ITEM_DEFAULT, "false" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -274,31 +262,31 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cat_items[] = {
-   { "name", store_name, ITEM(res_cat.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_cat.hdr.desc), 0, 0, NULL },
-   { "address", store_str, ITEM(res_cat.db_address), 0, 0, NULL },
-   { "dbaddress", store_str, ITEM(res_cat.db_address), 0, 0, NULL },
-   { "dbport", store_pint32, ITEM(res_cat.db_port), 0, 0, NULL },
-   { "password", store_clearpassword, ITEM(res_cat.db_password), 0, 0, NULL },
-   { "dbpassword", store_str, ITEM(res_cat.db_password), 0, 0, NULL },
-   { "dbuser", store_str, ITEM(res_cat.db_user), 0, 0, NULL },
-   { "user", store_str, ITEM(res_cat.db_user), 0, 0, NULL },
-   { "dbname", store_str, ITEM(res_cat.db_name), 0, ITEM_REQUIRED, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL },
+   { "address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, CFG_ITEM_ALIAS, NULL },
+   { "dbaddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL },
+   { "dbport", CFG_TYPE_PINT32, ITEM(res_cat.db_port), 0, 0, NULL },
+   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat.db_password), 0, CFG_ITEM_ALIAS, NULL },
+   { "dbpassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_cat.db_password), 0, 0, NULL },
+   { "dbuser", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, 0, NULL },
+   { "user", CFG_TYPE_STR, ITEM(res_cat.db_user), 0, CFG_ITEM_ALIAS, NULL },
+   { "dbname", CFG_TYPE_STR, ITEM(res_cat.db_name), 0, CFG_ITEM_REQUIRED, NULL },
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-   { "dbdriver", store_str, ITEM(res_cat.db_driver), 0, ITEM_REQUIRED, NULL },
+   { "dbdriver", CFG_TYPE_STR, ITEM(res_cat.db_driver), 0, CFG_ITEM_REQUIRED, NULL },
 #else
-   { "dbdriver", store_str, ITEM(res_cat.db_driver), 0, 0, NULL },
+   { "dbdriver", CFG_TYPE_STR, ITEM(res_cat.db_driver), 0, 0, NULL },
 #endif
-   { "dbsocket", store_str, ITEM(res_cat.db_socket), 0, 0, NULL },
+   { "dbsocket", CFG_TYPE_STR, ITEM(res_cat.db_socket), 0, 0, NULL },
    /* Turned off for the moment */
-   { "multipleconnections", store_bit, ITEM(res_cat.mult_db_connections), 0, 0, NULL },
-   { "disablebatchinsert", store_bool, ITEM(res_cat.disable_batch_insert), 0, ITEM_DEFAULT, "false" },
-   { "minconnections", store_pint32, ITEM(res_cat.pooling_min_connections), 0, ITEM_DEFAULT, "1" },
-   { "maxconnections", store_pint32, ITEM(res_cat.pooling_max_connections), 0, ITEM_DEFAULT, "5" },
-   { "incconnections", store_pint32, ITEM(res_cat.pooling_increment_connections), 0, ITEM_DEFAULT, "1" },
-   { "idletimeout", store_pint32, ITEM(res_cat.pooling_idle_timeout), 0, ITEM_DEFAULT, "30" },
-   { "validatetimeout", store_pint32, ITEM(res_cat.pooling_validate_timeout), 0, ITEM_DEFAULT, "120" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "multipleconnections", CFG_TYPE_BIT, ITEM(res_cat.mult_db_connections), 0, 0, NULL },
+   { "disablebatchinsert", CFG_TYPE_BOOL, ITEM(res_cat.disable_batch_insert), 0, CFG_ITEM_DEFAULT, "false" },
+   { "minconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_min_connections), 0, CFG_ITEM_DEFAULT, "1" },
+   { "maxconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_max_connections), 0, CFG_ITEM_DEFAULT, "5" },
+   { "incconnections", CFG_TYPE_PINT32, ITEM(res_cat.pooling_increment_connections), 0, CFG_ITEM_DEFAULT, "1" },
+   { "idletimeout", CFG_TYPE_PINT32, ITEM(res_cat.pooling_idle_timeout), 0, CFG_ITEM_DEFAULT, "30" },
+   { "validatetimeout", CFG_TYPE_PINT32, ITEM(res_cat.pooling_validate_timeout), 0, CFG_ITEM_DEFAULT, "120" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -307,87 +295,88 @@ static RES_ITEM cat_items[] = {
  * name handler value code flags default_value
  */
 RES_ITEM job_items[] = {
-   { "name", store_name, ITEM(res_job.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_job.hdr.desc), 0, 0, NULL },
-   { "type", store_jobtype, ITEM(res_job.JobType), 0, ITEM_REQUIRED, NULL },
-   { "protocol", store_protocoltype, ITEM(res_job.Protocol), 0, ITEM_DEFAULT, "Native" },
-   { "backupformat", store_str, ITEM(res_job.backup_format), 0, ITEM_DEFAULT, "Native" },
-   { "level", store_level, ITEM(res_job.JobLevel), 0, 0, NULL },
-   { "messages", store_res, ITEM(res_job.messages), R_MSGS, ITEM_REQUIRED, NULL },
-   { "storage", store_alist_res, ITEM(res_job.storage), R_STORAGE, 0, NULL },
-   { "pool", store_res, ITEM(res_job.pool), R_POOL, ITEM_REQUIRED, NULL },
-   { "fullbackuppool", store_res, ITEM(res_job.full_pool), R_POOL, 0, NULL },
-   { "incrementalbackuppool", store_res, ITEM(res_job.inc_pool), R_POOL, 0, NULL },
-   { "differentialbackuppool", store_res, ITEM(res_job.diff_pool), R_POOL, 0, NULL },
-   { "nextpool", store_res, ITEM(res_job.next_pool), R_POOL, 0, NULL },
-   { "client", store_res, ITEM(res_job.client), R_CLIENT, 0, NULL },
-   { "fileset", store_res, ITEM(res_job.fileset), R_FILESET, 0, NULL },
-   { "schedule", store_res, ITEM(res_job.schedule), R_SCHEDULE, 0, NULL },
-   { "verifyjob", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
-   { "jobtoverify", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
-   { "jobdefs", store_res, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
-   { "catalog", store_res, ITEM(res_job.catalog), R_CATALOG, 0, NULL },
-   { "run", store_alist_str, ITEM(res_job.run_cmds), 0, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL },
+   { "type", CFG_TYPE_JOBTYPE, ITEM(res_job.JobType), 0, CFG_ITEM_REQUIRED, NULL },
+   { "protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job.Protocol), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "backupformat", CFG_TYPE_STR, ITEM(res_job.backup_format), 0, CFG_ITEM_DEFAULT, "Native" },
+   { "level", CFG_TYPE_LEVEL, ITEM(res_job.JobLevel), 0, 0, NULL },
+   { "messages", CFG_TYPE_RES, ITEM(res_job.messages), R_MSGS, CFG_ITEM_REQUIRED, NULL },
+   { "storage", CFG_TYPE_ALIST_RES, ITEM(res_job.storage), R_STORAGE, 0, NULL },
+   { "pool", CFG_TYPE_RES, ITEM(res_job.pool), R_POOL, CFG_ITEM_REQUIRED, NULL },
+   { "fullbackuppool", CFG_TYPE_RES, ITEM(res_job.full_pool), R_POOL, 0, NULL },
+   { "incrementalbackuppool", CFG_TYPE_RES, ITEM(res_job.inc_pool), R_POOL, 0, NULL },
+   { "differentialbackuppool", CFG_TYPE_RES, ITEM(res_job.diff_pool), R_POOL, 0, NULL },
+   { "nextpool", CFG_TYPE_RES, ITEM(res_job.next_pool), R_POOL, 0, NULL },
+   { "client", CFG_TYPE_RES, ITEM(res_job.client), R_CLIENT, 0, NULL },
+   { "fileset", CFG_TYPE_RES, ITEM(res_job.fileset), R_FILESET, 0, NULL },
+   { "schedule", CFG_TYPE_RES, ITEM(res_job.schedule), R_SCHEDULE, 0, NULL },
+   { "verifyjob", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, CFG_ITEM_ALIAS, NULL },
+   { "jobtoverify", CFG_TYPE_RES, ITEM(res_job.verify_job), R_JOB, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_job.catalog), R_CATALOG, 0, NULL },
+   { "jobdefs", CFG_TYPE_RES, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
+   { "run", CFG_TYPE_ALIST_STR, ITEM(res_job.run_cmds), 0, 0, NULL },
    /* Root of where to restore files */
-   { "where", store_dir, ITEM(res_job.RestoreWhere), 0, 0, NULL },
-   { "regexwhere", store_str, ITEM(res_job.RegexWhere), 0, 0, NULL },
-   { "stripprefix", store_str, ITEM(res_job.strip_prefix), 0, 0, NULL },
-   { "addprefix", store_str, ITEM(res_job.add_prefix), 0, 0, NULL },
-   { "addsuffix", store_str, ITEM(res_job.add_suffix), 0, 0, NULL },
+   { "where", CFG_TYPE_DIR, ITEM(res_job.RestoreWhere), 0, 0, NULL },
+   { "regexwhere", CFG_TYPE_STR, ITEM(res_job.RegexWhere), 0, 0, NULL },
+   { "stripprefix", CFG_TYPE_STR, ITEM(res_job.strip_prefix), 0, 0, NULL },
+   { "addprefix", CFG_TYPE_STR, ITEM(res_job.add_prefix), 0, 0, NULL },
+   { "addsuffix", CFG_TYPE_STR, ITEM(res_job.add_suffix), 0, 0, NULL },
    /* Where to find bootstrap during restore */
-   { "bootstrap", store_dir, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
+   { "bootstrap", CFG_TYPE_DIR, ITEM(res_job.RestoreBootstrap), 0, 0, NULL },
    /* Where to write bootstrap file during backup */
-   { "writebootstrap", store_dir, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
-   { "writeverifylist", store_dir, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
-   { "replace", store_replace, ITEM(res_job.replace), 0, ITEM_DEFAULT, "Always" },
-   { "maximumbandwidth", store_speed, ITEM(res_job.max_bandwidth), 0, 0, NULL },
-   { "maxrunschedtime", store_time, ITEM(res_job.MaxRunSchedTime), 0, 0, NULL },
-   { "maxruntime", store_time, ITEM(res_job.MaxRunTime), 0, 0, NULL },
-   { "fullmaxwaittime", store_time, ITEM(res_job.FullMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "incrementalmaxwaittime", store_time, ITEM(res_job.IncMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "differentialmaxwaittime", store_time, ITEM(res_job.DiffMaxRunTime), 0, ITEM_DEPRECATED, NULL },
-   { "fullmaxruntime", store_time, ITEM(res_job.FullMaxRunTime), 0, 0, NULL },
-   { "incrementalmaxruntime", store_time, ITEM(res_job.IncMaxRunTime), 0, 0, NULL },
-   { "differentialmaxruntime", store_time, ITEM(res_job.DiffMaxRunTime), 0, 0, NULL },
-   { "maxwaittime", store_time, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
-   { "maxstartdelay",store_time, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
-   { "maxfullinterval", store_time, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
-   { "maxdiffinterval", store_time, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
-   { "prefixlinks", store_bool, ITEM(res_job.PrefixLinks), 0, ITEM_DEFAULT, "false" },
-   { "prunejobs", store_bool, ITEM(res_job.PruneJobs), 0, ITEM_DEFAULT, "false" },
-   { "prunefiles", store_bool, ITEM(res_job.PruneFiles), 0, ITEM_DEFAULT, "false" },
-   { "prunevolumes",store_bool, ITEM(res_job.PruneVolumes), 0, ITEM_DEFAULT, "false" },
-   { "purgemigrationjob", store_bool, ITEM(res_job.PurgeMigrateJob), 0, ITEM_DEFAULT, "false" },
-   { "enabled", store_bool, ITEM(res_job.enabled), 0, ITEM_DEFAULT, "true" },
-   { "spoolattributes",store_bool, ITEM(res_job.SpoolAttributes), 0, ITEM_DEFAULT, "false" },
-   { "spooldata", store_bool, ITEM(res_job.spool_data), 0, ITEM_DEFAULT, "false" },
-   { "spoolsize", store_size64, ITEM(res_job.spool_size), 0, 0, NULL },
-   { "rerunfailedlevels", store_bool, ITEM(res_job.rerun_failed_levels), 0, ITEM_DEFAULT, "false" },
-   { "prefermountedvolumes", store_bool, ITEM(res_job.PreferMountedVolumes), 0, ITEM_DEFAULT, "true" },
-   { "runbeforejob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "runafterjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "runafterfailedjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "clientrunbeforejob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "clientrunafterjob", store_short_runscript, ITEM(res_job.RunScripts), 0, 0, NULL },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_job.MaxConcurrentJobs), 0, ITEM_DEFAULT, "1" },
-   { "rescheduleonerror", store_bool, ITEM(res_job.RescheduleOnError), 0, ITEM_DEFAULT, "false" },
-   { "rescheduleinterval", store_time, ITEM(res_job.RescheduleInterval), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "rescheduletimes", store_pint32, ITEM(res_job.RescheduleTimes), 0, ITEM_DEFAULT, "5" },
-   { "priority", store_pint32, ITEM(res_job.Priority), 0, ITEM_DEFAULT, "10" },
-   { "allowmixedpriority", store_bool, ITEM(res_job.allow_mixed_priority), 0, ITEM_DEFAULT, "false" },
-   { "writepartafterjob", store_bool, ITEM(res_job.write_part_after_job), 0, ITEM_DEPRECATED, NULL },
-   { "selectionpattern", store_str, ITEM(res_job.selection_pattern), 0, 0, NULL },
-   { "runscript", store_runscript, ITEM(res_job.RunScripts), 0, ITEM_NO_EQUALS, NULL },
-   { "selectiontype", store_migtype, ITEM(res_job.selection_type), 0, 0, NULL },
-   { "accurate", store_bool, ITEM(res_job.accurate), 0, ITEM_DEFAULT, "false" },
-   { "allowduplicatejobs", store_bool, ITEM(res_job.AllowDuplicateJobs), 0, ITEM_DEFAULT, "true" },
-   { "allowhigherduplicates", store_bool, ITEM(res_job.AllowHigherDuplicates), 0, ITEM_DEFAULT, "true" },
-   { "cancellowerlevelduplicates", store_bool, ITEM(res_job.CancelLowerLevelDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "cancelqueuedduplicates", store_bool, ITEM(res_job.CancelQueuedDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "cancelrunningduplicates", store_bool, ITEM(res_job.CancelRunningDuplicates), 0, ITEM_DEFAULT, "false" },
-   { "pluginoptions", store_str, ITEM(res_job.PluginOptions), 0, 0, NULL },
-   { "base", store_alist_res, ITEM(res_job.base), R_JOB, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "writebootstrap", CFG_TYPE_DIR, ITEM(res_job.WriteBootstrap), 0, 0, NULL },
+   { "writeverifylist", CFG_TYPE_DIR, ITEM(res_job.WriteVerifyList), 0, 0, NULL },
+   { "replace", CFG_TYPE_REPLACE, ITEM(res_job.replace), 0, CFG_ITEM_DEFAULT, "Always" },
+   { "maximumbandwidth", CFG_TYPE_SPEED, ITEM(res_job.max_bandwidth), 0, 0, NULL },
+   { "maxrunschedtime", CFG_TYPE_TIME, ITEM(res_job.MaxRunSchedTime), 0, 0, NULL },
+   { "maxruntime", CFG_TYPE_TIME, ITEM(res_job.MaxRunTime), 0, 0, NULL },
+   { "fullmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.FullMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "incrementalmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.IncMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "differentialmaxwaittime", CFG_TYPE_TIME, ITEM(res_job.DiffMaxRunTime), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "fullmaxruntime", CFG_TYPE_TIME, ITEM(res_job.FullMaxRunTime), 0, 0, NULL },
+   { "incrementalmaxruntime", CFG_TYPE_TIME, ITEM(res_job.IncMaxRunTime), 0, 0, NULL },
+   { "differentialmaxruntime", CFG_TYPE_TIME, ITEM(res_job.DiffMaxRunTime), 0, 0, NULL },
+   { "maxwaittime", CFG_TYPE_TIME, ITEM(res_job.MaxWaitTime), 0, 0, NULL },
+   { "maxstartdelay", CFG_TYPE_TIME, ITEM(res_job.MaxStartDelay), 0, 0, NULL },
+   { "maxfullinterval", CFG_TYPE_TIME, ITEM(res_job.MaxFullInterval), 0, 0, NULL },
+   { "maxdiffinterval", CFG_TYPE_TIME, ITEM(res_job.MaxDiffInterval), 0, 0, NULL },
+   { "prefixlinks", CFG_TYPE_BOOL, ITEM(res_job.PrefixLinks), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunejobs", CFG_TYPE_BOOL, ITEM(res_job.PruneJobs), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunefiles", CFG_TYPE_BOOL, ITEM(res_job.PruneFiles), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prunevolumes", CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "purgemigrationjob", CFG_TYPE_BOOL, ITEM(res_job.PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { "spoolattributes", CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "spooldata", CFG_TYPE_BOOL, ITEM(res_job.spool_data), 0, CFG_ITEM_DEFAULT, "false" },
+   { "spoolsize", CFG_TYPE_SIZE64, ITEM(res_job.spool_size), 0, 0, NULL },
+   { "rerunfailedlevels", CFG_TYPE_BOOL, ITEM(res_job.rerun_failed_levels), 0, CFG_ITEM_DEFAULT, "false" },
+   { "prefermountedvolumes", CFG_TYPE_BOOL, ITEM(res_job.PreferMountedVolumes), 0, CFG_ITEM_DEFAULT, "true" },
+   { "runbeforejob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "runafterjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "runafterfailedjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "clientrunbeforejob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "clientrunafterjob", CFG_TYPE_SHRTRUNSCRIPT, ITEM(res_job.RunScripts), 0, 0, NULL },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_job.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
+   { "rescheduleonerror", CFG_TYPE_BOOL, ITEM(res_job.RescheduleOnError), 0, CFG_ITEM_DEFAULT, "false" },
+   { "rescheduleinterval", CFG_TYPE_TIME, ITEM(res_job.RescheduleInterval), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
+   { "rescheduletimes", CFG_TYPE_PINT32, ITEM(res_job.RescheduleTimes), 0, CFG_ITEM_DEFAULT, "5" },
+   { "priority", CFG_TYPE_PINT32, ITEM(res_job.Priority), 0, CFG_ITEM_DEFAULT, "10" },
+   { "allowmixedpriority", CFG_TYPE_BOOL, ITEM(res_job.allow_mixed_priority), 0, CFG_ITEM_DEFAULT, "false" },
+   { "writepartafterjob", CFG_TYPE_BOOL, ITEM(res_job.write_part_after_job), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "selectionpattern", CFG_TYPE_STR, ITEM(res_job.selection_pattern), 0, 0, NULL },
+   { "runscript", CFG_TYPE_RUNSCRIPT, ITEM(res_job.RunScripts), 0, CFG_ITEM_NO_EQUALS, NULL },
+   { "selectiontype", CFG_TYPE_MIGTYPE, ITEM(res_job.selection_type), 0, 0, NULL },
+   { "accurate", CFG_TYPE_BOOL, ITEM(res_job.accurate), 0, CFG_ITEM_DEFAULT, "false" },
+   { "allowduplicatejobs", CFG_TYPE_BOOL, ITEM(res_job.AllowDuplicateJobs), 0, CFG_ITEM_DEFAULT, "true" },
+   { "allowhigherduplicates", CFG_TYPE_BOOL, ITEM(res_job.AllowHigherDuplicates), 0, CFG_ITEM_DEFAULT, "true" },
+   { "cancellowerlevelduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelLowerLevelDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "cancelqueuedduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "cancelrunningduplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
+   { "savefilehistory", CFG_TYPE_BOOL, ITEM(res_job.SaveFileHist), 0, CFG_ITEM_DEFAULT, "true" },
+   { "pluginoptions", CFG_TYPE_STR, ITEM(res_job.PluginOptions), 0, 0, NULL },
+   { "base", CFG_TYPE_ALIST_RES, ITEM(res_job.base), R_JOB, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -396,13 +385,13 @@ RES_ITEM job_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM fs_items[] = {
-   { "name", store_name, ITEM(res_fs.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_fs.hdr.desc), 0, 0, NULL },
-   { "include", store_inc, { 0 }, 0, ITEM_NO_EQUALS, NULL },
-   { "exclude", store_inc, { 0 }, 1, ITEM_NO_EQUALS, NULL },
-   { "ignorefilesetchanges", store_bool, ITEM(res_fs.ignore_fs_changes), 0, ITEM_DEFAULT, "false" },
-   { "enablevss", store_bool, ITEM(res_fs.enable_vss), 0, ITEM_DEFAULT, "true" },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL },
+   { "include", CFG_TYPE_INCEXC, { 0 }, 0, CFG_ITEM_NO_EQUALS, NULL },
+   { "exclude", CFG_TYPE_INCEXC, { 0 }, 1, CFG_ITEM_NO_EQUALS, NULL },
+   { "ignorefilesetchanges", CFG_TYPE_BOOL, ITEM(res_fs.ignore_fs_changes), 0, CFG_ITEM_DEFAULT, "false" },
+   { "enablevss", CFG_TYPE_BOOL, ITEM(res_fs.enable_vss), 0, CFG_ITEM_DEFAULT, "true" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -411,10 +400,11 @@ static RES_ITEM fs_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM sch_items[] = {
-   { "name", store_name, ITEM(res_sch.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_sch.hdr.desc), 0, 0, NULL },
-   { "run", store_run, ITEM(res_sch.run), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL },
+   { "run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL },
+   { "enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true" },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -423,39 +413,41 @@ static RES_ITEM sch_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM pool_items[] = {
-   { "name", store_name, ITEM(res_pool.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_pool.hdr.desc), 0, 0, NULL },
-   { "pooltype", store_strname, ITEM(res_pool.pool_type), 0, ITEM_REQUIRED, NULL },
-   { "labelformat", store_strname, ITEM(res_pool.label_format), 0, 0, NULL },
-   { "labeltype", store_label, ITEM(res_pool.LabelType), 0, 0, NULL },
-   { "cleaningprefix", store_strname, ITEM(res_pool.cleaning_prefix), 0, ITEM_DEFAULT, "CLN" },
-   { "usecatalog", store_bool, ITEM(res_pool.use_catalog), 0, ITEM_DEFAULT, "true" },
-   { "usevolumeonce", store_bool, ITEM(res_pool.use_volume_once), 0, ITEM_DEPRECATED, NULL },
-   { "purgeoldestvolume", store_bool, ITEM(res_pool.purge_oldest_volume), 0, 0, NULL },
-   { "actiononpurge", store_actiononpurge, ITEM(res_pool.action_on_purge), 0, 0, NULL },
-   { "recycleoldestvolume", store_bool, ITEM(res_pool.recycle_oldest_volume), 0, 0, NULL },
-   { "recyclecurrentvolume", store_bool, ITEM(res_pool.recycle_current_volume), 0, 0, NULL },
-   { "maximumvolumes", store_pint32, ITEM(res_pool.max_volumes), 0, 0, NULL },
-   { "maximumvolumejobs", store_pint32, ITEM(res_pool.MaxVolJobs), 0, 0, NULL },
-   { "maximumvolumefiles", store_pint32, ITEM(res_pool.MaxVolFiles), 0, 0, NULL },
-   { "maximumvolumebytes", store_size64, ITEM(res_pool.MaxVolBytes), 0, 0, NULL },
-   { "catalogfiles", store_bool, ITEM(res_pool.catalog_files), 0, ITEM_DEFAULT, "true" },
-   { "volumeretention", store_time, ITEM(res_pool.VolRetention), 0, ITEM_DEFAULT, "31536000" /* 365 days */ },
-   { "volumeuseduration", store_time, ITEM(res_pool.VolUseDuration), 0, 0, NULL },
-   { "migrationtime", store_time, ITEM(res_pool.MigrationTime), 0, 0, NULL },
-   { "migrationhighbytes", store_size64, ITEM(res_pool.MigrationHighBytes), 0, 0, NULL },
-   { "migrationlowbytes", store_size64, ITEM(res_pool.MigrationLowBytes), 0, 0, NULL },
-   { "nextpool", store_res, ITEM(res_pool.NextPool), R_POOL, 0, NULL },
-   { "storage", store_alist_res, ITEM(res_pool.storage), R_STORAGE, 0, NULL },
-   { "autoprune", store_bool, ITEM(res_pool.AutoPrune), 0, ITEM_DEFAULT, "true" },
-   { "recycle", store_bool, ITEM(res_pool.Recycle), 0, ITEM_DEFAULT, "true" },
-   { "recyclepool", store_res, ITEM(res_pool.RecyclePool), R_POOL, 0, NULL },
-   { "scratchpool", store_res, ITEM(res_pool.ScratchPool), R_POOL, 0, NULL },
-   { "copypool", store_alist_res, ITEM(res_pool.CopyPool), R_POOL, 0, NULL },
-   { "catalog", store_res, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
-   { "fileretention", store_time, ITEM(res_pool.FileRetention), 0, 0, NULL },
-   { "jobretention", store_time, ITEM(res_pool.JobRetention), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL },
+   { "pooltype", CFG_TYPE_STRNAME, ITEM(res_pool.pool_type), 0, CFG_ITEM_REQUIRED, NULL },
+   { "labelformat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL },
+   { "labeltype", CFG_TYPE_LABEL, ITEM(res_pool.LabelType), 0, 0, NULL },
+   { "cleaningprefix", CFG_TYPE_STRNAME, ITEM(res_pool.cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN" },
+   { "usecatalog", CFG_TYPE_BOOL, ITEM(res_pool.use_catalog), 0, CFG_ITEM_DEFAULT, "true" },
+   { "usevolumeonce", CFG_TYPE_BOOL, ITEM(res_pool.use_volume_once), 0, CFG_ITEM_DEPRECATED, NULL },
+   { "purgeoldestvolume", CFG_TYPE_BOOL, ITEM(res_pool.purge_oldest_volume), 0, 0, NULL },
+   { "actiononpurge", CFG_TYPE_ACTIONONPURGE, ITEM(res_pool.action_on_purge), 0, 0, NULL },
+   { "recycleoldestvolume", CFG_TYPE_BOOL, ITEM(res_pool.recycle_oldest_volume), 0, 0, NULL },
+   { "recyclecurrentvolume", CFG_TYPE_BOOL, ITEM(res_pool.recycle_current_volume), 0, 0, NULL },
+   { "maximumvolumes", CFG_TYPE_PINT32, ITEM(res_pool.max_volumes), 0, 0, NULL },
+   { "maximumvolumejobs", CFG_TYPE_PINT32, ITEM(res_pool.MaxVolJobs), 0, 0, NULL },
+   { "maximumvolumefiles", CFG_TYPE_PINT32, ITEM(res_pool.MaxVolFiles), 0, 0, NULL },
+   { "maximumvolumebytes", CFG_TYPE_SIZE64, ITEM(res_pool.MaxVolBytes), 0, 0, NULL },
+   { "catalogfiles", CFG_TYPE_BOOL, ITEM(res_pool.catalog_files), 0, CFG_ITEM_DEFAULT, "true" },
+   { "volumeretention", CFG_TYPE_TIME, ITEM(res_pool.VolRetention), 0, CFG_ITEM_DEFAULT, "31536000" /* 365 days */ },
+   { "volumeuseduration", CFG_TYPE_TIME, ITEM(res_pool.VolUseDuration), 0, 0, NULL },
+   { "migrationtime", CFG_TYPE_TIME, ITEM(res_pool.MigrationTime), 0, 0, NULL },
+   { "migrationhighbytes", CFG_TYPE_SIZE64, ITEM(res_pool.MigrationHighBytes), 0, 0, NULL },
+   { "migrationlowbytes", CFG_TYPE_SIZE64, ITEM(res_pool.MigrationLowBytes), 0, 0, NULL },
+   { "nextpool", CFG_TYPE_RES, ITEM(res_pool.NextPool), R_POOL, 0, NULL },
+   { "storage", CFG_TYPE_ALIST_RES, ITEM(res_pool.storage), R_STORAGE, 0, NULL },
+   { "autoprune", CFG_TYPE_BOOL, ITEM(res_pool.AutoPrune), 0, CFG_ITEM_DEFAULT, "true" },
+   { "recycle", CFG_TYPE_BOOL, ITEM(res_pool.Recycle), 0, CFG_ITEM_DEFAULT, "true" },
+   { "recyclepool", CFG_TYPE_RES, ITEM(res_pool.RecyclePool), R_POOL, 0, NULL },
+   { "scratchpool", CFG_TYPE_RES, ITEM(res_pool.ScratchPool), R_POOL, 0, NULL },
+   { "copypool", CFG_TYPE_ALIST_RES, ITEM(res_pool.CopyPool), R_POOL, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
+   { "fileretention", CFG_TYPE_TIME, ITEM(res_pool.FileRetention), 0, 0, NULL },
+   { "jobretention", CFG_TYPE_TIME, ITEM(res_pool.JobRetention), 0, 0, NULL },
+   { "minimumblocksize", CFG_TYPE_PINT32, ITEM(res_pool.MinBlocksize), 0, 0, NULL },
+   { "maximumblocksize", CFG_TYPE_PINT32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -464,19 +456,19 @@ static RES_ITEM pool_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM counter_items[] = {
-   { "name", store_name, ITEM(res_counter.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_counter.hdr.desc), 0, 0, NULL },
-   { "minimum", store_int32, ITEM(res_counter.MinValue), 0, ITEM_DEFAULT, "0" },
-   { "maximum", store_pint32, ITEM(res_counter.MaxValue), 0, ITEM_DEFAULT, "2147483647" /* INT32_MAX */ },
-   { "wrapcounter", store_res, ITEM(res_counter.WrapCounter), R_COUNTER, 0, NULL },
-   { "catalog", store_res, ITEM(res_counter.Catalog), R_CATALOG, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL },
+   { "minimum", CFG_TYPE_INT32, ITEM(res_counter.MinValue), 0, CFG_ITEM_DEFAULT, "0" },
+   { "maximum", CFG_TYPE_PINT32, ITEM(res_counter.MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */ },
+   { "wrapcounter", CFG_TYPE_RES, ITEM(res_counter.WrapCounter), R_COUNTER, 0, NULL },
+   { "catalog", CFG_TYPE_RES, ITEM(res_counter.Catalog), R_CATALOG, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
  * Message resource
  */
-extern RES_ITEM msgs_items[];
+#include "lib/msg_res.h"
 
 /*
  * This is the master resource definition.
@@ -487,21 +479,21 @@ extern RES_ITEM msgs_items[];
  *
  * name handler value code flags default_value
  */
-RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "client", cli_items, R_CLIENT },
-   { "job", job_items, R_JOB },
-   { "storage", store_items, R_STORAGE },
-   { "catalog", cat_items, R_CATALOG },
-   { "schedule", sch_items, R_SCHEDULE },
-   { "fileset", fs_items, R_FILESET },
-   { "pool", pool_items, R_POOL },
-   { "messages", msgs_items, R_MSGS },
-   { "counter", counter_items, R_COUNTER },
-   { "console", con_items, R_CONSOLE },
-   { "jobdefs", job_items, R_JOBDEFS },
-   { "device", NULL, R_DEVICE }, /* info obtained from SD */
-   { NULL, NULL, 0 }
+static RES_TABLE resources[] = {
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "jobdefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
+   { "job", job_items, R_JOB, sizeof(JOBRES) },
+   { "storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "catalog", cat_items, R_CATALOG, sizeof(CATRES) },
+   { "schedule", sch_items, R_SCHEDULE, sizeof(SCHEDRES) },
+   { "fileset", fs_items, R_FILESET, sizeof(FILESETRES) },
+   { "pool", pool_items, R_POOL, sizeof(POOLRES) },
+   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
+   { "counter", counter_items, R_COUNTER, sizeof(COUNTERRES) },
+   { "console", con_items, R_CONSOLE, sizeof(CONRES) },
+   { "device", NULL, R_DEVICE, sizeof(DEVICERES) }, /* info obtained from SD */
+   { NULL, NULL, 0, 0 }
 };
 
 /*
@@ -520,16 +512,16 @@ static RUNSCRIPT res_runscript;
  * name handler value code flags default_value
  */
 static RES_ITEM runscript_items[] = {
- { "command", store_runscript_cmd, { (char **)&res_runscript }, SHELL_CMD, 0, NULL },
- { "console", store_runscript_cmd, { (char **)&res_runscript }, CONSOLE_CMD, 0, NULL },
- { "target", store_runscript_target, { (char **)&res_runscript }, 0, 0, NULL },
- { "runsonsuccess", store_runscript_bool, { (char **)&res_runscript.on_success }, 0, 0, NULL },
- { "runsonfailure", store_runscript_bool, { (char **)&res_runscript.on_failure }, 0, 0, NULL },
- { "failjobonerror", store_runscript_bool, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
- { "abortjobonerror",store_runscript_bool, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
- { "runswhen", store_runscript_when, { (char **)&res_runscript.when }, 0, 0, NULL },
- { "runsonclient", store_runscript_target, { (char **)&res_runscript }, 0, 0, NULL }, /* TODO */
- { NULL, NULL, { 0 }, 0, 0, NULL }
+ { "command", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, SHELL_CMD, 0, NULL },
+ { "console", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, CONSOLE_CMD, 0, NULL },
+ { "target", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL },
+ { "runsonsuccess", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_success }, 0, 0, NULL },
+ { "runsonfailure", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.on_failure }, 0, 0, NULL },
+ { "failjobonerror", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
+ { "abortjobonerror", CFG_TYPE_RUNSCRIPT_BOOL, { (char **)&res_runscript.fail_on_error }, 0, 0, NULL },
+ { "runswhen", CFG_TYPE_RUNSCRIPT_WHEN, { (char **)&res_runscript.when }, 0, 0, NULL },
+ { "runsonclient", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL }, /* TODO */
+ { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
@@ -585,7 +577,7 @@ struct s_jt jobtypes[] = {
  *
  * name token
  */
-struct s_kw backupprotocols[] = {
+static struct s_kw backupprotocols[] = {
    { "Native", PT_NATIVE },
    { "NDMP", PT_NDMP },
    { NULL, 0 }
@@ -595,7 +587,7 @@ struct s_kw backupprotocols[] = {
  *
  * name token
  */
-struct s_kw authprotocols[] = {
+static struct s_kw authprotocols[] = {
    { "Native", APT_NATIVE },
    { "NDMPV2", APT_NDMPV2 },
    { "NDMPV3", APT_NDMPV3 },
@@ -607,7 +599,7 @@ struct s_kw authprotocols[] = {
  *
  * name token
  */
-struct s_kw authmethods[] = {
+static struct s_kw authmethods[] = {
    { "None", AT_NONE },
    { "Clear", AT_CLEAR },
    { "MD5", AT_MD5 },
@@ -619,7 +611,7 @@ struct s_kw authmethods[] = {
  *
  * type_name job_type
  */
-struct s_jt migtypes[] = {
+static struct s_jt migtypes[] = {
    { "SmallestVolume", MT_SMALLEST_VOL },
    { "OldestVolume", MT_OLDEST_VOL },
    { "PoolOccupancy", MT_POOL_OCCUPANCY },
@@ -666,538 +658,888 @@ struct s_kw VolumeStatus[] = {
    { NULL, 0 }
 };
 
-char *CATRES::display(POOLMEM *dst) {
-   Mmsg(dst,"catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
-        "db_password=%s\ndb_address=%s\ndb_port=%i\n"
-        "db_socket=%s\n",
+char *CATRES::display(POOLMEM *dst)
+{
+   Mmsg(dst, "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
+             "db_password=%s\ndb_address=%s\ndb_port=%i\n"
+             "db_socket=%s\n",
         name(), NPRTB(db_name),
-        NPRTB(db_driver), NPRTB(db_user), NPRTB(db_password),
+        NPRTB(db_driver), NPRTB(db_user), NPRTB(db_password.value),
         NPRTB(db_address), db_port, NPRTB(db_socket));
+
    return dst;
 }
 
-const char *level_to_str(int level)
+static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
 {
-   int i;
-   static char level_no[30];
-   const char *str = level_no;
-
-   bsnprintf(level_no, sizeof(level_no), "%c (%d)", level, level); /* default if not found */
-   for (i = 0; joblevels[i].level_name; i++) {
-      if (level == (int)joblevels[i].level) {
-         str = joblevels[i].level_name;
-         break;
-      }
+   for (int i = 0; i < level; i++) {
+      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
    }
-   return str;
+   pm_strcat(cfg_str, config_item);
 }
 
-/* Dump contents of resource */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 {
-   URES *res = (URES *)reshdr;
-   bool recurse = true;
-   char ed1[100], ed2[100], ed3[100], ed4[100], ed5[100];
-   DEVICERES *dev;
-   UAContext *ua = (UAContext *)sock;
+   POOL_MEM temp;
+   RUNSCRIPT* runscript;
+   alist *list;
 
-   if (res == NULL) {
-      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
-      return;
+   list = *item->alistvalue;
+   if (bstrcmp(item->name, "runscript")) {
+      if (list != NULL) {
+         foreach_alist(runscript, list) {
+            int len;
+            bool shortrunscript = false;
+            POOLMEM *cmdbuf;
+
+            len = strlen(runscript->command);
+            cmdbuf = get_pool_memory(PM_NAME);
+            cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+            escape_string(cmdbuf, runscript->command, len);
+
+            /*
+             * Check if runscript can be written as short runscript
+             */
+            if (runscript->cmd_type == '|') {  /* short runscripts only support shell command */
+               if (runscript->when == SCRIPT_Before &&           /* runbeforejob */
+                  (bstrcmp(runscript->target, ""))) {
+                     Mmsg(temp, "run before job = \"%s\"\n", cmdbuf);
+                     shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&     /* runafterjob */
+                          runscript->on_success &&
+                         !runscript->on_failure &&
+                         !runscript->fail_on_error &&
+                          bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "run after job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&     /* client run after job */
+                          runscript->on_success &&
+                         !runscript->on_failure &&
+                         !runscript->fail_on_error &&
+                          !bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "client run after job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
+                          !bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "before job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
+                          runscript->on_failure &&
+                         !runscript->on_success &&
+                         !runscript->fail_on_error &&
+                          bstrcmp(runscript->target, "")) {
+                  Mmsg(temp, "run after failed job = \"%s\"\n", cmdbuf);
+                  shortrunscript = true;
+               }
+               indent_config_item(cfg_str, 1, temp.c_str());
+            }
+
+            /*
+             * If we cannot write the runscript as short runscript...
+             */
+            if (!shortrunscript) {
+               Mmsg(temp, "runscript {\n");
+               indent_config_item(cfg_str, 1, temp.c_str());
+
+               char *cmdstring = (char *)"command"; /* '|' */
+               if (runscript->cmd_type == '@') {
+                  cmdstring = (char *)"console";
+               }
+
+               Mmsg(temp, "%s = \"%s\"\n", cmdstring, cmdbuf);
+               indent_config_item(cfg_str, 2, temp.c_str());
+
+               /*
+                * default: never
+                */
+               char *when = (char *)"never";
+               switch (runscript->when) {
+                  case SCRIPT_Before:
+                     when  = (char *)"before";
+                     break;
+                  case SCRIPT_After:
+                     when = (char *)"after";
+                     break;
+                  case SCRIPT_AfterVSS:
+                     when = (char *)"aftervss";
+                     break;
+                  case SCRIPT_Any:
+                     when = (char *)"always";
+                     break;
+               }
+
+               if (! bstrcmp(when, "never")) { /* suppress default value */
+                  Mmsg(temp, "runswhen = %s\n", when);
+                  indent_config_item(cfg_str, 2, temp.c_str());
+               }
+
+               /* default: fail_on_error = true */
+               char *fail_on_error = (char *)"Yes";
+               if (! runscript->fail_on_error){
+                  fail_on_error = (char *)"No";
+                  Mmsg(temp, "failonerror = %s\n", fail_on_error);
+                  indent_config_item(cfg_str, 2, temp.c_str());
+               }
+
+               /* default: on_success = true */
+               char *run_on_success = (char *)"Yes";
+               if (! runscript->on_success){
+                  run_on_success = (char *)"No";
+                  Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
+                  indent_config_item(cfg_str, 2, temp.c_str());
+               }
+
+               /* default: on_failure = false */
+               char *run_on_failure = (char *)"No";
+               if (runscript->on_failure) {
+                  run_on_failure = (char *)"Yes";
+                  Mmsg(temp, "runsonfailure = %s\n", run_on_failure);
+                  indent_config_item(cfg_str, 2, temp.c_str());
+               }
+
+               /* level is not implemented
+               Dmsg1(200, "   level = %d\n", runscript->level);
+               */
+
+               /* default: runsonclient = yes */
+               char *runsonclient = (char *)"Yes";
+               if (bstrcmp(runscript->target, "")) {
+                  runsonclient = (char *)"No";
+                  Mmsg(temp, "runsonclient = %s\n", runsonclient);
+                  indent_config_item(cfg_str, 2, temp.c_str());
+               }
+
+               indent_config_item(cfg_str, 1, "}\n");
+            } /* not a short runscript */
+
+            free_pool_memory(cmdbuf);
+         }
+      } /* foreach runscript */
    }
-   if (type < 0) { /* no recursion */
-      type = - type;
-      recurse = false;
+}
+
+static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   RUNRES *run;
+   bool all_set;
+   int interval_start;
+   char *weekdays[] = {
+      (char *)"Sun",
+      (char *)"Mon",
+      (char *)"Tue",
+      (char *)"Wed",
+      (char *)"Thu",
+      (char *)"Fri",
+      (char *)"Sat"
+   };
+   char *ordinals[] = {
+      (char *)"1st",
+      (char *)"2nd",
+      (char *)"3rd",
+      (char *)"4th",
+      (char *)"5th"
+   };
+
+   run = (RUNRES *)*(item->value);
+   if (run != NULL) {
+      while (run) {
+         POOL_MEM run_str; /* holds the complete run= ... line */
+
+         indent_config_item(cfg_str, 1, "run = ");
+
+         /*
+          * Overrides
+          */
+         if (run->pool) {
+            Mmsg(temp, "pool=\"%s\" ", run->pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->full_pool) {
+            Mmsg(temp, "fullpool=\"%s\" ", run->full_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->inc_pool) {
+            Mmsg(temp, "incrementalpool=\"%s\" ", run->inc_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->diff_pool) {
+            Mmsg(temp, "differentialpool=\"%s\" ", run->diff_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->next_pool) {
+            Mmsg(temp, "nextpool=\"%s\" ", run->next_pool->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->level) {
+            for (int j = 0; joblevels[j].level_name; j++) {
+               if (joblevels[j].level == run->level) {
+                  Mmsg(temp, "level=%s ", joblevels[j].level_name);
+                  pm_strcat(run_str, temp.c_str());
+                  break;
+               }
+            }
+         }
+
+         if (run->storage) {
+            Mmsg(temp, "storage=\"%s\" ", run->storage->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->msgs) {
+            Mmsg(temp, "messages=\"%s\" ", run->msgs->name());
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->Priority && run->Priority != 10) {
+            Mmsg(temp, "priority=%d ", run->Priority);
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->MaxRunSchedTime) {
+            Mmsg(temp, "maxrunschedtime=%d ", run->MaxRunSchedTime);
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         if (run->accurate) {
+            /*
+             * TODO: You cannot distinct if accurate was not set or if it was set to no
+             *       maybe we need an additional variable like "accurate_set".
+             */
+            Mmsg(temp, "accurate=\"%s\" ","yes");
+            pm_strcat(run_str, temp.c_str());
+         }
+
+         /*
+          * Now the time specification
+          */
+
+         /*
+          * run->mday , output is just the number comma separated
+          */
+         all_set =  true;
+         interval_start = -1;
+
+         POOL_MEM t; /* is one entry of day/month/week etc. */
+
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 32; i++) {  /* search for one more than needed to detect also intervals that stop on last value  */
+            if (bit_is_set(i, run->mday)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %d\n", i+1);
+                  Mmsg(t, ",%d", i+1);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (!bit_is_set(i, run->mday)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %d to %d\n", interval_start+1, i);
+                     Mmsg(t, "-%d", i);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((!bit_is_set(i, run->mday)) && (i != 31)) {
+               all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set =  true;
+         }
+
+         /*
+          * run->wom output is 1st, 2nd... 5th comma separated
+          *                    first, second, third... is also allowed
+          *                    but we ignore that for now
+          */
+         interval_start = -1;
+
+         all_set =  true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 5; i++) {
+            if (bit_is_set(i, run->wom)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %s\n", ordinals[i]);
+                  Mmsg(t, ",%s", ordinals[i]);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (! bit_is_set(i, run->wom)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i-1]);
+                     Mmsg(t, "-%s", ordinals[i-1]);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((!bit_is_set(i, run->wom)) && (i != 5)) {
+               all_set = false;
+            }
+         }
+
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+
+         /*
+          * run->wday output is Sun, Mon, ..., Sat comma separated
+          */
+         all_set =  true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 7; i++) {
+            if (bit_is_set(i, run->wday)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at %s\n", weekdays[i]);
+                  Mmsg(t, ",%s", weekdays[i]);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+
+            if (!bit_is_set(i, run->wday)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i-1]);
+                     Mmsg(t, "-%s", weekdays[i-1]);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((! bit_is_set(i, run->wday)) && (i != 7)) {
+               all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+         /*
+          * run->woy output is w00 - w53, comma separated
+          */
+         all_set = true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 55; i++) {
+            if (bit_is_set(i, run->woy)) {
+               if (interval_start == -1) {   // bit is set and we are not in an interval
+                  interval_start = i;        // start an interval
+                  Dmsg1(200, "starting interval at w%02d\n", i);
+                  Mmsg(t, ",w%02d", i);
+                  pm_strcat(temp, t.c_str());
+               }
+            }
+            if (! bit_is_set(i, run->woy)) {
+               if (interval_start != -1) {   // bit is unset and we are in an interval
+                  if ((i - interval_start) > 1) {
+                     Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i-1);
+                     Mmsg(t, "-w%02d", i-1);
+                     pm_strcat(temp, t.c_str());
+
+                  }
+                  interval_start = -1;       // end the interval
+               }
+            }
+
+            if ((! bit_is_set(i, run->woy)) && (i != 54)) {
+                  all_set = false;
+            }
+         }
+
+         if (!all_set) { // suppress output if all bits are set
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
+            all_set = true;
+         }
+
+         /*
+          * run->hour output is HH:MM for hour and minute though its a bitfield.
+          * only "hourly" sets all bits.
+          */
+         all_set = true;
+         pm_strcpy(temp, '\0');
+         for (int i = 0; i < 24; i++) {
+            if bit_is_set(i, run->hour) {
+               Mmsg(temp, "at %02d:%02d\n", i, run->minute);
+               pm_strcat(run_str, temp.c_str());
+            } else {
+               all_set = false;
+            }
+         }
+
+         /* run->minute output is smply the minute in HH:MM */
+         pm_strcat(cfg_str, run_str.c_str());
+         all_set = true;
+
+         run = run->next;
+      } // loop over runs
    }
-   switch (type) {
-   case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s MaxJobs=%d FDtimeout=%s SDtimeout=%s \n"
-                     "   subscriptions=%d, subscriptions_used=%d\n"),
-             reshdr->name,
-             res->res_dir.MaxConcurrentJobs,
-             edit_uint64(res->res_dir.FDConnectTimeout, ed1),
-             edit_uint64(res->res_dir.SDConnectTimeout, ed2),
-             res->res_dir.subscriptions,
-             res->res_dir.subscriptions_used);
-      if (res->res_dir.query_file) {
-         sendit(sock, _("   query_file=%s\n"), res->res_dir.query_file);
-      }
-      if (res->res_dir.messages) {
-         sendit(sock, _("  --> "));
-         dump_resource(-R_MSGS, (RES *)res->res_dir.messages, sendit, sock);
-      }
+}
 
-      break;
-   case R_CONSOLE:
-      sendit(sock, _("Console: name=%s SSL=%d\n"),
-             res->res_con.hdr.name, res->res_con.tls_enable);
-      break;
-   case R_COUNTER:
-      if (res->res_counter.WrapCounter) {
-         sendit(sock, _("Counter: name=%s min=%d max=%d cur=%d wrapcntr=%s\n"),
-                res->res_counter.hdr.name, res->res_counter.MinValue,
-                res->res_counter.MaxValue, res->res_counter.CurrentValue,
-                res->res_counter.WrapCounter->hdr.name);
-      } else {
-         sendit(sock, _("Counter: name=%s min=%d max=%d\n"),
-                res->res_counter.hdr.name, res->res_counter.MinValue,
-                res->res_counter.MaxValue);
-      }
-      if (res->res_counter.Catalog) {
-         sendit(sock, _("  --> "));
-         dump_resource(-R_CATALOG, (RES *)res->res_counter.Catalog, sendit, sock);
-      }
-      break;
+bool FILESETRES::print_config(POOL_MEM &buff)
+{
+   POOL_MEM cfg_str;
+   POOL_MEM temp;
+   const char *p;
 
-   case R_CLIENT:
-      if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.hdr.name)) {
-         sendit(sock, _("Client: name=%s protocol=%d authtype=%d address=%s FDport=%d MaxJobs=%u\n"),
-                res->res_client.hdr.name, res->res_client.Protocol, res->res_client.AuthType,
-                res->res_client.address, res->res_client.FDport, res->res_client.MaxConcurrentJobs);
-         sendit(sock, _("      JobRetention=%s FileRetention=%s AutoPrune=%d Passive=%d"
-                        " SoftQuota=%s SoftQuotaGrace=%s HardQuota=%s StrictQuotas=%d\n"),
-                edit_utime(res->res_client.JobRetention, ed1, sizeof(ed1)),
-                edit_utime(res->res_client.FileRetention, ed2, sizeof(ed2)),
-                res->res_client.AutoPrune,
-                res->res_client.passive,
-                edit_uint64(res->res_client.SoftQuota, ed3),
-                edit_utime(res->res_client.SoftQuotaGracePeriod, ed4, sizeof(ed4)),
-                edit_uint64(res->res_client.HardQuota, ed5),
-                res->res_client.StrictQuotas);
-         if (res->res_client.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_client.max_bandwidth);
-         }
-         if (res->res_client.catalog) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_CATALOG, (RES *)res->res_client.catalog, sendit, sock);
-         }
-      }
-      break;
+   Dmsg0(200,"FILESETRES::print_config\n");
 
-   case R_DEVICE:
-      dev = &res->res_dev;
-      char ed1[50];
-      sendit(sock, _("Device: name=%s ok=%d num_writers=%d max_writers=%d\n"
-                     "      reserved=%d open=%d append=%d read=%d labeled=%d offline=%d autochgr=%d\n"
-                     "      poolid=%s volname=%s MediaType=%s\n"),
-             dev->hdr.name, dev->found, dev->num_writers, dev->max_writers,
-             dev->reserved, dev->open, dev->append, dev->read, dev->labeled,
-             dev->offline, dev->autochanger,
-             edit_uint64(dev->PoolId, ed1),
-             dev->VolumeName, dev->MediaType);
-      break;
+   Mmsg(temp, "FileSet {\n");
+   pm_strcat(cfg_str, temp.c_str());
 
-   case R_STORAGE:
-      if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.hdr.name)) {
-         sendit(sock, _("Storage: name=%s protocol=%d authtype=%d address=%s SDport=%d MaxJobs=%u\n"
-                        "      DeviceName=%s MediaType=%s PairedStorage=%s StorageId=%s\n"),
-                res->res_store.hdr.name, res->res_store.Protocol, res->res_store.AuthType,
-                res->res_store.address, res->res_store.SDport, res->res_store.MaxConcurrentJobs,
-                res->res_store.dev_name(), res->res_store.media_type,
-               (res->res_store.paired_storage) ? res->res_store.paired_storage->hdr.name : "None",
-                edit_int64(res->res_store.StorageId, ed1));
-         if (res->res_store.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_store.max_bandwidth);
-         }
-      }
-      break;
+   Mmsg(temp, "Name = \"%s\"\n", this->name());
+   indent_config_item(cfg_str, 1, temp.c_str());
 
-   case R_CATALOG:
-      if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.hdr.name)) {
-         sendit(sock, _("Catalog: name=%s address=%s DBport=%d db_name=%s\n"
-                        "      db_driver=%s db_user=%s MutliDBConn=%d\n"),
-                res->res_cat.hdr.name, NPRT(res->res_cat.db_address),
-                res->res_cat.db_port, res->res_cat.db_name,
-                NPRT(res->res_cat.db_driver), NPRT(res->res_cat.db_user),
-                res->res_cat.mult_db_connections);
-      }
-      break;
+   if (num_includes) {
+      /*
+       * Loop over all exclude blocks.
+       */
+      for (int i = 0;  i < num_includes; i++) {
+         INCEXE *incexe = include_items[i];
 
-   case R_JOB:
-   case R_JOBDEFS:
-      if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
-         sendit(sock, _("%s: name=%s JobType=%d protocol=%d level=%s Priority=%d Enabled=%d\n"),
-                type == R_JOB ? _("Job") : _("JobDefs"),
-                res->res_job.hdr.name, res->res_job.JobType, res->res_job.Protocol,
-                level_to_str(res->res_job.JobLevel), res->res_job.Priority,
-                res->res_job.enabled);
-         sendit(sock, _("     MaxJobs=%u Resched=%d Times=%d Interval=%s Spool=%d\n"),
-                res->res_job.MaxConcurrentJobs,
-                res->res_job.RescheduleOnError, res->res_job.RescheduleTimes,
-                edit_uint64_with_commas(res->res_job.RescheduleInterval, ed1),
-                res->res_job.spool_data);
-         if (res->res_job.spool_size) {
-            sendit(sock, _("     SpoolSize=%s\n"),        edit_uint64(res->res_job.spool_size, ed1));
-         }
-         if (res->res_job.JobType == JT_BACKUP) {
-            sendit(sock, _("     Accurate=%d\n"), res->res_job.accurate);
-         }
-         if (res->res_job.max_bandwidth) {
-            sendit(sock, _("     MaximumBandwidth=%lld\n"),
-                   res->res_job.max_bandwidth);
-         }
-         if (res->res_job.JobType == JT_MIGRATE || res->res_job.JobType == JT_COPY) {
-            sendit(sock, _("     SelectionType=%d\n"), res->res_job.selection_type);
-         }
-         if (res->res_job.client) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_CLIENT, (RES *)res->res_job.client, sendit, sock);
-         }
-         if (res->res_job.fileset) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_FILESET, (RES *)res->res_job.fileset, sendit, sock);
-         }
-         if (res->res_job.schedule) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_SCHEDULE, (RES *)res->res_job.schedule, sendit, sock);
-         }
-         if (res->res_job.RestoreWhere && !res->res_job.RegexWhere) {
-              sendit(sock, _("  --> Where=%s\n"), NPRT(res->res_job.RestoreWhere));
-         }
-         if (res->res_job.RegexWhere) {
-              sendit(sock, _("  --> RegexWhere=%s\n"), NPRT(res->res_job.RegexWhere));
-         }
-         if (res->res_job.RestoreBootstrap) {
-            sendit(sock, _("  --> Bootstrap=%s\n"), NPRT(res->res_job.RestoreBootstrap));
-         }
-         if (res->res_job.WriteBootstrap) {
-            sendit(sock, _("  --> WriteBootstrap=%s\n"), NPRT(res->res_job.WriteBootstrap));
-         }
-         if (res->res_job.PluginOptions) {
-            sendit(sock, _("  --> PluginOptions=%s\n"), NPRT(res->res_job.PluginOptions));
-         }
-         if (res->res_job.MaxRunTime) {
-            sendit(sock, _("  --> MaxRunTime=%u\n"), res->res_job.MaxRunTime);
-         }
-         if (res->res_job.MaxWaitTime) {
-            sendit(sock, _("  --> MaxWaitTime=%u\n"), res->res_job.MaxWaitTime);
-         }
-         if (res->res_job.MaxStartDelay) {
-            sendit(sock, _("  --> MaxStartDelay=%u\n"), res->res_job.MaxStartDelay);
-         }
-         if (res->res_job.MaxRunSchedTime) {
-            sendit(sock, _("  --> MaxRunSchedTime=%u\n"), res->res_job.MaxRunSchedTime);
-         }
-         if (res->res_job.storage) {
-            STORERES *store;
-            foreach_alist(store, res->res_job.storage) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_STORAGE, (RES *)store, sendit, sock);
-            }
-         }
-         if (res->res_job.base) {
-            JOBRES *job;
-            foreach_alist(job, res->res_job.base) {
-               sendit(sock, _("  --> Base %s\n"), job->name());
-            }
-         }
-         if (res->res_job.RunScripts) {
-           RUNSCRIPT *script;
-           foreach_alist(script, res->res_job.RunScripts) {
-              sendit(sock, _(" --> RunScript\n"));
-              sendit(sock, _("  --> Command=%s\n"), NPRT(script->command));
-              sendit(sock, _("  --> Target=%s\n"),  NPRT(script->target));
-              sendit(sock, _("  --> RunOnSuccess=%u\n"),  script->on_success);
-              sendit(sock, _("  --> RunOnFailure=%u\n"),  script->on_failure);
-              sendit(sock, _("  --> FailJobOnError=%u\n"),  script->fail_on_error);
-              sendit(sock, _("  --> RunWhen=%u\n"),  script->when);
-           }
-         }
-         if (res->res_job.pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.pool, sendit, sock);
-         }
-         if (res->res_job.full_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.full_pool, sendit, sock);
-         }
-         if (res->res_job.inc_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.inc_pool, sendit, sock);
-         }
-         if (res->res_job.diff_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.diff_pool, sendit, sock);
-         }
-         if (res->res_job.next_pool) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_POOL, (RES *)res->res_job.next_pool, sendit, sock);
-         }
-         if (res->res_job.verify_job) {
-            sendit(sock, _("  --> "));
-            dump_resource(-type, (RES *)res->res_job.verify_job, sendit, sock);
-         }
-         if (res->res_job.run_cmds) {
-            char *runcmd;
-            foreach_alist(runcmd, res->res_job.run_cmds) {
-               sendit(sock, _("  --> Run=%s\n"), runcmd);
-            }
-         }
-         if (res->res_job.selection_pattern) {
-            sendit(sock, _("  --> SelectionPattern=%s\n"), NPRT(res->res_job.selection_pattern));
-         }
-         if (res->res_job.messages) {
-            sendit(sock, _("  --> "));
-            dump_resource(-R_MSGS, (RES *)res->res_job.messages, sendit, sock);
-         }
-      }
-      break;
+         Mmsg(temp, "Include {\n");
+         indent_config_item(cfg_str, 1, temp.c_str());
 
-   case R_FILESET:
-   {
-      int i, j, k;
-      if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.hdr.name)) {
-         sendit(sock, _("FileSet: name=%s\n"), res->res_fs.hdr.name);
-         for (i = 0;  i < res->res_fs.num_includes; i++) {
-            INCEXE *incexe = res->res_fs.include_items[i];
-            for (j = 0; j < incexe->num_opts; j++) {
+         /*
+          * Start options block
+          */
+         if (incexe->num_opts > 0) {
+            Mmsg(temp, "Options {\n");
+            indent_config_item(cfg_str, 2, temp.c_str());
+
+            for (int j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
-               sendit(sock, "      O %s\n", fo->opts);
-
                bool enhanced_wild = false;
-               for (k = 0; fo->opts[k] != '\0'; k++) {
+
+               for (int k = 0; fo->opts[k] != '\0'; k++) {
                   if (fo->opts[k]=='W') {
                      enhanced_wild = true;
                      break;
                   }
                }
 
-               for (k = 0; k < fo->regex.size(); k++) {
-                  sendit(sock, "      R %s\n", fo->regex.get(k));
+               for (p = &fo->opts[0]; *p; p++) {
+                  switch (*p) {
+                     case 'a':                 /* alway replace */
+                        indent_config_item(cfg_str, 3, "replace = always\n");
+                        break;
+                     case '0':                 /* no option */
+                        break;
+                     case 'e':
+                        indent_config_item(cfg_str, 3, "exclude = yes\n");
+                        break;
+                     case 'f':
+                        indent_config_item(cfg_str, 3, "onefs = no\n");
+                        break;
+                     case 'h':                 /* no recursion */
+                        indent_config_item(cfg_str, 3, "recurse = no\n");
+                        break;
+                     case 'H':                 /* no hard link handling */
+                        indent_config_item(cfg_str, 3, "hardlinks = no\n");
+                        break;
+                     case 'i':
+                        indent_config_item(cfg_str, 3, "ignorecase = yes\n");
+                        break;
+                     case 'M':                 /* MD5 */
+                        indent_config_item(cfg_str, 3, "signature = md5\n");
+                        break;
+                     case 'n':
+                        indent_config_item(cfg_str, 3, "replace = never\n");
+                        break;
+                     case 'p':                 /* use portable data format */
+                        indent_config_item(cfg_str, 3, "portable = yes\n");
+                        break;
+                     case 'R':                 /* Resource forks and Finder Info */
+                        indent_config_item(cfg_str, 3, "hfsplussupport = yes\n");
+                     case 'r':                 /* read fifo */
+                        indent_config_item(cfg_str, 3, "readfifo = yes\n");
+                        break;
+                     case 'S':
+                        switch(*(p + 1)) {
+                        case ' ':
+                           /* Old director did not specify SHA variant */
+                           break;
+                        case '1':
+                           indent_config_item(cfg_str, 3, "signature = sha1\n");
+                           p++;
+                           break;
+#ifdef HAVE_SHA2
+                        case '2':
+                           indent_config_item(cfg_str, 3, "signature = sha256\n");
+                           p++;
+                           break;
+                        case '3':
+                           indent_config_item(cfg_str, 3, "signature = sha512\n");
+                           p++;
+                           break;
+#endif
+                        default:
+                           /* Automatically downgrade to SHA-1 if an unsupported
+                            * SHA variant is specified */
+                           indent_config_item(cfg_str, 3, "signature = sha1\n");
+                           p++;
+                           break;
+                        }
+                        break;
+                     case 's':
+                        indent_config_item(cfg_str, 3, "sparse = yes\n");
+                        break;
+                     case 'm':
+                        indent_config_item(cfg_str, 3, "mtimeonly = yes\n");
+                        break;
+                     case 'k':
+                        indent_config_item(cfg_str, 3, "keepatime = yes\n");
+                        break;
+                     case 'A':
+                        indent_config_item(cfg_str, 3, "aclsupport = yes\n");
+                        break;
+                     case 'V':                  /* verify options */
+                        indent_config_item(cfg_str, 3, "verify = ");
+
+                        /*
+                         * Copy Verify Options
+                         */
+                        //for (int j = 0; *p && *p != ':'; p++) {
+                        for (; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                           //fo->VerifyOpts[j] = *p;
+                           //if (j < (int)sizeof(fo->VerifyOpts) - 1) {
+                           //   j++;
+                           //}
+                        }
+                        //fo->VerifyOpts[j] = 0;
+                        break;
+                     case 'w':
+                        indent_config_item(cfg_str, 3, "replace = ifnewer\n");
+                        break;
+                     case 'W':
+                        indent_config_item(cfg_str, 3, "enhancedwild = yes\n");
+                        break;
+                     case 'Z':                 /* compression */
+                        indent_config_item(cfg_str, 3, "compression = ");
+                        p++;                   /* skip Z */
+                        if (*p >= '0' && *p <= '9') {
+                           Mmsg(temp, "gzip\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           Mmsg(temp, "%c\n", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                           p++; /* skip number */
+                        } else if (*p == 'o') {
+                           Mmsg(temp, "lzo\n");
+                           pm_strcat(cfg_str, temp.c_str());
+                           break;
+                        } else if (*p == 'f') {
+                           p++;
+                           if (*p == 'f') {
+                              Mmsg(temp, "lzfast\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           } else if (*p == '4') {
+                              Mmsg(temp, "lz4\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           } else if (*p == 'h') {
+                              Mmsg(temp, "lz4hc\n");
+                              pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           }
+                        }
+                        break;
+                     case 'X':
+                        indent_config_item(cfg_str, 3, "xattr = yes\n");
+                        break;
+                     default:
+                        Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
+                        break;
+                  }
                }
-               for (k = 0; k < fo->regexdir.size(); k++) {
-                  sendit(sock, "      RD %s\n", fo->regexdir.get(k));
+
+               for (int k = 0; k < fo->regex.size(); k++) {
+                  Mmsg(temp, "Regex =  \"%s\"\n", fo->regex.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->regexfile.size(); k++) {
-                  sendit(sock, "      RF %s\n", fo->regexfile.get(k));
+
+               for (int k = 0; k < fo->regexdir.size(); k++) {
+                  Mmsg(temp, "Regex Dir = \"%s\"\n", fo->regexdir.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->wild.size(); k++) {
-                  sendit(sock, "      W %s\n", fo->wild.get(k));
+
+               for (int k = 0; k < fo->regexfile.size(); k++) {
+                  Mmsg(temp, "Regex File = \"%s\"\n", fo->regexfile.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->wilddir.size(); k++) {
-                  sendit(sock, "      WD %s\n", fo->wilddir.get(k));
+
+               for (int k = 0; k < fo->wild.size(); k++) {
+                  Mmsg(temp, "Wild =  \"%s\"\n", fo->wild.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->wildfile.size(); k++) {
-                  sendit(sock, "      WF %s\n", fo->wildfile.get(k));
+
+               for (int k = 0; k < fo->wilddir.size(); k++) {
+                  Mmsg(temp, "Wild Dir = \"%s\"\n", fo->wilddir.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->wildbase.size(); k++) {
-                  sendit(sock, "      W%c %s\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+
+               for (int k = 0; k < fo->wildfile.size(); k++) {
+                  Mmsg(temp, "Wild File =  \"%s\"\n", fo->wildfile.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->base.size(); k++) {
-                  sendit(sock, "      B %s\n", fo->base.get(k));
+
+               for (int k = 0; k < fo->wildbase.size(); k++) {
+                  Mmsg(temp, "Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->fstype.size(); k++) {
-                  sendit(sock, "      X %s\n", fo->fstype.get(k));
+
+               for (int k = 0; k < fo->base.size(); k++) {
+                  Mmsg(temp, "Base = \"%s\"\n", fo->base.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               for (k = 0; k < fo->drivetype.size(); k++) {
-                  sendit(sock, "      XD %s\n", fo->drivetype.get(k));
+
+               for (int k = 0; k < fo->fstype.size(); k++) {
+                  Mmsg(temp, "Fs Type =  \"%s\"\n", fo->fstype.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
+
+               for (int k = 0; k < fo->drivetype.size(); k++) {
+                  Mmsg(temp, "Drive Type = \"%s\"\n", fo->drivetype.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
+               }
+
+               for (int k = 0; k < fo->meta.size(); k++) {
+                  Mmsg(temp, "Meta = \"%s\"\n", fo->meta.get(k));
+                  indent_config_item(cfg_str, 3, temp.c_str());
+               }
+
                if (fo->plugin) {
-                  sendit(sock, "      G %s\n", fo->plugin);
+                  Mmsg(temp, "Plugin = \"%s\"\n", fo->plugin);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
+
                if (fo->reader) {
-                  sendit(sock, "      D %s\n", fo->reader);
+                  Mmsg(temp, "Reader = \"%s\"\n", fo->reader);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
+
                if (fo->writer) {
-                  sendit(sock, "      T %s\n", fo->writer);
+                  Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
+                  indent_config_item(cfg_str, 3, temp.c_str());
                }
-               sendit(sock, "      N\n");
             }
-            if (incexe->ignoredir) {
-               sendit(sock, "      Z %s\n", incexe->ignoredir);
+
+            if (incexe->num_opts > 0) {
+               indent_config_item(cfg_str, 2, "}\n");
             }
-            for (j = 0; j < incexe->name_list.size(); j++) {
-               sendit(sock, "      I %s\n", incexe->name_list.get(j));
-            }
-            if (incexe->name_list.size()) {
-               sendit(sock, "      N\n");
-            }
-            for (j = 0; j < incexe->plugin_list.size(); j++) {
-               sendit(sock, "      P %s\n", incexe->plugin_list.get(j));
-            }
-            if (incexe->plugin_list.size()) {
-               sendit(sock, "      N\n");
+         } /* end options block */
+
+         /*
+          * File = entries.
+          */
+         if (incexe->name_list.size()) {
+            for (int l = 0; l < incexe->name_list.size(); l++) {
+               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
 
-         for (i = 0; i < res->res_fs.num_excludes; i++) {
-            INCEXE *incexe = res->res_fs.exclude_items[i];
-            for (j = 0; j < incexe->name_list.size(); j++) {
-               sendit(sock, "      E %s\n", incexe->name_list.get(j));
-            }
-            if (incexe->name_list.size()) {
-               sendit(sock, "      N\n");
+         /*
+          * Plugin = entries.
+          */
+         if (incexe->plugin_list.size()) {
+            for (int l = 0; l < incexe->plugin_list.size(); l++) {
+               Mmsg(temp, "Plugin =  %s\n", incexe->plugin_list.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
+
+         /*
+          * Exclude Dir Containing = entry.
+          */
+         if (incexe->ignoredir.size()) {
+            for (int l = 0; l < incexe->ignoredir.size(); l++) {
+               Mmsg(temp, "Exclude Dir Containing = \"%s\"\n", incexe->ignoredir.get(l));
+               indent_config_item(cfg_str, 2, temp.c_str());
+            }
+         }
+
+         indent_config_item(cfg_str, 1, "}\n");
+
+         /*
+          * End Include block
+          */
+      } /* loop over all include blocks */
+   }
+
+   if (num_excludes) {
+      /*
+       * Loop over all exclude blocks.
+       */
+      for (int j = 0; j < num_excludes; j++) {
+         INCEXE *incexe = exclude_items[j];
+
+         if (incexe->name_list.size()) {
+            indent_config_item(cfg_str, 1, "Exclude {\n");
+
+            for (int k = 0; k < incexe->name_list.size(); k++) {
+               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(k));
+               indent_config_item(cfg_str, 2, temp.c_str());
+            }
+
+            indent_config_item(cfg_str, 1, "}\n");
+         }
+      } /* loop over all exclude blocks */
+   }
+
+   pm_strcat(cfg_str, "}\n\n");
+   pm_strcat(buff, cfg_str.c_str());
+
+   return true;
+}
+
+const char *auth_protocol_to_str(uint32_t auth_protocol)
+{
+   for (int i = 0; authprotocols[i].name; i++) {
+      if (authprotocols[i].token == auth_protocol) {
+         return authprotocols[i].name;
+      }
+   }
+
+   return "Unknown";
+}
+
+const char *level_to_str(int level)
+{
+   static char level_no[30];
+   const char *str = level_no;
+
+   bsnprintf(level_no, sizeof(level_no), "%c (%d)", level, level); /* default if not found */
+   for (int i = 0; joblevels[i].level_name; i++) {
+      if (level == (int)joblevels[i].level) {
+         str = joblevels[i].level_name;
+         break;
+      }
+   }
+
+   return str;
+}
+
+/*
+ * Dump contents of resource
+ */
+void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt, ...), void *sock)
+{
+   URES *res = (URES *)ures;
+   bool recurse = true;
+   POOL_MEM buf;
+   UAContext *ua = (UAContext *)sock;
+
+   if (res == NULL) {
+      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
+      return;
+   }
+
+   if (type < 0) { /* no recursion */
+      type = -type;
+      recurse = false;
+   }
+
+   switch (type) {
+   case R_DIRECTOR:
+      res->res_dir.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_CONSOLE:
+      res->res_con.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_COUNTER:
+      res->res_counter.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_CLIENT:
+      if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.hdr.name)) {
+         res->res_client.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
+      }
+      break;
+   case R_DEVICE:
+      res->res_dev.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
+      break;
+   case R_STORAGE:
+      if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.hdr.name)) {
+         res->res_store.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
+      }
+      break;
+   case R_CATALOG:
+      if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.hdr.name)) {
+         res->res_cat.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
+      }
+      break;
+   case R_JOBDEFS:
+   case R_JOB:
+      if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
+         res->res_job.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
+      }
+      break;
+   case R_FILESET: {
+      if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.hdr.name)) {
+         res->res_fs.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
    }
-
    case R_SCHEDULE:
       if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.hdr.name)) {
-         if (res->res_sch.run) {
-            int i;
-            RUNRES *run = res->res_sch.run;
-            char buf[1000], num[30];
-            sendit(sock, _("Schedule: name=%s\n"), res->res_sch.hdr.name);
-            if (!run) {
-               break;
-            }
-
-next_run:
-            sendit(sock, _("  --> Run Level=%s\n"), level_to_str(run->level));
-            bstrncpy(buf, _("      hour="), sizeof(buf));
-            for (i = 0; i < 24; i++) {
-               if (bit_is_set(i, run->hour)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      mday="), sizeof(buf));
-            for (i = 0; i < 31; i++) {
-               if (bit_is_set(i, run->mday)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      month="), sizeof(buf));
-            for (i = 0; i < 12; i++) {
-               if (bit_is_set(i, run->month)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      wday="), sizeof(buf));
-            for (i = 0; i < 7; i++) {
-               if (bit_is_set(i, run->wday)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      wom="), sizeof(buf));
-            for (i = 0; i < 5; i++) {
-               if (bit_is_set(i, run->wom)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            bstrncpy(buf, _("      woy="), sizeof(buf));
-            for (i = 0; i < 54; i++) {
-               if (bit_is_set(i, run->woy)) {
-                  bsnprintf(num, sizeof(num), "%d ", i);
-                  bstrncat(buf, num, sizeof(buf));
-               }
-            }
-            bstrncat(buf, "\n", sizeof(buf));
-            sendit(sock, buf);
-            sendit(sock, _("      mins=%d\n"), run->minute);
-            if (run->pool) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_POOL, (RES *)run->pool, sendit, sock);
-            }
-            if (run->storage) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_STORAGE, (RES *)run->storage, sendit, sock);
-            }
-            if (run->msgs) {
-               sendit(sock, _("     --> "));
-               dump_resource(-R_MSGS, (RES *)run->msgs, sendit, sock);
-            }
-            /* If another Run record is chained in, go print it */
-            if (run->next) {
-               run = run->next;
-               goto next_run;
-            }
-         } else {
-            sendit(sock, _("Schedule: name=%s\n"), res->res_sch.hdr.name);
-         }
+         res->res_sch.print_config(buf);
+         sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_POOL:
       if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.hdr.name)) {
-         sendit(sock, _("Pool: name=%s PoolType=%s\n"), res->res_pool.hdr.name,
-                res->res_pool.pool_type);
-         sendit(sock, _("      use_cat=%d use_once=%d cat_files=%d\n"),
-                res->res_pool.use_catalog, res->res_pool.use_volume_once,
-                res->res_pool.catalog_files);
-         sendit(sock, _("      max_vols=%d auto_prune=%d VolRetention=%s\n"),
-                res->res_pool.max_volumes, res->res_pool.AutoPrune,
-                edit_utime(res->res_pool.VolRetention, ed1, sizeof(ed1)));
-         sendit(sock, _("      VolUse=%s recycle=%d LabelFormat=%s\n"),
-                edit_utime(res->res_pool.VolUseDuration, ed1, sizeof(ed1)),
-                res->res_pool.Recycle,
-                NPRT(res->res_pool.label_format));
-         sendit(sock, _("      CleaningPrefix=%s LabelType=%d\n"),
-                 NPRT(res->res_pool.cleaning_prefix), res->res_pool.LabelType);
-         sendit(sock, _("      RecyleOldest=%d PurgeOldest=%d ActionOnPurge=%d\n"),
-                res->res_pool.recycle_oldest_volume,
-                res->res_pool.purge_oldest_volume,
-                res->res_pool.action_on_purge);
-         sendit(sock, _("      MaxVolJobs=%d MaxVolFiles=%d MaxVolBytes=%s\n"),
-                res->res_pool.MaxVolJobs,
-                res->res_pool.MaxVolFiles,
-                edit_uint64(res->res_pool.MaxVolBytes, ed1));
-         sendit(sock, _("      MigTime=%s MigHiBytes=%s MigLoBytes=%s\n"),
-                edit_utime(res->res_pool.MigrationTime, ed1, sizeof(ed1)),
-                edit_uint64(res->res_pool.MigrationHighBytes, ed2),
-                edit_uint64(res->res_pool.MigrationLowBytes, ed3));
-         sendit(sock, _("      JobRetention=%s FileRetention=%s\n"),
-                edit_utime(res->res_pool.JobRetention, ed1, sizeof(ed1)),
-                edit_utime(res->res_pool.FileRetention, ed2, sizeof(ed2)));
-         if (res->res_pool.NextPool) {
-            sendit(sock, _("      NextPool=%s\n"), res->res_pool.NextPool->name());
-         }
-         if (res->res_pool.RecyclePool) {
-            sendit(sock, _("      RecyclePool=%s\n"), res->res_pool.RecyclePool->name());
-         }
-         if (res->res_pool.ScratchPool) {
-            sendit(sock, _("      ScratchPool=%s\n"), res->res_pool.ScratchPool->name());
-         }
-         if (res->res_pool.catalog) {
-            sendit(sock, _("      Catalog=%s\n"), res->res_pool.catalog->name());
-         }
-         if (res->res_pool.storage) {
-            STORERES *store;
-            foreach_alist(store, res->res_pool.storage) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_STORAGE, (RES *)store, sendit, sock);
-            }
-         }
-         if (res->res_pool.CopyPool) {
-            POOLRES *copy;
-            foreach_alist(copy, res->res_pool.CopyPool) {
-               sendit(sock, _("  --> "));
-               dump_resource(-R_POOL, (RES *)copy, sendit, sock);
-            }
-         }
+        res->res_pool.print_config(buf);
+        sendit(sock, "%s", buf.c_str());
       }
       break;
-
    case R_MSGS:
-      sendit(sock, _("Messages: name=%s\n"), res->res_msgs.hdr.name);
-      if (res->res_msgs.mail_cmd)
-         sendit(sock, _("      mailcmd=%s\n"), res->res_msgs.mail_cmd);
-      if (res->res_msgs.operator_cmd)
-         sendit(sock, _("      opcmd=%s\n"), res->res_msgs.operator_cmd);
+      res->res_msgs.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
       break;
-
    default:
       sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
       break;
    }
+
    if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, res->res_dir.hdr.next, sendit, sock);
    }
@@ -1237,9 +1579,7 @@ static void free_incexe(INCEXE *incexe)
    if (incexe->opts_list) {
       free(incexe->opts_list);
    }
-   if (incexe->ignoredir) {
-      free(incexe->ignoredir);
-   }
+   incexe->ignoredir.destroy();
    free(incexe);
 }
 
@@ -1290,8 +1630,11 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.subsys_directory) {
          free(res->res_dir.subsys_directory);
       }
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.backend_directories) {
+         delete res->res_dir.backend_directories;
+      }
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
       }
       if (res->res_dir.query_file) {
          free(res->res_dir.query_file);
@@ -1332,13 +1675,16 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.keyencrkey) {
          free(res->res_dir.keyencrkey);
       }
+      if (res->res_dir.audit_events) {
+         delete res->res_dir.audit_events;
+      }
       break;
    case R_DEVICE:
    case R_COUNTER:
        break;
    case R_CONSOLE:
-      if (res->res_con.password) {
-         free(res->res_con.password);
+      if (res->res_con.password.value) {
+         free(res->res_con.password.value);
       }
       if (res->res_con.tls_ctx) {
          free_tls_context(res->res_con.tls_ctx);
@@ -1378,8 +1724,8 @@ void free_resource(RES *sres, int type)
       if (res->res_client.username) {
          free(res->res_client.username);
       }
-      if (res->res_client.password) {
-         free(res->res_client.password);
+      if (res->res_client.password.value) {
+         free(res->res_client.password.value);
       }
       if (res->res_client.tls_ctx) {
          free_tls_context(res->res_client.tls_ctx);
@@ -1410,8 +1756,8 @@ void free_resource(RES *sres, int type)
       if (res->res_store.username) {
          free(res->res_store.username);
       }
-      if (res->res_store.password) {
-         free(res->res_store.password);
+      if (res->res_store.password.value) {
+         free(res->res_store.password.value);
       }
       if (res->res_store.media_type) {
          free(res->res_store.media_type);
@@ -1454,8 +1800,8 @@ void free_resource(RES *sres, int type)
       if (res->res_cat.db_driver) {
          free(res->res_cat.db_driver);
       }
-      if (res->res_cat.db_password) {
-         free(res->res_cat.db_password);
+      if (res->res_cat.db_password.value) {
+         free(res->res_cat.db_password.value);
       }
       break;
    case R_FILESET:
@@ -1499,8 +1845,8 @@ void free_resource(RES *sres, int type)
          }
       }
       break;
-   case R_JOB:
    case R_JOBDEFS:
+   case R_JOB:
       if (res->res_job.backup_format) {
          free(res->res_job.backup_format);
       }
@@ -1578,22 +1924,21 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
-   int i, size = 0;
+   int rindex = type - R_FIRST;
    bool error = false;
 
    /*
     * Check Job requirements after applying JobDefs
     */
-   if (type != R_JOB && type != R_JOBDEFS) {
+   if (type != R_JOBDEFS && type != R_JOB) {
       /*
        * Ensure that all required items are present
        */
-      for (i = 0; items[i].name; i++) {
-         if (items[i].flags & ITEM_REQUIRED) {
+      for (int i = 0; items[i].name; i++) {
+         if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                 Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
-                    items[i].name, resources[rindex]);
+                      items[i].name, resources[rindex]);
             }
          }
          /*
@@ -1607,7 +1952,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
       /*
        * Ensure that the name item is present
        */
-      if (items[0].flags & ITEM_REQUIRED) {
+      if (items[0].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
              Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
                    items[0].name, resources[rindex]);
@@ -1623,136 +1968,140 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    if (pass == 2) {
       switch (type) {
-      /*
-       * Resources not containing a resource
-       */
       case R_CATALOG:
       case R_MSGS:
       case R_FILESET:
       case R_DEVICE:
+         /*
+          * Resources not containing a resource
+          */
          break;
-      /*
-       * Resources containing another resource or alist. First
-       * look up the resource which contains another resource. It
-       * was written during pass 1.  Then stuff in the pointers to
-       * the resources it contains, which were inserted this pass.
-       * Finally, it will all be stored back.
-       */
       case R_POOL:
          /*
+          * Resources containing another resource or alist. First
+          * look up the resource which contains another resource. It
+          * was written during pass 1.  Then stuff in the pointers to
+          * the resources it contains, which were inserted this pass.
+          * Finally, it will all be stored back.
+          *
           * Find resource saved in pass 1
           */
          if ((res = (URES *)GetResWithName(R_POOL, res_all.res_con.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Pool resource %s\n"), res_all.res_con.hdr.name);
-         }
-         /*
-          * Explicitly copy resource pointers from this pass (res_all)
-          */
-         res->res_pool.NextPool = res_all.res_pool.NextPool;
-         res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
-         res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
-         res->res_pool.storage = res_all.res_pool.storage;
-         if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
-            res->res_pool.catalog = res_all.res_pool.catalog;
+         } else {
+            /*
+             * Explicitly copy resource pointers from this pass (res_all)
+             */
+            res->res_pool.NextPool = res_all.res_pool.NextPool;
+            res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
+            res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
+            res->res_pool.storage = res_all.res_pool.storage;
+            if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
+               res->res_pool.catalog = res_all.res_pool.catalog;
+            }
          }
          break;
       case R_CONSOLE:
          if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.hdr.name);
+         } else {
+            res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
          }
-         res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
          break;
       case R_DIRECTOR:
          if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_dir.messages = res_all.res_dir.messages;
+            res->res_dir.backend_directories = res_all.res_dir.backend_directories;
+            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          }
-         res->res_dir.messages = res_all.res_dir.messages;
-         res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          break;
       case R_STORAGE:
          if ((res = (URES *)GetResWithName(type, res_all.res_store.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"),
-                  res_all.res_dir.hdr.name);
-         }
-         res->res_store.paired_storage = res_all.res_store.paired_storage;
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_store.paired_storage = res_all.res_store.paired_storage;
 
-         /*
-          * We must explicitly copy the device alist pointer
-          */
-         res->res_store.device = res_all.res_store.device;
-         break;
-      case R_JOB:
-      case R_JOBDEFS:
-         if ((res = (URES *)GetResWithName(type, res_all.res_dir.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"),
-                  res_all.res_dir.hdr.name);
-         }
-         res->res_job.messages = res_all.res_job.messages;
-         res->res_job.schedule = res_all.res_job.schedule;
-         res->res_job.client = res_all.res_job.client;
-         res->res_job.fileset = res_all.res_job.fileset;
-         res->res_job.storage = res_all.res_job.storage;
-         res->res_job.catalog = res_all.res_job.catalog;
-         res->res_job.base = res_all.res_job.base;
-         res->res_job.pool = res_all.res_job.pool;
-         res->res_job.full_pool = res_all.res_job.full_pool;
-         res->res_job.inc_pool = res_all.res_job.inc_pool;
-         res->res_job.diff_pool = res_all.res_job.diff_pool;
-         res->res_job.next_pool = res_all.res_job.next_pool;
-         res->res_job.verify_job = res_all.res_job.verify_job;
-         res->res_job.jobdefs = res_all.res_job.jobdefs;
-         res->res_job.run_cmds = res_all.res_job.run_cmds;
-         res->res_job.RunScripts = res_all.res_job.RunScripts;
-         /*
-          * TODO: JobDefs where/regexwhere doesn't work well (but this
-          * is not very useful)
-          * We have to set_bit(index, res_all.hdr.item_present);
-          * or something like that
-          */
-         /*
-          * We take RegexWhere before all other options
-          */
-         if (!res->res_job.RegexWhere &&
-             (res->res_job.strip_prefix ||
-              res->res_job.add_suffix ||
-              res->res_job.add_prefix)) {
-            int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
-                                                   res->res_job.add_prefix,
-                                                   res->res_job.add_suffix);
-            res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
-            bregexp_build_where(res->res_job.RegexWhere, len,
-                                res->res_job.strip_prefix,
-                                res->res_job.add_prefix,
-                                res->res_job.add_suffix);
             /*
-             * TODO: test bregexp
+             * We must explicitly copy the device alist pointer
              */
+            res->res_store.device = res_all.res_store.device;
          }
-         if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
-            free(res->res_job.RestoreWhere);
-            res->res_job.RestoreWhere = NULL;
+         break;
+      case R_JOBDEFS:
+      case R_JOB:
+         if ((res = (URES *)GetResWithName(type, res_all.res_dir.hdr.name)) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"), res_all.res_dir.hdr.name);
+         } else {
+            res->res_job.messages = res_all.res_job.messages;
+            res->res_job.schedule = res_all.res_job.schedule;
+            res->res_job.client = res_all.res_job.client;
+            res->res_job.fileset = res_all.res_job.fileset;
+            res->res_job.storage = res_all.res_job.storage;
+            res->res_job.catalog = res_all.res_job.catalog;
+            res->res_job.base = res_all.res_job.base;
+            res->res_job.pool = res_all.res_job.pool;
+            res->res_job.full_pool = res_all.res_job.full_pool;
+            res->res_job.inc_pool = res_all.res_job.inc_pool;
+            res->res_job.diff_pool = res_all.res_job.diff_pool;
+            res->res_job.next_pool = res_all.res_job.next_pool;
+            res->res_job.verify_job = res_all.res_job.verify_job;
+            res->res_job.jobdefs = res_all.res_job.jobdefs;
+            res->res_job.run_cmds = res_all.res_job.run_cmds;
+            res->res_job.RunScripts = res_all.res_job.RunScripts;
+
+            /*
+             * TODO: JobDefs where/regexwhere doesn't work well (but this is not very useful)
+             * We have to set_bit(index, res_all.hdr.item_present); or something like that
+             *
+             * We take RegexWhere before all other options
+             */
+            if (!res->res_job.RegexWhere &&
+                (res->res_job.strip_prefix ||
+                 res->res_job.add_suffix ||
+                 res->res_job.add_prefix)) {
+               int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
+                                                      res->res_job.add_prefix,
+                                                      res->res_job.add_suffix);
+               res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
+               bregexp_build_where(res->res_job.RegexWhere, len,
+                                   res->res_job.strip_prefix,
+                                   res->res_job.add_prefix,
+                                   res->res_job.add_suffix);
+               /*
+                * TODO: test bregexp
+                */
+            }
+
+            if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
+               free(res->res_job.RestoreWhere);
+               res->res_job.RestoreWhere = NULL;
+            }
          }
          break;
       case R_COUNTER:
          if ((res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.hdr.name);
+         } else {
+            res->res_counter.Catalog = res_all.res_counter.Catalog;
+            res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
          }
-         res->res_counter.Catalog = res_all.res_counter.Catalog;
-         res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
          break;
       case R_CLIENT:
          if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.hdr.name);
-         }
-         if (res_all.res_client.catalog) {
-            res->res_client.catalog = res_all.res_client.catalog;
          } else {
-            /*
-             * No catalog overwrite given use the first catalog definition.
-             */
-            res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            if (res_all.res_client.catalog) {
+               res->res_client.catalog = res_all.res_client.catalog;
+            } else {
+               /*
+                * No catalog overwrite given use the first catalog definition.
+                */
+               res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            }
+            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
          }
-         res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
          break;
       case R_SCHEDULE:
          /*
@@ -1763,14 +2112,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          if ((res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.hdr.name);
+         } else {
+            res->res_sch.run = res_all.res_sch.run;
          }
-         res->res_sch.run = res_all.res_sch.run;
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
          error = true;
          break;
       }
+
       /*
        * Note, the resource name was already saved during pass 1,
        * so here, we can just release it.
@@ -1779,65 +2130,21 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.name);
          res_all.res_dir.hdr.name = NULL;
       }
+
       if (res_all.res_dir.hdr.desc) {
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
       }
+
       return;
    }
 
    /*
-    * The following code is only executed during pass 1
-    */
-   switch (type) {
-   case R_DIRECTOR:
-      size = sizeof(DIRRES);
-      break;
-   case R_CONSOLE:
-      size = sizeof(CONRES);
-      break;
-   case R_CLIENT:
-      size =sizeof(CLIENTRES);
-      break;
-   case R_STORAGE:
-      size = sizeof(STORERES);
-      break;
-   case R_CATALOG:
-      size = sizeof(CATRES);
-      break;
-   case R_JOB:
-   case R_JOBDEFS:
-      size = sizeof(JOBRES);
-      break;
-   case R_FILESET:
-      size = sizeof(FILESETRES);
-      break;
-   case R_SCHEDULE:
-      size = sizeof(SCHEDRES);
-      break;
-   case R_POOL:
-      size = sizeof(POOLRES);
-      break;
-   case R_MSGS:
-      size = sizeof(MSGSRES);
-      break;
-   case R_COUNTER:
-      size = sizeof(COUNTERRES);
-      break;
-   case R_DEVICE:
-      error = true;
-      break;
-   default:
-      printf(_("Unknown resource type %d in save_resource.\n"), type);
-      error = true;
-      break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
@@ -1866,10 +2173,220 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
+bool populate_jobdefs()
+{
+   JOBRES *job;
+   bool retval = true;
+
+   foreach_res(job, R_JOB) {
+      if (job->jobdefs) {
+         /*
+          * Handle Storage alists specifically
+          */
+         JOBRES *jobdefs = job->jobdefs;
+         if (jobdefs->storage && !job->storage) {
+            STORERES *store;
+
+            job->storage = New(alist(10, not_owned_by_alist));
+            foreach_alist(store, jobdefs->storage) {
+               job->storage->append(store);
+            }
+         }
+
+         /*
+          * Handle RunScripts alists specifically
+          */
+         if (jobdefs->RunScripts) {
+            RUNSCRIPT *rs, *elt;
+
+            if (!job->RunScripts) {
+               job->RunScripts = New(alist(10, not_owned_by_alist));
+            }
+
+            foreach_alist(rs, jobdefs->RunScripts) {
+               elt = copy_runscript(rs);
+               job->RunScripts->append(elt); /* we have to free it */
+            }
+         }
+
+         /*
+          * Transfer default items from JobDefs Resource
+          */
+         for (int i = 0; job_items[i].name; i++) {
+            char **def_svalue, **svalue;   /* string value */
+            uint32_t *def_ivalue, *ivalue; /* integer value */
+            bool *def_bvalue, *bvalue;     /* bool value */
+            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
+            uint32_t offset;
+
+            Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
+                job->name(), job_items[i].name,
+                bit_is_set(i, job->hdr.item_present),
+                bit_is_set(i, job->jobdefs->hdr.item_present));
+
+            if (!bit_is_set(i, job->hdr.item_present) &&
+                 bit_is_set(i, job->jobdefs->hdr.item_present)) {
+               Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
+                     job->name(), job_items[i].name);
+               offset = (char *)(job_items[i].value) - (char *)&res_all;
+               switch (job_items[i].type) {
+               case CFG_TYPE_STR:
+               case CFG_TYPE_DIR:
+                  /*
+                   * Handle strings and directory strings
+                   */
+                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
+                        job->name(), job_items[i].name, *def_svalue, i, offset);
+                  svalue = (char **)((char *)job + offset);
+                  if (*svalue) {
+                     free(*svalue);
+                  }
+                  *svalue = bstrdup(*def_svalue);
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_RES:
+                  /*
+                   * Handle resources
+                   */
+                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
+                        job->name(), job_items[i].name, i, offset);
+                  svalue = (char **)((char *)job + offset);
+                  if (*svalue) {
+                     Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+                  }
+                  *svalue = *def_svalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_ALIST_RES:
+                  /*
+                   * Handle alist resources
+                   */
+                  if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
+                     set_bit(i, job->hdr.item_present);
+                  }
+                  break;
+               case CFG_TYPE_BIT:
+               case CFG_TYPE_PINT32:
+               case CFG_TYPE_JOBTYPE:
+               case CFG_TYPE_PROTOCOLTYPE:
+               case CFG_TYPE_LEVEL:
+               case CFG_TYPE_INT32:
+               case CFG_TYPE_SIZE32:
+               case CFG_TYPE_MIGTYPE:
+               case CFG_TYPE_REPLACE:
+                  /*
+                   * Handle integer fields
+                   *    Note, our store_bit does not handle bitmaped fields
+                   */
+                  def_ivalue = (uint32_t *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_ivalue, i, offset);
+                  ivalue = (uint32_t *)((char *)job + offset);
+                  *ivalue = *def_ivalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_TIME:
+               case CFG_TYPE_SIZE64:
+               case CFG_TYPE_INT64:
+               case CFG_TYPE_SPEED:
+                  /*
+                   * Handle 64 bit integer fields
+                   */
+                  def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_lvalue, i, offset);
+                  lvalue = (int64_t *)((char *)job + offset);
+                  *lvalue = *def_lvalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               case CFG_TYPE_BOOL:
+                  /*
+                   * Handle bool fields
+                   */
+                  def_bvalue = (bool *)((char *)(job->jobdefs) + offset);
+                  Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
+                       job->name(), job_items[i].name, *def_bvalue, i, offset);
+                  bvalue = (bool *)((char *)job + offset);
+                  *bvalue = *def_bvalue;
+                  set_bit(i, job->hdr.item_present);
+                  break;
+               default:
+                  break;
+               }
+            }
+         }
+      }
+
+      /*
+       * Ensure that all required items are present
+       */
+      for (int i = 0; job_items[i].name; i++) {
+         if (job_items[i].flags & CFG_ITEM_REQUIRED) {
+            if (!bit_is_set(i, job->hdr.item_present)) {
+               Jmsg(NULL, M_ERROR_TERM, 0,
+                    _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
+                    job_items[i].name, job->name());
+               retval = false;
+               goto bail_out;
+            }
+         }
+
+         /*
+          * If this triggers, take a look at lib/parse_conf.h
+          */
+         if (i >= MAX_RES_ITEMS) {
+            Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
+            goto bail_out;
+         }
+      }
+
+      /*
+       * For Copy and Migrate we can have Jobs without a client or fileset.
+       * As for a copy we use the original Job as a reference for the Read storage
+       * we also don't need to check if there is an explicit storage definition in
+       * either the Job or the Read pool.
+       */
+      switch (job->JobType) {
+      case JT_COPY:
+      case JT_MIGRATE:
+         break;
+      default:
+         /*
+          * All others must have a client and fileset.
+          */
+         if (!job->client) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
+            retval = false;
+            goto bail_out;
+         }
+
+         if (!job->fileset) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
+            retval = false;
+            goto bail_out;
+         }
+
+         if (!job->storage && !job->pool->storage) {
+            Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), job->name());
+            retval = false;
+            goto bail_out;
+         }
+         break;
+      }
+   } /* End loop over Job res */
+
+bail_out:
+   return retval;
+}
+
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
-   uint32_t *destination = (uint32_t*)item->value;
+   uint32_t *destination = item->ui32value;
 
    lex_get_token(lc, T_NAME);
    /*
@@ -1882,9 +2399,11 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected an Action On Purge option, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -1897,15 +2416,14 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res;
-   int rindex = R_DEVICE - r_first;
-   int size = sizeof(DEVICERES);
+   int rindex = R_DEVICE - R_FIRST;
    bool found = false;
 
    if (pass == 1) {
       lex_get_token(lc, T_NAME);
       if (!res_head[rindex]) {
-         res = (URES *)malloc(size);
-         memset(res, 0, size);
+         res = (URES *)malloc(resources[rindex].size);
+         memset(res, 0, resources[rindex].size);
          res->res_dev.hdr.name = bstrdup(lc->str);
          res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(R_DEVICE),
@@ -1922,8 +2440,8 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
             }
          }
          if (!found) {
-            res = (URES *)malloc(size);
-            memset(res, 0, size);
+            res = (URES *)malloc(resources[rindex].size);
+            memset(res, 0, resources[rindex].size);
             res->res_dev.hdr.name = bstrdup(lc->str);
             next->next = (RES *)res;
             Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(R_DEVICE),
@@ -1934,14 +2452,14 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
       scan_to_eol(lc);
       set_bit(index, res_all.hdr.item_present);
    } else {
-      store_alist_res(lc, item, index, pass);
+      store_resource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
    }
 }
 
 /*
  * Store Migration/Copy type
  */
-void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -1951,14 +2469,16 @@ void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; migtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, migtypes[i].type_name)) {
-         *(uint32_t *)(item->value) = migtypes[i].job_type;
+         *(item->ui32value) = migtypes[i].job_type;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Migration Job Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -1966,7 +2486,7 @@ void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store JobType (backup, verify, restore)
  */
-void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -1976,14 +2496,16 @@ void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; jobtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, jobtypes[i].type_name)) {
-         *(uint32_t *)(item->value) = jobtypes[i].job_type;
+         *(item->ui32value) = jobtypes[i].job_type;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Job Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -1991,7 +2513,7 @@ void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Protocol (Native, NDMP)
  */
-void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -2001,35 +2523,40 @@ void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; backupprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, backupprotocols[i].name)) {
-         *(uint32_t *)(item->value) = backupprotocols[i].token;
+         *(item->ui32value) = backupprotocols[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Protocol Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
 
-void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
+
    lex_get_token(lc, T_NAME);
    /*
     * Scan Replacement options
     */
    for (i = 0; ReplaceOptions[i].name; i++) {
       if (bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
-         *(uint32_t *)(item->value) = ReplaceOptions[i].token;
+         *(item->ui32value) = ReplaceOptions[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Restore replacement option, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2047,11 +2574,12 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; authprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, authprotocols[i].name)) {
-         *(uint32_t *)(item->value) = authprotocols[i].token;
+         *(item->ui32value) = authprotocols[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Auth Protocol Type keyword, got: %s"), lc->str);
    }
@@ -2072,14 +2600,16 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; authmethods[i].name; i++) {
       if (bstrcasecmp(lc->str, authmethods[i].name)) {
-         *(uint32_t *)(item->value) = authmethods[i].token;
+         *(item->ui32value) = authmethods[i].token;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Authentication Type keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2087,7 +2617,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Job Level (Full, Incremental, ...)
  */
-void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
@@ -2097,14 +2627,16 @@ void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    for (i = 0; joblevels[i].level_name; i++) {
       if (bstrcasecmp(lc->str, joblevels[i].level_name)) {
-         *(uint32_t *)(item->value) = joblevels[i].level;
+         *(item->ui32value) = joblevels[i].level;
          i = 0;
          break;
       }
    }
+
    if (i != 0) {
       scan_err1(lc, _("Expected a Job Level keyword, got: %s"), lc->str);
    }
+
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
 }
@@ -2112,7 +2644,7 @@ void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store password either clear if for NDMP and catalog or MD5 hashed for native.
  */
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    switch (res_all.hdr.rcode) {
    case R_DIRECTOR:
@@ -2123,10 +2655,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
        */
       switch (item->code) {
       case 1:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2135,10 +2667,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
@@ -2147,18 +2679,18 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
       case APT_NDMPV2:
       case APT_NDMPV3:
       case APT_NDMPV4:
-         store_str(lc, item, index, pass);
+         store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
          break;
       default:
-         store_password(lc, item, index, pass);
+         store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
          break;
       }
       break;
    case R_CATALOG:
-      store_str(lc, item, index, pass);
+      store_resource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
    default:
-      store_password(lc, item, index, pass);
+      store_resource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
    }
 }
@@ -2169,15 +2701,20 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
+   alist *list;
+
+   if (pass == 1) {
+      if (!item->alistvalue[item->code]) {
+         item->alistvalue[item->code] = New(alist(10, owned_by_alist));
+         Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
+      }
+   }
+   list = item->alistvalue[item->code];
 
    for (;;) {
       lex_get_token(lc, T_STRING);
       if (pass == 1) {
-         if (((alist **)item->value)[item->code] == NULL) {
-            ((alist **)item->value)[item->code] = New(alist(10, owned_by_alist));
-            Dmsg1(900, "Defined new ACL alist at %d\n", item->code);
-         }
-         ((alist **)item->value)[item->code]->append(bstrdup(lc->str));
+         list->append(bstrdup(lc->str));
          Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
       }
       token = lex_get_token(lc, T_ALL);
@@ -2190,6 +2727,34 @@ static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * Store Audit event.
+ */
+static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+   alist *list;
+
+   if (pass == 1) {
+      if (!*item->alistvalue) {
+         *(item->alistvalue) = New(alist(10, owned_by_alist));
+      }
+   }
+   list = *item->alistvalue;
+
+   for (;;) {
+      lex_get_token(lc, T_STRING);
+      if (pass == 1) {
+         list->append(bstrdup(lc->str));
+      }
+      token = lex_get_token(lc, T_ALL);
+      if (token == T_COMMA) {
+         continue;
+      }
+      break;
+   }
+   set_bit(index, res_all.hdr.item_present);
+}
+/*
  * Store a runscript->when in a bit field
  */
 static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -2197,13 +2762,13 @@ static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
    lex_get_token(lc, T_NAME);
 
    if (bstrcasecmp(lc->str, "before")) {
-      *(uint32_t *)(item->value) = SCRIPT_Before ;
+      *(item->ui32value) = SCRIPT_Before;
    } else if (bstrcasecmp(lc->str, "after")) {
-      *(uint32_t *)(item->value) = SCRIPT_After;
+      *(item->ui32value) = SCRIPT_After;
    } else if (bstrcasecmp(lc->str, "aftervss")) {
-      *(uint32_t *)(item->value) = SCRIPT_AfterVSS;
+      *(item->ui32value) = SCRIPT_AfterVSS;
    } else if (bstrcasecmp(lc->str, "always")) {
-      *(uint32_t *)(item->value) = SCRIPT_Any;
+      *(item->ui32value) = SCRIPT_Any;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "Before, After, AfterVSS or Always", lc->str);
    }
@@ -2219,11 +2784,11 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
 
    if (pass == 2) {
       if (bstrcmp(lc->str, "%c")) {
-         ((RUNSCRIPT*) item->value)->set_target(lc->str);
+         ((RUNSCRIPT *)item->value)->set_target(lc->str);
       } else if (bstrcasecmp(lc->str, "yes")) {
-         ((RUNSCRIPT*) item->value)->set_target("%c");
+         ((RUNSCRIPT *)item->value)->set_target("%c");
       } else if (bstrcasecmp(lc->str, "no")) {
-         ((RUNSCRIPT*) item->value)->set_target("");
+         ((RUNSCRIPT *)item->value)->set_target("");
       } else {
          RES *res = GetResWithName(R_CLIENT, lc->str);
          if (res == NULL) {
@@ -2231,7 +2796,7 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
                       lc->str, lc->line_no, lc->line);
          }
 
-         ((RUNSCRIPT*) item->value)->set_target(lc->str);
+         ((RUNSCRIPT *)item->value)->set_target(lc->str);
       }
    }
    scan_to_eol(lc);
@@ -2251,8 +2816,8 @@ static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
        * Each runscript command takes 2 entries in commands list
        */
       pm_strcpy(c, lc->str);
-      ((RUNSCRIPT*) item->value)->commands->prepend(c); /* command line */
-      ((RUNSCRIPT*) item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
+      ((RUNSCRIPT *)item->value)->commands->prepend(c); /* command line */
+      ((RUNSCRIPT *)item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
    }
    scan_to_eol(lc);
 }
@@ -2260,7 +2825,7 @@ static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
 static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
-   alist **runscripts = (alist **)(item->value) ;
+   alist **runscripts = item->alistvalue;
 
    if (pass == 2) {
       RUNSCRIPT *script = new_runscript();
@@ -2312,9 +2877,9 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      *(bool *)(item->value) = true;
+      *(item->boolvalue) = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      *(bool *)(item->value) = false;
+      *(item->boolvalue) = false;
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
    }
@@ -2332,7 +2897,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    char *c;
    int token, i, t;
-   alist **runscripts = (alist **)(item->value) ;
+   alist **runscripts = item->alistvalue;
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
 
@@ -2354,9 +2919,11 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
       if (token == T_EOB) {
         break;
       }
+
       if (token != T_IDENTIFIER) {
         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
+
       for (i = 0; runscript_items[i].name; i++) {
         if (bstrcasecmp(runscript_items[i].name, lc->str)) {
            token = lex_get_token(lc, T_SKIP_EOL);
@@ -2367,7 +2934,22 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
            /*
             * Call item handler
             */
-           runscript_items[i].handler(lc, &runscript_items[i], i, pass);
+           switch (runscript_items[i].type) {
+           case CFG_TYPE_RUNSCRIPT_CMD:
+              store_runscript_cmd(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_TARGET:
+              store_runscript_target(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_BOOL:
+              store_runscript_bool(lc, &runscript_items[i], i, pass);
+              break;
+           case CFG_TYPE_RUNSCRIPT_WHEN:
+              store_runscript_when(lc, &runscript_items[i], i, pass);
+              break;
+           default:
+              break;
+           }
            i = -1;
            break;
         }
@@ -2394,7 +2976,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
        * - int command type (ex: SHELL_CMD)
        */
       res_runscript.set_job_code_callback(job_code_callback_director);
-      while ((c=(char*)res_runscript.commands->pop()) != NULL) {
+      while ((c = (char *)res_runscript.commands->pop()) != NULL) {
          t = (intptr_t)res_runscript.commands->pop();
          RUNSCRIPT *script = new_runscript();
          memcpy(script, &res_runscript, sizeof(RUNSCRIPT));
@@ -2493,35 +3075,327 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item)
+static void init_resource_cb(RES_ITEM *item, int pass)
 {
-   int i;
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_REPLACE:
+         for (int i = 0; ReplaceOptions[i].name; i++) {
+            if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
+               *(item->ui32value) = ReplaceOptions[i].token;
+            }
+         }
+         break;
+      case CFG_TYPE_AUTHPROTOCOLTYPE:
+         for (int i = 0; authprotocols[i].name; i++) {
+            if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
+               *(item->ui32value) = authprotocols[i].token;
+            }
+         }
+         break;
+      case CFG_TYPE_AUTHTYPE:
+         for (int i = 0; authmethods[i].name; i++) {
+            if (bstrcasecmp(item->default_value, authmethods[i].name)) {
+               *(item->ui32value) = authmethods[i].token;
+            }
+         }
+         break;
+      default:
+         break;
+      }
+      break;
+   default:
+      break;
+   }
+}
 
-   if (item->handler == store_replace) {
-      for (i = 0; ReplaceOptions[i].name; i++) {
-         if (bstrcasecmp(item->default_value, ReplaceOptions[i].name)) {
-            *(uint32_t *)(item->value) = ReplaceOptions[i].token;
+/*
+ * callback function for parse_config
+ * See ../lib/parse_conf.c, function parse_config, for more generic handling.
+ */
+static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   switch (item->type) {
+   case CFG_TYPE_AUTOPASSWORD:
+      store_autopassword(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ACL:
+      store_acl(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUDIT:
+      store_audit(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHPROTOCOLTYPE:
+      store_authprotocoltype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHTYPE:
+      store_authtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DEVICE:
+      store_device(lc, item, index, pass);
+      break;
+   case CFG_TYPE_JOBTYPE:
+      store_jobtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PROTOCOLTYPE:
+      store_protocoltype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_LEVEL:
+      store_level(lc, item, index, pass);
+      break;
+   case CFG_TYPE_REPLACE:
+      store_replace(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SHRTRUNSCRIPT:
+      store_short_runscript(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RUNSCRIPT:
+      store_runscript(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MIGTYPE:
+      store_migtype(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INCEXC:
+      store_inc(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RUN:
+      store_run(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ACTIONONPURGE:
+      store_actiononpurge(lc, item, index, pass);
+      break;
+   default:
+      break;
+   }
+}
+
+/*
+ * callback function for print_config
+ * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
+ */
+static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+
+   switch (items[i].type) {
+   case CFG_TYPE_DEVICE: {
+      /*
+       * Each member of the list is comma-separated
+       */
+      int cnt = 0;
+      RES *res;
+      alist* list;
+      POOL_MEM res_names;
+
+      list = *(items[i].alistvalue);
+      if (list != NULL) {
+         Mmsg(temp, "%s = ", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+
+         pm_strcpy(res_names, "");
+         foreach_alist(res, list) {
+            if (cnt) {
+               Mmsg(temp, ",\"%s\"", res->name);
+            } else {
+               Mmsg(temp, "\"%s\"", res->name);
+            }
+            pm_strcat(res_names, temp.c_str());
+            cnt++;
+         }
+
+         pm_strcat(cfg_str, res_names.c_str());
+         pm_strcat(cfg_str, "\n");
+      }
+      break;
+   }
+   case CFG_TYPE_RUNSCRIPT:
+      Dmsg0(200, "CFG_TYPE_RUNSCRIPT\n");
+      print_config_runscript(&items[i], cfg_str);
+      break;
+   case CFG_TYPE_SHRTRUNSCRIPT:
+      /*
+       * We don't get here as this type is converted to a CFG_TYPE_RUNSCRIPT when parsed
+       */
+      break;
+   case CFG_TYPE_ACL: {
+      int cnt = 0;
+      char *value;
+      alist *list;
+      POOL_MEM acl;
+
+      list = items[i].alistvalue[items[i].code];
+      if (list != NULL) {
+         Mmsg(temp, "%s = ", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+         foreach_alist(value, list) {
+            if (cnt) {
+               Mmsg(temp, ",\"%s\"", value);
+            } else {
+               Mmsg(temp, "\"%s\"", value);
+            }
+            pm_strcat(acl, temp.c_str());
+            cnt++;
+         }
+
+         pm_strcat(cfg_str, acl.c_str());
+         pm_strcat(cfg_str, "\n");
+      }
+      break;
+   }
+   case CFG_TYPE_RUN:
+      print_config_run(&items[i], cfg_str);
+      break;
+   case CFG_TYPE_JOBTYPE: {
+      int32_t jobtype = *(items[i].ui32value);
+
+      if (jobtype) {
+         for (int j = 0; jobtypes[j].type_name; j++) {
+            if (jobtypes[j].job_type == jobtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
          }
       }
-   } else if (item->handler == store_authprotocoltype) {
-      for (i = 0; authprotocols[i].name; i++) {
-         if (bstrcasecmp(item->default_value, authprotocols[i].name)) {
-            *(uint32_t *)(item->value) = authprotocols[i].token;
+      break;
+   }
+   case CFG_TYPE_PROTOCOLTYPE: {
+      uint32_t protocol = *(items[i].ui32value);
+
+      if (protocol) {
+         for (int j = 0; backupprotocols[j].name; j++) {
+            if (backupprotocols[j].token == protocol) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, backupprotocols[j].name)) {
+                     break;
+                  }
+               }
+
+               Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
          }
       }
-   } else if (item->handler == store_authtype) {
-      for (i = 0; authmethods[i].name; i++) {
-         if (bstrcasecmp(item->default_value, authmethods[i].name)) {
-            *(uint32_t *)(item->value) = authmethods[i].token;
+      break;
+   }
+   case CFG_TYPE_MIGTYPE: {
+      int32_t migtype = *(items[i].ui32value);
+
+      if (migtype) {
+         for (int j = 0; migtypes[j].type_name; j++) {
+            if (migtypes[j].job_type == migtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
          }
       }
+      break;
+   }
+   case CFG_TYPE_REPLACE: {
+      uint32_t replace = *(items[i].ui32value);
+
+      if (replace) {
+         for (int j = 0; ReplaceOptions[j].name; j++) {
+            if (ReplaceOptions[j].token == replace) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, ReplaceOptions[j].name)) {
+                     break;
+                  }
+               }
+
+               Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_LEVEL: {
+      uint32_t level = *(items[i].ui32value);
+
+      if (level) {
+         for (int j = 0; joblevels[j].level_name; j++) {
+            if (joblevels[j].level == level) {
+               Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_ACTIONONPURGE: {
+      uint32_t action = *(items[i].ui32value);
+
+      if (action) {
+         for (int j = 0; ActionOnPurgeOptions[j].name; j++) {
+            if (ActionOnPurgeOptions[j].token == action) {
+               Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_AUTHPROTOCOLTYPE: {
+      uint32_t authprotocol = *(items[i].ui32value);
+
+      if (authprotocol) {
+         for (int j = 0; authprotocols[j].name; j++) {
+            if (authprotocols[j].token == authprotocol) {
+               Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   case CFG_TYPE_AUTHTYPE: {
+      uint32_t authtype = *(items[i].ui32value);
+
+      if (authtype) {
+         for (int j = 0; authmethods[j].name; j++) {
+            if (authprotocols[j].token == authtype) {
+               Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+      }
+      break;
+   }
+   default:
+      Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
+      break;
    }
 }
 
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, init_resource_cb, exit_code,
-                (void *)&res_all, res_all_size, r_first,
-                r_last, resources, res_head);
+   config->init(configfile,
+                NULL,
+                NULL,
+                init_resource_cb,
+                parse_config_cb,
+                print_config_cb,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                R_FIRST,
+                R_LAST,
+                resources,
+                res_head);
    return config->parse_config();
 }

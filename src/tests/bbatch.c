@@ -54,6 +54,9 @@ static void *do_batch(void *);
 /* Local variables */
 static B_DB *db;
 
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+#endif
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
 static const char *db_password = "";
@@ -101,6 +104,9 @@ static int list_handler(void *ctx, int num_fields, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
    bool disable_batch = false;
    char *restore_list=NULL;
    setlocale(LC_ALL, "");
@@ -192,7 +198,17 @@ int main (int argc, char *argv[])
    if (restore_list) {
       uint64_t nb_file=0;
       btime_t start, end;
-      /* To use the -r option, the catalog should already contains records */
+
+      /*
+       * To use the -r option, the catalog should already contains records
+       */
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+      backend_directories = New(alist(10, owned_by_alist));
+      backend_directories->append((char *)backend_directory);
+
+      db_set_backend_dirs(backend_directories);
+#endif
 
       if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
                                  db_host, 0, NULL, false, disable_batch)) == NULL) {

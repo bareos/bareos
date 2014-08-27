@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -143,16 +143,25 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
 /*
  * Select a Storage resource from prompt list
  */
-STORERES *select_storage_resource(UAContext *ua)
+STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
 {
    char name[MAX_NAME_LENGTH];
    STORERES *store;
 
-   start_prompt(ua, _("The defined Storage resources are:\n"));
+   if (autochanger_only) {
+      start_prompt(ua, _("The defined Autochanger Storage resources are:\n"));
+   } else {
+      start_prompt(ua, _("The defined Storage resources are:\n"));
+   }
+
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
-         add_prompt(ua, store->name());
+         if (autochanger_only && !store->autochanger) {
+            continue;
+         } else {
+            add_prompt(ua, store->name());
+         }
       }
    }
    UnlockRes();
@@ -233,7 +242,6 @@ CATRES *get_catalog_resource(UAContext *ua)
    return catalog;
 }
 
-
 /*
  * Select a job to enable or disable
  */
@@ -296,8 +304,7 @@ JOBRES *get_restore_job(UAContext *ua)
       if (job && job->JobType == JT_RESTORE) {
          return job;
       }
-      ua->error_msg(_("Error: Restore Job resource \"%s\" does not exist.\n"),
-                    ua->argv[i]);
+      ua->error_msg(_("Error: Restore Job resource \"%s\" does not exist.\n"), ua->argv[i]);
    }
    return select_restore_job_resource(ua);
 }
@@ -349,6 +356,33 @@ CLIENTRES *select_client_resource(UAContext *ua)
 }
 
 /*
+ * Select a client to enable or disable
+ */
+CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   CLIENTRES *client;
+
+   LockRes();
+   start_prompt(ua, _("The defined Client resources are:\n"));
+   foreach_res(client, R_CLIENT) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         continue;
+      }
+      if (client->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                    /* yes, skip */
+      }
+      add_prompt(ua, client->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Client"), _("Select Client resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   client = (CLIENTRES *)GetResWithName(R_CLIENT, name);
+   return client;
+}
+
+/*
  *  Get client resource, start by looking for
  *   client=<client-name>
  *  if we don't find the keyword, we prompt the user.
@@ -373,6 +407,33 @@ CLIENTRES *get_client_resource(UAContext *ua)
       }
    }
    return select_client_resource(ua);
+}
+
+/*
+ * Select a schedule to enable or disable
+ */
+SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
+{
+   char name[MAX_NAME_LENGTH];
+   SCHEDRES *sched;
+
+   LockRes();
+   start_prompt(ua, _("The defined Schedule resources are:\n"));
+   foreach_res(sched, R_SCHEDULE) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         continue;
+      }
+      if (sched->enabled == enable) {   /* Already enabled/disabled? */
+         continue;                    /* yes, skip */
+      }
+      add_prompt(ua, sched->name());
+   }
+   UnlockRes();
+   if (do_prompt(ua, _("Schedule"), _("Select Schedule resource"), name, sizeof(name)) < 0) {
+      return NULL;
+   }
+   sched = (SCHEDRES *)GetResWithName(R_SCHEDULE, name);
+   return sched;
 }
 
 /* Scan what the user has entered looking for:
@@ -507,8 +568,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
           acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
          bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
          if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
-            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i],
-                     db_strerror(ua->db));
+            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i], db_strerror(ua->db));
             pr->PoolId = 0;
             break;
          }
@@ -576,14 +636,16 @@ int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
       ua->error_msg("%s", db_strerror(ua->db));
       return 0;
    }
-   if (!acl_access_ok(ua, Pool_ACL, pr->Name)) {
+   if (!acl_access_ok(ua, Pool_ACL, pr->Name, true)) {
       ua->error_msg(_("No access to Pool \"%s\"\n"), pr->Name);
       return 0;
    }
    return 1;
 }
 
-/* Select a Media (Volume) record from the database */
+/*
+ * Select a Media (Volume) record from the database
+ */
 int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
 {
    int i;
@@ -591,7 +653,7 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    POOLMEM *err = get_pool_memory(PM_FNAME);
    *err=0;
 
-   mr->clear();
+   memset(mr, 0, sizeof(MEDIA_DBR));
    i = find_arg_with_value(ua, NT_("volume"));
    if (i >= 0) {
       if (is_name_valid(ua->argv[i], &err)) {
@@ -600,10 +662,14 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
          goto bail_out;
       }
    }
+
    if (mr->VolumeName[0] == 0) {
       POOL_DBR pr;
+
       memset(&pr, 0, sizeof(pr));
-      /* Get the pool from pool=<pool-name> */
+      /*
+       * Get the pool from pool=<pool-name>
+       */
       if (!get_pool_dbr(ua, &pr)) {
          goto bail_out;
       }
@@ -635,7 +701,6 @@ bail_out:
    return ret;
 }
 
-
 /*
  * Select a pool resource from prompt list
  */
@@ -658,7 +723,6 @@ POOLRES *select_pool_resource(UAContext *ua)
    pool = (POOLRES *)GetResWithName(R_POOL, name);
    return pool;
 }
-
 
 /*
  *  If you are thinking about using it, you
@@ -699,16 +763,16 @@ int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 
 }
 
-
-/* Scan what the user has entered looking for:
+/*
+ * Scan what the user has entered looking for:
  *
- *  jobid=nn
+ * jobid=nn
  *
- *  if error or not found, put up a list of Jobs
- *  to choose from.
+ * if error or not found, put up a list of Jobs
+ * to choose from.
  *
- *   returns: 0 on error
- *            JobId on success and fills in JOB_DBR
+ * returns: 0 on error
+ *          JobId on success and fills in JOB_DBR
  */
 int get_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
@@ -786,15 +850,14 @@ void add_prompt(UAContext *ua, const char *prompt)
  * Display prompts and get user's choice
  *
  *  Returns: -1 on error
- *            index base 0 on success, and choice
- *               is copied to prompt if not NULL
- *             prompt is set to the chosen prompt item string
+ *            index base 0 on success, and choice is copied to prompt if not NULL
+ *            prompt is set to the chosen prompt item string
  */
 int do_prompt(UAContext *ua, const char *automsg, const char *msg,
               char *prompt, int max_prompt)
 {
    int i, item;
-   char pmsg[MAXSTRING];
+   POOL_MEM pmsg(PM_MESSAGE);
    BSOCK *user = ua->UA_sock;
 
    if (prompt) {
@@ -846,11 +909,11 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
          }
          break;
       } else {
-         sprintf(pmsg, "%s (1-%d): ", msg, ua->num_prompts-1);
+         Mmsg(pmsg, "%s (1-%d): ", msg, ua->num_prompts - 1);
       }
       /* Either a . or an @ will get you out of the loop */
       if (ua->api) user->signal(BNET_SELECT_INPUT);
-      if (!get_pint(ua, pmsg)) {
+      if (!get_pint(ua, pmsg.c_str())) {
          item = -1;                   /* error */
          ua->info_msg(_("Selection aborted, nothing done.\n"));
          break;
@@ -876,24 +939,28 @@ done:
 
 
 /*
- * We scan what the user has entered looking for
- *    storage=<storage-resource>
- *    job=<job_name>
- *    jobid=<jobid>
- *    ?              (prompt him with storage list)
- *    <some-error>   (prompt him with storage list)
+ * We scan what the user has entered looking for :
+ * - storage=<storage-resource>
+ * - job=<job_name>
+ * - jobid=<jobid>
+ * - ?              (prompt him with storage list)
+ * - <some-error>   (prompt him with storage list)
  *
  * If use_default is set, we assume that any keyword without a value
- *   is the name of the Storage resource wanted.
+ * is the name of the Storage resource wanted.
+ *
+ * If autochangers_only is given, we limit the output to autochangers only.
  */
-STORERES *get_storage_resource(UAContext *ua, bool use_default)
+STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochangers_only)
 {
+   int i;
+   JCR *jcr;
+   int jobid;
+   char ed1[50];
    char *store_name = NULL;
    STORERES *store = NULL;
-   int jobid;
-   JCR *jcr;
-   int i;
-   char ed1[50];
+
+   Dmsg1(100, "get_storage_resource: autochangers_only is %d\n", autochangers_only);
 
    for (i = 1; i < ua->argc; i++) {
       /*
@@ -904,7 +971,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
       }
       if (use_default && !ua->argv[i]) {
          /*
-          * Ignore barcode, barcodes, encrypt. scan and slots keywords.
+          * Ignore barcode, barcodes, encrypt, scan and slots keywords.
           */
          if (bstrcasecmp("barcode", ua->argk[i]) ||
              bstrcasecmp("barcodes", ua->argk[i]) ||
@@ -988,7 +1055,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default)
    }
    /* No keywords found, so present a selection list */
    if (!store) {
-      store = select_storage_resource(ua);
+      store = select_storage_resource(ua, autochangers_only);
    }
    return store;
 }
@@ -1213,7 +1280,7 @@ alist *select_jobs(UAContext *ua, const char *reason)
          }
 
          if (jcr) {
-            if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+            if (jcr->res.job && !acl_access_ok(ua, Job_ACL, jcr->res.job->name(), true)) {
                ua->error_msg(_("Unauthorized command from this console.\n"));
                goto bail_out;
             }

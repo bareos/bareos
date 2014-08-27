@@ -1,0 +1,3 @@
+@plugindir@/python-sd.so
+@plugindir@/bareos-sd.py*
+@plugindir@/bareos_sd_consts.py*

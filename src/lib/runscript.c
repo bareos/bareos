@@ -265,7 +265,7 @@ bool RUNSCRIPT::run(JCR *jcr, const char *name)
    POOLMEM *ecmd = get_pool_memory(PM_FNAME);
    int status;
    BPIPE *bpipe;
-   char line[MAXSTRING];
+   POOL_MEM line(PM_NAME);
 
    ecmd = edit_job_codes(jcr, ecmd, this->command, "", this->job_code_callback);
    Dmsg1(100, "runscript: running '%s'...\n", ecmd);
@@ -276,26 +276,28 @@ bool RUNSCRIPT::run(JCR *jcr, const char *name)
    case SHELL_CMD:
       bpipe = open_bpipe(ecmd, 0, "r");
       free_pool_memory(ecmd);
+
       if (bpipe == NULL) {
          berrno be;
          Jmsg(jcr, M_ERROR, 0, _("Runscript: %s could not execute. ERR=%s\n"), name,
             be.bstrerror());
          goto bail_out;
       }
-      while (fgets(line, sizeof(line), bpipe->rfd)) {
-         int len = strlen(line);
-         if (len > 0 && line[len-1] == '\n') {
-            line[len-1] = 0;
-         }
-         Jmsg(jcr, M_INFO, 0, _("%s: %s\n"), name, line);
+
+      while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
+         strip_trailing_junk(line.c_str());
+         Jmsg(jcr, M_INFO, 0, _("%s: %s\n"), name, line.c_str());
       }
+
       status = close_bpipe(bpipe);
+
       if (status != 0) {
          berrno be;
          Jmsg(jcr, M_ERROR, 0, _("Runscript: %s returned non-zero status=%d. ERR=%s\n"), name,
             be.code(status), be.bstrerror(status));
          goto bail_out;
       }
+
       Dmsg0(100, "runscript OK\n");
       break;
    case CONSOLE_CMD:

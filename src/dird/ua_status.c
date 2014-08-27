@@ -71,8 +71,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          ua->send_msg(OKqstatus, ua->argk[2]);
          foreach_jcr(njcr) {
             if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->res.job->name())) {
-               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1),
-                        njcr->JobStatus, njcr->JobErrors);
+               ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1), njcr->JobStatus, njcr->JobErrors);
             }
          }
          endeach_jcr(njcr);
@@ -81,8 +80,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
             if (acl_access_ok(ua, Job_ACL, job->Job)) {
-               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1),
-                     job->JobStatus, job->Errors);
+               ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1), job->JobStatus, job->Errors);
             }
          }
       } else if (bstrcasecmp(ua->argk[2], "header")) {
@@ -113,7 +111,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          }
       }
    } else if (bstrcasecmp(ua->argk[1], "storage")) {
-      store = get_storage_resource(ua, false /*no default*/);
+      store = get_storage_resource(ua);
       if (store) {
          switch (store->Protocol) {
          case APT_NDMPV2:
@@ -151,6 +149,7 @@ int status_cmd(UAContext *ua, const char *cmd)
    STORERES *store;
    CLIENTRES *client;
    int item, i;
+   bool autochangers_only;
 
    Dmsg1(20, "status:%s:\n", cmd);
 
@@ -186,7 +185,12 @@ int status_cmd(UAContext *ua, const char *cmd)
             return 0;
          }
       } else {
-         store = get_storage_resource(ua, false/*no default*/);
+         /*
+          * limit storages to autochangers if slots is given
+          */
+         autochangers_only = (find_arg(ua, NT_("slots")) > 0);
+         store = get_storage_resource(ua, false, autochangers_only);
+
          if (store) {
             if (find_arg(ua, NT_("slots")) > 0) {
                switch (store->Protocol) {
@@ -640,6 +644,14 @@ static void do_scheduler_status(UAContext *ua)
    foreach_res(sched, R_SCHEDULE) {
       int cnt = 0;
 
+      if (!schedulegiven && !sched->enabled) {
+         continue;
+      }
+
+      if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+         continue;
+      }
+
       if (schedulegiven) {
          if (!bstrcmp(sched->hdr.name, schedulename)) {
            continue;
@@ -655,6 +667,10 @@ static void do_scheduler_status(UAContext *ua)
          }
       } else {
          foreach_res(job, R_JOB) {
+            if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+               continue;
+            }
+
             if (client && job->client != client) {
                continue;
             }
@@ -663,7 +679,8 @@ static void do_scheduler_status(UAContext *ua)
                if (cnt++ == 0) {
                   ua->send_msg("%s\n", sched->hdr.name);
                }
-               if (job->enabled) {
+               if (job->enabled &&
+                   (!job->client || job->client->enabled)) {
                   ua->send_msg("                       %s\n", job->name());
                } else {
                   ua->send_msg("                       %s (disabled)\n", job->name());
@@ -708,6 +725,10 @@ start_again:
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
+               if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+                  continue;
+               }
+
                if (job->schedule && job->client == client) {
                   if (!show_scheduled_preview(ua, job->schedule, overview,
                                               &max_date_len, tm, time_to_check)) {
@@ -726,6 +747,10 @@ start_again:
           */
          LockRes();
          foreach_res(sched, R_SCHEDULE) {
+            if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+               continue;
+            }
+
             if (schedulegiven) {
                if (!bstrcmp(sched->hdr.name, schedulename)) {
                   continue;
@@ -803,6 +828,8 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    MEDIA_DBR mr;
    int orig_jobtype;
 
+   memset(&mr, 0, sizeof(mr));
+
    orig_jobtype = jcr->getJobType();
    if (sp->job->JobType == JT_BACKUP) {
       jcr->db = NULL;
@@ -873,8 +900,7 @@ static int compare_by_runtime_priority(void *item1, void *item2)
 }
 
 /*
- * Find all jobs to be run in roughly the
- *  next 24 hours.
+ * Find all jobs to be run in roughly the next 24 hours.
  */
 static void list_scheduled_jobs(UAContext *ua)
 {
@@ -900,10 +926,14 @@ static void list_scheduled_jobs(UAContext *ua)
      }
    }
 
-   /* Loop through all jobs */
+   /*
+    * Loop through all jobs
+    */
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!acl_access_ok(ua, Job_ACL, job->name()) || !job->enabled) {
+      if (!acl_access_ok(ua, Job_ACL, job->name()) ||
+          !job->enabled ||
+          (job->client && !job->client->enabled)) {
          continue;
       }
       for (run = NULL; (run = find_next_run(run, job, runtime, days)); ) {
@@ -1264,9 +1294,11 @@ static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name
    /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
    const char *slot_api_full_format="%c|%d|%d|%s|%s|%s|%s|%s|%s|%s\n";
 
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+
    bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
    if (db_get_media_record(ua->jcr, ua->db, &mr)) {
-      memset(&pr, 0, sizeof(POOL_DBR));
       pr.PoolId = mr.PoolId;
       if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
          strcpy(pr.Name, "?");
@@ -1465,6 +1497,8 @@ static void status_slots(UAContext *ua, STORERES *store_r)
       return;
    }
 
+   memset(&mr, 0, sizeof(mr));
+
    store.store = store_r;
    pm_strcpy(store.store_source, _("command line"));
    set_wstorage(ua->jcr, &store);
@@ -1569,7 +1603,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   continue;
                }
 
-               mr.clear();
+               memset(&mr, 0, sizeof(mr));
                bstrncpy(mr.VolumeName, vl1->VolName, sizeof(mr.VolumeName));
             } else {
                if (!vl2 || !vl2->VolName) {
@@ -1581,12 +1615,12 @@ static void status_slots(UAContext *ua, STORERES *store_r)
                   continue;
                }
 
-               mr.clear();
+               memset(&mr, 0, sizeof(mr));
                bstrncpy(mr.VolumeName, vl2->VolName, sizeof(mr.VolumeName));
             }
 
             if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
-               memset(&pr, 0, sizeof(POOL_DBR));
+               memset(&pr, 0, sizeof(pr));
                pr.PoolId = mr.PoolId;
                if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
                   strcpy(pr.Name, "?");

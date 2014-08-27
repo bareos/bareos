@@ -161,6 +161,7 @@ bool job_cmd(JCR *jcr)
    Dmsg2(50, ">dird jid=%u: %s", (uint32_t)jcr->JobId, dir->msg);
    jcr->sd_auth_key = bstrdup(auth_key);
    memset(auth_key, 0, sizeof(auth_key));
+
    new_plugins(jcr);            /* instantiate the plugins */
    generate_plugin_event(jcr, bsdEventJobStart, (void *)"JobStart");
    return true;

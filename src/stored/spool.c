@@ -50,7 +50,7 @@ struct spool_stats_t {
 };
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-spool_stats_t spool_stats;
+static spool_stats_t spool_stats;
 
 /*
  * Header for data spool record */
@@ -223,8 +223,8 @@ static bool despool_data(DCR *dcr, bool commit)
 
    /*
     * Commit means that the job is done, so we commit, otherwise, we
-    *  are despooling because of user spool size max or some error
-    *  (e.g. filesystem full).
+    * are despooling because of user spool size max or some error
+    * (e.g. filesystem full).
     */
    if (commit) {
       Jmsg(jcr, M_INFO, 0, _("Committing spooled data to Volume \"%s\". Despooling %s bytes ...\n"),
@@ -240,9 +240,8 @@ static bool despool_data(DCR *dcr, bool commit)
    dcr->despool_wait = true;
    dcr->spooling = false;
    /*
-    * We work with device blocked, but not locked so that
-    *  other threads -- e.g. reservations can lock the device
-    *  structure.
+    * We work with device blocked, but not locked so that other threads
+    * e.g. reservations can lock the device structure.
     */
    dcr->dblock(BST_DESPOOLING);
    dcr->despool_wait = false;
@@ -256,13 +255,14 @@ static bool despool_data(DCR *dcr, bool commit)
    rdev = (DEVICE *)malloc(sizeof(DEVICE));
    memset(rdev, 0, sizeof(DEVICE));
    rdev->dev_name = get_memory(strlen(spool_name)+1);
-   bstrncpy(rdev->dev_name, spool_name, sizeof(rdev->dev_name));
+   bstrncpy(rdev->dev_name, spool_name, sizeof_pool_memory(rdev->dev_name));
    rdev->errmsg = get_pool_memory(PM_EMSG);
    *rdev->errmsg = 0;
    rdev->max_block_size = dcr->dev->max_block_size;
    rdev->min_block_size = dcr->dev->min_block_size;
    rdev->device = dcr->dev->device;
-   rdcr = new_dcr(jcr, NULL, rdev);
+   rdcr = dcr->get_new_spooling_dcr();
+   setup_new_dcr_device(jcr, rdcr, rdev, NULL);
    rdcr->spool_fd = dcr->spool_fd;
    block = dcr->block;                /* save block */
    dcr->block = rdcr->block;          /* make read and write block the same */
@@ -313,7 +313,7 @@ static bool despool_data(DCR *dcr, bool commit)
       Dmsg1(100, "======= Set FI=%ld\n", dir->get_FileIndex());
    }
 
-   if (!dir_create_jobmedia_record(dcr)) {
+   if (!dcr->dir_create_jobmedia_record(false)) {
       Jmsg2(jcr, M_FATAL, 0, _("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
          dcr->getVolCatName(), jcr->Job);
       jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */

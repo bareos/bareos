@@ -22,7 +22,6 @@
  * Handle simple configuration file such as "ini" files.
  * key1 = val     # comment
  * key2 = val     # <type>
- *
  */
 
 #include "bareos.h"
@@ -37,28 +36,30 @@ static int dbglevel = 100;
 struct ini_store {
    const char *key;
    const char *comment;
-   INI_ITEM_HANDLER *handler;
+   int type;
 };
 
 static struct ini_store funcs[] = {
-   { "@INT32@", "Integer", ini_store_int32 },
-   { "@PINT32@", "Integer", ini_store_pint32 },
-   { "@PINT64@", "Positive Integer", ini_store_pint64 },
-   { "@INT64@", "Integer", ini_store_int64 },
-   { "@NAME@", "Simple String", ini_store_name },
-   { "@STR@", "String", ini_store_str },
-   { "@BOOL@", "on/off", ini_store_bool },
-   { "@ALIST@", "String list", ini_store_alist_str },
-   { NULL, NULL, NULL }
+   { "@INT32@", "Integer", INI_CFG_TYPE_INT32 },
+   { "@PINT32@", "Integer", INI_CFG_TYPE_PINT32 },
+   { "@INT64@", "Integer", INI_CFG_TYPE_INT64 },
+   { "@PINT64@", "Positive Integer", INI_CFG_TYPE_PINT64 },
+   { "@NAME@", "Simple String", INI_CFG_TYPE_NAME },
+   { "@STR@", "String", INI_CFG_TYPE_STR },
+   { "@BOOL@", "on/off", INI_CFG_TYPE_BOOL },
+   { "@ALIST@", "String list", INI_CFG_TYPE_ALIST_STR },
+   { NULL, NULL, 0 }
 };
 
 /*
- * Get handler code from handler @
+ * Get handler code from storage type.
  */
-const char *ini_get_store_code(INI_ITEM_HANDLER *handler)
+const char *ini_get_store_code(int type)
 {
-   for (int i = 0; funcs[i].key; i++) {
-      if (funcs[i].handler == handler) {
+   int i;
+
+   for (i = 0; funcs[i].key ; i++) {
+      if (funcs[i].type == type) {
          return funcs[i].key;
       }
    }
@@ -66,16 +67,164 @@ const char *ini_get_store_code(INI_ITEM_HANDLER *handler)
 }
 
 /*
- * Get handler function from handler name
+ * Get storage type from handler name.
  */
-INI_ITEM_HANDLER *ini_get_store_handler(const char *key)
+int ini_get_store_type(const char *key)
 {
-   for (int i = 0; funcs[i].key; i++) {
+   int i;
+
+   for (i = 0; funcs[i].key ; i++) {
       if (!strcmp(funcs[i].key, key)) {
-         return funcs[i].handler;
+         return funcs[i].type;
       }
    }
-   return NULL;
+   return 0;
+}
+
+/* ----------------------------------------------------------------
+ * Handle data type. Import/Export
+ * ----------------------------------------------------------------
+ */
+static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%s", item->val.strval);
+      return true;
+   }
+   if (lex_get_token(lc, T_STRING) == T_ERROR) {
+      return false;
+   }
+   /*
+    * If already allocated, free first
+    */
+   if (item->found && item->val.strval) {
+      free(item->val.strval);
+   }
+   item->val.strval = bstrdup(lc->str);
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%s", item->val.nameval);
+      return true;
+   }
+   if (lex_get_token(lc, T_NAME) == T_ERROR) {
+      return false;
+   }
+   bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   alist *list;
+   if (!lc) {
+      /*
+       * TODO, write back the alist to edit buffer
+       */
+      return true;
+   }
+   if (lex_get_token(lc, T_STRING) == T_ERROR) {
+      return false;
+   }
+
+   if (item->val.alistval == NULL) {
+      list = New(alist(10, owned_by_alist));
+   } else {
+      list = item->val.alistval;
+   }
+
+   Dmsg4(900, "Append %s to alist %p size=%d %s\n",
+         lc->str, list, list->size(), item->name);
+   list->append(bstrdup(lc->str));
+   item->val.alistval = list;
+
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%lld", item->val.int64val);
+      return true;
+   }
+   if (lex_get_token(lc, T_INT64) == T_ERROR) {
+      return false;
+   }
+   item->val.int64val = lc->int64_val;
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%lld", item->val.int64val);
+      return true;
+   }
+   if (lex_get_token(lc, T_PINT64) == T_ERROR) {
+      return false;
+   }
+   item->val.int64val = lc->pint64_val;
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%d", item->val.int32val);
+      return true;
+   }
+   if (lex_get_token(lc, T_PINT32) == T_ERROR) {
+      return false;
+   }
+   item->val.int32val = lc->pint32_val;
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%d", item->val.int32val);
+      return true;
+   }
+   if (lex_get_token(lc, T_INT32) == T_ERROR) {
+      return false;
+   }
+   item->val.int32val = lc->int32_val;
+   scan_to_eol(lc);
+   return true;
+}
+
+static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
+{
+   if (!lc) {
+      Mmsg(inifile->edit, "%s", item->val.boolval?"yes":"no");
+      return true;
+   }
+   if (lex_get_token(lc, T_NAME) == T_ERROR) {
+      return false;
+   }
+   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+      item->val.boolval = true;
+   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+      item->val.boolval = false;
+   } else {
+      /*
+       * YES and NO must not be translated
+       */
+      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
+      return false;
+   }
+   scan_to_eol(lc);
+   return true;
 }
 
 /*
@@ -83,36 +232,48 @@ INI_ITEM_HANDLER *ini_get_store_handler(const char *key)
  */
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
-   va_list arg_ptr;
-   char buf[MAXSTRING];
+   va_list ap;
+   int len, maxlen;
+   ConfigFile *ini;
+   POOL_MEM buf(PM_MESSAGE);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
 #ifdef TEST_PROGRAM
    printf("ERROR: Config file error: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
+   ini = (ConfigFile *)(lc->caller_ctx);
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_ERROR, 0, _("Config file error: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
 //   } else if (ini->ctx) {       /* called from plugin */
 //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_FATAL, 0,
 //                    _("Config file error: %s\n"
 //                      "            : Line %d, col %d of file %s\n%s\n"),
-//                            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+//                            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 //
    } else {                     /* called from ??? */
       e_msg(file, line, M_ERROR, 0,
             _("Config file error: %s\n"
               "            : Line %d, col %d of file %s\n%s\n"),
-            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 
@@ -121,36 +282,48 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
  */
 static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   ConfigFile *ini = (ConfigFile *)(lc->caller_ctx);
-   va_list arg_ptr;
-   char buf[MAXSTRING];
+   va_list ap;
+   int len, maxlen;
+   ConfigFile *ini;
+   POOL_MEM buf(PM_MESSAGE);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
 #ifdef TEST_PROGRAM
    printf("WARNING: Config file warning: %s\n"
           "            : Line %d, col %d of file %s\n%s\n",
-      buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 #endif
 
+   ini = (ConfigFile *)(lc->caller_ctx);
    if (ini->jcr) {              /* called from core */
       Jmsg(ini->jcr, M_WARNING, 0, _("Config file warning: %s\n"
                               "            : Line %d, col %d of file %s\n%s\n"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 
 //   } else if (ini->ctx) {       /* called from plugin */
 //      ini->bfuncs->JobMessage(ini->ctx, __FILE__, __LINE__, M_WARNING, 0,
 //                    _("Config file warning: %s\n"
 //                      "            : Line %d, col %d of file %s\n%s\n"),
-//                            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+//                            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
 //
    } else {                     /* called from ??? */
       p_msg(file, line, 0,
             _("Config file warning: %s\n"
               "            : Line %d, col %d of file %s\n%s\n"),
-            buf, lc->line_no, lc->col_no, lc->fname, lc->line);
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
    }
 }
 
@@ -168,13 +341,17 @@ void ConfigFile::clear_items()
          /*
           * Special members require delete or free
           */
-         if (items[i].handler == ini_store_str) {
+         switch (items[i].type) {
+         case INI_CFG_TYPE_STR:
             free(items[i].val.strval);
             items[i].val.strval = NULL;
-
-         } else if (items[i].handler == ini_store_alist_str) {
+            break;
+         case INI_CFG_TYPE_ALIST_STR:
             delete items[i].val.alistval;
             items[i].val.alistval = NULL;
+            break;
+         default:
+            break;
          }
          items[i].found = false;
       }
@@ -300,7 +477,7 @@ int ConfigFile::serialize(POOLMEM **buf)
 
       /* variable = @INT64@ */
       Mmsg(tmp, "%s=%s\n\n",
-           items[i].name, ini_get_store_code(items[i].handler));
+           items[i].name, ini_get_store_code(items[i].type));
       len = pm_strcat(buf, tmp);
    }
    free_pool_memory(tmp);
@@ -325,7 +502,34 @@ int ConfigFile::dump_results(POOLMEM **buf)
 
    for (int i = 0; items[i].name; i++) {
       if (items[i].found) {
-         items[i].handler(NULL, this, &items[i]);
+         switch (items[i].type) {
+         case INI_CFG_TYPE_INT32:
+            ini_store_int32(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_PINT32:
+            ini_store_pint32(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_INT64:
+            ini_store_int64(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_PINT64:
+            ini_store_pint64(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_NAME:
+            ini_store_name(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_STR:
+            ini_store_str(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_BOOL:
+            ini_store_bool(NULL, this, &items[i]);
+            break;
+         case INI_CFG_TYPE_ALIST_STR:
+            ini_store_alist_str(NULL, this, &items[i]);
+            break;
+         default:
+            break;
+         }
          if (items[i].comment && *items[i].comment) {
             Mmsg(tmp, "# %s\n", items[i].comment);
             pm_strcat(buf, tmp);
@@ -374,10 +578,38 @@ bool ConfigFile::parse(const char *fname)
             }
 
             Dmsg1(dbglevel, "calling handler for %s\n", items[i].name);
+
             /*
              * Call item handler
              */
-            ret = items[i].found = items[i].handler(lc, this, &items[i]);
+            switch (items[i].type) {
+            case INI_CFG_TYPE_INT32:
+               ret = ini_store_int32(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_PINT32:
+               ret = ini_store_pint32(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_INT64:
+               ret = ini_store_int64(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_PINT64:
+               ret = ini_store_pint64(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_NAME:
+               ret = ini_store_name(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_STR:
+               ret = ini_store_str(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_BOOL:
+               ret = ini_store_bool(lc, this, &items[i]);
+               break;
+            case INI_CFG_TYPE_ALIST_STR:
+               ret = ini_store_alist_str(lc, this, &items[i]);
+               break;
+            default:
+               break;
+            }
             i = -1;
             break;
          }
@@ -460,15 +692,12 @@ bool ConfigFile::unserialize(const char *fname)
 
       if (bstrcasecmp("optprompt", lc->str)) {
          assign = &(items[nb].comment);
-
       } else if (bstrcasecmp("optdefault", lc->str)) {
          assign = &(items[nb].default_value);
-
       } else if (bstrcasecmp("optrequired", lc->str)) {
          items[nb].required = true;               /* Don't use argument */
          scan_to_eol(lc);
          continue;
-
       } else {
          items[nb].name = bstrdup(lc->str);
       }
@@ -492,7 +721,7 @@ bool ConfigFile::unserialize(const char *fname)
          *assign = bstrdup(lc->str);
 
       } else {
-         if ((items[nb].handler = ini_get_store_handler(lc->str)) == NULL) {
+         if ((items[nb].type = ini_get_store_type(lc->str)) == 0) {
             scan_err1(lc, "expected a data type, got: %s", lc->str);
             break;
          }
@@ -507,156 +736,13 @@ bool ConfigFile::unserialize(const char *fname)
          bfree_and_null_const(items[i].name);
          bfree_and_null_const(items[i].comment);
          bfree_and_null_const(items[i].default_value);
-         items[i].handler = NULL;
+         items[i].type = 0;
          items[i].required = false;
       }
    }
 
    lc = lex_close_file(lc);
    return ret;
-}
-
-/*
- * Handle data type. Import/Export
- */
-bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%s", item->val.strval);
-      return true;
-   }
-   if (lex_get_token(lc, T_STRING) == T_ERROR) {
-      return false;
-   }
-   /* If already allocated, free first */
-   if (item->found && item->val.strval) {
-      free(item->val.strval);
-   }
-   item->val.strval = bstrdup(lc->str);
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%s", item->val.nameval);
-      return true;
-   }
-   if (lex_get_token(lc, T_NAME) == T_ERROR) {
-      return false;
-   }
-   bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   alist *list;
-   if (!lc) {
-      /*
-       * TODO, write back the alist to edit buffer
-       */
-      return true;
-   }
-   if (lex_get_token(lc, T_STRING) == T_ERROR) {
-      return false;
-   }
-
-   if (item->val.alistval == NULL) {
-      list = New(alist(10, owned_by_alist));
-   } else {
-      list = item->val.alistval;
-   }
-
-   Dmsg4(900, "Append %s to alist %p size=%d %s\n",
-         lc->str, list, list->size(), item->name);
-   list->append(bstrdup(lc->str));
-   item->val.alistval = list;
-
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%lld", item->val.int64val);
-      return true;
-   }
-   if (lex_get_token(lc, T_PINT64) == T_ERROR) {
-      return false;
-   }
-   item->val.int64val = lc->pint64_val;
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%lld", item->val.int64val);
-      return true;
-   }
-   if (lex_get_token(lc, T_INT64) == T_ERROR) {
-      return false;
-   }
-   item->val.int64val = lc->int64_val;
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%d", item->val.int32val);
-      return true;
-   }
-   if (lex_get_token(lc, T_PINT32) == T_ERROR) {
-      return false;
-   }
-   item->val.int32val = lc->pint32_val;
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%d", item->val.int32val);
-      return true;
-   }
-   if (lex_get_token(lc, T_INT32) == T_ERROR) {
-      return false;
-   }
-   item->val.int32val = lc->int32_val;
-   scan_to_eol(lc);
-   return true;
-}
-
-bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
-{
-   if (!lc) {
-      Mmsg(inifile->edit, "%s", item->val.boolval?"yes":"no");
-      return true;
-   }
-   if (lex_get_token(lc, T_NAME) == T_ERROR) {
-      return false;
-   }
-   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      item->val.boolval = true;
-   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      item->val.boolval = false;
-   } else {
-      /*
-       * YES and NO must not be translated
-       */
-      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str);
-      return false;
-   }
-   scan_to_eol(lc);
-   return true;
 }
 
 /* ---------------------------------------------------------------- */
@@ -703,15 +789,15 @@ int report()
 }
 
 struct ini_items test_items[] = {
-   /* name handler comment req */
-   { "datastore", ini_store_name, "Target Datastore", 0 },
-   { "newhost", ini_store_str, "New Hostname", 1 },
-   { "int64val", ini_store_int64, "Int64", 1 },
-   { "list", ini_store_alist_str, "list", 0 },
-   { "bool", ini_store_bool, "Bool", 0 },
-   { "pint64", ini_store_pint64,  "pint", 0 },
-   { "int32", ini_store_int32, "int 32bit", 0 },
-   { "plugin.test", ini_store_str, "test with .", 0 },
+   /* name type comment req */
+   { "datastore", INI_CFG_TYPE_NAME, "Target Datastore", 0 },
+   { "newhost", INI_CFG_TYPE_STR, "New Hostname", 1 },
+   { "int64val", INI_CFG_TYPE_INT64, "Int64", 1 },
+   { "list", INI_CFG_TYPE_ALIST_STR, "list", 0 },
+   { "bool", INI_CFG_TYPE_BOOL, "Bool", 0 },
+   { "pint64", INI_CFG_TYPE_PINT64,  "pint", 0 },
+   { "int32", INI_CFG_TYPE_INT32, "int 32bit", 0 },
+   { "plugin.test", INI_CFG_TYPE_STR, "test with .", 0 },
    { NULL, NULL, NULL, 0 }
 };
 

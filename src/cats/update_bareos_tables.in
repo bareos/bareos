@@ -28,8 +28,8 @@
 #
 . @scriptdir@/bareos-config-lib.sh
 
-db_name="${db_name:-@db_name@}"
-db_user="${db_user:-@db_user@}"
+db_name="${db_name:-`get_database_name @db_name@`}"
+db_user="${db_user:-`get_database_user @db_user@`}"
 db_version=`get_database_version`
 bareos_sql_ddl=`get_database_ddl_dir`
 temp_sql_schema="/tmp/tables.sql.$$"

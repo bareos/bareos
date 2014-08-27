@@ -65,14 +65,6 @@
 #include <lmcons.h>
 #endif
 
-/*
- * Dummy functions
- */
-int generate_daemon_event(JCR *jcr, const char *event)
-{
-   return 1;
-}
-
 #ifndef MAXSTRING
 #define MAXSTRING 254
 #endif
@@ -412,7 +404,8 @@ int main (int argc, char *argv[])
             my_hostname, gai_strerror(res));
       exit(1);
    }
-   strcpy(my_hostname, ai->ai_canonname);
+   strncpy(my_hostname, ai->ai_canonname, sizeof(my_hostname) - 1);
+   my_hostname[sizeof(my_hostname) - 1] = '\0';
    freeaddrinfo(ai);
 #else
    if ((hp = gethostbyname(my_hostname)) == NULL) {
@@ -420,7 +413,8 @@ int main (int argc, char *argv[])
             my_hostname, strerror(errno));
       exit(1);
    }
-   strcpy(my_hostname, hp->h_name);
+   strncpy(my_hostname, hp->h_name, sizeof(my_hostname) - 1);
+   my_hostname[sizeof(my_hostname) - 1] = '\0';
 #endif
    Dmsg1(20, "My hostname is: %s\n", my_hostname);
 

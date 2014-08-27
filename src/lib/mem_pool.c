@@ -105,12 +105,37 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
 
+/*
+ * Special version of error reporting using a static buffer so we don't use
+ * the normal error reporting which uses dynamic memory e.g. recursivly calls
+ * these routines again leading to deadlocks.
+ */
+static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
+{
+   char buf[256];
+   va_list arg_ptr;
+   int len;
+
+   len = bsnprintf(buf, sizeof(buf),
+                   _("%s: ABORTING due to ERROR in %s:%d\n"),
+                   my_name, get_basename(file), line);
+
+   va_start(arg_ptr, fmt);
+   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   dispatch_message(NULL, M_ABORT, 0, buf);
+
+   char *p = 0;
+   p[0] = 0;                    /* Generate segmentation violation */
+}
+
 POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
 {
    struct abufhead *buf;
 
    if (pool > PM_MAX) {
-      Emsg2(M_ABORT, 0, _("MemPool index %d larger than max %d\n"), pool, PM_MAX);
+      smart_alloc_msg(__FILE__, __LINE__, _("MemPool index %d larger than max %d\n"), pool, PM_MAX);
       return NULL;
    }
 
@@ -123,14 +148,13 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
          pool_ctl[pool].max_used = pool_ctl[pool].in_use;
       }
       V(mutex);
-      Dmsg3(1800, "sm_get_pool_memory reuse %p to %s:%d\n", buf, fname, lineno);
       sm_new_owner(fname, lineno, (char *)buf);
       return (POOLMEM *)((char *)buf + HEAD_SIZE);
    }
 
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
       return NULL;
    }
 
@@ -141,7 +165,6 @@ POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
       pool_ctl[pool].max_used = pool_ctl[pool].in_use;
    }
    V(mutex);
-   Dmsg3(1800, "sm_get_pool_memory give %p to %s:%d\n", buf, fname, lineno);
    return (POOLMEM *)((char *)buf + HEAD_SIZE);
 }
 
@@ -152,7 +175,7 @@ POOLMEM *sm_get_memory(const char *fname, int lineno, int32_t size)
    int pool = 0;
 
    if ((buf = (struct abufhead *)sm_malloc(fname, lineno, size + HEAD_SIZE)) == NULL) {
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -173,7 +196,7 @@ int32_t sm_sizeof_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
    char *cp = (char *)obuf;
 
    if (obuf == NULL) {
-      Emsg0(M_ABORT, 0, _("obuf is NULL\n"));
+      smart_alloc_msg(__FILE__, __LINE__, _("obuf is NULL\n"));
       return 0;
    }
 
@@ -194,7 +217,7 @@ POOLMEM *sm_realloc_pool_memory(const char *fname, int lineno, POOLMEM *obuf, in
    buf = sm_realloc(fname, lineno, cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -235,8 +258,6 @@ void sm_free_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
       /* Don't let him free the same buffer twice */
       for (next=pool_ctl[pool].free_buf; next; next=next->next) {
          if (next == buf) {
-            Dmsg4(1800, "free_pool_memory %p pool=%d from %s:%d\n", buf, pool, fname, lineno);
-            Dmsg4(1800, "bad free_pool_memory %p pool=%d from %s:%d\n", buf, pool, fname, lineno);
             V(mutex);                 /* unblock the pool */
             ASSERT(next != buf);      /* attempt to free twice */
          }
@@ -245,7 +266,6 @@ void sm_free_pool_memory(const char *fname, int lineno, POOLMEM *obuf)
       buf->next = pool_ctl[pool].free_buf;
       pool_ctl[pool].free_buf = buf;
    }
-   Dmsg4(1800, "free_pool_memory %p pool=%d from %s:%d\n", buf, pool, fname, lineno);
    V(mutex);
 }
 
@@ -267,7 +287,7 @@ POOLMEM *get_pool_memory(int pool)
 
    if ((buf=malloc(pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
       return NULL;
    }
 
@@ -289,7 +309,7 @@ POOLMEM *get_memory(int32_t size)
    int pool = 0;
 
    if ((buf=malloc(size + HEAD_SIZE)) == NULL) {
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -326,7 +346,7 @@ POOLMEM *realloc_pool_memory(POOLMEM *obuf, int32_t size)
    buf = realloc(cp, size + HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
 
@@ -375,7 +395,6 @@ void free_pool_memory(POOLMEM *obuf)
       buf->next = pool_ctl[pool].free_buf;
       pool_ctl[pool].free_buf = buf;
    }
-   Dmsg2(1800, "free_pool_memory %p pool=%d\n", buf, pool);
    V(mutex);
 }
 #endif /* SMARTALLOC */
@@ -391,7 +410,6 @@ void garbage_collect_memory_pool()
 {
    time_t now;
 
-   Dmsg0(200, "garbage collect memory pool\n");
    P(mutex);
    if (last_garbage_collection == 0) {
       last_garbage_collection = time(NULL);
@@ -414,7 +432,6 @@ void close_memory_pool()
    struct abufhead *buf, *next;
    int count = 0;
    uint64_t bytes = 0;
-   char ed1[50];
 
    sm_check(__FILE__, __LINE__, false);
    P(mutex);
@@ -429,12 +446,11 @@ void close_memory_pool()
       }
       pool_ctl[i].free_buf = NULL;
    }
-   Dmsg2(001, "Freed mem_pool count=%d size=%s\n", count, edit_uint64_with_commas(bytes, ed1));
+   V(mutex);
+
    if (debug_level >= 1) {
       print_memory_pool_stats();
    }
-   V(mutex);
-
 }
 
 /*
@@ -489,7 +505,6 @@ void print_memory_pool_stats()
 
    Pmsg0(-1, "\n");
 }
-
 #else
 void print_memory_pool_stats() {}
 #endif /* DEBUG */
@@ -630,17 +645,6 @@ int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n)
 
 /* ==============  CLASS POOL_MEM   ============== */
 
-/* Return the size of a memory buffer */
-int32_t POOL_MEM::max_size()
-{
-   int32_t size;
-   char *cp = mem;
-   cp -= HEAD_SIZE;
-   size = ((struct abufhead *)cp)->ablen;
-   Dmsg1(900, "max_size=%d\n", size);
-   return size;
-}
-
 void POOL_MEM::realloc_pm(int32_t size)
 {
    char *cp = mem;
@@ -652,11 +656,10 @@ void POOL_MEM::realloc_pm(int32_t size)
    buf = (char *)realloc(cp, size+HEAD_SIZE);
    if (buf == NULL) {
       V(mutex);
-      Emsg1(M_ABORT, 0, _("Out of memory requesting %d bytes\n"), size);
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return;
    }
 
-   Dmsg2(900, "Old buf=%p new buf=%p\n", cp, buf);
    ((struct abufhead *)buf)->ablen = size;
    pool = ((struct abufhead *)buf)->pool;
    if (size > pool_ctl[pool].max_allocated) {
@@ -664,7 +667,6 @@ void POOL_MEM::realloc_pm(int32_t size)
    }
    mem = buf+HEAD_SIZE;
    V(mutex);
-   Dmsg3(900, "Old buf=%p new buf=%p mem=%p\n", cp, buf, mem);
 }
 
 int POOL_MEM::strcat(const char *str)

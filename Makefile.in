@@ -18,13 +18,13 @@ first_rule: all
 dummy:
 
 # --client-only directories
-fd_subdirs = src scripts src/lib src/findlib src/filed \
+fd_subdirs = src scripts src/lib src/findlib @LMDB_DIR@ src/filed \
        @READLINE_SRC@ @BAT_DIR@ @TRAY_MONITOR_DIR@ src/console @FD_PLUGIN_DIR@
 
 # Non-client-only directores
-subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
+subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
 
-all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages
+all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages platforms
 
 DIST =	INSTALL README.configure configure Makefile Makefile.in ChangeLog
 
@@ -68,6 +68,7 @@ configure: autoconf/configure.in autoconf/aclocal.m4 autoconf/config.h.in
 	cd $(srcdir);
 	${RMF} config.cache config.log config.out config.status src/config.h
 	${RMF} -r autoconf/autom4te.cache autom4te.cache
+	touch config.status
 	autoconf --prepend-include=$(srcdir)/autoconf \
 	autoconf/configure.in > configure
 	chmod 755 configure
@@ -137,9 +138,7 @@ Makefile: Makefile.in
 Makefiles:
 	$(SHELL) config.status
 	(cd scripts; \
-	 chmod 755 startmysql stopmysql bareos startit stopit btraceback; \
-	 chmod 755 mtx-changer bconsole gconsole devel_bareos; \
-	 chmod 755 dvd-handler)
+	 chmod 755 bareos btraceback mtx-changer bconsole devel_bareos; )
 
 	(cd src/cats; \
 	 chmod 755 create_bareos_database update_bareos_tables make_bareos_tables; \
@@ -153,7 +152,7 @@ Makefiles:
 	  done
 
 	(cd src/qt-console; \
-	 chmod 755 install_conf_file build-depkgs-qt-console)
+	 chmod 755 install_conf_file)
 
 clean:
 	@for I in ${all_subdirs} ; \

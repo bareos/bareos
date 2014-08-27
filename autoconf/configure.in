@@ -66,6 +66,18 @@ LIBBAREOSNDMP_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSNDMP_LT_RELEASE.*"\(.*\)"$/\
 LIBBAREOSNDMP_LT_RELEASE=${LIBBAREOSNDMP_LT_RELEASE:-$VERSION}
 AC_SUBST(LIBBAREOSNDMP_LT_RELEASE)dnl
 
+dnl src/lmdb
+dnl can be overwritten by specific values from version.h
+LIBBAREOSLMDB_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSLMDB_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSLMDB_LT_RELEASE=${LIBBAREOSLMDB_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSLMDB_LT_RELEASE)dnl
+
+dnl src/stored/backends
+dnl can be overwritten by specific values from version.h
+LIBBAREOSSD_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSCATS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+LIBBAREOSSD_LT_RELEASE=${LIBBAREOSLMDB_LT_RELEASE:-$VERSION}
+AC_SUBST(LIBBAREOSSD_LT_RELEASE)dnl
+
 echo "configuring for ${BAREOS} $VERSION ($DATE)"
 
 dnl -------------------------------------------------------
@@ -304,6 +316,14 @@ AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir", [Where are config files stored])
 AC_DEFINE_UNQUOTED(LOCALEDIR, "$localedir", [Where are locale files stored])
 
 dnl ------------------------------------------------------------------
+dnl If the user has not set --bindir, we set our default as /bin
+dnl ------------------------------------------------------------------
+if test x$bindir = x'${exec_prefix}/bin' ; then
+   bindir=${exec_prefix}/bin
+fi
+bindir=`eval echo ${bindir}`
+
+dnl ------------------------------------------------------------------
 dnl If the user has not set --sbindir, we set our default as /sbin
 dnl ------------------------------------------------------------------
 if test x$sbindir = x'${exec_prefix}/sbin' ; then
@@ -360,6 +380,7 @@ build_stored=yes
 db_backends=""
 batch_insert_db_backends=""
 support_lockmgr=no
+support_lmdb=no
 support_ndmp=no
 
 dnl --------------------------------------------------------------------------
@@ -622,6 +643,44 @@ fi
 AC_SUBST(STORED_DIR)
 AC_SUBST(SD_PLUGIN_DIR)
 
+dnl --------------------------------------------------
+dnl dynamic loading of storage backends
+dnl --------------------------------------------------
+use_dynamic_storage_backends=no
+AC_ARG_ENABLE(dynamic-storage_backends,
+   AC_HELP_STRING([--enable-dynamic-storage-backends], [enable dynamic loading of storage backends @<:@default=no@:>@]),
+   [
+       if test x$enableval = xyes; then
+          use_dynamic_storage_backends=yes
+          AC_DEFINE(HAVE_DYNAMIC_SD_BACKENDS, 1, [Define to 1 if dynamic loading of storage backends is enabled])
+       fi
+   ]
+)
+
+if test "x$use_libtool" != "xyes" -a "x$use_dynamic_storage_backends" = "xyes"; then
+   echo ""
+   echo "You specified --enable-dynamic-storage-plugins but disabled libtool with --disable-libtool"
+   echo "We only support dynamic loading using libtool so either disable dynamic loading or enable libtool"
+   echo ""
+   echo "Aborting the configuration ..."
+   echo " "
+   echo " "
+   exit 1
+fi
+
+if test x$use_dynamic_storage_backends = xyes; then
+   NEEDED_DEVICE_API_SRCS=""
+   NEEDED_BACKEND_LIBS=""
+   SD_BACKENDS_DIR="src/stored/backends"
+else
+   NEEDED_DEVICE_API_SRCS="\$(AVAILABLE_DEVICE_API_SRCS)"
+   NEEDED_BACKEND_LIBS="\$(AVAILABLE_BACKEND_LIBS)"
+   SD_BACKENDS_DIR=""
+fi
+AC_SUBST(NEEDED_DEVICE_API_SRCS)
+AC_SUBST(NEEDED_BACKEND_LIBS)
+AC_SUBST(SD_BACKENDS_DIR)
+
 dnl ---------------------------------------------------
 dnl Check for conio (Bareos readline substitute)(
 dnl ---------------------------------------------------
@@ -634,7 +693,6 @@ AC_ARG_ENABLE(conio,
        fi
    ]
 )
-
 
 dnl ---------------------------------------------------
 dnl Check for IPv6 support
@@ -779,6 +837,9 @@ AC_SUBST(CONS_LIBS)
 AC_SUBST(CONS_LDFLAGS)
 AC_SUBST(READLINE_SRC)
 
+dnl End of readline/conio stuff
+dnl -----------------------------------------------------------------------
+
 dnl Minimal stuff for readline Makefile configuration
 MAKE_SHELL=/bin/sh
 AC_SUBST(MAKE_SHELL)
@@ -786,12 +847,10 @@ AC_HEADER_STAT
 AC_HEADER_DIRENT
 AC_CHECK_HEADER(poll.h, [AC_DEFINE(HAVE_POLL_H, 1, [Define to 1 if you have the <poll.h> header file.])] , )
 AC_CHECK_HEADER(sys/poll.h, [AC_DEFINE(HAVE_SYS_POLL_H, 1, [Define to 1 if you have the <sys/poll.h> header file.])] , )
-AC_CHECK_FUNCS(strcasecmp select poll setenv putenv tcgetattr lstat lchown)
+AC_CHECK_FUNCS(strcasecmp select poll setenv putenv tcgetattr)
+AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown)
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
-
-dnl End of readline/conio stuff
-dnl -----------------------------------------------------------------------
 
 dnl -----------------------------------------------------------------------
 dnl  Check for Python support
@@ -1041,6 +1100,16 @@ if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
       LIBS="${saved_LIBS} ${OPENSSL_LIBS}"
       CFLAGS="${saved_CFLAGS} ${OPENSSL_INC}"
       CPPFLAGS="${saved_CPPFLAGS} ${OPENSSL_INC}"
+
+      AC_TRY_LINK(
+         [
+	     #include <openssl/engine.h>
+         ], [
+	      ENGINE_load_pk11();
+         ], [
+	      AC_DEFINE(HAVE_ENGINE_LOAD_PK11, 1, [Define to 1 if OpenSSL library has ENGINE_load_pk11 available])
+         ]
+      )
 
       AC_TRY_LINK(
          [
@@ -1297,6 +1366,23 @@ AC_ARG_WITH(scriptdir,
 )
 
 AC_SUBST(scriptdir)
+
+
+# ------------------------------------------
+# Where to place backenddir (backend library files)
+# ------------------------------------------
+backenddir=`eval echo ${libdir}`
+AC_ARG_WITH(backenddir,
+   AC_HELP_STRING([--with-backenddir=PATH], [specify path of Bareos backends directory]),
+   [
+       if test "x$withval" != "xno" ; then
+	  backenddir=$withval
+       fi
+   ]
+)
+
+AC_DEFINE_UNQUOTED(_PATH_BAREOS_BACKENDDIR, "$backenddir", [Directory for backend files])
+AC_SUBST(backenddir)
 
 
 dnl ------------------------------------------
@@ -1736,6 +1822,32 @@ AC_SUBST(NDMP_LIBS)
 AC_SUBST(NDMP_DEPS)
 
 dnl -------------------------------------------
+dnl LMDB (default off)
+dnl -------------------------------------------
+AC_ARG_ENABLE(lmdb,
+   AC_HELP_STRING([--enable-lmdb], [enable build of LMDB support @<:@default=no@:>@]),
+   [
+       if test x$enableval = xyes; then
+	  AC_DEFINE(HAVE_LMDB, 1, [Define to 1 if LMDB support should be enabled])
+	  support_lmdb=yes
+       fi
+   ]
+)
+
+if test x$support_lmdb = xyes; then
+   LMDB_DIR="src/lmdb"
+   LMDB_LIBS="-L../lmdb -lbareoslmdb"
+   LMDB_DEPS="../lmdb/libbareoslmdb\$(DEFAULT_ARCHIVE_TYPE)"
+else
+   LMDB_DIR=""
+   LMDB_LIBS=""
+   LMDB_DEPS=""
+fi
+AC_SUBST(LMDB_DIR)
+AC_SUBST(LMDB_LIBS)
+AC_SUBST(LMDB_DEPS)
+
+dnl -------------------------------------------
 dnl enable batch attribute DB insert (default on)
 dnl -------------------------------------------
 support_batch_insert=yes
@@ -1941,6 +2053,8 @@ dnl CHECKING FOR HEADER FILES
 dnl --------------------------------------------------------------------------
 AC_CHECK_HEADERS( \
    assert.h \
+   dl.h \
+   dlfcn.h \
    fcntl.h \
    grp.h \
    pwd.h \
@@ -1967,6 +2081,7 @@ AC_CHECK_HEADERS( \
    sys/types.h \
    arpa/nameser.h \
    mtio.h \
+   sys/dl.h \
    sys/mtio.h \
    sys/tape.h \
    regex.h \
@@ -2663,6 +2778,20 @@ CFLAGS="${saved_CFLAGS} ${ZLIB_INC}"
 CPPFLAGS="${saved_CPPFLAGS} ${ZLIB_INC}"
 
 AC_CHECK_HEADERS(zlib.h)
+
+AC_MSG_CHECKING(for compressBound in zlib library)
+AC_TRY_LINK(
+   [
+       #include <zlib.h>
+   ], [
+       compressBound(0);
+   ], [
+       AC_MSG_RESULT(yes)
+       AC_DEFINE(HAVE_COMPRESS_BOUND, 1, [Define to 1 if you have compressBound])
+   ], [
+       AC_MSG_RESULT(no)
+   ]
+)
 
 AC_MSG_CHECKING(for deflate in zlib library)
 AC_TRY_LINK(
@@ -3386,6 +3515,251 @@ fi
 AC_SUBST(CAM_LIBS)
 
 dnl
+dnl Check for GlusterFS via gfapi.
+dnl
+GLUSTER_LIBS="-lgfapi"
+GLUSTER_INC=""
+have_glusterfs=no
+AC_ARG_WITH(glusterfs,
+   AC_HELP_STRING([--with-glusterfs@<:@=DIR@:>@], [Directory holding GLUSTERFS includes/libs]),
+      with_glusterfs_directory=$withval
+)
+
+if test "x${with_glusterfs_directory}" != "xyes" && test x"${with_glusterfs_directory}" != "x"; then
+   #
+   # Make sure the $with_glusterfs_directory also makes sense
+   #
+   if test -d "${with_glusterfs_directory}/lib" -a -d "${with_glusterfs_directory}/include"; then
+      GLUSTER_LIBS="-L${with_glusterfs_directory}/lib ${GLUSTER_LIBS}"
+      GLUSTER_INC="-I${with_glusterfs_directory}/include ${GLUSTER_INC}"
+   fi
+else
+   GLUSTER_INC="-I/usr/include/glusterfs"
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${GLUSTER_LIBS}"
+CFLAGS="${saved_CFLAGS} ${GLUSTER_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${GLUSTER_INC}"
+
+AC_CHECK_HEADER(api/glfs.h)
+
+AC_MSG_CHECKING(for glfs_init in gfapi library)
+AC_TRY_LINK(
+   [
+       #include <api/glfs.h>
+   ], [
+       glfs_new("volumename");
+   ], [
+       AC_MSG_RESULT(yes)
+       have_glusterfs="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_glusterfs="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_glusterfs}" = "xyes"; then
+   AC_DEFINE(HAVE_GFAPI, 1, [Define to 1 if you have gfapi lib])
+else
+   GLUSTER_LIBS=""
+   GLUSTER_INC=""
+fi
+
+AC_SUBST(GLUSTER_INC)
+AC_SUBST(GLUSTER_LIBS)
+
+dnl
+dnl Check for Object storage via libdroplet.
+dnl
+DROPLET_LIBS="-ldroplet"
+DROPLET_INC=""
+have_droplet=no
+AC_ARG_WITH(droplet,
+   AC_HELP_STRING([--with-droplet@<:@=DIR@:>@], [Directory holding DROPLET includes/libs]),
+      with_droplet_directory=$withval
+)
+
+if test "x${with_droplet_directory}" != "xyes" && test x"${with_droplet_directory}" != "x"; then
+   #
+   # Make sure the $with_droplet_directory also makes sense
+   #
+   if test -d "${with_droplet_directory}/lib" -a -d "${with_droplet_directory}/include"; then
+      DROPLET_LIBS="-L${with_droplet_directory}/lib ${DROPLET_LIBS}"
+      DROPLET_INC="-I${with_droplet_directory}/include ${DROPLET_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${DROPLET_LIBS}"
+CFLAGS="${saved_CFLAGS} ${DROPLET_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${DROPLET_INC}"
+
+AC_CHECK_HEADER(droplet.h)
+
+AC_MSG_CHECKING(for dpl_ctx_new in libdroplet library)
+AC_TRY_LINK(
+   [
+       #include <droplet.h>
+   ], [
+       dpl_ctx_new(NULL, NULL);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_droplet="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_droplet="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_droplet}" = "xyes"; then
+   AC_DEFINE(HAVE_OBJECTSTORE, 1, [Define to 1 if you have libdroplet lib])
+else
+   DROPLET_LIBS=""
+   DROPLET_INC=""
+fi
+
+AC_SUBST(DROPLET_INC)
+AC_SUBST(DROPLET_LIBS)
+
+dnl
+dnl Check for CEPH via librados.
+dnl
+RADOS_LIBS="-lrados"
+RADOS_INC=""
+have_ceph_rados=no
+AC_ARG_WITH(rados,
+   AC_HELP_STRING([--with-rados@<:@=DIR@:>@], [Directory holding RADOS includes/libs]),
+      with_rados_directory=$withval
+)
+
+if test "x${with_rados_directory}" != "xyes" && test x"${with_rados_directory}" != "x"; then
+   #
+   # Make sure the $with_rados_directory also makes sense
+   #
+   if test -d "${with_rados_directory}/lib" -a -d "${with_rados_directory}/include"; then
+      RADOS_LIBS="-L${with_rados_directory}/lib ${RADOS_LIBS}"
+      RADOS_INC="-I${with_rados_directory}/include ${RADOS_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${RADOS_LIBS}"
+CFLAGS="${saved_CFLAGS} ${RADOS_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${RADOS_INC}"
+
+AC_CHECK_HEADER(rados/librados.h)
+
+AC_MSG_CHECKING(for rados_create in rados library)
+AC_TRY_LINK(
+   [
+       #include <rados/librados.h>
+   ], [
+      rados_t cluster;
+
+      rados_create(&cluster, NULL);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_ceph_rados="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_ceph_rados="no"
+   ]
+)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_ceph_rados}" = "xyes"; then
+   AC_DEFINE(HAVE_RADOS, 1, [Define to 1 if you have rados lib])
+else
+   RADOS_LIBS=""
+   RADOS_INC=""
+fi
+
+AC_SUBST(RADOS_INC)
+AC_SUBST(RADOS_LIBS)
+
+dnl
+dnl Check for CEPH via libcephfs.
+dnl
+CEPHFS_LIBS="-lcephfs"
+CEPHFS_INC=""
+have_cephfs=no
+AC_ARG_WITH(cephfs,
+   AC_HELP_STRING([--with-cephfs@<:@=DIR@:>@], [Directory holding CEPHFS includes/libs]),
+      with_cephfs_directory=$withval
+)
+
+if test "x${with_cephfs_directory}" != "xyes" && test x"${with_cephfs_directory}" != "x"; then
+   #
+   # Make sure the $with_cephfs_directory also makes sense
+   #
+   if test -d "${with_cephfs_directory}/lib" -a -d "${with_cephfs_directory}/include"; then
+      CEPHFS_LIBS="-L${with_cephfs_directory}/lib ${CEPHFS_LIBS}"
+      CEPHFS_INC="-I${with_cephfs_directory}/include ${CEPHFS_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${CEPHFS_LIBS}"
+CFLAGS="${saved_CFLAGS} ${CEPHFS_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${CEPHFS_INC}"
+
+AC_LANG_PUSH(C++)
+AC_CHECK_HEADER(cephfs/libcephfs.h)
+
+AC_MSG_CHECKING(for ceph_create in cephfs library)
+AC_TRY_LINK(
+   [
+       #include <stdio.h>
+       #include <cephfs/libcephfs.h>
+   ], [
+      struct ceph_mount_info *cmount;
+
+      ceph_create(&cmount, NULL);
+   ], [
+       AC_MSG_RESULT(yes)
+       have_cephfs="yes"
+   ], [
+       AC_MSG_RESULT(no)
+       have_cephfs="no"
+   ]
+)
+AC_LANG_POP(C++)
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_cephfs}" = "xyes"; then
+   AC_DEFINE(HAVE_CEPHFS, 1, [Define to 1 if you have cephfs lib])
+else
+   CEPHFS_LIBS=""
+   CEPHFS_INC=""
+fi
+
+AC_SUBST(CEPHFS_INC)
+AC_SUBST(CEPHFS_LIBS)
+
+dnl
 dnl Check for pthread libraries
 dnl
 PTHREAD_LIB=""
@@ -3507,14 +3881,52 @@ osx)
    PFILES="${PFILES} \
       platforms/osx/Makefile"
   ;;
-debian)
+debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    PFILES="${PFILES} \
-	 platforms/debian/Makefile \
-	 platforms/debian/bareos-fd \
-	 platforms/debian/bareos-sd \
-	 platforms/debian/bareos-dir"
+      debian/bareos-bat.install \
+      debian/bareos-bconsole.install \
+      debian/bareos-common.install \
+      debian/bareos-common.preinst \
+      debian/bareos-database-common.config \
+      debian/bareos-database-common.install \
+      debian/bareos-database-common.postinst \
+      debian/bareos-database-mysql.install \
+      debian/bareos-database-postgresql.install \
+      debian/bareos-database-sqlite3.install \
+      debian/bareos-database-tools.install \
+      debian/bareos-devel.install \
+      debian/bareos-director-python-plugin.install \
+      debian/bareos-director.bareos-dir.init \
+      debian/bareos-director.install \
+      debian/bareos-director.preinst \
+      debian/bareos-filedaemon-python-plugin.install \
+      debian/bareos-filedaemon.bareos-fd.init \
+      debian/bareos-filedaemon.install \
+      debian/bareos-filedaemon.preinst \
+      debian/bareos-storage-fifo.install \
+      debian/bareos-storage-python-plugin.install \
+      debian/bareos-storage-tape.install \
+      debian/bareos-storage.bareos-sd.init \
+      debian/bareos-storage.install \
+      debian/bareos-storage.preinst \
+      debian/bareos-tools.install \
+      debian/bareos-traymonitor.install \
+      platforms/debian/Makefile \
+      platforms/debian/set_dbconfig_vars.sh"
+   case "$DISTNAME" in
+      ubuntu)
+         PFILES="${PFILES} \
+            platforms/ubuntu/Makefile"
+         ;;
+      univention)
+         PFILES="${PFILES} \
+            debian/univention-bareos-schema.install \
+            debian/univention-bareos.install \
+            platforms/univention/Makefile"
+         ;;
+   esac
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -3636,9 +4048,14 @@ solaris)
    5.5|5.6)
       AC_DEFINE(HAVE_OLD_SOCKOPT, 1, [Define to 1 to use the old sockopt option])
       AC_DEFINE(USE_THR_SETCONCURRENCY, 1, [Define to 1 to use the thr_setconcurrency function])
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
       ;;
    5.7|5.8)
       AC_DEFINE(USE_THR_SETCONCURRENCY, 1, [Define to 1 to use the thr_setconcurrency function])
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
+      ;;
+   5.9)
+      AC_DEFINE(HAVE_NON_WORKING_WALKCONTEXT, 1, [Define to 1 to when walkcontext does not work])
       ;;
    *)
       ;;
@@ -3654,25 +4071,6 @@ suse)
        platforms/suse/bareos-sd \
        platforms/suse/bareos-dir \
        platforms/suse/bareos"
-  ;;
-ubuntu)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   PFILES="${PFILES} \
-       platforms/ubuntu/Makefile \
-       platforms/ubuntu/bareos-fd \
-       platforms/ubuntu/bareos-sd \
-       platforms/ubuntu/bareos-dir"
-  ;;
-univention)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   PFILES="${PFILES} \
-     platforms/univention/Makefile \
-     platforms/debian/Makefile \
-     platforms/debian/bareos-fd \
-     platforms/debian/bareos-sd \
-     platforms/debian/bareos-dir"
   ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
@@ -3733,6 +4131,56 @@ dnl common parts of the Makefile
 MCOMMON=./autoconf/Make.common
 AC_SUBST_FILE(MCOMMON)
 
+dnl build a list of plugins we need to build.
+BUILD_FD_PLUGINS=""
+BUILD_SD_PLUGINS=""
+BUILD_DIR_PLUGINS=""
+
+if test X"$support_python" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
+   BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+fi
+
+if test X"$have_scsi_crypto" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
+fi
+
+if test X"$have_zlib" = "Xyes" -o \
+        X"$have_lzo" = "Xyes" -o \
+        X"$have_fastlz" = "Xyes" ; then
+   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+fi
+
+AC_SUBST(BUILD_FD_PLUGINS)
+AC_SUBST(BUILD_SD_PLUGINS)
+AC_SUBST(BUILD_DIR_PLUGINS)
+
+dnl build a list of storage backend  we need to build.
+if test x$use_libtool != xno; then
+   BUILD_SD_BACKENDS="libbareossd-fifo.la libbareossd-gentape.la libbareossd-tape.la"
+
+   if test X"$have_glusterfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gfapi.la"
+   fi
+
+   if test X"$have_droplet" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-object.la"
+   fi
+
+   if test X"$have_ceph_rados" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-rados.la"
+   fi
+
+   if test X"$have_cephfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
+   fi
+else
+   BUILD_SD_BACKENDS=""
+fi
+
+AC_SUBST(BUILD_SD_BACKENDS)
+
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "
@@ -3751,10 +4199,6 @@ AC_CONFIG_FILES([
 autoconf/Make.common \
 Makefile \
 manpages/Makefile \
-debian/bareos-common.preinst \
-debian/bareos-filedaemon.preinst \
-debian/bareos-director.preinst \
-debian/bareos-storage.preinst \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \
 scripts/bareos-explorer \
@@ -3788,6 +4232,7 @@ src/dird/bareos-dir.conf \
 src/lib/Makefile \
 src/stored/Makefile \
 src/stored/bareos-sd.conf \
+src/stored/backends/Makefile \
 src/filed/Makefile \
 src/filed/bareos-fd.conf \
 src/cats/Makefile \
@@ -3801,7 +4246,9 @@ src/cats/make_bareos_tables \
 src/cats/drop_bareos_tables \
 src/cats/drop_bareos_database \
 src/cats/install-default-backend \
+src/cats/ddl/versions.map \
 src/findlib/Makefile \
+src/lmdb/Makefile \
 src/ndmp/Makefile \
 src/tests/Makefile \
 src/tools/Makefile \
@@ -3914,7 +4361,8 @@ Configuration on `date`:
    Bareos version:          ${BAREOS} ${VERSION} (${DATE})
    Distribution:            ${DISTNAME}
    Source code location:    ${srcdir}
-   Install binaries:        ${sbindir}
+   Install binaries:        ${bindir}
+   Install system binaries: ${sbindir}
    Install libraries:       ${libdir}
    Install config files:    ${sysconfdir}
    Scripts directory:       ${scriptdir}
@@ -3924,6 +4372,7 @@ Configuration on `date`:
    Subsys directory:        ${subsysdir}
    Man directory:           ${mandir}
    Data directory:          ${datarootdir}
+   Backend directory:       ${backenddir}
    Plugin directory:        ${plugindir}
    C Compiler:              ${CC} ${CCVERSION}
    C++ Compiler:            ${CXX} ${CXXVERSION}
@@ -3967,6 +4416,7 @@ Configuration on `date`:
    ZLIB support:            ${have_zlib}
    LZO support:             ${have_lzo}
    FASTLZ support:          ${have_fastlz}
+   LMDB support:            ${support_lmdb}
    NDMP support:            ${support_ndmp}
    enable-smartalloc:       ${support_smartalloc}
    enable-lockmgr:          ${support_lockmgr}
@@ -3980,6 +4430,10 @@ Configuration on `date`:
    ACL support:             ${have_acl}
    XATTR support:           ${have_xattr}
    SCSI Crypto support:     ${have_scsi_crypto}
+   GLUSTERFS support:       ${have_glusterfs}
+   DROPLET support:         ${have_droplet}
+   CEPH RADOS support:      ${have_ceph_rados}
+   CEPHFS support:          ${have_cephfs}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}

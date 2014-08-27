@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
@@ -22,6 +22,8 @@
 */
 /**
  * Functions to handle compression/decompression of data.
+ *
+ * Kern Sibbald, November MM
  *
  * Extracted from other source files by Marco van Wieringen, May 2013
  */
@@ -47,6 +49,11 @@
 #endif
 
 #ifdef HAVE_LIBZ
+
+#ifndef HAVE_COMPRESS_BOUND
+#define compressBound(sourceLen) (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
+#endif
+
 /*
  * Convert ZLIB error code into an ASCII message
  */
@@ -845,8 +852,9 @@ bool setup_compression_buffers(JCR *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JCR *jcr)
+bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
 {
+   *decompress_buf_size = 0;
    return true;
 }
 

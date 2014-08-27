@@ -72,14 +72,16 @@ void term_job_server()
  *
  *  Returns: 0 on failure
  *           JobId on success
- *
  */
 JobId_t run_job(JCR *jcr)
 {
    int status;
+
    if (setup_job(jcr)) {
       Dmsg0(200, "Add jrc to work queue\n");
-      /* Queue the job to be run */
+      /*
+       * Queue the job to be run
+       */
       if ((status = jobq_add(&job_queue, jcr)) != 0) {
          berrno be;
          Jmsg(jcr, M_FATAL, 0, _("Could not add job queue: ERR=%s\n"), be.bstrerror(status));
@@ -87,6 +89,7 @@ JobId_t run_job(JCR *jcr)
       }
       return jcr->JobId;
    }
+
    return 0;
 }
 
@@ -140,15 +143,14 @@ bool setup_job(JCR *jcr, bool suppress_output)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password,
+                                          jcr->res.catalog->db_password.value,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,
                                           jcr->res.catalog->mult_db_connections,
                                           jcr->res.catalog->disable_batch_insert);
    if (jcr->db == NULL) {
-      Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
-                 jcr->res.catalog->db_name);
+      Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"), jcr->res.catalog->db_name);
       goto bail_out;
    }
    Dmsg0(150, "DB opened\n");
@@ -322,10 +324,10 @@ void update_job_end(JCR *jcr, int TermCode)
 }
 
 /*
- * This is the engine called by jobq.c:jobq_add() when we were pulled
- *  from the work queue.
- *  At this point, we are running in our own thread and all
- *    necessary resources are allocated -- see jobq.c
+ * This is the engine called by jobq.c:jobq_add() when we were pulled from the work queue.
+ *
+ * At this point, we are running in our own thread and all necessary resources are
+ * allocated -- see jobq.c
  */
 static void *job_thread(void *arg)
 {
@@ -339,6 +341,11 @@ static void *job_thread(void *arg)
    jcr->start_time = time(NULL);      /* set the real start time */
    jcr->jr.StartTime = jcr->start_time;
 
+   /*
+    * Let the statistics subsystem know a new Job was started.
+    */
+   stats_job_started();
+
    if (jcr->res.job->MaxStartDelay != 0 && jcr->res.job->MaxStartDelay <
        (utime_t)(jcr->start_time - jcr->sched_time)) {
       jcr->setJobStatus(JS_Canceled);
@@ -350,7 +357,9 @@ static void *job_thread(void *arg)
       Jmsg(jcr, M_FATAL, 0, _("Job canceled because max run sched time exceeded.\n"));
    }
 
-   /* TODO : check if it is used somewhere */
+   /*
+    * TODO : check if it is used somewhere
+    */
    if (jcr->res.job->RunScripts == NULL) {
       Dmsg0(200, "Warning, job->RunScripts is empty\n");
       jcr->res.job->RunScripts = New(alist(10, not_owned_by_alist));
@@ -360,24 +369,25 @@ static void *job_thread(void *arg)
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
 
-   /* Run any script BeforeJob on dird */
+   /*
+    * Run any script BeforeJob on dird
+    */
    run_scripts(jcr, jcr->res.job->RunScripts, "BeforeJob");
 
    /*
-    * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids
-    *  that any files created by the run before job will
-    *  be saved twice.  They will be backed up in the current
-    *  job, but not in the next one unless they are changed.
-    *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date
-    *   is after the start of this run.
+    * We re-update the job start record so that the start time is set after the run before job.
+    * This avoids that any files created by the run before job will be saved twice. They will
+    * be backed up in the current job, but not in the next one unless they are changed.
+    *
+    * Without this, they will be backed up in this job and in the next job run because in that
+    * case, their date is after the start of this run.
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
+
    generate_plugin_event(jcr, bDirEventJobRun);
 
    switch (jcr->getJobType()) {
@@ -1170,13 +1180,13 @@ bool get_or_create_fileset_record(JCR *jcr)
    /*
     * Get or Create FileSet record
     */
-   memset(&fsr, 0, sizeof(FILESET_DBR));
+   memset(&fsr, 0, sizeof(fsr));
    bstrncpy(fsr.FileSet, jcr->res.fileset->hdr.name, sizeof(fsr.FileSet));
    if (jcr->res.fileset->have_MD5) {
-      struct MD5Context md5c;
+      MD5_CTX md5c;
       unsigned char digest[MD5HashSize];
       memcpy(&md5c, &jcr->res.fileset->md5c, sizeof(md5c));
-      MD5Final(digest, &md5c);
+      MD5_Final(digest, &md5c);
       /*
        * Keep the flag (last arg) set to false otherwise old FileSets will
        * get new MD5 sums and the user will get Full backups on everything
@@ -1394,8 +1404,7 @@ void dird_free_jcr(JCR *jcr)
 
 /*
  * The Job storage definition must be either in the Job record
- *  or in the Pool record.  The Pool record overrides the Job
- *  record.
+ * or in the Pool record.  The Pool record overrides the Job record.
  */
 void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
 {
@@ -1413,8 +1422,10 @@ void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
       store->store = (STORERES *)job->pool->storage->first();
       pm_strcpy(store->store_source, _("Pool resource"));
    } else {
-      store->store = (STORERES *)job->storage->first();
-      pm_strcpy(store->store_source, _("Job resource"));
+      if (job->storage) {
+         store->store = (STORERES *)job->storage->first();
+         pm_strcpy(store->store_source, _("Job resource"));
+      }
    }
 }
 

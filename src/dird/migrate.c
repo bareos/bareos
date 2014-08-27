@@ -26,7 +26,7 @@
  * Also handles Copy jobs (March 2008)
  *
  * Kern Sibbald, September 2004
- * Marco van Wieringen, November 2012
+ * SD-SD Migration by Marco van Wieringen, November 2012
  *
  * Basic tasks done here:
  *    Open DB and create records for this job.
@@ -73,7 +73,7 @@ static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
 {
    return rstore->SDport == wstore->SDport &&
           bstrcasecmp(rstore->address, wstore->address) &&
-          bstrcasecmp(rstore->password, wstore->password);
+          bstrcasecmp(rstore->password.value, wstore->password.value);
 }
 
 /*
@@ -178,9 +178,7 @@ bool do_migration_init(JCR *jcr)
    }
 
    Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
-      (int)jcr->JobId,
-      jcr->jr.Name, (int)jcr->jr.JobId,
-      jcr->jr.JobType, jcr->jr.JobLevel);
+         (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
 
    LockRes();
    job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
@@ -198,7 +196,37 @@ bool do_migration_init(JCR *jcr)
       return false;
    }
 
-   jcr->spool_data = job->spool_data;     /* turn on spooling if requested in job */
+   /*
+    * Copy the actual level setting of the previous Job to this Job.
+    * This overrides the dummy backup level given to the migrate/copy Job and replaces it
+    * with the actual level the backup run at.
+    */
+   jcr->setJobLevel(prev_job->JobLevel);
+
+   /*
+    * If the current Job has no explicit client set use the client setting of the previous Job.
+    */
+   if (!jcr->res.client && prev_job->client) {
+      jcr->res.client = prev_job->client;
+      if (!jcr->client_name) {
+         jcr->client_name = get_pool_memory(PM_NAME);
+      }
+      pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
+   }
+
+   /*
+    * If the current Job has no explicit fileset set use the client setting of the previous Job.
+    */
+   if (!jcr->res.fileset) {
+      jcr->res.fileset = prev_job->fileset;
+   }
+
+   /*
+    * See if spooling data is not enabled yet. If so turn on spooling if requested in job
+    */
+   if (!jcr->spool_data) {
+      jcr->spool_data = job->spool_data;
+   }
 
    /*
     * Create a migration jcr
@@ -218,6 +246,17 @@ bool do_migration_init(JCR *jcr)
     * and set the jcr suppress_output boolean to true).
     */
    set_jcr_defaults(mig_jcr, prev_job);
+
+   /*
+    * Don't let WatchDog checks Max*Time value on this Job
+    */
+   mig_jcr->no_maxtime = true;
+
+   /*
+    * Don't check for duplicates on migration and copy jobs
+    */
+   mig_jcr->IgnoreDuplicateJobChecking = true;
+
    if (!setup_job(mig_jcr, true)) {
       Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
       return false;
@@ -239,19 +278,9 @@ bool do_migration_init(JCR *jcr)
    mig_jcr->jr.PoolId = jcr->jr.PoolId;
    mig_jcr->jr.JobId = mig_jcr->JobId;
 
-   /*
-    * Don't let WatchDog checks Max*Time value on this Job
-    */
-   mig_jcr->no_maxtime = true;
-
-   /*
-    * Don't check for duplicates on migration and copy jobs
-    */
-   mig_jcr->res.job->IgnoreDuplicateJobChecking = true;
-
    Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
-         mig_jcr->jr.Name, (int)mig_jcr->jr.JobId,
-         mig_jcr->jr.JobType, mig_jcr->jr.JobLevel);
+         mig_jcr->jr.Name, (int)mig_jcr->jr.JobId, mig_jcr->jr.JobType,
+         mig_jcr->jr.JobLevel);
 
    if (set_migration_next_pool(jcr, &pool)) {
       /*
@@ -263,6 +292,14 @@ bool do_migration_init(JCR *jcr)
       mig_jcr->res.pool = jcr->res.pool;
       mig_jcr->res.next_pool = jcr->res.next_pool;
       mig_jcr->jr.PoolId = jcr->jr.PoolId;
+   }
+
+   /*
+    * Get the storage that was used for the original Job.
+    * This only happens when the original pool used doesn't have an explicit storage.
+    */
+   if (!jcr->rstorage) {
+      copy_rstorage(jcr, prev_job->storage, _("previous Job"));
    }
 
    /*
@@ -400,9 +437,22 @@ bool do_migration(JCR *jcr)
    if (jcr->previous_jr.JobType != JT_BACKUP &&
        jcr->previous_jr.JobType != JT_JOB_COPY) {
       Jmsg(jcr, M_INFO, 0, _("JobId %s already %s probably by another Job. %s stopped.\n"),
-         edit_int64(jcr->previous_jr.JobId, ed1),
-         jcr->get_ActionName(true),
-         jcr->get_OperationName());
+           edit_int64(jcr->previous_jr.JobId, ed1),
+           jcr->get_ActionName(true),
+           jcr->get_OperationName());
+      jcr->setJobStatus(JS_Terminated);
+      migration_cleanup(jcr, jcr->JobStatus);
+      return true;
+   }
+
+   /*
+    * Sanity check that we are not using the same storage for reading and writing.
+    */
+   if (bstrcmp(((STORERES *)jcr->rstorage->first())->name(),
+                ((STORERES *)jcr->wstorage->first())->name())) {
+      Jmsg(jcr, M_FATAL, 0, _("JobId %s cannot %s using the same read and write storage.\n"),
+           edit_int64(jcr->previous_jr.JobId, ed1),
+           jcr->get_OperationName());
       jcr->setJobStatus(JS_Terminated);
       migration_cleanup(jcr, jcr->JobStatus);
       return true;
@@ -1156,12 +1206,11 @@ static int getJob_to_migrate(JCR *jcr)
    }
 
    Jmsg(jcr, M_INFO, 0, _("%s using JobId=%s Job=%s\n"),
-      jcr->get_OperationName(),
-      edit_int64(jcr->previous_jr.JobId, ed1), jcr->previous_jr.Job);
+        jcr->get_OperationName(), edit_int64(jcr->previous_jr.JobId, ed1),
+        jcr->previous_jr.Job);
    Dmsg4(dbglevel, "%s JobId=%d  using JobId=%s Job=%s\n",
-      jcr->get_OperationName(),
-      jcr->JobId,
-      edit_int64(jcr->previous_jr.JobId, ed1), jcr->previous_jr.Job);
+        jcr->get_OperationName(), jcr->JobId,
+        edit_int64(jcr->previous_jr.JobId, ed1), jcr->previous_jr.Job);
    count = 1;
 
 ok_out:
@@ -1435,6 +1484,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
    JCR *mig_jcr = jcr->mig_jcr;
    POOL_MEM query(PM_MESSAGE);
 
+   memset(&mr, 0, sizeof(mr));
    Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
    update_job_end(jcr, TermCode);
 
@@ -1655,6 +1705,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
         "  New Backup JobId:       %s\n"
         "  Current JobId:          %s\n"
         "  Current Job:            %s\n"
+        "  Backup Level:           %s\n"
+        "  Client:                 %s\n"
+        "  FileSet:                \"%s\"\n"
         "  Read Pool:              \"%s\" (From %s)\n"
         "  Read Storage:           \"%s\" (From %s)\n"
         "  Write Pool:             \"%s\" (From %s)\n"
@@ -1682,6 +1735,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
         mig_jcr ? edit_uint64(mig_jcr->jr.JobId, ec7) : "0",
         edit_uint64(jcr->jr.JobId, ec8),
         jcr->jr.Job,
+        level_to_str(jcr->getJobLevel()),
+        jcr->res.client ? jcr->res.client->name() :  _("*None*"),
+        jcr->res.fileset ? jcr->res.fileset->name() :  _("*None*"),
         jcr->res.rpool->name(), jcr->res.rpool_source,
         jcr->res.rstore ? jcr->res.rstore->name() : _("*None*"),
         NPRT(jcr->res.rstore_source),

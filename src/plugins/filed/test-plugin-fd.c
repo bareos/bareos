@@ -91,14 +91,13 @@ static pFuncs pluginFuncs = {
 };
 
 static struct ini_items test_items[] = {
-   // name       handler         comment            required
-   { "string1",  ini_store_str,  "Special String",    1},
-   { "string2",  ini_store_str,  "2nd String",        0},
-   { "ok",       ini_store_bool, "boolean",           0},
-
+   // name type comment required
+   { "string1", INI_CFG_TYPE_STR, "Special String", 1 },
+   { "string2", INI_CFG_TYPE_STR, "2nd String", 0 },
+   { "ok", INI_CFG_TYPE_BOOL, "boolean", 0 },
 // We can also use the ITEMS_DEFAULT
-// { "ok",       ini_store_bool, "boolean",           0, ITEMS_DEFAULT},
-   { NULL,       NULL,           NULL,                0}
+// { "ok", INI_CFG_TYPE_BOOL, "boolean", 0, ITEMS_DEFAULT },
+   { NULL, 0, NULL, 0 }
 };
 
 /*

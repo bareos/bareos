@@ -118,7 +118,7 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
          return 0;                    /* For user, bail out right now */
       }
       /* ***FIXME*** this really should not be here */
-      if (dir_find_next_appendable_volume(dcr)) {
+      if (dcr->dir_find_next_appendable_volume()) {
          slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
       } else {
          slot = 0;
@@ -575,8 +575,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
       if (bstrcmp(cmd, "drives")) {
          dir->fsend("drives=1\n");
       }
-      dir->fsend(_("3993 Device %s not an autochanger device.\n"),
-         dev->print_name());
+      dir->fsend(_("3993 Device %s not an autochanger device.\n"), dev->print_name());
       return false;
    }
 
@@ -623,7 +622,7 @@ retry_changercmd:
        */
       while (fgets(dir->msg, len, bpipe->rfd)) {
          dir->msglen = strlen(dir->msg);
-         Dmsg1(100, "<stored: %s\n", dir->msg);
+         Dmsg1(100, "<stored: %s", dir->msg);
          bnet_send(dir);
       }
    } else if (bstrcmp(cmd, "slots")) {

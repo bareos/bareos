@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,10 +36,16 @@
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
 
-/* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers */
+/*
+ * No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
+ */
 #define TLS_DEFAULT_CIPHERS "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"
 
-/* TLS Context Structure */
+#define MAX_CRLS 16
+
+/*
+ * TLS Context Structures
+ */
 struct TLS_Context {
    SSL_CTX *openssl;
    CRYPTO_PEM_PASSWD_CB *pem_callback;
@@ -52,6 +59,278 @@ struct TLS_Connection {
    TLS_Context *ctx;
    SSL *openssl;
 };
+
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L)
+struct TLS_CRL_Reload_Context {
+   time_t mtime;
+   char *crl_file_name;
+   X509_CRL *crls[MAX_CRLS];
+};
+
+/*
+ * Automatic Certificate Revocation List reload logic.
+ */
+static int crl_reloader_new(X509_LOOKUP *ctx)
+{
+   TLS_CRL_Reload_Context *data;
+
+   data = (TLS_CRL_Reload_Context *)malloc(sizeof(TLS_CRL_Reload_Context));
+   memset(data, 0, sizeof(TLS_CRL_Reload_Context));
+
+   ctx->method_data = (char *)data;
+   return 1;
+}
+
+static void crl_reloader_free(X509_LOOKUP *ctx)
+{
+   int cnt;
+   TLS_CRL_Reload_Context *data;
+
+   if (ctx->method_data) {
+      data = (TLS_CRL_Reload_Context *)ctx->method_data;
+
+      if (data->crl_file_name) {
+         free(data->crl_file_name);
+      }
+
+      for (cnt = 0; cnt < MAX_CRLS; cnt++) {
+         if (data->crls[cnt]) {
+            X509_CRL_free(data->crls[cnt]);
+         }
+      }
+
+      free(data);
+      ctx->method_data = NULL;
+   }
+}
+
+/*
+ * Load the new content from a Certificate Revocation List (CRL).
+ */
+static int crl_reloader_reload_file(X509_LOOKUP *ctx)
+{
+   int cnt, ok = 0;
+   struct stat st;
+   BIO *in = NULL;
+   TLS_CRL_Reload_Context *data;
+
+   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   if (!data->crl_file_name) {
+      goto bail_out;
+   }
+
+   if (stat(data->crl_file_name, &st) != 0) {
+      goto bail_out;
+   }
+
+   in = BIO_new_file(data->crl_file_name, "r");
+   if (!in) {
+      goto bail_out;
+   }
+
+   /*
+    * Load a maximum of MAX_CRLS Certificate Revocation Lists.
+    */
+   data->mtime = st.st_mtime;
+   for (cnt = 0; cnt < MAX_CRLS; cnt++) {
+      X509_CRL *crl;
+
+      if ((crl = PEM_read_bio_X509_CRL(in, NULL, NULL, NULL)) == NULL) {
+         if (cnt == 0) {
+            /*
+             * We try to read multiple times only the first is fatal.
+             */
+            goto bail_out;
+         } else {
+            break;
+         }
+      }
+
+      if (data->crls[cnt]) {
+         X509_CRL_free(data->crls[cnt]);
+      }
+      data->crls[cnt] = crl;
+   }
+
+   /*
+    * Clear the other slots.
+    */
+   while (++cnt < MAX_CRLS) {
+      if (data->crls[cnt]) {
+         X509_CRL_free(data->crls[cnt]);
+         data->crls[cnt] = NULL;
+      }
+   }
+
+   ok = 1;
+
+bail_out:
+   if (in) {
+      BIO_free(in);
+   }
+   return ok;
+}
+
+/*
+ * See if the data in the Certificate Revocation List (CRL) is newer then we loaded before.
+ */
+static int crl_reloader_reload_if_newer(X509_LOOKUP *ctx)
+{
+   int ok = 0;
+   TLS_CRL_Reload_Context *data;
+   struct stat st;
+
+   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   if (!data->crl_file_name) {
+      return ok;
+   }
+
+   if (stat(data->crl_file_name, &st) != 0) {
+      return ok;
+   }
+
+   if (st.st_mtime > data->mtime) {
+      ok = crl_reloader_reload_file(ctx);
+      if (!ok) {
+         goto bail_out;
+      }
+   }
+   ok = 1;
+
+bail_out:
+   return ok;
+}
+
+/*
+ * Load the data from a Certificate Revocation List (CRL) into memory.
+ */
+static int crl_reloader_file_load(X509_LOOKUP *ctx, const char *argp)
+{
+   int ok = 0;
+   TLS_CRL_Reload_Context *data;
+
+   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   if (data->crl_file_name) {
+      free(data->crl_file_name);
+   }
+   data->crl_file_name = bstrdup(argp);
+
+   ok = crl_reloader_reload_file(ctx);
+   if (!ok) {
+      goto bail_out;
+   }
+   ok = 1;
+
+bail_out:
+   return ok;
+}
+
+static int crl_reloader_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp, long argl, char **ret)
+{
+   int ok = 0;
+
+   switch (cmd) {
+   case X509_L_FILE_LOAD:
+      ok = crl_reloader_file_load(ctx, argp);
+      break;
+   default:
+      break;
+   }
+
+   return ok;
+}
+
+/*
+ * Check if a CRL entry is expired.
+ */
+static int crl_entry_expired(X509_CRL *crl)
+{
+   int lastUpdate, nextUpdate;
+
+   if (!crl) {
+      return 0;
+   }
+
+   lastUpdate = X509_cmp_current_time(X509_CRL_get_lastUpdate(crl));
+   nextUpdate = X509_cmp_current_time(X509_CRL_get_nextUpdate(crl));
+
+   if (lastUpdate < 0 && nextUpdate > 0) {
+      return 0;
+   }
+
+   return 1;
+}
+
+/*
+ * Retrieve a CRL entry by Subject.
+ */
+static int crl_reloader_get_by_subject(X509_LOOKUP *ctx, int type, X509_NAME *name, X509_OBJECT *ret)
+{
+   int cnt, ok = 0;
+   TLS_CRL_Reload_Context *data = NULL;
+
+   if (type != X509_LU_CRL) {
+      return ok;
+   }
+
+   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   if (!data->crls[0]) {
+      return ok;
+   }
+
+   ret->type = 0;
+   ret->data.crl = NULL;
+   for (cnt = 0; cnt < MAX_CRLS; cnt++) {
+      if (crl_entry_expired(data->crls[cnt]) && !crl_reloader_reload_if_newer(ctx)) {
+         goto bail_out;
+      }
+
+      if (X509_NAME_cmp(data->crls[cnt]->crl->issuer, name)) {
+         continue;
+      }
+
+      ret->type = type;
+      ret->data.crl = data->crls[cnt];
+      ok = 1;
+      break;
+   }
+
+   return ok;
+
+bail_out:
+   return ok;
+}
+
+static int load_new_crl_file(X509_LOOKUP *lu, const char *fname)
+{
+   int ok = 0;
+
+   if (!fname) {
+      return ok;
+   }
+   ok = X509_LOOKUP_ctrl(lu, X509_L_FILE_LOAD, fname, 0, NULL);
+
+   return ok;
+}
+
+static X509_LOOKUP_METHOD x509_crl_reloader = {
+   "CRL file reloader",
+   crl_reloader_new,            /* new */
+   crl_reloader_free,           /* free */
+   NULL,                        /* init */
+   NULL,                        /* shutdown */
+   crl_reloader_ctrl,           /* ctrl */
+   crl_reloader_get_by_subject, /* get_by_subject */
+   NULL,                        /* get_by_issuer_serial */
+   NULL,                        /* get_by_fingerprint */
+   NULL                         /* get_by_alias */
+};
+
+static X509_LOOKUP_METHOD *X509_LOOKUP_crl_reloader(void)
+{
+   return (&x509_crl_reloader);
+}
+#endif /* (OPENSSL_VERSION_NUMBER > 0x00907000L) */
 
 /*
  * OpenSSL certificate verification callback.
@@ -79,7 +358,9 @@ static int openssl_verify_peer(int ok, X509_STORE_CTX *store)
    return ok;
 }
 
-/* Dispatch user PEM encryption callbacks */
+/*
+ * Dispatch user PEM encryption callbacks
+ */
 static int tls_pem_callback_dispatch (char *buf, int size, int rwflag, void *userdata)
 {
    TLS_CONTEXT *ctx = (TLS_CONTEXT *)userdata;
@@ -148,6 +429,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
       goto err;
    }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L)
    /*
     * Set certificate revocation list.
     */
@@ -161,19 +443,20 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
          goto err;
       }
 
-      lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+      lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
       if (!lookup) {
          openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
          goto err;
       }
 
-      if (!X509_LOOKUP_load_file(lookup, (char *)crlfile, X509_FILETYPE_PEM)) {
+      if (!load_new_crl_file(lookup, (char *)crlfile)) {
          openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
          goto err;
       }
 
       X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
    }
+#endif
 
    /*
     * Load our certificate file, if available. This file may also contain a

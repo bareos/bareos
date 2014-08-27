@@ -624,12 +624,12 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    FILE_DBR fdbr;
    struct stat statf;                 /* file stat */
    struct stat statc;                 /* catalog stat */
-   char buf[MAXSTRING];
-   POOLMEM *fname = get_pool_memory(PM_MESSAGE);
+   POOL_MEM buf(PM_MESSAGE);
+   POOLMEM *fname = get_pool_memory(PM_FNAME);
    int do_Digest = CRYPTO_DIGEST_NONE;
    int32_t file_index = 0;
 
-   memset(&fdbr, 0, sizeof(FILE_DBR));
+   memset(&fdbr, 0, sizeof(fdbr));
    fd = jcr->file_bsock;
    fdbr.JobId = JobId;
    jcr->FileIndex = 0;
@@ -648,7 +648,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    while ((n=bget_dirmsg(fd)) >= 0 && !job_canceled(jcr)) {
       int stream;
       char *attr, *p, *fn;
-      char Opts_Digest[MAXSTRING];        /* Verify Opts or MD5/SHA1 digest */
+      POOL_MEM Opts_Digest(PM_MESSAGE);   /* Verify Opts or MD5/SHA1 digest */
 
       if (job_canceled(jcr)) {
          goto bail_out;
@@ -666,7 +666,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
        * We read the Options or Signature into fname
        *  to prevent overrun, now copy it to proper location.
        */
-      bstrncpy(Opts_Digest, fname, sizeof(Opts_Digest));
+      pm_strcpy(Opts_Digest, fname);
       p = fd->msg;
       skip_nonspaces(&p);             /* skip FileIndex */
       skip_spaces(&p);
@@ -718,14 +718,14 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
             db_mark_file_record(jcr, jcr->db, fdbr.FileId, jcr->JobId);
          }
 
-         Dmsg3(400, "Found %s in catalog. inx=%d Opts=%s\n", jcr->fname,
-            file_index, Opts_Digest);
+         Dmsg3(400, "Found %s in catalog. inx=%d Opts=%s\n",
+               jcr->fname, file_index, Opts_Digest.c_str());
          decode_stat(fdbr.LStat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
          /*
           * Loop over options supplied by user and verify the
           * fields he requests.
           */
-         for (p=Opts_Digest; *p; p++) {
+         for (p = Opts_Digest.c_str(); *p; p++) {
             char ed1[30], ed2[30];
             switch (*p) {
             case 'i':                /* compare INODEs */
@@ -828,7 +828,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
           *  It came across in the Opts_Digest field.
           */
          if (crypto_digest_stream_type(stream) != CRYPTO_DIGEST_NONE) {
-            Dmsg2(400, "stream=Digest inx=%d Digest=%s\n", file_index, Opts_Digest);
+            Dmsg2(400, "stream=Digest inx=%d Digest=%s\n", file_index, Opts_Digest.c_str());
             /*
              * When ever we get a digest it MUST have been
              * preceded by an attributes record, which sets attr_file_index
@@ -839,11 +839,11 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
                goto bail_out;
             }
             if (do_Digest != CRYPTO_DIGEST_NONE) {
-               db_escape_string(jcr, jcr->db, buf, Opts_Digest, strlen(Opts_Digest));
-               if (!bstrcmp(buf, fdbr.Digest)) {
+               db_escape_string(jcr, jcr->db, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
+               if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
                   prt_fname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
-                       stream_to_ascii(stream), buf, fdbr.Digest);
+                       stream_to_ascii(stream), buf.c_str(), fdbr.Digest);
                   jcr->setJobStatus(JS_Differences);
                }
                do_Digest = CRYPTO_DIGEST_NONE;
@@ -865,14 +865,14 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     *  the database where the MarkId != current JobId
     */
    jcr->fn_printed = false;
-   bsnprintf(buf, sizeof(buf),
+   Mmsg(buf,
       "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
       "WHERE File.JobId=%d AND File.FileIndex > 0 "
       "AND File.MarkId!=%d AND File.PathId=Path.PathId "
       "AND File.FilenameId=Filename.FilenameId",
          JobId, jcr->JobId);
    /* missing_handler is called for each file found */
-   db_sql_query(jcr->db, buf, missing_handler, (void *)jcr);
+   db_sql_query(jcr->db, buf.c_str(), missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }

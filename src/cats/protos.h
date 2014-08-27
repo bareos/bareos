@@ -32,6 +32,12 @@
 
 /* Database prototypes */
 
+/* cats_backends.c */
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+void db_set_backend_dirs(alist *new_backend_dirs);
+#endif
+void db_flush_backends(void);
+
 /* sql.c */
 bool db_open_batch_connection(JCR *jcr, B_DB *mdb);
 char *db_strerror(B_DB *mdb);
@@ -63,6 +69,9 @@ bool db_create_base_file_list(JCR *jcr, B_DB *mdb, char *jobids);
 bool db_create_quota_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr);
 bool db_create_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem);
 bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *name, char *value);
+bool db_create_job_statistics(JCR *jcr, B_DB *mdb, JOB_STATS_DBR *jsr);
+bool db_create_device_statistics(JCR *jcr, B_DB *mdb, DEVICE_STATS_DBR *dsr);
+bool db_create_tapealert_statistics(JCR *jcr, B_DB *mdb, TAPEALERT_STATS_DBR *tsr);
 
 /* sql_delete.c */
 bool db_delete_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pool_dbr);
@@ -91,7 +100,7 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb);
 int db_get_num_pool_records(JCR *jcr, B_DB *mdb);
 int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
 bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, int *num_ids, uint32_t **ids);
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t **ids);
 int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS **VolParams);
 bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr);
 bool db_get_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr);
@@ -178,7 +187,5 @@ bool db_add_digest_to_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, char *di
 bool db_mark_file_record(JCR *jcr, B_DB *mdb, FileId_t FileId, JobId_t JobId);
 void db_make_inchanger_unique(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr);
 int db_update_stats(JCR *jcr, B_DB *mdb, utime_t age);
-
-void db_flush_backends(void);
 
 #endif /* __SQL_PROTOS_H */

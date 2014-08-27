@@ -24,6 +24,17 @@
  * Resource codes -- they must be sequential for indexing
  */
 
+/*
+ * Program specific config types (start at 50)
+ */
+enum {
+   CFG_TYPE_AUTHTYPE = 50,              /* Authentication Type */
+   CFG_TYPE_DEVTYPE = 51,               /* Device Type */
+   CFG_TYPE_MAXBLOCKSIZE = 52,          /* Maximum Blocksize */
+   CFG_TYPE_IODIRECTION = 53,           /* IO Direction */
+   CFG_TYPE_CMPRSALGO = 54              /* Compression Algorithm */
+};
+
 enum {
    R_DIRECTOR = 3001,
    R_NDMP,
@@ -48,7 +59,7 @@ class DIRRES {
 public:
    RES hdr;
 
-   char *password;                    /* Director password */
+   s_password password;               /* Director password */
    char *address;                     /* Director IP address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
    bool tls_authenticate;             /* Authenticate with TLS */
@@ -75,7 +86,7 @@ public:
    uint32_t AuthType;                 /* Authentication Type to use */
    uint32_t LogLevel;                 /* Log level to use for logging NDMP protocol msgs */
    char *username;                    /* NDMP username */
-   char *password;                    /* NDMP password */
+   s_password password;               /* NDMP password */
 };
 
 /* Storage daemon "global" definitions */
@@ -92,8 +103,11 @@ public:
    char *plugin_directory;            /* Plugin directory */
    char *plugin_names;
    char *scripts_directory;
+   alist *backend_directories;        /* Backend Directories */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
    uint32_t ndmploglevel;             /* Initial NDMP log level */
+   uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
+   uint32_t stats_collect_interval;   /* Statistics collect interval in seconds */
    MSGSRES *messages;                 /* Daemon message handler */
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t FDConnectTimeout;          /* Timeout in seconds */
@@ -110,6 +124,9 @@ public:
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
+   bool collect_dev_stats;            /* Collect Device Statistics */
+   bool collect_job_stats;            /* Collect Job Statistics */
+   bool device_reserve_by_mediatype;  /* Allow device reservation based on a matching mediatype */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
@@ -149,16 +166,19 @@ public:
    uint32_t label_type;               /* label type */
    bool autoselect;                   /* Automatically select from AutoChanger */
    bool norewindonclose;              /* Don't rewind tape drive on close */
+   bool drive_tapealert_enabled;      /* Enable Tape Alert monitoring */
    bool drive_crypto_enabled;         /* Enable hardware crypto */
    bool query_crypto_status;          /* Query device for crypto status */
+   bool collectstats;                 /* Set if statistics should be collected */
    uint32_t drive_index;              /* Autochanger drive index */
    uint32_t cap_bits;                 /* Capabilities of this device */
    utime_t max_changer_wait;          /* Changer timeout */
    utime_t max_rewind_wait;           /* Maximum secs to wait for rewind */
    utime_t max_open_wait;             /* Maximum secs to wait for open */
    uint32_t max_open_vols;            /* Maximum simultaneous open volumes */
-   uint32_t min_block_size;           /* Min block size */
-   uint32_t max_block_size;           /* Max block size */
+   uint32_t label_block_size;         /* block size of the label block*/
+   uint32_t min_block_size;           /* Current Minimum block size */
+   uint32_t max_block_size;           /* Current Maximum block size */
    uint32_t max_volume_jobs;          /* Max jobs to put on one volume */
    uint32_t max_network_buffer_size;  /* Max network buf size */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs this drive */
@@ -196,10 +216,4 @@ union URES {
    MSGSRES res_msgs;
    AUTOCHANGERRES res_changer;
    RES hdr;
-};
-
-/* Used for certain KeyWord tables */
-struct s_kw {
-   const char *name;
-   uint32_t token;
 };

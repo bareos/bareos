@@ -62,13 +62,7 @@ static char *wbuf;                    /* write buffer address */
 static uint32_t wsize;                /* write size */
 static uint64_t fileAddr = 0;         /* file write address */
 
-static CONFIG *config;
 #define CONFIG_FILE "bareos-sd.conf"
-char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static void usage()
 {
@@ -206,19 +200,10 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
-   LockRes();
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      UnlockRes();
-      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-         configfile);
-   }
-   UnlockRes();
-
-  if (DirectorName) {
+   if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
             break;
@@ -399,7 +384,7 @@ static void do_extract(char *devname)
 
    enable_backup_privileges(NULL, 1);
 
-   jcr = setup_jcr("bextract", devname, bsr, director, VolumeName, 1); /* acquire for read */
+   jcr = setup_jcr("bextract", devname, bsr, director, VolumeName, true); /* read device */
    if (!jcr) {
       exit(1);
    }
@@ -427,9 +412,11 @@ static void do_extract(char *devname)
 
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    setup_decompression_buffers(jcr, &decompress_buf_size);
-   memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
-   jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
-   jcr->compress.inflate_buffer_size = decompress_buf_size;
+   if (decompress_buf_size > 0) {
+      memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
+      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
+      jcr->compress.inflate_buffer_size = decompress_buf_size;
+   }
 
    acl_data.last_fname = get_pool_memory(PM_FNAME);
    xattr_data.last_fname = get_pool_memory(PM_FNAME);
@@ -728,29 +715,4 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
    } /* end switch */
    return true;
-}
-
-/* Dummies to replace askdir.c */
-bool dir_find_next_appendable_volume(DCR *dcr) { return 1; }
-bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1; }
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
-{
-   DEVICE *dev = dcr->dev;
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-      dcr->VolumeName, dev->print_name());
-   dev->close(dcr);
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg1(500, "Vol=%s\n", dcr->getVolCatName());
-   return 1;
 }

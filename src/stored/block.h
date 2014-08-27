@@ -28,7 +28,9 @@
 #define __BLOCK_H 1
 
 #define MAX_BLOCK_LENGTH  20000000      /* this is a sort of sanity check */
-#define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,636 here */
+#define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,536 here
+                                           the POSIX standard defaults the size of a
+                                           tape record to 126 blocks (63k). */
 
 /* Block Header definitions. */
 #define BLKHDR1_ID                       "BB01"

@@ -8,10 +8,9 @@
 #   * only support platforms that are available in OBS
 #   * activate all options available (if reasonable)
 #   * single-dir-install is not supported
-#   * use special group (bconsole) for users that can access bconsole
 #   * Single packages for:
 #       * console package
-#       * dir package ( bsmtp )
+#       * dir package
 #       * sd package ( bls + btape + bcopy + bextract )
 #       * fd package ( )
 #       * tray monitor
@@ -21,20 +20,15 @@
 #       * tools without link to db libs (bwild, bregex)
 #       * tools with link to db libs (dbcheck, bscan)
 #       * bat
-#       * doc
 #
-#	For openSUSE/SUSE we placed the /usr/sbin/rcscript
-#	And added the firewall basics rules
-#
-#	Notice : the libbareoscats* package to be able to pass the shlib name policy are
+#	Notice: the libbareoscats* package to be able to pass the shlib name policy are
 #	explicitly named
 #
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
-Summary: 	The Network Backup Solution
 Name: 		bareos
-Version: 	14.1.0
-Release: 	1.0
+Version: 	14.3.0
+Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
 BuildRoot: 	%{_tmppath}/%{name}-root
@@ -42,9 +36,11 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    14.1.0
+%define _libversion    14.3.0
 
-%define plugin_dir     %_libdir/bareos/plugins
+%define library_dir    %{_libdir}/bareos
+%define backend_dir    %{_libdir}/bareos/backends
+%define plugin_dir     %{_libdir}/bareos/plugins
 %define script_dir     /usr/lib/bareos/scripts
 %define working_dir    /var/lib/bareos
 %define pid_dir        /var/lib/bareos
@@ -63,11 +59,21 @@ Vendor: 	The Bareos Team
 %define file_daemon_user        root
 %define storage_daemon_group    %{daemon_group}
 
+%define client_only 0
 %define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define systemd 0
 %define python_plugins 1
+
+%if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500
+%define RHEL4 1
+%define client_only 1
+%define build_bat 0
+%define build_qt_monitor 0
+%define build_sqlite3 0
+%define python_plugins 0
+%endif
 
 # firewall installation
 %define install_suse_fw 0
@@ -77,7 +83,7 @@ Vendor: 	The Bareos Team
 %define install_suse_fw 1
 %endif
 
-%if 0%{?suse_version} > 1140 || 0%{?fedora_version} > 14
+%if 0%{?suse_version} > 1140 || 0%{?fedora_version} > 14 || 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
 %define systemd_support 1
 %endif
 
@@ -101,6 +107,7 @@ BuildRequires: systemd
 
 Source0: %{name}_%{version}.tar.gz
 
+BuildRequires: elfutils
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -125,78 +132,90 @@ BuildRequires: sqlite-devel
 %endif
 BuildRequires: mysql-devel
 BuildRequires: postgresql-devel
-BuildRequires: libqt4-devel
 BuildRequires: openssl
 BuildRequires: libcap-devel
 BuildRequires: mtx
 
-%if 0%{?suse_version}
-# link identical files
-BuildRequires: fdupes
-BuildRequires: termcap
-BuildRequires: pwdutils
-BuildRequires: tcpd-devel
-BuildRequires: update-desktop-files
-
-# Some magic to be able to determine what platform we are running on.
-%if !0%{sles_version}
-BuildRequires: openSUSE-release
-%else
-%if 0%{?sles_version} && !0%{?sled_version}
-BuildRequires: sles-release
-%else
-BuildRequires: sled-release
-%endif
-%endif
-
-BuildRequires: lsb-release
-
-%else
-BuildRequires: qt4-devel
-BuildRequires: libtermcap-devel
-BuildRequires: passwd
-BuildRequires: tcp_wrappers
-
-# Some magic to be able to determine what platform we are running on.
-%if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
-%if 0%{?fedora_version}
-BuildRequires: fedora-release
-%endif
-# Favor lsb_release on platform that have proper support for it.
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version}
-BuildRequires: redhat-lsb
-%else
-# Older RHEL (5)/ CentOS (5)
-BuildRequires: redhat-release
-%endif
-%else
-# Non redhat like distribution for example mandriva.
-BuildRequires: lsb-release
-%endif
-%endif
-
-%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
-BuildRequires: tcp_wrappers-devel
+%if 0%{?build_bat} || 0%{?build_qt_monitor}
+BuildRequires: libqt4-devel
 %endif
 
 %if 0%{?python_plugins}
 BuildRequires: python-devel >= 2.6
 %endif
 
-Summary:  Bareos All-In-One package (dir,sd,fd)
-#BuildArch: noarch
+%if 0%{?suse_version}
+
+# link identical files
+BuildRequires: fdupes
+BuildRequires: lsb-release
+BuildRequires: distribution-release
+BuildRequires: pwdutils
+BuildRequires: tcpd-devel
+BuildRequires: termcap
+BuildRequires: update-desktop-files
+
+%if 0%{?sles_version}
+BuildRequires: sles-release
+%endif
+
+
+%else
+# non suse
+
+BuildRequires: libtermcap-devel
+BuildRequires: passwd
+BuildRequires: tcp_wrappers
+
+# Some magic to be able to determine what platform we are running on.
+%if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
+
+BuildRequires: redhat-lsb
+
+# older versions require additional release packages
+%if 0%{?rhel_version}   && 0%{?rhel_version} <= 600
+BuildRequires: redhat-release
+%endif
+
+%if 0%{?centos_version} && 0%{?centos_version} <= 600
+BuildRequires: redhat-release
+%endif
+
+%if 0%{?fedora_version}
+BuildRequires: fedora-release
+%endif
+
+%if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
+BuildRequires: tcp_wrappers-devel
+%endif
+
+%else
+# non suse, non redhat: eg. mandriva.
+
+BuildRequires: lsb-release
+
+%endif
+
+%endif
+
+
+Summary:  Meta-All-In-One package (director, storage-daemon, client daemon and tools)
 Requires: %{name}-director = %{version}
 Requires: %{name}-storage = %{version}
 Requires: %{name}-client = %{version}
 
-%define dscr Bareos - Backup Archiving Recovery Open Sourced.\
-Bareos is a set of computer programs that permit you (or the system\
-administrator) to manage backup, recovery, and verification of computer\
-data across a network of computers of different kinds. In technical terms,\
-it is a network client/server based backup program. Bareos is relatively\
-easy to use and efficient, while offering many advanced storage management\
-features that make it easy to find and recover lost or damaged files.\
+%if 0%{?RHEL4}
+%define dscr Bareos - Backup Archiving Recovery Open Sourced.
+%else
+%define dscr Bareos - Backup Archiving Recovery Open Sourced. \
+Bareos is a set of computer programs that permit you (or the system \
+administrator) to manage backup, recovery, and verification of computer \
+data across a network of computers of different kinds. In technical terms, \
+it is a network client/server based backup program. Bareos is relatively \
+easy to use and efficient, while offering many advanced storage management \
+features that make it easy to find and recover lost or damaged files. \
 Bareos source code has been released under the AGPL version 3 license.
+%endif
 
 %description
 %{dscr}
@@ -241,10 +260,16 @@ Provides: %{name}-sd
 %package storage-tape
 Summary:  Provide bareos storage daemon tape support
 Group:    Productivity/Archiving/Backup
+Requires: %{name}-common = %{version}
 Requires: mtx
 %if !0%{?suse_version}
 Requires: mt-st
 %endif
+
+%package storage-fifo
+Summary:  Provide bareos storage backend fifo
+Group:    Productivity/Archiving/Backup
+Requires: %{name}-common = %{version}
 
 %package filedaemon
 Summary:  Provide bareos file daemon service
@@ -402,11 +427,18 @@ This package contains the Storage Daemon
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
 
+%description storage-fifo
+%{dscr}
+
+This package contains the Storage backend for FIFO files.
+This package is only required, when a resource "Archive Device = fifo"
+should be used by the Bareos Storage Daemon.
+
 %description filedaemon
 %{dscr}
 
 This package contains the File Daemon
-(Bareoss client daemon to read/write data from the backed up computer)
+(Bareos client daemon to read/write data from the backed up computer)
 
 %description common
 %{dscr}
@@ -438,12 +470,12 @@ This package contains the shared library to use sqlite as catalog db.
 %description database-tools
 %{dscr}
 
-This package contains bareoss database tools.
+This package contains Bareos database tools.
 
 %description tools
 %{dscr}
 
-This package contains bareoss tools.
+This package contains Bareos tools.
 
 %if 0%{?build_qt_monitor}
 %description traymonitor
@@ -469,13 +501,14 @@ This package contains bareos development files.
 %setup
 
 %build
-%if %{undefined suse_version}
+%if !0%{?suse_version}
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
 %endif
 export MTX=/usr/sbin/mtx
 # Notice keep the upstream order of ./configure --help
 %configure \
   --prefix=%{_prefix} \
+  --libdir=%{library_dir} \
   --sbindir=%{_sbindir} \
   --with-sbin-perm=755 \
   --sysconfdir=%{_sysconfdir}/bareos \
@@ -483,6 +516,7 @@ export MTX=/usr/sbin/mtx
   --docdir=%{_docdir}/%{name} \
   --htmldir=%{_docdir}/%{name}/html \
   --with-archivedir=/var/lib/bareos/storage \
+  --with-backenddir=%{backend_dir} \
   --with-scriptdir=%{script_dir} \
   --with-working-dir=%{working_dir} \
   --with-plugindir=%{plugin_dir} \
@@ -498,7 +532,9 @@ export MTX=/usr/sbin/mtx
   --enable-readline \
   --enable-batch-insert \
   --enable-dynamic-cats-backends \
+  --enable-dynamic-storage-backends \
   --enable-scsi-crypto \
+  --enable-lmdb \
   --enable-ndmp \
   --enable-ipv6 \
   --enable-acl \
@@ -508,6 +544,9 @@ export MTX=/usr/sbin/mtx
 %endif
 %if 0%{?build_qt_monitor}
   --enable-traymonitor \
+%endif
+%if 0%{?client_only}
+  --enable-client-only \
 %endif
   --with-postgresql \
   --with-mysql \
@@ -542,38 +581,64 @@ export MTX=/usr/sbin/mtx
 
 %install
 %if 0%{?suse_version}
-    # work-around for SLE_11
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/init.d
     %makeinstall DESTDIR=%{buildroot} install
 %else
-    #%%install -d 755 %%{buildroot}%%{_sysconfdir}/rc.d/init.d
     make DESTDIR=%{buildroot} install
 %endif
+make DESTDIR=%{buildroot} install-autostart
 
-install -d 755 %{buildroot}/usr/share/applications
-install -d 755 %{buildroot}/usr/share/pixmaps
-
-install -d 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}/usr/share/applications
+install -d -m 755 %{buildroot}/usr/share/pixmaps
+install -d -m 755 %{buildroot}%{backend_dir}
+install -d -m 755 %{buildroot}%{working_dir}
+install -d -m 755 %{buildroot}%{plugin_dir}
 
 #Cleaning
 for F in  \
-%{script_dir}/bareos \
-%{script_dir}/bareos_config \
-%{script_dir}/btraceback.dbx \
-%{script_dir}/btraceback.mdb \
-%{script_dir}/bareos-ctl-funcs \
-%{script_dir}/bareos-ctl-dir \
-%{script_dir}/bareos-ctl-fd \
-%{script_dir}/bareos-ctl-sd \
-%{_docdir}/%{name}/INSTALL \
-%{_sbindir}/%{name}
+%if 0%{?client_only}
+    %{_mandir}/man1/bregex.1.gz \
+    %{_mandir}/man1/bsmtp.1.gz \
+    %{_mandir}/man1/bwild.1.gz \
+    %{_mandir}/man8/bareos-dbcheck.8.gz \
+    %{_mandir}/man8/bareos-dir.8.gz \
+    %{_mandir}/man8/bareos-sd.8.gz \
+    %{_mandir}/man8/bareos.8.gz \
+    %{_mandir}/man8/bcopy.8.gz \
+    %{_mandir}/man8/bextract.8.gz \
+    %{_mandir}/man8/bls.8.gz \
+    %{_mandir}/man8/bpluginfo.8.gz \
+    %{_mandir}/man8/bscan.8.gz \
+    %{_mandir}/man8/bscrypto.8.gz \
+    %{_mandir}/man8/btape.8.gz \
+    %{_sysconfdir}/logrotate.d/bareos-dir \
+    %{_sysconfdir}/rc.d/init.d/bareos-dir \
+    %{_sysconfdir}/rc.d/init.d/bareos-sd \
+    %{script_dir}/disk-changer \
+    %{script_dir}/mtx-changer \
+    %{_sysconfdir}/bareos/mtx-changer.conf \
+%endif
+    %{script_dir}/bareos \
+    %{script_dir}/bareos_config \
+    %{script_dir}/btraceback.dbx \
+    %{script_dir}/btraceback.mdb \
+    %{script_dir}/bareos-ctl-funcs \
+    %{script_dir}/bareos-ctl-dir \
+    %{script_dir}/bareos-ctl-fd \
+    %{script_dir}/bareos-ctl-sd \
+    %{_docdir}/%{name}/INSTALL \
+    %{_sbindir}/%{name}
 do
 rm -f "%{buildroot}/$F"
 done
 
+# remove links to libraries
+# for i in #{buildroot}/#{_libdir}/libbareos*; do printf "$i: "; readelf -a $i | grep SONAME; done
+find %{buildroot}/%{library_dir} -type l -name "libbareos*.so" -maxdepth 1 -exec rm {} \;
+ls -la %{buildroot}/%{library_dir}
+
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
-rm -f %{buildroot}/%{plugin_dir}/bar*.py*
+rm -f %{buildroot}/%{plugin_dir}/*.py*
 %endif
 
 %if 0%{?build_bat}
@@ -583,16 +648,13 @@ rm -f %{buildroot}/%{plugin_dir}/bar*.py*
 %endif
 
 # install tray monitor
-# %if 0%{?build_qt_monitor}
-# %if 0%{?suse_version} > 1010
+# #if 0#{?build_qt_monitor}
+# #if 0#{?suse_version} > 1010
 # disables, because suse_update_desktop_file complains
 # that there are two desktop file (applications and autostart)
 # ##suse_update_desktop_file bareos-tray-monitor System Backup
-# %endif
-# %endif
-
-# install the sample-query.sql file as default query file
-#install -m 644 examples/sample-query.sql %{buildroot}%{script_dir}/query.sql
+# #endif
+# #endif
 
 # remove man page if bat is not built
 %if !0%{?build_bat}
@@ -626,16 +688,20 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{_docdir}/%{name}
 %{_docdir}/%{name}/README.bareos-client
 
+
 %files bconsole
 # console package
 %defattr(-, root, root)
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
 %{script_dir}/bconsole
+%{_bindir}/bconsole
 %{_sbindir}/bconsole
-%{_mandir}/man8/bconsole.8.gz
+%{_mandir}/man1/bconsole.1.gz
+
+%if !0%{?client_only}
 
 %files director
-# dir package (bareos-dir, bsmtp)
+# dir package (bareos-dir)
 %defattr(-, root, root)
 %if 0%{?suse_version}
 %{_sysconfdir}/init.d/bareos-dir
@@ -648,7 +714,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sysconfdir}/rc.d/init.d/bareos-dir
 %endif
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
-%attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
 # we do not have any dir plugin but the python plugin
 #%%{plugin_dir}/*-dir.so
@@ -656,17 +721,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/make_catalog_backup
 %{script_dir}/make_catalog_backup.pl
 %{_sbindir}/bareos-dir
-%{_sbindir}/bsmtp
 %dir %{_docdir}/%{name}
-%{_mandir}/man1/bsmtp.1.gz
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-dir.service
 %endif
 
-# This is not a config file, but we need what %config is able to do
-# the query.sql can be personalized by end user.
+# query.sql is not a config file,
+# but can be personalized by end user.
 # a rpmlint rule is add to filter the warning
 %config(noreplace) %{script_dir}/query.sql
 
@@ -684,11 +747,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %else
 %{_sysconfdir}/rc.d/init.d/bareos-sd
 %endif
+%{_sbindir}/bareos-sd
 %{_sbindir}/bscrypto
+%{script_dir}/disk-changer
 %{plugin_dir}/autoxflate-sd.so
 %{plugin_dir}/scsicrypto-sd.so
-%{script_dir}/disk-changer
-%{_sbindir}/bareos-sd
 %{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
@@ -699,10 +762,19 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files storage-tape
 # tape specific files
 %defattr(-, root, root)
+%{backend_dir}/libbareossd-gentape*.so
+%{backend_dir}/libbareossd-tape*.so
 %{script_dir}/mtx-changer
 %config(noreplace) %{_sysconfdir}/bareos/mtx-changer.conf
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/btape
+%{plugin_dir}/scsitapealert-sd.so
+
+%files storage-fifo
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-fifo*.so
+
+%endif # client_only
 
 %files filedaemon
 # fd package (bareos-fd, plugins)
@@ -729,14 +801,16 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files common
 # common shared libraries (without db)
 %defattr(-, root, root)
-%{_libdir}/libbareos-%{_libversion}.so
-%{_libdir}/libbareos.so
-%{_libdir}/libbareoscfg-%{_libversion}.so
-%{_libdir}/libbareoscfg.so
-%{_libdir}/libbareosfind-%{_libversion}.so
-%{_libdir}/libbareosfind.so
-%{_libdir}/libbareosndmp-%{_libversion}.so
-%{_libdir}/libbareosndmp.so
+%attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
+%dir %{backend_dir}
+%{library_dir}/libbareos-%{_libversion}.so
+%{library_dir}/libbareoscfg-%{_libversion}.so
+%{library_dir}/libbareosfind-%{_libversion}.so
+%{library_dir}/libbareoslmdb-%{_libversion}.so
+%if !0%{?client_only}
+%{library_dir}/libbareosndmp-%{_libversion}.so
+%{library_dir}/libbareossd-%{_libversion}.so
+%endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
 %dir %{script_dir}
@@ -744,56 +818,64 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{script_dir}/bareos-config-lib.sh
 %{script_dir}/bareos-explorer
 %{script_dir}/btraceback.gdb
-%if "%{_libdir}/bareos/" != "/usr/lib/bareos/"
+%if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/bareos/
 %endif
 %dir %{plugin_dir}
+%if !0%{?client_only}
+%{_bindir}/bsmtp
+%{_sbindir}/bsmtp
+%endif
 %{_sbindir}/btraceback
+%if !0%{?client_only}
+%{_mandir}/man1/bsmtp.1.gz
+%endif
 %{_mandir}/man8/btraceback.8.gz
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
+%doc AGPL-3.0.txt AUTHORS LICENSE README.*
 
+%if !0%{?client_only}
 
 %files database-common
 # catalog independent files
 %defattr(-, root, root)
+%{library_dir}/libbareossql-%{_libversion}.so
+%{library_dir}/libbareoscats-%{_libversion}.so
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops
 %dir %{script_dir}/ddl/grants
 %dir %{script_dir}/ddl/updates
-%{_libdir}/libbareossql.so
-%{_libdir}/libbareoscats.so
-%{_libdir}/libbareossql-%{_libversion}.so
-%{_libdir}/libbareoscats-%{_libversion}.so
 %{script_dir}/create_bareos_database
 %{script_dir}/drop_bareos_database
 %{script_dir}/drop_bareos_tables
 %{script_dir}/grant_bareos_privileges
 %{script_dir}/make_bareos_tables
 %{script_dir}/update_bareos_tables
+%{script_dir}/ddl/versions.map
 
 %files database-postgresql
 # postgresql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
-%{_libdir}/libbareoscats-postgresql.so
-%{_libdir}/libbareoscats-postgresql-%{_libversion}.so
+%{backend_dir}/libbareoscats-postgresql.so
+%{backend_dir}/libbareoscats-postgresql-%{_libversion}.so
 
 %files database-mysql
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
-%{_libdir}/libbareoscats-mysql.so
-%{_libdir}/libbareoscats-mysql-%{_libversion}.so
+%{backend_dir}/libbareoscats-mysql.so
+%{backend_dir}/libbareoscats-mysql-%{_libversion}.so
 
 %if 0%{?build_sqlite3}
 %files database-sqlite3
 # sqlite3 catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/sqlite3*.sql
-%{_libdir}/libbareoscats-sqlite3.so
-%{_libdir}/libbareoscats-sqlite3-%{_libversion}.so
+%{backend_dir}/libbareoscats-sqlite3.so
+%{backend_dir}/libbareoscats-sqlite3-%{_libversion}.so
 %endif
 
 %files database-tools
@@ -807,17 +889,19 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files tools
 # tools without link to db libs (bwild, bregex)
 %defattr(-, root, root)
+%{_bindir}/bregex
+%{_bindir}/bwild
 %{_sbindir}/bcopy
 %{_sbindir}/bextract
 %{_sbindir}/bls
 %{_sbindir}/bregex
 %{_sbindir}/bwild
 %{_sbindir}/bpluginfo
+%{_mandir}/man1/bwild.1.gz
+%{_mandir}/man1/bregex.1.gz
 %{_mandir}/man8/bcopy.8.gz
 %{_mandir}/man8/bextract.8.gz
 %{_mandir}/man8/bls.8.gz
-%{_mandir}/man8/bwild.8.gz
-%{_mandir}/man8/bregex.8.gz
 %{_mandir}/man8/bpluginfo.8.gz
 
 %if 0%{?build_qt_monitor}
@@ -825,7 +909,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-,root, root)
 %attr(-, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.conf
 %config %{_sysconfdir}/xdg/autostart/bareos-tray-monitor.desktop
-%{_sbindir}/bareos-tray-monitor
+%{_bindir}/bareos-tray-monitor
 %{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
 /usr/share/pixmaps/bareos-tray-monitor.xpm
@@ -834,32 +918,23 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?build_bat}
 %files bat
 %defattr(-, root, root)
-%attr(-, root, %{daemon_group}) %{_sbindir}/bat
+%attr(-, root, %{daemon_group}) %{_bindir}/bat
 %attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
 %{_prefix}/share/pixmaps/bat.png
 %{_prefix}/share/pixmaps/bat.svg
 %{_prefix}/share/applications/bat.desktop
 %{_mandir}/man1/bat.1.gz
 %dir %{_docdir}/%{name}
-%dir %{_docdir}/%{name}/html
-%{_docdir}/%{name}/html/clients.html
-%{_docdir}/%{name}/html/console.html
-%{_docdir}/%{name}/html/filesets.html
-%{_docdir}/%{name}/html/index.html
-%{_docdir}/%{name}/html/joblist.html
-%{_docdir}/%{name}/html/jobplot.html
-%{_docdir}/%{name}/html/jobs.html
-%{_docdir}/%{name}/html/restore.html
-%{_docdir}/%{name}/html/status.png
-%{_docdir}/%{name}/html/storage.html
-%{_docdir}/%{name}/html/mail-message-new.png
-%{_docdir}/%{name}/html/media.html
+%dir %{_docdir}/%{name}/html/
+%doc %{_docdir}/%{name}/html/bat/
 %endif
+
+%endif # client_only
 
 %files devel
 %defattr(-, root, root)
 /usr/include/bareos
-%{_libdir}/*.la
+%{library_dir}/*.la
 
 
 %if 0%{?python_plugins}
@@ -867,6 +942,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/python-fd.so
 %{plugin_dir}/bareos-fd.py*
+%{plugin_dir}/bareos-fd-local-fileset.py*
+%{plugin_dir}/bareos-fd-mock-test.py*
+%{plugin_dir}/BareosFdPluginBaseclass.py*
+%{plugin_dir}/BareosFdPluginLocalFileset.py*
+%{plugin_dir}/BareosFdWrapper.py*
 %{plugin_dir}/bareos_fd_consts.py*
 
 %files director-python-plugin
@@ -886,40 +966,79 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 
 #
 # Define some macros for updating the system settings.
-# SUSE has most macros by default others have not so we
-# define the missing here.
 #
+%if 0%{?RHEL4}
+%define add_service_start() ( /sbin/chkconfig --add %1; %nil)
+%define stop_on_removal() ( /sbin/service %1 stop >/dev/null 2>&1 ||  /sbin/chkconfig --del %1 || true; %nil)
+%define restart_on_update() (/sbin/service %1 condrestart >/dev/null 2>&1 || true; %nil)
+%define insserv_cleanup() (/bin/true; %nil)
+%define create_group() (getent group %1 > /dev/null || groupadd -r %1; %nil);
+%define create_user() ( getent passwd %1 > /dev/null || useradd -r -c "%1" -d %{working_dir} -g %{daemon_group} -s /bin/false %1; %nil);
+%else
+# non RHEL4
 %if 0%{?suse_version}
+
+%if 0%{!?add_service_start:1}
 %define add_service_start() \
-/bin/true \
-%nil
-%else
-%if 0%{?systemd_support}
-%define add_service_start() \
-/bin/systemctl daemon-reload >/dev/null 2>&1 || true \
-%nil
-%define stop_on_removal() \
-/bin/systemctl --no-reload disable %1.service > /dev/null 2>&1 || \
-/bin/systemctl stop %1.service > /dev/null 2>&1 || true \
-%nil
-%define restart_on_update() \
-/bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
-%nil
-%else
-%define add_service_start() \
-/sbin/chkconfig --add %1 \
-%nil
-%define stop_on_removal() \
-/sbin/service %1 stop >/dev/null 2>&1 || \
-/sbin/chkconfig --del %1 || true \
-%nil
-%define restart_on_update() \
-/sbin/service %1 condrestart >/dev/null 2>&1 || true \
+SERVICE=%1 \
+#service_add $1 \
+%fillup_and_insserv $SERVICE \
 %nil
 %endif
+
+%else
+# non suse, systemd
+
 %define insserv_cleanup() \
 /bin/true \
 %nil
+
+%if 0%{?systemd_support}
+# non suse, systemd
+
+%define add_service_start() \
+/bin/systemctl daemon-reload >/dev/null 2>&1 || true \
+/bin/systemctl enable %1.service >/dev/null 2>&1 || true \
+%nil
+
+%define stop_on_removal() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" = "0" ; then \
+  /bin/systemctl stop %1.service > /dev/null 2>&1 || true \
+fi \
+%nil
+
+%define restart_on_update() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" -ge 1 ; then \
+  /bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
+fi \
+%nil
+
+%else
+# non suse, init.d
+
+%define add_service_start() \
+/sbin/chkconfig --add %1 \
+%nil
+
+%define stop_on_removal() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" = "0" ; then \
+  /sbin/service %1 stop >/dev/null 2>&1 || \
+  /sbin/chkconfig --del %1 || true \
+fi \
+%nil
+
+%define restart_on_update() \
+test -n "$FIRST_ARG" || FIRST_ARG=$1 \
+if test "$FIRST_ARG" -ge 1 ; then \
+  /sbin/service %1 condrestart >/dev/null 2>&1 || true \
+fi \
+%nil
+
+%endif
+
 %endif
 
 %define create_group() \
@@ -930,6 +1049,8 @@ getent group %1 > /dev/null || groupadd -r %1 \
 %define create_user() \
 getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
 %nil
+
+%endif
 
 %post director
 %{script_dir}/bareos-config initialize_local_hostname
@@ -1019,36 +1140,24 @@ exit 0
 exit 0
 
 %preun director
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-dir
-fi
 
 %preun storage
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-sd
-fi
 
 %preun filedaemon
-if [ "$1" = 0 ]; then
 %stop_on_removal bareos-fd
-fi
 
 %postun director
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-dir
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun storage
-if [ "$1" -ge "1" ]; then
-%restart_on_update bareos-sd
-fi
+# to prevent aborting jobs, no restart on update
 %insserv_cleanup
 
 %postun filedaemon
-if [ "$1" -ge "1" ]; then
 %restart_on_update bareos-fd
-fi
 %insserv_cleanup
 
 %changelog

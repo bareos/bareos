@@ -110,7 +110,7 @@ bool bnet_send(BSOCK *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
 {
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
@@ -123,7 +123,9 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 
    bsock->tls = tls;
 
-   /* Initiate TLS Negotiation */
+   /*
+    * Initiate TLS Negotiation
+    */
    if (!tls_bsock_accept(bsock)) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS Negotiation failed.\n"));
       goto err;
@@ -151,7 +153,7 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
 {
    TLS_CONNECTION *tls;
    JCR *jcr = bsock->jcr();
@@ -164,13 +166,17 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 
    bsock->tls = tls;
 
-   /* Initiate TLS Negotiation */
+   /*
+    * Initiate TLS Negotiation
+    */
    if (!tls_bsock_connect(bsock)) {
       goto err;
    }
 
-   /* If there's an Allowed CN verify list, use that to validate the remote
-    * certificate's CN. Otherwise, we use standard host/CN matching. */
+   /*
+    * If there's an Allowed CN verify list, use that to validate the remote
+    * certificate's CN. Otherwise, we use standard host/CN matching.
+    */
    if (verify_list) {
       if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
@@ -194,7 +200,6 @@ err:
    return false;
 }
 #else
-
 bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
@@ -206,7 +211,6 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enable but not configured.\n"));
    return false;
 }
-
 #endif /* HAVE_TLS */
 
 /*

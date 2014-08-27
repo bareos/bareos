@@ -29,6 +29,8 @@
 #include "find.h"
 #include "lib/cbuf.h"
 
+
+
 /*
  * For VSS we need to know which windows drives are used, because we create a snapshot
  * of all used drives. This function returns the number of used drives and fills
@@ -288,6 +290,211 @@ bool expand_win32_fileset(findFILESET *fileset)
       }
    }
    return true;
+}
+
+static inline int count_include_list_file_entries(FF_PKT *ff)
+{
+   int cnt = 0;
+   findFILESET *fileset;
+   findINCEXE *incexe;
+
+   fileset = ff->fileset;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
+         incexe = (findINCEXE *)fileset->include_list.get(i);
+         cnt += incexe->name_list.size();
+      }
+   }
+
+   return cnt;
+}
+
+/*
+ * Automatically exclude all files and paths defined in Registry Key
+ * "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
+ *
+ * Files/directories with wildcard characters are added to an
+ * options block with flags "exclude=yes" as "wild=dir/file".
+ * This options block is created and prepended by us.
+ *
+ */
+
+#define MAX_VALUE_NAME 16383
+#define REGISTRY_KEY "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
+
+bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
+{
+   bool retval = false;
+   uint32_t wild_count = 0;
+   DWORD retCode;
+   HKEY hKey;
+
+   /*
+    * If we do not have "File = " directives (e.g. only plugin calls)
+    * we do not create excludes for the NotForBackup RegKey
+    */
+   if (count_include_list_file_entries(ff) == 0 ) {
+      Qmsg(jcr, M_INFO, 1, _("Fileset has no \"File=\" directives, ignoring FilesNotToBackup Registry key\n"));
+      return true;
+   }
+
+   retCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(REGISTRY_KEY), 0, KEY_READ, &hKey);
+   if (retCode == ERROR_SUCCESS ) {
+      POOL_MEM achClass(PM_MESSAGE),
+               achValue(PM_MESSAGE),
+               dwKeyEn(PM_MESSAGE),
+               expandedKey(PM_MESSAGE),
+               destination(PM_MESSAGE);
+      DWORD cchClassName;            /* Size of class string */
+      DWORD cSubKeys = 0;            /* Number of subkeys */
+      DWORD cbMaxSubKey;             /* Longest subkey size */
+      DWORD cchMaxClass;             /* Longest class string */
+      DWORD cValues;                 /* Number of values for key */
+      DWORD cchMaxValue;             /* Longest value name */
+      DWORD cbMaxValueData;          /* Longest value data */
+      DWORD cbSecurityDescriptor;    /* Size of security descriptor */
+      FILETIME ftLastWriteTime;      /* Last write time */
+      DWORD cchValue;                /* Size of value string */
+      findINCEXE *include;
+
+      /*
+       * Make sure the variable are big enough to contain the data.
+       */
+      achClass.check_size(MAX_PATH);
+
+      /*
+       * Get the class name and the value count.
+       */
+      cchClassName = achClass.size();
+      retCode = RegQueryInfoKey(hKey,                  /* Key handle */
+                                achClass.c_str(),      /* Buffer for class name */
+                                &cchClassName,         /* Size of class string */
+                                NULL,                  /* Reserved */
+                                &cSubKeys,             /* Number of subkeys */
+                                &cbMaxSubKey,          /* Longest subkey size */
+                                &cchMaxClass,          /* Longest class string */
+                                &cValues,              /* Number of values for this key */
+                                &cchMaxValue,          /* Longest value name */
+                                &cbMaxValueData,       /* Longest value data */
+                                &cbSecurityDescriptor, /* Security descriptor */
+                                &ftLastWriteTime);     /* Last write time */
+
+      if (cValues) {
+         findFOPTS *fo;
+
+         /*
+          * Prepare include block to do exclusion via wildcards in options
+          */
+         if (ff->fileset->include_list.size() == 0) {
+            Dmsg0(100, "Fileset has no include block, inserting one at first position\n");
+            new_preinclude(ff->fileset);
+         } else {
+            Dmsg0(100, "Fileset has include block(s), using first one\n");
+         }
+
+
+         include = (findINCEXE*)ff->fileset->include_list.get(0);
+         /*
+          * Create new options block in include block for the wildcard excludes
+          */
+         Dmsg0(100, "prepending new options block\n");
+         new_options(ff, ff->fileset->incexe);
+         fo = (findFOPTS *)include->opts_list.get(0);
+         fo->flags |= FO_EXCLUDE;                      /* exclude = yes */
+         fo->flags |= FO_IGNORECASE;                   /* ignore case = yes */
+
+         /*
+          * Make sure the variables are big enough to contain the data.
+          */
+         achValue.check_size(MAX_VALUE_NAME);
+         dwKeyEn.check_size(MAX_PATH);
+         expandedKey.check_size(MAX_PATH);
+         destination.check_size(MAX_PATH);
+
+         for (unsigned int i = 0; i < cValues; i++) {
+            pm_strcpy(achValue, "");
+            cchValue = achValue.size();
+            retCode = RegEnumValue(hKey, i, achValue.c_str(), &cchValue, NULL, NULL, NULL, NULL);
+
+            if (retCode == ERROR_SUCCESS ){
+               DWORD dwLen;
+
+               Dmsg2(100 , "(%d) \"%s\" : \n", i + 1, achValue.c_str());
+
+               dwLen = dwKeyEn.size();
+               retCode = RegQueryValueEx(hKey, achValue.c_str(), 0, NULL, (LPBYTE)dwKeyEn.c_str(), &dwLen);
+               if (retCode == ERROR_SUCCESS) {
+                  char *lpValue;
+
+                  /*
+                   * Iterate over each string, expand the %xxx% variables and
+                   * process them for addition to exclude block or wildcard options block
+                   */
+                  for (lpValue = dwKeyEn.c_str();
+                       lpValue && *lpValue;
+                       lpValue = strchr(lpValue, '\0') + 1) {
+                     char *s, *d;
+
+                     ExpandEnvironmentStrings(lpValue, expandedKey.c_str(), expandedKey.size());
+                     Dmsg1(100, "        \"%s\"\n", expandedKey.c_str());
+
+                     pm_strcpy(destination, "");
+
+                     /*
+                      * Do all post processing.
+                      * - Replace '\' by '/'
+                      * - Strip any trailing /s patterns.
+                      * - Check if wildcards are used.
+                      */
+                     s = expandedKey.c_str();
+                     d = destination.c_str();
+
+                     /*
+                      * Begin with \ means all drives
+                      */
+                     if (*s == '\\') {
+                        d += pm_strcpy(destination, "[A-Z]:");
+                     }
+
+                     while (*s) {
+                        switch (*s) {
+                        case '\\':
+                           *d++ = '/';
+                           s++;
+                           break;
+                        case ' ':
+                           if (bstrcmp(s, " /s")) {
+                              *d = '\0';
+                              *s = '\0';
+                              continue;
+                           }
+                           /* FALLTHROUGH */
+                        default:
+                           *d++ = *s++;
+                           break;
+                        }
+                     }
+
+                     *d = '\0';
+
+                     fo->wild.append(bstrdup(destination.c_str()));
+                     wild_count++;
+                  }
+               } else {
+                  Dmsg0(100, TEXT("RegGetValue failed \n"));
+               }
+            }
+         }
+      }
+
+      Qmsg(jcr, M_INFO, 0, _("Created %d wildcard excludes from FilesNotToBackup Registry key\n"), wild_count);
+      RegCloseKey(hKey);
+      retval = true;
+   } else {
+      Qmsg(jcr, M_ERROR, 0, _("Failed to open FilesNotToBackup Registry Key\n"));
+   }
+
+   return retval;
 }
 
 /*

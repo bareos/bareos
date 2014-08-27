@@ -47,7 +47,8 @@
 #endif
 
 /* Exported variables */
-CONRES *me = NULL;                        /* my resource */
+CONRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 
 //extern int rl_catch_signals;
 
@@ -82,7 +83,6 @@ static int numdir;
 static POOLMEM *args;
 static char *argk[MAX_CMD_ARGS];
 static char *argv[MAX_CMD_ARGS];
-static CONFIG *config;
 static bool file_selection = false;
 
 /* Command prototypes */
@@ -619,6 +619,7 @@ struct cpl_keywords_t {
 
 static struct cpl_keywords_t cpl_keywords[] = {
    { "pool=", ".pool", false },
+   { "nextpool=", ".pool", false },
    { "fileset=", ".fileset", false },
    { "client=", ".client", false },
    { "job=", ".jobs", false },
@@ -1181,8 +1182,8 @@ int main(int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_cons_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_cons_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -1309,11 +1310,13 @@ int main(int argc, char *argv[])
     */
    if (cons) {
       name = cons->hdr.name;
-      password = cons->password;
+      ASSERT(cons->password.encoding == p_encoding_md5);
+      password = cons->password.value;
       tls_ctx = cons->tls_ctx;
    } else {
       name = "*UserAgent*";
-      password = dir->password;
+      ASSERT(dir->password.encoding == p_encoding_md5);
+      password = dir->password.value;
       tls_ctx = dir->tls_ctx;
    }
 
@@ -1397,9 +1400,9 @@ static void terminate_console(int sig)
    }
    already_here = true;
    stop_watchdog();
-   config->free_resources();
-   free(config);
-   config = NULL;
+   my_config->free_resources();
+   free(my_config);
+   my_config = NULL;
    cleanup_crypto();
    free_pool_memory(args);
    if (!no_conio) {
@@ -1602,8 +1605,9 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
    status = close_bpipe(bpipe);
    if (status != 0) {
       berrno be;
+
       be.set_errno(status);
-     senditf(_("Autochanger error: ERR=%s\n"), be.bstrerror());
+      senditf(_("@exec error: ERR=%s\n"), be.bstrerror());
    }
    return 1;
 }

@@ -29,24 +29,6 @@
  * this file.
  */
 
-/*
-   Here is how database versions work.
-
-   While I am working on a new release with database changes, the
-   update scripts are in the src/cats directory under the names
-   update_xxx_tables.in.  Most of the time, I make database updates
-   in one go and immediately update the version, but not always.  If
-   there are going to be several updates as is the case with version
-   1.37, then I will often forgo changing the version until the last
-   update otherwise I will end up with too many versions and a lot
-   of confusion.
-
-   When I am pretty sure there will be no more updates, I will
-   change the version from 8 to 9 (in the present case), and when I
-   am 100% sure there will be no more changes, the update script
-   will be copied to the updatedb directory with the correct name
-   (in the present case 8 to 9).
- */
 #ifndef __CATS_H_
 #define __CATS_H_ 1
 
@@ -91,7 +73,10 @@ public:
  * contains all the fields found in the Job database record,
  * it also contains fields found in the JobMedia record.
  */
-/* Job record */
+
+/*
+ * Job record
+ */
 struct JOB_DBR {
    JobId_t JobId;
    char Job[MAX_NAME_LENGTH];         /* Job unique name */
@@ -133,7 +118,10 @@ struct JOB_DBR {
    char cStartTime[MAX_TIME_LENGTH];
    char cEndTime[MAX_TIME_LENGTH];
    char cRealEndTime[MAX_TIME_LENGTH];
-   /* Extra stuff not in DB */
+
+   /*
+    * Extra stuff not in DB
+    */
    int limit;                         /* limit records to display */
    faddr_t rec_addr;
    uint32_t FileIndex;                /* added during Verify */
@@ -142,7 +130,9 @@ struct JOB_DBR {
 /* Job Media information used to create the media records
  * for each Volume used for the job.
  */
-/* JobMedia record */
+/*
+ * JobMedia record
+ */
 struct JOBMEDIA_DBR {
    DBId_t JobMediaId;                 /* record id */
    JobId_t  JobId;                    /* JobId */
@@ -173,10 +163,10 @@ struct VOL_PARAMS {
 // uint32_t Stripe;                   /* RAIT strip number */
 };
 
-
-/* Attributes record -- NOT same as in database because
- *  in general, this "record" creates multiple database
- *  records (e.g. pathname, filename, fileattributes).
+/*
+ * Attributes record -- NOT same as in database because
+ * in general, this "record" creates multiple database
+ * records (e.g. pathname, filename, fileattributes).
  */
 struct ATTR_DBR {
    char *fname;                       /* full path & filename */
@@ -202,30 +192,33 @@ struct ROBJECT_DBR {
    uint32_t object_len;
    uint32_t object_full_len;
    uint32_t object_index;
-   int32_t  object_compression;
+   int32_t object_compression;
    uint32_t FileIndex;
    uint32_t Stream;
    uint32_t FileType;
-   JobId_t  JobId;
+   JobId_t JobId;
    DBId_t RestoreObjectId;
 };
 
-
-/* File record -- same format as database */
+/*
+ * File record -- same format as database
+ */
 struct FILE_DBR {
    FileId_t FileId;
    uint32_t FileIndex;
-   JobId_t  JobId;
+   JobId_t JobId;
    DBId_t FilenameId;
    DBId_t PathId;
-   JobId_t  MarkId;
+   JobId_t MarkId;
    uint32_t DeltaSeq;
    char LStat[256];
    char Digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
    int DigestType;                    /* NO_SIG/MD5_SIG/SHA1_SIG */
 };
 
-/* Pool record -- same format as database */
+/*
+ * Pool record -- same format as database
+ */
 struct POOL_DBR {
    DBId_t PoolId;
    char Name[MAX_NAME_LENGTH];        /* Pool name */
@@ -238,8 +231,8 @@ struct POOL_DBR {
    int32_t AutoPrune;                 /* set to prune automatically */
    int32_t Recycle;                   /* default Vol recycle flag */
    uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
-   utime_t  VolRetention;             /* retention period in seconds */
-   utime_t  VolUseDuration;           /* time in secs volume can be used */
+   utime_t VolRetention;              /* retention period in seconds */
+   utime_t VolUseDuration;            /* time in secs volume can be used */
    uint32_t MaxVolJobs;               /* Max Jobs on Volume */
    uint32_t MaxVolFiles;              /* Max files on Volume */
    uint64_t MaxVolBytes;              /* Max bytes on Volume */
@@ -247,12 +240,16 @@ struct POOL_DBR {
    DBId_t ScratchPoolId;              /* ScratchPool source when media is needed */
    char PoolType[MAX_NAME_LENGTH];
    char LabelFormat[MAX_NAME_LENGTH];
-   /* Extra stuff not in DB */
+   uint32_t MinBlocksize;             /* Minimum Block Size */
+   uint32_t MaxBlocksize;             /* Maximum Block Size */
+
+   /*
+    * Extra stuff not in DB
+    */
    faddr_t rec_addr;
 };
 
-class DEVICE_DBR {
-public:
+struct DEVICE_DBR {
    DBId_t DeviceId;
    char Name[MAX_NAME_LENGTH];        /* Device name */
    DBId_t MediaTypeId;                /* MediaType */
@@ -260,50 +257,45 @@ public:
    uint32_t DevMounts;                /* Number of times mounted */
    uint32_t DevErrors;                /* Number of read/write errors */
    uint64_t DevReadBytes;             /* Number of bytes read */
-   uint64_t DevWriteBytes;            /* Number of bytew written */
+   uint64_t DevWriteBytes;            /* Number of bytes written */
    uint64_t DevReadTime;              /* time spent reading volume */
    uint64_t DevWriteTime;             /* time spent writing volume */
    uint64_t DevReadTimeSincCleaning;  /* read time since cleaning */
    uint64_t DevWriteTimeSincCleaning; /* write time since cleaning */
-   time_t   CleaningDate;             /* time last cleaned */
-   utime_t  CleaningPeriod;           /* time between cleanings */
+   time_t CleaningDate;               /* time last cleaned */
+   utime_t CleaningPeriod;            /* time between cleanings */
 };
 
-class STORAGE_DBR {
-public:
+struct STORAGE_DBR {
    DBId_t StorageId;
    char Name[MAX_NAME_LENGTH];        /* Device name */
    int AutoChanger;                   /* Set if autochanger */
 
-   /* Not in database */
+   /*
+    * Extra stuff not in DB
+    */
    bool created;                      /* set if created by db_create ... */
 };
 
-class MEDIATYPE_DBR {
-public:
+struct MEDIATYPE_DBR {
    DBId_t MediaTypeId;
    char MediaType[MAX_NAME_LENGTH];   /* MediaType string */
    int ReadOnly;                      /* Set if read-only */
 };
 
-
-/* Media record -- same as the database */
-class MEDIA_DBR {
-public:
-   MEDIA_DBR() { memset(this, 0, sizeof(MEDIA_DBR)); };
-   ~MEDIA_DBR() {  };
-   void clear() { memset(this, 0, sizeof(MEDIA_DBR)); };
-   void copy(MEDIA_DBR *omr) { memcpy(this, omr, sizeof(MEDIA_DBR)); };
-
+/*
+ * Media record -- same as the database
+ */
+struct MEDIA_DBR {
    DBId_t MediaId;                    /* Unique volume id */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
    char MediaType[MAX_NAME_LENGTH];   /* Media type */
    char EncrKey[MAX_NAME_LENGTH];     /* Encryption Key */
    DBId_t PoolId;                     /* Pool id */
-   time_t   FirstWritten;             /* Time Volume first written this usage */
-   time_t   LastWritten;              /* Time Volume last written */
-   time_t   LabelDate;                /* Date/Time Volume labeled */
-   time_t   InitialWrite;             /* Date/Time Volume first written */
+   time_t FirstWritten;               /* Time Volume first written this usage */
+   time_t LastWritten;                /* Time Volume last written */
+   time_t LabelDate;                  /* Date/Time Volume labeled */
+   time_t InitialWrite;               /* Date/Time Volume first written */
    int32_t  LabelType;                /* Label (BAREOS/ANSI/IBM) */
    uint32_t VolJobs;                  /* number of jobs on this medium */
    uint32_t VolFiles;                 /* Number of files */
@@ -317,38 +309,46 @@ public:
    uint64_t VolCapacityBytes;         /* capacity estimate */
    uint64_t VolReadTime;              /* time spent reading volume */
    uint64_t VolWriteTime;             /* time spent writing volume */
-   utime_t  VolRetention;             /* Volume retention in seconds */
-   utime_t  VolUseDuration;           /* time in secs volume can be used */
+   utime_t VolRetention;              /* Volume retention in seconds */
+   utime_t VolUseDuration;            /* time in secs volume can be used */
    uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
    uint32_t MaxVolJobs;               /* Max Jobs on Volume */
    uint32_t MaxVolFiles;              /* Max files on Volume */
-   int32_t  Recycle;                  /* recycle yes/no */
-   int32_t  Slot;                     /* slot in changer */
-   int32_t  Enabled;                  /* 0=disabled, 1=enabled, 2=archived */
-   int32_t  InChanger;                /* Volume currently in changer */
-   DBId_t   StorageId;                /* Storage record Id */
+   int32_t Recycle;                   /* recycle yes/no */
+   int32_t Slot;                      /* slot in changer */
+   int32_t Enabled;                   /* 0=disabled, 1=enabled, 2=archived */
+   int32_t InChanger;                 /* Volume currently in changer */
+   DBId_t StorageId;                  /* Storage record Id */
    uint32_t EndFile;                  /* Last file on volume */
    uint32_t EndBlock;                 /* Last block on volume */
    uint32_t RecycleCount;             /* Number of times recycled */
-   char     VolStatus[20];            /* Volume status */
-   DBId_t   DeviceId;                 /* Device where Vol last written */
-   DBId_t   LocationId;               /* Where Volume is -- user defined */
-   DBId_t   ScratchPoolId;            /* Where to move if scratch */
-   DBId_t   RecyclePoolId;            /* Where to move when recycled */
-   /* Extra stuff not in DB */
-   faddr_t rec_addr;                  /* found record address */
-   /* Since the database returns times as strings, this is how we pass
-    *   them back.
+   uint32_t MinBlocksize;             /* Minimum Block Size */
+   uint32_t MaxBlocksize;             /* Maximum Block Size */
+   char VolStatus[20];                /* Volume status */
+   DBId_t DeviceId;                   /* Device where Vol last written */
+   DBId_t LocationId;                 /* Where Volume is -- user defined */
+   DBId_t ScratchPoolId;              /* Where to move if scratch */
+   DBId_t RecyclePoolId;              /* Where to move when recycled */
+
+   /*
+    * Extra stuff not in DB
     */
-   char    cFirstWritten[MAX_TIME_LENGTH]; /* FirstWritten returned from DB */
-   char    cLastWritten[MAX_TIME_LENGTH];  /* LastWritten returned from DB */
-   char    cLabelDate[MAX_TIME_LENGTH];    /* LabelData returned from DB */
-   char    cInitialWrite[MAX_TIME_LENGTH]; /* InitialWrite returned from DB */
-   bool    set_first_written;
-   bool    set_label_date;
+   faddr_t rec_addr;                  /* found record address */
+
+   /*
+    * Since the database returns times as strings, this is how we pass them back.
+    */
+   char cFirstWritten[MAX_TIME_LENGTH]; /* FirstWritten returned from DB */
+   char cLastWritten[MAX_TIME_LENGTH];  /* LastWritten returned from DB */
+   char cLabelDate[MAX_TIME_LENGTH];    /* LabelData returned from DB */
+   char cInitialWrite[MAX_TIME_LENGTH]; /* InitialWrite returned from DB */
+   bool set_first_written;
+   bool set_label_date;
 };
 
-/* Client record -- same as the database */
+/*
+ * Client record -- same as the database
+ */
 struct CLIENT_DBR {
    DBId_t ClientId;                   /* Unique Client id */
    int AutoPrune;
@@ -360,7 +360,9 @@ struct CLIENT_DBR {
    char Uname[256];                   /* Uname for client */
 };
 
-/* Counter record as in database */
+/*
+ * Counter record -- same as in database
+ */
 struct COUNTER_DBR {
    char Counter[MAX_NAME_LENGTH];
    int32_t MinValue;
@@ -369,8 +371,9 @@ struct COUNTER_DBR {
    char WrapCounter[MAX_NAME_LENGTH];
 };
 
-
-/* FileSet record -- same as the database */
+/*
+ * FileSet record -- same as the database
+ */
 struct FILESET_DBR {
    DBId_t FileSetId;                  /* Unique FileSet id */
    char FileSet[MAX_NAME_LENGTH];     /* FileSet name */
@@ -380,11 +383,54 @@ struct FILESET_DBR {
     * This is where we return CreateTime
     */
    char cCreateTime[MAX_TIME_LENGTH]; /* CreateTime as returned from DB */
-   /* Not in DB but returned by db_create_fileset() */
+   /*
+    * Not in DB but returned by db_create_fileset()
+    */
    bool created;                      /* set when record newly created */
 };
 
-/* Call back context for getting a 32/64 bit value from the database */
+/*
+ * Device Statistics record -- same as in database
+ */
+struct DEVICE_STATS_DBR {
+   DBId_t DeviceId;                   /* Device record id */
+   time_t SampleTime;                 /* Timestamp statistic was captured */
+   uint64_t ReadTime;                 /* Time spent reading volume */
+   uint64_t WriteTime;                /* Time spent writing volume */
+   uint64_t ReadBytes;                /* Number of bytes read */
+   uint64_t WriteBytes;               /* Number of bytes written */
+   uint64_t SpoolSize;                /* Number of bytes spooled */
+   uint32_t NumWaiting;               /* Number of Jobs waiting for device */
+   uint32_t NumWriters;               /* Number of writers to device */
+   DBId_t MediaId;                    /* MediaId used */
+   uint64_t VolCatBytes;              /* Volume Bytes */
+   uint64_t VolCatFiles;              /* Volume Files */
+   uint64_t VolCatBlocks;             /* Volume Blocks */
+};
+
+/*
+ * TapeAlert record -- same as in database
+ */
+struct TAPEALERT_STATS_DBR {
+   DBId_t DeviceId;                   /* Device record id */
+   time_t SampleTime;                 /* Timestamp statistic was captured */
+   uint64_t AlertFlags;               /* Tape Alerts raised */
+};
+
+/*
+ * Job Statistics record -- same as in database
+ */
+struct JOB_STATS_DBR {
+   DBId_t DeviceId;                   /* Device record id */
+   time_t SampleTime;                 /* Timestamp statistic was captured */
+   JobId_t JobId;                     /* Job record id */
+   uint32_t JobFiles;                 /* Number of Files in Job */
+   uint64_t JobBytes;                 /* Number of Bytes in Job */
+};
+
+/*
+ * Call back context for getting a 32/64 bit value from the database
+ */
 class db_int64_ctx {
 public:
    int64_t value;                     /* value returned */
@@ -397,8 +443,8 @@ private:
    db_int64_ctx &operator=(const db_int64_ctx&); /* prohibit class assignment */
 };
 
-/* Call back context for getting a list of comma separated strings from the
- * database
+/*
+ * Call back context for getting a list of comma separated strings from the database
  */
 class db_list_ctx {
 public:
@@ -451,8 +497,10 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 #define db_lock(mdb)   mdb->_db_lock(__FILE__, __LINE__)
 #define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
 
-/* Current database version number for all drivers */
-#define BDB_VERSION 2002
+/*
+ * Current database version number for all drivers
+ */
+#define BDB_VERSION 2003
 
 class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:
@@ -580,7 +628,9 @@ struct SQL_POOL_DESCRIPTOR {
 #include "jcr.h"
 #include "sql_cmds.h"
 
-/* Object used in db_list_xxx function */
+/*
+ * Object used in db_list_xxx function
+ */
 class LIST_CTX {
 public:
    char line[256];              /* Used to print last dash line */

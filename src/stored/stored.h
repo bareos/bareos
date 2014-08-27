@@ -62,6 +62,7 @@ const int sd_dbglvl = 300;
 #include "jcr.h"
 #include "vol_mgr.h"
 #include "reserve.h"
+
 #include "protos.h"
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>
@@ -78,10 +79,9 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #include "sd_plugins.h"
 
-/* Daemon globals from stored.c */
-extern STORES *me;                    /* "Global" daemon resource */
-extern bool forge_on;                 /* proceed inspite of I/O errors */
-extern pthread_mutex_t device_release_mutex;
-extern pthread_cond_t wait_device_release; /* wait for any device to be released */
+extern char SD_IMP_EXP *configfile;
+extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
+extern STORES SD_IMP_EXP *me;         /* "Global" daemon resource */
+extern CONFIG SD_IMP_EXP *my_config;  /* Our Global config */
 
 #endif /* __STORED_H_ */

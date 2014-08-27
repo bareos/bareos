@@ -321,6 +321,9 @@ bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cmd_page, unsigned int cmd_page_len);
 bool check_scsi_at_eod(int fd);
 
+/* scsi_tapealert.c */
+bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags);
+
 /* signal.c */
 void init_signals(void terminate(int sig));
 void init_stack_dump(void);
@@ -363,6 +366,7 @@ bool get_tls_enable(TLS_CONTEXT *ctx);
 void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 
 /* util.c */
+void escape_string(char *snew, char *old, int len);
 bool is_buf_zero(char *buf, int len);
 void lcase(char *str);
 void bash_spaces(char *str);

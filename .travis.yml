@@ -18,7 +18,7 @@ env:
         # Name of the project
         - COVERITY_SCAN_PROJECT_NAME="bareos/bareos"
         # Email address for notifications related to this build
-        - COVERITY_SCAN_NOTIFICATION_EMAIL="joerg.steffens@bareos.com"
+        - COVERITY_SCAN_NOTIFICATION_EMAIL="coverity@bareos.org"
         # Regular expression selects on which branches to run analysis
         # Be aware of quotas. Do not run on every branch/commit
         - COVERITY_SCAN_BRANCH_PATTERN="master"
@@ -54,6 +54,7 @@ before_script:
     - if [ "${COVERITY_SCAN}" = '1' ]; then eval "$COVERITY_SCAN_BUILD"; else make; fi
     - for script in $PWD/debian/bareos*.preinst; do echo "$script"; sudo /bin/sh $script install; done
     - sudo make install
+    - sudo make install-autostart
     - for script in $PWD/debian/bareos*.postinst; do echo "$script"; sudo /bin/sh $script configure; done
 
 # test script

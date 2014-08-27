@@ -261,8 +261,10 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
          continue;
       }
 
+      ASSERT(auth_config->password.encoding == p_encoding_clear);
+
       if (bstrcmp(name, auth_config->username) &&
-          bstrcmp(pass, auth_config->password)) {
+          bstrcmp(pass, auth_config->password.value)) {
          /*
           * See if we need to adjust the logging level.
           */
@@ -302,7 +304,9 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
          continue;
       }
 
-      if (!ndmmd5_ok_digest(sess->md5_challenge, auth_config->password, digest)) {
+      ASSERT(auth_config->password.encoding == p_encoding_clear);
+
+      if (!ndmmd5_ok_digest(sess->md5_challenge, auth_config->password.value, digest)) {
          return 0;
       }
 
@@ -356,7 +360,7 @@ static inline bool bndmp_write_data_to_block(JCR *jcr,
    }
 
    if (stream == STREAM_UNIX_ATTRIBUTES) {
-      dir_update_file_attributes(dcr, dcr->rec);
+      dcr->dir_update_file_attributes(dcr->rec);
    }
 
    retval = true;
@@ -477,8 +481,8 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
    DCR *dcr = jcr->dcr;
    struct stat statp;
    time_t now = time(NULL);
-   char attribs[MAXSTRING];
-   char data[MAXSTRING];
+   POOL_MEM attribs(PM_NAME),
+            data(PM_NAME);
    int32_t size;
 
    memset(&statp, 0, sizeof(statp));
@@ -493,7 +497,7 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs, &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
+   encode_stat(attribs.c_str(), &statp, sizeof(statp), dcr->FileIndex, STREAM_UNIX_ATTRIBUTES);
 
    /*
     * Generate a file attributes stream.
@@ -505,21 +509,22 @@ static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
     *   Encoded extended-attributes (for Win32)
     *   Delta Sequence Number
     */
-   size = bsnprintf(data, sizeof(data), "%ld %d %s%c%s%c%s%c%s%c%d%c",
-                    dcr->FileIndex,       /* File_index */
-                    FT_REG,               /* File type */
-                    filename,             /* Filename (full path) */
-                    0,
-                    attribs,              /* Encoded attributes */
-                    0,
-                    "",                   /* Link name (if type==FT_LNK or FT_LNKSAVED) */
-                    0,
-                    "",                   /* Encoded extended-attributes (for Win32) */
-                    0,
-                    0,                    /* Delta Sequence Number */
-                    0);
+   size = Mmsg(data,
+               "%ld %d %s%c%s%c%s%c%s%c%d%c",
+               dcr->FileIndex,       /* File_index */
+               FT_REG,               /* File type */
+               filename,             /* Filename (full path) */
+               0,
+               attribs.c_str(),      /* Encoded attributes */
+               0,
+               "",                   /* Link name (if type==FT_LNK or FT_LNKSAVED) */
+               0,
+               "",                   /* Encoded extended-attributes (for Win32) */
+               0,
+               0,                    /* Delta Sequence Number */
+               0);
 
-   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data, size);
+   return bndmp_write_data_to_block(jcr, STREAM_UNIX_ATTRIBUTES, data.c_str(), size);
 }
 
 static int bndmp_simu_flush_weof(struct ndm_session *sess)

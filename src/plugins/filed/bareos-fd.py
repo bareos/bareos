@@ -9,6 +9,7 @@ def load_bareos_plugin(context, plugindef):
   events.append(bEventType['bEventJobEnd']);
   events.append(bEventType['bEventEndBackupJob']);
   events.append(bEventType['bEventEndFileSet']);
+  events.append(bEventType['bEventHandleBackupFile']);
   RegisterEvents(context, events);
   fdname = GetValue(context, bVariable['bVarFDName']);
   DebugMessage(context, 100, "FDName = " + fdname + "\n");
@@ -116,7 +117,7 @@ def plugin_io(context, IOP):
     return bRCs['bRC_OK'];
 
 def start_restore_file(context, cmd):
-  DebugMessage(context, 100, "start_restore_file() entry point in Python called with" + str(cmd) + "\n")
+  DebugMessage(context, 100, "start_restore_file() entry point in Python called with " + str(cmd) + "\n")
 
   return bRCs['bRC_OK'];
 
@@ -125,7 +126,24 @@ def end_restore_file(context):
 
   return bRCs['bRC_OK'];
 
-def restore_object_data(context, ROP):
-  DebugMessage(context, 100, "restore_object_data called with " + str(ROP) + "\n");
+def create_file(context, restorepkt):
+  DebugMessage(context, 100, "create_file() entry point in Python called with " + str(restorepkt) + "\n")
+
+  restorepkt.create_status = bCFs['CF_EXTRACT'];
+
+  return bRCs['bRC_OK'];
+
+def check_file(context, fname):
+  DebugMessage(context, 100, "check_file() entry point in Python called with " + str(fname) + "\n")
+
+  return bRCs['bRC_OK'];
+
+def restore_object_data(context, restoreobject):
+  DebugMessage(context, 100, "restore_object_data called with " + str(restoreobject) + "\n");
+
+  return bRCs['bRC_OK'];
+
+def handle_backup_file(context, savepkt):
+  DebugMessage(context, 100, "handle_backup_file called with " + str(savepkt) + "\n");
 
   return bRCs['bRC_OK'];

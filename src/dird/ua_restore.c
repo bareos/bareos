@@ -145,14 +145,14 @@ int restore_cmd(UAContext *ua, const char *cmd)
    /* TODO: add acl for regexwhere ? */
 
    if (rx.RegexWhere) {
-      if (!acl_access_ok(ua, Where_ACL, rx.RegexWhere)) {
+      if (!acl_access_ok(ua, Where_ACL, rx.RegexWhere, true)) {
          ua->error_msg(_("\"RegexWhere\" specification not authorized.\n"));
          goto bail_out;
       }
    }
 
    if (rx.where) {
-      if (!acl_access_ok(ua, Where_ACL, rx.where)) {
+      if (!acl_access_ok(ua, Where_ACL, rx.where, true)) {
          ua->error_msg(_("\"where\" specification not authorized.\n"));
          goto bail_out;
       }
@@ -599,7 +599,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
             ua->error_msg(_("Error: Pool resource \"%s\" does not exist.\n"), ua->argv[i]);
             return 0;
          }
-         if (!acl_access_ok(ua, Pool_ACL, ua->argv[i])) {
+         if (!acl_access_ok(ua, Pool_ACL, ua->argv[i], true)) {
             rx->pool = NULL;
             ua->error_msg(_("Error: Pool resource \"%s\" access not allowed.\n"), ua->argv[i]);
             return 0;
@@ -639,7 +639,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       case -1:                        /* error or cancel */
          return 0;
       case 0:                         /* list last 20 Jobs run */
-         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), 8)) {
+         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), true)) {
             ua->error_msg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -674,7 +674,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          pm_strcpy(rx->JobIds, ua->cmd);
          break;
       case 3:                         /* Enter an SQL list command */
-         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), 8)) {
+         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), true)) {
             ua->error_msg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -818,7 +818,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
             return 0;
          }
 
-         memset(&jr, 0, sizeof(JOB_DBR));
+         memset(&jr, 0, sizeof(jr));
          jr.JobId = str_to_int64(ua->cmd);
          if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
             ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -839,7 +839,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       }
    }
 
-   memset(&jr, 0, sizeof(JOB_DBR));
+   memset(&jr, 0, sizeof(jr));
    POOLMEM *JobIds = get_pool_memory(PM_FNAME);
    *JobIds = 0;
    rx->TotalFiles = 0;
@@ -861,7 +861,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       if (jr.JobId == JobId) {
          continue;                    /* duplicate of last JobId */
       }
-      memset(&jr, 0, sizeof(JOB_DBR));
+      memset(&jr, 0, sizeof(jr));
       jr.JobId = JobId;
       if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
          ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
@@ -869,7 +869,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          free_pool_memory(JobIds);
          return 0;
       }
-      if (!acl_access_ok(ua, Job_ACL, jr.Name)) {
+      if (!acl_access_ok(ua, Job_ACL, jr.Name, true)) {
          ua->error_msg(_("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
             edit_int64(JobId, ed1), jr.Name);
          continue;
@@ -1151,7 +1151,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    bool OK = true;
    char ed1[50];
 
-   memset(&tree, 0, sizeof(TREE_CTX));
+   memset(&tree, 0, sizeof(tree));
 
    /*
     * Build the directory tree containing JobIds user selected
@@ -1559,7 +1559,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
       i = find_arg_with_value(ua, "storage");
       if (i > 0) {
          store = (STORERES *)GetResWithName(R_STORAGE, ua->argv[i]);
-         if (store && !acl_access_ok(ua, Storage_ACL, store->name())) {
+         if (store && !acl_access_ok(ua, Storage_ACL, store->name(), true)) {
             store = NULL;
          }
       }
@@ -1602,7 +1602,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
    /*
     * Take command line arg, or ask user if none
     */
-   rx.store = get_storage_resource(ua, false /* don't use default */);
+   rx.store = get_storage_resource(ua);
    if (rx.store) {
       Dmsg1(200, "Set store=%s\n", rx.store->name());
    }

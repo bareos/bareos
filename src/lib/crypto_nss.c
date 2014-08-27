@@ -38,8 +38,8 @@ struct Digest {
    crypto_digest_t type;
    JCR *jcr;
    union {
-      SHA1Context sha1;
-      MD5Context md5;
+      SHA1_CTX sha1;
+      MD5_CTX md5;
    };
 };
 

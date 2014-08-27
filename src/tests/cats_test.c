@@ -31,7 +31,9 @@
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
-//static DBId_t fnid=0;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+#endif
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
 static const char *db_password = "";
@@ -212,6 +214,7 @@ static int count_col(void *ctx, int nb_col, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
+   alist* backend_directories = NULL;
    char *path=NULL, *client=NULL;
    uint64_t limit=0;
    bool clean=false;
@@ -341,6 +344,13 @@ int main (int argc, char *argv[])
 
    /* Test DB connexion */
    Pmsg1(0, PLINE "Test DB connection \"%s\"" PLINE, db_name);
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   backend_directories = New(alist(10, owned_by_alist));
+   backend_directories->append((char *)backend_directory);
+
+   db_set_backend_dirs(backend_directories);
+#endif
 
    if (full_test) {
       db = db_init_database(jcr, db_driver, db_name, db_user, db_password, db_address, db_port + 100, NULL);

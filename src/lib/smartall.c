@@ -19,7 +19,6 @@
    02110-1301, USA.
 */
 /*
-
                          S M A R T A L L O C
                         Smart Memory Allocator
 
@@ -32,33 +31,19 @@
         information and the current version visit the Web page:
 
                   http://www.fourmilab.ch/smartall/
-
 */
 
 #define _LOCKMGR_COMPLIANT
 
 #include "bareos.h"
-/* Use the real routines here */
+
+/*
+ * Use the real routines here
+ */
 #undef realloc
 #undef calloc
 #undef malloc
 #undef free
-
-/* We normally turn off debugging here.
- *  If you want it, simply #ifdef all the
- *  following off.
- */
-#ifdef no_debug_xxxxx
-#undef Dmsg1
-#undef Dmsg2
-#undef Dmsg3
-#undef Dmsg4
-#define Dmsg1(l,f,a1)
-#define Dmsg2(l,f,a1,a2)
-#define Dmsg3(l,f,a1,a2,a3)
-#define Dmsg4(l,f,a1,a2,a3,a4)
-#endif
-
 
 uint64_t sm_max_bytes = 0;
 uint64_t sm_bytes = 0;
@@ -68,16 +53,18 @@ uint32_t sm_buffers = 0;
 #ifdef SMARTALLOC
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+extern char my_name[];                /* Daemon name */
 
-extern char my_name[];                /* daemon name */
-
-#define EOS      '\0'              /* End of string sentinel */
+#define EOS '\0'                      /* End of string sentinel */
 #define sm_min(a, b) ((a) < (b) ? (a) : (b))
 
-/*  Queue data structures  */
+/*
+ * Queue data structures
+ */
 
-/*  Memory allocation control structures and storage.  */
-
+/*
+ * Memory allocation control structures and storage.
+ */
 struct abufhead {
    struct b_queue abq;         /* Links on allocated queue */
    uint32_t ablen;             /* Buffer length in bytes */
@@ -86,46 +73,85 @@ struct abufhead {
    bool abin_use;              /* set when malloced and cleared when free */
 };
 
-static struct b_queue abqueue = {    /* Allocated buffer queue */
+/*
+ * Allocated buffer queue
+ */
+static struct b_queue abqueue = {
    &abqueue, &abqueue
 };
-
 
 static bool bufimode = false;   /* Buffers not tracked when True */
 
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
 
+/*
+ * SMALLOC -- Allocate buffer, enqueing on the orphaned buffer tracking list.
+ */
 
-/*  SMALLOC  --  Allocate buffer, enqueing on the orphaned buffer
-                 tracking list.  */
+/*
+ * Special version of error reporting using a static buffer so we don't use
+ * the normal error reporting which uses dynamic memory e.g. recursivly calls
+ * these routines again leading to deadlocks.
+ */
+static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
+{
+   char buf[256];
+   va_list arg_ptr;
+   int len;
+
+   len = bsnprintf(buf, sizeof(buf),
+                   _("%s: ABORTING due to ERROR in %s:%d\n"),
+                   my_name, get_basename(file), line);
+
+   va_start(arg_ptr, fmt);
+   bvsnprintf(buf + len, sizeof(buf) - len, (char *)fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   dispatch_message(NULL, M_ABORT, 0, buf);
+
+   char *p = 0;
+   p[0] = 0;                    /* Generate segmentation violation */
+}
 
 static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
 {
    char *buf;
 
-   /* Note:  Unix  MALLOC  actually  permits  a zero length to be
-      passed and allocates a valid block with  zero  user  bytes.
-      Such  a  block  can  later  be expanded with realloc().  We
-      disallow this based on the belief that it's better to  make
-      a  special case and allocate one byte in the rare case this
-      is desired than to miss all the erroneous occurrences where
-      buffer length calculation code results in a zero.  */
-
+   /*
+    * Note: Unix MALLOC actually permits a zero length to be
+    * passed and allocates a valid block with zero user bytes.
+    * Such a block can later be expanded with realloc(). We
+    * disallow this based on the belief that it's better to make
+    * a special case and allocate one byte in the rare case this
+    * is desired than to miss all the erroneous occurrences where
+    * buffer length calculation code results in a zero.
+    */
    ASSERT(nbytes > 0);
 
    nbytes += HEAD_SIZE + 1;
    if ((buf = (char *)malloc(nbytes)) != NULL) {
       struct abufhead *head = (struct abufhead *)buf;
+
       P(mutex);
-      /* Enqueue buffer on allocated list */
+
+      /*
+       * Enqueue buffer on allocated list
+       */
       qinsert(&abqueue, (struct b_queue *) buf);
       head->ablen = nbytes;
       head->abfname = bufimode ? NULL : fname;
       head->ablineno = (uint32_t)lineno;
       head->abin_use = true;
-      /* Emplace end-clobber detector at end of buffer */
+
+      /*
+       * Emplace end-clobber detector at end of buffer
+       */
       buf[nbytes - 1] = (uint8_t)((((intptr_t) buf) & 0xFF) ^ 0xC5);
-      buf += HEAD_SIZE;  /* Increment to user data start */
+
+      /*
+       * Increment to user data start
+       */
+      buf += HEAD_SIZE;
       if (++sm_buffers > sm_max_buffers) {
          sm_max_buffers = sm_buffers;
       }
@@ -135,12 +161,11 @@ static void *smalloc(const char *fname, int lineno, unsigned int nbytes)
       }
       V(mutex);
    } else {
-      Emsg0(M_ABORT, 0, _("Out of memory\n"));
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
    }
-   Dmsg4(1150, "smalloc %d at %p from %s:%d\n", nbytes, buf, fname, lineno);
-#if    SMALLOC_SANITY_CHECK > 0
+#if SMALLOC_SANITY_CHECK > 0
    if (sm_bytes > SMALLOC_SANITY_CHECK) {
-      Emsg0(M_ABORT, 0, _("Too much memory used."));
+      smart_alloc_msg(__FILE__, __LINE__, _("Too much memory used."));
    }
 #endif
    return (void *)buf;
@@ -170,7 +195,7 @@ void sm_free(const char *file, int line, void *fp)
    uint32_t lineno = line;
 
    if (cp == NULL) {
-      Emsg2(M_ABORT, 0, _("Attempt to free NULL called from %s:%d\n"), file, lineno);
+      smart_alloc_msg(__FILE__, __LINE__, _("Attempt to free NULL called from %s:%d\n"), file, lineno);
    }
 
    cp -= HEAD_SIZE;
@@ -178,13 +203,9 @@ void sm_free(const char *file, int line, void *fp)
    struct abufhead *head = (struct abufhead *)cp;
 
    P(mutex);
-   Dmsg4(1150, "sm_free %d at %p from %s:%d\n",
-         head->ablen, fp,
-         get_basename(head->abfname), head->ablineno);
-
    if (!head->abin_use) {
       V(mutex);
-      Emsg2(M_ABORT, 0, _("double free from %s:%d\n"), file, lineno);
+      smart_alloc_msg(__FILE__, __LINE__, _("double free from %s:%d\n"), file, lineno);
    }
    head->abin_use = false;
 
@@ -192,11 +213,11 @@ void sm_free(const char *file, int line, void *fp)
       of an address which isn't an allocated buffer. */
    if (qp->qnext->qprev != qp) {
       V(mutex);
-      Emsg2(M_ABORT, 0, _("qp->qnext->qprev != qp called from %s:%d\n"), file, lineno);
+      smart_alloc_msg(__FILE__, __LINE__, _("qp->qnext->qprev != qp called from %s:%d\n"), file, lineno);
    }
    if (qp->qprev->qnext != qp) {
       V(mutex);
-      Emsg2(M_ABORT, 0, _("qp->qprev->qnext != qp called from %s:%d\n"), file, lineno);
+      smart_alloc_msg(__FILE__, __LINE__, _("qp->qprev->qnext != qp called from %s:%d\n"), file, lineno);
    }
 
    /* The following assertion detects storing off the  end  of  the
@@ -205,8 +226,8 @@ void sm_free(const char *file, int line, void *fp)
 
    if (((unsigned char *)cp)[head->ablen - 1] != ((((intptr_t) cp) & 0xFF) ^ 0xC5)) {
       V(mutex);
-      Emsg6(M_ABORT, 0, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"),
-         head->ablen, fp, get_basename(head->abfname), head->ablineno, file, line);
+      smart_alloc_msg(__FILE__, __LINE__, _("Overrun buffer: len=%d addr=%p allocated: %s:%d called from %s:%d\n"),
+                      head->ablen, fp, get_basename(head->abfname), head->ablineno, file, line);
    }
    if (sm_buffers > 0) {
       sm_buffers--;
@@ -246,7 +267,7 @@ void *sm_malloc(const char *fname, int lineno, unsigned int nbytes)
 
       memset(buf, 0x55, (int) nbytes);
    } else {
-      Emsg0(M_ABORT, 0, _("Out of memory\n"));
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
    }
    return buf;
 }
@@ -261,7 +282,7 @@ void *sm_calloc(const char *fname, int lineno,
    if ((buf = smalloc(fname, lineno, nelem * elsize)) != NULL) {
       memset(buf, 0, (int) (nelem * elsize));
    } else {
-      Emsg0(M_ABORT, 0, _("Out of memory\n"));
+      smart_alloc_msg(__FILE__, __LINE__, _("Out of memory\n"));
    }
    return buf;
 }
@@ -281,7 +302,6 @@ void *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size)
    void *buf;
    char *cp = (char *) ptr;
 
-   Dmsg4(1400, "sm_realloc %s:%d %p %d\n", get_basename(fname), (uint32_t)lineno, ptr, size);
    if (size <= 0) {
       e_msg(fname, lineno, M_ABORT, 0, _("sm_realloc size: %d\n"), size);
    }
@@ -321,7 +341,6 @@ void *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size)
       /* All done.  Free and dechain the original buffer. */
       sm_free(fname, lineno, ptr);
    }
-   Dmsg4(4150, _("sm_realloc %d at %p from %s:%d\n"), size, buf, get_basename(fname), (uint32_t)lineno);
    return buf;
 }
 
@@ -352,7 +371,6 @@ void *actuallycalloc(unsigned int nelem, unsigned int elsize)
 
 void *actuallyrealloc(void *ptr, unsigned int size)
 {
-   Dmsg2(1400, "Actuallyrealloc %p %d\n", ptr, size);
    return realloc(ptr, size);
 }
 
@@ -380,10 +398,9 @@ void sm_dump(bool bufdump, bool in_use)
       if ((ap == NULL) ||
           (ap->abq.qnext->qprev != (struct b_queue *) ap) ||
           (ap->abq.qprev->qnext != (struct b_queue *) ap)) {
-         Pmsg1(0, _(
-            "\nOrphaned buffers exist.  Dump terminated following\n"
-            "  discovery of bad links in chain of orphaned buffers.\n"
-            "  Buffer address with bad links: %p\n"), ap);
+         FPmsg1(0, _("\nOrphaned buffers exist.  Dump terminated following\n"
+                     "  discovery of bad links in chain of orphaned buffers.\n"
+                     "  Buffer address with bad links: %p\n"), ap);
          break;
       }
 
@@ -392,9 +409,9 @@ void sm_dump(bool bufdump, bool in_use)
          uint32_t memsize = ap->ablen - (HEAD_SIZE + 1);
          char *cp = ((char *)ap) + HEAD_SIZE;
 
-         Pmsg6(0, "%s buffer: %s %d bytes at %p from %s:%d\n",
-            in_use?"In use":"Orphaned",
-            my_name, memsize, cp, get_basename(ap->abfname), ap->ablineno);
+         FPmsg6(0, "%s buffer: %s %d bytes at %p from %s:%d\n",
+                in_use ? "In use" : "Orphaned",
+                my_name, memsize, cp, get_basename(ap->abfname), ap->ablineno);
          if (bufdump) {
             char buf[20];
             unsigned llen = 0;
@@ -404,7 +421,7 @@ void sm_dump(bool bufdump, bool in_use)
                if (llen >= 16) {
                   bstrncat(errmsg, "\n", sizeof(errmsg));
                   llen = 0;
-                  Pmsg1(0, "%s", errmsg);
+                  FPmsg1(0, "%s", errmsg);
                   errmsg[0] = EOS;
                }
                bsnprintf(buf, sizeof(buf), " %02X",
@@ -413,7 +430,7 @@ void sm_dump(bool bufdump, bool in_use)
                llen++;
                memsize--;
             }
-            Pmsg1(0, "%s\n", errmsg);
+            FPmsg1(0, "%s\n", errmsg);
          }
       }
       ap = (struct abufhead *) ap->abq.qnext;
@@ -426,8 +443,8 @@ void sm_dump(bool bufdump, bool in_use)
 void sm_check(const char *fname, int lineno, bool bufdump)
 {
    if (!sm_check_rtn(fname, lineno, bufdump)) {
-      Emsg2(M_ABORT, 0, _("Damaged buffer found. Called from %s:%d\n"),
-            get_basename(fname), (uint32_t)lineno);
+      smart_alloc_msg(__FILE__, __LINE__, _("Damaged buffer found. Called from %s:%d\n"),
+                      get_basename(fname), (uint32_t)lineno);
    }
 }
 
@@ -458,35 +475,33 @@ int sm_check_rtn(const char *fname, int lineno, bool bufdump)
       }
       badbuf |= bad;
       if (bad) {
-         Pmsg2(0,
+         FPmsg2(0,
             _("\nDamaged buffers found at %s:%d\n"), get_basename(fname), (uint32_t)lineno);
 
          if (bad & 0x1) {
-            Pmsg0(0,  _("  discovery of bad prev link.\n"));
+            FPmsg0(0,  _("  discovery of bad prev link.\n"));
          }
          if (bad & 0x2) {
-            Pmsg0(0, _("  discovery of bad next link.\n"));
+            FPmsg0(0, _("  discovery of bad next link.\n"));
          }
          if (bad & 0x4) {
-            Pmsg0(0, _("  discovery of data overrun.\n"));
+            FPmsg0(0, _("  discovery of data overrun.\n"));
          }
          if (bad & 0x8) {
-            Pmsg0(0, _("  NULL pointer.\n"));
+            FPmsg0(0, _("  NULL pointer.\n"));
          }
 
          if (!ap) {
             goto get_out;
          }
-         Pmsg1(0, _("  Buffer address: %p\n"), ap);
+         FPmsg1(0, _("  Buffer address: %p\n"), ap);
 
          if (ap->abfname != NULL) {
             uint32_t memsize = ap->ablen - (HEAD_SIZE + 1);
             char errmsg[80];
 
-            Pmsg4(0,
-              _("Damaged buffer:  %6u bytes allocated at line %d of %s %s\n"),
-               memsize, ap->ablineno, my_name, get_basename(ap->abfname)
-            );
+            FPmsg4(0, _("Damaged buffer:  %6u bytes allocated at line %d of %s %s\n"),
+                   memsize, ap->ablineno, my_name, get_basename(ap->abfname));
             if (bufdump) {
                unsigned llen = 0;
                char *cp = ((char *) ap) + HEAD_SIZE;
@@ -496,7 +511,7 @@ int sm_check_rtn(const char *fname, int lineno, bool bufdump)
                   if (llen >= 16) {
                      strcat(errmsg, "\n");
                      llen = 0;
-                     Pmsg1(0, "%s", errmsg);
+                     FPmsg1(0, "%s", errmsg);
                      errmsg[0] = EOS;
                   }
                   if (*cp < 0x20) {
@@ -509,7 +524,7 @@ int sm_check_rtn(const char *fname, int lineno, bool bufdump)
                   llen++;
                   memsize--;
                }
-               Pmsg1(0, "%s\n", errmsg);
+               FPmsg1(0, "%s\n", errmsg);
             }
          }
       }
@@ -541,15 +556,12 @@ void sm_static(bool mode)
 #ifdef xxx
 void * operator new(size_t size)
 {
-// Dmsg1(000, "new called %d\n", size);
    return sm_malloc(__FILE__, __LINE__, size);
 }
 
 void operator delete(void *buf)
 {
-// Dmsg1(000, "free called %p\n", buf);
    sm_free(__FILE__, __LINE__, buf);
 }
 #endif
-
-#endif
+#endif /* SMARTALLOC */

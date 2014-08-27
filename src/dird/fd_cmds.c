@@ -282,8 +282,8 @@ static bool send_fileset(JCR *jcr)
             fd->fsend("E\n");
          }
 
-         if (ie->ignoredir) {
-            fd->fsend("Z %s\n", ie->ignoredir);
+         for (int j = 0; j < ie->ignoredir.size(); j++) {
+            fd->fsend("Z %s\n", ie->ignoredir.get(j));
          }
 
          for (int j = 0; j < ie->num_opts; j++) {
@@ -291,7 +291,7 @@ static bool send_fileset(JCR *jcr)
             bool enhanced_wild = false;
 
             for (int k = 0; fo->opts[k] != '\0'; k++) {
-               if (fo->opts[k]=='W') {
+               if (fo->opts[k] == 'W') {
                   enhanced_wild = true;
                   break;
                }
@@ -302,7 +302,7 @@ static bool send_fileset(JCR *jcr)
              */
             if (store && !store->AllowCompress) {
                char newopts[MAX_FOPTS];
-               bool done=false;         /* print warning only if compression enabled in FS */
+               bool done = false;       /* print warning only if compression enabled in FS */
                int l = 0;
 
                for (int k = 0; fo->opts[k] != '\0'; k++) {
@@ -452,6 +452,7 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
          fd->msglen = Mmsg(fd->msg, "%s", buf);
          Dmsg2(500, "Inc/exc len=%d: %s", fd->msglen, fd->msg);
          if (!bnet_send(fd)) {
+            close_bpipe(bpipe);
             Jmsg(jcr, M_FATAL, 0, _(">filed: write error on socket\n"));
             return false;
          }
@@ -759,10 +760,10 @@ bool send_restore_objects(JCR *jcr)
  */
 int get_attributes_and_put_in_catalog(JCR *jcr)
 {
-   BSOCK   *fd;
+   BSOCK *fd;
    int n = 0;
    ATTR_DBR *ar = NULL;
-   char digest[MAXSTRING];
+   POOL_MEM digest(PM_FNAME);
 
    fd = jcr->file_bsock;
    jcr->jr.FirstIndex = 1;
@@ -777,11 +778,11 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       uint32_t file_index;
       int stream, len;
       char *p, *fn;
-      char Digest[MAXSTRING];      /* either Verify opts or MD5/SHA1 digest */
+      POOL_MEM Digest(PM_NAME);    /* either Verify opts or MD5/SHA1 digest */
 
-      if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest)) != 3) {
+      if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str())) != 3) {
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
-"msglen=%d msg=%s\n"), len, fd->msglen, fd->msg);
+                                 "msglen=%d msg=%s\n"), len, fd->msglen, fd->msg);
          jcr->setJobStatus(JS_ErrorTerminated);
          return 0;
       }
@@ -840,11 +841,11 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
                stream_to_ascii(stream), file_index, jcr->FileIndex);
             continue;
          }
-         ar->Digest = digest;
+         ar->Digest = digest.c_str();
          ar->DigestType = crypto_digest_stream_type(stream);
-         db_escape_string(jcr, jcr->db, digest, Digest, strlen(Digest));
+         db_escape_string(jcr, jcr->db, digest.c_str(), Digest.c_str(), strlen(Digest.c_str()));
          Dmsg4(dbglvl, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
-               strlen(digest), digest, ar->DigestType);
+               strlen(digest.c_str()), digest.c_str(), ar->DigestType);
       }
       jcr->jr.JobFiles = jcr->JobFiles = file_index;
       jcr->jr.LastIndex = file_index;

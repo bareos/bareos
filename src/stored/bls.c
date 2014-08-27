@@ -51,14 +51,8 @@ static JCR *jcr;
 static SESSION_LABEL sessrec;
 static uint32_t num_files = 0;
 static ATTR *attr;
-static CONFIG *config;
 
 #define CONFIG_FILE "bareos-sd.conf"
-char *configfile = NULL;
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
 static FF_PKT *ff;
 static BSR *bsr = NULL;
@@ -217,19 +211,10 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
-   LockRes();
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      UnlockRes();
-      Emsg1(M_ERROR_TERM, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-            configfile);
-   }
-   UnlockRes();
-
-  if (DirectorName) {
+   if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
          if (bstrcmp(director->hdr.name, DirectorName)) {
             break;
@@ -254,7 +239,7 @@ int main (int argc, char *argv[])
       if (bsrName) {
          bsr = parse_bsr(NULL, bsrName);
       }
-      jcr = setup_jcr("bls", argv[i], bsr, director, VolumeName, 1); /* acquire for read */
+      jcr = setup_jcr("bls", argv[i], bsr, director, VolumeName, true); /* read device */
       if (!jcr) {
          exit(1);
       }
@@ -310,7 +295,7 @@ static void do_blocks(char *infname)
    char buf1[100], buf2[100];
    for ( ;; ) {
       if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
-         Dmsg1(100, "!read_block(): ERR=%s\n", dev->bstrerror());
+         Dmsg1(100, "!read_block(): ERR=%s\n", dev->print_errmsg());
          if (dev->at_eot()) {
             if (!mount_next_read_volume(dcr)) {
                Jmsg(jcr, M_INFO, 0, _("Got EOM at file %u on device %s, Volume \"%s\"\n"),
@@ -331,7 +316,7 @@ static void do_blocks(char *infname)
             Dmsg0(20, "read_record got eof. try again\n");
             continue;
          } else if (dev->is_short_block()) {
-            Jmsg(jcr, M_INFO, 0, "%s", dev->errmsg);
+            Jmsg(jcr, M_INFO, 0, "%s", dev->print_errmsg());
             continue;
          } else {
             /* I/O error */
@@ -495,30 +480,4 @@ static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sess
       Pmsg5(-1, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
             rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
    }
-}
-
-/* Dummies to replace askdir.c */
-bool dir_find_next_appendable_volume(DCR *dcr) { return 1;}
-bool dir_update_volume_info(DCR *dcr, bool relabel, bool update_LastWritten) { return 1; }
-bool dir_create_jobmedia_record(DCR *dcr, bool zero) { return 1; }
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr) { return 1; }
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec) { return 1;}
-bool dir_send_job_status(JCR *jcr) {return 1;}
-
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int /*mode*/)
-{
-   DEVICE *dev = dcr->dev;
-   fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
-      dcr->VolumeName, dev->print_name());
-   dev->close(dcr);
-   getchar();
-   return true;
-}
-
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw  writing)
-{
-   Dmsg0(100, "Fake dir_get_volume_info\n");
-   dcr->setVolCatName(dcr->VolumeName);
-   Dmsg1(500, "Vol=%s num_parts=%d\n", dcr->getVolCatName());
-   return 1;
 }

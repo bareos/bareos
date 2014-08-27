@@ -30,7 +30,7 @@
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 
-const int dbglvl = 150;
+const int dbglvl = 250;
 const char *plugin_type = "-sd.so";
 static alist *sd_plugin_list = NULL;
 
@@ -46,6 +46,7 @@ static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
                                    const char *imsg, const char *cmd);
 static char *bareosLookupCryptoKey(const char *VolumeName);
 static bool bareosUpdateVolumeInfo(DCR *dcr);
+static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags);
 static DEV_RECORD *bareosNewRecord(bool with_data);
 static void bareosCopyRecordState(DEV_RECORD *dst, DEV_RECORD *src);
 static void bareosFreeRecord(DEV_RECORD *rec);
@@ -69,6 +70,7 @@ static bsdFuncs bfuncs = {
    bareosEditDeviceCodes,
    bareosLookupCryptoKey,
    bareosUpdateVolumeInfo,
+   bareosUpdateTapeAlert,
    bareosNewRecord,
    bareosCopyRecordState,
    bareosFreeRecord
@@ -288,10 +290,13 @@ int generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value, bool re
  */
 void dump_sd_plugin(Plugin *plugin, FILE *fp)
 {
+   genpInfo *info;
+
    if (!plugin) {
       return ;
    }
-   genpInfo *info = (genpInfo *) plugin->pinfo;
+
+   info = (genpInfo *) plugin->pinfo;
    fprintf(fp, "\tversion=%d\n", info->version);
    fprintf(fp, "\tdate=%s\n", NPRTB(info->plugin_date));
    fprintf(fp, "\tmagic=%s\n", NPRTB(info->plugin_magic));
@@ -622,7 +627,15 @@ static char *bareosLookupCryptoKey(const char *VolumeName)
 
 static bool bareosUpdateVolumeInfo(DCR *dcr)
 {
-   return dir_get_volume_info(dcr, GET_VOL_INFO_FOR_READ);
+   return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ);
+}
+
+static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags)
+{
+   utime_t now;
+   now = (utime_t)time(NULL);
+
+   update_device_tapealert(dcr->device->hdr.name, flags, now);
 }
 
 static DEV_RECORD *bareosNewRecord(bool with_data)

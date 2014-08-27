@@ -35,12 +35,6 @@
 #include "stored.h"
 #include "lib/crypto_cache.h"
 
-/* TODO: fix problem with bls, bextract
- * that use findlib and already declare
- * filed plugins
- */
-#include "sd_plugins.h"
-
 /* Imported functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
@@ -56,15 +50,11 @@ extern "C" void *device_initialization(void *arg);
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
-STORES *me = NULL;                    /* our Global resource */
-bool forge_on = false;                /* proceed inspite of I/O errors */
-pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
+
 void *start_heap;
 
 static uint32_t VolSessionId = 0;
 uint32_t VolSessionTime;
-char *configfile = NULL;
 bool init_done = false;
 
 /* Global static variables */
@@ -75,7 +65,8 @@ static workq_t dird_workq;            /* queue for processing connections */
 static workq_t ndmp_workq;            /* queue for processing NDMP connections */
 #endif
 static alist *sock_fds;
-static CONFIG *config;
+static pthread_t server_tid;
+static bool server_tid_valid = false;
 
 static void usage()
 {
@@ -224,8 +215,8 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_sd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -267,8 +258,8 @@ int main (int argc, char *argv[])
 
    cleanup_old_files();
 
-   /* Ensure that Volume Session Time and Id are both
-    * set and are both non-zero.
+   /*
+    * Ensure that Volume Session Time and Id are both set and are both non-zero.
     */
    VolSessionTime = (uint32_t)daemon_start_time;
    if (VolSessionTime == 0) { /* paranoid */
@@ -285,10 +276,16 @@ int main (int argc, char *argv[])
    }
 
    start_watchdog();                  /* start watchdog thread */
-   init_jcr_subsystem();              /* start JCR watchdogs etc. */
+   if (me->jcr_watchdog_time) {
+      init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+   }
+
+   start_statistics_thread();
 
 #if HAVE_NDMP
-   /* Seperate thread that handles NDMP connections */
+   /*
+    * Seperate thread that handles NDMP connections
+    */
    if (me->ndmp_enable) {
       start_ndmp_thread_server(me->NDMPaddrs,
                                me->max_concurrent_jobs * 2 + 1,
@@ -296,7 +293,11 @@ int main (int argc, char *argv[])
    }
 #endif
 
-   /* Single server used for Director/Storage and File daemon */
+   /*
+    * Single server used for Director/Storage and File daemon
+    */
+   server_tid = pthread_self();
+   server_tid_valid = true;
    sock_fds = New(alist(10, not_owned_by_alist));
    bnet_thread_server_tcp(me->SDaddrs,
                       me->max_concurrent_jobs * 2 + 1,
@@ -304,6 +305,7 @@ int main (int argc, char *argv[])
                       &dird_workq,
                       me->nokeepalive,
                       handle_connection_request);
+
    exit(1);                           /* to keep compiler quiet */
 }
 
@@ -324,13 +326,6 @@ static int check_resources()
 {
    bool OK = true;
    bool tls_needed;
-
-   me = (STORES *)GetNextRes(R_STORAGE, NULL);
-   if (!me) {
-      Jmsg1(NULL, M_ERROR, 0, _("No Storage resource defined in %s. Cannot continue.\n"),
-         configfile);
-      OK = false;
-   }
 
    if (GetNextRes(R_STORAGE, (RES *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
@@ -583,8 +578,7 @@ get_out2:
 
 
 /*
- * Here we attempt to init and open each device. This is done
- *  once at startup in a separate thread.
+ * Here we attempt to init and open each device. This is done once at startup in a separate thread.
  */
 extern "C"
 void *device_initialization(void *arg)
@@ -629,10 +623,15 @@ void *device_initialization(void *arg)
          continue;
       }
 
-      jcr->dcr = dcr = new_dcr(jcr, NULL, dev);
+      dcr = New(SD_DCR);
+      jcr->dcr = dcr;
+      setup_new_dcr_device(jcr, dcr, dev, NULL);
+      jcr->dcr->set_will_write();
       generate_plugin_event(jcr, bsdEventDeviceInit, dcr);
       if (dev->is_autochanger()) {
-         /* If autochanger set slot in dev structure */
+         /*
+          * If autochanger set slot in dev structure
+          */
          get_autochanger_loaded_slot(dcr);
       }
 
@@ -674,8 +673,9 @@ void *device_initialization(void *arg)
    return NULL;
 }
 
-
-/* Clean up and then exit */
+/*
+ * Clean up and then exit
+ */
 void terminate_stored(int sig)
 {
    static bool in_here = false;
@@ -688,6 +688,7 @@ void terminate_stored(int sig)
    }
    in_here = true;
    debug_level = 0;                   /* turn off any debug */
+   stop_statistics_thread();
 #if HAVE_NDMP
    if (me->ndmp_enable) {
       stop_ndmp_thread_server();
@@ -722,11 +723,12 @@ void terminate_stored(int sig)
             if (jcr->dcr && jcr->dcr->dev && jcr->dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->dcr->dev->wait_next_vol);
                Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
-               pthread_cond_broadcast(&wait_device_release);
+               release_device_cond();
             }
             if (jcr->read_dcr && jcr->read_dcr->dev && jcr->read_dcr->dev->blocked()) {
                pthread_cond_broadcast(&jcr->read_dcr->dev->wait_next_vol);
-               pthread_cond_broadcast(&wait_device_release);
+               Dmsg1(100, "JobId=%u broadcast wait_device_release\n", (uint32_t)jcr->JobId);
+               release_device_cond();
             }
             bmicrosleep(0, 50000);
          }
@@ -755,14 +757,18 @@ void terminate_stored(int sig)
       }
    }
 
+   if (server_tid_valid) {
+      bnet_stop_thread_server_tcp(server_tid);
+   }
+
    if (configfile) {
       free(configfile);
       configfile = NULL;
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
 
    if (debug_level > 10) {

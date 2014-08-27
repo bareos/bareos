@@ -95,7 +95,7 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-static int const dbglvl = 100;
+static int const dbglvl = 200;
 
 #ifdef __cplusplus
 extern "C" {
@@ -207,7 +207,6 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
-   Dmsg1(dbglvl, "autoxflate-sd: handlePluginEvent event %d\n", event->eventType);
    switch (event->eventType) {
    case bsdEventSetupRecordTranslation:
       return setup_record_translation(value);
@@ -440,18 +439,21 @@ static bool setup_auto_inflation(DCR *dcr)
    }
 
    setup_decompression_buffers(jcr, &decompress_buf_size);
-
-   /*
-    * See if we need to create a new compression buffer or make sure the existing is big enough.
-    */
-   if (!jcr->compress.inflate_buffer) {
-      jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
-      jcr->compress.inflate_buffer_size = decompress_buf_size;
-   } else {
-      if (decompress_buf_size > jcr->compress.inflate_buffer_size) {
-         jcr->compress.inflate_buffer = realloc_pool_memory(jcr->compress.inflate_buffer, decompress_buf_size);
+   if (decompress_buf_size > 0) {
+      /*
+       * See if we need to create a new compression buffer or make sure the existing is big enough.
+       */
+      if (!jcr->compress.inflate_buffer) {
+         jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
          jcr->compress.inflate_buffer_size = decompress_buf_size;
+      } else {
+         if (decompress_buf_size > jcr->compress.inflate_buffer_size) {
+            jcr->compress.inflate_buffer = realloc_pool_memory(jcr->compress.inflate_buffer, decompress_buf_size);
+            jcr->compress.inflate_buffer_size = decompress_buf_size;
+         }
       }
+   } else {
+      return false;
    }
 
    return true;

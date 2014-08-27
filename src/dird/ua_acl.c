@@ -30,46 +30,78 @@
 /*
  * Check if access is permitted to item in acl
  */
-bool acl_access_ok(UAContext *ua, int acl, const char *item)
+bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event)
 {
-   return acl_access_ok(ua, acl, item, strlen(item));
+   return acl_access_ok(ua, acl, item, strlen(item), audit_event);
 }
 
 
-/* This version expects the length of the item which we must check. */
-bool acl_access_ok(UAContext *ua, int acl, const char *item, int len)
+/*
+ * This version expects the length of the item which we must check.
+ */
+bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event)
 {
-   /* The resource name contains nasty characters */
-   if (acl != Where_ACL && acl != PluginOptions_ACL && !is_name_valid(item, NULL)) {
-      Dmsg1(1400, "Access denied for item=%s\n", item);
-      return false;
+   bool retval = false;
+   alist *list;
+
+   /*
+    * The resource name contains nasty characters
+    */
+   switch (acl) {
+   case Where_ACL:
+   case PluginOptions_ACL:
+      break;
+   default:
+      if (!is_name_valid(item, NULL)) {
+         Dmsg1(1400, "Access denied for item=%s\n", item);
+         goto bail_out;
+      }
+      break;
    }
 
-   /* If no console resource => default console and all is permitted */
+   /*
+    * If no console resource => default console and all is permitted
+    */
    if (!ua->cons) {
       Dmsg0(1400, "Root cons access OK.\n");
-      return true;                    /* No cons resource -> root console OK for everything */
+      retval = true;                  /* No cons resource -> root console OK for everything */
+      goto bail_out;
    }
 
-   alist *list = ua->cons->ACL_lists[acl];
-   if (!list) {                       /* empty list */
+   list = ua->cons->ACL_lists[acl];
+   if (!list) {                       /* Empty list */
+      /*
+       * Empty list for Where => empty where accept anything.
+       * For any other list, reject everything.
+       */
       if (len == 0 && acl == Where_ACL) {
-         return true;                 /* Empty list for Where => empty where */
+         retval = true;
       }
-      return false;                   /* List empty, reject everything */
+      goto bail_out;
    }
 
-   /* Special case *all* gives full access */
+   /*
+    * Special case *all* gives full access
+    */
    if (list->size() == 1 && bstrcasecmp("*all*", (char *)list->get(0))) {
-      return true;
+      goto bail_out;
    }
 
-   /* Search list for item */
+   /*
+    * Search list for item
+    */
    for (int i=0; i<list->size(); i++) {
       if (bstrcasecmp(item, (char *)list->get(i))) {
          Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, (char *)list->get(i));
-         return true;
+         retval = true;
+         goto bail_out;
       }
    }
-   return false;
+
+bail_out:
+   if (audit_event && !retval) {
+      log_audit_event_acl_failure(ua, acl, item);
+   }
+
+   return retval;
 }

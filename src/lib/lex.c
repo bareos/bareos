@@ -48,6 +48,10 @@ void scan_to_eol(LEX *lc)
          lex_unget_char(lc);
          return;
       }
+
+      if (token == T_EOF) {
+         return;
+      }
    }
 }
 
@@ -68,31 +72,41 @@ int scan_to_next_not_eol(LEX * lc)
  */
 static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   va_list arg_ptr;
-   char buf[MAXSTRING];
-   char more[MAXSTRING];
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_NAME),
+            more(PM_NAME);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
    if (lc->err_type == 0) {     /* M_ERROR_TERM by default */
       lc->err_type = M_ERROR_TERM;
    }
 
    if (lc->line_no > lc->begin_line_no) {
-      bsnprintf(more, sizeof(more),
-                _("Problem probably begins at line %d.\n"), lc->begin_line_no);
+      Mmsg(more, _("Problem probably begins at line %d.\n"), lc->begin_line_no);
    } else {
-      more[0] = 0;
+      pm_strcpy(more, "");
    }
 
    if (lc->line_no > 0) {
       e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"
-"            : line %d, col %d of file %s\n%s\n%s"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line, more);
+                                           "            : line %d, col %d of file %s\n%s\n%s"),
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
    } else {
-      e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"), buf);
+      e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"), buf.c_str());
    }
 }
 
@@ -101,27 +115,37 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
  */
 static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
-   va_list arg_ptr;
-   char buf[MAXSTRING];
-   char more[MAXSTRING];
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_NAME),
+            more(PM_NAME);
 
-   va_start(arg_ptr, msg);
-   bvsnprintf(buf, sizeof(buf), msg, arg_ptr);
-   va_end(arg_ptr);
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
 
    if (lc->line_no > lc->begin_line_no) {
-      bsnprintf(more, sizeof(more),
-                _("Problem probably begins at line %d.\n"), lc->begin_line_no);
+      Mmsg(more, _("Problem probably begins at line %d.\n"), lc->begin_line_no);
    } else {
-      more[0] = 0;
+      pm_strcpy(more, "");
    }
 
    if (lc->line_no > 0) {
       p_msg(file, line, 0, _("Config warning: %s\n"
-"            : line %d, col %d of file %s\n%s\n%s"),
-         buf, lc->line_no, lc->col_no, lc->fname, lc->line, more);
+                             "            : line %d, col %d of file %s\n%s\n%s"),
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line, more.c_str());
    } else {
-      p_msg(file, line, 0, _("Config warning: %s\n"), buf);
+      p_msg(file, line, 0, _("Config warning: %s\n"), buf.c_str());
    }
 }
 
@@ -163,12 +187,13 @@ LEX *lex_close_file(LEX *lf)
    if (lf->bpipe) {
       close_bpipe(lf->bpipe);
       lf->bpipe = NULL;
-   } else {
+   } else if (lf->fd) {
       fclose(lf->fd);
    }
    Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
    free(lf->fname);
    free_memory(lf->line);
+   free_memory(lf->str);
    lf->line = NULL;
    if (of) {
       of->options = lf->options;      /* preserve options */
@@ -178,7 +203,11 @@ LEX *lex_close_file(LEX *lf)
       of = lf;
       lf = NULL;
    }
-   free(of);
+
+   if (of) {
+      free(of);
+   }
+
    return lf;
 }
 
@@ -247,7 +276,9 @@ LEX *lex_open_file(LEX *lf,
    lf->fd = fd;
    lf->bpipe = bpipe;
    lf->fname = fname;
-   lf->line = get_memory(5000);
+   lf->line = get_memory(1024);
+   lf->str = get_memory(256);
+   lf->str_max_len = sizeof_pool_memory(lf->str);
    lf->state = lex_none;
    lf->ch = L_EOL;
    Dmsg1(dbglvl, "Return lex=%x\n", lf);
@@ -303,11 +334,15 @@ void lex_unget_char(LEX *lf)
  */
 static void add_str(LEX *lf, int ch)
 {
-   if (lf->str_len >= MAXSTRING-3) {
-      Emsg3(M_ERROR_TERM, 0, _(
-           _("Config token too long, file: %s, line %d, begins at line %d\n")),
-             lf->fname, lf->line_no, lf->begin_line_no);
+   /*
+    * The default config string is sized to 256 bytes.
+    * If we need longer config strings its increased with 256 bytes each time.
+    */
+   if ((lf->str_len + 3) >= lf->str_max_len) {
+      lf->str = check_pool_memory_size(lf->str, lf->str_max_len + 256);
+      lf->str_max_len = sizeof_pool_memory(lf->str);
    }
+
    lf->str[lf->str_len++] = ch;
    lf->str[lf->str_len] = 0;
 }

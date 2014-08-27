@@ -32,27 +32,12 @@ DCR *acquire_device_for_append(DCR *dcr);
 bool acquire_device_for_read(DCR *dcr);
 bool release_device(DCR *dcr);
 bool clean_device(DCR *dcr);
-DCR *new_dcr(JCR *jcr, DCR *dcr, DEVICE *dev);
+void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes);
 void free_dcr(DCR *dcr);
 
 /* append.c */
 bool do_append_data(JCR *jcr, BSOCK *bs, const char *what);
 bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec);
-
-/* askdir.c */
-enum get_vol_info_rw {
-   GET_VOL_INFO_FOR_WRITE,
-   GET_VOL_INFO_FOR_READ
-};
-bool dir_get_volume_info(DCR *dcr, enum get_vol_info_rw);
-bool dir_find_next_appendable_volume(DCR *dcr);
-bool dir_update_volume_info(DCR *dcr, bool label, bool update_LastWritten);
-bool dir_ask_sysop_to_create_appendable_volume(DCR *dcr);
-bool dir_ask_sysop_to_mount_volume(DCR *dcr, int mode);
-bool dir_update_file_attributes(DCR *dcr, DEV_RECORD *rec);
-bool dir_create_jobmedia_record(DCR *dcr, bool zero = false);
-bool dir_update_device(JCR *jcr, DEVICE *dev);
-bool dir_update_changer(JCR *jcr, AUTOCHANGERRES *changer);
 
 /* authenticate.c */
 bool authenticate_director(JCR *jcr);
@@ -84,7 +69,7 @@ void ser_block_header(DEV_BLOCK *block);
 void print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
 JCR *setup_jcr(const char *name, char *dev_name,
                BSR *bsr, DIRRES *director,
-               const char *VolumeName, int mode);
+               const char *VolumeName, bool readonly);
 void display_tape_error_status(JCR *jcr, DEVICE *dev);
 
 /* crc32.c */
@@ -95,7 +80,6 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device);
 bool can_open_mounted_dev(DEVICE *dev);
 bool load_dev(DEVICE *dev);
 int write_block(DEVICE *dev);
-uint32_t status_dev(DEVICE *dev);
 void attach_jcr_to_device(DEVICE *dev, JCR *jcr);
 void detach_jcr_from_device(DEVICE *dev, JCR *jcr);
 JCR *next_attached_jcr(DEVICE *dev, JCR *jcr);
@@ -256,12 +240,29 @@ extern int reservations_lock_count;
 #define unlock_volumes() _unlock_volumes()
 #endif
 
+/* sd_backends.c */
+DEVICE *init_backend_dev(JCR *jcr, int device_type);
+void dev_flush_backends();
+
+/* sd_backends.c */
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+void sd_set_backend_dirs(alist *new_backend_dirs);
+DEVICE *init_backend_dev(JCR *jcr, int device_type);
+void dev_flush_backends();
+#endif
+
 /* sd_cmds.c */
 void *handle_stored_connection(BSOCK *sd, char *job_name);
 bool do_listen_run(JCR *jcr);
 
 /* sd_plugins.c */
 char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd);
+
+/* sd_stats.c */
+int start_statistics_thread(void);
+void stop_statistics_thread();
+void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
+void update_job_statistics(JCR *jcr, utime_t now);
 
 /* spool.c */
 bool begin_data_spool (DCR *dcr);
@@ -278,7 +279,6 @@ void list_spool_stats (void sendit(const char *msg, int len, void *sarg), void *
 void init_vol_list_lock();
 void term_vol_list_lock();
 VOLRES *reserve_volume(DCR *dcr, const char *VolumeName);
-VOLRES *find_volume(const char *VolumeName);
 bool free_volume(DEVICE *dev);
 bool is_vol_list_empty();
 dlist *dup_vol_list(JCR *jcr);
@@ -295,3 +295,4 @@ void remove_read_volume(JCR *jcr, const char *VolumeName);
 /* wait.c */
 int wait_for_sysop(DCR *dcr);
 bool wait_for_device(JCR *jcr, int &retries);
+void release_device_cond();

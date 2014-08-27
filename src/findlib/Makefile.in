@@ -26,9 +26,9 @@ INCLUDE_FILES = bfile.h find.h protos.h
 
 #
 LIBBAREOSFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
-                  drivetype.c enable_priv.c find_one.c \
-                  find.c fstype.c match.c mkpath.c \
-                  savecwd.c shadowing.c xattr.c
+		     drivetype.c enable_priv.c find_one.c \
+		     find.c fstype.c hardlink.c match.c mkpath.c \
+		     savecwd.c shadowing.c xattr.c
 
 LIBBAREOSFIND_OBJS = $(LIBBAREOSFIND_SRCS:.c=.o)
 LIBBAREOSFIND_LOBJS = $(LIBBAREOSFIND_SRCS:.c=.lo)

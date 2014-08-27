@@ -67,6 +67,7 @@ typedef struct _REPARSE_DATA_BUFFER {
          WORD SubstituteNameLength;
          WORD PrintNameOffset;
          WORD PrintNameLength;
+         ULONG Flags;
          WCHAR PathBuffer[1];
       } SymbolicLinkReparseBuffer;
       struct {

@@ -15,9 +15,10 @@ CONFIG( debug, debug|release )  {
    CONFIG += release
 }
 
-LIBS += -L../lib -lbareoscfg -lbareos
+QMAKE_LIBDIR += ../lib
+LIBS         += -lbareoscfg -lbareos
 
-bins.path            = /$(DESTDIR)@sbindir@
+bins.path            = /$(DESTDIR)@bindir@
 bins.files           = bareos-tray-monitor
 confs.path           = /$(DESTDIR)@sysconfdir@
 confs.files          = tray-monitor.conf

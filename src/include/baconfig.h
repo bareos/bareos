@@ -105,12 +105,15 @@ void InitWinAPIWrapper();
 #if defined(BUILDING_DLL)
 #define DLL_IMP_EXP _declspec(dllexport)
 #define CATS_IMP_EXP _declspec(dllexport)
+#define SD_IMP_EXP _declspec(dllexport)
 #elif defined(USING_DLL)
 #define DLL_IMP_EXP _declspec(dllimport)
 #define CATS_IMP_EXP _declspec(dllimport)
+#define SD_IMP_EXP _declspec(dllimport)
 #else
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
+#define SD_IMP_EXP
 #endif
 
 #else  /* HAVE_WIN32 */
@@ -119,11 +122,11 @@ void InitWinAPIWrapper();
 
 #define DLL_IMP_EXP
 #define CATS_IMP_EXP
+#define SD_IMP_EXP
 
 #define  OSDependentInit()
 
 #endif /* HAVE_WIN32 */
-
 
 #ifdef ENABLE_NLS
    #include <libintl.h>
@@ -162,9 +165,6 @@ void InitWinAPIWrapper();
 /* Use the following for strings not to be translated */
 #define NT_(s) (s)
 
-/* This should go away! ****FIXME***** */
-#define MAXSTRING 500
-
 /* Maximum length to edit time/date */
 #define MAX_TIME_LENGTH 50
 
@@ -179,6 +179,11 @@ void InitWinAPIWrapper();
 
 /* All tape operations MUST be a multiple of this */
 #define TAPE_BSIZE 1024
+
+/* Maximum length of a hostname */
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 256
+#endif
 
 /* Default length of passphrases used */
 #define DEFAULT_PASSPHRASE_LENGTH 32
@@ -267,14 +272,14 @@ typedef int (INTHANDLER)();
 #endif
 
 #ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
+#include <sys/time.h>
+#include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
 #endif
 
 #ifndef O_BINARY
@@ -357,7 +362,7 @@ if ((lvl)<=debug_level) d_msg(__FILE__,__LINE__, lvl, msg, a1, a2, a3, a4, a5, a
 #define Dmsg1(lvl, msg, a1)
 #define Dmsg2(lvl, msg, a1, a2)
 #define Dmsg3(lvl, msg, a1, a2, a3)
-#define Dmsg4(lvl, msg, arg1, arg2, arg3, arg4)
+#define Dmsg4(lvl, msg, a1, a2, a3, a4)
 #define Dmsg5(lvl, msg, a1, a2, a3, a4, a5)
 #define Dmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
 #define Dmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
@@ -376,8 +381,8 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1)
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
 #define Tmsg3(lvl, msg, a1, a2, a3) \
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, arg1, arg2, arg3, arg4) \
-t_msg(__FILE__, __LINE__, lvl, msg, arg1, arg2, arg3, arg4)
+#define Tmsg4(lvl, msg, a1, a2, a3, a4) \
+t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
 #define Tmsg5(lvl, msg, a1, a2, a3, a4, a5) \
 t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
 #define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
@@ -401,7 +406,7 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 #define Tmsg1(lvl, msg, a1)
 #define Tmsg2(lvl, msg, a1, a2)
 #define Tmsg3(lvl, msg, a1, a2, a3)
-#define Tmsg4(lvl, msg, arg1, arg2, arg3, arg4)
+#define Tmsg4(lvl, msg, a1, a2, a3, a4)
 #define Tmsg5(lvl, msg, a1, a2, a3, a4, a5)
 #define Tmsg6(lvl, msg, a1, a2, a3, a4, a5, a6)
 #define Tmsg7(lvl, msg, a1, a2, a3, a4, a5, a6, a7)
@@ -413,7 +418,7 @@ t_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 #define Tmsg13(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 #endif /* TRACE_FILE */
 
-/** Messages that are printed (uses d_msg) */
+/** Messages that are printed (uses p_msg) */
 #define Pmsg0(lvl, msg) \
 p_msg(__FILE__, __LINE__, lvl, msg)
 #define Pmsg1(lvl, msg, a1) \
@@ -422,8 +427,8 @@ p_msg(__FILE__, __LINE__, lvl, msg, a1)
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2)
 #define Pmsg3(lvl, msg, a1, a2, a3) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
-#define Pmsg4(lvl, msg, arg1, arg2, arg3, arg4) \
-p_msg(__FILE__, __LINE__, lvl, msg, arg1, arg2, arg3, arg4)
+#define Pmsg4(lvl, msg, a1, a2, a3, a4) \
+p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
 #define Pmsg5(lvl, msg, a1, a2, a3, a4, a5) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
 #define Pmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
@@ -444,6 +449,22 @@ p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13)
 #define Pmsg14(lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14) \
 p_msg(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14)
+
+/** Messages that are printed using fixed size buffers (uses p_msg_fb) */
+#define FPmsg0(lvl, msg) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg)
+#define FPmsg1(lvl, msg, a1) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1)
+#define FPmsg2(lvl, msg, a1, a2) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2)
+#define FPmsg3(lvl, msg, a1, a2, a3) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3)
+#define FPmsg4(lvl, msg, a1, a2, a3, a4) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4)
+#define FPmsg5(lvl, msg, a1, a2, a3, a4, a5) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5)
+#define FPmsg6(lvl, msg, a1, a2, a3, a4, a5, a6) \
+p_msg_fb(__FILE__, __LINE__, lvl, msg, a1, a2, a3, a4, a5, a6)
 
 /** Daemon Error Messages that are delivered according to the message resource */
 #define Emsg0(typ, lvl, msg) \
@@ -523,33 +544,23 @@ m_msg(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 
 class POOL_MEM;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int  Mmsg(POOLMEM **msgbuf, const char *fmt,...);
-int  Mmsg(POOLMEM *&msgbuf, const char *fmt,...);
-int  Mmsg(POOL_MEM &msgbuf, const char *fmt,...);
+int Mmsg(POOLMEM **msgbuf, const char *fmt, ...);
+int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
+int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
 
 class JCR;
-void d_msg(const char *file, int line, int level, const char *fmt,...);
-void p_msg(const char *file, int line, int level, const char *fmt,...);
-void e_msg(const char *file, int line, int type, int level, const char *fmt,...);
-void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...);
-void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...);
-int  m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt,...);
-int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
-
+void d_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg(const char *file, int line, int level, const char *fmt, ...);
+void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
+void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
+void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
+void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
+int m_msg(const char *file, int line, POOLMEM **msgbuf, const char *fmt, ...);
+int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 
 /** Use our strdup with smartalloc */
-#ifndef HAVE_WXCONSOLE
 #undef strdup
 #define strdup(buf) bad_call_on_strdup_use_bstrdup(buf)
-#else
-/* Groan, WxWidgets has its own way of doing NLS so cleanup */
-#ifndef ENABLE_NLS
-#undef _
-#undef setlocale
-#undef textdomain
-#undef bindtextdomain
-#endif
-#endif
 
 /** Use our fgets which handles interrupts */
 #undef fgets
@@ -608,7 +619,7 @@ int  m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 #ifdef HAVE_SUN_OS
 /*
  * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the conncurrency level.
+ * so we need to explictly increase the concurrency level.
  */
 #ifdef USE_THR_SETCONCURRENCY
 #include <thread.h>

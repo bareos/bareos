@@ -41,43 +41,6 @@ extern int32_t name_max;              /* filename max length */
 extern int32_t path_max;              /* path name max length */
 
 /*
- * Structure for keeping track of hard linked files, we
- * keep an entry for each hardlinked file that we save,
- * which is the first one found. For all the other files that
- * are linked to this one, we save only the directory
- * entry so we can link it.
- */
-struct f_link {
-    struct f_link *next;
-    dev_t dev;                        /* device */
-    ino_t ino;                        /* inode with device is unique */
-    uint32_t FileIndex;               /* Bareos FileIndex of this file */
-    int32_t digest_stream;            /* Digest type if needed */
-    uint32_t digest_len;              /* Digest len if needed */
-    char *digest;                     /* Checksum of the file if needed */
-    char name[1];                     /* The name */
-};
-
-typedef struct f_link link_t;
-#define LINK_HASHTABLE_BITS 16
-#define LINK_HASHTABLE_SIZE (1<<LINK_HASHTABLE_BITS)
-#define LINK_HASHTABLE_MASK (LINK_HASHTABLE_SIZE-1)
-
-static inline int LINKHASH(const struct stat &info)
-{
-    int hash = info.st_dev;
-    unsigned long long i = info.st_ino;
-    hash ^= i;
-    i >>= 16;
-    hash ^= i;
-    i >>= 16;
-    hash ^= i;
-    i >>= 16;
-    hash ^= i;
-    return hash & LINK_HASHTABLE_MASK;
-}
-
-/*
  * Create a new directory Find File packet, but copy
  * some of the essential info from the current packet.
  * However, be careful to zero out the rest of the
@@ -85,7 +48,9 @@ static inline int LINKHASH(const struct stat &info)
  */
 static inline FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
 {
-   FF_PKT *dir_ff_pkt = (FF_PKT *)bmalloc(sizeof(FF_PKT));
+   FF_PKT *dir_ff_pkt;
+
+   dir_ff_pkt = (FF_PKT *)bmalloc(sizeof(FF_PKT));
    memcpy(dir_ff_pkt, ff_pkt, sizeof(FF_PKT));
    dir_ff_pkt->fname = bstrdup(ff_pkt->fname);
    dir_ff_pkt->link = bstrdup(ff_pkt->link);
@@ -97,6 +62,7 @@ static inline FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
    dir_ff_pkt->fname_save = NULL;
    dir_ff_pkt->link_save = NULL;
    dir_ff_pkt->ignoredir_fname = NULL;
+
    return dir_ff_pkt;
 }
 
@@ -363,39 +329,63 @@ static inline bool have_ignoredir(FF_PKT *ff_pkt)
    struct stat sb;
    char *ignoredir;
 
-   /* Ensure that pointers are defined */
+   /*
+    * Ensure that pointers are defined
+    */
    if (!ff_pkt->fileset || !ff_pkt->fileset->incexe) {
       return false;
    }
-   ignoredir = ff_pkt->fileset->incexe->ignoredir;
 
-   if (ignoredir) {
-      if (!ff_pkt->ignoredir_fname) {
-         ff_pkt->ignoredir_fname = get_pool_memory(PM_FNAME);
-      }
-      Mmsg(ff_pkt->ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
-      if (stat(ff_pkt->ignoredir_fname, &sb) == 0) {
-         Dmsg2(100, "Directory '%s' ignored (found %s)\n",
-               ff_pkt->fname, ignoredir);
-         return true;      /* Just ignore this directory */
+   for (int i = 0; i < ff_pkt->fileset->incexe->ignoredir.size(); i++) {
+      ignoredir = (char *)ff_pkt->fileset->incexe->ignoredir.get(i);
+
+      if (ignoredir) {
+         if (!ff_pkt->ignoredir_fname) {
+            ff_pkt->ignoredir_fname = get_pool_memory(PM_FNAME);
+         }
+         Mmsg(ff_pkt->ignoredir_fname, "%s/%s", ff_pkt->fname, ignoredir);
+         if (stat(ff_pkt->ignoredir_fname, &sb) == 0) {
+            Dmsg2(100, "Directory '%s' ignored (found %s)\n",
+                  ff_pkt->fname, ignoredir);
+            return true;      /* Just ignore this directory */
+         }
       }
    }
+
    return false;
 }
 
 /*
- * When the current file is a hardlink, the backup code can compute
- * the checksum and store it into the link_t structure.
+ * Restore file times.
  */
-void ff_pkt_set_link_digest(FF_PKT *ff_pkt, int32_t digest_stream,
-                            const char *digest, uint32_t len)
+static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
 {
-   if (ff_pkt->linked && !ff_pkt->linked->digest) {     /* is a hardlink */
-      ff_pkt->linked->digest = (char *) bmalloc(len);
-      memcpy(ff_pkt->linked->digest, digest, len);
-      ff_pkt->linked->digest_len = len;
-      ff_pkt->linked->digest_stream = digest_stream;
-   }
+#if defined(HAVE_LUTIMES)
+   struct timeval restore_times[2];
+
+   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
+   restore_times[0].tv_usec = 0;
+   restore_times[1].tv_sec = ff_pkt->statp.st_mtime;
+   restore_times[1].tv_usec = 0;
+
+   lutimes(fname, restore_times);
+#elif defined(HAVE_UTIMES)
+   struct timeval restore_times[2];
+
+   restore_times[0].tv_sec = ff_pkt->statp.st_atime;
+   restore_times[0].tv_usec = 0;
+   restore_times[1].tv_sec = ff_pkt->statp.st_mtime;
+   restore_times[1].tv_usec = 0;
+
+   utimes(fname, restore_times);
+#else
+   struct utimbuf restore_times;
+
+   restore_times.actime = ff_pkt->statp.st_atime;
+   restore_times.modtime = ff_pkt->statp.st_mtime;
+
+   utime(fname, &restore_times);
+#endif
 }
 
 #ifdef HAVE_DARWIN_OS
@@ -434,61 +424,40 @@ static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
                                    char *fname, bool top_level, bool *done)
 {
    int rtn_stat = 0;
-   int len;
-   struct f_link *lp;
-   const int linkhash = LINKHASH(ff_pkt->statp);
+   CurLink *hl;
 
-   if (ff_pkt->linkhash == NULL) {
-       ff_pkt->linkhash = (link_t **)bmalloc(LINK_HASHTABLE_SIZE * sizeof(link_t *));
-       memset(ff_pkt->linkhash, 0, LINK_HASHTABLE_SIZE * sizeof(link_t *));
-   }
-
-   /*
-    * Search link list of hard linked files
-    */
-   for (lp = ff_pkt->linkhash[linkhash]; lp; lp = lp->next) {
-      if (lp->ino == (ino_t)ff_pkt->statp.st_ino &&
-          lp->dev == (dev_t)ff_pkt->statp.st_dev) {
-         /*
-          * If we have already backed up the hard linked file don't do it again
-          */
-         if (bstrcmp(lp->name, fname)) {
-            Dmsg2(400, "== Name identical skip FI=%d file=%s\n", lp->FileIndex, fname);
-            *done = true;
-            return 1; /* ignore */
-         }
-         ff_pkt->link = lp->name;
-         ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
-         ff_pkt->LinkFI = lp->FileIndex;
-         ff_pkt->linked = 0;
-         ff_pkt->digest = lp->digest;
-         ff_pkt->digest_stream = lp->digest_stream;
-         ff_pkt->digest_len = lp->digest_len;
-         rtn_stat = handle_file(jcr, ff_pkt, top_level);
-         Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n",
-               ff_pkt->FileIndex, lp->FileIndex, lp->name);
+   hl = lookup_hardlink(jcr, ff_pkt, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
+   if (hl) {
+      /*
+       * If we have already backed up the hard linked file don't do it again
+       */
+      if (bstrcmp(hl->name, fname)) {
+         Dmsg2(400, "== Name identical skip FI=%d file=%s\n", hl->FileIndex, fname);
          *done = true;
-         return rtn_stat;
+         return 1; /* ignore */
       }
+
+      ff_pkt->link = hl->name;
+      ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
+      ff_pkt->LinkFI = hl->FileIndex;
+      ff_pkt->linked = NULL;
+      ff_pkt->digest = hl->digest;
+      ff_pkt->digest_stream = hl->digest_stream;
+      ff_pkt->digest_len = hl->digest_len;
+
+      rtn_stat = handle_file(jcr, ff_pkt, top_level);
+      Dmsg3(400, "FT_LNKSAVED FI=%d LinkFI=%d file=%s\n", ff_pkt->FileIndex, hl->FileIndex, hl->name);
+      *done = true;
+   } else {
+      /*
+       * File not previously dumped. Chain it into our list.
+       */
+      hl = new_hardlink(jcr, ff_pkt, fname, ff_pkt->statp.st_ino, ff_pkt->statp.st_dev);
+      ff_pkt->linked = hl;              /* Mark saved link */
+      Dmsg2(400, "Added to hash FI=%d file=%s\n", ff_pkt->FileIndex, hl->name);
+      *done = false;
    }
 
-   /*
-    * File not previously dumped. Chain it into our list.
-    */
-   len = strlen(fname) + 1;
-   lp = (struct f_link *)bmalloc(sizeof(struct f_link) + len);
-   lp->digest = NULL;                /* set later */
-   lp->digest_stream = 0;            /* set later */
-   lp->digest_len = 0;               /* set later */
-   lp->ino = ff_pkt->statp.st_ino;
-   lp->dev = ff_pkt->statp.st_dev;
-   lp->FileIndex = 0;                /* set later */
-   bstrncpy(lp->name, fname, len);
-   lp->next = ff_pkt->linkhash[linkhash];
-   ff_pkt->linkhash[linkhash] = lp;
-   ff_pkt->linked = lp;              /* mark saved link */
-   Dmsg2(400, "added to hash FI=%d file=%s\n", ff_pkt->FileIndex, lp->name);
-   *done = false;
    return rtn_stat;
 }
 
@@ -497,8 +466,7 @@ static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
  */
 static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
                                        int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
-                                       char *fname, bool top_level,
-                                       struct utimbuf *restore_times)
+                                       char *fname, bool top_level)
 {
    int rtn_stat;
    boffset_t sizeleft;
@@ -506,7 +474,7 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
    sizeleft = ff_pkt->statp.st_size;
 
    /*
-    * Don't bother opening empty, world readable files.  Also do not open
+    * Don't bother opening empty, world readable files. Also do not open
     * files when archive is meant for /dev/null.
     */
    if (ff_pkt->null_output_device || (sizeleft == 0 &&
@@ -515,15 +483,19 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
    } else {
       ff_pkt->type = FT_REG;
    }
+
    rtn_stat = handle_file(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
       ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
+
    Dmsg3(400, "FT_REG FI=%d linked=%d file=%s\n",
          ff_pkt->FileIndex, ff_pkt->linked ? 1 : 0, fname);
+
    if (ff_pkt->flags & FO_KEEPATIME) {
-      utime(fname, restore_times);
+      restore_file_times(ff_pkt, fname);
    }
+
    return rtn_stat;
 }
 
@@ -551,13 +523,16 @@ static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
       }
       return rtn_stat;
    }
+
    buffer[size] = 0;
    ff_pkt->link = buffer;          /* point to link */
    ff_pkt->type = FT_LNK;          /* got a real link */
+
    rtn_stat = handle_file(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
       ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
+
    return rtn_stat;
 }
 
@@ -566,8 +541,7 @@ static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
  */
 static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
                                     int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
-                                    char *fname, dev_t parent_device, bool top_level,
-                                    struct utimbuf *restore_times)
+                                    char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
    DIR *directory;
@@ -684,6 +658,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
          ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
       }
    }
+
    /*
     * If not recursing, just backup dir and return
     */
@@ -696,7 +671,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
       free_dir_ff_pkt(dir_ff_pkt);
       ff_pkt->link = ff_pkt->fname;     /* reset "link" */
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
       return rtn_stat;
    }
@@ -799,9 +774,10 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    free_dir_ff_pkt(dir_ff_pkt);
 
    if (ff_pkt->flags & FO_KEEPATIME) {
-      utime(fname, restore_times);
+      restore_file_times(ff_pkt, fname);
    }
    ff_pkt->volhas_attrlist = volhas_attrlist;      /* Restore value in case it changed. */
+
    return rtn_stat;
 }
 
@@ -842,24 +818,24 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
        */
       ff_pkt->type = FT_SPEC;
    }
+
    rtn_stat = handle_file(jcr, ff_pkt, top_level);
    if (ff_pkt->linked) {
      ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
    }
+
    return rtn_stat;
 }
 
 /*
  * See if we need to perform any processing for a given file.
  */
-static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt,
-                                   char *fname,
-                                   struct utimbuf *restore_times)
+static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
 {
    if (!accept_fstype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDFS;
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
 
       char fs[100];
@@ -871,10 +847,11 @@ static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt,
       Jmsg(jcr, M_INFO, 0, _("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname, fs);
       return 1;      /* Just ignore this error - or the whole backup is cancelled */
    }
+
    if (!accept_drivetype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDDT;
       if (ff_pkt->flags & FO_KEEPATIME) {
-         utime(fname, restore_times);
+         restore_file_times(ff_pkt, fname);
       }
 
       char dt[100];
@@ -886,6 +863,7 @@ static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt,
       Jmsg(jcr, M_INFO, 0, _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"), fname, dt);
       return 1;      /* Just ignore this error - or the whole backup is cancelled */
    }
+
    ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
 
    return 0;
@@ -905,7 +883,6 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
 {
    int rtn_stat;
    bool done = false;
-   struct utimbuf restore_times;
 
    ff_pkt->fname = ff_pkt->link = fname;
    if (lstat(fname, &ff_pkt->statp) != 0) {
@@ -920,17 +897,10 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    Dmsg1(300, "File ----: %s\n", fname);
 
    /*
-    * Save current times of this directory in case we need to
-    * reset them because the user doesn't want them changed.
-    */
-   restore_times.actime = ff_pkt->statp.st_atime;
-   restore_times.modtime = ff_pkt->statp.st_mtime;
-
-   /*
     * We check for allowed fstypes and drivetypes at top_level and fstype change (below).
     */
    if (top_level) {
-      if (needs_processing(jcr, ff_pkt, fname, &restore_times) == 1)
+      if (needs_processing(jcr, ff_pkt, fname) == 1)
          return 1;
    }
 
@@ -1019,13 +989,13 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     */
    switch (ff_pkt->statp.st_mode & S_IFMT) {
    case S_IFREG:
-      return process_regular_file(jcr, ff_pkt, handle_file, fname, top_level, &restore_times);
+      return process_regular_file(jcr, ff_pkt, handle_file, fname, top_level);
 #ifdef S_IFLNK
    case S_IFLNK:
       return process_symlink(jcr, ff_pkt, handle_file, fname, top_level);
 #endif
    case S_IFDIR:
-      return process_directory(jcr, ff_pkt, handle_file, fname, parent_device, top_level, &restore_times);
+      return process_directory(jcr, ff_pkt, handle_file, fname, parent_device, top_level);
    default:
       return process_special_file(jcr, ff_pkt, handle_file, fname, top_level);
    }
@@ -1033,33 +1003,16 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
 
 int term_find_one(FF_PKT *ff)
 {
-   struct f_link *lp, *lc;
-   int count = 0;
-   int i;
+   int count;
 
    if (ff->linkhash == NULL) {
       return 0;
    }
 
-   /*
-    * Free up list of hard linked files
-    */
-   for (i = 0; i < LINK_HASHTABLE_SIZE; i ++) {
-      lp = ff->linkhash[i];
-      while (lp) {
-         lc = lp;
-         lp = lp->next;
-         if (lc) {
-            if (lc->digest) {
-               free(lc->digest);
-            }
-            free(lc);
-            count++;
-         }
-      }
-      ff->linkhash[i] = NULL;
-   }
+   count = ff->linkhash->size();
+   ff->linkhash->destroy();
    free(ff->linkhash);
    ff->linkhash = NULL;
+
    return count;
 }

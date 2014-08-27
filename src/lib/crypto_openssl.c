@@ -1384,14 +1384,17 @@ int init_crypto(void)
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to seed OpenSSL PRNG\n"));
    }
 
-#ifndef HAVE_SUN_OS /* FIXME: Until https://www.illumos.org/issues/1667 is solved. */
+#ifdef HAVE_ENGINE_LOAD_PK11
+   /*
+    * FIXME: Until https://www.illumos.org/issues/1667 is solved.
+    */
+   ENGINE_load_pk11();
+#else
    /*
     * Load all the builtin engines.
     */
    ENGINE_load_builtin_engines();
    ENGINE_register_all_complete();
-#else
-   ENGINE_load_pk11();
 #endif
 
    crypto_initialized = true;

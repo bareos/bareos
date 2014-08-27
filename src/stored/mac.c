@@ -408,6 +408,7 @@ static inline void check_auto_xflation(JCR *jcr)
 bool do_mac_run(JCR *jcr)
 {
    DEVICE *dev;
+   utime_t now;
    char ec1[50];
    const char *Type;
    bool ok = true;
@@ -516,6 +517,12 @@ bool do_mac_run(JCR *jcr)
       }
 
       /*
+       * Update the initial Job Statistics.
+       */
+      now = (utime_t)time(NULL);
+      update_job_statistics(jcr, now);
+
+      /*
        * Read all data and send it to remote SD.
        */
       ok = read_records(jcr->read_dcr, clone_record_to_remote_sd, mount_next_read_volume);
@@ -578,6 +585,12 @@ bool do_mac_run(JCR *jcr)
       Dmsg2(200, "===== After acquire pos %u:%u\n", jcr->dcr->dev->file, jcr->dcr->dev->block_num);
 
       jcr->sendJobStatus(JS_Running);
+
+      /*
+       * Update the initial Job Statistics.
+       */
+      now = (utime_t)time(NULL);
+      update_job_statistics(jcr, now);
 
       if (!begin_data_spool(jcr->dcr) ) {
          ok = false;

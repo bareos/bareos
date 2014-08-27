@@ -17,13 +17,15 @@ thisdir = src/plugins/dird
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/dird
 
+BUILD_PLUGINS = @BUILD_DIR_PLUGINS@
+
 .SUFFIXES:    .c .lo
 
 # inference rules
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: Makefile python-dir.la
+all: Makefile $(BUILD_PLUGINS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -50,8 +52,10 @@ plugtest: Makefile dir_plugins.c \
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(CP) *.py $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-dir.la $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/python-dir.la
+	@for plugin in $(BUILD_PLUGINS); do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
+	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
+	done
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

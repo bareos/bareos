@@ -34,6 +34,10 @@
 static B_DB *db;
 static const char *file = "COPYRIGHT";
 static DBId_t fnid=0;
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+#endif
 static const char *db_name = "regress";
 static const char *db_user = "regress";
 static const char *db_password = "";
@@ -104,6 +108,9 @@ static int result_handler(void *ctx, int fields, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
    char *jobids = (char *)"1";
    char *path=NULL, *client=NULL;
    uint64_t limit=0;
@@ -206,6 +213,13 @@ int main (int argc, char *argv[])
    bjcr->client_name = get_pool_memory(PM_FNAME);
    pm_strcpy(bjcr->client_name, "Dummy.Client.Name");
    bstrncpy(bjcr->Job, "bvfs_test", sizeof(bjcr->Job));
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   backend_directories = New(alist(10, owned_by_alist));
+   backend_directories->append((char *)backend_directory);
+
+   db_set_backend_dirs(backend_directories);
+#endif
 
    if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, db_host, 0, NULL)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));

@@ -608,7 +608,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.PoolId=%s",
+"ActionOnPurge,MinBlocksize,MaxBlocksize FROM Pool WHERE Pool.PoolId=%s",
          edit_int64(pdbr->PoolId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, pdbr->Name, strlen(pdbr->Name));
@@ -616,7 +616,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,AcceptAnyVolume,"
 "AutoPrune,Recycle,VolRetention,VolUseDuration,MaxVolJobs,MaxVolFiles,"
 "MaxVolBytes,PoolType,LabelType,LabelFormat,RecyclePoolId,ScratchPoolId,"
-"ActionOnPurge FROM Pool WHERE Pool.Name='%s'", esc);
+"ActionOnPurge,MinBlocksize,MaxBlocksize FROM Pool WHERE Pool.Name='%s'", esc);
    }
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
@@ -650,6 +650,8 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
             pdbr->RecyclePoolId = str_to_int64(row[17]);
             pdbr->ScratchPoolId = str_to_int64(row[18]);
             pdbr->ActionOnPurge = str_to_int32(row[19]);
+            pdbr->MinBlocksize = str_to_int32(row[20]);
+            pdbr->MaxBlocksize = str_to_int32(row[21]);
             ok = true;
          }
       }
@@ -859,60 +861,70 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb)
 
 /**
  * This function returns a list of all the Media record ids for
- *     the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes
- *     VolumeName if specified
- *  The caller must free ids if non-NULL.
+ * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
+ * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
+ * over VolumeName. The caller must free ids if non-NULL.
  *
- *  Returns false: on failure
- *          true:  on success
+ * Returns false: on failure
+ *         true:  on success
  */
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, int *num_ids, uint32_t *ids[])
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t *ids[])
 {
    SQL_ROW row;
    int i = 0;
    uint32_t *id;
    char ed1[50];
    bool ok = false;
-   char buf[MAX_NAME_LENGTH*3]; /* Can contain MAX_NAME_LENGTH*2+1 + AND ....='' */
-   char esc[MAX_NAME_LENGTH*2+1];
+   char esc[MAX_NAME_LENGTH * 2 + 1];
+   bool have_volumes = false;
+   POOL_MEM buf(PM_MESSAGE);
 
    db_lock(mdb);
    *ids = NULL;
+
+   if (*volumes.c_str()) {
+      have_volumes = true;
+   }
 
    Mmsg(mdb->cmd, "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
         mr->Recycle, mr->Enabled);
 
    if (*mr->MediaType) {
       db_escape_string(jcr, mdb, esc, mr->MediaType, strlen(mr->MediaType));
-      bsnprintf(buf, sizeof(buf), "AND MediaType='%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND MediaType='%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->StorageId) {
-      bsnprintf(buf, sizeof(buf), "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND StorageId=%s ", edit_uint64(mr->StorageId, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->PoolId) {
-      bsnprintf(buf, sizeof(buf), "AND PoolId=%s ", edit_uint64(mr->PoolId, ed1));
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND PoolId=%s ", edit_uint64(mr->PoolId, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (mr->VolBytes) {
-      bsnprintf(buf, sizeof(buf), "AND VolBytes > %s ", edit_uint64(mr->VolBytes, ed1));
-      pm_strcat(mdb->cmd, buf);
-   }
-
-   if (*mr->VolumeName) {
-      db_escape_string(jcr, mdb, esc, mr->VolumeName, strlen(mr->VolumeName));
-      bsnprintf(buf, sizeof(buf), "AND VolumeName = '%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND VolBytes > %s ", edit_uint64(mr->VolBytes, ed1));
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    if (*mr->VolStatus) {
       db_escape_string(jcr, mdb, esc, mr->VolStatus, strlen(mr->VolStatus));
-      bsnprintf(buf, sizeof(buf), "AND VolStatus = '%s' ", esc);
-      pm_strcat(mdb->cmd, buf);
+      Mmsg(buf, "AND VolStatus = '%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
+   }
+
+   if (*mr->VolumeName && !have_volumes) {
+      db_escape_string(jcr, mdb, esc, mr->VolumeName, strlen(mr->VolumeName));
+      Mmsg(buf, "AND VolumeName = '%s' ", esc);
+      pm_strcat(mdb->cmd, buf.c_str());
+   }
+
+   if (have_volumes) {
+      Mmsg(buf, "AND VolumeName IN (%s) ", volumes.c_str());
+      pm_strcat(mdb->cmd, buf.c_str());
    }
 
    Dmsg1(100, "q=%s\n", mdb->cmd);
@@ -1004,7 +1016,7 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE MediaId=%s",
          edit_int64(mr->MediaId, ed1));
    } else {                           /* find by name */
@@ -1016,7 +1028,7 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
          "Enabled,LocationId,RecycleCount,InitialWrite,"
          "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey "
+         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
          "FROM Media WHERE VolumeName='%s'", esc);
    }
 
@@ -1075,7 +1087,8 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
             mr->VolWriteTime = str_to_int64(row[35]);
             mr->ActionOnPurge = str_to_int32(row[36]);
             bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
-
+            mr->MinBlocksize = str_to_int32(row[38]);
+            mr->MaxBlocksize = str_to_int32(row[39]);
             retval = true;
          }
       } else {

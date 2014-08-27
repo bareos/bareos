@@ -191,6 +191,7 @@ struct CP_THREAD_CTX;
 
 #ifdef FILE_DAEMON
 class htable;
+class B_ACCURATE;
 struct acl_data_t;
 struct xattr_data_t;
 
@@ -510,7 +511,7 @@ public:
    bool VSS;                              /* VSS used by FD */
    bool got_metadata;                     /* Set when found job_metadata */
    bool multi_restore;                    /* Dir can do multiple storage restore */
-   htable *file_list;                     /* Previous file list (accurate mode) */
+   B_ACCURATE *file_list;                 /* Previous file list (accurate mode) */
    uint64_t base_size;                    /* Compute space saved with base job */
 #endif /* FILE_DAEMON */
 
@@ -615,7 +616,7 @@ extern DLL_IMP_EXP dlist *last_jobs;
  * The following routines are found in lib/jcr.c
  */
 extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
-extern bool init_jcr_subsystem(void);
+extern bool init_jcr_subsystem(int timeout);
 extern JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
 extern JCR *get_jcr_by_id(uint32_t JobId);
 extern JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);

@@ -25,11 +25,12 @@ STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 WORKING_DIR = /var/lib/bareos
 
 override_dh_auto_configure:
-	export LDFLAGS="" && \
-	dh_auto_configure --    \
+	dh_auto_configure -- \
   --with-sbin-perm=755 \
+  --libdir=/usr/lib/bareos \
   --sysconfdir=/etc/bareos \
   --with-archivedir=/var/lib/bareos/storage \
+  --with-backenddir=/usr/lib/bareos/backends \
   --with-scriptdir=/usr/lib/bareos/scripts \
   --with-plugindir=/usr/lib/bareos/plugins \
   --with-working-dir=/var/lib/bareos \
@@ -37,16 +38,19 @@ override_dh_auto_configure:
   --with-bsrdir=/var/lib/bareos \
   --with-logdir=/var/log/bareos \
   --with-subsys-dir=/var/lock \
+  --with-python \
   --enable-smartalloc \
   --disable-conio \
   --enable-readline \
   --enable-batch-insert \
   --enable-dynamic-cats-backends \
+  --enable-dynamic-storage-backends \
   --enable-acl \
   --enable-bat \
   --enable-traymonitor \
   --enable-xattr \
   --enable-scsi-crypto \
+  --enable-lmdb \
   --enable-ndmp \
   --enable-ipv6 \
   --with-postgresql \
@@ -83,6 +87,10 @@ override_dh_fixperms:
 override_dh_strip:
 	dh_strip --dbg-package=bareos-dbg
 
+override_dh_installinit:
+	dh_installinit --package=bareos-director   --name=bareos-dir --no-start
+	dh_installinit --package=bareos-storage    --name=bareos-sd  --no-start
+	dh_installinit --package=bareos-filedaemon --name=bareos-fd
+
 %:
 	dh $@
-

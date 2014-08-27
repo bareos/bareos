@@ -93,10 +93,13 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
       NULL
    };
 
-   memset(&pr, 0, sizeof(pr));
    if (!open_client_db(ua)) {
       return 1;
    }
+
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+   memset(&omr, 0, sizeof(omr));
 
    /*
     * Look for one of the barcode keywords
@@ -119,7 +122,7 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
       label_encrypt = true;
    }
 
-   store.store = get_storage_resource(ua, true/*use default*/);
+   store.store = get_storage_resource(ua, true, label_barcodes);
    if (!store.store) {
       return 1;
    }
@@ -301,8 +304,19 @@ checkName:
          bash_spaces(dev_name);
          sd->fsend("mount %s drive=%d", dev_name, drive);
          unbash_spaces(dev_name);
-         while (bnet_recv(sd) >= 0) {
+
+         /*
+          * We use bget_dirmsg here and not bnet_recv because as part of
+          * the mount request the stored can request catalog information for
+          * any plugin who listens to the bsdEventLabelVerified event.
+          * As we don't want to loose any non protocol data e.g. errors
+          * without a 3xxx prefix we set the allow_any_message of
+          * bget_dirmsg to true and as such is behaves like a normal
+          * bnet_recv for any non protocol messages.
+          */
+         while (bget_dirmsg(sd, true) >= 0) {
             ua->send_msg("%s", sd->msg);
+
             /*
              * Here we can get
              *  3001 OK mount. Device=xxx      or
@@ -319,28 +333,31 @@ checkName:
          }
       }
    }
+
    if (print_reminder) {
       ua->info_msg(_("Do not forget to mount the drive!!!\n"));
    }
+
    close_sd_bsock(ua);
 
    return 1;
 }
 
 /*
- * Request SD to send us the slot:barcodes, then wiffle
- *  through them all labeling them.
+ * Request SD to send us the slot:barcodes, then wiffle through them all labeling them.
  */
 static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
 {
    STORERES *store = ua->jcr->res.wstore;
    POOL_DBR pr;
-   MEDIA_DBR mr, omr;
+   MEDIA_DBR mr;
    vol_list_t *vl;
    dlist *vol_list = NULL;
    bool media_record_exists;
    char *slot_list;
    int max_slots;
+
+   memset(&mr, 0, sizeof(mr));
 
    max_slots = get_num_slots_from_SD(ua);
    if (max_slots <= 0) {
@@ -391,7 +408,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
          continue;
       }
-      mr.clear();
+      memset(&mr, 0, sizeof(mr));
       bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
       media_record_exists = false;
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
@@ -412,8 +429,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       set_storageid_in_mr(store, &mr);
 
       /*
-       * Deal with creating cleaning tape here. Normal tapes created in
-       *  send_label_request() below
+       * Deal with creating cleaning tape here. Normal tapes created in send_label_request() below
        */
       if (is_cleaning_tape(ua, &mr, &pr)) {
          if (media_record_exists) {      /* we update it */
@@ -458,7 +474,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       }
 
       mr.Slot = vl->Slot;
-      send_label_request(ua, &mr, &omr, &pr, 0, media_record_exists, drive);
+      send_label_request(ua, &mr, NULL, &pr, false, media_record_exists, drive);
    }
 
 bail_out:
@@ -552,23 +568,34 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    bash_spaces(mr->VolumeName);
    bash_spaces(mr->MediaType);
    bash_spaces(pr->Name);
+
    if (relabel) {
       bash_spaces(omr->VolumeName);
       sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-                     "MediaType=%s Slot=%d drive=%d",
-                 dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
-                 mr->MediaType, mr->Slot, drive);
+                "MediaType=%s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
+                dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
+                mr->MediaType, mr->Slot, drive,
+                 /*
+                  * if relabeling, keep blocksize settings
+                  */
+                omr->MinBlocksize, omr->MaxBlocksize);
       ua->send_msg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
-         omr->VolumeName, mr->VolumeName);
+                   omr->VolumeName, mr->VolumeName);
    } else {
       sd->fsend("label %s VolumeName=%s PoolName=%s MediaType=%s "
-                     "Slot=%d drive=%d",
-                 dev_name, mr->VolumeName, pr->Name, mr->MediaType,
-                 mr->Slot, drive);
+                "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
+                dev_name, mr->VolumeName, pr->Name, mr->MediaType,
+                mr->Slot, drive,
+                 /*
+                  * If labeling, use blocksize defined in pool
+                  */
+                pr->MinBlocksize, pr->MaxBlocksize);
       ua->send_msg(_("Sending label command for Volume \"%s\" Slot %d ...\n"),
-         mr->VolumeName, mr->Slot);
-      Dmsg6(100, "label %s VolumeName=%s PoolName=%s MediaType=%s Slot=%d drive=%d\n",
-         dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive);
+                   mr->VolumeName, mr->Slot);
+      Dmsg8(100, "label %s VolumeName=%s PoolName=%s MediaType=%s "
+                 "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d\n",
+            dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
+            pr->MinBlocksize, pr->MaxBlocksize);
    }
 
    /*

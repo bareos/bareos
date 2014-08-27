@@ -65,7 +65,7 @@ struct ndmp_fhdb_node {
    int8_t FileType;               /* Type of File */
    int32_t FileIndex;             /* File index */
    int32_t Offset;                /* File Offset in NDMP stream */
-   int32_t inode;                 /* Inode nr */
+   uint32_t inode;                /* Inode nr */
    uint16_t fname_len;            /* Filename length */
    ndmp_fhdb_node *next;
    ndmp_fhdb_node *parent;
@@ -111,6 +111,7 @@ struct ndmp_internal_state {
    char *filesystem;
    int32_t FileIndex;
    char *virtual_filename;
+   bool save_filehist;
    N_TREE_ROOT *fhdb_root;
 };
 typedef struct ndmp_internal_state NIS;
@@ -348,7 +349,7 @@ static int node_compare_by_id(void *item1, void *item2)
    }
 }
 
-static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, int32_t inode,
+static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, uint32_t inode,
                                                        N_TREE_ROOT *root, N_TREE_NODE *parent)
 {
    N_TREE_NODE *node, *found_node;
@@ -402,7 +403,7 @@ static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t File
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, int32_t inode)
+static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint32_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -440,7 +441,7 @@ static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, int32_t inode)
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, int32_t inode)
+static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint32_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -490,6 +491,60 @@ static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, int32_t inode)
    }
 
    return (N_TREE_NODE *)NULL;
+}
+
+static inline bool validate_client(JCR *jcr)
+{
+   switch (jcr->res.client->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0,
+           _("Client %s, with backup protocol %s  not compatible for running NDMP backup.\n"),
+           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
+      return false;
+   }
+
+   return true;
+}
+
+static inline bool validate_storage(JCR *jcr, STORERES *store)
+{
+   switch (store->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
+           store->name(), auth_protocol_to_str(store->Protocol));
+      return false;
+   }
+
+   return true;
+}
+
+static inline bool validate_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   if (jcr->wstorage) {
+      foreach_alist(store, jcr->wstorage) {
+         if (!validate_storage(jcr, store)) {
+            return false;
+         }
+      }
+   } else {
+      foreach_alist(store, jcr->rstorage) {
+         if (!validate_storage(jcr, store)) {
+            return false;
+         }
+      }
+   }
+
+   return true;
 }
 
 /*
@@ -1180,20 +1235,22 @@ static inline bool build_ndmp_job(JCR *jcr,
    /*
     * The data_agent is the client being backuped or restored using NDMP.
     */
+   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,
-                               client->password)) {
+                               client->password.value)) {
       goto bail_out;
    }
 
    /*
     * The tape_agent is the storage daemon via the NDMP protocol.
     */
+   ASSERT(store->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(jcr, &job->tape_agent, store->Protocol,
                                store->AuthType, store->address,
                                store->SDport, store->username,
-                               store->password)) {
+                               store->password.value)) {
       goto bail_out;
    }
 
@@ -1267,7 +1324,7 @@ static inline void store_attribute_record(JCR *jcr, char *fname, char *linked_fn
 }
 
 static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
-                                 int8_t *FileType, char *attribs)
+                                 int8_t *FileType, POOL_MEM &attribs)
 {
    struct stat statp;
 
@@ -1349,57 +1406,60 @@ static inline void convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    /*
     * Encode a stat structure into an ASCII string.
     */
-   encode_stat(attribs, &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
+   encode_stat(attribs.c_str(), &statp, sizeof(statp), FileIndex, STREAM_UNIX_ATTRIBUTES);
 }
 
 extern "C" int bndmp_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
                               ndmp9_file_stat *fstat)
 {
    NIS *nis;
-   int8_t FileType = 0;
-   char attribs[MAXSTRING];
-   char namebuf[NDMOS_CONST_PATH_MAX];
-   POOL_MEM pathname(PM_FNAME);
-
-   ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
    nis = (NIS *)ixlog->ctx;
    nis->jcr->lock();
    nis->jcr->JobFiles++;
    nis->jcr->unlock();
 
-   /*
-    * Every file entry is releative from the filesystem currently being backuped.
-    */
-   Dmsg2(100, "bndmp_add_file: New filename ==> %s/%s\n", nis->filesystem, namebuf);
+   if (nis->save_filehist) {
+      int8_t FileType = 0;
+      char namebuf[NDMOS_CONST_PATH_MAX];
+      POOL_MEM attribs(PM_FNAME),
+               pathname(PM_FNAME);
 
-   if (nis->jcr->ar) {
+      ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
+
       /*
-       * See if this is the top level entry of the tree e.g. len == 0
+       * Every file entry is releative from the filesystem currently being backuped.
        */
-      if (strlen(namebuf) == 0) {
-         convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      Dmsg2(100, "bndmp_add_file: New filename ==> %s/%s\n", nis->filesystem, namebuf);
 
-         pm_strcpy(pathname, nis->filesystem);
-         pm_strcat(pathname, "/");
-         return 0;
-      } else {
-         convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      if (nis->jcr->ar) {
+         /*
+          * See if this is the top level entry of the tree e.g. len == 0
+          */
+         if (strlen(namebuf) == 0) {
+            convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
-         pm_strcpy(pathname, nis->filesystem);
-         pm_strcat(pathname, "/");
-         pm_strcat(pathname, namebuf);
-
-         if (FileType == FT_DIREND) {
-            /*
-             * A directory needs to end with a slash.
-             */
+            pm_strcpy(pathname, nis->filesystem);
             pm_strcat(pathname, "/");
-         }
-      }
+            return 0;
+         } else {
+            convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
-      store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs, FileType,
-                            (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
+            pm_strcpy(pathname, nis->filesystem);
+            pm_strcat(pathname, "/");
+            pm_strcat(pathname, namebuf);
+
+            if (FileType == FT_DIREND) {
+               /*
+                * A directory needs to end with a slash.
+                */
+               pm_strcat(pathname, "/");
+            }
+         }
+
+         store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
+                               (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
+      }
    }
 
    return 0;
@@ -1420,36 +1480,38 @@ extern "C" int bndmp_add_dir(struct ndmlog *ixlog, int tagc, char *raw_name,
       return 0;
    }
 
-   Dmsg3(100, "bndmp_add_dir: New filename ==> %s [%llu] - [%llu]\n", namebuf, dir_node, node);
-
    nis = (NIS *)ixlog->ctx;
    nis->jcr->lock();
    nis->jcr->JobFiles++;
    nis->jcr->unlock();
 
-   if (!nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"));
-      return 1;
-   }
+   if (nis->save_filehist) {
+      Dmsg3(100, "bndmp_add_dir: New filename ==> %s [%llu] - [%llu]\n", namebuf, dir_node, node);
 
-   /*
-    * See if this entry is in the cached parent.
-    */
-   if (nis->fhdb_root->cached_parent &&
-       nis->fhdb_root->cached_parent->inode == dir_node) {
-      search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
-                                  nis->fhdb_root, nis->fhdb_root->cached_parent);
-   } else {
+      if (!nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"));
+         return 1;
+      }
+
       /*
-       * Not the cached parent search the tree where it need to be put.
+       * See if this entry is in the cached parent.
        */
-      nis->fhdb_root->cached_parent = find_tree_node(nis->fhdb_root, dir_node);
-      if (nis->fhdb_root->cached_parent) {
+      if (nis->fhdb_root->cached_parent &&
+          nis->fhdb_root->cached_parent->inode == dir_node) {
          search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
                                      nis->fhdb_root, nis->fhdb_root->cached_parent);
       } else {
-         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"), dir_node);
-         return 1;
+         /*
+          * Not the cached parent search the tree where it need to be put.
+          */
+         nis->fhdb_root->cached_parent = find_tree_node(nis->fhdb_root, dir_node);
+         if (nis->fhdb_root->cached_parent) {
+            search_and_insert_tree_node(namebuf, nis->fhdb_root->FileIndex, node,
+                                        nis->fhdb_root, nis->fhdb_root->cached_parent);
+         } else {
+            Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"), dir_node);
+            return 1;
+         }
       }
    }
 
@@ -1460,41 +1522,44 @@ extern "C" int bndmp_add_node(struct ndmlog *ixlog, int tagc,
                               ndmp9_u_quad node, ndmp9_file_stat *fstat)
 {
    NIS *nis;
-   int attr_size;
-   int8_t FileType = 0;
-   N_TREE_NODE *wanted_node;
-   char attribs[MAXSTRING];
-
-   Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
    nis = (NIS *)ixlog->ctx;
 
-   if (!nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node call before add_dir.\n"));
-      return 1;
-   }
+   if (nis->save_filehist) {
+      int attr_size;
+      int8_t FileType = 0;
+      N_TREE_NODE *wanted_node;
+      POOL_MEM attribs(PM_FNAME);
 
-   wanted_node = find_tree_node(nis->fhdb_root, node);
-   if (!wanted_node) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node request for unknown node %llu.\n"), node);
-      return 1;
-   }
+      Dmsg1(100, "bndmp_add_node: New node [%llu]\n", node);
 
-   convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-   attr_size = strlen(attribs) + 1;
+      if (!nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node call before add_dir.\n"));
+         return 1;
+      }
 
-   wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
-   bstrncpy(wanted_node->attr, attribs, attr_size);
-   wanted_node->FileType = FileType;
-   if (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) {
-      wanted_node->Offset = fstat->fh_info.value;
-   }
+      wanted_node = find_tree_node(nis->fhdb_root, node);
+      if (!wanted_node) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node request for unknown node %llu.\n"), node);
+         return 1;
+      }
 
-   if (FileType == FT_DIREND) {
-      /*
-       * A directory needs to end with a slash.
-       */
-      strcat(wanted_node->fname, "/");
+      convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
+      attr_size = strlen(attribs.c_str()) + 1;
+
+      wanted_node->attr = ndmp_fhdb_tree_alloc(nis->fhdb_root, attr_size);
+      bstrncpy(wanted_node->attr, attribs, attr_size);
+      wanted_node->FileType = FileType;
+      if (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) {
+         wanted_node->Offset = fstat->fh_info.value;
+      }
+
+      if (FileType == FT_DIREND) {
+         /*
+          * A directory needs to end with a slash.
+          */
+         strcat(wanted_node->fname, "/");
+      }
    }
 
    return 0;
@@ -1505,27 +1570,29 @@ extern "C" int bndmp_add_dirnode_root(struct ndmlog *ixlog, int tagc,
 {
    NIS *nis;
 
-   Dmsg1(100, "bndmp_add_dirnode_root: New root node [%llu]\n", root_node);
-
    nis = (NIS *)ixlog->ctx;
 
-   if (nis->fhdb_root) {
-      Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dirnode_root call more then once.\n"));
-      return 1;
+   if (nis->save_filehist) {
+      Dmsg1(100, "bndmp_add_dirnode_root: New root node [%llu]\n", root_node);
+
+      if (nis->fhdb_root) {
+         Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dirnode_root call more then once.\n"));
+         return 1;
+      }
+
+      nis->fhdb_root = ndmp_fhdb_new_tree();
+
+      /*
+       * Allocate a new entry with 2 bytes extra e.g. the extra slash
+       * needed for directories and the \0.
+       */
+      nis->fhdb_root->fname_len = strlen(nis->filesystem);
+      nis->fhdb_root->fname = ndmp_fhdb_tree_alloc(nis->fhdb_root, nis->fhdb_root->fname_len + 2);
+      bstrncpy(nis->fhdb_root->fname, nis->filesystem, nis->fhdb_root->fname_len + 1);
+      nis->fhdb_root->inode = root_node;
+      nis->fhdb_root->FileIndex = nis->FileIndex;
+      nis->fhdb_root->cached_parent = (N_TREE_NODE *)nis->fhdb_root;
    }
-
-   nis->fhdb_root = ndmp_fhdb_new_tree();
-
-   /*
-    * Allocate a new entry with 2 bytes extra e.g. the extra slash
-    * needed for directories and the \0.
-    */
-   nis->fhdb_root->fname_len = strlen(nis->filesystem);
-   nis->fhdb_root->fname = ndmp_fhdb_tree_alloc(nis->fhdb_root, nis->fhdb_root->fname_len + 2);
-   bstrncpy(nis->fhdb_root->fname, nis->filesystem, nis->fhdb_root->fname_len + 1);
-   nis->fhdb_root->inode = root_node;
-   nis->fhdb_root->FileIndex = nis->FileIndex;
-   nis->fhdb_root->cached_parent = (N_TREE_NODE *)nis->fhdb_root;
 
    return 0;
 }
@@ -1754,7 +1821,7 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, NIS
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   unsigned int internal_level = level * 100;
+   int internal_level = level * 100;
    NIS *nis;
 
    /*
@@ -1855,6 +1922,17 @@ bool do_ndmp_backup_init(JCR *jcr)
 
    if (!jcr->wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
+      return false;
+   }
+
+   /*
+    * Validate the Job to have a NDMP client and NDMP storage.
+    */
+   if (!validate_client(jcr)) {
+      return false;
+   }
+
+   if (!validate_storage(jcr)) {
       return false;
    }
 
@@ -2012,6 +2090,7 @@ bool do_ndmp_backup(JCR *jcr)
          nis->filesystem = item;
          nis->FileIndex = cnt + 1;
          nis->jcr = jcr;
+         nis->save_filehist = jcr->res.job->SaveFileHist;
 
          /*
           * The full ndmp archive has a virtual filename, we need it to hardlink the individual
@@ -2667,6 +2746,13 @@ bool do_ndmp_restore(JCR *jcr)
 
    Dmsg1(20, "RestoreJobId=%d\n", jcr->res.job->RestoreJobId);
 
+   /*
+    * Validate the Job to have a NDMP client.
+    */
+   if (!validate_client(jcr)) {
+      return false;
+   }
+
    if (!jcr->RestoreBootstrap) {
       Jmsg(jcr, M_FATAL, 0, _("Cannot restore without a bootstrap file.\n"
            "You probably ran a restore job directly. All restore jobs must\n"
@@ -2876,10 +2962,11 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       /*
        * Query the TAPE agent of the NDMP server.
        */
+      ASSERT(store->password.encoding == p_encoding_clear);
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.tape_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password)) {
+                                  store->username, store->password.value)) {
          return;
       }
 
@@ -2889,7 +2976,7 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
       if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.robot_agent,
                                   store->Protocol, store->AuthType,
                                   store->address, store->SDport,
-                                  store->username, store->password)) {
+                                  store->username, store->password.value)) {
          return;
       }
 
@@ -2911,10 +2998,11 @@ void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    /*
     * Query the DATA agent of the NDMP server.
     */
+   ASSERT(client->password.encoding == p_encoding_clear);
    if (!fill_ndmp_agent_config(ua->jcr, &ndmp_job.data_agent,
                                client->Protocol, client->AuthType,
                                client->address, client->FDport,
-                               client->username, client->password)) {
+                               client->username, client->password.value)) {
       return;
    }
 

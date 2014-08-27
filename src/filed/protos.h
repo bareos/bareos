@@ -68,10 +68,6 @@ bool init_fileset(JCR *jcr);
 void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file);
 findINCEXE *get_incexe(JCR *jcr);
 void set_incexe(JCR *jcr, findINCEXE *incexe);
-findINCEXE *new_exclude(JCR *jcr);
-findINCEXE *new_include(JCR *jcr);
-findINCEXE *new_preinclude(JCR *jcr);
-void new_options(JCR *jcr, findINCEXE *incexe);
 int add_regex_to_fileset(JCR *jcr, const char *item, int type);
 int add_wild_to_fileset(JCR *jcr, const char *item, int type);
 int add_options_to_fileset(JCR *jcr, const char *item);
@@ -98,3 +94,5 @@ void *handle_stored_connection(BSOCK *sd);
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);
 void do_verify(JCR *jcr);
 void do_verify_volume(JCR *jcr);
+bool calculate_and_compare_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+                                       const char *fname, const char *chksum);

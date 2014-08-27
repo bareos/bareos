@@ -1,0 +1,56 @@
+#!/bin/sh
+
+set -e
+
+# summary of how this script can be called:
+#        * <postinst> `configure' <most-recently-configured-version>
+#        * <old-postinst> `abort-upgrade' <new version>
+#        * <conflictor's-postinst> `abort-remove' `in-favour' <package>
+#          <new-version>
+#        * <postinst> `abort-remove'
+#        * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
+#          <failed-install-package> <version> `removing'
+#          <conflicting-package> <version>
+# for details, see http://www.debian.org/doc/debian-policy/ or
+# the debian-policy package
+
+#set -x
+#echo "bareos-database-common.postinst: $@" >&2
+
+. /usr/share/debconf/confmodule
+
+if [ -r @scriptdir@/bareos-config-lib.sh ]; then
+    . @scriptdir@/bareos-config-lib.sh
+    if [ -f /usr/share/dbconfig-common/dpkg/postinst ]; then
+        . /usr/share/dbconfig-common/dpkg/postinst
+
+        # action
+        param1="$1"
+        # when action is "configure": most-recently-configured-version
+        param2="$2"
+        shift 2
+        if [ "$param2" ]; then
+            case "$param1" in
+                configure|reconfigure)
+                    param2=`get_database_version_by_release "$param2"`
+                    ;;
+                *)
+                    ;;
+            esac
+        fi
+
+        # dbc_pgsql_createdb_encoding: required for postgresql
+        dbc_pgsql_createdb_encoding="SQL_ASCII"
+
+        # dbc_dbfile_owner: only required for sqlite3
+        dbc_dbfile_owner=`get_user_dir`:`get_group_dir`
+
+        # run dbconfig
+        dbc_go bareos-database-common $param1 $param2 $@
+
+        # apply the dbconfig settings
+        apply_dbconfig_settings
+    fi
+fi
+
+#DEBHELPER#

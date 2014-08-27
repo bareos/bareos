@@ -73,9 +73,11 @@
 #define alloca _alloca
 #endif
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
-   */
+/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'. */
 #define HAVE_DIRENT_H 1
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#define HAVE_DLFCN_H 1
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #define HAVE_FCNTL_H 1
@@ -419,6 +421,9 @@
 /* Directory for daemon files */
 #define _PATH_BAREOS_WORKINGDIR "%TEMP%"
 
+/* Directory for backend drivers */
+#define _PATH_BAREOS_BACKENDDIR "."
+
 /* Define to 1 if dynamic loading of catalog backends is enabled */
 #define HAVE_DYNAMIC_CATS_BACKENDS 1
 
@@ -439,5 +444,8 @@
 
 /* Set if have PQisthreadsafe */
 #define HAVE_PQISTHREADSAFE 1
+
+/* Define to 1 if LMDB support should be enabled */
+#define HAVE_LMDB 1
 
 #endif /* __MINGWNCONFIG_H */

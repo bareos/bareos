@@ -20,13 +20,15 @@ thisdir = src/plugins/stored
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/stored
 
+BUILD_PLUGINS = @BUILD_SD_PLUGINS@
+
 .SUFFIXES:    .c .lo
 
 # inference rules
 .c.lo:
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
 
-all: Makefile autoxflate-sd.la python-sd.la scsicrypto-sd.la
+all: Makefile $(BUILD_PLUGINS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
@@ -57,6 +59,11 @@ scsicrypto-sd.la: Makefile \
 		  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsicrypto-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
 
+scsitapealert-sd.la: Makefile \
+		     scsitapealert-sd$(DEFAULT_OBJECT_TYPE) \
+		     ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared scsitapealert-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version -L../../lib -lbareos
+
 plugtest: Makefile sd_plugins.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
@@ -65,12 +72,10 @@ plugtest: Makefile sd_plugins.c \
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(CP) *.py $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) autoxflate-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/autoxflate-sd.la
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) python-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/python-sd.la
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) scsicrypto-sd$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
-	$(RMF) $(DESTDIR)$(plugindir)/scsicrypto-sd.la
+	@for plugin in $(BUILD_PLUGINS); do \
+	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
+	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
+	done
 
 install-test-plugin:
 	$(MKDIR) $(DESTDIR)$(plugindir)

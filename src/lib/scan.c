@@ -544,6 +544,8 @@ struct VOLUME_CAT_INFO {
    uint64_t VolCatCapacityBytes;      /* capacity estimate */
    uint64_t VolReadTime;              /* time spent reading */
    uint64_t VolWriteTime;             /* time spent writing this Volume */
+   uint32_t MinBlocksize;             /* Minimum block size */
+   uint32_t MaxBlocksize;             /* Maximum block size */
    char VolCatStatus[20];             /* Volume status */
    char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
 };
@@ -569,7 +571,8 @@ struct VOLUME_CAT_INFO {
                &vol.VolCatWrites, &vol.VolCatMaxBytes,
                &vol.VolCatCapacityBytes, vol.VolCatStatus,
                &vol.Slot, &vol.VolCatMaxJobs, &vol.VolCatMaxFiles,
-               &vol.InChanger, &vol.VolReadTime, &vol.VolWriteTime);
+               &vol.InChanger, &vol.VolReadTime, &vol.VolWriteTime,
+               &vol.MaxBlocksize, &vol.MinBocksize);
    printf("cnt=%d Vol=%s\n", cnt, vol.VolCatName);
 
 }

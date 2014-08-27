@@ -118,6 +118,9 @@
 /* Define to 1 if you have the <cam/scsi/scsi_message.h> header file. */
 #undef HAVE_CAM_SCSI_SCSI_MESSAGE_H
 
+/* Define to 1 if you have cephfs lib */
+#undef HAVE_CEPHFS
+
 /* Define to 1 if you have the MacOS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
@@ -131,6 +134,9 @@
 
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
+
+/* Define to 1 if you have compressBound */
+#undef HAVE_COMPRESS_BOUND
 
 /* Define to 1 if Bareos conio support enabled */
 #undef HAVE_CONIO
@@ -204,6 +210,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define to 1 if you have the <dl.h> header file. */
+#undef HAVE_DL_H
+
 /* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
 #undef HAVE_DOPRNT
 
@@ -213,8 +222,14 @@
 /* Define to 1 if dynamic loading of catalog backends is enabled */
 #undef HAVE_DYNAMIC_CATS_BACKENDS
 
+/* Define to 1 if dynamic loading of storage backends is enabled */
+#undef HAVE_DYNAMIC_SD_BACKENDS
+
 /* Set if you have an Embedded MySQL Database */
 #undef HAVE_EMBEDDED_MYSQL
+
+/* Define to 1 if OpenSSL library has ENGINE_load_pk11 available */
+#undef HAVE_ENGINE_LOAD_PK11
 
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
@@ -255,6 +270,12 @@
 /* Define to 1 if you have the `fchdir' function. */
 #undef HAVE_FCHDIR
 
+/* Define to 1 if you have the `fchmod' function. */
+#undef HAVE_FCHMOD
+
+/* Define to 1 if you have the `fchown' function. */
+#undef HAVE_FCHOWN
+
 /* Define to 1 if you have the `fchownat' function. */
 #undef HAVE_FCHOWNAT
 
@@ -278,6 +299,12 @@
 
 /* Define to 1 if you have the `fstatat' function. */
 #undef HAVE_FSTATAT
+
+/* Define to 1 if you have the `futimens' function. */
+#undef HAVE_FUTIMENS
+
+/* Define to 1 if you have the `futimes' function. */
+#undef HAVE_FUTIMES
 
 /* Define to 1 if you have the `futimesat' function. */
 #undef HAVE_FUTIMESAT
@@ -351,6 +378,9 @@
 /* Define to 1 if you have the `get_proplist_entry' function. */
 #undef HAVE_GET_PROPLIST_ENTRY
 
+/* Define to 1 if you have gfapi lib */
+#undef HAVE_GFAPI
+
 /* Define to 1 if GNUTLS library is available */
 #undef HAVE_GNUTLS
 
@@ -405,6 +435,9 @@
 
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 #undef HAVE_LANGINFO_CODESET
+
+/* Define to 1 if you have the `lchmod' function. */
+#undef HAVE_LCHMOD
 
 /* Define to 1 if you have the `lchown' function. */
 #undef HAVE_LCHOWN
@@ -466,6 +499,9 @@
 /* Define to 1 if you have the `llistxattr' function. */
 #undef HAVE_LLISTXATTR
 
+/* Define to 1 if LMDB support should be enabled */
+#undef HAVE_LMDB
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -489,6 +525,9 @@
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
+
+/* Define to 1 if you have the `lutimes' function. */
+#undef HAVE_LUTIMES
 
 /* Define to 1 if you have lzo lib */
 #undef HAVE_LZO
@@ -544,8 +583,14 @@
 /* Define to 1 if you have the <nl_types.h> header file. */
 #undef HAVE_NL_TYPES_H
 
+/* Define to 1 to when walkcontext does not work */
+#undef HAVE_NON_WORKING_WALKCONTEXT
+
 /* Define to 1 if you have the `nvlist_next_nvpair' function. */
 #undef HAVE_NVLIST_NEXT_NVPAIR
+
+/* Define to 1 if you have libdroplet lib */
+#undef HAVE_OBJECTSTORE
 
 /* Define to 1 to use the old sockopt option */
 #undef HAVE_OLD_SOCKOPT
@@ -604,6 +649,9 @@
 
 /* Define to 1 if python support should be enabled */
 #undef HAVE_PYTHON
+
+/* Define to 1 if you have rados lib */
+#undef HAVE_RADOS
 
 /* Define to 1 if you have the `readdir_r' function. */
 #undef HAVE_READDIR_R
@@ -784,6 +832,9 @@
    */
 #undef HAVE_SYS_DIR_H
 
+/* Define to 1 if you have the <sys/dl.h> header file. */
+#undef HAVE_SYS_DL_H
+
 /* Define to 1 if you have the <sys/ea.h> header file. */
 #undef HAVE_SYS_EA_H
 
@@ -909,6 +960,9 @@
 
 /* Define to 1 if you have SVR3 signals */
 #undef HAVE_USG_SIGHOLD
+
+/* Define to 1 if you have the `utimes' function. */
+#undef HAVE_UTIMES
 
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
@@ -1104,6 +1158,9 @@
 
 /* Define for large files, on AIX-style hosts. */
 #undef _LARGE_FILES
+
+/* Directory for backend files */
+#undef _PATH_BAREOS_BACKENDDIR
 
 /* Directory for PID files */
 #undef _PATH_BAREOS_PIDDIR

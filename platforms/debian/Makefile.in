@@ -8,9 +8,13 @@
 #
 @MCOMMON@
 
-nothing:
+all:
+	$(INSTALL) ../../debian/copyright.header ../../debian/copyright
+	$(SED) -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../../LICENSE >> ../../debian/copyright
+	cat ../../debian/copyright.footer >> ../../debian/copyright
 
-install: install-autostart install_logrotate
+
+install: install_logrotate install-dbconfig
 
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
@@ -21,37 +25,61 @@ install_logrotate:
 install-autostart-fd:
 	@echo "Installing bareos-fd boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/etc/init.d/bareos-fd
+	@$(INSTALL_PROGRAM) ../../debian/bareos-filedaemon.bareos-fd.init $(DESTDIR)/etc/init.d/bareos-fd
 	@echo "Installing bareos-fd symlinks ..."
 	@if test x$(DESTDIR) = x ; then \
-	   /usr/sbin/update-rc.d bareos-fd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-fd defaults; \
 	fi
 
 install-autostart-sd:
 	@echo "Installing bareos-sd boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-sd $(DESTDIR)/etc/init.d/bareos-sd
+	@$(INSTALL_PROGRAM) ../../debian/bareos-storage.bareos-sd.init $(DESTDIR)/etc/init.d/bareos-sd
 	@echo "Installing bareos-sd symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
-	   /usr/sbin/update-rc.d bareos-sd start 91 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-sd defaults; \
 	fi
 
 install-autostart-dir:
 	@echo "Installing bareos-dir boot script ..."
 	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-dir $(DESTDIR)/etc/init.d/bareos-dir
+	@$(INSTALL_PROGRAM) ../../debian/bareos-director.bareos-dir.init $(DESTDIR)/etc/init.d/bareos-dir
 	@echo "Installing bareos-dir symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
-	   /usr/sbin/update-rc.d bareos-dir start 90 2 3 4 5 . stop 9 0 1 6 .; \
+	   /usr/sbin/update-rc.d bareos-dir defaults; \
 	fi
+
+install-dbconfig:
+	@echo "Installing dbconfig files ..."
+	@$(INSTALL_PROGRAM) set_dbconfig_vars.sh $(DESTDIR)/${scriptdir}/
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/
+	@$(SYMLINK) $(scriptdir)/ddl/creates/mysql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
+	@$(SYMLINK) $(scriptdir)/ddl/creates/postgresql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
+	@$(SYMLINK) $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/mysql.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/$$VERSION; \
+	done
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/postgresql.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+	done
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/
+	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/sqlite3.*.sql; do \
+		BASENAME=`basename $$i`; \
+		VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/$$VERSION; \
+	done
 
 clean:
 	@$(RMF) 1 2 3
 
 distclean: clean
 	@$(RMF) Makefile
-	@$(RMF) bareos-sd bareos-fd bareos-dir
 
 devclean: clean
 	@$(RMF) Makefile
-	@$(RMF) bareos-sd bareos-fd bareos-dir

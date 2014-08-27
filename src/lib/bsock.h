@@ -59,7 +59,6 @@ public:
    uint32_t out_msg_no;               /* Output message number */
    int32_t msglen;                    /* Message length */
    volatile time_t timer_start;       /* Time started read/write */
-   volatile time_t timeout;           /* Timeout BSOCK after this interval */
    int b_errno;                       /* BSOCK errno */
    int m_blocking;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
@@ -94,10 +93,10 @@ protected:
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 public:
-   BSOCK() {};
-   virtual ~BSOCK() {};
-   /* methods -- in bsock.c */
-   virtual void init() = 0;
+   BSOCK();
+   virtual ~BSOCK();
+
+   /* Methods -- in bsock.c */
    void free_bsock();
    void free_tls();
    virtual BSOCK *clone() = 0;

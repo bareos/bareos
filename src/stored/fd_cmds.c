@@ -140,8 +140,16 @@ void *handle_filed_connection(BSOCK *fd, char *job_name)
       Jmsg(jcr, M_FATAL, 0, _("Unable to authenticate File daemon\n"));
       jcr->setJobStatus(JS_ErrorTerminated);
    } else {
+      utime_t now;
+
       jcr->authenticated = true;
       Dmsg2(50, "OK Authentication jid=%u Job %s\n", (uint32_t)jcr->JobId, jcr->Job);
+
+      /*
+       * Update the initial Job Statistics.
+       */
+      now = (utime_t)time(NULL);
+      update_job_statistics(jcr, now);
    }
 
    pthread_cond_signal(&jcr->job_start_wait); /* wake waiting job */

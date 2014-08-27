@@ -31,18 +31,13 @@ permissions()
   chown ${director_daemon_user}:${daemon_group} /etc/bareos/bareos-dir.conf
 }
 
-enable_rc_scripts()
-{
-  update-rc.d bareos-dir defaults
-}
-
 case "$1" in
     configure)
         permissions
         /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
         /usr/lib/bareos/scripts/bareos-config initialize_passwords
         /usr/lib/bareos/scripts/bareos-config initialize_database_driver
-        enable_rc_scripts
+        /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
         ;;

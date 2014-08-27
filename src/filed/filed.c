@@ -38,7 +38,9 @@ extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_cod
 static bool check_resources();
 
 /* Exported variables */
-CLIENTRES *me;                        /* my resource */
+CLIENTRES *me = NULL;                 /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
+
 bool no_signals = false;
 bool backup_only_mode = false;
 bool restore_only_mode = false;
@@ -51,7 +53,6 @@ static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
 static alist *sock_fds;
 static pthread_t tcp_server_tid;
-static CONFIG *config;
 
 static void usage()
 {
@@ -209,8 +210,8 @@ int main (int argc, char *argv[])
       configfile = bstrdup(CONFIG_FILE);
    }
 
-   config = new_config_parser();
-   parse_fd_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_fd_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
@@ -254,7 +255,9 @@ int main (int argc, char *argv[])
 
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */
-      init_jcr_subsystem();           /* start JCR watchdogs etc. */
+      if (me->jcr_watchdog_time) {
+         init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+      }
    }
    tcp_server_tid = pthread_self();
 
@@ -306,10 +309,10 @@ void terminate_filed(int sig)
    if (debug_level > 0) {
       print_memory_pool_stats();
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
    term_msg();
    cleanup_crypto();

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -98,10 +98,12 @@ static void show_disabled_jobs(UAContext *ua)
 {
    JOBRES *job;
    bool first = true;
+
    foreach_res(job, R_JOB) {
       if (!acl_access_ok(ua, Job_ACL, job->name())) {
          continue;
       }
+
       if (!job->enabled) {
          if (first) {
             first = false;
@@ -110,8 +112,36 @@ static void show_disabled_jobs(UAContext *ua)
          ua->send_msg("   %s\n", job->name());
      }
   }
+
   if (first) {
      ua->send_msg(_("No disabled Jobs.\n"));
+  }
+}
+
+/*
+ * Enter with Resources locked
+ */
+static void show_disabled_clients(UAContext *ua)
+{
+   CLIENTRES *client;
+   bool first = true;
+
+   foreach_res(client, R_CLIENT) {
+      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+         continue;
+      }
+
+      if (!client->enabled) {
+         if (first) {
+            first = false;
+            ua->send_msg(_("Disabled Clients:\n"));
+         }
+         ua->send_msg("   %s\n", client->name());
+     }
+  }
+
+  if (first) {
+     ua->send_msg(_("No disabled Clients.\n"));
   }
 }
 
@@ -132,6 +162,7 @@ static struct showstruct avail_resources[] = {
    { NT_("filesets"), R_FILESET },
    { NT_("pools"), R_POOL },
    { NT_("messages"), R_MSGS },
+   { NT_("consoles"), R_CONSOLE },
    { NT_("all"), -1 },
    { NT_("help"), -2 },
    { NULL, 0 }
@@ -142,9 +173,11 @@ static struct showstruct avail_resources[] = {
  *  Displays Resources
  *
  *  show all
- *  show <resource-keyword-name>  e.g. show directors
- *  show <resource-keyword-name>=<name> e.g. show director=HeadMan
- *  show disabled    shows disabled jobs
+ *  show <resource-keyword-name> - e.g. show directors
+ *  show <resource-keyword-name>=<name> - e.g. show director=HeadMan
+ *  show disabled - shows disabled jobs and clients
+ *  show disabled jobs - shows disabled jobs
+ *  show disabled clients - shows disabled clients
  *
  */
 int show_cmd(UAContext *ua, const char *cmd)
@@ -157,11 +190,20 @@ int show_cmd(UAContext *ua, const char *cmd)
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
 
    LockRes();
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], _("disabled"))) {
-         show_disabled_jobs(ua);
+         if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
+            show_disabled_jobs(ua);
+         } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
+            show_disabled_clients(ua);
+         } else {
+            show_disabled_jobs(ua);
+            show_disabled_clients(ua);
+         }
+
          goto bail_out;
       }
+
       type = 0;
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */
@@ -172,7 +214,7 @@ int show_cmd(UAContext *ua, const char *cmd)
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                if (type > 0) {
-                  res = res_head[type-r_first];
+                  res = my_config->m_res_head[type - my_config->m_r_first];
                } else {
                   res = NULL;
                }
@@ -197,10 +239,18 @@ int show_cmd(UAContext *ua, const char *cmd)
 
       switch (type) {
       case -1:                           /* all */
-         for (j=r_first; j<=r_last; j++) {
-            /* Skip R_DEVICE since it is really not used or updated */
-            if (j != R_DEVICE) {
-               dump_resource(j, res_head[j-r_first], bsendmsg, ua);
+         for (j = my_config->m_r_first; j <= my_config->m_r_last; j++) {
+            switch (j) {
+            case R_DEVICE:
+               /*
+                * Skip R_DEVICE since it is really not used or updated
+                */
+               continue;
+            default:
+               if (my_config->m_res_head[j - my_config->m_r_first]) {
+                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua);
+               }
+               break;
             }
          }
          break;
@@ -217,7 +267,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         dump_resource(recurse?type:-type, res, bsendmsg, ua);
+         dump_resource(recurse ? type : -type, res, bsendmsg, ua);
          break;
       }
    }
@@ -279,6 +329,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
    memset(&jr, 0, sizeof(jr));
    memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
 
    Dmsg1(20, "list: %s\n", cmd);
 
@@ -524,6 +575,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
 static bool list_nextvol(UAContext *ua, int ndays)
 {
+   int i;
    JOBRES *job;
    JCR *jcr;
    USTORERES store;
@@ -533,7 +585,9 @@ static bool list_nextvol(UAContext *ua, int ndays)
    MEDIA_DBR mr;
    POOL_DBR pr;
 
-   int i = find_arg_with_value(ua, "job");
+   memset(&mr, 0, sizeof(mr));
+
+   i = find_arg_with_value(ua, "job");
    if (i <= 0) {
       if ((job = select_job_resource(ua)) == NULL) {
          return false;
@@ -692,7 +746,7 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
 {
    POOL_DBR pr;
 
-   memset(&pr, 0, sizeof(POOL_DBR));
+   memset(&pr, 0, sizeof(pr));
    set_jcr_defaults(jcr, job);
    if (pool) {
       jcr->res.pool = pool;           /* override */
@@ -708,7 +762,7 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
                                           jcr->res.catalog->db_user,
-                                          jcr->res.catalog->db_password,
+                                          jcr->res.catalog->db_password.value,
                                           jcr->res.catalog->db_address,
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,
@@ -748,6 +802,13 @@ void do_messages(UAContext *ua, const char *cmd)
    char msg[2000];
    int mlen;
    bool do_truncate = false;
+
+   /*
+    * Flush any queued messages.
+    */
+   if (ua->jcr) {
+      dequeue_messages(ua->jcr);
+   }
 
    Pw(con_lock);
    pthread_cleanup_push(con_lock_release, (void *)NULL);

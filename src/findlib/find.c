@@ -99,9 +99,9 @@ void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
  * argument and a packet as the second argument, this packet
  * will be passed back to the callback subroutine as the last
  * argument.
- *
  */
-int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
+int find_files(JCR *jcr, FF_PKT *ff,
+               int file_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
                int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level))
 {
    ff->file_save = file_save;
@@ -111,16 +111,20 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
    findFILESET *fileset = ff->fileset;
    if (fileset) {
       int i, j;
-      /* TODO: We probably need be move the initialization in the fileset loop,
+      /*
+       * TODO: We probably need be move the initialization in the fileset loop,
        * at this place flags options are "concatenated" accross Include {} blocks
        * (not only Options{} blocks inside a Include{})
        */
       ff->flags = 0;
       for (i = 0; i < fileset->include_list.size(); i++) {
+         dlistString *node;
          findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
          fileset->incexe = incexe;
 
-         /* Here, we reset some values between two different Include{} */
+         /*
+          * Here, we reset some values between two different Include{}
+          */
          strcpy(ff->VerifyOpts, "V");
          strcpy(ff->AccurateOpts, "Cmcs");  /* mtime+ctime+size by default */
          strcpy(ff->BaseJobOpts, "Jspug5"); /* size+perm+user+group+chk  */
@@ -128,8 +132,7 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
          ff->opt_plugin = false;
 
          /*
-          * By setting all options, we in effect OR the global options
-          *   which is what we want.
+          * By setting all options, we in effect OR the global options which is what we want.
           */
          for (j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
@@ -154,9 +157,10 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
          }
          Dmsg4(50, "Verify=<%s> Accurate=<%s> BaseJob=<%s> flags=<%d>\n",
                ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts, ff->flags);
-         dlistString *node;
+
          foreach_dlist(node, &incexe->name_list) {
             char *fname = node->c_str();
+
             Dmsg1(dbglvl, "F %s\n", fname);
             ff->top_fname = fname;
             if (find_one_file(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
@@ -166,8 +170,10 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
                return 0;
             }
          }
+
          foreach_dlist(node, &incexe->plugin_list) {
             char *fname = node->c_str();
+
             if (!plugin_save) {
                Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
                return 0;
@@ -188,16 +194,16 @@ int find_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *jcr, FF_PKT *ff_pkt, boo
 
 /*
  * Test if the currently selected directory (in ff->fname) is
- *  explicitly in the Include list or explicitly in the Exclude
- *  list.
+ * explicitly in the Include list or explicitly in the Exclude list.
  */
 bool is_in_fileset(FF_PKT *ff)
 {
-   dlistString *node;
-   char *fname;
    int i;
+   char *fname;
+   dlistString *node;
    findINCEXE *incexe;
    findFILESET *fileset = ff->fileset;
+
    if (fileset) {
       for (i = 0; i < fileset->include_list.size(); i++) {
          incexe = (findINCEXE *)fileset->include_list.get(i);
@@ -220,6 +226,7 @@ bool is_in_fileset(FF_PKT *ff)
          }
       }
    }
+
    return false;
 }
 
@@ -227,14 +234,13 @@ bool accept_file(FF_PKT *ff)
 {
    int i, j, k;
    int fnm_flags;
+   const char *basename;
    findFILESET *fileset = ff->fileset;
    findINCEXE *incexe = fileset->incexe;
-   const char *basename;
    int (*match_func)(const char *pattern, const char *string, int flags);
 
    Dmsg1(dbglvl, "enter accept_file: fname=%s\n", ff->fname);
    if (ff->flags & FO_ENHANCEDWILD) {
-//    match_func = enh_fnmatch;
       match_func = fnmatch;
       if ((basename = last_path_separator(ff->fname)) != NULL)
          basename++;
@@ -258,7 +264,7 @@ bool accept_file(FF_PKT *ff)
 
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->wilddir.size(); k++) {
-            if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode|fnm_flags) == 0) {
+            if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k),
                      ff->fname);
@@ -269,7 +275,7 @@ bool accept_file(FF_PKT *ff)
          }
       } else {
          for (k = 0; k < fo->wildfile.size(); k++) {
-            if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode|fnm_flags) == 0) {
+            if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k),
                      ff->fname);
@@ -280,7 +286,7 @@ bool accept_file(FF_PKT *ff)
          }
 
          for (k = 0; k < fo->wildbase.size(); k++) {
-            if (match_func((char *)fo->wildbase.get(k), basename, fnmode|fnm_flags) == 0) {
+            if (match_func((char *)fo->wildbase.get(k), basename, fnmode | fnm_flags) == 0) {
                if (ff->flags & FO_EXCLUDE) {
                   Dmsg2(dbglvl, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k),
                      basename);
@@ -290,8 +296,9 @@ bool accept_file(FF_PKT *ff)
             }
          }
       }
+
       for (k = 0; k < fo->wild.size(); k++) {
-         if (match_func((char *)fo->wild.get(k), ff->fname, fnmode|fnm_flags) == 0) {
+         if (match_func((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
             if (ff->flags & FO_EXCLUDE) {
                Dmsg2(dbglvl, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k),
                   ff->fname);
@@ -300,6 +307,7 @@ bool accept_file(FF_PKT *ff)
             return true;              /* accept file */
          }
       }
+
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->regexdir.size(); k++) {
             const int nmatch = 30;
@@ -323,6 +331,7 @@ bool accept_file(FF_PKT *ff)
             }
          }
       }
+
       for (k = 0; k < fo->regex.size(); k++) {
          const int nmatch = 30;
          regmatch_t pmatch[nmatch];
@@ -338,8 +347,8 @@ bool accept_file(FF_PKT *ff)
        *  exclude the file
        */
       if (ff->flags & FO_EXCLUDE &&
-          fo->regex.size() == 0     && fo->wild.size() == 0 &&
-          fo->regexdir.size() == 0  && fo->wilddir.size() == 0 &&
+          fo->regex.size() == 0 && fo->wild.size() == 0 &&
+          fo->regexdir.size() == 0 && fo->wilddir.size() == 0 &&
           fo->regexfile.size() == 0 && fo->wildfile.size() == 0 &&
           fo->wildbase.size() == 0) {
          return false;              /* reject file */
@@ -350,12 +359,14 @@ bool accept_file(FF_PKT *ff)
     * Now apply the Exclude { } directive
     */
    for (i = 0; i < fileset->exclude_list.size(); i++) {
+      dlistString *node;
       findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+
       for (j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
          fnm_flags = (fo->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
          for (k = 0; k < fo->wild.size(); k++) {
-            if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode|fnm_flags) == 0) {
+            if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                Dmsg1(dbglvl, "Reject wild1: %s\n", ff->fname);
                return false;          /* reject file */
             }
@@ -363,9 +374,9 @@ bool accept_file(FF_PKT *ff)
       }
       fnm_flags = (incexe->current_opts != NULL &&
                    incexe->current_opts->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
-      dlistString *node;
       foreach_dlist(node, &incexe->name_list) {
          char *fname = node->c_str();
+
          if (fnmatch(fname, ff->fname, fnmode|fnm_flags) == 0) {
             Dmsg1(dbglvl, "Reject wild2: %s\n", ff->fname);
             return false;          /* reject file */
@@ -378,8 +389,7 @@ bool accept_file(FF_PKT *ff)
 
 /*
  * The code comes here for each file examined.
- * We filter the files, then call the user's callback if
- *    the file is included.
+ * We filter the files, then call the user's callback if the file is included.
  */
 static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
 {
@@ -426,8 +436,7 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
 }
 
 /*
- * Terminate find_files() and release
- * all allocated memory
+ * Terminate find_files() and release all allocated memory
  */
 int term_find_files(FF_PKT *ff)
 {
@@ -445,5 +454,130 @@ int term_find_files(FF_PKT *ff)
    }
    hard_links = term_find_one(ff);
    free(ff);
+
    return hard_links;
+}
+
+/**
+ * Allocate a new include/exclude block.
+ */
+findINCEXE *allocate_new_incexe(void)
+{
+   findINCEXE *incexe;
+
+   incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
+   memset(incexe, 0, sizeof(findINCEXE));
+   incexe->opts_list.init(1, true);
+   incexe->name_list.init();
+   incexe->plugin_list.init();
+
+   return incexe;
+}
+
+/**
+ * Define a new Exclude block in the FileSet
+ */
+findINCEXE *new_exclude(findFILESET *fileset)
+{
+   /*
+    * New exclude
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->exclude_list.append(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/**
+ * Define a new Include block in the FileSet
+ */
+findINCEXE *new_include(findFILESET *fileset)
+{
+   /*
+    * New include
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->include_list.append(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/**
+ * Define a new preInclude block in the FileSet.
+ * That is the include is prepended to the other
+ * Includes. This is used for plugin exclusions.
+ */
+findINCEXE *new_preinclude(findFILESET *fileset)
+{
+   /*
+    * New pre-include
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->include_list.prepend(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+/*
+ * Create a new exclude block and prepend it to the list of exclude blocks.
+ */
+findINCEXE *new_preexclude(findFILESET *fileset)
+{
+   /*
+    * New pre-exclude
+    */
+   fileset->incexe = allocate_new_incexe();
+   fileset->exclude_list.prepend(fileset->incexe);
+
+   return fileset->incexe;
+}
+
+findFOPTS *start_options(FF_PKT *ff)
+{
+   int state = ff->fileset->state;
+   findINCEXE *incexe = ff->fileset->incexe;
+
+   if (state != state_options) {
+      ff->fileset->state = state_options;
+      findFOPTS *fo = (findFOPTS *)malloc(sizeof(findFOPTS));
+      memset(fo, 0, sizeof(findFOPTS));
+      fo->regex.init(1, true);
+      fo->regexdir.init(1, true);
+      fo->regexfile.init(1, true);
+      fo->wild.init(1, true);
+      fo->wilddir.init(1, true);
+      fo->wildfile.init(1, true);
+      fo->wildbase.init(1, true);
+      fo->base.init(1, true);
+      fo->fstype.init(1, true);
+      fo->drivetype.init(1, true);
+      incexe->current_opts = fo;
+      incexe->opts_list.append(fo);
+   }
+
+   return incexe->current_opts;
+}
+
+/*
+ * Used by plugins to define a new options block
+ */
+void new_options(FF_PKT *ff, findINCEXE *incexe)
+{
+   findFOPTS *fo;
+
+   fo = (findFOPTS *)malloc(sizeof(findFOPTS));
+   memset(fo, 0, sizeof(findFOPTS));
+   fo->regex.init(1, true);
+   fo->regexdir.init(1, true);
+   fo->regexfile.init(1, true);
+   fo->wild.init(1, true);
+   fo->wilddir.init(1, true);
+   fo->wildfile.init(1, true);
+   fo->wildbase.init(1, true);
+   fo->base.init(1, true);
+   fo->fstype.init(1, true);
+   fo->drivetype.init(1, true);
+   incexe->current_opts = fo;
+   incexe->opts_list.prepend(fo);
+   ff->fileset->state = state_options;
 }

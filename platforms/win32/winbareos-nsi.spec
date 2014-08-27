@@ -12,7 +12,7 @@
 
 #!BuildIgnore: post-build-checks
 Name:           winbareos-nsi
-Version:        14.1.0
+Version:        14.3.0
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
@@ -121,7 +121,9 @@ for file in \
    autoxflate-sd.dll \
    libbareos.dll \
    libbareosfind.dll \
+   libbareoslmdb.dll \
    libbareoscats*.dll \
+   libbareossd*.dll \
    libcrypto-*.dll \
    libgcc_s_*-1.dll \
    libhistory6.dll \

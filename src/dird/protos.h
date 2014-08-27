@@ -83,8 +83,10 @@ void catalog_update(JCR *jcr, BSOCK *bs);
 bool despool_attributes_from_file(JCR *jcr, const char *file);
 
 /* dird_conf.c */
+const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
+bool populate_jobdefs();
 
 /* expand.c */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
@@ -228,9 +230,20 @@ JCR *wait_for_next_job(char *one_shot_job_to_run);
 bool is_doy_in_last_week(int year, int doy);
 void term_scheduler();
 
+/* stats.c */
+int start_statistics_thread(void);
+void stop_statistics_thread();
+void stats_job_started();
+
 /* ua_acl.c */
-bool acl_access_ok(UAContext *ua, int acl, const char *item);
-bool acl_access_ok(UAContext *ua, int acl, const char *item, int len);
+bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);
+bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event = false);
+
+/* ua_audit.c */
+bool audit_event_wanted(UAContext *ua, bool audit_event_enabled);
+void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item);
+void log_audit_event_acl_success(UAContext *ua, int acl, const char *item);
+void log_audit_event_cmdline(UAContext *ua);
 
 /* ua_cmds.c */
 bool do_a_command(UAContext *ua);
@@ -285,12 +298,14 @@ JCR *new_control_jcr(const char *base_name, int job_type);
 void free_ua_context(UAContext *ua);
 
 /* ua_select.c */
-STORERES *select_storage_resource(UAContext *ua);
+STORERES *select_storage_resource(UAContext *ua, bool autochanger_only = false);
 JOBRES *select_job_resource(UAContext *ua);
 JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable);
 JOBRES *select_restore_job_resource(UAContext *ua);
 CLIENTRES *select_client_resource(UAContext *ua);
+CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable);
 FILESETRES *select_fileset_resource(UAContext *ua);
+SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable);
 int select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 int select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
 bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk = "pool");
@@ -300,7 +315,8 @@ void start_prompt(UAContext *ua, const char *msg);
 void add_prompt(UAContext *ua, const char *prompt);
 int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt, int max_prompt);
 CATRES *get_catalog_resource(UAContext *ua);
-STORERES *get_storage_resource(UAContext *ua, bool use_default);
+STORERES *get_storage_resource(UAContext *ua, bool use_default = false,
+                               bool autochanger_only = false);
 int get_storage_drive(UAContext *ua, STORERES *store);
 int get_storage_slot(UAContext *ua, STORERES *store);
 int get_media_type(UAContext *ua, char *MediaType, int max_media);

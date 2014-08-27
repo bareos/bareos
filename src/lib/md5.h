@@ -1,45 +1,49 @@
 /*
-   BAREOS® - Backup Archiving REcovery Open Sourced
-
-   Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
-
-   This program is Free Software; you can redistribute it and/or
-   modify it under the terms of version three of the GNU Affero General Public
-   License as published by the Free Software Foundation and included
-   in the file LICENSE.
-
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-   Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-   02110-1301, USA.
-*/
-/*
- * BAREOS MD5 definitions
+ * This is an OpenSSL-compatible implementation of the RSA Data Security, Inc.
+ * MD5 Message-Digest Algorithm (RFC 1321).
  *
- * Kern Sibbald, 2001
+ * Homepage:
+ * http://openwall.info/wiki/people/solar/software/public-domain-source-code/md5
+ *
+ * Author:
+ * Alexander Peslyak, better known as Solar Designer <solar at openwall.com>
+ *
+ * This software was written by Alexander Peslyak in 2001.  No copyright is
+ * claimed, and the software is hereby placed in the public domain.
+ * In case this attempt to disclaim copyright and place the software in the
+ * public domain is deemed null and void, then the software is
+ * Copyright (c) 2001 Alexander Peslyak and it is hereby released to the
+ * general public under the following terms:
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted.
+ *
+ * There's ABSOLUTELY NO WARRANTY, express or implied.
+ *
+ * See md5.c for more information.
  */
 
-#ifndef __BMD5_H
-#define __BMD5_H
-
+#ifndef MD5HashSize
 #define MD5HashSize 16
+#endif
 
-struct MD5Context {
-   uint32_t buf[4];
-   uint32_t bits[2];
-   uint8_t  in[64];
-};
+#if defined(HAVE_OPENSSL) && !defined(HAVE_WIN32)
+#include <openssl/md5.h>
+#elif !defined(_MD5_H)
+#define _MD5_H
 
-typedef struct MD5Context MD5Context;
+/* Any 32-bit or wider unsigned integer data type will do */
+typedef unsigned int MD5_u32plus;
 
-void MD5Init(struct MD5Context *ctx);
-void MD5Update(struct MD5Context *ctx, unsigned char *buf, unsigned len);
-void MD5Final(unsigned char digest[16], struct MD5Context *ctx);
-void MD5Transform(uint32_t buf[4], uint32_t in[16]);
+typedef struct {
+	MD5_u32plus lo, hi;
+	MD5_u32plus a, b, c, d;
+	unsigned char buffer[64];
+	MD5_u32plus block[16];
+} MD5_CTX;
 
-#endif /* !__BMD5_H */
+extern void MD5_Init(MD5_CTX *ctx);
+extern void MD5_Update(MD5_CTX *ctx, const void *data, unsigned long size);
+extern void MD5_Final(unsigned char *result, MD5_CTX *ctx);
+
+#endif

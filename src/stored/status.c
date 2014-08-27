@@ -70,8 +70,8 @@ static const char *level_to_str(int level);
  */
 static void output_status(JCR *jcr, STATUS_PKT *sp)
 {
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
    list_status_header(sp);
 
@@ -95,27 +95,41 @@ static void output_status(JCR *jcr, STATUS_PKT *sp)
     */
    list_devices(jcr, sp);
 
-   len = Mmsg(msg, _("Used Volume status:\n"));
-   if (!sp->api) sendit(msg, len, sp);
+   if (!sp->api) {
+      len = Mmsg(msg, _("Used Volume status:\n"));
+      sendit(msg, len, sp);
+   }
 
    list_volumes(sendit, (void *)sp);
-   if (!sp->api) sendit("====\n\n", 6, sp);
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n\n");
+      sendit(msg, len, sp);
+   }
 
    list_spool_stats(sendit, (void *)sp);
-   if (!sp->api) sendit("====\n\n", 6, sp);
-
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n\n");
+      sendit(msg, len, sp);
+   }
 }
 
 static void list_resources(STATUS_PKT *sp)
 {
 #ifdef when_working
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
-   len = Mmsg(msg, _("\nSD Resources:\n"));
-   if (!sp->api) sendit(msg, len, sp);
-   dump_resource(R_DEVICE, resources[R_DEVICE-r_first], sp);
-   if (!sp->api) sendit("====\n\n", 6, sp);
+   if (!sp->api) {
+      len = Mmsg(msg, _("\nSD Resources:\n"));
+      sendit(msg, len, sp);
+   }
+
+   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->m_r_first], sp);
+
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n\n");
+      sendit(msg, len, sp);
+   }
 #endif
 }
 
@@ -140,20 +154,21 @@ static find_device(char *devname)
 
 static void list_devices(JCR *jcr, STATUS_PKT *sp)
 {
-   DEVRES *device;
-   AUTOCHANGERRES *changer;
-   DEVICE *dev;
-   char b1[35], b2[35], b3[35];
-   POOL_MEM msg(PM_MESSAGE);
    int len;
    int bpb;
+   DEVICE *dev;
+   DEVRES *device;
+   AUTOCHANGERRES *changer;
+   POOL_MEM msg(PM_MESSAGE);
+   char b1[35], b2[35], b3[35];
 
-   len = Mmsg(msg, _("\nDevice status:\n"));
-   if (!sp->api) sendit(msg, len, sp);
+   if (!sp->api) {
+      len = Mmsg(msg, _("\nDevice status:\n"));
+      sendit(msg, len, sp);
+   }
 
    foreach_res(changer, R_AUTOCHANGER) {
-      len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"),
-         changer->hdr.name);
+      len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"), changer->hdr.name);
       sendit(msg, len, sp);
 
       foreach_alist(device, changer->device) {
@@ -171,19 +186,44 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
       dev = device->dev;
       if (dev && dev->is_open()) {
          if (dev->is_labeled()) {
+            const char *state;
+
+            switch (dev->blocked()) {
+            case BST_NOT_BLOCKED:
+            case BST_DESPOOLING:
+            case BST_RELEASING:
+               state = _("mounted with");
+               break;
+            case BST_MOUNT:
+               state = _("waiting for");
+               break;
+            case BST_WRITING_LABEL:
+               state = _("being labeled with");
+               break;
+            case BST_DOING_ACQUIRE:
+               state = _("being acquired with");
+               break;
+            case BST_UNMOUNTED:
+            case BST_WAITING_FOR_SYSOP:
+            case BST_UNMOUNTED_WAITING_FOR_SYSOP:
+               state = _("waiting for sysop intervention");
+               break;
+            default:
+               state = _("unknown state");
+               break;
+            }
+
             len = Mmsg(msg, _("\nDevice %s is %s:\n"
                               "    Volume:      %s\n"
                               "    Pool:        %s\n"
                               "    Media type:  %s\n"),
-               dev->print_name(),
-               dev->blocked() ? _("waiting for") : _("mounted with"),
-               dev->VolHdr.VolumeName,
-               dev->pool_name[0] ? dev->pool_name : "*unknown*",
-               dev->device->media_type);
+                       dev->print_name(), state,
+                       dev->VolHdr.VolumeName,
+                       dev->pool_name[0] ? dev->pool_name : "*unknown*",
+                       dev->device->media_type);
             sendit(msg, len, sp);
          } else {
-            len = Mmsg(msg, _("\nDevice %s open but no Bareos volume is currently mounted.\n"),
-               dev->print_name());
+            len = Mmsg(msg, _("\nDevice %s open but no Bareos volume is currently mounted.\n"), dev->print_name());
             sendit(msg, len, sp);
          }
          trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
@@ -195,9 +235,9 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
             }
             bpb = dev->VolCatInfo.VolCatBytes / bpb;
             len = Mmsg(msg, _("    Total Bytes=%s Blocks=%s Bytes/block=%s\n"),
-               edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, b1),
-               edit_uint64_with_commas(dev->VolCatInfo.VolCatBlocks, b2),
-               edit_uint64_with_commas(bpb, b3));
+                       edit_uint64_with_commas(dev->VolCatInfo.VolCatBytes, b1),
+                       edit_uint64_with_commas(dev->VolCatInfo.VolCatBlocks, b2),
+                       edit_uint64_with_commas(bpb, b3));
             sendit(msg, len, sp);
          } else {  /* reading */
             bpb = dev->VolCatInfo.VolCatReads;
@@ -210,14 +250,14 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
                bpb = 0;
             }
             len = Mmsg(msg, _("    Total Bytes Read=%s Blocks Read=%s Bytes/block=%s\n"),
-               edit_uint64_with_commas(dev->VolCatInfo.VolCatRBytes, b1),
-               edit_uint64_with_commas(dev->VolCatInfo.VolCatReads, b2),
-               edit_uint64_with_commas(bpb, b3));
+                       edit_uint64_with_commas(dev->VolCatInfo.VolCatRBytes, b1),
+                       edit_uint64_with_commas(dev->VolCatInfo.VolCatReads, b2),
+                       edit_uint64_with_commas(bpb, b3));
             sendit(msg, len, sp);
          }
          len = Mmsg(msg, _("    Positioned at File=%s Block=%s\n"),
-            edit_uint64_with_commas(dev->file, b1),
-            edit_uint64_with_commas(dev->block_num, b2));
+                    edit_uint64_with_commas(dev->file, b1),
+                    edit_uint64_with_commas(dev->block_num, b2));
          sendit(msg, len, sp);
          trigger_device_status_hook(jcr, device, sp, bsdEventVolumeStatus);
       } else {
@@ -231,21 +271,27 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
          }
       }
 
-      if (!sp->api) sendit("==\n", 4, sp);
+      if (!sp->api) {
+         len = pm_strcpy(msg, "==\n");
+         sendit(msg, len, sp);
+      }
    }
 
-   if (!sp->api) sendit("====\n\n", 6, sp);
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n\n");
+      sendit(msg, len, sp);
+   }
 }
 
 static void list_status_header(STATUS_PKT *sp)
 {
+   int len;
+   POOL_MEM msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
-   POOL_MEM msg(PM_MESSAGE);
 #if defined(HAVE_WIN32)
    char buf[300];
 #endif
-   int len;
 
    len = Mmsg(msg, _("%s Version: %s (%s) %s %s %s\n"),
               my_name, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
@@ -253,9 +299,8 @@ static void list_status_header(STATUS_PKT *sp)
 
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
 
-
    len = Mmsg(msg, _("Daemon started %s. Jobs: run=%d, running=%d.\n"),
-        dt, num_jobs_run, job_count());
+              dt, num_jobs_run, job_count());
    sendit(msg, len, sp);
 
 #if defined(HAVE_WIN32)
@@ -345,8 +390,8 @@ static void trigger_device_status_hook(JCR *jcr,
 
 static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
 {
-   POOL_MEM msg(PM_MESSAGE);
    int len;
+   POOL_MEM msg(PM_MESSAGE);
 
    if (!dev) {
       len = Mmsg(msg, _("No DEVICE structure.\n\n"));
@@ -476,9 +521,10 @@ static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
    foreach_dlist(dcr, dev->attached_dcrs) {
       if (dcr->jcr) {
          if (found) {
-            sendit(",", 1, sp);
+            len = Mmsg(msg, ",%d", (int)dcr->jcr->JobId);
+         } else {
+            len = Mmsg(msg, "%d", (int)dcr->jcr->JobId);
          }
-         len = Mmsg(msg, "%d", (int)dcr->jcr->JobId);
          sendit(msg, len, sp);
          found = true;
       }
@@ -501,23 +547,24 @@ static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
 
 static void list_running_jobs(STATUS_PKT *sp)
 {
-   bool found = false;
-   int avebps, bps, sec;
    JCR *jcr;
    DCR *dcr, *rdcr;
+   bool found = false;
+   time_t now = time(NULL);
+   POOL_MEM msg(PM_MESSAGE);
+   int len, avebps, bps, sec;
    char JobName[MAX_NAME_LENGTH];
    char b1[50], b2[50], b3[50], b4[50];
-   int len;
-   POOL_MEM msg(PM_MESSAGE);
-   time_t now = time(NULL);
 
-   len = Mmsg(msg, _("\nRunning Jobs:\n"));
-   if (!sp->api) sendit(msg, len, sp);
+   if (!sp->api) {
+      len = Mmsg(msg, _("\nRunning Jobs:\n"));
+      sendit(msg, len, sp);
+   }
 
    foreach_jcr(jcr) {
       if (jcr->JobStatus == JS_WaitFD) {
          len = Mmsg(msg, _("%s Job %s waiting for Client connection.\n"),
-            job_type_to_str(jcr->getJobType()), jcr->Job);
+                    job_type_to_str(jcr->getJobType()), jcr->Job);
          sendit(msg, len, sp);
       }
       dcr = jcr->dcr;
@@ -534,30 +581,30 @@ static void list_running_jobs(STATUS_PKT *sp)
          if (rdcr && rdcr->device) {
             len = Mmsg(msg, _("Reading: %s %s job %s JobId=%d Volume=\"%s\"\n"
                             "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()),
-                   JobName,
-                   jcr->JobId,
-                   rdcr->VolumeName,
-                   rdcr->pool_name,
-                   rdcr->dev?rdcr->dev->print_name():
-                            rdcr->device->device_name);
+                       job_level_to_str(jcr->getJobLevel()),
+                       job_type_to_str(jcr->getJobType()),
+                       JobName,
+                       jcr->JobId,
+                       rdcr->VolumeName,
+                       rdcr->pool_name,
+                       rdcr->dev ? rdcr->dev->print_name():
+                                   rdcr->device->device_name);
             sendit(msg, len, sp);
          }
          if (dcr && dcr->device) {
             len = Mmsg(msg, _("Writing: %s %s job %s JobId=%d Volume=\"%s\"\n"
                             "    pool=\"%s\" device=%s\n"),
-                   job_level_to_str(jcr->getJobLevel()),
-                   job_type_to_str(jcr->getJobType()),
-                   JobName,
-                   jcr->JobId,
-                   dcr->VolumeName,
-                   dcr->pool_name,
-                   dcr->dev?dcr->dev->print_name():
-                            dcr->device->device_name);
+                       job_level_to_str(jcr->getJobLevel()),
+                       job_type_to_str(jcr->getJobType()),
+                       JobName,
+                       jcr->JobId,
+                       dcr->VolumeName,
+                       dcr->pool_name,
+                       dcr->dev ? dcr->dev->print_name():
+                                  dcr->device->device_name);
             sendit(msg, len, sp);
             len= Mmsg(msg, _("    spooling=%d despooling=%d despool_wait=%d\n"),
-                   dcr->spooling, dcr->despooling, dcr->despool_wait);
+                      dcr->spooling, dcr->despooling, dcr->despool_wait);
             sendit(msg, len, sp);
          }
          if (jcr->last_time == 0) {
@@ -573,10 +620,10 @@ static void list_running_jobs(STATUS_PKT *sp)
          }
          avebps = (jcr->LastRate + bps) / 2;
          len = Mmsg(msg, _("    Files=%s Bytes=%s AveBytes/sec=%s LastBytes/sec=%s\n"),
-            edit_uint64_with_commas(jcr->JobFiles, b1),
-            edit_uint64_with_commas(jcr->JobBytes, b2),
-            edit_uint64_with_commas(avebps, b3),
-            edit_uint64_with_commas(bps, b4));
+                    edit_uint64_with_commas(jcr->JobFiles, b1),
+                    edit_uint64_with_commas(jcr->JobBytes, b2),
+                    edit_uint64_with_commas(avebps, b3),
+                    edit_uint64_with_commas(bps, b4));
          sendit(msg, len, sp);
          jcr->LastRate = avebps;
          jcr->LastJobBytes = jcr->JobBytes;
@@ -585,9 +632,9 @@ static void list_running_jobs(STATUS_PKT *sp)
 #ifdef DEBUG
          if (jcr->file_bsock) {
             len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
-               edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
-               jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
-               jcr->file_bsock->m_fd);
+                       edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
+                       jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
+                       jcr->file_bsock->m_fd);
             sendit(msg, len, sp);
          } else {
             len = Mmsg(msg, _("    FDSocket closed\n"));
@@ -599,20 +646,28 @@ static void list_running_jobs(STATUS_PKT *sp)
    endeach_jcr(jcr);
 
    if (!found) {
-      len = Mmsg(msg, _("No Jobs running.\n"));
-      if (!sp->api) sendit(msg, len, sp);
+      if (!sp->api) {
+         len = Mmsg(msg, _("No Jobs running.\n"));
+         sendit(msg, len, sp);
+      }
    }
-   if (!sp->api) sendit("====\n", 5, sp);
+
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n");
+      sendit(msg, len, sp);
+   }
 }
 
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
 {
+   int len;
    JCR *jcr;
    POOL_MEM msg(PM_MESSAGE);
-   int len;
 
-   len = Mmsg(msg, _("\nJobs waiting to reserve a drive:\n"));
-   if (!sp->api) sendit(msg, len, sp);
+   if (!sp->api) {
+      len = Mmsg(msg, _("\nJobs waiting to reserve a drive:\n"));
+      sendit(msg, len, sp);
+   }
 
    foreach_jcr(jcr) {
       if (!jcr->reserve_msgs) {
@@ -622,31 +677,45 @@ static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
    }
    endeach_jcr(jcr);
 
-   if (!sp->api) sendit("====\n", 5, sp);
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n");
+      sendit(msg, len, sp);
+   }
 }
 
 static void list_terminated_jobs(STATUS_PKT *sp)
 {
-   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
+   int len;
    char level[10];
    struct s_last_job *je;
-   const char *msg;
+   POOL_MEM msg(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
-   msg =  _("\nTerminated Jobs:\n");
-   if (!sp->api) sendit(msg, strlen(msg), sp);
+   if (!sp->api) {
+      len = pm_strcpy(msg, _("\nTerminated Jobs:\n"));
+      sendit(msg, len, sp);
+   }
+
    if (last_jobs->size() == 0) {
-      if (!sp->api) sendit("====\n", 5, sp);
+      if (!sp->api) {
+         len = pm_strcpy(msg, "====\n");
+         sendit(msg, len, sp);
+      }
       return;
    }
+
    lock_last_jobs_list();
-   msg =  _(" JobId  Level    Files      Bytes   Status   Finished        Name \n");
-   if (!sp->api) sendit(msg, strlen(msg), sp);
-   msg =  _("===================================================================\n");
-   if (!sp->api) sendit(msg, strlen(msg), sp);
+
+   if (!sp->api) {
+      len = pm_strcpy(msg, _(" JobId  Level    Files      Bytes   Status   Finished        Name \n"));
+      sendit(msg, len, sp);
+      len = pm_strcpy(msg, _("===================================================================\n"));
+      sendit(msg, len, sp);
+   }
+
    foreach_dlist(je, last_jobs) {
       char JobName[MAX_NAME_LENGTH];
       const char *termstat;
-      char buf[1000];
 
       bstrftime_nc(dt, sizeof(dt), je->end_time);
       switch (je->JobType) {
@@ -692,26 +761,33 @@ static void list_terminated_jobs(STATUS_PKT *sp)
          }
       }
       if (sp->api) {
-         bsnprintf(buf, sizeof(buf), _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
-            je->JobId,
-            level,
-            edit_uint64_with_commas(je->JobFiles, b1),
-            edit_uint64_with_suffix(je->JobBytes, b2),
-            termstat,
-            dt, JobName);
+         len = Mmsg(msg, _("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"),
+                    je->JobId,
+                    level,
+                    edit_uint64_with_commas(je->JobFiles, b1),
+                    edit_uint64_with_suffix(je->JobBytes, b2),
+                    termstat,
+                    dt,
+                    JobName);
       } else {
-         bsnprintf(buf, sizeof(buf), _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
-            je->JobId,
-            level,
-            edit_uint64_with_commas(je->JobFiles, b1),
-            edit_uint64_with_suffix(je->JobBytes, b2),
-            termstat,
-            dt, JobName);
+         len = Mmsg(msg, _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
+                    je->JobId,
+                    level,
+                    edit_uint64_with_commas(je->JobFiles, b1),
+                    edit_uint64_with_suffix(je->JobBytes, b2),
+                    termstat,
+                    dt,
+                    JobName);
       }
-      sendit(buf, strlen(buf), sp);
+      sendit(msg, len, sp);
    }
+
    unlock_last_jobs_list();
-   if (!sp->api) sendit("====\n", 5, sp);
+
+   if (!sp->api) {
+      len = pm_strcpy(msg, "====\n");
+      sendit(msg, len, sp);
+   }
 }
 
 /*
@@ -768,6 +844,7 @@ static const char *level_to_str(int level)
 static void sendit(const char *msg, int len, STATUS_PKT *sp)
 {
    BSOCK *bs = sp->bs;
+
    if (bs) {
       memcpy(bs->msg, msg, len+1);
       bs->msglen = len+1;
@@ -785,6 +862,7 @@ static void sendit(const char *msg, int len, void *sp)
 static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
 {
    BSOCK *bs = sp->bs;
+
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
       bs->msglen = len+1;
@@ -882,7 +960,9 @@ bool qstatus_cmd(JCR *jcr)
 #if defined(HAVE_WIN32)
 int bareosstat = 0;
 
-/* Return a one line status for the tray monitor */
+/*
+ * Return a one line status for the tray monitor
+ */
 char *bareos_status(char *buf, int buf_len)
 {
    JCR *njcr;

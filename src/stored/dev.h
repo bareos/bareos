@@ -21,8 +21,7 @@
    02110-1301, USA.
 */
 /*
- * Definitions for using the Device functions in Bareos
- * Tape and File storage access
+ * Definitions for using the Device functions in Bareos Tape and File storage access
  *
  * Kern Sibbald, MM
  */
@@ -55,7 +54,6 @@
  *   clear_reserved() clears local reserve flag and calls dev->dec_reserved()
  *   is_reserved()    returns local reserved flag
  *   unreserve_device()  much more complete unreservation
- *
  */
 
 #ifndef __DEV_H
@@ -63,7 +61,9 @@
 
 #undef DCR                            /* used by Bareos */
 
-/* Return values from wait_for_sysop() */
+/*
+ * Return values from wait_for_sysop()
+ */
 enum {
    W_ERROR = 1,
    W_TIMEOUT,
@@ -72,7 +72,9 @@ enum {
    W_WAKE
 };
 
-/* Arguments to open_dev() */
+/*
+ * Arguments to open_dev()
+ */
 enum {
    CREATE_READ_WRITE = 1,
    OPEN_READ_WRITE,
@@ -80,16 +82,23 @@ enum {
    OPEN_WRITE_ONLY
 };
 
-/* Device types */
+/*
+ * Device types
+ */
 enum {
    B_FILE_DEV = 1,
    B_TAPE_DEV,
    B_FIFO_DEV,
-   B_VTAPE_DEV,                       /* change to B_TAPE_DEV after init */
-   B_VTL_DEV
+   B_VTL_DEV,
+   B_GFAPI_DEV,
+   B_OBJECT_STORE_DEV,
+   B_RADOS_DEV,
+   B_CEPHFS_DEV
 };
 
-/* IO directions */
+/*
+ * IO directions
+ */
 enum {
    IO_DIRECTION_NONE = 0,
    IO_DIRECTION_IN,
@@ -97,7 +106,9 @@ enum {
    IO_DIRECTION_INOUT
 };
 
-/* Generic status bits returned from status_dev() */
+/*
+ * Generic status bits returned from status_dev()
+ */
 #define BMT_TAPE           (1 << 0)   /* is tape device */
 #define BMT_EOF            (1 << 1)   /* just read EOF */
 #define BMT_BOT            (1 << 2)   /* at beginning of tape */
@@ -109,8 +120,9 @@ enum {
 #define BMT_DR_OPEN        (1 << 8)   /* tape door open */
 #define BMT_IM_REP_EN      (1 << 9)   /* immediate report enabled */
 
-
-/* Bits for device capabilities */
+/*
+ * Bits for device capabilities
+ */
 #define CAP_EOF            (1 << 0)   /* has MTWEOF */
 #define CAP_BSR            (1 << 1)   /* has MTBSR */
 #define CAP_BSF            (1 << 2)   /* has MTBSF */
@@ -138,7 +150,9 @@ enum {
 #define CAP_IOERRATEOM     (1 << 24)  /* IOError at EOM */
 #define CAP_IBMLINTAPE     (1 << 25)  /* Using IBM lin_tape driver */
 
-/* Device state bits */
+/*
+ * Device state bits
+ */
 #define ST_XXXXXX          (1 << 0)   /* was ST_OPENED */
 #define ST_XXXXX           (1 << 1)   /* was ST_TAPE */
 #define ST_XXXX            (1 << 2)   /* was ST_FILE */
@@ -148,8 +162,8 @@ enum {
 
 #define ST_LABEL           (1 << 6)   /* label found */
 #define ST_MALLOC          (1 << 7)   /* dev packet malloc'ed in init_dev() */
-#define ST_APPEND          (1 << 8)   /* ready for Bareos append */
-#define ST_READ            (1 << 9)   /* ready for Bareos read */
+#define ST_APPENDREADY     (1 << 8)   /* Ready for Bareos append */
+#define ST_READREADY       (1 << 9)   /* Ready for Bareos read */
 #define ST_EOT             (1 << 10)  /* at end of tape */
 #define ST_WEOT            (1 << 11)  /* Got EOT on write */
 #define ST_EOF             (1 << 12)  /* Read EOF i.e. zero bytes */
@@ -161,9 +175,13 @@ enum {
 #define ST_PART_SPOOLED    (1 << 18)  /* spooling part */
 #define ST_CRYPTOKEY       (1 << 19)  /* The device has a crypto key loaded */
 
-/* Volume Catalog Information structure definition */
+/*
+ * Volume Catalog Information structure definition
+ */
 struct VOLUME_CAT_INFO {
-   /* Media info for the current Volume */
+   /*
+    * Media info for the current Volume
+    */
    uint32_t VolCatJobs;               /* number of jobs on this Volume */
    uint32_t VolCatFiles;              /* Number of files */
    uint32_t VolCatBlocks;             /* Number of blocks */
@@ -192,89 +210,97 @@ struct VOLUME_CAT_INFO {
    char VolCatStatus[20];             /* Volume status */
    char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
    char VolEncrKey[MAX_NAME_LENGTH];  /* Encryption Key needed to read the media */
+   uint32_t VolMinBlocksize;          /* Volume Minimum Blocksize */
+   uint32_t VolMaxBlocksize;          /* Volume Maximum Blocksize */
+};
+
+struct BLOCKSIZES {
+   uint32_t max_block_size;
+   uint32_t min_block_size;
 };
 
 class DEVRES; /* Device resource defined in stored_conf.h */
-class DCR; /* forward reference */
-class VOLRES; /* forward reference */
+class DCR; /* Forward reference */
+class VOLRES; /* Forward reference */
 
 /*
- * Device structure definition. There is one of these for
- *  each physical device. Everything here is "global" to
- *  that device and effects all jobs using the device.
+ * Device structure definition.
+ *
+ * There is one of these for each physical device. Everything here is "global" to
+ * that device and effects all jobs using the device.
  */
 class DEVICE: public SMARTALLOC {
 protected:
-   int m_fd;                          /* file descriptor */
+   int m_fd;                          /* File descriptor */
 private:
-   int m_blocked;                     /* set if we must wait (i.e. change tape) */
+   int m_blocked;                     /* Set if we must wait (i.e. change tape) */
    int m_count;                       /* Mutex use count -- DEBUG only */
-   int m_num_reserved;                /* counter of device reservations */
-   int32_t m_slot;                    /* slot loaded in drive or -1 if none */
+   int m_num_reserved;                /* Counter of device reservations */
+   int32_t m_slot;                    /* Slot loaded in drive or -1 if none */
    pthread_t m_pid;                   /* Thread that locked -- DEBUG only */
-   bool m_unload;                     /* set when Volume must be unloaded */
-   bool m_load;                       /* set when Volume must be loaded */
+   bool m_unload;                     /* Set when Volume must be unloaded */
+   bool m_load;                       /* Set when Volume must be loaded */
 
 public:
-   DEVICE() {};
+   DEVICE();
    virtual ~DEVICE() {};
    DEVICE * volatile swap_dev;        /* Swap vol from this device */
-   dlist *attached_dcrs;              /* attached DCR list */
-   bthread_mutex_t m_mutex;           /* access control */
-   bthread_mutex_t spool_mutex;       /* mutex for updating spool_size */
-   bthread_mutex_t acquire_mutex;     /* mutex for acquire code */
-   pthread_mutex_t read_acquire_mutex; /* mutex for acquire read code */
-   pthread_cond_t wait;               /* thread wait variable */
-   pthread_cond_t wait_next_vol;      /* wait for tape to be mounted */
-   pthread_t no_wait_id;              /* this thread must not wait */
-   int dev_prev_blocked;              /* previous blocked state */
-   int num_waiting;                   /* number of threads waiting */
-   int num_writers;                   /* number of writing threads */
-   int capabilities;                  /* capabilities mask */
-   int state;                         /* state mask */
+   dlist *attached_dcrs;              /* Attached DCR list */
+   bthread_mutex_t m_mutex;           /* Access control */
+   bthread_mutex_t spool_mutex;       /* Mutex for updating spool_size */
+   bthread_mutex_t acquire_mutex;     /* Mutex for acquire code */
+   pthread_mutex_t read_acquire_mutex; /* Mutex for acquire read code */
+   pthread_cond_t wait;               /* Thread wait variable */
+   pthread_cond_t wait_next_vol;      /* Wait for tape to be mounted */
+   pthread_t no_wait_id;              /* This thread must not wait */
+   int dev_prev_blocked;              /* Previous blocked state */
+   int num_waiting;                   /* Number of threads waiting */
+   int num_writers;                   /* Number of writing threads */
+   int capabilities;                  /* Capabilities mask */
+   int state;                         /* State mask */
    int dev_errno;                     /* Our own errno */
-   int mode;                          /* read/write modes */
-   int openmode;                      /* parameter passed to open_dev (useful to reopen the device) */
-   int dev_type;                      /* device type */
+   int oflags;                        /* Read/write flags */
+   int open_mode;                     /* Parameter passed to open_dev (useful to reopen the device) */
+   int dev_type;                      /* Device type */
    bool autoselect;                   /* Autoselect in autochanger */
    bool norewindonclose;              /* Don't rewind tape drive on close */
-   bool initiated;                    /* set when init_dev() called */
+   bool initiated;                    /* Set when init_dev() called */
    int label_type;                    /* Bareos/ANSI/IBM label types */
    uint32_t drive_index;              /* Autochanger drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
    POOLMEM *prt_name;                 /* Name used for display purposes */
-   char *errmsg;                      /* nicely edited error message */
-   uint32_t block_num;                /* current block number base 0 */
-   uint32_t LastBlock;                /* last DEV_BLOCK number written to Volume */
-   uint32_t file;                     /* current file number base 0 */
+   char *errmsg;                      /* Nicely edited error message */
+   uint32_t block_num;                /* Current block number base 0 */
+   uint32_t LastBlock;                /* Last DEV_BLOCK number written to Volume */
+   uint32_t file;                     /* Current file number base 0 */
    uint64_t file_addr;                /* Current file read/write address */
    uint64_t file_size;                /* Current file size */
-   uint32_t EndBlock;                 /* last block written */
-   uint32_t EndFile;                  /* last file written */
-   uint32_t min_block_size;           /* min block size */
-   uint32_t max_block_size;           /* max block size */
-   uint32_t max_concurrent_jobs;      /* maximum simultaneous jobs this drive */
-   uint64_t max_volume_size;          /* max bytes to put on one volume */
-   uint64_t max_file_size;            /* max file size to put in one file on volume */
-   uint64_t volume_capacity;          /* advisory capacity */
-   uint64_t max_spool_size;           /* maximum spool file size */
-   uint64_t spool_size;               /* current spool size for this device */
-   uint32_t max_rewind_wait;          /* max secs to allow for rewind */
-   uint32_t max_open_wait;            /* max secs to allow for open */
-   uint32_t max_open_vols;            /* max simultaneous open volumes */
+   uint32_t EndBlock;                 /* Last block written */
+   uint32_t EndFile;                  /* Last file written */
+   uint32_t min_block_size;           /* Min block size currently set */
+   uint32_t max_block_size;           /* Max block size currently set */
+   uint32_t max_concurrent_jobs;      /* Maximum simultaneous jobs this drive */
+   uint64_t max_volume_size;          /* Max bytes to put on one volume */
+   uint64_t max_file_size;            /* Max file size to put in one file on volume */
+   uint64_t volume_capacity;          /* Advisory capacity */
+   uint64_t max_spool_size;           /* Maximum spool file size */
+   uint64_t spool_size;               /* Current spool size for this device */
+   uint32_t max_rewind_wait;          /* Max secs to allow for rewind */
+   uint32_t max_open_wait;            /* Max secs to allow for open */
+   uint32_t max_open_vols;            /* Max simultaneous open volumes */
 
-   utime_t vol_poll_interval;         /* interval between polling Vol mount */
-   DEVRES *device;                    /* pointer to Device Resource */
+   utime_t vol_poll_interval;         /* Interval between polling Vol mount */
+   DEVRES *device;                    /* Pointer to Device Resource */
    VOLRES *vol;                       /* Pointer to Volume reservation item */
-   btimer_t *tid;                     /* timer id */
+   btimer_t *tid;                     /* Timer id */
 
    VOLUME_CAT_INFO VolCatInfo;        /* Volume Catalog Information */
    VOLUME_LABEL VolHdr;               /* Actual volume label */
-   char pool_name[MAX_NAME_LENGTH];   /* pool name */
-   char pool_type[MAX_NAME_LENGTH];   /* pool type */
+   char pool_name[MAX_NAME_LENGTH];   /* Pool name */
+   char pool_type[MAX_NAME_LENGTH];   /* Pool type */
 
-   char UnloadVolName[MAX_NAME_LENGTH];  /* Last wrong Volume mounted */
-   bool poll;                         /* set to poll Volume */
+   char UnloadVolName[MAX_NAME_LENGTH]; /* Last wrong Volume mounted */
+   bool poll;                         /* Set to poll Volume */
    /* Device wait times ***FIXME*** look at durations */
    int min_wait;
    int max_wait;
@@ -283,8 +309,8 @@ public:
    int rem_wait_sec;
    int num_wait;
 
-   btime_t last_timer;        /* used by read/write/seek to get stats (usec) */
-   btime_t last_tick;         /* contains last read/write time (usec) */
+   btime_t last_timer;                /* Used by read/write/seek to get stats (usec) */
+   btime_t last_tick;                 /* Contains last read/write time (usec) */
 
    btime_t  DevReadTime;
    btime_t  DevWriteTime;
@@ -292,7 +318,7 @@ public:
    uint64_t DevReadBytes;
 
    /* Methods */
-   btime_t get_timer_count();         /* return the last timer interval (ms) */
+   btime_t get_timer_count();         /* Return the last timer interval (ms) */
 
    int has_cap(int cap) const { return capabilities & cap; }
    void clear_cap(int cap) { capabilities &= ~cap; }
@@ -301,12 +327,14 @@ public:
    int is_autochanger() const { return capabilities & CAP_AUTOCHANGER; }
    int requires_mount() const { return capabilities & CAP_REQMOUNT; }
    int is_removable() const { return capabilities & CAP_REM; }
-   int is_tape() const { return (dev_type == B_TAPE_DEV ||
-                                 dev_type == B_VTAPE_DEV); }
-   int is_file() const { return (dev_type == B_FILE_DEV); }
+   int is_tape() const { return (dev_type == B_TAPE_DEV); }
+   int is_file() const { return (dev_type == B_FILE_DEV ||
+                                 dev_type == B_GFAPI_DEV ||
+                                 dev_type == B_OBJECT_STORE_DEV ||
+                                 dev_type == B_RADOS_DEV ||
+                                 dev_type == B_CEPHFS_DEV); }
    int is_fifo() const { return dev_type == B_FIFO_DEV; }
    int is_vtl() const  { return dev_type == B_VTL_DEV; }
-   int is_vtape() const  { return dev_type == B_VTAPE_DEV; }
    int is_open() const { return m_fd >= 0; }
    int is_offline() const { return state & ST_OFFLINE; }
    int is_labeled() const { return state & ST_LABEL; }
@@ -316,11 +344,11 @@ public:
    int is_part_spooled() const { return state & ST_PART_SPOOLED; }
    int have_media() const { return state & ST_MEDIA; }
    int is_short_block() const { return state & ST_SHORT; }
-   int is_busy() const { return (state & ST_READ) || num_writers || num_reserved(); }
+   int is_busy() const { return (state & ST_READREADY) || num_writers || num_reserved(); }
    int at_eof() const { return state & ST_EOF; }
    int at_eot() const { return state & ST_EOT; }
    int at_weot() const { return state & ST_WEOT; }
-   int can_append() const { return state & ST_APPEND; }
+   int can_append() const { return state & ST_APPENDREADY; }
    int is_crypto_enabled() const { return state & ST_CRYPTOKEY; }
    /*
     * can_write() is meant for checking at the end of a job to see
@@ -329,7 +357,7 @@ public:
     */
    int can_write() const { return is_open() && can_append() &&
                             is_labeled() && !at_weot(); }
-   int can_read() const   { return state & ST_READ; }
+   int can_read() const   { return state & ST_READREADY; }
    bool can_steal_lock() const { return m_blocked &&
                     (m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
@@ -344,13 +372,11 @@ public:
    const char *archive_name() const;
    const char *name() const;
    const char *print_name() const;    /* Name for display purposes */
-   void set_ateof(); /* in dev.c */
-   void set_ateot(); /* in dev.c */
    void set_eot() { state |= ST_EOT; };
    void set_eof() { state |= ST_EOF; };
-   void set_append() { state |= ST_APPEND; };
+   void set_append() { state |= ST_APPENDREADY; };
    void set_labeled() { state |= ST_LABEL; };
-   inline void set_read() { state |= ST_READ; };
+   inline void set_read() { state |= ST_READREADY; };
    void set_offline() { state |= ST_OFFLINE; };
    void set_mounted() { state |= ST_MOUNTED; };
    void set_media() { state |= ST_MEDIA; };
@@ -364,8 +390,8 @@ public:
    void set_load() { m_load = true; };
    void inc_reserved() { m_num_reserved++; }
    void dec_reserved() { m_num_reserved--; ASSERT(m_num_reserved>=0); };
-   void clear_append() { state &= ~ST_APPEND; };
-   void clear_read() { state &= ~ST_READ; };
+   void clear_append() { state &= ~ST_APPENDREADY; };
+   void clear_read() { state &= ~ST_READREADY; };
    void clear_labeled() { state &= ~ST_LABEL; };
    void clear_offline() { state &= ~ST_OFFLINE; };
    void clear_eot() { state &= ~ST_EOT; };
@@ -388,119 +414,147 @@ public:
    };
    char *getVolCatName() { return VolCatInfo.VolCatName; };
 
-   void set_unload();            /* in dev.c */
-   void clear_volhdr();          /* in dev.c */
-   void close(DCR *dcr);         /* in dev.c */
-   bool open(DCR *dcr, int mode); /* in dev.c */
-   void term();                  /* in dev.c */
-   ssize_t read(void *buf, size_t len); /* in dev.c */
-   ssize_t write(const void *buf, size_t len); /* in dev.c */
-   bool mount(DCR *dcr, int timeout); /* in dev.c */
-   bool unmount(DCR *dcr, int timeout); /* in dev.c */
-   void edit_mount_codes(POOL_MEM &omsg, const char *imsg); /* in dev.c */
-   bool offline_or_rewind();     /* in dev.c */
-   bool offline();               /* in dev.c */
-   bool bsf(int count);          /* in dev.c */
-   bool eod(DCR *dcr);           /* in dev.c */
-   bool fsr(int num);            /* in dev.c */
-   bool fsf(int num);            /* in dev.c */
-   bool bsr(int num);            /* in dev.c */
-   bool weof(int num);           /* in dev.c */
-   void lock_door();             /* in dev.c */
-   void unlock_door();           /* in dev.c */
-   int32_t get_os_tape_file();   /* in dev.c */
-   bool scan_dir_for_volume(DCR *dcr); /* in scan.c */
-   bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock); /* in dev.c */
-   void clrerror(int func);      /* in dev.c */
-   void set_slot(int32_t slot);  /* in dev.c */
-   void clear_slot();            /* in dev.c */
+   const char *mode_to_str(int mode);
+   void set_unload();
+   void clear_volhdr();
+   void close(DCR *dcr);
+   bool open(DCR *dcr, int mode);
+   void term();
+   ssize_t read(void *buf, size_t len);
+   ssize_t write(const void *buf, size_t len);
+   bool mount(DCR *dcr, int timeout);
+   bool unmount(DCR *dcr, int timeout);
+   void edit_mount_codes(POOL_MEM &omsg, const char *imsg);
+   bool offline_or_rewind();
+   bool scan_dir_for_volume(DCR *dcr);
+   void set_slot(int32_t slot);
+   void clear_slot();
+
+   void set_blocksizes(DCR* dcr);
+   void set_label_blocksize(DCR* dcr);
 
    uint32_t get_file() const { return file; };
    uint32_t get_block_num() const { return block_num; };
    int fd() const { return m_fd; };
 
-   /* low level operations */
+   /*
+    * Tape specific operations.
+    */
+   virtual bool offline() { return true; };
+   virtual bool weof(int num) { return true; };
+   virtual bool fsf(int num) { return true; };
+   virtual bool bsf(int num) { return false; };
+   virtual bool fsr(int num) { return false; };
+   virtual bool bsr(int num) { return false; };
+   virtual bool load_dev() { return true; };
+   virtual void lock_door() {};
+   virtual void unlock_door() {};
+   virtual void clrerror(int func) {};
+   virtual void set_os_device_parameters(DCR *dcr) {};
+   virtual int32_t get_os_tape_file() { return -1; };
+
+   /*
+    * Generic operations.
+    */
+   virtual void open_device(DCR *dcr, int omode);
+   virtual uint32_t status_dev();
+   virtual bool eod(DCR *dcr);
+   virtual void set_ateof();
+   virtual void set_ateot();
+   virtual bool rewind(DCR *dcr);
+   virtual bool update_pos(DCR *dcr);
+   virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
+   virtual bool mount_backend(DCR *dcr, int timeout) { return true; };
+   virtual bool unmount_backend(DCR *dcr, int timeout) { return true; };
+   boffset_t lseek(DCR *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
+   bool truncate(DCR *dcr) { return d_truncate(dcr); };
+
+   /*
+    * Low level operations
+    */
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt_com = NULL) = 0;
-   virtual int d_open(const char *pathname, int flags) = 0;
+   virtual int d_open(const char *pathname, int flags, int mode) = 0;
    virtual int d_close(int fd) = 0;
    virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
-   virtual boffset_t lseek(DCR *dcr, boffset_t offset, int whence) = 0;
-   virtual bool update_pos(DCR *dcr);
-   virtual bool rewind(DCR *dcr);
-   virtual bool truncate(DCR *dcr);
+   virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence) = 0;
+   virtual bool d_truncate(DCR *dcr) = 0;
+
    /*
     * Locking and blocking calls
     */
 #ifdef  SD_DEBUG_LOCK
-   void dbg_rLock(const char *, int, bool locked=false);    /* in lock.c */
-   void dbg_rUnlock(const char *, int);                     /* in lock.c */
-   void dbg_Lock(const char *, int);                        /* in lock.c */
-   void dbg_Unlock(const char *, int);                      /* in lock.c */
-   void dbg_Lock_acquire(const char *, int);                /* in lock.c */
-   void dbg_Unlock_acquire(const char *, int);              /* in lock.c */
-   void dbg_Lock_read_acquire(const char *, int);           /* in lock.c */
-   void dbg_Unlock_read_acquire(const char *, int);         /* in lock.c */
+   void dbg_rLock(const char *, int, bool locked = false);
+   void dbg_rUnlock(const char *, int);
+   void dbg_Lock(const char *, int);
+   void dbg_Unlock(const char *, int);
+   void dbg_Lock_acquire(const char *, int);
+   void dbg_Unlock_acquire(const char *, int);
+   void dbg_Lock_read_acquire(const char *, int);
+   void dbg_Unlock_read_acquire(const char *, int);
 #else
-   void rLock(bool locked=false);         /* in lock.c */
-   void rUnlock();                        /* in lock.c */
-   void Lock();                           /* in lock.c */
-   void Unlock();                         /* in lock.c */
-   void Lock_acquire();                   /* in lock.c */
-   void Unlock_acquire();                 /* in lock.c */
-   void Lock_read_acquire();              /* in lock.c */
-   void Unlock_read_acquire();            /* in lock.c */
-   void Lock_VolCatInfo();                /* in lock.c */
-   void Unlock_VolCatInfo();              /* in lock.c */
+   void rLock(bool locked = false);
+   void rUnlock();
+   void Lock();
+   void Unlock();
+   void Lock_acquire();
+   void Unlock_acquire();
+   void Lock_read_acquire();
+   void Unlock_read_acquire();
+   void Lock_VolCatInfo();
+   void Unlock_VolCatInfo();
 #endif
-   int init_mutex();                      /* in lock.c */
-   int init_acquire_mutex();              /* in lock.c */
-   int init_read_acquire_mutex();         /* in lock.c */
-   int init_volcat_mutex();               /* in lock.c */
-   void set_mutex_priorities();           /* in lock.c */
-   int next_vol_timedwait(const struct timespec *timeout);  /* in lock.c */
-   void dblock(int why);                  /* in lock.c */
-   void dunblock(bool locked=false);      /* in lock.c */
-   bool is_device_unmounted();            /* in lock.c */
+   int init_mutex();
+   int init_acquire_mutex();
+   int init_read_acquire_mutex();
+   int init_volcat_mutex();
+   void set_mutex_priorities();
+   int next_vol_timedwait(const struct timespec *timeout);
+   void dblock(int why);
+   void dunblock(bool locked = false);
+   bool is_device_unmounted();
    void set_blocked(int block) { m_blocked = block; };
    int blocked() const { return m_blocked; };
    bool is_blocked() const { return m_blocked != BST_NOT_BLOCKED; };
-   const char *print_blocked() const;     /* in dev.c */
+   const char *print_blocked() const;
 
-private:
-   bool do_tape_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
-   bool do_file_mount(DCR *dcr, int mount, int dotimeout); /* in dev.c */
-   void set_mode(int omode);                      /* in dev.c */
-   void open_tape_device(DCR *dcr, int omode);    /* in dev.c */
-   void open_file_device(DCR *dcr, int omode);    /* in dev.c */
+protected:
+   void set_mode(int mode);
 };
 
 inline const char *DEVICE::strerror() const { return errmsg; }
 inline const char *DEVICE::archive_name() const { return dev_name; }
 inline const char *DEVICE::print_name() const { return prt_name; }
 
+#define CHECK_BLOCK_NUMBERS true
+#define NO_BLOCK_NUMBER_CHECK false
 
-#define CHECK_BLOCK_NUMBERS    true
-#define NO_BLOCK_NUMBER_CHECK  false
+enum get_vol_info_rw {
+   GET_VOL_INFO_FOR_WRITE,
+   GET_VOL_INFO_FOR_READ
+};
 
 /*
  * Device Context (or Control) Record.
- *  There is one of these records for each Job that is using
- *  the device. Items in this record are "local" to the Job and
- *  do not affect other Jobs. Note, a job can have multiple
- *  DCRs open, each pointing to a different device.
+ *
+ * There is one of these records for each Job that is using
+ * the device. Items in this record are "local" to the Job and
+ * do not affect other Jobs. Note, a job can have multiple
+ * DCRs open, each pointing to a different device.
+ *
  * Normally, there is only one JCR thread per DCR. However, the
- *  big and important exception to this is when a Job is being
- *  canceled. At that time, there may be two threads using the
- *  same DCR. Consequently, when creating/attaching/detaching
- *  and freeing the DCR we must lock it (m_mutex).
+ * big and important exception to this is when a Job is being
+ * canceled. At that time, there may be two threads using the
+ * same DCR. Consequently, when creating/attaching/detaching
+ * and freeing the DCR we must lock it (m_mutex).
  */
-class DCR {
+class SD_IMP_EXP DCR : public SMARTALLOC {
 private:
    bool m_dev_locked;                 /* Set if dev already locked */
    int m_dev_lock;                    /* Non-zero if rLock already called */
    bool m_reserved;                   /* Set if reserved device */
    bool m_found_in_use;               /* Set if a volume found in use */
+   bool m_will_write;                 /* Set if DCR will be used for writing */
 
 public:
    dlink dev_link;                    /* Link to attach to dev */
@@ -538,6 +592,8 @@ public:
    int64_t  VolMediaId;               /* MediaId */
    int64_t job_spool_size;            /* Current job spool size */
    int64_t max_job_spool_size;        /* Max job spool size */
+   uint32_t VolMinBlocksize;          /* Minimum Blocksize */
+   uint32_t VolMaxBlocksize;          /* Maximum Blocksize */
    char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
    char pool_name[MAX_NAME_LENGTH];   /* Pool name */
    char pool_type[MAX_NAME_LENGTH];   /* Pool type */
@@ -547,16 +603,31 @@ public:
    int Stripe;                        /* RAIT stripe */
    VOLUME_CAT_INFO VolCatInfo;        /* Catalog info for desired volume */
 
-   /* Methods */
+   /*
+    * Constructor/Destructor.
+    */
+   DCR();
+   virtual ~DCR() {};
+
+   /*
+    * Methods
+    */
    void set_dev(DEVICE *ndev) { dev = ndev; };
+   void set_found_in_use() { m_found_in_use = true; };
+   void set_will_write() { m_will_write = true; };
+   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
+
+   void clear_found_in_use() { m_found_in_use = false; };
+   void clear_will_write() { m_will_write = false; };
+
+   bool is_reserved() const { return m_reserved; };
+   bool is_dev_locked() { return m_dev_locked; }
+   bool is_writing() const { return m_will_write; };
+
    void inc_dev_lock() { m_dev_lock++; };
    void dec_dev_lock() { m_dev_lock--; };
    bool found_in_use() const { return m_found_in_use; };
-   void set_found_in_use() { m_found_in_use = true; };
-   void clear_found_in_use() { m_found_in_use = false; };
-   bool is_reserved() const { return m_reserved; };
-   bool is_dev_locked() { return m_dev_locked; }
-   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
+
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
      bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
@@ -564,29 +635,51 @@ public:
    };
    char *getVolCatName() { return VolCatInfo.VolCatName; };
 
-   /* Methods in lock.c */
+   /*
+    * Methods in askdir.c
+    */
+   virtual DCR *get_new_spooling_dcr();
+   virtual bool dir_find_next_appendable_volume() { return true; };
+   virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; };
+   virtual bool dir_create_jobmedia_record(bool zero) { return true; };
+   virtual bool dir_update_file_attributes(DEV_RECORD *record) { return true; };
+   virtual bool dir_ask_sysop_to_mount_volume(int mode);
+   virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; };
+   virtual bool dir_get_volume_info(enum get_vol_info_rw writing);
+
+   /*
+    * Methods in lock.c
+    */
    void dblock(int why) { dev->dblock(why); }
 #ifdef  SD_DEBUG_LOCK
-   void dbg_mLock(const char *, int, bool locked);    /* in lock.c */
-   void dbg_mUnlock(const char *, int);               /* in lock.c */
+   void dbg_mLock(const char *, int, bool locked);
+   void dbg_mUnlock(const char *, int);
 #else
    void mLock(bool locked);
    void mUnlock();
 #endif
 
-   /* Methods in record.c */
+   /*
+    * Methods in record.c
+    */
    bool write_record();
 
-   /* Methods in reserve.c */
+   /*
+    * Methods in reserve.c
+    */
    void clear_reserved();
    void set_reserved();
    void unreserve_device();
 
-   /* Methods in vol_mgr.c */
+   /*
+    * Methods in vol_mgr.c
+    */
    bool can_i_use_volume();
    bool can_i_write_volume();
 
-   /* Methods in mount.c */
+   /*
+    * Methods in mount.c
+    */
    bool mount_next_write_volume();
    bool mount_next_read_volume();
    void mark_volume_in_error();
@@ -602,23 +695,62 @@ public:
    bool do_load(bool is_writing);
    bool is_tape_position_ok();
 
-   /* Methods in block.c */
+   /*
+    * Methods in block.c
+    */
    bool write_block_to_device();
    bool write_block_to_dev();
    bool read_block_from_device(bool check_block_numbers);
    bool read_block_from_dev(bool check_block_numbers);
 
-   /* Methods in label.c */
+   /*
+    * Methods in label.c
+    */
    bool rewrite_volume_label(bool recycle);
-
 };
 
-/* Get some definition of function to position
- *  to the end of the medium in MTEOM. System
- *  dependent. Arrgggg!
+class SD_IMP_EXP SD_DCR : public DCR {
+public:
+   /*
+    * Virtual Destructor.
+    */
+   ~SD_DCR() {};
+
+   /*
+    * Methods overriding default implementations.
+    */
+   bool dir_find_next_appendable_volume();
+   bool dir_update_volume_info(bool label, bool update_LastWritten);
+   bool dir_create_jobmedia_record(bool zero);
+   bool dir_update_file_attributes(DEV_RECORD *record);
+   bool dir_ask_sysop_to_mount_volume(int mode);
+   bool dir_ask_sysop_to_create_appendable_volume();
+   bool dir_get_volume_info(enum get_vol_info_rw writing);
+   DCR *get_new_spooling_dcr();
+};
+
+class BTAPE_DCR : public DCR {
+public:
+   /*
+    * Virtual Destructor.
+    */
+   ~BTAPE_DCR() {};
+
+   /*
+    * Methods overriding default implementations.
+    */
+   bool dir_find_next_appendable_volume();
+   bool dir_create_jobmedia_record(bool zero);
+   bool dir_ask_sysop_to_mount_volume(int mode);
+   bool dir_ask_sysop_to_create_appendable_volume();
+   DCR *get_new_spooling_dcr();
+};
+
+/*
+ * Get some definition of function to position to the end of the medium in MTEOM. System dependent.
  */
 #ifndef MTEOM
-#ifdef  MTSEOD
+#ifdef MTSEOD
 #define MTEOM MTSEOD
 #endif
 #ifdef MTEOD
@@ -626,5 +758,4 @@ public:
 #define MTEOM MTEOD
 #endif
 #endif
-
 #endif

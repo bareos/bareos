@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,13 +31,11 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-#ifdef HAVE_PYTHON
 #undef _POSIX_C_SOURCE
 #include <Python.h>
 
 #if (PY_VERSION_HEX <  0x02060000)
 #error "Need at least Python version 2.6 or newer"
-#endif
 #endif
 
 static const int dbglvl = 150;
@@ -64,7 +62,6 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC checkFile(bpContext *ctx, char *fname);
 
-#ifdef HAVE_PYTHON
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
@@ -81,8 +78,8 @@ static bRC PyEndRestoreFile(bpContext *ctx);
 static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp);
 static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp);
 static bRC PyCheckFile(bpContext *ctx, char *fname);
-static bRC PyRestoreObjectData(bpContext *ctx, restore_object_pkt *rop);
-#endif
+static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop);
+static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp);
 
 /* Pointers to Bareos functions */
 static bFuncs *bfuncs = NULL;
@@ -125,7 +122,6 @@ static pFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    int32_t backup_level;
-#ifdef HAVE_PYTHON
    bool python_loaded;
    char *plugin_options;
    char *module_path;
@@ -138,21 +134,16 @@ struct plugin_ctx {
    PyObject *pModule;
    PyObject *pDict;
    PyObject *bpContext;
-#endif
 };
 
-#ifdef HAVE_PYTHON
 #include "python-fd.h"
-#endif
 
 /*
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
  */
-#ifdef HAVE_PYTHON
 static PyThreadState *mainThreadState;
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -172,14 +163,12 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
    *pinfo  = &pluginInfo;             /* Return pointer to our info */
    *pfuncs = &pluginFuncs;            /* Return pointer to our functions */
 
-#ifdef HAVE_PYTHON
    /*
     * Setup Python
     */
-   Py_Initialize();
+   Py_InitializeEx(0);
    PyEval_InitThreads();
    mainThreadState = PyEval_SaveThread();
-#endif
 
    return bRC_OK;
 }
@@ -189,13 +178,11 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
  */
 bRC unloadPlugin()
 {
-#ifdef HAVE_PYTHON
    /*
     * Terminate Python
     */
    PyEval_RestoreThread(mainThreadState);
    Py_Finalize();
-#endif
 
    return bRC_OK;
 }
@@ -213,7 +200,6 @@ bRC unloadPlugin()
  */
 static bRC newPlugin(bpContext *ctx)
 {
-#ifdef HAVE_PYTHON
    struct plugin_ctx *p_ctx;
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
@@ -229,7 +215,6 @@ static bRC newPlugin(bpContext *ctx)
    PyEval_AcquireLock();
    p_ctx->interpreter = Py_NewInterpreter();
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
    /*
     * Always register some events the python plugin itself can register
@@ -259,7 +244,6 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-#ifdef HAVE_PYTHON
    if (p_ctx->plugin_options) {
       free(p_ctx->plugin_options);
    }
@@ -306,7 +290,6 @@ static bRC freePlugin(bpContext *ctx)
 
    Py_EndInterpreter(p_ctx->interpreter);
    PyEval_ReleaseLock();
-#endif
 
    free(p_ctx);
    ctx->pContext = NULL;
@@ -327,11 +310,9 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyGetPluginValue(ctx, var, value);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -350,11 +331,9 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
       return bRC_Error;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PySetPluginValue(ctx, var, value);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
    return retval;
 }
@@ -365,7 +344,6 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
-#ifdef HAVE_PYTHON
    bool event_dispatched = false;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
@@ -464,7 +442,10 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          }
          break;
       case bEventRestoreObject:
-         retval = PyRestoreObjectData(ctx, (restore_object_pkt *)value);
+         retval = PyRestoreObjectData(ctx, (struct restore_object_pkt *)value);
+         break;
+      case bEventHandleBackupFile:
+         retval = PyHandleBackupFile(ctx, (struct save_pkt *)value);
          break;
       default:
          /*
@@ -485,9 +466,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
 bail_out:
    return retval;
-#else
-   return bRC_OK;
-#endif
 }
 
 /*
@@ -506,11 +484,9 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyStartBackupFile(ctx, sp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -528,11 +504,9 @@ static bRC endBackupFile(bpContext *ctx)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyEndBackupFile(ctx);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -552,11 +526,13 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
+   if (!p_ctx->python_loaded) {
+      goto bail_out;
+   }
+
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyPluginIO(ctx, io);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -574,11 +550,9 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyStartRestoreFile(ctx, cmd);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -596,11 +570,9 @@ static bRC endRestoreFile(bpContext *ctx)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyEndRestoreFile(ctx);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -622,11 +594,9 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCreateFile(ctx, rp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -645,11 +615,9 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PySetFileAttributes(ctx, rp);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
@@ -667,17 +635,14 @@ static bRC checkFile(bpContext *ctx, char *fname)
       goto bail_out;
    }
 
-#ifdef HAVE_PYTHON
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCheckFile(ctx, fname);
    PyEval_ReleaseThread(p_ctx->interpreter);
-#endif
 
 bail_out:
    return retval;
 }
 
-#ifdef HAVE_PYTHON
 /*
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
@@ -995,6 +960,14 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
    }
 
    /*
+    * Fill in the slots of PyRestorePacket
+    */
+   PyRestorePacketType.tp_new = PyType_GenericNew;
+   if (PyType_Ready(&PyRestorePacketType) < 0) {
+      goto bail_out;
+   }
+
+   /*
     * Fill in the slots of PyIoPacketType
     */
    PyIoPacketType.tp_new = PyType_GenericNew;
@@ -1013,6 +986,9 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
 
    Py_INCREF(&PySavePacketType);
    PyModule_AddObject(module, "SavePacket", (PyObject *)&PySavePacketType);
+
+   Py_INCREF(&PyRestorePacketType);
+   PyModule_AddObject(module, "RestorePacket", (PyObject *)&PyRestorePacketType);
 
    Py_INCREF(&PyIoPacketType);
    PyModule_AddObject(module, "IoPacket", (PyObject *)&PyIoPacketType);
@@ -1185,137 +1161,187 @@ bail_out:
    return retval;
 }
 
-static inline PySavePacket *NativeToPySavePacket(struct save_pkt *sp)
+static inline PyStatPacket *NativeToPyStatPacket(struct stat *statp)
 {
-   PySavePacket *pSavePkt;
+   PyStatPacket *pStatp = PyObject_New(PyStatPacket, &PyStatPacketType);
 
-   pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
-   if (!pSavePkt) {
-      return (PySavePacket *)NULL;
+   if (pStatp) {
+      pStatp->dev = statp->st_dev;
+      pStatp->ino = statp->st_ino;
+      pStatp->mode = statp->st_mode;
+      pStatp->nlink = statp->st_nlink;
+      pStatp->uid = statp->st_uid;
+      pStatp->gid = statp->st_gid;
+      pStatp->rdev = statp->st_rdev;
+      pStatp->size = statp->st_size;
+      pStatp->atime = statp->st_atime;
+      pStatp->mtime = statp->st_mtime;
+      pStatp->ctime = statp->st_ctime;
+      pStatp->blksize = statp->st_blksize;
+      pStatp->blocks = statp->st_blocks;
    }
 
-   /*
-    * Initialize the Python SavePkt with the data we got passed in.
-    */
-   pSavePkt->fname = NULL;
-   pSavePkt->link = NULL;
-   pSavePkt->statp = NULL;
-   pSavePkt->type = sp->type;
-   pSavePkt->flags = sp->flags;
-   pSavePkt->no_read = sp->no_read;
-   pSavePkt->portable = sp->portable;
-   pSavePkt->accurate_found = sp->accurate_found;
-   pSavePkt->cmd = sp->cmd;
-   pSavePkt->delta_seq = sp->delta_seq;
-   pSavePkt->object_name = NULL;
-   pSavePkt->object = NULL;
-   pSavePkt->object_len = sp->object_len;
-   pSavePkt->object_index = sp->index;
+   return pStatp;
+}
+
+static inline void PyStatPacketToNative(PyStatPacket *pStatp, struct stat *statp)
+{
+   statp->st_dev = pStatp->dev;
+   statp->st_ino = pStatp->ino;
+   statp->st_mode = pStatp->mode;
+   statp->st_nlink = pStatp->nlink;
+   statp->st_uid = pStatp->uid;
+   statp->st_gid = pStatp->gid;
+   statp->st_rdev = pStatp->rdev;
+   statp->st_size = pStatp->size;
+   statp->st_atime = pStatp->atime;
+   statp->st_mtime = pStatp->mtime;
+   statp->st_ctime = pStatp->ctime;
+   statp->st_blksize = pStatp->blksize;
+   statp->st_blocks = pStatp->blocks;
+}
+
+static inline PySavePacket *NativeToPySavePacket(struct save_pkt *sp)
+{
+   PySavePacket *pSavePkt = PyObject_New(PySavePacket, &PySavePacketType);
+
+   if (pSavePkt) {
+      /*
+       * Initialize the Python SavePkt with the data we got passed in.
+       */
+      if (sp->fname) {
+         pSavePkt->fname = PyString_FromString(sp->fname);
+      } else {
+         pSavePkt->fname = NULL;
+      }
+
+      if (sp->link) {
+         pSavePkt->link = PyString_FromString(sp->link);
+      } else {
+         pSavePkt->link = NULL;
+      }
+
+      if (sp->statp.st_mode) {
+         pSavePkt->statp = (PyObject *)NativeToPyStatPacket(&sp->statp);
+      } else {
+         pSavePkt->statp = NULL;
+      }
+
+      pSavePkt->type = sp->type;
+      pSavePkt->flags = sp->flags;
+      pSavePkt->no_read = sp->no_read;
+      pSavePkt->portable = sp->portable;
+      pSavePkt->accurate_found = sp->accurate_found;
+      pSavePkt->cmd = sp->cmd;
+      pSavePkt->delta_seq = sp->delta_seq;
+      pSavePkt->object_name = NULL;
+      pSavePkt->object = NULL;
+      pSavePkt->object_len = sp->object_len;
+      pSavePkt->object_index = sp->index;
+   }
 
    return pSavePkt;
 }
 
-static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt *sp, struct plugin_ctx *p_ctx)
+static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt *sp,
+                                        struct plugin_ctx *p_ctx, bool is_options_plugin)
 {
    /*
-    * Only copy back the arguments that are allowed to change.
+    * See if this is for an Options Plugin.
     */
-   if (pSavePkt->fname) {
+   if (!is_options_plugin) {
       /*
-       * As this has to linger as long as the backup is running we save it in our plugin context.
+       * Only copy back the arguments that are allowed to change.
        */
-      if (PyString_Check(pSavePkt->fname)) {
-         if (p_ctx->fname) {
-            free(p_ctx->fname);
-         }
-         p_ctx->fname = bstrdup(PyString_AsString(pSavePkt->fname));
-         sp->fname = p_ctx->fname;
-      }
-   } else {
-      goto bail_out;
-   }
-
-   /*
-    * Optional field.
-    */
-   if (pSavePkt->link) {
-      /*
-       * As this has to linger as long as the backup is running we save it in our plugin context.
-       */
-      if (PyString_Check(pSavePkt->link)) {
-         if (p_ctx->link) {
-            free(p_ctx->link);
-         }
-         p_ctx->link = bstrdup(PyString_AsString(pSavePkt->link));
-         sp->link = p_ctx->link;
-      }
-   }
-
-   /*
-    * Handle the stat structure.
-    */
-   if (pSavePkt->statp) {
-      PyStatPacket *statp = (PyStatPacket *)pSavePkt->statp;
-      sp->statp.st_dev = statp->dev;
-      sp->statp.st_ino = statp->ino;
-      sp->statp.st_mode = statp->mode;
-      sp->statp.st_nlink = statp->nlink;
-      sp->statp.st_uid = statp->uid;
-      sp->statp.st_gid = statp->gid;
-      sp->statp.st_rdev = statp->rdev;
-      sp->statp.st_atime = statp->atime;
-      sp->statp.st_mtime = statp->mtime;
-      sp->statp.st_ctime = statp->ctime;
-      sp->statp.st_blksize = statp->blksize;
-      sp->statp.st_blocks = statp->blocks;
-   } else {
-      goto bail_out;
-   }
-
-   sp->type = pSavePkt->type;
-   sp->flags = pSavePkt->flags;
-
-   /*
-    * Special code for handling restore objects.
-    */
-   if (IS_FT_OBJECT(sp->type)) {
-      /*
-       * See if a proper restore object was created.
-       */
-      if (pSavePkt->object_len > 0) {
+      if (pSavePkt->fname) {
          /*
           * As this has to linger as long as the backup is running we save it in our plugin context.
           */
-         if (pSavePkt->object_name &&
-             pSavePkt->object &&
-             PyString_Check(pSavePkt->object_name) &&
-             PyByteArray_Check(pSavePkt->object)) {
-            char *buf;
-
-            if (p_ctx->object_name) {
-               free(p_ctx->object_name);
+         if (PyString_Check(pSavePkt->fname)) {
+            if (p_ctx->fname) {
+               free(p_ctx->fname);
             }
-            p_ctx->object_name = bstrdup(PyString_AsString(pSavePkt->object_name));
-            sp->object_name = p_ctx->object_name;
+            p_ctx->fname = bstrdup(PyString_AsString(pSavePkt->fname));
+            sp->fname = p_ctx->fname;
+         }
+      } else {
+         goto bail_out;
+      }
 
-            sp->object_len = pSavePkt->object_len;
-            sp->index = pSavePkt->object_index;
+      /*
+       * Optional field.
+       */
+      if (pSavePkt->link) {
+         /*
+          * As this has to linger as long as the backup is running we save it in our plugin context.
+          */
+         if (PyString_Check(pSavePkt->link)) {
+            if (p_ctx->link) {
+               free(p_ctx->link);
+            }
+            p_ctx->link = bstrdup(PyString_AsString(pSavePkt->link));
+            sp->link = p_ctx->link;
+         }
+      }
 
-            if (!(buf = PyByteArray_AsString(pSavePkt->object))) {
-               if (p_ctx->object) {
-                  free(p_ctx->object);
+      /*
+       * Handle the stat structure.
+       */
+      if (pSavePkt->statp) {
+         PyStatPacketToNative((PyStatPacket *)pSavePkt->statp, &sp->statp);
+      } else {
+         goto bail_out;
+      }
+
+      sp->type = pSavePkt->type;
+      sp->flags = pSavePkt->flags;
+
+      /*
+       * Special code for handling restore objects.
+       */
+      if (IS_FT_OBJECT(sp->type)) {
+         /*
+          * See if a proper restore object was created.
+          */
+         if (pSavePkt->object_len > 0) {
+            /*
+             * As this has to linger as long as the backup is running we save it in our plugin context.
+             */
+            if (pSavePkt->object_name &&
+                pSavePkt->object &&
+                PyString_Check(pSavePkt->object_name) &&
+                PyByteArray_Check(pSavePkt->object)) {
+               char *buf;
+
+               if (p_ctx->object_name) {
+                  free(p_ctx->object_name);
                }
-               p_ctx->object = (char *)malloc(pSavePkt->object_len);
-               memcpy(p_ctx->object, buf, pSavePkt->object_len);
+               p_ctx->object_name = bstrdup(PyString_AsString(pSavePkt->object_name));
+               sp->object_name = p_ctx->object_name;
+
+               sp->object_len = pSavePkt->object_len;
+               sp->index = pSavePkt->object_index;
+
+               if (!(buf = PyByteArray_AsString(pSavePkt->object))) {
+                  if (p_ctx->object) {
+                     free(p_ctx->object);
+                  }
+                  p_ctx->object = (char *)malloc(pSavePkt->object_len);
+                  memcpy(p_ctx->object, buf, pSavePkt->object_len);
+               } else {
+                  goto bail_out;
+               }
             } else {
                goto bail_out;
             }
          } else {
             goto bail_out;
          }
-      } else {
-         goto bail_out;
       }
+   } else {
+      sp->no_read = pSavePkt->no_read;
+      sp->delta_seq = pSavePkt->delta_seq;
+      sp->flags = pSavePkt->flags;
    }
 
    return true;
@@ -1358,7 +1384,7 @@ static bRC PyStartBackupFile(bpContext *ctx, struct save_pkt *sp)
          retval = conv_python_retval(pRetVal);
          Py_DECREF(pRetVal);
 
-         if (!PySavePacketToNative(pSavePkt, sp, p_ctx)) {
+         if (!PySavePacketToNative(pSavePkt, sp, p_ctx, false)) {
             Py_DECREF((PyObject *)pSavePkt);
             goto bail_out;
          }
@@ -1419,44 +1445,41 @@ bail_out:
 
 static inline PyIoPacket *NativeToPyIoPacket(struct io_pkt *io)
 {
-   PyIoPacket *pIoPkt;
+   PyIoPacket *pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
 
-   pIoPkt = PyObject_New(PyIoPacket, &PyIoPacketType);
-   if (!pIoPkt) {
-      return (PyIoPacket *)NULL;
-   }
-
-   /*
-    * Initialize the Python IoPkt with the data we got passed in.
-    */
-   pIoPkt->func = io->func;
-   pIoPkt->count = io->count;
-   pIoPkt->flags = io->flags;
-   pIoPkt->mode = io->mode;
-   pIoPkt->fname = io->fname;
-   pIoPkt->whence = io->whence;
-   pIoPkt->offset = io->offset;
-   if (io->func == IO_WRITE && io->count > 0) {
+   if (pIoPkt) {
       /*
-       * Only initialize the buffer with read data when we are writing and there is data.
+       * Initialize the Python IoPkt with the data we got passed in.
        */
-      pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
-      if (!pIoPkt->buf) {
-         Py_DECREF((PyObject *)pIoPkt);
-         return (PyIoPacket *)NULL;
+      pIoPkt->func = io->func;
+      pIoPkt->count = io->count;
+      pIoPkt->flags = io->flags;
+      pIoPkt->mode = io->mode;
+      pIoPkt->fname = io->fname;
+      pIoPkt->whence = io->whence;
+      pIoPkt->offset = io->offset;
+      if (io->func == IO_WRITE && io->count > 0) {
+         /*
+          * Only initialize the buffer with read data when we are writing and there is data.
+          */
+         pIoPkt->buf = PyByteArray_FromStringAndSize(io->buf, io->count);
+         if (!pIoPkt->buf) {
+            Py_DECREF((PyObject *)pIoPkt);
+            return (PyIoPacket *)NULL;
+         }
+      } else {
+         pIoPkt->buf = NULL;
       }
-   } else {
-      pIoPkt->buf = NULL;
-   }
 
-   /*
-    * These must be set by the Python function but we initialize them to zero
-    * to be sure they have some valid setting an not random data.
-    */
-   pIoPkt->io_errno = 0;
-   pIoPkt->lerror = 0;
-   pIoPkt->win32 = false;
-   pIoPkt->status = 0;
+      /*
+       * These must be set by the Python function but we initialize them to zero
+       * to be sure they have some valid setting an not random data.
+       */
+      pIoPkt->io_errno = 0;
+      pIoPkt->lerror = 0;
+      pIoPkt->win32 = false;
+      pIoPkt->status = 0;
+   }
 
    return pIoPkt;
 }
@@ -1622,6 +1645,38 @@ bail_out:
    return retval;
 }
 
+static inline PyRestorePacket *NativeToPyRestorePacket(struct restore_pkt *rp)
+{
+   PyRestorePacket *pRestorePacket = PyObject_New(PyRestorePacket, &PyRestorePacketType);
+
+   if (pRestorePacket) {
+      pRestorePacket->stream = rp->stream;
+      pRestorePacket->data_stream = rp->data_stream;
+      pRestorePacket->type = rp->type;
+      pRestorePacket->file_index = rp->file_index;
+      pRestorePacket->LinkFI = rp->LinkFI;
+      pRestorePacket->uid = rp->uid;
+      pRestorePacket->statp = (PyObject *)NativeToPyStatPacket(&rp->statp);
+      pRestorePacket->attrEx = rp->attrEx;
+      pRestorePacket->ofname = rp->ofname;
+      pRestorePacket->olname = rp->olname;
+      pRestorePacket->where = rp->where;
+      pRestorePacket->RegexWhere = rp->RegexWhere;
+      pRestorePacket->replace = rp->replace;
+      pRestorePacket->create_status = rp->create_status;
+   }
+
+   return pRestorePacket;
+}
+
+static inline void PyRestorePacketToNative(PyRestorePacket *pRestorePacket, struct restore_pkt *rp)
+{
+   /*
+    * Only copy back the fields that are allowed to be changed.
+    */
+   rp->create_status = pRestorePacket->create_status;
+}
+
 /*
  * Called for a command plugin to create a file during a Restore job before restoring the data.
  * This entry point is called before any I/O is done on the file. After this call,
@@ -1636,8 +1691,50 @@ bail_out:
  */
 static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
 {
-   rp->create_status = CF_EXTRACT;
-   return bRC_OK;
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!rp) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the create_file() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "create_file"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyRestorePacket *pRestorePacket;
+      PyObject *pRetVal;
+
+      pRestorePacket = NativeToPyRestorePacket(rp);
+      if (!pRestorePacket) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pRestorePacket, NULL);
+      if (!pRetVal) {
+         Py_DECREF(pRestorePacket);
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+
+         PyRestorePacketToNative(pRestorePacket, rp);
+         Py_DECREF(pRestorePacket);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
 }
 
 static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp)
@@ -1647,33 +1744,67 @@ static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 
 static bRC PyCheckFile(bpContext *ctx, char *fname)
 {
-   return bRC_OK;
-}
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
 
-static inline PyObject *NativeToPyRestoreObject(restore_object_pkt *rop)
-{
-   PyRestoreObject *pRestoreObject;
-
-   pRestoreObject = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
-   if (!pRestoreObject) {
-      return (PyObject *)NULL;
+   if (!fname) {
+      return bRC_Error;
    }
 
-   pRestoreObject->object_name = rop->object_name;
-   pRestoreObject->object = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
-   pRestoreObject->plugin_name = rop->plugin_name;
-   pRestoreObject->object_type = rop->object_type;
-   pRestoreObject->object_len = rop->object_len;
-   pRestoreObject->object_full_len = rop->object_full_len;
-   pRestoreObject->object_index = rop->object_index;
-   pRestoreObject->object_compression = rop->object_compression;
-   pRestoreObject->stream = rop->stream;
-   pRestoreObject->JobId = rop->JobId;
+   /*
+    * Lookup the check_file() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "check_file"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PyObject *pFname,
+               *pRetVal;
 
-   return (PyObject *)pRestoreObject;
+      pFname = PyString_FromString(fname);
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pFname, NULL);
+      Py_DECREF(pFname);
+
+      if (!pRetVal) {
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
 }
 
-static bRC PyRestoreObjectData(bpContext *ctx, restore_object_pkt *rop)
+static inline PyRestoreObject *NativeToPyRestoreObject(struct restore_object_pkt *rop)
+{
+   PyRestoreObject *pRestoreObject = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
+
+   if (pRestoreObject) {
+      pRestoreObject->object_name = rop->object_name;
+      pRestoreObject->object = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
+      pRestoreObject->plugin_name = rop->plugin_name;
+      pRestoreObject->object_type = rop->object_type;
+      pRestoreObject->object_len = rop->object_len;
+      pRestoreObject->object_full_len = rop->object_full_len;
+      pRestoreObject->object_index = rop->object_index;
+      pRestoreObject->object_compression = rop->object_compression;
+      pRestoreObject->stream = rop->stream;
+      pRestoreObject->JobId = rop->JobId;
+   }
+
+   return pRestoreObject;
+}
+
+static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop)
 {
    bRC retval = bRC_Error;
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
@@ -1688,8 +1819,8 @@ static bRC PyRestoreObjectData(bpContext *ctx, restore_object_pkt *rop)
     */
    pFunc = PyDict_GetItemString(p_ctx->pDict, "restore_object_data"); /* Borrowed reference */
    if (pFunc && PyCallable_Check(pFunc)) {
-      PyObject *pRestoreObject,
-               *pRetVal;
+      PyRestoreObject *pRestoreObject;
+      PyObject *pRetVal;
 
       pRestoreObject = NativeToPyRestoreObject(rop);
       if (!pRestoreObject) {
@@ -1707,6 +1838,57 @@ static bRC PyRestoreObjectData(bpContext *ctx, restore_object_pkt *rop)
       }
    } else {
       Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+   }
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
+
+   if (!sp) {
+      return bRC_Error;
+   }
+
+   /*
+    * Lookup the handle_backup_file() function in the python module.
+    */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "handle_backup_file"); /* Borrowed reference */
+   if (pFunc && PyCallable_Check(pFunc)) {
+      PySavePacket *pSavePkt;
+      PyObject *pRetVal;
+
+      pSavePkt = NativeToPySavePacket(sp);
+      if (!pSavePkt) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pSavePkt, NULL);
+      if (!pRetVal) {
+         Py_DECREF((PyObject *)pSavePkt);
+         goto bail_out;
+      } else {
+         retval = conv_python_retval(pRetVal);
+         Py_DECREF(pRetVal);
+
+         if (!PySavePacketToNative(pSavePkt, sp, p_ctx, true)) {
+            Py_DECREF((PyObject *)pSavePkt);
+            goto bail_out;
+         }
+         Py_DECREF(pSavePkt);
+      }
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named handle_backup_file()\n");
    }
 
    return retval;
@@ -2123,8 +2305,8 @@ static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
    POOL_MEM buf(PM_MESSAGE);
 
    Mmsg(buf, "RestoreObject(object_name=\"%s\", object=\"%s\", plugin_name=\"%s\", "
-             "object_type=%d, object_len=%d, object_full_len=%d, "
-             "object_index=%d, object_compression=%d, stream=%d, jobid=%d)",
+             "object_type=%ld, object_len=%ld, object_full_len=%ld, "
+             "object_index=%ld, object_compression=%ld, stream=%ld, jobid=%ld)",
         self->object_name, self->object, self->plugin_name,
         self->object_type, self->object_len, self->object_full_len,
         self->object_index, self->object_compression, self->stream, self->JobId);
@@ -2203,9 +2385,9 @@ static PyObject *PyStatPacket_repr(PyStatPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "StatPacket(dev=%d, ino=%ld, mode=%d, nlink=%d, "
-             "uid=%d, gid=%d, rdev=%d, size=%ld, "
-             "atime=%d, mtime=%d, ctime=%d, blksize=%d, blocks=%ld",
+   Mmsg(buf, "StatPacket(dev=%ld, ino=%lld, mode=%d, nlink=%d, "
+             "uid=%ld, gid=%ld, rdev=%ld, size=%lld, "
+             "atime=%ld, mtime=%ld, ctime=%ld, blksize=%ld, blocks=%lld)",
         self->dev, self->ino, self->mode, self->nlink,
         self->uid, self->gid, self->rdev, self->size,
         self->atime, self->mtime, self->ctime, self->blksize, self->blocks);
@@ -2296,15 +2478,15 @@ static PyObject *PySavePacket_repr(PySavePacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%d, flags=%d, "
-             "no_read=%s, portable=%s, accurate_found=%s, "
-             "cmd=\"%s\", delta_seq=%d, object_name=\"%s\", "
-             "object=\"%s\", object_len=%d, object_index=%d)",
-             PyGetStringValue(self->fname), PyGetStringValue(self->link),
-             self->type, self->flags, self->no_read, self->portable,
-             self->accurate_found, self->cmd, self->delta_seq,
-             PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
-             self->object_len, self->object_index);
+   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%ld, "
+             "no_read=%d, portable=%d, accurate_found=%d, "
+             "cmd=\"%s\", delta_seq=%ld, object_name=\"%s\", "
+             "object=\"%s\", object_len=%ld, object_index=%ld)",
+        PyGetStringValue(self->fname), PyGetStringValue(self->link),
+        self->type, self->flags, self->no_read, self->portable,
+        self->accurate_found, self->cmd, self->delta_seq,
+        PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
+        self->object_len, self->object_index);
 
    s = PyString_FromString(buf.c_str());
 
@@ -2391,6 +2573,101 @@ static void PySavePacket_dealloc(PySavePacket *self)
 }
 
 /*
+ * Python specific handlers for PyRestorePacket structure mapping.
+ */
+
+/*
+ * Representation.
+ */
+static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
+{
+   PyObject *stat_repr, *s;
+   POOL_MEM buf(PM_MESSAGE);
+
+   stat_repr = PyObject_Repr(self->statp);
+   Mmsg(buf, "RestorePacket(stream=%d, data_stream=%ld, type=%ld, file_index=%ld, "
+             "linkFI=%ld, uid=%ld, statp=\"%s\", attrEx=\"%s\", ofname=\"%s\", "
+             "olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d, create_status=%d)",
+        self->stream, self->data_stream, self->type, self->file_index,
+        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx, self->ofname,
+        self->olname, self->where, self->RegexWhere, self->replace, self->create_status);
+
+   s = PyString_FromString(buf.c_str());
+   Py_DECREF(stat_repr);
+
+   return s;
+}
+
+/*
+ * Initialization.
+ */
+static int PyRestorePacket_init(PyRestorePacket *self, PyObject *args, PyObject *kwds)
+{
+   static char *kwlist[] = {
+      (char *)"stream",
+      (char *)"data_stream",
+      (char *)"type",
+      (char *)"file_index",
+      (char *)"linkFI",
+      (char *)"uid",
+      (char *)"statp",
+      (char *)"attrEX",
+      (char *)"ofname",
+      (char *)"olname",
+      (char *)"where",
+      (char *)"regexwhere",
+      (char *)"replace",
+      (char *)"create_status",
+      NULL
+   };
+
+   self->stream = 0;
+   self->data_stream = 0;
+   self->type = 0;
+   self->file_index = 0;
+   self->LinkFI = 0;
+   self->uid = 0;
+   self->statp = NULL;
+   self->attrEx = NULL;
+   self->ofname = NULL;
+   self->olname = NULL;
+   self->where = NULL;
+   self->RegexWhere = NULL;
+   self->replace = 0;
+   self->create_status = 0;
+
+   if (!PyArg_ParseTupleAndKeywords(args,
+                                    kwds,
+                                    "|iiiiiIosssssii",
+                                    kwlist,
+                                    &self->stream,
+                                    &self->data_stream,
+                                    &self->type,
+                                    &self->file_index,
+                                    &self->LinkFI,
+                                    &self->uid,
+                                    &self->statp,
+                                    &self->attrEx,
+                                    &self->ofname,
+                                    &self->olname,
+                                    &self->where,
+                                    &self->RegexWhere,
+                                    &self->replace,
+                                    &self->create_status)) {
+      return -1;
+   }
+
+   return 0;
+}
+
+/*
+ * Destructor.
+ */
+static void PyRestorePacket_dealloc(PyRestorePacket *self)
+{
+   PyObject_Del(self);
+}
+/*
  * Python specific handlers for PyIOPacket structure mapping.
  */
 
@@ -2402,9 +2679,9 @@ static PyObject *PyIoPacket_repr(PyIoPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "IoPacket(func=%d, count=%d, flags=%d, mode=%d, "
-             "buf=\"%s\", fname=\"%s\", status=%d, io_errno=%d, lerror=%d, "
-             "whence=%d, offset=%d, win32=%d)",
+   Mmsg(buf, "IoPacket(func=%d, count=%ld, flags=%ld, mode=%ld, "
+             "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
+             "whence=%ld, offset=%lld, win32=%d)",
         self->func, self->count, self->flags, self->mode,
         PyGetByteArrayValue(self->buf), self->fname, self->status,
         self->io_errno, self->lerror,
@@ -2480,4 +2757,3 @@ static void PyIoPacket_dealloc(PyIoPacket *self)
    }
    PyObject_Del(self);
 }
-#endif

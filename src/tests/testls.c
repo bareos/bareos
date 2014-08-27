@@ -28,12 +28,11 @@
 
 #include "bareos.h"
 #include "findlib/find.h"
+#include "filed/fd_plugins.h"
 
 /* Dummy functions */
-int generate_daemon_event(JCR *jcr, const char *event) { return 1; }
 int generate_job_event(JCR *jcr, const char *event) { return 1; }
 void generate_plugin_event(JCR *jcr, bEventType eventType, void *value) { }
-
 
 /* Global variables */
 int attrs = 0;

@@ -67,22 +67,15 @@ void init_device_resources();
 static char *runjob = NULL;
 static bool background = true;
 static void init_reload(void);
-static CONFIG *config;
 
 /* Globals Exported */
-DIRRES *me;           /* "Global" daemon resource */
+DIRRES *me = NULL;                    /* Our Global resource */
+CONFIG *my_config = NULL;             /* Our Global config */
 char *configfile = NULL;
 void *start_heap;
 
 /* Globals Imported */
 extern RES_ITEM job_items[];
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   extern URES res_all;
-}
-#else
-extern URES res_all;
-#endif
 
 typedef enum {
    CHECK_CONNECTION,  /* Check catalog connection */
@@ -94,42 +87,32 @@ static bool check_catalog(cat_op mode);
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
 
 /*
- * This allows the message handler to operate on the database
- * by using a pointer to this function. The pointer is
- * needed because the other daemons do not have access
- * to the database. If the pointer is not defined (other daemons),
- * then writing the database is disabled.
+ * This allows the message handler to operate on the database by using a pointer
+ * to this function. The pointer is needed because the other daemons do not have
+ * access to the database. If the pointer is not defined (other daemons), then
+ * writing the database is disabled.
  */
 static bool dir_db_log_insert(JCR *jcr, utime_t mtime, char *msg)
 {
    int length;
-   bool retval;
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
-   POOLMEM *cmd, *esc_msg;
+   POOL_MEM query(PM_MESSAGE),
+            esc_msg(PM_MESSAGE);
 
    if (!jcr || !jcr->db || !jcr->db->is_connected()) {
       return false;
    }
 
-   cmd = get_pool_memory(PM_MESSAGE);
-   esc_msg = get_pool_memory(PM_MESSAGE);
-
    length = strlen(msg) + 1;
-
-   esc_msg = check_pool_memory_size(esc_msg, length * 2 + 1);
-   db_escape_string(jcr, jcr->db, esc_msg, msg, length);
+   esc_msg.check_size(length * 2 + 1);
+   db_escape_string(jcr, jcr->db, esc_msg.c_str(), msg, length);
 
    bstrutime(dt, sizeof(dt), mtime);
-   Mmsg(cmd, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
-        edit_int64(jcr->JobId, ed1), dt, esc_msg);
+   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
+        edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
 
-   retval = db_sql_query(jcr->db, cmd);
-
-   free_pool_memory(cmd);
-   free_pool_memory(esc_msg);
-
-   return retval;
+   return db_sql_query(jcr->db, query.c_str());
 }
 
 static void usage()
@@ -169,6 +152,7 @@ int main (int argc, char *argv[])
 {
    int ch;
    JCR *jcr;
+   cat_op mode;
    bool no_signals = false;
    bool test_config = false;
    char *uid = NULL;
@@ -281,15 +265,17 @@ int main (int argc, char *argv[])
       drop(uid, gid, false);                    /* reduce privileges if requested */
    }
 
-   config = new_config_parser();
-   parse_dir_config(config, configfile, M_ERROR_TERM);
+   my_config = new_config_parser();
+   parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+      goto bail_out;
    }
 
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    if (!test_config) {                /* we don't need to do this block in test mode */
@@ -309,13 +295,26 @@ int main (int argc, char *argv[])
                           4 /* UA */ + 5 /* sched+watchdog+jobsvr+misc */);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   char *backend_dir;
+
+   foreach_alist(backend_dir, me->backend_directories) {
+        Dmsg1(100, "backend path: %s\n", backend_dir);
+   }
+
+   db_set_backend_dirs(me->backend_directories);
+#endif
+
    load_dir_plugins(me->plugin_directory, me->plugin_names);
 
-   /* If we are in testing mode, we don't try to fix the catalog */
-   cat_op mode=(test_config)?CHECK_CONNECTION:UPDATE_AND_FIX;
+   /*
+    * If we are in testing mode, we don't try to fix the catalog
+    */
+   mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
    if (!check_catalog(mode)) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    if (test_config) {
@@ -324,6 +323,7 @@ int main (int argc, char *argv[])
 
    if (!initialize_sql_pooling()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
    }
 
    my_name_is(0, NULL, me->name());    /* set user defined name */
@@ -343,7 +343,9 @@ int main (int argc, char *argv[])
 
    start_watchdog();                  /* start network watchdog thread */
 
-   init_jcr_subsystem();              /* start JCR watchdogs etc. */
+   if (me->jcr_watchdog_time) {
+      init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+   }
 
    init_job_server(me->MaxConcurrentJobs);
 
@@ -351,9 +353,11 @@ int main (int argc, char *argv[])
 
 //   init_device_resources();
 
+   start_statistics_thread();
+
    Dmsg0(200, "wait for next job\n");
    /* Main loop -- call scheduler to get next job to run */
-   while ( (jcr = wait_for_next_job(runjob)) ) {
+   while ((jcr = wait_for_next_job(runjob))) {
       run_job(jcr);                   /* run job */
       free_jcr(jcr);                  /* release jcr */
       set_jcr_in_tsd(INVALID_JCR);
@@ -364,6 +368,7 @@ int main (int argc, char *argv[])
 
    terminate_dird(0);
 
+bail_out:
    return 0;
 }
 
@@ -376,8 +381,11 @@ void terminate_dird(int sig)
       bmicrosleep(2, 0);              /* yield */
       exit(1);
    }
+
    already_here = true;
    debug_level = 0;                   /* turn off debug */
+
+   stop_statistics_thread();
    stop_watchdog();
    db_sql_pool_destroy();
    db_flush_backends();
@@ -386,6 +394,7 @@ void terminate_dird(int sig)
    delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
    term_scheduler();
    term_job_server();
+
    if (runjob) {
       free(runjob);
    }
@@ -395,17 +404,19 @@ void terminate_dird(int sig)
    if (debug_level > 5) {
       print_memory_pool_stats();
    }
-   if (config) {
-      config->free_resources();
-      free(config);
-      config = NULL;
+   if (my_config) {
+      my_config->free_resources();
+      free(my_config);
+      my_config = NULL;
    }
+
    stop_UA_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
    sm_dump(false);
+
    exit(sig);
 }
 
@@ -427,15 +438,16 @@ static void init_reload(void)
 
 static void free_saved_resources(int table)
 {
-   int num = r_last - r_first + 1;
+   int num = my_config->m_r_last - my_config->m_r_first + 1;
    RES **res_tab = reload_table[table].res_table;
+
    if (!res_tab) {
       Dmsg1(100, "res_tab for table %d already released.\n", table);
       return;
    }
    Dmsg1(100, "Freeing resources for table %d\n", table);
    for (int j=0; j<num; j++) {
-      free_resource(res_tab[j], r_first + j);
+      free_resource(res_tab[j], my_config->m_r_first + j);
    }
    free(res_tab);
    reload_table[table].job_count = 0;
@@ -531,10 +543,10 @@ void reload_config(int sig)
    db_sql_pool_flush();
 
    Dmsg1(100, "Reload_config njobs=%d\n", njobs);
-   reload_table[table].res_table = config->save_resources();
+   reload_table[table].res_table = my_config->save_resources();
    Dmsg1(100, "Saved old config in table %d\n", table);
 
-   ok = parse_dir_config(config, configfile, M_ERROR);
+   ok = parse_dir_config(my_config, configfile, M_ERROR);
 
    Dmsg0(100, "Reloaded config file\n");
    if (!ok || !check_resources() || !check_catalog(UPDATE_CATALOG) || !initialize_sql_pooling()) {
@@ -542,16 +554,17 @@ void reload_config(int sig)
       if (rtable < 0) {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR_TERM, 0, _("Out of reload table entries. Giving up.\n"));
+         goto bail_out;
       } else {
          Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
          Jmsg(NULL, M_ERROR, 0, _("Resetting previous configuration.\n"));
       }
-      reload_table[rtable].res_table = config->save_resources();
+      reload_table[rtable].res_table = my_config->save_resources();
       /* Now restore old resource values */
-      int num = r_last - r_first + 1;
+      int num = my_config->m_r_last - my_config->m_r_first + 1;
       RES **res_tab = reload_table[table].res_table;
       for (int i=0; i<num; i++) {
-         res_head[i] = res_tab[i];
+         my_config->m_res_head[i] = res_tab[i];
       }
       table = rtable;                 /* release new, bad, saved table below */
    } else {
@@ -589,6 +602,21 @@ bail_out:
 }
 
 /*
+ * See if two storage definitions point to the same Storage Daemon.
+ *
+ * We compare:
+ *  - address
+ *  - SDport
+ *  - password
+ */
+static inline bool is_same_storage_daemon(STORERES *store1, STORERES *store2)
+{
+   return store1->SDport == store2->SDport &&
+          bstrcasecmp(store1->address, store2->address) &&
+          bstrcasecmp(store1->password.value, store2->password.value);
+}
+
+/*
  * Make a quick check to see that we have all the
  * resources needed.
  *
@@ -609,25 +637,35 @@ static bool check_resources()
       Jmsg(NULL, M_FATAL, 0, _("No Director resource defined in %s\n"
                                "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
+      goto bail_out;
    } else {
+      my_config->m_omit_defaults = me->omit_defaults;
       set_working_directory(me->working_directory);
       if (!me->messages) {       /* If message resource not specified */
          me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
             OK = false;
+            goto bail_out;
          }
       }
 
-      if (me->optimize_for_size && me->optimize_for_speed) {
+      /*
+       * When the user didn't force use we optimize for size.
+       */
+      if (!me->optimize_for_size && !me->optimize_for_speed) {
+         me->optimize_for_size = true;
+      } else if (me->optimize_for_size && me->optimize_for_speed) {
          Jmsg(NULL, M_FATAL, 0, _("Cannot optimize for speed and size define only one in %s\n"), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (GetNextRes(R_DIRECTOR, (RES *)me) != NULL) {
          Jmsg(NULL, M_FATAL, 0, _("Only one Director resource permitted in %s\n"),
             configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -639,6 +677,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
+            goto bail_out;
          }
       }
 
@@ -647,11 +686,13 @@ static bool check_resources()
       if (!me->tls_certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (!me->tls_keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if ((!me->tls_ca_certfile && !me->tls_ca_certdir) &&
@@ -662,6 +703,7 @@ static bool check_resources()
               " when using \"TLS Verify Peer\".\n"),
               me->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -682,6 +724,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  me->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
    }
@@ -689,194 +732,13 @@ static bool check_resources()
    if (!job) {
       Jmsg(NULL, M_FATAL, 0, _("No Job records defined in %s\n"), configfile);
       OK = false;
+      goto bail_out;
    }
 
-   foreach_res(job, R_JOB) {
-      if (job->jobdefs) {
-         /*
-          * Handle Storage alists specifically
-          */
-         JOBRES *jobdefs = job->jobdefs;
-         if (jobdefs->storage && !job->storage) {
-            STORERES *store;
-            job->storage = New(alist(10, not_owned_by_alist));
-            foreach_alist(store, jobdefs->storage) {
-               job->storage->append(store);
-            }
-         }
-
-         /*
-          * Handle RunScripts alists specifically
-          */
-         if (jobdefs->RunScripts) {
-            RUNSCRIPT *rs, *elt;
-
-            if (!job->RunScripts) {
-               job->RunScripts = New(alist(10, not_owned_by_alist));
-            }
-
-            foreach_alist(rs, jobdefs->RunScripts) {
-               elt = copy_runscript(rs);
-               job->RunScripts->append(elt); /* we have to free it */
-            }
-         }
-
-         /*
-          * Transfer default items from JobDefs Resource
-          */
-         for (int i = 0; job_items[i].name; i++) {
-            char **def_svalue, **svalue;   /* string value */
-            uint32_t *def_ivalue, *ivalue; /* integer value */
-            bool *def_bvalue, *bvalue;     /* bool value */
-            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
-            uint32_t offset;
-
-            Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
-                job->name(), job_items[i].name,
-                bit_is_set(i, job->hdr.item_present),
-                bit_is_set(i, job->jobdefs->hdr.item_present));
-
-            if (!bit_is_set(i, job->hdr.item_present) &&
-                 bit_is_set(i, job->jobdefs->hdr.item_present)) {
-               Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
-                     job->name(), job_items[i].name);
-               offset = (char *)(job_items[i].value) - (char *)&res_all;
-               if (job_items[i].handler == store_str ||
-                   job_items[i].handler == store_dir) {
-                  /*
-                   * Handle strings and directory strings
-                   */
-                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
-                        job->name(), job_items[i].name, *def_svalue, i, offset);
-                  svalue = (char **)((char *)job + offset);
-                  if (*svalue) {
-                     free(*svalue);
-                  }
-                  *svalue = bstrdup(*def_svalue);
-                  set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_res) {
-                  /*
-                   * Handle resources
-                   */
-                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
-                  Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
-                        job->name(), job_items[i].name, i, offset);
-                  svalue = (char **)((char *)job + offset);
-                  if (*svalue) {
-                     Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
-                  }
-                  *svalue = *def_svalue;
-                  set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_alist_res) {
-                  /*
-                   * Handle alist resources
-                   */
-                  if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
-                     set_bit(i, job->hdr.item_present);
-                  }
-               } else if (job_items[i].handler == store_bit ||
-                          job_items[i].handler == store_pint32 ||
-                          job_items[i].handler == store_jobtype ||
-                          job_items[i].handler == store_protocoltype ||
-                          job_items[i].handler == store_level ||
-                          job_items[i].handler == store_int32 ||
-                          job_items[i].handler == store_size32 ||
-                          job_items[i].handler == store_migtype ||
-                          job_items[i].handler == store_replace) {
-                  /*
-                   * Handle integer fields
-                   *    Note, our store_bit does not handle bitmaped fields
-                   */
-                  def_ivalue = (uint32_t *)((char *)(job->jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_ivalue, i, offset);
-                  ivalue = (uint32_t *)((char *)job + offset);
-                  *ivalue = *def_ivalue;
-                  set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_time ||
-                          job_items[i].handler == store_size64 ||
-                          job_items[i].handler == store_int64 ||
-                          job_items[i].handler == store_speed) {
-                  /*
-                   * Handle 64 bit integer fields
-                   */
-                  def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_lvalue, i, offset);
-                  lvalue = (int64_t *)((char *)job + offset);
-                  *lvalue = *def_lvalue;
-                  set_bit(i, job->hdr.item_present);
-               } else if (job_items[i].handler == store_bool) {
-                  /*
-                   * Handle bool fields
-                   */
-                  def_bvalue = (bool *)((char *)(job->jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_bvalue, i, offset);
-                  bvalue = (bool *)((char *)job + offset);
-                  *bvalue = *def_bvalue;
-                  set_bit(i, job->hdr.item_present);
-               }
-            }
-         }
-      }
-
-      /*
-       * Ensure that all required items are present
-       */
-      for (int i = 0; job_items[i].name; i++) {
-         if (job_items[i].flags & ITEM_REQUIRED) {
-               if (!bit_is_set(i, job->hdr.item_present)) {
-                  Jmsg(NULL, M_ERROR_TERM, 0,
-                       _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
-                       job_items[i].name, job->name());
-                  OK = false;
-                }
-         }
-
-         /*
-          * If this triggers, take a look at lib/parse_conf.h
-          */
-         if (i >= MAX_RES_ITEMS) {
-            Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
-         }
-      }
-
-      /*
-       * For Copy and Migrate we can have Jobs without a client or fileset.
-       */
-      switch (job->JobType) {
-      case JT_COPY:
-      case JT_MIGRATE:
-         break;
-      default:
-         /*
-          * All others must have a client and fileset.
-          */
-         if (!job->client) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"),
-                 job->name());
-            OK = false;
-         }
-
-         if (!job->fileset) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"),
-                 job->name());
-            OK = false;
-         }
-         break;
-      }
-
-      if (!job->storage && !job->pool->storage) {
-         Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"),
-            job->name());
-         OK = false;
-      }
-   } /* End loop over Job res */
-
+   if (!populate_jobdefs()) {
+      OK = false;
+      goto bail_out;
+   }
 
    /*
     * Loop over Consoles
@@ -892,7 +754,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
 
@@ -902,12 +764,14 @@ static bool check_resources()
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if (!cons->tls_keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir)
@@ -918,6 +782,7 @@ static bool check_resources()
             " when using \"TLS Verify Peer\".\n"),
             cons->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -937,6 +802,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                cons->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
 
@@ -964,7 +830,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
       need_tls = client->tls_enable || client->tls_authenticate;
@@ -973,6 +839,7 @@ static bool check_resources()
             " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
             client->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -992,6 +859,7 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
             OK = false;
+            goto bail_out;
          }
       }
    }
@@ -999,7 +867,7 @@ static bool check_resources()
    /*
     * Loop over Storages
     */
-   STORERES *store;
+   STORERES *store, *nstore;
    foreach_res(store, R_STORAGE) {
       /*
        * tls_require implies tls_enable
@@ -1010,7 +878,7 @@ static bool check_resources()
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
-            continue;
+            goto bail_out;
          }
       }
 
@@ -1021,6 +889,7 @@ static bool check_resources()
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
          OK = false;
+         goto bail_out;
       }
 
       /*
@@ -1039,6 +908,22 @@ static bool check_resources()
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);
             OK = false;
+            goto bail_out;
+         }
+      }
+
+      /*
+       * If we collect statistics on this SD make sure any other entry pointing to the same SD does not
+       * collect statistics otherwise we collect the same data multiple times.
+       */
+      if (store->collectstats) {
+         nstore = store;
+         while ((nstore = (STORERES *)GetNextRes(R_STORAGE, (RES *)nstore))) {
+            if (is_same_storage_daemon(store, nstore) && nstore->collectstats) {
+               nstore->collectstats = false;
+               Dmsg1(200, _("Disabling collectstats for storage \"%s\""
+                            " as other storage already collects from this SD.\n"), nstore->name());
+            }
          }
       }
    }
@@ -1048,6 +933,8 @@ static bool check_resources()
       close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, me->messages); /* open daemon message handler */
    }
+
+bail_out:
    return OK;
 }
 
@@ -1060,9 +947,13 @@ static bool initialize_sql_pooling(void)
    CATRES *catalog;
 
    foreach_res(catalog, R_CATALOG) {
-      if (!db_sql_pool_initialize(catalog->db_driver, catalog->db_name, catalog->db_user,
-                                  catalog->db_password, catalog->db_address,
-                                  catalog->db_port, catalog->db_socket,
+      if (!db_sql_pool_initialize(catalog->db_driver,
+                                  catalog->db_name,
+                                  catalog->db_user,
+                                  catalog->db_password.value,
+                                  catalog->db_address,
+                                  catalog->db_port,
+                                  catalog->db_socket,
                                   catalog->disable_batch_insert,
                                   catalog->pooling_min_connections,
                                   catalog->pooling_max_connections,
@@ -1072,10 +963,11 @@ static bool initialize_sql_pooling(void)
          Jmsg(NULL, M_FATAL, 0, _("Could not setup sql pooling for Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
          retval = false;
-         continue;
+         goto bail_out;
       }
    }
 
+bail_out:
    return retval;
 }
 
@@ -1093,6 +985,7 @@ static bool check_catalog(cat_op mode)
    CATRES *catalog;
    foreach_res(catalog, R_CATALOG) {
       B_DB *db;
+
       /*
        * Make sure we can open catalog, otherwise print a warning
        * message because the server is probably not running.
@@ -1101,7 +994,7 @@ static bool check_catalog(cat_op mode)
                             catalog->db_driver,
                             catalog->db_name,
                             catalog->db_user,
-                            catalog->db_password,
+                            catalog->db_password.value,
                             catalog->db_address,
                             catalog->db_port,
                             catalog->db_socket,
@@ -1118,7 +1011,7 @@ static bool check_catalog(cat_op mode)
             db_close_database(NULL, db);
          }
          OK = false;
-         continue;
+         goto bail_out;
       }
 
       /* Display a message if the db max_connections is too low */
@@ -1195,6 +1088,7 @@ static bool check_catalog(cat_op mode)
             Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
                  store->name());
             OK = false;
+            goto bail_out;
          }
          store->StorageId = sr.StorageId;   /* set storage Id */
          if (!sr.created) {                 /* if not created, update it */
@@ -1203,6 +1097,7 @@ static bool check_catalog(cat_op mode)
                Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
                     store->name());
                OK = false;
+               goto bail_out;
             }
          }
       }
@@ -1244,6 +1139,8 @@ static bool check_catalog(cat_op mode)
 
       db_close_database(NULL, db);
    }
+
+bail_out:
    return OK;
 }
 

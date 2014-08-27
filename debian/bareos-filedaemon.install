@@ -1,4 +1,0 @@
-/etc/bareos/bareos-fd.conf
-/etc/init.d/bareos-fd
-/usr/sbin/bareos-fd
-/usr/share/man/man8/bareos-fd.8.gz

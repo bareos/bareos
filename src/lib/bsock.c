@@ -23,15 +23,28 @@
 /*
  * Network Utility Routines
  *
- * by Kern Sibbald
+ * Kern Sibbald
  */
 
 #include "bareos.h"
 #include "jcr.h"
 
+BSOCK::BSOCK()
+{
+   m_fd = -1;
+   msg = get_pool_memory(PM_BSOCK);
+   errmsg = get_pool_memory(PM_MESSAGE);
+   m_blocking = true;
+   m_use_keepalive = true;
+}
+
+BSOCK::~BSOCK()
+{
+}
+
 /*
  * This is our "class destructor" that ensures that we use
- *   smartalloc rather than the system free().
+ * smartalloc rather than the system free().
  */
 void BSOCK::free_bsock()
 {
@@ -325,10 +338,10 @@ bail_out:
    dir->stop_timer();
    bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\"\n"
                                        "Most likely the passwords do not agree.\n"
-                                       "If you are using TLS, there may have been a certificate"
-                                       " validation error during the TLS handshake.\n"
-                                       "Please see " MANUAL_AUTH_URL " for help.\n"),
-             dir->host(), dir->port());
+                                       "If you are using TLS, there may have been a certificate "
+                                       "validation error during the TLS handshake.\n"
+                                       "Please see %s for help.\n"),
+             dir->host(), dir->port(), MANUAL_AUTH_URL);
 
    return false;
 }

@@ -34,7 +34,9 @@
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
-//static DBId_t fnid=0;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+#endif
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
 static const char *db_password = "";
@@ -86,6 +88,7 @@ static int string_handler(void *ctx, int num_fields, char **row)
 int main (int argc, char *argv[])
 {
    int ch;
+   alist* backend_directories = NULL;
    char *jobids = (char *)"1";
    char *path=NULL, *client=NULL;
    uint64_t limit=0;
@@ -176,6 +179,12 @@ int main (int argc, char *argv[])
       usage();
    }
 
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   backend_directories = New(alist(10, owned_by_alist));
+   backend_directories->append((char *)backend_directory);
+
+   db_set_backend_dirs(backend_directories);
+#endif
    if ((db = db_init_database(NULL, "ingres", db_name, db_user, db_password, db_host, 0, NULL)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }

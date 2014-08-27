@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,26 +20,34 @@
    02110-1301, USA.
 */
 /*
- * This file handles locking and seaching resources
+ * This file handles most things related to generic resources.
  *
  * Kern Sibbald, January MM
  * Split from parse_conf.c April MMV
  */
 
 #include "bareos.h"
+#include "generic_res.h"
 
-/* Each daemon has a slightly different set of
- * resources, so it will define the following
- * global values.
+/* Forward referenced subroutines */
+static void scan_types(LEX *lc, MSGSRES *msg, int dest, char *where, char *cmd);
+
+extern CONFIG *my_config;             /* Our Global config */
+
+/*
+ * Set default indention e.g. 2 spaces.
  */
-extern int32_t r_first;
-extern int32_t r_last;
-extern RES_TABLE resources[];
-extern RES **res_head;
+#define DEFAULT_INDENT_STRING "  "
 
-brwlock_t res_lock;                   /* resource lock */
+/*
+ * Define the Union of all the common resource structure definitions.
+ */
+union URES {
+   MSGSRES  res_msgs;
+   RES hdr;
+};
+
 static int res_locked = 0;            /* resource chain lock count -- for debug */
-
 
 /* #define TRACE_RES */
 
@@ -47,13 +56,13 @@ void b_LockRes(const char *file, int line)
    int errstat;
 #ifdef TRACE_RES
    Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n",
-         res_locked, res_lock.w_active, file, line);
+         res_locked, my_config->m_res_lock.w_active, file, line);
     if (res_locked) {
-       Pmsg2(000, "LockRes writerid=%d myid=%d\n", res_lock.writer_id,
+       Pmsg2(000, "LockRes writerid=%d myid=%d\n", my_config->m_res_lock.writer_id,
           pthread_self());
      }
 #endif
-   if ((errstat=rwl_writelock(&res_lock)) != 0) {
+   if ((errstat = rwl_writelock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
            file, line, strerror(errstat));
    }
@@ -63,28 +72,27 @@ void b_LockRes(const char *file, int line)
 void b_UnlockRes(const char *file, int line)
 {
    int errstat;
-   if ((errstat=rwl_writeunlock(&res_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writeunlock failure at %s:%d:. ERR=%s\n"),
            file, line, strerror(errstat));
    }
    res_locked--;
 #ifdef TRACE_RES
    Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n",
-         res_locked, res_lock.w_active, file, line);
+         res_locked, my_config->m_res_lock.w_active, file, line);
 #endif
 }
 
 /*
  * Return resource of type rcode that matches name
  */
-RES *
-GetResWithName(int rcode, const char *name)
+RES *GetResWithName(int rcode, const char *name)
 {
    RES *res;
-   int rindex = rcode - r_first;
+   int rindex = rcode - my_config->m_r_first;
 
    LockRes();
-   res = res_head[rindex];
+   res = my_config->m_res_head[rindex];
    while (res) {
       if (bstrcmp(res->name, name)) {
          break;
@@ -101,16 +109,1579 @@ GetResWithName(int rcode, const char *name)
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-RES *
-GetNextRes(int rcode, RES *res)
+RES *GetNextRes(int rcode, RES *res)
 {
    RES *nres;
-   int rindex = rcode - r_first;
+   int rindex = rcode - my_config->m_r_first;
 
    if (res == NULL) {
-      nres = res_head[rindex];
+      nres = my_config->m_res_head[rindex];
    } else {
       nres = res->next;
    }
    return nres;
+}
+
+const char *res_to_str(int rcode)
+{
+   if (rcode < my_config->m_r_first || rcode > my_config->m_r_last) {
+      return _("***UNKNOWN***");
+   } else {
+      return my_config->m_resources[rcode - my_config->m_r_first].name;
+   }
+}
+
+/*
+ * Store Messages Destination information
+ */
+static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+   char *cmd;
+   POOLMEM *dest;
+   int dest_len;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
+   if (pass == 1) {
+      switch (item->code) {
+      case MD_STDOUT:
+      case MD_STDERR:
+      case MD_SYSLOG:              /* syslog */
+      case MD_CONSOLE:
+      case MD_CATALOG:
+         scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL);
+         break;
+      case MD_OPERATOR:            /* send to operator */
+      case MD_DIRECTOR:            /* send to Director */
+      case MD_MAIL:                /* mail */
+      case MD_MAIL_ON_ERROR:       /* mail if Job errors */
+      case MD_MAIL_ON_SUCCESS:     /* mail if Job succeeds */
+         if (item->code == MD_OPERATOR) {
+            cmd = res_all->res_msgs.operator_cmd;
+         } else {
+            cmd = res_all->res_msgs.mail_cmd;
+         }
+         dest = get_pool_memory(PM_MESSAGE);
+         dest[0] = 0;
+         dest_len = 0;
+         /*
+          * Pick up comma separated list of destinations
+          */
+         for ( ;; ) {
+            token = lex_get_token(lc, T_NAME);   /* scan destination */
+            dest = check_pool_memory_size(dest, dest_len + lc->str_len + 2);
+            if (dest[0] != 0) {
+               pm_strcat(dest, " ");  /* separate multiple destinations with space */
+               dest_len++;
+            }
+            pm_strcat(dest, lc->str);
+            dest_len += lc->str_len;
+            Dmsg2(900, "store_msgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
+            token = lex_get_token(lc, T_SKIP_EOL);
+            if (token == T_COMMA) {
+               continue;           /* get another destination */
+            }
+            if (token != T_EQUALS) {
+               scan_err1(lc, _("expected an =, got: %s"), lc->str);
+               return;
+            }
+            break;
+         }
+         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
+         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, cmd);
+         free_pool_memory(dest);
+         Dmsg0(900, "done with dest codes\n");
+         break;
+      case MD_FILE:                /* file */
+      case MD_APPEND:              /* append */
+         dest = get_pool_memory(PM_MESSAGE);
+         /*
+          * Pick up a single destination
+          */
+         token = lex_get_token(lc, T_NAME);   /* scan destination */
+         pm_strcpy(dest, lc->str);
+         dest_len = lc->str_len;
+         token = lex_get_token(lc, T_SKIP_EOL);
+         Dmsg1(900, "store_msgs dest=%s:\n", NPRT(dest));
+         if (token != T_EQUALS) {
+            scan_err1(lc, _("expected an =, got: %s"), lc->str);
+            return;
+         }
+         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL);
+         free_pool_memory(dest);
+         Dmsg0(900, "done with dest codes\n");
+         break;
+      default:
+         scan_err1(lc, _("Unknown item code: %d\n"), item->code);
+         return;
+      }
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+   Dmsg0(900, "Done store_msgs\n");
+}
+
+/*
+ * Scan for message types and add them to the message
+ * destination. The basic job here is to connect message types
+ *  (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
+ *  destination (MAIL, FILE, OPERATOR, ...)
+ */
+static void scan_types(LEX *lc, MSGSRES *msg, int dest_code, char *where, char *cmd)
+{
+   int i;
+   bool found, is_not;
+   int msg_type = 0;
+   char *str;
+
+   for ( ;; ) {
+      lex_get_token(lc, T_NAME);            /* expect at least one type */
+      found = false;
+      if (lc->str[0] == '!') {
+         is_not = true;
+         str = &lc->str[1];
+      } else {
+         is_not = false;
+         str = &lc->str[0];
+      }
+      for (i = 0; msg_types[i].name; i++) {
+         if (bstrcasecmp(str, msg_types[i].name)) {
+            msg_type = msg_types[i].token;
+            found = true;
+            break;
+         }
+      }
+      if (!found) {
+         scan_err1(lc, _("message type: %s not found"), str);
+         return;
+      }
+
+      if (msg_type == M_MAX+1) {         /* all? */
+         for (i = 1; i <= M_MAX; i++) {      /* yes set all types */
+            add_msg_dest(msg, dest_code, i, where, cmd);
+         }
+      } else if (is_not) {
+         rem_msg_dest(msg, dest_code, msg_type, where);
+      } else {
+         add_msg_dest(msg, dest_code, msg_type, where, cmd);
+      }
+      if (lc->ch != ',') {
+         break;
+      }
+      Dmsg0(900, "call lex_get_token() to eat comma\n");
+      lex_get_token(lc, T_ALL);          /* eat comma */
+   }
+   Dmsg0(900, "Done scan_types()\n");
+}
+
+/*
+ * This routine is ONLY for resource names
+ *  Store a name at specified address.
+ */
+static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   POOLMEM *msg = get_pool_memory(PM_EMSG);
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   if (!is_name_valid(lc->str, &msg)) {
+      scan_err1(lc, "%s\n", msg);
+      return;
+   }
+   free_pool_memory(msg);
+   /*
+    * Store the name both pass 1 and pass 2
+    */
+   if (*(item->value)) {
+      scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."),
+         *(item->value), lc->str);
+      return;
+   }
+   *(item->value) = bstrdup(lc->str);
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a name string at specified address
+ * A name string is limited to MAX_RES_NAME_LENGTH
+ */
+static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   /*
+    * Store the name
+    */
+   lex_get_token(lc, T_NAME);
+   if (pass == 1) {
+      /*
+       * If a default was set free it first.
+       */
+      if (*(item->value)) {
+         free(*(item->value));
+      }
+      *(item->value) = bstrdup(lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a string at specified address
+ */
+static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      /*
+       * If a default was set free it first.
+       */
+      if (*(item->value)) {
+         free(*(item->value));
+      }
+      *(item->value) = bstrdup(lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a directory name at specified address. Note, we do
+ * shell expansion except if the string begins with a vertical
+ * bar (i.e. it will likely be passed to the shell later).
+ */
+static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      /*
+       * If a default was set free it first.
+       */
+      if (*(item->value)) {
+         free(*(item->value));
+      }
+      if (lc->str[0] != '|') {
+         do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
+      }
+      *(item->value) = bstrdup(lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a password at specified address in MD5 coding
+ */
+static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   s_password *pwd;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      pwd = item->pwdvalue;
+
+      if (pwd->value) {
+         free(pwd->value);
+      }
+
+      /*
+       * See if we are parsing an MD5 encoded password already.
+       */
+      if (bstrncmp(lc->str, "[md5]", 5)) {
+         pwd->encoding = p_encoding_md5;
+         pwd->value = bstrdup(lc->str + 5);
+      } else {
+         unsigned int i, j;
+         MD5_CTX md5c;
+         unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
+         char sig[100];
+
+         MD5_Init(&md5c);
+         MD5_Update(&md5c, (unsigned char *) (lc->str), lc->str_len);
+         MD5_Final(digest, &md5c);
+         for (i = j = 0; i < sizeof(digest); i++) {
+            sprintf(&sig[j], "%02x", digest[i]);
+            j += 2;
+         }
+         pwd->encoding = p_encoding_md5;
+         pwd->value = bstrdup(sig);
+      }
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a password at specified address in MD5 coding
+ */
+static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   s_password *pwd;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      pwd = item->pwdvalue;
+
+      if (pwd->value) {
+         free(pwd->value);
+      }
+
+      pwd->encoding = p_encoding_clear;
+      pwd->value = bstrdup(lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a resource at specified address.
+ * If we are in pass 2, do a lookup of the
+ * resource.
+ */
+static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   RES *res;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   if (pass == 2) {
+      res = GetResWithName(item->code, lc->str);
+      if (res == NULL) {
+         scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
+                   lc->str, lc->line_no, lc->line);
+         return;
+      }
+      if (*(item->resvalue)) {
+         scan_err3(lc, _("Attempt to redefine resource \"%s\" referenced on line %d : %s\n"),
+                   item->name, lc->line_no, lc->line);
+         return;
+      }
+      *(item->resvalue) = res;
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a resource pointer in an alist. default_value indicates how many
+ * times this routine can be called -- i.e. how many alists there are.
+ *
+ * If we are in pass 2, do a lookup of the resource.
+ */
+static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   RES *res;
+   int i = 0;
+   alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
+   int count = str_to_int32(item->default_value);
+
+   if (pass == 2) {
+      if (count == 0) {               /* always store in item->value */
+         i = 0;
+         if (!item->alistvalue[i]) {
+            item->alistvalue[i] = New(alist(10, not_owned_by_alist));
+         }
+      } else {
+         /*
+          * Find empty place to store this directive
+          */
+         while ((item->value)[i] != NULL && i++ < count) { }
+         if (i >= count) {
+            scan_err4(lc, _("Too many %s directives. Max. is %d. line %d: %s\n"),
+                      lc->str, count, lc->line_no, lc->line);
+            return;
+         }
+         item->alistvalue[i] = New(alist(10, not_owned_by_alist));
+      }
+      list = item->alistvalue[i];
+
+      for (;;) {
+         lex_get_token(lc, T_NAME);   /* scan next item */
+         res = GetResWithName(item->code, lc->str);
+         if (res == NULL) {
+            scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
+                      item->name, lc->line_no, lc->line);
+            return;
+         }
+         Dmsg5(900, "Append %p to alist %p size=%d i=%d %s\n", res, list, list->size(), i, item->name);
+         list->append(res);
+         if (lc->ch != ',') {         /* if no other item follows */
+            break;                    /* get out */
+         }
+         lex_get_token(lc, T_ALL);    /* eat comma */
+      }
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a string in an alist.
+ */
+static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   if (pass == 2) {
+      if (!*(item->value)) {
+         *item->alistvalue = New(alist(10, owned_by_alist));
+      }
+      list = *item->alistvalue;
+
+      lex_get_token(lc, T_STRING);   /* scan next item */
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n",
+            lc->str, list, list->size(), item->name);
+
+      /*
+       * See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+         char *entry;
+
+         entry = (char *)list->first();
+         if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+         }
+      }
+
+      list->append(bstrdup(lc->str));
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a directory name at specified address in an alist.
+ * Note, we do shell expansion except if the string begins
+ * with a vertical bar (i.e. it will likely be passed to the
+ * shell later).
+ */
+static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   alist *list;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   if (pass == 2) {
+      if (!*item->alistvalue) {
+         *item->alistvalue = New(alist(10, owned_by_alist));
+      }
+      list = *item->alistvalue;
+
+      lex_get_token(lc, T_STRING);   /* scan next item */
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n",
+            lc->str, list, list->size(), item->name);
+
+      if (lc->str[0] != '|') {
+         do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
+      }
+
+      /*
+       * See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the CFG_ITEM_DEFAULT
+       * flag set and currently has exactly one entry.
+       */
+      if ((item->flags & CFG_ITEM_DEFAULT) && list->size() == 1) {
+         char *entry;
+
+         entry = (char *)list->first();
+         if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+         }
+      }
+
+      list->append(bstrdup(lc->str));
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store default values for Resource from xxxDefs
+ * If we are in pass 2, do a lookup of the
+ * resource and store everything not explicitly set
+ * in main resource.
+ *
+ * Note, here item points to the main resource (e.g. Job, not
+ *  the jobdefs, which we look up).
+ */
+static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   RES *res;
+
+   lex_get_token(lc, T_NAME);
+   if (pass == 2) {
+      Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
+      res = GetResWithName(item->code, lc->str);
+      if (res == NULL) {
+         scan_err3(lc, _("Missing config Resource \"%s\" referenced on line %d : %s\n"),
+                   lc->str, lc->line_no, lc->line);
+         return;
+      }
+   }
+   scan_to_eol(lc);
+}
+
+/*
+ * Store an integer at specified address
+ */
+static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_INT32);
+   *(item->i32value) = lc->int32_val;
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a positive integer at specified address
+ */
+static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_PINT32);
+   *(item->ui32value) = lc->pint32_val;
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store an 64 bit integer at specified address
+ */
+static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_INT64);
+   *(item->i64value) = lc->int64_val;
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Unit types
+ */
+enum unit_type {
+   STORE_SIZE,
+   STORE_SPEED
+};
+
+/*
+ * Store a size in bytes
+ */
+static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
+                           bool size32, enum unit_type type)
+{
+   int token;
+   uint64_t uvalue;
+   char bsize[500];
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   Dmsg0(900, "Enter store_unit\n");
+   token = lex_get_token(lc, T_SKIP_EOL);
+   errno = 0;
+   switch (token) {
+   case T_NUMBER:
+   case T_IDENTIFIER:
+   case T_UNQUOTED_STRING:
+      bstrncpy(bsize, lc->str, sizeof(bsize));  /* save first part */
+      /*
+       * If terminated by space, scan and get modifier
+       */
+      while (lc->ch == ' ') {
+         token = lex_get_token(lc, T_ALL);
+         switch (token) {
+         case T_NUMBER:
+         case T_IDENTIFIER:
+         case T_UNQUOTED_STRING:
+            bstrncat(bsize, lc->str, sizeof(bsize));
+            break;
+         }
+      }
+
+      switch (type) {
+      case STORE_SIZE:
+         if (!size_to_uint64(bsize, &uvalue)) {
+            scan_err1(lc, _("expected a size number, got: %s"), lc->str);
+            return;
+         }
+         break;
+      case STORE_SPEED:
+         if (!speed_to_uint64(bsize, &uvalue)) {
+            scan_err1(lc, _("expected a speed number, got: %s"), lc->str);
+            return;
+         }
+         break;
+      default:
+         scan_err0(lc, _("unknown unit type encountered"));
+         return;
+      }
+
+      if (size32) {
+         *(item->ui32value) = (uint32_t)uvalue;
+      } else {
+         switch (type) {
+         case STORE_SIZE:
+            *(item->i64value) = uvalue;
+            break;
+         case STORE_SPEED:
+            *(item->ui64value) = uvalue;
+            break;
+         }
+      }
+      break;
+   default:
+      scan_err2(lc, _("expected a %s, got: %s"),
+                (type == STORE_SIZE)?_("size"):_("speed"), lc->str);
+      return;
+   }
+   if (token != T_EOL) {
+      scan_to_eol(lc);
+   }
+   set_bit(index, res_all->hdr.item_present);
+   Dmsg0(900, "Leave store_unit\n");
+}
+
+/*
+ * Store a size in bytes
+ */
+static void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   store_int_unit(lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
+}
+
+/*
+ * Store a size in bytes
+ */
+static void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   store_int_unit(lc, item, index, pass, false /* not 32 bit */, STORE_SIZE);
+}
+
+/*
+ * Store a speed in bytes/s
+ */
+static void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
+}
+
+/*
+ * Store a time period in seconds
+ */
+static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+   utime_t utime;
+   char period[500];
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   token = lex_get_token(lc, T_SKIP_EOL);
+   errno = 0;
+   switch (token) {
+   case T_NUMBER:
+   case T_IDENTIFIER:
+   case T_UNQUOTED_STRING:
+      bstrncpy(period, lc->str, sizeof(period));  /* get first part */
+      /*
+       * If terminated by space, scan and get modifier
+       */
+      while (lc->ch == ' ') {
+         token = lex_get_token(lc, T_ALL);
+         switch (token) {
+         case T_NUMBER:
+         case T_IDENTIFIER:
+         case T_UNQUOTED_STRING:
+            bstrncat(period, lc->str, sizeof(period));
+            break;
+         }
+      }
+      if (!duration_to_utime(period, &utime)) {
+         scan_err1(lc, _("expected a time period, got: %s"), period);
+         return;
+      }
+      *(item->utimevalue) = utime;
+      break;
+   default:
+      scan_err1(lc, _("expected a time period, got: %s"), lc->str);
+      return;
+   }
+   if (token != T_EOL) {
+      scan_to_eol(lc);
+   }
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a yes/no in a bit field
+ */
+static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+      *(item->ui32value) |= item->code;
+   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+      *(item->ui32value) &= ~(item->code);
+   } else {
+      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
+      return;
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store a bool in a bit field
+ */
+static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
+      *item->boolvalue = true;
+   } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
+      *(item->boolvalue) = false;
+   } else {
+      scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
+      return;
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store Tape Label Type (BAREOS, ANSI, IBM)
+ */
+static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   /*
+    * Store the label pass 2 so that type is defined
+    */
+   for (i = 0; tapelabels[i].name; i++) {
+      if (bstrcasecmp(lc->str, tapelabels[i].name)) {
+         *(item->ui32value) = tapelabels[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Tape Label keyword, got: %s"), lc->str);
+      return;
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
+ * Store network addresses.
+ *
+ *   my tests
+ *   positiv
+ *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port = http; } }
+ *   = { ip = {
+ *         addr = 1.2.3.4; port = 1205; }
+ *     ipv4 = {
+ *         addr = 1.2.3.4; port = http; }
+ *     ipv6 = {
+ *       addr = 1.2.3.4;
+ *       port = 1205;
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *       port = 1205
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *     }
+ *     ip = {
+ *       addr = 2001:220:222::2
+ *     }
+ *     ip = {
+ *       addr = bluedot.thun.net
+ (     }
+ *   }
+ *   negativ
+ *   = { ip = { } }
+ *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
+ *   = { ipv4 { port = 4711 } }
+ */
+static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
+{
+   int token;
+   int exist;
+   int family = 0;
+   char errmsg[1024];
+   char port_str[128];
+   char hostname_str[1024];
+   enum {
+      EMPTYLINE = 0x0,
+      PORTLINE = 0x1,
+      ADDRLINE = 0x2
+   } next_line = EMPTYLINE;
+   int port = str_to_int32(item->default_value);
+
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (token != T_BOB) {
+      scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
+   }
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (token == T_EOB) {
+      scan_err0(lc, _("Empty addr block is not allowed"));
+   }
+   do {
+      if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
+         scan_err1(lc, _("Expected a string, got: %s"), lc->str);
+      }
+      if (bstrcasecmp("ip", lc->str) || bstrcasecmp("ipv4", lc->str)) {
+         family = AF_INET;
+#ifdef HAVE_IPV6
+      } else if (bstrcasecmp("ipv6", lc->str)) {
+         family = AF_INET6;
+      } else {
+         scan_err1(lc, _("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
+      }
+#else
+      } else {
+         scan_err1(lc, _("Expected a string [ip|ipv4], got: %s"), lc->str);
+      }
+#endif
+      token = lex_get_token(lc, T_SKIP_EOL);
+      if (token != T_EQUALS) {
+         scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
+      }
+      token = lex_get_token(lc, T_SKIP_EOL);
+      if (token != T_BOB) {
+         scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
+      }
+      token = lex_get_token(lc, T_SKIP_EOL);
+      exist = EMPTYLINE;
+      port_str[0] = hostname_str[0] = '\0';
+      do {
+         if (token != T_IDENTIFIER) {
+            scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
+         }
+         if (bstrcasecmp("port", lc->str)) {
+            next_line = PORTLINE;
+            if (exist & PORTLINE) {
+               scan_err0(lc, _("Only one port per address block"));
+            }
+            exist |= PORTLINE;
+         } else if (bstrcasecmp("addr", lc->str)) {
+            next_line = ADDRLINE;
+            if (exist & ADDRLINE) {
+               scan_err0(lc, _("Only one addr per address block"));
+            }
+            exist |= ADDRLINE;
+         } else {
+            scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
+         }
+         token = lex_get_token(lc, T_SKIP_EOL);
+         if (token != T_EQUALS) {
+            scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
+         }
+         token = lex_get_token(lc, T_SKIP_EOL);
+         switch (next_line) {
+         case PORTLINE:
+            if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+               scan_err1(lc, _("Expected a number or a string, got: %s"), lc->str);
+            }
+            bstrncpy(port_str, lc->str, sizeof(port_str));
+            break;
+         case ADDRLINE:
+            if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
+               scan_err1(lc, _("Expected an IP number or a hostname, got: %s"),
+                         lc->str);
+            }
+            bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
+            break;
+         case EMPTYLINE:
+            scan_err0(lc, _("State machine missmatch"));
+            break;
+         }
+         token = lex_get_token(lc, T_SKIP_EOL);
+      } while (token == T_IDENTIFIER);
+      if (token != T_EOB) {
+         scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
+      }
+      if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_MULTIPLE,
+                                    htons(port), family, hostname_str, port_str,
+                                    errmsg, sizeof(errmsg))) {
+           scan_err3(lc, _("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
+                   hostname_str, port_str, errmsg);
+      }
+      token = scan_to_next_not_eol(lc);
+   } while ((token == T_IDENTIFIER || token == T_UNQUOTED_STRING));
+   if (token != T_EOB) {
+      scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
+   }
+}
+
+static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
+{
+   int token;
+   char errmsg[1024];
+   int port = str_to_int32(item->default_value);
+
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+      scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
+   }
+   if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_ADDR,
+                    htons(port), AF_INET, lc->str, 0,
+                    errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+   }
+}
+
+static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
+{
+   int token;
+   char errmsg[1024];
+   int port = str_to_int32(item->default_value);
+
+   token = lex_get_token(lc, T_SKIP_EOL);
+   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+      scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
+   }
+   if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_PORT,
+                    htons(port), AF_INET, 0, lc->str,
+                    errmsg, sizeof(errmsg))) {
+      scan_err2(lc, _("can't add port (%s) to (%s)"), lc->str, errmsg);
+   }
+}
+
+/*
+ * Generic store resource dispatcher.
+ */
+bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   switch (type) {
+   case CFG_TYPE_STR:
+      store_str(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DIR:
+      store_dir(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MD5PASSWORD:
+      store_md5password(lc, item, index, pass);
+      break;
+   case CFG_TYPE_CLEARPASSWORD:
+      store_clearpassword(lc, item, index, pass);
+      break;
+   case CFG_TYPE_NAME:
+      store_name(lc, item, index, pass);
+      break;
+   case CFG_TYPE_STRNAME:
+      store_strname(lc, item, index, pass);
+      break;
+   case CFG_TYPE_RES:
+      store_res(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_RES:
+      store_alist_res(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_STR:
+      store_alist_str(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ALIST_DIR:
+      store_alist_dir(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INT32:
+      store_int32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PINT32:
+      store_pint32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_MSGS:
+      store_msgs(lc, item, index, pass);
+      break;
+   case CFG_TYPE_INT64:
+      store_int64(lc, item, index, pass);
+      break;
+   case CFG_TYPE_BIT:
+      store_bit(lc, item, index, pass);
+      break;
+   case CFG_TYPE_BOOL:
+      store_bool(lc, item, index, pass);
+      break;
+   case CFG_TYPE_TIME:
+      store_time(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SIZE64:
+      store_size64(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SIZE32:
+      store_size32(lc, item, index, pass);
+      break;
+   case CFG_TYPE_SPEED:
+      store_speed(lc, item, index, pass);
+      break;
+   case CFG_TYPE_DEFS:
+      store_defs(lc, item, index, pass);
+      break;
+   case CFG_TYPE_LABEL:
+      store_label(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES:
+      store_addresses(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES_ADDRESS:
+      store_addresses_address(lc, item, index, pass);
+      break;
+   case CFG_TYPE_ADDRESSES_PORT:
+      store_addresses_port(lc, item, index, pass);
+      break;
+   default:
+      return false;
+   }
+
+   return true;
+}
+
+static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
+{
+   int i;
+
+   for (i = 0; i < level; i++) {
+      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
+   }
+   pm_strcat(cfg_str, config_item);
+}
+
+static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   POOL_MEM volspec;   /* vol specification string*/
+   int64_t bytes = *(item->ui64value);
+   int factor;
+
+   /*
+    * convert default value string to numeric value
+    */
+   static const char *modifier[] = {
+      "g",
+      "m",
+      "k",
+      "",
+      NULL
+   };
+   const int64_t multiplier[] = {
+      1073741824,    /* gibi */
+      1048576,       /* mebi */
+      1024,          /* kibi */
+      1              /* byte */
+   };
+
+   if (bytes == 0) {
+      pm_strcat(volspec, "0");
+   } else {
+      for (int t=0; modifier[t]; t++) {
+         Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
+         factor = bytes / multiplier[t];
+         bytes  = bytes % multiplier[t];
+         if (factor > 0) {
+            Mmsg(temp, "%d %s ", factor, modifier[t]);
+            pm_strcat(volspec, temp.c_str());
+            Dmsg1(200, " volspec: %s\n", volspec.c_str());
+         }
+         if (bytes == 0) {
+            break;
+         }
+      }
+   }
+
+   Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str());
+}
+
+static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
+{
+   POOL_MEM temp;
+   POOL_MEM timespec;
+   utime_t secs = *(item->utimevalue);
+   int factor;
+
+   /*
+    * Reverse time formatting: 1 Month, 1 Week, etc.
+    *
+    * convert default value string to numeric value
+    */
+   static const char *modifier[] = {
+      "years",
+      "months",
+      "weeks",
+      "days",
+      "hours",
+      "minutes",
+      "seconds",
+      NULL
+   };
+   static const int32_t multiplier[] = {
+      60 * 60 * 24 * 365,
+      60 * 60 * 24 * 30,
+      60 * 60 * 24 * 7,
+      60 * 60 * 24,
+      60 * 60,
+      60,
+      1,
+      0
+   };
+
+   if (secs == 0) {
+      pm_strcat(timespec, "0");
+   } else {
+      for (int t=0; modifier[t]; t++) {
+         factor = secs / multiplier[t];
+         secs   = secs % multiplier[t];
+         if (factor > 0) {
+            Mmsg(temp, "%d %s ", factor, modifier[t]);
+            pm_strcat(timespec, temp.c_str());
+         }
+         if (secs == 0) {
+            break;
+         }
+      }
+   }
+
+   Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str());
+}
+
+bool MSGSRES::print_config(POOL_MEM &buff)
+{
+   int len;
+   POOLMEM *cmdbuf;
+   POOL_MEM cfg_str;    /* configuration as string  */
+   POOL_MEM temp;
+   MSGSRES *msgres;
+   DEST *d;
+
+   msgres = this;
+
+   pm_strcat(cfg_str, "Messages {\n");
+   Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->name());
+   pm_strcat(cfg_str, temp.c_str());
+
+   cmdbuf = get_pool_memory(PM_NAME);
+   if (msgres->mail_cmd) {
+      len = strlen(msgres->mail_cmd);
+      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+      escape_string(cmdbuf, msgres->mail_cmd, len);
+      Mmsg(temp, "   mailcommand = \"%s\"\n", cmdbuf);
+      pm_strcat(cfg_str, temp.c_str());
+   }
+
+   if (msgres->operator_cmd) {
+      len = strlen(msgres->operator_cmd);
+      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+      escape_string(cmdbuf, msgres->operator_cmd, len);
+      Mmsg(temp, "   operatorcommand = \"%s\"\n", cmdbuf);
+      pm_strcat(cfg_str, temp.c_str());
+   }
+   free_pool_memory(cmdbuf);
+
+   for (d = msgres->dest_chain; d; d = d->next) {
+      int nr_set = 0;
+      int nr_unset = 0;
+      POOL_MEM t; /* number of set   types */
+      POOL_MEM u; /* number of unset types */
+
+      for (int i = 0; msg_destinations[i].code; i++) {
+         if (msg_destinations[i].code == d->dest_code) {
+            if (msg_destinations[i].where) {
+               Mmsg(temp, "   %s = %s = ", msg_destinations[i].destination, d->where);
+            } else {
+               Mmsg(temp, "   %s = ", msg_destinations[i].destination);
+            }
+            pm_strcat(cfg_str, temp.c_str());
+            break;
+         }
+      }
+
+      for (int j = 0; j < M_MAX - 1; j++) {
+         if bit_is_set(msg_types[j].token, d->msg_types) {
+            nr_set ++;
+            Mmsg(temp, ",%s" , msg_types[j].name );
+            pm_strcat(t, temp.c_str());
+         } else {
+            Mmsg(temp, ",!%s" , msg_types[j].name );
+            nr_unset++;
+            pm_strcat(u, temp.c_str());
+         }
+      }
+
+      if (nr_set > nr_unset) {               /* if more is set than is unset */
+         pm_strcat(cfg_str,"all");           /* all, but not ... */
+         pm_strcat(cfg_str, u.c_str());
+      } else {                               /* only print set types */
+         pm_strcat(cfg_str, t.c_str() + 1);  /* skip first comma */
+      }
+      pm_strcat(cfg_str, "\n");
+   }
+
+   pm_strcat (cfg_str, "}\n\n");
+   pm_strcat (buff, cfg_str.c_str());
+
+   return true;
+}
+
+bool BRSRES::print_config(POOL_MEM &buff)
+{
+   POOL_MEM cfg_str;
+   POOL_MEM temp;
+   RES_ITEM *items;
+   int i = 0;
+   int rindex = this->hdr.rcode - my_config->m_r_first;
+
+   /*
+    * Make sure the resource class has any items.
+    */
+   if (!my_config->m_resources[rindex].items) {
+      return true;
+   }
+
+   memcpy(my_config->m_res_all, this, my_config->m_resources[rindex].size);
+
+   pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
+   pm_strcat(cfg_str, " {\n");
+
+   items = my_config->m_resources[rindex].items;
+
+   for (i = 0; items[i].name; i++) {
+      bool print_item = false;
+
+      /*
+       * If this is an alias for an other config keyword suppress it.
+       */
+      if ((items[i].flags & CFG_ITEM_ALIAS)) {
+         continue;
+      }
+
+      if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
+         /*
+          * Always print required items or if my_config->m_omit_defaults is false
+          */
+         print_item = true;
+      } else if (items[i].flags & CFG_ITEM_DEFAULT) {
+         /*
+          * Check for default values.
+          */
+         switch (items[i].type) {
+         case CFG_TYPE_STR:
+         case CFG_TYPE_DIR:
+         case CFG_TYPE_NAME:
+         case CFG_TYPE_STRNAME:
+            print_item = !bstrcmp(*(items[i].value), items[i].default_value);
+            break;
+         case CFG_TYPE_INT32:
+            print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_PINT32:
+            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_INT64:
+            print_item = (*(items[i].i64value) != str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SPEED:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SIZE64:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_SIZE32:
+            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+            break;
+         case CFG_TYPE_TIME:
+            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+            break;
+         case CFG_TYPE_BOOL: {
+            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
+                                 bstrcasecmp(items[i].default_value, "yes");
+
+            print_item = (*items[i].boolvalue != default_value);
+            break;
+         }
+         default:
+            break;
+         }
+      } else {
+         switch (items[i].type) {
+         case CFG_TYPE_STR:
+         case CFG_TYPE_DIR:
+         case CFG_TYPE_NAME:
+         case CFG_TYPE_STRNAME:
+            print_item = *(items[i].value) != NULL;
+            break;
+         case CFG_TYPE_INT32:
+            print_item = (*(items[i].i32value) > 0);
+            break;
+         case CFG_TYPE_PINT32:
+            print_item = (*(items[i].ui32value) > 0);
+            break;
+         case CFG_TYPE_INT64:
+            print_item = (*(items[i].i64value) > 0);
+            break;
+         case CFG_TYPE_SPEED:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_SIZE64:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_SIZE32:
+            print_item = (*(items[i].ui32value) > 0);
+            break;
+         case CFG_TYPE_TIME:
+            print_item = (*(items[i].ui64value) > 0);
+            break;
+         case CFG_TYPE_BOOL:
+            print_item = (*items[i].boolvalue != false);
+            break;
+         default:
+            break;
+         }
+      }
+
+      switch (items[i].type) {
+      case CFG_TYPE_STR:
+      case CFG_TYPE_DIR:
+      case CFG_TYPE_NAME:
+      case CFG_TYPE_STRNAME:
+         if (print_item && *(items[i].value) != NULL) {
+            Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_MD5PASSWORD:
+      case CFG_TYPE_CLEARPASSWORD:
+      case CFG_TYPE_AUTOPASSWORD:
+         if (print_item) {
+            s_password *password;
+
+            password = items[i].pwdvalue;
+            if (password && password->value != NULL) {
+               switch (password->encoding) {
+               case p_encoding_clear:
+                  Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
+                  Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
+                  break;
+               case p_encoding_md5:
+                  Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                  Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                  break;
+               default:
+                  break;
+               }
+               indent_config_item(cfg_str, 1, temp.c_str());
+            }
+         }
+         break;
+      case CFG_TYPE_LABEL:
+         for (int j = 0; tapelabels[j].name; j++) {
+            if (*(items[i].ui32value) == tapelabels[j].token) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, tapelabels[j].name)) {
+                     break;
+                  }
+               }
+
+               Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
+         }
+         break;
+      case CFG_TYPE_INT32:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i32value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_PINT32:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui32value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_INT64:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i64value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_SPEED:
+         if (print_item) {
+            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui64value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_SIZE64:
+      case CFG_TYPE_SIZE32:
+         if (print_item) {
+            print_config_size(&items[i], cfg_str);
+         }
+         break;
+      case CFG_TYPE_TIME:
+         if (print_item) {
+            print_config_time(&items[i], cfg_str);
+         }
+         break;
+      case CFG_TYPE_BOOL:
+         if (print_item) {
+            if (*items[i].boolvalue) {
+               Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
+            } else {
+               Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
+            }
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_ALIST_STR:
+      case CFG_TYPE_ALIST_DIR: {
+        /*
+         * One line for each member of the list
+         */
+         char *value;
+         alist* list;
+         list = (alist *) *(items[i].value);
+
+         if (list != NULL) {
+            foreach_alist(value, list) {
+               /*
+                * If this is the default value skip it.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcmp(value, items[i].default_value)) {
+                     continue;
+                  }
+               }
+               Mmsg(temp, "%s = %s\n", items[i].name, value);
+               indent_config_item(cfg_str, 1, temp.c_str());
+            }
+         }
+         break;
+      }
+      case CFG_TYPE_ALIST_RES: {
+         /*
+          * Each member of the list is comma-separated
+          */
+         int cnt = 0;
+         RES *res;
+         alist* list;
+         POOL_MEM res_names;
+
+         list = (alist *) *(items[i].value);
+         if (list != NULL) {
+            Mmsg(temp, "%s = ", items[i].name);
+            indent_config_item(cfg_str, 1, temp.c_str());
+
+            pm_strcpy(res_names, "");
+            foreach_alist(res, list) {
+               if (cnt) {
+                  Mmsg(temp, ",\"%s\"", res->name);
+               } else {
+                  Mmsg(temp, "\"%s\"", res->name);
+               }
+               pm_strcat(res_names, temp.c_str());
+               cnt++;
+            }
+
+            pm_strcat(cfg_str, res_names.c_str());
+            pm_strcat(cfg_str, "\n");
+         }
+         break;
+      }
+      case CFG_TYPE_RES: {
+         RES *res;
+
+         res = (RES *)*(items[i].value);
+         if (res != NULL && res->name != NULL) {
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      }
+      case CFG_TYPE_BIT:
+         if (*(items[i].ui32value) & items[i].code) {
+            Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
+         } else {
+            Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
+         }
+         indent_config_item(cfg_str, 1, temp.c_str());
+         break;
+      case CFG_TYPE_MSGS:
+         /*
+          * We ignore these items as they are printed in a special way in MSGSRES::print_config()
+          */
+         break;
+      case CFG_TYPE_ADDRESSES: {
+         dlist *addrs = *items[i].dlistvalue;
+         IPADDR *adr;
+
+         Mmsg(temp, "%s = {\n", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+         foreach_dlist(adr, addrs) {
+            char tmp[1024];
+
+            adr->build_config_str(tmp, sizeof(tmp));
+            pm_strcat(cfg_str, tmp);
+            pm_strcat(cfg_str, "\n");
+         }
+
+         indent_config_item(cfg_str, 1, "}\n");
+         break;
+      }
+      case CFG_TYPE_ADDRESSES_PORT:
+         /*
+          * Is stored in CFG_TYPE_ADDRESSES and printed there.
+          */
+         break;
+      case CFG_TYPE_ADDRESSES_ADDRESS:
+         /*
+          * Is stored in CFG_TYPE_ADDRESSES and printed there.
+          */
+         break;
+      default:
+         /*
+          * This is a non-generic type call back to the daemon to get things printed.
+          */
+         if (my_config->m_print_res) {
+            my_config->m_print_res(items, i, cfg_str);
+         }
+         break;
+      }
+   }
+
+   pm_strcat(cfg_str, "}\n\n");
+   pm_strcat(buff, cfg_str.c_str());
+
+   return true;
 }

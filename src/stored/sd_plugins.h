@@ -115,7 +115,8 @@ typedef enum {
   bsdEventVolumeStatus = 17,
   bsdEventSetupRecordTranslation = 18,
   bsdEventReadRecordTranslation = 19,
-  bsdEventWriteRecordTranslation = 20
+  bsdEventWriteRecordTranslation = 20,
+  bsdEventDeviceReleased = 21
 } bsdEventType;
 
 #define SD_NR_EVENTS bsdEventWriteRecordTranslation /* keep this updated ! */
@@ -153,6 +154,7 @@ typedef struct s_sdbareosFuncs {
                             const char *imsg, const char *cmd);
    char *(*LookupCryptoKey)(const char *VolumeName);
    bool (*UpdateVolumeInfo)(DCR *dcr);
+   void (*UpdateTapeAlert)(DCR *dcr, uint64_t flags);
    DEV_RECORD *(*new_record)(bool with_data);
    void (*copy_record_state)(DEV_RECORD *dst, DEV_RECORD *src);
    void (*free_record)(DEV_RECORD *rec);

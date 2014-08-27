@@ -32,6 +32,7 @@
  */
 #include "bareos.h"
 #include "jcr.h"
+#include "dlfcn.h"
 #include "findlib/find.h"
 
 /*
@@ -434,6 +435,8 @@ static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*=
 
    wchar_t *win32_name = &pwszBuf[nParseOffset];
    wchar_t *name_start = name;
+   wchar_t previous_char = 0;
+   wchar_t next_char = 0;
 
    while (*name) {
       /*
@@ -443,10 +446,12 @@ static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*=
          /*
           * Don't add a trailing slash.
           */
-         if (!*(name + 1)) {
+         next_char = *(name + 1);
+         if (previous_char != ':' && next_char == '\0') {
             name++;
             continue;
          }
+         previous_char = '\\';
          *win32_name++ = '\\';     /* convert char */
 
          /*
@@ -456,6 +461,7 @@ static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*=
             name++;
          }
       } else {
+         previous_char = *name;
          *win32_name++ = *name;    /* copy character */
       }
       name++;
@@ -709,8 +715,14 @@ int umask(int)
 void *dlopen(const char *filename, int mode)
 {
    void *handle;
+   DWORD dwFlags = 0;
 
-   handle = LoadLibraryEx(filename, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+   dwFlags |= LOAD_WITH_ALTERED_SEARCH_PATH;
+   if (mode & RTLD_NOLOAD) {
+      dwFlags |= LOAD_LIBRARY_AS_DATAFILE;
+   }
+
+   handle = LoadLibraryEx(filename, NULL, dwFlags);
 
    return handle;
 }
@@ -1152,8 +1164,8 @@ int fstat(intptr_t fd, struct stat *sb)
       Dmsg1(dbglvl,  "st_nlink=%d\n", sb->st_nlink);
    }
 
-   sb->st_mode |= S_IFREG;
    sb->st_mode = 0777;
+   sb->st_mode |= S_IFREG;
 
    /*
     * See if we need to encode in the old Bacula compatible way.

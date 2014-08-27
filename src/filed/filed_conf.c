@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,15 +49,12 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-int32_t r_first = R_FIRST;
-int32_t r_last  = R_LAST;
 static RES *sres_head[R_LAST - R_FIRST + 1];
-RES **res_head = sres_head;
+static RES **res_head = sres_head;
 
 /*
  * Forward referenced subroutines
  */
-static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass);
 
 /*
  * We build the current resource here as we are
@@ -65,14 +62,8 @@ static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass);
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-#if defined(_MSC_VER)
-extern "C" { // work around visual compiler mangling variables
-   URES res_all;
-}
-#else
-URES res_all;
-#endif
-int32_t res_all_size = sizeof(res_all);
+static URES res_all;
+static int32_t res_all_size = sizeof(res_all);
 
 /*
  * Definition of records permitted within each
@@ -84,91 +75,92 @@ int32_t res_all_size = sizeof(res_all);
  * Client or File daemon "Global" resources
  */
 static RES_ITEM cli_items[] = {
-   { "name", store_name, ITEM(res_client.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "fdport", store_addresses_port, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "fdaddress", store_addresses_address, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "fdaddresses", store_addresses, ITEM(res_client.FDaddrs), 0, ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "fdsourceaddress", store_addresses_address, ITEM(res_client.FDsrc_addr), 0, ITEM_DEFAULT, "0" },
-   { "workingdirectory", store_dir, ITEM(res_client.working_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
-   { "piddirectory", store_dir, ITEM(res_client.pid_directory), 0, ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "subsysdirectory", store_dir, ITEM(res_client.subsys_directory), 0, 0, NULL },
-   { "plugindirectory", store_dir, ITEM(res_client.plugin_directory), 0, 0, NULL },
-   { "pluginnames", store_str, ITEM(res_client.plugin_names), 0, 0, NULL },
-   { "scriptsdirectory", store_dir, ITEM(res_client.scripts_directory), 0, 0, NULL },
-   { "maximumconcurrentjobs", store_pint32, ITEM(res_client.MaxConcurrentJobs), 0, ITEM_DEFAULT, "20" },
-   { "messages", store_res, ITEM(res_client.messages), R_MSGS, 0, NULL },
-   { "sdconnecttimeout", store_time, ITEM(res_client.SDConnectTimeout), 0, ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "heartbeatinterval", store_time, ITEM(res_client.heartbeat_interval), 0, ITEM_DEFAULT, "0" },
-   { "maximumnetworkbuffersize", store_pint32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL },
+   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
+   { "fdport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdaddresses", CFG_TYPE_ADDRESSES, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
+   { "fdsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
+   { "workingdirectory", CFG_TYPE_DIR, ITEM(res_client.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
+   { "piddirectory", CFG_TYPE_DIR, ITEM(res_client.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
+   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_client.subsys_directory), 0, 0, NULL },
+   { "plugindirectory", CFG_TYPE_DIR, ITEM(res_client.plugin_directory), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_STR, ITEM(res_client.plugin_names), 0, 0, NULL },
+   { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_client.scripts_directory), 0, 0, NULL },
+   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20" },
+   { "messages", CFG_TYPE_RES, ITEM(res_client.messages), R_MSGS, 0, NULL },
+   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_client.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
+   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_client.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
+   { "maximumnetworkbuffersize", CFG_TYPE_PINT32, ITEM(res_client.max_network_buffer_size), 0, 0, NULL },
 #ifdef DATA_ENCRYPTION
-   { "pkisignatures", store_bool, ITEM(res_client.pki_sign), 0, ITEM_DEFAULT, "false" },
-   { "pkiencryption", store_bool, ITEM(res_client.pki_encrypt), 0, ITEM_DEFAULT, "false" },
-   { "pkikeypair", store_dir, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
-   { "pkisigner", store_alist_dir, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
-   { "pkimasterkey", store_alist_dir, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
-   { "pkicipher", store_cipher, ITEM(res_client.pki_cipher), 0, ITEM_DEFAULT, "aes128" },
+   { "pkisignatures", CFG_TYPE_BOOL, ITEM(res_client.pki_sign), 0, CFG_ITEM_DEFAULT, "false" },
+   { "pkiencryption", CFG_TYPE_BOOL, ITEM(res_client.pki_encrypt), 0, CFG_ITEM_DEFAULT, "false" },
+   { "pkikeypair", CFG_TYPE_DIR, ITEM(res_client.pki_keypair_file), 0, 0, NULL },
+   { "pkisigner", CFG_TYPE_ALIST_DIR, ITEM(res_client.pki_signing_key_files), 0, 0, NULL },
+   { "pkimasterkey", CFG_TYPE_ALIST_DIR, ITEM(res_client.pki_master_key_files), 0, 0, NULL },
+   { "pkicipher", CFG_TYPE_CIPHER, ITEM(res_client.pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128" },
 #endif
-   { "tlsauthenticate", store_bool, ITEM(res_client.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_client.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_client.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_client.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_client.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_client.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_client.tls_keyfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_dir, ITEM(res_client.tls_allowed_cns), 0, 0, NULL },
-   { "verid", store_str, ITEM(res_client.verid), 0, 0, NULL },
-   { "compatible", store_bool, ITEM(res_client.compatible), 0, ITEM_DEFAULT, "true" },
-   { "nokeepalive", store_bool, ITEM(res_client.nokeepalive), 0, ITEM_DEFAULT, "false" },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowbandwidthbursting", store_bool, ITEM(res_client.allow_bw_bursting), 0, ITEM_DEFAULT, "false" },
-   { "allowedscriptdir", store_alist_dir, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
-   { "allowedjobcommand", store_alist_str, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_client.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_client.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_client.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_client.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_client.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_client.tls_keyfile), 0, 0, NULL },
+   { "verid", CFG_TYPE_STR, ITEM(res_client.verid), 0, 0, NULL },
+   { "compatible", CFG_TYPE_BOOL, ITEM(res_client.compatible), 0, CFG_ITEM_DEFAULT, "true" },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL },
+   { "allowbandwidthbursting", CFG_TYPE_BOOL, ITEM(res_client.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false" },
+   { "allowedscriptdir", CFG_TYPE_ALIST_DIR, ITEM(res_client.allowed_script_dirs), 0, 0, NULL },
+   { "allowedjobcommand", CFG_TYPE_ALIST_STR, ITEM(res_client.allowed_job_cmds), 0, 0, NULL },
+   { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_client.jcr_watchdog_time), 0, 0, NULL },
+   { "alwaysuselmdb", CFG_TYPE_BOOL, ITEM(res_client.always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false" },
+   { "lmdbthreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
  * Directors that can use our services
  */
 static RES_ITEM dir_items[] = {
-   { "name", store_name, ITEM(res_dir.hdr.name), 0, ITEM_REQUIRED, NULL },
-   { "description", store_str, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "password", store_password, ITEM(res_dir.password), 0, ITEM_REQUIRED, NULL },
-   { "address", store_str, ITEM(res_dir.address), 0, 0, NULL },
-   { "monitor", store_bool, ITEM(res_dir.monitor), 0, ITEM_DEFAULT, "false" },
-   { "tlsauthenticate", store_bool, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", store_bool, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", store_bool, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", store_bool, ITEM(res_dir.tls_verify_peer), 0, ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", store_dir, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", store_dir, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", store_dir, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", store_dir, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", store_dir, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", store_dir, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", store_alist_str, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
-   { "maximumbandwidthperjob", store_speed, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowedscriptdir", store_alist_dir, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
-   { "allowedjobcommand", store_alist_str, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL },
-   { NULL, NULL, { 0 }, 0, 0, NULL }
+   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
+   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
+   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
+   { "monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, CFG_ITEM_DEFAULT, "false" },
+   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
+   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
+   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
+   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
+   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
+   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
+   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
+   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
+   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
+   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
+   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
+   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
+   { "allowedscriptdir", CFG_TYPE_ALIST_DIR, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL },
+   { "allowedjobcommand", CFG_TYPE_ALIST_STR, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
 /*
  * Message resource
  */
-extern RES_ITEM msgs_items[];
+#include "lib/msg_res.h"
 
 /*
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
-RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR },
-   { "filedaemon", cli_items, R_CLIENT },
-   { "client", cli_items, R_CLIENT }, /* alias for filedaemon */
-   { "messages", msgs_items, R_MSGS },
+static RES_TABLE resources[] = {
+   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "filedaemon", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) }, /* alias for filedaemon */
+   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { NULL, NULL, 0}
 };
 
@@ -191,7 +183,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    switch (type) {
    case R_DIRECTOR:
       sendit(sock, "Director: name=%s password=%s\n", reshdr->name,
-             res->res_dir.password);
+             res->res_dir.password.value);
       break;
    case R_CLIENT:
       sendit(sock, "Client: name=%s FDport=%d\n", reshdr->name,
@@ -240,8 +232,8 @@ void free_resource(RES *sres, int type)
    }
    switch (type) {
    case R_DIRECTOR:
-      if (res->res_dir.password) {
-         free(res->res_dir.password);
+      if (res->res_dir.password.value) {
+         free(res->res_dir.password.value);
       }
       if (res->res_dir.address) {
          free(res->res_dir.address);
@@ -389,15 +381,15 @@ void free_resource(RES *sres, int type)
 void save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
-   int rindex = type - r_first;
-   int i, size;
+   int rindex = type - R_FIRST;
+   int i;
    int error = 0;
 
    /*
     * Ensure that all required items are present
     */
    for (i = 0; items[i].name; i++) {
-      if (items[i].flags & ITEM_REQUIRED) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
                  items[i].name, resources[rindex]);
@@ -413,35 +405,36 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    if (pass == 2) {
       switch (type) {
-         /*
-          * Resources not containing a resource
-          */
          case R_MSGS:
+            /*
+             * Resources not containing a resource
+             */
             break;
-
-         /*
-          * Resources containing another resource
-          */
          case R_DIRECTOR:
+            /*
+             * Resources containing another resource
+             */
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+            } else {
+               res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+               res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
+               res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             }
-            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
-            res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
-            res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             break;
          case R_CLIENT:
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
+            } else {
+               res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
+               res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
+               res->res_client.pki_signers = res_all.res_client.pki_signers;
+               res->res_client.pki_recipients = res_all.res_client.pki_recipients;
+               res->res_client.messages = res_all.res_client.messages;
+               res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
+               res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
+               res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             }
-            res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
-            res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
-            res->res_client.pki_signers = res_all.res_client.pki_signers;
-            res->res_client.pki_recipients = res_all.res_client.pki_recipients;
-            res->res_client.messages = res_all.res_client.messages;
-            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
-            res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
-            res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
@@ -464,30 +457,11 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 
    /*
-    * The following code is only executed on pass 1
-    */
-   switch (type) {
-      case R_DIRECTOR:
-         size = sizeof(DIRRES);
-         break;
-      case R_CLIENT:
-         size = sizeof(CLIENTRES);
-         break;
-      case R_MSGS:
-         size = sizeof(MSGSRES);
-         break;
-      default:
-         printf(_("Unknown resource type %d\n"), type);
-         error = 1;
-         size = 1;
-         break;
-   }
-   /*
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(size);
-      memcpy(res, &res_all, size);
+      res = (URES *)malloc(resources[rindex].size);
+      memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
       } else {
@@ -549,23 +523,56 @@ static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item)
+static void init_resource_cb(RES_ITEM *item, int pass)
 {
-   int i;
-
-   if (item->handler == store_cipher) {
-      for (i = 0; CryptoCiphers[i].name; i++) {
-         if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
-            *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+   switch (pass) {
+   case 1:
+      switch (item->type) {
+      case CFG_TYPE_CIPHER:
+         for (int i = 0; CryptoCiphers[i].name; i++) {
+            if (bstrcasecmp(item->default_value, CryptoCiphers[i].name)) {
+               *(uint32_t *)(item->value) = CryptoCiphers[i].token;
+            }
          }
+         break;
+      default:
+         break;
       }
+      break;
+   default:
+      break;
+   }
+}
+
+/*
+ * callback function for parse_config
+ * See ../lib/parse_conf.c, function parse_config, for more generic handling.
+ */
+static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   switch (item->type) {
+   case CFG_TYPE_CIPHER:
+      store_cipher(lc, item, index, pass);
+      break;
+   default:
+      break;
    }
 }
 
 bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   config->init(configfile, NULL, NULL, init_resource_cb, exit_code,
-                (void *)&res_all, res_all_size, r_first,
-                r_last, resources, res_head);
+   config->init(configfile,
+                NULL,
+                NULL,
+                init_resource_cb,
+                parse_config_cb,
+                NULL,
+                exit_code,
+                (void *)&res_all,
+                res_all_size,
+                R_FIRST,
+                R_LAST,
+                resources,
+                res_head);
    return config->parse_config();
 }
