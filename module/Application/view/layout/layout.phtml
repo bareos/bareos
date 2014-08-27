@@ -65,9 +65,8 @@ echo $this->doctype();
 
     <body>
     
-	<!-- Navigation start -->
         <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
-            <!-- <div class="container"> -->
+            <div class="container-fluid">
 		<div class="navbar-header">
                     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
 		    	<span class="sr-only">Toggle navigation</span>
@@ -75,12 +74,9 @@ echo $this->doctype();
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-		    <img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" />&nbsp;
+		    <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
                 </div>
-
-		<!-- TODO -->
                 
-                <!--<div class="container">-->
                 <div class="collapse navbar-collapse">
 
 			<?php 
@@ -91,41 +87,21 @@ echo $this->doctype();
 					->setUlClass('nav navbar-nav');
 			?>
 
-			<!--                
-			<ul class="nav navbar-nav">
-                        <li class="active"><a href="<?php echo $this->url('home') ?>"><?php echo $this->translate('Home') ?></a></li>
-        	        <li class="active"><a href="<?php echo $this->url('job') ?>"><?php echo $this->translate('Jobs') ?></a></li>
-                	</ul> 
-		    	-->
                 </div>
-                <!--</div>-->
-            <!--</div>-->
+            </div>
         </nav>
-        <!-- Navigation end -->
-        
 
-        <div class="container">
-
-	<!-- TODO CLEANUP BREADCRUMBS -->	
-	<!-- Breadcrumbs start
-	<p>
-		<?php echo $this->navigation('navigation')
-			->breadcrumbs()
-			->setMinDepth(0)
-			->setPartial(array('partial/breadcrumb.phtml', 'Home')); 
-		?>
-	</p>
-	Breadcrumbs end -->
+        <div class="container-fluid">
 	        
-    		<?php echo $this->content; ?>
+    	<?php echo $this->content; ?>
 
-            <hr />
+        <hr />
 		
-            <footer>
-                <p class="text-muted">&copy; 2013 - <?php echo date('Y') ?> Bareos GmbH  &amp; Co. KG, GNU Affero General Public License Version 3</p>
-            </footer>
+        <footer>
+        <p class="text-muted">&copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
+        </footer>
 
-        </div> <!-- /container -->
+        </div>
 
         <?php echo $this->inlineScript() ?>
 

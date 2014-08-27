@@ -29,19 +29,49 @@ use Zend\View\Helper\AbstractHelper;
 
 class JobType extends AbstractHelper
 {
-    public function __invoke($jobType)
-    {
-	switch($jobType)
-	{
-	    case 'B':
-	      $output = "Backup";
-	      break;
-	    case 'R':
-	      $output = "Restore";
-	      break;
-	    default:
-	      $output = $jobType;
-	      break;
+	public function __invoke($jobType)
+    	{
+		switch($jobType)
+		{
+	    		case 'B':
+	      			$output = "Backup Job";
+	      		break;
+			case 'M':
+                                $output = "Migrated Job";
+                        break;
+			case 'V':
+                                $output = "Verify Job";
+                        break;
+	    		case 'R':
+	      			$output = "Restore Job";
+	      		break;
+	    		case 'U':
+	      			$output = "Console program";
+	      		break;
+			case 'I':
+                                $output = "Internal system job";
+                        break;
+			case 'D':
+                                $output = "Admin Job";
+                        break;
+			case 'A':
+                                $output = "Archive Job";
+                        break;
+			case 'C':
+                                $output = "Copy of a Job";
+                        break;
+			case 'c':
+                                $output = "Copy Job";
+                        break;
+			case 'g':
+                                $output = "Migration Job";
+                        break;
+			case 'S':
+                                $output = "Scan Job";
+                        break;
+	    		default:
+	      			$output = $jobType;
+	      		break;
 	}
 	
 	return $output;

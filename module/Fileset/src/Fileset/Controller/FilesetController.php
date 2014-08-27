@@ -38,7 +38,7 @@ class FilesetController extends AbstractActionController
 	{
 		$paginator = $this->getFilesetTable()->fetchAll(true);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage(25);
 
 		return new ViewModel(array('paginator' => $paginator));
 	}

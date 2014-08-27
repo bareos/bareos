@@ -43,6 +43,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if(count($this->allJobs) > 0) : ?>
+
 <div class="row">
 
 <div class="col-md-12">
@@ -68,7 +70,7 @@ $this->headTitle($title);
 
 <?php foreach ($this->paginator as $job) : ?>
 
-<tr>
+	<tr>
 
 	<td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $job->jobid)); ?>"><?php echo $this->escapeHtml($job->jobid); ?></a></td>
 	<td><?php echo $this->escapeHtml($job->jobname); ?></td>
@@ -131,3 +133,14 @@ echo $this->paginationControl(
 </div>
 
 </div>
+
+<?php print_r($this->job); ?>
+
+<?php elseif(count($this->allJobs) == 0) : ?>
+	<div class="alert alert-dismissable alert-info">
+	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+	<ul>
+	<li><?php echo $this->translate("No jobs found."); ?></li>
+	</ul>
+	</div>
+<?php endif; ?>
