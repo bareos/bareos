@@ -487,7 +487,9 @@ class JobTable implements ServiceLocatorAwareInterface
 		$row = $rowset->current();
 		
 		if(!$row) {
-			throw new \Exception("Could not find row $jobid");
+			// Note: If there is no record, a job for this client was never executed.
+			// Exception: throw new \Exception("Could not find row $jobid");
+			$row = null;
 		}
 		
 		return $row;
