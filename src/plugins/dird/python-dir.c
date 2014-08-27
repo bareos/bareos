@@ -550,7 +550,10 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bDirVarSDJobFiles:
    case bDirVarSDErrors:
    case bDirVarFDJobStatus:
-   case bDirVarSDJobStatus: {
+   case bDirVarSDJobStatus: 
+   case bDirVarLastRate: 
+   case bDirVarJobBytes: 
+   case bDirVarReadBytes: {
       int value;
 
       ctx = PyGetbpContext(pyCtx);
