@@ -27,8 +27,19 @@ $this->headTitle($title);
 <tr><td><b>Autoprune</b></td><td><?php echo $this->escapeHtml($client->autoprune); ?></td></tr>
 <tr><td><b>Fileretention</b></td><td><?php echo $this->printRetention($client->fileretention) . " days"; ?></td></tr>
 <tr><td><b>Jobretention</b></td><td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td></tr>
-<tr><td><b>Last successful backup</b></td><td><a href="<?php echo $this->url('job', array('action'=>'details', 'id' => $job->jobid)); ?>" title="<?php echo $job->endtime; ?>"><?php echo $this->printHumanReadableTimeperiod($job->endtime, "fuzzy")?> (Level: <?php echo $this->printJobLevel($job->level); ?>)</a></td></tr>
+
+<tr>
+<td><b>Last successful backup</b></td>
+<td>
+<?php if($job==null) : ?> never
+<?php elseif($job!=null) : ?>
+<a href="<?php echo $this->url('job', array('action'=>'details', 'id' => $job->jobid)); ?>" title="<?php echo $job->endtime; ?>"><?php echo $this->printHumanReadableTimeperiod($job->endtime, "fuzzy")?> (Level: <?php echo $this->printJobLevel($job->level); ?>)</a>
+<?php endif; ?>
+</td>
+</tr>
+
 <!-- <tr><td><b>Online status</b></td><td></td></tr> -->
+
 </table>
 
 </div>
