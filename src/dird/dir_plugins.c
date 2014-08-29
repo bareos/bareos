@@ -135,10 +135,6 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool r
       return bRC_OK;                  /* Return if no plugins loaded */
    }
 
-   if (jcr->is_job_canceled()) {
-      return bRC_Cancel;
-   }
-
    bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    event.eventType = eventType;
 
@@ -163,6 +159,10 @@ int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool r
             break;
          }
       }
+   }
+
+   if (jcr->is_job_canceled()) {
+      return bRC_Cancel;
    }
 
    return rc;
@@ -508,6 +508,18 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
       case bDirVarSDJobStatus:
          *((int *)value) = jcr->SDJobStatus;
          Dmsg1(dbglvl, "BAREOS: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
+         break;
+      case bDirVarLastRate:
+         *((int *)value) = jcr->LastRate;
+         Dmsg1(dbglvl, "BAREOS: return bDirVarLastRate=%d\n", jcr->LastRate);
+         break;
+      case bDirVarJobBytes:
+         *((int *)value) = jcr->JobBytes;
+         Dmsg1(dbglvl, "BAREOS: return bDirVarJobBytes=%d\n", jcr->JobBytes);
+         break;
+      case bDirVarReadBytes:
+         *((int *)value) = jcr->ReadBytes;
+         Dmsg1(dbglvl, "BAREOS: return bDirVarReadBytes=%d\n", jcr->ReadBytes);
          break;
       default:
          break;

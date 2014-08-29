@@ -513,10 +513,6 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bDirVarNumVols:
    case bDirVarJobStatus:
    case bDirVarPriority:
-   case bDirVarJobErrors:
-   case bDirVarJobFiles:
-   case bDirVarSDJobFiles:
-   case bDirVarSDErrors:
    case bDirVarFDJobStatus:
    case bDirVarSDJobStatus: {
       int value;
@@ -524,6 +520,21 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (brDirVariable)var, &value) == bRC_OK) {
          pRetVal = PyInt_FromLong(value);
+      }
+      break;
+   }
+   case bDirVarJobErrors:
+   case bDirVarSDErrors:
+   case bDirVarJobFiles:
+   case bDirVarSDJobFiles:
+   case bDirVarLastRate:
+   case bDirVarJobBytes:
+   case bDirVarReadBytes: {
+      uint64_t value;
+
+      ctx = PyGetbpContext(pyCtx);
+      if (bfuncs->getBareosValue(ctx, (brDirVariable)var, &value) == bRC_OK) {
+         pRetVal = PyLong_FromUnsignedLong(value);
       }
       break;
    }
