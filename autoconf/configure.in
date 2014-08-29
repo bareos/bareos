@@ -401,17 +401,20 @@ AC_ARG_ENABLE(bat,
 )
 
 BAT_DIR=
+DEBIAN_CONTROL_BAT=/dev/null
 if test x$support_bat = xyes; then
    abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
    pkg=$?
    if test $pkg = 0; then
       BAT_DIR=src/qt-console
+      DEBIAN_CONTROL_BAT=./debian/control.bareos-bat
    else
       AC_MSG_ERROR(Unable to find suitable Qt4 installation needed by bat)
    fi
 fi
 
 AC_SUBST(BAT_DIR)
+AC_SUBST_FILE(DEBIAN_CONTROL_BAT)
 
 dnl -------------------------------------------
 dnl tray-monitor (default off)
@@ -427,17 +430,20 @@ AC_ARG_ENABLE(traymonitor,
 )
 
 TRAY_MONITOR_DIR=
+DEBIAN_CONTROL_TRAYMONITOR=/dev/null
 if test x$support_traymonitor = xyes; then
    abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
    pkg=$?
    if test $pkg = 0; then
       TRAY_MONITOR_DIR=src/qt-tray-monitor
+      DEBIAN_CONTROL_TRAYMONITOR=./debian/control.bareos-traymonitor
    else
       AC_MSG_ERROR(Unable to find suitable Qt4 installation needed by tray-monitor)
    fi
 fi
 
 AC_SUBST(TRAY_MONITOR_DIR)
+AC_SUBST_FILE(DEBIAN_CONTROL_TRAYMONITOR)
 
 
 dnl -------------------------------------------
@@ -3884,6 +3890,8 @@ osx)
 debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
+   DEBIAN_CONTROL_UNIVENTION_BAREOS=/dev/null
+   DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=/dev/null
    PFILES="${PFILES} \
       debian/bareos-bat.install \
       debian/bareos-bconsole.install \
@@ -3913,6 +3921,7 @@ debian|ubuntu|univention)
       debian/bareos-storage.preinst \
       debian/bareos-tools.install \
       debian/bareos-traymonitor.install \
+      debian/control \
       platforms/debian/Makefile \
       platforms/debian/set_dbconfig_vars.sh"
    case "$DISTNAME" in
@@ -3921,12 +3930,16 @@ debian|ubuntu|univention)
             platforms/ubuntu/Makefile"
          ;;
       univention)
+         DEBIAN_CONTROL_UNIVENTION_BAREOS=./debian/control.univention-bareos
+         DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=./debian/control.univention-bareos-schema
          PFILES="${PFILES} \
             debian/univention-bareos-schema.install \
             debian/univention-bareos.install \
             platforms/univention/Makefile"
          ;;
    esac
+   AC_SUBST_FILE(DEBIAN_CONTROL_UNIVENTION_BAREOS)
+   AC_SUBST_FILE(DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA)
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`
@@ -4135,11 +4148,17 @@ dnl build a list of plugins we need to build.
 BUILD_FD_PLUGINS=""
 BUILD_SD_PLUGINS=""
 BUILD_DIR_PLUGINS=""
+DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=/dev/null
+DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=/dev/null
+DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=/dev/null
 
 if test X"$support_python" = "Xyes" ; then
    BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
    BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
    BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+   DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=./debian/control.bareos-filedaemon-python-plugin
+   DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=./debian/control.bareos-storage-python-plugin
+   DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
 fi
 
 if test X"$have_scsi_crypto" = "Xyes" ; then
@@ -4155,6 +4174,9 @@ fi
 AC_SUBST(BUILD_FD_PLUGINS)
 AC_SUBST(BUILD_SD_PLUGINS)
 AC_SUBST(BUILD_DIR_PLUGINS)
+AC_SUBST_FILE(DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
+AC_SUBST_FILE(DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
+AC_SUBST_FILE(DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
 
 dnl build a list of storage backend  we need to build.
 if test x$use_libtool != xno; then
@@ -4345,14 +4367,6 @@ echo " "
 echo "Cleaning up"
 echo " "
 ${MAKE:-make} clean
-
-dnl for some Debian based distribution, e.g. Univention, there are additional packages to build
-dnl must run after clean
-cp ${BUILD_DIR}/debian/control.common ${BUILD_DIR}/debian/control
-DEBIAN_CONTROL_ADDITIONAL=${BUILD_DIR}/platforms/$DISTNAME/debian/control.additional
-if test -e "$DEBIAN_CONTROL_ADDITIONAL"; then
-    cat $DEBIAN_CONTROL_ADDITIONAL >> ${BUILD_DIR}/debian/control
-fi
 
 echo "
 Configuration on `date`:
