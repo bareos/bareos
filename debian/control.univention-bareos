@@ -1,4 +1,3 @@
-
 Package: univention-bareos
 Architecture: all
 Depends: univention-postgresql, postgresql-8.4, bareos (>= 12.4.4), bareos-database-common, bareos-database-postgresql,
@@ -9,12 +8,3 @@ Description: meta package for univention-bareos-integration
  This package integrates the bareos backup solution into
  UCS. The package provides automatic configuration of the
  bareos director, local file daemon and storage daemon.
-
-Package: univention-bareos-schema
-Architecture: all
-Depends: shell-univention-lib (>> 2.0.17-1.125)
-Breaks: univention-ldap-server (<< 9.0.20-1.580.201303211526)
-Description: LDAP schema extension for Bareos
- This package provides the LDAP schema extension
- which enables the backup configuration for client
- systems from the Univention Management Console

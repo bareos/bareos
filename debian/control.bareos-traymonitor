@@ -1,0 +1,15 @@
+Package:        bareos-traymonitor
+Architecture:   any
+Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Suggests:       kde|gnome-desktop-environment
+Conflicts:      bacula-traymonitor
+Replaces:       bacula-traymonitor
+Description: Backup Archiving Recovery Open Sourced - tray monitor
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides a tray monitor for the Bareos backup system. It is
+ FreeDesktop-compatible, which means it will work under both KDE and
+ GNOME.
+ .
+ The monitor constantly displays Bareos's status.

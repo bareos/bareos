@@ -9,10 +9,7 @@
 @MCOMMON@
 
 all:
-	$(INSTALL) ../../debian/copyright.header ../../debian/copyright
-	$(SED) -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../../LICENSE >> ../../debian/copyright
-	cat ../../debian/copyright.footer >> ../../debian/copyright
-
+	(cd ../../debian; $(MAKE) $@;)
 
 install: install_logrotate install-dbconfig
 
@@ -77,6 +74,7 @@ install-dbconfig:
 
 clean:
 	@$(RMF) 1 2 3
+	(cd ../../debian; $(MAKE) $@;)
 
 distclean: clean
 	@$(RMF) Makefile

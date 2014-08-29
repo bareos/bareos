@@ -8,7 +8,8 @@
 #
 @MCOMMON@
 
-nothing:
+all:
+	(cd ../debian; $(MAKE) $@;)
 
 clean:
 	(cd ../debian; $(MAKE) $@;)
