@@ -80,7 +80,10 @@ typedef enum {
   bDirVarSDErrors = 21,
   bDirVarFDJobStatus = 22,
   bDirVarSDJobStatus = 23,
-  bDirVarPluginDir = 24
+  bDirVarPluginDir = 24,
+  bDirVarLastRate = 25,
+  bDirVarJobBytes = 26,
+  bDirVarReadBytes = 27
 } brDirVariable;
 
 /*
