@@ -57,56 +57,59 @@
  * Bareos Variable Ids (Read)
  */
 typedef enum {
-  bDirVarJob = 1,
-  bDirVarLevel = 2,
-  bDirVarType = 3,
-  bDirVarJobId = 4,
-  bDirVarClient = 5,
-  bDirVarNumVols = 6,
-  bDirVarPool = 7,
-  bDirVarStorage = 8,
-  bDirVarWriteStorage = 9,
-  bDirVarReadStorage = 10,
-  bDirVarCatalog = 11,
-  bDirVarMediaType = 12,
-  bDirVarJobName = 13,
-  bDirVarJobStatus = 14,
-  bDirVarPriority = 15,
-  bDirVarVolumeName = 16,
-  bDirVarCatalogRes = 17,
-  bDirVarJobErrors = 18,
-  bDirVarJobFiles = 19,
-  bDirVarSDJobFiles = 20,
-  bDirVarSDErrors = 21,
-  bDirVarFDJobStatus = 22,
-  bDirVarSDJobStatus = 23,
-  bDirVarPluginDir = 24
+   bDirVarJob = 1,
+   bDirVarLevel = 2,
+   bDirVarType = 3,
+   bDirVarJobId = 4,
+   bDirVarClient = 5,
+   bDirVarNumVols = 6,
+   bDirVarPool = 7,
+   bDirVarStorage = 8,
+   bDirVarWriteStorage = 9,
+   bDirVarReadStorage = 10,
+   bDirVarCatalog = 11,
+   bDirVarMediaType = 12,
+   bDirVarJobName = 13,
+   bDirVarJobStatus = 14,
+   bDirVarPriority = 15,
+   bDirVarVolumeName = 16,
+   bDirVarCatalogRes = 17,
+   bDirVarJobErrors = 18,
+   bDirVarJobFiles = 19,
+   bDirVarSDJobFiles = 20,
+   bDirVarSDErrors = 21,
+   bDirVarFDJobStatus = 22,
+   bDirVarSDJobStatus = 23,
+   bDirVarPluginDir = 24,
+   bDirVarLastRate = 25,
+   bDirVarJobBytes = 26,
+   bDirVarReadBytes = 27
 } brDirVariable;
 
 /*
  * Bareos Variable Ids (Write)
  */
 typedef enum {
-  bwDirVarJobReport = 1,
-  bwDirVarVolumeName = 2,
-  bwDirVarPriority = 3,
-  bwDirVarJobLevel = 4
+   bwDirVarJobReport = 1,
+   bwDirVarVolumeName = 2,
+   bwDirVarPriority = 3,
+   bwDirVarJobLevel = 4
 } bwDirVariable;
 
 /*
  * Events that are passed to plugin
  */
 typedef enum {
-  bDirEventJobStart = 1,
-  bDirEventJobEnd = 2,
-  bDirEventJobInit = 3,
-  bDirEventJobRun = 4,
-  bDirEventVolumePurged = 5,
-  bDirEventNewVolume = 6,
-  bDirEventNeedVolume = 7,
-  bDirEventVolumeFull = 8,
-  bDirEventRecyle = 9,
-  bDirEventGetScratch = 10
+   bDirEventJobStart = 1,
+   bDirEventJobEnd = 2,
+   bDirEventJobInit = 3,
+   bDirEventJobRun = 4,
+   bDirEventVolumePurged = 5,
+   bDirEventNewVolume = 6,
+   bDirEventNeedVolume = 7,
+   bDirEventVolumeFull = 8,
+   bDirEventRecyle = 9,
+   bDirEventGetScratch = 10
 } bDirEventType;
 
 #define DIR_NR_EVENTS bDirEventGetScratch /* keep this updated ! */
