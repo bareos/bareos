@@ -8,6 +8,9 @@
 #
 @MCOMMON@
 
+all:
+	(cd ../debian; $(MAKE) $@;)
+
 install:
 	(cd ../debian; $(MAKE) $@;)
 

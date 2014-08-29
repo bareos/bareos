@@ -8,7 +8,8 @@
 #
 @MCOMMON@
 
-nothing:
+all:
+	(cd ../../debian; $(MAKE) $@;)
 
 install: install-autostart install_logrotate
 
@@ -47,6 +48,7 @@ install-autostart-dir:
 
 clean:
 	@$(RMF) 1 2 3
+	(cd ../../debian; $(MAKE) $@;)
 
 distclean: clean
 	@$(RMF) Makefile

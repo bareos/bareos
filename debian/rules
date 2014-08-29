@@ -1,5 +1,6 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
+#
 # Sample debian/rules that uses debhelper.
 #
 # This file was originally written by Joey Hess and Craig Small.
@@ -24,9 +25,7 @@ FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 WORKING_DIR = /var/lib/bareos
 
-override_dh_auto_configure:
-	export LDFLAGS="" && \
-	dh_auto_configure --    \
+define CONFIGURE_COMMON
   --with-sbin-perm=755 \
   --sysconfdir=/etc/bareos \
   --with-archivedir=/var/lib/bareos/storage \
@@ -43,8 +42,6 @@ override_dh_auto_configure:
   --enable-batch-insert \
   --enable-dynamic-cats-backends \
   --enable-acl \
-  --enable-bat \
-  --enable-traymonitor \
   --enable-xattr \
   --enable-scsi-crypto \
   --enable-ndmp \
@@ -69,9 +66,24 @@ override_dh_auto_configure:
   --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   --enable-includes
+endef
 
 #  --docdir="\$(_docdir)/bareos" \
 #  --htmldir="\$(_docdir)/bareos/html" \
+
+CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) --enable-client-only
+CONFIGURE_FULL        = $(CONFIGURE_COMMON) --with-python --enable-bat --enable-traymonitor
+
+override_dh_auto_configure:
+	if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
+		echo "configure common configuration"; \
+		export LDFLAGS="" && \
+		dh_auto_configure -- $(CONFIGURE_COMMON); \
+	else \
+		echo "configure full configuration"; \
+		export LDFLAGS="" && \
+		dh_auto_configure -- $(CONFIGURE_FULL); \
+	fi
 
 override_dh_fixperms:
 	# all files in /etc/bareos
