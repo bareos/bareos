@@ -514,12 +514,12 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(dbglvl, "BAREOS: return bDirVarLastRate=%d\n", jcr->LastRate);
          break;
       case bDirVarJobBytes:
-         *((int *)value) = jcr->JobBytes;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarJobBytes=%d\n", jcr->JobBytes);
+         *((uint64_t *)value) = jcr->JobBytes;
+         Dmsg1(dbglvl, "BAREOS: return bDirVarJobBytes=%u\n", jcr->JobBytes);
          break;
       case bDirVarReadBytes:
-         *((int *)value) = jcr->ReadBytes;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarReadBytes=%d\n", jcr->ReadBytes);
+         *((uint64_t *)value) = jcr->ReadBytes;
+         Dmsg1(dbglvl, "BAREOS: return bDirVarReadBytes=%u\n", jcr->ReadBytes);
          break;
       default:
          break;
