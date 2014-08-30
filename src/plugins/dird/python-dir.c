@@ -515,7 +515,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bDirVarPriority:
    case bDirVarFDJobStatus:
    case bDirVarSDJobStatus: {
-      int value;
+      int value = 0;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (brDirVariable)var, &value) == bRC_OK) {
@@ -530,7 +530,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bDirVarLastRate:
    case bDirVarJobBytes:
    case bDirVarReadBytes: {
-      uint64_t value;
+      uint64_t value = 0;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (brDirVariable)var, &value) == bRC_OK) {
