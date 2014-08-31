@@ -85,12 +85,12 @@ int circbuf::enqueue(void *data)
    m_size++;
    m_next_in %= m_capacity;
 
-   pthread_mutex_unlock(&m_lock);
-
    /*
     * Let a waiting consumer know there is data.
     */
    pthread_cond_signal(&m_notempty);
+
+   pthread_mutex_unlock(&m_lock);
 
    return 0;
 }
@@ -127,12 +127,12 @@ void *circbuf::dequeue()
    m_size--;
    m_next_out %= m_capacity;
 
-   pthread_mutex_unlock(&m_lock);
-
    /*
     * Let a waiting producer know there is room.
     */
    pthread_cond_signal(&m_notfull);
+
+   pthread_mutex_unlock(&m_lock);
 
    return data;
 }
@@ -171,12 +171,12 @@ int circbuf::flush()
 
    m_flush = true;
 
-   pthread_mutex_unlock(&m_lock);
-
    /*
     * Let a waiting consumer know there will be no more data.
     */
    pthread_cond_signal(&m_notempty);
+
+   pthread_mutex_unlock(&m_lock);
 
    return 0;
 }

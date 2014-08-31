@@ -622,7 +622,7 @@ static inline bool setup_copy_thread(JCR *jcr, BFILE *bfd)
    new_context->flushed = false;
    new_context->cb = New(circbuf);
 
-   nr_save_elements = jcr->cp_thread->cb->capacity();
+   nr_save_elements = new_context->cb->capacity();
    new_context->save_data = (CP_THREAD_SAVE_DATA *)malloc(nr_save_elements * sizeof(CP_THREAD_SAVE_DATA));
    memset(new_context->save_data, 0, nr_save_elements * sizeof(CP_THREAD_SAVE_DATA));
    new_context->nr_save_elements = nr_save_elements;
@@ -636,7 +636,7 @@ static inline bool setup_copy_thread(JCR *jcr, BFILE *bfd)
       goto bail_out;
    }
 
-   if (pthread_create(&jcr->cp_thread->thread_id, NULL, copy_thread, (void *)jcr->cp_thread) != 0) {
+   if (pthread_create(&new_context->thread_id, NULL, copy_thread, (void *)new_context) != 0) {
       pthread_cond_destroy(&new_context->start);
       pthread_mutex_destroy(&new_context->lock);
       goto bail_out;
