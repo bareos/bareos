@@ -1,0 +1,47 @@
+\section{Passive Clients}
+\label{PassiveClient}
+
+The normal way of initializing the data channel (the channel where the backup data itself is transported)
+is done by the file daemon (client) that connects to the storage daemon.
+
+In many setups, this can cause problems, as this means that:
+\begin{itemize}
+    \item The client must be able to resolve the name of the storage daemon (Often not true, you have to do tricks with the hosts file)
+    \item The client must be allowed to create a new connection.
+    \item The client must be able to connect to the storage daemon over the network (often difficult over NAT or Firewall)
+\end{itemize}
+
+By using Passive Client, the initialization of the datachannel is reversed, so that the storage daemon connects to the filedaemon.
+This solves almost every problem created by Firewalls, NAT-gateways and resolving issues, as
+
+\begin{itemize}
+    \item The storage daemon initiates the connection, and thus can pass thru the same or similar firewallrules that the director already has to access the fileadaemon.
+    \item The client never initiates any connection, thus can be completely firewalled.
+    \item The client never needs any name resolution and is totally independent from any resolving issues.
+\end{itemize}
+
+\subsection{Usage}
+
+To use this new feature, just configure  \textbf{passive=yes} in the client definition of the director daemon:
+\begin{bconfig}{Enable passive mode in bareos-dir.conf}
+Client {
+   Name = client1-fd
+   Password = "secretpassword"
+   <input>Passive = yes</input>
+   [...]
+}
+\end{bconfig}
+
+Also, you need to set \configdirective{compatible=no} in the \file{bareos-fd.conf} configuration file:
+\begin{bconfig}{Disable compatible mode for the Bareos filedaemon in bareos-fd.conf} 
+Director {
+  Name = bareos-dir
+  Password = "secretpassword"
+}
+
+FileDaemon {
+   Name = client1-fd
+   [...]
+   <input>Compatible = no</input>
+}
+\end{bconfig}

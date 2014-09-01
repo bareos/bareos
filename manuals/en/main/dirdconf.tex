@@ -2261,21 +2261,20 @@ one Client resource definition for each machine to be backed up.
 \index[dir]{Directive!Client (or FileDaemon)}
 Start of the Client directives.
 
-\item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[dir]{Name}
-\index[dir]{Directive!Name}
+\xdirective{dir}{Name}{name}{required}{}{}{\\
 The client name which will be used in the  Job resource directive or in the
-console run command.  This directive is required.
+console run command.
+}
 
-\item [Protocol = {\textless}protocolname{\textgreater}] \hfill \\
-\index[dir]{Protocol}
-\index[dir]{Directive!Protocol}
-The backup protocol to use to run the Job. If not set it will default
-to {\bf Native} currently the director understand the following protocols:
+\xdirective{dir}{Protocol}{Native{\textbar}NDMP}{}{Native}{13.2}{\\
+The backup protocol to use to run the Job. 
+
+Currently the director understand the following protocols:
 \begin{enumerate}
 \item Native - The native Bareos protocol
 \item NDMP - The NDMP protocol
 \end{enumerate}
+}
 
 \item [Authtype = {\textless}Client-Authtype{\textgreater}] \hfill \\
 \index[dir]{Authtype}
@@ -2290,14 +2289,12 @@ The following values are allowed:
 \item MD5 - Use MD5 hashing
 \end{enumerate}
 
-\item [Address = {\textless}address{\textgreater}] \hfill \\
-\index[dir]{Address}
-\index[dir]{Directive!FD Address}
-\index[dir]{File Daemon Address}
-\index[dir]{Client Address}
+\xdirective{dir}{Address}{address}{required}{}{}{\\
 Where the address is a host name, a fully qualified domain name, or a
 network address in dotted quad notation for a Bareos File server daemon.
 This directive is required.
+\index[dir]{Client Address}
+}
 
 \item [FD Port = {\textless}port-number{\textgreater}] \hfill \\
 \index[dir]{FD Port}
@@ -2452,6 +2449,15 @@ This directive sets the loglevel for the NDMP protocol library.
 \index[sd]{Directive!NDMP Blocksize}
 This directive sets the default NDMP blocksize for this client.
 
+\xdirective{dir}{Passive}{yes{\textbar}no}{}{no}{13.2}{\\
+The normal way of initializing the data channel (the channel where the backup data itself is transported)
+is done by the file daemon (client) that connects to the storage daemon.
+
+By using the client passive mode, the initialization of the datachannel is reversed, so that the storage daemon connects to the filedaemon.
+
+See chapter \ilink{Passive Client}{PassiveClient}.
+}
+
 \item [Priority = {\textless}number{\textgreater}] \hfill \\
 \index[dir]{Priority}
 \index[dir]{Directive!Priority}
@@ -2464,15 +2470,13 @@ are performed first (not currently  implemented).
 
 The following is an example of a valid Client resource definition:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Minimal client resource definition in bareos-dir.conf}
 Client {
-  Name = minimatou
-  FDAddress = minimatou.example.com
+  Name = client1-fd
+  Address = client1.example.com
   Password = "secret"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 \section{Storage Resource}
 \label{StorageResource2}
