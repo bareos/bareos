@@ -62,17 +62,17 @@ clean:
 	@$(RMF) 1 2 3
 
 distclean:
-	@$(RMF) Makefile
 	@for subdir in ${SUBDIRS}; do \
 	    if [ -f $${subdir}/Makefile ]; then \
 		     (cd $${subdir}; $(MAKE) distclean) \
 	    fi; \
 	done
+	@$(RMF) Makefile
 
 devclean:
-	@$(RMF) Makefile
 	@for subdir in ${SUBDIRS}; do \
 	    if [ -f $${subdir}/Makefile ]; then \
 		     (cd $${subdir}; $(MAKE) devclean) \
 	    fi; \
 	done
+	@$(RMF) Makefile

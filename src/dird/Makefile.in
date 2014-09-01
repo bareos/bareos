@@ -116,8 +116,8 @@ libtool-clean:
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
-	@$(RMF) dird bareos-dir core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
-	@$(RMF) static-bareos-dir
+	@$(RMF) dird bareos-dir static-bareos-dir bareos-dbcheck
+	@$(RMF) core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
 
 realclean: clean
 	@$(RMF) tags bareos-dir.conf

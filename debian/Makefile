@@ -10,12 +10,12 @@ all:
 clean:
 	@rm -f *~ *.log
 	@rm -f -r tmp/*
+
+distclean: clean
 	@find . -type f -a -name "*.in" | sed -e 's/.in$$//' | xargs rm -f
 	# control is generated during configure,
 	# however, for Debian builds a control file must be available before.
 	# Therefore create a link to control.dummy.
 	@ln -s control.dummy control
-
-distclean: clean
 
 devclean: clean
