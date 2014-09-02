@@ -1,0 +1,160 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ * 
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+
+
+$title = 'Bareos WebUI Installation and Configuration Test';
+$this->headTitle($title);
+
+?>
+
+<h3 class="text-muted"><?php echo $title; ?></h3>
+
+<hr />
+
+<div class="row">
+<div class="col-md-6">
+
+<h4 class="text-muted">PHP</h4>
+<table class="table table-bordered table-striped">
+
+<th></th>
+<th>Required</th>
+<th>Installed</th>
+<th>Status</th>
+
+<tr>
+<td>PHP Version</td>
+<td><?php echo $this->REQUIRED_PHP_VERSION; ?></td>
+<td><?php echo $this->INSTALLED_PHP_VERSION; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->PHP_VERSION_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>PHP PDO Extension</td>
+<td><?php echo $this->REQUIRED_PDO; ?></td>
+<td><?php echo $this->INSTALLED_PDO; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->PDO_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Zend Framework 2</td>
+<td><?php echo $this->REQUIRED_ZF_VERSION; ?></td>
+<td><?php echo $this->INSTALLED_ZF_VERSION; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->ZF_VERSION_CHECK); ?></td>
+</tr>
+
+</table>
+
+<h4 class="text-muted">Database</h4>
+<table class="table table-bordered table-striped">
+
+<th></th>
+<th>Required</th>
+<th>Configured</th>
+<th>Status</th>
+
+<tr>
+<td>Driver</td>
+<td><?php echo $this->REQUIRED_DB_DRIVER; ?></td>
+<td><?php echo $this->CONFIGURED_DB_DRIVER; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_DRIVER_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Host</td>
+<td><?php echo $this->REQUIRED_DB_HOST; ?></td>
+<td><?php echo $this->CONFIGURED_DB_HOST; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_HOST_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>User</td>
+<td><?php echo $this->REQUIRED_DB_USER; ?></td>
+<td><?php echo $this->CONFIGURED_DB_USER; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_USER_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Password</td>
+<td><?php echo $this->REQUIRED_DB_PASSWORD; ?></td>
+<td><?php echo $this->CONFIGURED_DB_PASSWORD; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_PASSWORD_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Connection Test</td>
+<td></td>
+<td></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_CONNECTION_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Read-Access Test</td>
+<td></td>
+<td></td>
+<td><?php echo $this->printStatusGlyphicons($this->DB_READACCESS_CHECK); ?></td>
+</tr>
+
+</table>
+
+<h4 class="text-muted">bconsole</h4>
+<table class="table table-bordered table-striped">
+
+<th></th>
+<th>Required</th>
+<th>Configured</th>
+<th>Status</th>
+
+<tr>
+<td>Path to executable</td>
+<td><?php echo $this->REQUIRED_BCONSOLE_EXEC; ?></td>
+<td><?php echo $this->CONFIGURED_BCONSOLE_EXEC; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->BCONSOLE_EXEC_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Path to configuration</td>
+<td><?php echo $this->REQUIRED_BCONSOLE_CONF; ?></td>
+<td><?php echo $this->CONFIGURED_BCONSOLE_CONF; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->BCONSOLE_CONF_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>Use sudo</td>
+<td><?php echo $this->REQUIRED_BCONSOLE_SUDO; ?></td>
+<td><?php echo $this->CONFIGURED_BCONSOLE_SUDO; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->BCONSOLE_SUDO_CHECK); ?></td>
+</tr>
+
+</table>
+
+<a href="javascript:document.location.reload();">
+<button type="button" class="btn btn-default"><span class="glyphicon glyphicon-refresh"></span> Refresh</button>
+</a>
+
+</div>
+</div>
