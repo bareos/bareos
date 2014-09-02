@@ -453,6 +453,10 @@ Please note that some of the current limitations of bextract are:
       which means that you cannot enter a huge number of volumes.  If you need to
       enter more volumes than the command line supports, please use a bootstrap
       file (see below).
+\item Extracting files from a Windows backup on a Linux system
+      will only extract the plain files, not the addtional Windows file information.
+      If you have to extract files from a Windows backup,
+      you should use the Windows version of bextract.
 \end{enumerate}
 
 
@@ -558,6 +562,37 @@ under the {\bf bls} program entitled {\bf Listing Multiple Volumes} for more
 information. The same techniques apply equally well to the {\bf bextract}
 program or read the \ilink{Bootstrap}{BootstrapChapter}
 chapter of this document.
+
+\subsubsection{Extracting Under Windows}
+\index[general]{Windows!bextract}
+
+\warning{If you use \command{bextract} under Windows, the ordering of the parameters is essential.}
+
+To use \command{bextract}, the Bareos Storage Daemon must be installed.
+As bextract works on tapes or disk volumes, these must be configured in the Storage Daemon configuration file,
+normally found at \file{C:\ProgrammData\Bareos\bareos-sd.conf}.
+However, it is not required to start the Bareos Storage Daemon.
+Normally, if the Storage Daemon would be able to run, \command{bextract} would not be required.
+
+After installing, \command{bextract} can be called via command line:
+
+\begin{commands}{Call of bextract}
+C:\Program Files\Bareos .\bextract.exe -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+\end{commands}
+
+If you want to use exclude or include files you need to write them like you do on Linux. That means each path begins with
+a "/" and not with "yourdrive:/". You need to specify the parameter {\bf -e exclude.list} as first parameter.
+For example:
+
+\begin{config}{Example exclude.list}
+/Program Files/Bareos/bareos-dir.exe
+/ProgramData/
+\end{config}
+
+\begin{commands}{Call bextract with exclude list}
+C:\Program Files\Bareos .\bextract.exe -e exclude.list -c "C:\ProgrammData\Bareos\bareos-sd.conf" -V <Volume> <YourStorage> <YourDestination>
+\end{commands}
+
 
 \subsection{bscan}
 \label{bscan}
