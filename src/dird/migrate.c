@@ -366,6 +366,24 @@ static bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 }
 
 /*
+ * Sanity check that we are not using the same storage for reading and writing.
+ */
+static inline bool same_storage(JCR *jcr)
+{
+   STORERES *read_store, *write_store;
+
+   read_store = (STORERES *)jcr->rstorage->first();
+   write_store = (STORERES *)jcr->wstorage->first();
+
+   if (!read_store->autochanger && !write_store->autochanger &&
+       bstrcmp(read_store->name(), write_store->name())) {
+      return true;
+   }
+
+   return false;
+}
+
+/*
  * Do a Migration of a previous job
  *
  * Returns:  false on failure
@@ -403,9 +421,18 @@ bool do_migration(JCR *jcr)
    if (jcr->previous_jr.JobType != JT_BACKUP &&
        jcr->previous_jr.JobType != JT_JOB_COPY) {
       Jmsg(jcr, M_INFO, 0, _("JobId %s already %s probably by another Job. %s stopped.\n"),
-         edit_int64(jcr->previous_jr.JobId, ed1),
-         jcr->get_ActionName(true),
-         jcr->get_OperationName());
+           edit_int64(jcr->previous_jr.JobId, ed1),
+           jcr->get_ActionName(true),
+           jcr->get_OperationName());
+      jcr->setJobStatus(JS_Terminated);
+      migration_cleanup(jcr, jcr->JobStatus);
+      return true;
+   }
+
+   if (same_storage(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("JobId %s cannot %s using the same read and write storage.\n"),
+           edit_int64(jcr->previous_jr.JobId, ed1),
+           jcr->get_OperationName());
       jcr->setJobStatus(JS_Terminated);
       migration_cleanup(jcr, jcr->JobStatus);
       return true;
