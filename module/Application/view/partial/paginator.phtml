@@ -8,7 +8,7 @@
 		<!-- previous page link -->
 		<?php if(isset($this->previous)): ?>
 		<li>
-			<a href="<?php echo $this->url($this->route); ?>?page=<?php echo $this->previous; ?>">previous</a>
+			<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->previous; ?>">previous</a>
 		</li>
 		<?php else: ?>
 		<li class="disabled">
@@ -19,7 +19,7 @@
 		<!-- first page link -->
 		<?php if(isset($this->first)): ?>
 		<li>
-			<a href="<?php echo $this->url($this->route); ?>?page=<?php echo $this->first; ?>">first</a>
+			<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->first; ?>">first</a>
 		</li>
 		<?php endif; ?>
 
@@ -27,7 +27,7 @@
 		<?php foreach($this->pagesInRange as $page): ?>
 			<?php if($page != $this->current): ?>
 				<li>
-					<a href="<?php echo $this->url($this->route); ?>?page=<?php echo $page; ?>"><?php echo $page; ?></a>
+					<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $page; ?>"><?php echo $page; ?></a>
 				</li>
 			<?php else: ?>
 				<li class="active">
@@ -39,14 +39,14 @@
 		<!-- last page link -->
 		<?php if(isset($this->last)): ?>
 		<li>
-			<a href="<?php echo $this->url($this->route); ?>?page=<?php echo $this->last; ?>">last</a>
+			<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->last; ?>">last</a>
 		</li>
 		<?php endif; ?>
 
 		<!-- next page link -->
 		<?php if(isset($this->next)): ?>
 			<li>
-				<a href="<?php echo $this->url($this->route); ?>?page=<?php echo $this->next; ?>">next</a>
+				<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->next; ?>">next</a>
 			</li>
 		<?php else: ?>
 			<li class="disabled">
