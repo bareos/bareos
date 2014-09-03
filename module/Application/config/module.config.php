@@ -15,7 +15,7 @@ return array(
                 'options' => array(
                     'route'    => '/',
                     'defaults' => array(
-                        'controller' => 'Application\Controller\Index',
+                        'controller' => 'Dashboard\Controller\Dashboard',
                         'action'     => 'index',
                     ),
                 ),
@@ -91,6 +91,7 @@ return array(
 	    'printRetention' => 'Application\View\Helper\Retention',
 	    'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
 	    'printExpiration' => 'Application\View\Helper\Expiration',
+	    'printStatusGlyphicons' => 'Application\View\Helper\StatusGlyphicons',
 	),
     ),
     'view_manager' => array(

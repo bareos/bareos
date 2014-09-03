@@ -28,7 +28,7 @@ $env = getenv('APPLICATION_ENV') ?: 'production';
 // Use the $env value to dtermine which module to load
 $modules = array(
 	'Application',
-    'Dashboard',
+    	'Dashboard',
 	'Director',
 	'Fileset',
 	'Pool',
@@ -42,6 +42,7 @@ $modules = array(
 	'Statistics',
 	'Admin',
 	'User',
+	'Install',
 );
 
 /*
