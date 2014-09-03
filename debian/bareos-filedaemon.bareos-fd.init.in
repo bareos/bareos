@@ -45,6 +45,42 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 # and status_of_proc is working.
 . /lib/lsb/init-functions
 
+# workaround, if status_of_proc is not defined (Ubuntu 8.04)
+if ! type status_of_proc >/dev/null; then
+status_of_proc ()
+{
+    local pidfile daemon name status OPTIND
+
+    pidfile=
+    OPTIND=1
+    while getopts p: opt ; do
+        case "$opt" in
+            p)  pidfile="$OPTARG";;
+        esac
+    done
+    shift $(($OPTIND - 1))
+
+    if [ -n "$pidfile" ]; then
+        pidfile="-p $pidfile"
+    fi
+    daemon="$1"
+    name="$2"
+
+    status="0"
+    pidofproc $pidfile $daemon >/dev/null || status="$?"
+    if [ "$status" = 0 ]; then
+        log_success_msg "$name is running"
+        return 0
+    elif [ "$status" = 4 ]; then
+        log_failure_msg "could not access PID file for $name"
+        return $status
+    else
+        log_failure_msg "$name is not running"
+        return $status
+    fi
+}
+fi
+
 #
 # Function that starts the daemon/service
 #
@@ -103,7 +139,8 @@ do_stop()
 do_check()
 {
     STATUS=2
-    pidofproc -p $PIDFILE $DAEMON >/dev/null && lsof -i "TCP:${NETWORK_PORT}" -s "TCP:LISTEN" >/dev/null && STATUS=0
+    # Ubuntu 8.04 does not support "lsof -s "TCP:LISTEN", therefore "grep '(LISTEN)'" is used
+    pidofproc -p $PIDFILE $DAEMON >/dev/null && lsof -i "TCP:${NETWORK_PORT}" | grep --quiet '(LISTEN)' && STATUS=0
     return $STATUS
 }
 
