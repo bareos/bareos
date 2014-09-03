@@ -55,9 +55,16 @@ $this->headTitle($title);
 
 <tr>
 <td>PHP PDO Extension</td>
-<td><?php echo $this->REQUIRED_PDO; ?></td>
-<td><?php echo $this->INSTALLED_PDO; ?></td>
-<td><?php echo $this->printStatusGlyphicons($this->PDO_CHECK); ?></td>
+<td><?php echo $this->REQUIRED_EXT_PDO; ?></td>
+<td><?php echo $this->INSTALLED_EXT_PDO; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->EXT_PDO_CHECK); ?></td>
+</tr>
+
+<tr>
+<td>PHP Intl Extension</td>
+<td><?php echo $this->REQUIRED_EXT_INTL; ?></td>
+<td><?php echo $this->INSTALLED_EXT_INTL; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->EXT_INTL_CHECK); ?></td>
 </tr>
 
 <tr>

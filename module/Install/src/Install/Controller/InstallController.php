@@ -29,13 +29,16 @@ namespace Install\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Version\Version;
+use Zend\Db\Adapter\Driver\ConnectionInterface;
+use \Exception;
 
 class InstallController extends AbstractActionController 
 {
 	
 	const REQUIRED_PHP_VERSION = "5.3";
 	const REQUIRED_ZF_VERSION = "2.2";	
-	const REQUIRED_PDO = "YES";
+	const REQUIRED_EXT_PDO = "YES";
+	const REQUIRED_EXT_INTL = "YES";
 	const REQUIRED_DB_DRIVER = "YES";
 	const REQUIRED_DB_HOST = "YES";
 	const REQUIRED_DB_USER = "YES";
@@ -61,9 +64,12 @@ class InstallController extends AbstractActionController
 			'INSTALLED_ZF_VERSION' => $this->getInstalledZFVersion(),
 			'REQUIRED_ZF_VERSION' => self::REQUIRED_ZF_VERSION,
 			'ZF_VERSION_CHECK' => $this->compareVersions($this->getInstalledZFVersion(), self::REQUIRED_ZF_VERSION),
-			'INSTALLED_PDO' => $this->getInstalledPDO(),
-			'REQUIRED_PDO' => self::REQUIRED_PDO,
-			'PDO_CHECK' => $this->getPDOStatus(),
+			'INSTALLED_EXT_PDO' => $this->getInstalledPDOExt(),
+			'REQUIRED_EXT_PDO' => self::REQUIRED_EXT_PDO,
+			'EXT_PDO_CHECK' => $this->getPDOExtStatus(),
+			'INSTALLED_EXT_INTL' => $this->getInstalledIntlExt(),
+			'REQUIRED_EXT_INTL' => self::REQUIRED_EXT_INTL,
+			'EXT_INTL_CHECK' => $this->getIntlExtStatus(),	
 			'REQUIRED_DB_DRIVER' => self::REQUIRED_DB_DRIVER,
 			'CONFIGURED_DB_DRIVER' => $this->getConfiguredDbDriver(),
 			'DB_DRIVER_CHECK' => $this->getDbDriverStatus(),
@@ -112,7 +118,7 @@ class InstallController extends AbstractActionController
 		}
 	}
 
-	private function getInstalledPDO()
+	private function getInstalledPDOExt()
 	{
 		if(extension_loaded('PDO')) {
 			$pdo = "YES";
@@ -124,7 +130,7 @@ class InstallController extends AbstractActionController
                 }
 	}
 
-	private function getPDOStatus() 
+	private function getPDOExtStatus() 
 	{
 		if(extension_loaded('PDO')) {
 			return 0;
@@ -132,6 +138,29 @@ class InstallController extends AbstractActionController
 		else {
 			return -1;
 		}
+	}
+
+
+	private function getIntlExtStatus() 
+	{
+		if(extension_loaded('Intl')) {
+                        return 0;
+                }
+                else {
+                        return -1;
+                }
+	}
+
+	private function getInstalledIntlExt() 
+	{
+		if(extension_loaded('Intl')) {
+                        $intl = "YES";
+                        return $intl;
+                }
+                else {
+                        $intl = "NO";
+                        return $intl;
+                }
 	}
 
 	private function getConfiguredDbDriver()
@@ -216,13 +245,17 @@ class InstallController extends AbstractActionController
 	{
 		if(self::getDbDriverStatus() ==  0 &&
 			self::getDbHostStatus() == 0 && 
-			self::getDbUserStatus() == 0 //&&
-			//self::getDbPasswordStatus() == 0
+			self::getDbUserStatus() == 0 &&
+			self::getDbPasswordStatus() == 0
 			) {
-
-			// TODO
-
-			return 0;
+				try {
+					$dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
+					$connection = $dbAdapter->getDriver()->getConnection()->connect();
+					return 0;
+				}
+				catch(\Exception $e) {
+					return -1;
+				}
 		}
 		else {
 			return -1;
@@ -232,10 +265,17 @@ class InstallController extends AbstractActionController
 	private function getDbReadAccessStatus() 
 	{
 		if(self::getDbConnectionStatus() == 0) {
+			try {
+				$dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
+                                $connection = $dbAdapter->getDriver()->getConnection()->connect();	
 
-			// TODO
-
-			return 0;
+				if($connection->getCurrentSchema() == "bareos") {
+					return 0;
+				}
+			}
+			catch(\Exception $e) {
+				return -1;
+			}
 		}
 		else {
 			return -1;
