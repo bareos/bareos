@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Unsuccessful jobs (last 24h)';
+$title = 'Jobs';
 $this->headTitle($title);
 
 ?>
@@ -52,11 +52,11 @@ $flash->setMessageOpenFormat('
 ?>
 
 <ul class="nav nav-tabs">
-	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('History'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
-	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful (past 24 hours)'); ?></a></li>
+	<li><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful (past 24 hours)'); ?></a></li>
 	<!-- <li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li> -->
 </ul>
 
@@ -146,7 +146,7 @@ echo $this->paginationControl(
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li><?php echo $this->translate("Congratulation, no unsuccessful jobs during the last 24 hours!"); ?></li>
+<li><?php echo $this->translate("No unsuccessful jobs found."); ?></li>
 </ul>
 </div>
 
