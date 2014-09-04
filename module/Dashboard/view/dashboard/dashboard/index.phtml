@@ -32,6 +32,13 @@ $this->headTitle($title);
 <h3 class="text-muted"><?php echo $this->translate($title); ?></h3>
 <hr />
 
+<!-- PANEL START -->
+<div class="panel panel-default">
+<div class="panel-heading">
+<h3 class="panel-title">Jobs during the past 24 hours</h3>
+</div>
+<div class="panel-body">
+
 <?php
 
 $flash = $this->flashMessenger();
@@ -63,12 +70,12 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseRunning"><?php echo $this->translate('Running jobs') ?></a>
+		<a data-toggle="collapse" href="#collapseRunning"><?php echo count($this->runningJobs) . ' ';?><?php echo $this->translate('Running Job(s)') ?></a>
 		<span class="caret"></span>
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse in" id="collapseRunning">
+	    <div class="panel-body panel-collapse collapse out" id="collapseRunning">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
@@ -129,7 +136,7 @@ $flash->setMessageOpenFormat('
 	<div class="alert alert-dismissable alert-info">
 	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 	<ul>
-	<li><?php echo $this->translate("Currently, there are no jobs running."); ?></li>
+	<li><?php echo $this->translate("No running jobs found."); ?></li>
 	</ul>
 	</div>
 <?php endif; ?>
@@ -146,12 +153,12 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseWaiting"><?php echo $this->translate('Waiting jobs') ?></a>
+		<a data-toggle="collapse" href="#collapseWaiting"><?php echo count($this->waitingJobs) . ' '; ?><?php echo $this->translate('Waiting Job(s)') ?></a>
 		<span class="caret"></span>
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse in" id="collapseWaiting">
+	    <div class="panel-body panel-collapse collapse out" id="collapseWaiting">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
@@ -208,7 +215,7 @@ $flash->setMessageOpenFormat('
 	<div class="alert alert-dismissable alert-info">
 	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 	<ul>
-	<li><?php echo $this->translate("Currently, there are no jobs waiting."); ?></li>
+	<li><?php echo $this->translate("No waiting jobs found."); ?></li>
 	</ul>
 	</div>
 <?php endif; ?>
@@ -225,7 +232,7 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseUnsuccessful"><?php echo $this->translate('Unsuccessful jobs (last 24 hours)') ?></a>
+		<a data-toggle="collapse" href="#collapseUnsuccessful"><?php echo count($this->lastUnsuccessfulJobs) . ' '; ?><?php echo $this->translate('Unsuccessful Job(s)') ?></a>
 		<span class="caret"></span>
 		</h3>
             </div>
@@ -294,7 +301,7 @@ $flash->setMessageOpenFormat('
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li><?php echo $this->translate("Congratulation, no unsuccessful jobs during the last 24 hours!"); ?></li>
+<li><?php echo $this->translate("No unsuccessful jobs found."); ?></li>
 </ul>
 </div>
 
@@ -313,12 +320,12 @@ $flash->setMessageOpenFormat('
             <div class="panel-heading">
                 <h3 class="panel-title">
 		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseSuccessful"><?php echo $this->translate('Successful jobs (last 24 hours)') ?></a>
+		<a data-toggle="collapse" href="#collapseSuccessful"><?php echo count($this->lastSuccessfulJobs) . ' '; ?><?php echo $this->translate('Successful Job(s)') ?></a>
 		<span class="caret"></span>
 		</h3>
             </div>
   
-	    <div class="panel-body panel-collapse collapse in" id="collapseSuccessful">
+	    <div class="panel-body panel-collapse collapse out" id="collapseSuccessful">
             
             <table class="table table-striped table-hover" style="font-size: 9pt;">
             
@@ -385,9 +392,12 @@ $flash->setMessageOpenFormat('
 <div class="alert alert-dismissable alert-info">
 <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
 <ul>
-<li><?php echo $this->translate("No successful jobs during the last 24 hours!"); ?></li>
+<li><?php echo $this->translate("No successful jobs found."); ?></li>
 </ul>
 </div>
 
 <?php endif; ?>
-            
+      
+<!-- PANEL END -->     
+</div>
+</div> 

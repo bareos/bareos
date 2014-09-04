@@ -33,11 +33,11 @@ $this->headTitle($title);
 <hr />
 
 <ul class="nav nav-tabs">
-	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Job status'); ?></a></li>
+	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Jobs'); ?></a></li>
 	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'stored')); ?>"><?php echo $this->translate('Stored bytes'); ?></a></li>-->
 	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'client')); ?>"><?php echo $this->translate('Client'); ?></a></li>-->
 	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'backupjob')); ?>"><?php echo $this->translate('Backup job'); ?></a></li>-->
-	<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>
+	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>-->
 </ul>
 
 <br />
@@ -109,7 +109,7 @@ $this->headTitle($title);
             <div class="panel-heading">
                 <h3 class="panel-title">
 	    	<span class="glyphicon glyphicon-stats"></span>
-		<?php echo $this->translate('Job status overview (last 24 hours)') ?>
+		<?php echo $this->translate('Jobs during the past 24 hours') ?>
 		</h3>
             </div>
             

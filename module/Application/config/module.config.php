@@ -137,37 +137,37 @@ return array(
 			'route' => 'director',
 		),
 		array(
-			'label' => 'Fileset',
+			'label' => 'Filesets',
 			'route' => 'fileset',
 		),
 		array(
-			'label' => 'Pool',
+			'label' => 'Pools',
 			'route' => 'pool',
 		),
 		array(
-			'label' => 'Volume',
+			'label' => 'Volumes',
 			'route' => 'media',
 		),
 		array(
-			'label' => 'Storage',
+			'label' => 'Storages',
 			'route' => 'storage',
 		),
 		array(
-			'label' => 'Client',
+			'label' => 'Clients',
 			'route' => 'client',
 		),
 		array(
-			'label' => 'Job',
+			'label' => 'Jobs',
 			'route' => 'job',
 		),
 		/*
 		array(
-			'label' => 'File',
+			'label' => 'Files',
 			'route' => 'file',
 		),
 		*/
 		array(
-			'label' => 'Log',
+			'label' => 'Logs',
 			'route' => 'log',
 		),
 		/*
