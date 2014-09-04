@@ -29,94 +29,124 @@ use Zend\View\Helper\AbstractHelper;
 
 class JobStatus extends AbstractHelper
 {
+
     public function __invoke($jobStatus)
     {
-	switch($jobStatus)
-	{
-	    case 'e':
-	      $output = '<span class="label label-danger">Non-fatal error</span>';
-	      break;
-	    case 'E':
-	      $output = '<span class="label label-danger">Terminated with errors</span>';
-	      break;
-	    case 'f':
-	      $output = '<span class="label label-danger">Fatal error</span>';
-	      break;
-	    case 'T':
-	      $output = '<span class="label label-success">Success</span>';
-	      break;
-	    case 'R':
-	      $output = '<span class="label label-info">Running</span>';
-	      break;
-	    case 'C':
-	      $output = '<span class="label label-default">Created no yet running</span>';
-	      break;
-	    case 'B':
-	      $output = '<span class="label label-warning">Blocked</span>';
-	      break;
-	    case 'D':
-	      $output = '<span class="label label-warning">Verify found differences</span>';
-	      break;
-	    case 'A':
-	      $output = '<span class="label label-warning">Canceled by user</span>';
-	      break;
-	    case 'F':
-	      $output = '<span class="label label-default">Waiting for client</span>';
-	      break;
-	    case 'S':
-	      $output = '<span class="label label-default">Waiting for storage daemon</span>';
-	      break;
-	    case 'm':
-	      $output = '<span class="label label-default">Waiting for new media</span>';
-	      break;
-	    case 'M':
-	      $output = '<span class="label label-default">Waiting for media mount</span>';
-	      break;
-	    case 's':
-	      $output = '<span class="label label-default">Waiting for storage resource</span>';
-	      break;
-	    case 'j':
-	      $output = '<span class="label label-default">Waiting for job resource</span>';
-	      break;
-	    case 'c':
-	      $output = '<span class="label label-default">Waiting for client resource</span>';
-	      break;
-	    case 'd':
-	      $output = '<span class="label label-default">Waiting on maximum jobs</span>';
-	      break;
-	    case 't':
-	      $output = '<span class="label label-default">Waiting on starttime</span>';
-	      break;
-	    case 'p':
-	      $output = '<span class="label label-default">Waiting on higher priority jobs</span>';
-	      break;
-	    case 'a':
-	      $output = '<span class="label label-info">SD despooling attributes</span>';
-	      break;
-	    case 'i':
-	      $output = '<span class="label label-info">Doing batch insert file records</span>';
-	      break;
-	    case 'I':
-              $output = '<span class="label label-primary">Incomplete</span>';
-              break;
-	    case 'L':
-              $output = '<span class="label label-info">Committing data</span>';
-              break;
-	    case 'W':
-              $output = '<span class="label label-warning">Terminated with warnings</span>';
-              break;
-	    case 'l':
-              $output = '<span class="label label-info">Doing data despooling</span>';
-              break;
-	    case 'q':
-              $output = '<span class="label label-default">Queued waiting for device</span>';
-              break;
-	    default:
-	      $output = '<span class="label label-primary">' . $jobStatus . '</span>';
-	      break;
-	}
+
+		switch($jobStatus)
+		{
+			// Non-fatal error
+	    	case 'e':
+	      		$output = '<span class="label label-danger">Failure</span>';
+	      		break;
+			// Terminated with errors
+	    	case 'E':
+	      		$output = '<span class="label label-danger">Failure</span>';
+	      		break;
+			// Fatal error
+	    	case 'f':
+	      		$output = '<span class="label label-danger">Failure</span>';
+	      		break;
+			// Terminated successful
+	    	case 'T':
+	      		$output = '<span class="label label-success">Success</span>';
+	      		break;
+			// Running
+	    	case 'R':
+	      		$output = '<span class="label label-info">Running</span>';
+	      		break;
+			// Created no yet running
+	    	case 'C':
+	      		$output = '<span class="label label-default">Queued</span>';
+	      		break;
+	    	// Blocked
+			case 'B':
+	      		$output = '<span class="label label-warning">Blocked</span>';
+	      		break;
+			// Verify found differences
+	    	case 'D':
+	      		$output = '<span class="label label-warning">Verify found differences</span>';
+	      		break;
+			// Canceled by user
+	    	case 'A':
+	      		$output = '<span class="label label-warning">Canceled</span>';
+	      		break;
+			// Waiting for client
+	    	case 'F':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for storage daemon
+	    	case 'S':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for new media
+	    	case 'm':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for media mount
+	    	case 'M':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for storage resource
+	    	case 's':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for job resource
+	    	case 'j':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting for client resource
+	    	case 'c':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting on maximum jobs
+	    	case 'd':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting on starttime
+	    	case 't':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// Waiting on higher priority jobs
+	    	case 'p':
+	      		$output = '<span class="label label-default">Waiting</span>';
+	      		break;
+			// SD despooling attributes
+	    	case 'a':
+	      		$output = '<span class="label label-info">SD despooling attributes</span>';
+	      		break;
+			// Doing batch insert file records
+	    	case 'i':
+	      		$output = '<span class="label label-info">Doing batch insert file records</span>';
+	      		break;
+			// Incomplete
+	    	case 'I':
+              	$output = '<span class="label label-primary">Incomplete</span>';
+				break;
+			// Committing data
+	    	case 'L':
+              	$output = '<span class="label label-info">Committing data</span>';
+            	break;
+			// Terminated with warnings
+	    	case 'W':
+              	$output = '<span class="label label-warning">Warning</span>';
+              	break;
+			// Doing data despooling 
+	    	case 'l':
+              	$output = '<span class="label label-info">Doing data despooling</span>';
+              	break;
+			// Queued waiting for device
+	    	case 'q':
+              	$output = '<span class="label label-default">Queued waiting for device</span>';
+              	break;
+			// Default
+	    	default:
+				$output = '<span class="label label-primary">' . $jobStatus . '</span>';
+	      		break;
+		}
 	
-	return $output;
+		return $output;
 	
     }
+
 }
