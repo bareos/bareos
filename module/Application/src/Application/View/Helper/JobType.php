@@ -34,16 +34,16 @@ class JobType extends AbstractHelper
 		switch($jobType)
 		{
 	    		case 'B':
-	      			$output = "Backup Job";
+	      			$output = "Backup";
 	      		break;
 			case 'M':
-                                $output = "Migrated Job";
+                                $output = "Migrated";
                         break;
 			case 'V':
-                                $output = "Verify Job";
+                                $output = "Verify";
                         break;
 	    		case 'R':
-	      			$output = "Restore Job";
+	      			$output = "Restore";
 	      		break;
 	    		case 'U':
 	      			$output = "Console program";
@@ -52,10 +52,10 @@ class JobType extends AbstractHelper
                                 $output = "Internal system job";
                         break;
 			case 'D':
-                                $output = "Admin Job";
+                                $output = "Admin";
                         break;
 			case 'A':
-                                $output = "Archive Job";
+                                $output = "Archive";
                         break;
 			case 'C':
                                 $output = "Copy of a Job";
@@ -67,7 +67,7 @@ class JobType extends AbstractHelper
                                 $output = "Migration Job";
                         break;
 			case 'S':
-                                $output = "Scan Job";
+                                $output = "Scan";
                         break;
 	    		default:
 	      			$output = $jobType;
