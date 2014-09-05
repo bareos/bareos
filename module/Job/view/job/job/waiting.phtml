@@ -27,6 +27,23 @@
 $title = 'Jobs';
 $this->headTitle($title);
 
+if($order_by == 'JobId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Name')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'ClientName')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Type')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Level')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'StartTime')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'EndTime')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'JobBytes')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
@@ -64,6 +81,14 @@ $flash->setMessageOpenFormat('
 
 <?php if(count($this->waitingJobs) > 0) : ?>
 
+<p>
+Jobs per page:
+<a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
+
 <div class="row">
 
 <div class="col-md-12">
@@ -74,11 +99,11 @@ $flash->setMessageOpenFormat('
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th><?php echo $this->translate("Job"); ?></th>
-	<th><?php echo $this->translate("Name"); ?></th>
-	<th><?php echo $this->translate("Client"); ?></th>
-	<th><?php echo $this->translate("Type"); ?></th>
-	<th><?php echo $this->translate("Level"); ?></th>
+	<th><a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => 'JobId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Job"); ?></a></th>
+	<th><a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => 'Name', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
+	<th><a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => 'ClientName', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Client"); ?></a></th>
+	<th><a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => 'Type', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Type"); ?></a></th>
+	<th><a href="<?php echo $this->url('job', array('action' => 'waiting', 'order_by' => 'Level', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Level"); ?></a></th>
 	<th><?php echo $this->translate("Status"); ?></th>
 	<th><?php echo $this->translate("Action"); ?></th>
 	

@@ -39,15 +39,20 @@ class JobController extends AbstractActionController
 
 	public function indexAction() 
 	{
-
-		$paginator = $this->getJobTable()->fetchAll(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
+		$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+		$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getJobTable()->fetchAll(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
 		return new ViewModel(
 			array(
 				'paginator' => $paginator,
-				'allJobs' => $this->getJobTable()->fetchAll()
+				'order_by' => $order_by,
+				'order' => $order,
+				'limit' => $limit,
+				'allJobs' => $this->getJobTable()->fetchAll(),
 				)
 			);
 
@@ -68,59 +73,82 @@ class JobController extends AbstractActionController
 
 	public function runningAction() 
 	{
-		$paginator = $this->getJobTable()->getRunningJobs(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getJobTable()->getRunningJobs(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
 		return new ViewModel(
 			array(
-			      'paginator' => $paginator,
-			      'runningJobs' => $this->getJobTable()->getRunningJobs()
-			    )
-			);
+			      	'paginator' => $paginator,
+				'order_by' => $order_by,
+                                'order' => $order,
+                                'limit' => $limit,
+			      	'runningJobs' => $this->getJobTable()->getRunningJobs()
+			)
+		);
 	}
 	
 	public function waitingAction() 
 	{
-		$paginator = $this->getJobTable()->getWaitingJobs(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getJobTable()->getWaitingJobs(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
 		return new ViewModel(
 			array(
-			      'paginator' => $paginator,
-			      'waitingJobs' => $this->getJobTable()->getWaitingJobs()
-			    )
-			);
+			      	'paginator' => $paginator,
+				'order_by' => $order_by,
+                                'order' => $order,
+                                'limit' => $limit,		
+			      	'waitingJobs' => $this->getJobTable()->getWaitingJobs()
+			)
+		);
 	}
 	
 	public function unsuccessfulAction() 
 	{
-		$paginator = $this->getJobTable()->getLast24HoursUnsuccessfulJobs(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getJobTable()->getLast24HoursUnsuccessfulJobs(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
 		return new ViewModel(
 			array(
-			      'paginator' => $paginator,
-			      'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
-			    )
-			);
+			      	'paginator' => $paginator,
+				'order_by' => $order_by,
+                                'order' => $order,
+                                'limit' => $limit,      
+			      	'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
+			)
+		);
 	}
 	
 	public function successfulAction() 
 	{
-		$paginator = $this->getJobTable()->getLast24HoursSuccessfulJobs(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getJobTable()->getLast24HoursSuccessfulJobs(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
 		return new ViewModel(
 			array(
 				'paginator' => $paginator,
+				'order_by' => $order_by,
+				'order' => $order,
+				'limit' => $limit,
 				'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
 			)
 		);
-
 	}
 
 	public function timelineAction() 

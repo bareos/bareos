@@ -57,7 +57,7 @@ class JobTable implements ServiceLocatorAwareInterface
 		return $config['db']['driver'];
 	}
 
-	public function fetchAll($paginated=false)
+	public function fetchAll($paginated=false, $order_by=null, $order=null)
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
@@ -67,8 +67,14 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
-		$select->order($bsqlch->strdbcompat("Job.JobId")  . " DESC");
-		
+
+		if($order_by != null && $order != null) {
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
+			$select->order($bsqlch->strdbcompat("JobId") . " DESC");
+		}	
+
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
@@ -80,9 +86,10 @@ class JobTable implements ServiceLocatorAwareInterface
 			$paginator = new Paginator($paginatorAdapter);
 			return $paginator;
 		}
-
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);
+			return $resultSet;
+		}
 	}
 
 	public function getJob($jobid)
@@ -109,7 +116,7 @@ class JobTable implements ServiceLocatorAwareInterface
 		return $row;
 	}
 
-	public function getRunningJobs($paginated=false)
+	public function getRunningJobs($paginated=false, $order_by=null, $order=null)
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
@@ -119,12 +126,18 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
-		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
 			$bsqlch->strdbcompat("JobStatus") . " = 'R' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'l'"
 		);
 		
+		if($order_by != null && $order != null) {	
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
+			$select->order($bsqlch->strdbcompat("JobId") . " DESC");
+		}
+
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Job());
@@ -142,7 +155,7 @@ class JobTable implements ServiceLocatorAwareInterface
 		}
 	}
 	
-	public function getWaitingJobs($paginated=false) 
+	public function getWaitingJobs($paginated=false, $order_by=null, $order=null) 
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
@@ -152,7 +165,6 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
-		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
 			$bsqlch->strdbcompat("JobStatus") . " = 'F' OR " . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'S' OR " .
@@ -167,6 +179,13 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("JobStatus") . " = 'q' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'C'"
 		);
+
+		if($order_by != null && $order != null) {
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
+			$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		}
 		
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -185,7 +204,7 @@ class JobTable implements ServiceLocatorAwareInterface
 		}
 	}
 	
-	public function getLast24HoursSuccessfulJobs($paginated=false)
+	public function getLast24HoursSuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
@@ -198,7 +217,6 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
-		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
 			"(" . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
@@ -206,6 +224,13 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
 			$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);
+
+		if($order_by != null && $order != null) { 
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
+			$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		}
 
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
@@ -224,7 +249,7 @@ class JobTable implements ServiceLocatorAwareInterface
 		}
 	}
 	
-	public function getLast24HoursUnsuccessfulJobs($paginated=false)
+	public function getLast24HoursUnsuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
@@ -237,7 +262,6 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
-		$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
 		$select->where(
 			"(" . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'A' OR " .
@@ -247,6 +271,13 @@ class JobTable implements ServiceLocatorAwareInterface
                         $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
                         $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 		);		
+
+		if($order_by != null && $order != null) {
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
+			$select->order($bsqlch->strdbcompat("Job.JobId") . " DESC");
+		}
 
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
