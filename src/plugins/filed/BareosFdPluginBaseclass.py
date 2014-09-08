@@ -10,7 +10,7 @@ from bareosfd import *
 from bareos_fd_consts import *
 from os import O_WRONLY, O_CREAT
 
-class BareosFdPluginBaseclass:
+class BareosFdPluginBaseclass(object):
     ''' Bareos python plugin base class '''
     def __init__(self, context, plugindef):
         DebugMessage(context, 100, "Constructor called in module " + __name__ + "\n");
