@@ -36,11 +36,21 @@ class FilesetController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$paginator = $this->getFilesetTable()->fetchAll(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'FileSetId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getFilesetTable()->fetchAll(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(25);
+		$paginator->setItemCountPerPage($limit);
 
-		return new ViewModel(array('paginator' => $paginator));
+		return new ViewModel(
+				array(
+					'paginator' => $paginator,
+					'order_by' => $order_by,
+                                	'order' => $order,
+                                	'limit' => $limit,
+				)
+		);
 	}
 
 	public function detailsAction() 

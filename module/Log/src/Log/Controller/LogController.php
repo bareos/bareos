@@ -12,12 +12,21 @@ class LogController extends AbstractActionController
 
 	public function indexAction() 
 	{
-
-		$paginator = $this->getLogTable()->fetchAll(true);
+		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'LogId';
+                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$paginator = $this->getLogTable()->fetchAll(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(10);
+		$paginator->setItemCountPerPage($limit);
 
-		return new ViewModel(array('paginator' => $paginator));
+		return new ViewModel(
+				array(
+					'paginator' => $paginator,
+					'order_by' => $order_by,
+                                	'order' => $order,
+                                	'limit' => $limit,
+				)
+		);
 
 	}
 

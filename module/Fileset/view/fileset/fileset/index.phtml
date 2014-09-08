@@ -26,10 +26,25 @@
 $title = 'Filesets';
 $this->headTitle($title);
 
+if($order_by == 'FileSetId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'FileSet')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'CreateTime')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<p>
+Filesets per page:
+<a href="<?php echo $this->url('fileset', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('fileset', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('fileset', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('fileset', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <div class="row">
 
@@ -41,10 +56,10 @@ $this->headTitle($title);
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th>Fileset</th>
-	<th>Name</th>
-	<th>MD5</th>
-	<th>Modified</th>
+	<th><a href="<?php echo $this->url('fileset', array('order_by' => 'FileSetId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Fileset"); ?></a></th>
+	<th><a href="<?php echo $this->url('fileset', array('order_by' => 'FileSet', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
+	<th><?php echo $this->translate("MD5"); ?></th>
+	<th><a href="<?php echo $this->url('fileset', array('order_by' => 'CreateTime', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Modified"); ?></a></th>
 </tr>
 
 <?php foreach($this->paginator as $fileset) : ?>

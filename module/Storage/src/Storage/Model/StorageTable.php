@@ -25,7 +25,11 @@
 
 namespace Storage\Model;
 
+use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
+use Zend\Db\Sql\Select;
+use Zend\Paginator\Adapter\DbSelect;
+use Zend\Paginator\Paginator;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 use Bareos\Db\Sql\BareosSqlCompatHelper;
@@ -54,10 +58,34 @@ class StorageTable implements ServiceLocatorAwareInterface
                 return $config['db']['driver'];
         }
 
-	public function fetchAll() 
+	public function fetchAll($paginated=false, $order_by=null, $order=null) 
 	{
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+                $select = new Select();
+                $select->from($bsqlch->strdbcompat("Storage"));
+
+		if($order_by != null && $order != null) {
+                        $select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+                }
+                else {
+                        $select->order($bsqlch->strdbcompat("StorageId") . " DESC");
+                }
+
+		if($paginated) {
+                        $resultSetPrototype = new ResultSet();
+                        $resultSetPrototype->setArrayObjectPrototype(new Storage());
+                        $paginatorAdapter = new DbSelect(
+                                                $select,
+                                                $this->tableGateway->getAdapter(),
+                                                $resultSetPrototype
+                                        );
+                        $paginator = new Paginator($paginatorAdapter);
+                        return $paginator;
+                }
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);
+			return $resultSet;
+		}
 	}
 
 	public function getStorage($id)

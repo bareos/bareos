@@ -27,10 +27,23 @@
 $title = 'Storages';
 $this->headTitle($title);
 
+if($order_by == 'StorageId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Name')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<p>
+Storages per page:
+<a href="<?php echo $this->url('storage', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('storage', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('storage', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('storage', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <div class="row">
 
@@ -42,8 +55,8 @@ $this->headTitle($title);
 <table class="table table-striped table-bordered" style="font-size: 9pt;">
 
 <tr>
-	<th>ID</th>
-	<th>Name</th>
+	<th><a href="<?php echo $this->url('storage', array('order_by' => 'StorageId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Storage"); ?></a></th>
+	<th><a href="<?php echo $this->url('storage', array('order_by' => 'Name', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
 	<th>Autochanger</th>
 </tr>
 
@@ -72,6 +85,16 @@ $this->headTitle($title);
 
 </div>
 </div>
+
+<?php echo $this->paginationControl(
+                        $this->paginator,
+                        'Elastic',
+                        array('partial/paginator.phtml', 'Storage'),
+                        array('route' => 'storage')
+                );
+
+?>
+
 </div>
 
 </div>

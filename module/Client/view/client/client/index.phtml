@@ -3,10 +3,25 @@
 $title = 'Clients';
 $this->headTitle($title);
 
+if($order_by == 'ClientId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Name')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Uname')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<p>
+Clients per page:
+<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <div class="row">
 
@@ -18,9 +33,9 @@ $this->headTitle($title);
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th>Client</th>
-	<th>Name</th>
-	<th>Version</th>
+	<th><a href="<?php echo $this->url('client', array('order_by' => 'ClientId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Client"); ?></a></th>
+	<th><a href="<?php echo $this->url('client', array('order_by' => 'Name', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
+	<th><a href="<?php echo $this->url('client', array('order_by' => 'Uname', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Version"); ?></a></th>
 	<th>Autoprune</th>
 	<th>Fileretention</th>
 	<th>Jobretention</th>

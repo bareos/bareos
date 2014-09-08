@@ -27,10 +27,35 @@
 $title = 'Volumes';
 $this->headTitle($title);
 
+if($order_by == 'MediaId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'VolumeName')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'PoolId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'MediaType')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'LastWritten')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'VolStatus')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'MaxVolBytes')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'VolBytes')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<p>
+Volumes per page:
+<a href="<?php echo $this->url('media', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('media', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('media', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('media', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <div class="row">
 
@@ -42,15 +67,15 @@ $this->headTitle($title);
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th>Volume</th>
-	<th>Name</th>
-	<th>Storage</th>
-	<th>Type</th>
-	<th>Last written</th>
-	<th>Status</th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'MediaId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Volume"); ?></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'VolumeName', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'PoolId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Storage"); ?></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'MediaType', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Type"); ?></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'LastWritten', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Last written"); ?></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'VolStatus', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Status"); ?></a></th>
 	<th><div align="right">Retention/Expiration</div></th>
-	<th><div align="right">Maximum bytes</div></th>
-	<th><div align="right">Current bytes</div></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'MaxVolBytes', 'order' => $url_order, 'limit' => $this->limit)); ?>"><div align="right"><?php echo $this->translate("Maximum bytes"); ?></div></a></th>
+	<th><a href="<?php echo $this->url('media', array('order_by' => 'VolBytes', 'order' => $url_order, 'limit' => $this->limit)); ?>"><div align="right"><?php echo $this->translate("Current bytes"); ?></div></a></th>
 	<th><div align="right">Free bytes</div></th>
 	
 </tr>

@@ -34,12 +34,19 @@ class ClientTable implements ServiceLocatorAwareInterface
                 return $config['db']['driver'];
         }
 
-	public function fetchAll($paginated=false) 
+	public function fetchAll($paginated=false, $order_by=null, $order=null) 
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Client"));
 	
+		if($order_by != null && $order != null) {
+                        $select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+                }
+                else {
+                        $select->order($bsqlch->strdbcompat("ClientId") . " DESC");
+                }
+
 		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Client());
@@ -51,9 +58,10 @@ class ClientTable implements ServiceLocatorAwareInterface
 			$paginator = new Paginator($paginatorAdapter);
 			return $paginator;
 		}
-
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);
+			return $resultSet;
+		}
 	}
 
 	public function getClient($id)

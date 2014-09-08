@@ -36,10 +36,13 @@ return array(
 			'media' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/media[/][:action][/:id]',
+					'route' => '/media[/][:action][/:id][order_by/:order_by][/:order][/][limit/:limit]',
 					'constraints' => array(
-						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+						'action' => '(?!\blimit\b)(?!\border_by\b)[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[0-9]+',
+						'order_by' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                                                'order' => 'ASC|DESC',
+                                                'limit' => '[0-9]+',
 					),
 					'defaults' => array(
 						'controller' => 'Media\Controller\Media',

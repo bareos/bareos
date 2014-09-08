@@ -59,12 +59,19 @@ class MediaTable implements ServiceLocatorAwareInterface
                 return $config['db']['driver'];
         }
 
-	public function fetchAll($paginated=false) 
+	public function fetchAll($paginated=false, $order_by=null, $order=null) 
 	{
-		if($paginated) {
-			$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
-			$select = new Select($bsqlch->strdbcompat("Media"));
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
+		$select = new Select($bsqlch->strdbcompat("Media"));
+
+		if($order_by != null && $order != null) {
+			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
+		}
+		else {
 			$select->order($bsqlch->strdbcompat("MediaId") . " ASC");
+		}
+
+		if($paginated) {
 			$resultSetPrototype = new ResultSet();
 			$resultSetPrototype->setArrayObjectPrototype(new Media());
 			$paginatorAdapter = new DbSelect(
@@ -75,8 +82,10 @@ class MediaTable implements ServiceLocatorAwareInterface
 			$paginator = new Paginator($paginatorAdapter);
 			return $paginator;
 		}
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
+		else {
+			$resultSet = $this->tableGateway->selectWith($select);
+			return $resultSet;
+		}
 	}
 
 	public function getMedia($id)

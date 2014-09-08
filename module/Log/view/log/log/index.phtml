@@ -26,10 +26,25 @@
 $title = 'Logs';
 $this->headTitle($title);
 
+if($order_by == 'LogId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'Time')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'JobId')
+        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+
 ?>
 
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
+
+<p>
+Logs per page:
+<a href="<?php echo $this->url('log', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('log', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('log', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('log', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <div class="panel panel-default">
 <div class="panel-body">
@@ -37,10 +52,10 @@ $this->headTitle($title);
 <table class="table table-striped table-hover" style="font-size: 9pt;">
 
 <tr>
-	<th>Log</th>
-	<th>Timestamp</th>
+	<th><a href="<?php echo $this->url('log', array('order_by' => 'LogId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Log"); ?></a></th>
+	<th><a href="<?php echo $this->url('log', array('order_by' => 'Time', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Timestamp"); ?></a></th>
 	<th>Message</th>
-	<th>Job</th>
+	<th><a href="<?php echo $this->url('log', array('order_by' => 'JobId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Job"); ?></a></th>
 </tr>
 
 <?php foreach ($this->paginator as $log) : ?>
