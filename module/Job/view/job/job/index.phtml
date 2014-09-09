@@ -43,6 +43,9 @@ elseif($order_by == 'EndTime')
         $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
 elseif($order_by == 'JobStatus')
         $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+elseif($order_by == 'duration') {
+	$url_order = $order == 'ASC' ? 'DESC' : 'ASC';
+}
 
 ?>
 
@@ -87,7 +90,7 @@ Jobs per page:
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'Level', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Level"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'StartTime', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Start"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'EndTime', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("End"); ?></a></th>
-	<th><?php echo $this->translate("Duration"); ?></th>
+	<th><a href="<?php echo $this->url('job', array('order_by' => 'duration', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Duration"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'JobStatus', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Status"); ?></a></th>
 	<th><?php echo $this->translate("Action"); ?></th>
 	
@@ -104,12 +107,7 @@ Jobs per page:
 	<td><?php echo $this->printJobLevel($job->level); ?></td>
 	<td><?php echo $this->printDate($job->starttime); ?></td>
 	<td><?php echo $this->printDate($job->endtime); ?></td>
-	<?php if(!empty($job->endtime)) : ?>
-	<td><?php echo $this->printJobDuration($job->starttime, $job->endtime); ?></td>
-	<?php endif; ?>
-	<?php if(empty($job->endtime)) : ?>
-	<td><?php echo $this->escapeHtml("-"); ?></td>
-	<?php endif; ?>
+	<td><?php echo $this->printJobDuration($job->duration); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	<td>
 	<?php if($job->type == "B") : ?>

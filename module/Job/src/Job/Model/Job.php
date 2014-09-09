@@ -56,6 +56,7 @@ class Job
 	public $reviewed;
 	public $comment;
 	public $clientname;
+	public $duration;
 	
 	public function exchangeArray($data) 
 	{
@@ -82,6 +83,7 @@ class Job
 		$this->poolid = (!empty($data['poolid'])) ? $data['poolid'] : null;
 		$this->filesetid = (!empty($data['filesetid'])) ? $data['filesetid'] : null;
 		$this->clientname = (!empty($data['clientname'])) ? $data['clientname'] : null;
+		$this->duration = (!empty($data['duration'])) ? $data['duration'] : null;
 	}
 
 }

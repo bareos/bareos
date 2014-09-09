@@ -86,7 +86,6 @@ $flash->setMessageOpenFormat('
 		<th><?php echo $this->translate("Type"); ?></th>
 		<th><?php echo $this->translate("Level"); ?></th>
 		<th><?php echo $this->translate("Start"); ?></th>
-		<!-- <th>Duration</th> -->
 		<th><?php echo $this->translate("Status"); ?></th>
 		<th><?php echo $this->translate("Action"); ?></th>
 	    </tr>
@@ -101,7 +100,6 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobType($item->type); ?></td>
 	      <td><?php echo $this->printJobLevel($item->level); ?></td>
 	      <td><?php echo $this->printDate($item->starttime); ?></td>
-	      <!-- <td><?php echo $this->printJobDuration($item->starttime, $item->endtime); ?></td> -->
 	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
 	      <td>
 
@@ -265,7 +263,7 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
 	      <td><?php echo $this->printDate($jobUnsuccess->starttime); ?></td>
 	      <td><?php echo $this->printDate($jobUnsuccess->endtime); ?></td>
-	      <td><?php echo $this->printJobDuration($jobUnsuccess->starttime, $jobUnsuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobDuration($jobUnsuccess->duration); ?></td>
 	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
 	      <td>
 	      <?php if($jobUnsuccess->type == "B") : ?>
@@ -354,7 +352,7 @@ $flash->setMessageOpenFormat('
 	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
 	      <td><?php echo $this->printDate($jobSuccess->starttime); ?></td>
 	      <td><?php echo $this->printDate($jobSuccess->endtime); ?></td>
-	      <td><?php echo $this->printJobDuration($jobSuccess->starttime, $jobSuccess->endtime); ?></td>
+	      <td><?php echo $this->printJobDuration($jobSuccess->duration); ?></td>
 	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
 	      <td>
               <?php if($jobSuccess->type == "B") : ?>

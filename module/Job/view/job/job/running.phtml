@@ -41,8 +41,6 @@ elseif($order_by == 'StartTime')
         $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
 elseif($order_by == 'EndTime') 
         $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
-elseif($order_by == 'JobStatus')
-        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
 
 ?>
 
@@ -105,7 +103,7 @@ Jobs per page:
 	<th><a href="<?php echo $this->url('job', array('action' => 'running', 'order_by' => 'Type', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Type"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('action' => 'running', 'order_by' => 'Level', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Level"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('action' => 'running', 'order_by' => 'StartTime', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Start"); ?></a></th>
-	<th><a href="<?php echo $this->url('job', array('action' => 'running', 'order_by' => 'JobStatus', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Status"); ?></a></th>
+	<th><?php echo $this->translate("Status"); ?></th>
 	<th><?php echo $this->translate("Action"); ?></th>
 	
 </tr>

@@ -28,6 +28,7 @@ namespace Job\Model;
 use Zend\Db\ResultSet\ResultSet;
 use Zend\Db\TableGateway\TableGateway;
 use Zend\Db\Sql\Select;
+use Zend\Db\Sql\Expression;
 use Zend\Paginator\Adapter\DbSelect;
 use Zend\Paginator\Paginator;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
@@ -59,9 +60,27 @@ class JobTable implements ServiceLocatorAwareInterface
 
 	public function fetchAll($paginated=false, $order_by=null, $order=null)
 	{
+		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {
+			$duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");
+		}
+		elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {
+			$duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+		}
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+				$bsqlch->strdbcompat("JobId"),
+				$bsqlch->strdbcompat("Name"),
+				$bsqlch->strdbcompat("Type"),
+				$bsqlch->strdbcompat("Level"),
+				$bsqlch->strdbcompat("StartTime"),
+				$bsqlch->strdbcompat("EndTime"),
+				$bsqlch->strdbcompat("JobStatus"),
+				'duration' => $duration,
+			)
+		);
 		$select->join(
 			$bsqlch->strdbcompat("Client"), 
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
@@ -206,23 +225,41 @@ class JobTable implements ServiceLocatorAwareInterface
 	
 	public function getLast24HoursSuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
-		$current_time = date("Y-m-d H:i:s",time());
-		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
-		
+		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {       
+                        $duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");                
+			$interval = "now() - interval 1 day";
+                }
+                elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {    
+                        $duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+			$interval = "now() - interval '1 day'";
+                }
+	
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+                                $bsqlch->strdbcompat("JobId"),
+                                $bsqlch->strdbcompat("Name"),
+                                $bsqlch->strdbcompat("Type"),                                                   
+                                $bsqlch->strdbcompat("Level"),
+                                $bsqlch->strdbcompat("StartTime"),                                              
+                                $bsqlch->strdbcompat("EndTime"),
+                                $bsqlch->strdbcompat("JobStatus"),                                              
+                                'duration' => $duration,
+                        )
+                );
 		$select->join(
 			$bsqlch->strdbcompat("Client"), 
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
+
 		$select->where(
 			"(" . 
 			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
-			$bsqlch->strdbcompat("JobStatus") . " = 'W' ) AND " .
-			$bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
-			$bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+			$bsqlch->strdbcompat("JobStatus") . " = 'W' ) AND (" .
+			$bsqlch->strdbcompat("StartTime") . " >= " . $interval . " OR " .
+			$bsqlch->strdbcompat("EndTime") . " >= " . $interval . ")"
 		);
 
 		if($order_by != null && $order != null) { 
@@ -251,12 +288,29 @@ class JobTable implements ServiceLocatorAwareInterface
 	
 	public function getLast24HoursUnsuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
-		$current_time = date("Y-m-d H:i:s",time());
-		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*24));
-		
+		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {
+                        $duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");
+                        $interval = "now() - interval 1 day";
+                }
+                elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {
+                        $duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+                        $interval = "now() - interval '1 day'";
+                }
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+                                $bsqlch->strdbcompat("JobId"),
+                                $bsqlch->strdbcompat("Name"),
+                                $bsqlch->strdbcompat("Type"),
+                                $bsqlch->strdbcompat("Level"),
+                                $bsqlch->strdbcompat("StartTime"),
+                                $bsqlch->strdbcompat("EndTime"),
+                                $bsqlch->strdbcompat("JobStatus"),
+                                'duration' => $duration,
+                        )
+                );
 		$select->join(
 			$bsqlch->strdbcompat("Client"), 
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
@@ -267,9 +321,9 @@ class JobTable implements ServiceLocatorAwareInterface
 			$bsqlch->strdbcompat("JobStatus") . " = 'A' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'E' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'e' OR " .
-                        $bsqlch->strdbcompat("JobStatus") . " = 'f' ) AND " .
-                        $bsqlch->strdbcompat("StartTime") . " >= '" . $back24h_time . "' AND " .
-                        $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
+                        $bsqlch->strdbcompat("JobStatus") . " = 'f' ) AND (" .
+                        $bsqlch->strdbcompat("StartTime") . " >= " . $interval . " OR " .
+                        $bsqlch->strdbcompat("EndTime") . " >= " . $interval . ")"
 		);		
 
 		if($order_by != null && $order != null) {
