@@ -244,6 +244,7 @@ class JobTable implements ServiceLocatorAwareInterface
                                 $bsqlch->strdbcompat("Level"),
                                 $bsqlch->strdbcompat("StartTime"),                                              
                                 $bsqlch->strdbcompat("EndTime"),
+				$bsqlch->strdbcompat("JobBytes"),
                                 $bsqlch->strdbcompat("JobStatus"),                                              
                                 'duration' => $duration,
                         )
