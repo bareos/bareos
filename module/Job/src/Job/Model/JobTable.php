@@ -64,7 +64,7 @@ class JobTable implements ServiceLocatorAwareInterface
 			$duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");
 		}
 		elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {
-			$duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+			$duration = new Expression("DATE_PART('second', endtime::timestamp - starttime::timestamp)");
 		}
 
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
@@ -230,7 +230,7 @@ class JobTable implements ServiceLocatorAwareInterface
 			$interval = "now() - interval 1 day";
                 }
                 elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {    
-                        $duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+                        $duration = new Expression("DATE_PART('second', endtime::timestamp - starttime::timestamp)");
 			$interval = "now() - interval '1 day'";
                 }
 	
@@ -293,7 +293,7 @@ class JobTable implements ServiceLocatorAwareInterface
                         $interval = "now() - interval 1 day";
                 }
                 elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {
-                        $duration = new Expression("DATE_PART('second', 'EndTime'::timestamp - 'StartTime'::timestamp)");
+                        $duration = new Expression("DATE_PART('second', endtime::timestamp - starttime::timestamp)");
                         $interval = "now() - interval '1 day'";
                 }
 

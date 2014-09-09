@@ -31,11 +31,6 @@ class JobDuration extends AbstractHelper
 {
     	public function __invoke($duration)
     	{
-		if($duration > 0) {
-			return sprintf('%02d:%02d:%02d', ($duration/3600),($duration/60%60), $duration%60);
-		}
-		else {
-			return $duration = "-";
-		}
+		return sprintf('%02d:%02d:%02d', ($duration/3600),($duration/60%60), $duration%60);
     	}
 }
