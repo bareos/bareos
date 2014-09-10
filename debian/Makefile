@@ -2,7 +2,9 @@
 # Makefile for preparations of Debian builds
 #
 
-all:
+all: copyright
+
+copyright:
 	@install copyright.header copyright
 	@sed -r -e 's/^$$/./' -e 's/^[ ]*(.*)$$/    \1/' ../LICENSE >> copyright
 	@cat copyright.footer >> copyright
