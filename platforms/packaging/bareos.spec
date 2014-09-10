@@ -59,13 +59,37 @@ Vendor: 	The Bareos Team
 %define file_daemon_user        root
 %define storage_daemon_group    %{daemon_group}
 
+# default settings
 %define client_only 0
 %define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
+%define glusterfs 0
+%define install_suse_fw 0
 %define systemd 0
 %define python_plugins 1
 
+#
+# SUSE (openSUSE, SLES) specific settigs
+#
+%if 0%{?sles_version} == 10
+%define build_bat 0
+%define build_qt_monitor 0
+%define build_sqlite3 0
+%endif
+
+%if 0%{?suse_version} > 1010
+%define install_suse_fw 1
+%define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
+%endif
+
+%if 0%{?suse_version} > 1140
+%define systemd_support 1
+%endif
+
+#
+# RedHat (CentOS, Fedora, RHEL) specific settings
+#
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500
 %define RHEL4 1
 %define client_only 1
@@ -75,18 +99,6 @@ Vendor: 	The Bareos Team
 %define python_plugins 0
 %endif
 
-# firewall installation
-%define install_suse_fw 0
-
-%if 0%{?suse_version} > 1010
-%define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
-%define install_suse_fw 1
-%endif
-
-%if 0%{?suse_version} > 1140 || 0%{?fedora_version} > 14 || 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
-%define systemd_support 1
-%endif
-
 # centos/rhel 5 : segfault when building qt monitor
 %if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
 %define build_bat 0
@@ -94,10 +106,10 @@ Vendor: 	The Bareos Team
 %define python_plugins 0
 %endif
 
-%if 0%{?sles_version} == 10
-%define build_bat 0
-%define build_qt_monitor 0
-%define build_sqlite3 0
+%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
+%define systemd_support 1
+%define glusterfs 1
+BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?systemd_support}
@@ -252,13 +264,21 @@ Recommends: logrotate
 Provides: %{name}-dir
 
 %package storage
-Summary:  Provide bareos storage daemon
+Summary:  Provides Bareos storage daemon
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
 Provides: %{name}-sd
 
+%if 0%{?glusterfs}
+%package storage-glusterfs
+Summary:  Provides Bareos storage backend for GlusterFS
+Group:    Productivity/Archiving/Backup
+Requires: %{name}-common = %{version}
+Requires: glusterfs-api
+%endif
+
 %package storage-tape
-Summary:  Provide bareos storage daemon tape support
+Summary:  Provides Bareos storage daemon tape support
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
 Requires: mtx
@@ -267,18 +287,18 @@ Requires: mt-st
 %endif
 
 %package storage-fifo
-Summary:  Provide bareos storage backend fifo
+Summary:  Provides Bareos storage backend fifo
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
 
 %package filedaemon
-Summary:  Provide bareos file daemon service
+Summary:  Provides Bareos file daemon
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common = %{version}
 Provides: %{name}-fd
 
 %package common
-Summary:  Generic libs needed by every package
+Summary:  Generic libs needed by every Bareos package
 Group:    Productivity/Archiving/Backup
 Requires: openssl
 Provides: %{name}-libs
@@ -340,7 +360,7 @@ Provides:   %{name}-tray-monitor-qt
 
 %if 0%{?build_bat}
 %package bat
-Summary:  Provide Bareos Admin Tool gui
+Summary:  Provides Bareos Admin Tool gui
 Group:    Productivity/Archiving/Backup
 %endif
 
@@ -426,6 +446,13 @@ This package contains the Storage Daemon
 
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
+
+%if 0%{?glusterfs}
+%description storage-glusterfs
+%{dscr}
+
+This package contains the Storage backend for GlusterFS.
+%endif
 
 %description storage-fifo
 %{dscr}
@@ -769,6 +796,12 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/btape
 %{plugin_dir}/scsitapealert-sd.so
+
+%if 0%{?glusterfs}
+%files storage-glusterfs
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-gfapi*.so
+%endif
 
 %files storage-fifo
 %defattr(-, root, root)
