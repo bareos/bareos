@@ -273,14 +273,15 @@ Provides: %{name}-sd
 %package storage-glusterfs
 Summary:  Provides Bareos storage backend for GlusterFS
 Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
-Requires: glusterfs-api
+Requires: %{name}-common  = %{version}
+Requires: %{name}-storage = %{version}
 %endif
 
 %package storage-tape
 Summary:  Provides Bareos storage daemon tape support
 Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
+Requires: %{name}-common  = %{version}
+Requires: %{name}-storage = %{version}
 Requires: mtx
 %if !0%{?suse_version}
 Requires: mt-st
@@ -289,7 +290,8 @@ Requires: mt-st
 %package storage-fifo
 Summary:  Provides Bareos storage backend fifo
 Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
+Requires: %{name}-common  = %{version}
+Requires: %{name}-storage = %{version}
 
 %package filedaemon
 Summary:  Provides Bareos file daemon
