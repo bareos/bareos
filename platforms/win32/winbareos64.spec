@@ -54,14 +54,14 @@ BuildRequires:  mingw64-libgcc
 BuildRequires:  mingw64-libtool
 
 #BuildRequires:  mingw64-sed
-BuildRequires:  mingw64-libgcrypt
+BuildRequires:  mingw64-libgcrypt20
 BuildRequires:  mingw64-cross-nsis
 BuildRequires:  mingw64-gcc
 BuildRequires:  mingw64-gcc-c++
 BuildRequires:  mingw64-pthreads-devel
 BuildRequires:  mingw64-zlib-devel
 BuildRequires:  mingw64-zlib
-BuildRequires:  mingw64-libpng
+BuildRequires:  mingw64-libpng16-16
 BuildRequires:  mingw64-libstdc++
 BuildRequires:  mingw64-readline
 BuildRequires:  mingw64-readline-devel
@@ -69,7 +69,7 @@ BuildRequires:  mingw64-lzo
 BuildRequires:  mingw64-lzo-devel
 BuildRequires:  mingw64-libfastlz
 BuildRequires:  mingw64-libfastlz-devel
-BuildRequires:  mingw64-libsqlite
+BuildRequires:  mingw64-libsqlite3-0
 BuildRequires:  mingw64-libsqlite-devel
 
 BuildRequires:  sed
