@@ -4203,6 +4203,21 @@ fi
 
 AC_SUBST(BUILD_SD_BACKENDS)
 
+
+
+dnl install storage backend config files
+
+INSTALL_SD_CONFS=""
+if test X"$have_glusterfs" = "Xyes" ; then
+    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-gluster.conf"
+fi
+if test X"$have_ceph_rados" = "Xyes" ; then
+    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-ceph-rados.conf"
+fi
+AC_SUBST(INSTALL_SD_CONFS)
+
+
+
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "

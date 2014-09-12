@@ -1,2 +1,3 @@
+/etc/bareos/bareos-dir.d
 /var/lib/bareos
 /var/log/bareos
