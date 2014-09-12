@@ -764,6 +764,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
 %defattr(-, root, root)
 %attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.conf
+%attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d
 %if 0%{?suse_version}
 %{_sysconfdir}/init.d/bareos-sd
 %{_sbindir}/rcbareos-sd
@@ -801,6 +802,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
+%{_sysconfdir}/bareos/bareos-sd.d/device-gluster.conf
 %endif
 
 %files storage-fifo
@@ -835,6 +837,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # common shared libraries (without db)
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
+%attr(-, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d
 %dir %{backend_dir}
 %{library_dir}/libbareos-%{_libversion}.so
 %{library_dir}/libbareoscfg-%{_libversion}.so

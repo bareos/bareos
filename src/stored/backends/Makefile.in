@@ -53,6 +53,7 @@ LIBBAREOSSD_LT_RELEASE = @LIBBAREOSSD_LT_RELEASE@
 INCLUDES += -I$(srcdir) -I.. -I$(basedir) -I$(basedir)/include
 
 BUILD_BACKENDS = @BUILD_SD_BACKENDS@
+INSTALL_CONFS  = @INSTALL_SD_CONFS@
 
 .SUFFIXES:	.c .o .lo
 .PHONY:
@@ -153,6 +154,12 @@ libtool-install: all
 	   $(RM) $(DESTDIR)$(backenddir)/$$backend; \
 	done
 
-install: @LIBTOOL_INSTALL_TARGET@
+install-configs:
+	$(MKDIR) ${DESTDIR}${sysconfdir}/bareos-sd.d/
+	@for conf in $(INSTALL_CONFS); do \
+	   $(INSTALL_CONFIG) ../../defaultconfigs/bareos-sd.d/$$conf ${DESTDIR}${sysconfdir}/bareos-sd.d/; \
+	done
+
+install: @LIBTOOL_INSTALL_TARGET@ install-configs
 
 depend:

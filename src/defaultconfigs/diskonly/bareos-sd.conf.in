@@ -52,6 +52,14 @@ Device {
 }
 
 #
+# include additional configuration files, if required
+#
+
+# eg.
+#@/etc/bareos/bareos-sd.d/device-gluster.conf
+
+
+#
 # Send all messages to the Director,
 # mount messages also are sent to the email address
 #
