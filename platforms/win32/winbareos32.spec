@@ -55,14 +55,14 @@ BuildRequires:  mingw32-libgcc
 BuildRequires:  mingw32-libtool
 
 #BuildRequires:  mingw32-sed
-BuildRequires:  mingw32-libgcrypt
+BuildRequires:  mingw32-libgcrypt20
 BuildRequires:  mingw32-cross-nsis
 BuildRequires:  mingw32-gcc
 BuildRequires:  mingw32-gcc-c++
 BuildRequires:  mingw32-pthreads-devel
 BuildRequires:  mingw32-zlib-devel
 BuildRequires:  mingw32-zlib
-BuildRequires:  mingw32-libpng
+BuildRequires:  mingw32-libpng16-16
 BuildRequires:  mingw32-libstdc++
 BuildRequires:  mingw32-readline
 BuildRequires:  mingw32-readline-devel
@@ -70,7 +70,7 @@ BuildRequires:  mingw32-lzo
 BuildRequires:  mingw32-lzo-devel
 BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw32-libfastlz-devel
-BuildRequires:  mingw32-libsqlite
+BuildRequires:  mingw32-libsqlite3-0
 BuildRequires:  mingw32-libsqlite-devel
 
 BuildRequires:  sed
