@@ -137,7 +137,7 @@ for file in \
    QtGui4.dll \
    liblzo2-2.dll \
    libfastlz.dll \
-   libpng15-15.dll \
+   libpng*.dll \
    openssl.exe \
    sed.exe;\
 do
