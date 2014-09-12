@@ -17,7 +17,7 @@
 #                          #{_mingw64_install_post}
 
 Name:           mingw64-winbareos
-Version:        14.2.0
+Version:        14.2.1
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
