@@ -839,7 +839,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # common shared libraries (without db)
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
+%if !0%{?client_only}
 %attr(-, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d
+%endif
 %dir %{backend_dir}
 %{library_dir}/libbareos-%{_libversion}.so
 %{library_dir}/libbareoscfg-%{_libversion}.so
