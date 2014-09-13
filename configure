@@ -631,6 +631,7 @@ ac_includes_default="\
 
 ac_header_list=
 ac_subst_vars='LTLIBOBJS
+INSTALL_SD_CONFS
 BUILD_SD_BACKENDS
 BUILD_DIR_PLUGINS
 BUILD_SD_PLUGINS
@@ -32399,6 +32400,20 @@ if test x$use_libtool != xno; then
 else
    BUILD_SD_BACKENDS=""
 fi
+
+
+
+
+
+
+INSTALL_SD_CONFS=""
+if test X"$have_glusterfs" = "Xyes" ; then
+    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-gluster.conf"
+fi
+if test X"$have_ceph_rados" = "Xyes" ; then
+    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-ceph-rados.conf"
+fi
+
 
 
 
