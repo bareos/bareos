@@ -328,7 +328,7 @@ capacity planning, billings, etc.
 See chapter about \ilink{how to extract information from the catalog}{UseBareosCatalogToExtractInformationChapter}
  for additional information.
 
-See the \ilink{ Configuration chapter}{Time} of this manual for additional
+See the \ilink{Configuration chapter}{Time} of this manual for additional
 details of time specification.
 
 The default is 5 years.
@@ -2786,26 +2786,13 @@ The Pool Resource defined in the Director's configuration file
 Start of the Pool resource.  There must be at least one Pool resource
 defined.
 
-\item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[dir]{Name}
-\index[dir]{Directive!Name}
-The name of the pool.  For most applications, you will use the default
-pool name {\bf Default}.  This directive is required.
 
-\label{MaxVolumes}
-\item [Maximum Volumes = {\textless}number{\textgreater}] \hfill \\
-\index[dir]{Maximum Volumes}
-\index[dir]{Directive!Maximum Volumes}
-This directive specifies the maximum number of volumes (tapes or files)
-contained in the pool.  This directive is optional, if omitted or set to
-zero, any number of volumes will be permitted.  In general, this
-directive is useful for Autochangers where there is a fixed number of
-Volumes, or for File storage where you wish to ensure that the backups
-made to disk files do not become too numerous or consume too much space.
+\xdirective{dir}{Name}{name}{required}{}{}{%
+The name of the pool.
+}
 
-\item [Pool Type = {\textless}type{\textgreater}] \hfill \\
-\index[dir]{Pool Type}
-\index[dir]{Directive!Pool Type}
+
+\xdirective{dir}{Pool Type}{backup \textbar \ldots}{}{}{}{%
 This directive defines the pool type, which corresponds to the type of
 Job being run.  It is required and may be one of the following:
 
@@ -2818,41 +2805,45 @@ Job being run.  It is required and may be one of the following:
   \item [*Save]
 \end{description}
 Note, only Backup is currently implemented.
+}
 
-\item [Storage = {\textless}storage-resource-name{\textgreater}] \hfill \\
-\index[dir]{Storage}
-\index[dir]{Directive!Storage}
+\xdirective{dir}{Storage}{storage-resource-name}{}{}{}{%
 The Storage directive defines the name of the storage services where you
 want to backup the FileSet data.  For additional details, see the
-\ilink{Storage Resource Chapter}{StorageResource2} of this manual.
+\ilink{Storage Resource chapter}{StorageResource2} of this manual.
 The Storage resource may also be specified in the Job resource,
 but the value, if any, in the Pool resource overrides any value
 in the Job. This Storage resource definition is not required by either
 the Job resource or in the Pool, but it must be specified in
 one or the other.  If not configuration error will result.
+}
 
-\item [Use Volume Once = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{Use Volume Once}
-\index[dir]{Directive!Use Volume Once}
-This directive if set to {\bf yes} specifies that each volume is to be
-used only once.  This is most useful when the Media is a file and you
-want a new file for each backup that is done.  The default is {\bf no}
-(i.e.  use volume any number of times).  This directive will most likely
-be phased out (deprecated), so you are recommended to use {\bf Maximum
-Volume Jobs = 1} instead.
 
-The value defined by this directive in the bareos-dir.conf file is the
-default value used when a Volume is created.  Once the volume is
-created, changing the value in the bareos-dir.conf file will not change
-what is stored for the Volume.  To change the value for an existing
-Volume you must use the {\bf update} command in the Console.
+\xdirective{dir}{Minimum Block Size}{size-in-bytes}{}{}{14.2}{%
+The \configdirective{Minimum Block Size} can be defined here or at \ilink{Storage Device resource}{storage-device-minimumblocksize}.
+For details, see chapter \ilink{Setting Block Sizes}{setblocksizes}.
+}
 
-Please see the notes below under {\bf Maximum Volume Jobs} concerning
-using this directive with multiple simultaneous jobs.
 
-\item [Maximum Volume Jobs = {\textless}positive-integer{\textgreater}] \hfill \\
-\index[dir]{Maximum Volume Jobs}
-\index[dir]{Directive!Maximum Volume Jobs}
+\xdirective{dir}{Maximum Block Size}{size-in-bytes}{}{}{14.2}{%
+The \configdirective{Maximum Block Size} can be defined here or at \ilink{Storage Device resource}{storage-device-maximumblocksize}.
+If not defined, its default is 63 KB.
+Increasing this value could improve the throughput of writing to tapes a lot, see \ilink{Setting Block Sizes}{setblocksizes} chapter.
+}
+
+
+\xdirective{dir}{Maximum Volumes}{number}{}{0 (no limit)}{}{%
+\label{MaxVolumes}%
+This directive specifies the maximum number of volumes (tapes or files)
+contained in the pool.  This directive is optional, if omitted or set to
+zero, any number of volumes will be permitted.  In general, this
+directive is useful for Autochangers where there is a fixed number of
+Volumes, or for File storage where you wish to ensure that the backups
+made to disk files do not become too numerous or consume too much space.
+}
+
+
+\xdirective{dir}{Maximum Volume Jobs}{number}{}{0 (no limit)}{}{%
 This directive specifies the maximum number of Jobs that can be written
 to the Volume.  If you specify zero (the default), there is no limit.
 Otherwise, when the number of Jobs backed up to the Volume equals {\bf
@@ -2874,10 +2865,9 @@ directive is not taken into account, so multiple jobs may try to
 start writing to the Volume. At some point, when the Media record is
 updated, multiple simultaneous jobs may fail since the Volume can no
 longer be written.
+}
 
-\item [Maximum Volume Files = {\textless}positive-integer{\textgreater}] \hfill \\
-\index[dir]{Maximum Volume Files}
-\index[dir]{Directive!Maximum Volume Files}
+\xdirective{dir}{Maximum Volume Files}{number}{}{0 (no limit)}{}{%
 This directive specifies the maximum number of files that can be written
 to the Volume.  If you specify zero (the default), there is no limit.
 Otherwise, when the number of files written to the Volume equals {\bf
@@ -2893,10 +2883,9 @@ default value used when a Volume is created.  Once the volume is
 created, changing the value in the bareos-dir.conf file will not change
 what is stored for the Volume.  To change the value for an existing
 Volume you must use the {\bf update} command in the Console.
+}
 
-\item [Maximum Volume Bytes = {\textless}size{\textgreater}] \hfill \\
-\index[dir]{Maximum Volume Bytes}
-\index[dir]{Directive!Maximum Volume Bytes}
+\xdirective{dir}{Maximum Volume Bytes}{number}{}{0 (no limit)}{}{%
 This directive specifies the maximum number of bytes that can be written
 to the Volume.  If you specify zero (the default), there is no limit
 except the physical size of the Volume.  Otherwise, when the number of
@@ -2916,6 +2905,7 @@ default value used when a Volume is created.  Once the volume is
 created, changing the value in the bareos-dir.conf file will not change
 what is stored for the Volume.  To change the value for an existing
 Volume you must use the {\bf update} command in the Console.
+}
 
 \xdirective{dir}{Volume Use Duration}{time-period-specification}{}{0 (no limit)}{}
 {The Volume Use Duration directive defines the time period that the
@@ -2981,23 +2971,20 @@ When a catalog is defined in a Pool it will override the definition in
 the client (and the Catalog definition in a Job since 13.4.0). e.g.
 this catalog setting takes precedence over any other definition.
 
-\label{PoolAutoPrune}
-\item [AutoPrune = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{AutoPrune}
-\index[dir]{Directive!AutoPrune}
-If AutoPrune is set to {\bf yes} (default), Bareos (version 1.20 or
-greater) will automatically apply the Volume Retention period when new
+\xdirective{dir}{Auto Prune}{yes{\textbar}no}{}{yes}{}{%
+\label{PoolAutoPrune}%
+If AutoPrune is set to {\bf yes}, Bareos  will automatically
+apply the Volume Retention period when new
 Volume is needed and no appendable Volumes exist in the Pool.  Volume
 pruning causes expired Jobs (older than the {\bf Volume Retention}
 period) to be deleted from the Catalog and permits possible recycling of
 the Volume.
+}
 
+\xdirective{dir}{Volume Retention}{time-period-specification}{}{365 days}{}{%
 \label{VolRetention}
-\item [Volume Retention = {\textless}time-period-specification{\textgreater}] \hfill \\
-\index[dir]{Volume Retention}
-\index[dir]{Directive!Volume Retention}
-The Volume Retention directive defines the length of time that {\bf
-Bareos} will keep records associated with the Volume in
+The Volume Retention directive defines the length of time that
+Bareos will keep records associated with the Volume in
 the Catalog database after the End time of each Job written to the
 Volume.  When this time period expires, and if {\bf AutoPrune} is set to
 {\bf yes} Bareos may prune (remove) Job records that are older than the
@@ -3035,9 +3022,10 @@ retention period should be two months.
 The default Volume retention period is 365 days, and either the default
 or the value defined by this directive in the bareos-dir.conf file is
 the default value used when a Volume is created.  Once the volume is
-created, changing the value in the bareos-dir.conf file will not change
+created, changing the value in the \file{bareos-dir.conf} file will not change
 what is stored for the Volume.  To change the value for an existing
 Volume you must use the {\bf update} command in the Console.
+}
 
 \item [Action On Purge = {\textless}Truncate{\textgreater}] \hfill \\
 \index[dir]{actiononpurge}
@@ -3297,9 +3285,13 @@ LabelFormat} by using the \ilink{var command}{var} the Console Chapter
 of this manual.
 
 In almost all cases, you should enclose the format specification (part
-after the equal sign) in double quotes.  Please note that this directive
-is deprecated and is replaced in version 1.37 and greater with a Python
-script for creating volume names.
+after the equal sign) in double quotes.
+
+
+\xdirective{dir}{Use Volume Once}{yes{\textbar}no}{}{no}{deprecated}{%
+Use \configdirective{Maximum Volume Jobs = 1} instead.
+}
+
 \end{description}
 
 In order for a Pool to be used during a Backup Job, the Pool must have at

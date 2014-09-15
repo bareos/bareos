@@ -54,38 +54,41 @@ have one and only one Storage resource definition.
 
 \begin{description}
 
-\directive{sd}{Name}{name}{required}{}{}
+\xdirective{sd}{Name}{name}{required}{}{}{%
 Specifies the Name of the Storage daemon.
+}
 
-\directive{sd}{Working Directory}{directory}{required}{{\it platform specific}}{}
+\xdirective{sd}{Working Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage daemon may put
 its status files. This directory should be used only  by {\bf Bareos},
 but may be shared by other Bareos daemons provided the names given to each
 daemon are unique.
+}
 
-\directive{sd}{Pid Directory}{directory}{required}{{\it platform specific}}{}
+\xdirective{sd}{Pid Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage Daemon may put its
 process Id file files. The process Id file is used to  shutdown Bareos and to
 prevent multiple copies of  Bareos from running simultaneously.
 Standard shell expansion of the {\bf directory} is done when the
 configuration file is read so that values such  as {\bf \$HOME} will be
 properly expanded.
+}
 
 % \item [Subsys Directory = {\textless}Directory{\textgreater}] \hfill \\
 % \index[sd]{Subsys Directory}
 % \index[sd]{Directive!Subsys Directory}
 % This directive is currently unused.
 
-\directive{sd}{Plugin Directory}{directory}{required}{{\it platform specific}}{}
+\xdirective{sd}{Plugin Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage Daemon searches for
 plugins with the name {\bf {\textless}pluginname{\textgreater}-sd.so} which it will load at startup.
+}
 
 %\directive{sd}{Scripts Directory}{directory}{required}{{\it platform specific}}{}
 %This directive is currently unused.
 
-\directive{sd}{Heartbeat Interval}{time-interval}{required}{0}{}
-\index[general]{Heartbeat Interval}
-\index[general]{Broken pipe}
+\xdirective{sd}{Heartbeat Interval}{time-interval}{required}{0}{}{%
+\index[general]{Broken pipe}%
 This directive defines an interval of time in seconds.  When
 the Storage daemon is waiting for the operator to mount a
 tape, each time interval, it will send a heartbeat signal to
@@ -95,16 +98,17 @@ have a router that does not follow Internet
 standards and times out an valid connection after a short
 duration despite the fact that keepalive is set.  This usually
 results in a broken pipe error message.
+}
 
-\directive{sd}{Client Connect Wait}{time-interval}{required}{30 minutes}{}
-\index[general]{Client Connect Wait}
+\xdirective{sd}{Client Connect Wait}{time-interval}{required}{30 minutes}{}{%
 This directive defines an interval of time in seconds that
 the Storage daemon will wait for a Client (the File daemon)
 to connect.  Be aware that the
 longer the Storage daemon waits for a Client, the more
 resources will be tied up.
+}
 
-\directive{sd}{Maximum Concurrent Jobs}{number}{required}{10}{}
+\xdirective{sd}{Maximum Concurrent Jobs}{number}{required}{10}{}{%
 where {\textless}number{\textgreater} is the maximum number of Jobs that may run
 concurrently.  The default is set to 10, but you may set it to a larger
 number.  Each contact from the Director (e.g.  status request, job start
@@ -116,23 +120,25 @@ configuration file.  Which ones you set depend on what you want, but you
 will almost certainly need to set the {\bf Maximum Concurrent Jobs} in
 the Storage resource in the Director's configuration file and possibly
 those in the Job and Client resources.
+}
 
-\directive{sd}{SD Adress}{IP-address}{}{}{}
+\xdirective{sd}{SD Address}{IP-address}{}{}{}{%
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for Director and File daemon connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
 IP address specified as a dotted quadruple.  If this directive is not
 specified, the Storage daemon will bind to any available address (the
 default).
+}
 
-\directive{sd}{SD Adresses}{IP-address-specification}{}{}{}
+% failed to use xdirective here, because of verbatim including {}
+\directive{sd}{SD Addresses}{IP-address-specification}{}{}{}%
 Specify the ports and addresses on which the Storage daemon will listen
 for Director connections.  Normally, the default is sufficient and you
 do not need to specify this directive.  Probably the simplest way to
 explain how this directive works is to show an example:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{SD Addresses}
  SDAddresses  = { ip = {
         addr = 1.2.3.4; port = 1205; }
     ipv4 = {
@@ -155,8 +161,7 @@ explain how this directive works is to show an example:
         addr = bluedot.thun.net
     }
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
 can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
@@ -169,11 +174,13 @@ only IPv4 resolutions will be permitted,  and likewise with ip6.
 Using this directive, you can replace both the SDPort and SDAddress
 directives shown below.
 
-\directive{sd}{SD Port}{port-number}{required}{9103}{}
+
+\xdirective{sd}{SD Port}{port-number}{required}{9103}{}{%
 Specifies port number on which the Storage daemon  listens for Director
 connections.
+}
 
-\directive{sd}{Compatible}{yes{\textbar}no}{required}{yes}{}
+\xdirective{sd}{Compatible}{yes{\textbar}no}{required}{yes}{}{%
 This directive enables the compatible mode of the storage daemon. In
 this mode the storage daemon will try to write the storage data in a
 compatible way with Bareos of which Bareos is a fork. This only works
@@ -181,33 +188,40 @@ for the data streams both share and not for any new datastreams which
 are Bareos specific. Which may be read when used by a Bareos storage
 daemon but might not be understood by any of the Bareos components
 (dir/sd/fd).
+}
 
-\directive{sd}{NDMP Enable}{yes{\textbar}no}{}{}{}
+\xdirective{sd}{NDMP Enable}{yes{\textbar}no}{}{}{}{%
 This directive enables the Native NDMP Tape Agent.
+}
 
-\directive{sd}{NDMP Snooping}{yes{\textbar}no}{}{}{}
+\xdirective{sd}{NDMP Snooping}{yes{\textbar}no}{}{}{}{%
 This directive enables the Snooping and pretty printing of NDMP protocol
 information in debugging mode.
+}
 
-\directive{sd}{NDMP Loglevel}{level}{}{}{}
+\xdirective{sd}{NDMP Loglevel}{level}{}{}{}{%
 This directive sets the loglevel for the NDMP protocol library.
+}
 
-\directive{sd}{NDMP Address}{IP-address}{}{}{}
+\xdirective{sd}{NDMP Address}{IP-address}{}{}{}{%
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for NDMP Tape Server connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
 IP address specified as a dotted quadruple.  If this directive is not
 specified, the Storage daemon will bind to any available address (the
 default).
+}
 
-\directive{sd}{NDMP Addresses}{IP-address-specification}{}{}{}
+\xdirective{sd}{NDMP Addresses}{IP-address-specification}{}{}{}{%
 Specify the ports and addresses on which the Storage daemon will listen
 for NDMP Tape Server connections.  Normally, the default is sufficient and you
 do not need to specify this directive.
+}
 
-\directive{sd}{NDMP Port}{port-specification}{}{10000}{}
+\xdirective{sd}{NDMP Port}{port-specification}{}{10000}{}{%
 Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
+}
 
 \xdirective{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{This directive controls the autoxflate-sd plugin when replicating data inside one or
 between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will
@@ -222,7 +236,7 @@ data replication. This will not have any impact on any normal backup or restore 
 
 The following is a typical Storage daemon Storage definition.
 
-\begin{bconfig}{Storage daemon Storage definition}
+\begin{bconfig}{Storage daemon storage definition}
 #
 # "Global" Storage daemon configuration specifications appear
 # under the Storage resource.
@@ -371,12 +385,12 @@ accordingly to the type of the specified Archive Device file type.
 There are three different types that are supported:
 \begin{description}
     \item[device] Usually the device file
-name of a removable storage device (tape drive),  for example "{\bf
-/dev/nst0}" or "{\bf /dev/rmt/0mbn}", preferably in the "non-rewind" variant.
+name of a removable storage device (tape drive),  for example \path|/dev/nst0|
+or \path|/dev/rmt/0mbn|, preferably in the "non-rewind" variant.
 In addition, on systems such as Sun, which have multiple tape
 access methods, you must be sure to specify to use Berkeley I/O
 conventions with the device.  The {\bf b} in the Solaris (Sun) archive
-specification {\bf /dev/rmt/0mbn} is what is needed in this case.
+specification \path|/dev/rmt/0mbn| is what is needed in this case.
 Bareos does not support SysV tape drive behavior.
     \item[directory] If a directory is specified, it is used as file storage.
 The directory must be existing and be specified as absolute path.
@@ -386,7 +400,7 @@ Catalog.  If you want to write into more than one directory (i.e.  to spread
 the load to different disk drives), you will need to define two Device
 resources, each containing an Archive Device with a different directory.
     \item[fifo] \label{SetupFifo}
-A FIFO is a special kind of file that  connects two programs
+A FIFO is a special kind of file that connects two programs
 via kernel memory. If a FIFO device is specified  for a backup operation, you
 must have a program that reads what Bareos  writes into the FIFO. When the
 Storage daemon starts the job, it  will wait for {\bf MaximumOpenWait} seconds
@@ -399,9 +413,8 @@ set it to {\bf No}.  Since a FIFO is a one way device, Bareos will not attempt
 to read  a label of a FIFO device, but will simply write on it. To create a
 FIFO Volume in the catalog, use the {\bf add} command rather than the {\bf
 label} command to avoid attempting to write a label.
-{
-\footnotesize
-\begin{verbatim}
+
+\begin{bconfig}{Fifo device}
 Device {
   Name = FifoStorage
   Media Type = Fifo
@@ -414,9 +427,8 @@ Device {
   MaximumOpenWait = 60
   AlwaysOpen = no
 }
-\end{verbatim}
-}
-%\normalsize
+\end{bconfig}
+
 During a restore operation, if the Archive Device is a FIFO, Bareos  will
 attempt to read from the FIFO, so you must have an external program  that
 writes into the FIFO. Bareos will wait {\bf MaximumOpenWait} seconds  for the
@@ -669,28 +681,30 @@ drive autochanger operations will fail.  We strongly recommend to keep
 {\bf Always Open} set to {\bf Yes}
 
 
-\item [Volume Poll Interval = {\textless}time{\textgreater}] \hfill \\
-\index[sd]{Volume Poll Interval}
-\index[sd]{Directive!Volume Poll Interval}
-If the time  specified on this directive is non-zero, after  asking the
-operator to mount a new volume Bareos will  periodically poll (or read) the
+\xdirective{sd}{Volume Poll Interval}{time-interval}{}{300}{}{%
+If the time  specified on this directive is non-zero,
+%after  asking the operator to mount a new volume
+Bareos will  periodically poll (or read) the
 drive at the specified  interval to see if a new volume has been mounted. If
-the  time interval is zero (the default), no polling will occur.  This
+the  time interval is zero, no polling will occur.  This
 directive can be useful if you want to avoid operator  intervention via the
 console. Instead, the operator can  simply remove the old volume and insert
 the requested one,  and Bareos on the next poll will recognize the new tape
-and  continue. Please be aware that if you set this interval  too small, you
+and  continue.
+Please be aware that if you set this interval  too small, you
 may excessively wear your tape drive if the  old tape remains in the drive,
-since Bareos will read it on  each poll. This can be avoided by ejecting the
-tape using  the {\bf Offline On Unmount} and the {\bf Close on Poll}
-directives.
-However, if you are using a Linux 2.6 kernel or other OSes
-such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
-with no tape, and Bareos will not be able to properly open the drive and
-may fail the job.
+since Bareos will read it on  each poll.
+% This can be avoided by ejecting the
+% tape using  the {\bf Offline On Unmount} and the {\bf Close on Poll}
+% directives.
+% However, if you are using a Linux 2.6 kernel or other OSes
+% such as FreeBSD or Solaris, the Offline On Unmount will leave the drive
+% with no tape, and Bareos will not be able to properly open the drive and
+% may fail the job.
 %\TODO{reference is missing:  For more information on this problem, please see the
 %\ilink{description of Offline On Unmount}{NoTapeInDrive} in the Tape
 %Testing chapter.}
+}
 
 \item [Close on Poll= {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[sd]{Close on Poll}
@@ -836,7 +850,8 @@ data.
 drives or for disk Volumes where doing so may allow corrupted data to go
 undetected.
 
-\directive{sd}{Minimum block size}{size-in-bytes}{}{0}{}
+% xdirective? too long?
+\directive{sd}{Minimum block size}{size-in-bytes}{}{0}{}%
 This statement applies only to non-random access devices (e.g.
 tape drives).  Blocks written by the storage daemon to a non-random
 archive device will never be smaller than the given {\bf size-in-bytes}.
@@ -864,16 +879,18 @@ size mode, the block size (generally  defined by \command{mt}) {\bf must} be
 identical to the size specified  in Bareos -- otherwise when you attempt to
 re-read your Volumes,  you will get an error.
 
-If you want the  block size to be variable but with a 64K minimum and 200K
+If you want the  block size to be variable but with a 63K minimum and 200K
 maximum (and  default as well), you would specify:
 
 \begin{bconfig}{Variable Block Size}
-Minimum block size =  64K
+Minimum block size =  63K
 Maximum block size = 200K
 \end{bconfig}
 
 
-\directive{sd}{Maximum block size}{size-in-bytes}{}{64512}{}
+
+\xdirective{sd}{Maximum block size}{size-in-bytes}{}{64512}{}{
+\label{storage-device-maximumblocksize}%
 The Storage daemon will always attempt to
 write blocks of the specified {\bf size-in-bytes} to the archive device.
 As a consequence, this statement specifies both the default block size
@@ -885,23 +902,18 @@ and the new data will begin a new block.
 If no value is specified or zero is specified, the Storage daemon will
 use a default block size of 64,512 bytes (126 * 512).
 
-This default size is far too low for modern tape drives. If you
-are using a modern tape drive like LTO-4 or newer, you should use
-a block size of 512k or 1M.
+\warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes.}
 
-For more information, please see the tape speed whitepaper:
-\elink{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}
+Please read chapter \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes},
+to see how to tune this value in a safe manner.
+}
 
-%The maximum {\bf size-in-bytes} possible is 2,000,000.
-
-\warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes. So normally you will not change the block size in an existing configuration.}
-
-\directive{sd}{Label block size}{size-in-bytes}{}{64512}{}
+\xdirective{sd}{Label block size}{size-in-bytes}{}{64512}{14.2}{
 The storage daemon will write the label blocks with the size configured here.
 Usually, you will not need to change this directive.
 
 For more information on this directive, please see \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes}.
-
+}
 
 \directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}{}
 All modern (after 1998) tape drives should support this

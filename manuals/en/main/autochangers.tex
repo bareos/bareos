@@ -853,27 +853,30 @@ error message and request the tape be manually mounted on the drive.
 
 \section{Tapespeed and blocksizes}
 \index[general]{speedtuning!tapedrives}
+\index[general]{tuning!tape}
 \index[general]{blocksize!tapedrives}
-\index[general]{tapespeed and blocksizes}
+\index[general]{tape speed}
+\index[general]{block sizes}
 \label{Tapespeed and blocksizes}
+\label{setblocksizes}
 
-The tape speed tuning whitepaper ( \elink{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html})
+The tape speed tuning whitepaper (\elink{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html})
 shows that the two parameters
-{\bf maximum file size} and {\bf maximum block size} of the device
+\configdirective{maximum file size} and \configdirective{maximum block size} of the device
 have siginificant influence on the tape speed.
 
-While it is no problem to change the "maximum file size" parameter,
-unfortunately it is not possible to change the "maximum block size"
+While it is no problem to change the \configdirective{maximum file size} parameter,
+unfortunately it is not possible to change the \configdirective{maximum block size}
 parameter, because the previously written tapes would become unreadable
-in the new setup. It would require that the "maximum block size" parameter
+in the new setup. It would require that the \configdirective{maximum block size} parameter
 is switched back to the old value to be able to read the old volumes, but
 of course then the new volumes would be unreadable.
 
 Why is that the case?
 
-The problem is that bareos writes the bareos label block (header) in the same block
-size that is configured in the {\bf maximum block size} parameter in the device.
-Per default, this value is 63k, so usually a tape written by bareos looks like this:
+The problem is that Bareos writes the label block (header) in the same block
+size that is configured in the \configdirective{maximum block size} parameter in the device.
+Per default, this value is 63k, so usually a tape written by Bareos looks like this:
 
 \begin{verbatim}
 |------------------
@@ -900,27 +903,26 @@ Setting the maximum block size to e.g. 512k, would lead to the following:
 As you can see, every block is written with the maximum block size, also the label block.
 
 The problem that arises here is that reading a block header with a wrong block size causes
-a read error which is interpreted as an non-existent label by bareos.
+a read error which is interpreted as an non-existent label by Bareos.
 
-This is a potential source of data loss, because in normal operation, bareos refuses to
+This is a potential source of data loss, because in normal operation, Bareos refuses to
 relabel an already labeled volume to be sure to not overwrite data that is still needed.
-If bareos cannot read the volume label, this security mechanism does not work and you might
+If Bareos cannot read the volume label, this security mechanism does not work and you might
 label tapes already labeled accidentially.
 
-To solve this problem, the block size handling in bareos was changed in the following way:
+To solve this problem, the block size handling was changed in Bareos \sinceVersion{sd}{Maximum Block Size}{14.2} in the following way:
 \begin{itemize}
 \item  The tape label block is always written in the standard 63k (64512) Blocksize.
 \item  The following blocks are then written in the block size configured in the {\bf maximum block size} directive.
 \item  To be able to change the block size in an existing environment, it is now
-possible to set the "maximum block size" and "minimum block size" in the
+possible to set the \configdirective{maximum block size} and \configdirective{minimum block size} in the
 pool ressource. This setting is automatically promoted to each medium in
-that pool as usual (i.e. when a medium is labelled for that pool or if a volume is transferred to that pool from the scratch pool).
+that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool).
 When a volume is mounted, the volume's block size is
 used to write and read the data blocks that follow the header block.
 \end{itemize}
 
-The following picture shows the result: We have a label block with a certain size (63k per default to be compatible to old installations),
-and the following data blocks are written with another blocksize.
+The following picture shows the result:
 \begin{verbatim}
 |--------------------------------|
 |label block (label block size)  |
@@ -931,6 +933,8 @@ and the following data blocks are written with another blocksize.
 |data block n(maximum block size)|
 ---------------------------------|
 \end{verbatim}
+We have a label block with a certain size (63k per default to be compatible to old installations),
+and the following data blocks are written with another blocksize.
 
 
 This approach has the following advantages:
@@ -938,12 +942,12 @@ This approach has the following advantages:
 \item If nothing is configured, existing installations keep on working without problems.
 \item If you want to switch an existing installation that uses the default
 blocksize and move to a new (usually bigger) block size, you can do that
-easily by creating a new pool, where {\bf maximum block size} is set to the new
+easily by creating a new pool, where \configdirective{maximum block size} is set to the new
 value that you wish to use in the future:
 \end{itemize}
 
 
-\begin{verbatim}
+\begin{bconfig}{Pool Ressource: setting Maximum Block Size}
 Pool {
    Name = LTO-4-1M
       Pool Type = Backup
@@ -954,17 +958,17 @@ Pool {
       Recycle Pool = Scratch
 }
 
-\end{verbatim}
+\end{bconfig}
 
 Now configure your backups that they will write into the newly defined pool in the
 future, and your backups will be written with the new blocksize.
 
 Your existing tapes can be automatically transferred to the new pool when they expire
-via the {\bf scratch pool} mechanism. When a tape in your old pool expires, it is
-transferred to the Scratch pool if you set
+via the \ilink{Scratch Pool}{TheScratchPool} mechanism. When a tape in your old pool expires, it is
+transferred to the scratch pool if you set
 {\bf Recycle Pool = Scratch}. When your new pool needs a new volume, it will get it
 from the scratch pool and apply the new pool's properties to that tape which also
-include {\bf maximum block size} and {\bf minimum block size}.
+include \configdirective{maximum block size} and \configdirective{minimum block size}.
 
 This way you can smoothly switch your tapes to a new block size while you can still
 restore the data on your old tapes at any time.
@@ -974,35 +978,41 @@ There is only one case where the new block handling will cause problems, and thi
 is if you have used bigger block sizes already in your setup. As we now defined the
 label block to always be 63k, all labels will not be readable.
 
-To also solve this problem, the directive {\bf label block size} can be used to define
+To also solve this problem, the directive \configdirective{label block size} can be used to define
 a different label block size.  That way, everything should work smoothly as all label
 blocks will be readable again.
 
 
 \subsection{How can I find out which blocksize was used when the tape was written?}
 
-At least on linux, you can see if bareos tries to read the blocks with the
-wrong block size. In that case, you get a message like the following in
+At least on Linux, you can see if Bareos tries to read the blocks with the
+wrong block size. In that case, you get a kernel message like the following in
 your system's messages:
 \begin{verbatim}
 [542132.410170] st1: Failed to read 1048576 byte block with 64512 byte transfer.
 \end{verbatim}
 Here, the block was written with 1M block size but we only read 64k.
 
-\subsection{use of bls/bextract etc. with variable blocksizes}
+\subsection{Direct access to Volumes with with non-default blocksizes}
+\label{direct-access-to-volumes-with-non-default-blocksizes}
+\index[general]{bls!block size}
+\index[general]{bextract!block size}
+\index[general]{Command!bls!block size}
+\index[general]{Command!bextract!block size}
 
-{\bf bls} and {\bf bextract} can directly access bareos volumes without catalog database.
-This means that the {\bf maximum block size} information about the volume is also missing.
+
+\command{bls} and \command{bextract} can directly access Bareos volumes without catalog database.
+This means that these programs don't have information about the used block size.
 
 To be able to read a volume written with an arbitrary blocksize, you need to
-set the {\bf label block size}(to be able to to read the label block) and the
-{\bf maximum  block size} (to be able to read the data blocks) setting in the
+set the \configdirective{label block size} (to be able to to read the label block) and the
+\configdirective{maximum  block size} (to be able to read the data blocks) setting in the
 device definition used by those tools to be able to open the medium.
 
-Example using bls with a tape that was written with another blocksize than the
-DEFAULT\_BLOCK\_SIZE (63k), but with the default label block size of 63k:
-\begin{verbatim}
-../sbin/bls FC-Drive-1 -V A00007L4
+Example using \command{bls} with a tape that was written with another blocksize than the
+\variable{DEFAULT_BLOCK_SIZE} (63k), but with the default label block size of 63k:
+\begin{commands}{bls with non-default block size}
+<command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
 bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
 25-Feb 12:47 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
 25-Feb 12:47 bls JobId 0: Cartridge change or "update slots" may be required.
@@ -1011,53 +1021,54 @@ bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
  Bareos status: file=0 block=1
  Device status: ONLINE IM_REP_EN file=0 block=2
 0 files found.
-\end{verbatim}
+\end{commands}
 
-As can be seen, bls manages to read the label block as it knows what volume is mounted
-(Ready to read from volume ''A00007L4''), but fails to read the data blocks.
+As can be seen, \command{bls} manages to read the label block as it knows what volume is mounted
+(Ready to read from volume \parameter{A00007L4}), but fails to read the data blocks.
 
-{\bf dmesg} shows the following:
-
-\begin{verbatim}
+\begin{commands}{dmesg}
+<command>dmesg</command>
+[...]
 st2: Failed to read 131072 byte block with 64512 byte transfer.
-\end{verbatim}
+[...]
+\end{commands}
 
 This shows that the blocksize for the data blocks that we need is 131072.
 
-Now we have to set this blocksize in the bareos-sd.conf, Device
-resource as "Maximum Block Size":
+Now we have to set this blocksize in the \file{bareos-sd.conf}, device
+resource as \configdirective{Maximum Block Size}:
 
-\begin{verbatim}
+\begin{bconfig}{Storage Device Ressource: setting Maximum Block Size}
 Device {
-  Name = FC-Drive-1                      #
+  Name = FC-Drive-1
   Drive Index = 0
   Media Type = LTO-4
   Archive Device = /dev/tape/by-id/scsi-350011d00018a5f03-nst
-  AutomaticMount = yes;               # when device opened, read it
-  AlwaysOpen = yes;
-  RemovableMedia = yes;
-  RandomAccess = no;
-  AutoChanger = yes;
+  AutomaticMount = yes
+  AlwaysOpen = yes
+  RemovableMedia = yes
+  RandomAccess = no
+  AutoChanger = yes
   Maximum Block Size = 131072
 }
-
-\end{verbatim}
+\end{bconfig}
 
 
 Now we can call bls again, and everything works as expected:
-\begin{verbatim}
-sbin/bls FC-Drive-1 -V A00007L4
+\begin{commands}{bls with non-default block size}
+<command>bls</command> <parameter>FC-Drive-1 -V A00007L4</parameter>
 bls: butil.c:289-0 Using device: "FC-Drive-1" for reading.
 25-Feb 12:49 bls JobId 0: No slot defined in catalog (slot=0) for Volume "A00007L4" on "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
 25-Feb 12:49 bls JobId 0: Cartridge change or "update slots" may be required.
 25-Feb 12:49 bls JobId 0: Ready to read from volume "A00007L4" on device "FC-Drive-1" (/dev/tape/by-id/scsi-350011d00018a5f03-nst).
-bls JobId 203: -rw-r--r--   1 pstorz   users            221 2014-02-25 09:52:51  /home/pstorz/.java/.userPrefs/_!':!bw"t!#4!}@"w!(@!}@"u!'%!.g"k!')!.g"p!'@!~@!t!'k!~!==/prefs.xml
-bls JobId 203: drwxr-xr-x   2 pstorz   users           4096 2014-02-25 09:52:51  /home/pstorz/.java/.userPrefs/_!':!bw"t!#4!}@"w!(@!}@"u!'%!.g"k!')!.g"p!'@!~@!t!'k!~!==/
-\end{verbatim}
+bls JobId 203: [...]
+\end{commands}
 
 
 \subsection{How to configure the blocksizes in your environment}
 The following chart shows how to set the directives for {\bf maximum block size} and {\bf label block size}
 depending on how your current setup is:
 
-\includegraphics[scale=0.8]{\idir blocksize-decisionchart}
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir blocksize-decisionchart}
+\end{center}

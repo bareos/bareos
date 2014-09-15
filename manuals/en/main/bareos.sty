@@ -129,7 +129,7 @@
 % 3: directive type/value
 % 4: "required" | ""
 % 5: default value
-% 6: since version
+% 6: "deprecated" | since version
 % 7: description
 \item [#2 = {\textless}#3{\textgreater}]%
     \hfill%
@@ -138,10 +138,15 @@
   \hfill \\%
   \index[#1]{#2}%
   \index[#1]{Directive!#2}%
+  \ifthenelse{\equal{#6}{deprecated}}{%
+\warning{This directive is deprecated.\\}
+  }{}%
 #7\ \\%
-  \ifthenelse{\isempty{#6}}{}{%
-    \sinceVersion{#1}{#2}{#6}%
-    %\marginpar{#6}
+  \ifthenelse{\equal{#6}{deprecated}}{}{%
+    \ifthenelse{\isempty{#6}}{}{%
+      \sinceVersion{#1}{#2}{#6}%
+      %\marginpar{#6}
+    }%
   }%
 }
 % \xdirective{dir|sd|fd}{name}{type}{required}{default}{version}{}
