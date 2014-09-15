@@ -169,6 +169,8 @@ BuildRequires: update-desktop-files
 
 %if 0%{?sles_version}
 BuildRequires: sles-release
+%else
+BuildRequires: openSUSE-release
 %endif
 
 
