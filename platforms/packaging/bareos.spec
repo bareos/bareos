@@ -800,20 +800,22 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %config(noreplace) %{_sysconfdir}/bareos/mtx-changer.conf
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/btape
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-tape-with-autoloader.conf
 %{plugin_dir}/scsitapealert-sd.so
+
+%files storage-fifo
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-fifo*.so
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-fifo.conf
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
-%{_sysconfdir}/bareos/bareos-sd.d/device-gluster.conf
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-gluster.conf
 %endif
 
-%files storage-fifo
-%defattr(-, root, root)
-%{backend_dir}/libbareossd-fifo*.so
-
-%endif # client_only
+%endif # not client_only
 
 %files filedaemon
 # fd package (bareos-fd, plugins)

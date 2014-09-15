@@ -1,1 +1,2 @@
+/etc/bareos/bareos-sd.d/device-fifo.conf
 @backenddir@/libbareossd-fifo*.so
