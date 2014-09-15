@@ -1,4 +1,5 @@
 /etc/bareos/mtx-changer.conf
+/etc/bareos/bareos-sd.d/device-tape-with-autoloader.conf
 @backenddir@/libbareossd-gentape*.so
 @backenddir@/libbareossd-tape*.so
 @plugindir@/scsitapealert-sd.so
