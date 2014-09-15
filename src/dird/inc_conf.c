@@ -644,6 +644,8 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
 /* Store exclude directory containing  info */
 static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
 {
+   INCEXE *incexe;
+
    if (exclude) {
       scan_err0(lc, _("ExcludeDirContaining directive not permitted in Exclude.\n"));
       /* NOT REACHED */
@@ -652,7 +654,12 @@ static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool 
 
    lex_get_token(lc, T_NAME);
    if (pass == 1) {
-      res_incexe.ignoredir.append(bstrdup(lc->str));
+      incexe = &res_incexe;
+      if (incexe->ignoredir.size() == 0) {
+         incexe->ignoredir.init(10, true);
+      }
+      incexe->ignoredir.append(bstrdup(lc->str));
+      Dmsg1(900, "Add to ignoredir_list %s\n", lc->str);
    }
    scan_to_eol(lc);
 }
