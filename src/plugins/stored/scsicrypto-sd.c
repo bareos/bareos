@@ -317,19 +317,35 @@ static bRC do_set_scsi_encryption_key(void *value)
     */
    dcr = (DCR *)value;
    if (!dcr) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
    }
    dev = dcr->dev;
    if (!dev) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: dev is not set!\n");
       return bRC_Error;
    }
    device = dev->device;
    if (!device) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: device is not set!\n");
       return bRC_Error;
    }
 
    *StoredVolEncrKey = '\0';
    if (!get_volume_encryption_key(dcr, StoredVolEncrKey)) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Could not get_volume_encryption_key!\n");
+
+      /*
+       * Check if encryption key is needed for reading this volume.
+       */
+      P(crypto_operation_mutex);
+      if (!need_scsi_crypto_key(dev->fd(), dev->dev_name, true)) {
+         V(crypto_operation_mutex);
+         Dmsg0(dbglvl, "scsicrypto-sd: No encryption key needed!\n");
+         return bRC_OK;
+      }
+      V(crypto_operation_mutex);
+
       return bRC_Error;
    }
 
@@ -407,14 +423,17 @@ static bRC do_clear_scsi_encryption_key(void *value)
     */
    dcr = (DCR *)value;
    if (!dcr) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
    }
    dev = dcr->dev;
    if (!dev) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: dev is not set!\n");
       return bRC_Error;
    }
    device = dev->device;
    if (!device) {
+      Dmsg0(dbglvl, "scsicrypto-sd: Error: device is not set!\n");
       return bRC_Error;
    }
 
