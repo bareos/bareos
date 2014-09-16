@@ -2024,7 +2024,7 @@ static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args)
 
    if (dbgmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, level, dbgmsg);
+      Dmsg(ctx, level, "%s", dbgmsg);
    }
 
    Py_INCREF(Py_None);
@@ -2048,7 +2048,7 @@ static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args)
 
    if (jobmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Jmsg(ctx, type, jobmsg);
+      Jmsg(ctx, type, "%s", jobmsg);
    }
 
    Py_INCREF(Py_None);
