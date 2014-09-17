@@ -29,4 +29,3 @@ def handle_plugin_event(context, event):
     DebugMessage(context, 100, "bDirEventJobRun event triggered\n");
 
   return bRCs['bRC_OK'];
-

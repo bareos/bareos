@@ -21,4 +21,3 @@ def handle_plugin_event(context, event):
     DebugMessage(context, 100, "Job " + jobname + " stopped\n");
 
   return bRCs['bRC_OK'];
-

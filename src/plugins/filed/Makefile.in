@@ -63,7 +63,7 @@ plugtest: Makefile fd_plugins.c fileset.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(CP) *.py $(DESTDIR)$(plugindir)
+	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
 	@for plugin in $(BUILD_PLUGINS); do \

@@ -1,6 +1,6 @@
 #
 # Default Bareos Director configuration file for disk-only backup
-# (C) 2013 Bareos GmbH & Co.KG
+# (C) 2013-2014 Bareos GmbH & Co.KG
 #
 # Each configuration item has a reference number that shows
 # where this property can be changed in the configuration file.
@@ -57,8 +57,12 @@ Director {                            # define myself
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@
 
-  # remove comment in next line to load plugins from specified directory
+  # remove comment from "Plugin Directory" to load plugins from specified directory.
+  # if "Plugin Names" is defined, only the specified plugins will be loaded,
+  # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
+  #
   # Plugin Directory = @plugindir@
+  # Plugin Names = ""
 }
 
 JobDefs {
