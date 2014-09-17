@@ -32406,12 +32406,12 @@ fi
 
 
 
-INSTALL_SD_CONFS=""
+INSTALL_SD_CONFS="device-fifo.conf device-tape-with-autoloader.conf"
 if test X"$have_glusterfs" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-gluster.conf"
+    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-gluster.conf"
 fi
 if test X"$have_ceph_rados" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_BACKEND_CONFS} device-ceph-rados.conf"
+    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-ceph-rados.conf"
 fi
 
 
