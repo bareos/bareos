@@ -136,14 +136,12 @@ program anywhere on your network. Most frequently, however, one runs it on the
 same machine as the Director. Normally, the Console program will print
 something similar to the following:
 
-\footnotesize
-\begin{verbatim}
-root@bareos:~ # bconsole 
+\begin{commands}{bconsole}
+<command>bconsole</command>
 Connecting to Director bareos:9101
 Enter a period to cancel a command.
 *
-\end{verbatim}
-\normalsize
+\end{commands}
 
 the asterisk is the console command prompt.
 
@@ -779,7 +777,7 @@ Simply enter the command {\bf quit}.
 \index[general]{Client!Adding a Second}
 \index[general]{Adding a Second Client}
 
-\subsection{Changes on the Client}
+\subsection*{Changes on the Client}
 
 If you have gotten the example shown above to work on your system, you may be
 ready to add a second Client (File daemon). That is you have a second machine
@@ -821,7 +819,7 @@ root@client2:~ # service bareos-fd restart
 
 
 
-\subsection{Changes on the Bareos Director (Server)}
+\subsection*{Changes on the Server (Bareos Director)}
 
 Then you need to
 make some additions to your Director's configuration file to define the new
@@ -1251,7 +1249,7 @@ will inform you, and you can create them "on-the-fly" so to speak. In my
 case, I label my tapes with the date, for example: {\bf DLT-18April02}. See
 below for the details of using the {\bf label} command.
 
-\subsection{Labeling Volumes with the Console Program}
+\subsection*{Labeling Volumes with the Console Program}
 \index[general]{Labeling Volumes with the Console Program}
 \index[general]{Console!Command!label}
 

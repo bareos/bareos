@@ -813,8 +813,8 @@ command to synchronize autochanger content with your catalog.
 
 
 \section{Bareos Autochanger Interface}
-\index[general]{Interface!Bareos Autochanger}
-\index[general]{Bareos Autochanger Interface}
+\index[general]{Interface!Autochanger}
+\index[general]{Autochanger Interface}
 \label{autochanger-interface}
 
 Bareos calls the autochanger script that you specify on the {\bf Changer
@@ -973,7 +973,7 @@ include \configdirective{maximum block size} and \configdirective{minimum block 
 This way you can smoothly switch your tapes to a new block size while you can still
 restore the data on your old tapes at any time.
 
-\subsection{Possible Problems}
+\subsection*{Possible Problems}
 There is only one case where the new block handling will cause problems, and this
 is if you have used bigger block sizes already in your setup. As we now defined the
 label block to always be 63k, all labels will not be readable.
@@ -983,7 +983,7 @@ a different label block size.  That way, everything should work smoothly as all 
 blocks will be readable again.
 
 
-\subsection{How can I find out which blocksize was used when the tape was written?}
+\subsection*{How can I find out which blocksize was used when the tape was written?}
 
 At least on Linux, you can see if Bareos tries to read the blocks with the
 wrong block size. In that case, you get a kernel message like the following in
@@ -993,7 +993,7 @@ your system's messages:
 \end{verbatim}
 Here, the block was written with 1M block size but we only read 64k.
 
-\subsection{Direct access to Volumes with with non-default blocksizes}
+\subsection*{Direct access to Volumes with with non-default blocksizes}
 \label{direct-access-to-volumes-with-non-default-blocksizes}
 \index[general]{bls!block size}
 \index[general]{bextract!block size}
@@ -1065,7 +1065,7 @@ bls JobId 203: [...]
 \end{commands}
 
 
-\subsection{How to configure the blocksizes in your environment}
+\subsection*{How to configure the blocksizes in your environment}
 The following chart shows how to set the directives for {\bf maximum block size} and {\bf label block size}
 depending on how your current setup is:
 

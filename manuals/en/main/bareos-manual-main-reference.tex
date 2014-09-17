@@ -19,15 +19,21 @@
 \usepackage{longtable}
 \usepackage{makeidx}
 \usepackage{index}
-% \usepackage[linkcolor=black,colorlinks=true]{hyperref}
-%\usepackage{hyperref}
-\usepackage[hyperindex]{hyperref}
+\usepackage[usenames,dvipsnames]{color} % required by framed, used by hyperref
+%\usepackage{titlesec}
+
+\usepackage[titles]{tocloft}
+%\tocloftpagestyle{fancy}
+\cftsetindents{chapter}{0em}{1.5em}
+\cftsetindents{section}{1.5em}{3em}
+\cftsetindents{subsection}{4.5em}{4em}
+
+\usepackage[hyperindex=true,colorlinks=true,linkcolor=blue]{hyperref}
 \usepackage{url}
 \usepackage{moreverb}
 \renewcommand\verbatimtabsize{4\relax}
 \usepackage{ifthen}
 \usepackage{xifthen}
-\usepackage[usenames,dvipsnames]{color} % required by framed
 % framed does not work with htlatex, therefore replaced by listings
 %\usepackage{framed} % framed, oframed, shaded, shaded*, snugshade, snugshade*, leftbar, titled-frame
 \usepackage{listings}
@@ -49,6 +55,27 @@
 \newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
 \newindex{console}{console.idx}{console.ind}{Console Index}
 \newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
+
+% set links back to TOC. Failed to work with htlatex
+% \titleformat{\chapter}[display]
+%   {\normalfont\huge\bfseries}{\chaptertitlename\ {\fontfamily{cmr}\selectfont\thechapter}}{20pt}{\hyperlink{chap-\thechapter}{\Huge#1}
+% 
+% \titleformat{name=\chapter,numberless}
+%   {\normalfont\huge\bfseries}{}{-20pt}{\Huge#1}
+% 
+% \titleformat{\section}
+%   {\normalfont\Large\bfseries}{\thesection}{1em}{\hyperlink{sec-\thesection}{#1}
+% \addtocontents{toc}{\protect\hypertarget{sec-\thesection}{}}}
+% 
+% \titleformat{name=\section,numberless}
+%   {\normalfont\Large\bfseries}{}{0pt}{#1}
+% 
+% \titleformat{\subsection}
+%   {\normalfont\large\bfseries}{\thesubsection}{1em}{\hyperlink{subsec-\thesubsection}{#1}
+% \addtocontents{toc}{\protect\hypertarget{subsec-\thesubsection}{}}}
+% 
+% \titleformat{name=\subsection,numberless}
+%   {\normalfont\large\bfseries}{\thesubsection}{0pt}{#1}
 
 \begin{document}
 

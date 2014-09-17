@@ -230,16 +230,14 @@ You can test if your configuration file is syntactically correct by running
 the appropriate daemon with the {\bf -t} option. The daemon will process the
 configuration file and print any error messages then terminate.
 
-\footnotesize
-\begin{verbatim}
+\begin{commands}{Testing Configuration Files}
 bareos-dir -t -c /etc/bareos/bareos-dir.conf
 bareos-fd -t -c /etc/bareos/bareos-fd.conf
 bareos-sd -t -c /etc/bareos/bareos-sd.conf
 bconsole -t -c /etc/bareos/bconsole.conf
 bat -t -c /etc/bareos/bat.conf
-bareos-tray-monitor -t -c /etc/bareos/tray-monitor.conf"
-\end{verbatim}
-\normalsize
+bareos-tray-monitor -t -c /etc/bareos/tray-monitor.conf
+\end{commands}
 
 will test the configuration files of each of the main programs. If the
 configuration file is OK, the program will terminate without printing
