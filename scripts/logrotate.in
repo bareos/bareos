@@ -6,9 +6,9 @@
 #
 #      /etc/logrotate.d/bareos
 #
-@logdir@/bareos.log {
+@logdir@/bareos*.log {
     monthly
-    rotate 5
+    rotate 6
     notifempty
     missingok
 }
