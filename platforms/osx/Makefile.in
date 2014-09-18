@@ -83,6 +83,10 @@ INFILE_SUBST=\
   -e "s,@BAREOS_DESTDIR@,${BAREOS_DESTDIR},g" \
   -e "s,@PACKAGE_ID@,${PACKAGE_ID},g"
 
+nothing:
+
+all: dmg
+
 dmg: pkg
 	hdiutil create -srcfolder "${PACKAGE_DIR}" "${PACKAGE_DMG}"
 
