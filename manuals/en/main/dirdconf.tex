@@ -132,6 +132,27 @@ The password is plain text.
 }
 
 
+\xdirective{dir}{Absolute Job Timeout}{time}{}{}{14.2}{%
+}
+
+\xdirective{dir}{Auditing}{yes{\textbar}no}{}{no}{14.2}{%
+\label{DirectorConfigDirectorAuditing}%
+\index[general]{auditing}%
+This directive allows to en- or disable auditing of interaction with the Bareos Director.
+If enabled, \ilink{audit messages}{MessageTypes} will be generated.
+The \ilink{messages resource}{MessagesResource} configured in \configdirective{Messages} 
+defines, how these messages are handled.
+}
+
+\xdirective{dir}{Audit Events}{list}{}{}{14.2}{%
+}
+
+
+\xdirective{dir}{Backend Directory}{directory}{}{{\it platform specific}}{}{%
+This directive specifies a directory from where the Bareos Director loads his dynamic backends.
+}
+
+
 \xdirective{dir}{Description}{text}{}{}{}{%
 The text field contains a  description of the Director that will be displayed
 in the  graphical user interface. This directive is optional.
@@ -267,7 +288,7 @@ larger number.
 The messages resource  specifies where to deliver Director messages that are
 not associated  with a specific Job. Most messages are specific to a job and
 will  be directed to the Messages resource specified by the job. However,
-there are a few messages that can occur when no job is running.
+there are a messages that can occur when no job is running.
 }
 
 
@@ -280,6 +301,10 @@ information in debugging mode.
 \xdirective{dir}{NDMP Loglevel}{number}{}{4}{13.2}{%
 \index[general]{NDMP!Logging}%
 This directive sets the loglevel for the NDMP protocol library.
+}
+
+
+\xdirective{dir}{Omit Defaults}{yes {\textbar} no}{}{yes}{}{%
 }
 
 
@@ -297,6 +322,29 @@ which lead to a somewhat higher speed. Its currently mostly used for keeping all
 hardlinks in memory. Its relates to the \configdirective{Optimize For Size} option set either
 one to \parameter{yes} as they are mutually exclusive.
 }
+
+
+\xdirective{dir}{Plugin Directory}{directory}{}{}{14.2}{%
+If a directory is specified, the Bareos Director tries to load 
+all \ilink{Director plugins}{dirPlugins} that are located in this directory.
+If \configdirective{Plugin Names} is also specified,
+only the specified plugins get loaded.
+}
+
+\directive{dir}{Plugin Names}{stringlist}{}{}{14.2}%{%
+If a \configdirective{Plugin Directory} is specified
+\configdirective{Plugin Names} defines, which \ilink{Director plugins}{dirPlugins} get loaded.
+
+If \configdirective{Plugin Names} is not defined, all plugins get loaded,
+otherwise the defined ones.
+ 
+Multiple plugins are separated by \textbf{:}.
+
+Only the basename is given, the file extension \path|-dir.so| is added automatically.
+
+\begin{bconfig}{Plugin Names}
+Plugin Names = python:otherplugin
+\end{bconfig}
 
 
 \xdirective{dir}{Pid Directory}{directory}{}{{\it platform specific}}{}{%
@@ -339,6 +387,10 @@ the Director will cancel the job.  The default is 30 minutes.
 }
 
 
+\xdirective{dir}{Statistics Collect Interval}{time-interval}{}{150}{14.2}{%
+}
+
+
 \xdirective{dir}{Statistics Retention}{time}{}{160704000 (5 years)}{}{%
 \label{PruneStatistics}%
 The \configdirective{Statistics Retention} directive defines the length of time that
@@ -354,6 +406,25 @@ See chapter about \ilink{how to extract information from the catalog}{UseBareosC
 
 See the \ilink{Configuration chapter}{Time} of this manual for additional
 details of time specification.
+}
+
+
+\xdirective{dir}{Subscriptions}{number}{}{0}{12.4.4}{%
+In case you want check that the number of active clients don't exceed a specific number,
+you can define this number here and check with the \bcommand{status subscriptions} command.
+
+However, this is only indended to give a hint. No active limiting is implemented.
+}
+
+
+\xdirective{dir}{Subsysdirectory}{directory}{}{}{}{%
+}
+
+
+\xdirective{dir}{TLS \ldots}{\ldots}{}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+See chapter \ilink{TLS Configuration Directives}{TlsDirectives} to see,
+how the Bareos Director (and the other components) must be configured to use TLS.
 }
 
 

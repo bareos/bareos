@@ -1,7 +1,15 @@
 \chapter{Plugins}
 \index[general]{Plugin}
 
+The functionality of Bareos can be extended by plugins.
+They do exists plugins for the different daemons (Director, Storage- and File-Daemon).
+
+To use plugins, they must be enabled in the configuration (\configdirective{Plugin Directory} and \configdirective{Plugin Names}).
+
+
+
 \section{File Daemon Plugins}
+\label{fdPlugins}
 
 File Daemon plugins are configured by the \configdirective{plugin} directive of a FileSet, see the \ilink{File Set}{directive-fileset-plugin} section.
 
@@ -75,3 +83,62 @@ See chapter \ilink{Backup of a PostgreSQL Databases by using the PGSQL-Plugin}{b
 \subsection{MSSQL Plugin}
 
 See chapter \ilink{Backup Of MSSQL Databases}{MSSQL}.
+
+
+\subsection{python-fd Plugin}
+\index[general]{Plugin!Python!File Daemon}
+
+The \name{python-fd} plugin behaves similar to the \ilink{python-dir}{director-python-plugin} plugin.
+Please read the information there.
+
+
+
+\section{Storage Daemon Plugins}
+\label{sdPlugins}
+
+\subsection{autoxflate-sd}
+
+This plugin is part of the \package{bareos-storage} package.
+
+
+\subsection{scsicrypto-sd}
+
+This plugin is part of the \package{bareos-storage} package.
+
+\subsection{scsitapealert-sd}
+
+This plugin is part of the \package{bareos-storage-tape} package.
+
+
+\subsection{python-sd Plugin}
+\index[general]{Plugin!Python!Storage Daemon}
+
+The \name{python-sd} plugin behaves similar to the \ilink{python-dir}{director-python-plugin} plugin.
+Please read the information there.
+
+
+\section{Director Plugins}
+\label{dirPlugins}
+
+\subsection{python-dir Plugin}
+\label{director-python-plugin}
+\index[general]{Plugin!Python!Director}
+
+The \name{python-dir} plugin is intended to extend the functionality of the Bareos Director by Python code.
+A working example is included.
+
+\begin{itemize}
+    \item install the \package{bareos-director-python-plugin} package
+    \item change to the Baroes plugin directory (\directory{/usr/lib/bareos/plugins/} or \directory{/usr/lib64/bareos/plugins/})
+    \item copy \file{bareos-dir.py.template} to \file{bareos-dir.py}
+    \item activate the plugin in the Bareos Director configuration
+    \item restart the Bareos Director
+    \item change \file{bareos-dir.py} as required
+    \item restart the Bareos Director
+\end{itemize}
+
+\subsubsection*{Limitations}
+
+\begin{itemize}
+    \item Currently there can be only one Python plugin per Director. The plugin only loads the file \file{bareos-dir.py}.
+\end{itemize}
