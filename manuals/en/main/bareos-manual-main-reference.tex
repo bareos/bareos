@@ -49,12 +49,23 @@
 \usepackage{bareos}
 
 \makeindex
-\newindex{general}{general.idx}{general.ind}{General Index}
-\newindex{dir}{director.idx}{director.ind}{Director Index}
-\newindex{fd}{fd.idx}{fd.ind}{File Daemon Index}
-\newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
-\newindex{console}{console.idx}{console.ind}{Console Index}
-\newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
+\ifdefined\HCode
+    %htlatex code here
+    \newindex{general}{general.htidx}{general.htind}{General Index}
+    \newindex{dir}{director.htidx}{director.htind}{Director Index}
+    \newindex{fd}{fd.htidx}{fd.htind}{File Daemon Index}
+    \newindex{sd}{sd.htidx}{sd.htind}{Storage Daemon Index}
+    \newindex{console}{console.htidx}{console.htind}{Console Index}
+    \newindex{monitor}{monitor.htidx}{monitor.htind}{Monitor Index}
+\else
+    %pdflatex code here
+    \newindex{general}{general.idx}{general.ind}{General Index}
+    \newindex{dir}{director.idx}{director.ind}{Director Index}
+    \newindex{fd}{fd.idx}{fd.ind}{File Daemon Index}
+    \newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
+    \newindex{console}{console.idx}{console.ind}{Console Index}
+    \newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
+\fi
 
 % set links back to TOC. Failed to work with htlatex
 % \titleformat{\chapter}[display]
