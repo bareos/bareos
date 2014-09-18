@@ -133,7 +133,7 @@ static RES_ITEM dir_items[] = {
    { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4" },
    { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL },
-   { "auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "true" },
+   { "auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "false" },
    { "auditevents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
