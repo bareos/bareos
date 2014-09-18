@@ -14,7 +14,8 @@ data types recognized by {\bf Bareos}. Please see the
 
 %\section{Director Resource Types}
 \index[general]{Types!Director Resource}
-\index[general]{Director Resource Types}
+\index[general]{Director!Resource Types}
+\index[dir]{Resource Types}
 
 Director resource type may be one of the following:
 
@@ -87,9 +88,22 @@ way or another.
 \index[general]{Resource!Director}
 
 The Director resource defines the attributes of the Directors running on the
-network. In the current implementation, there is only a single Director
-resource, but the final design will contain multiple Directors to maintain
-index and media database redundancy.
+network. Only a single Director
+resource is allowed.
+
+
+The following is an example of a valid Director resource definition:
+
+\begin{bconfig}{Director Ressource example}
+Director {
+  Name = baroes-dir
+  Password = secretpassword
+  QueryFile = "/etc/bareos/query.sql"
+  Maximum Concurrent Jobs = 10
+  Messages = Daemon
+}
+\end{bconfig}
+
 
 \begin{description}
 
@@ -98,158 +112,54 @@ index and media database redundancy.
 Start of the Director resource. One and only one  director resource must be
 supplied.
 
-\item [Name = {\textless}name{\textgreater}] \hfill \\
-\index[dir]{Name}
-\index[dir]{Directive!Name}
-The director name used by the system  administrator. This directive is
-required.
 
-\item [Description = {\textless}text{\textgreater}] \hfill \\
-\index[dir]{Description}
-\index[dir]{Directive!Description}
-The text field contains a  description of the Director that will be displayed
-in the  graphical user interface. This directive is optional.
+\xdirective{dir}{Name}{name}{required}{}{}{%
+The director name used by the system  administrator.
+}
 
-\item [Password = {\textless}UA-password{\textgreater}] \hfill \\
-\index[dir]{Password}
-\index[dir]{Directive!Password}
+
+\xdirective{dir}{Password}{password}{required}{}{}{%
 Specifies the password that must be supplied for the default Bareos
 Console to be authorized.  The same password must appear in the {\bf
 Director} resource of the Console configuration file.  For added
 security, the password is never passed across the network but instead a
-challenge response hash code created with the password.  This directive
-is required.  If you have either {\bf /dev/random} or {\bf bc} on your
-machine, Bareos will generate a random password during the configuration
+challenge response hash code created with the password.  
+Bareos tries to generate a random password during the configuration
 process, otherwise it will be left blank and you must manually supply
 it.
 
-The password is plain text.  It is not generated through any special
-process but as noted above, it is better to use random text for
-security reasons.
+The password is plain text.
+}
 
-\item [Messages = {\textless}Messages-resource-name{\textgreater}] \hfill \\
-\index[dir]{Messages}
-\index[dir]{Directive!Messages}
-The messages resource  specifies where to deliver Director messages that are
-not associated  with a specific Job. Most messages are specific to a job and
-will  be directed to the Messages resource specified by the job. However,
-there are a few messages that can occur when no job is running.  This
-directive is required.
 
-\item [Working Directory = {\textless}Directory{\textgreater}] \hfill \\
-\index[dir]{Working Directory}
-\index[dir]{Directive!Working Directory}
-This directive is optional and specifies a directory in which the Director
-may put its status files. This directory should be used only  by Bareos but
-may be shared by other Bareos daemons. However, please note, if this
-directory is shared with other Bareos daemons (the File daemon and Storage
-daemon), you must ensure that the {\bf Name} given to each daemon is
-unique so that the temporary filenames used do not collide.
-By default
-the Bareos configure process creates unique daemon names by postfixing them
-with -dir, -fd, and -sd.
-Standard shell expansion of the {\bf
-Directory}  is done when the configuration file is read so that values such
-as {\bf \$HOME} will be properly expanded.
+\xdirective{dir}{Description}{text}{}{}{}{%
+The text field contains a  description of the Director that will be displayed
+in the  graphical user interface. This directive is optional.
+}
 
-The working directory specified must already exist and be
-readable and writable by the Bareos daemon referencing it.
 
-% If you have specified a Director user and/or a Director group on your
-% ./configure line with {\bf {-}{-}with-dir-user} and/or
-% {\bf {-}{-}with-dir-group} the Working Directory owner and group will
-% be set to those values.
+\xdirective{dir}{Dir Address}{IP-address}{}{}{}{%
+This directive is optional, but if it is specified, it will cause the
+Director server (for the Console program) to bind to the specified
+{\bf IP-Address}, which is either a domain name or an IP address specified as a
+dotted quadruple in string or quoted string format.  If this directive is
+not specified, the Director will bind to any available address (the
+default).  Note, unlike the \configdirective{Dir Addresses} specification noted above, this
+directive only permits a single address to be specified.  This directive
+should not be used if you specify a \configdirective{Dir Addresses} (N.B. plural) directive.
+}
 
-\item [Pid Directory = {\textless}Directory{\textgreater}] \hfill \\
-\index[dir]{Pid Directory}
-\index[dir]{Directive!Pid Directory}
-This directive  is optional and specifies a directory in which the Director
-may put its process Id file. The process Id file is used to  shutdown
-Bareos and to prevent multiple copies of  Bareos from running simultaneously.
-Standard shell expansion of the {\bf Directory}  is done when the
-configuration file is read so that values such  as {\bf \$HOME} will be
-properly expanded.
 
-The PID directory specified must already exist and be
-readable and writable by the Bareos daemon referencing it.
-
-Typically on Linux systems, you will set this to:  {\bf /var/run}. If you are
-not installing Bareos in the  system directories, you can use the {\bf Working
-Directory} as  defined above.
-
-\item [Scripts Directory = {\textless}Directory{\textgreater}] \hfill \\
-\index[dir]{Scripts Directory}
-\index[dir]{Directive!Scripts Directory}
-This directive is currently unused.
-
-\item [QueryFile = {\textless}Path{\textgreater}] \hfill \\
-\index[dir]{QueryFile}
-\index[dir]{Directive!QueryFile}
-This directive is required and specifies a directory and file in which
-the Director can find the canned SQL statements for the {\bf Query}
-command of the Console.
-
-%Standard shell expansion of the {\bf Path} is
-%done when the configuration file is read so that values such as {\bf
-%\$HOME} will be properly expanded.
-
-\item [Heartbeat Interval = {\textless}time-interval{\textgreater}] \hfill \\
-\index[dir]{Heartbeat Interval}
-\index[dir]{Directive!Heartbeat}
-This directive is optional and if specified will cause the Director to
-set a keepalive interval (heartbeat) in seconds on each of the sockets
-it opens for the Client resource.  This value will override any
-specified at the Director level.  It is implemented only on systems
-that provide the {\bf setsockopt} TCP\_KEEPIDLE function (Linux, ...).
-The default value is zero, which means no change is made to the socket.
-
-\directive{dir}{Maximum Concurrent Jobs}{number}{}{1}{}
-\label{DirMaxConJobs}
-%\item [Maximum Concurrent Jobs = {\textless}number{\textgreater}] \hfill \\
-\index[dir]{Maximum Concurrent Jobs}
-\index[dir]{Directive!Maximum Concurrent Jobs}
-\index[general]{Simultaneous Jobs}
-\index[general]{Concurrent Jobs}
-where {\textless}number{\textgreater}  is the maximum number of total Director Jobs that
-should run  concurrently. The default is set to 1, but you may set it to a
-larger number.
-
-The Volume format becomes more complicated with
-multiple simultaneous jobs, consequently, restores may take longer if
-Bareos must sort through interleaved volume blocks from  multiple simultaneous
-jobs. This can be avoided by having each simultaneous job write to
-a different volume or  by using data spooling, which will first spool the data
-to disk simultaneously, then write one spool file at a time to the volume
-thus avoiding excessive interleaving of the different job blocks.
-
-See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
-
-\item [FD Connect Timeout = {\textless}time{\textgreater}] \hfill \\
-\index[dir]{FD Connect Timeout}
-\index[dir]{Directive!FD Connect Timeout}
-where {\bf time} is the time that the Director should continue
-attempting to contact the File daemon to start a job, and after which
-the Director will cancel the job.  The default is 30 minutes.
-
-\item [SD Connect Timeout = {\textless}time{\textgreater}] \hfill \\
-\index[dir]{SD Connect Timeout}
-\index[dir]{Directive!SD Connect Timeout}
-where {\bf time} is the time that the Director should continue
-attempting to contact the Storage daemon to start a job, and after which
-the Director will cancel the job.  The default is 30 minutes.
-
-\item [DirAddresses = {\textless}IP-address-specification{\textgreater}] \hfill \\
-\index[dir]{DirAddresses}
-\index[dir]{Address}
-\index[general]{Address}
-\index[dir]{Directive!DirAddresses}
+% failed to use xdirective here, because of verbatim including {}
+\directive{dir}{Dir Addresses}{IP-address-specification}{}{}{}%
+\index[dir]{Address}%
+\index[general]{Address}%
 Specify the ports and addresses on which the Director daemon will listen
 for Bareos Console connections.  Probably the simplest way to explain
 this is to show an example:
 
-\footnotesize
-\begin{verbatim}
- DirAddresses  = {
+\begin{bconfig}{Dir Addresses}
+ Dir Addresses  = {
     ip = { addr = 1.2.3.4; port = 1205;}
     ipv4 = {
         addr = 1.2.3.4; port = http;}
@@ -267,57 +177,171 @@ this is to show an example:
         addr = bluedot.thun.net
     }
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
 can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
 a symbolic name (only in the ip specification).  Also, port can be specified
-as a number or as the mnemonic value from  the /etc/services file.  If a port
+as a number or as the mnemonic value from  the \file{/etc/services} file.  If a port
 is not specified, the default will be used. If an ip  section is specified,
 the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
 only IPv4 resolutions will be permitted,  and likewise with ip6.
 
-Please note that if you use the DirAddresses directive, you must
-not use either a DirPort or a DirAddress directive in the same
+Please note that if you use the \configdirective{Dir Addresses} directive, you must
+not use either a \configdirective{Dir Port} or a \configdirective{Dir Address} directive in the same
 resource.
 
-\item [DirPort = {\textless}port-number{\textgreater}] \hfill \\
-\index[dir]{DirPort}
-\index[dir]{Directive!DirPort}
+
+\xdirective{dir}{Dir Port}{port-number}{}{9101}{}{%
 Specify the port (a positive  integer) on which the  Director daemon will
 listen for Bareos Console connections.  This same port number must be
 specified in the Director resource  of the Console configuration file. The
 default is 9101, so  normally this directive need not be specified.  This
-directive should not be used if you specify DirAddresses (N.B plural)
+directive should not be used if you specify \configdirective{Dir Addresses} (N.B plural)
 directive.
+}
 
-\item [DirAddress = {\textless}IP-Address{\textgreater}] \hfill \\
-\index[dir]{DirAddress}
-\index[dir]{Directive!DirAddress}
-This directive is optional, but if it is specified, it will cause the
-Director server (for the Console program) to bind to the specified
-{\bf IP-Address}, which is either a domain name or an IP address specified as a
-dotted quadruple in string or quoted string format.  If this directive is
-not specified, the Director will bind to any available address (the
-default).  Note, unlike the DirAddresses specification noted above, this
-directive only permits a single address to be specified.  This directive
-should not be used if you specify a DirAddresses (N.B. plural) directive.
 
-\item [DirSourceAddress = {\textless}IP-Address{\textgreater}] \hfill \\
-\index[fd]{DirSourceAddress}
-\index[fd]{Directive!DirSourceAddress}
+\xdirective{dir}{Dir Source Address}{IP-address}{}{}{}{%
 This record is optional, and if it is specified, it will cause the Director
 server (when initiating connections to a storage or file daemon) to source
 its connections from the specified address.  Only a single IP address may be
 specified.  If this record is not specified, the Director server will source
 its outgoing connections according to the system routing table (the default).
+}
 
-\item [Statistics Retention = {\textless}time{\textgreater}] \hfill \\
-\index[dir]{StatisticsRetention}
-\index[dir]{Directive!StatisticsRetention}
-\label{PruneStatistics}
-The \texttt{Statistics Retention} directive defines the length of time that
+
+\xdirective{dir}{FD Connect Timeout}{time}{}{180}{}{%
+where \parameter{time} is the time that the Director should continue
+attempting to contact the File daemon to start a job, and after which
+the Director will cancel the job.  The default is 3 minutes.
+}
+
+
+\xdirective{dir}{Heartbeat Interval}{time-interval}{}{0}{}{%
+This directive is optional and if specified will cause the Director to
+set a keepalive interval (heartbeat) in seconds on each of the sockets
+it opens for the Client resource.  This value will override any
+specified at the Director level.  It is implemented only on systems
+that provide the {\bf setsockopt} TCP\_KEEPIDLE function (Linux, ...).
+The default value is zero, which means no change is made to the socket.
+}
+
+
+\xdirective{dir}{Key Encryption Key}{keyEncryptionKey}{}{}{}{%
+This key is used to encrypt the Security Key that is exchanged between
+the Director and the Storage Daemon for supporting Application Managed
+Encryption (AME). For security reasons each Director should have a
+different Key Encryption Key.
+}
+
+
+\xdirective{dir}{Maximum Concurrent Jobs}{number}{}{1}{}{%
+\label{DirMaxConJobs}%
+\index[general]{Simultaneous Jobs}%
+\index[general]{Concurrent Jobs}%
+where {\textless}number{\textgreater}  is the maximum number of total Director Jobs that
+should run  concurrently. The default is set to 1, but you may set it to a
+larger number.
+
+The Volume format becomes more complicated with
+multiple simultaneous jobs, consequently, restores may take longer if
+Bareos must sort through interleaved volume blocks from  multiple simultaneous
+jobs. This can be avoided by having each simultaneous job write to
+a different volume or  by using data spooling, which will first spool the data
+to disk simultaneously, then write one spool file at a time to the volume
+thus avoiding excessive interleaving of the different job blocks.
+
+See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
+}
+
+
+\xdirective{dir}{Maximum Console Connections}{number}{}{20}{}{%
+where \parameter{number}  is the maximum number of Console Connections that
+could run  concurrently. The default is set to 20, but you may set it to a
+larger number.
+}
+
+
+\xdirective{dir}{Messages}{messages-resource-name}{required}{}{}{%
+The messages resource  specifies where to deliver Director messages that are
+not associated  with a specific Job. Most messages are specific to a job and
+will  be directed to the Messages resource specified by the job. However,
+there are a few messages that can occur when no job is running.
+}
+
+
+\xdirective{dir}{NDMP Snooping}{yes {\textbar} no}{}{}{13.2}{%
+\index[general]{NDMP!Snooping}%
+This directive enables the Snooping and pretty printing of NDMP protocol
+information in debugging mode.
+}
+
+\xdirective{dir}{NDMP Loglevel}{number}{}{4}{13.2}{%
+\index[general]{NDMP!Logging}%
+This directive sets the loglevel for the NDMP protocol library.
+}
+
+
+\xdirective{dir}{Optimize For Size}{yes {\textbar} no}{}{no}{}{%
+If set to \parameter{yes} this directive will use the optimizations
+for memory size over speed. So it will try to use less memory which may lead
+to a somewhat lower speed. Its currently mostly used for keeping all hardlinks
+in memory.
+}
+
+\xdirective{dir}{Optimize For Speed}{yes {\textbar} no}{}{no}{}{%
+If set to \parameter{yes} this directive will use the
+optimizations for speed over the memory size. So it will try to use more memory
+which lead to a somewhat higher speed. Its currently mostly used for keeping all
+hardlinks in memory. Its relates to the \configdirective{Optimize For Size} option set either
+one to \parameter{yes} as they are mutually exclusive.
+}
+
+
+\xdirective{dir}{Pid Directory}{directory}{}{{\it platform specific}}{}{%
+This directive  is optional and specifies a directory in which the Director
+may put its process Id file. The process Id file is used to  shutdown
+Bareos and to prevent multiple copies of  Bareos from running simultaneously.
+Standard shell expansion of the {\bf Directory}  is done when the
+configuration file is read so that values such  as {\bf \$HOME} will be
+properly expanded.
+
+The PID directory specified must already exist and be
+readable and writable by the Bareos daemon referencing it.
+
+Typically on Linux systems, you will set this to:  \directory{/var/run}. If you are
+not installing Bareos in the  system directories, you can use the {\bf Working
+Directory} as  defined above.
+}
+
+
+\xdirective{dir}{Query File}{path}{required}{}{}{%
+This directive is required and specifies a directory and file in which
+the Director can find the canned SQL statements for the {\bf Query}
+command of the Console.
+%
+%Standard shell expansion of the {\bf Path} is
+%done when the configuration file is read so that values such as {\bf
+%\$HOME} will be properly expanded.
+}
+
+
+\xdirective{dir}{Scripts Directory}{directory}{}{{\it platform specific}}{}{%
+This directive is currently unused.
+}
+
+
+\xdirective{dir}{SD Connect Timeout}{time}{}{1800}{}{%
+where \parameter{time} is the time that the Director should continue
+attempting to contact the Storage daemon to start a job, and after which
+the Director will cancel the job.  The default is 30 minutes.
+}
+
+
+\xdirective{dir}{Statistics Retention}{time}{}{160704000 (5 years)}{}{%
+\label{PruneStatistics}%
+The \configdirective{Statistics Retention} directive defines the length of time that
 Bareos will keep statistics job records in the Catalog database after the
 Job End time (in \texttt{JobHistory} table). When this time period expires,
 and if user runs \texttt{prune stats} command, Bareos will prune (remove)
@@ -330,73 +354,29 @@ See chapter about \ilink{how to extract information from the catalog}{UseBareosC
 
 See the \ilink{Configuration chapter}{Time} of this manual for additional
 details of time specification.
+}
 
-The default is 5 years.
 
-\item [VerId = {\textless}string{\textgreater}] \hfill \\
-\index[dir]{Directive!VerId}
-where  {\textless}string{\textgreater} is an identifier which can be used for support purpose.
-This string is displayed using the \texttt{version} command.
+\xdirective{dir}{VerId}{string}{}{{\it plattform specific}}{}{%
+where  \parameter{string} is an identifier which can be used for support purpose.
+This string is displayed using the \bcommand{version} command.
+}
 
-\item [MaximumConsoleConnections = {\textless}number{\textgreater}] \hfill \\
-\index[dir]{MaximumConsoleConnections}
-\index[dir]{Directive!MaximumConsoleConnections}
-\index[dir]{Console}
-where {\textless}number{\textgreater}  is the maximum number of Console Connections that
-could run  concurrently. The default is set to 20, but you may set it to a
-larger number.
 
-\item [Optimize For Size = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{Optimize For Size}
-\index[dir]{Directive!Optimize For Size}
-If {\bf Yes} which is the default, this directive will use the optimizations
-for memory size over speed. So it will try to use less memory which may lead
-to a somewhat lower speed. Its currently mostly used for keeping all hardlinks
-in memory.
+\xdirective{dir}{Working Directory}{directory}{}{{\it platform specific}}{}{%
+This directive is optional and specifies a directory in which the Director
+may put its status files. This directory should be used only  by Bareos but
+may be shared by other Bareos daemons.
+Standard shell expansion of the {\bf
+directory}  is done when the configuration file is read so that values such
+as {\bf \$HOME} will be properly expanded.
 
-\item [Optimize For Speed = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{Optimize For Speed}
-\index[dir]{Directive!Optimize For Speed}
-If {\bf Yes} which is {\bf Not} the default, this directive will use the
-optimizations for speed over the memory size. So it will try to use more memory
-which lead to a somewhat higher speed. Its currently mostly used for keeping all
-hardlinks in memory. Its relates to the {\bf Optimize For Size} option set either
-one to {\bf Yes} as they are mutually exclusive.
+The working directory specified must already exist and be
+readable and writable by the Bareos daemon referencing it.
+}
 
-\item [Key Encryption Key = {\textless}KeyEncryptionKey{\textgreater}] \hfill \\
-\index[dir]{Key Encryption Key}
-\index[dir]{Directive!Key Encryption Key}
-This key is used to encrypt the Security Key that is exchanged between
-the Director and the Storage Daemon for supporting Application Managed
-Encryption (AME). For security reasons each Director should have a
-different Key Encryption Key.
-
-\item [NDMP Snooping = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
-\index[dir]{NDMP Snooping}
-\index[dir]{Directive!NDMP Snooping}
-This directive enables the Snooping and pretty printing of NDMP protocol
-information in debugging mode.
-
-\item [NDMP Loglevel = {\textless}level{\textgreater}] \hfill \\
-\index[dir]{NDMP Loglevel}
-\index[dir]{Directive!NDMP Loglevel}
-This directive sets the loglevel for the NDMP protocol library.
 \end{description}
 
-The following is an example of a valid Director resource definition:
-
-\footnotesize
-\begin{verbatim}
-Director {
-  Name = HeadMan
-  WorkingDirectory = "$HOME/bareos/bin/working"
-  Password = UA_password
-  PidDirectory = "$HOME/bareos/bin/working"
-  QueryFile = "$HOME/bareos/bin/query.sql"
-  Messages = Standard
-}
-\end{verbatim}
-\normalsize
 
 \section{Job Resource}
 \label{JobResource}
@@ -2319,8 +2299,8 @@ Only used for the non Native protocols at the moment.
 \index[dir]{Directive!Password}
 This is the password to be  used when establishing a connection with the File
 services, so  the Client configuration file on the machine to be backed up
-must  have the same password defined for this Director. This directive is
-required.  If you have either {\bf /dev/random}  {\bf bc} on your machine,
+must  have the same password defined for this Director.
+If you have either \file{/dev/random} or {\bf bc} on your machine,
 Bareos will generate a random  password during the configuration process,
 otherwise it will  be left blank.
 
