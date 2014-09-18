@@ -18,7 +18,7 @@ FileDaemon {
 }
 ```
 
-### Include the Plugin in the fileset definition of the job resource on the director
+### Include the Plugin in the fileset definition on the director
 ```
 FileSet {
     Name = "client-data"
