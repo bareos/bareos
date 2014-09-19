@@ -5,8 +5,6 @@
 \label{StateChapter}
 %\index[general]{Current State of Bareos}
 
-In other words, what is and what is not currently implemented and functional.
-
 \section{What is Implemented}
 \index[general]{Implemented!What}
 \index[general]{What is Implemented}
@@ -22,8 +20,7 @@ In other words, what is and what is not currently implemented and functional.
          (sometimes called multiplexing).
    \item Job sequencing using priorities.
    \item \ilink{Console}{UADef} interface to the Director allowing complete
-      control.  A text console and a Qt4 GUI of
-      the Console program are available.
+      control.  Same GUIs are also available.
    \end{itemize}
 
 \item Security
@@ -100,7 +97,7 @@ In other words, what is and what is not currently implemented and functional.
       barcodes or by reading the tapes.
    \item Support for multiple drive autochangers.
    \item Raw device backup/restore. Restore must be to the same device.
-   \item All Volume blocks (approximately 64K bytes) contain a data checksum.
+   \item All Volume blocks contain a data checksum.
    \item Migration support -- move data from one Pool to another or
          one Volume to another.
    %\item Supports writing to DVD.
@@ -172,17 +169,17 @@ In other words, what is and what is not currently implemented and functional.
 \index[general]{Restrictions!Current Implementation}
 
 \begin{itemize}
-\item It is very unusual to attempt to restore two Jobs
-   that ran simultaneously in a single restore, but if
-   you do, please be aware that unless you had
-   data spooling turned on and the spool file held the full
-   contents of both Jobs during the backup, the restore will not
-   work correctly. In other terms, Bareos cannot restore
-   two jobs in the same restore if the Jobs' data blocks were
-   intermixed on the backup medium. The problem is resolved by
-   simply doing two restores, one for each Job.
-   Normally this can happen only if you manually enter specific
-   JobIds to be restored in a single restore Job.
+% \item It is very unusual to attempt to restore two Jobs
+%    that ran simultaneously in a single restore, but if
+%    you do, please be aware that unless you had
+%    data spooling turned on and the spool file held the full
+%    contents of both Jobs during the backup, the restore will not
+%    work correctly. In other terms, Bareos cannot restore
+%    two jobs in the same restore if the Jobs' data blocks were
+%    intermixed on the backup medium. The problem is resolved by
+%    simply doing two restores, one for each Job.
+%    Normally this can happen only if you manually enter specific
+%    JobIds to be restored in a single restore Job.
 \item Bareos can generally restore any backup made from one client
    to any other client. However, if the architecture is significantly
    different (i.e. 32 bit architecture to 64 bit or Win32 to Unix),
