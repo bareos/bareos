@@ -98,15 +98,14 @@ uniquely identify the resource. The Description directive is (will be) used
 during display of the Resource to provide easier human recognition. For
 example:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Resource example}
 Director {
   Name = "MyDir"
   Description = "Main Bareos Director"
   WorkingDirectory = "$HOME/bareos/bin/working"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
+\hide{$}
 
 Defines the Director resource with the name "MyDir" and a working directory
 \$HOME/bareos/bin/working. In general, if you want spaces in a name to the
@@ -164,17 +163,18 @@ filename} is the full path and filename of another file. The @filename
 specification can be given anywhere a primitive token would appear.
 
 If you wish include all files in a specific directory, you can use the following:
-\begin{verbatim}
+\begin{bconfig}{include configuration files}
 # Include subfiles associated with configuration of clients.
 # They define the bulk of the Clients, Jobs, and FileSets.
 # Remember to "reload" the Director after adding a client file.
 #
 @|"sh -c 'for f in /etc/bareos/clientdefs/*.conf ; do echo @${f} ; done'"
-\end{verbatim}
+\end{bconfig}
+\hide{$}
 
 
 
-\subsection{Recognized Primitive Data Types}
+\subsection{Data Types}
 \index[general]{Configuration!Data Types}
 \index[general]{Data Type}
 \label{DataTypes}
@@ -349,6 +349,7 @@ modifiers are permitted:
 \item [time]
     \index[general]{Data Type!time}
     \label{DataTypeTime}
+    \label{Time}
 A time or duration specified in seconds.  The time is stored internally as
 a 64 bit integer value, but it is specified in two parts: a number part and
 a modifier part.  The number can be an integer or a floating point number.
