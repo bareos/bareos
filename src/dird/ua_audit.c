@@ -57,9 +57,11 @@ bool audit_event_wanted(UAContext *ua, bool audit_event_enabled)
 static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg, int acl, const char *item)
 {
    const char *console_name;
+   const char *host;
    const char *acl_type_name;
 
    console_name = (ua->cons) ? ua->cons->name() : "default";
+   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
    switch (acl) {
    case Job_ACL:
@@ -100,7 +102,7 @@ static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg,
       break;
    }
 
-   Emsg3(M_AUDIT, 0, audit_msg, console_name, acl_type_name, item);
+   Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
 }
 
 void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item)
@@ -109,7 +111,7 @@ void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item)
       return;
    }
 
-   log_audit_event_acl_msg(ua, _("Console [%s], Audit acl failure %s %s\n"), acl, item);
+   log_audit_event_acl_msg(ua, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
 void log_audit_event_acl_success(UAContext *ua, int acl, const char *item)
@@ -118,7 +120,7 @@ void log_audit_event_acl_success(UAContext *ua, int acl, const char *item)
       return;
    }
 
-   log_audit_event_acl_msg(ua, _("Console [%s], Audit acl success %s %s\n"), acl, item);
+   log_audit_event_acl_msg(ua, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
 /*
@@ -127,12 +129,14 @@ void log_audit_event_acl_success(UAContext *ua, int acl, const char *item)
 void log_audit_event_cmdline(UAContext *ua)
 {
    const char *console_name;
+   const char *host;
 
    if (!me->auditing) {
       return;
    }
 
    console_name = (ua->cons) ? ua->cons->name() : "default";
+   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
 
-   Emsg2(M_AUDIT, 0, _("Console [%s] cmdline %s\n"), console_name, ua->cmd);
+   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name, host, ua->cmd);
 }
