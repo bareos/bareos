@@ -277,6 +277,7 @@ Summary:  Provides Bareos storage backend for GlusterFS
 Group:    Productivity/Archiving/Backup
 Requires: %{name}-common  = %{version}
 Requires: %{name}-storage = %{version}
+Requires: glusterfs
 %endif
 
 %package storage-tape
