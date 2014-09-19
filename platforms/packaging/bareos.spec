@@ -213,10 +213,10 @@ BuildRequires: lsb-release
 %endif
 
 
-Summary:  Meta-All-In-One package (director, storage-daemon, client daemon and tools)
-Requires: %{name}-director = %{version}
-Requires: %{name}-storage = %{version}
-Requires: %{name}-client = %{version}
+Summary:    Backup Archiving REcovery Open Sourced - metapackage
+Requires:   %{name}-director = %{version}
+Requires:   %{name}-storage = %{version}
+Requires:   %{name}-client = %{version}
 
 %if 0%{?RHEL4}
 %define dscr Bareos - Backup Archiving Recovery Open Sourced.
@@ -237,126 +237,126 @@ Bareos source code has been released under the AGPL version 3 license.
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq
 
-%package bconsole
-Summary:  Provide ncurses administration console
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
+%package    bconsole
+Summary:    Bareos administration console (CLI)
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
 
-%package client
-# contains bconsole, fd, libs
-Summary:  Meta-All-In-One package client package
-Group:    Productivity/Archiving/Backup
+%package    client
+Summary:    Bareos client Meta-All-In-One package
+Group:      Productivity/Archiving/Backup
 Requires:   %{name}-bconsole = %{version}
 Requires:   %{name}-filedaemon = %{version}
 %if 0%{?suse_version}
 Recommends: %{name}-traymonitor = %{version}
 %endif
 
-%package director
-Summary:  Provide bareos director daemon
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
-Requires: %{name}-database-common = %{version}
-Requires: %{name}-database-tools
+%package    director
+Summary:    Bareos Director daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
+Requires:   %{name}-database-common = %{version}
+Requires:   %{name}-database-tools
 %if 0%{?suse_version}
 # Don't use this option on anything other then SUSE derived distributions
 # as Fedora & others don't know this tag
 Recommends: logrotate
 %endif
-Provides: %{name}-dir
+Provides:   %{name}-dir
 
-%package storage
-Summary:  Provides Bareos storage daemon
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
-Provides: %{name}-sd
+%package    storage
+Summary:    Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
+Provides:   %{name}-sd
 
 %if 0%{?glusterfs}
-%package storage-glusterfs
-Summary:  Provides Bareos storage backend for GlusterFS
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common  = %{version}
-Requires: %{name}-storage = %{version}
-Requires: glusterfs
+%package    storage-glusterfs
+Summary:    GlusterFS support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
+Requires:   glusterfs
 %endif
 
-%package storage-tape
-Summary:  Provides Bareos storage daemon tape support
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common  = %{version}
-Requires: %{name}-storage = %{version}
-Requires: mtx
+%package    storage-tape
+Summary:    Tape support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
+Requires:   mtx
 %if !0%{?suse_version}
-Requires: mt-st
+Requires:   mt-st
 %endif
 
-%package storage-fifo
-Summary:  Provides Bareos storage backend fifo
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common  = %{version}
-Requires: %{name}-storage = %{version}
+%package    storage-fifo
+Summary:    FIFO support for the Bareos Storage backend
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
 
-%package filedaemon
-Summary:  Provides Bareos file daemon
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
-Provides: %{name}-fd
+%package    filedaemon
+Summary:    Bareos File daemon (backup and restore client)
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
+Provides:   %{name}-fd
 
-%package common
-Summary:  Generic libs needed by every Bareos package
-Group:    Productivity/Archiving/Backup
-Requires: openssl
-Provides: %{name}-libs
+%package    common
+Summary:    Common files, required by multiple Bareos packages
+Group:      Productivity/Archiving/Backup
+Requires:   openssl
+Provides:   %{name}-libs
 
-%package database-common
-Summary:  Generic abstration lib for the sql catalog
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
-Requires: %{name}-database-backend = %{version}
-Requires: openssl
-Provides: %{name}-sql
+%package    database-common
+Summary:    Generic abstration libs and tools for the sql catalog
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
+Requires:   %{name}-database-backend = %{version}
+Requires:   openssl
+Provides:   %{name}-sql
 
-%package database-postgresql
-Summary:  Libs & tools for postgresql catalog
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-database-common = %{version}
-Provides: %{name}-catalog-postgresql
-Provides: %{name}-database-backend
+%package    database-postgresql
+Summary:    Libs & tools for postgresql catalog
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-database-common = %{version}
+Provides:   %{name}-catalog-postgresql
+Provides:   %{name}-database-backend
 
-%package database-mysql
-Summary:  Libs & tools for mysql catalog
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-database-common = %{version}
-Provides: %{name}-catalog-mysql
-Provides: %{name}-database-backend
+%package    database-mysql
+Summary:    Libs & tools for mysql catalog
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-database-common = %{version}
+Provides:   %{name}-catalog-mysql
+Provides:   %{name}-database-backend
 
 %if 0%{?build_sqlite3}
-%package database-sqlite3
-Summary:  Libs & tools for sqlite3 catalog
-Group:    Productivity/Archiving/Backup
+%package    database-sqlite3
+Summary:    Libs & tools for sqlite3 catalog
+Group:      Productivity/Archiving/Backup
 %if 0%{?suse_version}
-Requires: sqlite3
+Requires:   sqlite3
 %endif
-Requires: %{name}-database-common = %{version}
-Provides: %{name}-catalog-sqlite3
-Provides: %{name}-database-backend
+Requires:   %{name}-database-common = %{version}
+Provides:   %{name}-catalog-sqlite3
+Provides:   %{name}-database-backend
 %endif
 
-%package database-tools
-Summary:  Provides bareos-dbcheck, bscan
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}, %{name}-database-common = %{version}
-Provides: %{name}-dbtools
+%package    database-tools
+Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
+Requires:   %{name}-database-common = %{version}
+Provides:   %{name}-dbtools
 
-%package tools
-Summary:  Provides bcopy, bextract, bls, bregex, bwild
-Group:    Productivity/Archiving/Backup
-Requires: %{name}-common = %{version}
+%package    tools
+Summary:    Bareos CLI tools (bcopy, bextract, bls, bregex, bwild)
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common = %{version}
 
 %if 0%{build_qt_monitor}
-%package traymonitor
-Summary:  Qt based tray monitor
-Group:    Productivity/Archiving/Backup
+%package    traymonitor
+Summary:    Bareos Tray Monitor (QT)
+Group:      Productivity/Archiving/Backup
 # Added to by pass the 09 checker rules (conflict with bareos-tray-monitor.conf)
 # This is mostly wrong cause the two binaries can use it!
 Conflicts:  %{name}-tray-monitor-gtk
@@ -364,45 +364,45 @@ Provides:   %{name}-tray-monitor-qt
 %endif
 
 %if 0%{?build_bat}
-%package bat
-Summary:  Provides Bareos Admin Tool gui
-Group:    Productivity/Archiving/Backup
+%package    bat
+Summary:    Bareos Admin Tool (GUI)
+Group:      Productivity/Archiving/Backup
 %endif
 
-%package devel
-Summary:  Devel headers
-Group:    Development/Languages/C and C++
-Requires: %{name}-common = %{version}
-Requires: tcpd-devel
-Requires: zlib-devel
-Requires: libacl-devel
-Requires: libmysqlclient-devel
-Requires: postgresql-devel
+%package    devel
+Summary:    Devel headers
+Group:      Development/Languages/C and C++
+Requires:   %{name}-common = %{version}
+Requires:   tcpd-devel
+Requires:   zlib-devel
+Requires:   libacl-devel
+Requires:   libmysqlclient-devel
+Requires:   postgresql-devel
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
-Requires: sqlite3-devel
+Requires:   sqlite3-devel
 %else
-Requires: sqlite-devel
+Requires:   sqlite-devel
 %endif
 %endif
-Requires: libopenssl-devel
-Requires: libcap-devel
+Requires:   libopenssl-devel
+Requires:   libcap-devel
 
 %if 0%{?python_plugins}
-%package director-python-plugin
-Summary:  Python plugin for Director Daemon
-Group:    Productivity/Archiving/Backup
-Requires: bareos-director = %{version}
+%package    director-python-plugin
+Summary:    Python plugin for Bareos Director daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-director = %{version}
 
-%package filedaemon-python-plugin
-Summary:  Python plugin for File Daemon
-Group:    Productivity/Archiving/Backup
-Requires: bareos-filedaemon = %{version}
+%package    filedaemon-python-plugin
+Summary:    Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
 
-%package storage-python-plugin
-Summary:  Python plugin for Storage Daemon
-Group:    Productivity/Archiving/Backup
-Requires: bareos-storage = %{version}
+%package    storage-python-plugin
+Summary:    Python plugin for Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-storage = %{version}
 
 %description director-python-plugin
 %{dscr}
@@ -412,12 +412,12 @@ This package contains the python plugin for the director daemon
 %description filedaemon-python-plugin
 %{dscr}
 
-This package contains the python plugin for the filedaemon
+This package contains the python plugin for the file daemon
 
 %description storage-python-plugin
 %{dscr}
 
-This package contains the python plugin for the storagedaemon
+This package contains the python plugin for the storage daemon
 
 %endif
 
@@ -513,7 +513,7 @@ This package contains Bareos tools.
 %description traymonitor
 %{dscr}
 
-This package contains the new tray monitor that uses qt.
+This package contains the tray monitor (QT based).
 %endif
 
 %if 0%{?build_bat}
@@ -521,7 +521,7 @@ This package contains the new tray monitor that uses qt.
 %{dscr}
 
 This package contains the Bareos Admin Tool (BAT).
-Bat is a graphical interface for bareos.
+BAT is a graphical interface for Bareos.
 %endif
 
 %description devel
