@@ -29,6 +29,25 @@
 \newcommand{\configFileDirUnix}{\path|/etc/bareos/bareos-dir.conf|}
 \newcommand{\logfileUnix}{\path|/var/log/bareos/bareos.log|}
 
+\newcommand{\yesno}{yes{\textbar}no}
+
+% data type definitions. 
+% all data types should be defined here.
+% use them in xdirective.
+\newcommand{\dtDirectory}{\ilink{directory}{DataTypeDirectory}}
+\newcommand{\dtName}{\ilink{name}{DataTypeName}}
+\newcommand{\dtNetAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\newcommand{\dtNetAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\newcommand{\dtNetPort}{\ilink{net-port}{DataTypeNetPort}}
+\newcommand{\dtPassword}{\ilink{password}{DataTypePassword}}
+\newcommand{\dtPath}{\ilink{path}{DataTypePath}}
+\newcommand{\dtPositiveInteger}{\ilink{positive-integer}{DataTypePositiveInteger}}
+\newcommand{\dtUInt}{\dtPositiveInteger}
+\newcommand{\dtSize}{\ilink{size}{DataTypeSize}}
+\newcommand{\dtString}{\ilink{string}{DataTypeString}}
+\newcommand{\dtStringList}[1]{\ilink{string-list (separated by #1)}{DataTypeStringList}}
+\newcommand{\dtTime}{\ilink{time}{DataTypeTime}}
+\newcommand{\dtYesNo}{\ilink{\yesno}{DataTypeYesNo}}
 
 %%
 \newcommand*{\elink}[2]{%
@@ -128,7 +147,7 @@
 \newcommand{\xdirective}[7]{
 % 1: config file (dir | sd | fd)
 % 2: directive name
-% 3: directive type/value
+% 3: directive data type (\dtXXX) or value
 % 4: "required" | ""
 % 5: default value
 % 6: "deprecated" | since version
@@ -151,7 +170,7 @@
     }%
   }%
 }
-% \xdirective{dir|sd|fd}{name}{type}{required}{default}{version}{%
+% \xdirective{dir|sd|fd}{name}{\dtXXX}{required}{default}{version}{%
 % }
 % \xdirective{}{}{}{required}{}{}{}
 

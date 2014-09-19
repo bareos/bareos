@@ -840,7 +840,7 @@ device before asking the system operator to mount a tape.  However,
 please note that the tape must be mounted before the job begins.
 
 
-\directive{sd}{Block Checksum}{yes{\textbar}no}{}{yes}{}
+\directive{sd}{Block Checksum}{\dtYesNo}{}{yes}{}
 You may turn off the Block Checksum (CRC32) code that Bareos uses when
 writing blocks to a Volume. Doing so can reduce the Storage daemon CPU usage
 slightly.  It will also permit Bareos to read a Volume that has corrupted
@@ -850,12 +850,12 @@ data.
 drives or for disk Volumes where doing so may allow corrupted data to go
 undetected.
 
-% xdirective? too long?
-\directive{sd}{Minimum block size}{size-in-bytes}{}{0}{}%
+% xdirective? no bconfig in xdirective
+\directive{sd}{Minimum Block Size}{\dtSize}{}{0}{}%
 \label{storage-device-minimumblocksize}%
 This statement applies only to non-random access devices (e.g.
 tape drives).  Blocks written by the storage daemon to a non-random
-archive device will never be smaller than the given {\bf size-in-bytes}.
+archive device will never be smaller than the given size.
 The Storage daemon will attempt to efficiently fill blocks with data
 received from active sessions but will, if necessary, add padding to a
 block to achieve the required minimum size.
@@ -890,13 +890,13 @@ Maximum block size = 200K
 
 
 
-\xdirective{sd}{Maximum block size}{size-in-bytes}{}{64512}{}{
+\xdirective{sd}{Maximum block size}{\dtSize}{}{64512}{}{
 \label{storage-device-maximumblocksize}%
 The Storage daemon will always attempt to
-write blocks of the specified {\bf size-in-bytes} to the archive device.
+write blocks of the specified size (in-bytes) to the archive device.
 As a consequence, this statement specifies both the default block size
 and the maximum block size.  The size written never exceed the given
-{\bf size-in-bytes}.  If adding data to a block would cause it to exceed
+size.  If adding data to a block would cause it to exceed
 the given maximum size, the block will be written to the archive device,
 and the new data will begin a new block.
 
@@ -909,7 +909,7 @@ Please read chapter \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes},
 to see how to tune this value in a safe manner.
 }
 
-\xdirective{sd}{Label block size}{size-in-bytes}{}{64512}{14.2}{
+\xdirective{sd}{Label block size}{\dtSize}{}{64512}{14.2}{
 The storage daemon will write the label blocks with the size configured here.
 Usually, you will not need to change this directive.
 

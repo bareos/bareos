@@ -175,9 +175,8 @@ If you wish include all files in a specific directory, you can use the following
 
 
 \subsection{Recognized Primitive Data Types}
-\index[general]{Types!Recognized Primitive Data}
-\index[general]{Recognized Primitive Data Types}
 \index[general]{Configuration!Data Types}
+\index[general]{Data Type}
 \label{DataTypes}
 
 When parsing the resource directives, Bareos classifies the data according to
@@ -186,8 +185,30 @@ overwhelming, but in reality, it is all pretty logical and straightforward.
 
 \begin{description}
 
+\item [directory]
+    \index[general]{Data Type!directory}
+    \label{DataTypeDirectory}
+   A directory is either a quoted or  non-quoted string. A directory will be
+passed to your  standard shell for expansion when it is scanned. Thus
+constructs such as {\bf \$HOME} are interpreted to be  their correct values.
+
+
+\item [integer]
+    \index[general]{Data Type!integer}
+    \label{DataTypeInteger}
+   A 32 bit integer value. It may be positive or negative.
+
+
+\item [long integer]
+    \index[general]{Data Type!long integer}
+    \label{DataTypeLongInteger}
+   A 64 bit integer value. Typically these  are values such as bytes that can
+exceed 4 billion and thus  require a 64 bit value.
+
+
 \item [name]
-   \index[fd]{name}
+    \index[general]{Data Type!name}
+    \label{DataTypeName}
    A keyword or name consisting of alphanumeric characters, including the
 hyphen, underscore, and dollar  characters. The first character of a {\bf
 name} must be  a letter.  A name has a maximum length currently set to 127
@@ -196,15 +217,35 @@ Bareos keywords -- i.e. Resource names or  directive names). Keywords may not
 be quoted.
 
 \item [name-string]
-   \index[fd]{name-string}
+    \index[general]{Data Type!name-string}
+    \label{DataTypeNameString}
    A name-string is similar to a name,  except that the name may be quoted and
 can thus contain  additional characters including spaces. Name strings  are
 limited to 127 characters in length. Name strings  are typically used on the
 right side of an equal (i.e.  they are values to be associated with a keyword).
 
 
+\item [password]
+    \index[general]{Data Type!password}
+    \label{DataTypePassword}
+   This is a Bareos password and it is stored internally in MD5 hashed format.
+
+
+\item [path]
+    \index[general]{Data Type!path}
+    \label{DataTypePath}
+    File name, including path.
+
+
+\item [positive integer]
+    \index[general]{Data Type!positive integer}
+    \label{DataTypePositiveInteger}
+   A 32 bit positive integer value.
+
+
 \item [string]
-   \index[fd]{string}
+    \index[general]{Data Type!string}
+    \label{DataTypeString}
    A quoted string containing virtually any  character including spaces, or a
 non-quoted string. A  string may be of any length. Strings are typically
 values  that correspond to filenames, directories, or system  command names. A
@@ -212,36 +253,72 @@ backslash (\textbackslash{}) turns the next character into  itself, so to
 include a double quote in a string, you precede the  double quote with a
 backslash. Likewise to include a backslash.
 
-\item [directory]
-   \index[dir]{directory}
-   A directory is either a quoted or  non-quoted string. A directory will be
-passed to your  standard shell for expansion when it is scanned. Thus
-constructs such as {\bf \$HOME} are interpreted to be  their correct values.
 
-\item [password]
-   \index[dir]{password}
-   This is a Bareos password and it is stored internally in MD5 hashed format.
+\item [string-list]
+    \index[general]{Data Type!string list}
+    \label{DataTypeStringList}
+    Multiple strings, separated by \textbf{:}.
 
-\item [integer]
-   \index[dir]{integer}
-   A 32 bit integer value. It may be positive or negative.
 
-\item [positive integer]
-   \index[dir]{positive integer}
-   A 32 bit positive integer value.
 
-\item [long integer]
-   \index[dir]{long integer}
-   A 64 bit integer value. Typically these  are values such as bytes that can
-exceed 4 billion and thus  require a 64 bit value.
 
-\item [yes{\textbar}no]
-   \index[dir]{yes or no}
-   Either a {\bf yes} or a {\bf no}.
+\item [net-address]
+    \index[general]{Data Type!net-address}
+    \label{DataTypeNetAddress}
+Netaddress is either a domain name or an IP address specified as a
+dotted quadruple in string or quoted string format.
+This directive only permits a single address to be specified.
+The \dtNetPort must be specific separate.
+If multiple net-addresses are needed, check if it also possible to specify \dtNetAddresses (plural). 
 
-\label{Size1}
+
+\item [net-addresses]
+    \index[general]{Data Type!net-addresses}
+    \label{DataTypeNetAddresses}
+Specify a set of net-addresses and net-ports.
+Probably the simplest way to explain
+this is to show an example:
+
+\begin{bconfig}{net-addresses}
+Addresses  = {
+    ip = { addr = 1.2.3.4; port = 1205;}
+    ipv4 = {
+        addr = 1.2.3.4; port = http;}
+    ipv6 = {
+        addr = 1.2.3.4;
+        port = 1205;
+    }
+    ip = {
+        addr = 1.2.3.4
+        port = 1205
+    }
+    ip = { addr = 1.2.3.4 }
+    ip = { addr = 201:220:222::2 }
+    ip = {
+        addr = server.example.com
+    }
+}
+\end{bconfig}
+
+where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
+can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
+a symbolic name (only in the ip specification).  Also, port can be specified
+as a number or as the mnemonic value from  the \file{/etc/services} file.  If a port
+is not specified, the default will be used. If an ip  section is specified,
+the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
+only IPv4 resolutions will be permitted,  and likewise with ip6.
+
+
+\item [net-port]
+    \index[general]{Data Type!net-port}
+    \label{DataTypeNetPort}
+    Specify a network port (a positive  integer).
+
+
 \item [size]
-\index[dir]{size}
+    \index[general]{Data Type!size}
+    \label{DataTypeSize}
+    \label{Size1}
 A size specified as bytes. Typically, this is  a floating point scientific
 input format followed by an optional modifier. The  floating point input is
 stored as a 64 bit integer value.  If a modifier is present, it must
@@ -268,9 +345,10 @@ modifiers are permitted:
    1,000,000,000 (gigabytes)
 \end{description}
 
-\label{Time}
+
 \item [time]
-\index[dir]{time}
+    \index[general]{Data Type!time}
+    \label{DataTypeTime}
 A time or duration specified in seconds.  The time is stored internally as
 a 64 bit integer value, but it is specified in two parts: a number part and
 a modifier part.  The number can be an integer or a floating point number.
@@ -325,13 +403,22 @@ wish.  For example:
 \begin{verbatim}
 1 week 2 days 3 hours 10 mins
 1 month 2 days 30 sec
-
 \end{verbatim}
 \normalsize
 
 are valid date specifications.
 
+
+\item [\yesno]
+    \index[general]{Data Type!\yesno}
+    \label{DataTypeYesNo}
+   Either a {\bf yes} or a {\bf no}.
+
+
 \end{description}
+
+
+
 
 \subsection{Variable Expansion}
     \label{VarsChapter}
@@ -468,41 +555,40 @@ files will already contain at least one example of each permitted resource, so
 you need not worry about creating all these kinds of resources from scratch.
 
 \addcontentsline{lot}{table}{Resource Types}
-\begin{longtable}{|l|l|l|l|l|}
+\begin{longtable}{|l|c|c|c|c|}
  \hline
 \multicolumn{1}{|c| }{\bf Resource } & \multicolumn{1}{c| }{\bf Director } &
 \multicolumn{1}{c| }{\bf Client } & \multicolumn{1}{c| }{\bf Storage } &
 \multicolumn{1}{c| }{\bf Console  } \\
  \hline
-{Autochanger } & {No  } & {No } & {Yes } & {No  } \\
+{Autochanger } &  &  & x &  \\
 \hline
-{Catalog } & {Yes } & {No  } & {No } & {No  } \\
+{Catalog } & x &    &    &    \\
  \hline
-{Client  } & {Yes } & {Yes } & {No } & {No  } \\
+{Client  } & x & x &    &    \\
  \hline
-{Console } & {Yes } & {No } & {No } & {Yes  } \\
+{Console } & x &    &    & x \\
  \hline
-{Device  } & {No  } & {No } & {Yes } & {No  } \\
+{Device  } &    &    & x &    \\
  \hline
-{Director } & {Yes } & {Yes } & {Yes } & {Yes  } \\
+{Director } & x & x & x & x \\
  \hline
-{FileSet } & {Yes } & {No } & {No } & {No  } \\
+{FileSet } & x &    &    &    \\
  \hline
-{Job  } & {Yes } & {No } & {No } & {No  } \\
+{Job  } & x &    &    &    \\
  \hline
-{JobDefs } & {Yes } & {No } & {No } & {No  } \\
+{JobDefs } & x &    &    &    \\
  \hline
-{Message } & {Yes } & {Yes } & {Yes } & {No  } \\
+{Message } & x & x & x &    \\
  \hline
-{NDMP } & {No } & {No } & {Yes } & {No  } \\
+{NDMP } &    &    & x &    \\
  \hline
-{Pool  } & {Yes } & {No } & {No } & {No  } \\
+{Pool  } & x &    &    &    \\
  \hline
-{Schedule } & {Yes } & {No } & {No } & {No  } \\
+{Schedule } & x &    &    &    \\
  \hline
-{Storage } & {Yes } & {No } & {Yes } & {No }
+{Storage } & x &    & x &   
 \\ \hline
-
 \end{longtable}
 
 \section{Names, Passwords and Authorization}

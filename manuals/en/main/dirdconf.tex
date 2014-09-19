@@ -113,12 +113,12 @@ Start of the Director resource. One and only one  director resource must be
 supplied.
 
 
-\xdirective{dir}{Name}{name}{required}{}{}{%
+\xdirective{dir}{Name}{\dtName}{required}{}{}{%
 The director name used by the system  administrator.
 }
 
 
-\xdirective{dir}{Password}{password}{required}{}{}{%
+\xdirective{dir}{Password}{\dtPassword}{required}{}{}{%
 Specifies the password that must be supplied for the default Bareos
 Console to be authorized.  The same password must appear in the {\bf
 Director} resource of the Console configuration file.  For added
@@ -132,10 +132,10 @@ The password is plain text.
 }
 
 
-\xdirective{dir}{Absolute Job Timeout}{time}{}{}{14.2}{%
+\xdirective{dir}{Absolute Job Timeout}{\dtTime}{}{}{14.2}{%
 }
 
-\xdirective{dir}{Auditing}{yes{\textbar}no}{}{no}{14.2}{%
+\xdirective{dir}{Auditing}{\dtYesNo}{}{no}{14.2}{%
 \label{DirectorConfigDirectorAuditing}%
 \index[general]{auditing}%
 This directive allows to en- or disable auditing of interaction with the Bareos Director.
@@ -144,77 +144,42 @@ The \ilink{messages resource}{MessagesResource} configured in \configdirective{M
 defines, how these messages are handled.
 }
 
-\xdirective{dir}{Audit Events}{list}{}{}{14.2}{%
+\xdirective{dir}{Audit Events}{\dtStringList{,}}{}{}{14.2}{%
 }
 
 
-\xdirective{dir}{Backend Directory}{directory}{}{{\it platform specific}}{}{%
+\xdirective{dir}{Backend Directory}{\dtDirectory}{}{{\it platform specific}}{}{%
 This directive specifies a directory from where the Bareos Director loads his dynamic backends.
 }
 
 
-\xdirective{dir}{Description}{text}{}{}{}{%
+\xdirective{dir}{Description}{\dtString}{}{}{}{%
 The text field contains a  description of the Director that will be displayed
 in the  graphical user interface. This directive is optional.
 }
 
 
-\xdirective{dir}{Dir Address}{IP-address}{}{}{}{%
+\xdirective{dir}{Dir Address}{\dtNetAddress}{}{}{}{%
 This directive is optional, but if it is specified, it will cause the
-Director server (for the Console program) to bind to the specified
-{\bf IP-Address}, which is either a domain name or an IP address specified as a
-dotted quadruple in string or quoted string format.  If this directive is
+Director server (for the Console program) to bind to the specified address.
+If this and the \configdirective{Dir Addresses} directives are
 not specified, the Director will bind to any available address (the
-default).  Note, unlike the \configdirective{Dir Addresses} specification noted above, this
-directive only permits a single address to be specified.  This directive
-should not be used if you specify a \configdirective{Dir Addresses} (N.B. plural) directive.
+default).
 }
 
 
-% failed to use xdirective here, because of verbatim including {}
-\directive{dir}{Dir Addresses}{IP-address-specification}{}{}{}%
-\index[dir]{Address}%
-\index[general]{Address}%
+\xdirective{dir}{Dir Addresses}{\dtNetAddresses}{}{}{}{%
 Specify the ports and addresses on which the Director daemon will listen
-for Bareos Console connections.  Probably the simplest way to explain
-this is to show an example:
-
-\begin{bconfig}{Dir Addresses}
- Dir Addresses  = {
-    ip = { addr = 1.2.3.4; port = 1205;}
-    ipv4 = {
-        addr = 1.2.3.4; port = http;}
-    ipv6 = {
-        addr = 1.2.3.4;
-        port = 1205;
-    }
-    ip = {
-        addr = 1.2.3.4
-        port = 1205
-    }
-    ip = { addr = 1.2.3.4 }
-    ip = { addr = 201:220:222::2 }
-    ip = {
-        addr = bluedot.thun.net
-    }
-}
-\end{bconfig}
-
-where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
-can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
-a symbolic name (only in the ip specification).  Also, port can be specified
-as a number or as the mnemonic value from  the \file{/etc/services} file.  If a port
-is not specified, the default will be used. If an ip  section is specified,
-the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
-only IPv4 resolutions will be permitted,  and likewise with ip6.
+for Bareos Console connections.
 
 Please note that if you use the \configdirective{Dir Addresses} directive, you must
 not use either a \configdirective{Dir Port} or a \configdirective{Dir Address} directive in the same
 resource.
+}
 
 
-\xdirective{dir}{Dir Port}{port-number}{}{9101}{}{%
-Specify the port (a positive  integer) on which the  Director daemon will
+\xdirective{dir}{Dir Port}{\dtNetPort}{}{9101}{}{%
+Specify the port on which the  Director daemon will
 listen for Bareos Console connections.  This same port number must be
 specified in the Director resource  of the Console configuration file. The
 default is 9101, so  normally this directive need not be specified.  This
@@ -223,7 +188,7 @@ directive.
 }
 
 
-\xdirective{dir}{Dir Source Address}{IP-address}{}{}{}{%
+\xdirective{dir}{Dir Source Address}{\dtNetAddress}{}{}{}{%
 This record is optional, and if it is specified, it will cause the Director
 server (when initiating connections to a storage or file daemon) to source
 its connections from the specified address.  Only a single IP address may be
@@ -232,14 +197,14 @@ its outgoing connections according to the system routing table (the default).
 }
 
 
-\xdirective{dir}{FD Connect Timeout}{time}{}{180}{}{%
+\xdirective{dir}{FD Connect Timeout}{\dtTime}{}{180}{}{%
 where \parameter{time} is the time that the Director should continue
 attempting to contact the File daemon to start a job, and after which
 the Director will cancel the job.  The default is 3 minutes.
 }
 
 
-\xdirective{dir}{Heartbeat Interval}{time-interval}{}{0}{}{%
+\xdirective{dir}{Heartbeat Interval}{\dtTime}{}{0}{}{%
 This directive is optional and if specified will cause the Director to
 set a keepalive interval (heartbeat) in seconds on each of the sockets
 it opens for the Client resource.  This value will override any
@@ -257,7 +222,7 @@ different Key Encryption Key.
 }
 
 
-\xdirective{dir}{Maximum Concurrent Jobs}{number}{}{1}{}{%
+\xdirective{dir}{Maximum Concurrent Jobs}{\dtUInt}{}{1}{}{%
 \label{DirMaxConJobs}%
 \index[general]{Simultaneous Jobs}%
 \index[general]{Concurrent Jobs}%
@@ -277,14 +242,14 @@ See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
 }
 
 
-\xdirective{dir}{Maximum Console Connections}{number}{}{20}{}{%
+\xdirective{dir}{Maximum Console Connections}{\dtUInt}{}{20}{}{%
 where \parameter{number}  is the maximum number of Console Connections that
 could run  concurrently. The default is set to 20, but you may set it to a
 larger number.
 }
 
 
-\xdirective{dir}{Messages}{messages-resource-name}{required}{}{}{%
+\xdirective{dir}{Messages}{\dtName}{required}{}{}{%
 The messages resource  specifies where to deliver Director messages that are
 not associated  with a specific Job. Most messages are specific to a job and
 will  be directed to the Messages resource specified by the job. However,
@@ -292,30 +257,30 @@ there are a messages that can occur when no job is running.
 }
 
 
-\xdirective{dir}{NDMP Snooping}{yes {\textbar} no}{}{}{13.2}{%
+\xdirective{dir}{NDMP Snooping}{\dtYesNo}{}{}{13.2}{%
 \index[general]{NDMP!Snooping}%
 This directive enables the Snooping and pretty printing of NDMP protocol
 information in debugging mode.
 }
 
-\xdirective{dir}{NDMP Loglevel}{number}{}{4}{13.2}{%
+\xdirective{dir}{NDMP Loglevel}{\dtUInt}{}{4}{13.2}{%
 \index[general]{NDMP!Logging}%
 This directive sets the loglevel for the NDMP protocol library.
 }
 
 
-\xdirective{dir}{Omit Defaults}{yes {\textbar} no}{}{yes}{}{%
+\xdirective{dir}{Omit Defaults}{\dtYesNo}{}{yes}{}{%
 }
 
 
-\xdirective{dir}{Optimize For Size}{yes {\textbar} no}{}{no}{}{%
+\xdirective{dir}{Optimize For Size}{\dtYesNo}{}{no}{}{%
 If set to \parameter{yes} this directive will use the optimizations
 for memory size over speed. So it will try to use less memory which may lead
 to a somewhat lower speed. Its currently mostly used for keeping all hardlinks
 in memory.
 }
 
-\xdirective{dir}{Optimize For Speed}{yes {\textbar} no}{}{no}{}{%
+\xdirective{dir}{Optimize For Speed}{\dtYesNo}{}{no}{}{%
 If set to \parameter{yes} this directive will use the
 optimizations for speed over the memory size. So it will try to use more memory
 which lead to a somewhat higher speed. Its currently mostly used for keeping all
@@ -324,22 +289,20 @@ one to \parameter{yes} as they are mutually exclusive.
 }
 
 
-\xdirective{dir}{Plugin Directory}{directory}{}{}{14.2}{%
+\xdirective{dir}{Plugin Directory}{\dtDirectory}{}{}{14.2}{%
 If a directory is specified, the Bareos Director tries to load 
 all \ilink{Director plugins}{dirPlugins} that are located in this directory.
 If \configdirective{Plugin Names} is also specified,
 only the specified plugins get loaded.
 }
 
-\directive{dir}{Plugin Names}{stringlist}{}{}{14.2}%{%
+\directive{dir}{Plugin Names}{\dtStringList{:}}{}{}{14.2}%{%
 If a \configdirective{Plugin Directory} is specified
 \configdirective{Plugin Names} defines, which \ilink{Director plugins}{dirPlugins} get loaded.
 
 If \configdirective{Plugin Names} is not defined, all plugins get loaded,
 otherwise the defined ones.
  
-Multiple plugins are separated by \textbf{:}.
-
 Only the basename is given, the file extension \path|-dir.so| is added automatically.
 
 \begin{bconfig}{Plugin Names}
@@ -347,7 +310,7 @@ Plugin Names = python:otherplugin
 \end{bconfig}
 
 
-\xdirective{dir}{Pid Directory}{directory}{}{{\it platform specific}}{}{%
+\xdirective{dir}{Pid Directory}{\dtDirectory}{}{{\it platform specific}}{}{%
 This directive  is optional and specifies a directory in which the Director
 may put its process Id file. The process Id file is used to  shutdown
 Bareos and to prevent multiple copies of  Bareos from running simultaneously.
@@ -364,7 +327,7 @@ Directory} as  defined above.
 }
 
 
-\xdirective{dir}{Query File}{path}{required}{}{}{%
+\xdirective{dir}{Query File}{\dtPath}{required}{}{}{%
 This directive is required and specifies a directory and file in which
 the Director can find the canned SQL statements for the {\bf Query}
 command of the Console.
@@ -375,23 +338,23 @@ command of the Console.
 }
 
 
-\xdirective{dir}{Scripts Directory}{directory}{}{{\it platform specific}}{}{%
+\xdirective{dir}{Scripts Directory}{\dtDirectory}{}{{\it platform specific}}{}{%
 This directive is currently unused.
 }
 
 
-\xdirective{dir}{SD Connect Timeout}{time}{}{1800}{}{%
+\xdirective{dir}{SD Connect Timeout}{\dtTime}{}{1800}{}{%
 where \parameter{time} is the time that the Director should continue
 attempting to contact the Storage daemon to start a job, and after which
 the Director will cancel the job.  The default is 30 minutes.
 }
 
 
-\xdirective{dir}{Statistics Collect Interval}{time-interval}{}{150}{14.2}{%
+\xdirective{dir}{Statistics Collect Interval}{\dtTime}{}{150}{14.2}{%
 }
 
 
-\xdirective{dir}{Statistics Retention}{time}{}{160704000 (5 years)}{}{%
+\xdirective{dir}{Statistics Retention}{\dtTime}{}{160704000 (5 years)}{}{%
 \label{PruneStatistics}%
 The \configdirective{Statistics Retention} directive defines the length of time that
 Bareos will keep statistics job records in the Catalog database after the
@@ -409,7 +372,7 @@ details of time specification.
 }
 
 
-\xdirective{dir}{Subscriptions}{number}{}{0}{12.4.4}{%
+\xdirective{dir}{Subscriptions}{\dtUInt}{}{0}{12.4.4}{%
 In case you want check that the number of active clients don't exceed a specific number,
 you can define this number here and check with the \bcommand{status subscriptions} command.
 
@@ -417,7 +380,7 @@ However, this is only indended to give a hint. No active limiting is implemented
 }
 
 
-\xdirective{dir}{Subsysdirectory}{directory}{}{}{}{%
+\xdirective{dir}{Subsysdirectory}{\dtDirectory}{}{}{}{%
 }
 
 
@@ -428,13 +391,13 @@ how the Bareos Director (and the other components) must be configured to use TLS
 }
 
 
-\xdirective{dir}{VerId}{string}{}{{\it plattform specific}}{}{%
+\xdirective{dir}{VerId}{\dtString}{}{{\it plattform specific}}{}{%
 where  \parameter{string} is an identifier which can be used for support purpose.
 This string is displayed using the \bcommand{version} command.
 }
 
 
-\xdirective{dir}{Working Directory}{directory}{}{{\it platform specific}}{}{%
+\xdirective{dir}{Working Directory}{\dtDirectory}{}{{\it platform specific}}{}{%
 This directive is optional and specifies a directory in which the Director
 may put its status files. This directory should be used only  by Bareos but
 may be shared by other Bareos daemons.
