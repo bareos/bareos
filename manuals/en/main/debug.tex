@@ -43,7 +43,7 @@ your system:
    Therefore it expects a local mail transfer daemon running. 
    It send the traceback to \email{root@localhost} via \host{localhost}.
 
-\item Some Linux distributions, e.g. Ubuntu\index[general]{Plattfrom!Ubuntu!Debug}, 
+\item Some Linux distributions, e.g. Ubuntu\index[general]{Platform!Ubuntu!Debug}, 
     disable the possibility to examine the memory of other processes.
     While this is a good idea for hardening a system, our debug mechanismen will fail.
     To disable this feature, run (as root):
@@ -88,7 +88,7 @@ problem by modifying the \command{btraceback} script.
 
 It should be possible to produce a similar traceback on systems other than
 Linux, either using \command{gdb} or some other debugger. 
-Solaris\index[general]{Plattfrom!Solaris!Debug} with \command{dbx}
+Solaris\index[general]{Platform!Solaris!Debug} with \command{dbx}
 loaded works quite fine. On other systems, you will need to modify the 
 \command{btraceback} program to invoke the correct debugger, and possibly correct the
 \file{btraceback.gdb} script to have appropriate commands for your debugger.
