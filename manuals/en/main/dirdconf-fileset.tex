@@ -1130,11 +1130,10 @@ Include {
    more.
 
 
-\item [exclude=yes{\textbar}no] \hfill \\
-\index[dir]{exclude}
-\index[dir]{Directive!exclude}
-   The default is {\bf no}.  When enabled, any files matched within the
+\xdirective{dir}{Exclude}{\dtYesNo}{}{no}{}{%
+   When enabled, any files matched within the
    Options will be excluded from the backup.
+}
 
 \item [aclsupport=yes{\textbar}no] \hfill \\
 \index[dir]{aclsupport}
@@ -1333,8 +1332,16 @@ Include {
 FileSet Exclude-Ressources very similar to Include-Ressources, except that they only allow following directives:
 
 \begin{description}
-\directive{dir}{File}{ filename \textbar\ dirname \textbar\ \textbar command \textbar\ \textbackslash\textless includefile-client \textbar\ \textless includefile-server }{}{}{}
+% file | directoy | |command | \<includefile-client | <includefile-server
+\xdirective{dir}{File}{ 
+  filename \textbar\ 
+  directory \textbar\ 
+  \textbar command \textbar\ 
+  \textbackslash\textless includefile-client \textbar\ 
+  \textless includefile-server 
+  }{}{}{}{%
     Files to exclude are descripted in the same way as at the \ilink{Include ressource}{fileset-include}.
+}
 \end{description}
 
 For example:
