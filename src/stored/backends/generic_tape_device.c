@@ -809,7 +809,7 @@ static inline void os_clrerror(DEVICE *dev)
    /*
     * Read and clear SCSI error status
     */
-   Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev_errno, be.bstrerror(dev_errno));
+   Dmsg2(200, "Doing MTIOCERRSTAT errno=%d ERR=%s\n", dev->dev_errno, be.bstrerror(dev->dev_errno));
    if (dev->d_ioctl(dev->fd(), MTIOCERRSTAT, (char *)&mt_errstat) < 0) {
       dev->clrerror(MTIOCERRSTAT);
    }
