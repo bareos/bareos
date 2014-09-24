@@ -170,27 +170,37 @@ class bconsole:
         try:
             while True:
                 # first get the message length
-                header = self.socket.recv(4)
-                if len(header) == 0:
-                    self.logger.debug( "received empty header, assuming connection is closed" )
-                    break
-                elif len(header) < 0:
-                    # perhaps some signal command
-                    self.logger.error( "failed to get header (len: " + str(len(header)) + ")" )
-                    raise RuntimeError("get the msglen error (" + str(len(header)) + ")" )
+                self.socket.settimeout(0.1)
+                try:
+                    header = self.socket.recv(4)
+                except Timeout:
+                    self.logger.debug( "timeout on receiving header" )
+                    pass
                 else:
-                    # get the message
-                    submsg_length = struct.unpack("!i", header)[0]
-                    if submsg_length <= 0:
-                        #self.logger.debug( "msg len: " + str(submsg_length) )
-                        self.setStatus( submsg_length )
-                        return msg
-                    submsg = ""
-                    while submsg_length > 0:
-                        self.logger.debug( "  submsg len: " + str(submsg_length) )
-                        submsg += self.socket.recv(submsg_length)
-                        submsg_length -= len(submsg)
-                        msg += submsg
+                    if len(header) == 0:
+                        self.logger.debug( "received empty header, assuming connection is closed" )
+                        break
+                    elif len(header) < 0:
+                        # perhaps some signal command
+                        self.logger.error( "failed to get header (len: " + str(len(header)) + ")" )
+                        raise RuntimeError("get the msglen error (" + str(len(header)) + ")" )
+                    else:
+                        # get the message
+                        submsg_length = struct.unpack("!i", header)[0]
+                        if submsg_length <= 0:
+                            #self.logger.debug( "msg len: " + str(submsg_length) )
+                            self.setStatus( submsg_length )
+                            if ( submsg_length == bsock.BNET_EOD or
+                                 submsg_length == bsock.BNET_MAIN_PROMPT or
+                                 submsg_length == bsock.BNET_SUB_PROMPT ):
+                                    return msg
+                        submsg = ""
+                        while submsg_length > 0:
+                            self.logger.debug( "  submsg len: " + str(submsg_length) )
+                            self.socket.settimeout( None )
+                            submsg += self.socket.recv(submsg_length)
+                            submsg_length -= len(submsg)
+                            msg += submsg
         except socket.error as e:
             self._handleSocketError( e )
         return msg
