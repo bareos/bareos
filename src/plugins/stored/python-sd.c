@@ -131,7 +131,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
    /*
     * Setup Python
     */
-   Py_Initialize();
+   Py_InitializeEx(0);
    PyEval_InitThreads();
    mainThreadState = PyEval_SaveThread();
 
