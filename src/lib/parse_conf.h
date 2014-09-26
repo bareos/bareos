@@ -116,8 +116,8 @@ public:
    char *name;                          /* resource name */
    char *desc;                          /* resource description */
    uint32_t rcode;                      /* resource id or type */
-   int32_t  refcnt;                     /* reference count for releasing */
-   char  item_present[MAX_RES_ITEMS];   /* set if item is present in conf file */
+   int32_t refcnt;                      /* reference count for releasing */
+   char item_present[MAX_RES_ITEMS];    /* set if item is present in conf file */
 };
 
 /*
