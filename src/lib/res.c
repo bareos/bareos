@@ -1399,6 +1399,14 @@ bool BRSRES::print_config(POOL_MEM &buff)
    int rindex = this->hdr.rcode - my_config->m_r_first;
 
    /*
+    * If entry is not used, then there is nothing to print.
+    */
+   if (this->hdr.rcode < my_config->m_r_first ||
+       this->hdr.refcnt <= 0) {
+      return true;
+   }
+
+   /*
     * Make sure the resource class has any items.
     */
    if (!my_config->m_resources[rindex].items) {
