@@ -69,7 +69,7 @@ static RES_ITEM store_items[] = {
    { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
 #endif
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_store.plugin_directory), 0, 0, NULL },
-   { "pluginnames", CFG_TYPE_STR, ITEM(res_store.plugin_names), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_store.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_store.max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "20" },
    { "messages", CFG_TYPE_RES, ITEM(res_store.messages), R_MSGS, 0, NULL },
@@ -680,7 +680,7 @@ void free_resource(RES *sres, int type)
          free(res->res_store.plugin_directory);
       }
       if (res->res_store.plugin_names) {
-         free(res->res_store.plugin_names);
+         delete res->res_store.plugin_names;
       }
       if (res->res_store.scripts_directory) {
          free(res->res_store.scripts_directory);
@@ -797,8 +797,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
    for (i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-            Emsg2(M_ERROR_TERM, 0, _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-              items[i].name, resources[rindex]);
+            Emsg2(M_ERROR_TERM, 0,
+                  _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
+                  items[i].name, resources[rindex]);
           }
       }
       /*
@@ -841,6 +842,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          if ((res = (URES *)GetResWithName(R_STORAGE, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
          } else {
+            res->res_store.plugin_names = res_all.res_store.plugin_names;
             res->res_store.messages = res_all.res_store.messages;
             res->res_store.backend_directories = res_all.res_store.backend_directories;
             res->res_store.tls_allowed_cns = res_all.res_store.tls_allowed_cns;

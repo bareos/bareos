@@ -164,7 +164,7 @@ typedef struct s_sdbareosFuncs {
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef STORAGE_DAEMON
-void load_sd_plugins(const char *plugin_dir, const char *plugin_names);
+void load_sd_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_sd_plugins(void);
 int list_sd_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);

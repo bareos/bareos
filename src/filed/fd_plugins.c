@@ -1243,7 +1243,7 @@ static void dump_fd_plugins(FILE *fp)
 /**
  * This entry point is called internally by Bareos to ensure that the plugin IO calls come into this code.
  */
-void load_fd_plugins(const char *plugin_dir, const char *plugin_names)
+void load_fd_plugins(const char *plugin_dir, alist *plugin_names)
 {
    Plugin *plugin;
    int i;

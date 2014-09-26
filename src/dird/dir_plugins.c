@@ -198,7 +198,7 @@ static void dump_dir_plugins(FILE *fp)
  * This entry point is called internally by BAREOS to ensure
  *  that the plugin IO calls come into this code.
  */
-void load_dir_plugins(const char *plugin_dir, const char *plugin_names)
+void load_dir_plugins(const char *plugin_dir, alist *plugin_names)
 {
    Plugin *plugin;
    int i;

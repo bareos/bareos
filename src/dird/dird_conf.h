@@ -140,7 +140,7 @@ public:
    char *working_directory;           /* WorkingDirectory */
    char *scripts_directory;           /* ScriptsDirectory */
    char *plugin_directory;            /* Plugin Directory */
-   char *plugin_names;                /* Plugin names to load */
+   alist *plugin_names;               /* Plugin names to load */
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
    alist *backend_directories;        /* Backend Directories */

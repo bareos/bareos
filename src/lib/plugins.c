@@ -203,16 +203,13 @@ static bool load_a_plugin(void *binfo,
 /*
  * Load all the plugins in the specified directory.
  * Or when plugin_names is give it has a list of plugins
- * to load from the specified directory where the plugin_names
- * string is something like "<plugin_1>:<plugin_2>" where the
- * name is expanded to <plugin_dir>/<plugin-1>-<type> e.g.
- * <plugin_dir>/bpipe-fd.so
+ * to load from the specified directory.
  */
 bool load_plugins(void *binfo,
                   void *bfuncs,
                   alist *plugin_list,
                   const char *plugin_dir,
-                  const char *plugin_names,
+                  alist *plugin_names,
                   const char *type,
                   bool is_plugin_compatible(Plugin *plugin))
 {
@@ -232,25 +229,11 @@ bool load_plugins(void *binfo,
    /*
     * See if we are loading certain plugins only or all plugins of a certain type.
     */
-   if (plugin_names) {
-      char *p, *name, *names;
+   if (plugin_names && plugin_names->size()) {
+      char *name;
       POOL_MEM plugin_name(PM_FNAME);
 
-      /*
-       * Make a private copy so we can split it into the different items.
-       * The passed in string is a const string so we should not change it
-       * as it points directly to the config string.
-       */
-      names = bstrdup(plugin_names);
-      name = names;
-      while (name) {
-         /*
-          * Split the name string on ':'
-          */
-         if ((p = strchr(name, ':'))) {
-            *p++ = '\0';
-         }
-
+      foreach_alist(name, plugin_names) {
          /*
           * Generate the plugin name e.g. <name>-<daemon>.so
           */
@@ -265,7 +248,7 @@ bool load_plugins(void *binfo,
           * Make sure the plugin exists and is a regular file.
           */
          if (lstat(fname.c_str(), &statp) != 0 || !S_ISREG(statp.st_mode)) {
-            name = p;
+            continue;
          }
 
          /*
@@ -275,13 +258,10 @@ bool load_plugins(void *binfo,
                            plugin_list, is_plugin_compatible)) {
             found = true;
          }
-         name = p;
       }
-
-      free(names);
    } else {
       int name_max, type_len;
-      DIR* dp = NULL;
+      DIR *dp = NULL;
       struct dirent *entry = NULL, *result;
 
       name_max = pathconf(".", _PC_NAME_MAX);

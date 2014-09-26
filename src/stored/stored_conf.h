@@ -101,7 +101,7 @@ public:
    char *pid_directory;
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
-   char *plugin_names;
+   alist *plugin_names;
    char *scripts_directory;
    alist *backend_directories;        /* Backend Directories */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
