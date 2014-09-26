@@ -231,7 +231,7 @@ typedef struct s_bareosInfo {
 #ifdef FILE_DAEMON
 struct BFILE;                   /* forward referenced */
 struct FF_PKT;
-void load_fd_plugins(const char *plugin_dir, const char *plugin_names);
+void load_fd_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_fd_plugins(void);
 int list_fd_plugins(POOL_MEM &msg);
 void new_plugins(JCR *jcr);

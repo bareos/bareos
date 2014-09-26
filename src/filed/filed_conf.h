@@ -87,7 +87,7 @@ struct CLIENTRES {
    char *pid_directory;
    char *subsys_directory;
    char *plugin_directory;            /* Plugin directory */
-   char *plugin_names;
+   alist *plugin_names;
    char *scripts_directory;
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;

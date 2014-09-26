@@ -612,6 +612,43 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * Store a list of plugin names to load by the daemon on startup.
+ */
+static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int token;
+   alist *list;
+   char *p, *plugin_name, *plugin_names;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   if (pass == 2) {
+      lex_get_token(lc, T_STRING);   /* scan next item */
+
+      if (!*item->alistvalue) {
+         *(item->alistvalue) = New(alist(10, owned_by_alist));
+      }
+      list = *item->alistvalue;
+
+      plugin_names = bstrdup(lc->str);
+      plugin_name = plugin_names;
+      while (plugin_name) {
+         /*
+          * Split the plugin_names string on ':'
+          */
+         if ((p = strchr(plugin_name, ':'))) {
+            *p++ = '\0';
+         }
+
+         list->append(bstrdup(plugin_name));
+         plugin_name = p;
+      }
+      free(plugin_names);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
  * Store default values for Resource from xxxDefs
  * If we are in pass 2, do a lookup of the
  * resource and store everything not explicitly set
@@ -1156,6 +1193,9 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    case CFG_TYPE_ADDRESSES_PORT:
       store_addresses_port(lc, item, index, pass);
       break;
+   case CFG_TYPE_PLUGIN_NAMES:
+      store_plugin_names(lc, item, index, pass);
+      break;
    default:
       return false;
    }
@@ -1565,7 +1605,8 @@ bool BRSRES::print_config(POOL_MEM &buff)
          }
          break;
       case CFG_TYPE_ALIST_STR:
-      case CFG_TYPE_ALIST_DIR: {
+      case CFG_TYPE_ALIST_DIR:
+      case CFG_TYPE_PLUGIN_NAMES: {
         /*
          * One line for each member of the list
          */

@@ -85,7 +85,7 @@ static RES_ITEM cli_items[] = {
    { "piddirectory", CFG_TYPE_DIR, ITEM(res_client.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_client.subsys_directory), 0, 0, NULL },
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_client.plugin_directory), 0, 0, NULL },
-   { "pluginnames", CFG_TYPE_STR, ITEM(res_client.plugin_names), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_client.scripts_directory), 0, 0, NULL },
    { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "20" },
    { "messages", CFG_TYPE_RES, ITEM(res_client.messages), R_MSGS, 0, NULL },
@@ -286,7 +286,7 @@ void free_resource(RES *sres, int type)
          free(res->res_client.plugin_directory);
       }
       if (res->res_client.plugin_names) {
-         free(res->res_client.plugin_names);
+         delete res->res_client.plugin_names;
       }
       if (res->res_client.FDaddrs) {
          free_addresses(res->res_client.FDaddrs);
@@ -391,8 +391,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
    for (i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-               Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
-                 items[i].name, resources[rindex]);
+               Emsg2(M_ABORT, 0,
+                     _("%s item is required in %s resource, but not found.\n"),
+                     items[i].name, resources[rindex]);
              }
       }
    }
@@ -426,6 +427,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
             } else {
+               res->res_client.plugin_names = res_all.res_client.plugin_names;
                res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
                res->res_client.pki_master_key_files = res_all.res_client.pki_master_key_files;
                res->res_client.pki_signers = res_all.res_client.pki_signers;

@@ -99,7 +99,7 @@ static RES_ITEM dir_items[] = {
    { "workingdirectory", CFG_TYPE_DIR, ITEM(res_dir.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", CFG_TYPE_DIR, ITEM(res_dir.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_dir.plugin_directory), 0, 0, NULL },
-   { "pluginnames", CFG_TYPE_STR, ITEM(res_dir.plugin_names), 0, 0, NULL },
+   { "pluginnames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_dir.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_dir.scripts_directory), 0, 0, NULL },
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
@@ -1622,7 +1622,7 @@ void free_resource(RES *sres, int type)
          free(res->res_dir.plugin_directory);
       }
       if (res->res_dir.plugin_names) {
-         free(res->res_dir.plugin_names);
+         delete res->res_dir.plugin_names;
       }
       if (res->res_dir.pid_directory) {
          free(res->res_dir.pid_directory);
@@ -1937,7 +1937,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
       for (int i = 0; items[i].name; i++) {
          if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-                Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
+                Emsg2(M_ERROR_TERM, 0,
+                      _("%s item is required in %s resource, but not found.\n"),
                       items[i].name, resources[rindex]);
             }
          }
@@ -1954,7 +1955,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
-             Emsg2(M_ERROR_TERM, 0, _("%s item is required in %s resource, but not found.\n"),
+             Emsg2(M_ERROR_TERM, 0,
+                   _("%s item is required in %s resource, but not found.\n"),
                    items[0].name, resources[rindex]);
          }
       }
@@ -2012,6 +2014,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
          } else {
+            res->res_dir.plugin_names = res_all.res_dir.plugin_names;
             res->res_dir.messages = res_all.res_dir.messages;
             res->res_dir.backend_directories = res_all.res_dir.backend_directories;
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;

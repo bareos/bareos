@@ -174,7 +174,8 @@ enum {
    CFG_TYPE_LABEL = 23,                 /* Label */
    CFG_TYPE_ADDRESSES = 24,             /* List of ip addresses */
    CFG_TYPE_ADDRESSES_ADDRESS = 25,     /* Ip address */
-   CFG_TYPE_ADDRESSES_PORT = 26         /* Ip port */
+   CFG_TYPE_ADDRESSES_PORT = 26,        /* Ip port */
+   CFG_TYPE_PLUGIN_NAMES = 27           /* Plugin Name(s) */
 };
 
 /*
