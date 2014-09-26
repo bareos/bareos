@@ -41,6 +41,18 @@
 #define PLUGIN_DESCRIPTION  "Auto Xflation Storage Daemon Plugin"
 #define PLUGIN_USAGE        "(No usage yet)"
 
+#define Dmsg(context, level,  ...) bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__ )
+#define Jmsg(context, type,  ...) bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__ )
+
+#define SETTING_YES (char *)"yes"
+#define SETTING_NO (char *)"no"
+
+#define COMPRESSOR_NAME_GZIP (char *)"GZIP"
+#define COMPRESSOR_NAME_LZO (char *)"LZO"
+#define COMPRESSOR_NAME_FZLZ (char *)"FASTLZ"
+#define COMPRESSOR_NAME_FZ4L (char *)"LZ4"
+#define COMPRESSOR_NAME_FZ4H (char *)"LZ4HC"
+
 /*
  * Forward referenced functions
  */
@@ -49,14 +61,15 @@ static bRC freePlugin(bpContext *ctx);
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
-static bRC setup_record_translation(void *value);
-static bRC handle_read_translation(void *value);
-static bRC handle_write_translation(void *value);
+static bRC handleJobEnd(bpContext *ctx);
+static bRC setup_record_translation(bpContext *ctx, void *value);
+static bRC handle_read_translation(bpContext *ctx, void *value);
+static bRC handle_write_translation(bpContext *ctx, void *value);
 
-static bool setup_auto_deflation(DCR *dcr);
-static bool setup_auto_inflation(DCR *dcr);
-static bool auto_deflate_record(DCR *dcr);
-static bool auto_inflate_record(DCR *dcr);
+static bool setup_auto_deflation(bpContext *ctx, DCR *dcr);
+static bool setup_auto_inflation(bpContext *ctx, DCR *dcr);
+static bool auto_deflate_record(bpContext *ctx, DCR *dcr);
+static bool auto_inflate_record(bpContext *ctx, DCR *dcr);
 
 /*
  * Is the SD in compatible mode or not.
@@ -95,6 +108,20 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
+
+/*
+ * Plugin private context
+ */
+struct plugin_ctx {
+   /*
+    * Counters for compression/decompression ratio
+    */
+   uint64_t deflate_bytes_in;
+   uint64_t deflate_bytes_out;
+   uint64_t inflate_bytes_in;
+   uint64_t inflate_bytes_out;
+};
+
 static int const dbglvl = 200;
 
 #ifdef __cplusplus
@@ -115,7 +142,6 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
 {
    bfuncs = lbfuncs;       /* set Bareos funct pointers */
    binfo  = lbinfo;
-   Dmsg2(dbglvl, "autoxflate-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
    *pinfo  = &pluginInfo;  /* return pointer to our info */
    *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
@@ -151,17 +177,30 @@ static bRC newPlugin(bpContext *ctx)
    int JobId = 0;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
+   Dmsg(ctx, dbglvl, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
+
+   struct plugin_ctx *p_ctx;
+
+   p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
+
+   if (!p_ctx) {
+      return bRC_Error;
+   }
+
+   memset(p_ctx, 0, sizeof(struct plugin_ctx));
+   ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
    /*
     * Only register plugin events we are interested in.
     *
+    * bsdEventJobEnd - SD Job finished.
     * bsdEventSetupRecordTranslation - Setup the buffers for doing record translation.
     * bsdEventReadRecordTranslation - Perform read-side record translation.
     * bsdEventWriteRecordTranslation - Perform write-side record translantion.
     */
    bfuncs->registerBareosEvents(ctx,
-                                3,
+                                4,
+                                bsdEventJobEnd,
                                 bsdEventSetupRecordTranslation,
                                 bsdEventReadRecordTranslation,
                                 bsdEventWriteRecordTranslation);
@@ -175,9 +214,20 @@ static bRC newPlugin(bpContext *ctx)
 static bRC freePlugin(bpContext *ctx)
 {
    int JobId = 0;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
+   Dmsg(ctx, dbglvl, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
+
+   if (!p_ctx) {
+      Dmsg(ctx, dbglvl, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
+      return bRC_Error;
+   }
+
+   if (p_ctx) {
+      free(p_ctx);
+   }
+   ctx->pContext = NULL;
 
    return bRC_OK;
 }
@@ -187,7 +237,7 @@ static bRC freePlugin(bpContext *ctx)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "autoxflate-sd: getPluginValue var=%d\n", var);
+   Dmsg(ctx, dbglvl, "autoxflate-sd: getPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -197,7 +247,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "autoxflate-sd: setPluginValue var=%d\n", var);
+   Dmsg(ctx, dbglvl, "autoxflate-sd: setPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -209,22 +259,58 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
    switch (event->eventType) {
    case bsdEventSetupRecordTranslation:
-      return setup_record_translation(value);
+      return setup_record_translation(ctx, value);
    case bsdEventReadRecordTranslation:
-      return handle_read_translation(value);
+      return handle_read_translation(ctx, value);
    case bsdEventWriteRecordTranslation:
-      return handle_write_translation(value);
+      return handle_write_translation(ctx, value);
+   case bsdEventJobEnd:
+      return handleJobEnd(ctx);
    default:
-      Dmsg1(dbglvl, "autoxflate-sd: Unknown event %d\n", event->eventType);
+      Dmsg(ctx, dbglvl, "autoxflate-sd: Unknown event %d\n", event->eventType);
       return bRC_Error;
    }
 
    return bRC_OK;
 }
 
-static bRC setup_record_translation(void *value)
+/*
+ * At end of job report how inflate/deflate ratio was.
+ */
+static bRC handleJobEnd(bpContext *ctx)
+{
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
+   if (p_ctx->inflate_bytes_in) {
+      Dmsg(ctx, dbglvl, "autoxflate-sd.c: inflate ratio: %lld/%lld = %0.2f%%\n" ,
+           p_ctx->inflate_bytes_out, p_ctx->inflate_bytes_in,
+          (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
+      Jmsg(ctx, M_INFO, _("autoxflate-sd.c: inflate ratio: %0.2f%%\n"),
+           (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
+   }
+
+   if (p_ctx->deflate_bytes_in) {
+      Dmsg(ctx, dbglvl, "autoxflate-sd.c: deflate ratio: %lld/%lld =  %0.2f%%\n",
+           p_ctx->deflate_bytes_out,
+           p_ctx->deflate_bytes_in,
+          (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
+      Jmsg(ctx, M_INFO, _("autoxflate-sd.c: deflate ratio: %0.2f%%\n"),
+           (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
+   }
+
+bail_out:
+   return bRC_OK;
+}
+
+static bRC setup_record_translation(bpContext *ctx, void *value)
 {
    DCR *dcr;
+   const char *inflate_in, *inflate_out;
+   const char *deflate_in, *deflate_out;
 
    /*
     * Unpack the arguments passed in.
@@ -234,13 +320,53 @@ static bRC setup_record_translation(void *value)
       return bRC_Error;
    }
 
+
+   /*
+    * Give jobmessage info what is configured
+    */
+   switch (dcr->autodeflate) {
+   case IO_DIRECTION_IN:
+      deflate_in = SETTING_YES;
+      deflate_out = SETTING_NO;
+      break;
+   case IO_DIRECTION_OUT:
+      deflate_in = SETTING_NO;
+      deflate_out = SETTING_YES;
+      break;
+   case IO_DIRECTION_INOUT:
+      deflate_in = SETTING_YES;
+      deflate_out = SETTING_YES;
+      break;
+   default:
+      Jmsg(ctx, M_ERROR, _("Unexpected autodeflate setting on %s"), dcr->dev_name);
+      break;
+   }
+
+   switch (dcr->autoinflate) {
+   case IO_DIRECTION_IN:
+      inflate_in = SETTING_YES;
+      inflate_out = SETTING_NO;
+      break;
+   case IO_DIRECTION_OUT:
+      inflate_in = SETTING_NO;
+      inflate_out = SETTING_YES;
+      break;
+   case IO_DIRECTION_INOUT:
+      inflate_in = SETTING_YES;
+      inflate_out = SETTING_YES;
+      break;
+   default:
+      Jmsg(ctx, M_ERROR, _("Unexpected autoinflate setting on %s"), dcr->dev_name);
+      break;
+   }
+
    /*
     * Setup auto deflation/inflation of streams when enabled for this device.
     */
    switch (dcr->autodeflate) {
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      if (!setup_auto_deflation(dcr)) {
+      if (!setup_auto_deflation(ctx, dcr)) {
          return bRC_Error;
       }
       break;
@@ -251,18 +377,21 @@ static bRC setup_record_translation(void *value)
    switch (dcr->autoinflate) {
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      if (!setup_auto_inflation(dcr)) {
+      if (!setup_auto_inflation(ctx, dcr)) {
          return bRC_Error;
       }
       break;
    default:
       break;
    }
+   Jmsg(ctx, M_INFO,
+         _("autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
+        dcr->dev_name, deflate_out, inflate_out, inflate_in, inflate_out);
 
    return bRC_OK;
 }
 
-static bRC handle_read_translation(void *value)
+static bRC handle_read_translation(bpContext *ctx, void *value)
 {
    DCR *dcr;
    bool swap_record = false;
@@ -281,7 +410,7 @@ static bRC handle_read_translation(void *value)
    switch (dcr->autoinflate) {
    case IO_DIRECTION_IN:
    case IO_DIRECTION_INOUT:
-      swap_record = auto_inflate_record(dcr);
+      swap_record = auto_inflate_record(ctx, dcr);
       break;
    default:
       break;
@@ -291,7 +420,7 @@ static bRC handle_read_translation(void *value)
       switch (dcr->autodeflate) {
       case IO_DIRECTION_IN:
       case IO_DIRECTION_INOUT:
-         swap_record = auto_deflate_record(dcr);
+         swap_record = auto_deflate_record(ctx, dcr);
          break;
       default:
          break;
@@ -301,7 +430,7 @@ static bRC handle_read_translation(void *value)
    return bRC_OK;
 }
 
-static bRC handle_write_translation(void *value)
+static bRC handle_write_translation(bpContext *ctx, void *value)
 {
    DCR *dcr;
    bool swap_record = false;
@@ -320,7 +449,7 @@ static bRC handle_write_translation(void *value)
    switch (dcr->autoinflate) {
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
-      swap_record = auto_inflate_record(dcr);
+      swap_record = auto_inflate_record(ctx, dcr);
       break;
    default:
       break;
@@ -330,7 +459,7 @@ static bRC handle_write_translation(void *value)
       switch (dcr->autodeflate) {
       case IO_DIRECTION_OUT:
       case IO_DIRECTION_INOUT:
-         swap_record = auto_deflate_record(dcr);
+         swap_record = auto_deflate_record(ctx, dcr);
          break;
       default:
          break;
@@ -344,11 +473,12 @@ static bRC handle_write_translation(void *value)
 /*
  * Setup deflate for auto deflate of data streams.
  */
-static bool setup_auto_deflation(DCR *dcr)
+static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
 {
    JCR *jcr = dcr->jcr;
    bool retval = false;
    uint32_t compress_buf_size = 0;
+   const char *compressorname;
 
    if (jcr->buf_size == 0) {
       jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
@@ -376,12 +506,13 @@ static bool setup_auto_deflation(DCR *dcr)
    switch (dcr->device->autodeflate_algorithm) {
 #if defined(HAVE_LIBZ)
    case COMPRESS_GZIP: {
+      compressorname = COMPRESSOR_NAME_GZIP;
       int zstat;
       z_stream *pZlibStream;
 
       pZlibStream = (z_stream *)jcr->compress.workset.pZLIB;
       if ((zstat = deflateParams(pZlibStream, dcr->device->autodeflate_level, Z_DEFAULT_STRATEGY)) != Z_OK) {
-         Jmsg(jcr, M_FATAL, 0, _("Compression deflateParams error: %d\n"), zstat);
+         Jmsg(ctx, M_FATAL, _("Compression deflateParams error: %d\n"), zstat);
          jcr->setJobStatus(JS_ErrorTerminated);
          goto bail_out;
       }
@@ -390,12 +521,16 @@ static bool setup_auto_deflation(DCR *dcr)
 #endif
 #if defined(HAVE_LZO)
    case COMPRESS_LZO1X:
+      compressorname = COMPRESSOR_NAME_LZO;
       break;
 #endif
 #if defined(HAVE_FASTLZ)
    case COMPRESS_FZFZ:
+      compressorname = COMPRESSOR_NAME_FZLZ;
    case COMPRESS_FZ4L:
+      compressorname = COMPRESSOR_NAME_FZ4L;
    case COMPRESS_FZ4H: {
+      compressorname = COMPRESSOR_NAME_FZ4H;
       int zstat;
       zfast_stream *pZfastStream;
       zfast_stream_compressor compressor = COMPRESSOR_FASTLZ;
@@ -409,7 +544,7 @@ static bool setup_auto_deflation(DCR *dcr)
 
       pZfastStream = (zfast_stream *)jcr->compress.workset.pZFAST;
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
-         Jmsg(jcr, M_FATAL, 0, _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+         Jmsg(ctx, M_FATAL, _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
          jcr->setJobStatus(JS_ErrorTerminated);
          goto bail_out;
       }
@@ -420,6 +555,7 @@ static bool setup_auto_deflation(DCR *dcr)
       break;
    }
 
+   Jmsg(ctx, M_INFO,  _("autodeflation: Compressor on device %s is %s\n"), dcr->dev_name, compressorname);
    retval = true;
 
 bail_out:
@@ -429,7 +565,7 @@ bail_out:
 /*
  * Setup inflation for auto inflation of data streams.
  */
-static bool setup_auto_inflation(DCR *dcr)
+static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
 {
    JCR *jcr = dcr->jcr;
    uint32_t decompress_buf_size;
@@ -462,7 +598,7 @@ static bool setup_auto_inflation(DCR *dcr)
 /*
  * Perform automatic compression of certain stream types when enabled in the config.
  */
-static bool auto_deflate_record(DCR *dcr)
+static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
 {
    ser_declare;
    comp_stream_header ch;
@@ -471,6 +607,12 @@ static bool auto_deflate_record(DCR *dcr)
    bool intermediate_value = false;
    unsigned int max_compression_length = 0;
    unsigned char *data = NULL;
+
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
 
    /*
     * See what our starting point is. When dcr->after_rec is set we already have
@@ -590,8 +732,11 @@ static bool auto_deflate_record(DCR *dcr)
       break;
    }
 
-   Dmsg4(400, "auto_deflate_record: From datastream %d to %d from original size %ld to %ld\n",
-         rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
+   Dmsg(ctx, 400, "auto_deflate_record: From datastream %d to %d from original size %ld to %ld\n",
+        rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
+
+   p_ctx->deflate_bytes_in += rec->data_len;
+   p_ctx->deflate_bytes_out +=  nrec->data_len;
 
    /*
     * If the input is just an intermediate value free it now.
@@ -609,11 +754,18 @@ bail_out:
 /*
  * Inflate (uncompress) the content of a read record and return the data as an alternative datastream.
  */
-static bool auto_inflate_record(DCR *dcr)
+static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
 {
    DEV_RECORD *rec, *nrec;
    bool retval = false;
    bool intermediate_value = false;
+
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      goto bail_out;
+   }
+
 
    /*
     * See what our starting point is. When dcr->after_rec is set we already have
@@ -689,9 +841,11 @@ static bool auto_inflate_record(DCR *dcr)
       break;
    }
 
-   Dmsg4(400, "auto_inflate_record: From datastream %d to %d from original size %ld to %ld\n",
-         rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
+   Dmsg(ctx, 400, "auto_inflate_record: From datastream %d to %d from original size %ld to %ld\n",
+        rec->maskedStream, nrec->maskedStream, rec->data_len, nrec->data_len);
 
+   p_ctx->inflate_bytes_in += rec->data_len;
+   p_ctx->inflate_bytes_out += nrec->data_len;
    /*
     * If the input is just an intermediate value free it now.
     */
@@ -708,7 +862,7 @@ bail_out:
 /*
  * Setup deflate for auto deflate of data streams.
  */
-static bool setup_auto_deflation(DCR *dcr)
+static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
 {
    return true;
 }
@@ -716,7 +870,7 @@ static bool setup_auto_deflation(DCR *dcr)
 /*
  * Setup inflation for auto inflation of data streams.
  */
-static bool setup_auto_inflation(DCR *dcr)
+static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
 {
    return true;
 }
@@ -724,7 +878,7 @@ static bool setup_auto_inflation(DCR *dcr)
 /*
  * Perform automatic compression of certain stream types when enabled in the config.
  */
-static bool auto_deflate_record(DCR *dcr)
+static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
 {
    return false;
 }
@@ -733,7 +887,7 @@ static bool auto_deflate_record(DCR *dcr)
  * Inflate (uncompress) the content of a read record and return
  * the data as an alternative datastream.
  */
-static bool auto_inflate_record(DCR *dcr)
+static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
 {
    return false;
 }
