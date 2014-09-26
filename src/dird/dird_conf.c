@@ -3379,6 +3379,36 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
       }
       break;
    }
+   case CFG_TYPE_AUDIT: {
+      /*
+       * Each member of the list is comma-separated
+       */
+      int cnt = 0;
+      char *audit_event;
+      alist* list;
+      POOL_MEM audit_events;
+
+      list = *(items[i].alistvalue);
+      if (list != NULL) {
+         Mmsg(temp, "%s = ", items[i].name);
+         indent_config_item(cfg_str, 1, temp.c_str());
+
+         pm_strcpy(audit_events, "");
+         foreach_alist(audit_event, list) {
+            if (cnt) {
+               Mmsg(temp, ",\"%s\"", audit_event);
+            } else {
+               Mmsg(temp, "\"%s\"", audit_event);
+            }
+            pm_strcat(audit_events, temp.c_str());
+            cnt++;
+         }
+
+         pm_strcat(cfg_str, audit_events.c_str());
+         pm_strcat(cfg_str, "\n");
+      }
+      break;
+   }
    default:
       Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
       break;
