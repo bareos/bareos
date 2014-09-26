@@ -398,9 +398,10 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    }
 
    /*
-    * See if we have been triggered in the previous switch of not we have to
-    * do out work here and if we did we need to be sure the parse_plugin_definition
-    * returned bRC_OK indicating the plugin definition was OK.
+    * See if we have been triggered in the previous switch if not we have to
+    * always dispatch the event. If we already processed the event internally
+    * we only do a dispatch to the python entry point when that internal processing
+    * was successfull (e.g. retval == bRC_OK).
     */
    if (!event_dispatched || retval == bRC_OK) {
       PyEval_AcquireThread(p_ctx->interpreter);
