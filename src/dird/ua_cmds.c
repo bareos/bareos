@@ -208,7 +208,7 @@ static struct cmdstruct commands[] = {
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("job=<job-name> | pool=<pool-name> | fileset=<fileset-name> | schedule=<schedule-name> |\n"
-         "\tclient=<client-name> | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true, true },
+         "\tclient=<client-name> | jobdefs | jobs | pools | filesets | schedules | clients | messages | consoles | disabled | all"), true, true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false, true },
    { NT_("time"), time_cmd, _("Print current time"),
