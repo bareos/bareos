@@ -155,6 +155,7 @@ static struct showstruct avail_resources[] = {
    { NT_("clients"), R_CLIENT },
    { NT_("counters"), R_COUNTER },
    { NT_("devices"), R_DEVICE },
+   { NT_("jobdefs"), R_JOBDEFS },
    { NT_("jobs"), R_JOB },
    { NT_("storages"), R_STORAGE },
    { NT_("catalogs"), R_CATALOG },
