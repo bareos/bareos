@@ -182,7 +182,6 @@ class BSOCK;
 struct FF_PKT;
 class B_DB;
 struct ATTR_DBR;
-class Plugin;
 struct save_pkt;
 struct bpContext;
 #ifdef HAVE_WIN32
@@ -395,11 +394,9 @@ public:
    ATTR_DBR *ar;                          /* DB attribute record */
    guid_list *id_list;                    /* User/group id to name list */
 
-   bpContext *plugin_ctx_list;            /* List of contexts for plugins */
+   alist *plugin_ctx_list;                /* List of contexts for plugins */
    bpContext *plugin_ctx;                 /* Current plugin context */
-   Plugin *plugin;                        /* Plugin instance */
    save_pkt *plugin_sp;                   /* Plugin save packet */
-   char *plugin_options;                  /* User set options for plugin */
    POOLMEM *comment;                      /* Comment for this Job */
    int64_t max_bandwidth;                 /* Bandwidth limit for this Job */
    htable *path_list;                     /* Directory list (used by findlib) */
@@ -426,6 +423,7 @@ public:
    TREE_ROOT *restore_tree_root;          /* Selected files to restore (some protocols need this info) */
    BSR *bsr;                              /* Bootstrap record -- has everything */
    char *backup_format;                   /* Backup format used when doing a NDMP backup */
+   char *plugin_options;                  /* User set options for plugin */
    uint32_t SDJobFiles;                   /* Number of files written, this job */
    uint64_t SDJobBytes;                   /* Number of bytes processed this job */
    uint32_t SDErrors;                     /* Number of non-fatal errors */
@@ -547,6 +545,7 @@ public:
    bool spool_data;                       /* Set to spool data */
    int32_t CurVol;                        /* Current Volume count */
    DIRRES *director;                      /* Director resource */
+   alist *plugin_options;                 /* Specific Plugin Options sent by DIR */
    alist *write_store;                    /* List of write storage devices sent by DIR */
    alist *read_store;                     /* List of read devices sent by DIR */
    alist *reserve_msgs;                   /* Reserve fail messages */

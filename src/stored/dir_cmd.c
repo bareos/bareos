@@ -82,6 +82,8 @@ static char passiveclientcmd[] =
    "passive client address=%s port=%d ssl=%d";
 static char resolvecmd[] =
    "resolve %s";
+static char pluginoptionscmd[] =
+   "pluginoptions %s";
 
 /* Responses sent to Director */
 static char derrmsg[] =
@@ -102,6 +104,8 @@ static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
 static char OKpassive[] =
    "2000 OK passive client\n";
+static char OKpluginoptions[] =
+   "2000 OK plugin options\n";
 
 /* Imported functions */
 extern bool finish_cmd(JCR *jcr);
@@ -127,6 +131,7 @@ static bool label_cmd(JCR *jcr);
 static bool listen_cmd(JCR *jcr);
 static bool mount_cmd(JCR *jcr);
 static bool passive_cmd(JCR *jcr);
+static bool pluginoptions_cmd(JCR *jcr);
 static bool readlabel_cmd(JCR *jcr);
 static bool resolve_cmd(JCR *jcr);
 static bool relabel_cmd(JCR *jcr);
@@ -169,6 +174,7 @@ static struct s_cmds cmds[] = {
    { "mount", mount_cmd, false },
    { "nextrun", nextrun_cmd, false },       /* Prepare for next backup/restore part of same Job */
    { "passive", passive_cmd, false },
+   { "pluginoptions", pluginoptions_cmd, false },
 // { "query", query_cmd, false },
    { "readlabel", readlabel_cmd, false },
    { "relabel", relabel_cmd, false },       /* Relabel a tape */
@@ -1682,5 +1688,33 @@ static bool passive_cmd(JCR *jcr)
 
 bail_out:
    dir->fsend(BADcmd, "passive client");
+   return false;
+}
+
+static bool pluginoptions_cmd(JCR *jcr)
+{
+   BSOCK *dir = jcr->dir_bsock;
+   char plugin_options[2048];
+
+   Dmsg1(100, "PluginOptionsCmd: %s", dir->msg);
+   if (sscanf(dir->msg, pluginoptionscmd, plugin_options) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      Jmsg(jcr, M_FATAL, 0, _("Bad pluginoptionscmd command: %s"), jcr->errmsg);
+      goto bail_out;
+   }
+
+   unbash_spaces(plugin_options);
+   if (!jcr->plugin_options) {
+      jcr->plugin_options = New(alist(10, owned_by_alist));
+   }
+   jcr->plugin_options->append(bstrdup(plugin_options));
+
+   /*
+    * Send OK to Director
+    */
+   return dir->fsend(OKpluginoptions);
+
+bail_out:
+   dir->fsend(BADcmd, "plugin options");
    return false;
 }

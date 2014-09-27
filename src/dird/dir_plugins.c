@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -101,13 +101,8 @@ static inline bool is_plugin_disabled(JCR *jcr)
 }
 #endif
 
-static inline bRC trigger_plugin_event(JCR *jcr, bDirEventType eventType, bDirEvent *event,
-                                       Plugin *plugin, bpContext *plugin_ctx_list,
-                                       int index, void *value)
+static inline bRC trigger_plugin_event(JCR *jcr, bDirEventType eventType, bDirEvent *event, bpContext *ctx, void *value)
 {
-   bpContext *ctx;
-
-   ctx = &plugin_ctx_list[index];
    if (!is_event_enabled(ctx, eventType)) {
       Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
       return bRC_OK;
@@ -118,7 +113,7 @@ static inline bRC trigger_plugin_event(JCR *jcr, bDirEventType eventType, bDirEv
       return bRC_OK;
    }
 
-   return dirplug_func(plugin)->handlePluginEvent(ctx, event, value);
+   return dirplug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
 }
 
 /*
@@ -126,34 +121,38 @@ static inline bRC trigger_plugin_event(JCR *jcr, bDirEventType eventType, bDirEv
  */
 int generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool reverse)
 {
-   bDirEvent event;
-   Plugin *plugin;
    int i;
+   bDirEvent event;
+   alist *plugin_ctx_list;
    bRC rc = bRC_OK;
 
    if (!dird_plugin_list || !jcr || !jcr->plugin_ctx_list) {
       return bRC_OK;                  /* Return if no plugins loaded */
    }
 
-   bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
+   plugin_ctx_list = jcr->plugin_ctx_list;
    event.eventType = eventType;
 
-   Dmsg2(dbglvl, "dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   Dmsg2(dbglvl, "dir-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
 
    /*
     * See if we need to trigger the loaded plugins in reverse order.
     */
    if (reverse) {
-      foreach_alist_rindex(i, plugin, dird_plugin_list) {
-         rc = trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+      bpContext *ctx;
+
+      foreach_alist_rindex(i, ctx, plugin_ctx_list) {
+         rc = trigger_plugin_event(jcr, eventType, &event, ctx, value);
 
          if (rc != bRC_OK) {
             break;
          }
       }
    } else {
-      foreach_alist_index(i, plugin, dird_plugin_list) {
-         rc = trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+      bpContext *ctx;
+
+      foreach_alist_index(i, ctx, plugin_ctx_list) {
+         rc = trigger_plugin_event(jcr, eventType, &event, ctx, value);
 
          if (rc != bRC_OK) {
             break;
@@ -291,12 +290,139 @@ static bool is_plugin_compatible(Plugin *plugin)
 }
 
 /*
+ * Instantiate a new plugin instance.
+ */
+static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t instance)
+{
+   bpContext *ctx;
+   b_plugin_ctx *b_ctx;
+
+   b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
+   memset(b_ctx, 0, sizeof(b_plugin_ctx));
+   b_ctx->jcr = jcr;
+
+   Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+
+   ctx = (bpContext *)malloc(sizeof(bpContext));
+   ctx->instance = instance;
+   ctx->plugin = plugin;
+   ctx->bContext = (void *)b_ctx;
+   ctx->pContext = NULL;
+
+   jcr->plugin_ctx_list->append(ctx);
+
+   if (dirplug_func(plugin)->newPlugin(ctx) != bRC_OK) {
+      b_ctx->disabled = true;
+   }
+
+   return ctx;
+}
+
+/*
+ * Send a bDirEventNewPluginOptions event to all plugins configured in
+ * jcr->res.Job.DirPluginOptions
+ */
+void dispatch_new_plugin_options(JCR *jcr)
+{
+   int i, j, len;
+   Plugin *plugin;
+   bpContext *ctx;
+   uint32_t instance;
+   bDirEvent event;
+   bDirEventType eventType;
+   char *bp, *plugin_name, *option;
+   const char *plugin_options;
+   POOL_MEM priv_plugin_options(PM_MESSAGE);
+
+   if (!dird_plugin_list || dird_plugin_list->empty()) {
+      return;
+   }
+
+   if (jcr->res.job &&
+       jcr->res.job->DirPluginOptions &&
+       jcr->res.job->DirPluginOptions->size()) {
+
+      eventType = bDirEventNewPluginOptions;
+      event.eventType = eventType;
+
+      foreach_alist_index(i, plugin_options, jcr->res.job->DirPluginOptions) {
+         /*
+          * Make a private copy of plugin options.
+          */
+         pm_strcpy(priv_plugin_options, plugin_options);
+
+         plugin_name = priv_plugin_options.c_str();
+         if (!(bp = strchr(plugin_name, ':'))) {
+            Jmsg(NULL, M_ERROR, 0, _("Illegal DIR plugin options encountered, %s skipping\n"),
+                 priv_plugin_options.c_str());
+            continue;
+         }
+         *bp++ = '\0';
+
+         /*
+          * See if there is any instance named in the options string.
+          */
+         instance = 0;
+         option = bp;
+         while (option) {
+            bp = strchr(bp, ':');
+            if (bp) {
+               *bp++ = '\0';
+            }
+
+            if (bstrncasecmp(option, "instance=", 9)) {
+               instance = str_to_int64(option + 9);
+               break;
+            }
+
+            option = bp;
+         }
+
+         if (instance < LOWEST_PLUGIN_INSTANCE || instance > HIGHEST_PLUGIN_INSTANCE) {
+            Jmsg(NULL, M_ERROR, 0, _("Illegal DIR plugin options encountered, %s instance %d skipping\n"),
+                 plugin_options, instance);
+            continue;
+         }
+
+         len = strlen(plugin_name);
+
+         /*
+          * See if this plugin options are for an already instantiated plugin instance.
+          */
+         foreach_alist(ctx, jcr->plugin_ctx_list) {
+            if (ctx->instance == instance &&
+                ctx->plugin->file_len == len &&
+                bstrncasecmp(ctx->plugin->file, plugin_name, len)) {
+               break;
+            }
+         }
+
+         /*
+          * Found a context in the previous loop ?
+          */
+         if (!ctx) {
+            foreach_alist_index(j, plugin, dird_plugin_list) {
+               if (plugin->file_len == len && bstrncasecmp(plugin->file, plugin_name, len)) {
+                  ctx = instantiate_plugin(jcr, plugin, instance);
+                  break;
+               }
+            }
+         }
+
+         if (ctx) {
+            trigger_plugin_event(jcr, eventType, &event, ctx, (void *)plugin_options);
+         }
+      }
+   }
+}
+
+/*
  * Create a new instance of each plugin for this Job
  */
 void new_plugins(JCR *jcr)
 {
+   int i, num;
    Plugin *plugin;
-   int i;
 
    Dmsg0(dbglvl, "=== enter new_plugins ===\n");
    if (!dird_plugin_list) {
@@ -307,27 +433,18 @@ void new_plugins(JCR *jcr)
       return;
    }
 
-   int num = dird_plugin_list->size();
-
+   num = dird_plugin_list->size();
    Dmsg1(dbglvl, "dir-plugin-list size=%d\n", num);
    if (num == 0) {
       return;
    }
 
-   jcr->plugin_ctx_list = (bpContext *)malloc(sizeof(bpContext) * num);
-
-   bpContext *plugin_ctx_list = jcr->plugin_ctx_list;
-   Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   jcr->plugin_ctx_list = New(alist(10, owned_by_alist));
    foreach_alist_index(i, plugin, dird_plugin_list) {
-      /* Start a new instance of each plugin */
-      b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
-      memset(b_ctx, 0, sizeof(b_plugin_ctx));
-      b_ctx->jcr = jcr;
-      plugin_ctx_list[i].bContext = (void *)b_ctx;
-      plugin_ctx_list[i].pContext = NULL;
-      if (dirplug_func(plugin)->newPlugin(&plugin_ctx_list[i]) != bRC_OK) {
-         b_ctx->disabled = true;
-      }
+      /*
+       * Start a new instance of each plugin
+       */
+      instantiate_plugin(jcr, plugin, 0);
    }
 }
 
@@ -336,21 +453,22 @@ void new_plugins(JCR *jcr)
  */
 void free_plugins(JCR *jcr)
 {
-   Plugin *plugin;
-   int i;
+   bpContext *ctx;
 
    if (!dird_plugin_list || !jcr->plugin_ctx_list) {
       return;
    }
 
-   bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, dird_plugin_list) {
-      /* Free the plugin instance */
-      dirplug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
-      free(plugin_ctx_list[i].bContext);     /* free BAREOS private context */
+   foreach_alist(ctx, jcr->plugin_ctx_list) {
+      /*
+       * Free the plugin instance
+       */
+      dirplug_func(ctx->plugin)->freePlugin(ctx);
+      free(ctx->bContext);                   /* Free BAREOS private context */
    }
-   free(plugin_ctx_list);
+
+   delete jcr->plugin_ctx_list;
    jcr->plugin_ctx_list = NULL;
 }
 

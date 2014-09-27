@@ -116,10 +116,11 @@ typedef enum {
   bsdEventSetupRecordTranslation = 18,
   bsdEventReadRecordTranslation = 19,
   bsdEventWriteRecordTranslation = 20,
-  bsdEventDeviceReleased = 21
+  bsdEventDeviceReleased = 21,
+  bsdEventNewPluginOptions = 22
 } bsdEventType;
 
-#define SD_NR_EVENTS bsdEventDeviceReleased /* keep this updated ! */
+#define SD_NR_EVENTS bsdEventNewPluginOptions /* keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;
@@ -167,6 +168,7 @@ typedef struct s_sdbareosFuncs {
 void load_sd_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_sd_plugins(void);
 int list_sd_plugins(POOL_MEM &msg);
+void dispatch_new_plugin_options(JCR *jcr);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
 int generate_plugin_event(JCR *jcr, bsdEventType event,

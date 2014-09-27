@@ -162,8 +162,9 @@ bool job_cmd(JCR *jcr)
    jcr->sd_auth_key = bstrdup(auth_key);
    memset(auth_key, 0, sizeof(auth_key));
 
-   new_plugins(jcr);            /* instantiate the plugins */
+   dispatch_new_plugin_options(jcr);
    generate_plugin_event(jcr, bsdEventJobStart, (void *)"JobStart");
+
    return true;
 }
 
@@ -546,6 +547,10 @@ void stored_free_jcr(JCR *jcr)
    if (jcr->read_dcr) {
       free_dcr(jcr->read_dcr);
       jcr->read_dcr = NULL;
+   }
+
+   if (jcr->plugin_options) {
+      delete jcr->plugin_options;
    }
 
    if (jcr->read_store) {

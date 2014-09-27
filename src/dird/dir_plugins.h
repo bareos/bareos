@@ -109,10 +109,11 @@ typedef enum {
    bDirEventNeedVolume = 7,
    bDirEventVolumeFull = 8,
    bDirEventRecyle = 9,
-   bDirEventGetScratch = 10
+   bDirEventGetScratch = 10,
+   bDirEventNewPluginOptions = 11
 } bDirEventType;
 
-#define DIR_NR_EVENTS bDirEventGetScratch /* keep this updated ! */
+#define DIR_NR_EVENTS bDirEventNewPluginOptions /* keep this updated ! */
 
 typedef struct s_bDirEvent {
    uint32_t eventType;
@@ -149,6 +150,7 @@ typedef struct s_dirbareosFuncs {
 void load_dir_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_dir_plugins(void);
 int list_dir_plugins(POOL_MEM &msg);
+void dispatch_new_plugin_options(JCR *jcr);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
 int generate_plugin_event(JCR *jcr, bDirEventType event,
@@ -167,7 +169,7 @@ typedef enum {
 } pDirVariable;
 
 #define DIR_PLUGIN_MAGIC     "*DirPluginData*"
-#define DIR_PLUGIN_INTERFACE_VERSION  2
+#define DIR_PLUGIN_INTERFACE_VERSION  3
 
 typedef struct s_dirpluginFuncs {
    uint32_t size;

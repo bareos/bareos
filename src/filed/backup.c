@@ -867,7 +867,6 @@ bail_out:
    if (ff_pkt->opt_plugin) {
       jcr->plugin_sp = NULL;            /* sp is local to this function */
       jcr->plugin_ctx = NULL;
-      jcr->plugin = NULL;
       jcr->opt_plugin = false;
    }
    if (bsctx.digest) {

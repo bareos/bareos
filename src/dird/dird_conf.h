@@ -380,7 +380,6 @@ public:
    char *add_prefix;                  /* add prefix to filename  */
    char *add_suffix;                  /* add suffix to filename -- .old */
    char *backup_format;               /* Format of backup to use for protocols supporting multiple backup formats */
-   char *PluginOptions;               /* Options to pass to plugin */
    char *RestoreBootstrap;            /* Bootstrap file */
    char *WriteBootstrap;              /* Where to write bootstrap Job updates */
    char *WriteVerifyList;             /* List of changed files */
@@ -440,6 +439,9 @@ public:
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
    bool SaveFileHist;                 /* Ability to disable File history saving for certain protocols */
 
+   alist *FdPluginOptions;            /* Generic FD plugin options used by this Job */
+   alist *SdPluginOptions;            /* Generic SD plugin options used by this Job */
+   alist *DirPluginOptions;           /* Generic DIR plugin options used by this Job */
    alist *base;                       /* Base jobs */
    int64_t max_bandwidth;             /* Speed limit on this job */
 

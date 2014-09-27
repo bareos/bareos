@@ -374,7 +374,10 @@ RES_ITEM job_items[] = {
    { "CancelQueuedDuplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelQueuedDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
    { "CancelRunningDuplicates", CFG_TYPE_BOOL, ITEM(res_job.CancelRunningDuplicates), 0, CFG_ITEM_DEFAULT, "false" },
    { "SaveFileHistory", CFG_TYPE_BOOL, ITEM(res_job.SaveFileHist), 0, CFG_ITEM_DEFAULT, "true" },
-   { "PluginOptions", CFG_TYPE_STR, ITEM(res_job.PluginOptions), 0, 0, NULL },
+   { "PluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job.FdPluginOptions), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL },
+   { "FdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job.FdPluginOptions), 0, 0, NULL },
+   { "SdPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job.SdPluginOptions), 0, 0, NULL },
+   { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job.DirPluginOptions), 0, 0, NULL },
    { "Base", CFG_TYPE_ALIST_RES, ITEM(res_job.base), R_JOB, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
@@ -1933,9 +1936,6 @@ void free_resource(RES *sres, int type)
       if (res->res_job.WriteVerifyList) {
          free(res->res_job.WriteVerifyList);
       }
-      if (res->res_job.PluginOptions) {
-         free(res->res_job.PluginOptions);
-      }
       if (res->res_job.selection_pattern) {
          free(res->res_job.selection_pattern);
       }
@@ -1944,6 +1944,15 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_job.storage) {
          delete res->res_job.storage;
+      }
+      if (res->res_job.FdPluginOptions) {
+         delete res->res_job.FdPluginOptions;
+      }
+      if (res->res_job.SdPluginOptions) {
+         delete res->res_job.SdPluginOptions;
+      }
+      if (res->res_job.DirPluginOptions) {
+         delete res->res_job.DirPluginOptions;
       }
       if (res->res_job.base) {
          delete res->res_job.base;
@@ -2105,6 +2114,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
             res->res_job.fileset = res_all.res_job.fileset;
             res->res_job.storage = res_all.res_job.storage;
             res->res_job.catalog = res_all.res_job.catalog;
+            res->res_job.FdPluginOptions = res_all.res_job.FdPluginOptions;
+            res->res_job.SdPluginOptions = res_all.res_job.SdPluginOptions;
+            res->res_job.DirPluginOptions = res_all.res_job.DirPluginOptions;
             res->res_job.base = res_all.res_job.base;
             res->res_job.pool = res_all.res_job.pool;
             res->res_job.full_pool = res_all.res_job.full_pool;
@@ -2245,10 +2257,11 @@ bool populate_jobdefs()
 
    foreach_res(job, R_JOB) {
       if (job->jobdefs) {
+         JOBRES *jobdefs = job->jobdefs;
+
          /*
           * Handle Storage alists specifically
           */
-         JOBRES *jobdefs = job->jobdefs;
          if (jobdefs->storage && !job->storage) {
             STORERES *store;
 
@@ -2286,12 +2299,12 @@ bool populate_jobdefs()
             uint32_t offset;
 
             Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
-                job->name(), job_items[i].name,
-                bit_is_set(i, job->hdr.item_present),
-                bit_is_set(i, job->jobdefs->hdr.item_present));
+                  job->name(), job_items[i].name,
+                  bit_is_set(i, job->hdr.item_present),
+                  bit_is_set(i, jobdefs->hdr.item_present));
 
             if (!bit_is_set(i, job->hdr.item_present) &&
-                 bit_is_set(i, job->jobdefs->hdr.item_present)) {
+                 bit_is_set(i, jobdefs->hdr.item_present)) {
                Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
                      job->name(), job_items[i].name);
                offset = (char *)(job_items[i].value) - (char *)&res_all;
@@ -2301,7 +2314,7 @@ bool populate_jobdefs()
                   /*
                    * Handle strings and directory strings
                    */
-                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  def_svalue = (char **)((char *)(jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
                         job->name(), job_items[i].name, *def_svalue, i, offset);
                   svalue = (char **)((char *)job + offset);
@@ -2316,7 +2329,7 @@ bool populate_jobdefs()
                   /*
                    * Handle resources
                    */
-                  def_svalue = (char **)((char *)(job->jobdefs) + offset);
+                  def_svalue = (char **)((char *)(jobdefs) + offset);
                   Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
                         job->name(), job_items[i].name, i, offset);
                   svalue = (char **)((char *)job + offset);
@@ -2327,11 +2340,39 @@ bool populate_jobdefs()
                   set_bit(i, job->hdr.item_present);
                   set_bit(i, job->hdr.inherit_content);
                   break;
+               case CFG_TYPE_ALIST_STR: {
+                  const char *str;
+                  alist *orig_list, **new_list;
+
+                  /*
+                   * Handle alist strings
+                   */
+                  orig_list = *(alist **)((char *)(jobdefs) + offset);
+
+                  /*
+                   * See if there is anything on the list.
+                   */
+                  if (orig_list && orig_list->size()) {
+                     new_list = (alist **)((char *)(job) + offset);
+
+                     if (!*new_list) {
+                        *new_list = New(alist(10, owned_by_alist));
+                     }
+
+                     foreach_alist(str, orig_list) {
+                        (*new_list)->append(bstrdup(str));
+                     }
+
+                     set_bit(i, job->hdr.item_present);
+                     set_bit(i, job->hdr.inherit_content);
+                  }
+                  break;
+               }
                case CFG_TYPE_ALIST_RES:
                   /*
                    * Handle alist resources
                    */
-                  if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
+                  if (bit_is_set(i, jobdefs->hdr.item_present)) {
                      set_bit(i, job->hdr.item_present);
                      set_bit(i, job->hdr.inherit_content);
                   }
@@ -2349,7 +2390,7 @@ bool populate_jobdefs()
                    * Handle integer fields
                    *    Note, our store_bit does not handle bitmaped fields
                    */
-                  def_ivalue = (uint32_t *)((char *)(job->jobdefs) + offset);
+                  def_ivalue = (uint32_t *)((char *)(jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_ivalue, i, offset);
                   ivalue = (uint32_t *)((char *)job + offset);
@@ -2364,7 +2405,7 @@ bool populate_jobdefs()
                   /*
                    * Handle 64 bit integer fields
                    */
-                  def_lvalue = (int64_t *)((char *)(job->jobdefs) + offset);
+                  def_lvalue = (int64_t *)((char *)(jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_lvalue, i, offset);
                   lvalue = (int64_t *)((char *)job + offset);
@@ -2376,7 +2417,7 @@ bool populate_jobdefs()
                   /*
                    * Handle bool fields
                    */
-                  def_bvalue = (bool *)((char *)(job->jobdefs) + offset);
+                  def_bvalue = (bool *)((char *)(jobdefs) + offset);
                   Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
                        job->name(), job_items[i].name, *def_bvalue, i, offset);
                   bvalue = (bool *)((char *)job + offset);

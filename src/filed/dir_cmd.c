@@ -2169,10 +2169,6 @@ static void filed_free_jcr(JCR *jcr)
       free_pool_memory(jcr->last_fname);
    }
 
-   if (jcr->plugin_options) {
-      free(jcr->plugin_options);
-   }
-
    free_bootstrap(jcr);
    free_runscripts(jcr->RunScripts);
    delete jcr->RunScripts;
