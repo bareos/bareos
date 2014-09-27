@@ -124,6 +124,8 @@ struct b_plugin_ctx {
    JCR *jcr;                                       /* jcr for plugin */
    bRC ret;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
+   bool restoreFileStarted;
+   bool createFileCalled;
    char events[nbytes_for_bits(FD_NR_EVENTS + 1)]; /* enabled events bitmask */
    findINCEXE *exclude;                            /* pointer to exclude files */
    findINCEXE *include;                            /* pointer to include/exclude files */
@@ -134,12 +136,12 @@ static inline bool is_event_enabled(bpContext *ctx, bEventType eventType)
    b_plugin_ctx *b_ctx;
 
    if (!ctx) {
-      return true;
+      return false;
    }
 
    b_ctx = (b_plugin_ctx *)ctx->bContext;
    if (!b_ctx) {
-      return true;
+      return false;
    }
 
    return bit_is_set(eventType, b_ctx->events);
@@ -195,37 +197,33 @@ static bool for_this_plugin(Plugin *plugin, char *name, int len)
 /**
  * Raise a certain plugin event.
  */
-static inline void trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *event, Plugin *plugin,
-                                        bpContext *plugin_ctx_list, int index, void *value)
+static inline bRC trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *event, bpContext *ctx, void *value)
 {
-   bpContext *ctx;
-
-   /*
-    * Note, at this point do not change jcr->plugin or jcr->plugin_ctx
-    */
-   ctx = &plugin_ctx_list[index];
    if (!is_event_enabled(ctx, eventType)) {
       Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
-      return;
+      return bRC_OK;
    }
 
    if (is_plugin_disabled(ctx)) {
-      return;
+      return bRC_OK;
    }
 
    if (eventType == bEventEndRestoreJob) {
-      Dmsg0(50, "eventType==bEventEndRestoreJob\n");
-      if (jcr->plugin && jcr->plugin->restoreFileStarted) {
-         plug_func(jcr->plugin)->endRestoreFile(jcr->plugin_ctx);
+      b_plugin_ctx *b_ctx = (b_plugin_ctx *)ctx->bContext;
+
+      Dmsg0(50, "eventType == bEventEndRestoreJob\n");
+      if (ctx && ctx->plugin &&
+          b_ctx && b_ctx->restoreFileStarted) {
+         plug_func(ctx->plugin)->endRestoreFile(ctx);
       }
 
-      if (jcr->plugin) {
-         jcr->plugin->restoreFileStarted = false;
-         jcr->plugin->createFileCalled = false;
+      if (b_ctx) {
+         b_ctx->restoreFileStarted = false;
+         b_ctx->createFileCalled = false;
       }
    }
 
-   plug_func(plugin)->handlePluginEvent(ctx, event, value);
+   return plug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
 }
 
 /**
@@ -234,17 +232,19 @@ static inline void trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *
 void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
 {
    bEvent event;
-   Plugin *plugin;
    char *name = NULL;
    int i;
    int len = 0;
    bool call_if_canceled = false;
    restore_object_pkt *rop;
-   bpContext *plugin_ctx_list;
+   bpContext *ctx;
+   alist *plugin_ctx_list;
 
    if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list) {
       return;                         /* Return if no plugins loaded */
    }
+
+   plugin_ctx_list = jcr->plugin_ctx_list;
 
    /*
     * Some events are sent to only a particular plugin or must be called even if the job is canceled.
@@ -277,9 +277,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
       call_if_canceled = true; /* plugin *must* see this call */
       break;
    case bEventStartRestoreJob:
-      foreach_alist_index(i, plugin, fd_plugin_list) {
-         plugin->restoreFileStarted = false;
-         plugin->createFileCalled = false;
+      foreach_alist(ctx, plugin_ctx_list) {
+         ((b_plugin_ctx *)ctx->bContext)->restoreFileStarted = false;
+         ((b_plugin_ctx *)ctx->bContext)->createFileCalled = false;
       }
       break;
    case bEventEndRestoreJob:
@@ -296,10 +296,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
       return;
    }
 
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
    event.eventType = eventType;
 
-   Dmsg2(dbglvl, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   Dmsg2(dbglvl, "plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
 
    /*
     * Pass event to every plugin that has requested this event type (except if name is set).
@@ -308,22 +307,22 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
     * See if we need to trigger the loaded plugins in reverse order.
     */
    if (reverse) {
-      foreach_alist_rindex(i, plugin, fd_plugin_list) {
-         if (!for_this_plugin(plugin, name, len)) {
+      foreach_alist_rindex(i, ctx, plugin_ctx_list) {
+         if (!for_this_plugin(ctx->plugin, name, len)) {
             Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n", name, (name == NULL) ? 1 : 0);
             continue;
          }
 
-         trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+         trigger_plugin_event(jcr, eventType, &event, ctx, value);
       }
    } else {
-      foreach_alist_index(i, plugin, fd_plugin_list) {
-         if (!for_this_plugin(plugin, name, len)) {
+      foreach_alist_index(i, ctx, plugin_ctx_list) {
+         if (!for_this_plugin(ctx->plugin, name, len)) {
             Dmsg2(dbglvl, "Not for this plugin name=%s NULL=%d\n", name, (name == NULL) ? 1 : 0);
             continue;
          }
 
-         trigger_plugin_event(jcr, eventType, &event, plugin, plugin_ctx_list, i, value);
+         trigger_plugin_event(jcr, eventType, &event, ctx, value);
       }
    }
 
@@ -335,44 +334,35 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
  */
 bool plugin_check_file(JCR *jcr, char *fname)
 {
-   Plugin *plugin;
+   bpContext *ctx;
+   alist *plugin_ctx_list;
    int ret = bRC_OK;
-   int i;
 
    if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list || jcr->is_job_canceled()) {
       return false;                      /* Return if no plugins loaded */
    }
 
-   bpContext *plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
-
+   plugin_ctx_list = jcr->plugin_ctx_list;
    Dmsg2(dbglvl, "plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
    /*
     * Pass event to every plugin
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      bpContext *ctx;
-
-      ctx = &plugin_ctx_list[i];
+   foreach_alist(ctx, plugin_ctx_list) {
       if (is_plugin_disabled(ctx)) {
          continue;
       }
 
       jcr->plugin_ctx = ctx;
-      jcr->plugin = plugin;
-
-      if (plug_func(plugin)->checkFile == NULL) {
+      if (plug_func(ctx->plugin)->checkFile == NULL) {
          continue;
       }
 
-      ret = plug_func(plugin)->checkFile(ctx, fname);
+      ret = plug_func(ctx->plugin)->checkFile(ctx, fname);
       if (ret == bRC_Seen) {
          break;
       }
    }
-
-   jcr->plugin = NULL;
-   jcr->plugin_ctx = NULL;
 
    return ret == bRC_Seen;
 }
@@ -418,7 +408,7 @@ static bool get_plugin_name(JCR *jcr, char *cmd, int *ret)
    return true;
 }
 
-static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
+void plugin_update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
 {
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
@@ -462,13 +452,12 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
 bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
 {
    int len;
-   int i = 0;
    char *cmd;
-   Plugin *plugin;
    bRC ret = bRC_Core;
    bEvent event;
    bEventType eventType;
-   bpContext *plugin_ctx_list;
+   bpContext *ctx;
+   alist *plugin_ctx_list;
 
    cmd = ff_pkt->plugin;
    eventType = bEventHandleBackupFile;
@@ -486,7 +475,7 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
    sp->delta_seq = ff_pkt->delta_seq;
    sp->accurate_found = ff_pkt->accurate_found;
 
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
+   plugin_ctx_list = jcr->plugin_ctx_list;
    if (!fd_plugin_list || !plugin_ctx_list || jcr->is_job_canceled()) {
       Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
       goto bail_out;         /* Return if no plugins loaded */
@@ -499,15 +488,12 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
    /*
     * Note, we stop the loop on the first plugin that matches the name
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      bpContext *ctx;
-
-      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", plugin->file, plugin->file_len, cmd, len);
-      if (!for_this_plugin(plugin, cmd, len)) {
+   foreach_alist(ctx, plugin_ctx_list) {
+      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file, ctx->plugin->file_len, cmd, len);
+      if (!for_this_plugin(ctx->plugin, cmd, len)) {
          continue;
       }
 
-      ctx = &plugin_ctx_list[i];
       if (!is_event_enabled(ctx, eventType)) {
          Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
          continue;
@@ -518,27 +504,7 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
       }
 
       jcr->plugin_ctx = ctx;
-      jcr->plugin = plugin;
-
-      ret = plug_func(plugin)->handlePluginEvent(ctx, &event, sp);
-
-      /*
-       * TODO: would be better to set this in save_file()
-       */
-      if (ret == bRC_OK) {
-         jcr->opt_plugin = true;
-         jcr->plugin = plugin;
-         jcr->plugin_sp = sp;      /* Unset sp in save_file */
-         jcr->plugin_ctx = ctx;
-
-         update_ff_pkt(ff_pkt, sp);
-      } else {
-         /*
-          * Reset plugin in JCR if not used this time
-          */
-         jcr->plugin_ctx = NULL;
-         jcr->plugin = NULL;
-      }
+      ret = plug_func(ctx->plugin)->handlePluginEvent(ctx, &event, sp);
 
       goto bail_out;
    } /* end foreach loop */
@@ -564,20 +530,19 @@ bail_out:
  */
 int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
-   int i;
    int len;
    bRC ret;
    char *cmd;
    bEvent event;
-   Plugin *plugin;
+   bpContext *ctx;
    struct save_pkt sp;
    bEventType eventType;
    POOL_MEM fname(PM_FNAME);
    POOL_MEM link(PM_FNAME);
-   bpContext *plugin_ctx_list;
+   alist *plugin_ctx_list;
 
    cmd = ff_pkt->top_fname;
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
+   plugin_ctx_list = jcr->plugin_ctx_list;
    if (!fd_plugin_list || !plugin_ctx_list || jcr->is_job_canceled()) {
       Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
       return 1;                            /* Return if no plugins loaded */
@@ -594,11 +559,9 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    /*
     * Note, we stop the loop on the first plugin that matches the name
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      bpContext *ctx;
-
-      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", plugin->file, plugin->file_len, cmd, len);
-      if (!for_this_plugin(plugin, cmd, len)) {
+   foreach_alist(ctx, plugin_ctx_list) {
+      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file, ctx->plugin->file_len, cmd, len);
+      if (!for_this_plugin(ctx->plugin, cmd, len)) {
          continue;
       }
 
@@ -606,7 +569,6 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
        * We put the current plugin pointer, and the plugin context into the jcr, because during save_file(),
        * the plugin will be called many times and these values are needed.
        */
-      ctx = &plugin_ctx_list[i];
       if (!is_event_enabled(ctx, eventType)) {
          Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
          continue;
@@ -617,13 +579,12 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       }
 
       jcr->plugin_ctx = ctx;
-      jcr->plugin = plugin;
 
       /*
        * Send the backup command to the right plugin
        */
       Dmsg1(dbglvl, "Command plugin = %s\n", cmd);
-      if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
+      if (plug_func(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
          goto bail_out;
       }
 
@@ -643,7 +604,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          /*
           * Get the file save parameters. I.e. the stat pkt ...
           */
-         if (plug_func(plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
+         if (plug_func(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
             goto bail_out;
          }
 
@@ -685,7 +646,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             ff_pkt->fname = fname.c_str();
             ff_pkt->link = link.c_str();
 
-            update_ff_pkt(ff_pkt, &sp);
+            plugin_update_ff_pkt(ff_pkt, &sp);
          }
 
          memcpy(&ff_pkt->statp, &sp.statp, sizeof(ff_pkt->statp));
@@ -754,7 +715,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
           * Call Bareos core code to backup the plugin's file
           */
          save_file(jcr, ff_pkt, true);
-         ret = plug_func(plugin)->endBackupFile(ctx);
+         ret = plug_func(ctx->plugin)->endBackupFile(ctx);
          if (ret == bRC_More || ret == bRC_OK) {
             accurate_mark_file_as_seen(jcr, fname.c_str());
          }
@@ -772,8 +733,6 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
 bail_out:
    jcr->cmd_plugin = false;
-   jcr->plugin = NULL;
-   jcr->plugin_ctx = NULL;
 
    return 1;
 }
@@ -790,19 +749,18 @@ bail_out:
  */
 int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
-   Plugin *plugin;
    int len;
-   int i;
    char *cmd = ff_pkt->top_fname;
    struct save_pkt sp;
    bEvent event;
    bEventType eventType;
    POOL_MEM fname(PM_FNAME);
    POOL_MEM link(PM_FNAME);
-   bpContext *plugin_ctx_list;
+   bpContext *ctx;
+   alist *plugin_ctx_list;
    ATTR attr;
 
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
+   plugin_ctx_list = jcr->plugin_ctx_list;
    if (!fd_plugin_list || !plugin_ctx_list) {
       Jmsg1(jcr, M_FATAL, 0, "Command plugin \"%s\" requested, but is not loaded.\n", cmd);
       return 1;                            /* Return if no plugins loaded */
@@ -819,11 +777,9 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    /*
     * Note, we stop the loop on the first plugin that matches the name
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      bpContext *ctx;
-
-      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", plugin->file, plugin->file_len, cmd, len);
-      if (!for_this_plugin(plugin, cmd, len)) {
+   foreach_alist(ctx, plugin_ctx_list) {
+      Dmsg4(dbglvl, "plugin=%s plen=%d cmd=%s len=%d\n", ctx->plugin->file, ctx->plugin->file_len, cmd, len);
+      if (!for_this_plugin(ctx->plugin, cmd, len)) {
          continue;
       }
 
@@ -831,7 +787,6 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
        * We put the current plugin pointer, and the plugin context into the jcr, because during save_file(),
        * the plugin will be called many times and these values are needed.
        */
-      ctx = &plugin_ctx_list[i];
       if (!is_event_enabled(ctx, eventType)) {
          Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
          continue;
@@ -842,13 +797,12 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       }
 
       jcr->plugin_ctx = ctx;
-      jcr->plugin = plugin;
 
       /*
        * Send the backup command to the right plugin
        */
       Dmsg1(dbglvl, "Command plugin = %s\n", cmd);
-      if (plug_func(plugin)->handlePluginEvent(ctx, &event, cmd) != bRC_OK) {
+      if (plug_func(ctx->plugin)->handlePluginEvent(ctx, &event, cmd) != bRC_OK) {
          goto bail_out;
       }
 
@@ -868,7 +822,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          /*
           * Get the file save parameters. I.e. the stat pkt ...
           */
-         if (plug_func(plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
+         if (plug_func(ctx->plugin)->startBackupFile(ctx, &sp) != bRC_OK) {
             goto bail_out;
          }
 
@@ -924,7 +878,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             Dmsg2(dbglvl, "index=%d object=%s\n", sp.index, sp.object);
          }
 
-         bRC ret = plug_func(plugin)->endBackupFile(ctx);
+         bRC ret = plug_func(ctx->plugin)->endBackupFile(ctx);
          if (ret == bRC_More || ret == bRC_OK) {
             accurate_mark_file_as_seen(jcr, sp.fname);
          }
@@ -942,8 +896,6 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
 bail_out:
    jcr->cmd_plugin = false;
-   jcr->plugin = NULL;
-   jcr->plugin_ctx = NULL;
 
    return 1;
 }
@@ -1009,13 +961,12 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
  */
 bool plugin_name_stream(JCR *jcr, char *name)
 {
-   int i;
    int len;
    char *cmd;
    char *p = name;
    bool start;
-   Plugin *plugin;
-   bpContext *plugin_ctx_list;
+   bpContext *ctx;
+   alist *plugin_ctx_list;
 
    Dmsg1(dbglvl, "Read plugin stream string=%s\n", name);
    skip_nonspaces(&p);             /* skip over jcr->JobFiles */
@@ -1027,7 +978,6 @@ bool plugin_name_stream(JCR *jcr, char *name)
        */
       skip_nonspaces(&p);          /* skip start/end flag */
       skip_spaces(&p);
-//    portable = *p == '1';
       skip_nonspaces(&p);          /* skip portable flag */
       skip_spaces(&p);
       cmd = p;
@@ -1035,16 +985,18 @@ bool plugin_name_stream(JCR *jcr, char *name)
       /*
        * End of plugin data, notify plugin, then clear flags
        */
-      Dmsg2(dbglvl, "End plugin data plugin=%p ctx=%p\n", jcr->plugin, jcr->plugin_ctx);
-      if (jcr->plugin && jcr->plugin->restoreFileStarted) {
-         plug_func(jcr->plugin)->endRestoreFile(jcr->plugin_ctx);
+      if (jcr->plugin_ctx) {
+         Plugin *plugin = jcr->plugin_ctx->plugin;
+         b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
+
+         Dmsg2(dbglvl, "End plugin data plugin=%p ctx=%p\n", plugin, jcr->plugin_ctx);
+         if (b_ctx->restoreFileStarted) {
+            plug_func(plugin)->endRestoreFile(jcr->plugin_ctx);
+         }
+         b_ctx->restoreFileStarted = false;
+         b_ctx->createFileCalled = false;
       }
-      if (jcr->plugin) {
-         jcr->plugin->restoreFileStarted = false;
-         jcr->plugin->createFileCalled = false;
-      }
-      jcr->plugin_ctx = NULL;
-      jcr->plugin = NULL;
+
       goto bail_out;
    }
 
@@ -1063,17 +1015,16 @@ bool plugin_name_stream(JCR *jcr, char *name)
    /*
     * Search for correct plugin as specified on the command
     */
-   foreach_alist_index(i, plugin, fd_plugin_list) {
-      bpContext *ctx;
+   foreach_alist(ctx, plugin_ctx_list) {
       bEvent event;
       bEventType eventType;
+      b_plugin_ctx *b_ctx;
 
-      Dmsg3(dbglvl, "plugin=%s cmd=%s len=%d\n", plugin->file, cmd, len);
-      if (!for_this_plugin(plugin, cmd, len)) {
+      Dmsg3(dbglvl, "plugin=%s cmd=%s len=%d\n", ctx->plugin->file, cmd, len);
+      if (!for_this_plugin(ctx->plugin, cmd, len)) {
          continue;
       }
 
-      ctx = &plugin_ctx_list[i];
       if (is_plugin_disabled(ctx)) {
          Dmsg1(dbglvl, "Plugin %s disabled\n", cmd);
          goto bail_out;
@@ -1089,38 +1040,31 @@ bool plugin_name_stream(JCR *jcr, char *name)
       }
 
       jcr->plugin_ctx = ctx;
-      jcr->plugin = plugin;
+      jcr->cmd_plugin = true;
+      b_ctx = (b_plugin_ctx *)ctx->bContext;
 
-      if (plug_func(plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
+      if (plug_func(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
          Dmsg1(dbglvl, "Handle event failed. Plugin=%s\n", cmd);
          goto bail_out;
       }
 
-      if (plugin->restoreFileStarted) {
-         Jmsg2(jcr, M_FATAL, 0, "Second call to startRestoreFile. plugin=%s cmd=%s\n", plugin->file, cmd);
-         plugin->restoreFileStarted = false;
+      if (b_ctx->restoreFileStarted) {
+         Jmsg2(jcr, M_FATAL, 0, "Second call to startRestoreFile. plugin=%s cmd=%s\n", ctx->plugin->file, cmd);
+         b_ctx->restoreFileStarted = false;
          goto bail_out;
       }
 
-      if (plug_func(plugin)->startRestoreFile(jcr->plugin_ctx, cmd) == bRC_OK) {
-         plugin->restoreFileStarted = true;
-         goto ok_out;
+      if (plug_func(ctx->plugin)->startRestoreFile(jcr->plugin_ctx, cmd) == bRC_OK) {
+         b_ctx->restoreFileStarted = true;
+         goto bail_out;
       } else {
          Dmsg1(dbglvl, "startRestoreFile failed. plugin=%s\n", cmd);
+         goto bail_out;
       }
-
-      goto bail_out;
    }
    Jmsg1(jcr, M_WARNING, 0, _("Plugin=%s not found.\n"), cmd);
-   goto bail_out;
-
-ok_out:
-   return start;
 
 bail_out:
-   jcr->plugin = NULL;
-   jcr->plugin_ctx = NULL;
-
    return start;
 }
 
@@ -1136,7 +1080,8 @@ bail_out:
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 {
    bpContext *ctx = jcr->plugin_ctx;
-   Plugin *plugin = jcr->plugin;
+   b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
+   Plugin *plugin = ctx->plugin;
    struct restore_pkt rp;
    int flags;
    int ret;
@@ -1170,10 +1115,10 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       Dmsg1(dbglvl, "attrEx=\"%s\"\n", rp.attrEx);
    }
 
-   if (!plugin->restoreFileStarted || plugin->createFileCalled) {
+   if (!b_ctx->restoreFileStarted || b_ctx->createFileCalled) {
       Jmsg2(jcr, M_FATAL, 0, "Unbalanced call to createFile=%d %d\n",
-         plugin->createFileCalled, plugin->restoreFileStarted);
-      plugin->createFileCalled = false;
+            b_ctx->createFileCalled, b_ctx->restoreFileStarted);
+      b_ctx->createFileCalled = false;
       return CF_ERROR;
    }
 
@@ -1230,14 +1175,15 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
  */
 bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct restore_pkt rp;
 
    Dmsg0(dbglvl, "plugin_set_attributes\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return false;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&rp, 0, sizeof(rp));
    rp.pkt_size = sizeof(rp);
@@ -1278,13 +1224,14 @@ bacl_exit_code plugin_build_acl_streams(JCR *jcr,
                                         acl_data_t *acl_data,
                                         FF_PKT *ff_pkt)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
 
    Dmsg0(dbglvl, "plugin_build_acl_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bacl_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->getAcl == NULL) {
       return bacl_exit_ok;
@@ -1327,13 +1274,14 @@ bacl_exit_code plugin_parse_acl_streams(JCR *jcr,
                                         char *content,
                                         uint32_t content_length)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
 
    Dmsg0(dbglvl, "plugin_parse_acl_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bacl_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->setAcl == NULL) {
       return bacl_exit_error;
@@ -1368,15 +1316,16 @@ bxattr_exit_code plugin_build_xattr_streams(JCR *jcr,
                                             struct xattr_data_t *xattr_data,
                                             FF_PKT *ff_pkt)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    alist *xattr_value_list = NULL;
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_build_xattr_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bxattr_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->getXattr == NULL) {
       return bxattr_exit_ok;
@@ -1500,15 +1449,16 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
                                             char *content,
                                             uint32_t content_length)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    alist *xattr_value_list = NULL;
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_parse_xattr_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bxattr_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
 #if defined(HAVE_XATTR)
    if (plug_func(plugin)->setXattr != NULL) {
@@ -1686,6 +1636,33 @@ static bool is_plugin_compatible(Plugin *plugin)
    return true;
 }
 
+/*
+ * Instantiate a new plugin instance.
+ */
+static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char instance)
+{
+   bpContext *ctx;
+   b_plugin_ctx *b_ctx;
+
+   b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
+   memset(b_ctx, 0, sizeof(b_plugin_ctx));
+   b_ctx->jcr = jcr;
+
+   ctx = (bpContext *)malloc(sizeof(bpContext));
+   ctx->instance = instance;
+   ctx->plugin = plugin;
+   ctx->bContext = (void *)b_ctx;
+   ctx->pContext = NULL;
+
+   jcr->plugin_ctx_list->append(ctx);
+
+   if (plug_func(plugin)->newPlugin(ctx) != bRC_OK) {
+      b_ctx->disabled = true;
+   }
+
+   return ctx;
+}
+
 /**
  * Create a new instance of each plugin for this Job
  *
@@ -1695,7 +1672,6 @@ void new_plugins(JCR *jcr)
 {
    int i, num;
    Plugin *plugin;
-   bpContext *plugin_ctx_list;
 
    if (!fd_plugin_list) {
       Dmsg0(dbglvl, "plugin list is NULL\n");
@@ -1712,26 +1688,13 @@ void new_plugins(JCR *jcr)
       return;
    }
 
-   jcr->plugin_ctx_list = (bpContext *)malloc(sizeof(bpContext) * num);
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
-
-   Dmsg2(dbglvl, "Instantiate plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
+   jcr->plugin_ctx_list = New(alist(10, owned_by_alist));
+   Dmsg2(dbglvl, "Instantiate plugin_ctx=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
    foreach_alist_index(i, plugin, fd_plugin_list) {
       /*
        * Start a new instance of each plugin
        */
-      b_plugin_ctx *b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
-      memset(b_ctx, 0, sizeof(b_plugin_ctx));
-      b_ctx->jcr = jcr;
-      plugin_ctx_list[i].bContext = (void *)b_ctx;   /* Bareos private context */
-      plugin_ctx_list[i].pContext = NULL;
-      if (plug_func(plugin)->newPlugin(&plugin_ctx_list[i]) != bRC_OK) {
-         b_ctx->disabled = true;
-      }
-   }
-   if (i > num) {
-      Jmsg2(jcr, M_ABORT, 0, "Num plugins=%d exceeds list size=%d\n",
-            i, num);
+      instantiate_plugin(jcr, plugin, 0);
    }
 }
 
@@ -1740,24 +1703,22 @@ void new_plugins(JCR *jcr)
  */
 void free_plugins(JCR *jcr)
 {
-   int i;
-   Plugin *plugin;
-   bpContext *plugin_ctx_list;
+   bpContext *ctx;
 
-   plugin_ctx_list = (bpContext *)jcr->plugin_ctx_list;
-   if (!fd_plugin_list || !plugin_ctx_list) {
-      return;                         /* no plugins, nothing to do */
+   if (!fd_plugin_list || !jcr->plugin_ctx_list) {
+      return;
    }
 
-   Dmsg2(dbglvl, "Free instance plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
-   foreach_alist_index(i, plugin, fd_plugin_list) {
+   Dmsg2(dbglvl, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   foreach_alist(ctx, jcr->plugin_ctx_list) {
       /*
        * Free the plugin instance
        */
-      plug_func(plugin)->freePlugin(&plugin_ctx_list[i]);
-      free(plugin_ctx_list[i].bContext);     /* free Bareos private context */
+      plug_func(ctx->plugin)->freePlugin(ctx);
+      free(ctx->bContext);                   /* Free BAREOS private context */
    }
-   free(plugin_ctx_list);
+
+   delete jcr->plugin_ctx_list;
    jcr->plugin_ctx_list = NULL;
 }
 
@@ -1766,14 +1727,15 @@ void free_plugins(JCR *jcr)
  */
 static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg1(dbglvl, "plugin_bopen flags=%x\n", flags);
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1804,14 +1766,15 @@ static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode
  */
 static int my_plugin_bclose(BFILE *bfd)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "===== plugin_bclose\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1839,14 +1802,15 @@ static int my_plugin_bclose(BFILE *bfd)
  */
 static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bread\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1875,15 +1839,16 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
  */
 static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bwrite\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       Dmsg0(0, "No plugin context\n");
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1911,14 +1876,16 @@ static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
  */
 static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bseek\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
+
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
    io.func = IO_SEEK;

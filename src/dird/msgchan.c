@@ -153,6 +153,14 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    BSOCK *sd = jcr->store_bsock;
 
    /*
+    * Before actually starting a new Job on the SD make sure we send any specific plugin options for this Job.
+    */
+   if (!do_storage_plugin_options(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Storage daemon rejected Plugin Options command: %s\n"), sd->msg);
+      return false;
+   }
+
+   /*
     * Now send JobId and permissions, and get back the authorization key.
     */
    pm_strcpy(job_name, jcr->res.job->name());

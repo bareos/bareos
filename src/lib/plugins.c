@@ -341,13 +341,16 @@ bail_out:
  */
 void unload_plugins(alist *plugin_list)
 {
+   int i;
    Plugin *plugin;
 
    if (!plugin_list) {
       return;
    }
-   foreach_alist(plugin, plugin_list) {
-      /* Shut it down and unload it */
+   foreach_alist_index(i, plugin, plugin_list) {
+      /*
+       * Shut it down and unload it
+       */
       plugin->unloadPlugin();
       dlclose(plugin->pHandle);
       if (plugin->file) {
@@ -359,12 +362,12 @@ void unload_plugins(alist *plugin_list)
 
 int list_plugins(alist *plugin_list, POOL_MEM &msg)
 {
-   int len = 0;
+   int i, len = 0;
    Plugin *plugin;
 
    if (plugin_list->size() > 0) {
       pm_strcpy(msg, "Plugin Info:\n");
-      foreach_alist(plugin, plugin_list) {
+      foreach_alist_index(i, plugin, plugin_list) {
          pm_strcat(msg, " Plugin     : ");
          len = pm_strcat(msg, plugin->file);
          if (plugin->pinfo) {
@@ -397,10 +400,10 @@ int list_plugins(alist *plugin_list, POOL_MEM &msg)
             pm_strcat(msg, "\n");
          }
       }
-     len = pm_strcat(msg, "\n");
+      len = pm_strcat(msg, "\n");
    }
 
-  return len;
+   return len;
 }
 
 /*
@@ -426,17 +429,17 @@ void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct)
 
 void dump_plugins(alist *plugin_list, FILE *fp)
 {
+   int i;
    Plugin *plugin;
    fprintf(fp, "Attempt to dump plugins. Hook count=%d\n", dbg_plugin_hook_count);
 
    if (!plugin_list) {
       return;
    }
-   foreach_alist(plugin, plugin_list) {
+   foreach_alist_index(i, plugin, plugin_list) {
       for(int i=0; i < dbg_plugin_hook_count; i++) {
 //       dbg_plugin_hook_t *fct = dbg_plugin_hooks[i];
-         fprintf(fp, "Plugin %p name=\"%s\" disabled=%d\n",
-                 plugin, plugin->file, plugin->disabled);
+         fprintf(fp, "Plugin %p name=\"%s\"\n", plugin, plugin->file);
 //       fct(plugin, fp);
       }
    }

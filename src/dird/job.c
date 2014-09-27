@@ -190,11 +190,13 @@ bool setup_job(JCR *jcr, bool suppress_output)
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
       goto bail_out;
    }
+
    jcr->JobId = jcr->jr.JobId;
    Dmsg4(100, "Created job record JobId=%d Name=%s Type=%c Level=%c\n",
-       jcr->JobId, jcr->Job, jcr->jr.JobType, jcr->jr.JobLevel);
+         jcr->JobId, jcr->Job, jcr->jr.JobType, jcr->jr.JobLevel);
 
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
+   dispatch_new_plugin_options(jcr);
    generate_plugin_event(jcr, bDirEventJobStart);
 
    if (job_canceled(jcr)) {
@@ -208,6 +210,7 @@ bool setup_job(JCR *jcr, bool suppress_output)
          copy_rwstorage(jcr, jcr->res.job->pool->storage, _("Pool resource"));
       }
    }
+
    if (!jcr->JobReads()) {
       free_rstorage(jcr);
    }

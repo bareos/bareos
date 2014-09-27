@@ -34,7 +34,9 @@
  *                                                                          *
  ****************************************************************************/
 
-/* Universal return codes from all plugin functions */
+/*
+ * Universal return codes from all plugin functions
+ */
 typedef enum {
    bRC_OK     = 0,                       /* OK */
    bRC_Stop   = 1,                       /* Stop calling other plugins */
@@ -49,11 +51,8 @@ typedef enum {
    bRC_Max    = 9999                     /* Max code BAREOS can use */
 } bRC;
 
-/* Context packet as first argument of all functions */
-struct bpContext {
-   void *bContext;                       /* BAREOS private context */
-   void *pContext;                       /* Plugin private context */
-};
+#define LOWEST_PLUGIN_INSTANCE 0
+#define HIGHEST_PLUGIN_INSTANCE 127
 
 extern "C" {
    typedef bRC (*t_loadPlugin)(void *binfo, void *bfuncs, void **pinfo, void **pfuncs);
@@ -68,9 +67,16 @@ public:
    void *pinfo;
    void *pfuncs;
    void *pHandle;
-   bool disabled;
-   bool restoreFileStarted;
-   bool createFileCalled;
+};
+
+/*
+ * Context packet as first argument of all functions
+ */
+struct bpContext {
+   uint32_t instance;
+   Plugin *plugin;
+   void *bContext;                       /* BAREOS private context */
+   void *pContext;                       /* Plugin private context */
 };
 
 typedef struct gen_pluginInfo {

@@ -104,7 +104,7 @@ struct RES_ITEM {
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
 
-#define MAX_RES_ITEMS 80                /* Maximum resource items per RES */
+#define MAX_RES_ITEMS 88                /* maximum resource items per RES */
 
 /*
  * This is the universal header that is at the beginning of every resource record.

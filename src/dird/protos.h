@@ -225,6 +225,7 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation, int drive, int slot);
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
 bool do_storage_resolve(UAContext *ua, STORERES *store);
+bool do_storage_plugin_options(JCR *jcr);
 
 /* scheduler.c */
 JCR *wait_for_next_job(char *one_shot_job_to_run);

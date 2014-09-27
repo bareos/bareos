@@ -56,10 +56,14 @@ static char statuscmd[] =
    "status\n";
 static char bandwidthcmd[] =
    "setbandwidth=%lld Job=%s\n";
+static char pluginoptionscmd[] =
+   "pluginoptions %s\n";
 
-/* Responses received from File daemon */
+/* Responses received from Storage daemon */
 static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
+static char OKpluginoptions[] =
+   "2000 OK plugin options\n";
 
 /* Commands received from storage daemon that need scanning */
 static char readlabelresponse[] =
@@ -909,6 +913,33 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
    sd->close();
    delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
+
+   return true;
+}
+
+/*
+ * send Job specific plugin options to a storage daemon
+ */
+bool do_storage_plugin_options(JCR *jcr)
+{
+   int i;
+   POOL_MEM cur_plugin_options(PM_MESSAGE);
+   const char *plugin_options;
+   BSOCK *sd = jcr->store_bsock;
+
+   if (jcr->res.job &&
+       jcr->res.job->SdPluginOptions &&
+       jcr->res.job->SdPluginOptions->size()) {
+      foreach_alist_index(i, plugin_options, jcr->res.job->SdPluginOptions) {
+         pm_strcpy(cur_plugin_options, plugin_options);
+         bash_spaces(cur_plugin_options.c_str());
+
+         sd->fsend(pluginoptionscmd, cur_plugin_options.c_str());
+         if (!response(jcr, sd, OKpluginoptions, "PluginOptions", DISPLAY_ERROR)) {
+            return false;
+         }
+      }
+   }
 
    return true;
 }
