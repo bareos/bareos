@@ -527,10 +527,8 @@ struct INCEXE {
 /*
  * FileSet Resource
  */
-class FILESETRES {
+class FILESETRES : public BRSRES {
 public:
-   RES hdr;
-
    bool new_include;                  /* Set if new include used */
    INCEXE **include_items;            /* Array of incexe structures */
    int32_t num_includes;              /* Number in array */
@@ -543,11 +541,8 @@ public:
    bool enable_vss;                   /* Enable Volume Shadow Copy */
 
    /* Methods */
-   char *name() const;
    bool print_config(POOL_MEM& buff);
 };
-
-inline char *FILESETRES::name() const { return hdr.name; }
 
 /*
  * Schedule Resource

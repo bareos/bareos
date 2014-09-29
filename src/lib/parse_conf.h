@@ -213,7 +213,6 @@ public:
    /*
     * Methods
     */
-//   char *name() const;
    void clear_in_use() { lock(); m_in_use=false; unlock(); }
    void set_in_use() { wait_not_in_use(); m_in_use=true; unlock(); }
    void set_closing() { m_closing=true; }
