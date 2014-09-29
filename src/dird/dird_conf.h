@@ -29,44 +29,6 @@
 /* NOTE:  #includes at the end of this file */
 
 /*
- * Program specific config types (start at 50)
- */
-enum {
-   CFG_TYPE_ACL = 50,                   /* User Access Control List */
-   CFG_TYPE_AUDIT = 51,                 /* Auditing Command List */
-   CFG_TYPE_AUTHPROTOCOLTYPE = 52,      /* Authentication Protocol */
-   CFG_TYPE_AUTHTYPE = 53,              /* Authentication Type */
-   CFG_TYPE_DEVICE = 54,                /* Device resource */
-   CFG_TYPE_JOBTYPE = 55,               /* Type of Job */
-   CFG_TYPE_PROTOCOLTYPE = 56,          /* Protocol */
-   CFG_TYPE_LEVEL = 57,                 /* Backup Level */
-   CFG_TYPE_REPLACE = 58,               /* Replace option */
-   CFG_TYPE_SHRTRUNSCRIPT = 59,         /* Short Runscript definition */
-   CFG_TYPE_RUNSCRIPT = 60,             /* Runscript */
-   CFG_TYPE_RUNSCRIPT_CMD = 61,         /* Runscript Command */
-   CFG_TYPE_RUNSCRIPT_TARGET = 62,      /* Runscript Target (Host) */
-   CFG_TYPE_RUNSCRIPT_BOOL = 63,        /* Runscript Boolean */
-   CFG_TYPE_RUNSCRIPT_WHEN = 64,        /* Runscript When expression */
-   CFG_TYPE_MIGTYPE = 65,               /* Migration Type */
-   CFG_TYPE_INCEXC = 66,                /* Include/Exclude item */
-   CFG_TYPE_RUN = 67,                   /* Schedule Run Command */
-   CFG_TYPE_ACTIONONPURGE = 68,         /* Action to perform on Purge */
-
-   CFG_TYPE_FNAME = 80,                 /* Filename */
-   CFG_TYPE_PLUGINNAME = 81,            /* Pluginname */
-   CFG_TYPE_EXCLUDEDIR = 82,            /* Exclude directory */
-   CFG_TYPE_OPTIONS = 83,               /* Options block */
-   CFG_TYPE_OPTION = 84,                /* Option of Options block */
-   CFG_TYPE_REGEX = 85,                 /* Regular Expression */
-   CFG_TYPE_BASE = 86,                  /* Basejob Expression */
-   CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
-   CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
-   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
-   CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
-   CFG_TYPE_META = 91                   /* Meta tag */
-};
-
-/*
  * Resource codes -- they must be sequential for indexing
  */
 enum {
