@@ -132,6 +132,7 @@ PROG_COPYRIGHT
 "       -t          test - read configuration and exit\n"
 "       -u          userid\n"
 "       -v          verbose user messages\n"
+"       -x          print configuration file schema in JSON format and exit\n"
 "       -?          print this message.\n"
 "\n"), 2000, VERSION, BDATE);
 
@@ -155,6 +156,7 @@ int main (int argc, char *argv[])
    cat_op mode;
    bool no_signals = false;
    bool test_config = false;
+   bool export_config_schema = false;
    char *uid = NULL;
    char *gid = NULL;
 
@@ -171,7 +173,7 @@ int main (int argc, char *argv[])
 
    console_command = run_console_command;
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx?")) != -1) {
       switch (ch) {
       case 'c':                    /* specify config file */
          if (configfile != NULL) {
@@ -229,6 +231,10 @@ int main (int argc, char *argv[])
          verbose++;
          break;
 
+      case 'x':                    /* export configuration file schema (json) and exit */
+         export_config_schema = true;
+         break;
+
       case '?':
       default:
          usage();
@@ -275,6 +281,13 @@ int main (int argc, char *argv[])
 
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      goto bail_out;
+   }
+
+   if (export_config_schema) {
+      POOL_MEM buffer;
+      print_config_schema_json(buffer);
+      printf( "%s\n", buffer.c_str() );
       goto bail_out;
    }
 
