@@ -106,9 +106,8 @@ struct RES_ITEM {
 
 #define MAX_RES_ITEMS 80                /* maximum resource items per RES */
 
-/* This is the universal header that is
- * at the beginning of every resource
- * record.
+/*
+ * This is the universal header that is at the beginning of every resource record.
  */
 class RES {
 public:
@@ -122,8 +121,7 @@ public:
 
 /*
  * Master Resource configuration structure definition
- * This is the structure that defines the
- * resources that are available to this daemon.
+ * This is the structure that defines the resources that are available to this daemon.
  */
 struct RES_TABLE {
    const char *name;                    /* resource name */
@@ -132,8 +130,9 @@ struct RES_TABLE {
    uint32_t size;                       /* Size of resource */
 };
 
-/* Common Resource definitions */
-
+/*
+ * Common Resource definitions
+ */
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH - 1 /* maximum resource name length */
 
 /*
@@ -145,10 +144,10 @@ struct RES_TABLE {
 #define CFG_ITEM_DEPRECATED        0x8  /* Deprecated config option */
 #define CFG_ITEM_ALIAS             0x10 /* Item is an alias for an other */
 
-/*
- * Standard global types with handlers defined in res.c
- */
 enum {
+   /*
+    * Standard resource types. handlers in res.c
+    */
    CFG_TYPE_STR = 1,                    /* String */
    CFG_TYPE_DIR = 2,                    /* Directory */
    CFG_TYPE_MD5PASSWORD = 3,            /* MD5 hashed Password */
@@ -175,7 +174,65 @@ enum {
    CFG_TYPE_ADDRESSES = 24,             /* List of ip addresses */
    CFG_TYPE_ADDRESSES_ADDRESS = 25,     /* Ip address */
    CFG_TYPE_ADDRESSES_PORT = 26,        /* Ip port */
-   CFG_TYPE_PLUGIN_NAMES = 27           /* Plugin Name(s) */
+   CFG_TYPE_PLUGIN_NAMES = 27,          /* Plugin Name(s) */
+
+   /*
+    * Director resource types. handlers in dird_conf.
+    */
+   CFG_TYPE_ACL = 50,                   /* User Access Control List */
+   CFG_TYPE_AUDIT = 51,                 /* Auditing Command List */
+   CFG_TYPE_AUTHPROTOCOLTYPE = 52,      /* Authentication Protocol */
+   CFG_TYPE_AUTHTYPE = 53,              /* Authentication Type */
+   CFG_TYPE_DEVICE = 54,                /* Device resource */
+   CFG_TYPE_JOBTYPE = 55,               /* Type of Job */
+   CFG_TYPE_PROTOCOLTYPE = 56,          /* Protocol */
+   CFG_TYPE_LEVEL = 57,                 /* Backup Level */
+   CFG_TYPE_REPLACE = 58,               /* Replace option */
+   CFG_TYPE_SHRTRUNSCRIPT = 59,         /* Short Runscript definition */
+   CFG_TYPE_RUNSCRIPT = 60,             /* Runscript */
+   CFG_TYPE_RUNSCRIPT_CMD = 61,         /* Runscript Command */
+   CFG_TYPE_RUNSCRIPT_TARGET = 62,      /* Runscript Target (Host) */
+   CFG_TYPE_RUNSCRIPT_BOOL = 63,        /* Runscript Boolean */
+   CFG_TYPE_RUNSCRIPT_WHEN = 64,        /* Runscript When expression */
+   CFG_TYPE_MIGTYPE = 65,               /* Migration Type */
+   CFG_TYPE_INCEXC = 66,                /* Include/Exclude item */
+   CFG_TYPE_RUN = 67,                   /* Schedule Run Command */
+   CFG_TYPE_ACTIONONPURGE = 68,         /* Action to perform on Purge */
+
+   /*
+    * Director fileset options. handlers in dird_conf.
+    */
+   CFG_TYPE_FNAME = 80,                 /* Filename */
+   CFG_TYPE_PLUGINNAME = 81,            /* Pluginname */
+   CFG_TYPE_EXCLUDEDIR = 82,            /* Exclude directory */
+   CFG_TYPE_OPTIONS = 83,               /* Options block */
+   CFG_TYPE_OPTION = 84,                /* Option of Options block */
+   CFG_TYPE_REGEX = 85,                 /* Regular Expression */
+   CFG_TYPE_BASE = 86,                  /* Basejob Expression */
+   CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
+   CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
+   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
+   CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
+   CFG_TYPE_META = 91,                  /* Meta tag */
+
+   /*
+    * Storage daemon resource types
+    */
+   CFG_TYPE_DEVTYPE = 201,               /* Device Type */
+   CFG_TYPE_MAXBLOCKSIZE = 202,          /* Maximum Blocksize */
+   CFG_TYPE_IODIRECTION = 203,           /* IO Direction */
+   CFG_TYPE_CMPRSALGO = 204,             /* Compression Algorithm */
+
+   /*
+    * File daemon resource types
+    */
+   CFG_TYPE_CIPHER = 301                /* Encryption Cipher */
+};
+
+struct DATATYPE_NAME {
+   const int number;
+   const char *name;
+   const char *description;
 };
 
 /*
@@ -291,6 +348,20 @@ void init_resource(int type, RES_ITEM *item);
 void save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
+static const char *datatype_to_str(int type);
+
+bool print_config_schema_json(POOL_MEM &buff);
+bool print_res_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item );
+
+/* JSON output helper functions */
+void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string);
+void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string);
+void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value);
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value);
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value);
+
+
+
 
 /* Loop through each resource of type, returning in var */
 #ifdef HAVE_TYPEOF
