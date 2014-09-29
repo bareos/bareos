@@ -20,7 +20,6 @@ Build-Depends: acl-dev,
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
  libcap-dev,
- libfastlz-dev,
  liblzo2-dev,
  libqt4-dev,
  libreadline-dev,
@@ -35,6 +34,9 @@ Build-Depends: acl-dev,
  po-debconf (>= 0.8.2),
  python-dev,
  zlib1g-dev
+# libfastlz-dev:
+#   installed in OBS via dsc file,
+#   not part of Debian/Ubuntu.
 # Debian (not Ubuntu):
 #   libsqlite0-dev,
 #   libjconv-dev,
@@ -42,8 +44,8 @@ Build-Depends: acl-dev,
 #   ucslint, univention-config-dev
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
 Standards-Version: 3.9.5
-#Vcs-Git: git://git.debian.org/collab-maint/bareos.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/bareos.git;a=summary
+Vcs-Git: git://github.com/bareos/bareos.git -b master
+Vcs-Browser: https://github.com/bareos/bareos/tree/master
 Homepage: http://www.bareos.org/
 
 
