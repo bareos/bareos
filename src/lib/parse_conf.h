@@ -348,7 +348,6 @@ void init_resource(int type, RES_ITEM *item);
 void save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
-static const char *datatype_to_str(int type);
 
 bool print_config_schema_json(POOL_MEM &buff);
 bool print_res_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item );
