@@ -31,6 +31,7 @@
 
 /* Forward referenced subroutines */
 static void scan_types(LEX *lc, MSGSRES *msg, int dest, char *where, char *cmd);
+static const char *datatype_to_str(int type);
 
 extern CONFIG *my_config;             /* Our Global config */
 
