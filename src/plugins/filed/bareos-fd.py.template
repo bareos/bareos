@@ -61,7 +61,7 @@ def parse_plugin_definition(context, plugindef):
       continue;
 
     else:
-      DebugMessage(context, 100, "parse_plugin_definition unknown option " + key + "with value " + val + "\n");
+      DebugMessage(context, 100, "parse_plugin_definition unknown option " + key + " with value " + val + "\n");
       return bRCs['bRC_Error'];
 
   return bRCs['bRC_OK'];

@@ -97,5 +97,6 @@ bDirEventType = dict(
     bDirEventNeedVolume = 7,
     bDirEventVolumeFull = 8,
     bDirEventRecyle = 9,
-    bDirEventGetScratch = 10
+    bDirEventGetScratch = 10,
+    bDirEventNewPluginOptions = 11
 )

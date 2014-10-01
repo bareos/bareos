@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the Free
@@ -25,6 +25,27 @@
 #ifndef BPYTHONDIR_H
 #define BPYTHONDIR_H 1
 
+/*
+ * This defines the arguments that the plugin parser understands.
+ */
+enum plugin_argument_type {
+   argument_none,
+   argument_instance,
+   argument_module_path,
+   argument_module_name
+};
+
+struct plugin_argument {
+   const char *name;
+   enum plugin_argument_type type;
+};
+
+static plugin_argument plugin_arguments[] = {
+   { "instance", argument_instance },
+   { "module_path", argument_module_path },
+   { "module_name", argument_module_name },
+   { NULL, argument_none }
+};
 /*
  * Callback methods from Python.
  */
