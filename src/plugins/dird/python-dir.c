@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,9 +39,9 @@ static const int dbglvl = 150;
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
 #define PLUGIN_DATE         "October 2013"
-#define PLUGIN_VERSION      "2"
+#define PLUGIN_VERSION      "3"
 #define PLUGIN_DESCRIPTION  "Python Director Daemon Plugin"
-#define PLUGIN_USAGE        "(No usage yet)"
+#define PLUGIN_USAGE        "python:instance=<instance_id>:module_path=<path-to-python-modules>:module_name=<python-module-to-load>"
 
 #define Dmsg(context, level,  ...) bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__ )
 #define Jmsg(context, type,  ...) bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__ )
@@ -52,9 +52,11 @@ static bRC freePlugin(bpContext *ctx);
 static bRC getPluginValue(bpContext *ctx, pDirVariable var, void *value);
 static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value);
 static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value);
+static bRC parse_plugin_definition(bpContext *ctx, void *value);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
-static bRC PyLoadModule(bpContext *ctx);
+static bRC PyLoadModule(bpContext *ctx, void *value);
+static bRC PyParsePluginDefinition(bpContext *ctx, void *value);
 static bRC PyGetPluginValue(bpContext *ctx, pDirVariable var, void *value);
 static bRC PySetPluginValue(bpContext *ctx, pDirVariable var, void *value);
 static bRC PyHandlePluginEvent(bpContext *ctx, bDirEvent *event, void *value);
@@ -92,6 +94,10 @@ static pDirFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    PyThreadState *interpreter;
+   int64_t instance;
+   bool python_loaded;
+   char *module_path;
+   char *module_name;
    PyObject *pModule;
    PyObject *pDict;
    PyObject *bpContext;
@@ -158,7 +164,6 @@ bRC DLL_IMP_EXP unloadPlugin()
 
 static bRC newPlugin(bpContext *ctx)
 {
-   bRC retval = bRC_Error;
    struct plugin_ctx *p_ctx;
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
@@ -173,10 +178,17 @@ static bRC newPlugin(bpContext *ctx)
     */
    PyEval_AcquireLock();
    p_ctx->interpreter = Py_NewInterpreter();
-   retval = PyLoadModule(ctx);
    PyEval_ReleaseThread(p_ctx->interpreter);
 
-   return retval;
+   /*
+    * Always register some events the python plugin itself can register
+    * any other events it is interested in.
+    */
+   bfuncs->registerBareosEvents(ctx,
+                                1,
+                                bDirEventNewPluginOptions);
+
+   return bRC_OK;
 }
 
 static bRC freePlugin(bpContext *ctx)
@@ -238,16 +250,220 @@ static bRC setPluginValue(bpContext *ctx, pDirVariable var, void *value)
 
 static bRC handlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
 {
-   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   bool event_dispatched = false;
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
 
-   PyEval_AcquireThread(p_ctx->interpreter);
-   retval = PyHandlePluginEvent(ctx, event, value);
-   PyEval_ReleaseThread(p_ctx->interpreter);
+   if (!p_ctx) {
+      goto bail_out;
+   }
 
+   /*
+    * First handle some events internally before calling python if it
+    * want to do some special handling on the event triggered.
+    */
+   switch (event->eventType) {
+   case bDirEventNewPluginOptions:
+      event_dispatched = true;
+      retval = parse_plugin_definition(ctx, value);
+      break;
+   default:
+      break;
+   }
+
+   /*
+    * See if we have been triggered in the previous switch if not we have to
+    * always dispatch the event. If we already processed the event internally
+    * we only do a dispatch to the python entry point when that internal processing
+    * was successfull (e.g. retval == bRC_OK).
+    */
+   if (!event_dispatched || retval == bRC_OK) {
+      PyEval_AcquireThread(p_ctx->interpreter);
+
+      /*
+       * Now dispatch the event to Python.
+       * First the calls that need special handling.
+       */
+      switch (event->eventType) {
+      case bDirEventNewPluginOptions:
+         /*
+          * See if we already loaded the Python modules.
+          */
+         if (!p_ctx->python_loaded) {
+            retval = PyLoadModule(ctx, value);
+         }
+
+         /*
+          * Only try to call when the loading succeeded.
+          */
+         if (retval == bRC_OK) {
+            retval = PyParsePluginDefinition(ctx, value);
+         }
+         break;
+      default:
+         /*
+          * Handle the generic events e.g. the ones which are just passed on.
+          * We only try to call Python when we loaded the right module until
+          * that time we pretend the call succeeded.
+          */
+         if (p_ctx->python_loaded) {
+            retval = PyHandlePluginEvent(ctx, event, value);
+         } else {
+            retval = bRC_OK;
+         }
+         break;
+      }
+
+      PyEval_ReleaseThread(p_ctx->interpreter);
+   }
+
+bail_out:
    return retval;
 }
 
+/*
+ * Parse a integer value.
+ */
+static inline int64_t parse_integer(const char *argument_value)
+{
+   return str_to_int64(argument_value);
+}
+
+/*
+ * Parse a boolean value e.g. check if its yes or true anything else translates to false.
+ */
+static inline bool parse_boolean(const char *argument_value)
+{
+   if (bstrcasecmp(argument_value, "yes") ||
+       bstrcasecmp(argument_value, "true")) {
+      return true;
+   } else {
+      return false;
+   }
+}
+
+/*
+ * Always set destination to value and clean any previous one.
+ */
+static inline void set_string(char **destination, char *value)
+{
+   if (*destination) {
+      free(*destination);
+   }
+
+   *destination = bstrdup(value);
+}
+
+/*
+ * Parse the plugin definition passed in.
+ *
+ * The definition is in this form:
+ *
+ * python:module_path=<path>:module_name=<python_module_name>:...
+ */
+static bRC parse_plugin_definition(bpContext *ctx, void *value)
+{
+   int i;
+   char *plugin_definition, *bp, *argument, *argument_value;
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+
+   if (!value) {
+      return bRC_Error;
+   }
+
+   /*
+    * Parse the plugin definition.
+    * Make a private copy of the whole string.
+    */
+   plugin_definition = bstrdup((char *)value);
+
+   bp = strchr(plugin_definition, ':');
+   if (!bp) {
+      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      goto bail_out;
+   }
+
+   /*
+    * Skip the first ':'
+    */
+   bp++;
+   while (bp) {
+      if (strlen(bp) == 0) {
+         break;
+      }
+
+      /*
+       * Each argument is in the form:
+       *    <argument> = <argument_value>
+       *
+       * So we setup the right pointers here, argument to the beginning
+       * of the argument, argument_value to the beginning of the argument_value.
+       */
+      argument = bp;
+      argument_value = strchr(bp, '=');
+      if (!argument_value) {
+         Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
+         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         goto bail_out;
+      }
+      *argument_value++ = '\0';
+
+      /*
+       * See if there are more arguments and setup for the next run.
+       */
+      bp = strchr(argument_value, ':');
+      if (bp) {
+         *bp++ = '\0';
+      }
+
+      for (i = 0; plugin_arguments[i].name; i++) {
+         if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+            int64_t *int_destination = NULL;
+            char **str_destination = NULL;
+            bool *bool_destination = NULL;
+
+            switch (plugin_arguments[i].type) {
+            case argument_instance:
+               int_destination = &p_ctx->instance;
+               break;
+            case argument_module_path:
+               str_destination = &p_ctx->module_path;
+               break;
+            case argument_module_name:
+               str_destination = &p_ctx->module_name;
+               break;
+            default:
+               break;
+            }
+
+            if (int_destination) {
+               *int_destination = parse_integer(argument_value);
+            }
+
+            if (str_destination) {
+               set_string(str_destination, argument_value);
+            }
+
+            if (bool_destination) {
+               *bool_destination = parse_boolean(argument_value);
+            }
+
+            /*
+             * When we have a match break the loop.
+             */
+            break;
+         }
+      }
+   }
+
+   free(plugin_definition);
+   return bRC_OK;
+
+bail_out:
+   free(plugin_definition);
+   return bRC_Error;
+}
 /*
  * Work around API changes in Python versions.
  * These function abstract the storage and retrieval of the bpContext
@@ -364,9 +580,8 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
  * module path and the module to load. We also load the dictionary used
  * for looking up the Python methods.
  */
-static bRC PyLoadModule(bpContext *ctx)
+static bRC PyLoadModule(bpContext *ctx, void *value)
 {
-   char *value;
    bRC retval = bRC_Error;
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
    PyObject *sysPath,
@@ -376,11 +591,11 @@ static bRC PyLoadModule(bpContext *ctx)
             *module;
 
    /*
-    * Extend the Python search path with the defoned plugin_directory.
+    * Extend the Python search path with the given module_path.
     */
-   if (bfuncs->getBareosValue(NULL, bDirVarPluginDir, &value) == bRC_OK) {
+   if (p_ctx->module_path) {
       sysPath = PySys_GetObject((char *)"path");
-      mPath = PyString_FromString(value);
+      mPath = PyString_FromString(p_ctx->module_path);
       PyList_Append(sysPath, mPath);
       Py_DECREF(mPath);
    }
@@ -390,36 +605,101 @@ static bRC PyLoadModule(bpContext *ctx)
     */
    module = Py_InitModule("bareosdir", BareosDIRMethods);
 
-   Dmsg(ctx, dbglvl, "Trying to load module with name bareos-dir\n");
-   pName = PyString_FromString("bareos-dir");
-   p_ctx->pModule = PyImport_Import(pName);
-   Py_DECREF(pName);
+   /*
+    * Try to load the Python module by name.
+    */
+   if (p_ctx->module_name) {
+      Dmsg(ctx, dbglvl, "Trying to load module with name %s\n", p_ctx->module_name);
+      pName = PyString_FromString(p_ctx->module_name);
+      p_ctx->pModule = PyImport_Import(pName);
+      Py_DECREF(pName);
 
-   if (!p_ctx->pModule) {
-      Dmsg(ctx, dbglvl, "Failed to load module with name bareos-dir\n");
-      goto bail_out;
+      if (!p_ctx->pModule) {
+         Dmsg(ctx, dbglvl, "Failed to load module with name %s\n", p_ctx->module_name);
+         goto bail_out;
+      }
+
+      Dmsg(ctx, dbglvl, "Sucessfully loaded module with name %s\n", p_ctx->module_name);
+
+      /*
+       * Get the Python dictionary for lookups in the Python namespace.
+       */
+      p_ctx->pDict = PyModule_GetDict(p_ctx->pModule); /* Borrowed reference */
+
+      /*
+       * Encode the bpContext so a Python method can pass it in on calling back.
+       */
+      p_ctx->bpContext = PyCreatebpContext(ctx);
+
+      /*
+       * Lookup the load_bareos_plugin() function in the python module.
+       */
+      pFunc = PyDict_GetItemString(p_ctx->pDict, "load_bareos_plugin"); /* Borrowed reference */
+      if (pFunc && PyCallable_Check(pFunc)) {
+         PyObject *pPluginDefinition,
+                  *pRetVal;
+
+         pPluginDefinition = PyString_FromString((char *)value);
+         if (!pPluginDefinition) {
+            goto bail_out;
+         }
+
+         pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pPluginDefinition, NULL);
+         Py_DECREF(pPluginDefinition);
+
+         if (!pRetVal) {
+            goto bail_out;
+         } else {
+            retval = conv_python_retval(pRetVal);
+            Py_DECREF(pRetVal);
+         }
+      } else {
+         Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
+         goto bail_out;
+      }
    }
 
-   Dmsg(ctx, dbglvl, "Sucessfully loaded module with name bareos-dir\n");
+   /*
+    * Keep track we successfully loaded.
+    */
+   p_ctx->python_loaded = true;
+
+   return retval;
+
+bail_out:
+   if (PyErr_Occurred()) {
+      PyErrorHandler(ctx, M_FATAL);
+   }
+
+   return retval;
+}
+
+/*
+ * Any plugin options which are passed in are dispatched here to a Python method and it
+ * can parse the plugin options. This function is also called after PyLoadModule() has
+ * loaded the Python module and made sure things are operational.
+ */
+static bRC PyParsePluginDefinition(bpContext *ctx, void *value)
+{
+   bRC retval = bRC_Error;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   PyObject *pFunc;
 
    /*
-    * Get the Python dictionary for lookups in the Python namespace.
+    * Lookup the parse_plugin_definition() function in the python module.
     */
-   p_ctx->pDict = PyModule_GetDict(p_ctx->pModule); /* Borrowed reference */
-
-   /*
-    * Encode the bpContext so a Python method can pass it in on calling back.
-    */
-   p_ctx->bpContext = PyCreatebpContext(ctx);
-
-   /*
-    * Lookup the load_bareos_plugin() function in the python module.
-    */
-   pFunc = PyDict_GetItemString(p_ctx->pDict, "load_bareos_plugin"); /* Borrowed reference */
+   pFunc = PyDict_GetItemString(p_ctx->pDict, "parse_plugin_definition"); /* Borrowed reference */
    if (pFunc && PyCallable_Check(pFunc)) {
-      PyObject *pRetVal;
+      PyObject *pPluginDefinition,
+               *pRetVal;
 
-      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, NULL);
+      pPluginDefinition = PyString_FromString((char *)value);
+      if (!pPluginDefinition) {
+         goto bail_out;
+      }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, p_ctx->bpContext, pPluginDefinition, NULL);
+      Py_DECREF(pPluginDefinition);
 
       if (!pRetVal) {
          goto bail_out;
@@ -427,12 +707,12 @@ static bRC PyLoadModule(bpContext *ctx)
          retval = conv_python_retval(pRetVal);
          Py_DECREF(pRetVal);
       }
-   } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
-      goto bail_out;
-   }
 
-   return retval;
+      return retval;
+   } else {
+      Dmsg(ctx, dbglvl, "Failed to find function named parse_plugin_definition()\n");
+      return bRC_Error;
+   }
 
 bail_out:
    if (PyErr_Occurred()) {
