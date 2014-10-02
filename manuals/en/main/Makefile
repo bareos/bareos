@@ -68,7 +68,7 @@ bareos-manual-main-reference.pdf: depend *.sty *.tex $(INDEXES) bareos-manual-ma
 	$(PDFLATEX) bareos-manual-main-reference.tex
 
 check: bareos-manual-main-reference.pdf
-	@if ! grep "LaTeX Warning: Hyper reference .* undefined on input\|LaTeX Warning: There were undefined references." $(LOG); then true; else false; fi
+	@if ! grep "LaTeX Warning: Hyper reference .* undefined on input\|LaTeX Warning: There were undefined references." $(LOG); then echo "CHECK: OK"; true; else echo "CHECK: FAILED: undefined references"; false; fi
 
 clean:
 	rm -f *.4ct *.4dx *.4ix *.4tc *.aux *.dvi *.htidx *.htind *.idx *.log *.out *.pdf *.toc *.idv *.lg *.tmp *.xref html/* bareos-manual-main-reference.html bareos-manual-main-reference.css

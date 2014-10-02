@@ -97,38 +97,26 @@ Please read the information there.
 \label{sdPlugins}
 
 \subsection{autoxflate-sd}
+\label{plugin-autoxflate-sd}
 
 This plugin is part of the \package{bareos-storage} package.
 
-The autoxflate-sd plugin can inflate(decompres) and deflate(compress)
+The autoxflate-sd plugin can inflate (decompress) and deflate (compress)
 the data being written to or read from a device. It can also do both.
 
-[autoxflate-functionblocks.png]
+\begin{center}
+\includegraphics[width=0.8\textwidth]{\idir autoxflate-functionblocks}
+\end{center}
 
 Therefore the autoxflate plugin inserts a inflate and a deflate function block
 into the stream going to the device (called OUT) and coming from the device (called IN).
 
-Each stream passes first the inflate function block, then the deflate funcion block.
+Each stream passes first the inflate function block, then the deflate function block.
 
-The inflate blocks are controlled by the setting of the \directive{sd}{autoinflate}{yes{\textbar}no}{}{yes}{}
-directive.
+The inflate blocks are controlled by the setting of the \ilink{AutoInflate}{storage-device-autoinflate} directive.
 
-The deflate blocks are controlled by the setting of the \directive{sd}{autodeflate}{yes{\textbar}no}{}{yes}{}
-\directive{sd}{autodeflatealgorithm}{yes{\textbar}no}{}{yes}{} and  \directive{sd}{autodeflatelevel}{yes{\textbar}no}{}{yes}{} .
-
-
-\directive{sd}{autodeflate}{yes{\textbar}no}{}{yes}{} \directive{sd}{autoinflate}{yes{\textbar}no}{}{yes}{} control if the
-function block is enabled at all.
-Possible values are:
-\begin{description}
- \item [in] inflation / deflation is enabled on the incoming data path.
- \item [out] inflation / deflation is enabled ont the outgoing data path.
- \item [both] inflation / deflation is enabled both for incoming and outgoing data.
-\end{description}
-
-The \directive{sd}{autodeflatealgorithm}{yes{\textbar}no}{}{yes}{} selects the algorithm used for deflation,
-and can be one of the supported compression algorithms: gzip / lzo / lzfast / lz4 / lz4hc.
-If the compression algorithm supports the selection of compression level like gzip, this level can be configured in \directive{sd}{autodeflatelevel}{yes{\textbar}no}{}{yes}{}
+The deflate blocks are controlled by the setting of the \ilink{Autodeflate}{storage-device-autodeflate},
+\ilink{AutodeflateAlgorithm}{storage-device-autodeflatealgorithm} and \ilink{AutodeflateLevel}{storage-device-autodeflatelevel} directives.
 
 The inflate blocks, if enabled, will uncompress data if it is compressed using the
 algorithm that was used during compression.
@@ -138,26 +126,30 @@ The deflate blocks, if enabled, will compress uncompressed data with the algorit
 The series connection of the inflate and deflate function blocks makes the plugin very flexible.
 
 Szenarios where this plugin can be used are for example:
-
-- client computers with weak cpus can do backups without compression and
-  let the sd do the compression when writing to disk.
-
-- compressed backups can be recompressed to a different compression format (e.g. gzip -> lzo) using migration jobs
-
-- client backups can be compressed with compression algorithms that the client itself does not support.
+\begin{itemize}
+   \item client computers with weak cpus can do backups without compression and let the sd do the compression when writing to disk
+    \item compressed backups can be recompressed to a different compression format (e.g. gzip \textrightarrow\ lzo) using migration jobs
+    \item client backups can be compressed with compression algorithms that the client itself does not support
+\end{itemize}
 
 Multi-core cpus will be utilized when using parallel jobs as the compression is done in each jobs' thread.
 
 When the autoxflate plugin is configured, it will write some status information into the joblog.
 
-This information shows what compression algorithm is used:
+\begin{bmessage}{used compression algorithm}
 autodeflation: compressor on device FileStorage is FZ4H
+\end{bmessage}
 
-How the inflation and deflation blocks are configured:
+\begin{bmessage}{configured inflation and deflation blocks}
 autoxflate-sd.c: FileStorage OUT:[SD->inflate=yes->deflate=yes->DEV] IN:[DEV->inflate=yes->deflate=yes->SD]
+\end{bmessage}
 
-And how the overall deflation/inflation ratio was:
+\begin{bmessage}{overall deflation/inflation ratio}
 autoxflate-sd.c: deflate ratio: 50.59%
+\end{bmessage}
+
+Additional \ilink{AutoXFlateOnReplication}{storage-storage-autoxflateonreplication} can be configured at the Storage resource.
+
 
 \subsection{scsicrypto-sd}
 

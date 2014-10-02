@@ -223,7 +223,10 @@ Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 }
 
-\xdirective{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{This directive controls the autoxflate-sd plugin when replicating data inside one or
+\xdirective{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{%
+\label{storage-storage-autoxflateonreplication}%
+This directive controls the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
+plugin when replicating data inside one or
 between two storage daemons (Migration/Copy Jobs). Normally the storage daemon will
 use the autoinflate/autodeflate setting of the device when reading and writing
 data to it which could mean that while reading it inflates the compressed data
@@ -232,9 +235,10 @@ be exactly the same e.g. don't perform any on the fly uncompression and compress
 while doing the replication of data you can set this option to no and it will
 override any setting on the device for doing auto inflation/deflation when doing
 data replication. This will not have any impact on any normal backup or restore jobs.}
+
 \end{description}
 
-The following is a typical Storage daemon Storage definition.
+The following is a typical Storage daemon storage resource definition.
 
 \begin{bconfig}{Storage daemon storage definition}
 #
@@ -1163,7 +1167,10 @@ this device. This directory is also used to store  temporary part files when
 writing to a device that requires mount (USB).  The default is to use the
 working directory.
 
-\xdirective{sd}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{This is a parameter used by the autoxflate-sd plugin which allow you to transform
+\xdirective{sd}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\label{storage-device-autodeflate}%
+This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
+ which allow you to transform
 a non compressed piece of data into a compressed piece of data on the storage daemon.
 e.g. Storage Daemon compression. You can either enable compression on the client
 and use the CPU cyclces there to compress your data with one of the supported
@@ -1190,7 +1197,9 @@ Or when your filesystem doesn't have the option to transparently compress
 data you write to it but you want the data to be compressed when written.
 }
 
-\xdirective{sd}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{This option specifies the compression algorithm used for the autodeflate option
+\xdirective{sd}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{%
+\label{storage-device-autodeflatealgorithm}%
+This option specifies the compression algorithm used for the autodeflate option
 which is performed by the autoxflate-sd plugin. The algorithms supported are:
 \begin{itemize}
 \item GZIP - gzip level 1--9
@@ -1200,10 +1209,16 @@ which is performed by the autoxflate-sd plugin. The algorithms supported are:
 \item LZ4HC
 \end{itemize}}
 
-\xdirective{sd}{AutoDeflateLevel}{0--9}{}{}{13.4}{This option specifies the level to be used when compressing when you select a
+\xdirective{sd}{AutoDeflateLevel}{0--9}{}{}{13.4}{%
+\label{storage-device-autodeflatelevel}%
+This option specifies the level to be used when compressing when you select a
 compression algorithm that has different levels.}
 
-\xdirective{sd}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{This is a parameter used by the autoxflate-sd plugin which allow you to transform
+
+\xdirective{sd}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\label{storage-device-autoinflate}%
+This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
+which allow you to transform
 a compressed piece of data into a non compressed piece of data on the storage daemon.
 e.g. Storage Daemon decompression. You can either enable decompression on the client
 and use the CPU cyclces there to decompress your data with one of the supported
