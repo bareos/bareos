@@ -46,12 +46,15 @@
 
 #define SETTING_YES (char *)"yes"
 #define SETTING_NO (char *)"no"
+#define SETTING_UNSET (char *)"unknown"
+
 
 #define COMPRESSOR_NAME_GZIP (char *)"GZIP"
 #define COMPRESSOR_NAME_LZO (char *)"LZO"
 #define COMPRESSOR_NAME_FZLZ (char *)"FASTLZ"
 #define COMPRESSOR_NAME_FZ4L (char *)"LZ4"
 #define COMPRESSOR_NAME_FZ4H (char *)"LZ4HC"
+#define COMPRESSOR_NAME_UNSET (char *)"unknown"
 
 /*
  * Forward referenced functions
@@ -309,8 +312,10 @@ bail_out:
 static bRC setup_record_translation(bpContext *ctx, void *value)
 {
    DCR *dcr;
-   const char *inflate_in, *inflate_out;
-   const char *deflate_in, *deflate_out;
+   const char *inflate_in = SETTING_UNSET;
+   const char *inflate_out = SETTING_UNSET;
+   const char *deflate_in = SETTING_UNSET;
+   const char *deflate_out = SETTING_UNSET;
 
    /*
     * Unpack the arguments passed in.
@@ -478,7 +483,7 @@ static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
    JCR *jcr = dcr->jcr;
    bool retval = false;
    uint32_t compress_buf_size = 0;
-   const char *compressorname;
+   const char *compressorname = COMPRESSOR_NAME_UNSET;
 
    if (jcr->buf_size == 0) {
       jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
