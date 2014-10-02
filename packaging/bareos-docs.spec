@@ -2,11 +2,11 @@
 #
 # spec file for package bareos-docs
 #
-# Copyright (c) 2013-2013  Bareos GmbH & Co. KG
+# Copyright (c) 2013-2014  Bareos GmbH & Co. KG
 #
 
 Name:           bareos-docs
-Version:        13.3.0
+Version:        14.3.0
 Release:        0
 License:        GFDL-1.3
 Summary:        Documentation
@@ -15,6 +15,11 @@ Group:          Productivity/Archiving/Backup
 Source:         %{name}-%version.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
+# bareos-database-sqlite3 is the database backend
+# that has minimal additional dependencies
+BuildRequires:  bareos >= 14.3.0
+BuildRequires:  bareos-database-sqlite3
+BuildRequires:  python
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
 %if ( 0%{?rhel_version} || 0%{?fedora_version} )
