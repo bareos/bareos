@@ -102,5 +102,6 @@ bsdEventType = dict(
     bsdEventVolumeStatus = 17,
     bsdEventSetupRecordTranslation = 18,
     bsdEventReadRecordTranslation = 19,
-    bsdEventWriteRecordTranslation = 20
+    bsdEventWriteRecordTranslation = 20,
+    bsdEventNewPluginOptions = 21
 )
