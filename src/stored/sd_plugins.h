@@ -119,7 +119,7 @@ typedef enum {
   bsdEventDeviceReleased = 21
 } bsdEventType;
 
-#define SD_NR_EVENTS bsdEventWriteRecordTranslation /* keep this updated ! */
+#define SD_NR_EVENTS bsdEventDeviceReleased /* keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;
