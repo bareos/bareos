@@ -161,9 +161,34 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
 }
 
 /*
+ * Check if the configured options are valid.
+ */
+static inline void is_in_permitted_set(LEX *lc, const char *set_type, const char *permitted_set)
+{
+   const char *p, *q;
+   bool found;
+
+   for (p = lc->str; *p; p++) {
+      found = false;
+      for (q = permitted_set; *q; q++) {
+         if (*p == *q) {
+            found = true;
+            break;
+         }
+      }
+
+      if (!found) {
+         scan_err3(lc, _("Illegal %s option %c, got option string: %s:"),
+                   set_type, *p, lc->str);
+      }
+   }
+}
+
+/*
  * Scan for right hand side of Include options (keyword=option) is
- *    converted into one or two characters. Verifyopts=xxxx is Vxxxx:
- *    Whatever is found is concatenated to the opts string.
+ * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
+ * Whatever is found is concatenated to the opts string.
+ *
  * This code is also used inside an Options resource.
  */
 static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
@@ -174,29 +199,29 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    struct s_sz_matching size_matching;
 
    memset(option, 0, sizeof(option));
-   lc->options |= LOPT_STRING;        /* force string */
-   lex_get_token(lc, T_STRING);       /* expect at least one option */
-   if (keyword == INC_KW_VERIFY) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
+   lc->options |= LOPT_STRING;             /* force string */
+   lex_get_token(lc, T_STRING);            /* expect at least one option */
+   if (keyword == INC_KW_VERIFY) {         /* special case */
+      is_in_permitted_set(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
       bstrncat(opts, "V", optlen);         /* indicate Verify */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_ACCURATE) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
+      is_in_permitted_set(lc, _("accurate"), PERMITTED_ACCURATE_OPTIONS);
       bstrncat(opts, "C", optlen);         /* indicate Accurate */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_BASEJOB) { /* special case */
-      /* ***FIXME**** ensure these are in permitted set */
+      is_in_permitted_set(lc, _("base job"), PERMITTED_BASEJOB_OPTIONS);
       bstrncat(opts, "J", optlen);         /* indicate BaseJob */
       bstrncat(opts, lc->str, optlen);
       bstrncat(opts, ":", optlen);         /* terminate it */
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_STRIPPATH) { /* special case */
       if (!is_an_integer(lc->str)) {
-         scan_err1(lc, _("Expected a strip path positive integer, got:%s:"), lc->str);
+         scan_err1(lc, _("Expected a strip path positive integer, got: %s:"), lc->str);
       }
       bstrncat(opts, "P", optlen);         /* indicate strip path */
       bstrncat(opts, lc->str, optlen);
@@ -204,7 +229,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
       Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
    } else if (keyword == INC_KW_SIZE) { /* special case */
       if (!parse_size_match(lc->str, &size_matching)) {
-         scan_err1(lc, _("Expected a parseable size, got:%s:"), lc->str);
+         scan_err1(lc, _("Expected a parseable size, got: %s:"), lc->str);
       }
       bstrncat(opts, "z", optlen);         /* indicate size */
       bstrncat(opts, lc->str, optlen);
@@ -222,7 +247,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
          }
       }
       if (i != 0) {
-         scan_err1(lc, _("Expected a FileSet option keyword, got:%s:"), lc->str);
+         scan_err1(lc, _("Expected a FileSet option keyword, got: %s:"), lc->str);
       } else { /* add option */
          bstrncat(opts, option, optlen);
          Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option,optlen);
@@ -230,7 +255,9 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    }
    lc->options = lcopts;
 
-   /* If option terminated by comma, eat it */
+   /*
+    * If option terminated by comma, eat it
+    */
    if (lc->ch == ',') {
       lex_get_token(lc, T_ALL);      /* yes, eat comma */
    }
