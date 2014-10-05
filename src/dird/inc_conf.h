@@ -177,4 +177,9 @@ static struct s_fs_opt FS_options[] = {
    { "none", INC_KW_SHADOWING, "0" },
    { NULL, 0, 0 }
 };
+
+#define PERMITTED_VERIFY_OPTIONS (const char *)"ipnugsamcd51"
+#define PERMITTED_ACCURATE_OPTIONS (const char *)"ipnugsamcd51A"
+#define PERMITTED_BASEJOB_OPTIONS (const char *)"ipnugsamcd51"
+
 #endif /* _INC_CONF_H */
