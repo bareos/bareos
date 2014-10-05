@@ -741,4 +741,5 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lc->options = options;                /* Restore scanner options */
    set_bit(index, res_all->res_sch.hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
