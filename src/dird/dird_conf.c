@@ -1148,39 +1148,86 @@ bool FILESETRES::print_config(POOL_MEM &buff)
 
                for (p = &fo->opts[0]; *p; p++) {
                   switch (*p) {
-                     case 'a':                 /* alway replace */
-                        indent_config_item(cfg_str, 3, "replace = always\n");
-                        break;
                      case '0':                 /* no option */
                         break;
+                     case 'a':                 /* alway replace */
+                        indent_config_item(cfg_str, 3, "Replace = Always\n");
+                        break;
+                     case 'C':                 /* */
+                        indent_config_item(cfg_str, 3, "Accurate = ");
+                        p++;                   /* skip C */
+                        for (; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                        }
+                        pm_strcat(cfg_str, "\n");
+                        break;
+                     case 'd':
+                        switch(*(p + 1)) {
+                        case '1':
+                           indent_config_item(cfg_str, 3, "Shadowing = LocalWarn\n");
+                           p++;
+                           break;
+                        case '2':
+                           indent_config_item(cfg_str, 3, "Shadowing = LocalRemove\n");
+                           p++;
+                           break;
+                        case '3':
+                           indent_config_item(cfg_str, 3, "Shadowing = GlobalWarn\n");
+                           p++;
+                           break;
+                        case '4':
+                           indent_config_item(cfg_str, 3, "Shadowing = GlobalRemove\n");
+                           p++;
+                           break;
+                        }
+                        break;
                      case 'e':
-                        indent_config_item(cfg_str, 3, "exclude = yes\n");
+                        indent_config_item(cfg_str, 3, "Exclude = yes\n");
                         break;
                      case 'f':
-                        indent_config_item(cfg_str, 3, "onefs = no\n");
+                        indent_config_item(cfg_str, 3, "OneFS = no\n");
                         break;
                      case 'h':                 /* no recursion */
-                        indent_config_item(cfg_str, 3, "recurse = no\n");
+                        indent_config_item(cfg_str, 3, "Recurse = no\n");
                         break;
                      case 'H':                 /* no hard link handling */
-                        indent_config_item(cfg_str, 3, "hardlinks = no\n");
+                        indent_config_item(cfg_str, 3, "Hardlinks = no\n");
                         break;
                      case 'i':
-                        indent_config_item(cfg_str, 3, "ignorecase = yes\n");
+                        indent_config_item(cfg_str, 3, "IgnoreCase = yes\n");
+                        break;
+                     case 'J':                 /* Base Job */
+                        indent_config_item(cfg_str, 3, "BaseJob = ");
+                        p++;                   /* skip J */
+                        for (; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                        }
+                        pm_strcat(cfg_str, "\n");
                         break;
                      case 'M':                 /* MD5 */
-                        indent_config_item(cfg_str, 3, "signature = md5\n");
+                        indent_config_item(cfg_str, 3, "Signature = MD5\n");
                         break;
                      case 'n':
-                        indent_config_item(cfg_str, 3, "replace = never\n");
+                        indent_config_item(cfg_str, 3, "Replace = Never\n");
                         break;
                      case 'p':                 /* use portable data format */
-                        indent_config_item(cfg_str, 3, "portable = yes\n");
+                        indent_config_item(cfg_str, 3, "Portable = Yes\n");
+                        break;
+                     case 'P':                 /* strip path */
+                        indent_config_item(cfg_str, 3, "Strip = ");
+                        p++;                   /* skip P */
+                        for (; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                        }
+                        pm_strcat(cfg_str, "\n");
                         break;
                      case 'R':                 /* Resource forks and Finder Info */
-                        indent_config_item(cfg_str, 3, "hfsplussupport = yes\n");
+                        indent_config_item(cfg_str, 3, "HFSPlusSupport = Yes\n");
                      case 'r':                 /* read fifo */
-                        indent_config_item(cfg_str, 3, "readfifo = yes\n");
+                        indent_config_item(cfg_str, 3, "ReadFifo = Yes\n");
                         break;
                      case 'S':
                         switch(*(p + 1)) {
@@ -1188,94 +1235,98 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                            /* Old director did not specify SHA variant */
                            break;
                         case '1':
-                           indent_config_item(cfg_str, 3, "signature = sha1\n");
+                           indent_config_item(cfg_str, 3, "Signature = SHA1\n");
                            p++;
                            break;
 #ifdef HAVE_SHA2
                         case '2':
-                           indent_config_item(cfg_str, 3, "signature = sha256\n");
+                           indent_config_item(cfg_str, 3, "Signature = SHA256\n");
                            p++;
                            break;
                         case '3':
-                           indent_config_item(cfg_str, 3, "signature = sha512\n");
+                           indent_config_item(cfg_str, 3, "Signature = SHA512\n");
                            p++;
                            break;
 #endif
                         default:
                            /* Automatically downgrade to SHA-1 if an unsupported
                             * SHA variant is specified */
-                           indent_config_item(cfg_str, 3, "signature = sha1\n");
+                           indent_config_item(cfg_str, 3, "Signature = SHA1\n");
                            p++;
                            break;
                         }
                         break;
                      case 's':
-                        indent_config_item(cfg_str, 3, "sparse = yes\n");
+                        indent_config_item(cfg_str, 3, "Sparse = Yes\n");
                         break;
                      case 'm':
-                        indent_config_item(cfg_str, 3, "mtimeonly = yes\n");
+                        indent_config_item(cfg_str, 3, "MtimeOnly = Yes\n");
                         break;
                      case 'k':
-                        indent_config_item(cfg_str, 3, "keepatime = yes\n");
+                        indent_config_item(cfg_str, 3, "KeepAtime = Yes\n");
+                        break;
+                     case 'K':
+                        indent_config_item(cfg_str, 3, "NoAtime = Yes\n");
                         break;
                      case 'A':
-                        indent_config_item(cfg_str, 3, "aclsupport = yes\n");
+                        indent_config_item(cfg_str, 3, "AclSupport = Yes\n");
                         break;
                      case 'V':                  /* verify options */
-                        indent_config_item(cfg_str, 3, "verify = ");
-
-                        /*
-                         * Copy Verify Options
-                         */
-                        //for (int j = 0; *p && *p != ':'; p++) {
+                        indent_config_item(cfg_str, 3, "Verify = ");
+                        p++;                   /* skip V */
                         for (; *p && *p != ':'; p++) {
                            Mmsg(temp, "%c", *p);
                            pm_strcat(cfg_str, temp.c_str());
-                           //fo->VerifyOpts[j] = *p;
-                           //if (j < (int)sizeof(fo->VerifyOpts) - 1) {
-                           //   j++;
-                           //}
                         }
-                        //fo->VerifyOpts[j] = 0;
+                        pm_strcat(cfg_str, "\n");
                         break;
                      case 'w':
-                        indent_config_item(cfg_str, 3, "replace = ifnewer\n");
+                        indent_config_item(cfg_str, 3, "Replace = IfNewer\n");
                         break;
                      case 'W':
-                        indent_config_item(cfg_str, 3, "enhancedwild = yes\n");
+                        indent_config_item(cfg_str, 3, "EnhancedWild = Yes\n");
+                        break;
+                     case 'z':                 /* size */
+                        indent_config_item(cfg_str, 3, "Size = ");
+                        p++;                   /* skip z */
+                        for (; *p && *p != ':'; p++) {
+                           Mmsg(temp, "%c", *p);
+                           pm_strcat(cfg_str, temp.c_str());
+                        }
+                        pm_strcat(cfg_str, "\n");
                         break;
                      case 'Z':                 /* compression */
-                        indent_config_item(cfg_str, 3, "compression = ");
+                        indent_config_item(cfg_str, 3, "Compression = ");
                         p++;                   /* skip Z */
                         if (*p >= '0' && *p <= '9') {
-                           Mmsg(temp, "gzip\n");
+                           Mmsg(temp, "GZIP\n");
                            pm_strcat(cfg_str, temp.c_str());
                            Mmsg(temp, "%c\n", *p);
                            pm_strcat(cfg_str, temp.c_str());
                            p++; /* skip number */
                         } else if (*p == 'o') {
-                           Mmsg(temp, "lzo\n");
+                           Mmsg(temp, "LZO\n");
                            pm_strcat(cfg_str, temp.c_str());
                            break;
                         } else if (*p == 'f') {
                            p++;
                            if (*p == 'f') {
-                              Mmsg(temp, "lzfast\n");
+                              Mmsg(temp, "LZFAST\n");
                               pm_strcat(cfg_str, temp.c_str());
                               break;
                            } else if (*p == '4') {
-                              Mmsg(temp, "lz4\n");
+                              Mmsg(temp, "LZ4\n");
                               pm_strcat(cfg_str, temp.c_str());
                               break;
                            } else if (*p == 'h') {
-                              Mmsg(temp, "lz4hc\n");
+                              Mmsg(temp, "LZ4HC\n");
                               pm_strcat(cfg_str, temp.c_str());
                               break;
                            }
                         }
                         break;
                      case 'X':
-                        indent_config_item(cfg_str, 3, "xattr = yes\n");
+                        indent_config_item(cfg_str, 3, "Xattr = Yes\n");
                         break;
                      default:
                         Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
