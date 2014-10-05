@@ -2247,6 +2247,7 @@ bool populate_jobdefs()
                   }
                   *svalue = bstrdup(*def_svalue);
                   set_bit(i, job->hdr.item_present);
+                  set_bit(i, job->hdr.inherit_content);
                   break;
                case CFG_TYPE_RES:
                   /*
@@ -2261,6 +2262,7 @@ bool populate_jobdefs()
                   }
                   *svalue = *def_svalue;
                   set_bit(i, job->hdr.item_present);
+                  set_bit(i, job->hdr.inherit_content);
                   break;
                case CFG_TYPE_ALIST_RES:
                   /*
@@ -2268,6 +2270,7 @@ bool populate_jobdefs()
                    */
                   if (bit_is_set(i, job->jobdefs->hdr.item_present)) {
                      set_bit(i, job->hdr.item_present);
+                     set_bit(i, job->hdr.inherit_content);
                   }
                   break;
                case CFG_TYPE_BIT:
@@ -2289,6 +2292,7 @@ bool populate_jobdefs()
                   ivalue = (uint32_t *)((char *)job + offset);
                   *ivalue = *def_ivalue;
                   set_bit(i, job->hdr.item_present);
+                  set_bit(i, job->hdr.inherit_content);
                   break;
                case CFG_TYPE_TIME:
                case CFG_TYPE_SIZE64:
@@ -2303,6 +2307,7 @@ bool populate_jobdefs()
                   lvalue = (int64_t *)((char *)job + offset);
                   *lvalue = *def_lvalue;
                   set_bit(i, job->hdr.item_present);
+                  set_bit(i, job->hdr.inherit_content);
                   break;
                case CFG_TYPE_BOOL:
                   /*
@@ -2314,6 +2319,7 @@ bool populate_jobdefs()
                   bvalue = (bool *)((char *)job + offset);
                   *bvalue = *def_bvalue;
                   set_bit(i, job->hdr.item_present);
+                  set_bit(i, job->hdr.inherit_content);
                   break;
                default:
                   break;
@@ -2409,6 +2415,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2454,6 +2461,7 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
 
       scan_to_eol(lc);
       set_bit(index, res_all.hdr.item_present);
+      clear_bit(index, res_all.hdr.inherit_content);
    } else {
       store_resource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
    }
@@ -2484,6 +2492,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2511,6 +2520,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2538,6 +2548,7 @@ static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -2562,6 +2573,7 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2588,6 +2600,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2615,6 +2628,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2642,6 +2656,7 @@ static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2727,6 +2742,7 @@ static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
       break;
    }
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -2756,6 +2772,7 @@ static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
       break;
    }
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 /*
  * Store a runscript->when in a bit field
@@ -3004,6 +3021,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
 
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*

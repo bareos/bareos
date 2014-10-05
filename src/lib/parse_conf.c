@@ -454,9 +454,12 @@ RES **CONFIG::new_res_head()
  */
 void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
 {
+   URES *res_all;
+
    memset(m_res_all, 0, m_res_all_size);
-   ((URES *)m_res_all)->hdr.rcode = type;
-   ((URES *)m_res_all)->hdr.refcnt = 1;
+   res_all = ((URES *)m_res_all);
+   res_all->hdr.rcode = type;
+   res_all->hdr.refcnt = 1;
 
    /*
     * See what pass of the config parsing this is.
@@ -559,6 +562,10 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
                }
                break;
             }
+
+            if (!m_omit_defaults) {
+               set_bit(i, res_all->hdr.inherit_content);
+            }
          }
 
          /*
@@ -624,6 +631,10 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
                   m_init_res(&items[i], pass);
                }
                break;
+            }
+
+            if (!m_omit_defaults) {
+               set_bit(i, res_all->hdr.inherit_content);
             }
          }
 

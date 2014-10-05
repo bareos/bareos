@@ -96,27 +96,28 @@ struct RES_ITEM {
       alist **alistvalue;
       dlist **dlistvalue;
    };
-   int32_t code;                        /* item code/additional info */
-   uint32_t flags;                      /* flags: See CFG_ITEM_* */
-   const char *default_value;           /* default value */
+   int32_t code;                        /* Item code/additional info */
+   uint32_t flags;                      /* Flags: See CFG_ITEM_* */
+   const char *default_value;           /* Default value */
 };
 
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
 
-#define MAX_RES_ITEMS 80                /* maximum resource items per RES */
+#define MAX_RES_ITEMS 80                /* Maximum resource items per RES */
 
 /*
  * This is the universal header that is at the beginning of every resource record.
  */
 class RES {
 public:
-   RES *next;                           /* pointer to next resource of this type */
-   char *name;                          /* resource name */
-   char *desc;                          /* resource description */
-   uint32_t rcode;                      /* resource id or type */
-   int32_t refcnt;                      /* reference count for releasing */
-   char item_present[MAX_RES_ITEMS];    /* set if item is present in conf file */
+   RES *next;                           /* Pointer to next resource of this type */
+   char *name;                          /* Resource name */
+   char *desc;                          /* Resource description */
+   uint32_t rcode;                      /* Resource id or type */
+   int32_t refcnt;                      /* Reference count for releasing */
+   char item_present[MAX_RES_ITEMS];    /* Set if item is present in conf file */
+   char inherit_content[MAX_RES_ITEMS]; /* Set if item has inherited content */
 };
 
 /*
@@ -124,9 +125,9 @@ public:
  * This is the structure that defines the resources that are available to this daemon.
  */
 struct RES_TABLE {
-   const char *name;                    /* resource name */
-   RES_ITEM *items;                     /* list of resource keywords */
-   uint32_t rcode;                      /* code if needed */
+   const char *name;                    /* Resource name */
+   RES_ITEM *items;                     /* List of resource keywords */
+   uint32_t rcode;                      /* Code if needed */
    uint32_t size;                       /* Size of resource */
 };
 

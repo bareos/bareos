@@ -752,6 +752,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
