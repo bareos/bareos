@@ -380,12 +380,10 @@ public:
    char *add_prefix;                  /* add prefix to filename  */
    char *add_suffix;                  /* add suffix to filename -- .old */
    char *backup_format;               /* Format of backup to use for protocols supporting multiple backup formats */
-   char *RestoreBootstrap;            /* Bootstrap file */
    char *PluginOptions;               /* Options to pass to plugin */
-   union {
-      char *WriteBootstrap;           /* Where to write bootstrap Job updates */
-      char *WriteVerifyList;          /* List of changed files */
-   };
+   char *RestoreBootstrap;            /* Bootstrap file */
+   char *WriteBootstrap;              /* Where to write bootstrap Job updates */
+   char *WriteVerifyList;             /* List of changed files */
    utime_t MaxRunTime;                /* max run time in seconds */
    utime_t MaxWaitTime;               /* max blocking time in seconds */
    utime_t FullMaxRunTime;            /* Max Full job run time */
@@ -414,9 +412,7 @@ public:
    POOLRES *diff_pool;                /* Pool for Differental backups */
    POOLRES *next_pool;                /* Next Pool for Copy/Migration Jobs and Virtual backups */
    char *selection_pattern;
-   union {
-      JOBRES *verify_job;             /* Job name to verify */
-   };
+   JOBRES *verify_job;                /* Job name to verify */
    JOBRES *jobdefs;                   /* Job defaults */
    alist *run_cmds;                   /* Run commands */
    alist *RunScripts;                 /* Run {client} program {after|before} Job */
