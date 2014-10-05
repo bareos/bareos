@@ -1871,6 +1871,9 @@ void free_resource(RES *sres, int type)
       if (res->res_job.WriteBootstrap) {
          free(res->res_job.WriteBootstrap);
       }
+      if (res->res_job.WriteVerifyList) {
+         free(res->res_job.WriteVerifyList);
+      }
       if (res->res_job.PluginOptions) {
          free(res->res_job.PluginOptions);
       }
