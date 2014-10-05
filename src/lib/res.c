@@ -1262,7 +1262,7 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
       pm_strcat(volspec, "0");
    } else {
       for (int t=0; modifier[t]; t++) {
-         Dmsg2(200, " %s bytes: %d\n", item->name,  bytes);
+         Dmsg2(200, " %s bytes: %lld\n", item->name, bytes);
          factor = bytes / multiplier[t];
          bytes  = bytes % multiplier[t];
          if (factor > 0) {
