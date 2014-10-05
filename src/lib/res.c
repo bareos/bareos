@@ -220,6 +220,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
    Dmsg0(900, "Done store_msgs\n");
 }
 
@@ -278,7 +279,7 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code, char *where, char *
 
 /*
  * This routine is ONLY for resource names
- *  Store a name at specified address.
+ * Store a name at specified address.
  */
 static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -296,12 +297,13 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
     */
    if (*(item->value)) {
       scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."),
-         *(item->value), lc->str);
+                *(item->value), lc->str);
       return;
    }
    *(item->value) = bstrdup(lc->str);
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -327,6 +329,7 @@ static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -348,6 +351,7 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -374,6 +378,7 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -417,6 +422,7 @@ static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -440,6 +446,7 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -469,6 +476,7 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -523,6 +531,7 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -563,6 +572,7 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -610,6 +620,7 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -647,6 +658,7 @@ static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -686,6 +698,7 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
    *(item->i32value) = lc->int32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -699,6 +712,7 @@ static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
    *(item->ui32value) = lc->pint32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -712,6 +726,7 @@ static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
    *(item->i64value) = lc->int64_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -795,6 +810,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
       scan_to_eol(lc);
    }
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
    Dmsg0(900, "Leave store_unit\n");
 }
 
@@ -866,6 +882,7 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
       scan_to_eol(lc);
    }
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -886,6 +903,7 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -906,6 +924,7 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -933,6 +952,7 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
 }
 
 /*
@@ -1438,81 +1458,100 @@ bool BRSRES::print_config(POOL_MEM &buff)
          print_item = true;
       } else if (items[i].flags & CFG_ITEM_DEFAULT) {
          /*
-          * Check for default values.
+          * See if the item has inherited content from somewhere.
+          * If that is true there is no need to check the whole default setting.
           */
-         switch (items[i].type) {
-         case CFG_TYPE_STR:
-         case CFG_TYPE_DIR:
-         case CFG_TYPE_NAME:
-         case CFG_TYPE_STRNAME:
-            print_item = !bstrcmp(*(items[i].value), items[i].default_value);
-            break;
-         case CFG_TYPE_INT32:
-            print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
-            break;
-         case CFG_TYPE_PINT32:
-            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
-            break;
-         case CFG_TYPE_INT64:
-            print_item = (*(items[i].i64value) != str_to_int64(items[i].default_value));
-            break;
-         case CFG_TYPE_SPEED:
-            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-            break;
-         case CFG_TYPE_SIZE64:
-            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-            break;
-         case CFG_TYPE_SIZE32:
-            print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
-            break;
-         case CFG_TYPE_TIME:
-            print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-            break;
-         case CFG_TYPE_BOOL: {
-            bool default_value = bstrcasecmp(items[i].default_value, "true") ||
-                                 bstrcasecmp(items[i].default_value, "yes");
+         if (!bit_is_set(i, this->hdr.inherit_content)) {
+            /*
+             * Check for default values.
+             */
+            switch (items[i].type) {
+            case CFG_TYPE_STR:
+            case CFG_TYPE_DIR:
+            case CFG_TYPE_NAME:
+            case CFG_TYPE_STRNAME:
+               print_item = !bstrcmp(*(items[i].value), items[i].default_value);
+               break;
+            case CFG_TYPE_INT32:
+               print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
+               break;
+            case CFG_TYPE_PINT32:
+               print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+               break;
+            case CFG_TYPE_INT64:
+               print_item = (*(items[i].i64value) != str_to_int64(items[i].default_value));
+               break;
+            case CFG_TYPE_SPEED:
+               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+               break;
+            case CFG_TYPE_SIZE64:
+               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+               break;
+            case CFG_TYPE_SIZE32:
+               print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
+               break;
+            case CFG_TYPE_TIME:
+               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
+               break;
+            case CFG_TYPE_BOOL: {
+               bool default_value = bstrcasecmp(items[i].default_value, "true") ||
+                                    bstrcasecmp(items[i].default_value, "yes");
 
-            print_item = (*items[i].boolvalue != default_value);
-            break;
-         }
-         default:
-            break;
+               print_item = (*items[i].boolvalue != default_value);
+               break;
+            }
+            default:
+               break;
+            }
          }
       } else {
-         switch (items[i].type) {
-         case CFG_TYPE_STR:
-         case CFG_TYPE_DIR:
-         case CFG_TYPE_NAME:
-         case CFG_TYPE_STRNAME:
-            print_item = *(items[i].value) != NULL;
-            break;
-         case CFG_TYPE_INT32:
-            print_item = (*(items[i].i32value) > 0);
-            break;
-         case CFG_TYPE_PINT32:
-            print_item = (*(items[i].ui32value) > 0);
-            break;
-         case CFG_TYPE_INT64:
-            print_item = (*(items[i].i64value) > 0);
-            break;
-         case CFG_TYPE_SPEED:
-            print_item = (*(items[i].ui64value) > 0);
-            break;
-         case CFG_TYPE_SIZE64:
-            print_item = (*(items[i].ui64value) > 0);
-            break;
-         case CFG_TYPE_SIZE32:
-            print_item = (*(items[i].ui32value) > 0);
-            break;
-         case CFG_TYPE_TIME:
-            print_item = (*(items[i].ui64value) > 0);
-            break;
-         case CFG_TYPE_BOOL:
-            print_item = (*items[i].boolvalue != false);
-            break;
-         default:
-            break;
+         /*
+          * See if the item has inherited content from somewhere.
+          * If that is true there is no need to check the whole default setting.
+          */
+         if (!bit_is_set(i, this->hdr.inherit_content)) {
+            switch (items[i].type) {
+            case CFG_TYPE_STR:
+            case CFG_TYPE_DIR:
+            case CFG_TYPE_NAME:
+            case CFG_TYPE_STRNAME:
+               print_item = *(items[i].value) != NULL;
+               break;
+            case CFG_TYPE_INT32:
+               print_item = (*(items[i].i32value) > 0);
+               break;
+            case CFG_TYPE_PINT32:
+               print_item = (*(items[i].ui32value) > 0);
+               break;
+            case CFG_TYPE_INT64:
+               print_item = (*(items[i].i64value) > 0);
+               break;
+            case CFG_TYPE_SPEED:
+               print_item = (*(items[i].ui64value) > 0);
+               break;
+            case CFG_TYPE_SIZE64:
+               print_item = (*(items[i].ui64value) > 0);
+               break;
+            case CFG_TYPE_SIZE32:
+               print_item = (*(items[i].ui32value) > 0);
+               break;
+            case CFG_TYPE_TIME:
+               print_item = (*(items[i].ui64value) > 0);
+               break;
+            case CFG_TYPE_BOOL:
+               print_item = (*items[i].boolvalue != false);
+               break;
+            default:
+               break;
+            }
          }
+      }
+
+      /*
+       * See if the item has inherited content from somewhere.
+       */
+      if (bit_is_set(i, this->hdr.inherit_content)) {
+         continue;
       }
 
       switch (items[i].type) {

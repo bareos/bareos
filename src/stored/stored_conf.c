@@ -320,6 +320,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -374,6 +375,7 @@ static void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -408,6 +410,7 @@ static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
@@ -430,6 +433,7 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
    }
    scan_to_eol(lc);
    set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
 }
 
 /*
