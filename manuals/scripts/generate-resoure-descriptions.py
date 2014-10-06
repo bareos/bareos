@@ -54,7 +54,7 @@ class BareosConfigurationSchema2Latex:
     def getResourceDirectivesTable(self, resourcename):
         result="\\begin{center}\n"
         result+="\\begin{tabular}{l | l | l | l}\n"
-        result+=" name & type of data & required & default value \\\\ \n"
+        result+=" name & type of data & default value & remark \\\\ \n"
         result+="\\hline \n"
         for directive in self.schema.getResourceDirectives(resourcename):
             data=self.schema.getResourceDirective(resourcename, directive)
