@@ -178,7 +178,7 @@ struct ndmp_backup_format_option {
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"dump", true, true, true, true },
    { (char *)"tar", true, false, true, true },
-   { (char *)"smtape", false, false, false, false },
+   { (char *)"smtape", false, false, false, true },
    { (char *)"zfs", false, true, false, true },
    { NULL, false, false, false }
 };
