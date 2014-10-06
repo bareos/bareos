@@ -620,6 +620,8 @@ public:
    bool last_set;                       /* last week of month */
 };
 
+void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
+
 #define GetPoolResWithName(x) ((POOLRES *)GetResWithName(R_POOL, (x)))
 #define GetStoreResWithName(x) ((STORERES *)GetResWithName(R_STORAGE, (x)))
 #define GetClientResWithName(x) ((CLIENTRES *)GetResWithName(R_CLIENT, (x)))

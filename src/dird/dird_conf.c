@@ -3503,7 +3503,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
    }
 }
 
-bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
+void init_dir_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -3518,5 +3518,11 @@ bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+}
+
+bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
+{
+   init_dir_config( config, configfile, exit_code );
+
    return config->parse_config();
 }
