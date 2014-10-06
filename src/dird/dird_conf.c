@@ -1230,6 +1230,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                         break;
                      case 'R':                 /* Resource forks and Finder Info */
                         indent_config_item(cfg_str, 3, "HFSPlusSupport = Yes\n");
+                        break;
                      case 'r':                 /* read fifo */
                         indent_config_item(cfg_str, 3, "ReadFifo = Yes\n");
                         break;
