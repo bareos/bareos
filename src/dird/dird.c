@@ -271,6 +271,15 @@ int main (int argc, char *argv[])
       drop(uid, gid, false);                    /* reduce privileges if requested */
    }
 
+   if (export_config_schema) {
+      my_config = new_config_parser();
+      init_dir_config(my_config, configfile, M_ERROR_TERM);
+      POOL_MEM buffer;
+      print_config_schema_json(buffer);
+      printf( "%s\n", buffer.c_str() );
+      goto bail_out;
+   }
+
    my_config = new_config_parser();
    parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
@@ -281,13 +290,6 @@ int main (int argc, char *argv[])
 
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
-      goto bail_out;
-   }
-
-   if (export_config_schema) {
-      POOL_MEM buffer;
-      print_config_schema_json(buffer);
-      printf( "%s\n", buffer.c_str() );
       goto bail_out;
    }
 
