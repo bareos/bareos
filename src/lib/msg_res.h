@@ -34,22 +34,22 @@
  * name config_data_type value code flags default_value
  */
 static RES_ITEM msgs_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL },
-   { "mailcommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL },
-   { "operatorcommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL },
-   { "syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL },
-   { "mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL },
-   { "mailonerror", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL },
-   { "mailonsuccess", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL },
-   { "file", CFG_TYPE_MSGS, ITEM(res_msgs), MD_FILE, 0, NULL },
-   { "append", CFG_TYPE_MSGS, ITEM(res_msgs), MD_APPEND, 0, NULL },
-   { "stdout", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDOUT, 0, NULL },
-   { "stderr", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDERR, 0, NULL },
-   { "director", CFG_TYPE_MSGS, ITEM(res_msgs), MD_DIRECTOR, 0, NULL },
-   { "console", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CONSOLE, 0, NULL },
-   { "operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
-   { "catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL },
+   { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL },
+   { "OperatorCommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL },
+   { "Syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL },
+   { "Mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL },
+   { "MailOnError", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL },
+   { "MailOnSuccess", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_SUCCESS, 0, NULL },
+   { "File", CFG_TYPE_MSGS, ITEM(res_msgs), MD_FILE, 0, NULL },
+   { "Append", CFG_TYPE_MSGS, ITEM(res_msgs), MD_APPEND, 0, NULL },
+   { "Stdout", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDOUT, 0, NULL },
+   { "Stderr", CFG_TYPE_MSGS, ITEM(res_msgs), MD_STDERR, 0, NULL },
+   { "Director", CFG_TYPE_MSGS, ITEM(res_msgs), MD_DIRECTOR, 0, NULL },
+   { "Console", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CONSOLE, 0, NULL },
+   { "Operator", CFG_TYPE_MSGS, ITEM(res_msgs), MD_OPERATOR, 0, NULL },
+   { "Catalog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_CATALOG, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
