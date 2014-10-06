@@ -145,6 +145,12 @@ struct RES_TABLE {
 #define CFG_ITEM_DEPRECATED        0x8  /* Deprecated config option */
 #define CFG_ITEM_ALIAS             0x10 /* Item is an alias for an other */
 
+/*
+ * CFG_ITEM_DEFAULT_PLATFORM_SPECIFIC: the value may differ between different
+ * platforms (or configure settings). This information is used for the documentation.
+ */
+#define CFG_ITEM_PLATFORM_SPECIFIC 0x20
+
 enum {
    /*
     * Standard resource types. handlers in res.c
