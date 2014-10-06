@@ -689,7 +689,6 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
       if (list != NULL) {
          foreach_alist(runscript, list) {
             int len;
-            bool shortrunscript = false;
             POOLMEM *cmdbuf;
 
             len = strlen(runscript->command);
@@ -698,46 +697,43 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
             escape_string(cmdbuf, runscript->command, len);
 
             /*
-             * Check if runscript can be written as short runscript
+             * Don't print runscript when its inherited from a JobDef.
              */
-            if (runscript->cmd_type == '|') {  /* short runscripts only support shell command */
+            if (runscript->from_jobdef) {
+               continue;
+            }
+
+            /*
+             * Check if runscript must be written as short runscript
+             */
+            if (runscript->short_form) {
                if (runscript->when == SCRIPT_Before &&           /* runbeforejob */
                   (bstrcmp(runscript->target, ""))) {
                      Mmsg(temp, "run before job = \"%s\"\n", cmdbuf);
-                     shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&     /* runafterjob */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
                   Mmsg(temp, "run after job = \"%s\"\n", cmdbuf);
-                  shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&     /* client run after job */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           !bstrcmp(runscript->target, "")) {
                   Mmsg(temp, "client run after job = \"%s\"\n", cmdbuf);
-                  shortrunscript = true;
                } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
                           !bstrcmp(runscript->target, "")) {
                   Mmsg(temp, "before job = \"%s\"\n", cmdbuf);
-                  shortrunscript = true;
                } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
                           runscript->on_failure &&
                          !runscript->on_success &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
                   Mmsg(temp, "run after failed job = \"%s\"\n", cmdbuf);
-                  shortrunscript = true;
                }
                indent_config_item(cfg_str, 1, temp.c_str());
-            }
-
-            /*
-             * If we cannot write the runscript as short runscript...
-             */
-            if (!shortrunscript) {
+            } else {
                Mmsg(temp, "runscript {\n");
                indent_config_item(cfg_str, 1, temp.c_str());
 
@@ -750,7 +746,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                indent_config_item(cfg_str, 2, temp.c_str());
 
                /*
-                * default: never
+                * Default: never
                 */
                char *when = (char *)"never";
                switch (runscript->when) {
@@ -773,23 +769,29 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                   indent_config_item(cfg_str, 2, temp.c_str());
                }
 
-               /* default: fail_on_error = true */
+               /*
+                * Default: fail_on_error = true
+                */
                char *fail_on_error = (char *)"Yes";
-               if (! runscript->fail_on_error){
+               if (!runscript->fail_on_error){
                   fail_on_error = (char *)"No";
                   Mmsg(temp, "failonerror = %s\n", fail_on_error);
                   indent_config_item(cfg_str, 2, temp.c_str());
                }
 
-               /* default: on_success = true */
+               /*
+                * Default: on_success = true
+                */
                char *run_on_success = (char *)"Yes";
-               if (! runscript->on_success){
+               if (!runscript->on_success){
                   run_on_success = (char *)"No";
                   Mmsg(temp, "runsonsuccess = %s\n", run_on_success);
                   indent_config_item(cfg_str, 2, temp.c_str());
                }
 
-               /* default: on_failure = false */
+               /*
+                * Default: on_failure = false
+                */
                char *run_on_failure = (char *)"No";
                if (runscript->on_failure) {
                   run_on_failure = (char *)"Yes";
@@ -801,7 +803,9 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                Dmsg1(200, "   level = %d\n", runscript->level);
                */
 
-               /* default: runsonclient = yes */
+               /*
+                * Default: runsonclient = yes
+                */
                char *runsonclient = (char *)"Yes";
                if (bstrcmp(runscript->target, "")) {
                   runsonclient = (char *)"No";
@@ -810,7 +814,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                }
 
                indent_config_item(cfg_str, 1, "}\n");
-            } /* not a short runscript */
+            }
 
             free_pool_memory(cmdbuf);
          }
@@ -2262,6 +2266,7 @@ bool populate_jobdefs()
 
             foreach_alist(rs, jobdefs->RunScripts) {
                elt = copy_runscript(rs);
+               elt->from_jobdef = true;
                job->RunScripts->append(elt); /* we have to free it */
             }
          }
@@ -2932,6 +2937,11 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
          script->set_target("");
       }
 
+      /*
+       * Remember that the entry was configured in the short runscript form.
+       */
+      script->short_form = true;
+
       if (*runscripts == NULL) {
         *runscripts = New(alist(10, not_owned_by_alist));
       }
@@ -3062,6 +3072,11 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
           */
          script->target = NULL;
          script->set_target(res_runscript.target);
+
+         /*
+          * Remember that the entry was configured in the short runscript form.
+          */
+         script->short_form = false;
 
          (*runscripts)->append(script);
          script->debug();
