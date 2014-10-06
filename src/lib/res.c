@@ -1861,6 +1861,9 @@ bool print_res_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item)
     if (item->flags & CFG_ITEM_DEFAULT) {
        add_json_pair(buff, level + 1, "default_value", item->default_value);
     }
+    if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
+       add_json_pair(buff, level + 1, "platform_specific", "true");
+    }
     if (item->flags & CFG_ITEM_DEPRECATED) {
        add_json_pair_plain(buff, level + 1, "deprecated", "true");
     }
