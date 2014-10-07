@@ -931,7 +931,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
 
          POOL_MEM t; /* is one entry of day/month/week etc. */
 
-         pm_strcpy(temp, '\0');
+         pm_strcpy(temp, "");
          for (int i = 0; i < 32; i++) {  /* search for one more than needed to detect also intervals that stop on last value  */
             if (bit_is_set(i, run->mday)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
@@ -973,7 +973,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          interval_start = -1;
 
          all_set =  true;
-         pm_strcpy(temp, '\0');
+         pm_strcpy(temp, "");
          for (int i = 0; i < 5; i++) {
             if (bit_is_set(i, run->wom)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
@@ -1013,7 +1013,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           * run->wday output is Sun, Mon, ..., Sat comma separated
           */
          all_set =  true;
-         pm_strcpy(temp, '\0');
+         pm_strcpy(temp, "");
          for (int i = 0; i < 7; i++) {
             if (bit_is_set(i, run->wday)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
@@ -1051,7 +1051,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           * run->woy output is w00 - w53, comma separated
           */
          all_set = true;
-         pm_strcpy(temp, '\0');
+         pm_strcpy(temp, "");
          for (int i = 0; i < 55; i++) {
             if (bit_is_set(i, run->woy)) {
                if (interval_start == -1) {   // bit is set and we are not in an interval
@@ -1089,7 +1089,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           * only "hourly" sets all bits.
           */
          all_set = true;
-         pm_strcpy(temp, '\0');
+         pm_strcpy(temp, "");
          for (int i = 0; i < 24; i++) {
             if bit_is_set(i, run->hour) {
                Mmsg(temp, "at %02d:%02d\n", i, run->minute);
@@ -3151,10 +3151,10 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
          if (jcr->VolumeName) {
             return jcr->VolumeName;
          } else {
-            return _("*none*");
+            return (char *)_("*none*");
          }
       } else {
-         return _("*none*");
+         return (char *)_("*none*");
       }
       break;
    }

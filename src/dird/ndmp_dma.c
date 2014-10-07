@@ -1807,9 +1807,7 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, NIS
    /*
     * Make sure the level is in the wanted range.
     */
-   if (level < 0) {
-      level = 0;
-   } else if (level > 9) {
+   if (level > 9) {
       level = 9;
    }
 
