@@ -60,7 +60,7 @@ class BareosConfigurationSchema2Latex:
             data=self.schema.getResourceDirective(resourcename, directive)
 
             m="{"
-            extra=""
+            extra=[]
 
             if data.get( 'equals' ):
                 datatype="= \\dt{"+data['datatype']+"}"
@@ -68,18 +68,20 @@ class BareosConfigurationSchema2Latex:
                 datatype="\{ \\dt{"+data['datatype']+"} \}"
 
             deprecated=""
-            if data.get( 'deprecated' ):
-                extra="deprecated"
+            if data.get( 'alias' ):
+                extra.append("alias")
                 m="\\textit{"
-            required=""
+            if data.get( 'deprecated' ):
+                extra.append("deprecated")
+                m="\\textit{"
             if data.get( 'required' ):
-                extra="required"
+                extra.append("required")
                 m="\\textbf{"
             default=""
             if data.get( 'default_value' ):
                 default=data.get( 'default_value' )
 
-            result+=m+directive + "} & " + m + datatype + "} & " + m + default + "} & " + m + extra + "}\\\\ \n"
+            result+=m+directive + "} & " + m + datatype + "} & " + m + default + "} & " + m + " ".join(extra) + "}\\\\ \n"
         result+="\\end{tabular}\n"
         result+="\\end{center}\n"
         result+="\n"
