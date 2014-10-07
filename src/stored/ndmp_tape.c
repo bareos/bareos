@@ -161,9 +161,7 @@ static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
    /*
     * Make sure the level is in the wanted range.
     */
-   if (level < 0) {
-      level = 0;
-   } else if (level > 9) {
+   if (level > 9) {
       level = 9;
    }
 
@@ -273,7 +271,7 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
 
             nis = (NIS *)sess->param->log.ctx;
             if (nis->LogLevel != auth_config->LogLevel) {
-               if (auth_config->LogLevel >= 0 && auth_config->LogLevel <= 9) {
+               if (auth_config->LogLevel <= 9) {
                   nis->LogLevel = auth_config->LogLevel;
                }
             }
@@ -318,7 +316,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
 
          nis = (NIS *)sess->param->log.ctx;
          if (nis->LogLevel != auth_config->LogLevel) {
-            if (auth_config->LogLevel >= 0 && auth_config->LogLevel <= 9) {
+            if (auth_config->LogLevel <= 9) {
                nis->LogLevel = auth_config->LogLevel;
             }
          }

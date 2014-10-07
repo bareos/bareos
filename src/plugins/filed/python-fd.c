@@ -2722,7 +2722,7 @@ static int PyIoPacket_init(PyIoPacket *self, PyObject *args, PyObject *kwds)
    self->status = 0;
    self->io_errno = 0;
    self->lerror = 0;
-   self->whence - 0;
+   self->whence = 0;
    self->offset = 0;
    self->win32 = false;
 
