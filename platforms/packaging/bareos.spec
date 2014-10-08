@@ -27,7 +27,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
 Name: 		bareos
-Version: 	14.3.0
+Version: 	14.4.0
 Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
@@ -36,7 +36,7 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    14.3.0
+%define _libversion    14.4.0
 
 %define library_dir    %{_libdir}/bareos
 %define backend_dir    %{_libdir}/bareos/backends
