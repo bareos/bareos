@@ -926,7 +926,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          /*
           * run->mday , output is just the number comma separated
           */
-         all_set =  true;
+         all_set = true;
          interval_start = -1;
 
          POOL_MEM t; /* is one entry of day/month/week etc. */
@@ -962,7 +962,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          if (!all_set) { // suppress output if all bits are set
             pm_strcat(temp, " ");
             pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-            all_set =  true;
+            all_set = true;
          }
 
          /*
@@ -972,7 +972,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           */
          interval_start = -1;
 
-         all_set =  true;
+         all_set = true;
          pm_strcpy(temp, "");
          for (int i = 0; i < 5; i++) {
             if (bit_is_set(i, run->wom)) {
@@ -1012,7 +1012,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          /*
           * run->wday output is Sun, Mon, ..., Sat comma separated
           */
-         all_set =  true;
+         all_set = true;
          pm_strcpy(temp, "");
          for (int i = 0; i < 7; i++) {
             if (bit_is_set(i, run->wday)) {
@@ -1340,7 +1340,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                }
 
                for (int k = 0; k < fo->regex.size(); k++) {
-                  Mmsg(temp, "Regex =  \"%s\"\n", fo->regex.get(k));
+                  Mmsg(temp, "Regex = \"%s\"\n", fo->regex.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
@@ -1355,7 +1355,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                }
 
                for (int k = 0; k < fo->wild.size(); k++) {
-                  Mmsg(temp, "Wild =  \"%s\"\n", fo->wild.get(k));
+                  Mmsg(temp, "Wild = \"%s\"\n", fo->wild.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
@@ -1365,12 +1365,12 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                }
 
                for (int k = 0; k < fo->wildfile.size(); k++) {
-                  Mmsg(temp, "Wild File =  \"%s\"\n", fo->wildfile.get(k));
+                  Mmsg(temp, "Wild File = \"%s\"\n", fo->wildfile.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
                for (int k = 0; k < fo->wildbase.size(); k++) {
-                  Mmsg(temp, "Wild Base =  \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+                  Mmsg(temp, "Wild Base = \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
@@ -1380,7 +1380,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                }
 
                for (int k = 0; k < fo->fstype.size(); k++) {
-                  Mmsg(temp, "Fs Type =  \"%s\"\n", fo->fstype.get(k));
+                  Mmsg(temp, "Fs Type = \"%s\"\n", fo->fstype.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
@@ -1430,7 +1430,7 @@ bool FILESETRES::print_config(POOL_MEM &buff)
           */
          if (incexe->plugin_list.size()) {
             for (int l = 0; l < incexe->plugin_list.size(); l++) {
-               Mmsg(temp, "Plugin =  %s\n", incexe->plugin_list.get(l));
+               Mmsg(temp, "Plugin = %s\n", incexe->plugin_list.get(l));
                indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
