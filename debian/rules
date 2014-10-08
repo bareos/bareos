@@ -55,7 +55,8 @@ define CONFIGURE_COMMON
   --with-mysql \
   --with-sqlite3 \
   --with-tcp-wrappers \
-  --with-openssl \
+  --without-openssl \
+  --with-gnutls \
   --with-dir-user=$(DIRECTOR_DAEMON_USER) \
   --with-dir-group=$(DAEMON_GROUP) \
   --with-sd-user=$(STORAGE_DAEMON_USER) \

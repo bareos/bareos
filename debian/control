@@ -12,7 +12,8 @@
 Source: bareos
 Section: admin
 Priority: optional
-Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
+Maintainer: Bareos Packaging Team <pkg-bareos-devel@lists.alioth.debian.org>
+Uploaders: Joerg Steffens <joerg.steffens@bareos.com>, Evgeni Golov <evgeni@debian.org>
 Build-Depends: acl-dev,
  autotools-dev,
  bc,
@@ -24,7 +25,7 @@ Build-Depends: acl-dev,
  liblzo2-dev,
  libqt4-dev,
  libreadline-dev,
- libssl-dev,
+ libgnutls28-dev,
  libwrap0-dev,
  libx11-dev,
  libsqlite3-dev, libmysqlclient-dev, libpq-dev,
@@ -45,8 +46,8 @@ Build-Depends: acl-dev,
 #   ucslint, univention-config-dev
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
 Standards-Version: 3.9.5
-Vcs-Git: git://github.com/bareos/bareos.git -b master
-Vcs-Browser: https://github.com/bareos/bareos/tree/master
+Vcs-Git: git://github.com/bareos/bareos.git -b bareos-14.2-debian
+Vcs-Browser: https://github.com/bareos/bareos/tree/bareos-14.2-debian
 Homepage: http://www.bareos.org/
 
 

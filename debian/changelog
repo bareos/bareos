@@ -1,5 +1,13 @@
-bareos (14.2.1+20140930git1339225-1) UNRELEASED; urgency=medium
+bareos (14.2.1+20141017gitc6c5b56-1) unstable; urgency=medium
+
+  * Import newer upstream snapshot.
+  * Use GnuTLS instead of OpenSSL to avoid licensing problems.
+  * Don't generate debian/control during build.
+
+ -- Evgeni Golov <evgeni@debian.org>  Sat, 25 Oct 2014 21:32:39 +0200
+
+bareos (14.2.1+20140930git1339225-1) unstable; urgency=medium
 
   * Initial Debian release. (Closes: Bug#762459)
 
- -- Evgeni Golov <evgeni@debian.org>  Thu, 02 Oct 2014 08:47:17 +0200
+ -- Evgeni Golov <evgeni@debian.org>  Wed, 08 Oct 2014 13:21:16 +0200
