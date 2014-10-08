@@ -628,7 +628,6 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
 {
-   int token;
    alist *list;
    char *p, *plugin_name, *plugin_names;
    URES *res_all = (URES *)my_config->m_res_all;
@@ -1417,15 +1416,16 @@ bool BRSRES::print_config(POOL_MEM &buff)
    POOL_MEM temp;
    RES_ITEM *items;
    int i = 0;
-   int rindex = this->hdr.rcode - my_config->m_r_first;
+   int rindex;
 
    /*
     * If entry is not used, then there is nothing to print.
     */
-   if (this->hdr.rcode < my_config->m_r_first ||
+   if (this->hdr.rcode < (uint32_t)my_config->m_r_first ||
        this->hdr.refcnt <= 0) {
       return true;
    }
+   rindex = this->hdr.rcode - my_config->m_r_first;
 
    /*
     * Make sure the resource class has any items.
