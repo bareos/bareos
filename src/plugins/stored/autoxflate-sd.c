@@ -325,7 +325,6 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-
    /*
     * Give jobmessage info what is configured
     */
@@ -391,7 +390,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
    }
    Jmsg(ctx, M_INFO,
          _("autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
-        dcr->dev_name, deflate_out, inflate_out, inflate_in, inflate_out);
+        dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
 
    return bRC_OK;
 }
