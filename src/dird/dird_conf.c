@@ -2912,25 +2912,25 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
       script->set_job_code_callback(job_code_callback_director);
 
       script->set_command(lc->str);
-      if (bstrcmp(item->name, "runbeforejob")) {
+      if (bstrcasecmp(item->name, "runbeforejob")) {
          script->when = SCRIPT_Before;
          script->set_target("");
-      } else if (bstrcmp(item->name, "runafterjob")) {
+      } else if (bstrcasecmp(item->name, "runafterjob")) {
          script->when = SCRIPT_After;
          script->on_success = true;
          script->on_failure = false;
          script->fail_on_error = false;
          script->set_target("");
-      } else if (bstrcmp(item->name, "clientrunafterjob")) {
+      } else if (bstrcasecmp(item->name, "clientrunafterjob")) {
          script->when = SCRIPT_After;
          script->on_success = true;
          script->on_failure = false;
          script->fail_on_error = false;
          script->set_target("%c");
-      } else if (bstrcmp(item->name, "clientrunbeforejob")) {
+      } else if (bstrcasecmp(item->name, "clientrunbeforejob")) {
          script->when = SCRIPT_Before;
          script->set_target("%c");
-      } else if (bstrcmp(item->name, "runafterfailedjob")) {
+      } else if (bstrcasecmp(item->name, "runafterfailedjob")) {
          script->when = SCRIPT_After;
          script->on_failure = true;
          script->on_success = false;
