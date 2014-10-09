@@ -259,7 +259,7 @@ static void *handle_director_connection(BSOCK *dir, char *job_name)
          break;               /* connection terminated */
       }
 
-      Dmsg1(199, "<dird: %s\n", dir->msg);
+      Dmsg1(199, "<dird: %s", dir->msg);
 
       /*
        * Ensure that device initialization is complete
