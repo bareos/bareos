@@ -84,7 +84,7 @@ if [ $a = 0 -a $b = 0 -a $c = 0 -a $d = 0 ]
 then
    [ "$debug" = 1 ] && echo RUN_ALL_OK ok
 else
-   echo "RUN_ALL_OK in error"
+   echo "RUN_ALL_OK in error  a=$a b=$b c=$c d=$d"
    bstat=1
 fi
 
@@ -96,7 +96,7 @@ if [ $a = 0 -a $b = 0 ]
 then
    [ "$debug" = 1 ] && echo RUN_DIR_FAILED ok
 else
-   echo "RUN_DIR_FAILED in error"
+   echo "RUN_DIR_FAILED in error  a=$a b=$b"
    bstat=1
 fi
 

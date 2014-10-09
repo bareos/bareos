@@ -12,7 +12,7 @@ scripts/copy-strip-confs
 # Make a copy of build/src/dird to be backed up
 rm -rf ${tmp}/$$-strip
 mkdir -p ${tmp}/$$-strip
-cp -rpf ${cwd}/build/src/dird/ ${tmp}/$$-strip/
+cp -rpf ${cwd}/build/src/console/ ${tmp}/$$-strip/
 echo "${tmp}/$$-strip" >${cwd}/tmp/file-list
 
 # Now, strip the first 4 parts of the path (which is what
