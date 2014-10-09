@@ -6,7 +6,7 @@
 #
 
 Name:           bareos-docs
-Version:        14.3.0
+Version:        14.4.0
 Release:        0
 License:        GFDL-1.3
 Summary:        Documentation
