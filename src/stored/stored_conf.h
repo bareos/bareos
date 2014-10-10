@@ -63,7 +63,7 @@ public:
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
-   char *keyencrkey;                  /* Key Encryption Key */
+   s_password keyencrkey;             /* Key Encryption Key */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };

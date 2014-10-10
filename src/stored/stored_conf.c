@@ -638,8 +638,8 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_allowed_cns) {
          delete res->res_dir.tls_allowed_cns;
       }
-      if (res->res_dir.keyencrkey) {
-         free(res->res_dir.keyencrkey);
+      if (res->res_dir.keyencrkey.value) {
+         free(res->res_dir.keyencrkey.value);
       }
       break;
    case R_NDMP:

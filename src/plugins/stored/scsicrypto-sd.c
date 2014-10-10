@@ -379,18 +379,18 @@ static bRC do_set_scsi_encryption_key(void *value)
     */
    if (dcr->jcr && dcr->jcr->director) {
       director = dcr->jcr->director;
-      if (director->keyencrkey) {
+      if (director->keyencrkey.value) {
          char WrappedVolEncrKey[MAX_NAME_LENGTH];
 
          memcpy(WrappedVolEncrKey, VolEncrKey, MAX_NAME_LENGTH);
          memset(VolEncrKey, 0, MAX_NAME_LENGTH);
 
-         if (aes_unwrap((unsigned char *)director->keyencrkey,
+         if (aes_unwrap((unsigned char *)director->keyencrkey.value,
                         DEFAULT_PASSPHRASE_LENGTH / 8,
                         (unsigned char *)WrappedVolEncrKey,
                         (unsigned char *)VolEncrKey) != 0) {
             Dmsg1(dbglvl,
-                  "scsicrypto-sd: Failed to unwrap encryption key using %s\n", director->keyencrkey);
+                  "scsicrypto-sd: Failed to unwrap encryption key using %s\n", director->keyencrkey.value);
             Emsg0(M_ERROR, 0,
                   _("scsicrypto-sd: Failed to unwrap encryption key, probably wrong KeyEncryptionKey in config\n"));
             return bRC_Error;
