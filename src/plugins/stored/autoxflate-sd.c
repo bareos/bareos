@@ -312,6 +312,7 @@ bail_out:
 static bRC setup_record_translation(bpContext *ctx, void *value)
 {
    DCR *dcr;
+   bool did_setup = false;
    const char *inflate_in = SETTING_UNSET;
    const char *inflate_out = SETTING_UNSET;
    const char *deflate_in = SETTING_UNSET;
@@ -329,6 +330,10 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
     * Give jobmessage info what is configured
     */
    switch (dcr->autodeflate) {
+   case IO_DIRECTION_NONE:
+      deflate_in = SETTING_NO;
+      deflate_out = SETTING_NO;
+      break;
    case IO_DIRECTION_IN:
       deflate_in = SETTING_YES;
       deflate_out = SETTING_NO;
@@ -347,6 +352,10 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
    }
 
    switch (dcr->autoinflate) {
+   case IO_DIRECTION_NONE:
+      inflate_in = SETTING_NO;
+      inflate_out = SETTING_NO;
+      break;
    case IO_DIRECTION_IN:
       inflate_in = SETTING_YES;
       inflate_out = SETTING_NO;
@@ -368,29 +377,38 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
     * Setup auto deflation/inflation of streams when enabled for this device.
     */
    switch (dcr->autodeflate) {
+   case IO_DIRECTION_NONE:
+      break;
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
       if (!setup_auto_deflation(ctx, dcr)) {
          return bRC_Error;
       }
+      did_setup = true;
       break;
    default:
       break;
    }
 
    switch (dcr->autoinflate) {
+   case IO_DIRECTION_NONE:
+      break;
    case IO_DIRECTION_OUT:
    case IO_DIRECTION_INOUT:
       if (!setup_auto_inflation(ctx, dcr)) {
          return bRC_Error;
       }
+      did_setup = true;
       break;
    default:
       break;
    }
-   Jmsg(ctx, M_INFO,
-         _("autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
-        dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
+
+   if (did_setup) {
+      Jmsg(ctx, M_INFO,
+            _("autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
+           dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
+   }
 
    return bRC_OK;
 }
