@@ -43,7 +43,7 @@ However, not all distributions offer these packages.
 * SUSE
   * available as part of the [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository (based on EPEL version)
 * Debian/Ubuntu
-  * unknown
+  * available as part of the [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository
 
 
 #### Installation
@@ -89,6 +89,14 @@ You might configure your Apache manually or copy the example configuration with 
 ```
 cd /etc/apache2/conf.d
 wget https://raw.github.com/bareos/bareos-webui/master/install/apache/bareos-webui.conf
+```
+
+Note: On Debian the ZF2_PATH Variable in your bareos-webui.conf is currently needed, if you are using the ZF2 package from Bareos contrib. 
+This will change and no longer be necessary in future, but it is the way to go for the moment.
+
+```
+# Environment Variable for Zend Framwework 2 (Debian)
+SetEnv "ZF2_PATH" "/usr/share/php5"
 ```
 
 ### Configuration to be able to run bconsole commands within the web-frontend
