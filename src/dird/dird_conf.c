@@ -1728,8 +1728,8 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.verid) {
          free(res->res_dir.verid);
       }
-      if (res->res_dir.keyencrkey) {
-         free(res->res_dir.keyencrkey);
+      if (res->res_dir.keyencrkey.value) {
+         free(res->res_dir.keyencrkey.value);
       }
       if (res->res_dir.audit_events) {
          delete res->res_dir.audit_events;
