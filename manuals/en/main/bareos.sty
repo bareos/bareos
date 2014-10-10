@@ -34,6 +34,11 @@
 % data type definitions. 
 % all data types should be defined here.
 % use them in xdirective.
+\newcommand{\dtAcl}{\ilink{acl}{DataTypeNetAcl}}
+\newcommand{\dtAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\newcommand{\dtAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\newcommand{\dtAutopassword}{\ilink{password}{DataTypePassword}}
+\newcommand{\dtBoolean}{\ilink{\yesno}{DataTypeYesNo}}
 \newcommand{\dtDirectory}{\ilink{directory}{DataTypeDirectory}}
 \newcommand{\dtName}{\ilink{name}{DataTypeName}}
 \newcommand{\dtNetAddress}{\ilink{net-address}{DataTypeNetAddress}}
@@ -41,26 +46,40 @@
 \newcommand{\dtNetPort}{\ilink{net-port}{DataTypeNetPort}}
 \newcommand{\dtPassword}{\ilink{password}{DataTypePassword}}
 \newcommand{\dtPath}{\ilink{path}{DataTypePath}}
-\newcommand{\dtPositiveInteger}{\ilink{positive-integer}{DataTypePositiveInteger}}
-\newcommand{\dtUInt}{\dtPositiveInteger}
+% use csdef instead of newcommand, because command contains numbers
+\csdef{dtPint32}{\dtUInt}
+\newcommand{\dtRes}{\ilink{resource-name}{DataTypeRes}}
+\newcommand{\dtPort}{\dtNetPort}
 \newcommand{\dtSize}{\ilink{size}{DataTypeSize}}
 \newcommand{\dtString}{\ilink{string}{DataTypeString}}
-\newcommand{\dtStringList}[1]{\ilink{string-list (separated by #1)}{DataTypeStringList}}
+\newcommand{\dtStringList}{\ilink{string-list}{DataTypeStringList}}
 \newcommand{\dtTime}{\ilink{time}{DataTypeTime}}
+\newcommand{\dtUInt}{\ilink{positive-integer}{DataTypePositiveInteger}}
 \newcommand{\dtYesNo}{\ilink{\yesno}{DataTypeYesNo}}
 
-\newcommand{\dt}[1]{\path|#1|}
+\newcommand{\dt}[1]{%
+    \ifcsdef{dt#1}{\csuse{dt#1}}{\path|#1|} %
+}
 
+%
+% references
+%
 
-%%
+% 1: text, 2: URL
 \newcommand*{\elink}[2]{%
-  \htmladdnormallink{#1}{#2}%
+    %\htmladdnormallink{#1}{#2}%
+    \href{#2}{#1}%
 }
-%%
+% or use \url{URL}
+
+% 1: text, 2. URL
 \newcommand*{\ilink}[2]{%
-  \htmlref{#1}{#2}%
+  %\htmlref{#1}{#2}%
+    \hyperref[#2]{#1}%
 }
-%%
+% or use \autoref{label} (or \nameref{label}
+
+
 \newcommand{\dq}{\verb+"+}
 \newcommand{\at}{\makeatletter @\makeatother}
 \newcommand{\lt}{\textless}

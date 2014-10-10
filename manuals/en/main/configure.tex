@@ -185,6 +185,18 @@ overwhelming, but in reality, it is all pretty logical and straightforward.
 
 \begin{description}
 
+\item [acl]
+    \index[general]{Data Type!acl}
+    \label{DataTypeAcl}
+This directive defines what is premitted to access.
+It does this by a list of strings, separated by \parameter{,}.
+
+The special keyword \parameter{*all*} allows unrestricted access.
+
+Depending on the type of the ACL, the strings can by either resource names, paths or bconsole commands.
+ 
+
+
 \item [directory]
     \index[general]{Data Type!directory}
     \label{DataTypeDirectory}
@@ -314,6 +326,11 @@ only IPv4 resolutions will be permitted,  and likewise with ip6.
     \label{DataTypeNetPort}
     Specify a network port (a positive  integer).
 
+\item [resource]
+    \index[general]{Data Type!resource}
+    \label{DataTypeRes}
+A resource defines a relation to the name of another resource.
+
 
 \item [size]
     \index[general]{Data Type!size}
@@ -412,8 +429,9 @@ are valid date specifications.
 
 \item [\yesno]
     \index[general]{Data Type!\yesno}
+    \index[general]{Data Type!boolean}
     \label{DataTypeYesNo}
-   Either a {\bf yes} or a {\bf no}.
+   Either a \parameter{yes} or a \parameter{no} (or \parameter{true} or \parameter{false}).
 
 
 \end{description}

@@ -4,6 +4,7 @@ import argparse
 import logging
 import json
 from   pprint import pprint
+import re
 import sys
 
 class BareosConfigurationSchema:
@@ -25,8 +26,25 @@ class BareosConfigurationSchema:
         #   None:  include deprecated
         #   False: exclude deprecated
         #   True:  only deprecated
-        return self.json[resourcename][directive]
+        return BareosConfigurationSchemaDirective( self.json[resourcename][directive] )
 
+class BareosConfigurationSchemaDirective(dict):
+    def getDefaultValue( self ):
+        default=None
+        if dict.get( self, 'default_value' ):
+            if dict.get( self, 'default_value' ) == "true":
+                default="yes"
+            elif dict.get( self, 'default_value' ) == "false":
+                default="no"
+            else:
+                default=dict.get( self, 'default_value' )
+        return default
+
+    def get( self, key ):
+        if key == "default_value" or key == "default":
+            return self.getDefaultValue()
+        else:
+            return dict.get(self,key)
 
 class BareosConfigurationSchema2Latex:
     def __init__( self, json ):
@@ -61,12 +79,20 @@ class BareosConfigurationSchema2Latex:
         else:
             return ""
 
+    def convertCamelCase2Spaces( self, valueCC ):
+        s1 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', valueCC)
+        #return s1
+        result=[]
+        for token in s1.split(' '):
+            u = token.upper()
+            if u in [ "ACL", "CA", "CN", "DB", "DH", "FD", "NDMP", "SD", "TLS", "VSS" ]:
+                token=u
+            result.append(token)
+        return " ".join( result )
+
     def getLatexDatatypeRef( self, datatype ):
         DataType="".join([x.lower().capitalize() for x in datatype.split('_')])
-        if DataType == "StringList":
-            return "\\ifdefined\\dt%(DataType)s \\dt%(DataType)s{,} \\else \\dt{%(DataType)s} \\fi" % { 'DataType': DataType }
-        else:
-            return "\\ifdefined\\dt%(DataType)s \\dt%(DataType)s \\else \\dt{%(DataType)s} \\fi" % { 'DataType': DataType }
+        return "\\dt{%(DataType)s}" % { 'DataType': DataType }
 
     def getResourceDirectivesTable(self, resourcename):
         result="\\begin{center}\n"
@@ -77,7 +103,7 @@ class BareosConfigurationSchema2Latex:
             data=self.schema.getResourceDirective(resourcename, directive)
 
             strings={
-                    'directive': directive,
+                    'directive': self.convertCamelCase2Spaces( directive ),
                     'mc': "}",
                     'extra': [],
                     'default': "",
@@ -87,7 +113,7 @@ class BareosConfigurationSchema2Latex:
             if data.get( 'equals' ):
                 strings["datatype"]="= %(datatype)s" % { 'datatype': strings["datatype"] }
             else:
-                strings["datatype"]="{ %(datatype)s }" % { 'datatype': strings["datatype"] }
+                strings["datatype"]="\{ %(datatype)s \}" % { 'datatype': strings["datatype"] }
 
             extra=[]
             if data.get( 'alias' ):
@@ -134,7 +160,7 @@ class BareosConfigurationSchema2Latex:
         for directive in self.schema.getResourceDirectives(resourcename):
             data=self.schema.getResourceDirective(resourcename, directive)
 
-            datatype="\\dt{"+data['datatype']+"}"
+            datatype="\\dt{"+data.get('datatype')+"}"
             deprecated=""
             if data.get( 'deprecated' ):
                 deprecated="deprecated"
@@ -144,7 +170,6 @@ class BareosConfigurationSchema2Latex:
             default=""
             if data.get( 'default_value' ):
                 default=data.get( 'default_value' )
-
             result+="\\xdirective{dir}{"+directive+"}{"+datatype+"}{"+required+"}{"+default+"}{"+deprecated+"}{%\n"
             result+="}\n\n" 
         result+="\\end{description}\n\n"
