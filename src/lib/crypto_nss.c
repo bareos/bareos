@@ -58,7 +58,7 @@ DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
 
    switch (type) {
    case CRYPTO_DIGEST_MD5:
-      MD5Init(&digest->md5);
+      MD5_Init(&digest->md5);
       break;
    case CRYPTO_DIGEST_SHA1:
       SHA1Init(&digest->sha1);
@@ -77,17 +77,12 @@ bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
    switch (digest->type) {
    case CRYPTO_DIGEST_MD5:
       /* Doesn't return anything ... */
-      MD5Update(&digest->md5, (unsigned char *) data, length);
+      MD5_Update(&digest->md5, (unsigned char *) data, length);
       return true;
    case CRYPTO_DIGEST_SHA1:
-      int ret;
-      if ((ret = SHA1Update(&digest->sha1, (const u_int8_t *) data, length)) == shaSuccess) {
-         return true;
-      } else {
-         Jmsg1(NULL, M_ERROR, 0, _("SHA1Update() returned an error: %d\n"), ret);
-         return false;
-      }
-      break;
+      /* Doesn't return anything ... */
+      SHA1Update(&digest->sha1, (const u_int8_t *) data, (unsigned int)length);
+      return true;
    default:
       return false;
    }
@@ -102,19 +97,15 @@ bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
       assert(*length >= CRYPTO_DIGEST_MD5_SIZE);
       *length = CRYPTO_DIGEST_MD5_SIZE;
       /* Doesn't return anything ... */
-      MD5Final((unsigned char *)dest, &digest->md5);
+      MD5_Final((unsigned char *)dest, &digest->md5);
       return true;
    case CRYPTO_DIGEST_SHA1:
       /* Guard against programmer error by either the API client or
        * an out-of-sync CRYPTO_DIGEST_MAX_SIZE */
       assert(*length >= CRYPTO_DIGEST_SHA1_SIZE);
       *length = CRYPTO_DIGEST_SHA1_SIZE;
-      if (SHA1Final(&digest->sha1, (u_int8_t *) dest) == shaSuccess) {
-         return true;
-      } else {
-         return false;
-      }
-      break;
+      SHA1Final((u_int8_t *) dest, &digest->sha1);
+      return true;
    default:
       return false;
    }
