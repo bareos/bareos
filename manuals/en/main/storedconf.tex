@@ -54,18 +54,18 @@ have one and only one Storage resource definition.
 
 \begin{description}
 
-\xdirective{sd}{Name}{name}{required}{}{}{%
+\xdirective{dir}{}{Name}{name}{required}{}{}{%
 Specifies the Name of the Storage daemon.
 }
 
-\xdirective{sd}{Working Directory}{directory}{required}{{\it platform specific}}{}{%
+\xdirective{dir}{}{Working Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage daemon may put
 its status files. This directory should be used only  by {\bf Bareos},
 but may be shared by other Bareos daemons provided the names given to each
 daemon are unique.
 }
 
-\xdirective{sd}{Pid Directory}{directory}{required}{{\it platform specific}}{}{%
+\xdirective{dir}{}{Pid Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage Daemon may put its
 process Id file files. The process Id file is used to  shutdown Bareos and to
 prevent multiple copies of  Bareos from running simultaneously.
@@ -79,7 +79,7 @@ properly expanded.
 % \index[sd]{Directive!Subsys Directory}
 % This directive is currently unused.
 
-\xdirective{sd}{Plugin Directory}{directory}{required}{{\it platform specific}}{}{%
+\xdirective{dir}{}{Plugin Directory}{directory}{required}{{\it platform specific}}{}{%
 This directive specifies a directory in which the Storage Daemon searches for
 plugins with the name {\bf {\textless}pluginname{\textgreater}-sd.so} which it will load at startup.
 }
@@ -87,7 +87,7 @@ plugins with the name {\bf {\textless}pluginname{\textgreater}-sd.so} which it w
 %\directive{sd}{Scripts Directory}{directory}{required}{{\it platform specific}}{}
 %This directive is currently unused.
 
-\xdirective{sd}{Heartbeat Interval}{time-interval}{required}{0}{}{%
+\xdirective{dir}{}{Heartbeat Interval}{time-interval}{required}{0}{}{%
 \index[general]{Broken pipe}%
 This directive defines an interval of time in seconds.  When
 the Storage daemon is waiting for the operator to mount a
@@ -100,7 +100,7 @@ duration despite the fact that keepalive is set.  This usually
 results in a broken pipe error message.
 }
 
-\xdirective{sd}{Client Connect Wait}{time-interval}{required}{30 minutes}{}{%
+\xdirective{dir}{}{Client Connect Wait}{time-interval}{required}{30 minutes}{}{%
 This directive defines an interval of time in seconds that
 the Storage daemon will wait for a Client (the File daemon)
 to connect.  Be aware that the
@@ -108,7 +108,7 @@ longer the Storage daemon waits for a Client, the more
 resources will be tied up.
 }
 
-\xdirective{sd}{Maximum Concurrent Jobs}{number}{required}{10}{}{%
+\xdirective{dir}{}{Maximum Concurrent Jobs}{number}{required}{10}{}{%
 where {\textless}number{\textgreater} is the maximum number of Jobs that may run
 concurrently.  The default is set to 10, but you may set it to a larger
 number.  Each contact from the Director (e.g.  status request, job start
@@ -122,7 +122,7 @@ the Storage resource in the Director's configuration file and possibly
 those in the Job and Client resources.
 }
 
-\xdirective{sd}{SD Address}{IP-address}{}{}{}{%
+\xdirective{dir}{}{SD Address}{IP-address}{}{}{}{%
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for Director and File daemon connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
@@ -175,12 +175,12 @@ Using this directive, you can replace both the SDPort and SDAddress
 directives shown below.
 
 
-\xdirective{sd}{SD Port}{port-number}{required}{9103}{}{%
+\xdirective{dir}{}{SD Port}{port-number}{required}{9103}{}{%
 Specifies port number on which the Storage daemon  listens for Director
 connections.
 }
 
-\xdirective{sd}{Compatible}{yes{\textbar}no}{required}{yes}{}{%
+\xdirective{dir}{}{Compatible}{yes{\textbar}no}{required}{yes}{}{%
 This directive enables the compatible mode of the storage daemon. In
 this mode the storage daemon will try to write the storage data in a
 compatible way with Bareos of which Bareos is a fork. This only works
@@ -190,20 +190,20 @@ daemon but might not be understood by any of the Bareos components
 (dir/sd/fd).
 }
 
-\xdirective{sd}{NDMP Enable}{yes{\textbar}no}{}{}{}{%
+\xdirective{dir}{}{NDMP Enable}{yes{\textbar}no}{}{}{}{%
 This directive enables the Native NDMP Tape Agent.
 }
 
-\xdirective{sd}{NDMP Snooping}{yes{\textbar}no}{}{}{}{%
+\xdirective{dir}{}{NDMP Snooping}{yes{\textbar}no}{}{}{}{%
 This directive enables the Snooping and pretty printing of NDMP protocol
 information in debugging mode.
 }
 
-\xdirective{sd}{NDMP Loglevel}{level}{}{}{}{%
+\xdirective{dir}{}{NDMP Loglevel}{level}{}{}{}{%
 This directive sets the loglevel for the NDMP protocol library.
 }
 
-\xdirective{sd}{NDMP Address}{IP-address}{}{}{}{%
+\xdirective{dir}{}{NDMP Address}{IP-address}{}{}{}{%
 This directive is optional, and if it is specified, it will cause the
 Storage daemon server (for NDMP Tape Server connections) to bind
 to the specified {\bf IP-Address}, which is either a domain name or an
@@ -212,18 +212,18 @@ specified, the Storage daemon will bind to any available address (the
 default).
 }
 
-\xdirective{sd}{NDMP Addresses}{IP-address-specification}{}{}{}{%
+\xdirective{dir}{}{NDMP Addresses}{IP-address-specification}{}{}{}{%
 Specify the ports and addresses on which the Storage daemon will listen
 for NDMP Tape Server connections.  Normally, the default is sufficient and you
 do not need to specify this directive.
 }
 
-\xdirective{sd}{NDMP Port}{port-specification}{}{10000}{}{%
+\xdirective{dir}{}{NDMP Port}{port-specification}{}{10000}{}{%
 Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 }
 
-\xdirective{sd}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{%
+\xdirective{dir}{}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{%
 \label{storage-storage-autoxflateonreplication}%
 This directive controls the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
 plugin when replicating data inside one or
@@ -685,7 +685,7 @@ drive autochanger operations will fail.  We strongly recommend to keep
 {\bf Always Open} set to {\bf Yes}
 
 
-\xdirective{sd}{Volume Poll Interval}{time-interval}{}{300}{}{%
+\xdirective{dir}{}{Volume Poll Interval}{time-interval}{}{300}{}{%
 If the time  specified on this directive is non-zero,
 %after  asking the operator to mount a new volume
 Bareos will  periodically poll (or read) the
@@ -894,7 +894,7 @@ Maximum block size = 200K
 
 
 
-\xdirective{sd}{Maximum block size}{\dtSize}{}{64512}{}{
+\xdirective{dir}{}{Maximum block size}{\dtSize}{}{64512}{}{
 \label{storage-device-maximumblocksize}%
 The Storage daemon will always attempt to
 write blocks of the specified size (in-bytes) to the archive device.
@@ -913,7 +913,7 @@ Please read chapter \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes},
 to see how to tune this value in a safe manner.
 }
 
-\xdirective{sd}{Label block size}{\dtSize}{}{64512}{14.2}{
+\xdirective{dir}{}{Label block size}{\dtSize}{}{64512}{14.2}{
 The storage daemon will write the label blocks with the size configured here.
 Usually, you will not need to change this directive.
 
@@ -1167,7 +1167,7 @@ this device. This directory is also used to store  temporary part files when
 writing to a device that requires mount (USB).  The default is to use the
 working directory.
 
-\xdirective{sd}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
 \label{storage-device-autodeflate}%
 This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
  which allow you to transform
@@ -1197,7 +1197,7 @@ Or when your filesystem doesn't have the option to transparently compress
 data you write to it but you want the data to be compressed when written.
 }
 
-\xdirective{sd}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{%
 \label{storage-device-autodeflatealgorithm}%
 This option specifies the compression algorithm used for the autodeflate option
 which is performed by the autoxflate-sd plugin. The algorithms supported are:
@@ -1209,13 +1209,13 @@ which is performed by the autoxflate-sd plugin. The algorithms supported are:
 \item LZ4HC
 \end{itemize}}
 
-\xdirective{sd}{AutoDeflateLevel}{0--9}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflateLevel}{0--9}{}{}{13.4}{%
 \label{storage-device-autodeflatelevel}%
 This option specifies the level to be used when compressing when you select a
 compression algorithm that has different levels.}
 
 
-\xdirective{sd}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\xdirective{dir}{}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
 \label{storage-device-autoinflate}%
 This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
 which allow you to transform

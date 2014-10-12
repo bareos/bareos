@@ -109,6 +109,8 @@ class BareosConfigurationSchema2Latex:
                     'default': "",
             }
 
+            strings['directive_link'] = "\\linkResourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}" % { 'daemon': "Dir", 'resource': resourcename, 'directive': self.convertCamelCase2Spaces( directive ) }
+
             strings["datatype"] = self.getLatexDatatypeRef( data['datatype'] )
             if data.get( 'equals' ):
                 strings["datatype"]="= %(datatype)s" % { 'datatype': strings["datatype"] }
@@ -132,12 +134,14 @@ class BareosConfigurationSchema2Latex:
                 if data.get( 'platform_specific' ):
                     strings["default"]+=" \\textit{\\small(platform specific)}"
 
+            strings['define']="\\csgdef{resourceDirectiveDefined%(daemon)s%(resource)s%(directive)s}{yes}" % { 'daemon': "Dir", 'resource': resourcename, 'directive': self.convertCamelCase2Spaces( directive ) }
             strings["index"]="\\index[dir]{Directive!%(directive)s}" % ( strings )
-            strings["t_directive"] = self.getStringsWithModifiers( "directive", strings )
+            strings["t_directive"] = self.getStringsWithModifiers( "directive_link", strings )
             strings["t_datatype"] = self.getStringsWithModifiers( "datatype", strings )
             strings["t_default"] = self.getStringsWithModifiers( "default", strings )
             strings["t_extra"] = self.getStringsWithModifiers( "extra", strings )
 
+            result+="%(define)-80s\n" % ( strings )
             result+="%(index)-80s\n" % ( strings )
             result+="%(t_directive)-80s &\n" % ( strings )
             result+="%(t_datatype)-80s &\n" % ( strings )
@@ -160,18 +164,25 @@ class BareosConfigurationSchema2Latex:
         for directive in self.schema.getResourceDirectives(resourcename):
             data=self.schema.getResourceDirective(resourcename, directive)
 
-            datatype="\\dt{"+data.get('datatype')+"}"
+            strings={
+                'daemon': "Dir",
+                'resource': resourcename,
+                'directive': self.convertCamelCase2Spaces( directive ),
+                'datatype': self.getLatexDatatypeRef( data['datatype'] ),
+                'default': "",
+                'deprecated': "",
+                'required': '',
+            }
+
             deprecated=""
             if data.get( 'deprecated' ):
-                deprecated="deprecated"
-            required=""
+                strings['deprecated']="deprecated"
             if data.get( 'required' ):
-                required="required"
-            default=""
+                strings['required']="required"
             if data.get( 'default_value' ):
-                default=data.get( 'default_value' )
-            result+="\\xdirective{dir}{"+directive+"}{"+datatype+"}{"+required+"}{"+default+"}{"+deprecated+"}{%\n"
-            result+="}\n\n" 
+                strings['default']=data.get( 'default_value' )
+
+            result+="\\resourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}{%(datatype)s}{%(required)s}{%(default)s}{%(deprecated)s}{}\n\n" % ( strings )
         result+="\\end{description}\n\n"
         return result
 

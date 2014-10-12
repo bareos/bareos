@@ -23,6 +23,9 @@
 %% define images directory
 \def\idir{../../images/conv/}  %% images directory
 
+%
+% Bareos paths and filenames
+%
 \newcommand{\fileStoragePath}{\path|/var/lib/bareos/storage/|}
 \newcommand{\scriptPathUnix}{\path|/usr/lib/bareos/scripts/|}
 \newcommand{\configPathUnix}{\path|/etc/bareos/|}
@@ -30,35 +33,35 @@
 \newcommand{\logfileUnix}{\path|/var/log/bareos/bareos.log|}
 
 \newcommand{\yesno}{yes{\textbar}no}
-
+%
 % data type definitions. 
 % all data types should be defined here.
 % use them in xdirective.
-\newcommand{\dtAcl}{\ilink{acl}{DataTypeAcl}}
-\newcommand{\dtAddress}{\ilink{net-address}{DataTypeNetAddress}}
-\newcommand{\dtAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
-\newcommand{\dtAutopassword}{\ilink{password}{DataTypePassword}}
-\newcommand{\dtBoolean}{\ilink{\yesno}{DataTypeYesNo}}
-\newcommand{\dtDirectory}{\ilink{directory}{DataTypeDirectory}}
-\newcommand{\dtName}{\ilink{name}{DataTypeName}}
-\newcommand{\dtNetAddress}{\ilink{net-address}{DataTypeNetAddress}}
-\newcommand{\dtNetAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
-\newcommand{\dtNetPort}{\ilink{net-port}{DataTypeNetPort}}
-\newcommand{\dtPassword}{\ilink{password}{DataTypePassword}}
-\newcommand{\dtPath}{\ilink{path}{DataTypePath}}
+\csdef{dtAcl}{\ilink{acl}{DataTypeAcl}}
+\csdef{dtAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\csdef{dtAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\csdef{dtAutopassword}{\ilink{password}{DataTypePassword}}
+\csdef{dtBoolean}{\ilink{\yesno}{DataTypeYesNo}}
+\csdef{dtDirectory}{\ilink{directory}{DataTypeDirectory}}
+\csdef{dtName}{\ilink{name}{DataTypeName}}
+\csdef{dtNetAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\csdef{dtNetAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\csdef{dtNetPort}{\ilink{net-port}{DataTypeNetPort}}
+\csdef{dtPassword}{\ilink{password}{DataTypePassword}}
+\csdef{dtPath}{\ilink{path}{DataTypePath}}
 % use csdef instead of newcommand, because command contains numbers
 \csdef{dtPint32}{\dtUInt}
-\newcommand{\dtRes}{\ilink{resource-name}{DataTypeRes}}
-\newcommand{\dtPort}{\dtNetPort}
-\newcommand{\dtSize}{\ilink{size}{DataTypeSize}}
-\newcommand{\dtString}{\ilink{string}{DataTypeString}}
-\newcommand{\dtStringList}{\ilink{string-list}{DataTypeStringList}}
-\newcommand{\dtTime}{\ilink{time}{DataTypeTime}}
-\newcommand{\dtUInt}{\ilink{positive-integer}{DataTypePositiveInteger}}
-\newcommand{\dtYesNo}{\ilink{\yesno}{DataTypeYesNo}}
+\csdef{dtRes}{\ilink{resource-name}{DataTypeRes}}
+\csdef{dtPort}{\dtNetPort}
+\csdef{dtSize}{\ilink{size}{DataTypeSize}}
+\csdef{dtString}{\ilink{string}{DataTypeString}}
+\csdef{dtStringList}{\ilink{string-list}{DataTypeStringList}}
+\csdef{dtTime}{\ilink{time}{DataTypeTime}}
+\csdef{dtUInt}{\ilink{positive-integer}{DataTypePositiveInteger}}
+\csdef{dtYesNo}{\ilink{\yesno}{DataTypeYesNo}}
 
 \newcommand{\dt}[1]{%
-    \ifcsdef{dt#1}{\csuse{dt#1}}{\path|#1|} %
+    \ifcsdef{dt#1}{\csuse{dt#1}}{\path|#1|}%
 }
 
 %
@@ -72,19 +75,29 @@
 }
 % or use \url{URL}
 
-% 1: text, 2. URL
+% 1: text, 2. label
 \newcommand*{\ilink}[2]{%
   %\htmlref{#1}{#2}%
     \hyperref[#2]{#1}%
 }
 % or use \autoref{label} (or \nameref{label}
 
+% for links directly to a text (not just only to the section) use
+% \hyppertarget{label}{text}
+% and
+% \hyperlink{label}{text}
 
-\newcommand{\dq}{\verb+"+}
+
+%
+% special characters
+%
 \newcommand{\at}{\makeatletter @\makeatother}
 \newcommand{\lt}{\textless}
 \newcommand{\gt}{\textgreater}
 
+%
+% specific types of text
+%
 \newcommand{\commandPrompt}{root{\at}linux:\~{}\# }
 \newcommand{\command}[1]{\path|#1|}
 \newcommand{\bcommand}[1]{\path|#1|}
@@ -96,6 +109,7 @@
 \newcommand{\group}[1]{\path|#1|}
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
+% to also link to a directive, use \linkResourceDirective}{Dir|Sd|Fd}{Resource}{Directive Name}
 \newcommand{\configdirective}[1]{\textbf{#1}}
 \newcommand{\host}[1]{\path|#1|}
 \newcommand{\email}[1]{\url{#1}}
@@ -107,46 +121,31 @@
 \newcommand{\TODO}[1]{\textit{TODO: #1}}
 %\newcommand{\TODO}[1]{}
 \newcommand{\hide}[1]{}
-%%
+%
 \newcommand{\warning}[1]{Please note! \textit{#1}}
-%%
+
+% 1: version, 2: description
 \newcommand{\releasenote}[2]{
     \subsection*{bareos-#1}
     \index[general]{#1!Release Notes}%
     #2
 }
-\newcommand{\sinceVersion}[3]{Version $>=$ #3%
-    \index[#1]{#2}%
-    \index[general]{#3!#2}%
+
+% 1: daemon (dir|sd|fd), 2: item, 3: version, 
+\newcommand{\sinceVersion}[3]{%
+\edef\pv{#3}
+\ifcsvoid{pv}{}{
+Version $>=$ #3%
+\index[#1]{#2}%
+% expand variables
+\edef\temp{\noexpand\index[general]{#3!#2}}%
+\temp%
 }
+}
+
 \newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
 \newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
 \newcommand{\removedSince}[3]{This option is removed since version #3}
-
-% \newenvironment{directives}[1]
-%     {%
-%         \def\configfile{#1}
-%         \begin{itemize}
-%     }{%
-%         \end{itemize}
-%     }
-
-% \newcommand{\xdirective}[5]{
-% %% 1: config file (dir | sd | fd)
-% % 2: directive name
-% % 3: directive type/value
-% % 4: "required" | ""
-% % 5: default value
-% % 6: since version
-% \item [#1 = {\textless}#2{\textgreater}]
-%     \hfill
-%   \ifthenelse{\isempty{#4}}{}{(default: #4)}
-%   \ifthenelse{\isempty{#3}}{}{(#3)}
-%   \hfill \\
-%   \index[\configfile]{#1}
-%   \index[\configfile]{Directive!#1}
-%   \ifthenelse{\isempty{#5}}{}{\sinceVersion{\configfile}{#1}{#5}}
-% }
 
 % deprecated. use xdirective instead.
 \newcommand{\directive}[6]{
@@ -166,68 +165,126 @@
   \index[#1]{Directive!#2}
 }
 
-\newcommand{\xdirective}[7]{
-% 1: config file (dir | sd | fd)
-% 2: directive name
-% 3: directive data type (\dtXXX) or value
-% 4: "required" | ""
-% 5: default value
-% 6: "deprecated" | since version
-% 7: description
-\item [#2 = {\textless}#3{\textgreater}]%
+\newcommand{\xdirective}[8]{
+% 1: config file (Dir | Sd | Fd)
+% 2: Resource
+% 3: directive name
+% 4: directive data type (\dtXXX) or value
+% 5: "required" | ""
+% 6: default value
+% 7: "deprecated" | since version
+% 8: description
+%
+% translate daemon name to lowercase.
+% Unfortunally, the result of
+% \MakeLowercase{#1} or \makefirstuc{#1}
+% can be used for \index
+\ifthenelse{\equal{#1}{Dir}}{
+    \def\daemon{dir}
+}{ 
+  \ifthenelse{\equal{#1}{Sd}}{
+    \def\daemon{sd}
+  }{ 
+    \ifthenelse{\equal{#1}{Fd}}{
+        \def\daemon{fd}
+    }{
+        % hopefully, no translatation needed. Take original parameter
+        \def\daemon{#1}
+    }
+  }
+}
+%
+\item [\hypertarget{directive#1#2#3}{#3} = {\textless}#4{\textgreater}]%
     \hfill%
-  \ifthenelse{\isempty{#5}}{}{(default: #5)}%
-  \ifthenelse{\isempty{#4}}{}{(#4)}%
+  \ifthenelse{\isempty{#6}}{}{(default: #6)}%
+  \ifthenelse{\isempty{#5}}{}{(#5)}%
   \hfill \\%
-  \index[#1]{#2}%
-  \index[#1]{Directive!#2}%
-  \ifthenelse{\equal{#6}{deprecated}}{%
+  \index[\daemon]{#3}%
+  \index[\daemon]{Directive!#3}%
+  \ifthenelse{\equal{#7}{deprecated}}{%
 \warning{This directive is deprecated.\\}
   }{}%
-#7\ \\%
-  \ifthenelse{\equal{#6}{deprecated}}{}{%
-    \ifthenelse{\isempty{#6}}{}{%
-      \sinceVersion{#1}{#2}{#6}%
-      %\marginpar{#6}
+#8\ \\%
+  \ifthenelse{\equal{#7}{deprecated}}{}{%
+    \ifthenelse{\equal{#7}{}}{}{%
+      \sinceVersion{\daemon}{#3}{#7}%
     }%
   }%
 }
-% \xdirective{dir|sd|fd}{name}{\dtXXX}{required}{default}{version}{%
+% usage:
+% \xdirective{Dir|Sd|Fd}{Resource}{Name}{\dtXXX}{required}{default}{version}{%
 % }
-% \xdirective{}{}{}{required}{}{}{}
+% \xdirective{}{}{}{}{required}{}{}{}
 
 
-% \floatstyle{boxed}
-% \newfloat{floatProgram}{h}{lop}
-% \floatname{floatProgram}{bconsole}
-% %\newbox\examplebox
-% \newenvironment{bconsole}[4]{%
-%     % #1 prompt
-%     % #2 command
-%     % #3 caption (caption is "command", if #3 is not given)
-%     % #4 input
-%     \ifthenelse{\isempty{#4}}{
-%         \def\bconsoleinput{\vskip-1.0\baselineskip}
-%     }{
-%         \def\bconsoleinput{{\it enter #4}}
-%     }
-%     %\floatProgram
-%     \footnotesize
-%     \ifthenelse{\isempty{#3}}{
-%         \captionof{floatProgram}{#2}
-%         \label{#2}
-%     }{
-%         \captionof{floatProgram}{#3}
-%         \label{#3}
-%     }
-%     \verbatim
-% #1 #2\\
-% }
-% {
-%     \endverbatim
-%     \bconsoleinput
-% %    \endfloatProgram
-% }
+\newcommand{\defDirective}[6]{%
+% defDirective: 
+%   provide additional information to a directive.
+%   These information will not displayed right away,
+%   but used by \resourceDirective
+%   which will be used at autogenerated/*-resource-*-description.tex
+%
+% 1: daemon (Dir | Sd | Fd)
+% 2: Resource
+% 3: DirectiveName
+% 4: "" | parameter (postgresql | mysql | ...)
+% 5: "" | since version
+% 6: description
+\def\pp{#4}
+\def\pv{#5}
+\def\pd{#6}
+\ifcsvoid{pp}{}{%
+    \csdef{directiveParameter#1#2#3}{#4}%
+}%
+\ifcsvoid{pv}{}{%
+    \csdef{directiveSinceVersion#1#2#3}{#5}%
+}%
+\ifcsvoid{pd}{}{%
+    \csdef{directiveDescription#1#2#3}{#6}%
+}%
+%
+\ifcsvoid{resourceDirectiveDefined#1#2#3}{%
+\wlog{Warning: defDirective{#1}{#2}{#3} has no matching resourceDirective and will be ignored}
+}{}%
+}
+
+\newcommand{\resourceDirective}[8]{%
+% 1: config file (Dir | Sd | Fd)
+% 2: Resource
+% 3: directive name
+% 4: directive data type (\dtXXX) or value
+% 5: "required" | ""
+% 6: default value
+% 7: "deprecated" | since version
+% 8: description
+\ifcsdef{directiveParameter#1#2#3}{%
+    \csletcs{resourceDirectiveParameter}{directiveParameter#1#2#3}%
+}{%
+    \csdef{resourceDirectiveParameter}{#4}%
+}%
+\ifcsdef{directiveSinceVersion#1#2#3}{%
+    \csletcs{resourceDirectiveVersion}{directiveSinceVersion#1#2#3}%
+}{%
+    \csedef{resourceDirectiveVersion}{#7}%
+}%
+\xdirective{#1}{#2}{#3}{\resourceDirectiveParameter}{#5}{#6}{\resourceDirectiveVersion}{%
+    \ifthenelse{\isempty{#8}}{}{%
+#8
+
+}%
+\ifcsdef{directiveDescription#1#2#3}{\csuse{directiveDescription#1#2#3}}{}%
+}%
+}
+
+\newcommand{\linkResourceDirective}[3]{%
+% 1: config file (Dir | Sd | Fd)
+% 2: Resource
+% 3: Directive Name
+%
+\hyperlink{directive#1#2#3}{#3}%
+}
+
+
 
 \lstnewenvironment{bconsole}[1]{
     % #1 caption
@@ -296,6 +353,7 @@
     }
 }{}
 
+
 \lstnewenvironment{config}[1]{%
     % #1 caption
     \renewcommand*{\lstlistingname}{Configuration}
@@ -315,6 +373,7 @@
         moredelim=[is][\underline]{<strong>}{</strong>},
     }
 }{}
+
 
 \lstnewenvironment{commands}[1]{%
     % #1 caption
