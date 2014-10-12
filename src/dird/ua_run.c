@@ -510,7 +510,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          switch (jcr->getJobType()) {
          case JT_BACKUP:
             if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
-               apply_pool_overrides(jcr);
+               apply_pool_overrides(jcr, true);
             }
             break;
          default:
