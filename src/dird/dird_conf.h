@@ -411,7 +411,8 @@ public:
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    int64_t spool_size;                /* Size of spool file for this job */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
-   int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
+   int32_t NumConcurrentJobs;         /* Number of concurrent jobs running */
+   int32_t MaxConcurrentCopies;       /* Limit number of concurrent jobs one Copy Job spawns */
    bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
 
    MSGSRES *messages;                 /* How and where to send messages */

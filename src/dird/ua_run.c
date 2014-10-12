@@ -1984,7 +1984,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
          ua->error_msg(_("No authorization. Pool \"%s\".\n"), rc.next_pool->name());
          return false;
       }
-      Dmsg1(100, "Using next pool %s\n", rc.pool->name());
+      Dmsg1(100, "Using next pool %s\n", rc.next_pool->name());
    }
 
    if (rc.store_name) {

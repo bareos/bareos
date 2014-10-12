@@ -901,7 +901,7 @@ static pthread_mutex_t rstore_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Note: inc_read_store() and dec_read_store() are
- *   called from select_rstore() in src/dird/restore.c
+ *   called from select_next_rstore() in src/dird/job.c
  */
 bool inc_read_store(JCR *jcr)
 {

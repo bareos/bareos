@@ -1898,7 +1898,6 @@ bool has_paired_storage(JCR *jcr)
 bool select_next_rstore(JCR *jcr, bootstrap_info &info)
 {
    USTORERES ustore;
-   int i;
 
    if (bstrcmp(jcr->res.rstore->name(), info.storage)) {
       return true;                 /* Same SD nothing to change */
@@ -1932,7 +1931,7 @@ bool select_next_rstore(JCR *jcr, bootstrap_info &info)
    /*
     * Wait for up to 6 hours to increment read stoage counter
     */
-   for (i=0; i < MAX_TRIES; i++) {
+   for (int i = 0; i < MAX_TRIES; i++) {
       /*
        * Try to get read storage counter incremented
        */
