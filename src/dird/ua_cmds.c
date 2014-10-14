@@ -1341,7 +1341,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    int accurate=-1;
 
    jcr->setJobLevel(L_FULL);
-   for (int i=1; i<ua->argc; i++) {
+   for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("client")) ||
           bstrcasecmp(ua->argk[i], NT_("fd"))) {
          if (ua->argv[i]) {
@@ -1360,6 +1360,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             return 1;
          }
       }
+
       if (bstrcasecmp(ua->argk[i], NT_("job"))) {
          if (ua->argv[i]) {
             job = GetJobResWithName(ua->argv[i]);
@@ -1378,6 +1379,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          }
 
       }
+
       if (bstrcasecmp(ua->argk[i], NT_("fileset"))) {
          if (ua->argv[i]) {
             fileset = GetFileSetResWithName(ua->argv[i]);
@@ -1395,10 +1397,12 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             return 1;
          }
       }
+
       if (bstrcasecmp(ua->argk[i], NT_("listing"))) {
          listing = 1;
          continue;
       }
+
       if (bstrcasecmp(ua->argk[i], NT_("level"))) {
          if (ua->argv[i]) {
             if (!get_level_from_name(jcr, ua->argv[i])) {
@@ -1410,6 +1414,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
             return 1;
          }
       }
+
       if (bstrcasecmp(ua->argk[i], NT_("accurate"))) {
          if (ua->argv[i]) {
             if (!is_yesno(ua->argv[i], &accurate)) {
@@ -1423,11 +1428,13 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          }
       }
    }
+
    if (!job && !(client && fileset)) {
       if (!(job = select_job_resource(ua))) {
          return 1;
       }
    }
+
    if (!job) {
       job = GetJobResWithName(ua->argk[1]);
       if (!job) {
@@ -1439,15 +1446,37 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
          return 1;
       }
    }
+
+   switch (job->JobType) {
+   case JT_BACKUP:
+      break;
+   default:
+      ua->error_msg(_("Wrong job specified of type %s.\n"), job_type_to_str(job->JobType));
+      return 1;
+   }
+
    if (!client) {
       client = job->client;
    }
+
    if (!fileset) {
       fileset = job->fileset;
    }
+
+   if (!client) {
+      ua->error_msg(_("No client specified or selected.\n"));
+      return 1;
+   }
+
+   if (!fileset) {
+      ua->error_msg(_("No fileset specified or selected.\n"));
+      return 1;
+   }
+
    jcr->res.client = client;
    jcr->res.fileset = fileset;
    close_db(ua);
+
    if (job->pool->catalog) {
       ua->catalog = job->pool->catalog;
    } else {
@@ -1466,6 +1495,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    if (!get_or_create_client_record(jcr)) {
       return 1;
    }
+
    if (!get_or_create_fileset_record(jcr)) {
       return 1;
    }
@@ -1473,7 +1503,7 @@ static int estimate_cmd(UAContext *ua, const char *cmd)
    get_level_since_time(jcr);
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
-      jcr->res.client->name(), jcr->res.client->address, jcr->res.client->FDport);
+               jcr->res.client->name(), jcr->res.client->address, jcr->res.client->FDport);
    if (!connect_to_file_daemon(jcr, 1, 15, 0)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return 1;
