@@ -807,7 +807,10 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    }
 
    switch (var) {
-   case bsdVarJobId: {
+   case bsdVarJobId:
+   case bsdVarLevel:
+   case bsdVarType:
+   case bsdVarJobStatus: {
       int value;
 
       ctx = PyGetbpContext(pyCtx);
@@ -816,12 +819,41 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
       }
       break;
    }
-   case bsdVarJobName: {
+   case bsdVarJobErrors:
+   case bsdVarJobFiles:
+   case bsdVarJobBytes: {
+      uint64_t value = 0;
+
+      ctx = PyGetbpContext(pyCtx);
+      if (bfuncs->getBareosValue(ctx, (bsdrVariable)var, &value) == bRC_OK) {
+         pRetVal = PyLong_FromUnsignedLong(value);
+      }
+      break;
+   }
+   case bsdVarJobName:
+   case bsdVarJob:
+   case bsdVarClient:
+   case bsdVarPool:
+   case bsdVarPoolType:
+   case bsdVarStorage:
+   case bsdVarMediaType:
+   case bsdVarVolumeName: {
       char *value;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (bsdrVariable)var, &value) == bRC_OK) {
          pRetVal = PyString_FromString(value);
+      }
+      break;
+   }
+   case bsdVarCompatible: {
+      bool value;
+
+      if (bfuncs->getBareosValue(NULL, (bsdrVariable)var, &value) == bRC_OK) {
+         long bool_value;
+
+         bool_value = (value) ? 1 : 0;
+         pRetVal = PyBool_FromLong(bool_value);
       }
       break;
    }
