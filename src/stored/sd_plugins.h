@@ -57,67 +57,61 @@
  * Bareos Variable Ids (Read)
  */
 typedef enum {
-  bsdVarJob = 1,
-  bsdVarLevel = 2,
-  bsdVarType = 3,
-  bsdVarJobId = 4,
-  bsdVarClient = 5,
-  bsdVarNumVols = 6,
-  bsdVarPool = 7,
-  bsdVarStorage = 8,
-  bsdVarCatalog = 9,
-  bsdVarMediaType = 10,
-  bsdVarJobName = 11,
-  bsdVarJobStatus = 12,
-  bsdVarPriority = 13,
-  bsdVarVolumeName = 14,
-  bsdVarCatalogRes = 15,
-  bsdVarJobErrors = 16,
-  bsdVarJobFiles  = 17,
-  bsdVarSDJobFiles = 18,
-  bsdVarSDErrors = 19,
-  bsdVarFDJobStatus = 20,
-  bsdVarSDJobStatus = 21,
-  bsdVarCompatible = 22,
-  bsdVarPluginDir = 23
+   bsdVarJob = 1,
+   bsdVarLevel = 2,
+   bsdVarType = 3,
+   bsdVarJobId = 4,
+   bsdVarClient = 5,
+   bsdVarPool = 6,
+   bsdVarPoolType = 7,
+   bsdVarStorage = 8,
+   bsdVarMediaType = 9,
+   bsdVarJobName = 10,
+   bsdVarJobStatus = 11,
+   bsdVarVolumeName = 12,
+   bsdVarJobErrors = 13,
+   bsdVarJobFiles = 14,
+   bsdVarJobBytes = 15,
+   bsdVarCompatible = 16,
+   bsdVarPluginDir = 17
 } bsdrVariable;
 
 /*
  * Bareos Variable Ids (Write)
  */
 typedef enum {
-  bsdwVarJobReport = 1,
-  bsdwVarVolumeName = 2,
-  bsdwVarPriority = 3,
-  bsdwVarJobLevel = 4
+   bsdwVarJobReport = 1,
+   bsdwVarVolumeName = 2,
+   bsdwVarPriority = 3,
+   bsdwVarJobLevel = 4
 } bsdwVariable;
 
 /*
  * Events that are passed to plugin
  */
 typedef enum {
-  bsdEventJobStart = 1,
-  bsdEventJobEnd = 2,
-  bsdEventDeviceInit = 3,
-  bsdEventDeviceMount = 4,
-  bsdEventVolumeLoad = 5,
-  bsdEventDeviceTryOpen = 6,
-  bsdEventDeviceOpen = 7,
-  bsdEventLabelRead = 8,
-  bsdEventLabelVerified = 9,
-  bsdEventLabelWrite = 10,
-  bsdEventDeviceClose = 11,
-  bsdEventVolumeUnload = 12,
-  bsdEventDeviceUnmount = 13,
-  bsdEventReadError = 14,
-  bsdEventWriteError = 15,
-  bsdEventDriveStatus = 16,
-  bsdEventVolumeStatus = 17,
-  bsdEventSetupRecordTranslation = 18,
-  bsdEventReadRecordTranslation = 19,
-  bsdEventWriteRecordTranslation = 20,
-  bsdEventDeviceReleased = 21,
-  bsdEventNewPluginOptions = 22
+   bsdEventJobStart = 1,
+   bsdEventJobEnd = 2,
+   bsdEventDeviceInit = 3,
+   bsdEventDeviceMount = 4,
+   bsdEventVolumeLoad = 5,
+   bsdEventDeviceTryOpen = 6,
+   bsdEventDeviceOpen = 7,
+   bsdEventLabelRead = 8,
+   bsdEventLabelVerified = 9,
+   bsdEventLabelWrite = 10,
+   bsdEventDeviceClose = 11,
+   bsdEventVolumeUnload = 12,
+   bsdEventDeviceUnmount = 13,
+   bsdEventReadError = 14,
+   bsdEventWriteError = 15,
+   bsdEventDriveStatus = 16,
+   bsdEventVolumeStatus = 17,
+   bsdEventSetupRecordTranslation = 18,
+   bsdEventReadRecordTranslation = 19,
+   bsdEventWriteRecordTranslation = 20,
+   bsdEventDeviceReleased = 21,
+   bsdEventNewPluginOptions = 22
 } bsdEventType;
 
 #define SD_NR_EVENTS bsdEventNewPluginOptions /* keep this updated ! */
