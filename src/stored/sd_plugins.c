@@ -601,6 +601,7 @@ void free_plugins(JCR *jcr)
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
    JCR *jcr = NULL;
+   bRC ret = bRC_OK;
 
    if (!value) {
       return bRC_Error;
@@ -629,20 +630,93 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 
    if (jcr) {
       switch (var) {
+      case bsdVarJob:
+         *((char **)value) = jcr->job_name;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
+         break;
+      case bsdVarLevel:
+         *((int *)value) = jcr->getJobLevel();
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarLevel=%c\n", jcr->getJobLevel());
+         break;
+      case bsdVarType:
+         *((int *)value) = jcr->getJobType();
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarType=%c\n", jcr->getJobType());
+         break;
       case bsdVarJobId:
          *((int *)value) = jcr->JobId;
-         Dmsg1(dbglvl, "sd-plugin: return bVarJobId=%d\n", jcr->JobId);
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobId=%d\n", jcr->JobId);
+         break;
+      case bsdVarClient:
+         *((char **)value) = jcr->client_name;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarClient=%s\n", NPRT(*((char **)value)));
+         break;
+      case bsdVarPool:
+         if (jcr->dcr) {
+            *((char **)value) = jcr->dcr->pool_name;
+            Dmsg1(dbglvl, "sd-plugin: return bsdVarPool=%s\n", NPRT(*((char **)value)));
+         } else {
+            ret = bRC_Error;
+         }
+         break;
+      case bsdVarPoolType:
+         if (jcr->dcr) {
+            *((char **)value) = jcr->dcr->pool_type;
+            Dmsg1(dbglvl, "sd-plugin: return bsdVarPoolType=%s\n", NPRT(*((char **)value)));
+         } else {
+            ret = bRC_Error;
+         }
+         break;
+      case bsdVarStorage:
+         if (jcr->dcr && jcr->dcr->device) {
+            *((char **)value) = jcr->dcr->device->hdr.name;
+            Dmsg1(dbglvl, "sd-plugin: return bsdVarStorage=%s\n", NPRT(*((char **)value)));
+         } else {
+            ret = bRC_Error;
+         }
+         break;
+      case bsdVarMediaType:
+         if (jcr->dcr) {
+            *((char **)value) = jcr->dcr->media_type;
+            Dmsg1(dbglvl, "sd-plugin: return bsdVarMediaType=%s\n", NPRT(*((char **)value)));
+         } else {
+            ret = bRC_Error;
+         }
          break;
       case bsdVarJobName:
          *((char **)value) = jcr->Job;
-         Dmsg1(dbglvl, "sd-plugin: return Job name=%s\n", jcr->Job);
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
+         break;
+      case bsdVarJobStatus:
+         *((int *)value) = jcr->JobStatus;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobStatus=%c\n", jcr->JobStatus);
+         break;
+      case bsdVarVolumeName:
+         if (jcr->dcr) {
+            *((char **)value) = jcr->dcr->VolumeName;
+            Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", NPRT(*((char **)value)));
+         } else {
+            ret = bRC_Error;
+         }
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", jcr->VolumeName);
+         break;
+      case bsdVarJobErrors:
+         *((int *)value) = jcr->JobErrors;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobErrors=%d\n", jcr->JobErrors);
+         break;
+      case bsdVarJobFiles:
+         *((int *)value) = jcr->JobFiles;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobFiles=%d\n", jcr->JobFiles);
+         break;
+      case bsdVarJobBytes:
+         *((uint64_t *)value) = jcr->JobBytes;
+         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobBytes=%d\n", jcr->JobBytes);
          break;
       default:
          break;
       }
    }
 
-   return bRC_OK;
+   return ret;
 }
 
 static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
@@ -651,12 +725,12 @@ static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+
    jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bareos: jcr=%p\n", jcr);
+
    Dmsg1(dbglvl, "sd-plugin: bareosSetValue var=%d\n", var);
    switch (var) {
    case bsdwVarVolumeName:

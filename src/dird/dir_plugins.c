@@ -490,7 +490,7 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
    switch (var) {               /* General variables, no need of ctx */
    case bDirVarPluginDir:
       *((char **)value) = me->plugin_directory;
-      Dmsg1(dbglvl, "dir-plugin: return bDirVarPluginDir=%s\n", me->plugin_directory);
+      Dmsg1(dbglvl, "dir-plugin: return bDirVarPluginDir=%s\n", NPRT(*((char **)value)));
       break;
    default:
       if (!ctx) {
@@ -511,37 +511,38 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          break;
       case bDirVarJobName:
          *((char **)value) = jcr->Job;
-         Dmsg1(dbglvl, "BAREOS: return Job name=%s\n", jcr->Job);
+         Dmsg1(dbglvl, "dir-plugin: return Job name=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarJob:
          *((char **)value) = jcr->res.job->hdr.name;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarJob=%s\n", jcr->res.job->hdr.name);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarJob=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarLevel:
          *((int *)value) = jcr->getJobLevel();
-         Dmsg1(dbglvl, "BAREOS: return bDirVarLevel=%c\n", jcr->getJobLevel());
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarLevel=%c\n", jcr->getJobLevel());
          break;
       case bDirVarType:
          *((int *)value) = jcr->getJobType();
-         Dmsg1(dbglvl, "BAREOS: return bDirVarType=%c\n", jcr->getJobType());
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarType=%c\n", jcr->getJobType());
          break;
       case bDirVarClient:
          *((char **)value) = jcr->res.client->hdr.name;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarClient=%s\n", jcr->res.client->hdr.name);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarClient=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarNumVols:
          POOL_DBR pr;
+
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
          if (!db_get_pool_record(jcr, jcr->db, &pr)) {
-            ret=bRC_Error;
+            ret = bRC_Error;
          }
          *((int *)value) = pr.NumVols;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarNumVols=%d\n", pr.NumVols);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarNumVols=%d\n", pr.NumVols);
          break;
       case bDirVarPool:
          *((char **)value) = jcr->res.pool->hdr.name;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarPool=%s\n", jcr->res.pool->hdr.name);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarPool=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarStorage:
          if (jcr->res.wstore) {
@@ -550,31 +551,31 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
             *((char **)value) = jcr->res.rstore->hdr.name;
          } else {
             *((char **)value) = NULL;
-            ret=bRC_Error;
+            ret = bRC_Error;
          }
-         Dmsg1(dbglvl, "BAREOS: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarStorage=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarWriteStorage:
          if (jcr->res.wstore) {
             *((char **)value) = jcr->res.wstore->hdr.name;
          } else {
             *((char **)value) = NULL;
-            ret=bRC_Error;
+            ret = bRC_Error;
          }
-         Dmsg1(dbglvl, "BAREOS: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarWriteStorage=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarReadStorage:
          if (jcr->res.rstore) {
             *((char **)value) = jcr->res.rstore->hdr.name;
          } else {
             *((char **)value) = NULL;
-            ret=bRC_Error;
+            ret = bRC_Error;
          }
-         Dmsg1(dbglvl, "BAREOS: return bDirVarReadStorage=%s\n", NPRT(*((char **)value)));
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarReadStorage=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarCatalog:
          *((char **)value) = jcr->res.catalog->hdr.name;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarCatalog=%s\n", jcr->res.catalog->hdr.name);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarCatalog=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarMediaType:
          if (jcr->res.wstore) {
@@ -583,60 +584,60 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
             *((char **)value) = jcr->res.rstore->media_type;
          } else {
             *((char **)value) = NULL;
-            ret=bRC_Error;
+            ret = bRC_Error;
          }
-         Dmsg1(dbglvl, "BAREOS: return bDirVarMediaType=%s\n", NPRT(*((char **)value)));
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarMediaType=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarJobStatus:
          *((int *)value) = jcr->JobStatus;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarJobStatus=%c\n", jcr->JobStatus);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarJobStatus=%c\n", jcr->JobStatus);
          break;
       case bDirVarPriority:
          *((int *)value) = jcr->JobPriority;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarPriority=%d\n", jcr->JobPriority);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarPriority=%d\n", jcr->JobPriority);
          break;
       case bDirVarVolumeName:
          *((char **)value) = jcr->VolumeName;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarVolumeName=%s\n", jcr->VolumeName);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarVolumeName=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarCatalogRes:
          ret = bRC_Error;
          break;
       case bDirVarJobErrors:
          *((int *)value) = jcr->JobErrors;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarErrors=%d\n", jcr->JobErrors);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarErrors=%d\n", jcr->JobErrors);
          break;
       case bDirVarJobFiles:
          *((int *)value) = jcr->JobFiles;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarFiles=%d\n", jcr->JobFiles);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarFiles=%d\n", jcr->JobFiles);
          break;
       case bDirVarSDJobFiles:
          *((int *)value) = jcr->SDJobFiles;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarSDFiles=%d\n", jcr->SDJobFiles);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarSDFiles=%d\n", jcr->SDJobFiles);
          break;
       case bDirVarSDErrors:
          *((int *)value) = jcr->SDErrors;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarSDErrors=%d\n", jcr->SDErrors);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarSDErrors=%d\n", jcr->SDErrors);
          break;
       case bDirVarFDJobStatus:
          *((int *)value) = jcr->FDJobStatus;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarFDJobStatus=%c\n", jcr->FDJobStatus);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarFDJobStatus=%c\n", jcr->FDJobStatus);
          break;
       case bDirVarSDJobStatus:
          *((int *)value) = jcr->SDJobStatus;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarSDJobStatus=%c\n", jcr->SDJobStatus);
          break;
       case bDirVarLastRate:
          *((int *)value) = jcr->LastRate;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarLastRate=%d\n", jcr->LastRate);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarLastRate=%d\n", jcr->LastRate);
          break;
       case bDirVarJobBytes:
          *((uint64_t *)value) = jcr->JobBytes;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarJobBytes=%u\n", jcr->JobBytes);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarJobBytes=%u\n", jcr->JobBytes);
          break;
       case bDirVarReadBytes:
          *((uint64_t *)value) = jcr->ReadBytes;
-         Dmsg1(dbglvl, "BAREOS: return bDirVarReadBytes=%u\n", jcr->ReadBytes);
+         Dmsg1(dbglvl, "dir-plugin: return bDirVarReadBytes=%u\n", jcr->ReadBytes);
          break;
       default:
          break;
@@ -653,12 +654,12 @@ static bRC bareosSetValue(bpContext *ctx, bwDirVariable var, void *value)
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+
    jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "BAREOS: jcr=%p\n", jcr);
+
    Dmsg1(dbglvl, "dir-plugin: bareosSetValue var=%d\n", var);
    switch (var) {
    case bwDirVarVolumeName:

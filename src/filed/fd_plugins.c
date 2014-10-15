@@ -1966,39 +1966,39 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
       switch (var) {
       case bVarJobId:
          *((int *)value) = jcr->JobId;
-         Dmsg1(dbglvl, "Bareos: return bVarJobId=%d\n", jcr->JobId);
+         Dmsg1(dbglvl, "fd-plugin: return bVarJobId=%d\n", jcr->JobId);
          break;
       case bVarLevel:
          *((int *)value) = jcr->getJobLevel();
-         Dmsg1(dbglvl, "Bareos: return bVarJobLevel=%d\n", jcr->getJobLevel());
+         Dmsg1(dbglvl, "fd-plugin: return bVarJobLevel=%d\n", jcr->getJobLevel());
          break;
       case bVarType:
          *((int *)value) = jcr->getJobType();
-         Dmsg1(dbglvl, "Bareos: return bVarJobType=%d\n", jcr->getJobType());
+         Dmsg1(dbglvl, "fd-plugin: return bVarJobType=%d\n", jcr->getJobType());
          break;
       case bVarClient:
          *((char **)value) = jcr->client_name;
-         Dmsg1(dbglvl, "Bareos: return Client_name=%s\n", jcr->client_name);
+         Dmsg1(dbglvl, "fd-plugin: return bVarClient=%s\n", NPRT(*((char **)value)));
          break;
       case bVarJobName:
          *((char **)value) = jcr->Job;
-         Dmsg1(dbglvl, "Bareos: return Job name=%s\n", jcr->Job);
+         Dmsg1(dbglvl, "fd-plugin: return bVarJobName=%s\n", NPRT(*((char **)value)));
          break;
       case bVarPrevJobName:
          *((char **)value) = jcr->PrevJob;
-         Dmsg1(dbglvl, "Bareos: return Previous Job name=%s\n", jcr->PrevJob);
+         Dmsg1(dbglvl, "fd-plugin: return bVarPrevJobName=%s\n", NPRT(*((char **)value)));
          break;
       case bVarJobStatus:
          *((int *)value) = jcr->JobStatus;
-         Dmsg1(dbglvl, "Bareos: return bVarJobStatus=%d\n", jcr->JobStatus);
+         Dmsg1(dbglvl, "fd-plugin: return bVarJobStatus=%d\n", jcr->JobStatus);
          break;
       case bVarSinceTime:
          *((int *)value) = (int)jcr->mtime;
-         Dmsg1(dbglvl, "Bareos: return since=%d\n", (int)jcr->mtime);
+         Dmsg1(dbglvl, "fd-plugin: return bVarSinceTime=%d\n", (int)jcr->mtime);
          break;
       case bVarAccurate:
          *((int *)value) = (int)jcr->accurate;
-         Dmsg1(dbglvl, "Bareos: return accurate=%d\n", (int)jcr->accurate);
+         Dmsg1(dbglvl, "fd-plugin: return bVarAccurate=%d\n", (int)jcr->accurate);
          break;
       case bVarFileSeen:
          break;                 /* a write only variable, ignore read request */
@@ -2006,6 +2006,7 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 #ifdef HAVE_WIN32
          if (g_pVSSClient) {
             *(void **)value = g_pVSSClient->GetVssObject();
+            Dmsg1(dbglvl, "fd-plugin: return bVarVssObject=%p\n", *(void **)value);
             break;
           }
 #endif
@@ -2014,18 +2015,22 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 #ifdef HAVE_WIN32
          if (g_pVSSClient) {
             *(void **)value = g_pVSSClient->GetVssDllHandle();
+            Dmsg1(dbglvl, "fd-plugin: return bVarVssDllHandle=%p\n", *(void **)value);
             break;
           }
 #endif
        return bRC_Error;
       case bVarWhere:
          *(char **)value = jcr->where;
+         Dmsg1(dbglvl, "fd-plugin: return bVarWhere=%s\n", NPRT(*((char **)value)));
          break;
       case bVarRegexWhere:
          *(char **)value = jcr->RegexWhere;
+         Dmsg1(dbglvl, "fd-plugin: return bVarRegexWhere=%s\n", NPRT(*((char **)value)));
          break;
       case bVarPrefixLinks:
          *(int *)value = (int)jcr->prefix_links;
+         Dmsg1(dbglvl, "fd-plugin: return bVarPrefixLinks=%d\n", (int)jcr->prefix_links);
          break;
       default:
          break;
@@ -2042,12 +2047,12 @@ static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
    if (!value || !ctx) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "bareos: bareosGetValue var=%d\n", var);
+
    jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
    if (!jcr) {
       return bRC_Error;
    }
-// Dmsg1(dbglvl, "Bareos: jcr=%p\n", jcr);
+
    switch (var) {
    case bVarFileSeen:
       if (!accurate_mark_file_as_seen(jcr, (char *)value)) {
