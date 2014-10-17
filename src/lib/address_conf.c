@@ -47,36 +47,39 @@ IPADDR::IPADDR(const IPADDR &src) : type(src.type)
 IPADDR::IPADDR(int af) : type(R_EMPTY)
 {
 #ifdef HAVE_IPV6
-  if (!(af == AF_INET6 || af == AF_INET)) {
-     Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
-  }
+   if (!(af == AF_INET6 || af == AF_INET)) {
+      Emsg1(M_ERROR_TERM, 0, _("Only ipv4 and ipv6 are supported (%d)\n"), af);
+   }
 #else
-  if (af != AF_INET) {
-     Emsg1(M_ERROR_TERM, 0, _("Only ipv4 is supported (%d)\n"), af);
-  }
+   if (af != AF_INET) {
+      Emsg1(M_ERROR_TERM, 0, _("Only ipv4 is supported (%d)\n"), af);
+   }
 #endif
-  memset(&saddrbuf, 0, sizeof(saddrbuf));
-  saddr  = &saddrbuf.dontuse;
-  saddr4 = &saddrbuf.dontuse4;
+
+   memset(&saddrbuf, 0, sizeof(saddrbuf));
+   saddr  = &saddrbuf.dontuse;
+   saddr4 = &saddrbuf.dontuse4;
 #ifdef HAVE_IPV6
-  saddr6 = &saddrbuf.dontuse6;
+   saddr6 = &saddrbuf.dontuse6;
 #endif
-  saddr->sa_family = af;
-  if (af  == AF_INET) {
-     saddr4->sin_port = 0xffff;
-  }
-#ifdef HAVE_IPV6
-  else {
-     saddr6->sin6_port = 0xffff;
-  }
-#endif
+   saddr->sa_family = af;
+   switch (af) {
+   case AF_INET:
+      saddr4->sin_port = 0xffff;
 #ifdef HAVE_SA_LEN
+      saddr->sa_len = sizeof(sockaddr_in);
+#endif
+      break;
 #ifdef HAVE_IPV6
-  saddr->sa_len = (af == AF_INET) ? sizeof(sockaddr_in) : sizeof(sockaddr_in6);
-#else
-  saddr->sa_len = sizeof(sockaddr_in);
+   case AF_INET6:
+      saddr6->sin6_port = 0xffff;
+#ifdef HAVE_SA_LEN
+      saddr->sa_len = sizeof(sockaddr_in6);
 #endif
+      break;
 #endif
+   }
+
    set_addr_any();
 }
 
@@ -196,12 +199,28 @@ const char *IPADDR::get_address(char *outputbuf, int outlen)
 const char *IPADDR::build_config_str(char *buf, int blen)
 {
    char tmp[1024];
-   bsnprintf(buf, blen, "      %s = {\n"
-                        "         addr = %s\n"
-                        "         port = %hu\n"
-                        "      }",
-             get_family() == AF_INET ? "ipv4" : "ipv6",
-             get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+
+   switch (get_family()) {
+   case AF_INET:
+      bsnprintf(buf, blen, "      ipv4 = {\n"
+                           "         addr = %s\n"
+                           "         port = %hu\n"
+                           "      }",
+                get_address(tmp, sizeof(tmp) - 1),
+                get_port_host_order());
+      break;
+   case AF_INET6:
+      bsnprintf(buf, blen, "      ipv6 = {\n"
+                           "         addr = %s\n"
+                           "         port = %hu\n"
+                           "      }",
+                get_address(tmp, sizeof(tmp) - 1),
+                get_port_host_order());
+      break;
+   default:
+      break;
+   }
+
    return buf;
 }
 
@@ -209,15 +228,33 @@ const char *IPADDR::build_address_str(char *buf, int blen, bool print_port/*=tru
 {
    char tmp[1024];
    if (print_port) {
-      bsnprintf(buf, blen, "host[%s;%s;%hu] ",
-            get_family() == AF_INET ? "ipv4" : "ipv6",
-            get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+      switch (get_family()) {
+      case AF_INET:
+         bsnprintf(buf, blen, "host[ipv4;%s;%hu] ",
+                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+         break;
+      case AF_INET6:
+         bsnprintf(buf, blen, "host[ipv6;%s;%hu] ",
+                   get_address(tmp, sizeof(tmp) - 1), get_port_host_order());
+         break;
+      default:
+         break;
+      }
    } else {
-      bsnprintf(buf, blen, "host[%s;%s] ",
-            get_family() == AF_INET ? "ipv4" : "ipv6",
-            get_address(tmp, sizeof(tmp) - 1));
-
+      switch (get_family()) {
+      case AF_INET:
+         bsnprintf(buf, blen, "host[ipv4;%s] ",
+                   get_address(tmp, sizeof(tmp) - 1));
+         break;
+      case AF_INET6:
+         bsnprintf(buf, blen, "host[ipv6;%s] ",
+                   get_address(tmp, sizeof(tmp) - 1));
+         break;
+      default:
+         break;
+      }
    }
+
    return buf;
 }
 
