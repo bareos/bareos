@@ -2,6 +2,8 @@
 *.aux
 *.backup
 *.dvi
+*.htidx
+*.htind
 *.idx
 *.ilg
 *.ind
@@ -14,6 +16,7 @@
 *.sty
 *.4ct
 *.4tc
+*.4ix
 *.idv
 *.lg
 *.tmp

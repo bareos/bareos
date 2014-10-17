@@ -81,7 +81,6 @@ class BareosConfigurationSchema2Latex:
 
     def convertCamelCase2Spaces( self, valueCC ):
         s1 = re.sub('([a-z0-9])([A-Z])', r'\1 \2', valueCC)
-        #return s1
         result=[]
         for token in s1.split(' '):
             u = token.upper()
@@ -94,11 +93,25 @@ class BareosConfigurationSchema2Latex:
         DataType="".join([x.lower().capitalize() for x in datatype.split('_')])
         return "\\dt{%(DataType)s}" % { 'DataType': DataType }
 
+    def getLatexDefaultValue( self, data ):
+        default=""
+        if data.get( 'default_value' ):
+            default=data.get( 'default_value' )
+            if data.get( 'platform_specific' ):
+                default+=" \\textit{\\small(platform specific)}"
+        return default
+
     def getResourceDirectivesTable(self, resourcename):
         result="\\begin{center}\n"
-        result+="\\begin{tabular}{l | l | l | l}\n"
-        result+="%(name)-50s & %(type)-30s & %(default)-20s & %(remark)s \\\\ \n" % { 'name': "name", 'type': "type of data", 'default': "default value", 'remark': "remark" }
+        result+="\\begin{tabular}{ l | l | l | l }\n"
         result+="\\hline \n"
+        result+="\\multicolumn{1}{ c|}{\\textbf{%(name)-80s}} &\n" % { 'name': "configuration directive name" }
+        result+="\\multicolumn{1}{|c|}{\\textbf{%(type)-80s}} &\n" % { 'type': "type of data" }
+        result+="\\multicolumn{1}{|c|}{\\textbf{%(default)-80s}} &\n" % { 'default': "default value" }
+        result+="\\multicolumn{1}{|c }{\\textbf{%(remark)-80s}} \\\\ \n" % { 'remark': "remark" }
+        result+="\\hline \n"
+        result+="\\hline \n"
+
         for directive in self.schema.getResourceDirectives(resourcename):
             data=self.schema.getResourceDirective(resourcename, directive)
 
@@ -106,7 +119,7 @@ class BareosConfigurationSchema2Latex:
                     'directive': self.convertCamelCase2Spaces( directive ),
                     'mc': "}",
                     'extra': [],
-                    'default': "",
+                    'default': self.getLatexDefaultValue( data ),
             }
 
             strings['directive_link'] = "\\linkResourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}" % { 'daemon': "Dir", 'resource': resourcename, 'directive': self.convertCamelCase2Spaces( directive ) }
@@ -129,26 +142,22 @@ class BareosConfigurationSchema2Latex:
                 strings["mo"]="\\textbf{"
             strings["extra"]=", ".join(extra)
 
-            if data.get( 'default_value' ):
-                strings["default"]=data.get( 'default_value' )
-                if data.get( 'platform_specific' ):
-                    strings["default"]+=" \\textit{\\small(platform specific)}"
-
             strings['define']="\\csgdef{resourceDirectiveDefined%(daemon)s%(resource)s%(directive)s}{yes}" % { 'daemon': "Dir", 'resource': resourcename, 'directive': self.convertCamelCase2Spaces( directive ) }
-            strings["index"]="\\index[dir]{Directive!%(directive)s}" % ( strings )
+            #strings["index"]="\\index[dir]{Directive!%(directive)s}" % ( strings )
             strings["t_directive"] = self.getStringsWithModifiers( "directive_link", strings )
             strings["t_datatype"] = self.getStringsWithModifiers( "datatype", strings )
             strings["t_default"] = self.getStringsWithModifiers( "default", strings )
             strings["t_extra"] = self.getStringsWithModifiers( "extra", strings )
 
             result+="%(define)-80s\n" % ( strings )
-            result+="%(index)-80s\n" % ( strings )
+            #result+="%(index)-80s\n" % ( strings )
             result+="%(t_directive)-80s &\n" % ( strings )
             result+="%(t_datatype)-80s &\n" % ( strings )
             result+="%(t_default)-80s &\n" % ( strings )
             result+="%(t_extra)s\n" % ( strings )
             result+="\\\\ \n\n" % ( strings )
 
+        result+="\\hline \n"
         result+="\\end{tabular}\n"
         result+="\\end{center}\n"
         result+="\n"
@@ -169,7 +178,7 @@ class BareosConfigurationSchema2Latex:
                 'resource': resourcename,
                 'directive': self.convertCamelCase2Spaces( directive ),
                 'datatype': self.getLatexDatatypeRef( data['datatype'] ),
-                'default': "",
+                'default': self.getLatexDefaultValue( data ),
                 'deprecated': "",
                 'required': '',
             }
@@ -179,8 +188,6 @@ class BareosConfigurationSchema2Latex:
                 strings['deprecated']="deprecated"
             if data.get( 'required' ):
                 strings['required']="required"
-            if data.get( 'default_value' ):
-                strings['default']=data.get( 'default_value' )
 
             result+="\\resourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}{%(datatype)s}{%(required)s}{%(default)s}{%(deprecated)s}{}\n\n" % ( strings )
         result+="\\end{description}\n\n"

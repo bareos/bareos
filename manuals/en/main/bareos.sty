@@ -80,7 +80,7 @@
   %\htmlref{#1}{#2}%
     \hyperref[#2]{#1}%
 }
-% or use \autoref{label} (or \nameref{label}
+% or use \nameref{label} or \autoref{label}
 
 % for links directly to a text (not just only to the section) use
 % \hyppertarget{label}{text}
@@ -199,8 +199,8 @@ Version $>=$ #3%
   \ifthenelse{\isempty{#6}}{}{(default: #6)}%
   \ifthenelse{\isempty{#5}}{}{(#5)}%
   \hfill \\%
-  \index[\daemon]{#3}%
-  \index[\daemon]{Directive!#3}%
+  \index[\daemon]{#3|textbf}%
+  \index[\daemon]{Directive!#3|textbf}%
   \ifthenelse{\equal{#7}{deprecated}}{%
 \warning{This directive is deprecated.\\}
   }{}%
@@ -281,6 +281,21 @@ Version $>=$ #3%
 % 2: Resource
 % 3: Directive Name
 %
+\ifthenelse{\equal{#1}{Dir}}{
+    \def\daemon{dir}
+}{ 
+  \ifthenelse{\equal{#1}{Sd}}{
+    \def\daemon{sd}
+  }{ 
+    \ifthenelse{\equal{#1}{Fd}}{
+        \def\daemon{fd}
+    }{
+        % hopefully, no translatation needed. Take original parameter
+        \def\daemon{#1}
+    }
+  }
+}
+\index[\daemon]{Directive!#3}%
 \hyperlink{directive#1#2#3}{#3}%
 }
 

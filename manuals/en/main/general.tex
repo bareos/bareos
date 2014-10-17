@@ -360,7 +360,7 @@ and finally the chapter on
    the files to be backed up.  It consists of a list of included files or
    directories, a list of excluded files, and how the file is to be stored
    (compression, encryption, signatures).  For more details, see the
-   \ilink{FileSet Resource definition}{FileSetResource} in the Director
+   \nameref{DirectorResourceFileSet} in the Director
    chapter of this document.
 
 \item [Incremental]
@@ -371,14 +371,14 @@ and finally the chapter on
 
 \label{JobDef}
 \item [Job]
-\index[fd]{a name}
+    \index[fd]{Job}
    A Bareos Job is a configuration resource that defines the work that
    Bareos must perform to backup or restore a particular Client.  It
    consists of the {\bf Type} (backup, restore, verify, etc), the {\bf
    Level} (full, differential, incremental, etc.), 
    the {\bf FileSet}, and {\bf Storage} the
    files are to be backed up (Storage device, Media Pool).  For more
-   details, see the \ilink{Job Resource definition}{JobResource} in the
+   details, see the \nameref{DirectorResourceJob} in the
    Director chapter of this document.
 
 \item [Monitor]
@@ -408,7 +408,7 @@ and finally the chapter on
    A Schedule is a configuration resource that defines when the Bareos Job
    will be scheduled for execution.  To use the Schedule, the Job resource
    will refer to the name of the Schedule.  For more details, see the
-   \ilink{Schedule Resource definition}{ScheduleResource} in the Director
+   \nameref{DirectorResourceSchedule} in the Director
    chapter of this document.
 
 \item [Service]
