@@ -12,149 +12,199 @@ Additional information can be found in the chapter \ilink{Operating Systems}{Sup
 %please refer to the \ilink{Building chapter}{compile}.}
 
 If Bareos is available as a package, 
-only 4 steps are required to get to a running Bareos System:
-\begin{itemize}
-    \item Subscribe to the repository according to your platform and version
-    \item Install the Bareos package
-    \item Prepare database backend
-    \item Start the daemons
-\end{itemize}
+only 5 steps are required to get to a running Bareos System:
+\begin{enumerate}
+    \item \nameref{sec:AddSoftwareRepository}
+    \item \nameref{sec:ChooseDatabaseBackend}
+    \item \nameref{sec:InstallBareosPackages}
+    \item \nameref{sec:CreateDatabase}
+    \item \nameref{sec:StartDaemons}
+\end{enumerate}
 
 This will start a very basic Bareos installation which will regularly backup a directory to disk.
 In order to fit it to your needs, you'll have to adapt the configuration and might want to backup other clients.
 
-\section{Subscribe to a Software Repository and Install Software}
+\section{Subscribe to a Software Repository}
+    \label{sec:AddSoftwareRepository}
 
-You'll find Bareos binary package repositories at \url{http://download.bareos.org/bareos}.
-Add the repository to your system. 
-You will find the public key in the repodata subdirectory 
-(for Debian the distribution directory itself). 
+\begin{itemize}
+   \item \url{http://download.bareos.org/bareos/release/latest/}
+\end{itemize}
+
+You'll find Bareos binary package repositories at \url{http://download.bareos.org/}.
+The lastet stable released version is available at \url{http://download.bareos.org/bareos/release/latest/}.
+Add the repository to your system.
+
+The public key to verify the repository is also in repository directory
+(\file{Release.key} for Debian based distributions, \file{repodata/repomd.xml.key} for RPM based distributions).
 See your distribution's documentation for details.
- 
-You will then have to install the package bareos. 
 
-This will install all client- and server components and the postgresql backend. 
-We recommend to use postgresql, therefore this is the default. 
-You can also use mysql or sqlite3 
-(where sqlite3 is intended for testing purposes only, by no means recommended for productive use).
 
-If you want to use mysql rather than postgresql, you need two packages: bareos and bareos-database-mysql.
+\section{Choose a Database Backend}
+    \label{sec:ChooseDatabaseBackend}
 
-Here are some working examples:
+Next you have to decide, what database backend you want to use.
+Bareos supports following database backends:
+\begin{itemize}
+    \item PostgreSQL by package \package{bareos-database-postgresql}
+    \item MySQL by package \package{bareos-database-mysql}
+    \item Sqlite by package \package{bareos-database-sqlite3} \\
+        \warning{The Sqlite backend only intended for testing, not for productive use.}
+\end{itemize}
+
+The PostgreSQL backend is the default.
+However, the MySQL backend is also supported,
+while the Sqlite backend is intended for testing purposes only.
+
+The Bareos database packages have there dependencies only to the database client packages, 
+therefore the database itself must be installed manually.
+
+
+\section{Install the Bareos Software Packages}
+    \label{sec:InstallBareosPackages}
+
+You will have to install the package \package{bareos} 
+and the database backend package (\package{bareos-database-*}) you want to use.
+The corresponding database should already be installed and running, see \nameref{sec:ChooseDatabaseBackend}.
+
+If you do not explicitly choose a database backend, your operating system installer will choose one for you.
+The default should be PostgreSQL, but depending on your operating system and the already installed packages, 
+this may differ.
+
+The package \package{bareos} is only a meta package, that contains dependencies to the main components of Bareos, see \nameref{sec:BareosPackages}. 
+If you want to setup a distributed environment (like one Director, separate database server, multiple Storage daemons)
+you have to choose the corresponding Bareos packages to install on each hosts instead of just installing the \package{bareos} package.
 
 \subsection{Install on RedHat based Linux Distributions}
-\subsubsection{RHEL 6}
 
-For adding the repository:
-\begin{commands}{Add Bareos repository}
-wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/RHEL_6/bareos.repo
+\subsubsection{RHEL$\ge$6, CentOS$\ge$6, Fedora}
+\index[general]{Platform!RHEL}
+\index[general]{Platform!CentOS}
+\index[general]{Platform!Fedora}
+
+\begin{commands}{Bareos installation on RHEL $\ge$ 6 / CentOS $\ge$ 6 / Fedora}
+#
+# define parameter
+#
+
+DIST=RHEL_7
+# or
+# DIST=RHEL_6
+# DIST=Fedora_20
+# DIST=CentOS_7
+# DIST=CentOS_6
+
+DATABASE=postgresql
+# or
+# DATABASE=mysql
+
+# add the Bareos repository
+URL=http://download.bareos.org/bareos/release/latest/$DIST
+wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
+
+# install Bareos packages
+yum install bareos bareos-database-$DATABASE
 \end{commands}
+\hide{$}
 
-For using PostgreSQL backend:
-\begin{commands}{Bareos installation on RHEL 6 (PostgreSQL backend)}
-yum install bareos bareos-database-postgresql
-\end{commands}
 
-For using MySQL backend:
-\begin{commands}{Bareos installation on RHEL 6 (MySQL backend)}
-yum install bareos bareos-database-mysql
-\end{commands}
+\subsubsection{RHEL 5, CentOS 5}
+\index[general]{Platform!RHEL!5}
+\index[general]{Platform!CentOS!5}
 
-\subsubsection{CentOS 6}
+yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
 
-Just replace RHEL by CentOS in the repository URL
+\begin{commands}{Bareos installation on RHEL 5 / CentOS 5}
+#
+# define parameter
+#
 
-\subsubsection{RHEL 5}
+DIST=RHEL_5
+# or
+# DIST=CentOS_5
 
-yum in RHEL 5 has slightly different behaviour as far as dependency resolving is concerned: it sometimes install a dependent package after the one that has the dependency defined. To make sure that it works, install the desired Bareos database backend package first in a separate step:
+DATABASE=postgresql
+# or
+# DATABASE=mysql
 
-First add the repository using:
-\begin{commands}{Add Bareos repository}
-wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/RHEL_5/bareos.repo
-\end{commands}
+# add the Bareos repository
+URL=http://download.bareos.org/bareos/release/latest/$DIST
+wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
-After that you can install with PostgreSQL backend:
-\begin{commands}{Bareos installation on RHEL 5 (PostgreSQL backend)}
-yum install bareos-database-postgresql
+# install Bareos packages
+yum install bareos-database-$DATABASE
 yum install bareos
 \end{commands}
-
-Or install with MySQL backend:
-\begin{commands}{Bareos installation on RHEL 5 (MySQL backend)}
-yum install bareos-database-mysql
-yum install bareos
-\end{commands}
-
-\subsubsection{CentOS 5}
-
-Again, just replace RHEL with CentOS in the repository URL.
-
-\subsubsection{Fedora 18}
-
-For adding the repository:
-\begin{commands}{Add Bareos repository}
-wget -O /etc/yum.repos.d/bareos.repo http://download.bareos.org/bareos/release/latest/Fedora_18/bareos.repo
-\end{commands}
-
-After that you can install with PostgreSQL backend:
-\begin{commands}{Bareos installation on Fedora 18 (PostgreSql backend)}
-yum install bareos bareos-database-postgresql
-\end{commands}
-
-Or install with MySQL backend:
-\begin{commands}{Bareos installation on Fedora 18 (MySQL backend)}
-yum install bareos bareos-database-mysql
-\end{commands}
+\hide{$}
 
 \subsection{Install on SUSE based Linux Distributions}
 
-\subsubsection{SLES11 SP3}
+\subsubsection{SUSE Linux Enterprise Server (SLES), openSUSE}
+\index[general]{Platform!SLES}
+\index[general]{Platform!openSUSE}
 
-\begin{commands}{Bareos installation on SUSE Linux Enterprise Server (SLES) 11 SP3}
-zypper addrepo --refresh http://download.bareos.org/bareos/release/latest/SLE_11_SP3/bareos.repo
-zypper install bareos bareos-database-mysql
+\begin{commands}{Bareos installation on SLES / openSUSE}
+#
+# define parameter
+#
+
+DIST=SLE_11_SP3
+# or
+# DIST=openSUSE_13.1
+
+DATABASE=postgresql
+# or
+# DATABASE=mysql
+
+# add the Bareos repository
+URL=http://download.bareos.org/bareos/release/latest/$DIST
+zypper addrepo --refresh $URL/bareos.repo
+
+# install Bareos packages
+zypper install bareos bareos-database-$DATABASE
 \end{commands}
-In this example using mysql as database backend.
+\hide{$}
 
-\subsubsection{openSUSE 13.1}
-
-\begin{commands}{Bareos installation on openSUSE 13.1}
-zypper addrepo --refresh http://download.bareos.org/bareos/release/latest/openSUSE_13.1/bareos.repo
-zypper install bareos bareos-database-mysql
-\end{commands}
 
 
 \subsection{Install on Debian based Linux Distributions}
 
+\subsubsection{Debian / Ubuntu}
+\index[general]{Platform!Debian}
+\index[general]{Platform!Ubuntu}
 
-\subsubsection{Debian 7}
+\begin{commands}{Bareos installation on Debian / Ubuntu}
+#
+# define parameter
+#
 
-\begin{commands}{Bareos installation on Debian 7}
-URL=http://download.bareos.org/bareos/release/latest/Debian_7.0/
+DIST=Debian_7.0
+# or
+# DIST=Debian_6.0
+# DIST=xUbuntu_14.04
+# DIST=xUbuntu_12.04
+
+DATABASE=postgresql
+# or
+# DATABASE=mysql
+
+URL=http://download.bareos.org/bareos/release/latest/$DIST/
+
+# add the Bareos repository
 printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
 
 # add package key
 wget -q $URL/Release.key -O- | apt-key add -
 
+# install Bareos packages
 apt-get update
-apt-get install bareos bareos-database-postgresql
+apt-get install bareos bareos-database-$DATABASE
 \end{commands}
 
-\subsubsection{Ubuntu 12.04}
 
-\begin{commands}{Bareos installation on Ubuntu 12.04}
-URL=http://download.bareos.org/bareos/release/latest/xUbuntu_12.04/
-printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
-
-# add package key
-wget -q $URL/Release.key -O- | apt-key add -
-
-apt-get update
-apt-get install bareos bareos-database-postgresql
-\end{commands}
 
 \section{Prepare Bareos database}
-    \label{CreateDatabase}
+    \label{sec:CreateDatabase}
 
 We assume that you have already your database installed and basically running.
 Currently the database backend PostgreSQL and MySQL are recommended. The Sqlite database backend is only intended for testing purposes.
@@ -167,7 +217,7 @@ For details, see chapter \ilink{Catalog Maintenance}{CatMaintenanceChapter}.
 \subsection{PostgreSQL}
 If your are using PostgreSQL and your PostgreSQL administration user is \user{postgres} (default), use following commands:
 
-\begin{commands}{Setup Bareos catalog database}
+\begin{commands}{Setup Bareos catalog with PostgreSQL}
 su postgres -c /usr/lib/bareos/scripts/create_bareos_database
 su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
 su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
@@ -192,7 +242,7 @@ It is recommended, to secure the Bareos database connection with a password.
 See \ilink{Catalog Maintenance -- MySQL}{catalog-maintenance-mysql} about how to archieve this.
 For testing, using a password-less MySQL connection is probable okay.
 Setup the Bareos database tables by following commands:
-\begin{commands}{Setup Bareos catalog database}
+\begin{commands}{Setup Bareos catalog with MySQL}
 /usr/lib/bareos/scripts/create_bareos_database
 /usr/lib/bareos/scripts/make_bareos_tables
 /usr/lib/bareos/scripts/grant_bareos_privileges
@@ -203,6 +253,8 @@ therefore the file \file{/root/.my.cnf} might also be useful in the future.
 
 
 \section{Start the daemons}
+    \label{sec:StartDaemons}
+
 \begin{commands}{Start the Bareos Daemons}
 service bareos-dir start
 service bareos-sd start
