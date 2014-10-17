@@ -49,11 +49,15 @@
  *	  stale locks can block further operation.
  *
  *	  Fix: Check for stale readers periodically, using the
- *	  #mdb_reader_check function or the \ref mdb_stat_1 "mdb_stat" tool. Or just
- *	  make all programs using the database close it; the lockfile
- *	  is always reset on first open of the environment.
+ *	  #mdb_reader_check function or the \ref mdb_stat_1 "mdb_stat" tool.
+ *	  Stale writers will be cleared automatically on most systems:
+ *	  - Windows - automatic
+ *	  - BSD, systems using SysV semaphores - automatic
+ *	  - Linux, systems using POSIX mutexes with Robust option - automatic
+ *	  Otherwise just make all programs using the database close it;
+ *	  the lockfile is always reset on first open of the environment.
  *
- *	- On BSD systems or others configured with MDB_USE_POSIX_SEM,
+ *	- On BSD systems or others configured with MDB_USE_SYSV_SEM,
  *	  startup can fail due to semaphores owned by another userid.
  *
  *	  Fix: Open and close the database as the user which owns the
@@ -105,6 +109,7 @@
  *	  The transaction becomes "long-lived" as above until a check
  *	  for stale readers is performed or the lockfile is reset,
  *	  since the process may not remove it from the lockfile.
+ *	  Except write-transactions on Unix with MDB_ROBUST or on Windows.
  *
  *	- If you do that anyway, do a periodic check for stale readers. Or
  *	  close the environment once in a while, so the lockfile can get reset.
@@ -194,7 +199,7 @@ typedef int mdb_filehandle_t;
 	MDB_VERINT(MDB_VERSION_MAJOR,MDB_VERSION_MINOR,MDB_VERSION_PATCH)
 
 /** The release date of this library version */
-#define MDB_VERSION_DATE	"July 24, 2014"
+#define MDB_VERSION_DATE	"September 20, 2014"
 
 /** A stringifier for the version info */
 #define MDB_VERSTR(a,b,c,d)	"LMDB " #a "." #b "." #c ": (" d ")"
@@ -391,7 +396,7 @@ typedef enum MDB_cursor_op {
 #define MDB_PAGE_NOTFOUND	(-30797)
 	/** Located page was wrong type */
 #define MDB_CORRUPTED	(-30796)
-	/** Update of meta page failed, probably I/O error */
+	/** Update of meta page failed or environment had fatal error */
 #define MDB_PANIC		(-30795)
 	/** Environment version mismatch */
 #define MDB_VERSION_MISMATCH	(-30794)
@@ -727,6 +732,7 @@ void mdb_env_close(MDB_env *env);
 	 * This may be used to set some flags in addition to those from
 	 * #mdb_env_open(), or to unset these flags.  If several threads
 	 * change the flags at the same time, the result is undefined.
+	 * Most flags cannot be changed after #mdb_env_open().
 	 * @param[in] env An environment handle returned by #mdb_env_create()
 	 * @param[in] flags The flags to change, bitwise OR'ed together
 	 * @param[in] onoff A non-zero value sets the flags, zero clears them.
