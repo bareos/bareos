@@ -159,6 +159,7 @@ Director, Console, File, Storage, and Monitor services.
 
 
 \section{Bareos Packages}
+    \label{sec:BareosPackages}
 
 Following Bareos Linux packages are available (release 14.2):
 
@@ -538,18 +539,6 @@ Bareos is a backup, restore and verification program and is not a
 complete disaster recovery system in itself, but it can be a key part of one
 if you plan carefully and follow the instructions included in the
 \ilink{Disaster Recovery}{RescueChapter} chapter of this manual.
-
-With proper planning, as mentioned in the Disaster Recovery chapter,
-Bareos can be a central component of your disaster recovery system. For
-example, if you have created an emergency boot disk, and/or a Bareos Rescue disk to
-save the current partitioning information of your hard disk, and maintain a
-complete Bareos backup, it is possible to completely recover your system from
-"bare metal" that is starting from an empty disk.
-
-If you have used the {\bf WriteBootstrap} record in your job or some other
-means to save a valid bootstrap file, you will be able to use it to extract
-the necessary files (without using the catalog or manually searching for the
-files to restore).
 
 \section{Interactions Between the Bareos Services}
 

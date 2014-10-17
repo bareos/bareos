@@ -17,6 +17,7 @@ File Daemon plugins are configured by the \configdirective{plugin} directive of 
 
 \subsection{bpipe Plugin}
 \label{bpipe}
+\index[general]{Plugin!bpipe}
 
 The bpipe plugin is a generic pipe program, that simply transmits the data from a specified program to Bareos for backup, and
 from Bareos to a specified program for restore. The purpose of the plugin is to provide an interface to any system program
@@ -77,20 +78,18 @@ See the examples about \ilink{Backup PostgreSQL}{backup-postgresql} and \ilink{B
 
 \subsection{PGSQL Plugin}
 
-See chapter \ilink{Backup of a PostgreSQL Databases by using the PGSQL-Plugin}{backup-postgresql-plugin}.
+See chapter \nameref{backup-postgresql-plugin}.
 
 
 \subsection{MSSQL Plugin}
 
-See chapter \ilink{Backup Of MSSQL Databases}{MSSQL}.
+See chapter \nameref{MSSQL}.
 
 
 \subsection{python-fd Plugin}
 \index[general]{Plugin!Python!File Daemon}
 
-The \name{python-fd} plugin behaves similar to the \ilink{python-dir}{director-python-plugin} plugin.
-Please read the information there.
-
+The \name{python-fd} plugin behaves similar to the \nameref{director-python-plugin}.
 
 
 \section{Storage Daemon Plugins}
@@ -98,6 +97,8 @@ Please read the information there.
 
 \subsection{autoxflate-sd}
 \label{plugin-autoxflate-sd}
+\index[general]{Plugin!autoxflate-sd}
+
 
 This plugin is part of the \package{bareos-storage} package.
 
@@ -152,10 +153,12 @@ Additional \ilink{AutoXFlateOnReplication}{storage-storage-autoxflateonreplicati
 
 
 \subsection{scsicrypto-sd}
+\index[general]{Plugin!scsicrypto-sd}
 
 This plugin is part of the \package{bareos-storage} package.
 
 \subsection{scsitapealert-sd}
+\index[general]{Plugin!scsitapealert-sd}
 
 This plugin is part of the \package{bareos-storage-tape} package.
 
@@ -163,8 +166,7 @@ This plugin is part of the \package{bareos-storage-tape} package.
 \subsection{python-sd Plugin}
 \index[general]{Plugin!Python!Storage Daemon}
 
-The \name{python-sd} plugin behaves similar to the \ilink{python-dir}{director-python-plugin} plugin.
-Please read the information there.
+The \name{python-sd} plugin behaves similar to the \nameref{director-python-plugin}.
 
 
 \section{Director Plugins}

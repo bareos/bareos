@@ -55,9 +55,6 @@ For installing Bareos, follow the instructions from the \ilink{Installing Bareos
 % it can take hours (about four hours on my drive) to fill a large capacity tape.
 
 \section{Starting the Database}
-\label{StartDB}
-\index[general]{Starting the Database}
-\index[general]{Database!Start}
 
 If you are using MySQL or PostgreSQL as the Bareos database, you should start
 it before you attempt to run a job to avoid getting error messages from Bareos
@@ -118,14 +115,6 @@ To communicate with the director and to query the state of Bareos or run jobs,
 from the top level directory, simply enter:
 
 \command{bconsole}
-
-% Alternatively to running the command line console, if you have
-% Qt4 installed and used the {\bf \verb:--:enable-bat} on the configure command,
-% you may use the Bareos Administration Tool ({\bf bat}):
-% 
-% ./bat
-% 
-% Which has a graphical interface, and many more features than bconsole.
 
 For simplicity, here we will describe only the \command{bconsole} program,
 also there is also a graphical interface called \command{BAT}.
