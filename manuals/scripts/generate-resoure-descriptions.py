@@ -103,7 +103,7 @@ class BareosConfigurationSchema2Latex:
 
     def getResourceDirectivesTable(self, resourcename):
         result="\\begin{center}\n"
-        result+="\\begin{tabular}{ l | l | l | l }\n"
+        result+="\\begin{longtable}{ l | l | l | l }\n"
         result+="\\hline \n"
         result+="\\multicolumn{1}{ c|}{\\textbf{%(name)-80s}} &\n" % { 'name': "configuration directive name" }
         result+="\\multicolumn{1}{|c|}{\\textbf{%(type)-80s}} &\n" % { 'type': "type of data" }
@@ -158,7 +158,7 @@ class BareosConfigurationSchema2Latex:
             result+="\\\\ \n\n" % ( strings )
 
         result+="\\hline \n"
-        result+="\\end{tabular}\n"
+        result+="\\end{longtable}\n"
         result+="\\end{center}\n"
         result+="\n"
         return result
