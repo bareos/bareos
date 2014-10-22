@@ -128,7 +128,7 @@ Please correct configuration file: bareos-dir.conf
 
 On most distributions, PostgreSQL uses ident to allow access to the database system.
 The database administrator account is the Unix user \user{postgres}.
-Normally, this use can access the database without password, as the ident mechanism is used to identify the user.
+Normally, this user can access the database without password, as the ident mechanism is used to identify the user.
 
 If this works on your system can be verified by
 \begin{commands}{Access the local PostgreSQL database}
@@ -138,7 +138,7 @@ psql
 
 If your database is configured to to require a password, this must be definied in the file
 \elink{\file{~/.pgpass}}{http://www.postgresql.org/docs/8.2/static/libpq-pgpass.html}
-in the following syntax: \parameter{HOST:POST:DATABASE:USER:PASSWORD}, e.g.
+in the following syntax: \parameter{HOST:PORT:DATABASE:USER:PASSWORD}, e.g.
 \begin{config}{PostgreSQL access credentials}
 localhost:*:bareos:bareos:secret
 \end{config}
@@ -171,7 +171,7 @@ This can be verified by the command \command{psql -l}, which  shows information 
 (4 rows)
 \end{commands}
 
-By default, using PostgreSQL ident, a Unix user can access a database with the same name.
+By default, using PostgreSQL ident, a Unix user can access a database of the same name.
 Therefore the user \user{bareos} can access the database \path|bareos|.
 
 \begin{commands}{Verify Bareos database on PostgreSQL as Unix user bareos}
@@ -294,7 +294,8 @@ Catalog {
 
 After this, run the Bareos database preparation scripts.
 For Bareos $<=$ 13.2.2, the database password must be specified as environment variable \variable{db_password}.
-From Bareos $>=$ 13.2.3 the database password is read from \configFileDirUnix, if no environment variable is given.
+From \sinceVersion{dir}{MySQL password from configuration file}{13.2.3} 
+the database password is read from \configFileDirUnix, if no environment variable is given.
 
 \begin{commands}{Setup Bareos catalog database}
 export db_password=<input>YourSecretPassword</input>

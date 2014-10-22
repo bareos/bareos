@@ -133,8 +133,8 @@
 
 % 1: daemon (dir|sd|fd), 2: item, 3: version, 
 \newcommand{\sinceVersion}[3]{%
-\edef\pv{#3}
-\ifcsvoid{pv}{}{
+\edef\pv{#3}%
+\ifcsvoid{pv}{}{%
 Version $>=$ #3%
 \index[#1]{#2}%
 % expand variables

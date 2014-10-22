@@ -275,13 +275,28 @@
 % label should reside directly at index begin, not Index cover page.
 \phantomsection
 \label{index}
-
+\addcontentsline{toc}{chapter}{General}
 \printindex[general]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Director}
 \printindex[dir]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Storage Daemon}
 \printindex[sd]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{File Daemon}
 \printindex[fd]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Console}
 \printindex[console]
-\printindex[monitor]
+
+% \phantomsection
+% \addcontentsline{toc}{chapter}{Monitor}
+% \printindex[monitor]
 
 
 \end{document}
