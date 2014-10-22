@@ -1184,24 +1184,22 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       return CF_ERROR;
    }
 
-   if (rp.create_status == CF_ERROR) {
+   switch (rp.create_status) {
+   case CF_ERROR:
       Qmsg1(jcr, M_ERROR, 0, _("Plugin createFile call failed. Returned CF_ERROR file=%s\n"), attr->ofname);
-      return CF_ERROR;
-   }
-
-   if (rp.create_status == CF_SKIP) {
-      return CF_SKIP;
-   }
-
-   if (rp.create_status == CF_CORE) {
-      return CF_CORE;           /* Let Bareos core handle the file creation */
-   }
-
-   /*
-    * Created link or directory?
-    */
-   if (rp.create_status == CF_CREATED) {
-      return rp.create_status;        /* yes, no need to bopen */
+      /*
+       * FALLTHROUGH
+       */
+   case CF_SKIP:
+      /*
+       * FALLTHROUGH
+       */
+   case CF_CORE:
+      /*
+       * FALLTHROUGH
+       */
+   case CF_CREATED:
+      return rp.create_status;
    }
 
    flags =  O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
@@ -1209,8 +1207,10 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 
    status = bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR, attr->statp.st_rdev);
    Dmsg1(dbglvl, "bopen status=%d\n", stat);
+
    if (status < 0) {
       berrno be;
+
       be.set_errno(bfd->berrno);
       Qmsg2(jcr, M_ERROR, 0, _("Could not create %s: ERR=%s\n"),
             attr->ofname, be.bstrerror());
