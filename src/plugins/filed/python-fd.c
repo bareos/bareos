@@ -1323,12 +1323,13 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
                sp->object_len = pSavePkt->object_len;
                sp->index = pSavePkt->object_index;
 
-               if (!(buf = PyByteArray_AsString(pSavePkt->object))) {
+               if (buf = PyByteArray_AsString(pSavePkt->object)) {
                   if (p_ctx->object) {
                      free(p_ctx->object);
                   }
                   p_ctx->object = (char *)malloc(pSavePkt->object_len);
                   memcpy(p_ctx->object, buf, pSavePkt->object_len);
+                  sp->object = p_ctx->object;
                } else {
                   goto bail_out;
                }
