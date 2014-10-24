@@ -909,7 +909,7 @@ relabel an already labeled volume to be sure to not overwrite data that is still
 If Bareos cannot read the volume label, this security mechanism does not work and you might
 label tapes already labeled accidentially.
 
-To solve this problem, the block size handling was changed in Bareos \sinceVersion{sd}{Maximum Block Size}{14.2} in the following way:
+To solve this problem, the block size handling was changed in Bareos \sinceVersion{sd}{Maximum Blocksize}{14.2.0} in the following way:
 \begin{itemize}
 \item  The tape label block is always written in the standard 63k (64512) Blocksize.
 \item  The following blocks are then written in the block size configured in the {\bf maximum block size} directive.

@@ -207,7 +207,7 @@ class BareosConfigurationSchema2Latex:
                 'directive': self.convertCamelCase2Spaces( directive ),
             }
 
-            result+="\\defDirective{%(daemon)s}{%(resource)s}{%(directive)s}{}{}{\n" % ( strings )
+            result+="\\defDirective{%(daemon)s}{%(resource)s}{%(directive)s}{}{}{%%\n" % ( strings )
             result+="}\n\n"
         return result
 

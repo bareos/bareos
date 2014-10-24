@@ -53,7 +53,9 @@
 \csdef{dtPint32}{\dtUInt}
 \csdef{dtRes}{\ilink{resource-name}{DataTypeRes}}
 \csdef{dtPort}{\dtNetPort}
+\csdef{dtScheduleRunCommand}{{job-overrides{\gt} {\lt}date-time-specification}}
 \csdef{dtSize}{\ilink{size}{DataTypeSize}}
+\csdef{dtSpeed}{\ilink{speed}{DataTypeSpeed}}
 \csdef{dtString}{\ilink{string}{DataTypeString}}
 \csdef{dtStringList}{\ilink{string-list}{DataTypeStringList}}
 \csdef{dtTime}{\ilink{time}{DataTypeTime}}
@@ -94,6 +96,9 @@
 \newcommand{\at}{\makeatletter @\makeatother}
 \newcommand{\lt}{\textless}
 \newcommand{\gt}{\textgreater}
+\newcommand{\pipe}{\textbar\ }
+% these characters must be quoted in Bareos config files: &<>()@^|
+\newcommand{\configCharsToQuote}{\parameter{&<>()@^}\textbar\ }
 
 %
 % specific types of text
@@ -111,8 +116,10 @@
 \newcommand{\variable}[1]{\path|#1|}
 % to also link to a directive, use \linkResourceDirective}{Dir|Sd|Fd}{Resource}{Directive Name}
 \newcommand{\configdirective}[1]{\textbf{#1}}
+\newcommand{\configline}[1]{\path|#1|}
 \newcommand{\host}[1]{\path|#1|}
 \newcommand{\email}[1]{\url{#1}}
+\newcommand{\bnfvar}[1]{\lt#1\gt}
 
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}
@@ -131,8 +138,10 @@
     #2
 }
 
-% 1: daemon (dir|sd|fd), 2: item, 3: version, 
 \newcommand{\sinceVersion}[3]{%
+% 1: daemon (dir|sd|fd),
+% 2: item,
+% 3: version
 \edef\pv{#3}%
 \ifcsvoid{pv}{}{%
 Version $>=$ #3%
@@ -281,20 +290,20 @@ Version $>=$ #3%
 % 2: Resource
 % 3: Directive Name
 %
-\ifthenelse{\equal{#1}{Dir}}{
-    \def\daemon{dir}
-}{ 
-  \ifthenelse{\equal{#1}{Sd}}{
-    \def\daemon{sd}
-  }{ 
-    \ifthenelse{\equal{#1}{Fd}}{
-        \def\daemon{fd}
-    }{
+\ifthenelse{\equal{#1}{Dir}}{%
+    \def\daemon{dir}%
+}{%
+  \ifthenelse{\equal{#1}{Sd}}{%
+    \def\daemon{sd}%
+  }{%
+    \ifthenelse{\equal{#1}{Fd}}{%
+        \def\daemon{fd}%
+    }{%
         % hopefully, no translatation needed. Take original parameter
-        \def\daemon{#1}
-    }
-  }
-}
+        \def\daemon{#1}%
+    }%
+  }%
+}%
 \index[\daemon]{Directive!#3}%
 \hyperlink{directive#1#2#3}{#3}%
 }
@@ -413,7 +422,6 @@ Version $>=$ #3%
         moredelim=[is][\underline]{<strong>}{</strong>},
     }
 }{}
-
 
 
 \newfloat{floatCommandOut}{h}{lop}
