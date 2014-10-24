@@ -243,7 +243,7 @@ Device}.
 As a default, Bareos jobs will prefer to write to a Volume that is
 already mounted. If you have a multiple drive autochanger and you want
 Bareos to write to more than one Volume in the same Pool at the same
-time, you will need to set \ilink{Prefer Mounted Volumes} {PreferMountedVolumes}
+time, you will need to set \linkResourceDirective{Dir}{Job}{Prefer Mounted Volumes}
 in the Directors Job resource to {\bf no}. This will cause
 the Storage daemon to maximize the use of drives.
 

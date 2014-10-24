@@ -45,12 +45,10 @@ production, use the checklist anyway).
    (Linux, Solaris, HP, MacOS, FreeBSD, Win32, ...),
    restore files from each system type. The
    \ilink{Restoring Files}{RestoreChapter} chapter shows you how.
-\item Write a bootstrap file to a separate system for each backup job.  The
-   Write Bootstrap directive is described in the
-   \ilink{Director Configuration}{writebootstrap}  chapter of the
-   manual, and more details are available in the
-   \ilink{Bootstrap File}{BootstrapChapter} chapter. Also, the default
-   bareos-dir.conf comes with a Write Bootstrap directive defined. This  allows
+\item Write a bootstrap file to a separate system for each backup job.
+   See \linkResourceDirective{Dir}{Job}{Write Bootstrap} directive and more details are available in the
+   \nameref{BootstrapChapter} chapter. Also, the default
+   \file{bareos-dir.conf} comes with a Write Bootstrap directive defined. This  allows
    you to recover the state of your system as of the last backup.
 \item Backup your catalog. An example of this is found in the default
    bareos-dir.conf file. The backup script is installed by default and

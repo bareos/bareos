@@ -1,5 +1,4 @@
 \defDirective{Dir}{Job}{Accurate}{}{}{%
-\label{dir-resource-accurate}%
 In accurate mode, the File daemon knowns exactly which files were present
 after the last backup. So it is able to handle deleted or renamed files.
 
@@ -21,7 +20,6 @@ required information.
 }
 
 \defDirective{Dir}{Job}{Add Prefix}{}{}{%
-\label{confaddprefix}
 This directive applies only to a Restore job and specifies a prefix to the
 directory name of all files being restored.  This will use \ilink{File
 Relocation}{filerelocation} feature.
@@ -62,7 +60,6 @@ will be cancelled.
 }
 
 \defDirective{Dir}{Job}{Allow Mixed Priority}{}{}{%
-\label{AllowMixedPriority}%
 When
 set to {\bf yes} (default {\bf no}), this job may run even if lower
 priority jobs are already running.  This means a high priority job
@@ -253,7 +250,6 @@ variations such as different Clients.
 }
 
 \defDirective{Dir}{Job}{Level}{}{}{%
-\label{Level}
 The Level directive specifies the default Job level to be run.  Each
 different Job Type (Backup, Restore, Verify, ...) has a different set of Levels
 that can be specified.  The Level is normally overridden by a different
@@ -607,7 +603,6 @@ of this chapter.  This directive is required.
 }
 
 \defDirective{Dir}{Job}{Prefer Mounted Volumes}{}{}{%
-\label{PreferMountedVolumes}
 If the Prefer Mounted Volumes directive is set to {\bf yes},
 the Storage daemon is requested to select either an Autochanger or
 a drive with a valid Volume already mounted in preference to a drive
@@ -653,7 +648,6 @@ original locations, all files linked with absolute names will be broken.
 }
 
 \defDirective{Dir}{Job}{Priority}{}{}{%
-\label{Priority}
 This directive permits you to control the order in which your jobs will
 be run by specifying a positive non-zero number. The higher the number,
 the lower the job priority. Assuming you are not running concurrent jobs,
@@ -666,13 +660,11 @@ running, and a new job is scheduled with priority 1, the currently
 running priority 2 jobs must complete before the priority 1 job is
 run, unless Allow Mixed Priority is set.
 
-The default priority is 10.
-
 If you want to run concurrent jobs you should
 keep these points in mind:
 
 \begin{itemize}
-\item See \ilink{Running Concurrent Jobs}{ConcurrentJobs} on how to setup
+\item See \nameref{ConcurrentJobs} on how to setup
 concurrent jobs.
 
 \item Bareos concurrently runs jobs of only one priority at a time.  It
@@ -1422,7 +1414,6 @@ your files.
 }
 
 \defDirective{Dir}{Job}{Write Bootstrap}{}{}{%
-\label{writebootstrap}%
 The {\bf writebootstrap} directive specifies a file name where Bareos
 will write a {\bf bootstrap} file for each Backup job run.  This
 directive applies only to Backup Jobs.  If the Backup job is a Full
