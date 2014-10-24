@@ -1385,7 +1385,6 @@ static bool is_plugin_compatible(Plugin *plugin)
       return false;
    }
    if (!bstrcasecmp(info->plugin_license, "Bareos AGPLv3") &&
-       !bstrcasecmp(info->plugin_license, "Bacula AGPLv3") &&
        !bstrcasecmp(info->plugin_license, "AGPLv3")) {
       Jmsg(NULL, M_ERROR, 0, _("Plugin license incompatible. Plugin=%s license=%s\n"),
            plugin->file, info->plugin_license);
