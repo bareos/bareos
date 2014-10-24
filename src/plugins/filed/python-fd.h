@@ -57,7 +57,7 @@ static plugin_argument plugin_arguments[] = {
  */
 typedef struct {
    PyObject_HEAD
-   char *object_name;                /* Object name */
+   PyObject *object_name;            /* Object name */
    PyObject *object;                 /* Restore object data to restore */
    char *plugin_name;                /* Plugin name */
    int32_t object_type;              /* FT_xx for this file */
@@ -81,8 +81,8 @@ static PyMethodDef PyRestoreObject_methods[] = {
 };
 
 static PyMemberDef PyRestoreObject_members[] = {
-   { (char *)"object_name", T_STRING, offsetof(PyRestoreObject, object_name), 0, (char *)"Object Name" },
-   { (char *)"object", T_STRING, offsetof(PyRestoreObject, object), 0, (char *)"Object Content" },
+   { (char *)"object_name", T_OBJECT, offsetof(PyRestoreObject, object_name), 0, (char *)"Object Name" },
+   { (char *)"object", T_OBJECT, offsetof(PyRestoreObject, object), 0, (char *)"Object Content" },
    { (char *)"plugin_name", T_STRING, offsetof(PyRestoreObject, plugin_name), 0, (char *)"Plugin Name" },
    { (char *)"object_type", T_INT, offsetof(PyRestoreObject, object_type), 0, (char *)"Object Type" },
    { (char *)"object_len", T_INT, offsetof(PyRestoreObject, object_len), 0, (char *)"Object Length" },

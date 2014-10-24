@@ -640,15 +640,19 @@ struct OBJ_CTX {
 
 static int restore_object_handler(void *ctx, int num_fields, char **row)
 {
+   BSOCK *fd;
+   bool is_compressed;
    OBJ_CTX *octx = (OBJ_CTX *)ctx;
    JCR *jcr = octx->jcr;
-   BSOCK *fd;
 
    fd = jcr->file_bsock;
    if (jcr->is_job_canceled()) {
       return 1;
    }
-   /* Old File Daemon doesn't handle restore objects */
+
+   /*
+    * Old File Daemon doesn't handle restore objects
+    */
    if (jcr->FDVersion < FD_VERSION_3) {
       Jmsg(jcr, M_WARNING, 0, _("Client \"%s\" may not be used to restore "
                                 "this job. Please upgrade your client.\n"),
@@ -660,7 +664,9 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
       fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6]);
    } else {
-      /* bash spaces from PluginName */
+      /*
+       * bash spaces from PluginName
+       */
       bash_spaces(row[9]);
       fd->fsend("restoreobject JobId=%s %s,%s,%s,%s,%s,%s,%s\n",
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[9]);
@@ -672,22 +678,27 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
 
    Dmsg1(010, "Send obj: %s\n", fd->msg);
 
-//   fd->msglen = str_to_uint64(row[1]);   /* object length */
-//   Dmsg1(000, "obj size: %lld\n", (uint64_t)fd->msglen);
-
-   /* object */
-   db_unescape_object(jcr, jcr->db,
+   db_unescape_object(jcr,
+                      jcr->db,
                       row[8],                /* Object  */
                       str_to_uint64(row[1]), /* Object length */
-                      &fd->msg, &fd->msglen);
+                      &fd->msg,
+                      &fd->msglen);
    fd->send();                           /* send object */
    octx->count++;
 
-   if (debug_level) {
-      for (int i=0; i < fd->msglen; i++)
-         if (!fd->msg[i])
+   /*
+    * Don't try to print compressed objects.
+    */
+   is_compressed = str_to_uint64(row[5]) > 0;
+   if (debug_level >= 100 && !is_compressed) {
+      for (int i = 0; i < fd->msglen; i++) {
+         if (!fd->msg[i]) {
             fd->msg[i] = ' ';
-      Dmsg1(000, "Send obj: %s\n", fd->msg);
+         }
+      }
+
+      Dmsg1(100, "Send obj: %s\n", fd->msg);
    }
 
    return 0;
@@ -711,6 +722,7 @@ bool send_plugin_options(JCR *jcr)
          return false;
       }
    }
+
    return true;
 }
 
@@ -727,13 +739,19 @@ bool send_restore_objects(JCR *jcr)
    octx.jcr = jcr;
    octx.count = 0;
 
-   /* restore_object_handler is called for each file found */
+   /*
+    * restore_object_handler is called for each file found
+    */
 
-   /* send restore objects for all jobs involved  */
+   /*
+    * Send restore objects for all jobs involved
+    */
    Mmsg(query, get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
    db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
 
-   /* send config objects for the current restore job */
+   /*
+    * Send config objects for the current restore job
+    */
    Mmsg(query, get_restore_objects,
         edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
    db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
@@ -750,6 +768,7 @@ bool send_restore_objects(JCR *jcr)
          return false;
       }
    }
+
    return true;
 }
 

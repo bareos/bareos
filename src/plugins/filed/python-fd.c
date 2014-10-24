@@ -221,13 +221,14 @@ static bRC newPlugin(bpContext *ctx)
     * any other events it is interested in.
     */
    bfuncs->registerBareosEvents(ctx,
-                                6,
+                                7,
                                 bEventNewPluginOptions,
                                 bEventPluginCommand,
                                 bEventJobStart,
                                 bEventRestoreCommand,
                                 bEventEstimateCommand,
-                                bEventBackupCommand);
+                                bEventBackupCommand,
+                                bEventRestoreObject);
 
    return bRC_OK;
 }
@@ -393,6 +394,23 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
        */
       p_ctx->plugin_options = bstrdup((char *)value);
       break;
+   case bEventRestoreObject: {
+      struct restore_object_pkt *rop;
+
+      rop = (struct restore_object_pkt *)value;
+
+      /*
+       * Only use the plugin definition of a restore object if we
+       * didn't get any other plugin definition from some other source before.
+       */
+      if (!p_ctx->python_loaded) {
+         if (rop && *rop->plugin_name) {
+            event_dispatched = true;
+            retval = parse_plugin_definition(ctx, rop->plugin_name);
+         }
+      }
+      break;
+   }
    default:
       break;
    }
@@ -442,9 +460,38 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
             retval = PyParsePluginDefinition(ctx, value);
          }
          break;
-      case bEventRestoreObject:
-         retval = PyRestoreObjectData(ctx, (struct restore_object_pkt *)value);
+      case bEventRestoreObject: {
+         struct restore_object_pkt *rop;
+
+         rop = (struct restore_object_pkt *)value;
+         if (!rop) {
+            /*
+             * If rop == NULL this means we got the last restore object.
+             * No need to call into python so just return.
+             */
+            retval = bRC_OK;
+         } else {
+            /*
+             * See if we already loaded the Python modules.
+             */
+            if (!p_ctx->python_loaded && *rop->plugin_name) {
+               retval = PyLoadModule(ctx, rop->plugin_name);
+
+               /*
+                * Only try to call when the loading succeeded.
+                */
+               if (retval == bRC_OK) {
+                  retval = PyParsePluginDefinition(ctx, rop->plugin_name);
+                  if (retval == bRC_OK) {
+                     retval = PyRestoreObjectData(ctx, rop);
+                  }
+               }
+            } else {
+               retval = PyRestoreObjectData(ctx, rop);
+            }
+         }
          break;
+      }
       case bEventHandleBackupFile:
          retval = PyHandleBackupFile(ctx, (struct save_pkt *)value);
          break;
@@ -1323,7 +1370,7 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
                sp->object_len = pSavePkt->object_len;
                sp->index = pSavePkt->object_index;
 
-               if (buf = PyByteArray_AsString(pSavePkt->object)) {
+               if ((buf = PyByteArray_AsString(pSavePkt->object))) {
                   if (p_ctx->object) {
                      free(p_ctx->object);
                   }
@@ -1791,7 +1838,7 @@ static inline PyRestoreObject *NativeToPyRestoreObject(struct restore_object_pkt
    PyRestoreObject *pRestoreObject = PyObject_New(PyRestoreObject, &PyRestoreObjectType);
 
    if (pRestoreObject) {
-      pRestoreObject->object_name = rop->object_name;
+      pRestoreObject->object_name = PyString_FromString(rop->object_name);
       pRestoreObject->object = PyByteArray_FromStringAndSize(rop->object, rop->object_len);
       pRestoreObject->plugin_name = rop->plugin_name;
       pRestoreObject->object_type = rop->object_type;
@@ -2307,9 +2354,9 @@ static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
    POOL_MEM buf(PM_MESSAGE);
 
    Mmsg(buf, "RestoreObject(object_name=\"%s\", object=\"%s\", plugin_name=\"%s\", "
-             "object_type=%ld, object_len=%ld, object_full_len=%ld, "
-             "object_index=%ld, object_compression=%ld, stream=%ld, jobid=%ld)",
-        self->object_name, self->object, self->plugin_name,
+             "object_type=%d, object_len=%d, object_full_len=%d, "
+             "object_index=%d, object_compression=%d, stream=%d, jobid=%u)",
+        PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object), self->plugin_name,
         self->object_type, self->object_len, self->object_full_len,
         self->object_index, self->object_compression, self->stream, self->JobId);
    s = PyString_FromString(buf.c_str());
@@ -2349,7 +2396,7 @@ static int PyRestoreObject_init(PyRestoreObject *self, PyObject *args, PyObject 
 
    if (!PyArg_ParseTupleAndKeywords(args,
                                     kwds,
-                                    "|sosiiiiiiI",
+                                    "|oosiiiiiiI",
                                     kwlist,
                                     &self->object_name,
                                     &self->object,
@@ -2372,6 +2419,12 @@ static int PyRestoreObject_init(PyRestoreObject *self, PyObject *args, PyObject 
  */
 static void PyRestoreObject_dealloc(PyRestoreObject *self)
 {
+   if (self->object_name) {
+      Py_XDECREF(self->object_name);
+   }
+   if (self->object) {
+      Py_XDECREF(self->object);
+   }
    PyObject_Del(self);
 }
 

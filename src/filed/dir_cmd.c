@@ -1022,7 +1022,9 @@ static bool restore_object_cmd(JCR *jcr)
               &rop.object_type, &rop.object_compression, &FileIndex,
               rop.plugin_name) != 8) {
 
-      /* Old version, no plugin_name */
+      /*
+       * Old version, no plugin_name
+       */
       if (sscanf(dir->msg, restoreobjcmd1, &rop.JobId, &rop.object_len,
                  &rop.object_full_len, &rop.object_index,
                  &rop.object_type, &rop.object_compression, &FileIndex) != 7) {
@@ -1039,39 +1041,72 @@ static bool restore_object_cmd(JCR *jcr)
          "FI=%d plugin_name=%s\n",
          rop.JobId, rop.object_len, rop.object_full_len,
          rop.object_index, rop.object_type, FileIndex, rop.plugin_name);
-   /* Read Object name */
+
+   /*
+    * Read Object name
+    */
    if (dir->recv() < 0) {
       goto bail_out;
    }
    Dmsg2(100, "Recv Oname object: len=%d Oname=%s\n", dir->msglen, dir->msg);
    rop.object_name = bstrdup(dir->msg);
 
-   /* Read Object */
+   /*
+    * Read Object
+    */
    if (dir->recv() < 0) {
       goto bail_out;
    }
-   /* Transfer object from message buffer, and get new message buffer */
+
+   /*
+    * Transfer object from message buffer, and get new message buffer
+    */
    rop.object = dir->msg;
    dir->msg = get_pool_memory(PM_MESSAGE);
 
-   /* If object is compressed, uncompress it */
-   if (rop.object_compression == 1) {   /* zlib level 9 */
+   /*
+    * If object is compressed, uncompress it
+    */
+   switch (rop.object_compression) {
+   case 1: {                          /* zlib level 9 */
       int status;
       int out_len = rop.object_full_len + 100;
       POOLMEM *obj = get_memory(out_len);
+
       Dmsg2(100, "Inflating from %d to %d\n", rop.object_len, rop.object_full_len);
       status = Zinflate(rop.object, rop.object_len, obj, out_len);
       Dmsg1(100, "Zinflate status=%d\n", status);
+
       if (out_len != rop.object_full_len) {
-         Jmsg3(jcr, M_ERROR, 0, ("Decompression failed. Len wanted=%d got=%d. Object=%s\n"),
-            rop.object_full_len, out_len, rop.object_name);
+         Jmsg3(jcr, M_ERROR, 0, ("Decompression failed. Len wanted=%d got=%d. Object_name=%s\n"),
+               rop.object_full_len, out_len, rop.object_name);
       }
-      free_pool_memory(rop.object);   /* release compressed object */
-      rop.object = obj;               /* new uncompressed object */
+
+      free_pool_memory(rop.object);   /* Release compressed object */
+      rop.object = obj;               /* New uncompressed object */
       rop.object_len = out_len;
+      break;
    }
-   Dmsg2(100, "Recv Object: len=%d Object=%s\n", rop.object_len, rop.object);
-   /* we still need to do this to detect a vss restore */
+   default:
+      break;
+   }
+
+   if (debug_level >= 100) {
+      POOL_MEM object_content(PM_MESSAGE);
+
+      /*
+       * Convert the object into a null terminated string.
+       */
+      object_content.check_size(rop.object_len + 1);
+      memset(object_content.c_str(), 0, rop.object_len + 1);
+      memcpy(object_content.c_str(), rop.object, rop.object_len);
+
+      Dmsg2(100, "Recv Object: len=%d Object=%s\n", rop.object_len, object_content.c_str());
+   }
+
+   /*
+    * We still need to do this to detect a vss restore
+    */
    if (bstrcmp(rop.object_name, "job_metadata.xml")) {
       Dmsg0(100, "got job metadata\n");
       jcr->got_metadata = true;
@@ -1082,9 +1117,11 @@ static bool restore_object_cmd(JCR *jcr)
    if (rop.object_name) {
       free(rop.object_name);
    }
+
    if (rop.object) {
       free_pool_memory(rop.object);
    }
+
    if (rop.plugin_name) {
       free(rop.plugin_name);
    }
