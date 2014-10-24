@@ -356,12 +356,12 @@ Version $>=$ #3%
 }{}
 
 
+\definecolor{colorConfig}{gray}{0.9}
 
 \lstnewenvironment{bconfig}[1]{%
     % #1 caption
     \renewcommand*{\lstlistingname}{Configuration} 
     \footnotesize
-    \definecolor{colorConfig}{gray}{0.9}
     \lstset{
         backgroundcolor=\color{colorConfig},
         frame=single,
@@ -377,6 +377,19 @@ Version $>=$ #3%
     }
 }{}
 
+\newcommand{\bconfigInput}[1]{
+    {
+        \footnotesize
+%     \lstinputlisting[backgroundcolor=\color{colorConfig},frame=single,framerule=0pt,basicstyle=\ttfamily,keepspaces=true,columns=fullflexible,moredelim=[is][\it]{<input>}{</input>},moredelim=[is][\underline]{<strong>}{</strong>}]{#1}
+        \lstinputlisting[
+                backgroundcolor=\color{colorConfig},
+                frame=single,framerule=0pt,
+                basicstyle=\ttfamily,
+                keepspaces=true,
+                columns=fullflexible
+            ]{#1}
+    }
+}
 
 \lstnewenvironment{config}[1]{%
     % #1 caption

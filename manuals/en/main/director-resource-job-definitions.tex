@@ -832,9 +832,10 @@ current job.  Note, in the case of the since keyword, the \%s must be
 enclosed in double quotes, and thus they must be preceded by a backslash
 since they are already inside quotes. For example:
 
-\begin{bconfig}{}^^J
-   run = "Nightly-backup level=\%l since=\\"\%s\\" storage=DDS-4"^^J
-\end{bconfig}
+% \begin{bconfig}{}^^J
+%    run = "Nightly-backup level=\%l since=\\"\%s\\" storage=DDS-4"^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRun1.conf}
 
 A cloned job will not start additional clones, so it is not
 possible to recurse.
@@ -862,15 +863,16 @@ operating system, Bareos performs character substitution as described above
 for the {\bf RunScript} directive. Note, if you wish that your script
 will run regardless of the exit status of the Job, you can use this:
 
-\begin{bconfig}{Run Script that runs after all jobs (successful and failed)}^^J
-Run Script \{^^J
-\ Command = "echo test"^^J
-\ Runs When = After^^J
-\ Runs On Failure = yes^^J
-\ Runs On Client  = no^^J
-\ Runs On Success = yes    \# default, you can drop this line^^J
-\}^^J
-\end{bconfig}
+% \begin{bconfig}{Run Script that runs after all jobs (successful and failed)}^^J
+% Run Script \{^^J
+% \ Command = "echo test"^^J
+% \ Runs When = After^^J
+% \ Runs On Failure = yes^^J
+% \ Runs On Client  = no^^J
+% \ Runs On Success = yes    \# default, you can drop this line^^J
+% \}^^J
+% \end{bconfig} 
+\bconfigInput{config/DirJobRunAfterFailedJob1.conf}
 }
 
 \defDirective{Dir}{Job}{Run After Job}{}{}{%
@@ -895,19 +897,21 @@ current Job.  This directive is not required, but if it is defined, and if the
 exit code of the program run is non-zero, the current Bareos job will be
 canceled.
 
-\begin{bconfig}{}^^J
-Run Before Job = "echo test"^^J
-\end{bconfig}
+% \begin{bconfig}{}^^J
+% Run Before Job = "echo test"^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRunBeforeJob1.conf}
 
    it's equivalent to :
 
-\begin{bconfig}{}^^J
-RunScript \{^^J
-\  Command = "echo test"^^J
-\  Runs On Client = No^^J
-\  Runs When = Before^^J
-\}^^J
-\end{bconfig}
+% \begin{bconfig}{}^^J
+% RunScript \{^^J
+% \  Command = "echo test"^^J
+% \  Runs On Client = No^^J
+% \  Runs When = Before^^J
+% \}^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRunBeforeJob2.conf}
 %
 % Lutz Kittler has pointed out that using the RunBeforeJob directive can be a
 % simple way to modify your schedules during a holiday.  For example, suppose
@@ -941,10 +945,11 @@ You can use following console command : \texttt{delete}, \texttt{disable},
 more information. You need to specify needed information on command line, nothing
 will be prompted. Example:
 
-\begin{bconfig}{Run Script Console commands}^^J
-   Console = "prune files client=\%c"^^J
-   Console = "update stats age=3"^^J
-\end{bconfig}
+% \begin{bconfig}{Run Script Console commands}^^J
+%    Console = "prune files client=\%c"^^J
+%    Console = "update stats age=3"^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRunScript1.conf}
 
 You can specify more than one Command/Console option per RunScript.
 
@@ -1051,19 +1056,20 @@ Keyword & RunsOnSuccess & RunsOnFailure  & FailJobOnError & Runs On Client & Run
 \end{tabular}
 
 Examples:
-\begin{bconfig}{Run Script Examples}^^J
-RunScript \{^^J
-\ \   RunsWhen = Before^^J
-\ \   FailJobOnError = No^^J
-\ \   Command = "/etc/init.d/apache stop"^^J
-\}^^J
-^^J
-RunScript \{^^J
-\ \   RunsWhen = After^^J
-\ \   RunsOnFailure = yes^^J
-\ \   Command = "/etc/init.d/apache start"^^J
-\}^^J
-\end{bconfig}
+% \begin{bconfig}{Run Script Examples}^^J
+% RunScript \{^^J
+% \ \   RunsWhen = Before^^J
+% \ \   FailJobOnError = No^^J
+% \ \   Command = "/etc/init.d/apache stop"^^J
+% \}^^J
+% ^^J
+% RunScript \{^^J
+% \ \   RunsWhen = After^^J
+% \ \   RunsOnFailure = yes^^J
+% \ \   Command = "/etc/init.d/apache start"^^J
+% \}^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRunScript2.conf}
 
 {\bf Notes about ClientRunBeforeJob}
 
@@ -1116,13 +1122,14 @@ should work fine:
 %\end{bconfig}
 % \normalsize
 
-\begin{bconfig}{Windows systemstate Run Script}^^J
-        Client Run Before Job = "systemstate"^^J
-or^^J
-        Client Run Before Job = "systemstate.bat"^^J
-or^^J
-        Client Run Before Job = "\\"C:/Program Files/Bareos/systemstate.bat\\""^^J
-\end{bconfig}
+% \begin{bconfig}{Windows systemstate Run Script}^^J
+%         Client Run Before Job = "systemstate"^^J
+% or^^J
+%         Client Run Before Job = "systemstate.bat"^^J
+% or^^J
+%         Client Run Before Job = "\\"C:/Program Files/Bareos/systemstate.bat\\""^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobRunScript3.conf}
 
 % \begin{itemize}
 %     \item \path|Client Run Before Job = "systemstate"|
@@ -1340,10 +1347,12 @@ Using \texttt{Strip Prefix=/etc}, \texttt{/etc/passwd} will be restored to
 Under Windows, if you want to restore \texttt{c:/files} to \texttt{d:/files},
 you can use:
 
-\begin{bconfig}{}^^J
- Strip Prefix = c:^^J
- Add Prefix = d:^^J
-\end{bconfig}
+% \begin{bconfig}{}^^J
+%  Strip Prefix = c:^^J
+%  Add Prefix = d:^^J
+% \end{bconfig}
+% 
+\bconfigInput{config/DirJobStripPrefix1.conf}
 }
 
 \defDirective{Dir}{Job}{Type}{}{}{%
@@ -1442,12 +1451,13 @@ specified command, Bareos performs
 \ilink{character substitution}{character substitution} like in RunScript
 directive. To automatically manage your bootstrap files, you can use
 this in your {\bf JobDefs} resources:
-\begin{bconfig}{Write Bootstrap Example}^^J
-Job Defs \{^^J
-\ \ Write Bootstrap = "\%c_\%n.bsr"^^J
-\ \ ...^^J
-\}^^J
-\end{bconfig}
+% \begin{bconfig}{Write Bootstrap Example}^^J
+% Job Defs \{^^J
+% \ \ Write Bootstrap = "\%c_\%n.bsr"^^J
+% \ \ ...^^J
+% \}^^J
+% \end{bconfig}
+\bconfigInput{config/DirJobWriteBootstrap1.conf}
 
 For more details on using this file, please see chapter \nameref{BootstrapChapter}.
 }
