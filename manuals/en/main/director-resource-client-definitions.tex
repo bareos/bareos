@@ -51,7 +51,6 @@ be contacted.  The default is 9102. For NDMP backups set this to 10000.
 }
 
 \defDirective{Dir}{Client}{File Retention}{}{}{%
-\label{FileRetention}
 The File Retention directive defines the length of time that  Bareos will
 keep File records in the Catalog database after the End time of the
 Job corresponding to the File records.
@@ -62,8 +61,8 @@ only records in the catalog database. It does not  affect your archive
 backups.
 
 File records  may actually be retained for a shorter period than you specify
-on  this directive if you specify either a shorter {\bf Job Retention}  or a
-shorter {\bf Volume Retention} period. The shortest  retention period of the
+on  this directive if you specify either a shorter \linkResourceDirective{Dir}{Client}{Job Retention}  or a
+shorter \linkResourceDirective{Dir}{Pool}{Volume Retention} period. The shortest  retention period of the
 three takes precedence.  The time may be expressed in seconds, minutes,
 hours, days, weeks, months, quarters, or years. See the
 \ilink{ Configuration chapter}{Time} of this  manual for
@@ -81,7 +80,6 @@ will be aborted.
 }
 
 \defDirective{Dir}{Client}{Job Retention}{}{}{%
-\label{JobRetention}
 The Job Retention directive defines the length of time that  Bareos will keep
 Job records in the Catalog database after the Job End time.  When
 this time period expires, and if {\bf AutoPrune} is set to {\bf yes}
