@@ -1903,12 +1903,32 @@ static bool restore_cmd(JCR *jcr)
       return 0;
    }
 
+   jcr->setJobType(JT_RESTORE);
+
    /**
     * Scan WHERE (base directory for restore) from command
     */
    Dmsg0(100, "restore command\n");
-#if defined(WIN32_VSS)
 
+   /*
+    * Pickup where string
+    */
+   args = get_memory(dir->msglen+1);
+   *args = 0;
+
+   if (sscanf(dir->msg, restorecmd, &replace, &prefix_links, args) != 3) {
+      if (sscanf(dir->msg, restorecmdR, &replace, &prefix_links, args) != 3){
+         if (sscanf(dir->msg, restorecmd1, &replace, &prefix_links) != 2) {
+            pm_strcpy(jcr->errmsg, dir->msg);
+            Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
+            return false;
+         }
+         *args = 0;
+      }
+      use_regexwhere = true;
+   }
+
+#if defined(WIN32_VSS)
    /**
     * No need to enable VSS for restore if we do not have plugin data to restore
     */
@@ -1928,24 +1948,10 @@ static bool restore_cmd(JCR *jcr)
       P(vss_mutex);
    }
 #endif
-   /*
-    * Pickup where string
-    */
-   args = get_memory(dir->msglen+1);
-   *args = 0;
 
-   if (sscanf(dir->msg, restorecmd, &replace, &prefix_links, args) != 3) {
-      if (sscanf(dir->msg, restorecmdR, &replace, &prefix_links, args) != 3){
-         if (sscanf(dir->msg, restorecmd1, &replace, &prefix_links) != 2) {
-            pm_strcpy(jcr->errmsg, dir->msg);
-            Jmsg(jcr, M_FATAL, 0, _("Bad replace command. CMD=%s\n"), jcr->errmsg);
-            return false;
-         }
-         *args = 0;
-      }
-      use_regexwhere = true;
-   }
-   /* Turn / into nothing */
+   /*
+    * Turn / into nothing
+    */
    if (IsPathSeparator(args[0]) && args[1] == '\0') {
       args[0] = '\0';
    }
@@ -1953,7 +1959,9 @@ static bool restore_cmd(JCR *jcr)
    Dmsg2(150, "Got replace %c, where=%s\n", replace, args);
    unbash_spaces(args);
 
-   /* Keep track of newly created directories to apply them correct attributes */
+   /*
+    * Keep track of newly created directories to apply them correct attributes
+    */
    if (replace == REPLACE_NEVER) {
       jcr->keep_path_list = true;
    }
@@ -1975,8 +1983,6 @@ static bool restore_cmd(JCR *jcr)
 
    dir->fsend(OKrestore);
    Dmsg1(110, "filed>dird: %s", dir->msg);
-
-   jcr->setJobType(JT_RESTORE);
 
    jcr->setJobStatus(JS_Blocked);
 
