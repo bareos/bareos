@@ -53,8 +53,6 @@ extern void invalidate_schedules();
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Imported subroutines */
-void start_UA_server(dlist *addrs);
-void stop_UA_server(void);
 void init_job_server(int max_workers);
 void term_job_server();
 void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass);
@@ -354,7 +352,7 @@ int main (int argc, char *argv[])
    init_console_msg(working_directory);
 
    Dmsg0(200, "Start UA server\n");
-   start_UA_server(me->DIRaddrs);
+   start_socket_server(me->DIRaddrs);
 
    start_watchdog();                  /* start network watchdog thread */
 
@@ -425,7 +423,7 @@ void terminate_dird(int sig)
       my_config = NULL;
    }
 
-   stop_UA_server();
+   stop_socket_server();
    term_msg();                        /* terminate message handler */
    cleanup_crypto();
    close_memory_pool();               /* release free memory in pool */
@@ -654,9 +652,20 @@ static bool check_resources()
       OK = false;
       goto bail_out;
    } else {
+      /*
+       * Sanity check.
+       */
+      if (me->MaxConsoleConnections > me->MaxConnections) {
+         me->MaxConnections = me->MaxConsoleConnections + 10;
+      }
+
       my_config->m_omit_defaults = me->omit_defaults;
       set_working_directory(me->working_directory);
-      if (!me->messages) {       /* If message resource not specified */
+
+      /*
+       * See if message resource is specified.
+       */
+      if (!me->messages) {
          me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
             Jmsg(NULL, M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);

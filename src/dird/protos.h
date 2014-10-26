@@ -30,8 +30,9 @@ bool do_admin(JCR *jcr);
 void admin_cleanup(JCR *jcr, int TermCode);
 
 /* authenticate.c */
-bool authenticate_storage_daemon(JCR *jcr, STORERES *store);
-bool authenticate_file_daemon(JCR *jcr);
+bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store);
+bool authenticate_with_file_daemon(JCR *jcr);
+bool authenticate_file_daemon(JCR *jcr, char *client_name);
 bool authenticate_user_agent(UAContext *ua);
 
 /* autoprune.c */
@@ -55,11 +56,6 @@ void update_bootstrap_file(JCR *jcr);
 bool send_accurate_current_files(JCR *jcr);
 void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type,
                              const char *term_msg);
-
-/* vbackup.c */
-bool do_native_vbackup_init(JCR *jcr);
-bool do_native_vbackup(JCR *jcr);
-void native_vbackup_cleanup(JCR *jcr, int TermCode);
 
 /* bsr.c */
 RBSR *new_bsr();
@@ -109,6 +105,7 @@ bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 void do_client_resolve(UAContext *ua, CLIENTRES *client);
+void *handle_filed_connection(BSOCK *fd, char *client_name);
 
 /* getmsg.c */
 bool response(JCR *jcr, BSOCK *fd, char *resp, const char *cmd, e_prtmsg prtmsg);
@@ -232,6 +229,10 @@ JCR *wait_for_next_job(char *one_shot_job_to_run);
 bool is_doy_in_last_week(int year, int doy);
 void term_scheduler();
 
+/* socket_server.c */
+void start_socket_server(dlist *addrs);
+void stop_socket_server();
+
 /* stats.c */
 int start_statistics_thread(void);
 void stop_statistics_thread();
@@ -283,6 +284,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list,
 void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list);
 
 /* ua_output.c */
+void bsendmsg(void *ua_ctx, const char *fmt, ...);
 void prtit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool);
 RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);
@@ -291,10 +293,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);
 void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *MediaType);
 
 /* ua_server.c */
-void bsendmsg(void *ua_ctx, const char *fmt, ...);
-void berrormsg(void *ua_ctx, const char *fmt, ...);
-void bwarningmsg(void *ua_ctx, const char *fmt, ...);
-void binfomsg(void *ua_ctx, const char *fmt, ...);
+void *handle_UA_client_request(BSOCK *user);
 UAContext *new_ua_context(JCR *jcr);
 JCR *new_control_jcr(const char *base_name, int job_type);
 void free_ua_context(UAContext *ua);
@@ -369,6 +368,11 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del);
 /* ua_run.c */
 int rerun_cmd(UAContext *ua, const char *cmd);
 int run_cmd(UAContext *ua, const char *cmd);
+
+/* vbackup.c */
+bool do_native_vbackup_init(JCR *jcr);
+bool do_native_vbackup(JCR *jcr);
+void native_vbackup_cleanup(JCR *jcr, int TermCode);
 
 /* verify.c */
 bool do_verify(JCR *jcr);

@@ -97,8 +97,8 @@ void set_new_file_parameters(DCR *dcr);
 BSR *position_device_to_first_file(JCR *jcr, DCR *dcr);
 bool try_device_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr);
 
-/* dircmd.c */
-void *handle_connection_request(void *arg);
+/* dir_cmd.c */
+void *handle_director_connection(BSOCK *dir);
 
 /* fd_cmds.c */
 void *handle_filed_connection(BSOCK *fd, char *job_name);
@@ -152,7 +152,7 @@ bool mount_next_read_volume(DCR *dcr);
 /* ndmp_tape.c */
 void end_of_ndmp_backup(JCR *jcr);
 void end_of_ndmp_restore(JCR *jcr);
-int start_ndmp_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq);
+int start_ndmp_thread_server(dlist *addr_list, int max_clients);
 void stop_ndmp_thread_server();
 
 /* parse_bsr.c */
@@ -263,6 +263,10 @@ int start_statistics_thread(void);
 void stop_statistics_thread();
 void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
 void update_job_statistics(JCR *jcr, utime_t now);
+
+/* socket_server.c */
+void start_socket_server(dlist *addrs);
+void stop_socket_server();
 
 /* spool.c */
 bool begin_data_spool (DCR *dcr);

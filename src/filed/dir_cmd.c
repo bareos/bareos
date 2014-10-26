@@ -410,7 +410,7 @@ static inline void cleanup_fileset(JCR *jcr)
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-static void *handle_director_connection(BSOCK *dir)
+void *handle_director_connection(BSOCK *dir)
 {
    JCR *jcr;
    bool found;
@@ -544,54 +544,6 @@ static void *handle_director_connection(BSOCK *dir)
 #ifdef HAVE_WIN32
    allow_os_suspensions();
 #endif
-
-   return NULL;
-}
-
-/*
- * Connection request. We accept connections either from the Director or the Storage Daemon
- *
- * NOTE! We are running as a separate thread
- *
- * Send output one line at a time followed by a zero length transmission.
- * Return when the connection is terminated or there is an error.
- *
- * Basic tasks done here:
- *  - If it was a connection from an SD, call handle_stored_connection()
- *  - Otherwise it was a connection from the DIR, call handle_director_connection()
- */
-void *handle_connection_request(void *arg)
-{
-   BSOCK *bs = (BSOCK *)arg;
-   char tbuf[100];
-
-   if (bs->recv() <= 0) {
-      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      delete bs;
-      return NULL;
-   }
-
-   Dmsg1(110, "Conn: %s", bs->msg);
-
-   /*
-    * See if its a director making a connection.
-    */
-   if (bstrncmp(bs->msg, "Hello Director", 14)) {
-      Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_director_connection(bs);
-   }
-
-   /*
-    * See if its a storage daemon making a connection.
-    */
-   if (bstrncmp(bs->msg, "Hello Storage", 13)) {
-      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_stored_connection(bs);
-   }
-
-   Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
 
    return NULL;
 }

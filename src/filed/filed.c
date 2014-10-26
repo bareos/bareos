@@ -50,9 +50,6 @@ void *start_heap;
 
 char *configfile = NULL;
 static bool foreground = false;
-static workq_t dir_workq;             /* queue of work from Director */
-static alist *sock_fds;
-static pthread_t tcp_server_tid;
 
 static void usage()
 {
@@ -198,11 +195,12 @@ int main (int argc, char *argv[])
       drop(uid, gid, keep_readall_caps);
    }
 
-   tcp_server_tid = pthread_self();
    if (!no_signals) {
       init_signals(terminate_filed);
    } else {
-      /* This reduces the number of signals facilitating debugging */
+      /*
+       * This reduces the number of signals facilitating debugging
+       */
       watchdog_sleep_time = 120;      /* long timeout for debugging */
    }
 
@@ -259,21 +257,8 @@ int main (int argc, char *argv[])
          init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
       }
    }
-   tcp_server_tid = pthread_self();
 
-   /* Become server, and handle requests */
-   IPADDR *p;
-   foreach_dlist(p, me->FDaddrs) {
-      Dmsg1(10, "filed: listening on port %d\n", p->get_port_host_order());
-   }
-
-   sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp(me->FDaddrs,
-                          me->MaxConcurrentJobs,
-                          sock_fds,
-                          &dir_workq,
-                          me->nokeepalive,
-                          handle_connection_request);
+   start_socket_server(me->FDaddrs);
 
    terminate_filed(0);
 
@@ -292,10 +277,7 @@ void terminate_filed(int sig)
    debug_level = 0;                   /* turn off debug */
    stop_watchdog();
 
-   bnet_stop_thread_server_tcp(tcp_server_tid);
-   cleanup_bnet_thread_server_tcp(sock_fds, &dir_workq);
-   delete sock_fds;
-   sock_fds = NULL;
+   stop_socket_server();
 
    unload_fd_plugins();
    flush_mntent_cache();

@@ -32,67 +32,6 @@
 /* Imported variables */
 
 /* Forward referenced functions */
-extern "C" void *connect_thread(void *arg);
-static void *handle_UA_client_request(void *arg);
-
-/* Global variables */
-static int started = FALSE;
-static workq_t ua_workq;
-static alist *sock_fds;
-static pthread_t tcp_server_tid;
-
-struct s_addr_port {
-   char *addr;
-   char *port;
-};
-
-/* Called here by Director daemon to start UA (user agent)
- * command thread. This routine creates the thread and then
- * returns.
- */
-void start_UA_server(dlist *addrs)
-{
-   int status;
-   static dlist *myaddrs = addrs;
-
-   if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
-      berrno be;
-      Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
-   }
-   started = TRUE;
-
-   return;
-}
-
-void stop_UA_server()
-{
-   if (!started) {
-      return;
-   }
-
-   bnet_stop_thread_server_tcp(tcp_server_tid);
-   cleanup_bnet_thread_server_tcp(sock_fds, &ua_workq);
-   delete sock_fds;
-   sock_fds = NULL;
-}
-
-extern "C"
-void *connect_thread(void *arg)
-{
-   pthread_detach(pthread_self());
-   set_jcr_in_tsd(INVALID_JCR);
-
-   /* Permit MaxConsoleConnect console connections */
-   sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp((dlist*)arg,
-                          me->MaxConsoleConnect,
-                          sock_fds,
-                          &ua_workq,
-                          me->nokeepalive,
-                          handle_UA_client_request);
-
-   return NULL;
-}
 
 /*
  * Create a Job Control Record for a control "job", filling in all the appropriate fields.
@@ -124,12 +63,11 @@ JCR *new_control_jcr(const char *base_name, int job_type)
 /*
  * Handle Director User Agent commands
  */
-static void *handle_UA_client_request(void *arg)
+void *handle_UA_client_request(BSOCK *user)
 {
    int status;
    UAContext *ua;
    JCR *jcr;
-   BSOCK *user = (BSOCK *)arg;
 
    pthread_detach(pthread_self());
 
@@ -139,7 +77,6 @@ static void *handle_UA_client_request(void *arg)
    ua->UA_sock = user;
    set_jcr_in_tsd(INVALID_JCR);
 
-   user->recv();             /* Get first message */
    if (!authenticate_user_agent(ua)) {
       goto getout;
    }

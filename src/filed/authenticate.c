@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * See who is connecting and lookup the authentication information.
- * First make him prove his identity and then prove our identity to the Remote daemon.
+ * First make him prove his identity and then prove our identity to the Remote.
  */
 static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
 {
@@ -219,7 +219,10 @@ auth_fatal:
 }
 
 /*
- * First prove our identity to the Remote daemon and then make him prove his identity.
+ * Depending on the initiate parameter perform one of the following:
+ *
+ * - First make him prove his identity and then prove our identity to the Remote.
+ * - First prove our identity to the Remote and then make him prove his identity.
  */
 static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, const char *what)
 {
@@ -297,7 +300,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
    }
 
    if (!auth_success) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s daemon.\n"
+      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s.\n"
                               "Please see %s for help.\n"), what, MANUAL_AUTH_URL);
       goto auth_fatal;
    }
@@ -387,7 +390,7 @@ bool authenticate_storagedaemon(JCR *jcr)
 {
    BSOCK *sd = jcr->store_bsock;
 
-   return two_way_authenticate(sd, jcr, true, "Storage");
+   return two_way_authenticate(sd, jcr, true, "Storage daemon");
 }
 
 /*
@@ -397,5 +400,5 @@ bool authenticate_with_storagedaemon(JCR *jcr)
 {
    BSOCK *sd = jcr->store_bsock;
 
-   return two_way_authenticate(sd, jcr, false, "Storage");
+   return two_way_authenticate(sd, jcr, false, "Storage daemon");
 }

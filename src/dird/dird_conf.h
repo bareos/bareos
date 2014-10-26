@@ -108,7 +108,8 @@ public:
    alist *backend_directories;        /* Backend Directories */
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
-   uint32_t MaxConsoleConnect;        /* Max concurrent console session */
+   uint32_t MaxConnections;           /* Max concurrent connections */
+   uint32_t MaxConsoleConnections;    /* Max concurrent console connections */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
@@ -267,6 +268,7 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
+   bool allow_client_connect;         /* Allow a client to connect to the director */
    bool enabled;                      /* Set if client is enabled */
 
    bool tls_authenticate;             /* Authenticated with TLS */

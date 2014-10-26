@@ -87,7 +87,7 @@ static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
 /*
- * After receiving a connection (in dircmd.c) if it is
+ * After receiving a connection (in socket_server.c) if it is
  * from the Storage daemon, this routine is called.
  */
 void *handle_stored_connection(BSOCK *sd, char *job_name)

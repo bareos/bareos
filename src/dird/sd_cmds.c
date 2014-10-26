@@ -121,7 +121,7 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    sd->res = (RES *)store;        /* save pointer to other end */
    jcr->store_bsock = sd;
 
-   if (!authenticate_storage_daemon(jcr, store)) {
+   if (!authenticate_with_storage_daemon(jcr, store)) {
       sd->close();
       delete jcr->store_bsock;
       jcr->store_bsock = NULL;

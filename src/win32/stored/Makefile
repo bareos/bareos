@@ -53,7 +53,7 @@ LIBBAREOSSD_OBJS = $(LIBBAREOSSD_SRCS:.c=.o)
 DYNAMIC_OBJS = $(LIBBAREOSSD_OBJS)
 
 SVRSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c \
-	  ndmp_tape.c read.c sd_cmds.c sd_stats.c status.c stored.c \
+	  ndmp_tape.c read.c sd_cmds.c sd_stats.c socket_server.c status.c stored.c \
 	  service.c main.c
 SVROBJS = $(SVRSRCS:.c=.o)
 

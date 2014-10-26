@@ -98,6 +98,10 @@ struct ndmp_backup_format_option {
    bool uses_level;
 };
 
+#if HAVE_NDMP
+static workq_t ndmp_workq;         /* Queue for processing NDMP connections */
+#endif
+
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"dump", true },
    { (char *)"tar", false },
@@ -1549,13 +1553,13 @@ extern "C" void *ndmp_thread_server(void *arg)
    return NULL;
 }
 
-int start_ndmp_thread_server(dlist *addr_list, int max_clients, workq_t *client_wq)
+int start_ndmp_thread_server(dlist *addr_list, int max_clients)
 {
    int status;
 
    ndmp_thread_server_args.addr_list = addr_list;
    ndmp_thread_server_args.max_clients = max_clients;
-   ndmp_thread_server_args.client_wq = client_wq;
+   ndmp_thread_server_args.client_wq = &ndmp_workq;
 
    if ((status = pthread_create(&ndmp_tid, NULL, ndmp_thread_server,
                                (void *)&ndmp_thread_server_args)) != 0) {

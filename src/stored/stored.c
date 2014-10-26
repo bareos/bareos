@@ -60,11 +60,6 @@ bool init_done = false;
 /* Global static variables */
 static bool foreground = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static workq_t dird_workq;            /* queue for processing connections */
-#if HAVE_NDMP
-static workq_t ndmp_workq;            /* queue for processing NDMP connections */
-#endif
-static alist *sock_fds;
 
 static void usage()
 {
@@ -281,22 +276,20 @@ int main (int argc, char *argv[])
    start_statistics_thread();
 
 #if HAVE_NDMP
-   /* Seperate thread that handles NDMP connections */
+   /*
+    * Seperate thread that handles NDMP connections
+    */
    if (me->ndmp_enable) {
       start_ndmp_thread_server(me->NDMPaddrs,
-                               me->max_concurrent_jobs * 2 + 1,
-                               &ndmp_workq);
+                               me->max_concurrent_jobs * 2 + 1);
    }
 #endif
 
-   /* Single server used for Director/Storage and File daemon */
-   sock_fds = New(alist(10, not_owned_by_alist));
-   bnet_thread_server_tcp(me->SDaddrs,
-                      me->max_concurrent_jobs * 2 + 1,
-                      sock_fds,
-                      &dird_workq,
-                      me->nokeepalive,
-                      handle_connection_request);
+   /*
+    * Single server used for Director/Storage and File daemon
+    */
+   start_socket_server(me->SDaddrs);
+
    exit(1);                           /* to keep compiler quiet */
 }
 
@@ -687,9 +680,7 @@ void terminate_stored(int sig)
 #endif
    stop_watchdog();
 
-   cleanup_bnet_thread_server_tcp(sock_fds, &dird_workq);
-   delete sock_fds;
-   sock_fds = NULL;
+   stop_socket_server();
 
    if (sig == SIGTERM) {              /* normal shutdown request? */
       /*

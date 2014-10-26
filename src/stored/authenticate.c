@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +37,7 @@ static char OK_hello[] =
 
 /*
  * See who is connecting and lookup the authentication information.
- * First make him prove his identity and then prove our identity to the Remote daemon.
+ * First make him prove his identity and then prove our identity to the Remote.
  */
 static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
 {
@@ -180,8 +181,8 @@ auth_fatal:
 /*
  * Depending on the initiate parameter perform one of the following:
  *
- * - First make him prove his identity and then prove our identity to the Remote daemon.
- * - First prove our identity to the Remote daemon and then make him prove his identity.
+ * - First make him prove his identity and then prove our identity to the Remote.
+ * - First prove our identity to the Remote and then make him prove his identity.
  */
 static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, const char *what)
 {
@@ -254,7 +255,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
    }
 
    if (!auth_success) {
-      Jmsg(jcr, M_FATAL, 0, _("Incorrect authorization key from %s daemon at %s rejected.\n"
+      Jmsg(jcr, M_FATAL, 0, _("Incorrect authorization key from %s at %s rejected.\n"
                               "Please see %s for help.\n"), what, bs->who(), MANUAL_AUTH_URL);
       auth_success = false;
       goto auth_fatal;
@@ -287,14 +288,14 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
        */
       if (initiate) {
          if (!bnet_tls_server(me->tls_ctx, bs, verify_list)) {
-            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s daemon at \"%s:%d\"\n"),
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
                  what, bs->host(), bs->port());
             auth_success = false;
             goto auth_fatal;
          }
       } else {
          if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
-            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s daemon at \"%s:%d\"\n"),
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
                  what, bs->host(), bs->port());
             auth_success = false;
             goto auth_fatal;
@@ -312,6 +313,7 @@ auth_fatal:
 
    return auth_success;
 }
+
 /*
  * Initiate the message channel with the Director.
  * It has made a connection to our server.
@@ -350,7 +352,7 @@ bool authenticate_storagedaemon(JCR *jcr)
 {
    BSOCK *sd = jcr->store_bsock;
 
-   if (!two_way_authenticate(sd, jcr, true, "Storage")) {
+   if (!two_way_authenticate(sd, jcr, true, "Storage daemon")) {
       Jmsg1(jcr, M_FATAL, 0,
             _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
             sd->who());
@@ -369,7 +371,7 @@ bool authenticate_with_storagedaemon(JCR *jcr)
 {
    BSOCK *sd = jcr->store_bsock;
 
-   if (!two_way_authenticate(sd, jcr, false, "Storage")) {
+   if (!two_way_authenticate(sd, jcr, false, "Storage daemon")) {
       Jmsg1(jcr, M_FATAL, 0,
             _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
             sd->who());
@@ -388,7 +390,7 @@ bool authenticate_filedaemon(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
 
-   if (!two_way_authenticate(fd, jcr, true, "File")) {
+   if (!two_way_authenticate(fd, jcr, true, "File daemon")) {
       Jmsg1(jcr, M_FATAL, 0,
             _("Authorization problem: Two way security handshake failed with File daemon at %s\n"),
             fd->who());
@@ -407,7 +409,7 @@ bool authenticate_with_filedaemon(JCR *jcr)
 {
    BSOCK *fd = jcr->file_bsock;
 
-   if (!two_way_authenticate(fd, jcr, false, "File")) {
+   if (!two_way_authenticate(fd, jcr, false, "File daemon")) {
       Jmsg1(jcr, M_FATAL, 0,
             _("Authorization problem: Two way security handshake failed with File daemon at %s\n"),
             fd->who());

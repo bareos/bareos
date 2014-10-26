@@ -45,7 +45,6 @@
 /* Exported variables */
 
 /* Imported variables */
-extern BSOCK *filed_chan;
 extern struct s_last_job last_job;
 extern bool init_done;
 
@@ -202,7 +201,7 @@ static struct s_cmds cmds[] = {
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-static void *handle_director_connection(BSOCK *dir, char *job_name)
+void *handle_director_connection(BSOCK *dir)
 {
    JCR *jcr;
    int i, errstat;
@@ -302,64 +301,6 @@ bail_out:
    free_jcr(jcr);
 
    return NULL;
-}
-
-/*
- * Connection request. We accept connections either from the
- * Director, Storage Daemon or a Client (File daemon).
- *
- * Note, we are running as a seperate thread of the Storage daemon.
- *
- * Basic tasks done here:
- *  - If it was a connection from the FD, call handle_filed_connection()
- *  - If it was a connection from an other SD, call handle_stored_connection()
- *  - Otherwise it was a connection from the DIR, call handle_director_connection()
- */
-void *handle_connection_request(void *arg)
-{
-   BSOCK *bs = (BSOCK *)arg;
-   char name[500];
-   char tbuf[100];
-
-   if (bs->recv() <= 0) {
-      Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      return NULL;
-   }
-
-   /*
-    * Do a sanity check on the message received
-    */
-   if (bs->msglen < 25 || bs->msglen > (int)sizeof(name)) {
-      Dmsg1(000, "<filed: %s", bs->msg);
-      Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
-      bmicrosleep(5, 0);   /* make user wait 5 seconds */
-      bs->close();
-      return NULL;
-   }
-
-   Dmsg1(110, "Conn: %s", bs->msg);
-
-   /*
-    * See if this is a File daemon connection. If so call FD handler.
-    */
-   if (sscanf(bs->msg, "Hello Start Job %127s", name) == 1) {
-      Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_filed_connection(bs, name);
-   }
-
-   /*
-    * See if this is a Storage daemon connection. If so call SD handler.
-    */
-   if (sscanf(bs->msg, "Hello Start Storage Job %127s", name) == 1) {
-      Dmsg1(110, "Got a SD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_stored_connection(bs, name);
-   }
-
-   Dmsg1(110, "Got a DIR connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-
-   return handle_director_connection(bs, name);
 }
 
 /*

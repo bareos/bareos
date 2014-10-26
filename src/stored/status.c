@@ -34,7 +34,6 @@
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 /* Imported variables */
-extern BSOCK *filed_chan;
 extern void *start_heap;
 
 /* Static variables */

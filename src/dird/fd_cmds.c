@@ -131,7 +131,7 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, boo
    jcr->file_bsock = fd;
    jcr->setJobStatus(JS_Running);
 
-   if (!authenticate_file_daemon(jcr)) {
+   if (!authenticate_with_file_daemon(jcr)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       return 0;
    }
@@ -1092,4 +1092,26 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
    ua->jcr->file_bsock = NULL;
 
    return;
+}
+
+/*
+ * After receiving a connection (in socket_server.c) if it is
+ * from the File daemon, this routine is called.
+ */
+void *handle_filed_connection(BSOCK *fd, char *client_name)
+{
+   JCR *jcr;
+
+   jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+
+   if (!authenticate_file_daemon(jcr, client_name)) {
+      goto getout;
+   }
+
+getout:
+   free_jcr(jcr);
+   fd->close();
+   delete fd;
+
+   return NULL;
 }

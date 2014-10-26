@@ -48,7 +48,7 @@ LDLIBS = ../lib/libbareos.a \
 SVRSRCS = accurate.c accurate_htable.c accurate_lmdb.c authenticate.c \
 	  backup.c compression.c crypto.c dir_cmd.c estimate.c \
 	  fd_plugins.c filed_conf.c filed.c fileset.c heartbeat.c \
-	  restore.c sd_cmds.c status.c verify.c verify_vol.c \
+	  restore.c sd_cmds.c socket_server.c status.c verify.c verify_vol.c \
 	  vss.c vss_XP.c vss_W2K3.c vss_Vista.c service.c main.c
 
 SVROBJS = $(SVRSRCS:.c=.o)

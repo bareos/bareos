@@ -54,8 +54,8 @@ LIBBAREOSSD_LOBJS = $(LIBBAREOSSD_SRCS:.c=.lo)
 LIBBAREOSSD_LT_RELEASE = @LIBBAREOSSD_LT_RELEASE@
 
 # bareos-sd
-SDSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c \
-	 ndmp_tape.c read.c sd_cmds.c sd_stats.c status.c stored.c
+SDSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c ndmp_tape.c \
+         read.c sd_cmds.c sd_stats.c socket_server.c status.c stored.c
 SDOBJS = $(SDSRCS:.c=.o)
 
 # btape
