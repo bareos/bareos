@@ -465,6 +465,10 @@ database.  Although the attribute data including the signatures (MD5 or
 SHA1) are compared, the actual file data is not compared (it is not in
 the catalog).
 
+VolumeToCatalog jobs need a client to extract the metadata, but this
+client does not have to be the original client. We suggest to use the
+client on the backup server itself for maximum performance.
+
 \warning{If you run two Verify VolumeToCatalog jobs on the same
 client at the same time, the results will certainly be incorrect.  This
 is because the Verify VolumeToCatalog modifies the Catalog database
