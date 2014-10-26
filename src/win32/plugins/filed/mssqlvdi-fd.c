@@ -49,10 +49,11 @@ static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Zilvinas Krapavickas"
-#define PLUGIN_DATE         "July 2013"
-#define PLUGIN_VERSION      "1"
+#define PLUGIN_DATE         "October 2014"
+#define PLUGIN_VERSION      "2"
 #define PLUGIN_DESCRIPTION  "Bareos MSSQL VDI Windows File Daemon Plugin"
 #define PLUGIN_USAGE        "\n  mssqlvdi:\n"\
+                            "  serveraddress=<hostname>:\n"\
                             "  instance=<instance name>:\n"\
                             "  database=<database name>:\n"\
                             "  username=<database username>:\n"\
@@ -68,13 +69,13 @@ static const int dbglvl = 150;
                             "  timestamp: 'Apr 15, 2020 12:00 AM'\n"\
                             "  log sequence number: 'lsn:15000000040000037'"
 
-
-#define DEFAULT_INSTANCE    "default"
-#define DEFAULT_BLOCKSIZE   65536
-#define DEFAULT_BUFFERS     10
-#define VDS_NAME_LENGTH     50
-#define VDI_DEFAULT_WAIT    60000 /* 60 seconds */
-#define VDI_WAIT_TIMEOUT    0xFFFFFFFF /* INFINITE */
+#define DEFAULT_SERVER_ADDRESS "localhost"
+#define DEFAULT_INSTANCE "default"
+#define DEFAULT_BLOCKSIZE 65536
+#define DEFAULT_BUFFERS 10
+#define VDS_NAME_LENGTH 50
+#define VDI_DEFAULT_WAIT 60000 /* 60 seconds */
+#define VDI_WAIT_TIMEOUT 0xFFFFFFFF /* INFINITE */
 
 /*
  * Forward referenced functions
@@ -151,6 +152,7 @@ struct plugin_ctx {
    bool RecoverAfterRestore;
    char *plugin_options;
    char *filename;
+   char *server_address;
    char *instance;
    char *database;
    char *username;
@@ -181,6 +183,7 @@ struct adoThreadContext {
  */
 enum plugin_argument_type {
    argument_none,
+   argument_server_address,
    argument_instance,
    argument_database,
    argument_username,
@@ -199,6 +202,7 @@ struct plugin_argument {
 };
 
 static plugin_argument plugin_arguments[] = {
+   { "serveraddress", argument_server_address },
    { "instance", argument_instance },
    { "database", argument_database },
    { "username", argument_username },
@@ -319,6 +323,10 @@ static bRC freePlugin(bpContext *ctx)
 
    if (p_ctx->filename) {
       free(p_ctx->filename);
+   }
+
+   if (p_ctx->server_address) {
+      free(p_ctx->server_address);
    }
 
    if (p_ctx->instance) {
@@ -462,10 +470,17 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    }
 
    /*
-    * If no explicit instance name given use the DEFAULT_INSTANCE name.
+    * If no explicit instance name given use the DEFAULT_INSTANCE.
     */
    if (!p_ctx->instance) {
       p_ctx->instance = bstrdup(DEFAULT_INSTANCE);
+   }
+
+   /*
+    * If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
+    */
+   if (!p_ctx->server_address) {
+      p_ctx->server_address = bstrdup(DEFAULT_SERVER_ADDRESS);
    }
 
    now = time(NULL);
@@ -620,6 +635,9 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             bool *bool_destination = NULL;
 
             switch (plugin_arguments[i].type) {
+            case argument_server_address:
+               str_destination = &p_ctx->server_address;
+               break;
             case argument_instance:
                str_destination = &p_ctx->instance;
                break;
@@ -1060,12 +1078,13 @@ static void set_ado_connect_string(bpContext *ctx)
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
-      pm_strcpy(ado_connect_string,
-                "Provider=SQLOLEDB.1;Data Source=localhost;Initial Catalog=master");
+      Mmsg(ado_connect_string,
+           "Provider=SQLOLEDB.1;Data Source=%s;Initial Catalog=master",
+           p_ctx->server_address);
    } else {
       Mmsg(ado_connect_string,
-           "Provider=SQLOLEDB.1;Data Source=localhost\\%s;Initial Catalog=master",
-           p_ctx->instance);
+           "Provider=SQLOLEDB.1;Data Source=%s\\%s;Initial Catalog=master",
+           p_ctx->server_address, p_ctx->instance);
    }
 
    /*
