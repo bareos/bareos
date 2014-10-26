@@ -332,7 +332,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    char *cn;
    int error, cnt;
    unsigned int list_size;
-   unsigned int cn_length;
+   size_t cn_length;
    char cannonicalname[256];
    bool auth_success = false;
    gnutls_x509_crt_t cert;
