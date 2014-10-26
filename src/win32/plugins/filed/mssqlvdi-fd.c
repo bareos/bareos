@@ -147,6 +147,8 @@ static pFuncs pluginFuncs = {
  * Plugin private context
  */
 struct plugin_ctx {
+   int RestoreFD;
+   bool RestoreToFile;
    bool DoNoRecovery;
    bool ForceReplace;
    bool RecoverAfterRestore;
@@ -1250,7 +1252,6 @@ static inline void perform_ado_restore(bpContext *ctx)
    free_pool_memory(vdsname);
 }
 
-
 /*
  * Run a query not in a seperate thread.
  */
@@ -1469,7 +1470,80 @@ bail_out:
 }
 
 /*
- * Perform an I/O operation as part of a backup or restore.
+ * Perform an I/O operation to a file as part of a restore.
+ */
+static inline bool perform_file_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
+{
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+
+   switch(io->func) {
+   case IO_OPEN:
+      if (p_ctx->RestoreFD == -1) {
+         io->status = 0;
+         p_ctx->RestoreFD = open(io->fname, io->flags, io->mode);
+         if (p_ctx->RestoreFD < 0) {
+            goto bail_out;
+         }
+      } else {
+         *completionCode = ERROR_BAD_ENVIRONMENT;
+         goto bail_out;
+      }
+      break;
+   case IO_READ:
+      if (p_ctx->RestoreFD != -1) {
+         io->status = read(p_ctx->RestoreFD, io->buf, io->count);
+      } else {
+         *completionCode = ERROR_BAD_ENVIRONMENT;
+         goto bail_out;
+      }
+      break;
+   case IO_WRITE:
+      if (p_ctx->RestoreFD != -1) {
+         io->status = write(p_ctx->RestoreFD, io->buf, io->count);
+      } else {
+         *completionCode = ERROR_BAD_ENVIRONMENT;
+         goto bail_out;
+      }
+      break;
+   case IO_CLOSE:
+      if (p_ctx->RestoreFD != -1) {
+         io->status = 0;
+         close(p_ctx->RestoreFD);
+         p_ctx->RestoreFD = -1;
+      } else {
+         *completionCode = ERROR_BAD_ENVIRONMENT;
+         goto bail_out;
+      }
+      break;
+   case IO_SEEK:
+      if (p_ctx->RestoreFD != -1) {
+         io->status = lseek(p_ctx->RestoreFD, io->offset, io->whence);
+      } else {
+         *completionCode = ERROR_BAD_ENVIRONMENT;
+         goto bail_out;
+      }
+      break;
+   default:
+      goto bail_out;
+   }
+
+   if (io->status < 0) {
+      goto bail_out;
+   }
+
+   io->io_errno = 0;
+   io->lerror = 0;
+   io->win32 = false;
+   *completionCode = ERROR_SUCCESS;
+
+   return true;
+
+bail_out:
+   return false;
+}
+
+/*
+ * Perform an I/O operation to a virtual device as part of a backup or restore.
  */
 static inline bool perform_vdi_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
 {
@@ -1632,12 +1706,17 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
 
    switch(io->func) {
    case IO_OPEN:
-      if (!setup_vdi_device(ctx, io)) {
-         goto bail_out;
+      if (p_ctx->RestoreToFile) {
+         if (!perform_file_io(ctx, io, &completionCode)) {
+            goto bail_out;
+         }
+      } else {
+         if (!setup_vdi_device(ctx, io)) {
+            goto bail_out;
+         }
       }
       break;
    case IO_READ:
-   case IO_WRITE:
       if (!p_ctx->VDIDevice) {
          return bRC_Error;
       }
@@ -1645,29 +1724,58 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          goto bail_out;
       }
       break;
+   case IO_WRITE:
+      if (p_ctx->RestoreToFile) {
+         if (!perform_file_io(ctx, io, &completionCode)) {
+            goto bail_out;
+         }
+      } else {
+         if (!p_ctx->VDIDevice) {
+            return bRC_Error;
+         }
+         if (!perform_vdi_io(ctx, io, &completionCode)) {
+            goto bail_out;
+         }
+      }
+      break;
    case IO_CLOSE:
-      if (!tear_down_vdi_device(ctx, io)) {
-         goto bail_out;
+      if (p_ctx->RestoreToFile) {
+         if (!perform_file_io(ctx, io, &completionCode)) {
+            goto bail_out;
+         }
+      } else {
+         if (!tear_down_vdi_device(ctx, io)) {
+            goto bail_out;
+         }
       }
       break;
    case IO_SEEK:
-      Jmsg(ctx, M_ERROR, "Illegal Seek request on VDIDevice.");
-      Dmsg(ctx, dbglvl, "Illegal Seek request on VDIDevice.");
-      goto bail_out;
+      if (p_ctx->RestoreToFile) {
+         if (!perform_file_io(ctx, io, &completionCode)) {
+            goto bail_out;
+         }
+      } else {
+         Jmsg(ctx, M_ERROR, "Illegal Seek request on VDIDevice.");
+         Dmsg(ctx, dbglvl, "Illegal Seek request on VDIDevice.");
+         goto bail_out;
+      }
+      break;
    }
 
    return bRC_OK;
 
 bail_out:
-   /*
-    * Report any ADO errors.
-    */
-   adoReportError(ctx);
+   if (!p_ctx->RestoreToFile) {
+      /*
+       * Report any ADO errors.
+       */
+      adoReportError(ctx);
 
-   /*
-    * Generic error handling.
-    */
-   close_vdi_deviceset(p_ctx);
+      /*
+       * Generic error handling.
+       */
+      close_vdi_deviceset(p_ctx);
+   }
 
    io->io_errno = completionCode;
    io->lerror = completionCode;
@@ -1727,10 +1835,24 @@ static bRC endRestoreFile(bpContext *ctx)
  *  CF_SKIP     -- skip processing this file
  *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
  *  CF_CREATED  -- created, but no content to extract (typically directories)
+ *  CF_CORE     -- let bareos core create the file
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
-   rp->create_status = CF_EXTRACT;
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
+      return bRC_Error;
+   }
+
+   if (!bstrcasecmp(rp->where, "/")) {
+      p_ctx->RestoreToFile = true;
+      p_ctx->RestoreFD = -1;
+      rp->create_status = CF_CORE;
+   } else {
+      rp->create_status = CF_EXTRACT;
+   }
+
    return bRC_OK;
 }
 
