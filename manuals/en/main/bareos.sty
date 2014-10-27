@@ -239,6 +239,8 @@ Version $>=$ #3%
 % 4: "" | parameter (postgresql | mysql | ...)
 % 5: "" | since version
 % 6: description
+%       can't contain verbatim/lstlisting parts. 
+%       Therefore use \bconfiginput{filename} to include config examples.
 \def\pp{#4}
 \def\pv{#5}
 \def\pd{#6}
