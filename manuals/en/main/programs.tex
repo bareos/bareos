@@ -200,6 +200,7 @@ needs config file
 
 \subsection{bat}
 \index[general]{Command!bat}
+\label{bat}
 
 
 
@@ -1176,14 +1177,12 @@ a configuration file nor a device name.
 \index[general]{bsmtp}
 \index[general]{Command!bsmtp}
 
-{\bf bsmtp} is a simple mail transport program that permits more flexibility
+\command{bsmtp} is a simple mail transport program that permits more flexibility
 than the standard mail programs typically found on Unix systems. It can even
 be used on Windows machines.
 
 It is called:
-
-\footnotesize
-\begin{verbatim}
+\begin{commands}{bsmtp}
 Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...t
        -4          forces bsmtp to use IPv4 addresses only.
        -6          forces bsmtp to use IPv6 addresses only.
@@ -1198,15 +1197,14 @@ Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...t
        -r          set the Reply-To: field
        -l          set the maximum number of lines to send (default: unlimited)
        -?          print this message.
-\end{verbatim}
-\normalsize
+\end{commands}
 
-If the {\bf -f} option is not specified, {\bf bsmtp} will use your userid. If
-the option {\bf -h} is not specified {\bf bsmtp} will use the value in the environment
+If the {\bf -f} option is not specified, \command{bsmtp} will use your userid. If
+the option {\bf -h} is not specified \command{bsmtp} will use the value in the environment
 variable {\bf bsmtpSERVER} or if there is none {\bf localhost}. By default
 port 25 is used.
 
-If a line count limit is set with the {\bf -l} option, {\bf bsmtp} will
+If a line count limit is set with the {\bf -l} option, \command{bsmtp} will
 not send an email with a body text exceeding that number of lines. This
 is especially useful for large restore job reports where the list of
 files restored might produce very long mails your mail-server would
@@ -1219,20 +1217,15 @@ by the Director (see the messages resource in this manual for details).
 
 The body of the email message is read from standard input.
 
-An example of the use of {\bf bsmtp} would be to put the following statement
-in the {\bf Messages} resource of your {\bf Bareos-dir.conf} file. Note, these
-commands should appear on a single line each.
+An example of the use of \command{bsmtp} would be to put the following statement
+in the \ilink{Messages resource}{MessagesResource} of your \file{bareos-dir.conf} file.
 
-\footnotesize
-\begin{verbatim}
-  mailcommand = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\"
-                 -s \"Bareos: %t %e of %c %l\" %r"
-  operatorcommand = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\"
-                    -s \"Bareos: Intervention needed for %j\" %r"
-\end{verbatim}
-\normalsize
+\begin{bconfig}{bsmtp in Message resource}
+Mail Command     = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\" -s \"Bareos: %t %e of %c %l\" %r"
+Operator Command = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\" -s \"Bareos: Intervention needed for %j\" %r"
+\end{bconfig}
 
-Where you replace replace {\bf mail.examplecom} with the fully
+You have to replace {\bf mail.example.com} with the fully
 qualified name of your SMTP (email) server, which normally listens on port
 25. For more details on the substitution characters (e.g. \%r) used in the
 above line, please see the documentation of the
@@ -1249,23 +1242,23 @@ a fully qualified domain name in the {\bf from} field, and depending on
 whether your bsmtp gateway is Exim or Sendmail, you may need to modify the
 syntax of the from part of the message. Please test.
 
-When running {\bf bsmtp} by hand, you will need to terminate the message by
+When running \command{bsmtp} by hand, you will need to terminate the message by
 entering a ctrl-d in column 1 of the last line.
 % TODO: is "column" the correct terminology for this?
 
 If you are getting incorrect dates (e.g. 1970) and you are
 running with a non-English language setting, you might try adding
-a LANG=''en\_US'' immediately before the bsmtp call.
+a \command{LANG=C} immediately before the \command{bsmtp} call.
 
-In general, {\bf bsmtp} attempts to cleanup email addresses that you
+In general, \command{bsmtp} attempts to cleanup email addresses that you
 specify in the from, copy, mailhost, and recipient fields, by adding
 the necessary {\textless} and {\textgreater} characters around the address part.  However,
 if you include a {\bf display-name} (see RFC 5332), some SMTP servers
 such as Exchange may not accept the message if the {\bf display-name} is
 also included in {\textless} and {\textgreater}.  As mentioned above, you must test, and
 if you run into this situation, you may manually add the {\textless} and {\textgreater}
-to the Bareos {\bf mailcommand} or {\bf operatorcommand} and when
-{\bf bsmtp} is formatting an address if it already contains a {\textless} or
+to the Bareos \linkResourceDirective{Dir}{Messages}{Mail Command} or \linkResourceDirective{Dir}{Messages}{Operator Command} and when
+\command{bsmtp} is formatting an address if it already contains a {\textless} or
 {\textgreater} character, it will leave the address unchanged.
 
 \subsection{bareos-dbcheck}
@@ -1437,15 +1430,10 @@ The inconsistencies examined are the following:
 If you are using Mysql, bareos-dbcheck will ask you if you want to create temporary
 indexes to speed up orphaned Path and Filename elimination.
 
-Mostly for PostgreSQL users, we provide a pure SQL script dbcheck replacement
-in \url{examples/database/dbcheck.sql} that works with global queries instead
-of many small queries like dbcheck. Execution instructions are at the top of
-the script and you will need to type \texttt{COMMIT} at the end to validate
-modifications.
-
-If you are using bweb or brestore, don't eliminate orphaned Path, else you will
-have to rebuild \texttt{brestore\_pathvisibility} and
-\texttt{brestore\_pathhierarchy} indexes.
+If you are using bvfs (e.g. used by \ilink{BAT}{bat}), don't eliminate orphaned path, else you will
+have to rebuild \variable{brestore_pathvisibility} and
+\variable{brestore_pathhierarchy} indexes.
+\TODO{verify if orphaned paths are still in use by Bareos}
 
 Normally
 you should never need to run bareos-dbcheck in spite of the
