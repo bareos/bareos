@@ -1,8 +1,30 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# BAREOS® - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation, which is
+# listed in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+#
 # Bareos-fd-local-fileset a simple example for a python Bareos FD Plugin using
 # BareosFdPluginLocalFileset. The plugin argument 'filename' is used to read
 # all files listed in that file and add it to the fileset
+#
+# Author: Maik Aussendorf
+#
 
 # Provided by the Bareos FD Python plugin interface
 import bareos_fd_consts
