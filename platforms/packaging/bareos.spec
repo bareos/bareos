@@ -167,7 +167,7 @@ BuildRequires: tcpd-devel
 BuildRequires: termcap
 BuildRequires: update-desktop-files
 
-%if 0%{?sles_version}
+%if 0%{?sles_version} || 0%{?suse_version} == 1315
 BuildRequires: sles-release
 %else
 BuildRequires: openSUSE-release
