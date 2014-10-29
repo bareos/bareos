@@ -98,6 +98,7 @@ Package:        bareos-common
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
 Depends:        openssl, ${shlibs:Depends}, ${misc:Depends}
+Conflicts:	bacula-director-common, bacula-common
 Description:    Backup Archiving Recovery Open Sourced - common files
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -158,6 +159,7 @@ Package:        bareos-database-tools
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
+Conflicts:	bacula-sd-mysql, bacula-sd-pgsql, bacula-sd-sqlite3
 Description: Backup Archiving Recovery Open Sourced - database tools
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -172,6 +174,7 @@ Priority: extra
 Depends:
     bareos-storage (= ${binary:Version}) | bareos-bconsole (= ${binary:Version}) | bareos-common (= ${binary:Version}) | bareos-database-common (= ${binary:Version}) | bareos-database-mysql (= ${binary:Version}) | bareos-database-postgresql (= ${binary:Version}) | bareos-database-sqlite3 (= ${binary:Version}) | bareos-database-tools (= ${binary:Version}) | bareos-director (= ${binary:Version}) | bareos-filedaemon (= ${binary:Version}) | bareos-storage (= ${binary:Version}) | bareos-storage-tape (= ${binary:Version}) | bareos-storage-fifo (= ${binary:Version}) | bareos-tools (= ${binary:Version}),
     ${misc:Depends}
+Conflicts: bacula-sd-dbg, bacula-sd-mysql-dbg, bacula-sd-pgsql-dbg, bacula-sd-sqlite3-dbg
 Description: Backup Archiving Recovery Open Sourced - debugging symbols
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -280,6 +283,7 @@ Package:        bareos-tools
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Conflicts:	bacula-sd, bacula-sd-mysql, bacula-sd-pgsql, bacula-sd-sqlite3
 Description: Backup Archiving Recovery Open Sourced - common tools
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
