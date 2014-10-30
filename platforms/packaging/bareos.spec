@@ -136,6 +136,10 @@ BuildRequires: pwdutils
 BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
 
+# SLE-12
+%if 0%{?suse_version} == 1315
+BuildRequires: sles-release
+%else
 # Some magic to be able to determine what platform we are running on.
 %if !0%{sles_version}
 BuildRequires: openSUSE-release
@@ -144,6 +148,7 @@ BuildRequires: openSUSE-release
 BuildRequires: sles-release
 %else
 BuildRequires: sled-release
+%endif
 %endif
 %endif
 
