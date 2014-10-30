@@ -317,11 +317,6 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
             goto bail_out;
          }
 
-         if (!send_restore_objects(jcr)) {
-            Dmsg0(000, "FAIL: Send restore objects\n");
-            goto bail_out;
-         }
-
          /*
           * Only FD version 52 and later understand the sending of plugin options.
           */
@@ -341,6 +336,11 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
                     jcr->res.client->name());
                goto bail_out;
             }
+         }
+
+         if (!send_restore_objects(jcr, 0, true)) {
+            Dmsg0(000, "FAIL: Send restore objects\n");
+            goto bail_out;
          }
       }
 

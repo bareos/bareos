@@ -1034,15 +1034,24 @@ bool get_level_since_time(JCR *jcr)
                break;
             }
          }
+
          bstrncpy(jcr->since, _(", since="), sizeof(jcr->since));
          bstrncat(jcr->since, jcr->stime, sizeof(jcr->since));
       }
       jcr->jr.JobId = jcr->JobId;
+
+      /*
+       * Lookup the Job record of the previous Job and store it in jcr->previous_jr.
+       */
+      bstrncpy(jcr->previous_jr.Job, jcr->PrevJob, sizeof(jcr->previous_jr.Job));
+      if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
+         Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), db_strerror(jcr->db));
+      }
+
       break;
    }
 
-   Dmsg3(100, "Level=%c last start time=%s job=%s\n",
-         JobLevel, jcr->stime, jcr->PrevJob);
+   Dmsg3(100, "Level=%c last start time=%s job=%s\n", JobLevel, jcr->stime, jcr->PrevJob);
 
    return pool_updated;
 }

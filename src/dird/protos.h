@@ -98,13 +98,14 @@ bool send_include_list(JCR *jcr);
 bool send_exclude_list(JCR *jcr);
 bool send_level_command(JCR *jcr);
 bool send_bwlimit_to_fd(JCR *jcr, const char *Job);
+bool send_previous_restore_objects(JCR *jcr);
 int get_attributes_and_put_in_catalog(JCR *jcr);
 void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
 int put_file_into_catalog(JCR *jcr, long file_index, char *fname,
                           char *link, char *attr, int stream);
 int send_runscripts_commands(JCR *jcr);
 bool send_plugin_options(JCR *jcr);
-bool send_restore_objects(JCR *jcr);
+bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 void do_client_resolve(UAContext *ua, CLIENTRES *client);

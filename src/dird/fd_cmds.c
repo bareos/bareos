@@ -180,18 +180,25 @@ int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, boo
    return 1;
 }
 
-static void send_since_time(JCR *jcr)
+bool send_previous_restore_objects(JCR *jcr)
 {
-   BSOCK   *fd = jcr->file_bsock;
-   utime_t stime;
-   char ed1[50];
+   int JobLevel;
 
-   stime = str_to_utime(jcr->stime);
-   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
-             NT_("prev_job="), jcr->PrevJob);
-   while (bget_dirmsg(fd) >= 0) {  /* allow him to poll us to sync clocks */
-      Jmsg(jcr, M_INFO, 0, "%s\n", fd->msg);
+   JobLevel = jcr->getJobLevel();
+   switch (JobLevel) {
+   case L_DIFFERENTIAL:
+   case L_INCREMENTAL:
+      if (jcr->previous_jr.JobId > 0) {
+         if (!send_restore_objects(jcr, jcr->previous_jr.JobId, false)) {
+            return false;
+         }
+      }
+      break;
+   default:
+      break;
    }
+
+   return true;
 }
 
 bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
@@ -209,6 +216,21 @@ bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
    return true;
 }
 
+static inline void send_since_time(JCR *jcr)
+{
+   char ed1[50];
+   utime_t stime;
+   BSOCK *fd = jcr->file_bsock;
+
+   stime = str_to_utime(jcr->stime);
+   fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
+             NT_("prev_job="), jcr->PrevJob);
+
+   while (bget_dirmsg(fd) >= 0) {  /* allow him to poll us to sync clocks */
+      Jmsg(jcr, M_INFO, 0, "%s\n", fd->msg);
+   }
+}
+
 /*
  * Send level command to FD.
  * Used for backup jobs and estimate command.
@@ -217,9 +239,10 @@ bool send_level_command(JCR *jcr)
 {
    int JobLevel;
    BSOCK *fd = jcr->file_bsock;
-   const char *accurate = jcr->accurate?"accurate_":"";
+   const char *accurate = jcr->accurate ? "accurate_" : "";
    const char *not_accurate = "";
-   const char *rerunning = jcr->rerunning?" rerunning ":" ";
+   const char *rerunning = jcr->rerunning ? " rerunning " : " ";
+
    /*
     * Send Level command to File daemon
     */
@@ -228,8 +251,7 @@ bool send_level_command(JCR *jcr)
    case L_BASE:
       fd->fsend(levelcmd, not_accurate, "base", rerunning, 0, "", "");
       break;
-   /* L_NONE is the console, sending something off to the FD */
-   case L_NONE:
+   case L_NONE: /* L_NONE is the console, sending something off to the FD */
    case L_FULL:
       fd->fsend(levelcmd, not_accurate, "full", rerunning, 0, "", "");
       break;
@@ -242,14 +264,19 @@ bool send_level_command(JCR *jcr)
       send_since_time(jcr);
       break;
    case L_SINCE:
+      Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel, JobLevel);
+      break;
    default:
       Jmsg2(jcr, M_FATAL, 0, _("Unimplemented backup level %d %c\n"), JobLevel, JobLevel);
       return 0;
    }
+
    Dmsg1(120, ">filed: %s", fd->msg);
+
    if (!response(jcr, fd, OKlevel, "Level", DISPLAY_ERROR)) {
       return false;
    }
+
    return true;
 }
 
@@ -638,6 +665,9 @@ struct OBJ_CTX {
    int count;
 };
 
+/*
+ * restore_object_handler is called for each file found
+ */
 static int restore_object_handler(void *ctx, int num_fields, char **row)
 {
    BSOCK *fd;
@@ -726,35 +756,62 @@ bool send_plugin_options(JCR *jcr)
    return true;
 }
 
-bool send_restore_objects(JCR *jcr)
+static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
 {
-   char ed1[50];
    POOL_MEM query(PM_MESSAGE);
-   BSOCK *fd;
-   OBJ_CTX octx;
+   char ed1[50];
 
    if (!jcr->JobIds || !jcr->JobIds[0]) {
-      return true;
+      return;
    }
-   octx.jcr = jcr;
-   octx.count = 0;
-
-   /*
-    * restore_object_handler is called for each file found
-    */
 
    /*
     * Send restore objects for all jobs involved
     */
    Mmsg(query, get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
+   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+
+   Mmsg(query, get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
+   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
 
    /*
     * Send config objects for the current restore job
     */
    Mmsg(query, get_restore_objects,
         edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)&octx);
+   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+}
+
+static inline void send_job_specific_restore_objects(JCR *jcr, JobId_t JobId, OBJ_CTX *octx)
+{
+   POOL_MEM query(PM_MESSAGE);
+   char ed1[50];
+
+   /*
+    * Send restore objects for specific JobId.
+    */
+   Mmsg(query, get_restore_objects,
+        edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+
+   Mmsg(query, get_restore_objects,
+        edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+}
+
+bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global)
+{
+   BSOCK *fd;
+   OBJ_CTX octx;
+
+   octx.jcr = jcr;
+   octx.count = 0;
+
+   if (send_global) {
+      send_global_restore_objects(jcr, &octx);
+   } else {
+      send_job_specific_restore_objects(jcr, JobId, &octx);
+   }
 
    /*
     * Send to FD only if we have at least one restore object.

@@ -455,6 +455,10 @@ bool do_native_backup(JCR *jcr)
       goto bail_out;
    }
 
+   if (!send_previous_restore_objects(jcr)) {
+      goto bail_out;
+   }
+
    if (jcr->res.job->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->res.job->max_bandwidth;
    } else if (jcr->res.client->max_bandwidth > 0) {
