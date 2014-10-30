@@ -169,7 +169,7 @@ ndmp9.h ndmp9_xdr.c: ndmp9.x
 
 ndmos.lo: ndmos.c
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) \
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CFLAGS) $(INCLUDES) $(DINCLUDE) \
 		-DNDMOS_CONST_PRODUCT_NAME='"BAREOS NDMP"' \
 		-DNDMOS_CONST_VENDOR_NAME='"Bareos GmbH & Co. KG"' \
 		-DNDMOS_CONST_NDMJOBLIB_REVISION='"bareos-$(LIBBAREOSNDMP_LT_RELEASE)"' \
@@ -185,7 +185,7 @@ depend: $(RPC_GEN_FILES)
 	@$(SED) "/^# DO NOT DELETE:/,$$ d" Makefile.bak > Makefile
 	@$(ECHOCMD) "# DO NOT DELETE: nice dependency list follows" >> Makefile
 	@for src in $(LIBBAREOSNDMP_SRCS) ; do \
-	   $(CC) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CPPFLAGS) $(XINC) $(INCLUDES) $$src >> Makefile; \
+	   $(CC) -S -M -MT `basename $$src .c`$(DEFAULT_OBJECT_TYPE) $(CFLAGS) $(XINC) $(INCLUDES) $$src >> Makefile; \
         done
 	@if test -f Makefile ; then \
 	   $(RMF) Makefile.bak; \
