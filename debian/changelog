@@ -1,3 +1,10 @@
+bareos (14.2.1+20141017gitc6c5b56-2) unstable; urgency=medium
+
+  * Add more conflicts against Bacula packages.
+    Thanks to Ralf Treinen <treinen@free.fr> (Closes: #767058)
+
+ -- Evgeni Golov <evgeni@debian.org>  Thu, 30 Oct 2014 17:17:58 +0100
+
 bareos (14.2.1+20141017gitc6c5b56-1) unstable; urgency=medium
 
   * Import newer upstream snapshot.
