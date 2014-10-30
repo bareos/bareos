@@ -832,6 +832,24 @@ tapes only by specific operator command ({\bf label} in the Console) or
 when the tape has been recycled.  The automatic labeling feature is most
 useful when writing to disk rather than tape volumes.
 
+\xdirective{Sd}{Device}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{}{}{%
+Defines the label type to use, see section \nameref{AnsiLabelsChapter}.
+This directive is implemented in the Director Pool resource (\linkResourceDirective{Dir}{Pool}{Label Type}) 
+and in the SD Device resource.  If it is specified in the the SD Device resource, it will take
+precedence over the value passed from the Director to the SD.
+If it is set to a non-default value, make sure to also enable \linkResourceDirective{Sd}{Device}{Check Label}.
+}
+
+\xdirective{Sd}{Device}{Check Label}{yes{\textbar}no}{}{no}{}{%
+If you intend to read ANSI or IBM labels, this \textbf{must} be set. 
+Even if the volume is not ANSI labeled, you can set this to yes, and Bareos will check the
+label type. Without this directive set to yes, Bareos will assume that
+labels are of Bareos type and will not check for ANSI or IBM labels.
+In other words, if there is a possibility of Bareos encountering an
+ANSI/IBM label, you must set this to yes.
+}
+
+
 \item [Automatic Mount = {\textless}yes{\textbar}no{\textgreater}] \hfill \\
 \index[sd]{Automatic mount}
 \index[sd]{Directive!Automatic mount}
@@ -909,7 +927,7 @@ use a default block size of 64,512 bytes (126 * 512).
 
 \warning{If your are using LTO drives, changing the block size after labeling the tape will result into unreadable tapes.}
 
-Please read chapter \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes},
+Please read chapter \nameref{Tapespeed and blocksizes},
 to see how to tune this value in a safe manner.
 }
 
@@ -917,7 +935,7 @@ to see how to tune this value in a safe manner.
 The storage daemon will write the label blocks with the size configured here.
 Usually, you will not need to change this directive.
 
-For more information on this directive, please see \ilink{Tapespeed and blocksizes}{Tapespeed and blocksizes}.
+For more information on this directive, please see \nameref{Tapespeed and blocksizes}.
 }
 
 \directive{sd}{Hardware End of Medium}{yes{\textbar}no}{}{yes}{}
@@ -1358,6 +1376,4 @@ manual.
 
 A example Storage Daemon configuration file might be the following:
 
-\footnotesize
-\verbatimtabinput[4]{bareos-sd.conf}
-\normalsize
+\bconfigInput{bareos-sd.conf}

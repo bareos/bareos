@@ -4,30 +4,12 @@ volume when it is purged with the \configline{Purge Volume Action=Truncate}
 command. It is useful to prevent disk based volumes from consuming too much
 space.
 
-% \begin{bconfig}{}^^J
-% Pool \{^^J
-% \  Name = Default^^J
-% \  Action On Purge = Truncate^^J
-% \  ...^^J
-% \}^^J
-% \end{bconfig}
 \bconfigInput{config/DirPoolActionOnPurge1.conf}
 
 
 You can schedule the truncate operation at the end of your CatalogBackup job
 like in this example:
 
-% \begin{bconfig}{}^^J
-% Job \{^^J
-% \ Name = CatalogBackup^^J
-% \ ...^^J
-% \ RunScript \{^^J
-% \ \   RunsWhen=After^^J
-% \ \   RunsOnClient=No^^J
-% \ \   Console = "purge volume action=all allpools storage=File"^^J
-% \ \}^^J
-% \}^^J
-% \end{bconfig}
 \bconfigInput{config/DirPoolActionOnPurge2.conf}
 }
 
@@ -151,7 +133,13 @@ In almost all cases, you should enclose the format specification (part
 after the equal sign) in double quotes.
 }
 
-\defDirective{Dir}{Pool}{Label Type}{}{}{%
+%\xdirective{dir}{}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{required}{Bareos}{}{
+\defDirective{Dir}{Pool}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{%
+This directive is implemented in the
+Director Pool resource and in the SD Device
+resource (\linkResourceDirective{Sd}{Device}{Label Type}).
+If it is specified in the SD Device resource, it will take
+precedence over the value passed from the Director to the SD.
 }
 
 \defDirective{Dir}{Pool}{Maximum Blocksize}{}{14.2.0}{%
