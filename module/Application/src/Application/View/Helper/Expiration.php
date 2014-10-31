@@ -28,7 +28,7 @@ namespace Application\View\Helper;
 use Zend\View\Helper\AbstractHelper;
 
 /**
- * 
+ *
  */
 class Expiration extends AbstractHelper
 {
@@ -36,8 +36,8 @@ class Expiration extends AbstractHelper
     protected $result;
 
     /**
-     * @method 
-     * @return string 
+     * @method
+     * @return string
      * @param
      * @param
      */
@@ -59,7 +59,7 @@ class Expiration extends AbstractHelper
 			$d2 = mktime(0, 0, 0, (int)$t2[1],(int)$t2[2],(int)$t2[0]);
 			$interval = ($d2 - $d1) / (3600 * 24);
 			$retention = round(($retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN);
-			$this->result = ($retention - $interval);
+			$this->result = round(($retention - $interval), 2, PHP_ROUND_HALF_EVEN);
 
 			if($this->result <= 0) {
 				return $this->result = "<span class='label label-danger'>expired</span>";

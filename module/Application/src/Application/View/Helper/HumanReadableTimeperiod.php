@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -28,7 +28,7 @@ namespace Application\View\Helper;
 use Zend\View\Helper\AbstractHelper;
 
 /**
- * 
+ *
  */
 class HumanReadableTimeperiod extends AbstractHelper
 {
@@ -37,8 +37,8 @@ class HumanReadableTimeperiod extends AbstractHelper
 
     /**
      * A function for making timeperiods human readable
-     * @method 
-     * @return string 
+     * @method
+     * @return string
      * @param
      * @param
      */
@@ -51,32 +51,32 @@ class HumanReadableTimeperiod extends AbstractHelper
 	else {
 
 		$this->result = "-";
-		$dateTime = date_create($time); 
+		$dateTime = date_create($time);
 		$timestamp = date_format($dateTime, 'U');
 		$seconds = time() - $timestamp;
 
 		if($format == "short") {
 
 			$units = array(
-				'y' => $seconds / 31556926 % 12, 
-				'w' => $seconds / 604800 % 52, 
+				'y' => $seconds / 31556926 % 12,
+				'w' => $seconds / 604800 % 52,
 				'd' => $seconds / 86400 % 7,
-				'h' => $seconds / 3600 % 24, 
-				'm' => $seconds / 60 % 60, 
+				'h' => $seconds / 3600 % 24,
+				'm' => $seconds / 60 % 60,
 				's' => $seconds % 60
-			);  
+			);
 
 			foreach($units as $key => $value) {
 				if($value > 0) {
 					$res[] = $value . $key;
-				}   
-			}   
-			
+				}
+			}
+
 			$this->result = join(' ', $res) . " ago";
 
-		} 		
+		}
 		elseif($format == "long") {
-			
+
 			$units = array(
 				'Year(s)' => $seconds / 31556926 % 12,
 				'Week(s)' => $seconds / 604800 % 52,
@@ -90,8 +90,8 @@ class HumanReadableTimeperiod extends AbstractHelper
 				if($value > 0) {
 					$res[] = $value . $key;
 				}
-			}		
-			
+			}
+
 			$this->result = join(' ', $res) . " ago";
 
 		}
@@ -109,6 +109,7 @@ class HumanReadableTimeperiod extends AbstractHelper
 				return $this->result = "today";
 			}
 			elseif($interval <= 31 && $interval >= 1) {
+				$interval = round($interval, 0, PHP_ROUND_HALF_UP);
 				$this->result = "about " . $interval . " day(s) ago";
 			}
 			elseif($interval >= 31 && $interval <= 365) {
@@ -121,7 +122,7 @@ class HumanReadableTimeperiod extends AbstractHelper
 			}
 
 		}
-		
+
 		return $this->result;
 
 		}
