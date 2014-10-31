@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -35,11 +35,11 @@ $this->headTitle($title);
 
 <div class="col-md-6">
 <div class="panel panel-default">
-	  
+
 <div class="panel-heading">
 <h3 class="panel-title">General Information</h3>
 </div>
-    
+
 <div class="panel-body">
 
 <table class="table table-striped table-hover" style="font-size: 9pt;">
@@ -67,17 +67,11 @@ $this->headTitle($title);
 </div>
 
 <div class="panel-body">
-
-    <pre style="font-size: 8pt;">
-    <code>
-    <?php
-      foreach($this->configuration as $row) {
-	echo $row ."<br />";
-      }
-    ?>
-    </code>
-    </pre>
-
+<pre style="font-size: 8pt;">
+<code>
+<?php echo $this->configuration; ?>
+</code>
+</pre>
 </div>
 
 </div>

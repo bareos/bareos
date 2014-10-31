@@ -27,7 +27,7 @@ namespace Fileset\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BConsole\BConsoleConnector;
+use Bareos\BSock\BareosBSock;
 
 class FilesetController extends AbstractActionController
 {
@@ -37,8 +37,8 @@ class FilesetController extends AbstractActionController
 	public function indexAction()
 	{
 		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'FileSetId';
-                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+		$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 		$paginator = $this->getFilesetTable()->fetchAll(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
 		$paginator->setItemCountPerPage($limit);
@@ -53,28 +53,30 @@ class FilesetController extends AbstractActionController
 		);
 	}
 
-	public function detailsAction() 
+	public function detailsAction()
 	{
 		$id = (int) $this->params()->fromRoute('id', 0);
 		$fset = $this->getFilesetTable()->getFileSet($id);
-                $cmd = 'show fileset="' . $fset->fileset . '"';
+		$cmd = 'show fileset="' . $fset->fileset . '"';
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);		
-	
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
+
 		if (!$id) {
 		    return $this->redirect()->toRoute('fileset');
 		}
-	
+
 		return new ViewModel(
 			array(
 				'fileset' => $this->getFilesetTable()->getFileset($id),
 				'history' => $this->getFilesetTable()->getFilesetHistory($id),
-				'configuration' => $bcon->getBConsoleOutput($cmd),
+				'configuration' => $bsock->send_command($cmd),
 			)
 		);
 	}
 
-	public function getFilesetTable() 
+	public function getFilesetTable()
 	{
 		if(!$this->filesetTable) {
 			$sm = $this->getServiceLocator();

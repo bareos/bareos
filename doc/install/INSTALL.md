@@ -5,7 +5,6 @@ Remember: this project is still in alpha state.
 ### SYSTEM REQUIREMENTS
 
 * A working Bareos environment, Bareos 12.4 or later, including a Bareos catalog database (currently only PostgreSQL is tested)
-* A working Bareos Console (bconsole) on this system
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenvif enabled
 * PHP 5.3.3 or later
   * PHP PDO Extension
@@ -20,7 +19,7 @@ Remember: this project is still in alpha state.
 ### How bareos-webui accesses Bareos
 
 Bareos-webui connects to Bareos by
-  * bconsole
+  * native connection to the director
   * database connection (read-only) to the Bareos catalog
 
 ## Installation
@@ -50,7 +49,6 @@ However, not all distributions offer these packages.
 
   * add the [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository that is matching your Linux distribution
   * install the package bareos-webui
-  * verify, that your local bconsole can connect to your Bareos environment, e.g. run ```bconsole```
   * configure your database connection to your Bareos catalog in ```/etc/bareos-webui.conf.php``` (this is the link target of ```/usr/share/bareos-webui/config/autoload/local.php```). See [configure database connection](#configure-the-database-connection)
   * reload your Apache webserver
   * test bareos-webui using the url: [http://localhost/bareos-webui](http://localhost/bareos-webui)
@@ -67,7 +65,7 @@ git clone https://github.com/bareos/bareos-webui.git
 cd bareos-webui
 ```
 
-* Download composer.phar 
+* Download composer.phar
 
 ```
 wget https://getcomposer.org/composer.phar
@@ -97,30 +95,6 @@ This will change and no longer be necessary in future, but it is the way to go f
 ```
 # Environment Variable for Zend Framwework 2 (Debian)
 SetEnv "ZF2_PATH" "/usr/share/php5"
-```
-
-### Configuration to be able to run bconsole commands within the web-frontend
-
-In order to be able to execute bconsole commands within the web-frontend, it is necessary there is a sudo rule for the user under
-which your webserver is running. So, run visudo and add the following lines, e.g:
-
-```
-# bareos web-frontend entry
-wwwrun ALL=NOPASSWD: /usr/sbin/bconsole
-```
-
-or something like ...
-
-```
-# bareos web-frontend entry
-apache ALL=NOPASSWD: /usr/sbin/bconsole
-```
-
-You can use the default sudo configuration from bareos-webui, that should work on most Linux distributions:
-```
-cd /etc/sudoers.d/
-wget https://raw.github.com/bareos/bareos-webui/master/install/sudoers.d/bareos-webui-bconsole
-chmod u=r,g=r,o= bareos-webui-bconsole
 ```
 
 ### Configure the database connection
@@ -159,8 +133,7 @@ Reload the PostgreSQL configuration:
 pg_ctl reload
 ```
 
-
-##### 
+#####
 
 Adapt the bareos-webui configuration file to match your database settings.
 

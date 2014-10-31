@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -42,19 +42,11 @@ $this->headTitle($title);
 <br />
 
 <div class="row">
-
-  <div class="col-md-12">
-  
-    <pre style="font-size: 8pt;">
-    <code>
-    <?php
-      foreach($this->directorOutput as $row) {
-	echo $row ."<br />";
-      }
-    ?>
-    </code>
-    </pre>
-  
-  </div>
-
+<div class="col-md-12">
+<pre style="font-size: 8pt;">
+<code>
+<?php echo $this->directorOutput; ?>
+</code>
+</pre>
+</div>
 </div>

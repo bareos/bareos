@@ -28,7 +28,7 @@ namespace Job\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BConsole\BConsoleConnector;
+use Bareos\BSock\BareosBSock;
 
 class JobController extends AbstractActionController
 {
@@ -161,10 +161,12 @@ class JobController extends AbstractActionController
 		$jobid = (int) $this->params()->fromRoute('id', 0);
 		$cmd = "rerun jobid=" . $jobid . " yes";
 		$config = $this->getServiceLocator()->get('Config');
-		$bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(
 			array(
-				'bconsoleOutput' => $bcon->getBConsoleOutput($cmd),
+				'bconsoleOutput' => $bsock->send_command($cmd),
 				'jobid' => $jobid,
 			)
 		);
@@ -175,10 +177,12 @@ class JobController extends AbstractActionController
 		$jobid = (int) $this->params()->fromRoute('id', 0);
                 $cmd = "cancel jobid=" . $jobid . " yes";
 		$config = $this->getServiceLocator()->get('Config');
-		$bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
                 return new ViewModel(
                         array(
-				'bconsoleOutput' => $bcon->getBConsoleOutput($cmd)
+				'bconsoleOutput' => $bsock->send_command($cmd)
 			)
                 );	
 	}

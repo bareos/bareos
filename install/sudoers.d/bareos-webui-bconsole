@@ -1,4 +1,0 @@
-# allow apache to run bconsole. required for bareos-webui
-Cmnd_Alias BCON = /usr/sbin/bconsole -n -c /etc/bareos/bconsole.conf, /usr/sbin/bconsole -n -c /etc/bareos/webui/bconsole.conf, /usr/sbin/bconsole
-Defaults!BCON !requiretty
-wwwrun,www-data,apache ALL=(root) NOPASSWD: BCON

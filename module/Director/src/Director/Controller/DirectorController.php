@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -28,20 +28,22 @@ namespace Director\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BConsole\BConsoleConnector;
+use Bareos\BSock\BareosBSock;
 
-class DirectorController extends AbstractActionController 
+class DirectorController extends AbstractActionController
 {
 
 	protected $directorOutput = array();
-	
+
 	public function indexAction()
 	{
 		$cmd = "status director";
 		$config = $this->getServiceLocator()->get('Config');
-		$bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'directorOutput' => $bcon->getBConsoleOutput($cmd),
+				'directorOutput' => $bsock->send_command($cmd),
 			));
 	}
 
@@ -49,41 +51,49 @@ class DirectorController extends AbstractActionController
 	{
 		$cmd = "messages";
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'directorOutput' => $bcon->getBConsoleOutput($cmd),
+				'directorOutput' => $bsock->send_command($cmd),
 			));
 	}
-	
+
 	public function scheduleAction()
 	{
 		$cmd = "show schedule";
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'directorOutput' => $bcon->getBConsoleOutput($cmd),
+				'directorOutput' => $bsock->send_command($cmd),
 			));
 	}
-	
+
 	public function schedulerstatusAction()
 	{
 		$cmd = "status scheduler";
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'directorOutput' => $bcon->getBConsoleOutput($cmd),
+				'directorOutput' => $bsock->send_command($cmd),
 			));
 	}
-	
+
 	public function versionAction()
 	{
 		$cmd = "version";
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'directorOutput' => $bcon->getBConsoleOutput($cmd),
+				'directorOutput' => $bsock->send_command($cmd),
 			));
 	}
-	
+
 }
 

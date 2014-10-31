@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -27,7 +27,7 @@ namespace Storage\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BConsole\BConsoleConnector;
+use Bareos\BSock\BareosBSock;
 
 class StorageController extends AbstractActionController
 {
@@ -55,7 +55,7 @@ class StorageController extends AbstractActionController
 		);
 	}
 
-	public function detailsAction() 
+	public function detailsAction()
 	{
 		$id = (int) $this->params()->fromRoute('id', 0);
 		if(!$id) {
@@ -64,14 +64,16 @@ class StorageController extends AbstractActionController
 		$result = $this->getStorageTable()->getStorage($id);
 		$cmd = "status storage=" . $result->name;
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+        $bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 		return new ViewModel(array(
-				'bconsoleOutput' => $bcon->getBConsoleOutput($cmd),
+				'bconsoleOutput' => $bsock->send_command($cmd),
 			)
 		);
 	}
 
-	public function autochangerAction() 
+	public function autochangerAction()
 	{
 		$id = (int) $this->params()->fromRoute('id', 0);
         if(!$id) {
@@ -79,15 +81,17 @@ class StorageController extends AbstractActionController
         }
         $result = $this->getStorageTable()->getStorage($id);
         $cmd = "status storage=" . $result->name . " slots";
-	$config = $this->getServiceLocator()->get('Config');
-        $bcon = new BConsoleConnector($config['bconsole']);
+		$config = $this->getServiceLocator()->get('Config');
+        $bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
         return new ViewModel(array(
-                'bconsoleOutput' => $bcon->getBConsoleOutput($cmd),
+                'bconsoleOutput' => $bsock->send_command($cmd),
             )
         );
 	}
 
-	public function getStorageTable() 
+	public function getStorageTable()
 	{
 		if(!$this->storageTable) {
 			$sm = $this->getServiceLocator();

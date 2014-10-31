@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -34,7 +34,7 @@ use \Exception;
 
 class InstallController extends AbstractActionController 
 {
-	
+
 	const REQUIRED_PHP_VERSION = "5.3";
 	const REQUIRED_ZF_VERSION = "2.2";	
 	const REQUIRED_EXT_PDO = "YES";
@@ -84,18 +84,9 @@ class InstallController extends AbstractActionController
 			'DB_PASSWORD_CHECK' => $this->getDbPasswordStatus(),
 			'DB_CONNECTION_CHECK' => $this->getDbConnectionStatus(),
 			'DB_READACCESS_CHECK' => $this->getDbReadAccessStatus(),
-			'REQUIRED_BCONSOLE_EXEC' => self::REQUIRED_BCONSOLE_EXEC,
-			'CONFIGURED_BCONSOLE_EXEC' => $this->getConfiguredBConsoleExecPath(),
-			'BCONSOLE_EXEC_CHECK' => $this->getBConsoleExecPathStatus(),
-			'REQUIRED_BCONSOLE_CONF' => self::REQUIRED_BCONSOLE_CONF,
-			'CONFIGURED_BCONSOLE_CONF' => $this->getConfiguredBConsoleConfPath(),
-			'BCONSOLE_CONF_CHECK' => $this->getBConsoleConfPathStatus(),
-			'REQUIRED_BCONSOLE_SUDO' => self::REQUIRED_BCONSOLE_SUDO,
-			'CONFIGURED_BCONSOLE_SUDO' => $this->getConfiguredBConsoleSudo(),
-			'BCONSOLE_SUDO_CHECK' => $this->getBConsoleSudoStatus(),
 		));
 		return $viewModel;
-	}	
+	}
 
 	private function getInstalledPHPVersion() 
 	{
@@ -106,8 +97,8 @@ class InstallController extends AbstractActionController
 	private function getInstalledZFVersion() 
 	{
 		return Version::VERSION; 
-	}	
-	
+	}
+
 	private function compareVersions($installed, $required) 
 	{
 		if(version_compare($installed, $required, '<')) {
@@ -276,78 +267,6 @@ class InstallController extends AbstractActionController
 			catch(\Exception $e) {
 				return -1;
 			}
-		}
-		else {
-			return -1;
-		}
-	}
-
-	private function getConfiguredBConsoleExecPath() 
-	{
-		$config = $this->getServiceLocator()->get('Config');
-                $exec_path = $config['bconsole']['exec_path'];
-		if($exec_path != "") {
-			return $exec_path;
-		}
-		else {
-			$err = "NOT SET";
-			return $err; 
-		}
-	}
-
-	private function getBConsoleExecPathStatus() 
-	{
-		if(self::getConfiguredBConsoleExecPath() == "NOT SET") {
-			return -1;
-		}
-		else {
-			return 0;
-		}
-	}
-
-	private function getConfiguredBConsoleConfPath()
-	{
-		$config = $this->getServiceLocator()->get('Config');
-                $config_path = $config['bconsole']['config_path'];
-                if($config_path != "") {
-                        return $config_path;
-                }
-                else {
-                        $err = "NOT SET";
-                        return $err; 
-                }
-	}
-	
-	private function getBConsoleConfPathStatus()
-	{
-		if(self::getConfiguredBConsoleConfPath() == "NOT SET") {
-			return -1;
-		}
-		else {
-			return 0;
-		}
-	}
-
-	private function getConfiguredBConsoleSudo()
-	{
-		$config = $this->getServiceLocator()->get('Config');
-                $sudo = $config['bconsole']['sudo'];
-		if($sudo == true) {
-			$msg = "TRUE";
-		}
-		elseif($sudo == false) {
-			$msg = "FALSE";
-		}
-		else {
-			$msg = "NOT SET";
-		}
-		return $msg;
-	}
-
-	private function getBConsoleSudoStatus() 
-	{
-		if(self::getConfiguredBConsoleSudo() == "TRUE" || self::getConfiguredBConsoleSudo() == "FALSE") {
-			return 0;
 		}
 		else {
 			return -1;

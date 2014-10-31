@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -27,31 +27,12 @@ namespace Director\Model;
 
 //use Zend\Db\TableGateway\TableGateway;
 
-class DirectorTable 
+class DirectorTable
 {
-//	protected $tableGateway;
-/*
-	public function __construct(TableGateway $tableGateway) 
-	{
-		$this->tableGateway = $tableGateway;
-	}
 
-	public function fetchAll() 
-	{
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
-	}
-*/
-	
-	public function __construct() 
+	public function __construct()
 	{
 	}
 
-	public function getStatus() 
-	{
-		$status = exec('ls -al');
-		return $status;
-	}
-	
 }
 

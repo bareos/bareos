@@ -4,7 +4,7 @@ namespace Client\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BConsole\BConsoleConnector;
+use Bareos\BSock\BareosBSock;
 
 class ClientController extends AbstractActionController
 {
@@ -15,8 +15,8 @@ class ClientController extends AbstractActionController
 	public function indexAction()
 	{
 		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'ClientId';
-                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+		$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+		$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 		$paginator = $this->getClientTable()->fetchAll(true, $order_by, $order);
 		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
 		$paginator->setItemCountPerPage($limit);
@@ -31,30 +31,32 @@ class ClientController extends AbstractActionController
 		);
 	}
 
-	public function detailsAction() 
+	public function detailsAction()
 	{
-		
+
 		$id = (int) $this->params()->fromRoute('id', 0);
 		if(!$id) {
 		    return $this->redirect()->toRoute('client');
 		}
-		
+
 		$result = $this->getClientTable()->getClient($id);
 		$cmd = 'status client="' . $result->name . '"';
 		$config = $this->getServiceLocator()->get('Config');
-                $bcon = new BConsoleConnector($config['bconsole']);
+		$bsock = new BareosBSock();
+		$bsock->set_config($config['director']);
+		$bsock->init();
 
 		return new ViewModel(
 		    array(
 		      'client' => $this->getClientTable()->getClient($id),
 		      'job' => $this->getJobTable()->getLastSuccessfulClientJob($id),
-		      'bconsoleOutput' => $bcon->getBConsoleOutput($cmd),
+		      'bconsoleOutput' => $bsock->send_command($cmd),
 		    )
 		);
-		
+
 	}
 
-	public function getClientTable() 
+	public function getClientTable()
 	{
 		if(!$this->clientTable) {
 			$sm = $this->getServiceLocator();
@@ -62,8 +64,8 @@ class ClientController extends AbstractActionController
 		}
 		return $this->clientTable;
 	}
-	
-	public function getJobTable() 
+
+	public function getJobTable()
 	{
 		if(!$this->jobTable) {
 			$sm = $this->getServiceLocator();
@@ -71,6 +73,6 @@ class ClientController extends AbstractActionController
 		}
 		return $this->jobTable;
 	}
-	
+
 }
 

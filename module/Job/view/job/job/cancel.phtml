@@ -35,11 +35,7 @@ $this->headTitle($title);
 <p>Cancel job <?php echo $this->jobid; ?></p>
 
 <pre style="font-size: 8pt;">
-    <code>
-    <?php
-      foreach($this->bconsoleOutput as $row) {
-	echo $row ."<br />";
-      }
-    ?>
+<code>
+<?php echo $this->bconsoleOutput; ?>
 </code>
 </pre>

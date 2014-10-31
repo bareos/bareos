@@ -13,9 +13,7 @@ BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 BuildArch:     noarch
 
 BuildRequires: autoconf automake
-BuildRequires: sudo
 
-Requires: bareos-bconsole bareos-common
 Requires: php >= 5.3.3
 Requires: php-ZendFramework2 >= 2.2.0
 Requires: php-pdo
@@ -28,7 +26,6 @@ Requires: php-pdo
 # * PHP PHAR Extension
 # * PHP DATE Extension
 # * PHP OpenSSL Extension
-Requires: sudo
 
 %if 0%{?suse_version}
 BuildRequires: apache2
@@ -79,16 +76,10 @@ make
 # makeinstall macro does not work on RedHat
 #makeinstall
 make DESTDIR=%{buildroot} install
-# /etc/sudoers.d/ should not belong to this package,
-# but is does currently not exist on most distributions
 touch filelist
-if ! [ -x /etc/sudoers.d/ ]; then
-  echo "%dir %attr(750,root,root) /etc/sudoers.d/" > filelist
-fi
-
 
 %post
-# if command a2enmod exists, 
+# if command a2enmod exists,
 # use it to enable Apache rewrite module
 LOG=/var/log/bareos-webui-install.log
 echo "`date`: BEGIN bareos-webui init" >> $LOG
@@ -113,5 +104,3 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 #/usr/sbin/bareos-webui-config
 
-# sudo requires permissions 440 and config files without any "."
-%attr(440,root,root) %config(noreplace) /etc/sudoers.d/bareos-webui-bconsole
