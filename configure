@@ -653,6 +653,8 @@ DEBUG
 CAP_LIBS
 CEPHFS_LIBS
 CEPHFS_INC
+RADOS_STRIPER_LIBS
+RADOS_STRIPER_INC
 RADOS_LIBS
 RADOS_INC
 DROPLET_LIBS
@@ -1069,6 +1071,7 @@ enable_scsi_crypto
 with_glusterfs
 with_droplet
 with_rados
+with_rados_striper
 with_cephfs
 with_systemd
 '
@@ -1833,6 +1836,8 @@ Optional Packages:
   --with-glusterfs[=DIR]  Directory holding GLUSTERFS includes/libs
   --with-droplet[=DIR]    Directory holding DROPLET includes/libs
   --with-rados[=DIR]      Directory holding RADOS includes/libs
+  --with-rados-striper[=DIR]
+                          Directory holding RADOS striper includes/libs
   --with-cephfs[=DIR]     Directory holding CEPHFS includes/libs
   --with-systemd[=UNITDIR]
                           Include systemd support. UNITDIR is where systemd
@@ -31710,6 +31715,94 @@ fi
 
 
 
+RADOS_STRIPER_LIBS="-lradosstriper"
+RADOS_STRIPER_INC=""
+have_ceph_rados_striper=no
+
+# Check whether --with-rados-striper was given.
+if test "${with_rados_striper+set}" = set; then :
+  withval=$with_rados_striper; with_rados_striper_directory=$withval
+
+fi
+
+
+if test "x${with_rados_striper_directory}" != "xyes" && test x"${with_rados_striper_directory}" != "x"; then
+   #
+   # Make sure the $with_rados_striper_directory also makes sense
+   #
+   if test -d "${with_rados_striper_directory}/lib" -a -d "${with_rados_striper_directory}/include"; then
+      RADOS_STRIPER_LIBS="-L${with_rados_striper_directory}/lib ${RADOS_STRIPER_LIBS}"
+      RADOS_STRIPER_INC="-I${with_rados_striper_directory}/include ${RADOS_STRIPER_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${RADOS_STRIPER_LIBS}"
+CFLAGS="${saved_CFLAGS} ${RADOS_STRIPER_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${RADOS_STRIPER_INC}"
+
+ac_fn_c_check_header_mongrel "$LINENO" "radosstriper/libradosstriper.h" "ac_cv_header_radosstriper_libradosstriper_h" "$ac_includes_default"
+if test "x$ac_cv_header_radosstriper_libradosstriper_h" = xyes; then :
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rados_striper_create in radosstriper library" >&5
+$as_echo_n "checking for rados_striper_create in radosstriper library... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <radosstriper/libradosstriper.h>
+
+int
+main ()
+{
+
+      rados_ioctx_t io_ctx;
+      rados_striper_t striper;
+
+      rados_striper_create(io_ctx, &striper);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+       have_ceph_rados_striper="yes"
+
+else
+
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+       have_ceph_rados_striper="no"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_ceph_rados_striper}" = "xyes"; then
+
+$as_echo "#define HAVE_RADOS_STRIPER 1" >>confdefs.h
+
+else
+   RADOS_STRIPER_LIBS=""
+   RADOS_STRIPER_INC=""
+fi
+
+
+
+
 CEPHFS_LIBS="-lcephfs"
 CEPHFS_INC=""
 have_cephfs=no
@@ -35337,6 +35430,7 @@ Configuration on `date`:
    GLUSTERFS support:       ${have_glusterfs}
    DROPLET support:         ${have_droplet}
    CEPH RADOS support:      ${have_ceph_rados}
+   RADOS striping support:  ${have_ceph_rados_striper}
    CEPHFS support:          ${have_cephfs}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}

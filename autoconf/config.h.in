@@ -653,6 +653,9 @@
 /* Define to 1 if you have rados lib */
 #undef HAVE_RADOS
 
+/* Define to 1 if you have radosstriper lib */
+#undef HAVE_RADOS_STRIPER
+
 /* Define to 1 if you have the `readdir_r' function. */
 #undef HAVE_READDIR_R
 
