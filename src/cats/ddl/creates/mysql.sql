@@ -402,7 +402,7 @@ CREATE TABLE NDMPJobEnvironment (
    FileIndex INTEGER UNSIGNED NOT NULL,
    EnvName TINYBLOB NOT NULL,
    EnvValue TINYBLOB NOT NULL,
-   CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName)
+   CONSTRAINT NDMPJobEnvironment_pkey PRIMARY KEY (JobId, FileIndex, EnvName(256))
 );
 
 CREATE TABLE DeviceStats (
