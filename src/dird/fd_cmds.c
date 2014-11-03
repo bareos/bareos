@@ -593,20 +593,20 @@ int send_runscripts_commands(JCR *jcr)
       return 1;
    }
 
-   Dmsg0(120, "bdird: sending runscripts to fd\n");
+   Dmsg0(120, "dird: sending runscripts to fd\n");
 
    msg = get_pool_memory(PM_FNAME);
    ehost = get_pool_memory(PM_FNAME);
    foreach_alist(cmd, jcr->res.job->RunScripts) {
       if (cmd->can_run_at_level(jcr->getJobLevel()) && cmd->target) {
          ehost = edit_job_codes(jcr, ehost, cmd->target, "");
-         Dmsg2(200, "bdird: runscript %s -> %s\n", cmd->target, ehost);
+         Dmsg2(200, "dird: runscript %s -> %s\n", cmd->target, ehost);
 
          if (bstrcmp(ehost, jcr->res.client->name())) {
             pm_strcpy(msg, cmd->command);
             bash_spaces(msg);
 
-            Dmsg1(120, "bdird: sending runscripts to fd '%s'\n", cmd->command);
+            Dmsg1(120, "dird: sending runscripts to fd '%s'\n", cmd->command);
 
             fd->fsend(runscriptcmd,
                       cmd->on_success,
@@ -838,22 +838,28 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    BSOCK *fd;
    int n = 0;
    ATTR_DBR *ar = NULL;
-   POOL_MEM digest(PM_FNAME);
+   POOL_MEM digest(PM_MESSAGE);
 
    fd = jcr->file_bsock;
    jcr->jr.FirstIndex = 1;
    jcr->FileIndex = 0;
-   /* Start transaction allocates jcr->attr and jcr->ar if needed */
+
+   /*
+    * Start transaction allocates jcr->attr and jcr->ar if needed
+    */
    db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
    ar = jcr->ar;
 
-   Dmsg0(120, "bdird: waiting to receive file attributes\n");
-   /* Pickup file attributes and digest */
+   Dmsg0(120, "dird: waiting to receive file attributes\n");
+
+   /*
+    * Pickup file attributes and digest
+    */
    while (!fd->errors && (n = bget_dirmsg(fd)) > 0) {
       uint32_t file_index;
       int stream, len;
       char *p, *fn;
-      POOL_MEM Digest(PM_NAME);    /* either Verify opts or MD5/SHA1 digest */
+      POOL_MEM Digest(PM_MESSAGE);    /* Either Verify opts or MD5/SHA1 digest */
 
       if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str())) != 3) {
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
@@ -862,7 +868,10 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          return 0;
       }
       p = fd->msg;
-      /* The following three fields were sscanf'ed above so skip them */
+
+      /*
+       * The following three fields were sscanf'ed above so skip them
+       */
       skip_nonspaces(&p);             /* skip FileIndex */
       skip_spaces(&p);
       skip_nonspaces(&p);             /* skip Stream */
@@ -878,7 +887,10 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
                Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
             }
          }
-         /* Any cached attr is flushed so we can reuse jcr->attr and jcr->ar */
+
+         /*
+          * Any cached attr is flushed so we can reuse jcr->attr and jcr->ar
+          */
          fn = jcr->fname = check_pool_memory_size(jcr->fname, fd->msglen);
          while (*p != 0) {
             *fn++ = *p++;                /* copy filename */
@@ -904,32 +916,39 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          Dmsg2(dbglvl, "dird<filed: stream=%d %s\n", stream, jcr->fname);
          Dmsg1(dbglvl, "dird<filed: attr=%s\n", ar->attr);
          jcr->FileId = ar->FileId;
-      /*
-       * First, get STREAM_UNIX_ATTRIBUTES and fill ATTR_DBR structure
-       * Next, we CAN have a CRYPTO_DIGEST, so we fill ATTR_DBR with it (or not)
-       * When we get a new STREAM_UNIX_ATTRIBUTES, we known that we can add file to the catalog
-       * At the end, we have to add the last file
-       */
       } else if (crypto_digest_stream_type(stream) != CRYPTO_DIGEST_NONE) {
+         size_t length;
+
+         /*
+          * First, get STREAM_UNIX_ATTRIBUTES and fill ATTR_DBR structure
+          * Next, we CAN have a CRYPTO_DIGEST, so we fill ATTR_DBR with it (or not)
+          * When we get a new STREAM_UNIX_ATTRIBUTES, we known that we can add file to the catalog
+          * At the end, we have to add the last file
+          */
          if (jcr->FileIndex != (uint32_t)file_index) {
             Jmsg3(jcr, M_ERROR, 0, _("%s index %d not same as attributes %d\n"),
                stream_to_ascii(stream), file_index, jcr->FileIndex);
             continue;
          }
+
          ar->Digest = digest.c_str();
          ar->DigestType = crypto_digest_stream_type(stream);
-         db_escape_string(jcr, jcr->db, digest.c_str(), Digest.c_str(), strlen(Digest.c_str()));
+         length = strlen(Digest.c_str());
+         digest.check_size(length * 2 + 1);
+         db_escape_string(jcr, jcr->db, digest.c_str(), Digest.c_str(), length);
          Dmsg4(dbglvl, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
                strlen(digest.c_str()), digest.c_str(), ar->DigestType);
       }
       jcr->jr.JobFiles = jcr->JobFiles = file_index;
       jcr->jr.LastIndex = file_index;
    }
+
    if (is_bnet_error(fd)) {
       Jmsg1(jcr, M_FATAL, 0, _("<filed: Network error getting attributes. ERR=%s\n"),
             fd->bstrerror());
       return 0;
    }
+
    if (jcr->cached_attribute) {
       Dmsg3(dbglvl, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,
          ar->fname, ar->attr);
@@ -938,7 +957,9 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       }
       jcr->cached_attribute = false;
    }
+
    jcr->setJobStatus(JS_Terminated);
+
    return 1;
 }
 
