@@ -2,48 +2,90 @@
 }
 
 \defDirective{Dir}{Catalog}{DB Address}{}{}{%
+This is the host address  of the database server. Normally, you would specify
+this instead  of {\bf DB Socket} if the database server is on another machine.
+In that case, you will also specify {\bf DB Port}. This directive  is used
+only by MySQL and PostgreSQL and is ignored by SQLite if provided.
+This directive is optional.
 }
 
-\defDirective{Dir}{Catalog}{DB Driver}{}{}{%
+\defDirective{Dir}{Catalog}{DB Driver}{postgresql {\textbar} mysql {\textbar} sqlite}{}{%
+Selects the database type to use.
 }
 
 \defDirective{Dir}{Catalog}{DB Name}{}{}{%
+This specifies the name of the database.  If you use multiple catalogs
+(databases), you specify which one here.  If you are using an external
+database server rather than the internal one, you must specify a name
+that is known to the server (i.e.  you explicitly created the Bareos
+tables using this name).
 }
 
 \defDirective{Dir}{Catalog}{DB Password}{}{}{%
+This specifies the password to use when logging into the database.
 }
 
 \defDirective{Dir}{Catalog}{DB Port}{}{}{%
+This defines the port to  be used in conjunction with {\bf DB Address} to
+access the  database if it is on another machine. This directive is used  only
+by MySQL and PostgreSQL and is ignored by SQLite if provided.  This
+directive is optional.
 }
 
 \defDirective{Dir}{Catalog}{DB Socket}{}{}{%
+This is the name of  a socket to use on the local host to connect to the
+database. This directive is used only by MySQL and is ignored by  SQLite.
+Normally, if neither {\bf DB Socket} or {\bf DB Address}  are specified, MySQL
+will use the default socket. If the DB Socket is specified, the
+MySQL server must reside on the same machine as the Director.
 }
 
-\defDirective{Dir}{Catalog}{DB User}{}{}{%
+\defDirective{Dir}{Catalog}{DB User}{user}{}{%
+This specifies what user name to use to log into the database.
 }
 
 \defDirective{Dir}{Catalog}{Description}{}{}{%
 }
 
 \defDirective{Dir}{Catalog}{Disable Batch Insert}{}{}{%
+This directive allows you to override at runtime if the Batch insert should
+be enabled or disabled. Normally this is determined by querying the database
+library if it is thread-safe. If you think that disabling Batch insert will make
+your backup run faster you may disable it using this option and set it to {\bf Yes}
 }
 
 \defDirective{Dir}{Catalog}{Idle Timeout}{}{}{%
+This directive is used by the experimental database pooling functionality. Only use
+this for non production sites. This sets the idle time after which a database pool
+should be shrinked.
 }
 
 \defDirective{Dir}{Catalog}{Inc Connections}{}{}{%
+This directive is used by the experimental database pooling functionality. Only use
+this for non production sites. This sets the number of connections to add to a
+database pool when not enough connections are available on the pool anymore.
 }
 
 \defDirective{Dir}{Catalog}{Max Connections}{}{}{%
+This directive is used by the experimental database pooling functionality. Only use
+this for non production sites. This sets the maximum number of connections to a
+database to keep in this database pool.
 }
 
 \defDirective{Dir}{Catalog}{Min Connections}{}{}{%
+This directive is used by the experimental database pooling functionality. Only use
+this for non production sites. This sets the minimum number of connections to a
+database to keep in this database pool.
 }
 
 \defDirective{Dir}{Catalog}{Multiple Connections}{}{}{%
 }
 
 \defDirective{Dir}{Catalog}{Name}{}{}{%
+The name of the Catalog.  No necessary relation to the database server
+name.  This name will be specified in the Client resource directive
+indicating that all catalog data for that Client is maintained in this
+Catalog.  This directive is required.
 }
 
 \defDirective{Dir}{Catalog}{Password}{}{}{%
@@ -53,5 +95,8 @@
 }
 
 \defDirective{Dir}{Catalog}{Validate Timeout}{}{}{%
+This directive is used by the experimental database pooling functionality. Only use
+this for non production sites. This sets the validation timeout after which the
+database connection is polled to see if its still alive.
 }
 
