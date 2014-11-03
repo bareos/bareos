@@ -177,17 +177,19 @@ class BareosConfigurationSchema2Latex:
                 'directive': self.convertCamelCase2Spaces( directive ),
                 'datatype': self.getLatexDatatypeRef( data['datatype'] ),
                 'default': self.getLatexDefaultValue( data ),
+                'alias': "",
                 'deprecated': "",
                 'required': '',
             }
 
-            deprecated=""
+            if data.get( 'alias' ):
+                strings['alias']="\\textit{This directive is an alias.}"
             if data.get( 'deprecated' ):
                 strings['deprecated']="deprecated"
             if data.get( 'required' ):
                 strings['required']="required"
 
-            result+="\\resourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}{%(datatype)s}{%(required)s}{%(default)s}{%(deprecated)s}{}\n\n" % ( strings )
+            result+="\\resourceDirective{%(daemon)s}{%(resource)s}{%(directive)s}{%(datatype)s}{%(required)s}{%(default)s}{%(deprecated)s}{%(alias)s}\n\n" % ( strings )
         result+="\\end{description}\n\n"
         return result
 

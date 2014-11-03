@@ -46,8 +46,7 @@ password is never actually passed across the network but rather a
 challenge response hash code created with the password.  This directive
 is required.
 
-The password is plain text.  It is not generated through any special
-process.  However, it is preferable for security reasons to choose
+The password is plain text.  It is preferable for security reasons to choose
 random text.
 }
 
@@ -94,6 +93,9 @@ be accessed by  the console.
 }
 
 \defDirective{Dir}{Console}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+See chapter \nameref{TlsDirectives} to see,
+how the Bareos Director (and the other components) must be configured to use TLS.
 }
 
 \defDirective{Dir}{Console}{TLS Key}{}{}{%
