@@ -1,4 +1,3 @@
-/etc/bareos/tray-monitor.conf
 /etc/xdg/autostart/bareos-tray-monitor.desktop
 /usr/bin/bareos-tray-monitor
 /usr/share/man/man1/bareos-tray-monitor.1.gz

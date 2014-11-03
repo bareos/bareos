@@ -14,3 +14,9 @@
 /usr/share/man/man1/bsmtp.1.gz
 /usr/share/man/man8/btraceback.8.gz
 /var/lib/bareos/
+/etc/bareos/bat.conf usr/share/bareos-common/defconfig
+/etc/bareos/bconsole.conf usr/share/bareos-common/defconfig
+/etc/bareos/bareos-dir.conf usr/share/bareos-common/defconfig
+/etc/bareos/bareos-fd.conf usr/share/bareos-common/defconfig
+/etc/bareos/bareos-sd.conf usr/share/bareos-common/defconfig
+/etc/bareos/tray-monitor.conf usr/share/bareos-common/defconfig

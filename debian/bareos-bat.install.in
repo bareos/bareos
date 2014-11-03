@@ -1,6 +1,4 @@
-/etc/bareos/bat.conf
 /usr/bin/bat
-/etc/bareos/bat.conf
 /usr/share/pixmaps/bat.png
 /usr/share/pixmaps/bat.svg
 /usr/share/applications/bat.desktop
