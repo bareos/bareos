@@ -1,4 +1,3 @@
-/etc/bareos/bconsole.conf
 @scriptdir@/bconsole
 /usr/bin/bconsole
 /usr/sbin/bconsole

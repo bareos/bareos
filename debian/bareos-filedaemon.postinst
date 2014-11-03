@@ -25,17 +25,27 @@ daemon_group=bareos
 file_daemon_user=root
 #storage_daemon_group=$daemon_group
 
+DEFCONFIGDIR="/usr/share/bareos-common/defconfig"
+CONFIG="bareos-fd.conf"
+TARGET="/etc/bareos/${CONFIG}"
+
 
 permissions()
 {
-  chown ${file_daemon_user}:${daemon_group} /etc/bareos/bareos-fd.conf
+  chown ${file_daemon_user}:${daemon_group} $TARGET
+  chmod 640 $TARGET
 }
 
 case "$1" in
     configure)
+        if [ ! -f "$TARGET" ]; then
+            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}
+            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
+            /usr/lib/bareos/scripts/bareos-config initialize_passwords
+        else
+            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
+        fi
         permissions
-        /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
-        /usr/lib/bareos/scripts/bareos-config initialize_passwords
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
