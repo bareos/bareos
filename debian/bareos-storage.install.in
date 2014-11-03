@@ -1,4 +1,3 @@
-/etc/bareos/bareos-sd.conf
 /usr/sbin/bscrypto
 @plugindir@/scsicrypto-sd.so
 @scriptdir@/disk-changer
