@@ -747,6 +747,7 @@ OPENSSL_INC
 OPENSSL_LIBS
 PYTHON_INC
 PYTHON_LIBS
+DEBIAN_CONTROL
 READLINE_SRC
 CONS_LDFLAGS
 CONS_LIBS
@@ -1005,6 +1006,7 @@ enable_conio
 enable_ipv6
 enable_readline
 with_readline
+enable_dynamic_debian_package_list
 with_python
 with_tcp_wrappers
 enable_crypto
@@ -1727,6 +1729,9 @@ Optional Features:
   --disable-conio         disable conio support [default=no]
   --enable-ipv6           enable ipv6 support [default=yes]
   --disable-readline      disable readline support [default=yes]
+  --enable-dynamic-debian-package-list
+                          generate debian/control depending on configured
+                          options [default=no]
   --disable-crypto        disable crypto support [default=auto]
   --disable-tls           disable TLS support [default=auto]
   --enable-ndmp           enable build of NDMP support [default=no]
@@ -22660,6 +22665,27 @@ fi
 
 
 
+# Check whether --enable-dynamic-debian-package-list was given.
+if test "${enable_dynamic_debian_package_list+set}" = set; then :
+  enableval=$enable_dynamic_debian_package_list;
+       if test x$enableval = xyes; then
+	     generate_debian_control=yes
+       fi
+
+
+fi
+
+
+DEBIAN_CONTROL=
+if test x$generate_debian_control = xyes; then
+   DEBIAN_CONTROL="debian/control"
+fi
+
+
+
+
+
+
 MAKE_SHELL=/bin/sh
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether stat file-mode macros are broken" >&5
@@ -32065,7 +32091,7 @@ debian|ubuntu|univention)
    PSCMD="ps -e -o pid,command"
    DEBIAN_CONTROL_UNIVENTION_BAREOS=/dev/null
    DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=/dev/null
-   PFILES="${PFILES} \
+   PFILES="${PFILES} ${DEBIAN_CONTROL} \
       debian/bareos-bat.install \
       debian/bareos-bconsole.install \
       debian/bareos-common.install \
@@ -32094,7 +32120,6 @@ debian|ubuntu|univention)
       debian/bareos-storage.preinst \
       debian/bareos-tools.install \
       debian/bareos-traymonitor.install \
-      debian/control \
       platforms/debian/Makefile \
       platforms/debian/set_dbconfig_vars.sh"
    case "$DISTNAME" in
@@ -35204,6 +35229,7 @@ Configuration on `date`:
    Bareos version:          ${BAREOS} ${VERSION} (${DATE})
    Distribution:            ${DISTNAME}
    Source code location:    ${srcdir}
+   Modify package list:     ${DEBIAN_CONTROL}
    Install binaries:        ${bindir}
    Install system binaries: ${sbindir}
    Install libraries:       ${libdir}
