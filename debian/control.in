@@ -1,11 +1,12 @@
 #
-# debian/control is generated from debian/control.in by configure.
-# However, the debian/control must already exist
-# at the beginning of the build process,
-# therefore a initial version is delivered.
-# It will be replaced during configure.
-# The build process checks "Source" for build dependencies
-# and that at least one "Package" is defined.
+# when using
+# configure --enable-dynamic-debian-package-list
+# the file debian/control will be generated (overwritten)
+# from configure by the template debian/control.in.
+# While this makes building more flexible,
+# it does not comply with Debian Packaging Policy.
+# Therefore when building packages for Debian.org,
+# the statical debian/control will be used.
 #
 
 Source: bareos
