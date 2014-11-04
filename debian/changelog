@@ -1,3 +1,9 @@
+bareos (14.2.1+20141017gitc6c5b56-3) unstable; urgency=medium
+
+  * do not install files as conffiles in /etc/bareos (Closes: #767819)
+
+ -- Evgeni Golov <evgeni@debian.org>  Tue, 04 Nov 2014 07:19:30 +0100
+
 bareos (14.2.1+20141017gitc6c5b56-2) unstable; urgency=medium
 
   * Add more conflicts against Bacula packages.
