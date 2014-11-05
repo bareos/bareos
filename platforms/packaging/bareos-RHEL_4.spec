@@ -33,7 +33,7 @@
 
 Summary: 	The Network Backup Solution
 Name: 		bareos
-Version: 	13.2.3
+Version: 	13.2.4
 Release: 	1.0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
@@ -42,7 +42,7 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    13.2.3
+%define _libversion    13.2.4
 
 %define client_only 1
 
