@@ -52,7 +52,7 @@ public:
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
    RES *res;                          /* Resource to which we are connected */
-   FILE *m_spool_fd;                  /* Spooling file */
+   int m_spool_fd;                    /* Spooling file */
    TLS_CONNECTION *tls;               /* Associated tls connection */
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
@@ -144,9 +144,9 @@ public:
    bool is_stop() { return errors || is_terminated(); }
    bool is_error() { errno = b_errno; return errors; }
    void set_data_end(int32_t FileIndex) {
-          if (m_spool && FileIndex > m_FileIndex) {
+          if (m_spool != -1 && FileIndex > m_FileIndex) {
               m_FileIndex = FileIndex - 1;
-              m_data_end = ftello(m_spool_fd);
+              m_data_end = lseek(m_spool_fd, 0, SEEK_CUR);
            }
         };
    boffset_t get_data_end() { return m_data_end; };

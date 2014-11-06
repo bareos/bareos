@@ -958,7 +958,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nwritten;
 
    if (is_spooling()) {
-      nwritten = fwrite(ptr, 1, nbytes, m_spool_fd);
+      nwritten = write(m_spool_fd, ptr, nbytes);
       if (nwritten != nbytes) {
          berrno be;
          b_errno = errno;
