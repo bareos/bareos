@@ -32,6 +32,7 @@
 BSOCK::BSOCK()
 {
    m_fd = -1;
+   m_spool_fd = -1;
    msg = get_pool_memory(PM_BSOCK);
    errmsg = get_pool_memory(PM_MESSAGE);
    m_blocking = true;
@@ -134,45 +135,46 @@ bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
    int count = 0;
    JCR *jcr = get_jcr();
 
-   rewind(m_spool_fd);
+   if (lseek(m_spool_fd, 0, SEEK_SET) == -1) {
+      Qmsg(jcr, M_FATAL, 0, _("attr spool I/O error.\n"));
+      return false;
+   }
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-   posix_fadvise(fileno(m_spool_fd), 0, 0, POSIX_FADV_WILLNEED);
+   posix_fadvise(m_spool_fd, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-   while (fread((char *)&pktsiz, 1, sizeof(int32_t), m_spool_fd) ==
-          sizeof(int32_t)) {
+   while ((nbytes = read(m_spool_fd, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
       if (msglen > 0) {
          if (msglen > (int32_t)sizeof_pool_memory(msg)) {
             msg = realloc_pool_memory(msg, msglen + 1);
          }
-         nbytes = fread(msg, 1, msglen, m_spool_fd);
+
+         nbytes = read(m_spool_fd, msg, msglen);
          if (nbytes != (size_t)msglen) {
             berrno be;
             Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
-            Qmsg1(get_jcr(), M_FATAL, 0, _("fread attr spool error. ERR=%s\n"),
-                  be.bstrerror());
+            Qmsg1(get_jcr(), M_FATAL, 0, _("read attr spool error. ERR=%s\n"), be.bstrerror());
             update_attr_spool_size(tsize - last);
             return false;
          }
+
          size += nbytes;
          if ((++count & 0x3F) == 0) {
             update_attr_spool_size(size - last);
             last = size;
          }
       }
+
       send();
       if (jcr && job_canceled(jcr)) {
          return false;
       }
    }
    update_attr_spool_size(tsize - last);
-   if (ferror(m_spool_fd)) {
-      Qmsg(jcr, M_FATAL, 0, _("fread attr spool I/O error.\n"));
-      return false;
-   }
+
    return true;
 }
 

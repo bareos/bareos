@@ -665,7 +665,7 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
    size_t nbytes;
    ssize_t size = 0;
    int32_t msglen;                    /* message length */
-   FILE *spool_fd = NULL;
+   int spool_fd = -1;
    POOLMEM *msg = get_pool_memory(PM_MESSAGE);
 
    Dmsg0(100, "Begin despool_attributes_from_file\n");
@@ -674,29 +674,30 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
       goto bail_out;                  /* user disabled cataloging */
    }
 
-   spool_fd = fopen(file, "rb");
-   if (!spool_fd) {
+   spool_fd = open(file, O_RDONLY | O_BINARY);
+   if (spool_fd == -1) {
       Dmsg0(100, "cancel despool_attributes_from_file\n");
       /* send an error message */
       goto bail_out;
    }
+
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-   posix_fadvise(fileno(spool_fd), 0, 0, POSIX_FADV_WILLNEED);
+   posix_fadvise(spool_fd, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-   while (fread((char *)&pktsiz, 1, sizeof(int32_t), spool_fd) == sizeof(int32_t)) {
+   while ((nbytes = read(spool_fd, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
+
       if (msglen > 0) {
          if (msglen > (int32_t) sizeof_pool_memory(msg)) {
             msg = realloc_pool_memory(msg, msglen + 1);
          }
-         nbytes = fread(msg, 1, msglen, spool_fd);
+         nbytes = read(spool_fd, msg, msglen);
          if (nbytes != (size_t) msglen) {
             berrno be;
             Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
-            Qmsg1(jcr, M_FATAL, 0, _("fread attr spool error. ERR=%s\n"),
-                  be.bstrerror());
+            Qmsg1(jcr, M_FATAL, 0, _("read attr spool error. ERR=%s\n"), be.bstrerror());
             goto bail_out;
          }
          msg[nbytes] = '\0';
@@ -711,18 +712,11 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
       }
    }
 
-   if (ferror(spool_fd)) {
-      berrno be;
-      Qmsg1(jcr, M_FATAL, 0, _("fread attr spool error. ERR=%s\n"),
-            be.bstrerror());
-      goto bail_out;
-   }
-
    retval = true;
 
 bail_out:
-   if (spool_fd) {
-      fclose(spool_fd);
+   if (spool_fd != -1) {
+      close(spool_fd);
    }
 
    if (jcr->is_job_canceled()) {

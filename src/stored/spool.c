@@ -156,13 +156,13 @@ static bool open_data_spool_file(DCR *dcr)
    int spool_fd;
 
    make_unique_data_spool_filename(dcr, &name);
-   if ((spool_fd = open(name, O_CREAT|O_TRUNC|O_RDWR|O_BINARY, 0640)) >= 0) {
+   if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640)) >= 0) {
       dcr->spool_fd = spool_fd;
       dcr->jcr->spool_attributes = true;
    } else {
       berrno be;
-      Jmsg(dcr->jcr, M_FATAL, 0, _("Open data spool file %s failed: ERR=%s\n"), name,
-           be.bstrerror());
+
+      Jmsg(dcr->jcr, M_FATAL, 0, _("Open data spool file %s failed: ERR=%s\n"), name, be.bstrerror());
       free_pool_memory(name);
       return false;
    }
@@ -279,7 +279,7 @@ static bool despool_data(DCR *dcr, bool commit)
 
    set_new_file_parameters(dcr);
 
-   for ( ; ok; ) {
+   while (ok) {
       if (job_canceled(jcr)) {
          ok = false;
          break;
@@ -341,8 +341,8 @@ static bool despool_data(DCR *dcr, bool commit)
    lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
    if (ftruncate(rdcr->spool_fd, 0) != 0) {
       berrno be;
-      Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
-         be.bstrerror());
+
+      Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
       /* Note, try continuing despite ftruncate problem */
    }
 
@@ -400,8 +400,8 @@ static int read_block_from_spool_file(DCR *dcr)
    } else if (status != (ssize_t)rlen) {
       if (status == -1) {
          berrno be;
-         Jmsg(dcr->jcr, M_FATAL, 0, _("Spool header read error. ERR=%s\n"),
-              be.bstrerror());
+
+         Jmsg(dcr->jcr, M_FATAL, 0, _("Spool header read error. ERR=%s\n"), be.bstrerror());
       } else {
          Pmsg2(000, _("Spool read error. Wanted %u bytes, got %d\n"), rlen, status);
          Jmsg2(jcr, M_FATAL, 0, _("Spool header read error. Wanted %u bytes, got %d\n"), rlen, status);
@@ -521,12 +521,12 @@ static bool write_spool_header(DCR *dcr)
    hdr.len = block->binbuf;
 
    /* Write header */
-   for (int retry=0; retry<=1; retry++) {
+   for (int retry = 0; retry <= 1; retry++) {
       status = write(dcr->spool_fd, (char*)&hdr, sizeof(hdr));
       if (status == -1) {
          berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Error writing header to spool file. ERR=%s\n"),
-              be.bstrerror());
+
+         Jmsg(jcr, M_FATAL, 0, _("Error writing header to spool file. ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
       }
       if (status != (ssize_t)sizeof(hdr)) {
@@ -542,8 +542,8 @@ static bool write_spool_header(DCR *dcr)
 #endif
             if (ftruncate(dcr->spool_fd, pos - status) != 0) {
                berrno be;
-               Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
-                  be.bstrerror());
+
+               Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
               /* Note, try continuing despite ftruncate problem */
             }
          }
@@ -568,12 +568,12 @@ static bool write_spool_data(DCR *dcr)
    JCR *jcr = dcr->jcr;
 
    /* Write data */
-   for (int retry=0; retry<=1; retry++) {
+   for (int retry = 0; retry <= 1; retry++) {
       status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
       if (status == -1) {
          berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Error writing data to spool file. ERR=%s\n"),
-              be.bstrerror());
+
+         Jmsg(jcr, M_FATAL, 0, _("Error writing data to spool file. ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
       }
       if (status != (ssize_t)block->binbuf) {
@@ -588,8 +588,8 @@ static bool write_spool_data(DCR *dcr)
 #endif
             if (ftruncate(dcr->spool_fd, pos - status - sizeof(spool_hdr)) != 0) {
                berrno be;
-               Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"),
-                  be.bstrerror());
+
+               Jmsg(dcr->jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
                /* Note, try continuing despite ftruncate problem */
             }
          }
@@ -614,7 +614,7 @@ static bool write_spool_data(DCR *dcr)
 
 bool are_attributes_spooled(JCR *jcr)
 {
-   return jcr->spool_attributes && jcr->dir_bsock->m_spool_fd;
+   return jcr->spool_attributes && jcr->dir_bsock->m_spool_fd != -1;
 }
 
 /*
@@ -655,8 +655,7 @@ static void update_attr_spool_size(ssize_t size)
 
 static void make_unique_spool_filename(JCR *jcr, POOLMEM **name, int fd)
 {
-   Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name,
-      jcr->Job, fd);
+   Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name, jcr->Job, fd);
 }
 
 /*
@@ -690,53 +689,58 @@ bool commit_attribute_spool(JCR *jcr)
 {
    boffset_t size, data_end;
    char ec1[30];
-   char tbuf[100];
+   char tbuf[MAX_TIME_LENGTH];
    BSOCK *dir;
 
-   Dmsg1(100, "Commit attributes at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-         (utime_t)time(NULL)));
+   Dmsg1(100, "Commit attributes at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
    if (are_attributes_spooled(jcr)) {
       dir = jcr->dir_bsock;
-      if (fseeko(dir->m_spool_fd, 0, SEEK_END) != 0) {
+      if ((size = lseek(dir->m_spool_fd, 0, SEEK_END)) == -1) {
          berrno be;
-         Jmsg(jcr, M_FATAL, 0, _("Fseek on attributes file failed: ERR=%s\n"),
-              be.bstrerror());
+
+         Jmsg(jcr, M_FATAL, 0, _("lseek on attributes file failed: ERR=%s\n"), be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
          goto bail_out;
       }
-      size = ftello(dir->m_spool_fd);
+
       if (jcr->is_JobStatus(JS_Incomplete)) {
          data_end = dir->get_data_end();
-         /* Check and truncate to last valid data_end if necssary */
+
+         /*
+          * Check and truncate to last valid data_end if necssary
+          */
          if (size > data_end) {
-            if (ftruncate(fileno(dir->m_spool_fd), data_end) != 0) {
+            if (ftruncate(dir->m_spool_fd, data_end) != 0) {
                berrno be;
-               Jmsg(jcr, M_FATAL, 0, _("Truncate on attributes file failed: ERR=%s\n"),
-                    be.bstrerror());
+
+               Jmsg(jcr, M_FATAL, 0, _("Truncate on attributes file failed: ERR=%s\n"), be.bstrerror());
                jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
                goto bail_out;
             }
-            Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n",
-                  size, data_end);
+            Dmsg2(100, "=== Attrib spool truncated from %lld to %lld\n", size, data_end);
             size = data_end;
          }
       }
+
       if (size < 0) {
          berrno be;
+
          Jmsg(jcr, M_FATAL, 0, _("Fseek on attributes file failed: ERR=%s\n"),
               be.bstrerror());
          jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
          goto bail_out;
       }
+
       P(mutex);
       if (spool_stats.attr_size + size > spool_stats.max_attr_size) {
          spool_stats.max_attr_size = spool_stats.attr_size + size;
       }
       spool_stats.attr_size += size;
       V(mutex);
+
       jcr->sendJobStatus(JS_AttrDespooling);
       Jmsg(jcr, M_INFO, 0, _("Sending spooled attrs to the Director. Despooling %s bytes ...\n"),
-            edit_uint64_with_commas(size, ec1));
+           edit_uint64_with_commas(size, ec1));
 
       if (!blast_attr_spool_file(jcr, size)) {
          /* Can't read spool file from director side,
@@ -758,43 +762,48 @@ static bool open_attr_spool_file(JCR *jcr, BSOCK *bs)
    POOLMEM *name  = get_pool_memory(PM_MESSAGE);
 
    make_unique_spool_filename(jcr, &name, bs->m_fd);
-   bs->m_spool_fd = fopen(name, "w+b");
-   if (!bs->m_spool_fd) {
+   bs->m_spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
+   if (bs->m_spool_fd == -1) {
       berrno be;
-      Jmsg(jcr, M_FATAL, 0, _("fopen attr spool file %s failed: ERR=%s\n"), name,
-           be.bstrerror());
+
+      Jmsg(jcr, M_FATAL, 0, _("fopen attr spool file %s failed: ERR=%s\n"), name, be.bstrerror());
       jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
       free_pool_memory(name);
       return false;
    }
+
    P(mutex);
    spool_stats.attr_jobs++;
    V(mutex);
+
    free_pool_memory(name);
+
    return true;
 }
 
 static bool close_attr_spool_file(JCR *jcr, BSOCK *bs)
 {
    POOLMEM *name;
+   char tbuf[MAX_TIME_LENGTH];
 
-   char tbuf[100];
-
-   Dmsg1(100, "Close attr spool file at %s\n", bstrftimes(tbuf, sizeof(tbuf),
-         (utime_t)time(NULL)));
-   if (!bs->m_spool_fd) {
+   Dmsg1(100, "Close attr spool file at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
+   if (bs->m_spool_fd == -1) {
       return true;
    }
+
    name = get_pool_memory(PM_MESSAGE);
+
    P(mutex);
    spool_stats.attr_jobs--;
    spool_stats.total_attr_jobs++;
    V(mutex);
+
    make_unique_spool_filename(jcr, &name, bs->m_fd);
-   fclose(bs->m_spool_fd);
+   close(bs->m_spool_fd);
    unlink(name);
    free_pool_memory(name);
-   bs->m_spool_fd = NULL;
+   bs->m_spool_fd = -1;
    bs->clear_spooling();
+
    return true;
 }
