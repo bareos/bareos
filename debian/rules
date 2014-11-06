@@ -42,7 +42,7 @@ define CONFIGURE_COMMON
   --disable-conio \
   --enable-readline \
   --enable-batch-insert \
-  --enable-dynamic-debian-package-list \
+  --disable-dynamic-debian-package-list \
   --enable-dynamic-cats-backends \
   --enable-dynamic-storage-backends \
   --enable-acl \
