@@ -20,15 +20,25 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
+DEFCONFIGDIR="@configtemplatedir@"
+CONFIG="bconsole.conf"
+TARGET="/etc/bareos/${CONFIG}"
+
 permissions()
 {
-  chown ${daemon_user}:${daemon_group} /etc/bareos/bareos-dir.d
-  chown ${daemon_user}:${daemon_group} /var/lib/bareos/
-  chown ${daemon_user}:${daemon_group} /var/log/bareos/
+  chown root:${daemon_group} $TARGET
+  chmod 640 $TARGET
 }
 
 case "$1" in
     configure)
+        if [ ! -f "$TARGET" ]; then
+            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}
+            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
+            /usr/lib/bareos/scripts/bareos-config initialize_passwords
+        else
+            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
+        fi
         permissions
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
@@ -36,7 +46,7 @@ case "$1" in
     *)
         echo "postinst called with unknown argument \`$1'" >&2
         exit 1
-        ;;
+    ;;
 esac
 
 # dh_installdeb will replace this with shell code automatically
