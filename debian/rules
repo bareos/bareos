@@ -23,7 +23,6 @@ DIRECTOR_DAEMON_USER = $(DAEMON_USER)
 STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
-WORKING_DIR = /var/lib/bareos
 
 define CONFIGURE_COMMON
   --with-sbin-perm=755 \
@@ -31,6 +30,7 @@ define CONFIGURE_COMMON
   --sysconfdir=/etc/bareos \
   --with-archivedir=/var/lib/bareos/storage \
   --with-backenddir=/usr/lib/bareos/backends \
+  --with-configtemplatedir=/usr/lib/bareos/defaultconfigs \
   --with-scriptdir=/usr/lib/bareos/scripts \
   --with-plugindir=/usr/lib/bareos/plugins \
   --with-working-dir=/var/lib/bareos \

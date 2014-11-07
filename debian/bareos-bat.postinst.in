@@ -20,21 +20,13 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-#director_daemon_user=$daemon_user
-storage_daemon_user=$daemon_user
-#file_daemon_user=root
-storage_daemon_group=$daemon_group
-
-DEFCONFIGDIR="/usr/share/bareos-common/defconfig"
-CONFIG="bareos-sd.conf"
+DEFCONFIGDIR="@configtemplatedir@"
+CONFIG="bat.conf"
 TARGET="/etc/bareos/${CONFIG}"
-
 
 permissions()
 {
-  chown ${storage_daemon_user}:${daemon_group} $TARGET
-  chown ${storage_daemon_user}:${daemon_group} /etc/bareos/bareos-sd.d
-  chown ${storage_daemon_user}:${daemon_group} /var/lib/bareos/storage/
+  chown root:${daemon_group} $TARGET
   chmod 640 $TARGET
 }
 
@@ -48,12 +40,9 @@ case "$1" in
             cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
         fi
         permissions
-        /usr/lib/bareos/scripts/bareos-config setup_sd_user
-    ;;
-
+        ;;
     abort-upgrade|abort-remove|abort-deconfigure)
-    ;;
-
+        ;;
     *)
         echo "postinst called with unknown argument \`$1'" >&2
         exit 1

@@ -1459,6 +1459,22 @@ AC_ARG_WITH(plugindir,
 
 AC_SUBST(plugindir)
 
+# ------------------------------------------
+# Where to place configtemplatedir (configuration template files)
+# ------------------------------------------
+configtemplatedir=`eval echo ${libdir}`
+AC_ARG_WITH(configtemplatedir,
+   AC_HELP_STRING([--with-configtemplatedir=PATH], [specify path of Bareos configuration templates directory (Debian only)]),
+   [
+       if test "x$withval" != "xno" ; then
+	  configtemplatedir=$withval
+       fi
+   ]
+)
+
+AC_SUBST(configtemplatedir)
+
+
 dnl ------------------------------------------
 dnl Where to send dump email
 dnl ------------------------------------------
@@ -3916,8 +3932,11 @@ debian|ubuntu|univention)
    DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=/dev/null
    PFILES="${PFILES} ${DEBIAN_CONTROL} \
       debian/bareos-bat.install \
+      debian/bareos-bat.postinst \
       debian/bareos-bconsole.install \
+      debian/bareos-bconsole.postinst \
       debian/bareos-common.install \
+      debian/bareos-common.postinst \
       debian/bareos-common.preinst \
       debian/bareos-database-common.config \
       debian/bareos-database-common.install \
@@ -3930,19 +3949,25 @@ debian|ubuntu|univention)
       debian/bareos-director-python-plugin.install \
       debian/bareos-director.bareos-dir.init \
       debian/bareos-director.install \
+      debian/bareos-director.postinst \
       debian/bareos-director.preinst \
       debian/bareos-filedaemon-python-plugin.install \
       debian/bareos-filedaemon.bareos-fd.init \
       debian/bareos-filedaemon.install \
+      debian/bareos-filedaemon.postinst \
       debian/bareos-filedaemon.preinst \
+      debian/bareos-storage-fifo.postinst \
       debian/bareos-storage-fifo.install \
       debian/bareos-storage-python-plugin.install \
+      debian/bareos-storage-tape.postinst \
       debian/bareos-storage-tape.install \
       debian/bareos-storage.bareos-sd.init \
       debian/bareos-storage.install \
+      debian/bareos-storage.postinst \
       debian/bareos-storage.preinst \
       debian/bareos-tools.install \
       debian/bareos-traymonitor.install \
+      debian/bareos-traymonitor.postinst \
       platforms/debian/Makefile \
       platforms/debian/set_dbconfig_vars.sh"
    case "$DISTNAME" in
@@ -3955,7 +3980,9 @@ debian|ubuntu|univention)
          DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=./debian/control.univention-bareos-schema
          PFILES="${PFILES} \
             debian/univention-bareos-schema.install \
+            debian/univention-bareos-schema.postinst \
             debian/univention-bareos.install \
+            debian/univention-bareos.postinst \
             platforms/univention/Makefile"
          ;;
    esac
