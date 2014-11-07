@@ -1,11 +1,11 @@
 #undef  VERSION
-#define VERSION "12.4.6"
-#define BDATE   "04 September 2013"
-#define LSMDATE "12Sep13"
+#define VERSION "12.4.7"
+#define BDATE   "07 November 2014"
+#define LSMDATE "07Nov14"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
-                       "Copyright (C) 2013-2013 Bareos GmbH & Co. KG\n"
-#define BYEAR "2013"       /* year for copyright messages in progs */
+                       "Copyright (C) 2013-2014 Bareos GmbH & Co. KG\n"
+#define BYEAR "2014"       /* year for copyright messages in progs */
 
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
