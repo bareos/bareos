@@ -1,12 +1,14 @@
 # If versionstring contains debug, enable debug during build
 %define WIN_DEBUG %(echo %version | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
 
+# If versionstring contains prevista, build for windows < vista
+%define WIN_VISTACOMPAT %(echo %version | grep prevista >/dev/null 2>&1 && echo "no" || echo "yes")
+
 # Determine Windows Version (32/64) from name (mingw32-.../ming64-...)
 %define WIN_VERSION %(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
 
 # Set what to build
 %define BUILD_QTGUI yes
-%define WIN_VISTACOMPAT yes
 
 %define __strip %{_mingw64_strip}
 %define __objdump %{_mingw64_objdump}
