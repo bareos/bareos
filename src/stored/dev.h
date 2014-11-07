@@ -93,7 +93,8 @@ enum {
    B_GFAPI_DEV,
    B_OBJECT_STORE_DEV,
    B_RADOS_DEV,
-   B_CEPHFS_DEV
+   B_CEPHFS_DEV,
+   B_ELASTO_DEV
 };
 
 /*

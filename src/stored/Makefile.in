@@ -28,6 +28,7 @@ first_rule: all
 dummy:
 
 AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
+			    elasto_device.c \
 			    gfapi_device.c \
 			    object_store_device.c \
 			    rados_device.c \
@@ -37,10 +38,11 @@ AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
 NEEDED_DEVICE_API_SRCS = unix_file_device.c @NEEDED_DEVICE_API_SRCS@
 
 CEPHFS_LIBS = @CEPHFS_LIBS@
+ELASTO_LIBS = @ELASTO_LIBS@
 DROPLET_LIBS = @DROPLET_LIBS@
 GLUSTER_LIBS = @GLUSTER_LIBS@
 RADOS_LIBS = @RADOS_LIBS@
-AVAILABLE_BACKEND_LIBS = $(CEPHFS_LIBS) $(DROPLET_LIBS) $(GLUSTER_LIBS) $(RADOS_LIBS)
+AVAILABLE_BACKEND_LIBS = $(CEPHFS_LIBS) $(ELASTO_LIBS) $(DROPLET_LIBS) $(GLUSTER_LIBS) $(RADOS_LIBS)
 LIBS += @NEEDED_BACKEND_LIBS@
 
 # objects used in all daemons collected in (shared) library.
@@ -84,6 +86,7 @@ BEXTRACT_LIBS += @LZO_LIBS_NONSHARED@
 BEXTRACT_LIBS += @FASTLZ_LIBS_NONSHARED@
 
 CEPHFS_INC = @CEPHFS_INC@
+ELASTO_INC = @ELASTO_INC@
 DROPLET_INC = @DROPLET_INC@
 GLUSTER_INC = @GLUSTER_INC@
 RADOS_INC = @RADOS_INC@
@@ -126,11 +129,15 @@ libbareossd.la: Makefile $(LIBBAREOSSD_LOBJS)
 
 dev.lo: dev.c
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) $(GLUSTER_INC) $(DROPLET_INC) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) $(ELASTO_INC) $(GLUSTER_INC) $(DROPLET_INC) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 cephfs_device.lo: cephfs_device.c
 	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+elasto_device.lo: elasto_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(ELASTO_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 gfapi_device.lo: gfapi_device.c
 	@echo "Compiling $<"

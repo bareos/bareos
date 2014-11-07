@@ -273,6 +273,7 @@ static s_kw dev_types[] = {
    { "object", B_OBJECT_STORE_DEV },
    { "rados", B_RADOS_DEV },
    { "cephfs", B_CEPHFS_DEV },
+   { "elasto", B_ELASTO_DEV },
    { NULL, 0 }
 };
 

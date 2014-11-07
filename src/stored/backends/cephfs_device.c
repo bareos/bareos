@@ -44,14 +44,12 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
       m_cephfs_configstring = bstrdup(dev_name);
       bp = strchr(m_cephfs_configstring, ':');
       if (!bp) {
-         Mmsg1(errmsg, _("Unable to parse device %s.\n"), dev_name);
-         Emsg0(M_FATAL, 0, errmsg);
-         goto bail_out;
+         m_cephfs_conffile = m_cephfs_configstring;
+      } else {
+         *bp++ = '\0';
+         m_cephfs_conffile = m_cephfs_configstring;
+         m_basedir = bp;
       }
-
-      *bp++ = '\0';
-      m_cephfs_conffile = m_cephfs_configstring;
-      m_basedir = bp;
    }
 
    if (!m_cmount) {

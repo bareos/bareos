@@ -3882,6 +3882,53 @@ AC_SUBST(CEPHFS_INC)
 AC_SUBST(CEPHFS_LIBS)
 
 dnl
+dnl Check for AZURE via libelasto_file.
+dnl
+ELASTO_LIBS="-lelasto_file"
+ELASTO_INC=""
+have_elasto=no
+AC_ARG_WITH(elasto,
+   AC_HELP_STRING([--with-elasto@<:@=DIR@:>@], [Directory holding ELASTO includes/libs]),
+      with_elasto_directory=$withval
+)
+
+if test "x${with_elasto_directory}" != "xyes" && test x"${with_elasto_directory}" != "x"; then
+   #
+   # Make sure the $with_elasto_directory also makes sense
+   #
+   if test -d "${with_elasto_directory}/lib" -a -d "${with_elasto_directory}/include"; then
+      ELASTO_LIBS="-L${with_elasto_directory}/lib ${ELASTO_LIBS}"
+      ELASTO_INC="-I${with_elasto_directory}/include ${ELASTO_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${ELASTO_LIBS}"
+CFLAGS="${saved_CFLAGS} ${ELASTO_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${ELASTO_INC}"
+
+AC_CHECK_HEADER(elasto/data.h)
+AC_CHECK_HEADER(elasto/file.h)
+
+AC_CHECK_LIB(elasto_file, elasto_fclose, have_elasto="yes")
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_elasto}" = "xyes"; then
+   AC_DEFINE(HAVE_ELASTO, 1, [Define to 1 if you have elasto lib])
+else
+   ELASTO_LIBS=""
+   ELASTO_INC=""
+fi
+
+AC_SUBST(ELASTO_INC)
+AC_SUBST(ELASTO_LIBS)
+
+dnl
 dnl Check for pthread libraries
 dnl
 PTHREAD_LIB=""
@@ -4323,6 +4370,10 @@ if test x$use_libtool != xno; then
    if test X"$have_cephfs" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
    fi
+
+   if test X"$have_elasto" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-elasto.la"
+   fi
 else
    BUILD_SD_BACKENDS=""
 fi
@@ -4591,6 +4642,7 @@ Configuration on `date`:
    CEPH RADOS support:      ${have_ceph_rados}
    RADOS striping support:  ${have_ceph_rados_striper}
    CEPHFS support:          ${have_cephfs}
+   ELASTO support:          ${have_elasto}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}

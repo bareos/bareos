@@ -86,6 +86,9 @@
 #ifdef HAVE_CEPHFS
 #include "backends/cephfs_device.h"
 #endif
+#ifdef HAVE_ELASTO
+#include "backends/elasto_device.h"
+#endif
 #include "backends/generic_tape_device.h"
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
@@ -190,6 +193,11 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 #ifdef HAVE_CEPHFS
    case B_CEPHFS_DEV:
       dev = New(cephfs_device);
+      break;
+#endif
+#ifdef HAVE_ELASTO
+   case B_ELASTO_DEV:
+      dev = New(elasto_device);
       break;
 #endif
 #ifdef HAVE_WIN32
