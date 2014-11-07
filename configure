@@ -651,6 +651,8 @@ DLIB
 DINCLUDE
 DEBUG
 CAP_LIBS
+ELASTO_LIBS
+ELASTO_INC
 CEPHFS_LIBS
 CEPHFS_INC
 RADOS_STRIPER_LIBS
@@ -1073,6 +1075,7 @@ with_droplet
 with_rados
 with_rados_striper
 with_cephfs
+with_elasto
 with_systemd
 '
       ac_precious_vars='build_alias
@@ -1839,6 +1842,7 @@ Optional Packages:
   --with-rados-striper[=DIR]
                           Directory holding RADOS striper includes/libs
   --with-cephfs[=DIR]     Directory holding CEPHFS includes/libs
+  --with-elasto[=DIR]     Directory holding ELASTO includes/libs
   --with-systemd[=UNITDIR]
                           Include systemd support. UNITDIR is where systemd
                           system .service files are located, default is to ask
@@ -31940,6 +31944,104 @@ fi
 
 
 
+ELASTO_LIBS="-lelasto_file"
+ELASTO_INC=""
+have_elasto=no
+
+# Check whether --with-elasto was given.
+if test "${with_elasto+set}" = set; then :
+  withval=$with_elasto; with_elasto_directory=$withval
+
+fi
+
+
+if test "x${with_elasto_directory}" != "xyes" && test x"${with_elasto_directory}" != "x"; then
+   #
+   # Make sure the $with_elasto_directory also makes sense
+   #
+   if test -d "${with_elasto_directory}/lib" -a -d "${with_elasto_directory}/include"; then
+      ELASTO_LIBS="-L${with_elasto_directory}/lib ${ELASTO_LIBS}"
+      ELASTO_INC="-I${with_elasto_directory}/include ${ELASTO_INC}"
+   fi
+fi
+
+saved_LIBS="${LIBS}"
+saved_CFLAGS="${CFLAGS}"
+saved_CPPFLAGS="${CPPFLAGS}"
+LIBS="${saved_LIBS} ${ELASTO_LIBS}"
+CFLAGS="${saved_CFLAGS} ${ELASTO_INC}"
+CPPFLAGS="${saved_CPPFLAGS} ${ELASTO_INC}"
+
+ac_fn_c_check_header_mongrel "$LINENO" "elasto/data.h" "ac_cv_header_elasto_data_h" "$ac_includes_default"
+if test "x$ac_cv_header_elasto_data_h" = xyes; then :
+
+fi
+
+
+ac_fn_c_check_header_mongrel "$LINENO" "elasto/file.h" "ac_cv_header_elasto_file_h" "$ac_includes_default"
+if test "x$ac_cv_header_elasto_file_h" = xyes; then :
+
+fi
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for elasto_fclose in -lelasto_file" >&5
+$as_echo_n "checking for elasto_fclose in -lelasto_file... " >&6; }
+if ${ac_cv_lib_elasto_file_elasto_fclose+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lelasto_file  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char elasto_fclose ();
+int
+main ()
+{
+return elasto_fclose ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_elasto_file_elasto_fclose=yes
+else
+  ac_cv_lib_elasto_file_elasto_fclose=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_elasto_file_elasto_fclose" >&5
+$as_echo "$ac_cv_lib_elasto_file_elasto_fclose" >&6; }
+if test "x$ac_cv_lib_elasto_file_elasto_fclose" = xyes; then :
+  have_elasto="yes"
+fi
+
+
+LIBS="${saved_LIBS}"
+CFLAGS="${saved_CFLAGS}"
+CPPFLAGS="${saved_CPPFLAGS}"
+
+if test "x${have_elasto}" = "xyes"; then
+
+$as_echo "#define HAVE_ELASTO 1" >>confdefs.h
+
+else
+   ELASTO_LIBS=""
+   ELASTO_INC=""
+fi
+
+
+
+
 PTHREAD_LIB=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_create in -lpthread" >&5
 $as_echo_n "checking for pthread_create in -lpthread... " >&6; }
@@ -32586,6 +32688,10 @@ if test x$use_libtool != xno; then
 
    if test X"$have_cephfs" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
+   fi
+
+   if test X"$have_elasto" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-elasto.la"
    fi
 else
    BUILD_SD_BACKENDS=""
@@ -35469,6 +35575,7 @@ Configuration on `date`:
    CEPH RADOS support:      ${have_ceph_rados}
    RADOS striping support:  ${have_ceph_rados_striper}
    CEPHFS support:          ${have_cephfs}
+   ELASTO support:          ${have_elasto}
    Python support:          ${support_python} ${PYTHON_LIBS}
    systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:    ${batch_insert_db_backends}

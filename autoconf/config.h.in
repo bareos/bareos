@@ -225,6 +225,9 @@
 /* Define to 1 if dynamic loading of storage backends is enabled */
 #undef HAVE_DYNAMIC_SD_BACKENDS
 
+/* Define to 1 if you have elasto lib */
+#undef HAVE_ELASTO
+
 /* Set if you have an Embedded MySQL Database */
 #undef HAVE_EMBEDDED_MYSQL
 
