@@ -3,7 +3,8 @@ Architecture: all
 Depends: univention-postgresql, postgresql-8.4, bareos (>= 12.4.4), bareos-database-common, bareos-database-postgresql,
  dbconfig-common, bareos-database-tools,
  univention-join (>> 5.0.20-1.436),
- shell-univention-lib (>> 2.0.17-1.125)
+ shell-univention-lib (>> 2.0.17-1.125),
+ univention-config
 Description: meta package for univention-bareos-integration
  This package integrates the bareos backup solution into
  UCS. The package provides automatic configuration of the
