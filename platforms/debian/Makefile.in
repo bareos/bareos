@@ -17,7 +17,7 @@ install-autostart: install-autostart-fd install-autostart-sd install-autostart-d
 
 install_logrotate:
 	@$(MKDIR) $(DESTDIR)/etc/logrotate.d
-	@$(INSTALL_PROGRAM) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
+	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
 
 install-autostart-fd:
 	@echo "Installing bareos-fd boot script ..."

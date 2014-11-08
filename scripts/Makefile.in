@@ -65,7 +65,7 @@ install: installdirs
 	$(INSTALL_SCRIPT) bareos-config-lib.sh ${DESTDIR}${scriptdir}/bareos-config-lib.sh
 	$(INSTALL_SCRIPT) bareos-explorer ${DESTDIR}${scriptdir}/bareos-explorer
 	$(INSTALL_SCRIPT) btraceback $(DESTDIR)$(sbindir)/btraceback
-	#$(INSTALL_SCRIPT) logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
+	#$(INSTALL_DATA) logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
 
 Makefile: Makefile.in
 	cd $(topdir) \

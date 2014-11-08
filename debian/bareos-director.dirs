@@ -1,2 +1,2 @@
-/etc/bareos
+/etc/bareos/bareos-dir.d
 /usr/lib/bareos

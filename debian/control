@@ -44,9 +44,9 @@ Build-Depends: acl-dev,
 # univention:
 #   ucslint, univention-config-dev
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
-Standards-Version: 3.9.5
-Vcs-Git: git://github.com/bareos/bareos.git -b master
-Vcs-Browser: https://github.com/bareos/bareos/tree/master
+Standards-Version: 3.9.6
+Vcs-Git: git://github.com/bareos/bareos.git -b bareos-14.2
+Vcs-Browser: https://github.com/bareos/bareos/tree/bareos-14.2
 Homepage: http://www.bareos.org/
 
 
@@ -196,7 +196,7 @@ Description: Backup Archiving Recovery Open Sourced - development files
 Package:        bareos-director
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), bareos-database-tools, lsb-base (>= 3.2-13), bsd-mailx | mailx, ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), bareos-database-common (= ${binary:Version}), bareos-database-tools, lsb-base (>= 3.2-13), lsof, bsd-mailx | mailx, ${shlibs:Depends}, ${misc:Depends}
 Recommends:     logrotate
 Conflicts:      bacula-director
 Replaces:       bacula-director
@@ -214,7 +214,7 @@ Description: Backup Archiving Recovery Open Sourced - director daemon
 Package:        bareos-filedaemon
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, lsb-base (>= 3.2-13), lsof, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-fd
 Replaces:       bacula-fd
 Description: Backup Archiving Recovery Open Sourced - file daemon
@@ -231,7 +231,7 @@ Description: Backup Archiving Recovery Open Sourced - file daemon
 Package:        bareos-storage
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
-Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, python, ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-sd
 Replaces:       bacula-sd
 Description: Backup Archiving Recovery Open Sourced - storage daemon
@@ -264,7 +264,7 @@ Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
 Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), mtx, ${shlibs:Depends}, ${misc:Depends}
 Recommends:     mt-st
-Suggests:       dds2tar, scsitools, sg3-utils
+Suggests:       scsitools, sg3-utils
 Description: Backup Archiving Recovery Open Sourced - storage daemon tape support
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
