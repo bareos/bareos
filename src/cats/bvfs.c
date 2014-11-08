@@ -410,10 +410,9 @@ static bool update_path_hierarchy_cache(JCR *jcr,
      "SELECT DISTINCT h.PPathId AS PathId "
        "FROM PathHierarchy AS h "
        "JOIN  PathVisibility AS p ON (h.PathId=p.PathId) "
-      "WHERE p.JobId=%s) AS a LEFT JOIN "
-       "(SELECT PathId "
-          "FROM PathVisibility "
-         "WHERE JobId=%s) AS b ON (a.PathId = b.PathId) "
+      "WHERE p.JobId=%s) AS a "
+     "LEFT JOIN PathVisibility AS b "
+       "ON (b.JobId=%s and a.PathId = b.PathId) "
    "WHERE b.PathId IS NULL",  jobid, jobid, jobid);
    }
 
@@ -452,45 +451,6 @@ void bvfs_update_cache(JCR *jcr, B_DB *mdb)
    db_list_ctx jobids_list;
 
    db_lock(mdb);
-
-#ifdef xxx
-   /* TODO: Remove this code when updating make_bareos_table script */
-   Mmsg(mdb->cmd, "SELECT 1 FROM Job WHERE HasCache<>2 LIMIT 1");
-   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      Dmsg0(dbglevel, "Creating cache table\n");
-      Mmsg(mdb->cmd, "ALTER TABLE Job ADD HasCache int DEFAULT 0");
-      QUERY_DB(jcr, mdb, mdb->cmd);
-
-      Mmsg(mdb->cmd,
-           "CREATE TABLE PathHierarchy ( "
-           "PathId integer NOT NULL, "
-           "PPathId integer NOT NULL, "
-           "CONSTRAINT pathhierarchy_pkey "
-           "PRIMARY KEY (PathId))");
-      QUERY_DB(jcr, mdb, mdb->cmd);
-
-      Mmsg(mdb->cmd,
-           "CREATE INDEX pathhierarchy_ppathid "
-           "ON PathHierarchy (PPathId)");
-      QUERY_DB(jcr, mdb, mdb->cmd);
-
-      Mmsg(mdb->cmd,
-           "CREATE TABLE PathVisibility ("
-           "PathId integer NOT NULL, "
-           "JobId integer NOT NULL, "
-           "Size int8 DEFAULT 0, "
-           "Files int4 DEFAULT 0, "
-           "CONSTRAINT pathvisibility_pkey "
-           "PRIMARY KEY (JobId, PathId))");
-      QUERY_DB(jcr, mdb, mdb->cmd);
-
-      Mmsg(mdb->cmd,
-           "CREATE INDEX pathvisibility_jobid "
-           "ON PathVisibility (JobId)");
-      QUERY_DB(jcr, mdb, mdb->cmd);
-
-   }
-#endif
 
    Mmsg(mdb->cmd,
  "SELECT JobId from Job "
