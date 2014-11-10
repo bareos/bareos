@@ -308,7 +308,7 @@ Requires:   openssl
 Provides:   %{name}-libs
 
 %package    database-common
-Summary:    Generic abstration libs and tools for the sql catalog
+Summary:    Generic abstraction libs and files to connect to a database
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-backend = %{version}
