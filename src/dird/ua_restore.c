@@ -1287,8 +1287,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
 }
 
 /*
- * This routine is used to get the current backup or a backup
- *   before the specified date.
+ * This routine is used to get the current backup or a backup before the specified date.
  */
 static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date)
 {
@@ -1356,7 +1355,9 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       }
    }
 
-   /* If Pool specified, add PoolId specification */
+   /*
+    * If Pool specified, add PoolId specification
+    */
    pool_select[0] = 0;
    if (rx->pool) {
       POOL_DBR pr;
@@ -1370,23 +1371,35 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       }
    }
 
-   /* Find JobId of last Full backup for this client, fileset */
-   edit_int64(cr.ClientId, ed1);
-   Mmsg(rx->query, uar_last_full, ed1, ed1, date, fsr.FileSet,
-         pool_select);
-   if (!db_sql_query(ua->db, rx->query)) {
-      ua->error_msg("%s\n", db_strerror(ua->db));
-      goto bail_out;
+   /*
+    * Find JobId of last Full backup for this client, fileset
+    */
+   if (pool_select[0]) {
+      edit_int64(cr.ClientId, ed1);
+      Mmsg(rx->query, uar_last_full, ed1, date, fsr.FileSet, pool_select);
+      if (!db_sql_query(ua->db, rx->query)) {
+         ua->error_msg("%s\n", db_strerror(ua->db));
+         goto bail_out;
+      }
+   } else {
+      edit_int64(cr.ClientId, ed1);
+      Mmsg(rx->query, uar_last_full_no_pool, ed1, date, fsr.FileSet);
+      if (!db_sql_query(ua->db, rx->query)) {
+         ua->error_msg("%s\n", db_strerror(ua->db));
+         goto bail_out;
+      }
    }
 
-   /* Find all Volumes used by that JobId */
+   /*
+    * Find all Volumes used by that JobId
+    */
    if (!db_sql_query(ua->db, uar_full)) {
       ua->error_msg("%s\n", db_strerror(ua->db));
       goto bail_out;
    }
 
-   /* Note, this is needed because I don't seem to get the callback
-    * from the call just above.
+   /*
+    * Note, this is needed because I don't seem to get the callback from the call just above.
     */
    rx->JobTDate = 0;
    if (!db_sql_query(ua->db, uar_sel_all_temp1, last_full_handler, (void *)rx)) {
@@ -1397,13 +1410,18 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       goto bail_out;
    }
 
-   /* Now find most recent Differental Job after Full save, if any */
+   /*
+    * Now find most recent Differental Job after Full save, if any
+    */
    Mmsg(rx->query, uar_dif, edit_uint64(rx->JobTDate, ed1), date,
         edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!db_sql_query(ua->db, rx->query)) {
       ua->warning_msg("%s\n", db_strerror(ua->db));
    }
-   /* Now update JobTDate to look into Differental, if any */
+
+   /*
+    * Now update JobTDate to look into Differental, if any
+    */
    rx->JobTDate = 0;
    if (!db_sql_query(ua->db, uar_sel_all_temp, last_full_handler, (void *)rx)) {
       ua->warning_msg("%s\n", db_strerror(ua->db));
@@ -1413,14 +1431,18 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       goto bail_out;
    }
 
-   /* Now find all Incremental Jobs after Full/dif save */
+   /*
+    * Now find all Incremental Jobs after Full/dif save
+    */
    Mmsg(rx->query, uar_inc, edit_uint64(rx->JobTDate, ed1), date,
         edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!db_sql_query(ua->db, rx->query)) {
       ua->warning_msg("%s\n", db_strerror(ua->db));
    }
 
-   /* Get the JobIds from that list */
+   /*
+    * Get the JobIds from that list
+    */
    rx->last_jobid[0] = rx->JobIds[0] = 0;
 
    if (!db_sql_query(ua->db, uar_sel_jobid_temp, jobid_handler, (void *)rx)) {
@@ -1429,14 +1451,18 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
 
    if (rx->JobIds[0] != 0) {
       if (find_arg(ua, NT_("copies")) > 0) {
-         /* Display a list of all copies */
+         /*
+          * Display a list of all copies
+          */
          db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds,
                                 prtit, ua, HORZ_LIST);
       }
-      /* Display a list of Jobs selected for this restore */
+
+      /*
+       * Display a list of Jobs selected for this restore
+       */
       db_list_sql_query(ua->jcr, ua->db, uar_list_temp, prtit, ua, true, HORZ_LIST);
       ok = true;
-
    } else {
       ua->warning_msg(_("No jobs found.\n"));
    }
