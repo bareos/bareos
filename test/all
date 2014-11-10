@@ -8,25 +8,6 @@ echo "TRAVIS_BRANCH: $TRAVIS_BRANCH"
 echo "USER: $USER"
 echo "DB: $DB"
 
-chown ${daemon_user}:${daemon_group} /etc/bareos/*.conf
-chmod ug=rw,o+r /etc/bareos/*.conf
-chmod a+rx /etc/bareos/
-
-ls -la /etc/bareos/
-
-case "$DB" in
-    postgres*)
-        su postgres -c /usr/lib/bareos/scripts/create_bareos_database
-        su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
-        su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
-        ;;
-    *)
-        /usr/lib/bareos/scripts/create_bareos_database
-        /usr/lib/bareos/scripts/make_bareos_tables
-        /usr/lib/bareos/scripts/grant_bareos_privileges
-        ;;
-esac
-
 echo "--------- starting services ----------- "
 service bareos-dir start
 service bareos-sd start
