@@ -133,8 +133,8 @@ const char *uar_del_temp1 = "DROP TABLE temp1";
 
 const char *uar_last_full =
    "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
-   "FROM Client,Job,JobMedia,Media,FileSet WHERE Client.ClientId=%s "
-   "AND Job.ClientId=%s "
+   "FROM Job,JobMedia,Media,FileSet "
+   "WHERE Job.ClientId=%s "
    "AND Job.StartTime < '%s' "
    "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
    "AND JobMedia.JobId=Job.JobId "
@@ -145,11 +145,22 @@ const char *uar_last_full =
    "%s"
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
+const char *uar_last_full_no_pool =
+   "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
+   "FROM Job,FileSet "
+   "WHERE Job.ClientId=%s "
+   "AND Job.StartTime < '%s' "
+   "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
+   "AND Job.FileSetId=FileSet.FileSetId "
+   "AND FileSet.FileSet='%s' "
+   "ORDER BY Job.JobTDate DESC LIMIT 1";
+
 const char *uar_full =
    "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,"
    "Job.ClientId,Job.Level,Job.JobFiles,Job.JobBytes,"
    "StartTime,VolumeName,JobMedia.StartFile,VolSessionId,VolSessionTime "
-   "FROM temp1,Job,JobMedia,Media WHERE temp1.JobId=Job.JobId "
+   "FROM temp1,Job,JobMedia,Media "
+   "WHERE temp1.JobId=Job.JobId "
    "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
    "AND Media.Enabled=1 "
    "AND JobMedia.JobId=Job.JobId "

@@ -40,6 +40,7 @@ extern const char CATS_IMP_EXP *uar_sel_files;
 extern const char CATS_IMP_EXP *uar_del_temp;
 extern const char CATS_IMP_EXP *uar_del_temp1;
 extern const char CATS_IMP_EXP *uar_last_full;
+extern const char CATS_IMP_EXP *uar_last_full_no_pool;
 extern const char CATS_IMP_EXP *uar_full;
 extern const char CATS_IMP_EXP *uar_inc;
 extern const char CATS_IMP_EXP *uar_list_temp;
