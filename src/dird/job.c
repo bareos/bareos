@@ -932,7 +932,8 @@ bool get_level_since_time(JCR *jcr)
    if (!jcr->stime) {
       jcr->stime = get_pool_memory(PM_MESSAGE);
    }
-   jcr->PrevJob[0] = jcr->stime[0] = 0;
+   jcr->PrevJob[0] = 0;
+   jcr->stime[0] = 0;
 
    /*
     * Lookup the last FULL backup job to get the time/date for a
@@ -1043,9 +1044,11 @@ bool get_level_since_time(JCR *jcr)
       /*
        * Lookup the Job record of the previous Job and store it in jcr->previous_jr.
        */
-      bstrncpy(jcr->previous_jr.Job, jcr->PrevJob, sizeof(jcr->previous_jr.Job));
-      if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-         Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), db_strerror(jcr->db));
+      if (jcr->PrevJob[0]) {
+         bstrncpy(jcr->previous_jr.Job, jcr->PrevJob, sizeof(jcr->previous_jr.Job));
+         if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
+            Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), db_strerror(jcr->db));
+         }
       }
 
       break;
