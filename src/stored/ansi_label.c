@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,6 @@ static bool same_label_names(char *bareos_name, char *ansi_name);
  *    VOL_IO_ERROR      I/O error on read
  *    VOL_NAME_ERROR    Wrong name in VOL1 record
  *    VOL_LABEL_ERROR   Probably an ANSI label, but something wrong
- *
  */
 int read_ansi_ibm_label(DCR *dcr)
 {
@@ -63,8 +62,7 @@ int read_ansi_ibm_label(DCR *dcr)
 
    /*
     * Read VOL1, HDR1, HDR2 labels, but ignore the data
-    *  If tape read the following EOF mark, on disk do
-    *  not read.
+    * If tape read the following EOF mark, on disk do not read.
     */
    Dmsg0(100, "Read ansi label.\n");
    if (!dev->is_tape()) {
@@ -73,11 +71,14 @@ int read_ansi_ibm_label(DCR *dcr)
 
    dev->label_type = B_BAREOS_LABEL;  /* assume Bareos label */
 
-   /* Read a maximum of 5 records VOL1, HDR1, ... HDR4 */
-   for (i=0; i < 6; i++) {
+   /*
+    * Read a maximum of 5 records VOL1, HDR1, ... HDR4
+    */
+   for (i = 0; i < 6; i++) {
       do {
          status = dev->read(label, sizeof(label));
       } while (status == -1 && errno == EINTR);
+
       if (status < 0) {
          berrno be;
          dev->clrerror(-1);
@@ -88,6 +89,7 @@ int read_ansi_ibm_label(DCR *dcr)
          dev->VolCatInfo.VolCatErrors++;
          return VOL_IO_ERROR;
       }
+
       if (status == 0) {
          if (dev->at_eof()) {
             dev->set_eot();           /* second eof, set eot bit */
@@ -98,6 +100,7 @@ int read_ansi_ibm_label(DCR *dcr)
             dev->set_ateof();        /* set eof state */
          }
       }
+
       switch (i) {
       case 0:                         /* Want VOL1 label */
          if (status == 80) {
@@ -106,7 +109,9 @@ int read_ansi_ibm_label(DCR *dcr)
                dev->label_type = B_ANSI_LABEL;
                Dmsg0(100, "Got ANSI VOL1 label\n");
             } else {
-               /* Try EBCDIC */
+               /*
+                * Try EBCDIC
+                */
                ebcdic_to_ascii(label, label, sizeof(label));
                if (bstrncmp("VOL1", label, 4)) {
                   ok = true;;
@@ -116,28 +121,35 @@ int read_ansi_ibm_label(DCR *dcr)
                }
             }
          }
+
          if (!ok) {
             Dmsg0(100, "No VOL1 label\n");
             Mmsg0(jcr->errmsg, _("No VOL1 label while reading ANSI/IBM label.\n"));
             return VOL_NO_LABEL;   /* No ANSI label */
          }
 
-
-         /* Compare Volume Names allow special wild card */
+         /*
+          * Compare Volume Names allow special wild card
+          */
          if (VolName && *VolName && *VolName != '*') {
             if (!same_label_names(VolName, &label[4])) {
                char *p = &label[4];
                char *q;
 
                free_volume(dev);
-               /* Store new Volume name */
+
+               /*
+                * Store new Volume name
+                */
                q = dev->VolHdr.VolumeName;
                for (int i=0; *p != ' ' && i < 6; i++) {
                   *q++ = *p++;
                }
                *q = 0;
                Dmsg0(100, "Call reserve_volume\n");
-               /* ***FIXME***  why is this reserve_volume() needed???? KES */
+               /*
+                * ***FIXME***  why is this reserve_volume() needed???? KES
+                */
                reserve_volume(dcr, dev->VolHdr.VolumeName);
                dev = dcr->dev;            /* may have changed in reserve_volume */
                Dmsg2(100, "Wanted ANSI Vol %s got %6s\n", VolName, dev->VolHdr.VolumeName);
@@ -150,17 +162,26 @@ int read_ansi_ibm_label(DCR *dcr)
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
+
          if (status != 80 || !bstrncmp("HDR1", label, 4)) {
             Dmsg0(100, "No HDR1 label\n");
             Mmsg0(jcr->errmsg, _("No HDR1 label while reading ANSI label.\n"));
             return VOL_LABEL_ERROR;
          }
-         if (!bstrncmp("BAREOS.DATA", &label[4], 11)) {
-            Dmsg1(100, "HD1 not Bareos label. Wanted  BAREOS.DATA got %11s\n",
-               &label[4]);
-            Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"),
-               dev->VolHdr.VolumeName);
-            return VOL_NAME_ERROR;     /* Not a Bareos label */
+
+         if (me->compatible) {
+            if (!bstrncmp("BACULA.DATA", &label[4], 11) &&
+                !bstrncmp("BAREOS.DATA", &label[4], 11)) {
+               Dmsg1(100, "HD1 not Bacula/Bareos label. Wanted BACULA.DATA/BAREOS.DATA got %11s\n", &label[4]);
+               Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"), dev->VolHdr.VolumeName);
+               return VOL_NAME_ERROR;     /* Not a Bareos label */
+            }
+         } else {
+            if (!bstrncmp("BAREOS.DATA", &label[4], 11)) {
+               Dmsg1(100, "HD1 not Bareos label. Wanted BAREOS.DATA got %11s\n", &label[4]);
+               Mmsg1(jcr->errmsg, _("ANSI/IBM Volume \"%s\" does not belong to Bareos.\n"), dev->VolHdr.VolumeName);
+               return VOL_NAME_ERROR;     /* Not a Bareos label */
+            }
          }
          Dmsg0(100, "Got HDR1 label\n");
          break;
@@ -168,6 +189,7 @@ int read_ansi_ibm_label(DCR *dcr)
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
+
          if (status != 80 || !bstrncmp("HDR2", label, 4)) {
             Dmsg0(100, "No HDR2 label\n");
             Mmsg0(jcr->errmsg, _("No HDR2 label while reading ANSI/IBM label.\n"));
@@ -180,14 +202,17 @@ int read_ansi_ibm_label(DCR *dcr)
             Dmsg0(100, "ANSI label OK\n");
             return VOL_OK;
          }
+
          if (dev->label_type == B_IBM_LABEL) {
             ebcdic_to_ascii(label, label, sizeof(label));
          }
+
          if (status != 80 || !bstrncmp("HDR", label, 3)) {
             Dmsg0(100, "Unknown or bad ANSI/IBM label record.\n");
             Mmsg0(jcr->errmsg, _("Unknown or bad ANSI/IBM label record.\n"));
             return VOL_LABEL_ERROR;
          }
+
          Dmsg0(100, "Got HDR label\n");
          break;
       }
@@ -215,8 +240,6 @@ int read_ansi_ibm_label(DCR *dcr)
  * 37-40   4     reserved
  * 41-50   10    Owner
  * 51-79   29    reserved
-
- *
  *
  * ANSI/IBM HDR1 label
  *  80 characters blank filled
@@ -234,7 +257,7 @@ int read_ansi_ibm_label(DCR *dcr)
  * 54-59   6     Block count           000000
  * 60-72   13    Software name         Bareos
  * 73-79   7     Reserved
-
+ *
  * ANSI/IBM HDR2 label
  *  80 characters blank filled
  * Pos   count   Function          What Bareos puts
@@ -252,17 +275,16 @@ int read_ansi_ibm_label(DCR *dcr)
  * 39-49   11    reserved
  * 50-51   2     offset
  * 52-79   28    reserved
-
  */
-
 static const char *labels[] = {"HDR", "EOF", "EOV"};
 
 /*
  * Write an ANSI or IBM 80 character tape label
- *   Type determines whether we are writing HDR, EOF, or EOV labels
- *   Assume we are positioned to write the labels
- *   Returns:  true of OK
- *             false if error
+ *
+ * Type determines whether we are writing HDR, EOF, or EOV labels
+ * Assume we are positioned to write the labels
+ * Returns:  true of OK
+ *           false if error
  */
 bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
 {
@@ -297,8 +319,9 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
             VolName);
          return false;
       }
-      /* ANSI labels have 6 characters, and are padded with spaces
-       * 'vol1\0' => 'vol1   \0'
+
+      /*
+       * ANSI labels have 6 characters, and are padded with spaces 'vol1\0' => 'vol1   \0'
        */
       strcpy(ansi_volname, VolName);
       for(int i=len; i < 6; i++) {
@@ -310,27 +333,37 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
          ser_begin(label, sizeof(label));
          ser_bytes("VOL1", 4);
          ser_bytes(ansi_volname, 6);
-         /* Write VOL1 label */
+
+         /*
+          * Write VOL1 label
+          */
          if (label_type == B_IBM_LABEL) {
             ascii_to_ebcdic(label, label, sizeof(label));
          } else {
             label[79] = '3';                /* ANSI label flag */
          }
+
          status = dev->write(label, sizeof(label));
          if (status != sizeof(label)) {
             berrno be;
             Jmsg3(jcr, M_FATAL, 0,  _("Could not write ANSI VOL1 label. Wanted size=%d got=%d ERR=%s\n"),
-               sizeof(label), status, be.bstrerror());
+                  sizeof(label), status, be.bstrerror());
             return false;
          }
       }
 
-      /* Now construct HDR1 label */
+      /*
+       * Now construct HDR1 label
+       */
       memset(label, ' ', sizeof(label));
       ser_begin(label, sizeof(label));
       ser_bytes(labels[type], 3);
       ser_bytes("1", 1);
-      ser_bytes("BAREOS.DATA", 11);            /* Filename field */
+      if (me->compatible) {
+         ser_bytes("BACULA.DATA", 11);            /* Filename field */
+      } else {
+         ser_bytes("BAREOS.DATA", 11);            /* Filename field */
+      }
       ser_begin(&label[21], sizeof(label)-21); /* fileset field */
       ser_bytes(ansi_volname, 6);              /* write Vol Ser No. */
       ser_begin(&label[27], sizeof(label)-27);
@@ -339,14 +372,16 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
       ser_bytes(ansi_date(now, date), 6); /* current date */
       ser_bytes(ansi_date(now - 24 * 3600, date), 6); /* created yesterday */
       ser_bytes(" 000000Bareos              ", 27);
-      /* Write HDR1 label */
+
+      /*
+       * Write HDR1 label
+       */
       if (label_type == B_IBM_LABEL) {
          ascii_to_ebcdic(label, label, sizeof(label));
       }
 
       /*
-       * This could come at the end of a tape, ignore
-       *  EOT errors.
+       * This could come at the end of a tape, ignore EOT errors.
        */
       status = dev->write(label, sizeof(label));
       if (status != sizeof(label)) {
@@ -367,12 +402,17 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
          }
       }
 
-      /* Now construct HDR2 label */
+      /*
+       * Now construct HDR2 label
+       */
       memset(label, ' ', sizeof(label));
       ser_begin(label, sizeof(label));
       ser_bytes(labels[type], 3);
       ser_bytes("2D3200032000", 12);
-      /* Write HDR2 label */
+
+      /*
+       * Write HDR2 label
+       */
       if (label_type == B_IBM_LABEL) {
          label[4] = 'V';
          ascii_to_ebcdic(label, label, sizeof(label));
@@ -408,29 +448,41 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
    }
 }
 
-/* Check a Bareos Volume name against an ANSI Volume name */
+/*
+ * Check a Bareos Volume name against an ANSI Volume name
+ */
 static bool same_label_names(char *bareos_name, char *ansi_name)
 {
    char *a = ansi_name;
    char *b = bareos_name;
-   /* Six characters max */
+
+   /*
+    * Six characters max
+    */
    for (int i=0; i < 6; i++) {
       if (*a == *b) {
          a++;
          b++;
          continue;
       }
-      /* ANSI labels are blank filled, Bareos's are zero terminated */
+      /*
+       * ANSI labels are blank filled, Bareos's are zero terminated
+       */
       if (*a == ' ' && *b == 0) {
          return true;
       }
+
       return false;
    }
-   /* Reached 6 characters */
+
+   /*
+    * Reached 6 characters
+    */
    b++;
    if (*b == 0) {
       return true;
    }
+
    return false;
 }
 
@@ -447,5 +499,6 @@ static char *ansi_date(time_t td, char *buf)
    }
    tm = gmtime(&td);
    bsnprintf(buf, 10, " %05d ", 1000 * (tm->tm_year + 1900 - 2000) + tm->tm_yday);
+
    return buf;
 }
