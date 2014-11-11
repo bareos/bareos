@@ -57,7 +57,7 @@ before_script:
     - cp -a platforms/packaging/bareos.changes debian/changelog
     # build Debian packages
     - fakeroot debian/rules binary
-    - [ "${COVERITY_SCAN}" = '1' ]; then eval "$COVERITY_SCAN_BUILD"; fi
+    - if [ "${COVERITY_SCAN}" = '1' ]; then eval "$COVERITY_SCAN_BUILD"; fi
     # create Debian package repository
     - cd ..
     - dpkg-scanpackages . /dev/null | gzip > Packages.gz;
