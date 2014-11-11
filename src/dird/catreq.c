@@ -690,7 +690,10 @@ bool despool_attributes_from_file(JCR *jcr, const char *file)
       msglen = ntohl(pktsiz);
 
       if (msglen > 0) {
-         if (msglen > (int32_t) sizeof_pool_memory(msg)) {
+        /*
+         * check for msglen + \0
+         */
+         if ((msglen + 1) > (int32_t) sizeof_pool_memory(msg)) {
             msg = realloc_pool_memory(msg, msglen + 1);
          }
          nbytes = read(spool_fd, msg, msglen);
