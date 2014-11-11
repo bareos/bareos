@@ -272,8 +272,7 @@ bail_out:
  * writing it to bfd.
  * Return value is true on success, false on failure.
  */
-bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, int flags, int32_t stream,
-                  RESTORE_CIPHER_CTX *cipher_ctx)
+bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx)
 {
    uint32_t decrypted_len = 0;
    char *wbuf;                        /* write buffer */
@@ -317,21 +316,20 @@ again:
    cipher_ctx->buf_len -= cipher_ctx->packet_len;
    Dmsg2(130, "Encryption writing full block, %u bytes, remaining %u bytes in buffer\n", wsize, cipher_ctx->buf_len);
 
-   if ((flags & FO_SPARSE) ||
-       (flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_SPARSE, flags) || bit_is_set(FO_OFFSETS, flags)) {
       if (!sparse_data(jcr, bfd, addr, &wbuf, &wsize)) {
          return false;
       }
    }
 
-   if (flags & FO_COMPRESS) {
+   if (bit_is_set(FO_COMPRESS, flags)) {
       if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize, false)) {
          return false;
       }
    }
 
    Dmsg0(130, "Call store_data\n");
-   if (!store_data(jcr, bfd, wbuf, wsize, (flags & FO_WIN32DECOMP) != 0)) {
+   if (!store_data(jcr, bfd, wbuf, wsize, bit_is_set(FO_WIN32DECOMP, flags))) {
       return false;
    }
    jcr->JobBytes += wsize;
@@ -397,9 +395,9 @@ bool setup_encryption_context(b_ctx &bctx)
    uint32_t cipher_block_size;
    bool retval = false;
 
-   if (bctx.ff_pkt->flags & FO_ENCRYPT) {
-      if ((bctx.ff_pkt->flags & FO_SPARSE) ||
-          (bctx.ff_pkt->flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_ENCRYPT, bctx.ff_pkt->flags)) {
+      if (bit_is_set(FO_SPARSE, bctx.ff_pkt->flags) ||
+          bit_is_set(FO_OFFSETS, bctx.ff_pkt->flags)) {
          Jmsg0(bctx.jcr, M_FATAL, 0, _("Encrypting sparse or offset data not supported.\n"));
          goto bail_out;
       }
@@ -474,8 +472,8 @@ bool encrypt_data(b_ctx *bctx, bool *need_more_data)
     */
    ser_declare;
 
-   if ((bctx->ff_pkt->flags & FO_SPARSE) ||
-       (bctx->ff_pkt->flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_SPARSE, bctx->ff_pkt->flags) ||
+       bit_is_set(FO_OFFSETS, bctx->ff_pkt->flags)) {
          bctx->cipher_input_len += OFFSET_FADDR_SIZE;
    }
 

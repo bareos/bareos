@@ -183,8 +183,8 @@ static bool volume_has_attrlist(const char *fname)
 static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
 {
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
-   if ( (ff_pkt->flags & FO_HONOR_NODUMP) &&
-        (ff_pkt->statp.st_flags & UF_NODUMP) ) {
+   if (bit_is_set(FO_HONOR_NODUMP, ff_pkt->flags) &&
+       (ff_pkt->statp.st_flags & UF_NODUMP) ) {
       Jmsg(jcr, M_INFO, 1, _("     NODUMP flag set - will not process %s\n"),
            ff_pkt->fname);
       return true;                    /* do not backup this file */
@@ -316,8 +316,8 @@ bool check_changes(JCR *jcr, FF_PKT *ff_pkt)
     */
    if (ff_pkt->incremental &&
       (ff_pkt->statp.st_mtime < ff_pkt->save_time &&
-      ((ff_pkt->flags & FO_MTIMEONLY) ||
-        ff_pkt->statp.st_ctime < ff_pkt->save_time))) {
+      (bit_is_set(FO_MTIMEONLY, ff_pkt->flags) ||
+       ff_pkt->statp.st_ctime < ff_pkt->save_time))) {
       return false;
    }
 
@@ -492,7 +492,7 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
    Dmsg3(400, "FT_REG FI=%d linked=%d file=%s\n",
          ff_pkt->FileIndex, ff_pkt->linked ? 1 : 0, fname);
 
-   if (ff_pkt->flags & FO_KEEPATIME) {
+   if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
       restore_file_times(ff_pkt, fname);
    }
 
@@ -643,12 +643,12 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
 #if defined(HAVE_WIN32)
    is_win32_mount_point = ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
 #endif
-   if (!top_level && ff_pkt->flags & FO_NO_RECURSION) {
+   if (!top_level && bit_is_set(FO_NO_RECURSION, ff_pkt->flags)) {
       ff_pkt->type = FT_NORECURSE;
       recurse = false;
    } else if (!top_level && (parent_device != ff_pkt->statp.st_dev ||
               is_win32_mount_point)) {
-      if(!(ff_pkt->flags & FO_MULTIFS)) {
+      if(!bit_is_set(FO_MULTIFS, ff_pkt->flags)) {
          ff_pkt->type = FT_NOFSCHG;
          recurse = false;
       } else if (!accept_fstype(ff_pkt, NULL)) {
@@ -670,7 +670,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
       free(link);
       free_dir_ff_pkt(dir_ff_pkt);
       ff_pkt->link = ff_pkt->fname;     /* reset "link" */
-      if (ff_pkt->flags & FO_KEEPATIME) {
+      if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
          restore_file_times(ff_pkt, fname);
       }
       return rtn_stat;
@@ -773,7 +773,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    }
    free_dir_ff_pkt(dir_ff_pkt);
 
-   if (ff_pkt->flags & FO_KEEPATIME) {
+   if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
       restore_file_times(ff_pkt, fname);
    }
    ff_pkt->volhas_attrlist = volhas_attrlist;      /* Restore value in case it changed. */
@@ -809,8 +809,9 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
    if (top_level && S_ISBLK(ff_pkt->statp.st_mode)) {
 #endif
       ff_pkt->type = FT_RAW;          /* raw partition */
-   } else if (top_level && S_ISFIFO(ff_pkt->statp.st_mode) &&
-              ff_pkt->flags & FO_READFIFO) {
+   } else if (top_level &&
+              S_ISFIFO(ff_pkt->statp.st_mode) &&
+              bit_is_set(FO_READFIFO, ff_pkt->flags)) {
       ff_pkt->type = FT_FIFO;
    } else {
       /*
@@ -834,7 +835,7 @@ static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
 {
    if (!accept_fstype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDFS;
-      if (ff_pkt->flags & FO_KEEPATIME) {
+      if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
          restore_file_times(ff_pkt, fname);
       }
 
@@ -850,7 +851,7 @@ static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
 
    if (!accept_drivetype(ff_pkt, NULL)) {
       ff_pkt->type = FT_INVALIDDT;
-      if (ff_pkt->flags & FO_KEEPATIME) {
+      if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
          restore_file_times(ff_pkt, fname);
       }
 
@@ -938,7 +939,7 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    }
 
 #ifdef HAVE_DARWIN_OS
-   if (ff_pkt->flags & FO_HFSPLUS &&
+   if (bit_is_set(FO_HFSPLUS, ff_pkt->flags) &&
        ff_pkt->volhas_attrlist &&
        S_ISREG(ff_pkt->statp.st_mode)) {
       rtn_stat = process_hfsattributes(jcr, ff_pkt, handle_file, fname, top_level);
@@ -956,7 +957,7 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     * allows us to ensure that the data of each file gets backed
     * up only once.
     */
-   if (!(ff_pkt->flags & FO_NO_HARDLINK) && ff_pkt->statp.st_nlink > 1) {
+   if (!bit_is_set(FO_NO_HARDLINK, ff_pkt->flags) && ff_pkt->statp.st_nlink > 1) {
       switch (ff_pkt->statp.st_mode & S_IFMT) {
       case S_IFREG:
       case S_IFCHR:

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,33 +29,57 @@
 #ifndef __BITS_H_
 #define __BITS_H_
 
-/* number of bytes to hold n bits */
-#define nbytes_for_bits(n) ((((n)-1)>>3)+1)
+/*
+ * Number of bytes to hold n bits
+ */
+#define nbytes_for_bits(n) ((((n) - 1) >> 3) + 1)
 
-/* test if bit is set */
-#define bit_is_set(b, var) (((var)[(b)>>3] & (1<<((b)&0x7))) != 0)
+/*
+ * Test if bit is set
+ */
+#define bit_is_set(b, var) (((var)[(b) >> 3] & (1 << ((b) & 0x7))) != 0)
 
-/* set bit */
-#define set_bit(b, var) ((var)[(b)>>3] |= (1<<((b)&0x7)))
+/*
+ * Set bit
+ */
+#define set_bit(b, var) ((var)[(b) >> 3] |= (1 << ((b) & 0x7)))
 
-/* clear bit */
-#define clear_bit(b, var) ((var)[(b)>>3] &= ~(1<<((b)&0x7)))
+/*
+ * Clear bit
+ */
+#define clear_bit(b, var) ((var)[(b) >> 3] &= ~(1 << ((b) & 0x7)))
 
-/* clear all bits */
-#define clear_all_bits(b, var) memset(var, 0, nbytes_for_bits(b))
+/*
+ * Clear all bits
+ */
+#define clear_all_bits(b, var) memset(var, 0, nbytes_for_bits((b)))
 
-/* set range of bits */
+/*
+ * Set range of bits
+ */
 #define set_bits(f, l, var) { \
-   int i; \
-   for (i=f; i<=l; i++)  \
-      set_bit(i, var); \
+   int bit; \
+   for (bit = (f); bit <= (l); bit++)  \
+      set_bit(bit, (var)); \
 }
 
-/* clear range of bits */
+/*
+ * Clear range of bits
+ */
 #define clear_bits(f, l, var) { \
-   int i; \
-   for (i=f; i<=l; i++)  \
-      clear_bit(i, var); \
+   int bit; \
+   for (bit = (f); bit <= (l); bit++)  \
+      clear_bit(bit, (var)); \
+}
+
+/*
+ * Clone all set bits from var1 to var2
+ */
+#define clone_bits(l, var1, var2) { \
+   int bit; \
+   for (bit = 0; bit <= (l); bit++)  \
+      if (bit_is_set(bit, (var1))) \
+         set_bit(bit, (var2)); \
 }
 
 #endif /* __BITS_H_ */

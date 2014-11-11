@@ -90,7 +90,7 @@ static void free_signature(r_ctx &rctx);
 static bool close_previous_stream(JCR *jcr, r_ctx &rctx);
 
 int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
-                     uint64_t *addr, int flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx);
+                     uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx);
 
 /*
  * Close a bfd check that we are at the expected file offset.
@@ -122,7 +122,7 @@ static inline bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
    attrList.commonattr = ATTR_CMN_FNDRINFO;
 
    Dmsg0(130, "Restoring Finder Info\n");
-   jcr->ff->flags |= FO_HFSPLUS;
+   set_bit(FO_HFSPLUS, jcr->ff->flags);
    if (buflen != 32) {
       Jmsg(jcr, M_WARNING, 0, _("Invalid length of Finder Info (got %d, not 32)\n"), buflen);
       return false;
@@ -738,21 +738,22 @@ void do_restore(JCR *jcr)
              * processing of the data based on the stream type available.
              */
             if (process_data) {
-               rctx.flags = 0;
+               clear_all_bits(FO_MAX, rctx.flags);
                switch (rctx.stream) {
                case STREAM_SPARSE_DATA:
-                  rctx.flags |= FO_SPARSE;
+                  set_bit(FO_SPARSE, rctx.flags);
                   break;
                case STREAM_SPARSE_GZIP_DATA:
                case STREAM_SPARSE_COMPRESSED_DATA:
-                  rctx.flags |= (FO_SPARSE | FO_COMPRESS);
+                  set_bit(FO_SPARSE, rctx.flags);
+                  set_bit(FO_COMPRESS, rctx.flags);
                   rctx.comp_stream = rctx.stream;
                   break;
                case STREAM_GZIP_DATA:
                case STREAM_COMPRESSED_DATA:
                case STREAM_WIN32_GZIP_DATA:
                case STREAM_WIN32_COMPRESSED_DATA:
-                  rctx.flags |= FO_COMPRESS;
+                  set_bit(FO_COMPRESS, rctx.flags);
                   rctx.comp_stream = rctx.stream;
                   break;
                case STREAM_ENCRYPTED_FILE_GZIP_DATA:
@@ -766,7 +767,8 @@ void do_restore(JCR *jcr)
                         continue;
                      }
                   }
-                  rctx.flags |= (FO_COMPRESS | FO_ENCRYPT);
+                  set_bit(FO_COMPRESS, rctx.flags);
+                  set_bit(FO_ENCRYPT, rctx.flags);
                   rctx.comp_stream = rctx.stream;
                   break;
                case STREAM_ENCRYPTED_FILE_DATA:
@@ -778,7 +780,7 @@ void do_restore(JCR *jcr)
                         continue;
                      }
                   }
-                  rctx.flags |= FO_ENCRYPT;
+                  set_bit(FO_ENCRYPT, rctx.flags);
                   break;
                default:
                   break;
@@ -793,7 +795,7 @@ void do_restore(JCR *jcr)
                   /*
                    * "decompose" BackupWrite data
                    */
-                  rctx.flags |= FO_WIN32DECOMP;
+                  set_bit(FO_WIN32DECOMP, rctx.flags);
                }
 
                if (extract_data(jcr, &rctx.bfd, sd->msg, sd->msglen, &rctx.fileAddr,
@@ -813,11 +815,11 @@ void do_restore(JCR *jcr)
       case STREAM_ENCRYPTED_MACOS_FORK_DATA:
       case STREAM_MACOS_FORK_DATA:
          if (have_darwin_os) {
-            rctx.fork_flags = 0;
-            jcr->ff->flags |= FO_HFSPLUS;
+            clear_all_bits(FO_MAX, rctx.fork_flags);
+            set_bit(FO_HFSPLUS, jcr->ff->flags);
 
             if (rctx.stream == STREAM_ENCRYPTED_MACOS_FORK_DATA) {
-               rctx.fork_flags |= FO_ENCRYPT;
+               set_bit(FO_ENCRYPT, rctx.fork_flags);
                if (rctx.extract && !rctx.fork_cipher_ctx.cipher) {
                   if (!setup_decryption_context(rctx, rctx.fork_cipher_ctx)) {
                      rctx.extract = false;
@@ -1222,7 +1224,7 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
  * Return value is the number of bytes written, or -1 on errors.
  */
 int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
-                     uint64_t *addr, int flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx)
+                     uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx)
 {
    char *wbuf;                 /* write buffer */
    uint32_t wsize;             /* write size */
@@ -1234,7 +1236,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
    wsize = rsize;
    wbuf = buf;
 
-   if (flags & FO_ENCRYPT) {
+   if (bit_is_set(FO_ENCRYPT, flags)) {
       if (!decrypt_data(jcr, &wbuf, &wsize, cipher_ctx)) {
          goto bail_out;
       }
@@ -1243,19 +1245,19 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
       }
    }
 
-   if ((flags & FO_SPARSE) || (flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_SPARSE, flags) || bit_is_set(FO_OFFSETS, flags)) {
       if (!sparse_data(jcr, bfd, addr, &wbuf, &wsize)) {
          goto bail_out;
       }
    }
 
-   if (flags & FO_COMPRESS) {
+   if (bit_is_set(FO_COMPRESS, flags)) {
       if (!decompress_data(jcr, jcr->last_fname, stream, &wbuf, &wsize, false)) {
          goto bail_out;
       }
    }
 
-   if (!store_data(jcr, bfd, wbuf, wsize, (flags & FO_WIN32DECOMP) != 0)) {
+   if (!store_data(jcr, bfd, wbuf, wsize, bit_is_set(FO_WIN32DECOMP, flags))) {
       goto bail_out;
    }
    jcr->JobBytes += wsize;
@@ -1265,7 +1267,7 @@ int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
    /*
     * Clean up crypto buffers
     */
-   if (flags & FO_ENCRYPT) {
+   if (bit_is_set(FO_ENCRYPT, flags)) {
       /*
        * Move any remaining data to start of buffer
        */
@@ -1338,7 +1340,7 @@ static bool close_previous_stream(JCR *jcr, r_ctx &rctx)
        */
       free_signature(rctx);
       free_session(rctx);
-      rctx.jcr->ff->flags = 0;
+      clear_all_bits(FO_MAX, rctx.jcr->ff->flags);
       Dmsg0(130, "Stop extracting.\n");
    } else if (is_bopen(&rctx.bfd)) {
       Jmsg0(rctx.jcr, M_ERROR, 0, _("Logic error: output file should not be open\n"));

@@ -94,7 +94,7 @@ static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          jcr->JobBytes += ff_pkt->statp.st_size;
       }
 #ifdef HAVE_DARWIN_OS
-      if (ff_pkt->flags & FO_HFSPLUS) {
+      if (bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
          if (ff_pkt->hfsinfo.rsrclength > 0) {
             jcr->JobBytes += ff_pkt->hfsinfo.rsrclength;
          }

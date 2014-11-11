@@ -132,13 +132,13 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
       for (rp=fname; *rp && *rp != ' '; rp++) {
          switch (*rp) {
          case 'A':
-            inc->options |= FO_ACL;
+            set_bit(FO_ACL, inc->options);
             break;
          case 'a':                 /* alway replace */
          case '0':                 /* no option */
             break;
          case 'c':
-            inc->options |= FO_CHKCHANGES;
+            set_bit(FO_CHKCHANGES, inc->options);
             break;
          case 'd':
             switch(*(rp + 1)) {
@@ -157,60 +157,60 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             }
             break;
          case 'e':
-            inc->options |= FO_EXCLUDE;
+            set_bit(FO_EXCLUDE, inc->options);
             break;
          case 'f':
-            inc->options |= FO_MULTIFS;
+            set_bit(FO_MULTIFS, inc->options);
             break;
          case 'H':                 /* no hard link handling */
-            inc->options |= FO_NO_HARDLINK;
+            set_bit(FO_NO_HARDLINK, inc->options);
             break;
          case 'h':                 /* no recursion */
-            inc->options |= FO_NO_RECURSION;
+            set_bit(FO_NO_RECURSION, inc->options);
             break;
          case 'i':
-            inc->options |= FO_IGNORECASE;
+            set_bit(FO_IGNORECASE, inc->options);
             break;
          case 'K':
-            inc->options |= FO_NOATIME;
+            set_bit(FO_NOATIME, inc->options);
             break;
          case 'k':
-            inc->options |= FO_KEEPATIME;
+            set_bit(FO_KEEPATIME, inc->options);
             break;
          case 'M':                 /* MD5 */
-            inc->options |= FO_MD5;
+            set_bit(FO_MD5, inc->options);
             break;
          case 'm':
-            inc->options |= FO_MTIMEONLY;
+            set_bit(FO_MTIMEONLY, inc->options);
             break;
          case 'N':
-            inc->options |= FO_HONOR_NODUMP;
+            set_bit(FO_HONOR_NODUMP, inc->options);
             break;
          case 'n':
-            inc->options |= FO_NOREPLACE;
+            set_bit(FO_NOREPLACE, inc->options);
             break;
          case 'p':                 /* use portable data format */
-            inc->options |= FO_PORTABLE;
+            set_bit(FO_PORTABLE, inc->options);
             break;
          case 'R':                 /* Resource forks and Finder Info */
-            inc->options |= FO_HFSPLUS;
+            set_bit(FO_HFSPLUS, inc->options);
             break;
          case 'r':                 /* read fifo */
-            inc->options |= FO_READFIFO;
+            set_bit(FO_READFIFO, inc->options);
             break;
          case 'S':
             switch(*(rp + 1)) {
             case '1':
-               inc->options |= FO_SHA1;
+               set_bit(FO_SHA1, inc->options);
                rp++;
                break;
 #ifdef HAVE_SHA2
             case '2':
-               inc->options |= FO_SHA256;
+               set_bit(FO_SHA256, inc->options);
                rp++;
                break;
             case '3':
-               inc->options |= FO_SHA512;
+               set_bit(FO_SHA512, inc->options);
                rp++;
                break;
 #endif
@@ -222,12 +222,12 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
                if (rp[1] == '2' || rp[1] == '3') {
                   rp++;
                }
-               inc->options |= FO_SHA1;
+               set_bit(FO_SHA1, inc->options);
                break;
             }
             break;
          case 's':
-            inc->options |= FO_SPARSE;
+            set_bit(FO_SPARSE, inc->options);
             break;
          case 'V':                  /* verify options */
             /* Copy Verify Options */
@@ -240,38 +240,41 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             inc->VerifyOpts[j] = 0;
             break;
          case 'W':
-            inc->options |= FO_ENHANCEDWILD;
+            set_bit(FO_ENHANCEDWILD, inc->options);
             break;
          case 'w':
-            inc->options |= FO_IF_NEWER;
+            set_bit(FO_IF_NEWER, inc->options);
+            break;
+         case 'x':
+            set_bit(FO_NO_AUTOEXCL, inc->options);
             break;
          case 'X':
-            inc->options |= FO_XATTR;
+            set_bit(FO_XATTR, inc->options);
             break;
          case 'Z':                  /* Compression */
             rp++;                   /* Skip Z */
             if (*rp >= '0' && *rp <= '9') {
-               inc->options |= FO_COMPRESS;
+               set_bit(FO_COMPRESS, inc->options);
                inc->algo = COMPRESS_GZIP;
                inc->level = *rp - '0';
             } else if (*rp == 'o') {
-               inc->options |= FO_COMPRESS;
+               set_bit(FO_COMPRESS, inc->options);
                inc->algo = COMPRESS_LZO1X;
                inc->level = 1;      /* Not used with LZO */
             } else if (*rp == 'f') {
                if (rp[1] == 'f') {
                   rp++;             /* Skip f */
-                  inc->options |= FO_COMPRESS;
+                  set_bit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZFZ;
                   inc->level = 1;   /* Not used with libfzlib */
                } else if (rp[1] == '4') {
                   rp++;             /* Skip f */
-                  inc->options |= FO_COMPRESS;
+                  set_bit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZ4L;
                   inc->level = 1;   /* Not used with libfzlib */
                } else if (rp[1] == 'h') {
                   rp++;             /* Skip f */
-                  inc->options |= FO_COMPRESS;
+                  set_bit(FO_COMPRESS, inc->options);
                   inc->algo = COMPRESS_FZ4H;
                   inc->level = 1;   /* Not used with libfzlib */
                }
@@ -345,7 +348,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
       next->next = inc;
    }
    Dmsg4(100, "add_fname_to_include prefix=%d compres=%d alg= %d fname=%s\n",
-         prefixed, !!(inc->options & FO_COMPRESS), inc->algo, inc->fname);
+         prefixed, bit_is_set(FO_COMPRESS, inc->options), inc->algo, inc->fname);
 }
 
 /*
@@ -400,7 +403,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
     * copy inc_options for this file into the ff packet
     */
    if (inc) {
-      ff->flags = inc->options;
+      clone_bits(FO_MAX, inc->options, ff->flags);
       ff->Compress_algo = inc->algo;
       ff->Compress_level = inc->level;
    }

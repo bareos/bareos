@@ -103,7 +103,7 @@ struct s_sz_matching {
 
 struct s_included_file {
    struct s_included_file *next;
-   uint32_t options;                  /* Backup options */
+   char options[FOPTS_BYTES];         /* Backup options */
    uint32_t algo;                     /* Compression algorithm. 4 letters stored as an integer */
    int level;                         /* Compression level */
    int len;                           /* Length of fname */
@@ -120,28 +120,21 @@ struct s_excluded_file {
    char fname[1];
 };
 
-/*
- * FileSet definitions very similar to the resource
- * contained in the Director because the components
- * of the structure are passed by the Director to the
- * File daemon and recompiled back into this structure
- */
-#undef MAX_FOPTS
-#define MAX_FOPTS 30
+#define MAX_OPTS 20
 
 /*
  * File options structure
  */
 struct findFOPTS {
-   uint32_t flags;                    /* Options in bits */
+   char flags[FOPTS_BYTES];           /* Backup options */
    uint32_t Compress_algo;            /* Compression algorithm. 4 letters stored as an integer */
    int Compress_level;                /* Compression level */
    int strip_path;                    /* Strip path count */
    struct s_sz_matching *size_match;  /* Perform size matching ? */
    b_fileset_shadow_type shadow_type; /* Perform fileset shadowing check ? */
-   char VerifyOpts[MAX_FOPTS];        /* Verify options */
-   char AccurateOpts[MAX_FOPTS];      /* Accurate mode options */
-   char BaseJobOpts[MAX_FOPTS];       /* Basejob mode options */
+   char VerifyOpts[MAX_OPTS];         /* Verify options */
+   char AccurateOpts[MAX_OPTS] ;      /* Accurate mode options */
+   char BaseJobOpts[MAX_OPTS];        /* Basejob mode options */
    char *plugin;                      /* Plugin that handle this section */
    alist regex;                       /* Regex string(s) */
    alist regexdir;                    /* Regex string(s) for directories */
@@ -237,9 +230,9 @@ struct FF_PKT {
    bool null_output_device;           /* Using null output device */
    bool incremental;                  /* Incremental save */
    bool no_read;                      /* Do not read this file when using Plugin */
-   char VerifyOpts[20];
-   char AccurateOpts[20];
-   char BaseJobOpts[20];
+   char VerifyOpts[MAX_OPTS];
+   char AccurateOpts[MAX_OPTS];
+   char BaseJobOpts[MAX_OPTS];
    struct s_included_file *included_files_list;
    struct s_excluded_file *excluded_files_list;
    struct s_excluded_file *excluded_paths_list;
@@ -251,7 +244,7 @@ struct FF_PKT {
    /*
     * Values set by accept_file while processing Options
     */
-   uint32_t flags;                    /* Backup options */
+   char flags[FOPTS_BYTES];           /* Backup options */
    uint32_t Compress_algo;            /* Compression algorithm. 4 letters stored as an integer */
    int Compress_level;                /* Compression level */
    int strip_path;                    /* Strip path count */

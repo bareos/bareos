@@ -1333,6 +1333,9 @@ bool FILESETRES::print_config(POOL_MEM &buff)
                      case 'X':
                         indent_config_item(cfg_str, 3, "Xattr = Yes\n");
                         break;
+                     case 'x':
+                        indent_config_item(cfg_str, 3, "AutoExclude = No\n");
+                        break;
                      default:
                         Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);
                         break;

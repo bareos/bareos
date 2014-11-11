@@ -99,6 +99,7 @@ static RES_ITEM options_items[] = {
    { "xattrsupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
    { "size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
    { "shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
+   { "autoexclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
    { "meta", CFG_TYPE_META, { 0 }, 0, 0, 0 },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
@@ -463,26 +464,36 @@ static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
 
    inc_opts[0] = 0;
    keyword = INC_KW_NONE;
-   /* Look up the keyword */
-   for (i=0; FS_option_kw[i].name; i++) {
+
+   /*
+    * Look up the keyword
+    */
+   for (i = 0; FS_option_kw[i].name; i++) {
       if (bstrcasecmp(item->name, FS_option_kw[i].name)) {
          keyword = FS_option_kw[i].token;
          break;
       }
    }
+
    if (keyword == INC_KW_NONE) {
       scan_err1(lc, _("Expected a FileSet keyword, got: %s"), lc->str);
    }
-   /* Now scan for the value */
+
+   /*
+    * Now scan for the value
+    */
    scan_include_options(lc, keyword, inc_opts, sizeof(inc_opts));
    if (pass == 1) {
       bstrncat(res_incexe.current_opts->opts, inc_opts, MAX_FOPTS);
       Dmsg2(900, "new pass=%d incexe opts=%s\n", pass, res_incexe.current_opts->opts);
    }
+
    scan_to_eol(lc);
 }
 
-/* If current_opts not defined, create first entry */
+/*
+ * If current_opts not defined, create first entry
+ */
 static void setup_current_opts(void)
 {
    FOPTS *fo = (FOPTS *)malloc(sizeof(FOPTS));

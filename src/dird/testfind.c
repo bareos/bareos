@@ -537,73 +537,73 @@ static void set_options(findFOPTS *fo, const char *opts)
       case '0':                 /* no option */
          break;
       case 'e':
-         fo->flags |= FO_EXCLUDE;
+         set_bit(FO_EXCLUDE, fo->flags);
          break;
       case 'f':
-         fo->flags |= FO_MULTIFS;
+         set_bit(FO_MULTIFS, fo->flags);
          break;
       case 'h':                 /* no recursion */
-         fo->flags |= FO_NO_RECURSION;
+         set_bit(FO_NO_RECURSION, fo->flags);
          break;
       case 'H':                 /* no hard link handling */
-         fo->flags |= FO_NO_HARDLINK;
+         set_bit(FO_NO_HARDLINK, fo->flags);
          break;
       case 'i':
-         fo->flags |= FO_IGNORECASE;
+         set_bit(FO_IGNORECASE, fo->flags);
          break;
       case 'M':                 /* MD5 */
-         fo->flags |= FO_MD5;
+         set_bit(FO_MD5, fo->flags);
          break;
       case 'n':
-         fo->flags |= FO_NOREPLACE;
+         set_bit(FO_NOREPLACE, fo->flags);
          break;
       case 'p':                 /* use portable data format */
-         fo->flags |= FO_PORTABLE;
+         set_bit(FO_PORTABLE, fo->flags);
          break;
       case 'R':                 /* Resource forks and Finder Info */
-         fo->flags |= FO_HFSPLUS;
+         set_bit(FO_HFSPLUS, fo->flags);
       case 'r':                 /* read fifo */
-         fo->flags |= FO_READFIFO;
+         set_bit(FO_READFIFO, fo->flags);
          break;
       case 'S':
          switch(*(p + 1)) {
          case ' ':
             /* Old director did not specify SHA variant */
-            fo->flags |= FO_SHA1;
+            set_bit(FO_SHA1, fo->flags);
             break;
          case '1':
-            fo->flags |= FO_SHA1;
+            set_bit(FO_SHA1, fo->flags);
             p++;
             break;
 #ifdef HAVE_SHA2
          case '2':
-            fo->flags |= FO_SHA256;
+            set_bit(FO_SHA256, fo->flags);
             p++;
             break;
          case '3':
-            fo->flags |= FO_SHA512;
+            set_bit(FO_SHA512, fo->flags);
             p++;
             break;
 #endif
          default:
             /* Automatically downgrade to SHA-1 if an unsupported
              * SHA variant is specified */
-            fo->flags |= FO_SHA1;
+            set_bit(FO_SHA1, fo->flags);
             p++;
             break;
          }
          break;
       case 's':
-         fo->flags |= FO_SPARSE;
+         set_bit(FO_SPARSE, fo->flags);
          break;
       case 'm':
-         fo->flags |= FO_MTIMEONLY;
+         set_bit(FO_MTIMEONLY, fo->flags);
          break;
       case 'k':
-         fo->flags |= FO_KEEPATIME;
+         set_bit(FO_KEEPATIME, fo->flags);
          break;
       case 'A':
-         fo->flags |= FO_ACL;
+         set_bit(FO_ACL, fo->flags);
          break;
       case 'V':                  /* verify options */
          /* Copy Verify Options */
@@ -616,27 +616,30 @@ static void set_options(findFOPTS *fo, const char *opts)
          fo->VerifyOpts[j] = 0;
          break;
       case 'w':
-         fo->flags |= FO_IF_NEWER;
+         set_bit(FO_IF_NEWER, fo->flags);
          break;
       case 'W':
-         fo->flags |= FO_ENHANCEDWILD;
+         set_bit(FO_ENHANCEDWILD, fo->flags);
          break;
       case 'Z':                 /* compression */
          p++;                   /* skip Z */
          if (*p >= '0' && *p <= '9') {
-            fo->flags |= FO_COMPRESS;
+            set_bit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_GZIP;
             fo->Compress_level = *p - '0';
          }
          else if (*p == 'o') {
-            fo->flags |= FO_COMPRESS;
+            set_bit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_LZO1X;
             fo->Compress_level = 1; /* not used with LZO */
          }
          Dmsg2(200, "Compression alg=%d level=%d\n", fo->Compress_algo, fo->Compress_level);
          break;
+      case 'x':
+         set_bit(FO_NO_AUTOEXCL, fo->flags);
+         break;
       case 'X':
-         fo->flags |= FO_XATTR;
+         set_bit(FO_XATTR, fo->flags);
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown include/exclude option: %c\n"), *p);

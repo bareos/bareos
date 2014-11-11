@@ -178,7 +178,7 @@ int add_regex_to_fileset(JCR *jcr, const char *item, int type)
    char prbuf[500];
 
    preg = (regex_t *)malloc(sizeof(regex_t));
-   if (current_opts->flags & FO_IGNORECASE) {
+   if (bit_is_set(FO_IGNORECASE, current_opts->flags)) {
       rc = regcomp(preg, item, REG_EXTENDED|REG_ICASE);
    } else {
       rc = regcomp(preg, item, REG_EXTENDED);
@@ -504,15 +504,10 @@ static int set_options(findFOPTS *fo, const char *opts)
    char strip[21];
    char size[50];
 
-// Commented out as it is not backward compatible - KES
-#ifdef HAVE_WIN32
-//   fo->flags |= FO_IGNORECASE; /* always ignorecase under windows */
-#endif
-
    for (p = opts; *p; p++) {
       switch (*p) {
       case 'A':
-         fo->flags |= FO_ACL;
+         set_bit(FO_ACL, fo->flags);
          break;
       case 'a':                          /* Alway replace */
       case '0':                          /* No option */
@@ -530,7 +525,7 @@ static int set_options(findFOPTS *fo, const char *opts)
          fo->AccurateOpts[j] = 0;
          break;
       case 'c':
-         fo->flags |= FO_CHKCHANGES;
+         set_bit(FO_CHKCHANGES, fo->flags);
          break;
       case 'd':
          switch(*(p + 1)) {
@@ -549,19 +544,19 @@ static int set_options(findFOPTS *fo, const char *opts)
          }
          break;
       case 'e':
-         fo->flags |= FO_EXCLUDE;
+         set_bit(FO_EXCLUDE, fo->flags);
          break;
       case 'f':
-         fo->flags |= FO_MULTIFS;
+         set_bit(FO_MULTIFS, fo->flags);
          break;
       case 'H':                          /* No hard link handling */
-         fo->flags |= FO_NO_HARDLINK;
+         set_bit(FO_NO_HARDLINK, fo->flags);
          break;
       case 'h':                          /* No recursion */
-         fo->flags |= FO_NO_RECURSION;
+         set_bit(FO_NO_RECURSION, fo->flags);
          break;
       case 'i':
-         fo->flags |= FO_IGNORECASE;
+         set_bit(FO_IGNORECASE, fo->flags);
          break;
       case 'J':                         /* Basejob options */
          /*
@@ -576,22 +571,22 @@ static int set_options(findFOPTS *fo, const char *opts)
          fo->BaseJobOpts[j] = 0;
          break;
       case 'K':
-         fo->flags |= FO_NOATIME;
+         set_bit(FO_NOATIME, fo->flags);
          break;
       case 'k':
-         fo->flags |= FO_KEEPATIME;
+         set_bit(FO_KEEPATIME, fo->flags);
          break;
       case 'M':                         /* MD5 */
-         fo->flags |= FO_MD5;
+         set_bit(FO_MD5, fo->flags);
          break;
       case 'm':
-         fo->flags |= FO_MTIMEONLY;
+         set_bit(FO_MTIMEONLY, fo->flags);
          break;
       case 'N':
-         fo->flags |= FO_HONOR_NODUMP;
+         set_bit(FO_HONOR_NODUMP, fo->flags);
          break;
       case 'n':
-         fo->flags |= FO_NOREPLACE;
+         set_bit(FO_NOREPLACE, fo->flags);
          break;
       case 'P':                         /* Strip path */
          /*
@@ -606,48 +601,47 @@ static int set_options(findFOPTS *fo, const char *opts)
          }
          strip[j] = 0;
          fo->strip_path = atoi(strip);
-         fo->flags |= FO_STRIPPATH;
+         set_bit(FO_STRIPPATH, fo->flags);
          Dmsg2(100, "strip=%s strip_path=%d\n", strip, fo->strip_path);
          break;
       case 'p':                         /* Use portable data format */
-         fo->flags |= FO_PORTABLE;
+         set_bit(FO_PORTABLE, fo->flags);
          break;
       case 'R':                         /* Resource forks and Finder Info */
-         fo->flags |= FO_HFSPLUS;
+         set_bit(FO_HFSPLUS, fo->flags);
          break;
       case 'r':                         /* Read fifo */
-         fo->flags |= FO_READFIFO;
+         set_bit(FO_READFIFO, fo->flags);
          break;
       case 'S':
          switch(*(p + 1)) {
          case '1':
-            fo->flags |= FO_SHA1;
+            set_bit(FO_SHA1, fo->flags);
             p++;
             break;
 #ifdef HAVE_SHA2
          case '2':
-            fo->flags |= FO_SHA256;
+            set_bit(FO_SHA256, fo->flags);
             p++;
             break;
          case '3':
-            fo->flags |= FO_SHA512;
+            set_bit(FO_SHA512, fo->flags);
             p++;
             break;
 #endif
          default:
             /*
-             * If 2 or 3 is seen here, SHA2 is not configured, so
-             *  eat the option, and drop back to SHA-1.
+             * If 2 or 3 is seen here, SHA2 is not configured, so eat the option, and drop back to SHA-1.
              */
             if (p[1] == '2' || p[1] == '3') {
                p++;
             }
-            fo->flags |= FO_SHA1;
+            set_bit(FO_SHA1, fo->flags);
             break;
          }
          break;
       case 's':
-         fo->flags |= FO_SPARSE;
+         set_bit(FO_SPARSE, fo->flags);
          break;
       case 'V':                         /* verify options */
          /*
@@ -662,36 +656,39 @@ static int set_options(findFOPTS *fo, const char *opts)
          fo->VerifyOpts[j] = 0;
          break;
       case 'W':
-         fo->flags |= FO_ENHANCEDWILD;
+         set_bit(FO_ENHANCEDWILD, fo->flags);
          break;
       case 'w':
-         fo->flags |= FO_IF_NEWER;
+         set_bit(FO_IF_NEWER, fo->flags);
+         break;
+      case 'x':
+         set_bit(FO_NO_AUTOEXCL, fo->flags);
          break;
       case 'X':
-         fo->flags |= FO_XATTR;
+         set_bit(FO_XATTR, fo->flags);
          break;
       case 'Z':                         /* Compression */
          p++;                           /* Skip Z */
          if (*p >= '0' && *p <= '9') {
-            fo->flags |= FO_COMPRESS;
+            set_bit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_GZIP;
             fo->Compress_level = *p - '0';
          } else if (*p == 'o') {
-            fo->flags |= FO_COMPRESS;
+            set_bit(FO_COMPRESS, fo->flags);
             fo->Compress_algo = COMPRESS_LZO1X;
             fo->Compress_level = 1;     /* not used with LZO */
          } else if (*p == 'f') {
 	    p++;
 	    if (*p == 'f') {
-               fo->flags |= FO_COMPRESS;
+               set_bit(FO_COMPRESS, fo->flags);
                fo->Compress_algo = COMPRESS_FZFZ;
                fo->Compress_level = 1;     /* not used with FZFZ */
             } else if (*p == '4') {
-               fo->flags |= FO_COMPRESS;
+               set_bit(FO_COMPRESS, fo->flags);
                fo->Compress_algo = COMPRESS_FZ4L;
                fo->Compress_level = 1;     /* not used with FZ4L */
             } else if (*p == 'h') {
-               fo->flags |= FO_COMPRESS;
+               set_bit(FO_COMPRESS, fo->flags);
                fo->Compress_algo = COMPRESS_FZ4H;
                fo->Compress_level = 1;     /* not used with FZ4H */
             }
