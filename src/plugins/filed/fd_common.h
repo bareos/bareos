@@ -48,8 +48,8 @@ DLL_IMP_EXP void *reallymalloc(const char *fname, int lineno, unsigned int nbyte
 DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
 
 #ifndef bmalloc
-# define bmalloc(s)      sm_malloc(__FILE__, __LINE__, (s))
-# define bfree(o)        sm_free(__FILE__, __LINE__, (o))
+#define bmalloc(s) sm_malloc(__FILE__, __LINE__, (s))
+#define bfree(o) sm_free(__FILE__, __LINE__, (o))
 #endif
 
 #define SM_CHECK sm_check(__FILE__, __LINE__, false)

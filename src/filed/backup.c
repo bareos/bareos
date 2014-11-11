@@ -183,7 +183,7 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
  */
 static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 {
-   int flags;
+   char flags[FOPTS_BYTES];
    int rsrc_stream;
    BSOCK *sd = bsctx.jcr->store_bsock;
    bool retval = false;
@@ -202,15 +202,17 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
       } else {
          int status;
 
-         flags = bsctx.ff_pkt->flags;
-         bsctx.ff_pkt->flags &= ~(FO_COMPRESS | FO_SPARSE | FO_OFFSETS);
-         rsrc_stream = (flags & FO_ENCRYPT) ? STREAM_ENCRYPTED_MACOS_FORK_DATA :
-                                              STREAM_MACOS_FORK_DATA;
+         memcpy(flags, bsctx.ff_pkt->flags, sizeof(flags));
+         clear_bit(FO_COMPRESS, bsctx.ff_pkt->flags);
+         clear_bit(FO_SPARSE, bsctx.ff_pkt->flags);
+         clear_bit(FO_OFFSETS, bsctx.ff_pkt->flags);
+         rsrc_stream = bit_is_set(FO_ENCRYPT, flags) ? STREAM_ENCRYPTED_MACOS_FORK_DATA :
+                                                       STREAM_MACOS_FORK_DATA;
 
          status = send_data(bsctx.jcr, rsrc_stream, bsctx.ff_pkt,
                             bsctx.digest, bsctx.signing_digest);
 
-         bsctx.ff_pkt->flags = flags;
+         memcpy(bsctx.ff_pkt->flags, flags, sizeof(flags));
          bclose(&bsctx.ff_pkt->bfd);
          if (!status) {
             goto bail_out;
@@ -259,16 +261,16 @@ static inline bool setup_encryption_digests(b_save_ctx &bsctx)
    crypto_digest_t signing_algorithm = CRYPTO_DIGEST_SHA1;
 #endif
 
-   if (bsctx.ff_pkt->flags & FO_MD5) {
+   if (bit_is_set(FO_MD5, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_MD5);
       bsctx.digest_stream = STREAM_MD5_DIGEST;
-   } else if (bsctx.ff_pkt->flags & FO_SHA1) {
+   } else if (bit_is_set(FO_SHA1, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA1);
       bsctx.digest_stream = STREAM_SHA1_DIGEST;
-   } else if (bsctx.ff_pkt->flags & FO_SHA256) {
+   } else if (bit_is_set(FO_SHA256, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA256);
       bsctx.digest_stream = STREAM_SHA256_DIGEST;
-   } else if (bsctx.ff_pkt->flags & FO_SHA512) {
+   } else if (bit_is_set(FO_SHA512, bsctx.ff_pkt->flags)) {
       bsctx.digest = crypto_digest_new(bsctx.jcr, CRYPTO_DIGEST_SHA512);
       bsctx.digest_stream = STREAM_SHA512_DIGEST;
    }
@@ -306,7 +308,7 @@ static inline bool setup_encryption_digests(b_save_ctx &bsctx)
     * Enable encryption
     */
    if (bsctx.jcr->crypto.pki_encrypt) {
-      bsctx.ff_pkt->flags |= FO_ENCRYPT;
+      set_bit(FO_ENCRYPT, bsctx.ff_pkt->flags);
    }
    retval = true;
 
@@ -627,7 +629,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
     * Initialize the file descriptor we use for data and other streams.
     */
    binit(&ff_pkt->bfd);
-   if (ff_pkt->flags & FO_PORTABLE) {
+   if (bit_is_set(FO_PORTABLE, ff_pkt->flags)) {
       set_portable_backup(&ff_pkt->bfd); /* disable Win32 BackupRead() */
    }
 
@@ -730,7 +732,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          tid = NULL;
       }
 
-      noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
+      noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
       ff_pkt->bfd.reparse_point = (ff_pkt->type == FT_REPARSE ||
                                    ff_pkt->type == FT_JUNCTION);
 
@@ -755,7 +757,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
       status = send_data(jcr, data_stream, ff_pkt, bsctx.digest, bsctx.signing_digest);
 
-      if (ff_pkt->flags & FO_CHKCHANGES) {
+      if (bit_is_set(FO_CHKCHANGES, ff_pkt->flags)) {
          has_file_changed(jcr, ff_pkt);
       }
 
@@ -772,7 +774,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
        */
       if (ff_pkt->type != FT_LNKSAVED &&
          (S_ISREG(ff_pkt->statp.st_mode) &&
-          ff_pkt->flags & FO_HFSPLUS)) {
+          bit_is_set(FO_HFSPLUS, ff_pkt->flags))) {
          if (!save_rsrc_and_finder(bsctx)) {
             goto bail_out;
          }
@@ -783,7 +785,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
     * Save ACLs when requested and available for anything not being a symlink and not being a plugin.
     */
    if (have_acl) {
-      if (ff_pkt->flags & FO_ACL && ff_pkt->type != FT_LNK && !ff_pkt->cmd_plugin) {
+      if (bit_is_set(FO_ACL, ff_pkt->flags) && ff_pkt->type != FT_LNK && !ff_pkt->cmd_plugin) {
          if (!do_backup_acl(jcr, ff_pkt)) {
             goto bail_out;
          }
@@ -794,7 +796,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
     * Save Extended Attributes when requested and available for all files not being a plugin.
     */
    if (have_xattr) {
-      if (ff_pkt->flags & FO_XATTR && !ff_pkt->cmd_plugin) {
+      if (bit_is_set(FO_XATTR, ff_pkt->flags) && !ff_pkt->cmd_plugin) {
          if (!do_backup_xattr(jcr, ff_pkt)) {
             goto bail_out;
          }
@@ -871,7 +873,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
    /*
     * Check for sparse blocks
     */
-   if (bctx->ff_pkt->flags & FO_SPARSE) {
+   if (bit_is_set(FO_SPARSE, bctx->ff_pkt->flags)) {
       bool allZeros;
       ser_declare;
 
@@ -900,7 +902,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
       if (allZeros) {
          return true;
       }
-   } else if (bctx->ff_pkt->flags & FO_OFFSETS) {
+   } else if (bit_is_set(FO_OFFSETS, bctx->ff_pkt->flags)) {
       ser_declare;
       ser_begin(bctx->wbuf, OFFSET_FADDR_SIZE);
       ser_uint64(bctx->ff_pkt->bfd.offset); /* store offset in begin of buffer */
@@ -930,7 +932,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
    /*
     * Compress the data.
     */
-   if ((bctx->ff_pkt->flags & FO_COMPRESS)) {
+   if (bit_is_set(FO_COMPRESS, bctx->ff_pkt->flags)) {
       if (!compress_data(bctx->jcr, bctx->ff_pkt->Compress_algo, bctx->rbuf,
                          bctx->jcr->store_bsock->msglen, bctx->cbuf,
                          bctx->max_compress_len, &bctx->compress_len)) {
@@ -964,7 +966,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
     * Encrypt the data.
     */
    need_more_data = false;
-   if ((bctx->ff_pkt->flags & FO_ENCRYPT) && !encrypt_data(bctx, &need_more_data)) {
+   if (bit_is_set(FO_ENCRYPT, bctx->ff_pkt->flags) && !encrypt_data(bctx, &need_more_data)) {
       if (need_more_data) {
          return true;
       }
@@ -974,7 +976,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
    /*
     * Send the buffer to the Storage daemon
     */
-   if ((bctx->ff_pkt->flags & FO_SPARSE) || (bctx->ff_pkt->flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_SPARSE, bctx->ff_pkt->flags) || bit_is_set(FO_OFFSETS, bctx->ff_pkt->flags)) {
       sd->msglen += OFFSET_FADDR_SIZE; /* include fileAddr in size */
    }
    sd->msg = bctx->wbuf; /* set correct write buffer */
@@ -1092,8 +1094,7 @@ bail_out:
  * We return 1 on sucess and 0 on errors.
  *
  * ***FIXME***
- * We use ff_pkt->statp.st_size when FO_SPARSE to know when to stop
- *  reading.
+ * We use ff_pkt->statp.st_size when FO_SPARSE to know when to stop reading.
  * Currently this is not a problem as the only other stream, resource forks,
  * are not handled as sparse files.
  */
@@ -1146,7 +1147,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
     * Make space at beginning of buffer for fileAddr because this
     *   same buffer will be used for writing if compression is off.
     */
-   if ((ff_pkt->flags & FO_SPARSE) || (ff_pkt->flags & FO_OFFSETS)) {
+   if (bit_is_set(FO_SPARSE, ff_pkt->flags) || bit_is_set(FO_OFFSETS, ff_pkt->flags)) {
       bctx.rbuf += OFFSET_FADDR_SIZE;
       bctx.rsize -= OFFSET_FADDR_SIZE;
 #ifdef HAVE_FREEBSD_OS
@@ -1186,7 +1187,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
       if (jcr->JobErrors++ > 1000) { /* insanity check */
          Jmsg(jcr, M_FATAL, 0, _("Too many errors. JobErrors=%d.\n"), jcr->JobErrors);
       }
-   } else if (ff_pkt->flags & FO_ENCRYPT) {
+   } else if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
       /*
        * For encryption, we must call finalize to push out any buffered data.
        */
@@ -1474,14 +1475,16 @@ static bool do_strip(int count, char *in)
  */
 void strip_path(FF_PKT *ff_pkt)
 {
-   if (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0) {
+   if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
       Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
       return;
    }
+
    if (!ff_pkt->fname_save) {
      ff_pkt->fname_save = get_pool_memory(PM_FNAME);
      ff_pkt->link_save = get_pool_memory(PM_FNAME);
    }
+
    pm_strcpy(ff_pkt->fname_save, ff_pkt->fname);
    if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
       pm_strcpy(ff_pkt->link_save, ff_pkt->link);
@@ -1516,9 +1519,10 @@ rtn:
 
 void unstrip_path(FF_PKT *ff_pkt)
 {
-   if (!(ff_pkt->flags & FO_STRIPPATH) || ff_pkt->strip_path <= 0) {
+   if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
       return;
    }
+
    strcpy(ff_pkt->fname, ff_pkt->fname_save);
    if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
       Dmsg2(500, "strcpy link=%s link_save=%s\n", ff_pkt->link,

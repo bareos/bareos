@@ -1238,7 +1238,7 @@ static bxattr_exit_code generic_build_xattr_streams(JCR *jcr,
        * So we check if we are already backing up acls and if we do we
        * don't store the extended attribute with the same info.
        */
-      if (ff_pkt->flags & FO_ACL) {
+      if (bit_is_set(FO_ACL, ff_pkt->flags)) {
          for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
             if (bstrcmp(bp, xattr_acl_skiplist[cnt])) {
                skip_xattr = true;
@@ -1706,7 +1706,7 @@ static bxattr_exit_code bsd_build_xattr_streams(JCR *jcr,
           * So we check if we are already backing up acls and if we do we
           * don't store the extended attribute with the same info.
           */
-         if (ff_pkt->flags & FO_ACL) {
+         if (bit_is_set(FO_ACL, ff_pkt->flags)) {
             for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
                if (bstrcmp(current_attrtuple, xattr_acl_skiplist[cnt])) {
                   skip_xattr = true;
@@ -2144,7 +2144,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JCR *jcr,
        * So we check if we are already backing up acls and if we do we
        * don't store the extended attribute with the same info.
        */
-      if (ff_pkt->flags & FO_ACL) {
+      if (bit_is_set(FO_ACL, ff_pkt->flags)) {
          for (cnt = 0; xattr_acl_skiplist[cnt] != NULL; cnt++) {
             if (bstrcmp(xattr_name, xattr_acl_skiplist[cnt])) {
                skip_xattr = true;

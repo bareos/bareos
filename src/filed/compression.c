@@ -94,7 +94,7 @@ bool setup_compression_context(b_ctx &bctx)
 {
    bool retval = false;
 
-   if ((bctx.ff_pkt->flags & FO_COMPRESS)) {
+   if (bit_is_set(FO_COMPRESS, bctx.ff_pkt->flags)) {
       /*
        * See if we need to be compatible with the old GZIP stream encoding.
        */
@@ -104,8 +104,8 @@ bool setup_compression_context(b_ctx &bctx)
          /*
           * Calculate buffer offsets.
           */
-         if ((bctx.ff_pkt->flags & FO_SPARSE) ||
-             (bctx.ff_pkt->flags & FO_OFFSETS)) {
+         if (bit_is_set(FO_SPARSE, bctx.ff_pkt->flags) ||
+             bit_is_set(FO_OFFSETS, bctx.ff_pkt->flags)) {
             bctx.chead = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
             bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE + sizeof(comp_stream_header);
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - (sizeof(comp_stream_header) + OFFSET_FADDR_SIZE);
@@ -124,8 +124,8 @@ bool setup_compression_context(b_ctx &bctx)
           * Calculate buffer offsets.
           */
          bctx.chead = NULL;
-         if ((bctx.ff_pkt->flags & FO_SPARSE) ||
-             (bctx.ff_pkt->flags & FO_OFFSETS)) {
+         if (bit_is_set(FO_SPARSE, bctx.ff_pkt->flags) ||
+             bit_is_set(FO_OFFSETS, bctx.ff_pkt->flags)) {
             bctx.cbuf = (uint8_t *)bctx.jcr->compress.deflate_buffer + OFFSET_FADDR_SIZE;
             bctx.max_compress_len = bctx.jcr->compress.deflate_buffer_size - OFFSET_FADDR_SIZE;
          } else {

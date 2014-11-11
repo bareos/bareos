@@ -116,8 +116,9 @@ static inline bool include_block_is_recursive(findINCEXE *incexe)
    for (i = 0; i < incexe->opts_list.size(); i++) {
       fo = (findFOPTS *)incexe->opts_list.get(i);
 
-      recursive = (fo->flags & FO_NO_RECURSION) == 0;
+      recursive = !bit_is_set(FO_NO_RECURSION, fo->flags);
    }
+
    return recursive;
 }
 
@@ -139,7 +140,7 @@ static inline bool include_block_has_patterns(findINCEXE *incexe)
        * e.g. exclude = yes is set then we
        * should still check for shadowing.
        */
-      if (fo->flags & FO_EXCLUDE) {
+      if (bit_is_set(FO_EXCLUDE, fo->flags)) {
          continue;
       }
 

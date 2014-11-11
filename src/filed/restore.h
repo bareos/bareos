@@ -46,11 +46,11 @@ struct r_ctx {
    BFILE bfd;                          /* File content */
    uint64_t fileAddr;                  /* file write address */
    uint32_t size;                      /* Size of file */
-   int flags;                          /* Options for extract_data() */
+   char flags[FOPTS_BYTES];            /* Options for extract_data() */
    BFILE forkbfd;                      /* Alternative data stream */
    uint64_t fork_addr;                 /* Write address for alternative stream */
    int64_t fork_size;                  /* Size of alternate stream */
-   int fork_flags;                     /* Options for extract_data() */
+   char fork_flags[FOPTS_BYTES];       /* Options for extract_data() */
    int32_t type;                       /* file type FT_ */
    ATTR *attr;                         /* Pointer to attributes */
    bool extract;                       /* set when extracting */

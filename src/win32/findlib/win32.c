@@ -400,8 +400,8 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
          Dmsg0(100, "prepending new options block\n");
          new_options(ff, ff->fileset->incexe);
          fo = (findFOPTS *)include->opts_list.get(0);
-         fo->flags |= FO_EXCLUDE;                      /* exclude = yes */
-         fo->flags |= FO_IGNORECASE;                   /* ignore case = yes */
+         set_bit(FO_EXCLUDE, fo->flags);               /* exclude = yes */
+         set_bit(FO_IGNORECASE, fo->flags);            /* ignore case = yes */
 
          /*
           * Make sure the variables are big enough to contain the data.

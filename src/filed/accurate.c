@@ -241,7 +241,10 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       case '1':                /* Compare SHA1 */
          if (!status && ff_pkt->type != FT_LNKSAVED &&
              (S_ISREG(ff_pkt->statp.st_mode) &&
-             ff_pkt->flags & (FO_MD5 | FO_SHA1 | FO_SHA256 | FO_SHA512))) {
+             (bit_is_set(FO_MD5, ff_pkt->flags) ||
+              bit_is_set(FO_SHA1, ff_pkt->flags) ||
+              bit_is_set(FO_SHA256, ff_pkt->flags) ||
+              bit_is_set(FO_SHA512, ff_pkt->flags)))) {
             if (!*payload->chksum && !jcr->rerunning) {
                Jmsg(jcr, M_WARNING, 0, _("Cannot verify checksum for %s\n"), ff_pkt->fname);
                status = true;

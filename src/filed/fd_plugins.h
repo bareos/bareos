@@ -48,6 +48,7 @@
 
 #include "version.h"
 #include "bc_types.h"
+#include "fileopts.h"
 #include "lib/plugins.h"
 #include <sys/stat.h>
 #ifdef HAVE_WIN32
@@ -83,7 +84,7 @@ struct save_pkt {
    char *link;                        /* Link name if any */
    struct stat statp;                 /* System stat() packet for file */
    int32_t type;                      /* FT_xx for this file */
-   uint32_t flags;                    /* Bareos internal flags */
+   char flags[FOPTS_BYTES];           /* Bareos internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */

@@ -213,8 +213,11 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
 
    if (ff_pkt->type != FT_LNKSAVED &&
-      (S_ISREG(ff_pkt->statp.st_mode) &&
-       ff_pkt->flags & (FO_MD5 | FO_SHA1 | FO_SHA256 | FO_SHA512))) {
+       S_ISREG(ff_pkt->statp.st_mode) &&
+      (bit_is_set(FO_MD5, ff_pkt->flags) ||
+       bit_is_set(FO_SHA1, ff_pkt->flags) ||
+       bit_is_set(FO_SHA256, ff_pkt->flags) ||
+       bit_is_set(FO_SHA512, ff_pkt->flags))) {
       int digest_stream = STREAM_NONE;
       DIGEST *digest = NULL;
       char *digest_buf = NULL;
@@ -262,7 +265,8 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
    if (ff_pkt->statp.st_size > 0 ||
        ff_pkt->type == FT_RAW ||
        ff_pkt->type == FT_FIFO) {
-      int noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
+      int noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
+
       if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
          ff_pkt->ff_errno = errno;
          berrno be;
@@ -280,7 +284,7 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
       /*
        * Open resource fork if necessary
        */
-      if (ff_pkt->flags & FO_HFSPLUS && ff_pkt->hfsinfo.rsrclength > 0) {
+      if (bit_is_set(FO_HFSPLUS, ff_pkt->flags) && ff_pkt->hfsinfo.rsrclength > 0) {
          if (bopen_rsrc(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY, 0) < 0) {
             ff_pkt->ff_errno = errno;
             berrno be;
@@ -295,7 +299,7 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
          bclose(&bfd);
       }
 
-      if (digest && ff_pkt->flags & FO_HFSPLUS) {
+      if (digest && bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
          crypto_digest_update(digest, (uint8_t *)ff_pkt->hfsinfo.fndrinfo, 32);
       }
    }
@@ -318,7 +322,7 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
    Dmsg0(50, "=== read_digest\n");
    while ((n=bread(bfd, buf, bufsiz)) > 0) {
       /* Check for sparse blocks */
-      if (ff_pkt->flags & FO_SPARSE) {
+      if (bit_is_set(FO_SPARSE, ff_pkt->flags)) {
          bool allZeros = false;
          if ((n == bufsiz &&
               fileAddr+n < (uint64_t)ff_pkt->statp.st_size) ||
@@ -372,16 +376,16 @@ static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt, DIGEST **digest,
     * Create our digest context.
     * If this fails, the digest will be set to NULL and not used.
     */
-   if (ff_pkt->flags & FO_MD5) {
+   if (bit_is_set(FO_MD5 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_MD5);
       *digest_stream = STREAM_MD5_DIGEST;
-   } else if (ff_pkt->flags & FO_SHA1) {
+   } else if (bit_is_set(FO_SHA1,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA1);
       *digest_stream = STREAM_SHA1_DIGEST;
-   } else if (ff_pkt->flags & FO_SHA256) {
+   } else if (bit_is_set(FO_SHA256 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA256);
       *digest_stream = STREAM_SHA256_DIGEST;
-   } else if (ff_pkt->flags & FO_SHA512) {
+   } else if (bit_is_set(FO_SHA512 ,ff_pkt->flags)) {
       *digest = crypto_digest_new(jcr, CRYPTO_DIGEST_SHA512);
       *digest_stream = STREAM_SHA512_DIGEST;
    }

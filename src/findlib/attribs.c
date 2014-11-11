@@ -72,7 +72,7 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
 
    /* This is a plugin special restore object */
    if (ff_pkt->type == FT_RESTORE_FIRST) {
-      ff_pkt->flags = 0;
+      clear_all_bits(FO_MAX, ff_pkt->flags);
       return STREAM_FILE_DATA;
    }
 
@@ -83,8 +83,8 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
    /**
     * No sparse option for encrypted data
     */
-   if (ff_pkt->flags & FO_ENCRYPT) {
-      ff_pkt->flags &= ~FO_SPARSE;
+   if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
+      clear_bit(FO_SPARSE, ff_pkt->flags);
    }
 
    /*
@@ -92,13 +92,13 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
     */
    if (!is_portable_backup(&ff_pkt->bfd)) {
       stream = STREAM_WIN32_DATA;
-      ff_pkt->flags &= ~FO_SPARSE;
-   } else if (ff_pkt->flags & FO_SPARSE) {
+      clear_bit(FO_SPARSE, ff_pkt->flags);
+   } else if (bit_is_set(FO_SPARSE, ff_pkt->flags)) {
       stream = STREAM_SPARSE_DATA;
    } else {
       stream = STREAM_FILE_DATA;
    }
-   if (ff_pkt->flags & FO_OFFSETS) {
+   if (bit_is_set(FO_OFFSETS, ff_pkt->flags)) {
       stream = STREAM_SPARSE_DATA;
    }
 
@@ -108,20 +108,20 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
    if (stream != STREAM_FILE_DATA &&
        stream != STREAM_WIN32_DATA &&
        stream != STREAM_MACOS_FORK_DATA) {
-      ff_pkt->flags &= ~FO_ENCRYPT;
+      clear_bit(FO_ENCRYPT, ff_pkt->flags);
    }
 
    /*
     * Compression is not supported for Mac fork data
     */
    if (stream == STREAM_MACOS_FORK_DATA) {
-      ff_pkt->flags &= ~FO_COMPRESS;
+      clear_bit(FO_COMPRESS, ff_pkt->flags);
    }
 
    /*
     * Handle compression and encryption options
     */
-   if (ff_pkt->flags & FO_COMPRESS) {
+   if (bit_is_set(FO_COMPRESS, ff_pkt->flags)) {
       if (compatible && ff_pkt->Compress_algo == COMPRESS_GZIP) {
          switch (stream) {
          case STREAM_WIN32_DATA:
@@ -138,7 +138,7 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
              * All stream types that do not support compression should clear out
              * FO_COMPRESS above, and this code block should be unreachable.
              */
-            ASSERT(!(ff_pkt->flags & FO_COMPRESS));
+            ASSERT(!bit_is_set(FO_COMPRESS, ff_pkt->flags));
             return STREAM_NONE;
          }
       } else {
@@ -157,14 +157,14 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
              * All stream types that do not support compression should clear out
              * FO_COMPRESS above, and this code block should be unreachable.
              */
-            ASSERT(!(ff_pkt->flags & FO_COMPRESS));
+            ASSERT(!bit_is_set(FO_COMPRESS, ff_pkt->flags));
             return STREAM_NONE;
          }
       }
    }
 
 #ifdef HAVE_CRYPTO
-   if (ff_pkt->flags & FO_ENCRYPT) {
+   if (bit_is_set(FO_ENCRYPT, ff_pkt->flags)) {
       switch (stream) {
       case STREAM_WIN32_DATA:
          stream = STREAM_ENCRYPTED_WIN32_DATA;
@@ -189,7 +189,7 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
           * All stream types that do not support encryption should clear out
           * FO_ENCRYPT above, and this code block should be unreachable.
           */
-         ASSERT(!(ff_pkt->flags & FO_ENCRYPT));
+         ASSERT(!bit_is_set(FO_ENCRYPT, ff_pkt->flags));
          return STREAM_NONE;
       }
    }
@@ -525,7 +525,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
       return STREAM_UNIX_ATTRIBUTES;
    }
    p = attribsEx;
-   if (ff_pkt->flags & FO_HFSPLUS) {
+   if (bit_is_set(FO_HFSPLUS, ff_pkt->flags)) {
       p += to_base64((uint64_t)(ff_pkt->hfsinfo.rsrclength), p);
    }
    *p = 0;

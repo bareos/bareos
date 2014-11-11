@@ -57,7 +57,8 @@ enum {
    INC_KW_HONOR_NODUMP,
    INC_KW_XATTR,
    INC_KW_SIZE,
-   INC_KW_SHADOWING
+   INC_KW_SHADOWING,
+   INC_KW_AUTO_EXCLUDE
 };
 
 /*
@@ -94,6 +95,7 @@ static struct s_kw FS_option_kw[] = {
    { "xattrsupport", INC_KW_XATTR },
    { "size", INC_KW_SIZE },
    { "shadowing", INC_KW_SHADOWING },
+   { "autoexclude", INC_KW_AUTO_EXCLUDE },
    { NULL, 0 }
 };
 
@@ -175,6 +177,8 @@ static struct s_fs_opt FS_options[] = {
    { "globalwarn", INC_KW_SHADOWING, "d3" },
    { "globalremove", INC_KW_SHADOWING, "d4" },
    { "none", INC_KW_SHADOWING, "0" },
+   { "yes", INC_KW_AUTO_EXCLUDE, "0" },
+   { "no", INC_KW_AUTO_EXCLUDE, "x" },
    { NULL, 0, 0 }
 };
 

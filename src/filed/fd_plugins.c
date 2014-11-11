@@ -423,37 +423,37 @@ static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
 
-   if (sp->flags & FO_DELTA) {
-      ff_pkt->flags |= FO_DELTA;
-      ff_pkt->delta_seq++;          /* make new delta sequence number */
+   if (bit_is_set(FO_DELTA, sp->flags)) {
+      set_bit(FO_DELTA, ff_pkt->flags);
+      ff_pkt->delta_seq++;            /* make new delta sequence number */
    } else {
-      ff_pkt->flags &= ~FO_DELTA;   /* clean delta sequence number */
-      ff_pkt->delta_seq = 0;
+      clear_bit(FO_DELTA, ff_pkt->flags);
+      ff_pkt->delta_seq = 0;          /* clean delta sequence number */
    }
 
-   if (sp->flags & FO_OFFSETS) {
-      ff_pkt->flags |= FO_OFFSETS;
+   if (bit_is_set(FO_OFFSETS, sp->flags)) {
+      set_bit(FO_OFFSETS, ff_pkt->flags);
    } else {
-      ff_pkt->flags &= ~FO_OFFSETS;
+      clear_bit(FO_OFFSETS, ff_pkt->flags);
    }
 
    /*
     * Sparse code doesn't work with plugins
     * that use FIFO or STDOUT/IN to communicate
     */
-   if (sp->flags & FO_SPARSE) {
-      ff_pkt->flags |= FO_SPARSE;
+   if (bit_is_set(FO_SPARSE, sp->flags)) {
+      set_bit(FO_SPARSE, ff_pkt->flags);
    } else {
-      ff_pkt->flags &= ~FO_SPARSE;
+      clear_bit(FO_SPARSE, ff_pkt->flags);
    }
 
-   if (sp->flags & FO_PORTABLE_DATA) {
-      ff_pkt->flags |= FO_PORTABLE_DATA;
+   if (bit_is_set(FO_PORTABLE_DATA, sp->flags)) {
+      set_bit(FO_PORTABLE_DATA, ff_pkt->flags);
    } else {
-      ff_pkt->flags &= ~FO_PORTABLE_DATA;
+      clear_bit(FO_PORTABLE_DATA, ff_pkt->flags);
    }
 
-   ff_pkt->flags |= FO_PLUGIN;       /* data from plugin */
+   set_bit(FO_PLUGIN, ff_pkt->flags); /* data from plugin */
 }
 
 /**
@@ -477,9 +477,9 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
    memset(sp, 0, sizeof(struct save_pkt));
    sp->pkt_size = sp->pkt_end = sizeof(struct save_pkt);
    sp->portable = true;
+   clone_bits(FO_MAX, ff_pkt->flags, sp->flags);
    sp->cmd = cmd;
    sp->link = ff_pkt->link;
-   sp->cmd = ff_pkt->plugin;
    sp->statp = ff_pkt->statp;
    sp->type = ff_pkt->type;
    sp->fname = ff_pkt->fname;
@@ -636,7 +636,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.pkt_end = sizeof(sp);
          sp.portable = true;
          sp.no_read = false;
-         sp.flags = 0;
+         clone_bits(FO_MAX, ff_pkt->flags, sp.flags);
          sp.cmd = cmd;
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n", &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
@@ -701,7 +701,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
           * that the data of each file gets backed up only once.
           */
          ff_pkt->LinkFI = 0;
-         if (!(ff_pkt->flags & FO_NO_HARDLINK) && ff_pkt->statp.st_nlink > 1) {
+         if (!bit_is_set(FO_NO_HARDLINK, ff_pkt->flags) && ff_pkt->statp.st_nlink > 1) {
             CurLink *hl;
 
             switch (ff_pkt->statp.st_mode & S_IFMT) {
@@ -860,7 +860,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.pkt_size = sizeof(sp);
          sp.pkt_end = sizeof(sp);
          sp.portable = true;
-         sp.flags = 0;
+         clone_bits(FO_MAX, ff_pkt->flags, sp.flags);
          sp.cmd = cmd;
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n",
                &sp.statp.st_size, &sp.statp.st_blocks, &sp);

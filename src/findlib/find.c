@@ -116,7 +116,7 @@ int find_files(JCR *jcr, FF_PKT *ff,
        * at this place flags options are "concatenated" accross Include {} blocks
        * (not only Options{} blocks inside a Include{})
        */
-      ff->flags = 0;
+      clear_all_bits(FO_MAX, ff->flags);
       for (i = 0; i < fileset->include_list.size(); i++) {
          dlistString *node;
          findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
@@ -135,8 +135,10 @@ int find_files(JCR *jcr, FF_PKT *ff,
           * By setting all options, we in effect OR the global options which is what we want.
           */
          for (j = 0; j < incexe->opts_list.size(); j++) {
-            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-            ff->flags |= fo->flags;
+            findFOPTS *fo;
+
+            fo = (findFOPTS *)incexe->opts_list.get(j);
+            clone_bits(FO_MAX, fo->flags, ff->flags);
             ff->Compress_algo = fo->Compress_algo;
             ff->Compress_level = fo->Compress_level;
             ff->strip_path = fo->strip_path;
@@ -240,7 +242,7 @@ bool accept_file(FF_PKT *ff)
    int (*match_func)(const char *pattern, const char *string, int flags);
 
    Dmsg1(dbglvl, "enter accept_file: fname=%s\n", ff->fname);
-   if (ff->flags & FO_ENHANCEDWILD) {
+   if (bit_is_set(FO_ENHANCEDWILD, ff->flags)) {
       match_func = fnmatch;
       if ((basename = last_path_separator(ff->fname)) != NULL)
          basename++;
@@ -252,22 +254,23 @@ bool accept_file(FF_PKT *ff)
    }
 
    for (j = 0; j < incexe->opts_list.size(); j++) {
-      findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-      ff->flags = fo->flags;
+      findFOPTS *fo;
+
+      fo = (findFOPTS *)incexe->opts_list.get(j);
+      clone_bits(FO_MAX, fo->flags, ff->flags);
       ff->Compress_algo = fo->Compress_algo;
       ff->Compress_level = fo->Compress_level;
       ff->fstypes = fo->fstype;
       ff->drivetypes = fo->drivetype;
 
-      fnm_flags = (ff->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
-      fnm_flags |= (ff->flags & FO_ENHANCEDWILD) ? FNM_PATHNAME : 0;
+      fnm_flags = bit_is_set(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
+      fnm_flags |= bit_is_set(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
 
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->wilddir.size(); k++) {
             if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-               if (ff->flags & FO_EXCLUDE) {
-                  Dmsg2(dbglvl, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k),
-                     ff->fname);
+               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+                  Dmsg2(dbglvl, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k), ff->fname);
                   return false;       /* reject dir */
                }
                return true;           /* accept dir */
@@ -276,9 +279,8 @@ bool accept_file(FF_PKT *ff)
       } else {
          for (k = 0; k < fo->wildfile.size(); k++) {
             if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-               if (ff->flags & FO_EXCLUDE) {
-                  Dmsg2(dbglvl, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k),
-                     ff->fname);
+               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+                  Dmsg2(dbglvl, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k), ff->fname);
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -287,9 +289,8 @@ bool accept_file(FF_PKT *ff)
 
          for (k = 0; k < fo->wildbase.size(); k++) {
             if (match_func((char *)fo->wildbase.get(k), basename, fnmode | fnm_flags) == 0) {
-               if (ff->flags & FO_EXCLUDE) {
-                  Dmsg2(dbglvl, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k),
-                     basename);
+               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+                  Dmsg2(dbglvl, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k), basename);
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -299,9 +300,8 @@ bool accept_file(FF_PKT *ff)
 
       for (k = 0; k < fo->wild.size(); k++) {
          if (match_func((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-            if (ff->flags & FO_EXCLUDE) {
-               Dmsg2(dbglvl, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k),
-                  ff->fname);
+            if (bit_is_set(FO_EXCLUDE, ff->flags)) {
+               Dmsg2(dbglvl, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k), ff->fname);
                return false;          /* reject file */
             }
             return true;              /* accept file */
@@ -313,7 +313,7 @@ bool accept_file(FF_PKT *ff)
             const int nmatch = 30;
             regmatch_t pmatch[nmatch];
             if (regexec((regex_t *)fo->regexdir.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
-               if (ff->flags & FO_EXCLUDE) {
+               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -324,7 +324,7 @@ bool accept_file(FF_PKT *ff)
             const int nmatch = 30;
             regmatch_t pmatch[nmatch];
             if (regexec((regex_t *)fo->regexfile.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
-               if (ff->flags & FO_EXCLUDE) {
+               if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -336,17 +336,17 @@ bool accept_file(FF_PKT *ff)
          const int nmatch = 30;
          regmatch_t pmatch[nmatch];
          if (regexec((regex_t *)fo->regex.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
-            if (ff->flags & FO_EXCLUDE) {
+            if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                return false;          /* reject file */
             }
             return true;              /* accept file */
          }
       }
+
       /*
-       * If we have an empty Options clause with exclude, then
-       *  exclude the file
+       * If we have an empty Options clause with exclude, then exclude the file
        */
-      if (ff->flags & FO_EXCLUDE &&
+      if (bit_is_set(FO_EXCLUDE, ff->flags) &&
           fo->regex.size() == 0 && fo->wild.size() == 0 &&
           fo->regexdir.size() == 0 && fo->wilddir.size() == 0 &&
           fo->regexfile.size() == 0 && fo->wildfile.size() == 0 &&
@@ -364,7 +364,7 @@ bool accept_file(FF_PKT *ff)
 
       for (j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
-         fnm_flags = (fo->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
+         fnm_flags = bit_is_set(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
          for (k = 0; k < fo->wild.size(); k++) {
             if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                Dmsg1(dbglvl, "Reject wild1: %s\n", ff->fname);
@@ -373,7 +373,7 @@ bool accept_file(FF_PKT *ff)
          }
       }
       fnm_flags = (incexe->current_opts != NULL &&
-                   incexe->current_opts->flags & FO_IGNORECASE) ? FNM_CASEFOLD : 0;
+                   bit_is_set(FO_IGNORECASE, incexe->current_opts->flags)) ? FNM_CASEFOLD : 0;
       foreach_dlist(node, &incexe->name_list) {
          char *fname = node->c_str();
 

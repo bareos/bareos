@@ -1569,13 +1569,13 @@ static bool backup_cmd(JCR *jcr)
    /**
     * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
-   if (jcr->ff->flags & FO_ACL && !have_acl) {
+   if (bit_is_set(FO_ACL, jcr->ff->flags) && !have_acl) {
       Jmsg(jcr, M_WARNING, 0, _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
-      jcr->ff->flags &= ~FO_ACL;
+      clear_bit(FO_ACL, jcr->ff->flags);
    }
-   if (jcr->ff->flags & FO_XATTR && !have_xattr) {
+   if (bit_is_set(FO_XATTR, jcr->ff->flags) && !have_xattr) {
       Jmsg(jcr, M_WARNING, 0, _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
-      jcr->ff->flags &= ~FO_XATTR;
+      clear_bit(FO_XATTR, jcr->ff->flags);
    }
 
    jcr->setJobStatus(JS_Blocked);

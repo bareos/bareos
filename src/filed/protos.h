@@ -51,7 +51,7 @@ bool crypto_session_start(JCR *jcr);
 void crypto_session_end(JCR *jcr);
 bool crypto_session_send(JCR *jcr, BSOCK *sd);
 bool verify_signature(JCR *jcr, r_ctx &rctx);
-bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, int flags, int32_t stream,
+bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, char *flags, int32_t stream,
                   RESTORE_CIPHER_CTX *cipher_ctx);
 void deallocate_cipher(r_ctx &rctx);
 void deallocate_fork_cipher(r_ctx &rctx);
