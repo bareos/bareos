@@ -233,7 +233,7 @@ typedef struct {
    PyObject *link;                    /* Link name if any */
    PyObject *statp;                   /* System stat() packet for file */
    int32_t type;                      /* FT_xx for this file */
-   uint32_t flags;                    /* Bareos internal flags */
+   PyObject *flags;                   /* Bareos internal flags */
    bool no_read;                      /* During the save, the file should not be saved */
    bool portable;                     /* set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
@@ -261,7 +261,7 @@ static PyMemberDef PySavePacket_members[] = {
    { (char *)"link", T_OBJECT, offsetof(PySavePacket, link), 0, (char *)"Linkname" },
    { (char *)"statp", T_OBJECT, offsetof(PySavePacket, statp), 0, (char *)"Stat Packet" },
    { (char *)"type", T_INT, offsetof(PySavePacket, type), 0, (char *)"Type" },
-   { (char *)"flags", T_UINT, offsetof(PySavePacket, flags), 0, (char *)"Flags" },
+   { (char *)"flags", T_OBJECT, offsetof(PySavePacket, flags), 0, (char *)"Flags" },
    { (char *)"no_read", T_BOOL, offsetof(PySavePacket, no_read), 0, (char *)"No Read" },
    { (char *)"portable", T_BOOL, offsetof(PySavePacket, portable), 0, (char *)"Portable" },
    { (char *)"accurate_found", T_BOOL, offsetof(PySavePacket, accurate_found), 0, (char *)"Accurate Found" },
