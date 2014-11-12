@@ -1413,7 +1413,7 @@ static inline PySavePacket *NativeToPySavePacket(struct save_pkt *sp)
       }
 
       pSavePkt->type = sp->type;
-      pSavePkt->flags = sp->flags;
+      pSavePkt->flags = PyByteArray_FromStringAndSize(sp->flags, sizeof(sp->flags));
       pSavePkt->no_read = sp->no_read;
       pSavePkt->portable = sp->portable;
       pSavePkt->accurate_found = sp->accurate_found;
@@ -1479,7 +1479,19 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
       }
 
       sp->type = pSavePkt->type;
-      sp->flags = pSavePkt->flags;
+
+      if (PyByteArray_Check(pSavePkt->flags)) {
+         char *flags;
+
+         if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+            goto bail_out;
+         }
+
+         flags = PyString_AsString(pSavePkt->flags);
+         memcpy(sp->flags, flags, sizeof(sp->flags));
+      } else {
+         goto bail_out;
+      }
 
       /*
        * Special code for handling restore objects.
@@ -1527,7 +1539,19 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
    } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
-      sp->flags = pSavePkt->flags;
+
+      if (PyByteArray_Check(pSavePkt->flags)) {
+         char *flags;
+
+         if (PyByteArray_Size(pSavePkt->flags) != sizeof(sp->flags)) {
+            goto bail_out;
+         }
+
+         flags = PyString_AsString(pSavePkt->flags);
+         memcpy(sp->flags, flags, sizeof(sp->flags));
+      } else {
+         goto bail_out;
+      }
    }
 
    return true;
@@ -1685,6 +1709,10 @@ static inline bool PyIoPacketToNative(PyIoPacket *pIoPkt, struct io_pkt *io)
        */
       if (PyByteArray_Check(pIoPkt->buf)) {
          char *buf;
+
+         if (PyByteArray_Size(pIoPkt->buf) > io->count || io->status > io->count) {
+            return false;
+         }
 
          if (!(buf = PyByteArray_AsString(pIoPkt->buf))) {
             return false;
@@ -3006,17 +3034,45 @@ static void PyStatPacket_dealloc(PyStatPacket *self)
 /*
  * Representation.
  */
+static inline const char *print_flags_bitmap(PyObject *bitmap)
+{
+   static char visual_bitmap[FOPTS_BYTES];
+
+   if (PyByteArray_Check(bitmap)) {
+      int cnt;
+      char *flags;
+
+      if (PyByteArray_Size(bitmap) != sizeof(visual_bitmap)) {
+         return "Unknown";
+      }
+
+      flags = PyString_AsString(bitmap);
+      memset(visual_bitmap, 0, sizeof(visual_bitmap));
+      for (cnt = 0; cnt <= FO_MAX; cnt++) {
+         if (bit_is_set(cnt, flags)) {
+            visual_bitmap[cnt] = '1';
+         } else {
+            visual_bitmap[cnt] = '0';
+         }
+      }
+
+      return visual_bitmap;
+   }
+
+   return "Unknown";
+}
+
 static PyObject *PySavePacket_repr(PySavePacket *self)
 {
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%ld, "
+   Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%s, "
              "no_read=%d, portable=%d, accurate_found=%d, "
              "cmd=\"%s\", delta_seq=%ld, object_name=\"%s\", "
              "object=\"%s\", object_len=%ld, object_index=%ld)",
         PyGetStringValue(self->fname), PyGetStringValue(self->link),
-        self->type, self->flags, self->no_read, self->portable,
+        self->type, print_flags_bitmap(self->flags), self->no_read, self->portable,
         self->accurate_found, self->cmd, self->delta_seq,
         PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
         self->object_len, self->object_index);
@@ -3051,7 +3107,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
    self->fname = NULL;
    self->link = NULL;
    self->type = 0;
-   self->flags = 0;
+   self->flags = NULL;
    self->no_read = false;
    self->portable = false;
    self->accurate_found = false;
@@ -3064,7 +3120,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
 
    if (!PyArg_ParseTupleAndKeywords(args,
                                     kwds,
-                                    "|ooiIcccsiooii",
+                                    "|ooiocccsiooii",
                                     kwlist,
                                     &self->fname,
                                     &self->link,
@@ -3095,6 +3151,9 @@ static void PySavePacket_dealloc(PySavePacket *self)
    }
    if (self->link) {
       Py_XDECREF(self->link);
+   }
+   if (self->flags) {
+      Py_XDECREF(self->flags);
    }
    if (self->object_name) {
       Py_XDECREF(self->object_name);
