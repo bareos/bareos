@@ -148,11 +148,60 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
       switch (item->code) {
       case MD_STDOUT:
       case MD_STDERR:
-      case MD_SYSLOG:              /* syslog */
       case MD_CONSOLE:
       case MD_CATALOG:
          scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL);
          break;
+      case MD_SYSLOG: {            /* syslog */
+         char *p;
+         int cnt = 0;
+         bool done = false;
+
+         /*
+          * See if this is an old style syslog definition.
+          * We count the number of = signs in the current config line.
+          */
+         p = lc->line;
+         while (!done && *p) {
+            switch (*p) {
+            case '=':
+               cnt++;
+               break;
+            case ',':
+            case ';':
+               /*
+                * No need to continue scanning when we encounter a ',' or ';'
+                */
+               done = true;
+               break;
+            default:
+               break;
+            }
+            p++;
+         }
+
+         /*
+          * If there is more then one = its the new format e.g.
+          * syslog = facility = filter
+          */
+         if (cnt > 1) {
+            dest = get_pool_memory(PM_MESSAGE);
+            /*
+             * Pick up a single facility.
+             */
+            token = lex_get_token(lc, T_NAME);   /* scan destination */
+            pm_strcpy(dest, lc->str);
+            dest_len = lc->str_len;
+            token = lex_get_token(lc, T_SKIP_EOL);
+
+            scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL);
+            free_pool_memory(dest);
+            Dmsg0(900, "done with dest codes\n");
+         } else {
+            scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL);
+         }
+         break;
+      }
       case MD_OPERATOR:            /* send to operator */
       case MD_DIRECTOR:            /* send to Director */
       case MD_MAIL:                /* mail */
@@ -167,7 +216,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
          dest[0] = 0;
          dest_len = 0;
          /*
-          * Pick up comma separated list of destinations
+          * Pick up comma separated list of destinations.
           */
          for (;;) {
             token = lex_get_token(lc, T_NAME);   /* scan destination */
@@ -198,7 +247,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
       case MD_APPEND:              /* append */
          dest = get_pool_memory(PM_MESSAGE);
          /*
-          * Pick up a single destination
+          * Pick up a single destination.
           */
          token = lex_get_token(lc, T_NAME);   /* scan destination */
          pm_strcpy(dest, lc->str);

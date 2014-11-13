@@ -1653,7 +1653,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
  */
 extern "C" void syslog(int type, const char *fmt, ...)
 {
-   va_list   arg_ptr;
+   va_list arg_ptr;
    int len, maxlen;
    POOLMEM *msg;
 
@@ -1674,7 +1674,7 @@ extern "C" void syslog(int type, const char *fmt, ...)
    free_memory(msg);
 }
 
-void closelog()
+extern "C" void closelog()
 {
 }
 
@@ -3090,7 +3090,7 @@ bail_out:
 /*
  * Syslog function, added by Nicolas Boichat
  */
-void openlog(const char *ident, int option, int facility)
+extern "C" void openlog(const char *ident, int option, int facility)
 {
 }
 #endif //HAVE_MINGW

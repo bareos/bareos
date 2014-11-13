@@ -171,7 +171,7 @@ static void delivery_error(const char *fmt,...)
 
    fputs(pool_buf, stdout);        /* print this here to INSURE that it is printed */
    fflush(stdout);
-   syslog(LOG_DAEMON|LOG_ERR, "%s", pool_buf);
+   syslog(LOG_DAEMON | LOG_ERR, "%s", pool_buf);
    free_memory(pool_buf);
 }
 
@@ -726,7 +726,7 @@ void term_msg()
    term_last_jobs_list();
 }
 
-static bool open_dest_file(JCR *jcr, DEST *d, const char *mode)
+static inline bool open_dest_file(JCR *jcr, DEST *d, const char *mode)
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
@@ -734,6 +734,78 @@ static bool open_dest_file(JCR *jcr, DEST *d, const char *mode)
       delivery_error(_("fopen %s failed: ERR=%s\n"), d->where, be.bstrerror());
       return false;
    }
+
+   return true;
+}
+
+static struct syslog_facility_name {
+   const char *name;
+   int facility;
+} syslog_facility_names[] = {
+    { "kern", LOG_KERN },
+    { "user", LOG_USER },
+    { "mail", LOG_MAIL },
+    { "daemon", LOG_DAEMON },
+    { "auth", LOG_AUTH },
+    { "syslog", LOG_SYSLOG },
+    { "lpr", LOG_LPR },
+    { "news", LOG_NEWS },
+    { "uucp", LOG_UUCP },
+#ifdef LOG_CRON
+    { "cron", LOG_CRON },
+#endif
+#ifdef LOG_AUTHPRIV
+    { "authpriv", LOG_AUTHPRIV },
+#endif
+#ifdef LOG_FTP
+    { "ftp", LOG_FTP },
+#endif
+#ifdef LOG_NTP
+    { "ntp", LOG_NTP },
+#endif
+#ifdef LOG_AUDIT
+    { "audit", LOG_AUDIT },
+#endif
+#ifdef LOG_SECURITY
+    { "security", LOG_SECURITY },
+#endif
+#ifdef LOG_CONSOLE
+    { "console", LOG_CONSOLE },
+#endif
+    { "local0", LOG_LOCAL0 },
+    { "local1", LOG_LOCAL1 },
+    { "local2", LOG_LOCAL2 },
+    { "local3", LOG_LOCAL3 },
+    { "local4", LOG_LOCAL4 },
+    { "local5", LOG_LOCAL5 },
+    { "local6", LOG_LOCAL6 },
+    { "local7", LOG_LOCAL7 },
+    { NULL, -1 }
+};
+
+static inline bool set_syslog_facility(JCR *jcr, DEST *d)
+{
+   int i;
+
+   if (d->where) {
+      for (i = 0; syslog_facility_names[i].name; i++) {
+         if (bstrcasecmp(d->where, syslog_facility_names[i].name)) {
+            d->syslog_facility = syslog_facility_names[i].facility;
+            i = 0;
+            break;
+         }
+      }
+
+      /*
+       * Make sure we got a match otherwise fallback to LOG_DAEMON
+       */
+      if (i != 0) {
+         d->syslog_facility = LOG_DAEMON;
+      }
+   } else {
+      d->syslog_facility = LOG_DAEMON;
+   }
+
    return true;
 }
 
@@ -811,7 +883,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
       fputs(msg, stdout);
       fflush(stdout);
       if (type == M_ABORT) {
-         syslog(LOG_DAEMON|LOG_ERR, "%s", msg);
+         syslog(LOG_DAEMON | LOG_ERR, "%s", msg);
       }
    }
 
@@ -855,7 +927,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
       fputs(dt, stdout);
       fputs(msg, stdout);
       fflush(stdout);
-      syslog(LOG_DAEMON|LOG_ERR, "%s", msg);
+      syslog(LOG_DAEMON | LOG_ERR, "%s", msg);
       return;
    }
 
@@ -901,10 +973,49 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
             break;
          case MD_SYSLOG:
             Dmsg1(850, "SYSLOG for following msg: %s\n", msg);
+
+            if (!d->syslog_facility && !set_syslog_facility(jcr, d)) {
+               msgs->clear_in_use();
+               break;
+            }
+
             /*
-             * We really should do an openlog() here.
+             * Dispatch based on our internal message type to a matching syslog one.
              */
-            send_to_syslog(LOG_DAEMON|LOG_ERR, msg);
+            switch (type) {
+            case M_ERROR:
+            case M_ERROR_TERM:
+               send_to_syslog(d->syslog_facility | LOG_ERR, msg);
+               break;
+            case M_ABORT:
+            case M_FATAL:
+               send_to_syslog(d->syslog_facility | LOG_CRIT, msg);
+               break;
+            case M_WARNING:
+               send_to_syslog(d->syslog_facility | LOG_WARNING, msg);
+               break;
+            case M_DEBUG:
+               send_to_syslog(d->syslog_facility | LOG_DEBUG, msg);
+               break;
+            case M_INFO:
+            case M_NOTSAVED:
+            case M_RESTORED:
+            case M_SAVED:
+            case M_SKIPPED:
+            case M_TERM:
+               send_to_syslog(d->syslog_facility | LOG_INFO, msg);
+               break;
+            case M_ALERT:
+            case M_AUDIT:
+            case M_MOUNT:
+            case M_SECURITY:
+            case M_VOLMGMT:
+               send_to_syslog(d->syslog_facility | LOG_NOTICE, msg);
+               break;
+            default:
+               send_to_syslog(d->syslog_facility | LOG_ERR, msg);
+               break;
+            }
             break;
          case MD_OPERATOR:
             Dmsg1(850, "OPERATOR for following msg: %s\n", msg);
