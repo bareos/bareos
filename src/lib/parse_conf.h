@@ -264,14 +264,14 @@ class MSGSRES : public BRSRES {
     * Members
     */
 public:
-   char *mail_cmd;                    /* mail command */
+   char *mail_cmd;                    /* Mail command */
    char *operator_cmd;                /* Operator command */
    DEST *dest_chain;                  /* chain of destinations */
-   char send_msg[nbytes_for_bits(M_MAX+1)];  /* bit array of types */
+   char send_msg[nbytes_for_bits(M_MAX+1)]; /* Bit array of types */
 
 private:
-   bool m_in_use;                     /* set when using to send a message */
-   bool m_closing;                    /* set when closing message resource */
+   bool m_in_use;                     /* Set when using to send a message */
+   bool m_closing;                    /* Set when closing message resource */
 
 public:
    /*
