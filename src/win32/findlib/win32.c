@@ -29,8 +29,6 @@
 #include "find.h"
 #include "lib/cbuf.h"
 
-
-
 /*
  * For VSS we need to know which windows drives are used, because we create a snapshot
  * of all used drives. This function returns the number of used drives and fills
@@ -336,6 +334,23 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
    if (count_include_list_file_entries(ff) == 0 ) {
       Qmsg(jcr, M_INFO, 1, _("Fileset has no \"File=\" directives, ignoring FilesNotToBackup Registry key\n"));
       return true;
+   }
+
+   /*
+    * If autoexclude is set to no in fileset options somewhere, we do not
+    * automatically exclude files from FilesNotToBackup Registry Key
+    */
+   for (int i = 0; i < ff->fileset->include_list.size(); i++) {
+      findINCEXE *incexe = (findINCEXE *)ff->fileset->include_list.get(i);
+
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+         if (bit_is_set(FO_NO_AUTOEXCL, fo->flags)) {
+            Qmsg(jcr, M_INFO, 1, _("Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key\n"));
+            return true;
+         }
+      }
    }
 
    retCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(REGISTRY_KEY), 0, KEY_READ, &hKey);
