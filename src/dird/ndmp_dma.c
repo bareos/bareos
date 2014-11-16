@@ -83,7 +83,7 @@ struct ndmp_fhdb_root {
    int8_t FileType;               /* Type of File */
    int32_t FileIndex;             /* File index */
    int32_t Offset;                /* File Offset in NDMP stream */
-   int32_t inode;                 /* Inode nr */
+   uint32_t inode;                /* Inode nr */
    uint16_t fname_len;            /* Filename length */
    ndmp_fhdb_node *next;
    ndmp_fhdb_node *parent;
@@ -1819,7 +1819,7 @@ static inline int native_to_ndmp_loglevel(CLIENTRES *client, int debuglevel, NIS
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   int internal_level = level * 100;
+   int internal_level;
    NIS *nis;
 
    /*
@@ -1839,7 +1839,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
     * If the log level of this message is under our logging treshold we
     * log it as part of the Job.
     */
-   if ((internal_level / 100) <= nis->LogLevel) {
+   if (level <= (int)nis->LogLevel) {
       if (nis->jcr) {
          /*
           * Look at the tag field to see what is logged.
@@ -1887,7 +1887,8 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
     * level and let the normal debug logging handle if it needs to be printed
     * or not.
     */
-   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, (internal_level / 100), msg);
+   internal_level = level * 100;
+   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
 
 /*
