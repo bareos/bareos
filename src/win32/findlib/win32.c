@@ -407,13 +407,17 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
             Dmsg0(100, "Fileset has include block(s), using first one\n");
          }
 
-
          include = (findINCEXE*)ff->fileset->include_list.get(0);
-         /*
-          * Create new options block in include block for the wildcard excludes
-          */
-         Dmsg0(100, "prepending new options block\n");
-         new_options(ff, ff->fileset->incexe);
+
+         if (include->opts_list.size() == 0) {
+            /*
+             * Create new options block in include block for the wildcard excludes
+             */
+            Dmsg0(100, "prepending new options block\n");
+            new_options(ff, ff->fileset->incexe);
+         } else {
+            Dmsg0(100, "reusing existing options block\n");
+         }
          fo = (findFOPTS *)include->opts_list.get(0);
          set_bit(FO_EXCLUDE, fo->flags);               /* exclude = yes */
          set_bit(FO_IGNORECASE, fo->flags);            /* ignore case = yes */
@@ -453,47 +457,53 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
                      ExpandEnvironmentStrings(lpValue, expandedKey.c_str(), expandedKey.size());
                      Dmsg1(100, "        \"%s\"\n", expandedKey.c_str());
 
-                     pm_strcpy(destination, "");
-
                      /*
-                      * Do all post processing.
-                      * - Replace '\' by '/'
-                      * - Strip any trailing /s patterns.
-                      * - Check if wildcards are used.
+                      * Never add single character entries. Probably known buggy DRM Entry in Windows XP / 2003
                       */
-                     s = expandedKey.c_str();
-                     d = destination.c_str();
+                     if (strlen(expandedKey.c_str()) <= 1) {
+                        Dmsg0(100, TEXT("Single character entry ignored. Probably reading buggy DRM entry on Windows XP/2003 SP 1 and later\n"));
+                     } else {
+                        pm_strcpy(destination, "");
 
-                     /*
-                      * Begin with \ means all drives
-                      */
-                     if (*s == '\\') {
-                        d += pm_strcpy(destination, "[A-Z]:");
-                     }
+                        /*
+                         * Do all post processing.
+                         * - Replace '\' by '/'
+                         * - Strip any trailing /s patterns.
+                         * - Check if wildcards are used.
+                         */
+                        s = expandedKey.c_str();
+                        d = destination.c_str();
 
-                     while (*s) {
-                        switch (*s) {
-                        case '\\':
-                           *d++ = '/';
-                           s++;
-                           break;
-                        case ' ':
-                           if (bstrcmp(s, " /s")) {
-                              *d = '\0';
-                              *s = '\0';
-                              continue;
-                           }
-                           /* FALLTHROUGH */
-                        default:
-                           *d++ = *s++;
-                           break;
+                        /*
+                         * Begin with \ means all drives
+                         */
+                        if (*s == '\\') {
+                           d += pm_strcpy(destination, "[A-Z]:");
                         }
+
+                        while (*s) {
+                           switch (*s) {
+                              case '\\':
+                                 *d++ = '/';
+                                 s++;
+                                 break;
+                              case ' ':
+                                 if (bstrcmp(s, " /s")) {
+                                    *d = '\0';
+                                    *s = '\0';
+                                    continue;
+                                 }
+                                 /* FALLTHROUGH */
+                              default:
+                                 *d++ = *s++;
+                                 break;
+                           }
+                        }
+                        *d = '\0';
+                        Dmsg1(100, "    ->  \"%s\"\n", destination.c_str() );
+                        fo->wild.append(bstrdup(destination.c_str()));
+                        wild_count++;
                      }
-
-                     *d = '\0';
-
-                     fo->wild.append(bstrdup(destination.c_str()));
-                     wild_count++;
                   }
                } else {
                   Dmsg0(100, TEXT("RegGetValue failed \n"));

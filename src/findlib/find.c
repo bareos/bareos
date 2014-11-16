@@ -351,6 +351,7 @@ bool accept_file(FF_PKT *ff)
           fo->regexdir.size() == 0 && fo->wilddir.size() == 0 &&
           fo->regexfile.size() == 0 && fo->wildfile.size() == 0 &&
           fo->wildbase.size() == 0) {
+         Dmsg1(dbglvl, "Empty options, rejecting: %s\n", ff->fname);
          return false;              /* reject file */
       }
    }
