@@ -177,7 +177,7 @@ static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
 {
-   unsigned int internal_level = level * 100;
+   int internal_level;
    NIS *nis;
 
    /*
@@ -197,7 +197,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
     * If the log level of this message is under our logging treshold we
     * log it as part of the Job.
     */
-   if ((internal_level / 100) <= nis->LogLevel) {
+   if (level <= (int)nis->LogLevel) {
       if (nis->jcr) {
          /*
           * Look at the tag field to see what is logged.
@@ -245,7 +245,8 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
     * level and let the normal debug logging handle if it needs to be printed
     * or not.
     */
-   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, (internal_level / 100), msg);
+   internal_level = level * 100;
+   Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
 
 /*
