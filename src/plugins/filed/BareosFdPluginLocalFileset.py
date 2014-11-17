@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# BAREOS® - Backup Archiving REcovery Open Sourced
+# BAREOS - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 #
