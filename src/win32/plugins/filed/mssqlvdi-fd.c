@@ -1098,7 +1098,7 @@ static inline void perform_ado_backup(bpContext *ctx)
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    POOL_MEM ado_connect_string(PM_NAME),
             ado_query(PM_NAME);
-   char vdsname[VDS_NAME_LENGTH + 1];
+   POOLMEM *vdsname;
 
    /*
     * If no explicit instance name given usedthe DEFAULT_INSTANCE name.
@@ -1109,7 +1109,9 @@ static inline void perform_ado_backup(bpContext *ctx)
 
    set_ado_connect_string(ctx);
 
-   sprintf_s(vdsname, sizeof(vdsname), "%S", p_ctx->vdsname);
+   vdsname = get_pool_memory(PM_NAME);
+   wchar_2_UTF8(&vdsname, p_ctx->vdsname);
+
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
       Mmsg(ado_query,
@@ -1143,6 +1145,7 @@ static inline void perform_ado_backup(bpContext *ctx)
    Dmsg(ctx, dbglvl, "perform_ado_backup: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
+   free_pool_memory(vdsname);
 }
 
 /*
@@ -1153,7 +1156,7 @@ static inline void perform_ado_restore(bpContext *ctx)
 {
    POOL_MEM ado_query(PM_NAME),
             temp(PM_NAME);
-   char vdsname[VDS_NAME_LENGTH + 1];
+   POOLMEM *vdsname;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    /*
@@ -1165,7 +1168,9 @@ static inline void perform_ado_restore(bpContext *ctx)
 
    set_ado_connect_string(ctx);
 
-   sprintf_s(vdsname, sizeof(vdsname), "%S", p_ctx->vdsname);
+   vdsname = get_pool_memory(PM_NAME);
+   wchar_2_UTF8(&vdsname, p_ctx->vdsname);
+
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
       Mmsg(ado_query,
@@ -1223,6 +1228,7 @@ static inline void perform_ado_restore(bpContext *ctx)
    Dmsg(ctx, dbglvl, "perform_ado_restore: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
+   free_pool_memory(vdsname);
 }
 
 
