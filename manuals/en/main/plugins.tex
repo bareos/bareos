@@ -89,8 +89,51 @@ See chapter \nameref{MSSQL}.
 \subsection{python-fd Plugin}
 \index[general]{Plugin!Python!File Daemon}
 
-The \name{python-fd} plugin behaves similar to the \nameref{director-python-plugin}.
+The \name{python-fd} plugin behaves similar to the \nameref{director-python-plugin}. Base plugins and an example get installed via the package bareos-filedaemon-python-plugin.
+Configuration is done in the FileSet-resource on the director.
 
+We basically distinguish between command-plugin and option-plugins. 
+
+\subsubsection{Command Plugins}
+Command plugins are used to replace or extend the FileSet definition in the File Section. If you have a command-plugin, 
+you can use it like in this example:
+
+\begin{bconfig}{bareos-dir.conf: Python FD command plugins}
+FileSet {
+  Name = "mysql"
+  Include {
+    Options {
+      Signature = MD5 # calculate md5 checksum per file
+    }
+    File = "/etc"
+   Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-mysql"
+  }
+} 
+\end{bconfig}
+
+This example uses the MySQL\index[general]{MySQL!Backup} plugin from \elink{GIT}{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} to backup MySQL dumps in addition to /etc.
+
+\subsubsection{Option Plugins}
+Option plugins are activated in the Options resource of a FileSet definition.
+
+Example:
+
+\begin{bconfig}{bareos-dir.conf: Python FD option plugins}
+FileSet {
+  Name = "option"
+  Include {
+    Options {
+      Signature = MD5 # calculate md5 checksum per file
+      Plugin = "python:module_path=/usr/lib/bareos/plugins:module_name=bareos-fd-file-interact"
+    }
+    File = "/etc"
+    File = "/usr/lib/bareos/plugins"
+  }
+}
+\end{bconfig}
+
+This plugin bareos-fd-file-interact from \elink{GIT}{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/options-plugin-sample} has a method that is called before and after each file that goes into the backup,
+it can be used as a template for whatever plugin wants to interact with files before or after backup.
 
 \section{Storage Daemon Plugins}
 \label{sdPlugins}
@@ -193,4 +236,43 @@ A working example is included.
 
 \begin{itemize}
     \item Currently there can be only one Python plugin per Director. The plugin only loads the file \file{bareos-dir.py}.
+    \item Fixed since 14.4: now multiple Python plugins can be loaded and plugin names can be arbitrary.
 \end{itemize}
+
+\subsubsection{Loading plugins}
+
+The director plugins are configured in the Job-Resource (or JobDefs resource). To load a Python plugin you need
+\begin{itemize}
+ \item [module\_path= ] pointing to your plugin directory (needs to be enabled in the Director resource, too
+ \item [module\_name= ] Your plugin (without the suffix .py)
+ \item [instance= ] default is '0', you can leave this, as long as you only have 1 Director Python plugin. If you have more than 1, start with instance=0 and increment the instance for each plugin.
+ \item You can add plugin specific option key-value pairs, each pair separated by ':' key=value
+\end{itemize}
+
+
+Example:
+
+\begin{bconfig}{bareos-dir.conf: Python Plugins}
+
+Director {
+  # ...
+  # Plugin directory
+  Plugin Directory = /usr/lib64/bareos/plugins
+  # Load the python plugin
+  Plugin Names = "python"
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  # ...
+  # Load the class based plugin with testoption=testparam
+  DIR Plugin Options ="python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam
+  # ...
+}
+\end{bconfig}
+
+\subsubsection{Write your own Python Plugin}
+Some plugin examples are available on \elink{GIT}{https://github.com/bareos/bareos-contrib}. The class-based approach lets you easily reuse stuff already
+defined in the baseclass BareosDirPluginBaseclass, which ships with the bareos-director-python-plugin package.
+The examples contain the plugin bareos-dir-nsca-sender, that submits the results and performance data of a backup job directly to Icinga\index[general]{Icinga} or Nagios\index[general]{Nagios|see{Icinga}} using the NSCA protocol.
