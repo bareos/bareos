@@ -46,7 +46,7 @@ class BareosDirPluginNscaSender(BareosDirPluginBaseclass.BareosDirPluginBaseclas
             self.monitorHost = self.options['monitorHost']
         if not 'encryption' in self.options:
             DebugMessage(context, 100, "Paraemter encryption not set for plugin %s. Setting to 0 (no encryption)" %(self.__class__))
-            self.encryption= 0; 
+            self.encryption= 1; # XOR is nsca default 
         else:
             self.encryption = int(self.options['encryption'])
         if not 'monitorPort' in self.options:
