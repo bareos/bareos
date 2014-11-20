@@ -3036,7 +3036,7 @@ static void PyStatPacket_dealloc(PyStatPacket *self)
  */
 static inline const char *print_flags_bitmap(PyObject *bitmap)
 {
-   static char visual_bitmap[FOPTS_BYTES];
+   static char visual_bitmap[FO_MAX + 1];
 
    if (PyByteArray_Check(bitmap)) {
       int cnt;
