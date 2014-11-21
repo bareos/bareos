@@ -585,7 +585,7 @@ void do_restore(JCR *jcr)
          rctx.extract = false;
          status = CF_CORE;        /* By default, let Bareos's core handle it */
 
-         if (jcr->plugin_ctx && jcr->plugin_ctx->plugin) {
+         if (jcr->is_plugin()) {
             status = plugin_create_file(jcr, attr, &rctx.bfd, jcr->replace);
          }
 
@@ -640,7 +640,7 @@ void do_restore(JCR *jcr)
                /*
                 * Set attributes now because file will not be extracted
                 */
-               if (jcr->plugin_ctx && jcr->plugin_ctx->plugin) {
+               if (jcr->is_plugin()) {
                   plugin_set_attributes(jcr, attr, &rctx.bfd);
                } else {
                   set_attributes(jcr, attr, &rctx.bfd);
@@ -1341,7 +1341,7 @@ static bool close_previous_stream(JCR *jcr, r_ctx &rctx)
       }
 #endif
 
-      if (rctx.jcr->plugin_ctx && rctx.jcr->plugin_ctx->plugin) {
+      if (jcr->is_plugin()) {
          plugin_set_attributes(rctx.jcr, rctx.attr, &rctx.bfd);
       } else {
          set_attributes(rctx.jcr, rctx.attr, &rctx.bfd);

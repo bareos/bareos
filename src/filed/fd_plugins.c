@@ -354,7 +354,6 @@ bool plugin_check_file(JCR *jcr, char *fname)
       }
 
       jcr->plugin_ctx = ctx;
-
       if (plug_func(ctx->plugin)->checkFile == NULL) {
          continue;
       }
@@ -364,8 +363,6 @@ bool plugin_check_file(JCR *jcr, char *fname)
          break;
       }
    }
-
-   jcr->plugin_ctx = NULL;
 
    return ret == bRC_Seen;
 }
@@ -411,7 +408,7 @@ static bool get_plugin_name(JCR *jcr, char *cmd, int *ret)
    return true;
 }
 
-static void update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
+void plugin_update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
 {
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
@@ -507,24 +504,7 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
       }
 
       jcr->plugin_ctx = ctx;
-
       ret = plug_func(ctx->plugin)->handlePluginEvent(ctx, &event, sp);
-
-      /*
-       * TODO: would be better to set this in save_file()
-       */
-      if (ret == bRC_OK) {
-         jcr->opt_plugin = true;
-         jcr->plugin_sp = sp;      /* Unset sp in save_file */
-         jcr->plugin_ctx = ctx;
-
-         update_ff_pkt(ff_pkt, sp);
-      } else {
-         /*
-          * Reset plugin in JCR if not used this time
-          */
-         jcr->plugin_ctx = NULL;
-      }
 
       goto bail_out;
    } /* end foreach loop */
@@ -666,7 +646,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             ff_pkt->fname = fname.c_str();
             ff_pkt->link = link.c_str();
 
-            update_ff_pkt(ff_pkt, &sp);
+            plugin_update_ff_pkt(ff_pkt, &sp);
          }
 
          memcpy(&ff_pkt->statp, &sp.statp, sizeof(ff_pkt->statp));
@@ -753,7 +733,6 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
 bail_out:
    jcr->cmd_plugin = false;
-   jcr->plugin_ctx = NULL;
 
    return 1;
 }
@@ -917,7 +896,6 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 
 bail_out:
    jcr->cmd_plugin = false;
-   jcr->plugin_ctx = NULL;
 
    return 1;
 }
@@ -1000,7 +978,6 @@ bool plugin_name_stream(JCR *jcr, char *name)
        */
       skip_nonspaces(&p);          /* skip start/end flag */
       skip_spaces(&p);
-//    portable = *p == '1';
       skip_nonspaces(&p);          /* skip portable flag */
       skip_spaces(&p);
       cmd = p;
@@ -1008,17 +985,18 @@ bool plugin_name_stream(JCR *jcr, char *name)
       /*
        * End of plugin data, notify plugin, then clear flags
        */
-      b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
+      if (jcr->plugin_ctx) {
+         Plugin *plugin = jcr->plugin_ctx->plugin;
+         b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
 
-      Dmsg2(dbglvl, "End plugin data plugin=%p ctx=%p\n", jcr->plugin_ctx->plugin, jcr->plugin_ctx);
-      if (jcr->plugin_ctx->plugin && b_ctx->restoreFileStarted) {
-         plug_func(jcr->plugin_ctx->plugin)->endRestoreFile(jcr->plugin_ctx);
-      }
-      if (jcr->plugin_ctx->plugin) {
+         Dmsg2(dbglvl, "End plugin data plugin=%p ctx=%p\n", plugin, jcr->plugin_ctx);
+         if (b_ctx->restoreFileStarted) {
+            plug_func(plugin)->endRestoreFile(jcr->plugin_ctx);
+         }
          b_ctx->restoreFileStarted = false;
          b_ctx->createFileCalled = false;
       }
-      jcr->plugin_ctx = NULL;
+
       goto bail_out;
    }
 
@@ -1062,6 +1040,7 @@ bool plugin_name_stream(JCR *jcr, char *name)
       }
 
       jcr->plugin_ctx = ctx;
+      jcr->cmd_plugin = true;
       b_ctx = (b_plugin_ctx *)ctx->bContext;
 
       if (plug_func(ctx->plugin)->handlePluginEvent(jcr->plugin_ctx, &event, cmd) != bRC_OK) {
@@ -1077,22 +1056,15 @@ bool plugin_name_stream(JCR *jcr, char *name)
 
       if (plug_func(ctx->plugin)->startRestoreFile(jcr->plugin_ctx, cmd) == bRC_OK) {
          b_ctx->restoreFileStarted = true;
-         goto ok_out;
+         goto bail_out;
       } else {
          Dmsg1(dbglvl, "startRestoreFile failed. plugin=%s\n", cmd);
+         goto bail_out;
       }
-
-      goto bail_out;
    }
    Jmsg1(jcr, M_WARNING, 0, _("Plugin=%s not found.\n"), cmd);
-   goto bail_out;
-
-ok_out:
-   return start;
 
 bail_out:
-   jcr->plugin_ctx = NULL;
-
    return start;
 }
 
@@ -1203,14 +1175,15 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
  */
 bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct restore_pkt rp;
 
    Dmsg0(dbglvl, "plugin_set_attributes\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return false;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&rp, 0, sizeof(rp));
    rp.pkt_size = sizeof(rp);
@@ -1251,13 +1224,14 @@ bacl_exit_code plugin_build_acl_streams(JCR *jcr,
                                         acl_data_t *acl_data,
                                         FF_PKT *ff_pkt)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
 
    Dmsg0(dbglvl, "plugin_build_acl_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bacl_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->getAcl == NULL) {
       return bacl_exit_ok;
@@ -1300,13 +1274,14 @@ bacl_exit_code plugin_parse_acl_streams(JCR *jcr,
                                         char *content,
                                         uint32_t content_length)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
 
    Dmsg0(dbglvl, "plugin_parse_acl_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bacl_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->setAcl == NULL) {
       return bacl_exit_error;
@@ -1341,15 +1316,16 @@ bxattr_exit_code plugin_build_xattr_streams(JCR *jcr,
                                             struct xattr_data_t *xattr_data,
                                             FF_PKT *ff_pkt)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    alist *xattr_value_list = NULL;
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_build_xattr_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bxattr_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    if (plug_func(plugin)->getXattr == NULL) {
       return bxattr_exit_ok;
@@ -1473,15 +1449,16 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
                                             char *content,
                                             uint32_t content_length)
 {
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    alist *xattr_value_list = NULL;
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_parse_xattr_streams\n");
 
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return bxattr_exit_ok;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
 #if defined(HAVE_XATTR)
    if (plug_func(plugin)->setXattr != NULL) {
@@ -1749,14 +1726,15 @@ void free_plugins(JCR *jcr)
  */
 static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg1(dbglvl, "plugin_bopen flags=%x\n", flags);
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1787,14 +1765,15 @@ static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode
  */
 static int my_plugin_bclose(BFILE *bfd)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "===== plugin_bclose\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1822,14 +1801,15 @@ static int my_plugin_bclose(BFILE *bfd)
  */
 static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bread\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1858,15 +1838,16 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
  */
 static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bwrite\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       Dmsg0(0, "No plugin context\n");
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
    memset(&io, 0, sizeof(io));
    io.pkt_size = sizeof(io);
@@ -1894,14 +1875,16 @@ static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
  */
 static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
 {
-   JCR *jcr = bfd->jcr;
-   Plugin *plugin = (Plugin *)jcr->plugin_ctx->plugin;
+   Plugin *plugin;
    struct io_pkt io;
+   JCR *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bseek\n");
-   if (!plugin || !jcr->plugin_ctx) {
+   if (!jcr->plugin_ctx) {
       return 0;
    }
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
+
    io.pkt_size = sizeof(io);
    io.pkt_end = sizeof(io);
    io.func = IO_SEEK;

@@ -271,6 +271,7 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr, struct xattr_data_t *xattr
 int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 bool plugin_check_file(JCR *jcr, char *fname);
+void plugin_update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp);
 bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp);
 #endif
 

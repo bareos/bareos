@@ -298,8 +298,13 @@ public:
    int32_t getJobStatus() const { return JobStatus; };
    int32_t getJobProtocol() const { return m_Protocol; };
    bool no_client_used() const {
-      return (m_JobType == JT_MIGRATE || m_JobType == JT_COPY ||
+      return (m_JobType == JT_MIGRATE ||
+              m_JobType == JT_COPY ||
               m_JobLevel == L_VIRTUAL_FULL);
+   };
+   bool is_plugin() const {
+      return (cmd_plugin ||
+              opt_plugin);
    };
    const char *get_OperationName();       /* in lib/jcr.c */
    const char *get_ActionName(bool past = false); /* in lib/jcr.c */

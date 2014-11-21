@@ -426,7 +426,7 @@ static inline bool do_backup_acl(JCR *jcr, FF_PKT *ff_pkt)
    jcr->acl_data->filetype = ff_pkt->type;
    jcr->acl_data->last_fname = jcr->last_fname;
 
-   if (jcr->cmd_plugin) {
+   if (jcr->is_plugin()) {
       retval = plugin_build_acl_streams(jcr, jcr->acl_data, ff_pkt);
    } else {
       retval = build_acl_streams(jcr, jcr->acl_data, ff_pkt);
@@ -459,7 +459,7 @@ static inline bool do_backup_xattr(JCR *jcr, FF_PKT *ff_pkt)
 
    jcr->xattr_data->last_fname = jcr->last_fname;
 
-   if (jcr->cmd_plugin) {
+   if (jcr->is_plugin()) {
       retval = plugin_build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
    } else {
       retval = build_xattr_streams(jcr, jcr->xattr_data, ff_pkt);
@@ -663,6 +663,9 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
       switch (plugin_option_handle_file(jcr, ff_pkt, &sp)) {
       case bRC_OK:
          Dmsg2(10, "Option plugin %s will be used to backup %s\n", ff_pkt->plugin, ff_pkt->fname);
+         jcr->opt_plugin = true;
+         jcr->plugin_sp = &sp;
+         plugin_update_ff_pkt(ff_pkt, &sp);
          do_plugin_set = true;
          break;
       case bRC_Skip:
@@ -866,7 +869,6 @@ bail_out:
    }
    if (ff_pkt->opt_plugin) {
       jcr->plugin_sp = NULL;            /* sp is local to this function */
-      jcr->plugin_ctx = NULL;
       jcr->opt_plugin = false;
    }
    if (bsctx.digest) {
