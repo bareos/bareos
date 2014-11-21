@@ -67,6 +67,8 @@ Source4:         storagedialog.ini
 Source5:         KillProcWMI.dll
 Source6:         bareos.ico
 Source7:         AccessControl.dll
+Source8:         LogEx.dll
+Source9:         databasedialog.ini
 %description
 bareos
 
@@ -88,6 +90,7 @@ bareos
 mkdir -p $RPM_BUILD_ROOT/nsisplugins
 cp %SOURCE5 $RPM_BUILD_ROOT/nsisplugins  #  KillProcWMI
 cp %SOURCE7 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
+cp %SOURCE8 $RPM_BUILD_ROOT/nsisplugins  #  LogEx
 
 mkdir $RPM_BUILD_ROOT/release32
 mkdir $RPM_BUILD_ROOT/release64
@@ -153,8 +156,8 @@ for cfg in /etc/mingw64-winbareos/*.conf; do
    cp $cfg $RPM_BUILD_ROOT/release64
 done
 
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %SOURCE7 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE5 %SOURCE6 %SOURCE7 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
+cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
 
 makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release32/winbareos.nsi
 makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release64/winbareos.nsi
