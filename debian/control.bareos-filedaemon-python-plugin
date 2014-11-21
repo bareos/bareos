@@ -1,5 +1,6 @@
 Package:        bareos-filedaemon-python-plugin
 Architecture:   any
+Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - filedaemon-python-plugin

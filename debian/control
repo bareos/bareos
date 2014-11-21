@@ -312,6 +312,7 @@ Description: Backup Archiving Recovery Open Sourced - Bareos Admin Tool (BAT)
 
 Package:        bareos-director-python-plugin
 Architecture:   any
+Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - director-python-plugin
@@ -322,6 +323,7 @@ Description: Backup Archiving Recovery Open Sourced - director-python-plugin
 
 Package:        bareos-filedaemon-python-plugin
 Architecture:   any
+Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - filedaemon-python-plugin
@@ -332,6 +334,7 @@ Description: Backup Archiving Recovery Open Sourced - filedaemon-python-plugin
 
 Package:        bareos-storage-python-plugin
 Architecture:   any
+Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - storage-python-plugin
