@@ -1,7 +1,7 @@
 ;
 ;   BAREOS?? - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2013 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2014 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,10 @@
 RequestExecutionLevel admin
 
 !addplugindir ../nsisplugins
+
+#SilentInstall silentlog
+
+BrandingText "Bareos Installer"
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Bareos"
@@ -69,6 +73,12 @@ Var DbPort
 Var DbUser
 Var DbName
 Var DbEncoding
+Var DbAdminPassword
+Var DbAdminUser
+
+# do we need to install Director/Storage (Cmdline setting)
+Var InstallDirector
+Var InstallStorage
 
 # Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
@@ -85,6 +95,11 @@ Var SilentKeepConfig
 # keep the existing config files silently and skip
 # the param dialogs and the config snippet dialog
 Var Upgrading
+
+
+# variable if we do write logs or not
+#
+Var WriteLogs
 
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
@@ -125,17 +140,19 @@ ${StrRep}
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 
+
 ; Components page
 !insertmacro MUI_PAGE_COMPONENTS
 
-; Check if database server is installed
-Page custom checkForDatabase
 
 ; Custom für Abfragen benötigter Parameter für den Client
 Page custom getClientParameters
 
 ; Custom für Abfragen benötigter Parameter für den Zugriff auf director
 Page custom getDirectorParameters
+
+
+Page custom getDatabaseParameters getDatabaseParametersLeave
 
 ; Custom für Abfragen benötigter Parameter für den Storage
 Page custom getStorageParameters
@@ -169,6 +186,82 @@ FunctionEnd
 
 ; MUI end ------
 
+# check for the connection of the admin user with DbAdminUser/DbAdminPass
+# if not successfull, abort
+# this will quit the silent installer
+# and jump back to the db param dialog in interactive installer
+!macro CheckDbAdminConnection
+
+!define UniqueID ${__LINE__} # create a unique Id to be able to use labels in the macro.
+# See http://nsis.sourceforge.net/Tutorial:_Using_labels_in_macro%27s
+
+# search for value of HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL Global Development Group\PostgreSQL,  Key "Location"
+    ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
+
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Init false $INSTDIR\sql.log
+# now check if we can login with DbAdminUser and DbAdminPassword
+    StrCpy $R0 "$PostgresPath"
+    StrCpy $R1 "\bin"
+    StrCpy $PostgresBinPath "$R0$R1" # create postgresbinpath
+    StrCmp $WriteLogs "yes" 0 +2
+      LogEx::Write "PostgresPath=$PostgresPath"
+
+    # set postgres username and password in environment
+    System::Call 'kernel32::SetEnvironmentVariable(t "PGUSER", t "$DbAdminUser")i.r0'
+    System::Call 'kernel32::SetEnvironmentVariable(t "PGPASSWORD", t "$DbAdminPassword")i.r0'
+
+    DetailPrint "Now trying to log into the postgres server with the DbAdmin User and Password"
+    DetailPrint "Running $PostgresBinPath\psql.exe -c \copyright"
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Write "Running $PostgresBinPath\psql.exe -c \copyright"
+
+    nsExec::Exec /TIMEOUT=10000 "$PostgresBinPath\psql.exe -c \copyright"
+    Pop $0 # return value/error/timeout
+    DetailPrint "Return Value is $0"
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Write "Return Value is $0"
+    ${select} $0
+       ${case} "1"
+         DetailPrint "psql.exe was killed"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "psql.exe was killed"
+       ${case} "2"
+         DetailPrint "connection failed, username or password wrong?"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "connection failed, username or password wrong?"
+       ${case} "timeout"
+         DetailPrint "connection timed out, probably password is wrong?"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "connection timed out, probably password is wrong?"
+       ${case} "error"
+         DetailPrint "could not execute $PostgresBinPath\psql.exe"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "could not execute $PostgresBinPath\psql.exe"
+       ${case} "0"
+         DetailPrint "success"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "success"
+         goto afterabort_${UniqueID}
+       ${caseelse}
+         DetailPrint "Unknown problem executing $PostgresBinPath\psql.exe"
+         StrCmp $WriteLogs "yes" 0 +2
+            LogEx::Write "Unknown problem executing $PostgresBinPath\psql.exe"
+    ${endselect}
+   MessageBox MB_OK|MB_ICONSTOP "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service" /SD IDOK
+   StrCmp $WriteLogs "yes" 0 +2
+      LogEx::Write "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service"
+   StrCmp $WriteLogs "yes" 0 +2
+      LogEx::Close
+      FileOpen $R1 $TEMP\abortreason.txt w
+      FileWrite $R1 "database connection failed"
+      FileClose $R1
+   abort
+
+afterabort_${UniqueID}:
+!undef UniqueID
+
+!macroend
 
 #
 # move existing conf files to .old
@@ -350,7 +443,6 @@ Section -SetPasswords
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#with password '$DbPassword'#g$\r$\n"
-
   FileClose $R1
   #
   # config files for bconsole and bat to access remote director
@@ -383,6 +475,19 @@ Section -SetPasswords
 #  FileWrite $R1 '}$\n'
 #
 #  FileClose $R1
+SectionEnd
+
+
+#; Check if database server is installed only in silent mode
+# otherwise this is done in the database dialog
+#
+Section -DataBaseCheck
+
+IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
+
+!insertmacro CheckDbAdminConnection
+
+DataBaseCheckEnd:
 SectionEnd
 
 !If ${WIN_DEBUG} == yes
@@ -581,16 +686,17 @@ SectionIn 2
   FileWrite $R1 'REM $\r$\n'
   FileWrite $R1 'REM  create postgresql database $\r$\n'
   FileWrite $R1 "SET PATH=%PATH%;$\"$PostgresBinPath$\"$\r$\n"
+
   FileWrite $R1 "cd $APPDATA\${PRODUCT_NAME}\scripts\$\r$\n"
 
   FileWrite $R1 "echo creating bareos database$\r$\n"
-  FileWrite $R1 "psql.exe -U postgres -f postgresql-createdb.sql$\r$\n"
+  FileWrite $R1 "psql.exe -f postgresql-createdb.sql$\r$\n"
 
   FileWrite $R1 "echo creating bareos database tables$\r$\n"
-  FileWrite $R1 "psql.exe -U postgres -f postgresql-create.sql $DbName$\r$\n"
+  FileWrite $R1 "psql.exe -f postgresql-create.sql $DbName$\r$\n"
 
   FileWrite $R1 "echo granting bareos database rights$\r$\n"
-  FileWrite $R1 "psql.exe -U postgres -f postgresql-grant.sql $DbName$\r$\n"
+  FileWrite $R1 "psql.exe -f postgresql-grant.sql $DbName$\r$\n"
   FileClose $R1
 
   #
@@ -793,11 +899,26 @@ Section -StartDaemon
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_DIR}
-      MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
-                     $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
-                     with administrator rights now." /SD IDOK
-
+    #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
+    #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
+    #                 with administrator rights now." /SD IDOK
+    LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Init false $INSTDIR\sql.log
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+    nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
+    #nsExec::ExecToStack "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+    #    Pop $0 # return value/error/timeout
+    #    Pop $1 # printed text, up to ${NSIS_MAX_STRLEN}
+    #    DetailPrint $1
+    #    LogText $1
+    LogText "### Executing net start bareos-dir"
     nsExec::ExecToLog "net start bareos-dir"
+    StrCmp $WriteLogs "yes" 0 +2
+       LogEx::Close
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
@@ -849,6 +970,63 @@ Function GetHostName
 FunctionEnd
 
 Function .onInit
+
+# Parameters:
+# Needed for Client and Tray-Mon:
+#
+#   Client Name
+#
+#   Director Name
+#   Client Password
+#   Client Network Address
+#
+#   Client Monitor Password
+#
+# Needed for Bconsole/Bat:
+#
+#   Director Network Address
+#   Director Password
+#
+
+  var /GLOBAL cmdLineParams
+
+  # Installer Options
+  ${GetParameters} $cmdLineParams
+  ClearErrors
+
+  #  /? param (help)
+  ClearErrors
+  ${GetOptions} $cmdLineParams '/?' $R0
+  IfErrors +3 0
+  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource] $\r$\n\
+                    [/CLIENTPASSWORD=Password to access the client]  $\r$\n\
+                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
+                    [/CLIENTADDRESS=Network Address of the client] $\r$\n\
+                    [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
+                    [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
+                    $\r$\n\
+                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
+                    [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
+                    $\r$\n\
+                    [/STORAGENAME=Name of the storage ressource] $\r$\n\
+                    [/STORAGEPASSWORD=Password to access the storage]  $\r$\n\
+                    [/STORAGEADDRESS=Network Address of the storage] $\r$\n\
+                    [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
+                    $\r$\n\
+                    [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]  $\r$\n\
+                    [/DBADMINUSER=Database Admin User]  $\r$\n\
+                    [/DBADMINPASSWORD=Database Admin Password]  $\r$\n\
+                    [/INSTALLSTORAGE  Installs Storage Daemon and Components]  $\r$\n\
+                    $\r$\n\
+                    [/S silent install without user interaction]$\r$\n\
+                        (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
+                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install]$\r$\n\
+                    [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
+                    [/? (this help dialog)] $\r$\n\
+                    [/WRITELOGS lets the installer create log files in INSTDIR"
+#                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
+  Abort
+
   # Check if this is Windows NT.
   StrCpy $OsIsNT 0
   ReadRegStr $R0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
@@ -923,58 +1101,12 @@ uninst:
 
 no_remove_uninstaller:
   MessageBox MB_OK|MB_ICONEXCLAMATION "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
+      FileOpen $R1 $TEMP\abortreason.txt w
+      FileWrite $R1 "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
+      FileClose $R1
   abort
 
 done:
-# Parameters:
-# Needed for Client and Tray-Mon:
-#
-#   Client Name
-#
-#   Director Name
-#   Client Password
-#   Client Network Address
-#
-#   Client Monitor Password
-#
-# Needed for Bconsole/Bat:
-#
-#   Director Network Address
-#   Director Password
-#
-
-  var /GLOBAL cmdLineParams
-
-  # Installer Options
-  ${GetParameters} $cmdLineParams
-  ClearErrors
-
-  #  /? param (help)
-  ClearErrors
-  ${GetOptions} $cmdLineParams '/?' $R0
-  IfErrors +3 0
-  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource] $\r$\n\
-                    [/CLIENTPASSWORD=Password to access the client]  $\r$\n\
-                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
-                    [/CLIENTADDRESS=Network Address of the client] $\r$\n\
-                    [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
-                    [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
-                    $\r$\n\
-                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
-                    [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
-                    $\r$\n\
-                    [/STORAGENAME=Name of the storage ressource] $\r$\n\
-                    [/STORAGEPASSWORD=Password to access the storage]  $\r$\n\
-                    [/STORAGEADDRESS=Network Address of the storage] $\r$\n\
-                    [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
-                    $\r$\n\
-                    [/S silent install without user interaction]$\r$\n\
-                        (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
-                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install]$\r$\n\
-                    [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
-                    [/? (this help dialog)"
-#                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
-  Abort
 
 
 
@@ -1021,6 +1153,32 @@ done:
   ${GetOptions} $cmdLineParams "/STORAGEMONITORPASSWORD=" $StorageMonitorPassword
   ClearErrors
 
+  ${GetOptions} $cmdLineParams "/DBADMINPASSWORD=" $DbAdminPassword
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/DBADMINUSER=" $DbAdminUser
+  ClearErrors
+
+
+  StrCpy $WriteLogs "yes"
+  ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $WriteLogs "no"
+  ClearErrors
+
+
+  StrCpy $InstallDirector "yes"
+  ${GetOptions} $cmdLineParams "/INSTALLDIRECTOR" $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $InstallDirector "no"
+  ClearErrors
+
+  StrCpy $InstallStorage "yes"
+  ${GetOptions} $cmdLineParams "/INSTALLSTORAGE" $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $InstallStorage "no"
+  ClearErrors
+
 
   StrCpy $SilentKeepConfig "yes"
   ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
@@ -1032,6 +1190,7 @@ done:
   File "/oname=$PLUGINSDIR\storagedialog.ini" "storagedialog.ini"
   File "/oname=$PLUGINSDIR\clientdialog.ini" "clientdialog.ini"
   File "/oname=$PLUGINSDIR\directordialog.ini" "directordialog.ini"
+  File "/oname=$PLUGINSDIR\databasedialog.ini" "databasedialog.ini"
   File "/oname=$PLUGINSDIR\openssl.exe" "openssl.exe"
   File "/oname=$PLUGINSDIR\sed.exe" "sed.exe"
 
@@ -1068,10 +1227,25 @@ done:
 
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
-  SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED} # SF_SELECTED
-  SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} # SF_SELECTED
+  SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
+  SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
+
+  StrCmp $InstallDirector "no" dontInstDir
+    SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
+    SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_SELECTED} # director firewall
+    SectionSetFlags ${SEC_DIRPLUGINS} ${SF_SELECTED} # director plugins
+
+  # also install bconsole if director is selected
+    SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
+  dontInstDir:
+
+  StrCmp $InstallStorage "no" dontInstSD
+    SectionSetFlags ${SEC_SD} ${SF_SELECTED} # storage daemon
+    SectionSetFlags ${SEC_FIREWALL_SD} ${SF_SELECTED} # sd firewall
+    SectionSetFlags ${SEC_SDPLUGINS} ${SF_SELECTED} # sd plugins
+  dontInstSD:
 
   # find out the computer name
   Call GetComputerName
@@ -1164,18 +1338,20 @@ done:
   skipdirectormonpassword:
 
 
-
-
 # if the variables are not empty (because of cmdline params),
 # dont set them with our own logic but leave them as they are
   strcmp $ClientName     "" +1 +2
   StrCpy $ClientName    "$HostName-fd"
+
   strcmp $ClientAddress "" +1 +2
   StrCpy $ClientAddress "$HostName"
+
   strcmp $DirectorName   "" +1 +2
   StrCpy $DirectorName  "$HostName-dir"
+
   strcmp $DirectorAddress  "" +1 +2
   StrCpy $DirectorAddress  "$HostName"
+
   strcmp $DirectorPassword "" +1 +2
   StrCpy $DirectorPassword "$DirectorPassword"
 
@@ -1206,33 +1382,26 @@ done:
   strcmp $DbName "" +1 +2
   StrCpy $DbName "bareos"
 
+  strcmp $DbAdminUser "" +1 +2
+  StrCpy $DbAdminUser "postgres"
+
+  strcmp $DbAdminPassword "" +1 +2
+  StrCpy $DbAdminPassword ""
 
 
+!If ${WIN_DEBUG} == yes
+  StrCpy $WriteLogs "yes"
+!EndIf
 
-FunctionEnd
-
-
-#
-## Check for Database
-#
-Function checkForDatabase
-${IfNot} ${SectionIsSelected} ${SEC_DIR}
-   goto dbcheckend
-${EndIf}
-
-# search for value of HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL Global Development Group\PostgreSQL,  Key "Location"
-   ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
-
-   StrCmp $PostgresPath "" postgresnotfound dbcheckend
-
-postgresnotfound:
-
-   MessageBox MB_OK|MB_ICONSTOP "Postgresql installation was not found.$\r$\nPostgresql installation is needed for the bareos director to work. $\r$\nPlease download Postgresql for windows following the instructions on$\r$\nhttp://www.postgresql.org/download/windows/. $\r$\nBareos director on windows was tested with Postgresql 9.3 "
-   Quit
-
-dbcheckend:
+  StrCmp $WriteLogs "yes" 0 +3
+     LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
+     LogText "Logging started, INSTDIR is $INSTDIR"
 
 FunctionEnd
+
+
+
+
 
 #
 # Client Configuration Dialog
@@ -1319,11 +1488,48 @@ ${If} ${SectionIsSelected} ${SEC_BCONSOLE}
   Pop $R0
   ReadINIStr  $DirectorAddress        "$PLUGINSDIR\directordialog.ini" "Field 2" "state"
   ReadINIStr  $DirectorPassword       "$PLUGINSDIR\directordialog.ini" "Field 3" "state"
-
-#  MessageBox MB_OK "$DirectorAddress$\r$\n$DirectorPassword"
 ${EndIf}
 skip:
   Pop $R0
+FunctionEnd
+
+
+
+#
+# Database Configuration Dialog (for bconsole and bat configuration)
+#
+Function getDatabaseParameters
+  Push $R0
+strcmp $Upgrading "yes" skip
+# prefill the dialog fields
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 5" "state" $DbUser
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 6" "state" $DbPassword
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
+  WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
+  InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
+
+  Pop $R0
+
+skip:
+  Pop $R0
+FunctionEnd
+
+Function getDatabaseParametersLeave
+# read values just configured
+  ReadINIStr  $DbAdminUser            "$PLUGINSDIR\databasedialog.ini" "Field 3" "state"
+  ReadINIStr  $DbAdminPassword        "$PLUGINSDIR\databasedialog.ini" "Field 4" "state"
+  ReadINIStr  $DbUser                 "$PLUGINSDIR\databasedialog.ini" "Field 5" "state"
+  ReadINIStr  $DbPassword             "$PLUGINSDIR\databasedialog.ini" "Field 6" "state"
+  ReadINIStr  $DbName                 "$PLUGINSDIR\databasedialog.ini" "Field 7" "state"
+  ReadINIStr  $DbPort                 "$PLUGINSDIR\databasedialog.ini" "Field 8" "state"
+dbcheckend:
+
+!insertmacro CheckDbAdminConnection
+
+   MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+
 FunctionEnd
 
 #
@@ -1471,6 +1677,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"
   Delete "$INSTDIR\Plugins\autoxflate-sd.dll"
   Delete "$INSTDIR\libbareos.dll"
+  Delete "$INSTDIR\libbareossd.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
   Delete "$INSTDIR\libbareoscats.dll"
@@ -1511,7 +1718,6 @@ ConfDeleteSkip:
   RMDir "$APPDATA\${PRODUCT_NAME}\working"
   RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
   RMDir  "$APPDATA\${PRODUCT_NAME}"
-
 
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
@@ -1562,6 +1768,8 @@ ConfDeleteSkip:
   # remove sourcecode
   RMDir /r "C:\bareos-${VERSION}"
 
+  # install log
+  Delete "$INSTDIR\install.txt"
 SectionEnd
 
 Function .onSelChange
