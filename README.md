@@ -6,10 +6,25 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
-Release 14.2.x
+Release 14.4.x
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* Allow multiple python DIR and SD plugins.
+* Class based Python DIR plugin wrappers.
+* Max VirtualFull Interval and Virtual Full Pool override.
+* Support to rados SD backend for libradosstriper
+* Syslog message destinations fixed, allow setting of syslog facility and correct log level.
+* Add ability to specify server address for ADO connect string in mssqlvdi plugin.
+* Refactor socket handling.
+* Refactor FileSet Options using bit operations (future readiness)
+* ANSI label compatibility with Bacula ANSI labels.
+
+Release 14.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * Configuration engine refactoring in preparation for configuration API.
 * Accurate mode refactoring
@@ -65,7 +80,7 @@ Release 14.2.x
 Release 14.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * Windows DIR.
 * Support for different blocksizes (e.g. per volume blocksize) for better performance.
@@ -77,7 +92,7 @@ Release 14.1.x
 Release 13.4.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * First attempt at supporting IBM lin_tape driver.
 * Fix storage daemon plugin interface.
@@ -97,7 +112,7 @@ Release 13.4.x
 Release 13.3.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * NDMP enhancements (first code for doing filelevel restores, preliminary).
 * Plugin framework enhancements.
