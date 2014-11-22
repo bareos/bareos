@@ -2265,15 +2265,19 @@ ndmp_3to9_name (
   ndmp9_name *name9)
 {
 	char		buf[1024];
+	int		cnt;
 
+	cnt = sizeof(buf) - 1;
 	name9->original_path = NDMOS_API_STRDUP(name3->original_path);
-	strcpy (buf, name3->destination_dir);
-	if (name3->new_name && *name3->new_name) {
-		strcat (buf, "/");
-		strcat (buf, name3->new_name);
+	if (name3->new_name && *name3->new_name && *name3->destination_dir) {
+	    snprintf (buf, cnt, "%s/%s", name3->destination_dir, name3->new_name);
+	} else if (name3->new_name && *name3->new_name) {
+	    snprintf (buf, cnt, "/%s", name3->new_name);
+	} else {
+	    strncpy (buf, name3->destination_dir, cnt);
 	}
+	buf[cnt] = '\0';
 	name9->destination_path = NDMOS_API_STRDUP(buf);
-
 
 	/* per the following email's on the NDMP tech mailing on
 	 * Apr. 10 & 11 2000 and Feb. 21, 2001  with matching
@@ -2288,26 +2292,32 @@ ndmp_3to9_name (
          * and original_path is missing the trailing component.
          */
 	if (name3->new_name && *name3->new_name) {
-	    strcpy (buf, name3->original_path);
-	    if (*buf)
-		strcat(buf, "/");
-	    strcat (buf, name3->new_name);
+	    if (*name3->original_path) {
+		snprintf (buf, cnt, "%s/%s", name3->original_path, name3->new_name);
+	    } else {
+		strncpy (buf, name3->new_name, cnt);
+	    }
+	    buf[cnt] = '\0';
 	    name9->original_path = NDMOS_API_STRDUP(buf);
 	} else {
 	    name9->original_path = NDMOS_API_STRDUP(name3->original_path);
 	}
 
 	if (name3->new_name && *name3->new_name) {
-	    strcpy (buf, name3->destination_dir);
-	    if (*buf)
-		strcat(buf, "/");
-	    strcat (buf, name3->new_name);
+	    if (*name3->destination_dir) {
+		snprintf (buf, cnt, "%s/%s", name3->destination_dir, name3->new_name);
+	    } else {
+		strncpy (buf, name3->new_name, cnt);
+	    }
+	    buf[cnt] = '\0';
 	    name9->original_path = NDMOS_API_STRDUP(buf);
 	} else {
-	    strcpy (buf, name3->destination_dir);
-	    if (*buf)
-		strcat(buf, "/");
-	    strcat (buf, name3->original_path);
+	    if (*name3->destination_dir) {
+		snprintf (buf, cnt, "%s/%s", name3->destination_dir, name3->original_path);
+	    } else {
+		strncpy (buf, name3->original_path, cnt);
+	    }
+	    buf[cnt] = '\0';
 	}
 	name9->destination_path = NDMOS_API_STRDUP(buf);
 

@@ -572,7 +572,7 @@ ndmca_tt_basic_write_and_read (struct ndm_session *sess)
 	    i++, p++)
 	    if (*p != ((i - 4) & 0xff)) {
 		char tmp[80];
-		sprintf (tmp,
+		snprintf (tmp, sizeof(tmp),
 			 "%d: 0x%x => 0x%x",
 			 i, ((i - 4) & 0xff), *p);
 		ndmalogf (sess, "DATA", 6, tmp);
@@ -628,10 +628,10 @@ ndmca_tt_write (struct ndm_session *sess)
 		n_rec = tt_series[fileno].n_rec;
 		recsize = tt_series[fileno].recsize;
 
-		sprintf (note, "Write tape file %d", fileno+1);
+		snprintf (note, sizeof(note), "Write tape file %d", fileno+1);
 		ndmca_test_open (sess, note, 0);
 
-		sprintf (note, "file #%d, %d records, %d bytes/rec",
+		snprintf (note, sizeof(note), "file #%d, %d records, %d bytes/rec",
 				fileno+1, n_rec, recsize);
 		ndmca_test_log_note (sess, 2, note);
 
@@ -652,7 +652,7 @@ ndmca_tt_write (struct ndm_session *sess)
 		CHECK_FILENO_RECNO ("wfm", fileno+1, 0);
 
 		/* no test calls so the file operation is the test */
-		sprintf (buf, "Passed tape write %s", note);
+		snprintf (buf, sizeof(buf), "Passed tape write %s", note);
 		ndmca_test_log_step (sess, 2, buf);
 	}
 
@@ -665,7 +665,7 @@ ndmca_tt_write (struct ndm_session *sess)
 	return 0;
 
   fail:
-	sprintf (buf, "Failed %s recno=%d; %s", what, recno, note);
+	snprintf (buf, sizeof(buf), "Failed %s recno=%d; %s", what, recno, note);
 	ndmca_test_fail (sess, buf);
 	return -1;
 }
@@ -697,10 +697,10 @@ ndmca_tt_read (struct ndm_session *sess)
 		n_rec = tt_series[fileno].n_rec;
 		recsize = tt_series[fileno].recsize;
 
-		sprintf (note, "Read tape file %d", fileno+1);
+		snprintf (note, sizeof(note), "Read tape file %d", fileno+1);
 		ndmca_test_open (sess, note, 0);
 
-		sprintf (note, "file #%d, %d records, %d bytes/rec",
+		snprintf (note, sizeof(note), "file #%d, %d records, %d bytes/rec",
 				fileno+1, n_rec, recsize);
 		ndmca_test_log_note (sess, 2, note);
 
@@ -727,7 +727,7 @@ ndmca_tt_read (struct ndm_session *sess)
 				    i++, expect_p++, got_p++) {
 				    if (*expect_p != *got_p) {
 					char tmp[80];
-					sprintf (tmp,
+					snprintf (tmp, sizeof(tmp),
 						 "%d: 0x%x => 0x%x",
 						 i, *expect_p, *got_p);
 					ndmalogf (sess, "DATA", 6, tmp);
@@ -755,7 +755,7 @@ ndmca_tt_read (struct ndm_session *sess)
 		    CHECK_FILENO_RECNO ("eof", fileno+1, 0);
 		}
 
-		sprintf (buf, "Passed tape read %s", note);
+		snprintf (buf, sizeof(buf), "Passed tape read %s", note);
 		ndmca_test_log_step (sess, 2, buf);
 	}
 
@@ -768,7 +768,7 @@ ndmca_tt_read (struct ndm_session *sess)
 	return 0;
 
   fail:
-	sprintf (buf, "Failed %s recno=%d; %s", what, recno, note);
+	snprintf (buf, sizeof(buf), "Failed %s recno=%d; %s", what, recno, note);
 	ndmca_test_fail (sess, buf);
 	return -1;
 }
@@ -802,10 +802,10 @@ ndmca_tt_mtio (struct ndm_session *sess)
 		n_rec = tt_series[fileno].n_rec;
 		recsize = tt_series[fileno].recsize;
 
-		sprintf (note, "Seek around tape file %d", fileno+1);
+		snprintf (note, sizeof(note), "Seek around tape file %d", fileno+1);
 		ndmca_test_open (sess, note, 0);
 
-		sprintf (note, "file #%d, %d records, %d bytes/rec",
+		snprintf (note, sizeof(note), "file #%d, %d records, %d bytes/rec",
 				fileno+1, n_rec, recsize);
 		ndmca_test_log_note (sess, 2, note);
 
@@ -941,7 +941,7 @@ ndmca_tt_mtio (struct ndm_session *sess)
 				goto fail;
 		}
 
-		sprintf (buf, "Passed %s", note);
+		snprintf (buf, sizeof(buf), "Passed %s", note);
 		ndmca_test_log_step (sess, 2, buf);
 	}
 
@@ -951,7 +951,7 @@ ndmca_tt_mtio (struct ndm_session *sess)
 	return 0;
 
   fail:
-	sprintf (buf, "Failed %s: %s", what, note);
+	snprintf (buf, sizeof(buf), "Failed %s: %s", what, note);
 	ndmca_test_fail (sess, buf);
 	return -1;
 }
@@ -989,19 +989,19 @@ ndmca_tt_check_fileno_recno (struct ndm_session *sess,
 	return 0;
 
   fail:
-	sprintf (buf, "Failed %s while testing %s", oper, what);
+	snprintf (buf, sizeof(buf), "Failed %s while testing %s", oper, what);
 	ndmca_test_log_note (sess, 1, buf);
 	if (ts) {
-		sprintf (buf, "    expect file_num=%ld got file_num=%ld",
+		snprintf (buf, sizeof(buf), "    expect file_num=%ld got file_num=%ld",
 			(long)file_num, (long)ts->file_num.value);
 		ndmca_test_log_note (sess, 1, buf);
 
-		sprintf (buf, "    expect blockno=%ld got blockno=%ld",
+		snprintf (buf, sizeof(buf), "    expect blockno=%ld got blockno=%ld",
 			(long)blockno, (long)ts->blockno.value);
 		ndmca_test_log_note (sess, 1, buf);
 	}
 
-	sprintf (buf, "    note: %s", note);
+	snprintf (buf, sizeof(buf), "    note: %s", note);
 	ndmca_test_fail (sess, buf);
 	return -1;
 }
@@ -1145,7 +1145,7 @@ ndmca_check_tape_mtio (struct ndm_session *sess, ndmp9_error expect_err,
 
     if (resid != got_resid) {
 	char tmp[128];
-	sprintf (tmp,
+	snprintf (tmp, sizeof(tmp),
 		 "Residual incorrect, got %lu expected %lu",
 		 got_resid,
 		 resid);

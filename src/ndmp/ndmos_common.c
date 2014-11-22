@@ -86,12 +86,12 @@ ndmos_sync_config_info (struct ndm_session *sess)
 	obuf[4] = 0;
 
 	uname (&unam);
-	sprintf (idbuf, "%lu", gethostid());
+	snprintf (idbuf, sizeof(idbuf), "%lu", gethostid());
 	/*
 	 * give CONTROL via NDMPv2 a chance to recognize this
 	 * implementation (no ndmp2_config_get_server).
 	 */
-	sprintf (osbuf, "%s (running %s from %s)",
+	snprintf (osbuf, sizeof(osbuf), "%s (running %s from %s)",
 			unam.sysname,
 			NDMOS_CONST_PRODUCT_NAME,
 			NDMOS_CONST_VENDOR_NAME);
@@ -104,7 +104,7 @@ ndmos_sync_config_info (struct ndm_session *sess)
 	sess->config_info->vendor_name = (char *)NDMOS_CONST_VENDOR_NAME;
 	sess->config_info->product_name = (char *)NDMOS_CONST_PRODUCT_NAME;
 
-	sprintf (revbuf, "%s LIB:%d.%d/%s OS:%s (%s)",
+	snprintf (revbuf, sizeof(revbuf), "%s LIB:%d.%d/%s OS:%s (%s)",
 		NDMOS_CONST_PRODUCT_REVISION,
 		NDMJOBLIB_VERSION, NDMJOBLIB_RELEASE,
 		NDMOS_CONST_NDMJOBLIB_REVISION,

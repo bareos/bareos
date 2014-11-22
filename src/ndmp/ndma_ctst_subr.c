@@ -223,7 +223,7 @@ ndmca_test_check_expect_errs (struct ndmconn *conn, int rc,
 			  ndmp9_error_to_str (expect_errs[i]));
 	    }
 
-	    sprintf(tmpbuf, "got %s (error expected)", ndmp9_error_to_str (reply_error));
+	    snprintf(tmpbuf, sizeof(tmpbuf), "got %s (error expected)", ndmp9_error_to_str (reply_error));
 
 	    if (rc == 2)
 		ndmca_test_warn (sess, tmpbuf);
@@ -307,7 +307,7 @@ ndmca_test_call (struct ndmconn *conn,
 
 	if (rc != 0) {
 	    char tmpbuf[128];
-	    sprintf(tmpbuf, "got %s (call)", ndmp9_error_to_str (reply_error));
+	    snprintf(tmpbuf, sizeof(tmpbuf), "got %s (call)", ndmp9_error_to_str (reply_error));
 	    if (rc == 2)
 		ndmca_test_warn (sess, tmpbuf);
 	    else
@@ -333,7 +333,7 @@ ndmca_test_open (struct ndm_session *sess, char *test_name, char *sub_test_name)
 	if (sess->control_acb->active_test == 0) {
 		/* record name */
 		if (sub_test_name)
-			sprintf(test_name_buf, "%s/%s", test_name, sub_test_name);
+			snprintf(test_name_buf, sizeof(test_name_buf), "%s/%s", test_name, sub_test_name);
 		else
 			strcpy(test_name_buf, test_name);
 		sess->control_acb->active_test = test_name_buf;

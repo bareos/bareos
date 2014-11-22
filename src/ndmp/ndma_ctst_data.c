@@ -369,7 +369,7 @@ ndmca_test_check_data_state  (struct ndm_session *sess,
 
 	what = "state";
 	if (ds->state != expected) {
-		sprintf (errbuf, "expected %s got %s",
+		snprintf (errbuf, sizeof(errbuf), "expected %s got %s",
 			ndmp9_data_state_to_str (expected),
 			ndmp9_data_state_to_str (ds->state));
 		goto fail;
@@ -379,7 +379,7 @@ ndmca_test_check_data_state  (struct ndm_session *sess,
 	switch (ds->state) {
 	case NDMP9_DATA_STATE_HALTED:
 		if (ds->halt_reason != (ndmp9_data_halt_reason)reason) {
-			sprintf (errbuf, "expected %s got %s",
+			snprintf (errbuf, sizeof(errbuf), "expected %s got %s",
 			    ndmp9_data_halt_reason_to_str (reason),
 			    ndmp9_data_halt_reason_to_str (ds->halt_reason));
 			goto fail;
@@ -397,7 +397,7 @@ ndmca_test_check_data_state  (struct ndm_session *sess,
 
   fail:
 	/* test failed */
-	sprintf(tmpbuf, "%s: %s", what, errbuf);
+	snprintf(tmpbuf, sizeof(tmpbuf), "%s: %s", what, errbuf);
 	ndmca_test_fail(sess, tmpbuf);
 
 	ndmca_test_close (sess);

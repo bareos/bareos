@@ -920,7 +920,7 @@ copy_args_expanding_macros (int argc, char *argv[], char *av[], int max_ac)
 			continue;
 		}
 
-		sprintf (env_name, "NDMJOB_%s", arg+2);
+		snprintf (env_name, sizeof(env_name), "NDMJOB_%s", arg+2);
 		if ((p = getenv (env_name)) != 0) {
 			ac += snarf_macro (&av[ac], p);
 			continue;
