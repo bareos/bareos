@@ -120,7 +120,7 @@ bool B_ACCURATE_LMDB::init(JCR *jcr, uint32_t nbfile)
    }
 
    if (!m_lmdb_name) {
-      m_pay_load = get_pool_memory(PM_FNAME);
+      m_lmdb_name = get_pool_memory(PM_FNAME);
    }
 
    if (!m_seen_bitmap) {
