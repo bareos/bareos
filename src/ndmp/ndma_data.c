@@ -141,9 +141,8 @@ add_env (struct ndm_env_table *envtab, char *cmd)
 	struct ndm_env_entry *	entry;
 
 	for (entry = envtab->head; entry; entry = entry->next) {
-		strcpy (buf, entry->pval.name);
-		strcat (buf, "=");
-		strcat (buf, entry->pval.value);
+		snprintf (buf, sizeof(buf) - 1, "%s=%s", entry->pval.name, entry->pval.value);
+		buf[sizeof(buf) - 1] = '\0';
 		ndmda_add_to_cmd (cmd, "-E");
 		ndmda_add_to_cmd (cmd, buf);
 	}
@@ -160,7 +159,7 @@ add_nlist (struct ndm_nlist_table *nlisttab, char *cmd)
 	for (entry = nlisttab->head; entry; entry = entry->next) {
 		ndmda_add_to_cmd (cmd, entry->name.original_path);
 		if (entry->name.fh_info.valid == NDMP9_VALIDITY_VALID) {
-			sprintf (buf, "@%llu", entry->name.fh_info.value);
+			snprintf (buf, sizeof(buf), "@%llu", entry->name.fh_info.value);
 			ndmda_add_to_cmd (cmd, buf);
 		} else {
 			ndmda_add_to_cmd (cmd, "@-");
@@ -184,7 +183,7 @@ ndmda_data_start_backup (struct ndm_session *sess)
 
 	if (sess->param->log_level > 0) {
 	    char tmpbuf[40];
-	    sprintf(tmpbuf, "-d%d", sess->param->log_level);
+	    snprintf(tmpbuf, sizeof(tmpbuf), "-d%d", sess->param->log_level);
 	    ndmda_add_to_cmd (cmd, tmpbuf);
 	}
 
@@ -219,7 +218,7 @@ ndmda_data_start_recover (struct ndm_session *sess)
 
 	if (sess->param->log_level > 0) {
 	    char tmpbuf[40];
-	    sprintf(tmpbuf, "-d%d", sess->param->log_level);
+	    snprintf(tmpbuf, sizeof(tmpbuf), "-d%d", sess->param->log_level);
 	    ndmda_add_to_cmd (cmd, tmpbuf);
 	}
 

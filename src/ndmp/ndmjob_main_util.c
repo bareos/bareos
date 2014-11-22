@@ -73,7 +73,7 @@ sort_index_file (void)
 		fclose (index_fp);
 		index_fp = stderr;	/* in case anything else happens */
 
-		sprintf (cmd, "LC_ALL=C sort %s -o %s\n", I_index_file, I_index_file);
+		snprintf (cmd, sizeof(cmd), "LC_ALL=C sort %s -o %s\n", I_index_file, I_index_file);
 		ndmjob_log (3, "sort command: %s", cmd);
 		ndmjob_log (1, "sorting index");
 		if (system (cmd) < 0)
@@ -107,10 +107,10 @@ ndmjob_log_deliver (struct ndmlog *log, char *tag, int lev, char *msg)
 	if (the_mode == 'D') {
 		char    buf[32];
 
-		sprintf (buf, "%s(%d)", tag, (int)getpid());
-		sprintf (tagbuf, "%-11s", buf);
+		snprintf (buf, sizeof(buf), "%s(%d)", tag, (int)getpid());
+		snprintf (tagbuf, sizeof(tagbuf), "%-11s", buf);
 	} else {
-		sprintf (tagbuf, "%-4s", tag);
+		snprintf (tagbuf, sizeof(tagbuf), "%-4s", tag);
 	}
 
 	if (d_debug >= lev) {

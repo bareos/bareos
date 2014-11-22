@@ -1438,7 +1438,9 @@ wrap_reco_issue_read (struct wrap_ccb *wccb)
 		return -1;
 
 	case 'f':
-		lseek (wccb->data_conn_fd, off, 0);
+		if (lseek (wccb->data_conn_fd, off, 0) < 0) {
+			return -1;
+		}
 		break;
 
 	case 'p':

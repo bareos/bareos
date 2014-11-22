@@ -178,6 +178,8 @@ int
 ndmca_opq_host_info (struct ndm_session *sess, struct ndmconn *conn)
 {
 	int		rc;
+	int		cnt;
+	int		out;
 	unsigned int	i;
 	char		buf[100];
 
@@ -204,13 +206,20 @@ ndmca_opq_host_info (struct ndm_session *sess, struct ndmconn *conn)
 		ndmalogqr (sess, "    hostid     %s", reply->hostid);
 
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->auth_type.auth_type_len; i++) {
 			ndmp2_auth_type atyp;
 
 			atyp = reply->auth_type.auth_type_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp2_auth_type_to_str (atyp));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp2_auth_type_to_str (atyp));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp2_auth_type_to_str (atyp));
+			out += rc;
+			cnt -= rc;
 		}
+		buf[sizeof(buf) - 1] = '\0';
 
 		ndmalogqr (sess, "    auths      (%d) %s",
 					reply->auth_type.auth_type_len, buf);
@@ -253,13 +262,21 @@ ndmca_opq_host_info (struct ndm_session *sess, struct ndmconn *conn)
 		ndmalogqr (sess, "    product    %s", reply->product_name);
 		ndmalogqr (sess, "    revision   %s", reply->revision_number);
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->auth_type.auth_type_len; i++) {
 			ndmp3_auth_type atyp;
 
 			atyp = reply->auth_type.auth_type_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp3_auth_type_to_str (atyp));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp3_auth_type_to_str (atyp));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp3_auth_type_to_str (atyp));
+			out += rc;
+			cnt -= rc;
 		}
+		buf[sizeof(buf) - 1] = '\0';
+
 		ndmalogqr (sess, "    auths      (%d) %s",
 					reply->auth_type.auth_type_len, buf);
 		ndmalogqr (sess, "");
@@ -301,13 +318,21 @@ ndmca_opq_host_info (struct ndm_session *sess, struct ndmconn *conn)
 		ndmalogqr (sess, "    product    %s", reply->product_name);
 		ndmalogqr (sess, "    revision   %s", reply->revision_number);
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->auth_type.auth_type_len; i++) {
 			ndmp4_auth_type atyp;
 
 			atyp = reply->auth_type.auth_type_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp4_auth_type_to_str (atyp));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp4_auth_type_to_str (atyp));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp4_auth_type_to_str (atyp));
+			out += rc;
+			cnt -= rc;
 		}
+		buf[sizeof(buf) - 1] = '\0';
+
 		ndmalogqr (sess, "    auths      (%d) %s",
 					reply->auth_type.auth_type_len, buf);
 		ndmalogqr (sess, "");
@@ -325,6 +350,8 @@ int
 ndmca_opq_get_mover_type (struct ndm_session *sess, struct ndmconn *conn)
 {
 	int		rc;
+	int		cnt;
+	int		out;
 	unsigned int	i;
 	char		buf[100];
 
@@ -345,12 +372,18 @@ ndmca_opq_get_mover_type (struct ndm_session *sess, struct ndmconn *conn)
 		ndmalogqr (sess, "  Mover types");
 
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->methods.methods_len; i++) {
 			ndmp2_mover_addr_type	val;
 
 			val = reply->methods.methods_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp2_mover_addr_type_to_str (val));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp2_mover_addr_type_to_str (val));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp2_mover_addr_type_to_str (val));
+			out += rc;
+			cnt -= rc;
 		}
 		ndmalogqr (sess, "    methods    (%d) %s",
 					reply->methods.methods_len,
@@ -373,12 +406,18 @@ ndmca_opq_get_mover_type (struct ndm_session *sess, struct ndmconn *conn)
 
 		ndmalogqr (sess, "  Connection types");
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->addr_types.addr_types_len; i++) {
 			ndmp3_addr_type		val;
 
 			val = reply->addr_types.addr_types_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp3_addr_type_to_str (val));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp3_addr_type_to_str (val));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp3_addr_type_to_str (val));
+			out += rc;
+			cnt -= rc;
 		}
 		ndmalogqr (sess, "    addr_types (%d) %s",
 					reply->addr_types.addr_types_len, buf);
@@ -400,12 +439,18 @@ ndmca_opq_get_mover_type (struct ndm_session *sess, struct ndmconn *conn)
 
 		ndmalogqr (sess, "  Connection types");
 		*buf = 0;
+		out = 0;
+		cnt = sizeof(buf) - 1;
 		for (i = 0; i < reply->addr_types.addr_types_len; i++) {
 			ndmp4_addr_type		val;
 
 			val = reply->addr_types.addr_types_val[i];
-			strcat (buf, " ");
-			strcat (buf, ndmp4_addr_type_to_str (val));
+			if (out)
+				rc = snprintf(buf + out, cnt, " %s", ndmp4_addr_type_to_str (val));
+                        else
+				rc = snprintf(buf + out, cnt, "%s", ndmp4_addr_type_to_str (val));
+			out += rc;
+			cnt -= rc;
 		}
 		ndmalogqr (sess, "    addr_types (%d) %s",
 					reply->addr_types.addr_types_len, buf);

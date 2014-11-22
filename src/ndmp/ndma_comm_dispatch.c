@@ -1577,7 +1577,8 @@ ndmp_sxa_data_start_backup (struct ndm_session *sess,
 		return rc;	/* already tattled */
 	}
 
-	strcpy (sess->data_acb->bu_type, request->bu_type);
+	strncpy (sess->data_acb->bu_type, request->bu_type, sizeof(sess->data_acb->bu_type) - 1);
+	sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
 	error = data_copy_environment (sess,
 			request->env.env_val, request->env.env_len);
@@ -1639,7 +1640,8 @@ ndmp_sxa_data_start_recover (struct ndm_session *sess,
 		return rc;	/* already tattled */
 	}
 
-	strcpy (sess->data_acb->bu_type, request->bu_type);
+	strncpy (sess->data_acb->bu_type, request->bu_type, sizeof(sess->data_acb->bu_type) - 1);
+	sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
 	error = data_copy_environment (sess,
 			request->env.env_val, request->env.env_len);
@@ -1800,7 +1802,8 @@ ndmp_sxa_data_start_recover_filehist (struct ndm_session *sess,
 		return rc;	/* already tattled */
 	}
 
-	strcpy (sess->data_acb->bu_type, request->bu_type);
+	strncpy (sess->data_acb->bu_type, request->bu_type, sizeof(sess->data_acb->bu_type) - 1);
+	sess->data_acb->bu_type[sizeof(sess->data_acb->bu_type) - 1] = '\0';
 
 	error = data_copy_environment (sess,
 			request->env.env_val, request->env.env_len);
@@ -2930,7 +2933,7 @@ ndmp_sxa_log_file (struct ndm_session *sess,
 		    ca->recover_log_file_error++;
 		}
 
-		sprintf (prefix, "%cLF", ref_conn->chan.name[1]);
+		snprintf (prefix, sizeof(prefix), "%cLF", ref_conn->chan.name[1]);
 
 		ndmalogf (sess, prefix, lev, "%s: %s", tag, request->name);
 	NDMS_ENDWITH
@@ -2960,7 +2963,7 @@ ndmp2_sxa_log_log (struct ndm_session *sess,
 		tag =  "n";
 		lev = 1;
 
-		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+		snprintf (prefix, sizeof(prefix), "%cLM%s", ref_conn->chan.name[1], tag);
 
 		bp = strrchr(request->entry, '\n');
 		if (bp) {
@@ -2991,7 +2994,7 @@ ndmp2_sxa_log_debug (struct ndm_session *sess,
 		tag =  "d";
 		lev = 2;
 
-		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+		snprintf (prefix, sizeof(prefix), "%cLM%s", ref_conn->chan.name[1], tag);
 
 		bp = strrchr(request->message, '\n');
 		if (bp) {
@@ -3051,7 +3054,7 @@ ndmp_sxa_log_message (struct ndm_session *sess,
 			break;
 		}
 
-		sprintf (prefix, "%cLM%s", ref_conn->chan.name[1], tag);
+		snprintf (prefix, sizeof(prefix), "%cLM%s", ref_conn->chan.name[1], tag);
 
 		bp = strrchr(request->entry, '\n');
 		if (bp) {

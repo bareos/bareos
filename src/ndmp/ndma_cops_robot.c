@@ -368,7 +368,7 @@ ndmca_op_unload_tape (struct ndm_session *sess)
 			goto unload_anyway;
 		}
 
-		sprintf (prefix, "drive @%d full", edp->element_address);
+		snprintf (prefix, sizeof(prefix), "drive @%d full", edp->element_address);
 
 		if (!edp->SValid) {
 			ndmalogf (sess, 0, 1,

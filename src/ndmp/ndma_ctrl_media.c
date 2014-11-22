@@ -453,7 +453,7 @@ ndmca_media_write_label (struct ndm_session *sess, int type, char labbuf[])
 	for (p = buf; p < &buf[512]; p++) *p = '#';
 	for (p = buf+63; p < &buf[512]; p += 64) *p = '\n';
 
-	sprintf (buf, "##ndmjob -%c %s", type, labbuf);
+	snprintf (buf, sizeof(buf), "##ndmjob -%c %s", type, labbuf);
 	for (p = buf; *p; p++) continue;
 	*p++ = '\n';
 

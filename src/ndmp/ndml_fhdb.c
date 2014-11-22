@@ -177,7 +177,7 @@ ndmfhdb_dirnode_root (struct ndmfhdb *fhcb)
 	char		key[256];
 	char		linebuf[2048];
 
-	sprintf (key, "DHr ");
+	snprintf (key, sizeof(key), "DHr ");
 
 	p = NDMOS_API_STREND(key);
 	off = p - key;
@@ -245,7 +245,7 @@ ndmfhdb_dir_lookup (struct ndmfhdb *fhcb, unsigned long long dir_node,
 	char		key[256+128];
 	char		linebuf[2048];
 
-	sprintf (key, "DHd %llu ", dir_node);
+	snprintf (key, sizeof(key), "DHd %llu ", dir_node);
 	p = NDMOS_API_STREND(key);
 
 	ndmcstr_from_str (name, p, sizeof key - (p-key) - 10);
@@ -279,7 +279,7 @@ ndmfhdb_node_lookup (struct ndmfhdb *fhcb, unsigned long long node,
 	char		key[128];
 	char		linebuf[2048];
 
-	sprintf (key, "DHn %llu UNIX ", node);
+	snprintf (key, sizeof(key), "DHn %llu UNIX ", node);
 
 	p = NDMOS_API_STREND(key);
 	off = p - key;
@@ -324,7 +324,7 @@ ndmfhdb_file_lookup (struct ndmfhdb *fhcb, char *path,
 	char		key[2048];
 	char		linebuf[2048];
 
-	sprintf (key, "DHf ");
+	snprintf (key, sizeof(key), "DHf ");
 	p = NDMOS_API_STREND(key);
 
 	ndmcstr_from_str (path, p, sizeof key - (p-key) - 10);

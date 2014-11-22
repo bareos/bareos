@@ -65,7 +65,7 @@ ndmlog_time_stamp (void)
 	min = elapsed % 60;	elapsed /= 60;
 	hour = elapsed;
 
-	sprintf (buf, "%d:%02d:%02d.%03d", hour, min, sec, ms);
+	snprintf (buf, sizeof(buf), "%d:%02d:%02d.%03d", hour, min, sec, ms);
 
 	return buf;
 }

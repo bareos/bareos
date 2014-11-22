@@ -553,7 +553,7 @@ ndmca_test_check_mover_state  (struct ndm_session *sess,
 
 	what = "state";
 	if (ms->state != expected) {
-		sprintf (errbuf, "expected %s got %s",
+		snprintf (errbuf, sizeof(errbuf), "expected %s got %s",
 			ndmp9_mover_state_to_str (expected),
 			ndmp9_mover_state_to_str (ms->state));
 		goto fail;
@@ -563,7 +563,7 @@ ndmca_test_check_mover_state  (struct ndm_session *sess,
 	switch (ms->state) {
 	case NDMP9_MOVER_STATE_PAUSED:
 		if (ms->pause_reason != (ndmp9_mover_pause_reason)reason) {
-			sprintf (errbuf, "expected %s got %s",
+			snprintf (errbuf, sizeof(errbuf), "expected %s got %s",
 			    ndmp9_mover_pause_reason_to_str (reason),
 			    ndmp9_mover_pause_reason_to_str (ms->pause_reason));
 			goto fail;
@@ -572,7 +572,7 @@ ndmca_test_check_mover_state  (struct ndm_session *sess,
 
 	case NDMP9_MOVER_STATE_HALTED:
 		if (ms->halt_reason != (ndmp9_mover_halt_reason)reason) {
-			sprintf (errbuf, "expected %s got %s",
+			snprintf (errbuf, sizeof(errbuf), "expected %s got %s",
 			    ndmp9_mover_halt_reason_to_str (reason),
 			    ndmp9_mover_halt_reason_to_str (ms->halt_reason));
 			goto fail;
@@ -590,7 +590,7 @@ ndmca_test_check_mover_state  (struct ndm_session *sess,
 
   fail:
 	/* test failed */
-	sprintf(tmpbuf, "%s: %s", what, errbuf);
+	snprintf(tmpbuf, sizeof(tmpbuf), "%s: %s", what, errbuf);
 	ndmca_test_fail(sess, tmpbuf);
 
 	ndmca_test_close (sess);

@@ -311,7 +311,7 @@ ndmca_robot_remedy_ready (struct ndm_session *sess)
 		if (!edp->Full)
 			continue;
 
-		sprintf (prefix, "drive @%d not empty", edp->element_address);
+		snprintf (prefix, sizeof(prefix), "drive @%d not empty", edp->element_address);
 
 		if (!edp->SValid) {
 			ndmalogf (sess, 0, 1, "%s, invalid source", prefix);
@@ -409,9 +409,9 @@ ndmca_robot_query (struct ndm_session *sess)
 								lineno, buf);
 
 				if (lineno == 0)
-					sprintf (lnbuf, "    %2d ", i+1);
+					snprintf (lnbuf, sizeof(lnbuf), "    %2d ", i+1);
 				else
-					sprintf (lnbuf, "       ");
+					snprintf (lnbuf, sizeof(lnbuf), "       ");
 
 				if (rc < 0) {
 					strcpy (buf, "PP-ERROR");
