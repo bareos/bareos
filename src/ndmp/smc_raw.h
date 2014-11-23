@@ -849,11 +849,15 @@ struct smc_raw_element_descriptor {
 
 	unsigned char		src_se_addr[2];
 
-	struct smc_raw_volume_tag primary_vol_tag;
-	struct smc_raw_volume_tag alternate_vol_tag;
-
-	unsigned char		resv84[4];
-	unsigned char		vendor_specific[4];
+	/*
+	 * primary_vol_tag (optional)
+	 * alternate_vol_tag (optional)
+	 * resv84
+	 * vendor_specific
+	 */
+	unsigned char		data[SMC_VOL_TAG_LEN +
+				     SMC_VOL_TAG_LEN +
+                                     4 + 4];
 };
 
 
