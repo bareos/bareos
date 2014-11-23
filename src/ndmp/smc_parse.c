@@ -148,19 +148,18 @@ smc_parse_element_status_data (
 
 			edp->src_se_addr = SMC_GET2(red->src_se_addr);
 
-			p2 = (unsigned char *) &red->primary_vol_tag;
+			p2 = (unsigned char *) &red->data;
 			if (edp->PVolTag) {
 				smc_parse_volume_tag ((void*)p2,
 						&edp->primary_vol_tag);
 				p2 += SMC_VOL_TAG_LEN;
 			}
 			if (edp->AVolTag) {
-				p2 = (unsigned char *) &red->alternate_vol_tag;
 				smc_parse_volume_tag ((void*)p2,
 						&edp->alternate_vol_tag);
 				p2 += SMC_VOL_TAG_LEN;
 			}
-			p2 += 4;	/* resv84 */
+			p2 += 4;        /* resv84 */
 			/* p2 ready for vendor_specific */
 		    ENDWITH
 		}
