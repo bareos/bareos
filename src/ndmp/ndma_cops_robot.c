@@ -333,6 +333,7 @@ ndmca_op_unload_tape (struct ndm_session *sess)
 		/* best effort */
 		rc = ndmca_op_mtio (sess, job->use_eject
 					    ? NDMP9_MTIO_OFF : NDMP9_MTIO_REW);
+		if (rc) return rc;	/* already tattled -- NOT */
 	}
 
 	if (job->to_addr_given) {

@@ -890,7 +890,6 @@ ndmis_tcp_listen (struct ndm_session *sess, struct ndmp9_addr *listen_addr)
 		 * We found a connection to use for determining
 		 * what IP address to offer.
 		 */
-		what = "getsockname-ctrl";
 		len = sizeof c_sa;
 		if (getsockname (ndmconn_fileno(conn), &c_sa, &len) < 0) {
 			/* we'll try the fallback rules */
@@ -1009,7 +1008,6 @@ ndmis_tcp_accept (struct ndm_session *sess)
 
   fail:
 	ndmalogf (sess, 0, 2, "ndmis_tcp_accept(): %s failed", what);
-	if (accept_sock >= 0) close (accept_sock);
 
 	return -1;
 }

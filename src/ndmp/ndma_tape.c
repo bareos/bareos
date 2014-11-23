@@ -614,7 +614,6 @@ ndmta_write_quantum (struct ndm_session *sess)
 			return did_something - 1;
 		}
 		if (done_count != count) {
-			n_read = done_count;
 			goto again;
 		}
 		ta->tb_blockno = want_blockno;

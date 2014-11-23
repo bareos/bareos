@@ -229,7 +229,7 @@ ndma_store_nlist (struct ndm_nlist_table *nlist, ndmp9_name *nl)
 
 	entry = NDMOS_API_MALLOC (sizeof(struct ndm_nlist_entry));
 	if (!entry)
-		goto bail_out;
+		return NULL;
 
 	NDMOS_MACRO_ZEROFILL (entry);
 
