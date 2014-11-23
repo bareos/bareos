@@ -1159,7 +1159,9 @@ const char *re_compile_pattern(regex_t * bufp, unsigned char *regex)
          break;
       case Rquote:
          set_error("Rquote");
-       /*NOTREACHED*/ case Rbol:
+         /* NOTREACHED */
+         break;
+      case Rbol:
          if (!beginning_context) {
             if (regexp_context_indep_ops)
                goto op_error;

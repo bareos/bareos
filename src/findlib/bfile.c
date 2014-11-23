@@ -1181,24 +1181,25 @@ int bclose(BFILE *bfd)
       status = plugin_bclose(bfd);
       bfd->fid = -1;
       bfd->cmd_plugin = false;
-   }
-
-   if (bfd->fid == -1) {
-      return 0;
-   }
+   } else {
+      if (bfd->fid == -1) {
+         return 0;
+      }
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
-   if (bfd->m_flags & O_RDONLY) {
-      fdatasync(bfd->fid);            /* sync the file */
-      /* Tell OS we don't need it any more */
-      posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
-   }
+      if (bfd->m_flags & O_RDONLY) {
+         fdatasync(bfd->fid);            /* sync the file */
+         /* Tell OS we don't need it any more */
+         posix_fadvise(bfd->fid, 0, 0, POSIX_FADV_DONTNEED);
+      }
 #endif
 
-   /* Close normal file */
-   status = close(bfd->fid);
-   bfd->berrno = errno;
-   bfd->fid = -1;
-   bfd->cmd_plugin = false;
+      /* Close normal file */
+      status = close(bfd->fid);
+      bfd->berrno = errno;
+      bfd->fid = -1;
+      bfd->cmd_plugin = false;
+   }
+
    return status;
 }
 

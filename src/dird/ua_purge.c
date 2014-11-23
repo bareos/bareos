@@ -870,12 +870,15 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
             bstrcmp(mr->VolStatus, "Full") ||
             bstrcmp(mr->VolStatus, "Used") ||
             bstrcmp(mr->VolStatus, "Error");
+
    if (status) {
       bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
       set_storageid_in_mr(NULL, mr);
+
       if (!db_update_media_record(jcr, ua->db, mr)) {
          return false;
       }
+
       pm_strcpy(jcr->VolumeName, mr->VolumeName);
       generate_plugin_event(jcr, bDirEventVolumePurged);
 
@@ -888,16 +891,15 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
          memset(&newpr, 0, sizeof(newpr));
          newpr.PoolId = mr->RecyclePoolId;
          oldpr.PoolId = mr->PoolId;
-         if (   db_get_pool_record(jcr, ua->db, &oldpr)
-             && db_get_pool_record(jcr, ua->db, &newpr))
-         {
+         if (db_get_pool_record(jcr, ua->db, &oldpr) &&
+             db_get_pool_record(jcr, ua->db, &newpr)) {
             /*
              * Check if destination pool size is ok
              */
             if (newpr.MaxVols > 0 && newpr.NumVols >= newpr.MaxVols) {
                ua->error_msg(_("Unable move recycled Volume in full "
-                              "Pool \"%s\" MaxVols=%d\n"),
-                        newpr.Name, newpr.MaxVols);
+                             "Pool \"%s\" MaxVols=%d\n"),
+                             newpr.Name, newpr.MaxVols);
 
             } else {            /* move media */
                update_vol_pool(ua, newpr.Name, mr, &oldpr);
@@ -910,13 +912,16 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
       /*
        * Send message to Job report, if it is a *real* job
        */
-      if (jcr && jcr->JobId > 0) {
-         Jmsg(jcr, M_INFO, 0, _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
-            mr->VolumeName);
+      if (jcr->JobId > 0) {
+         Jmsg(jcr, M_INFO, 0,
+              _("All records pruned from Volume \"%s\"; marking it \"Purged\"\n"),
+              mr->VolumeName);
       }
+
       return true;
    } else {
       ua->error_msg(_("Cannot purge Volume with VolStatus=%s\n"), mr->VolStatus);
    }
+
    return bstrcmp(mr->VolStatus, "Purged");
 }

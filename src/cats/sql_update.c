@@ -120,8 +120,7 @@ bool db_update_job_start_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
 }
 
 /*
- * Update Long term statistics with all jobs that were run before
- * age seconds
+ * Update Long term statistics with all jobs that were run before age seconds
  */
 int db_update_stats(JCR *jcr, B_DB *mdb, utime_t age)
 {
@@ -133,8 +132,11 @@ int db_update_stats(JCR *jcr, B_DB *mdb, utime_t age)
    db_lock(mdb);
 
    Mmsg(mdb->cmd, fill_jobhisto, ed1);
-   QUERY_DB(jcr, mdb, mdb->cmd); /* TODO: get a message ? */
-   rows = sql_affected_rows(mdb);
+   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
+      rows = sql_affected_rows(mdb);
+   } else {
+      rows = -1;
+   }
 
    db_unlock(mdb);
    return rows;

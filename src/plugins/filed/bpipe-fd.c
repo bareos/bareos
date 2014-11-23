@@ -320,12 +320,13 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 {
    time_t now;
-   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+   struct plugin_ctx *p_ctx;
 
    if (plugin_has_all_arguments(ctx) != bRC_OK) {
       return bRC_Error;
    }
 
+   p_ctx = (struct plugin_ctx *)ctx->pContext;
    if (!p_ctx) {
       return bRC_Error;
    }

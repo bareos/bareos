@@ -379,12 +379,13 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       /* List Base files */
       } else if (bstrcasecmp(ua->argk[i], NT_("basefiles"))) {
-         /* TODO: cleanup this block */
          for (j=i+1; j<ua->argc; j++) {
             if (bstrcasecmp(ua->argk[j], NT_("ujobid")) && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
-               db_get_job_record(ua->jcr, ua->db, &jr);
+               if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+                  continue;
+               }
                jobid = jr.JobId;
             } else if (bstrcasecmp(ua->argk[j], NT_("jobid")) && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);
@@ -403,7 +404,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (bstrcasecmp(ua->argk[j], NT_("ujobid")) && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
-               db_get_job_record(ua->jcr, ua->db, &jr);
+               if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+                  continue;
+               }
                jobid = jr.JobId;
             } else if (bstrcasecmp(ua->argk[j], NT_("jobid")) && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);
@@ -422,7 +425,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (bstrcasecmp(ua->argk[j], NT_("ujobid")) && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
-               db_get_job_record(ua->jcr, ua->db, &jr);
+               if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+                  continue;
+               }
                jobid = jr.JobId;
             } else if (bstrcasecmp(ua->argk[j], NT_("jobid")) && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);
@@ -444,7 +449,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (bstrcasecmp(ua->argk[j], NT_("ujobid")) && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
-               db_get_job_record(ua->jcr, ua->db, &jr);
+               if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+                  continue;
+               }
                jobid = jr.JobId;
             } else if (bstrcasecmp(ua->argk[j], NT_("jobid")) && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);
@@ -482,7 +489,9 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (bstrcasecmp(ua->argk[j], NT_("ujobid")) && ua->argv[j]) {
                bstrncpy(jr.Job, ua->argv[j], MAX_NAME_LENGTH);
                jr.JobId = 0;
-               db_get_job_record(ua->jcr, ua->db, &jr);
+               if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+                  continue;
+               }
                jobid = jr.JobId;
             } else if (bstrcasecmp(ua->argk[j], NT_("jobid")) && ua->argv[j]) {
                jobid = str_to_int64(ua->argv[j]);

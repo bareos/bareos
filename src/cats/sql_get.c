@@ -657,6 +657,7 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
       }
       sql_free_result(mdb);
    }
+
    if (ok) {
       uint32_t NumVols;
       Mmsg(mdb->cmd, "SELECT count(*) from Media WHERE PoolId=%s",
@@ -665,11 +666,12 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
       Dmsg2(400, "Actual NumVols=%d Pool NumVols=%d\n", NumVols, pdbr->NumVols);
       if (NumVols != pdbr->NumVols) {
          pdbr->NumVols = NumVols;
-         db_update_pool_record(jcr, mdb, pdbr);
+         ok = db_update_pool_record(jcr, mdb, pdbr);
       }
    } else {
       Mmsg(mdb->errmsg, _("Pool record not found in Catalog.\n"));
    }
+
    db_unlock(mdb);
    return ok;
 }

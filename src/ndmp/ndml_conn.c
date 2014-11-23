@@ -933,12 +933,13 @@ ndmconn_sys_read (struct ndmconn *conn, char *buf, unsigned len)
 	rc = read (conn->chan.fd, buf, len);
 
 	ndmconn_snoop (conn, 8, "read=%d len=%d", rc, len);
-	ndmconn_hex_dump (conn, buf, rc);
 
 	if (rc <= 0) {
 		conn->chan.eof = 1;
 		if (rc < 0)
 			conn->chan.error = 1;
+	} else {
+		ndmconn_hex_dump (conn, buf, rc);
 	}
 
 	return rc;

@@ -212,8 +212,7 @@ static inline bRC trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *e
       b_plugin_ctx *b_ctx = (b_plugin_ctx *)ctx->bContext;
 
       Dmsg0(50, "eventType == bEventEndRestoreJob\n");
-      if (ctx && ctx->plugin &&
-          b_ctx && b_ctx->restoreFileStarted) {
+      if (b_ctx && b_ctx->restoreFileStarted) {
          plug_func(ctx->plugin)->endRestoreFile(ctx);
       }
 
@@ -268,7 +267,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
          rop = (restore_object_pkt *)value;
          if (*rop->plugin_name) {
             name = rop->plugin_name;
-            get_plugin_name(jcr, name, &len);
+            if (!get_plugin_name(jcr, name, &len)) {
+               return;
+            }
          }
       }
       break;
@@ -1079,17 +1080,18 @@ bail_out:
  */
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 {
-   bpContext *ctx = jcr->plugin_ctx;
-   b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
-   Plugin *plugin = ctx->plugin;
-   struct restore_pkt rp;
    int flags;
    int ret;
    int status;
+   Plugin *plugin;
+   struct restore_pkt rp;
+   bpContext *ctx = jcr->plugin_ctx;
+   b_plugin_ctx *b_ctx = (b_plugin_ctx *)jcr->plugin_ctx->bContext;
 
-   if (!plugin || !ctx || !set_cmd_plugin(bfd, jcr) || jcr->is_job_canceled()) {
+   if (!ctx || !set_cmd_plugin(bfd, jcr) || jcr->is_job_canceled()) {
       return CF_ERROR;
    }
+   plugin = ctx->plugin;
 
    rp.pkt_size = sizeof(rp);
    rp.pkt_end = sizeof(rp);

@@ -155,6 +155,7 @@ smc_parse_element_status_data (
 				p2 += SMC_VOL_TAG_LEN;
 			}
 			if (edp->AVolTag) {
+				p2 = (unsigned char *) &red->alternate_vol_tag;
 				smc_parse_volume_tag ((void*)p2,
 						&edp->alternate_vol_tag);
 				p2 += SMC_VOL_TAG_LEN;
