@@ -31,10 +31,11 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
 
         # action
         param1="$1"
+        shift || true
         # $2: when action is "configure": most-recently-configured-version
-        param2="$2"
+        param2="$1"
         param2_orig=$param2
-        shift 2
+        shift || true
 
         # When upgrading from an older version (param2),
         # do not pass the version number of the old package.
