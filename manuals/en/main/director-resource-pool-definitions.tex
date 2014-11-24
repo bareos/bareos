@@ -14,7 +14,6 @@ like in this example:
 }
 
 \defDirective{Dir}{Pool}{Auto Prune}{}{}{%
-\label{PoolAutoPrune}%
 If AutoPrune is set to {\bf yes}, Bareos  will automatically
 apply the Volume Retention period when new
 Volume is needed and no appendable Volumes exist in the Pool.  Volume
@@ -94,7 +93,6 @@ For more information see Client side documentation
 }
 
 \defDirective{Dir}{Pool}{Label Format}{}{}{%
-\label{Label}%
 This directive specifies the format of the labels contained in this
 pool.  The format directive is used as a sort of template to create new
 Volume names during automatic Volume labeling.
@@ -133,7 +131,6 @@ In almost all cases, you should enclose the format specification (part
 after the equal sign) in double quotes.
 }
 
-%\xdirective{dir}{}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{required}{Bareos}{}{
 \defDirective{Dir}{Pool}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{%
 This directive is implemented in the
 Director Pool resource and in the SD Device
@@ -213,7 +210,6 @@ longer be written.
 }
 
 \defDirective{Dir}{Pool}{Maximum Volumes}{}{}{%
-\label{MaxVolumes}%
 This directive specifies the maximum number of volumes (tapes or files)
 contained in the pool.  This directive is optional, if omitted or set to
 zero, any number of volumes will be permitted.  In general, this
@@ -261,7 +257,6 @@ Note, only Backup is currently implemented.
 }
 
 \defDirective{Dir}{Pool}{Purge Oldest Volume}{}{}{%
-\label{PurgeOldest}%
 This directive instructs the Director to search for the oldest used
 Volume in the Pool when another Volume is requested by the Storage
 daemon and none are available.  The catalog is then {\bf purged}
@@ -290,7 +285,6 @@ data.  The default is {\bf no}.
 }
 
 \defDirective{Dir}{Pool}{Recycle}{}{}{%
-\label{PoolRecycle}%
 This directive specifies whether or not Purged Volumes may be recycled.
 If it is set to {\bf yes} (default) and Bareos needs a volume but finds
 none that are appendable, it will search for and recycle (reuse) Purged
@@ -317,7 +311,6 @@ Recycled state if the {\bf Recycle} directive is set to {\bf yes}.
 }
 
 \defDirective{Dir}{Pool}{Recycle Current Volume}{}{}{%
-\label{RecycleCurrent}%
 If Bareos needs a new Volume, this directive instructs Bareos to Prune
 the volume respecting the Job and File retention periods.  If all Jobs
 are pruned (i.e.  the volume is Purged), then the Volume is recycled and
@@ -338,7 +331,6 @@ directive with care.  The default is {\bf no}.
 }
 
 \defDirective{Dir}{Pool}{Recycle Oldest Volume}{}{}{%
-\label{RecycleOldest}%
 This directive instructs the Director to search for the oldest used
 Volume in the Pool when another Volume is requested by the Storage
 daemon and none are available.  The catalog is then {\bf pruned}
@@ -360,7 +352,6 @@ Please use this directive with care. The default is {\bf no}.
 }
 
 \defDirective{Dir}{Pool}{Recycle Pool}{}{}{%
-\label{PoolRecyclePool}%
 This directive defines to which pool
 the Volume will be placed (moved) when it is recycled. Without
 this directive, a Volume will remain in the same pool when it is
@@ -378,7 +369,6 @@ marks it as {\bf Purged}.
 }
 
 \defDirective{Dir}{Pool}{Scratch Pool}{}{}{%
-\label{PoolScratchPool}%
 This directive permits to specify a dedicate \textsl{Scratch} for the
 current pool. This pool will replace the special pool named \textsl{Scrach}
 for volume selection. For more information about \textsl{Scratch} see
@@ -407,7 +397,6 @@ Use \configdirective{Maximum Volume Jobs = 1} instead.
 }
 
 \defDirective{Dir}{Pool}{Volume Retention}{}{}{%
-\label{VolRetention}%
 The Volume Retention directive defines the length of time that
 Bareos will keep records associated with the Volume in
 the Catalog database after the End time of each Job written to the

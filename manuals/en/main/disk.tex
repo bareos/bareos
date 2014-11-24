@@ -235,33 +235,34 @@ following:
    \linkResourceDirective{Dir}{Client}{Job Retention}  record in the Client
    resource.
 \item The
-   \ilink{ AutoPrune = yes}{AutoPrune} record in the Client resource
+   \linkResourceDirective{Dir}{Client}{Auto Prune} = yes record in the Client resource
    to permit  application of the above two retention periods.
 \item The
    \linkResourceDirective{Dir}{Pool}{Volume Retention} record in the Pool
    resource.
 \item The
-   \ilink{ AutoPrune = yes}{PoolAutoPrune} record in the Pool
+   \linkResourceDirective{Dir}{Pool}{Auto Prune} = yes record in the Pool
    resource to permit  application of the Volume retention period.
 \item The
-   \ilink{ Recycle = yes}{PoolRecycle} record in the Pool resource
+   \linkResourceDirective{Dir}{Pool}{Recycle} = yes record in the Pool resource
    to permit  automatic recycling of Volumes whose Volume retention period has
    expired.
 \item The
-   \ilink{ Recycle Oldest Volume = yes}{RecycleOldest} record in the
+   \linkResourceDirective{Dir}{Pool}{Recycle Oldest Volume} = yes record in the
    Pool resource tells Bareos  to Prune the oldest volume in the Pool, and if all
    files  were pruned to recycle this volume and use it.
 \item The
-   \ilink{ Recycle Current Volume = yes}{RecycleCurrent} record in
+   \linkResourceDirective{Dir}{Pool}{Recycle Current Volume} = yes record in
    the Pool resource tells Bareos  to Prune the currently mounted volume in the
    Pool, and if all files  were pruned to recycle this volume and use it.
 \item The
-   \ilink{ Purge Oldest Volume = yes}{PurgeOldest} record in the
+   \linkResourceDirective{Dir}{Pool}{Purge Oldest Volume} = yes record in the
    Pool resource  permits a forced recycling of the oldest Volume when a new one
-   is  needed.  {\bf N.B. This record ignores retention periods! We highly
-   recommend  not to use this record, but instead use Recycle Oldest Volume}
+   is  needed.\\
+   \warning{This record ignores retention periods! We highly
+   recommend  not to use this record, but instead use \linkResourceDirective{Dir}{Pool}{Recycle Oldest Volume}.}
 \item The
-   \ilink{ Maximum Volumes = nnn}{MaxVolumes} record in the Pool
+   \linkResourceDirective{Dir}{Pool}{Maximum Volumes} = nnn record in the Pool
    resource to limit  the number of Volumes that can be created.
 \end{enumerate}
 
