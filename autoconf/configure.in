@@ -1275,6 +1275,10 @@ if test "x$support_crypto" != "xno" -o "x$support_tls" != "xno"; then
 
       if test "$have_gnutls" = "yes"; then
          AC_DEFINE(HAVE_GNUTLS, 1, [Define to 1 if GNUTLS library is available])
+         # gnutls_transport_set_ptr may cause problems on some platforms,
+         # therefore the replacement gnutls_transport_set_int is used
+         # when available (since GnuTLS >= 3.1.9)
+         AC_CHECK_FUNCS(gnutls_transport_set_int)
       fi
 
       if test "$support_tls" != "no" -a "$have_gnutls" = "yes"; then
