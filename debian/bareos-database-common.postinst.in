@@ -26,9 +26,10 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
 
         # action
         param1="$1"
+        shift || true
         # when action is "configure": most-recently-configured-version
-        param2="$2"
-        shift 2
+        param2="$1"
+        shift || true
         if [ "$param2" ]; then
             case "$param1" in
                 configure|reconfigure)
