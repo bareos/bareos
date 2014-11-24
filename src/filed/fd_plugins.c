@@ -1320,7 +1320,9 @@ bxattr_exit_code plugin_build_xattr_streams(JCR *jcr,
                                             FF_PKT *ff_pkt)
 {
    Plugin *plugin;
+#if defined(HAVE_XATTR)
    alist *xattr_value_list = NULL;
+#endif
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_build_xattr_streams\n");
@@ -1452,8 +1454,10 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
                                             char *content,
                                             uint32_t content_length)
 {
+#if defined(HAVE_XATTR)
    Plugin *plugin;
    alist *xattr_value_list = NULL;
+#endif
    bxattr_exit_code retval = bxattr_exit_error;
 
    Dmsg0(dbglvl, "plugin_parse_xattr_streams\n");
@@ -1461,9 +1465,9 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
    if (!jcr->plugin_ctx) {
       return bxattr_exit_ok;
    }
-   plugin = (Plugin *)jcr->plugin_ctx->plugin;
 
 #if defined(HAVE_XATTR)
+   plugin = (Plugin *)jcr->plugin_ctx->plugin;
    if (plug_func(plugin)->setXattr != NULL) {
       xattr_t *current_xattr;
       struct xattr_pkt xp;
@@ -1498,9 +1502,7 @@ bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
 
       retval = bxattr_exit_ok;
    }
-#endif
 
-#if defined(HAVE_XATTR)
 bail_out:
    if (xattr_value_list) {
       xattr_drop_internal_table(xattr_value_list);
