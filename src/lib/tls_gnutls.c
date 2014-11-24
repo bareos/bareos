@@ -490,8 +490,15 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
 
    /*
     * Link the TLS session and the filedescriptor of the socket used.
+    * gnutls_transport_set_ptr may cause problems on some platforms,
+    * therefore the replacement gnutls_transport_set_int is used,
+    * when available (since GnuTLS >= 3.1.9)
     */
+#ifdef HAVE_GNUTLS_TRANSPORT_SET_INT
+   gnutls_transport_set_int(tls->gnutls_state, fd);
+#else
    gnutls_transport_set_ptr(tls->gnutls_state, (gnutls_transport_ptr_t)fd);
+#endif
 
    /*
     * Server specific settings.
