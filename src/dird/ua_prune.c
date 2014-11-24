@@ -566,10 +566,7 @@ bail_out:
 
 static void drop_temp_tables(UAContext *ua)
 {
-   int i;
-   for (i=0; drop_deltabs[i]; i++) {
-      db_sql_query(ua->db, drop_deltabs[i]);
-   }
+   db_sql_query(ua->db, drop_deltabs[db_get_type_index(ua->db)]);
 }
 
 static bool create_temp_tables(UAContext *ua)

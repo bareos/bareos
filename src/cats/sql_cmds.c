@@ -95,9 +95,22 @@ const char *sel_JobMedia =
    "AND Job.JobTDate<%s";
 
 /* Delete temp tables and indexes  */
+static const char *drop_deltabs_default =
+   "DROP TABLE DelCandidates";
+
 const char *drop_deltabs[] = {
-   "DROP TABLE DelCandidates",
-   NULL};
+   /* MySQL */
+   "DROP TABLE IF EXISTS DelCandidates",
+
+   /* Postgresql */
+   "DROP TABLE IF EXISTS DelCandidates",
+
+   /* SQLite3 */
+   drop_deltabs_default,
+
+   /* Ingres */
+   drop_deltabs_default
+};
 
 const char *create_delindex = "CREATE INDEX DelInx1 ON DelCandidates (JobId)";
 
