@@ -2368,6 +2368,10 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
 
    ff_pkt->fname = sp->fname;
    ff_pkt->link = sp->link;
+   if (sp->save_time) {
+      ff_pkt->save_time = sp->save_time;
+      ff_pkt->incremental = true;
+   }
    memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
    if (check_changes(jcr, ff_pkt))  {
@@ -2395,9 +2399,6 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
    JCR *jcr;
    FF_PKT *ff_pkt;
    b_plugin_ctx *bctx;
-
-   char *old;
-   struct stat oldstat;
    bRC ret = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2409,23 +2410,14 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
 
    ff_pkt = jcr->ff;
 
-   /*
-    * TODO: Probably not needed, but keep a copy
-    */
-   old = ff_pkt->fname;
-   oldstat = ff_pkt->statp;
-
    ff_pkt->fname = sp->fname;
-   ff_pkt->statp = sp->statp;
+   memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
    if (accept_file(ff_pkt)) {
       ret = bRC_OK;
    } else {
       ret = bRC_Skip;
    }
-
-   ff_pkt->fname = old;
-   ff_pkt->statp = oldstat;
 
 bail_out:
    return ret;

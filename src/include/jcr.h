@@ -493,7 +493,7 @@ public:
    acl_data_t *acl_data;                  /* ACLs for backup/restore */
    xattr_data_t *xattr_data;              /* Extended Attributes for backup/restore */
    int32_t last_type;                     /* Type of last file saved/verified */
-   int incremental;                       /* Set if incremental for SINCE */
+   bool incremental;                      /* Set if incremental for SINCE */
    utime_t mtime;                         /* Begin time for SINCE */
    int listing;                           /* Job listing in estimate */
    long Ticket;                           /* Ticket */

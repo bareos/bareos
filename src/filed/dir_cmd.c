@@ -1302,7 +1302,7 @@ static bool level_cmd(JCR *jcr)
       dir->signal(BNET_EOD);
 
       Dmsg2(100, "adj=%lld since_time=%lld\n", adj, since_time);
-      jcr->incremental = 1;           /* set incremental or decremental backup */
+      jcr->incremental = true;        /* set incremental or decremental backup */
       jcr->mtime = since_time;        /* set since time */
       generate_plugin_event(jcr, bEventSince, (void *)(time_t)jcr->mtime);
    } else {

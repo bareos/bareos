@@ -40,7 +40,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *ofd, int replace);
 
 /* find.c */
 FF_PKT *init_find_files();
-void set_find_options(FF_PKT *ff, int incremental, time_t mtime);
+void set_find_options(FF_PKT *ff, bool incremental, time_t mtime);
 void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff));
 int find_files(JCR *jcr, FF_PKT *ff, int file_sub(JCR *, FF_PKT *ff_pkt, bool),
                int plugin_sub(JCR *, FF_PKT *ff_pkt, bool));

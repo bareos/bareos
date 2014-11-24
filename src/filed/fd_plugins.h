@@ -89,6 +89,7 @@ struct save_pkt {
    bool portable;                     /* Set if data format is portable */
    bool accurate_found;               /* Found in accurate list (valid after check_changes()) */
    char *cmd;                         /* Command */
+   time_t save_time;                  /* Start of incremental time */
    uint32_t delta_seq;                /* Delta sequence number */
    char *object_name;                 /* Object name to create */
    char *object;                      /* Restore object data to save */
