@@ -1418,6 +1418,7 @@ static inline PySavePacket *NativeToPySavePacket(struct save_pkt *sp)
       pSavePkt->portable = sp->portable;
       pSavePkt->accurate_found = sp->accurate_found;
       pSavePkt->cmd = sp->cmd;
+      pSavePkt->save_time = sp->save_time;
       pSavePkt->delta_seq = sp->delta_seq;
       pSavePkt->object_name = NULL;
       pSavePkt->object = NULL;
@@ -3069,11 +3070,11 @@ static PyObject *PySavePacket_repr(PySavePacket *self)
 
    Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%s, "
              "no_read=%d, portable=%d, accurate_found=%d, "
-             "cmd=\"%s\", delta_seq=%ld, object_name=\"%s\", "
+             "cmd=\"%s\", save_time=%ld, delta_seq=%ld, object_name=\"%s\", "
              "object=\"%s\", object_len=%ld, object_index=%ld)",
         PyGetStringValue(self->fname), PyGetStringValue(self->link),
         self->type, print_flags_bitmap(self->flags), self->no_read, self->portable,
-        self->accurate_found, self->cmd, self->delta_seq,
+        self->accurate_found, self->cmd, self->save_time, self->delta_seq,
         PyGetStringValue(self->object_name), PyGetByteArrayValue(self->object),
         self->object_len, self->object_index);
 
@@ -3096,6 +3097,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
       (char *)"portable",
       (char *)"accurate_found",
       (char *)"cmd",
+      (char *)"save_time",
       (char *)"delta_seq",
       (char *)"object_name",
       (char *)"object",
@@ -3112,6 +3114,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
    self->portable = false;
    self->accurate_found = false;
    self->cmd = NULL;
+   self->save_time = 0;
    self->delta_seq = 0;
    self->object_name = NULL;
    self->object = NULL;
@@ -3120,7 +3123,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
 
    if (!PyArg_ParseTupleAndKeywords(args,
                                     kwds,
-                                    "|ooiocccsiooii",
+                                    "|ooiocccsiiooii",
                                     kwlist,
                                     &self->fname,
                                     &self->link,
@@ -3130,6 +3133,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
                                     &self->portable,
                                     &self->accurate_found,
                                     &self->cmd,
+                                    &self->save_time,
                                     &self->delta_seq,
                                     &self->object_name,
                                     &self->object,

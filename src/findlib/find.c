@@ -80,7 +80,7 @@ FF_PKT *init_find_files()
  * provide for full/incremental saves, and setting
  * of save_time. For additional options, see above
  */
-void set_find_options(FF_PKT *ff, int incremental, time_t save_time)
+void set_find_options(FF_PKT *ff, bool incremental, time_t save_time)
 {
   Dmsg0(dbglvl, "Enter set_find_options()\n");
   ff->incremental = incremental;
