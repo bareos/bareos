@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -23,8 +23,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
-
 
 $title = 'Bareos WebUI Installation and Configuration Test';
 $this->headTitle($title);
@@ -46,6 +44,7 @@ $this->headTitle($title);
 <th>Installed</th>
 <th>Status</th>
 
+<!-- JENKINS: PHP VERSION = <?php echo $this->PHP_VERSION_CHECK; ?> -->
 <tr>
 <td>PHP Version</td>
 <td><?php echo $this->REQUIRED_PHP_VERSION; ?></td>
@@ -53,6 +52,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->PHP_VERSION_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: PHP PDO EXTENSION = <?php echo $this->EXT_PDO_CHECK; ?> -->
 <tr>
 <td>PHP PDO Extension</td>
 <td><?php echo $this->REQUIRED_EXT_PDO; ?></td>
@@ -60,6 +60,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->EXT_PDO_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: PHP INTL EXTENSION = <?php echo $this->EXT_INTL_CHECK; ?> -->
 <tr>
 <td>PHP Intl Extension</td>
 <td><?php echo $this->REQUIRED_EXT_INTL; ?></td>
@@ -67,6 +68,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->EXT_INTL_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: ZEND FRAMEWORK 2 VERSION = <?php echo $this->ZF_VERSION_CHECK; ?> -->
 <tr>
 <td>Zend Framework 2</td>
 <td><?php echo $this->REQUIRED_ZF_VERSION; ?></td>
@@ -84,6 +86,7 @@ $this->headTitle($title);
 <th>Configured</th>
 <th>Status</th>
 
+<!-- JENKINS: DATABASE DRIVER = <?php echo $this->DB_DRIVER_CHECK; ?> -->
 <tr>
 <td>Driver</td>
 <td><?php echo $this->REQUIRED_DB_DRIVER; ?></td>
@@ -91,6 +94,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->DB_DRIVER_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: DATABASE HOST = <?php echo $this->DB_HOST_CHECK; ?> -->
 <tr>
 <td>Host</td>
 <td><?php echo $this->REQUIRED_DB_HOST; ?></td>
@@ -98,6 +102,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->DB_HOST_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: DATABASE USER = <?php echo $this->DB_USER_CHECK; ?> -->
 <tr>
 <td>User</td>
 <td><?php echo $this->REQUIRED_DB_USER; ?></td>
@@ -105,6 +110,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->DB_USER_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: DATABASE PASSWORD = <?php echo $this->DB_PASSWORD_CHECK; ?> -->
 <tr>
 <td>Password</td>
 <td><?php echo $this->REQUIRED_DB_PASSWORD; ?></td>
@@ -112,6 +118,7 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->DB_PASSWORD_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: DATABASE CONNECTION TEST = <?php echo $this->DB_CONNECTION_CHECK; ?> -->
 <tr>
 <td>Connection Test</td>
 <td></td>
@@ -119,11 +126,30 @@ $this->headTitle($title);
 <td><?php echo $this->printStatusGlyphicons($this->DB_CONNECTION_CHECK); ?></td>
 </tr>
 
+<!-- JENKINS: DATABASE READ-ACCESS TEST = <?php echo $this->DB_READACCESS_CHECK; ?> -->
 <tr>
 <td>Read-Access Test</td>
 <td></td>
 <td></td>
 <td><?php echo $this->printStatusGlyphicons($this->DB_READACCESS_CHECK); ?></td>
+</tr>
+
+</table>
+
+<h4 class="text-muted">Director</h4>
+<table class="table table-bordered table-striped">
+
+<th></th>
+<th>Required</th>
+<th>Configured</th>
+<th>Status</th>
+
+<!-- JENKINS: DIRECTOR CONSOLE CONFIGURED = <?php echo $this->DIRECTOR_CHECK; ?> -->
+<tr>
+<td>Console</td>
+<td><?php echo $this->REQUIRED_DIRECTOR; ?></td>
+<td><?php echo $this->CONFIGURED_DIRECTOR; ?></td>
+<td><?php echo $this->printStatusGlyphicons($this->DIRECTOR_CHECK); ?></td>
 </tr>
 
 </table>
@@ -134,3 +160,4 @@ $this->headTitle($title);
 
 </div>
 </div>
+

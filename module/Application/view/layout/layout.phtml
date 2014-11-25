@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  * 
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -64,41 +64,38 @@ echo $this->doctype();
     </head>
 
     <body>
-    
+
         <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
             <div class="container">
-		<div class="navbar-header">
+				<div class="navbar-header">
                     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-		    	<span class="sr-only">Toggle navigation</span>
+					<span class="sr-only">Toggle navigation</span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-		    <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
+				<a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
                 </div>
-                
                 <div class="collapse navbar-collapse">
-
-			<?php 
+				<?php
 		    		echo $this->navigation('navigation')
 			    		->menu()
-					->setMinDepth(0)
-					->setMaxDepth(0)
-					->setUlClass('nav navbar-nav');
-			?>
-
+						->setMinDepth(0)
+						->setMaxDepth(0)
+						->setUlClass('nav navbar-nav');
+				?>
                 </div>
             </div>
         </nav>
-	        
+
         <div class="container">
 
     	<?php echo $this->content; ?>
 
         <hr />
-		
+
         <footer>
-        <p class="text-muted">&copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
+        <p class="text-muted">Bareos WebUI Version 0.1 beta<br />&copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
         </footer>
 
         </div>

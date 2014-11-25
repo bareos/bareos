@@ -3,7 +3,7 @@ Section: web
 Priority: extra
 Maintainer: Bareos Packager <packager@bareos.org>
 Build-Depends: debhelper (>= 7.0.50~),
-  apache2-dev | apache2-prefork-dev,
+  apache2-dev | apache2-prefork-dev, apache2,
   autoconf,
   automake
 Standards-Version: 3.9.1

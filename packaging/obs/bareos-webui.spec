@@ -8,15 +8,15 @@ Summary:       Bareos Web User Interface
 Group:         Productivity/Archiving/Backup
 License:       AGPL-3.0+
 URL:           https://github.com/bareos/bareos-webui
-Source:        %{name}_%{version}.tar.gz
+Source:        %{name}-%{version}.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 BuildArch:     noarch
 
-BuildRequires: autoconf automake
+BuildRequires: autoconf automake bareos-common
 
 Requires: php >= 5.3.3
 Requires: php-ZendFramework2 >= 2.2.0
-Requires: php-pdo
+#Requires: php-pdo
 #Requires: php-json
 #Requires: php-pcre
 #Requires: php-gd
@@ -31,6 +31,7 @@ Requires: php-pdo
 BuildRequires: apache2
 # /usr/sbin/apxs2
 BuildRequires: apache2-devel
+BuildRequires: mod_php_any
 #define _apache_conf_dir #(/usr/sbin/apxs2 -q SYSCONFDIR)
 %define _apache_conf_dir /etc/apache2/conf.d/
 %define daemon_user  wwwrun
@@ -65,42 +66,32 @@ Supports status overview about Jobs.
 %prep
 %setup -q
 
-
 %build
 #autoreconf -fvi
 %configure
 make
 
-
 %install
 # makeinstall macro does not work on RedHat
 #makeinstall
 make DESTDIR=%{buildroot} install
-touch filelist
 
 %post
-# if command a2enmod exists,
-# use it to enable Apache rewrite module
-LOG=/var/log/bareos-webui-install.log
-echo "`date`: BEGIN bareos-webui init" >> $LOG
-which a2enmod >/dev/null && a2enmod rewrite >> $LOG 2>&1
-export BAREOS_WEBUI_INTERACTIVE="no"
-# if /usr/sbin/bareos-webui-config init >> $LOG 2>&1; then
-#     echo "SUCCESS: bareos-webui-config init, see $LOG"
-# else
-#     echo "FAILED: bareos-webui-config init, see $LOG"
-# fi
+a2enmod setenv &> /dev/null
+a2enmod rewrite &> /dev/null
+a2enmod php5 &> /dev/null
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files -f filelist
+%files
 %defattr(-,root,root,-)
-%doc AUTHORS.txt CONTRIBUTE.md README.md LICENSE.txt
+%doc README.md LICENSE AGPL-3.0.txt AUTHORS
 %doc doc/
 %{_datadir}/%{name}/
 #attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
-%config(noreplace) /etc/bareos-webui.conf.php
+%dir /etc/bareos-webui
+%config(noreplace) /etc/bareos-webui/directors.ini
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/bareos-webui.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
-#/usr/sbin/bareos-webui-config
 

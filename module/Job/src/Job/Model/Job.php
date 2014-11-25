@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 
 namespace Job\Model;
 
-class Job 
+class Job
 {
 
 	public $jobid;
@@ -46,7 +46,7 @@ class Job
 	public $jobbytes;
 	public $readbytes;
 	public $joberrors;
-	public $jobmissingfiles; 	
+	public $jobmissingfiles;
 	public $poolid;
 	public $filesetid;
 	public $priorjobid;
@@ -57,8 +57,8 @@ class Job
 	public $comment;
 	public $clientname;
 	public $duration;
-	
-	public function exchangeArray($data) 
+
+	public function exchangeArray($data)
 	{
 		$data = array_change_key_case($data, CASE_LOWER);
 

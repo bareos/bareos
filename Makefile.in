@@ -77,8 +77,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/configure $(am__configure_deps) install-sh \
-	missing
+	$(top_srcdir)/configure $(am__configure_deps) AUTHORS \
+	install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -522,11 +522,13 @@ uninstall-am:
 install: install-am
 	mkdir -p $(DESTDIR)$(pkgdatadir)
 	mkdir -p $(DESTDIR)/@HTTPD_CONF@
+	mkdir -p $(DESTDIR)/etc/bareos/bareos-dir.d/
+	mkdir -p $(DESTDIR)/etc/bareos-webui/
 
 	cp -pr init_autoloader.php config/ data/ module/ public/ vendor/ $(DESTDIR)$(pkgdatadir)
-	cp -p  config/autoload/local.php.dist $(DESTDIR)/etc/bareos-webui.conf.php
-	ln -s  /etc/bareos-webui.conf.php $(DESTDIR)/$(pkgdatadir)/config/autoload/local.php
-	$(INSTALL) -m 0640 install/apache/bareos-webui.conf  $(DESTDIR)@HTTPD_CONF@/
+	cp -p install/directors.ini $(DESTDIR)/etc/bareos-webui/directors.ini
+	$(INSTALL) -m 0640 install/bareos/bareos-webui.conf $(DESTDIR)/etc/bareos/bareos-dir.d/
+	$(INSTALL) -m 0640 install/apache/bareos-webui.conf $(DESTDIR)@HTTPD_CONF@/
 
 #	#$(INSTALL_SCRIPT) install/bareos-webui-config $(DESTDIR)@sbindir@
 

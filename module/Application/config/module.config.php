@@ -15,8 +15,8 @@ return array(
                 'options' => array(
                     'route'    => '/',
                     'defaults' => array(
-                        'controller' => 'Dashboard\Controller\Dashboard',
-                        'action'     => 'index',
+                        'controller' => 'Auth\Controller\Auth',
+                        'action'     => 'login',
                     ),
                 ),
             ),
@@ -57,13 +57,20 @@ return array(
             'Zend\Cache\Service\StorageCacheAbstractServiceFactory',
             'Zend\Log\LoggerAbstractServiceFactory',
         ),
-	'factories' => array(
-		//'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
-		'navigation' => 'Zend\Navigation\Service\DefaultNavigationFactory',
-	),
+		'services' => array(
+			'bsock' => new Bareos\BSock\BareosBSock(),
+		),
+		'shared' => array(
+		),
+		'factories' => array(
+			'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
+			'navigation' => 'Zend\Navigation\Service\DefaultNavigationFactory',
+		),
         'aliases' => array(
-            'translator' => 'MvcTranslator',
+            //'translator' => 'MvcTranslator',
         ),
+		'invokables' => array(
+		),
     ),
     'translator' => array(
         'locale' => 'en_US',
@@ -77,22 +84,22 @@ return array(
     ),
     'controllers' => array(
         'invokables' => array(
-	    'Application\Controller\Index' => 'Application\Controller\IndexController',
+		'Application\Controller\Index' => 'Application\Controller\IndexController',
         ),
     ),
     'view_helpers' => array(
-	'invokables' => array (
-	    'printDate' => 'Application\View\Helper\Date',
-	    'printJobStatus' => 'Application\View\Helper\JobStatus',
-	    'printJobLevel' => 'Application\View\Helper\JobLevel',
-	    'printJobType' => 'Application\View\Helper\JobType',
-	    'printJobDuration' => 'Application\View\Helper\JobDuration',
-	    'printBytes' => 'Application\View\Helper\Bytes',
-	    'printRetention' => 'Application\View\Helper\Retention',
-	    'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
-	    'printExpiration' => 'Application\View\Helper\Expiration',
-	    'printStatusGlyphicons' => 'Application\View\Helper\StatusGlyphicons',
-	),
+		'invokables' => array (
+		'printDate' => 'Application\View\Helper\Date',
+		'printJobStatus' => 'Application\View\Helper\JobStatus',
+		'printJobLevel' => 'Application\View\Helper\JobLevel',
+		'printJobType' => 'Application\View\Helper\JobType',
+		'printJobDuration' => 'Application\View\Helper\JobDuration',
+		'printBytes' => 'Application\View\Helper\Bytes',
+		'printRetention' => 'Application\View\Helper\Retention',
+		'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
+		'printExpiration' => 'Application\View\Helper\Expiration',
+		'printStatusGlyphicons' => 'Application\View\Helper\StatusGlyphicons',
+		),
     ),
     'view_manager' => array(
         'display_not_found_reason' => true,
@@ -109,9 +116,9 @@ return array(
         'template_path_stack' => array(
             __DIR__ . '/../view',
         ),
-	'strategies' => array(
-		'ViewJsonStrategy',	
-	),
+		'strategies' => array(
+			'ViewJsonStrategy',
+		),
     ),
     // Placeholder for console routes
     'console' => array(
@@ -121,76 +128,77 @@ return array(
         ),
     ),
     'navigation' => array(
-	'default' => array(
-		/*
-		array(
-			'label' => 'Home',
-			'route' => 'home',
+		'default' => array(
+			/*
+			array(
+				'label' => 'Home',
+				'route' => 'home',
+			),
+			*/
+			array(
+				'label' => 'Dashboard',
+				'route' => 'dashboard',
+			),
+			array(
+				'label' => 'Director',
+				'route' => 'director',
+			),
+			array(
+				'label' => 'Filesets',
+				'route' => 'fileset',
+			),
+			array(
+				'label' => 'Pools',
+				'route' => 'pool',
+			),
+			array(
+				'label' => 'Volumes',
+				'route' => 'media',
+			),
+			array(
+				'label' => 'Storages',
+				'route' => 'storage',
+			),
+			array(
+				'label' => 'Clients',
+				'route' => 'client',
+			),
+			array(
+				'label' => 'Jobs',
+				'route' => 'job',
+			),
+			/*
+			array(
+				'label' => 'Files',
+				'route' => 'file',
+			),
+			*/
+			array(
+				'label' => 'Logs',
+				'route' => 'log',
+			),
+			/*
+			array(
+				'label' => 'Restore',
+				'route' => 'restore',
+			),
+			*/
+			array(
+				'label' => 'Statistics',
+				'route' => 'statistics',
+			),
+			/*
+			array(
+				'label' => 'Administration',
+				'route' => 'admin',
+			),
+			*/
+			array(
+				'label' => 'Logout',
+				'route' => 'auth',
+				'action' => 'logout',
+			),
 		),
-		*/
-		array(
-			'label' => 'Dashboard',
-			'route' => 'dashboard',
-		),
-		array(
-			'label' => 'Director',
-			'route' => 'director',
-		),
-		array(
-			'label' => 'Filesets',
-			'route' => 'fileset',
-		),
-		array(
-			'label' => 'Pools',
-			'route' => 'pool',
-		),
-		array(
-			'label' => 'Volumes',
-			'route' => 'media',
-		),
-		array(
-			'label' => 'Storages',
-			'route' => 'storage',
-		),
-		array(
-			'label' => 'Clients',
-			'route' => 'client',
-		),
-		array(
-			'label' => 'Jobs',
-			'route' => 'job',
-		),
-		/*
-		array(
-			'label' => 'Files',
-			'route' => 'file',
-		),
-		*/
-		array(
-			'label' => 'Logs',
-			'route' => 'log',
-		),
-		/*
-		array(
-			'label' => 'Restore',
-			'route' => 'restore',
-		),
-		*/
-		array(
-			'label' => 'Statistics',
-			'route' => 'statistics',
-		),
-		/*
-		array(
-			'label' => 'Administration',
-			'route' => 'admin',
-		),
-		array(
-			'label' => 'User',
-			'route' => 'user',
-		),
-		*/
-	),
     ),
 );
 

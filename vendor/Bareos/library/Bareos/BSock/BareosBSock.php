@@ -24,7 +24,10 @@
  */
 namespace Bareos\BSock;
 
-class BareosBSock
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+
+class BareosBSock implements ServiceLocatorAwareInterface
 {
 	const BNET_TLS_NONE = 0;	/* cannot do TLS */
 	const BNET_TLS_OK = 1;		/* can do, but not required on my end */
@@ -79,14 +82,34 @@ class BareosBSock
 		'allowed_cns' => null,
 	);
 
+	protected $serviceLocator;
 	private $socket = null;
+
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+	{
+		$this->serviceLocator = $serviceLocator;
+	}
+
+	public function getServiceLocator()
+	{
+		return $this->serviceLocator;
+	}
 
 	/**
 	 * Initialize the connection
 	 */
 	public function init()
 	{
-		if(self::connect()) {
+		if(self::connect($this->config['console_name'], $this->config['password'])) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public function auth($console, $password)
+	{
+		if(self::connect($console, $password)) {
 			return true;
 		} else {
 			return false;
@@ -100,6 +123,12 @@ class BareosBSock
 		} else {
 			throw new \Exception("Illegal parameter $key in /config/autoload/local.php");
 		}
+	}
+
+	public function set_user_credentials($username=null, $password=null)
+	{
+		$this->config['console_name'] = $username;
+		$this->config['password'] = $password;
 	}
 
 	/**
@@ -117,10 +146,6 @@ class BareosBSock
 
 		if(empty($config['port'])) {
 			throw new \Exception("Missing parameter 'port' in /config/autoload/local.php");
-		}
-
-		if(empty($config['password'])) {
-			throw new \Exception("Missing parameter 'password' in /config/autoload/local.php");
 		}
 
 		if($this->config['debug']) {
@@ -210,7 +235,7 @@ class BareosBSock
 		$buffer = "";
 		$msg_len = array();
 
-		if ($len == 0) {
+		if ($len === 0) {
 			$buffer = fread($this->socket, 4);
 			if($buffer === false){
 				return false;
@@ -340,11 +365,14 @@ class BareosBSock
 	 *
 	 * @return boolean
 	 */
-	private function connect()
+	private function connect($username, $password)
 	{
 		if (!isset($this->config['host']) or !isset($this->config['port'])) {
 			return false;
 		}
+
+		$this->config['console_name'] = $username;
+		$this->config['password'] = $password;
 
 		$port = $this->config['port'];
 		$remote = "tcp://" . $this->config['host'] . ":" . $port;
@@ -441,7 +469,7 @@ class BareosBSock
 	 *
 	 * @return boolean
 	 */
-	private function disconnect()
+	public function disconnect()
 	{
 		fclose($this->socket);
 		if($this->config['debug']) {
@@ -471,11 +499,13 @@ class BareosBSock
 		$recv = self::receive();
 
 		if(strncasecmp($recv, self::DIR_AUTH_FAILED, strlen(self::DIR_AUTH_FAILED)) == 0) {
-			throw new \Exception("Failed to authenticate with Director\n");
+			return false;
+			//throw new \Exception("Failed to authenticate with Director\n");
 		} elseif(strncasecmp($recv, self::DIR_OK_AUTH, strlen(self::DIR_OK_AUTH)) == 0) {
 			return self::cram_md5_challenge($this->config['password']);
 		} else {
-			throw new \Exception("Unknown response to authentication by Director $recv\n");
+			return false;
+			//throw new \Exception("Unknown response to authentication by Director $recv\n");
 		}
 
 	}

@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,19 +32,22 @@ class DashboardController extends AbstractActionController
 {
 
 	protected $jobTable;
-	
+
 	public function indexAction()
 	{
-		return new ViewModel(
-			array(
-			
-				'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
-				'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
-				'waitingJobs' => $this->getJobTable()->getWaitingJobs(),
-				'runningJobs' => $this->getJobTable()->getRunningJobs(),
-			
-			)
-		);
+		if($_SESSION['bareos']['authenticated'] == true) {
+			return new ViewModel(
+				array(
+					'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
+					'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
+					'waitingJobs' => $this->getJobTable()->getWaitingJobs(),
+					'runningJobs' => $this->getJobTable()->getRunningJobs(),
+				)
+			);
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function getJobTable()
@@ -56,6 +59,6 @@ class DashboardController extends AbstractActionController
 		}
 		return $this->jobTable;
 	}
-	
+
 }
 

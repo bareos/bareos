@@ -35,3 +35,12 @@ div.container a.brand {
     margin-left: 0;
     padding: 8px 20px 12px 40px;
 }
+
+form label, form label span {
+	display: block;
+}
+
+.col-centered {
+    float: none;
+    margin: 0 auto;
+}

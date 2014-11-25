@@ -56,9 +56,12 @@ if ($zf2Path) {
 
 try {
         if (!class_exists('Zend\Loader\AutoloaderFactory')) {
-                throw new RuntimeException('<p>Unable to load Zend Framework 2. Please install the Zend Framework 2 package from your 
-                                                distribution repository.<br />If Zend Framework 2 is already installed, please define 
-                                                a ZF2_PATH environment variable.</p>');
+                throw new RuntimeException('
+			Unable to load Zend Framework 2.<br /><br />
+			Please install Zend Framework 2 package from your distribution repository.<br />
+			If Zend Framework 2 is already installed, please set the include_path in your php.ini or<br />
+			define a ZF2_PATH environment variable in your apache configuration file and do not forget<br />
+			to restart your apache webserver.<br />');
         }
 }
 catch(Exception $e) {

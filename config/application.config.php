@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ $env = getenv('APPLICATION_ENV') ?: 'production';
 // Use the $env value to dtermine which module to load
 $modules = array(
 	'Application',
-    	'Dashboard',
+	'Dashboard',
 	'Director',
 	'Fileset',
 	'Pool',
@@ -43,28 +43,20 @@ $modules = array(
 	'Admin',
 	'User',
 	'Install',
+	'Auth',
 );
 
-/*
-if($env == 'development') {
-   $modules[] = 'ZendDeveloperTools';
-}
-*/
 
-// to display all errors use: 
-
-/*
 if($env == 'development') {
-        $modules[] = 'ZendDeveloperTools';  // you may comment only this line out if ZendDeveloperTools are not installed e.g.
+        //$modules[] = 'ZendDeveloperTools';  // you may comment only this line out if ZendDeveloperTools are not installed e.g.
         error_reporting(E_ALL);
         ini_set("display_errors", 1);
 }
-*/
 
 return array(
     // This should be an array of module namespaces used in the application.
     'modules' => $modules,
-    
+
     // These are various options for the listeners attached to the ModuleManager
     'module_listener_options' => array(
         // This should be an array of paths in which modules reside.

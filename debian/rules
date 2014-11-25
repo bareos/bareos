@@ -21,4 +21,4 @@ export DH_OPTIONS = -v
 #       dh_auto_configure
 
 %:
-	dh $@ 
+	dh $@

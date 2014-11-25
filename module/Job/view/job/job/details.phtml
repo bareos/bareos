@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author	  Frank Bergkemper
  *
@@ -35,9 +35,9 @@ $this->headTitle($title);
 <div class="row">
 
   <div class="col-md-12">
-      
+
       <div class="panel panel-default">
-      
+
 	<div class="panel-heading">
 	  <h3 class="panel-title">General Information</h3>
 	</div>
@@ -45,78 +45,78 @@ $this->headTitle($title);
 	<div class="panel-body">
 
 	<table class="table table-striped table-bordered" style="font-size: 9pt;">
-	
+
 	<tr>
 	<td><b>Job</b></td><td><?php echo $this->escapeHtml($job->jobid); ?></td>
 	<td><b>Scheduled start</b></td><td><?php echo $this->printDate($job->schedtime, 'iso'); ?></td>
 	<td><b>Status</b></td><td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	</tr>
-	
+
 	<tr>
 	<td><b>Name</b></td><td><?php echo $this->escapeHtml($job->jobname); ?></td>
 	<td><b>Real start</b></td><td><?php echo $this->printDate($job->starttime, 'iso'); ?></td>
 	<td><b>Errors</b></td><td><?php echo $this->escapeHtml($job->joberrors); ?></td>
 	</tr>
-	
+
 	<tr>
 	<td><b>Client</b></td><td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job->clientid)); ?>"><?php echo $this->escapeHtml($job->clientname); ?></a></td>
 	<td><b>End</b></td><td><?php echo $this->printDate($job->endtime, 'iso'); ?></td>
-	<td><b>Files</b></td><td><a href="<?php /*echo $this->url('file', array('action' => 'jobid', 'id' => $job->jobid));*/ ?>"><?php echo $this->escapeHtml($job->jobfiles); ?></a></td>
+	<td><b>Files</b></td><td><!--<a href="<?php /*echo $this->url('file', array('action' => 'jobid', 'id' => $job->jobid));*/ ?>">--><?php echo $this->escapeHtml($job->jobfiles); ?><!--</a>--></td>
 	</tr>
-	
+
 	<tr>
 	<td><b>Type</b></td><td><?php echo $this->printJobType($job->type); ?></td>
 	<td><b>Fileset</b></td><td><a href="<?php echo $this->url('fileset', array('action' => 'details', 'id' => $job->filesetid)); ?>"><?php echo $this->escapeHtml($job->filesetid); ?></a></td>
 	<td><b>Bytes</b></td><td><?php echo $this->printBytes($job->jobbytes); ?></td>
 	</tr>
-	
+
 	<tr>
 	<td><b>Level</b></td><td><?php echo $this->printJobLevel($job->level); ?></td>
 	<td><b>Pool</b></td><td><a href="<?php echo $this->url('pool', array('action' => 'details', 'id' => $job->poolid)); ?>"><?php echo $this->escapeHtml($job->poolid); ?></a></td>
 	<td></td><td></td>
 	</tr>
-	
+
 	</table>
 
 	</div>
 
       </div>
-      
+
   </div>
-  
+
   <!--
   <div class="col-md-6">
-      
+
       <div class="panel panel-default">
-      
+
 	<div class="panel-heading">
 	  <h3 class="panel-title">Placeholder</h3>
 	</div>
 
 	<div class="panel-body">
 
-	
+
 
 	</div>
 
       </div>
-      
-  </div> 
+
+  </div>
   -->
-  
+
 </div>
 
 <div class="row">
 
   <div class="col-md-12">
       <div class="panel panel-default">
-	
+
 	<div class="panel-heading">
 	  <h3 class="panel-title">Messages</h3>
 	</div>
-	
+
 	<div class="panel-body">
-	
+
 	<table class="table table-striped table-hover" style="font-size: 9pt;">
 
 	<tr>
@@ -138,10 +138,10 @@ $this->headTitle($title);
 	<?php endforeach; ?>
 
 </table>
-	
+
 	</div>
-	
+
       </div>
   </div>
-  
+
 </div>

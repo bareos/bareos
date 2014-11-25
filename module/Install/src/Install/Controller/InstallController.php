@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -32,11 +32,11 @@ use Zend\Version\Version;
 use Zend\Db\Adapter\Driver\ConnectionInterface;
 use \Exception;
 
-class InstallController extends AbstractActionController 
+class InstallController extends AbstractActionController
 {
 
 	const REQUIRED_PHP_VERSION = "5.3";
-	const REQUIRED_ZF_VERSION = "2.2";	
+	const REQUIRED_ZF_VERSION = "2.2";
 	const REQUIRED_EXT_PDO = "YES";
 	const REQUIRED_EXT_INTL = "YES";
 	const REQUIRED_DB_DRIVER = "YES";
@@ -46,6 +46,7 @@ class InstallController extends AbstractActionController
 	const REQUIRED_BCONSOLE_EXEC = "YES";
 	const REQUIRED_BCONSOLE_CONF = "YES";
 	const REQUIRED_BCONSOLE_SUDO = "NO";
+	const REQUIRED_DIRECTOR = "YES";
 
 	public function indexAction()
 	{
@@ -69,7 +70,7 @@ class InstallController extends AbstractActionController
 			'EXT_PDO_CHECK' => $this->getPDOExtStatus(),
 			'INSTALLED_EXT_INTL' => $this->getInstalledIntlExt(),
 			'REQUIRED_EXT_INTL' => self::REQUIRED_EXT_INTL,
-			'EXT_INTL_CHECK' => $this->getIntlExtStatus(),	
+			'EXT_INTL_CHECK' => $this->getIntlExtStatus(),
 			'REQUIRED_DB_DRIVER' => self::REQUIRED_DB_DRIVER,
 			'CONFIGURED_DB_DRIVER' => $this->getConfiguredDbDriver(),
 			'DB_DRIVER_CHECK' => $this->getDbDriverStatus(),
@@ -84,22 +85,25 @@ class InstallController extends AbstractActionController
 			'DB_PASSWORD_CHECK' => $this->getDbPasswordStatus(),
 			'DB_CONNECTION_CHECK' => $this->getDbConnectionStatus(),
 			'DB_READACCESS_CHECK' => $this->getDbReadAccessStatus(),
+			'REQUIRED_DIRECTOR' => self::REQUIRED_DIRECTOR,
+			'CONFIGURED_DIRECTOR' => $this->getConfiguredDirector(),
+			'DIRECTOR_CHECK' => $this->getDirectorStatus(),
 		));
 		return $viewModel;
 	}
 
-	private function getInstalledPHPVersion() 
+	private function getInstalledPHPVersion()
 	{
 		$version = phpversion();
 		return $version;
 	}
 
-	private function getInstalledZFVersion() 
+	private function getInstalledZFVersion()
 	{
-		return Version::VERSION; 
+		return Version::VERSION;
 	}
 
-	private function compareVersions($installed, $required) 
+	private function compareVersions($installed, $required)
 	{
 		if(version_compare($installed, $required, '<')) {
 			return -1;
@@ -121,7 +125,7 @@ class InstallController extends AbstractActionController
                 }
 	}
 
-	private function getPDOExtStatus() 
+	private function getPDOExtStatus()
 	{
 		if(extension_loaded('PDO')) {
 			return 0;
@@ -132,7 +136,7 @@ class InstallController extends AbstractActionController
 	}
 
 
-	private function getIntlExtStatus() 
+	private function getIntlExtStatus()
 	{
 		if(extension_loaded('Intl')) {
                         return 0;
@@ -142,7 +146,7 @@ class InstallController extends AbstractActionController
                 }
 	}
 
-	private function getInstalledIntlExt() 
+	private function getInstalledIntlExt()
 	{
 		if(extension_loaded('Intl')) {
                         $intl = "YES";
@@ -157,15 +161,16 @@ class InstallController extends AbstractActionController
 	private function getConfiguredDbDriver()
 	{
 		$config = $this->getServiceLocator()->get('Config');
-		$backend = $config['db']['driver'];
+		$adapter = array_keys($config['db']['adapters']);
+		$backend = $config['db']['adapters'][$adapter[0]]['driver'];
 		return $backend;
 	}
 
-	private function getDbDriverStatus() 
+	private function getDbDriverStatus()
 	{
-		if(self::getConfiguredDbDriver() == "Pdo_Pgsql" || 
+		if(self::getConfiguredDbDriver() == "Pdo_Pgsql" ||
 			self::getConfiguredDbDriver() == "Pdo_Mysql" ||
-			self::getConfiguredDbDriver() == "Mysqli" || 
+			self::getConfiguredDbDriver() == "Mysqli" ||
 			self::getConfiguredDbDriver() == "Pgsql") {
 			return 0;
 		}
@@ -174,14 +179,15 @@ class InstallController extends AbstractActionController
 		}
 	}
 
-	private function getConfiguredDbHost() 
+	private function getConfiguredDbHost()
 	{
 		$config = $this->getServiceLocator()->get('Config');
-                $host = $config['db']['host'];
-                return $host;
+		$adapter = array_keys($config['db']['adapters']);
+        $host = $config['db']['adapters'][$adapter[0]]['host'];
+        return $host;
 	}
 
-	private function getDbHostStatus() 
+	private function getDbHostStatus()
 	{
 		if(self::getConfiguredDbHost() != "") {
 			return 0;
@@ -191,14 +197,15 @@ class InstallController extends AbstractActionController
 		}
 	}
 
-	private function getConfiguredDbUser() 
+	private function getConfiguredDbUser()
 	{
 		$config = $this->getServiceLocator()->get('Config');
-                $user = $config['db']['username'];
-                return $user;
+		$adapter = array_keys($config['db']['adapters']);
+        $user = $config['db']['adapters'][$adapter[0]]['username'];
+        return $user;
 	}
 
-	private function getDbUserStatus() 
+	private function getDbUserStatus()
 	{
 		if(self::getConfiguredDbUser() != "") {
                         return 0;
@@ -208,10 +215,11 @@ class InstallController extends AbstractActionController
                 }
 	}
 
-	private function getConfiguredDbPassword() 
+	private function getConfiguredDbPassword()
 	{
 		$config = $this->getServiceLocator()->get('Config');
-                $passwd = $config['db']['password'];
+		$adapter = array_keys($config['db']['adapters']);
+        $passwd = $config['db']['adapters'][$adapter[0]]['password'];
 		if($passwd != "") {
 			$passwd = "SET";
                 	return $passwd;
@@ -222,7 +230,7 @@ class InstallController extends AbstractActionController
 		}
 	}
 
-	private function getDbPasswordStatus() 
+	private function getDbPasswordStatus()
 	{
 		if(self::getConfiguredDbPassword() == "SET") {
                         return 0;
@@ -232,15 +240,18 @@ class InstallController extends AbstractActionController
                 }
 	}
 
-	private function getDbConnectionStatus() 
+	private function getDbConnectionStatus()
 	{
 		if(self::getDbDriverStatus() ==  0 &&
-			self::getDbHostStatus() == 0 && 
+			self::getDbHostStatus() == 0 &&
 			self::getDbUserStatus() == 0 &&
-			self::getDbPasswordStatus() == 0
+			self::getDbPasswordStatus() == -1
 			) {
 				try {
-					$dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
+					$config = $this->getServiceLocator()->get('Config');
+					$adapter = array_keys($config['db']['adapters']);
+					$db = $config['db']['adapters'][$adapter[0]]['host'];
+					$dbAdapter = $this->getServiceLocator()->get($db);
 					$connection = $dbAdapter->getDriver()->getConnection()->connect();
 					return 0;
 				}
@@ -253,15 +264,21 @@ class InstallController extends AbstractActionController
 		}
 	}
 
-	private function getDbReadAccessStatus() 
+	private function getDbReadAccessStatus()
 	{
 		if(self::getDbConnectionStatus() == 0) {
 			try {
-				$dbAdapter = $this->getServiceLocator()->get('Zend\Db\Adapter\Adapter');
-                                $connection = $dbAdapter->getDriver()->getConnection()->connect();	
+				$config = $this->getServiceLocator()->get('Config');
+				$adapter = array_keys($config['db']['adapters']);
+                $db = $config['db']['adapters'][$adapter[0]]['host'];
+                $dbAdapter = $this->getServiceLocator()->get($db);
+                $connection = $dbAdapter->getDriver()->getConnection()->connect();
 
-				if($connection->getCurrentSchema() == "bareos") {
+				if($connection->getCurrentSchema() != false) {
 					return 0;
+				}
+				else {
+					return -1;
 				}
 			}
 			catch(\Exception $e) {
@@ -271,6 +288,25 @@ class InstallController extends AbstractActionController
 		else {
 			return -1;
 		}
+	}
+
+	private function getConfiguredDirector()
+	{
+		$config = $this->getServiceLocator()->get('Config');
+		$dir = array_keys($config['directors']);
+        $director = $config['directors'][$dir[0]]['host'];
+        return $director;
+	}
+
+	private function getDirectorStatus()
+	{
+		if(self::getConfiguredDirector() != "") {
+                        return 0;
+                }
+                else {
+                        return -1;
+                }
+
 	}
 
 }

@@ -31,7 +31,7 @@ class LogTable implements ServiceLocatorAwareInterface
 
         public function getDbDriverConfig() {
                 $config = $this->getServiceLocator()->get('Config');
-                return $config['db']['driver'];
+                return $config['db']['adapters'][$_SESSION['bareos']['director']]['driver'];
         }
 
 	public function fetchAll($paginated=false, $order_by=null, $order=null)
@@ -66,7 +66,7 @@ class LogTable implements ServiceLocatorAwareInterface
 	public function getLog($logid)
 	{
 		$logid = (int) $logid;
-		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());	
+		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$rowset = $this->tableGateway->select(array(
 			$bsqlch->strdbcompat("LogId") => $logid)
 		);
@@ -81,7 +81,7 @@ class LogTable implements ServiceLocatorAwareInterface
 	{
 
 		$jobid = (int) $id;
-		
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Log"));
@@ -93,7 +93,7 @@ class LogTable implements ServiceLocatorAwareInterface
 		return $resultSet;
 
 	}
-	
+
 	public function getLogNum()
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());

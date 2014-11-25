@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@ namespace Statistics\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 
-class StatisticsController extends AbstractActionController 
+class StatisticsController extends AbstractActionController
 {
 	protected $jobTable;
 	protected $clientTable;
@@ -37,77 +37,79 @@ class StatisticsController extends AbstractActionController
 	protected $fileTable;
 	protected $logTable;
 	protected $filesetTable;
-	
+
 	public function indexAction()
 	{
-		return new ViewModel(
-		      array(
-			
-				'jobsCreatedNotRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("C"),
-				'jobsBlocked' => $this->getJobTable()->getJobCountLast24HoursByStatus("B"),
-				'jobsRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("R"),
-				'jobsTerminated' => $this->getJobTable()->getJobCountLast24HoursByStatus("T"),
-				'jobsTerminatedWithErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("E"),
-				'jobsWithNonFatalErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("e"),
-				'jobsWithFatalErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("f"),
-				'jobsCanceled' => $this->getJobTable()->getJobCountLast24HoursByStatus("A"),
-				'jobsVerifyFoundDiff' => $this->getJobTable()->getJobCountLast24HoursByStatus("D"),
-				'jobsWaitingForClient' => $this->getJobTable()->getJobCountLast24HoursByStatus("F"),
-				'jobsWaitingForStorageDaemon' => $this->getJobTable()->getJobCountLast24HoursByStatus("S"),
-				'jobsWaitingForNewMedia' => $this->getJobTable()->getJobCountLast24HoursByStatus("m"),
-				'jobsWaitingForMediaMount' => $this->getJobTable()->getJobCountLast24HoursByStatus("M"),
-				'jobsWaitingForStorageResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("s"),
-				'jobsWaitingForJobResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("j"),
-				'jobsWaitingForClientResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("c"),
-				'jobsWaitingOnMaximumJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("d"),
-				'jobsWaitingOnStartTime' => $this->getJobTable()->getJobCountLast24HoursByStatus("t"),
-				'jobsWaitingOnHigherPriorityJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("p"),
-				'jobsSDdespoolingAttributes' => $this->getJobTable()->getJobCountLast24HoursByStatus("a"),
-				'jobsBatchInsertFileRecords' => $this->getJobTable()->getJobCountLast24HoursByStatus("i"),
-				
-			)
-		);
+		if($_SESSION['bareos']['authenticated'] == true) {
+				return new ViewModel(
+					  array(
+
+						'jobsCreatedNotRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("C"),
+						'jobsBlocked' => $this->getJobTable()->getJobCountLast24HoursByStatus("B"),
+						'jobsRunning' => $this->getJobTable()->getJobCountLast24HoursByStatus("R"),
+						'jobsTerminated' => $this->getJobTable()->getJobCountLast24HoursByStatus("T"),
+						'jobsTerminatedWithErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("E"),
+						'jobsWithNonFatalErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("e"),
+						'jobsWithFatalErrors' => $this->getJobTable()->getJobCountLast24HoursByStatus("f"),
+						'jobsCanceled' => $this->getJobTable()->getJobCountLast24HoursByStatus("A"),
+						'jobsVerifyFoundDiff' => $this->getJobTable()->getJobCountLast24HoursByStatus("D"),
+						'jobsWaitingForClient' => $this->getJobTable()->getJobCountLast24HoursByStatus("F"),
+						'jobsWaitingForStorageDaemon' => $this->getJobTable()->getJobCountLast24HoursByStatus("S"),
+						'jobsWaitingForNewMedia' => $this->getJobTable()->getJobCountLast24HoursByStatus("m"),
+						'jobsWaitingForMediaMount' => $this->getJobTable()->getJobCountLast24HoursByStatus("M"),
+						'jobsWaitingForStorageResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("s"),
+						'jobsWaitingForJobResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("j"),
+						'jobsWaitingForClientResource' => $this->getJobTable()->getJobCountLast24HoursByStatus("c"),
+						'jobsWaitingOnMaximumJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("d"),
+						'jobsWaitingOnStartTime' => $this->getJobTable()->getJobCountLast24HoursByStatus("t"),
+						'jobsWaitingOnHigherPriorityJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("p"),
+						'jobsSDdespoolingAttributes' => $this->getJobTable()->getJobCountLast24HoursByStatus("a"),
+						'jobsBatchInsertFileRecords' => $this->getJobTable()->getJobCountLast24HoursByStatus("i"),
+
+					)
+				);
+		}
+		else {
+                return $this->redirect()->toRoute('auth', array('action' => 'login'));
+        }
+
 	}
 
 	public function catalogAction()
 	{
-		return new ViewModel(
-		      array(
-			
-				'clientNum' => $this->getClientTable()->getClientNum(),
-				'poolNum' => $this->getPoolTable()->getPoolNum(),
-				'volumeNum' => $this->getMediaTable()->getMediaNum(),
-				'fileNum' => $this->getFileTable()->getFileNum(),
-				'jobNum' => $this->getJobTable()->getJobNum(),
-				'logNum' => $this->getLogTable()->getLogNum(),
-				'filesetNum' => $this->getFilesetTable()->getFilesetNum(),
-				
-			)
-		);
+				return new ViewModel(
+					  array(
+
+						'clientNum' => $this->getClientTable()->getClientNum(),
+						'poolNum' => $this->getPoolTable()->getPoolNum(),
+						'volumeNum' => $this->getMediaTable()->getMediaNum(),
+						'fileNum' => $this->getFileTable()->getFileNum(),
+						'jobNum' => $this->getJobTable()->getJobNum(),
+						'logNum' => $this->getLogTable()->getLogNum(),
+						'filesetNum' => $this->getFilesetTable()->getFilesetNum(),
+
+					)
+				);
 	}
-	
-	public function storedAction() 
-	{
-		return new ViewModel(
-		      array(
-				'stored7days' => $this->getJobTable()->getStoredBytes7Days(),
-				'stored14days' => $this->getJobTable()->getStoredBytes14Days(),
-		      )
-		);
-	}
-	
-	public function clientAction() 
+
+	public function storedAction()
 	{
 		return new ViewModel(
 		);
 	}
-	
-	public function backupjobAction() 
+
+	public function clientAction()
 	{
 		return new ViewModel(
 		);
 	}
-	
+
+	public function backupjobAction()
+	{
+		return new ViewModel(
+		);
+	}
+
 	public function getJobTable()
 	{
 		if(!$this->jobTable)
@@ -117,7 +119,7 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->jobTable;
 	}
-	
+
 	public function getClientTable()
 	{
 		if(!$this->clientTable)
@@ -127,8 +129,8 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->clientTable;
 	}
-	
-	public function getPoolTable() 
+
+	public function getPoolTable()
 	{
 		if(!$this->poolTable)
 		{
@@ -137,8 +139,8 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->poolTable;
 	}
-	
-	public function getMediaTable() 
+
+	public function getMediaTable()
 	{
 		if(!$this->mediaTable)
 		{
@@ -147,8 +149,8 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->mediaTable;
 	}
-	
-	public function getFileTable() 
+
+	public function getFileTable()
 	{
 		if(!$this->fileTable)
 		{
@@ -157,8 +159,8 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->fileTable;
 	}
-	
-	public function getLogTable() 
+
+	public function getLogTable()
 	{
 		if(!$this->logTable)
 		{
@@ -167,8 +169,8 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->logTable;
 	}
-	
-	public function getFilesetTable() 
+
+	public function getFilesetTable()
 	{
 		if(!$this->filesetTable)
 		{
@@ -177,6 +179,6 @@ class StatisticsController extends AbstractActionController
 		}
 		return $this->filesetTable;
 	}
-	
+
 }
 

@@ -10,7 +10,7 @@ use Zend\Db\TableGateway\TableGateway;
 class Module
 {
 
-	public function getAutoloaderConfig() 
+	public function getAutoloaderConfig()
 	{
 		return array(
 			'Zend\Loader\ClassMapAutoloader' => array(
@@ -24,16 +24,16 @@ class Module
 		);
 	}
 
-	public function getConfig() 
+	public function getConfig()
 	{
 		return include __DIR__ . '/config/module.config.php';
 	}
 
-	public function getServiceConfig() 
+	public function getServiceConfig()
 	{
 		return array(
 			'factories' => array(
-				'Statistics\Model\StatisticsTable' => function($sm) 
+				'Statistics\Model\StatisticsTable' => function($sm)
 				{
 					$tableGateway = $sm->get('StatisticsTableGateway');
 					$table = new StatisticsTable($tableGateway);
@@ -41,7 +41,8 @@ class Module
 				},
 				'StatisticsTableGateway' => function($sm)
 				{
-					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
+					//$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
+					$dbAdapter = $sm->get($_SESSION['bareos']['director']);
 					$resultSetPrototype = new ResultSet();
 					$resultSetPrototype->setArrayObjectPrototype(new Statistics());
 					return new TableGateway('statistics', $dbAdapter, null, $resultSetPrototype);

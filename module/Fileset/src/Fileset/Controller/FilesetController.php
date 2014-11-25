@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  * 
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,44 +36,55 @@ class FilesetController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'FileSetId';
-		$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-		$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-		$paginator = $this->getFilesetTable()->fetchAll(true, $order_by, $order);
-		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage($limit);
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'FileSetId';
+				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+				$paginator = $this->getFilesetTable()->fetchAll(true, $order_by, $order);
+				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+				$paginator->setItemCountPerPage($limit);
 
-		return new ViewModel(
-				array(
-					'paginator' => $paginator,
-					'order_by' => $order_by,
-                                	'order' => $order,
-                                	'limit' => $limit,
-				)
-		);
+				return new ViewModel(
+						array(
+							'paginator' => $paginator,
+							'order_by' => $order_by,
+											'order' => $order,
+											'limit' => $limit,
+						)
+				);
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function detailsAction()
 	{
-		$id = (int) $this->params()->fromRoute('id', 0);
-		$fset = $this->getFilesetTable()->getFileSet($id);
-		$cmd = 'show fileset="' . $fset->fileset . '"';
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$id = (int) $this->params()->fromRoute('id', 0);
+				$fset = $this->getFilesetTable()->getFileSet($id);
+				$cmd = 'show fileset="' . $fset->fileset . '"';
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
 
-		if (!$id) {
-		    return $this->redirect()->toRoute('fileset');
+				if (!$id) {
+					return $this->redirect()->toRoute('fileset');
+				}
+
+				return new ViewModel(
+					array(
+						'fileset' => $this->getFilesetTable()->getFileset($id),
+						'history' => $this->getFilesetTable()->getFilesetHistory($id),
+						'configuration' => $bsock->send_command($cmd),
+					)
+				);
 		}
-
-		return new ViewModel(
-			array(
-				'fileset' => $this->getFilesetTable()->getFileset($id),
-				'history' => $this->getFilesetTable()->getFilesetHistory($id),
-				'configuration' => $bsock->send_command($cmd),
-			)
-		);
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function getFilesetTable()

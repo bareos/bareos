@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -37,62 +37,92 @@ class DirectorController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$cmd = "status director";
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
-		return new ViewModel(array(
-				'directorOutput' => $bsock->send_command($cmd),
-			));
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$cmd = "status director";
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
+				return new ViewModel(array(
+						'directorOutput' => $bsock->send_command($cmd),
+				));
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function messagesAction()
 	{
-		$cmd = "messages";
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
-		return new ViewModel(array(
-				'directorOutput' => $bsock->send_command($cmd),
-			));
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$cmd = "messages";
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
+				return new ViewModel(array(
+						'directorOutput' => $bsock->send_command($cmd),
+					));
+				}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function scheduleAction()
 	{
-		$cmd = "show schedule";
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
-		return new ViewModel(array(
-				'directorOutput' => $bsock->send_command($cmd),
-			));
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$cmd = "show schedule";
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
+				return new ViewModel(array(
+						'directorOutput' => $bsock->send_command($cmd),
+					));
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function schedulerstatusAction()
 	{
-		$cmd = "status scheduler";
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
-		return new ViewModel(array(
-				'directorOutput' => $bsock->send_command($cmd),
-			));
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$cmd = "status scheduler";
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
+				return new ViewModel(array(
+						'directorOutput' => $bsock->send_command($cmd),
+					));
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function versionAction()
 	{
-		$cmd = "version";
-		$config = $this->getServiceLocator()->get('Config');
-		$bsock = new BareosBSock();
-		$bsock->set_config($config['director']);
-		$bsock->init();
-		return new ViewModel(array(
-				'directorOutput' => $bsock->send_command($cmd),
-			));
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$cmd = "version";
+				$config = $this->getServiceLocator()->get('Config');
+				$bsock = new BareosBSock();
+				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+				$bsock->init();
+				return new ViewModel(array(
+						'directorOutput' => $bsock->send_command($cmd),
+					));
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 }

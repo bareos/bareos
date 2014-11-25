@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,10 +56,10 @@ class MediaTable implements ServiceLocatorAwareInterface
 
         public function getDbDriverConfig() {
                 $config = $this->getServiceLocator()->get('Config');
-                return $config['db']['driver'];
+                return $config['db']['adapters'][$_SESSION['bareos']['director']]['driver'];
         }
 
-	public function fetchAll($paginated=false, $order_by=null, $order=null) 
+	public function fetchAll($paginated=false, $order_by=null, $order=null)
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select($bsqlch->strdbcompat("Media"));
@@ -91,16 +91,16 @@ class MediaTable implements ServiceLocatorAwareInterface
 	public function getMedia($id)
 	{
 		$mediaid = (int) $id;
-		
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Media"));
 		$select->where($bsqlch->strdbcompat("MediaId") . " = " . $mediaid);
-		
+
 		$resultSet = $this->tableGateway->selectWith($select);
 		$row = $resultSet->current();
-		
-		return $row;		
+
+		return $row;
 	}
 
 	public function getMediaNum()
@@ -116,26 +116,26 @@ class MediaTable implements ServiceLocatorAwareInterface
 			$this->tableGateway->getAdapter(),
 			$resultSetPrototype
 		);
-		$num = $rowset->count();		  
+		$num = $rowset->count();
 
 		return $num;
 	}
-	
-	public function getPoolVolumes($id) 
+
+	public function getPoolVolumes($id)
 	{
 		$poolid = (int) $id;
-		
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Media"));
 		$select->where($bsqlch->strdbcompat("PoolId") . " = " . $poolid);
 		$select->order($bsqlch->strdbcompat("MediaId") . " ASC");
-		
+
 		$resultSet = $this->tableGateway->selectWith($select);
-		
+
 		return $resultSet;
-		
+
 	}
-	
+
 }
 

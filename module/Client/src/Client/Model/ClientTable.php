@@ -31,15 +31,15 @@ class ClientTable implements ServiceLocatorAwareInterface
 
         public function getDbDriverConfig() {
                 $config = $this->getServiceLocator()->get('Config');
-                return $config['db']['driver'];
+                return $config['db']['adapters'][$_SESSION['bareos']['director']]['driver'];
         }
 
-	public function fetchAll($paginated=false, $order_by=null, $order=null) 
+	public function fetchAll($paginated=false, $order_by=null, $order=null)
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Client"));
-	
+
 		if($order_by != null && $order != null) {
                         $select->order($bsqlch->strdbcompat($order_by) . " " . $order);
                 }

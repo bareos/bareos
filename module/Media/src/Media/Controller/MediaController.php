@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,36 +35,46 @@ class MediaController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'MediaId';
-                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-		$paginator = $this->getMediaTable()->fetchAll(true, $order_by, $order);
-		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage($limit);
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'MediaId';
+				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+				$paginator = $this->getMediaTable()->fetchAll(true, $order_by, $order);
+				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+				$paginator->setItemCountPerPage($limit);
 
-		return new ViewModel(
-			array(
-				'paginator' => $paginator,
-				'order_by' => $order_by,
-                                'order' => $order,
-                                'limit' => $limit,
-			)
-		);
+				return new ViewModel(
+					array(
+						'paginator' => $paginator,
+						'order_by' => $order_by,
+										'order' => $order,
+										'limit' => $limit,
+					)
+				);
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
-	public function detailsAction() 
+	public function detailsAction()
 	{
-		$id = (int) $this->params()->fromRoute('id', 0);
-		if (!$id) {
-		    return $this->redirect()->toRoute('media');
-		}
-	  
-		return new ViewModel(array(
+		if($_SESSION['bareos']['authenticated'] == true) {
+			$id = (int) $this->params()->fromRoute('id', 0);
+			if (!$id) {
+			return $this->redirect()->toRoute('media');
+			}
+
+			return new ViewModel(array(
 				'media' => $this->getMediaTable()->getMedia($id),
 			));
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
-	public function getMediaTable() 
+	public function getMediaTable()
 	{
 		if(!$this->mediaTable) {
 			$sm = $this->getServiceLocator();
@@ -72,6 +82,6 @@ class MediaController extends AbstractActionController
 		}
 		return $this->mediaTable;
 	}
-	
+
 }
 

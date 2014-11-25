@@ -40,11 +40,12 @@ class Module
 					return $table;
 				},
 				'PoolTableGateway' => function($sm) {
-					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
+					//$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
+					$dbAdapter = $sm->get($_SESSION['bareos']['director']);
 					$resultSetPrototype = new ResultSet();
 					$resultSetPrototype->setArrayObjectPrototype(new Pool());
 					$config = $sm->get('Config');
-					$bsqlch = new BareosSqlCompatHelper($config['db']['driver']);
+					$bsqlch = new BareosSqlCompatHelper($config['db']['adapters'][$_SESSION['bareos']['director']]['driver']);
 					return new TableGateway($bsqlch->strdbcompat("Pool"), $dbAdapter, null, $resultSetPrototype);
 				},
 			),

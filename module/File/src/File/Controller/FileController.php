@@ -12,34 +12,44 @@ class FileController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$paginator = $this->getFileTable()->fetchAll(true);
-		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(15);
+		if($_SESSION['user']['authenticated'] == true) {
+				$paginator = $this->getFileTable()->fetchAll(true);
+				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+				$paginator->setItemCountPerPage(15);
 
-		return new ViewModel( array('paginator' => $paginator) );
-	}
-
-	public function revisionsAction() 
-	{
-
-	}
-
-	public function jobidAction() 
-	{
-		$id = (int) $this->params()->fromRoute('id', 0);
-		
-		if (!$id) {
-		    return $this->redirect()->toRoute('job');
+				return new ViewModel( array('paginator' => $paginator) );
 		}
-	
-		$paginator = $this->getFileTable()->getFileByJobId($id);
-		$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-		$paginator->setItemCountPerPage(20);
-
-		return new ViewModel( array('paginator' => $paginator) );
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
-	
-	public function getFileTable() 
+
+	public function revisionsAction()
+	{
+
+	}
+
+	public function jobidAction()
+	{
+		if($_SESSION['user']['authenticated'] == true) {
+				$id = (int) $this->params()->fromRoute('id', 0);
+
+				if (!$id) {
+					return $this->redirect()->toRoute('job');
+				}
+
+				$paginator = $this->getFileTable()->getFileByJobId($id);
+				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+				$paginator->setItemCountPerPage(20);
+
+				return new ViewModel( array('paginator' => $paginator) );
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getFileTable()
 	{
 		if(!$this->fileTable) {
 			$sm = $this->getServiceLocator();
@@ -47,6 +57,6 @@ class FileController extends AbstractActionController
 		}
 		return $this->fileTable;
 	}
-	
+
 }
 

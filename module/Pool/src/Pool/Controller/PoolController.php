@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 dass-IT GmbH (http://www.dass-it.de/)
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,42 +36,51 @@ class PoolController extends AbstractActionController
 
 	public function indexAction()
 	{
-		$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'PoolId';
-                $order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-                $paginator = $this->getPoolTable()->fetchAll(true, $order_by, $order);
-                $paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-                $paginator->setItemCountPerPage($limit);
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'PoolId';
+				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+				$paginator = $this->getPoolTable()->fetchAll(true, $order_by, $order);
+				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+				$paginator->setItemCountPerPage($limit);
 
-		return new ViewModel(
-			array(
-				'paginator' => $paginator,
-                                'order_by' => $order_by,
-                                'order' => $order,
-                                'limit' => $limit,
-				'pools' => $this->getPoolTable()->fetchAll(),
-			)
-		);
-	}
-
-	public function detailsAction() 
-	{
-		$id = (int) $this->params()->fromRoute('id', 0);
-		
-		if (!$id) {
-		    return $this->redirect()->toRoute('pool');
+				return new ViewModel(
+					array(
+						'paginator' => $paginator,
+										'order_by' => $order_by,
+										'order' => $order,
+										'limit' => $limit,
+						'pools' => $this->getPoolTable()->fetchAll(),
+					)
+				);
 		}
-		
-		return new ViewModel(
-			array(
-				'pool' => $this->getPoolTable()->getPool($id),
-				'media' => $this->getMediaTable()->getPoolVolumes($id),
-			)
-		);
-		
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
-	public function getPoolTable() 
+	public function detailsAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true) {
+				$id = (int) $this->params()->fromRoute('id', 0);
+
+				if (!$id) {
+					return $this->redirect()->toRoute('pool');
+				}
+
+				return new ViewModel(
+					array(
+						'pool' => $this->getPoolTable()->getPool($id),
+						'media' => $this->getMediaTable()->getPoolVolumes($id),
+					)
+				);
+		}
+		else {
+				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getPoolTable()
 	{
 		if(!$this->poolTable) {
 			$sm = $this->getServiceLocator();
@@ -79,7 +88,7 @@ class PoolController extends AbstractActionController
 		}
 		return $this->poolTable;
 	}
-	
+
 	public function getMediaTable()
 	{
 		if(!$this->mediaTable) {
@@ -88,6 +97,6 @@ class PoolController extends AbstractActionController
 		}
 		return $this->mediaTable;
 	}
-	
+
 }
 

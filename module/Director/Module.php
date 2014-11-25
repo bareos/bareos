@@ -10,7 +10,7 @@ use Zend\Db\TableGateway\TableGateway;
 class Module
 {
 
-	public function getAutoloaderConfig() 
+	public function getAutoloaderConfig()
 	{
 		return array(
 			'Zend\Loader\ClassMapAutoloader' => array(
@@ -24,16 +24,16 @@ class Module
 		);
 	}
 
-	public function getConfig() 
+	public function getConfig()
 	{
 		return include __DIR__ . '/config/module.config.php';
 	}
 
-	public function getServiceConfig() 
+	public function getServiceConfig()
 	{
 		return array(
 			'factories' => array(
-				'Director\Model\DirectorTable' => function($sm) 
+				'Director\Model\DirectorTable' => function($sm)
 				{
 					$tableGateway = $sm->get('DirectorTableGateway');
 					$table = new DirectorTable($tableGateway);
