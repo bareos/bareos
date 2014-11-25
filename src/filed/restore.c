@@ -599,6 +599,7 @@ void do_restore(JCR *jcr)
          Dmsg2(130, "Outfile=%s create_file status=%d\n", attr->ofname, status);
          switch (status) {
          case CF_ERROR:
+            break;
          case CF_SKIP:
             jcr->JobFiles++;
             break;
