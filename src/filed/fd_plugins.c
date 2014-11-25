@@ -1110,7 +1110,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    flags =  O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
    Dmsg0(dbglvl, "call bopen\n");
    int status = bopen(bfd, attr->ofname, flags, S_IRUSR | S_IWUSR);
-   Dmsg1(dbglvl, "bopen status=%d\n", stat);
+   Dmsg1(dbglvl, "bopen status=%d\n", status);
    if (status < 0) {
       berrno be;
       be.set_errno(bfd->berrno);
