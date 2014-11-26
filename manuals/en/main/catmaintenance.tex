@@ -17,9 +17,49 @@ Different database backends are supported:
 \end{itemize}
 
 What database will be used, can be configured in \file{/etc/bareos/bareos-dir.conf}, see the \nameref{DirectorResourceCatalog}.
+
 The database often runs on the same server as the Bareos Director.
 However, it is also possible to run it on a different system.
 This might require some more manual configuration.
+
+
+
+\subsection{dbconfig-common (Debian)}
+\index[general]{Platform!Debian!dbconfig-common}
+\index[general]{Platform!Ubuntu!dbconfig-common}
+\label{sec:dbconfig}
+
+Since Bareos \sinceVersion{dir}{dbconfig-common (Debian)}{14.2.0} the Debian (and Ubuntu) based packages support the \package{dbconfig-common} mechanism to create and update the Bareos database.
+If this is properly configured, there is no need to manual create and update the Bareos database. 
+Instead, this will be done automatically during package installation and update, according to the user choices.
+
+The first choice is, if \package{dbconfig-common} should be used at all.
+If you decide against it, the database must be configured manually, see \nameref{CatMaintenanceManualConfiguration}.
+
+If you decided to use \package{dbconfig-common}, the next question will only be asked, if more than one
+Bareos database backend (\package{bareos-database-*}) is installed.
+If this is the case, select the database backend you want to use.
+
+\begin{center}
+\includegraphics[width=0.45\textwidth]{\idir dbconfig-1-enable}
+\includegraphics[width=0.45\textwidth]{\idir dbconfig-2-select-database-type}
+\end{center}
+
+Depending on the selected database backend,
+more questions about how to access the database will be asked.
+Often, the default values are suitable.
+
+The \package{dbconfig-common} configuration (and credentials) is done by the \package{bareos-database-common} package.
+Settings are stored in the file \file{/etc/dbconfig-common/bareos-database-common.conf}.
+
+The Bareos database backend will get automatically configured in \file{/etc/bareos/bareos-dir.conf}.
+A later reconfiguration might require manual adapt changes.
+
+
+
+
+\subsection{Manual Configuration}
+    \label{CatMaintenanceManualConfiguration}
 
 Bareos comes with a number of scripts to prepare and update the databases. All these scripts are located in the Bareos script directory, normally at \scriptPathUnix.
 
@@ -124,7 +164,7 @@ Please correct configuration file: bareos-dir.conf
 
 
 
-\subsection{PostgreSQL}
+\subsubsection{PostgreSQL}
 
 On most distributions, PostgreSQL uses ident to allow access to the database system.
 The database administrator account is the Unix user \user{postgres}.
@@ -247,8 +287,8 @@ bareos=>
 \end{commands}
 
 
-\subsection{MySQL}
-\label{catalog-maintenance-mysql}
+\subsubsection{MySQL}
+    \label{catalog-maintenance-mysql}
 
 MySQL user authentication is username, password and host-based.
 The database administrator is the user \user{root}.
@@ -372,7 +412,7 @@ Bye
 \end{commands}
 
 
-\subsubsection{Modify database credentials}
+\paragraph{Modify database credentials}
 
 If you want to change the Bareos database credentials, do the following:
 
@@ -446,7 +486,7 @@ mysql>
 
 
 
-\subsection{Sqlite}
+\subsubsection{Sqlite}
 
 There are different versions of Sqlite available. When we use the term Sqlite, we will always refer to Sqlite3.
 
