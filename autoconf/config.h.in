@@ -384,8 +384,14 @@
 /* Define to 1 if GNUTLS library is available */
 #undef HAVE_GNUTLS
 
+/* Define to 1 if you have the `gnutls_cipher_init' function. */
+#undef HAVE_GNUTLS_CIPHER_INIT
+
 /* Define to 1 if you have the <gnutls/gnutls.h> header file. */
 #undef HAVE_GNUTLS_GNUTLS_H
+
+/* Define to 1 if you have the `gnutls_transport_set_int' function. */
+#undef HAVE_GNUTLS_TRANSPORT_SET_INT
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H

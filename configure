@@ -23792,8 +23792,45 @@ fi
       fi
 
       if test "$have_gnutls" = "yes"; then
+         # do an additional check to see if required functions are available,
+         # otherwise disable gnutls
+         for ac_func in gnutls_cipher_init
+do :
+  ac_fn_c_check_func "$LINENO" "gnutls_cipher_init" "ac_cv_func_gnutls_cipher_init"
+if test "x$ac_cv_func_gnutls_cipher_init" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GNUTLS_CIPHER_INIT 1
+_ACEOF
+
+	        have_gnutls="yes"
+
+else
+
+	        have_gnutls="no"
+
+
+fi
+done
+
+      fi
+
+      if test "$have_gnutls" = "yes"; then
 
 $as_echo "#define HAVE_GNUTLS 1" >>confdefs.h
+
+         # gnutls_transport_set_ptr may cause problems on some platforms,
+         # therefore the replacement gnutls_transport_set_int is used
+         # when available (since GnuTLS >= 3.1.9)
+         for ac_func in gnutls_transport_set_int
+do :
+  ac_fn_c_check_func "$LINENO" "gnutls_transport_set_int" "ac_cv_func_gnutls_transport_set_int"
+if test "x$ac_cv_func_gnutls_transport_set_int" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GNUTLS_TRANSPORT_SET_INT 1
+_ACEOF
+
+fi
+done
 
       fi
 
