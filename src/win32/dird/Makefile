@@ -63,7 +63,7 @@ bareos-dir.exe: $(SVROBJS) $(WINDRESOBJS)
 
 dbcheck.exe: DLL_USAGE = -DUSING_DLL
 dbcheck.exe: $(DBCHKOBJS) $(DBCHKRESOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(DBCHKOBJS) $(LDLIBS) $(WINDRESOBJS) -o $@
+	$(CXX) $(LDFLAGS_CONS) $(DBCHKOBJS) $(LDLIBS) $(DBCHKRESOBJS) -o $@
 
 clean:
 	rm -f *.o

@@ -69,6 +69,15 @@ BEXTOBJS = $(BEXTSRCS:.c=.o)
 WINDRESSRCS = storedres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
 
+BLSRESSRCS = blsres.rc
+BLSRESOBJS = $(BLSRESSRCS:.rc=.o)
+
+BTAPERESSRCS = btaperes.rc
+BTAPERESOBJS = $(BTAPERESSRCS:.rc=.o)
+
+BEXTRACTRESSRCS = bextractres.rc
+BEXTRACTRESOBJS = $(BEXTRACTRESSRCS:.rc=.o)
+
 all: libbareossd.dll bareos-sd.exe btape.exe bls.exe bextract.exe
 
 bareos$(WIN_VERSION).def: $(DYNAMIC_OBJS) make_def
@@ -84,16 +93,16 @@ bareos-sd.exe: libbareossd.dll $(SVROBJS) $(WINDRESOBJS)
 	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(WINDRESOBJS) $(LDLIBS) ./libbareossd.dll -o $@
 
 btape.exe: DLL_USAGE = -DUSING_DLL
-btape.exe: libbareossd.dll $(TAPEOBJS) $(WINDRESOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(TAPEOBJS) $(WINDRESOBJS) $(LDLIBS) ./libbareossd.dll -o $@
+btape.exe: libbareossd.dll $(TAPEOBJS) $(BTAPERESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(TAPEOBJS) $(BTAPERESOBJS) $(LDLIBS) ./libbareossd.dll -o $@
 
 bls.exe: DLL_USAGE = -DUSING_DLL
-bls.exe: libbareossd.dll $(BLSOBJS) $(WINDRESOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(BLSOBJS) $(WINDRESOBJS) $(LDLIBS_FIND) ./libbareossd.dll -o $@
+bls.exe: libbareossd.dll $(BLSOBJS) $(BLSRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BLSOBJS) $(BLSRESOBJS) $(LDLIBS_FIND) ./libbareossd.dll -o $@
 
 bextract.exe: DLL_USAGE = -DUSING_DLL
-bextract.exe: libbareossd.dll $(BEXTOBJS) $(WINDRESOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(BEXTOBJS) $(WINDRESOBJS) $(LDLIBS_FIND) ./libbareossd.dll -o $@
+bextract.exe: libbareossd.dll $(BEXTOBJS) $(BEXTRACTRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BEXTOBJS) $(BEXTRACTRESOBJS) $(LDLIBS_FIND) ./libbareossd.dll -o $@
 
 clean:
 	rm -f *.o bareos$(WIN_VERSION).def
