@@ -16,13 +16,13 @@ install: install_logrotate install-dbconfig
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
 install_logrotate:
-	@$(MKDIR) $(DESTDIR)/etc/logrotate.d
-	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/logrotate.d
+	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/${sysconfdir}/logrotate.d/bareos-dir
 
 install-autostart-fd:
 	@echo "Installing bareos-fd boot script ..."
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) ../../debian/bareos-filedaemon.bareos-fd.init $(DESTDIR)/etc/init.d/bareos-fd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) ../../debian/bareos-filedaemon.bareos-fd.init $(DESTDIR)/${sysconfdir}/init.d/bareos-fd
 	@echo "Installing bareos-fd symlinks ..."
 	@if test x$(DESTDIR) = x ; then \
 	   /usr/sbin/update-rc.d bareos-fd defaults; \
@@ -30,8 +30,8 @@ install-autostart-fd:
 
 install-autostart-sd:
 	@echo "Installing bareos-sd boot script ..."
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) ../../debian/bareos-storage.bareos-sd.init $(DESTDIR)/etc/init.d/bareos-sd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) ../../debian/bareos-storage.bareos-sd.init $(DESTDIR)/${sysconfdir}/init.d/bareos-sd
 	@echo "Installing bareos-sd symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
 	   /usr/sbin/update-rc.d bareos-sd defaults; \
@@ -39,8 +39,8 @@ install-autostart-sd:
 
 install-autostart-dir:
 	@echo "Installing bareos-dir boot script ..."
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) ../../debian/bareos-director.bareos-dir.init $(DESTDIR)/etc/init.d/bareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) ../../debian/bareos-director.bareos-dir.init $(DESTDIR)/${sysconfdir}/init.d/bareos-dir
 	@echo "Installing bareos-dir symlinks ..."
 	@if test "x$(DESTDIR)" = "x" ; then \
 	   /usr/sbin/update-rc.d bareos-dir defaults; \

@@ -13,7 +13,7 @@ case "$1" in
     'start')
        echo "Starting the Bareos File daemon: "
        if test -x @sbindir@/bareos-fd && test -f @sysconfidir@/bareos-fd.conf; then
-	 exec  @sbindir@/bareos-fd $2 -c @sysconfdir@/bareos-fd.conf
+          exec  @sbindir@/bareos-fd $2 -c @confdir@/bareos-fd.conf
        fi
        RETVAL=$?
        echo

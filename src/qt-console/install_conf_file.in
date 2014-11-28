@@ -1,16 +1,16 @@
 #!/bin/sh
 
 sbindir=@sbindir@
-sysconfdir=@sysconfdir@
+confdir=@confdir@
 INSTALL_CONFIG="@INSTALL@ -m 640"
 DESTDIR=`echo ${DESTDIR}`
 
 srcconf=bat.conf
-if  test -f ${DESTDIR}${sysconfdir}/${srcconf}; then
+if  test -f ${DESTDIR}${confdir}/${srcconf}; then
   destconf=${srcconf}.new
   echo "  ==> Found existing $srcconf, installing new conf file as ${destconf}"
 else
   destconf=${srcconf}
 fi
-echo "${INSTALL_CONFIG} ${srcconf} ${DESTDIR}${sysconfdir}/${destconf}"
-${INSTALL_CONFIG} ${srcconf} ${DESTDIR}${sysconfdir}/${destconf}
+echo "${INSTALL_CONFIG} ${srcconf} ${DESTDIR}${confdir}/${destconf}"
+${INSTALL_CONFIG} ${srcconf} ${DESTDIR}${confdir}/${destconf}

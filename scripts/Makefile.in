@@ -26,7 +26,7 @@ depend:
 #-------------------------------------------------------------------------
 
 installdirs:
-	$(MKDIR) $(DESTDIR)$(sysconfdir)
+	$(MKDIR) $(DESTDIR)$(confdir)
 	#$(MKDIR) $(DESTDIR)/etc/logrotate.d/
 	$(MKDIR) $(DESTDIR)$(sbindir)
 	$(MKDIR) $(DESTDIR)$(scriptdir)
@@ -46,11 +46,11 @@ install: installdirs
 	   $(MV) -f ${DESTDIR}${scriptdir}/mtx-changer ${DESTDIR}${scriptdir}/mtx-changer.old; \
 	fi
 	$(INSTALL_SCRIPT) mtx-changer $(DESTDIR)$(scriptdir)/mtx-changer
-	@if  test -f ${DESTDIR}${sysconfdir}/mtx-changer.conf; then \
+	@if  test -f ${DESTDIR}${confdir}/mtx-changer.conf; then \
 	   echo "  ==> Installing mtx-changer.conf to mtx-changer.conf.new"; \
-	   $(INSTALL_DATA) mtx-changer.conf $(DESTDIR)$(sysconfdir)/mtx-changer.conf.new; \
+	   $(INSTALL_DATA) mtx-changer.conf $(DESTDIR)$(confdir)/mtx-changer.conf.new; \
 	else \
-	   $(INSTALL_DATA) mtx-changer.conf $(DESTDIR)$(sysconfdir)/mtx-changer.conf; \
+	   $(INSTALL_DATA) mtx-changer.conf $(DESTDIR)$(confdir)/mtx-changer.conf; \
 	fi
 	@if  test -f ${DESTDIR}${scriptdir}/disk-changer; then \
 	   echo "  ==> Saving existing disk-changer to disk-changer.old"; \

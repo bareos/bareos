@@ -24,7 +24,7 @@ case "$1" in
        fi
 
        echo "Starting the Bareos Storage daemon: "
-       @sbindir@/bareos-sd $2 ${SD_OPTIONS} -c @sysconfdir@/bareos-sd.conf
+       @sbindir@/bareos-sd $2 ${SD_OPTIONS} -c @confdir@/bareos-sd.conf
        ;;
     stop)
        echo "Stopping the Bareos Storage daemon: "

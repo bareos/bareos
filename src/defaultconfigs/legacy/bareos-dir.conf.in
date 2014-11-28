@@ -168,7 +168,7 @@ FileSet {
       signature = MD5
     }
     File = "@working_dir@/@db_name@.sql" # database dump
-    File = "@sysconfdir@"                # configuration
+    File = "@confdir@"                   # configuration
   }
 }
 

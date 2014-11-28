@@ -233,17 +233,17 @@ install: all @LIBTOOL_INSTALL_TARGET@
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bscan $(DESTDIR)$(sbindir)/bscan
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) btape $(DESTDIR)$(sbindir)/btape
 	@srcconf=bareos-sd.conf; \
-	$(MKDIR) ${DESTDIR}${sysconfdir}/bareos-sd.d/; \
-	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/; \
+	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
 	else \
 	   destconf=$$srcconf; \
 	fi; \
-	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
-	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
 	-@if test "x${sd_group}" != "x"; then \
-	   chgrp -f ${sd_group} ${DESTDIR}${sysconfdir}/$$destconf; \
+	   chgrp -f ${sd_group} ${DESTDIR}${confdir}/$$destconf; \
 	fi
 	@if test -f static-bareos-sd; then \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-sd $(DESTDIR)$(sbindir)/static-bareos-sd; \

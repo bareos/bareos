@@ -12,7 +12,7 @@
 case "$1" in
     start)
        echo "Starting the Bareos Storage daemon: "
-       @sbindir@/bareos-sd $2 -c @sysconfdir@/bareos-sd.conf
+       @sbindir@/bareos-sd $2 -c @confdir@/bareos-sd.conf
        RETVAL=$?
        echo
        [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd

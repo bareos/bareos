@@ -133,17 +133,17 @@ install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dir $(DESTDIR)$(sbindir)/bareos-dir
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dbcheck $(DESTDIR)$(sbindir)/bareos-dbcheck
 	@srcconf=bareos-dir.conf; \
-	   $(MKDIR) ${DESTDIR}${sysconfdir}/bareos-dir.d/; \
-	   if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	   $(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/; \
+	   if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	      destconf=$$srcconf.new; \
 	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
 	   else \
 	      destconf=$$srcconf; \
 	   fi; \
-	   echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
-	   ${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	   echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
+	   ${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
 	   -@if test "x${dir_group}" != "x"; then \
-	      chgrp -f ${dir_group} ${DESTDIR}${sysconfdir}/$$destconf ; \
+	      chgrp -f ${dir_group} ${DESTDIR}${confdir}/$$destconf ; \
 	   fi
 	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \

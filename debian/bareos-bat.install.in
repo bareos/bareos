@@ -1,4 +1,4 @@
-@sysconfdir@/bat.conf       @configtemplatedir@
+@confdir@/bat.conf       @configtemplatedir@
 /usr/bin/bat
 /usr/share/pixmaps/bat.png
 /usr/share/pixmaps/bat.svg

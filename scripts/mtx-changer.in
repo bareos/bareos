@@ -47,13 +47,13 @@
 #
 
 # source our conf file
-if test ! -r @sysconfdir@/mtx-changer.conf ; then
+if test ! -r @confdir@/mtx-changer.conf ; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "ERROR: @sysconfdir@/mtx-changer.conf file not found!!!!"
+  echo "ERROR: @confdir@/mtx-changer.conf file not found!!!!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   exit 1
 fi
-. @sysconfdir@/mtx-changer.conf
+. @confdir@/mtx-changer.conf
 
 MTX=@MTX@
 if test ! -x "$MTX" ; then

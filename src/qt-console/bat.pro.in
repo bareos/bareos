@@ -17,7 +17,7 @@ CONFIG( debug, debug|release )  {
 
 bins.path = /$(DESTDIR)@bindir@
 bins.files = bat
-confs.path = /$(DESTDIR)@sysconfdir@
+confs.path = /$(DESTDIR)@confdir@
 confs.commands = ./install_conf_file
 help.path = /$(DESTDIR)@htmldir@/bat
 help.files = help/*.html ../images/status.png ../images/mail-message-new.png

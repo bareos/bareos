@@ -11,7 +11,7 @@
 
 start() {
        ebegin "Starting the Bareos Storage daemon"
-       start-stop-daemon --start --quiet --exec  @sbindir@/bareos-sd -- $2 -c @sysconfdir@/bareos-sd.conf
+       start-stop-daemon --start --quiet --exec  @sbindir@/bareos-sd -- $2 -c @confdir@/bareos-sd.conf
        eend $?
 }
 

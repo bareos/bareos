@@ -135,16 +135,16 @@ devclean: realclean
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-fd $(DESTDIR)$(sbindir)/bareos-fd
 	@srcconf=bareos-fd.conf; \
-	if  test -f ${DESTDIR}${sysconfdir}/$$srcconf; then \
+	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
 	else \
 	   destconf=$$srcconf; \
 	fi; \
-	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf"; \
-	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${sysconfdir}/$$destconf
+	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
 	-@if test "x${fd_group}" != "x"; then \
-	   chgrp -f ${fd_group} ${DESTDIR}${sysconfdir}/$$destconf ; \
+	   chgrp -f ${fd_group} ${DESTDIR}${confdir}/$$destconf ; \
 	fi
 	@if test -f static-bareos-fd; then \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-fd $(DESTDIR)$(sbindir)/static-bareos-fd; \

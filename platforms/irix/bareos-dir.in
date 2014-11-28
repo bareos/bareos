@@ -13,7 +13,7 @@ RETVAL=0
 case "$1" in
     start)
        echo "Starting the Bareos Director: "
-       @sbindir@/bareos-dir $2 -c @sysconfdir@/bareos-dir.conf
+       @sbindir@/bareos-dir $2 -c @confdir@/bareos-dir.conf
        RETVAL=$?
        echo
        [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dir

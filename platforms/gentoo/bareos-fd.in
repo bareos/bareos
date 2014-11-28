@@ -11,7 +11,7 @@
 
 start() {
        ebegin "Starting the Bareos File daemon"
-       start-stop-daemon --start --quiet --exec @sbindir@/bareos-fd -- $2 -c @sysconfdir@/bareos-fd.conf
+       start-stop-daemon --start --quiet --exec @sbindir@/bareos-fd -- $2 -c @confdir@/bareos-fd.conf
        eend $?
 }
 

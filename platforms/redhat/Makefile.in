@@ -15,37 +15,37 @@ install: install_logrotate
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
 install_logrotate:
-	@$(MKDIR) $(DESTDIR)/etc/logrotate.d
-	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/logrotate.d
+	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/${sysconfdir}/logrotate.d/bareos-dir
 
 install-autostart-fd:
-	@if test x$(DESTDIR) = x -a  -f /etc/rc.d/init.d/bareos-fd; then \
+	@if test x$(DESTDIR) = x -a  -f /${sysconfdir}/rc.d/init.d/bareos-fd; then \
 	   /sbin/chkconfig --del bareos-fd; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
-	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/etc/rc.d/init.d/bareos-fd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/${sysconfdir}/rc.d/init.d/bareos-fd
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-fd; \
 	fi
 
 install-autostart-sd:
-	@if test x$(DESTDIR) = x -a  -f /etc/rc.d/init.d/bareos-sd; then \
+	@if test x$(DESTDIR) = x -a  -f /${sysconfdir}/rc.d/init.d/bareos-sd; then \
 	    /sbin/chkconfig --del bareos-sd; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
-	@$(INSTALL_PROGRAM) bareos-sd  $(DESTDIR)/etc/rc.d/init.d/bareos-sd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-sd  $(DESTDIR)/${sysconfdir}/rc.d/init.d/bareos-sd
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-sd; \
 	fi
 
 install-autostart-dir:
-	@if test x$(DESTDIR) = x -a  -f /etc/rc.d/init.d/bareos-dir; then \
+	@if test x$(DESTDIR) = x -a  -f /${sysconfdir}/rc.d/init.d/bareos-dir; then \
 	    /sbin/chkconfig --del bareos-dir; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/rc.d/init.d
-	@$(INSTALL_PROGRAM) bareos-dir	$(DESTDIR)/etc/rc.d/init.d/bareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/rc.d/init.d
+	@$(INSTALL_PROGRAM) bareos-dir	$(DESTDIR)/${sysconfdir}/rc.d/init.d/bareos-dir
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-dir; \

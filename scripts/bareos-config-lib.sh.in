@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CONFIG_LIB=@scriptdir@/bareos-config-lib.sh
-DIR_CFG=@sysconfdir@
+DIR_CFG=@confdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=@scriptdir@
 DBCHECK="@sbindir@/bareos-dbcheck -B -c ${CFG_DIR}"

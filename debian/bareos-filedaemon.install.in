@@ -1,3 +1,3 @@
-@sysconfdir@/bareos-fd.conf     @configtemplatedir@
+@confdir@/bareos-fd.conf     @configtemplatedir@
 /usr/sbin/bareos-fd
 /usr/share/man/man8/bareos-fd.8.gz

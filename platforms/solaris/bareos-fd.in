@@ -24,7 +24,7 @@ case "$1" in
        fi
 
        echo "Starting the Bareos File daemon: "
-       @sbindir@/bareos-fd $2 ${FD_OPTIONS} -c @sysconfdir@/bareos-fd.conf
+       @sbindir@/bareos-fd $2 ${FD_OPTIONS} -c @confdir@/bareos-fd.conf
        ;;
     stop)
        echo "Stopping the Bareos File daemon: "

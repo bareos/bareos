@@ -9,7 +9,7 @@ CONFIG( debug, debug|release )  {
 
 bins.path = /$(DESTDIR)@sbindir@
 bins.files = bareos-tray-monitor
-confs.path = /$(DESTDIR)@sysconfdir@
+confs.path = /$(DESTDIR)@confdir@
 confs.commands = ./install_conf_file
 
 TEMPLATE     = app

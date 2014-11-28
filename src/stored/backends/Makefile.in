@@ -169,9 +169,9 @@ libtool-install: all
 	done
 
 install-configs:
-	$(MKDIR) ${DESTDIR}${sysconfdir}/bareos-sd.d/
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/
 	@for conf in $(INSTALL_CONFS); do \
-	   $(INSTALL_CONFIG) ../../defaultconfigs/bareos-sd.d/$$conf ${DESTDIR}${sysconfdir}/bareos-sd.d/; \
+	   $(INSTALL_CONFIG) ../../defaultconfigs/bareos-sd.d/$$conf ${DESTDIR}${confdir}/bareos-sd.d/; \
 	done
 
 install: @LIBTOOL_INSTALL_TARGET@ install-configs

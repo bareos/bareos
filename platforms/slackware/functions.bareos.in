@@ -16,11 +16,11 @@ PSCMD="@PSCMD@"
 #  environment where they are different.
 #
 BACFDBIN=@sbindir@
-BACFDCFG=@sysconfdir@
+BACFDCFG=@confdir@
 BACSDBIN=@sbindir@
-BACSDCFG=@sysconfdir@
+BACSDCFG=@confdir@
 BACDIRBIN=@sbindir@
-BACDIRCFG=@sysconfdir@
+BACDIRCFG=@confdir@
 PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 

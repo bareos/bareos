@@ -128,7 +128,8 @@ src_compile() {
 		--prefix=/usr \
 		--mandir=/usr/share/man \
 		--with-pid-dir=/var/run \
-		--sysconfdir=/etc/bareos \
+		--sysconfdir=/etc \
+		--with-confdir=/etc/bareos \
 		--infodir=/usr/share/info \
 		--with-subsys-dir=/var/lock/subsys \
 		--with-working-dir=/var/bareos \

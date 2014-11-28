@@ -7,15 +7,15 @@
 #
 @MCOMMON@
 
-FIREWALL_DIR = /etc/sysconfig/SuSEfirewall2.d/services/
+FIREWALL_DIR = ${sysconfdir}/sysconfig/SuSEfirewall2.d/services/
 
 nothing:
 
 install: install-firewall install_logrotate
 
 install_logrotate:
-	@$(MKDIR) $(DESTDIR)/etc/logrotate.d
-	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/logrotate.d
+	@$(INSTALL_DATA) ../../scripts/logrotate $(DESTDIR)/${sysconfdir}/logrotate.d/bareos-dir
 
 install-autostart: install-autostart-fd install-autostart-sd install-autostart-dir
 
@@ -34,36 +34,36 @@ install-firewall-dir:
 	@$(INSTALL_DATA) bareos-dir.fw $(DESTDIR)/$(FIREWALL_DIR)/bareos-dir
 
 install-autostart-fd:
-	@if test x$(DESTDIR) = x -a  -f /etc/init.d/bareos-fd; then \
+	@if test x$(DESTDIR) = x -a  -f ${sysconfdir}/init.d/bareos-fd; then \
 	   /sbin/chkconfig --del bareos-fd; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/etc/init.d/bareos-fd
-	@$(SYMLINK) ../../etc/init.d/bareos-fd $(DESTDIR)$(sbindir)/rcbareos-fd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) bareos-fd $(DESTDIR)/${sysconfdir}/init.d/bareos-fd
+	@$(SYMLINK) ../../${sysconfdir}/init.d/bareos-fd $(DESTDIR)$(sbindir)/rcbareos-fd
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-fd; \
 	fi
 
 install-autostart-sd:
-	@if test x$(DESTDIR) = x -a  -f /etc/init.d/bareos-sd; then \
+	@if test x$(DESTDIR) = x -a  -f ${sysconfdir}/init.d/bareos-sd; then \
 	    /sbin/chkconfig --del bareos-sd; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-sd  $(DESTDIR)/etc/init.d/bareos-sd
-	@$(SYMLINK) ../../etc/init.d/bareos-sd $(DESTDIR)$(sbindir)/rcbareos-sd
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) bareos-sd  $(DESTDIR)/${sysconfdir}/init.d/bareos-sd
+	@$(SYMLINK) ../../${sysconfdir}/init.d/bareos-sd $(DESTDIR)$(sbindir)/rcbareos-sd
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-sd; \
 	fi
 
 install-autostart-dir:
-	@if test x$(DESTDIR) = x -a  -f /etc/init.d/bareos-dir; then \
+	@if test x$(DESTDIR) = x -a  -f ${sysconfdir}/init.d/bareos-dir; then \
 	    /sbin/chkconfig --del bareos-dir; \
 	fi
-	@$(MKDIR) $(DESTDIR)/etc/init.d
-	@$(INSTALL_PROGRAM) bareos-dir  $(DESTDIR)/etc/init.d/bareos-dir
-	@$(SYMLINK) ../../etc/init.d/bareos-dir $(DESTDIR)$(sbindir)/rcbareos-dir
+	@$(MKDIR) $(DESTDIR)/${sysconfdir}/init.d
+	@$(INSTALL_PROGRAM) bareos-dir  $(DESTDIR)/${sysconfdir}/init.d/bareos-dir
+	@$(SYMLINK) ../../${sysconfdir}/init.d/bareos-dir $(DESTDIR)$(sbindir)/rcbareos-dir
 	# set symlinks for script at startup and shutdown
 	@if test x$(DESTDIR) = x ; then \
 	   /sbin/chkconfig --add bareos-dir; \
@@ -73,9 +73,9 @@ clean:
 	@$(RMF) 1 2 3
 
 distclean: clean
-	@$(RMF) Makefile bareos-*.spec bareos.*.spec bareos.spec
+	@$(RMF) Makefile
 	@$(RMF) bareos-sd bareos-fd bareos-dir
 
 devclean: clean
-	@$(RMF) Makefile bareos-*.spec bareos.*.spec bareos.spec
+	@$(RMF) Makefile
 	@$(RMF) bareos-sd bareos-fd bareos-dir

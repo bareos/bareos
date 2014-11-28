@@ -31,7 +31,7 @@ start() {
 		OPTIONS="${OPTIONS} -g ${SD_GROUP}"
 	fi
 	start-stop-daemon --start --quiet --exec @sbindir@/bareos-sd \
-		-- ${OPTIONS} -c @sysconfdir@/bareos-sd.conf
+		-- ${OPTIONS} -c @confdir@/bareos-sd.conf
 	result=$?
 
 	ebegin "Starting bareos file daemon"
@@ -44,7 +44,7 @@ start() {
 		OPTIONS="${OPTIONS} -g ${FD_GROUP}"
 	fi
 	start-stop-daemon --start --quiet --exec @sbindir@/bareos-fd \
-		-- ${OPTIONS} -c @sysconfdir@/bareos-fd.conf
+		-- ${OPTIONS} -c @confdir@/bareos-fd.conf
 	result=$(( $result + $? ))
 	sleep 2
 
@@ -58,7 +58,7 @@ start() {
 		OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
 	fi
 	start-stop-daemon --start --quiet --exec @sbindir@/bareos-dir \
-		-- ${OPTIONS} -c @sysconfdir@/bareos-dir.conf
+		-- ${OPTIONS} -c @confdir@/bareos-dir.conf
 	result=$(( $result + $? ))
 
 	eend $result
@@ -82,13 +82,13 @@ stop() {
 
 test() {
 	ebegin "Testing bareos storage daemon configuration"
-	@sbindir@/bareos-sd -t -c @sysconfdir@/bareos-sd.conf
+	@sbindir@/bareos-sd -t -c @confdir@/bareos-sd.conf
 	result=$?
 	ebegin "Testing bareos file daemon configuration"
-	@sbindir@/bareos-fd -t -c @sysconfdir@/bareos-fd.conf
+	@sbindir@/bareos-fd -t -c @confdir@/bareos-fd.conf
 	result=$(( $result + $? ))
 	ebegin "Testing bareos director configuration"
-	@sbindir@/bareos-dir -t -c @sysconfdir@/bareos-dir.conf
+	@sbindir@/bareos-dir -t -c @confdir@/bareos-dir.conf
 	result=$(( $result + $? ))
 	eend $result
 }

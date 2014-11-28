@@ -27,7 +27,8 @@ STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 define CONFIGURE_COMMON
   --with-sbin-perm=755 \
   --libdir=/usr/lib/bareos \
-  --sysconfdir=/etc/bareos \
+  --sysconfdir=/etc \
+  --with-confdir=/etc/bareos \
   --with-archivedir=/var/lib/bareos/storage \
   --with-backenddir=/usr/lib/bareos/backends \
   --with-configtemplatedir=/usr/lib/bareos/defaultconfigs \

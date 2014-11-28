@@ -10,6 +10,7 @@ CFLAGS="-g -Wall" \
   ./configure \
     --sbindir=$HOME/bareos/bin \
     --sysconfdir=$HOME/bareos/bin \
+    --with-confdir=$HOME/bareos/bin \
     --with-pid-dir=$HOME/bareos/bin \
     --with-subsys-dir=$HOME/bareos/bin \
     --enable-smartalloc \

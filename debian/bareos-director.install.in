@@ -3,7 +3,7 @@
 @scriptdir@/make_catalog_backup
 @scriptdir@/make_catalog_backup.pl
 @scriptdir@/query.sql
-@sysconfdir@/bareos-dir.conf    @configtemplatedir@
+@confdir@/bareos-dir.conf    @configtemplatedir@
 /usr/sbin/bareos-dir
 /usr/share/man/man8/bareos-dir.8.gz
 /usr/share/man/man8/bareos.8.gz

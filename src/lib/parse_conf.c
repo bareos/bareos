@@ -350,7 +350,7 @@ const char *get_default_configdir()
    }
    return szConfigDir;
 #else
-   return SYSCONFDIR;
+   return CONFDIR;
 #endif
 }
 

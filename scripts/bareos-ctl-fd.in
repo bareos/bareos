@@ -23,7 +23,7 @@ AWK=@AWK@
 #  environment where they are different.
 #
 BACFDBIN=@sbindir@
-BACFDCFG=@sysconfdir@
+BACFDCFG=@confdir@
 PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 

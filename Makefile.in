@@ -91,12 +91,13 @@ libtool: Makefile $(LIBTOOL_DEPS)
 installdirs:
 	$(MKDIR) $(DESTDIR)$(sbindir)
 	$(MKDIR) $(DESTDIR)$(sysconfdir)
-	chmod 770 $(DESTDIR)$(sysconfdir)
+	$(MKDIR) $(DESTDIR)$(confdir)
+	chmod 770 $(DESTDIR)$(confdir)
 	-if test "x$(dir_user)" != "x" ; then \
-	   chown $(dir_user) $(DESTDIR)$(sysconfdir); \
+	   chown $(dir_user) $(DESTDIR)$(confdir); \
 	fi
 	-if test "x$(dir_group)" != "x" ; then \
-	   chgrp $(dir_group) $(DESTDIR)$(sysconfdir); \
+	   chgrp $(dir_group) $(DESTDIR)$(confdir); \
 	fi
 	$(MKDIR) $(DESTDIR)$(scriptdir)
 	$(MKDIR) $(DESTDIR)$(archivedir)

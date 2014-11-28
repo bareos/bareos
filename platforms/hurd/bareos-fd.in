@@ -23,7 +23,7 @@ DESC="@BAREOS@ File Daemon"
 DAEMON=@sbindir@/${NAME}
 BUSER=@fd_user@
 BGROUP=@fd_group@
-BOPTIONS="-c @sysconfdir@/${NAME}.conf"
+BOPTIONS="-c @confdir@/${NAME}.conf"
 BPORT=@fd_port@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin

@@ -264,10 +264,6 @@ dnl alone except to eval it
 dnl ------------------------------------------------------------------
 os_name=`uname -s 2>/dev/null`
 if test x${prefix} = xNONE ; then
-   if test `eval echo ${sysconfdir}` = NONE/etc ; then
-      sysconfdir=/etc/bareos
-   fi
-
    if test `eval echo ${libdir}` = NONE/lib ; then
       case ${os_name} in
       Linux)
@@ -312,7 +308,7 @@ libdir=`eval echo ${libdir}`
 includedir=`eval echo ${includedir}`
 localedir=`eval echo ${datarootdir}/locale`
 AC_DEFINE_UNQUOTED(LIBDIR, "$libdir", [Where are shared libs stored])
-AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir", [Where are config files stored])
+AC_DEFINE_UNQUOTED(SYSCONFDIR, "$sysconfdir", [Where are system config files stored])
 AC_DEFINE_UNQUOTED(LOCALEDIR, "$localedir", [Where are locale files stored])
 
 dnl ------------------------------------------------------------------
@@ -1327,6 +1323,21 @@ dnl -----------------------------------------------------------
 AC_SEARCH_LIBS(dlopen, [dl])
 
 dnl ------------------------------------------
+dnl Where to place the Bareos configure files
+dnl ------------------------------------------
+confdir=`eval echo ${sysconfdir}/bareos`
+AC_ARG_WITH(confdir,
+   AC_HELP_STRING([--with-confdir=PATH], [specify directory for Bareos configuration files]),
+   [
+       if test "x$withval" != "xno" ; then
+	 confdir=$withval
+       fi
+   ]
+)
+AC_SUBST(confdir)
+AC_DEFINE_UNQUOTED(CONFDIR, "$confdir", [Where are Bareos config files stored])
+
+dnl ------------------------------------------
 dnl Where to place working dir
 dnl ------------------------------------------
 working_dir=`eval echo ${prefix}/var/bareos/working`
@@ -1399,7 +1410,7 @@ AC_SUBST(hostname)
 dnl ------------------------------------------
 dnl Where to place scriptdir (script files)
 dnl ------------------------------------------
-scriptdir=`eval echo ${sysconfdir}`
+scriptdir=`eval echo ${confdir}`
 AC_ARG_WITH(scriptdir,
    AC_HELP_STRING([--with-scriptdir=PATH], [specify path of Bareos scripts directory]),
    [
@@ -4255,8 +4266,7 @@ suse)
        platforms/suse/Makefile \
        platforms/suse/bareos-fd \
        platforms/suse/bareos-sd \
-       platforms/suse/bareos-dir \
-       platforms/suse/bareos"
+       platforms/suse/bareos-dir"
   ;;
 unknown)
    TAPEDRIVE="/dev/nst0"
@@ -4563,89 +4573,90 @@ ${MAKE:-make} clean
 echo "
 Configuration on `date`:
 
-   Host:                    ${host}${post_host} -- ${DISTNAME} ${DISTVER}
-   Bareos version:          ${BAREOS} ${VERSION} (${DATE})
-   Distribution:            ${DISTNAME}
-   Source code location:    ${srcdir}
-   Modify package list:     ${DEBIAN_CONTROL}
-   Install binaries:        ${bindir}
-   Install system binaries: ${sbindir}
-   Install libraries:       ${libdir}
-   Install config files:    ${sysconfdir}
-   Scripts directory:       ${scriptdir}
-   Archive directory:       ${archivedir}
-   Working directory:       ${working_dir}
-   PID directory:           ${piddir}
-   Subsys directory:        ${subsysdir}
-   Man directory:           ${mandir}
-   Data directory:          ${datarootdir}
-   Backend directory:       ${backenddir}
-   Plugin directory:        ${plugindir}
-   C Compiler:              ${CC} ${CCVERSION}
-   C++ Compiler:            ${CXX} ${CXXVERSION}
-   Compiler flags:          ${WCFLAGS} ${CFLAGS}
-   Linker flags:            ${WLDFLAGS} ${LDFLAGS}
-   Libraries:               ${LIBS}
-   Statically Linked Tools: ${support_static_tools}
-   Statically Linked FD:    ${support_static_fd}
-   Statically Linked SD:    ${support_static_sd}
-   Statically Linked DIR:   ${support_static_dir}
-   Statically Linked CONS:  ${support_static_cons}
-   Database backends:       ${db_backends}
-   Database port:           ${db_port}
-   Database name:           ${db_name}
-   Database user:           ${db_user}
-   Database version:        ${BDB_VERSION}
+   Host:                         ${host}${post_host} -- ${DISTNAME} ${DISTVER}
+   Bareos version:               ${BAREOS} ${VERSION} (${DATE})
+   Distribution:                 ${DISTNAME}
+   Source code location:         ${srcdir}
+   Modify package list:          ${DEBIAN_CONTROL}
+   Install binaries:             ${bindir}
+   Install system binaries:      ${sbindir}
+   Install libraries:            ${libdir}
+   Install system config files:  ${sysconfdir}
+   Install Bareos config files:  ${confdir}
+   Scripts directory:            ${scriptdir}
+   Archive directory:            ${archivedir}
+   Working directory:            ${working_dir}
+   PID directory:                ${piddir}
+   Subsys directory:             ${subsysdir}
+   Man directory:                ${mandir}
+   Data directory:               ${datarootdir}
+   Backend directory:            ${backenddir}
+   Plugin directory:             ${plugindir}
+   C Compiler:                   ${CC} ${CCVERSION}
+   C++ Compiler:                 ${CXX} ${CXXVERSION}
+   Compiler flags:               ${WCFLAGS} ${CFLAGS}
+   Linker flags:                 ${WLDFLAGS} ${LDFLAGS}
+   Libraries:                    ${LIBS}
+   Statically Linked Tools:      ${support_static_tools}
+   Statically Linked FD:         ${support_static_fd}
+   Statically Linked SD:         ${support_static_sd}
+   Statically Linked DIR:        ${support_static_dir}
+   Statically Linked CONS:       ${support_static_cons}
+   Database backends:            ${db_backends}
+   Database port:                ${db_port}
+   Database name:                ${db_name}
+   Database user:                ${db_user}
+   Database version:             ${BDB_VERSION}
 
-   Job Output Email:        ${job_email}
-   Traceback Email:         ${dump_email}
-   SMTP Host Address:       ${smtp_host}
+   Job Output Email:             ${job_email}
+   Traceback Email:              ${dump_email}
+   SMTP Host Address:            ${smtp_host}
 
-   Director Port:           ${dir_port}
-   File daemon Port:        ${fd_port}
-   Storage daemon Port:     ${sd_port}
+   Director Port:                ${dir_port}
+   File daemon Port:             ${fd_port}
+   Storage daemon Port:          ${sd_port}
 
-   Director User:           ${dir_user}
-   Director Group:          ${dir_group}
-   Storage Daemon User:     ${sd_user}
-   Storage DaemonGroup:     ${sd_group}
-   File Daemon User:        ${fd_user}
-   File Daemon Group:       ${fd_group}
+   Director User:                ${dir_user}
+   Director Group:               ${dir_group}
+   Storage Daemon User:          ${sd_user}
+   Storage DaemonGroup:          ${sd_group}
+   File Daemon User:             ${fd_user}
+   File Daemon Group:            ${fd_group}
 
-   Large file support:      $largefile_support
-   Bareos conio support:    ${got_conio} ${CONS_LIBS}
-   readline support:        ${got_readline} ${PRTREADLINE_SRC}
-   TCP Wrappers support:    ${TCPW_MSG} ${WRAPLIBS}
-   TLS support:             ${have_tls}
-   Encryption support:      ${have_crypto}
-   OpenSSL support:         ${have_openssl}
-   GNUTLS support:          ${have_gnutls}
-   ZLIB support:            ${have_zlib}
-   LZO support:             ${have_lzo}
-   FASTLZ support:          ${have_fastlz}
-   LMDB support:            ${support_lmdb}
-   NDMP support:            ${support_ndmp}
-   enable-smartalloc:       ${support_smartalloc}
-   enable-lockmgr:          ${support_lockmgr}
-   bat support:             ${support_bat}
-   tray-monitor support:    ${support_traymonitor}
-   client-only:             ${build_client_only}
-   build-dird:              ${build_dird}
-   build-stored:            ${build_stored}
-   Plugin support:          ${have_plugins}
-   AFS support:             ${have_afs}
-   ACL support:             ${have_acl}
-   XATTR support:           ${have_xattr}
-   SCSI Crypto support:     ${have_scsi_crypto}
-   GLUSTERFS support:       ${have_glusterfs}
-   DROPLET support:         ${have_droplet}
-   CEPH RADOS support:      ${have_ceph_rados}
-   RADOS striping support:  ${have_ceph_rados_striper}
-   CEPHFS support:          ${have_cephfs}
-   ELASTO support:          ${have_elasto}
-   Python support:          ${support_python} ${PYTHON_LIBS}
-   systemd support:         ${support_systemd} ${SYSTEMD_UNITDIR}
-   Batch insert enabled:    ${batch_insert_db_backends}
+   Large file support:           $largefile_support
+   Bareos conio support:         ${got_conio} ${CONS_LIBS}
+   readline support:             ${got_readline} ${PRTREADLINE_SRC}
+   TCP Wrappers support:         ${TCPW_MSG} ${WRAPLIBS}
+   TLS support:                  ${have_tls}
+   Encryption support:           ${have_crypto}
+   OpenSSL support:              ${have_openssl}
+   GNUTLS support:               ${have_gnutls}
+   ZLIB support:                 ${have_zlib}
+   LZO support:                  ${have_lzo}
+   FASTLZ support:               ${have_fastlz}
+   LMDB support:                 ${support_lmdb}
+   NDMP support:                 ${support_ndmp}
+   enable-smartalloc:            ${support_smartalloc}
+   enable-lockmgr:               ${support_lockmgr}
+   bat support:                  ${support_bat}
+   tray-monitor support:         ${support_traymonitor}
+   client-only:                  ${build_client_only}
+   build-dird:                   ${build_dird}
+   build-stored:                 ${build_stored}
+   Plugin support:               ${have_plugins}
+   AFS support:                  ${have_afs}
+   ACL support:                  ${have_acl}
+   XATTR support:                ${have_xattr}
+   SCSI Crypto support:          ${have_scsi_crypto}
+   GLUSTERFS support:            ${have_glusterfs}
+   DROPLET support:              ${have_droplet}
+   CEPH RADOS support:           ${have_ceph_rados}
+   RADOS striping support:       ${have_ceph_rados_striper}
+   CEPHFS support:               ${have_cephfs}
+   ELASTO support:               ${have_elasto}
+   Python support:               ${support_python} ${PYTHON_LIBS}
+   systemd support:              ${support_systemd} ${SYSTEMD_UNITDIR}
+   Batch insert enabled:         ${batch_insert_db_backends}
 
   " > config.out
 

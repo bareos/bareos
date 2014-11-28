@@ -23,7 +23,7 @@ DESC="@BAREOS@ Storage Daemon"
 DAEMON=@sbindir@/${NAME}
 BUSER=@sd_user@
 BGROUP=@sd_group@
-BOPTIONS="-c @sysconfdir@/${NAME}.conf"
+BOPTIONS="-c @confdir@/${NAME}.conf"
 BPORT=@sd_port@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin

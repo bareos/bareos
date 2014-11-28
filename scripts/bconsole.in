@@ -11,6 +11,10 @@ if [ $? = 0 ] ; then
      exit 1
   fi
 fi
+if [ x@sbindir@ = x@confdir@ ]; then
+   echo "bconsole not properly installed."
+   exit 1
+fi
 if [ x@sbindir@ = x@sysconfdir@ ]; then
    echo "bconsole not properly installed."
    exit 1
@@ -19,5 +23,5 @@ if [ $# = 1 ] ; then
    echo "doing bconsole $1.conf"
    @sbindir@/bconsole -c $1.conf
 else
-   @sbindir@/bconsole -c @sysconfdir@/bconsole.conf
+   @sbindir@/bconsole -c @confdir@/bconsole.conf
 fi
