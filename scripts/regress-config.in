@@ -20,6 +20,7 @@ fi
     --sbindir=${1}/bin \
     --libdir=${1}/bin \
     --sysconfdir=${1}/bin \
+    --with-confdir=${1}/bin \
     --mandir=${1}/bin \
     --docdir=${1}/bin/html \
     --htmldir=${1}/bin/html \
