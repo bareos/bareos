@@ -463,10 +463,9 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       sendit(sock, "NDMP DMA: name=%s\n", res->res_dir.hdr.name);
       break;
    case R_STORAGE:
-      sendit(sock, "Storage: name=%s SDaddr=%s SDport=%d HB=%s\n",
+      sendit(sock, "Storage: name=%s SDaddr=%s HB=%s\n",
              res->res_store.hdr.name,
              NPRT(get_first_address(res->res_store.SDaddrs, buf, sizeof(buf))),
-             get_first_port_host_order(res->res_store.SDaddrs),
              edit_utime(res->res_store.heartbeat_interval, buf, sizeof(buf)));
       if (res->res_store.SDaddrs) {
          foreach_dlist(addr, res->res_store.SDaddrs) {

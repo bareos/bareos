@@ -1119,8 +1119,7 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
    }
 
    /*
-    * Check if the device is in append mode with writers (i.e.
-    *  available if pool is the same).
+    * Check if the device is in append mode with writers (i.e. available if pool is the same).
     */
    if (dev->can_append() || dev->num_writers > 0) {
       return is_pool_ok(dcr);
@@ -1130,17 +1129,10 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
             jcr->JobId, dev->print_name());
       queue_reserve_message(jcr);
       Jmsg0(jcr, M_FATAL, 0, _("Logic error!!!! Should not get here.\n"));
+
       return -1;                      /* error, should not get here */
    }
-   Mmsg(jcr->errmsg, _("3911 JobId=%u failed reserve drive %s.\n"),
-         jcr->JobId, dev->print_name());
-   queue_reserve_message(jcr);
-   Dmsg1(dbglvl, "Failed: No reserve %s\n", dev->print_name());
-   return 0;
 }
-
-
-
 
 /*
  * Queue a reservation error or failure message for this jcr

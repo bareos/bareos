@@ -390,53 +390,49 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       goto bail_out;
    }
 
-   for ( ;; ) {
-      empty_block(block);
-      if (!dev->rewind(dcr)) {
-         Dmsg2(130, "Bad status on %s from rewind: ERR=%s\n", dev->print_name(), dev->print_errmsg());
-         if (!forge_on) {
-            goto bail_out;
-         }
-      }
-
-      /* Temporarily mark in append state to enable writing */
-      dev->set_append();
-
-
-      /* Create PRE_LABEL */
-      create_volume_label(dev, VolName, PoolName);
-
-      /*
-       * If we have already detected an ANSI label, re-read it
-       *   to skip past it. Otherwise, we write a new one if
-       *   so requested.
-       */
-      if (dev->label_type != B_BAREOS_LABEL) {
-         if (read_ansi_ibm_label(dcr) != VOL_OK) {
-            dev->rewind(dcr);
-            goto bail_out;
-         }
-      } else if (!write_ansi_ibm_labels(dcr, ANSI_VOL_LABEL, VolName)) {
+   empty_block(block);
+   if (!dev->rewind(dcr)) {
+      Dmsg2(130, "Bad status on %s from rewind: ERR=%s\n", dev->print_name(), dev->print_errmsg());
+      if (!forge_on) {
          goto bail_out;
       }
+   }
 
-      create_volume_label_record(dcr, dev, dcr->rec);
-      dcr->rec->Stream = 0;
-      dcr->rec->maskedStream = 0;
+   /* Temporarily mark in append state to enable writing */
+   dev->set_append();
 
-      if (!write_record_to_block(dcr, dcr->rec)) {
-         Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
+   /* Create PRE_LABEL */
+   create_volume_label(dev, VolName, PoolName);
+
+   /*
+    * If we have already detected an ANSI label, re-read it
+    *   to skip past it. Otherwise, we write a new one if
+    *   so requested.
+    */
+   if (dev->label_type != B_BAREOS_LABEL) {
+      if (read_ansi_ibm_label(dcr) != VOL_OK) {
+         dev->rewind(dcr);
          goto bail_out;
-      } else {
-         Dmsg2(130, "Wrote label of %d bytes to %s\n", dcr->rec->data_len, dev->print_name());
       }
+   } else if (!write_ansi_ibm_labels(dcr, ANSI_VOL_LABEL, VolName)) {
+      goto bail_out;
+   }
 
-      Dmsg0(130, "Call write_block_to_dev()\n");
-      if (!dcr->write_block_to_dev()) {
-         Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
-         goto bail_out;
-      }
-      break;
+   create_volume_label_record(dcr, dev, dcr->rec);
+   dcr->rec->Stream = 0;
+   dcr->rec->maskedStream = 0;
+
+   if (!write_record_to_block(dcr, dcr->rec)) {
+      Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
+      goto bail_out;
+   } else {
+      Dmsg2(130, "Wrote label of %d bytes to %s\n", dcr->rec->data_len, dev->print_name());
+   }
+
+   Dmsg0(130, "Call write_block_to_dev()\n");
+   if (!dcr->write_block_to_dev()) {
+      Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
+      goto bail_out;
    }
    dev = dcr->dev;
 
