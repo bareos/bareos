@@ -69,6 +69,9 @@ rc-files: tools/bsmtpres.rc \
 	  console/consoleres.rc \
 	  filed/filedres.rc \
 	  stored/storedres.rc \
+	  stored/bextractres.rc \
+	  stored/blsres.rc \
+	  stored/btaperes.rc \
 	  dird/dirdres.rc \
 	  dird/dbcheckres.rc \
 	  qt-console/batres.rc \
@@ -105,4 +108,13 @@ dird/dirdres.rc: dird/dirdres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 dird/dbcheckres.rc: dird/dbcheckres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+stored/bextractres.rc: stored/bextractres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+stored/btaperes.rc: stored/btaperes.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+stored/blsres.rc: stored/blsres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
