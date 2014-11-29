@@ -66,9 +66,9 @@ enum {
    FO_HONOR_NODUMP = 26, /* Honor NODUMP flag */
    FO_XATTR = 27,        /* Backup Extended Attributes */
    FO_DELTA = 28,        /* Delta data -- i.e. all copies returned on restore */
-   FO_PLUGIN = 30,       /* Plugin data stream -- return to plugin on restore */
-   FO_OFFSETS = 31,      /* Keep I/O file offsets */
-   FO_NO_AUTOEXCL = 32   /* Don't use autoexclude methods */
+   FO_PLUGIN = 29,       /* Plugin data stream -- return to plugin on restore */
+   FO_OFFSETS = 30,      /* Keep I/O file offsets */
+   FO_NO_AUTOEXCL = 31   /* Don't use autoexclude methods */
 };
 
 /*
