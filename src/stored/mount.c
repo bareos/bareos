@@ -99,6 +99,7 @@ mount_next_vol:
       P(mount_mutex);
       Dmsg1(150, "Continue after dir_ask_sysop_to_mount. must_load=%d\n", dev->must_load());
    }
+
    if (job_canceled(jcr)) {
       Jmsg(jcr, M_FATAL, 0, _("Job %d canceled.\n"), jcr->JobId);
       goto bail_out;
@@ -119,6 +120,7 @@ mount_next_vol:
    if (job_canceled(jcr)) {
       goto bail_out;
    }
+
    Dmsg2(150, "After find_next_append. Vol=%s Slot=%d\n", getVolCatName(), VolCatInfo.Slot);
 
    /*
@@ -130,29 +132,60 @@ mount_next_vol:
     * If the device is a file, we create the output
     * file. If it is a tape, we check the volume name
     * and move the tape to the end of data.
-    *
     */
    dcr->setVolCatInfo(false);   /* out of date when Vols unlocked */
-   if (autoload_device(dcr, true/*writing*/, NULL) > 0) {
-      autochanger = true;
-      ask = false;
-   } else {
+
+   switch (autoload_device(dcr, true /* writing */, NULL)) {
+   case -1:
+      /*
+       * -1 => error on autochanger
+       */
       autochanger = false;
       VolCatInfo.Slot = 0;
       ask = retry >= 2;
+      break;
+   case 0:
+      /*
+       * 0 => failure (no changer available)
+       */
+      autochanger = false;
+      VolCatInfo.Slot = 0;
+
+      /*
+       * If the VolCatInfo.InChanger flag is not set we are trying to use a volume
+       * that is not in the autochanger so that means we need to ask the operator to
+       * mount it.
+       */
+      if (!VolCatInfo.InChanger) {
+         ask = true;
+      } else {
+         ask = retry >= 2;
+      }
+      break;
+   default:
+      /*
+       * Success
+       */
+      autochanger = true;
+      ask = false;
+      break;
    }
    Dmsg1(150, "autoload_dev returns %d\n", autochanger);
+
    /*
     * If we autochanged to correct Volume or (we have not just
-    *   released the Volume AND we can automount) we go ahead
-    *   and read the label. If there is no tape in the drive,
-    *   we will fail, recurse and ask the operator the next time.
+    * released the Volume AND we can automount) we go ahead
+    * and read the label. If there is no tape in the drive,
+    * we will fail, recurse and ask the operator the next time.
     */
    if (!dev->must_unload() && dev->is_tape() && dev->has_cap(CAP_AUTOMOUNT)) {
       Dmsg0(250, "(1)Ask=0\n");
       ask = false;                 /* don't ask SYSOP this time */
    }
-   /* Don't ask if not removable */
+
+   /*
+    * Don't ask if not removable
+    */
    if (!dev->is_removable()) {
       Dmsg0(250, "(2)Ask=0\n");
       ask = false;
@@ -168,27 +201,34 @@ mount_next_vol:
       }
       P(mount_mutex);
    }
+
    if (job_canceled(jcr)) {
       goto bail_out;
    }
-   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName,
-      dev->VolHdr.VolumeName, dev->print_name());
+
+   Dmsg3(150, "want vol=%s devvol=%s dev=%s\n", VolumeName, dev->VolHdr.VolumeName, dev->print_name());
 
    if (dev->poll && dev->has_cap(CAP_CLOSEONPOLL)) {
       dev->close(dcr);
       free_volume(dev);
    }
 
-   /* Ensure the device is open */
+   /*
+    * Ensure the device is open
+    */
    if (dev->has_cap(CAP_STREAM)) {
       mode = OPEN_WRITE_ONLY;
    } else {
       mode = OPEN_READ_WRITE;
    }
-   /* Try autolabel if enabled */
+
+   /*
+    * Try autolabel if enabled
+    */
    if (!dev->open(dcr, mode)) {
       try_autolabel(false);      /* try to create a new volume label */
    }
+
    while (!dev->open(dcr, mode)) {
       Dmsg1(150, "open_device failed: ERR=%s\n", dev->bstrerror());
       if (dev->is_file() && dev->is_removable()) {
@@ -322,10 +362,11 @@ no_lock_bail_out:
 
 /*
  * This routine is meant to be called once the first pass
- *   to ensure that we have a candidate volume to mount.
- *   Otherwise, we ask the sysop to created one.
+ * to ensure that we have a candidate volume to mount.
+ * Otherwise, we ask the sysop to created one.
+ *
  * Note, mount_mutex is already locked on entry and thus
- *   must remain locked on exit from this function.
+ * must remain locked on exit from this function.
  */
 bool DCR::find_a_volume()
 {
@@ -333,14 +374,17 @@ bool DCR::find_a_volume()
 
    if (!is_suitable_volume_mounted()) {
       bool have_vol = false;
-      /* Do we have a candidate volume? */
+
+      /*
+       * Do we have a candidate volume?
+       */
       if (dev->vol) {
          bstrncpy(VolumeName, dev->vol->vol_name, sizeof(VolumeName));
          have_vol = dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
       }
+
       /*
-       * Get Director's idea of what tape we should have mounted.
-       *    in dcr->VolCatInfo
+       * Get Director's idea of what tape we should have mounted, in dcr->VolCatInfo
        */
       if (!have_vol) {
          Dmsg0(200, "Before dir_find_next_appendable_volume.\n");
@@ -362,9 +406,11 @@ bool DCR::find_a_volume()
          }
       }
    }
+
    if (dcr->haveVolCatInfo()) {
       return true;
    }
+
    return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
 }
 

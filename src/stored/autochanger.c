@@ -74,17 +74,17 @@ bool init_autochangers()
 
 /*
  * Called here to do an autoload using the autochanger, if
- *  configured, and if a Slot has been defined for this Volume.
- *  On success this routine loads the indicated tape, but the
- *  label is not read, so it must be verified.
+ * configured, and if a Slot has been defined for this Volume.
+ * On success this routine loads the indicated tape, but the
+ * label is not read, so it must be verified.
  *
- *  Note if dir is not NULL, it is the console requesting the
- *   autoload for labeling, so we respond directly to the
- *   dir bsock.
+ * Note if dir is not NULL, it is the console requesting the
+ *  autoload for labeling, so we respond directly to the
+ *  dir bsock.
  *
- *  Returns: 1 on success
- *           0 on failure (no changer available)
- *          -1 on error on autochanger
+ * Returns: 1 on success
+ *          0 on failure (no changer available)
+ *         -1 on error on autochanger
  */
 int autoload_device(DCR *dcr, int writing, BSOCK *dir)
 {
@@ -100,7 +100,9 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
       return 0;
    }
 
-   /* An empty ChangerCommand => virtual disk autochanger */
+   /*
+    * An empty ChangerCommand => virtual disk autochanger
+    */
    if (dcr->device->changer_command && dcr->device->changer_command[0] == 0) {
       Dmsg0(100, "ChangerCommand=0, virtual disk changer\n");
       return 1;                       /* nothing to load */
@@ -109,15 +111,19 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
    slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
    Dmsg3(100, "autoload: slot=%d InChgr=%d Vol=%s\n", dcr->VolCatInfo.Slot,
          dcr->VolCatInfo.InChanger, dcr->getVolCatName());
+
    /*
-    * Handle autoloaders here.  If we cannot autoload it, we
-    *  will return 0 so that the sysop will be asked to load it.
+    * Handle autoloaders here.  If we cannot autoload it, we will return 0 so that
+    * the sysop will be asked to load it.
     */
    if (writing && slot <= 0) {
       if (dir) {
          return 0;                    /* For user, bail out right now */
       }
-      /* ***FIXME*** this really should not be here */
+
+      /*
+       * ***FIXME*** this really should not be here
+       */
       if (dcr->dir_find_next_appendable_volume()) {
          slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
       } else {
@@ -128,7 +134,9 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
 
    changer = get_pool_memory(PM_FNAME);
    if (slot <= 0) {
-      /* Suppress info when polling */
+      /*
+       * Suppress info when polling
+       */
       if (!dev->poll) {
          Jmsg(jcr, M_INFO, 0, _("No slot defined in catalog (slot=%d) for Volume \"%s\" on %s.\n"),
               slot, dcr->getVolCatName(), dev->print_name());
@@ -136,42 +144,51 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
       }
       rtn_stat = 0;
    } else if (!dcr->device->changer_name) {
-      /* Suppress info when polling */
+      /*
+       * Suppress info when polling
+       */
       if (!dev->poll) {
          Jmsg(jcr, M_INFO, 0, _("No \"Changer Device\" for %s. Manual load of Volume may be required.\n"),
               dev->print_name());
       }
       rtn_stat = 0;
   } else if (!dcr->device->changer_command) {
-      /* Suppress info when polling */
+      /*
+       * Suppress info when polling
+       */
       if (!dev->poll) {
          Jmsg(jcr, M_INFO, 0, _("No \"Changer Command\" for %s. Manual load of Volume may be requird.\n"),
               dev->print_name());
       }
       rtn_stat = 0;
   } else {
-      /* Attempt to load the Volume */
-
       uint32_t timeout = dcr->device->max_changer_wait;
       int loaded, status;
 
+      /*
+       * Attempt to load the Volume
+       */
       loaded = get_autochanger_loaded_slot(dcr);
 
       if (loaded != slot) {
          POOL_MEM results(PM_MESSAGE);
 
-         /* Unload anything in our drive */
+         /*
+          * Unload anything in our drive
+          */
          if (!unload_autochanger(dcr, loaded)) {
             goto bail_out;
          }
 
-         /* Make sure desired slot is unloaded */
+         /*
+          * Make sure desired slot is unloaded
+          */
          if (!unload_other_drive(dcr, slot)) {
             goto bail_out;
          }
 
          /*
-          * Load the desired cassette
+          * Load the desired volume.
           */
          lock_changer(dcr);
          Dmsg2(100, "Doing changer load slot %d %s\n", slot, dev->print_name());
@@ -189,7 +206,9 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
             Dmsg2(100, "load slot %d, drive %d, status is OK.\n", slot, drive);
             dev->set_slot(slot);      /* set currently loaded slot */
             if (dev->vol) {
-               /* We just swapped this Volume so it cannot be swapping any more */
+               /*
+                * We just swapped this Volume so it cannot be swapping any more
+                */
                dev->vol->clear_swapping();
             }
          } else {
@@ -214,13 +233,13 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
          rtn_stat = 1;                /* tape loaded by changer */
       }
    }
+
    free_pool_memory(changer);
    return rtn_stat;
 
 bail_out:
    free_pool_memory(changer);
    return -1;
-
 }
 
 /*
