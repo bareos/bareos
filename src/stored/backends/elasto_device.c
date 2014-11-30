@@ -60,6 +60,11 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
    struct elasto_fauth auth;
    struct elasto_fstat efstat;
 
+#if 1
+   Mmsg1(errmsg, _("Elasto Storage devices are not yet supported, please disable %s\n"), dev_name);
+   return -1;
+#endif
+
    if (!m_elasto_configstring) {
       char *bp, *next_option;
 
