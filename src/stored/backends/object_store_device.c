@@ -91,6 +91,11 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
    dpl_vfile_flag_t dpl_flags;
    dpl_option_t dpl_options;
 
+#if 1
+   Mmsg1(errmsg, _("Object Storage devices are not yet supported, please disable %s\n"), dev_name);
+   return -1;
+#endif
+
    /*
     * Initialize the droplet library when its not done previously.
     */
