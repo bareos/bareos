@@ -675,7 +675,7 @@ static bool check_resources()
       }
 
       /*
-       * When the user didn't force use we optimize for size.
+       * When the user didn't force us we optimize for size.
        */
       if (!me->optimize_for_size && !me->optimize_for_speed) {
          me->optimize_for_size = true;
