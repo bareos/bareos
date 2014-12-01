@@ -105,7 +105,6 @@ static RES_ITEM dir_items[] = {
    { "BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR },
 #endif
    { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0" },
-   { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, 0, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
    { "MaximumConnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConnections), 0, CFG_ITEM_DEFAULT, "30" },
    { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnections), 0, CFG_ITEM_DEFAULT, "20"},
@@ -448,7 +447,6 @@ static RES_ITEM pool_items[] = {
    { "Recycle", CFG_TYPE_BOOL, ITEM(res_pool.Recycle), 0, CFG_ITEM_DEFAULT, "true" },
    { "RecyclePool", CFG_TYPE_RES, ITEM(res_pool.RecyclePool), R_POOL, 0, NULL },
    { "ScratchPool", CFG_TYPE_RES, ITEM(res_pool.ScratchPool), R_POOL, 0, NULL },
-   { "CopyPool", CFG_TYPE_ALIST_RES, ITEM(res_pool.CopyPool), R_POOL, 0, NULL },
    { "Catalog", CFG_TYPE_RES, ITEM(res_pool.catalog), R_CATALOG, 0, NULL },
    { "FileRetention", CFG_TYPE_TIME, ITEM(res_pool.FileRetention), 0, 0, NULL },
    { "JobRetention", CFG_TYPE_TIME, ITEM(res_pool.JobRetention), 0, 0, NULL },
@@ -1697,9 +1695,6 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dir.pid_directory) {
          free(res->res_dir.pid_directory);
-      }
-      if (res->res_dir.subsys_directory) {
-         free(res->res_dir.subsys_directory);
       }
       if (res->res_dir.backend_directories) {
          delete res->res_dir.backend_directories;

@@ -104,7 +104,6 @@ public:
    char *plugin_directory;            /* Plugin Directory */
    alist *plugin_names;               /* Plugin names to load */
    char *pid_directory;               /* PidDirectory */
-   char *subsys_directory;            /* SubsysDirectory */
    alist *backend_directories;        /* Backend Directories */
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
@@ -561,7 +560,6 @@ public:
    uint32_t action_on_purge;          /* action on purge, e.g. truncate the disk volume */
    POOLRES *RecyclePool;              /* RecyclePool destination when media is purged */
    POOLRES *ScratchPool;              /* ScratchPool source when requesting media */
-   alist *CopyPool;                   /* List of copy pools */
    CATRES *catalog;                   /* Catalog to be used */
    utime_t FileRetention;             /* file retention period in seconds */
    utime_t JobRetention;              /* job retention period in seconds */
