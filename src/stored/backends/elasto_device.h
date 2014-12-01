@@ -27,13 +27,8 @@
 #ifndef ELASTO_DEVICE_H
 #define ELASTO_DEVICE_H
 
-/*
- * As the elasto headers are not C++ compliant wrap them in extern "C"
- */
-extern "C" {
-   #include <elasto/data.h>
-   #include <elasto/file.h>
-}
+#include <elasto/data.h>
+#include <elasto/file.h>
 
 class elasto_device: public DEVICE {
 private:
