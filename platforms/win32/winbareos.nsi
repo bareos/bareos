@@ -192,8 +192,10 @@ FunctionEnd
 # and jump back to the db param dialog in interactive installer
 !macro CheckDbAdminConnection
 
+
 !define UniqueID ${__LINE__} # create a unique Id to be able to use labels in the macro.
 # See http://nsis.sourceforge.net/Tutorial:_Using_labels_in_macro%27s
+
 
 # search for value of HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL Global Development Group\PostgreSQL,  Key "Location"
     ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
@@ -484,6 +486,8 @@ SectionEnd
 Section -DataBaseCheck
 
 IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
+
+StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not instaling director
 
 !insertmacro CheckDbAdminConnection
 
@@ -1526,9 +1530,10 @@ Function getDatabaseParametersLeave
   ReadINIStr  $DbPort                 "$PLUGINSDIR\databasedialog.ini" "Field 8" "state"
 dbcheckend:
 
-!insertmacro CheckDbAdminConnection
-
+   StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
+   !insertmacro CheckDbAdminConnection
    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+SkipDbCheck:
 
 FunctionEnd
 
@@ -1781,6 +1786,14 @@ Push $R1
   IntOp $R0 $R0 & ${SF_SELECTED}
   StrCmp $R0 ${SF_SELECTED} 0 +2
   SectionSetFlags ${SEC_BCONSOLE} $R0
+
+  # if director is selected, we set InstallDirector to yes else no
+  StrCpy $InstallDirector "no"
+  SectionGetFlags ${SEC_DIR} $R0
+  IntOp $R0 $R0 & ${SF_SELECTED}
+  StrCmp $R0 ${SF_SELECTED} 0 +2
+  StrCpy $InstallDirector "yes"
+
 Pop $R1
 Pop $R0
 FunctionEnd
