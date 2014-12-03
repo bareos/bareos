@@ -184,6 +184,8 @@ struct stat
 #define S_IFIFO     0010000         /* pipe */
 #undef  S_IFREG
 #define S_IFREG     0100000         /* regular */
+#undef S_IFLNK
+#define S_IFLNK     0120000         /* symbolic link */
 #define S_IREAD     0000400         /* read permission, owner */
 #define S_IWRITE    0000200         /* write permission, owner */
 #define S_IEXEC     0000100         /* execute/search permission, owner */
@@ -192,6 +194,7 @@ struct stat
 #define S_IWUSR     S_IWRITE
 #define S_IXUSR     S_IEXEC
 #define S_ISREG(x)  (((x) & S_IFMT) == S_IFREG)
+#define S_ISLNK(x)  (((x) & S_IFMT) == S_IFLNK)
 #define S_ISDIR(x)  (((x) & S_IFMT) == S_IFDIR)
 #define S_ISCHR(x)  0
 #define S_ISBLK(x)  (((x) & S_IFMT) == S_IFBLK)
@@ -211,7 +214,6 @@ struct stat
 #define S_ISGID     002000
 #define S_ISVTX     001000
 #define S_ISSOCK(x) 0
-#define S_ISLNK(x)  0
 
 #if __STDC__
 #define O_RDONLY    _O_RDONLY
@@ -273,13 +275,16 @@ int utime(const char *filename, struct utimbuf *buf);
 
 struct timespec;
 int readdir(unsigned int fd, struct dirent *dirp, unsigned int count);
-int nanosleep(const struct timespec*, struct timespec *);
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 long int random(void);
 void srandom(unsigned int seed);
-int lstat(const char *, struct stat *);
+int lstat(const char *filename, struct stat *sb);
 int stat(const char *file, struct stat *sb);
-long pathconf(const char *, int);
-int readlink(const char *, char *, int);
+long pathconf(const char *path, int name);
+ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev);
+int link(const char *existing, const char *newfile);
+
 #define _PC_PATH_MAX 1
 #define _PC_NAME_MAX 2
 
@@ -406,6 +411,7 @@ int win32_ftruncate(int fd, int64_t length);
 #define FILE_ATTRIBUTE_VOLUME_MOUNT_POINT 0x10000000
 #define FILE_ATTRIBUTES_JUNCTION_POINT 0x20000000
 #define FILE_ATTRIBUTES_DEDUPED_ITEM 0x40000000
+#define FILE_ATTRIBUTES_SYMBOLIC_LINK 0x80000000
 
 #ifndef IO_REPARSE_TAG_DEDUP
 #define IO_REPARSE_TAG_DEDUP (0x80000013)

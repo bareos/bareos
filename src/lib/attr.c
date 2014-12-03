@@ -219,12 +219,6 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
             attr->olname[0] = 0;
             add_link = false;
          }
-
-#if defined(HAVE_WIN32)
-         if (attr->lname[1] == ':') {
-            attr->lname[1] = '/';    /* turn : into / */
-         }
-#endif
          fn = attr->lname;       /* take whole name */
          /* Ensure where is terminated with a slash */
          if (add_link &&

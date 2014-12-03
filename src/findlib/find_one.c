@@ -590,9 +590,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    }
 
 #if defined(HAVE_WIN32)
-   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTES_JUNCTION_POINT) {
-      ff_pkt->type = FT_JUNCTION;
-   } else if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_REPARSE_POINT) {
+   if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_REPARSE_POINT) {
       ff_pkt->type = FT_REPARSE;
    }
 #endif
@@ -607,9 +605,9 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     */
    rtn_stat = handle_file(jcr, ff_pkt, top_level);
    if (rtn_stat < 1 ||
-       ff_pkt->type == FT_REPARSE ||
-       ff_pkt->type == FT_JUNCTION) {   /* ignore or error status */
+       ff_pkt->type == FT_REPARSE)  {   /* ignore or error status */
       free(link);
+
       return rtn_stat;
    }
 

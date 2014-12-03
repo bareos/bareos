@@ -732,9 +732,12 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 #else
       do_read = ff_pkt->statp.st_size > 0;
 #endif
-   } else if (ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO ||
-              ff_pkt->type == FT_REPARSE || ff_pkt->type == FT_JUNCTION ||
-         (!is_portable_backup(&ff_pkt->bfd) && ff_pkt->type == FT_DIREND)) {
+   } else if (ff_pkt->type == FT_RAW ||
+              ff_pkt->type == FT_FIFO ||
+              ff_pkt->type == FT_REPARSE ||
+              ff_pkt->type == FT_JUNCTION ||
+             (!is_portable_backup(&ff_pkt->bfd) &&
+              ff_pkt->type == FT_DIREND)) {
       do_read = true;
    }
 
@@ -1357,6 +1360,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       strip_path(ff_pkt);
    }
    switch (ff_pkt->type) {
+   case FT_JUNCTION:
    case FT_LNK:
    case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname, ff_pkt->link);
@@ -1366,7 +1370,6 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       break;
    case FT_DIREND:
    case FT_REPARSE:
-   case FT_JUNCTION:
       /* Here link is the canonical filename (i.e. with trailing slash) */
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,

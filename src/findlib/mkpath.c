@@ -183,12 +183,8 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
 
 /*
  * mode is the mode bits to use in creating a new directory
- *
- * parent_mode are the parent's modes if we need to create parent
- *    directories.
- *
+ * parent_mode are the parent's modes if we need to create parent directories.
  * owner and group are to set on any created dirs
- *
  * keep_dir_modes if set means don't change mode bits if dir exists
  */
 bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
@@ -227,17 +223,19 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
    strip_trailing_slashes(path);
    /*
     * Now for one of the complexities. If we are not running as root,
-    *  then if the parent_mode does not have wx user perms, or we are
-    *  setting the userid or group, and the parent_mode has setuid, setgid,
-    *  or sticky bits, we must create the dir with open permissions, then
-    *  go back and patch all the dirs up with the correct perms.
+    * then if the parent_mode does not have wx user perms, or we are
+    * setting the userid or group, and the parent_mode has setuid, setgid,
+    * or sticky bits, we must create the dir with open permissions, then
+    * go back and patch all the dirs up with the correct perms.
     * Solution, set everything to 0777, then go back and reset them at the
-    *  end.
+    * end.
     */
    tmode = 0777;
 
 #if defined(HAVE_WIN32)
-   /* Validate drive letter */
+   /*
+    * Validate drive letter
+    */
    if (path[1] == ':') {
       char drive[4] = "X:\\";
 
@@ -263,7 +261,9 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
    p = path;
 #endif
 
-   /* Skip leading slash(es) */
+   /*
+    * Skip leading slash(es)
+    */
    while (IsPathSeparator(*p)) {
       p++;
    }
@@ -282,10 +282,15 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
          p++;
       }
    }
-   /* Create final component */
-   if (!makedir(jcr, path, tmode, &created)) {
-      goto bail_out;
+   /*
+    * Create final component if not a junction/symlink
+    */
+   if(attr->type != FT_JUNCTION ){
+      if (!makedir(jcr, path, tmode, &created)) {
+         goto bail_out;
+      }
    }
+
    if (ndir < max_dirs) {
       new_dir[ndir++] = created;
    }
@@ -293,10 +298,14 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
       Jmsg0(jcr, M_WARNING, 0, _("Too many subdirectories. Some permissions not reset.\n"));
    }
 
-   /* Now set the proper owner and modes */
+   /*
+    * Now set the proper owner and modes
+    */
 #if defined(HAVE_WIN32)
 
-   /* Don't propagate the hidden attribute to parent directories */
+   /*
+    * Don't propagate the hidden attribute to parent directories
+    */
    parent_mode &= ~S_ISVTX;
 
    if (path[1] == ':') {
@@ -307,7 +316,9 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
 #else
    p = path;
 #endif
-   /* Skip leading slash(es) */
+   /*
+    * Skip leading slash(es)
+    */
    while (IsPathSeparator(*p)) {
       p++;
    }
@@ -324,7 +335,9 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
       }
    }
 
-   /* Set for final component */
+   /*
+    * Set for final component
+    */
    if (i < ndir && new_dir[i++]) {
       set_own_mod(attr, path, owner, group, mode);
    }
