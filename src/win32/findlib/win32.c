@@ -30,6 +30,30 @@
 #include "lib/cbuf.h"
 
 /*
+ * We need to analyze if a fileset contains onefs=no as option, because only then
+ * we need to snapshot submounted vmps
+ */
+bool win32_onefs_is_disabled(findFILESET *fileset)
+{
+   findINCEXE *incexe;
+
+   for (int i = 0; i < fileset->include_list.size(); i++) {
+      incexe = (findINCEXE *)fileset->include_list.get(i);
+      /*
+       * Look through all files and check
+       */
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+         findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+         if (bit_is_set(FO_MULTIFS, fo->flags)) {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
+/*
  * For VSS we need to know which windows drives are used, because we create a snapshot
  * of all used drives. This function returns the number of used drives and fills
  * szDrives with up to 26 (A..Z) drive names.

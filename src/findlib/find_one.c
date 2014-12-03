@@ -589,9 +589,17 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
       ff_pkt->type = FT_DIRBEGIN;
    }
 
+   bool is_win32_mount_point = false;
 #if defined(HAVE_WIN32)
+   is_win32_mount_point = ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
+
    if (ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_REPARSE_POINT) {
       ff_pkt->type = FT_REPARSE;
+   }
+
+   /* treat win32 mount points (Volume Mount Points) as directories */
+   if (is_win32_mount_point) {
+      ff_pkt->type = FT_DIRBEGIN;
    }
 #endif
 
@@ -637,10 +645,6 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * to cross, or we may be restricted by a list of permitted
     * file systems.
     */
-   bool is_win32_mount_point = false;
-#if defined(HAVE_WIN32)
-   is_win32_mount_point = ff_pkt->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
-#endif
    if (!top_level && bit_is_set(FO_NO_RECURSION, ff_pkt->flags)) {
       ff_pkt->type = FT_NORECURSE;
       recurse = false;

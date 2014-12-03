@@ -107,6 +107,7 @@ void check_include_list_shadowing(JCR *jcr, findFILESET *fileset);
 
 #if defined(HAVE_WIN32)
 /* win32.c */
+bool win32_onefs_is_disabled(findFILESET *fileset);
 int get_win32_driveletters(findFILESET *fileset, char *szDrives);
 int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps);
 bool expand_win32_fileset(findFILESET *fileset);
