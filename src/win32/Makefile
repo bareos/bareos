@@ -60,6 +60,9 @@ rc-files: tools/bsmtpres.rc \
 	  console/consoleres.rc \
 	  filed/filedres.rc \
 	  stored/storedres.rc \
+	  stored/bextractres.rc \
+	  stored/blsres.rc \
+	  stored/btaperes.rc \
 	  dird/dirdres.rc \
 	  dird/dbcheckres.rc
 
