@@ -83,7 +83,7 @@ static RES_ITEM cli_items[] = {
    { "fdsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_client.FDsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
    { "workingdirectory", CFG_TYPE_DIR, ITEM(res_client.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", CFG_TYPE_DIR, ITEM(res_client.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_client.subsys_directory), 0, 0, NULL },
+   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_client.subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL },
    { "plugindirectory", CFG_TYPE_DIR, ITEM(res_client.plugin_directory), 0, 0, NULL },
    { "pluginnames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_client.plugin_names), 0, 0, NULL },
    { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_client.scripts_directory), 0, 0, NULL },
