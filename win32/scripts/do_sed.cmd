@@ -24,7 +24,6 @@ ECHO s;@sbindir@;%CD:\=/%/bin;g >%out%
 ECHO s;@scriptdir@;%CD:\=/%/scripts;g >>%out%
 ECHO s;@working_dir@;%CD:\=/%/working;g >>%out%
 ECHO s;@piddir@;%CD:\=/%/working;g >>%out%
-ECHO s;@subsysdir@;%CD:\=/%/working;g >>%out%
 ECHO s;@job_email@;%1;g >>%out%
 ECHO s;@smtp_host@;%2;g >>%out%
 ECHO s;@tape_drive@;%3;g >>%out%

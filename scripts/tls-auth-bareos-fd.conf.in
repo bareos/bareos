@@ -26,7 +26,6 @@ FileDaemon {                          # this is me
   FDPort = @fdport@                  # where we listen for the director
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  SubSys Directory = "@subsysdir@"
   TLS Authenticate = yes
   TLS Require = no
   TLS Certificate = "@scriptdir@/tls-cert.pem"

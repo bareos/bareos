@@ -13,7 +13,6 @@ Storage {                             # definition of myself
   SDPort = 8103                  # Director's port
   WorkingDirectory = "/home/kern/bareos/regress/working"
   Pid Directory = "/home/kern/bareos/regress/working"
-  Subsys Directory = "/home/kern/bareos/regress/working"
 }
 
 #

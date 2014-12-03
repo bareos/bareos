@@ -23,7 +23,6 @@ FileDaemon {                          # this is me
   FDport = 8102                  # where we listen for the director
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  SubSys Directory = "@subsysdir@"
 }
 
 # Send all messages except skipped files back to Director

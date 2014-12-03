@@ -16,7 +16,6 @@ Director {                            # define myself
   QueryFile = "@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
   PidDirectory = "@piddir@"
-  SubSysDirectory = "@subsysdir@"
   PluginDirectory = "@sbindir@"
   Maximum Concurrent Jobs = 4
   Heartbeat Interval = 330

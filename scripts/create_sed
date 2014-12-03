@@ -38,7 +38,6 @@ echo "s%@sbindir@%${bin}%g" >${out}
 echo "s%@scriptdir@%${scripts}%g" >>${out}
 echo "s%@working_dir@%${working}%g" >>${out}
 echo "s%@piddir@%${working}%g" >>${out}
-echo "s%@subsysdir@%${working}%g" >>${out}
 echo "s%@job_email@%${EMAIL}%g" >>${out}
 echo "s%@tape_drive@%${TAPE_DRIVE}%g" >>${out}
 echo "s%@autochanger@%${AUTOCHANGER}%g" >>${out}

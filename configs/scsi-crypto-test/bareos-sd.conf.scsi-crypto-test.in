@@ -13,7 +13,6 @@ Storage {
   SDPort = 8103
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  SubSys Directory = "@subsysdir@"
   Plugin Directory = "@sbindir@/plugins"
   Maximum Concurrent Jobs = 100
 }

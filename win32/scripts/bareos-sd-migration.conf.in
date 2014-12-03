@@ -15,7 +15,6 @@ Storage {                             # definition of myself
   SDPort = 8103                  # Director's port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  Subsys Directory = "@subsysdir@"
 }
 
 #
