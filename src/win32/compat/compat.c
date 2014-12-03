@@ -37,10 +37,10 @@
 
 /*
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
- * then our define of FILE_ATTRIBUTE_VOLUME_MOUNT_POINT.
+ * than our define of FILE_ATTRIBUTE_VOLUME_MOUNT_POINT.
  */
 #if FILE_ATTRIBUTE_VOLUME_MOUNT_POINT < FILE_ATTRIBUTE_VALID_FLAGS
-#error "FILE_ATTRIBUTE_VALID_FLAGS smaller then FILE_ATTRIBUTE_VALID_FLAGS"
+#error "FILE_ATTRIBUTE_VALID_FLAGS smaller than FILE_ATTRIBUTE_VALID_FLAGS"
 #endif
 
 /*
@@ -824,6 +824,84 @@ static time_t cvt_ftime_to_utime(const LARGE_INTEGER &time)
    return (time_t) (mstime & 0xffffffff);
 }
 
+static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
+{
+   DWORD dwRet;
+   HANDLE hDir;
+   POOLMEM *buf;
+   bool retval = false;
+   int buf_length, path_length, data_length;
+   REPARSE_DATA_BUFFER *rdb;
+   char szDestDir[MAX_PATH];
+
+   /*
+    * Create a buffer big enough to hold all data.
+    */
+   buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR);
+   buf = get_pool_memory(PM_NAME);
+   buf = check_pool_memory_size(buf, buf_length);
+   rdb = (REPARSE_DATA_BUFFER *)buf;
+
+   bstrncpy(szDestDir, "\\??\\", sizeof(szDestDir));
+   bstrncat(szDestDir, szPath, sizeof(szDestDir));
+   bstrncat(szDestDir, "\\", sizeof(szDestDir));
+
+   if (!CreateDirectory(szJunction, NULL)) {
+      Dmsg1(dbglvl, "CreateDirectory Failed:%s\n", errorString());
+      goto bail_out;
+   }
+
+   hDir = CreateFile(szJunction,
+                     GENERIC_WRITE,
+                     0,
+                     NULL,
+                     OPEN_EXISTING,
+                     FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                     NULL);
+
+   if (hDir == INVALID_HANDLE_VALUE){
+      Dmsg0(dbglvl, "INVALID_FILE_HANDLE");
+      RemoveDirectory(szJunction);
+      goto bail_out;
+   }
+
+   memset(buf, 0, buf_length);
+   path_length = MultiByteToWideChar(CP_ACP,
+                                     0,
+                                     szDestDir,
+                                     -1,
+                                     rdb->MountPointReparseBuffer.PathBuffer,
+                                     MAX_PATH * sizeof(WCHAR));
+
+   rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
+   rdb->ReparseDataLength = (path_length + 2) * sizeof(WCHAR) + 6;
+   rdb->MountPointReparseBuffer.SubstituteNameLength = (path_length - 1) * sizeof(WCHAR);
+   rdb->MountPointReparseBuffer.PrintNameOffset = path_length * sizeof(WCHAR);
+   data_length = rdb->ReparseDataLength + 8;
+
+   if (!DeviceIoControl(hDir,
+                        FSCTL_SET_REPARSE_POINT,
+                        (LPVOID)buf,
+                        data_length,
+                        NULL,
+                        0,
+                        &dwRet,
+                        0)) {
+      Dmsg1(dbglvl, "DeviceIoControl Failed:%s\n", errorString());
+      CloseHandle(hDir);
+      RemoveDirectory(szJunction);
+      goto bail_out;
+   }
+
+   CloseHandle(hDir);
+
+   retval = true;
+bail_out:
+
+   free_pool_memory(buf);
+
+   return retval;
+}
 
 static const char *errorString(void)
 {
@@ -910,30 +988,159 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM **d
    }
 
    if (h != INVALID_HANDLE_VALUE) {
-      char dummy[1000];
       bool ok;
+      POOLMEM *buf;
+      int buf_length;
+      REPARSE_DATA_BUFFER *rdb;
       DWORD bytes;
-      REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)dummy;
 
+      /*
+       * Create a buffer big enough to hold all data.
+       */
+      buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR);
+      buf = get_pool_memory(PM_NAME);
+      buf = check_pool_memory_size(buf, buf_length);
+      rdb = (REPARSE_DATA_BUFFER *)buf;
+
+      memset(buf, 0, buf_length);
       rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
       ok = DeviceIoControl(h,
                            FSCTL_GET_REPARSE_POINT,
                            NULL,
                            0,                    /* in buffer, bytes */
-                           (LPVOID)rdb,
-                           (DWORD)sizeof(dummy), /* out buffer, btyes */
+                           (LPVOID)buf,
+                           (DWORD)buf_length,    /* out buffer, btyes */
                            (LPDWORD)&bytes,
                            (LPOVERLAPPED)0);
       if (ok) {
-         wchar_2_UTF8(devicename, (wchar_t *)rdb->SymbolicLinkReparseBuffer.PathBuffer);
+         wchar_2_UTF8(devicename, (wchar_t *)rdb->MountPointReparseBuffer.PathBuffer);
       }
 
       CloseHandle(h);
+      free_pool_memory(buf);
    } else {
       return false;
    }
 
    return true;
+}
+
+/*
+ * Retrieve the symlink target
+ */
+static inline ssize_t get_symlink_data(const char *filename, POOLMEM *symlinktarget)
+{
+   ssize_t nrconverted = -1;
+   HANDLE h = INVALID_HANDLE_VALUE;
+
+   if (p_GetFileAttributesW) {
+      POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
+      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
+
+      if (p_CreateFileW) {
+         h = CreateFileW((LPCWSTR)pwszBuf,
+                         GENERIC_READ,
+                         FILE_SHARE_READ,
+                         NULL,
+                         OPEN_EXISTING,
+                         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                         NULL);
+      }
+
+      if (h == INVALID_HANDLE_VALUE) {
+         Dmsg1(dbglvl, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
+         free_pool_memory(pwszBuf);
+         return -1;
+      }
+
+      free_pool_memory(pwszBuf);
+   } else if (p_GetFileAttributesA) {
+      POOLMEM *win32_fname;
+
+      win32_fname = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_fname, filename);
+      h = CreateFileA(win32_fname,
+                      GENERIC_READ,
+                      FILE_SHARE_READ,
+                      NULL,
+                      OPEN_EXISTING,
+                      FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                      NULL);
+
+      if (h == INVALID_HANDLE_VALUE) {
+         Dmsg1(dbglvl, "Invalid handle from CreateFile(%s)\n", win32_fname);
+         free_pool_memory(win32_fname);
+         return -1;
+      }
+      free_pool_memory(win32_fname);
+   }
+   if (h != INVALID_HANDLE_VALUE) {
+      bool ok;
+      POOLMEM *buf;
+      int buf_length;
+      REPARSE_DATA_BUFFER *rdb;
+      DWORD bytes;
+
+      /*
+       * Create a buffer big enough to hold all data.
+       */
+      buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR);
+      buf = get_pool_memory(PM_NAME);
+      buf = check_pool_memory_size(buf, buf_length);
+      rdb = (REPARSE_DATA_BUFFER *)buf;
+
+      memset(buf, 0, buf_length);
+      rdb->ReparseTag = IO_REPARSE_TAG_SYMLINK;
+      ok = DeviceIoControl(h,
+                           FSCTL_GET_REPARSE_POINT,
+                           NULL,
+                           0,                    /* in buffer, bytes */
+                           (LPVOID)buf,
+                           (DWORD)buf_length,    /* out buffer, btyes */
+                           (LPDWORD)&bytes,
+                           (LPOVERLAPPED)0);
+      if (ok) {
+         POOLMEM *path;
+         int len, offset, ofs;
+
+         len = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(WCHAR);
+         offset = rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset / sizeof(WCHAR);
+
+         /*
+          * null-terminate pathbuffer
+          */
+         *(wchar_t *)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset + len) = L'\0';
+
+         /*
+          * convert to UTF-8
+          */
+         path = get_pool_memory(PM_FNAME);
+         nrconverted = wchar_2_UTF8(path, (wchar_t *)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
+
+         ofs = 0;
+         if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
+            ofs = 4;
+            Dmsg0(dbglvl, "\\??\\ was in filename, skipping\n");
+         }
+
+         if (bstrncasecmp(path, "?\\", 2)) { /* skip ?\\ if exists, this is a MountPoint that we opened as Symlink */
+            ofs = 2;
+            Dmsg0(dbglvl, "?\\ was in filename, skipping, use of MountPointReparseDataBuffer is needed\n");
+         }
+
+         pm_strcpy(symlinktarget, path + ofs);
+         free_pool_memory(path);
+      } else {
+         Dmsg1(dbglvl, "DeviceIoControl failed:%s\n", errorString());
+      }
+
+      CloseHandle(h);
+      free_pool_memory(buf);
+   } else {
+      return -1;
+   }
+
+   return nrconverted;
 }
 
 /*
@@ -1080,7 +1287,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
        */
       sb->st_rdev = *pdwFileAttributes;
       if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
-          (*pdwReserved0 & IO_REPARSE_TAG_DEDUP)) {
+            (*pdwReserved0 & IO_REPARSE_TAG_DEDUP)) {
          sb->st_rdev |= FILE_ATTRIBUTES_DEDUPED_ITEM;
       }
    }
@@ -1099,31 +1306,57 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
        * so it is like a Unix mount point (change of filesystem).
        */
       if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-         if (*pdwReserved0 & IO_REPARSE_TAG_MOUNT_POINT) {
+         if (*pdwReserved0 == IO_REPARSE_TAG_MOUNT_POINT) {
+            /*
+             * A mount point can be:
+             * Volume Mount Point "\\??\\volume{..."
+             * Junction Point     "\\??\\..."
+             */
             POOLMEM *vmp = get_pool_memory(PM_NAME);
-
             if (get_volume_mount_point_data(filename, &vmp)) {
-               Dmsg2(dbglvl, "Junction %s points to: %s\n", filename, vmp);
-
-               if (strncasecmp(vmp, "\\??\\volume{", 11) == 0) {
+               if (bstrncasecmp(vmp, "\\??\\volume{", 11)) {
+                  Dmsg2(dbglvl, "Volume Mount Point %s points to: %s\n", filename, vmp);
                   sb->st_rdev |= FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
-                  sb->st_rdev &= ~FILE_ATTRIBUTES_JUNCTION_POINT;
                } else {
-                   /*
-                    * It points to a directory so we ignore it.
-                    */
-                   sb->st_rdev |= FILE_ATTRIBUTES_JUNCTION_POINT;
-                   sb->st_rdev &= ~FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
+                  Dmsg2(dbglvl, "Junction Point %s points to: %s\n", filename, vmp);
+                  sb->st_rdev |= FILE_ATTRIBUTES_JUNCTION_POINT;
+                  sb->st_mode |= S_IFLNK;
+                  sb->st_mode &= ~S_IFDIR;
                }
-            } else {
-               sb->st_rdev |= FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
-               sb->st_rdev &= ~FILE_ATTRIBUTES_JUNCTION_POINT;
             }
             free_pool_memory(vmp);
+        } else if (*pdwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+            POOLMEM *slt;
+
+            Dmsg0(dbglvl, "We have a symlinked directory!\n");
+            sb->st_rdev |= FILE_ATTRIBUTES_SYMBOLIC_LINK;
+            sb->st_mode |= S_IFLNK;
+            sb->st_mode &= ~S_IFDIR;
+
+            slt = get_pool_memory(PM_NAME);
+            slt = check_pool_memory_size(slt, MAX_PATH * sizeof(WCHAR));
+
+            if (get_symlink_data(filename, slt)) {
+               Dmsg2(dbglvl, "Symlinked Directory %s points to: %s\n", filename, slt);
+            }
+            free_pool_memory(slt);
+         } else {
+            Dmsg0(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG\n");
          }
       }
-   } else {
-      sb->st_mode |= S_IFREG;
+   } else { /* no directory */
+      if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+         if (*pdwReserved0 & IO_REPARSE_TAG_SYMLINK) {
+            Dmsg0(dbglvl, "We have a symlinked file!\n");
+            sb->st_mode |= S_IFLNK;
+
+            POOLMEM *slt = get_pool_memory(PM_NAME);
+            if (get_symlink_data(filename, slt)) {
+               Dmsg2(dbglvl, "Symlinked File %s points to: %s\n", filename, slt);
+            }
+            free_pool_memory(slt);
+         }
+      }
    }
 
    Dmsg2(dbglvl, "st_rdev=%d filename=%s\n", sb->st_rdev, filename);
@@ -1427,6 +1660,8 @@ int stat(const char *filename, struct stat *sb)
                return -1;
             }
 
+            /*  TODO: Hardlinks ?*/
+
             sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
             sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
             sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
@@ -1561,7 +1796,58 @@ int waitpid(int, int*, int)
    return -1;
 }
 
-int readlink(const char *, char *, int)
+/*
+ * Read contents of symbolic link
+ */
+ssize_t readlink(const char *path, char *buf, size_t bufsiz)
+{
+   Dmsg1(dbglvl, "readlink called for path %s\n", path);
+   get_symlink_data(path, buf);
+   return strlen(buf);
+}
+
+/*
+ * Create a directory symlink / file symlink/junction
+ */
+int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
+{
+#if (_WIN32_WINNT >= 0x0600)
+   int  dwFlags = 0x0;
+
+   if (st_rdev & FILE_ATTRIBUTES_JUNCTION_POINT){
+      Dmsg0(130, "We have a Junction Point \n");
+      if (!CreateJunction(name2, name1)) {
+         return -1;
+      } else {
+         return 0;
+      }
+   } else if (st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT){
+      Dmsg0(130, "We have a Volume Mount Point \n");
+      return 0;
+   } else if (st_rdev & FILE_ATTRIBUTES_SYMBOLIC_LINK) {
+      Dmsg0(130, "We have a Directory Symbolic Link\n");
+      dwFlags = SYMBOLIC_LINK_FLAG_DIRECTORY;
+   } else {
+      Dmsg0(130, "We have a File Symbolic Link \n");
+   }
+
+   Dmsg2(dbglvl, "symlink called  name1=%s, name2=%s\n", name1, name2);
+   if (!CreateSymbolicLink(const_cast<char*>(name2), const_cast<char *>(name1), dwFlags)) {
+      Dmsg1(dbglvl, "CreateSymbolicLink failed:%s\n", errorString());
+      return -1;
+   } else {
+      return 0;
+   }
+#else
+   errno = ENOSYS;
+   return -1;
+#endif
+}
+
+/*
+ * Create a hardlink
+ */
+int link(const char *existing, const char *newfile)
 {
    errno = ENOSYS;
    return -1;

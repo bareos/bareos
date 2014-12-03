@@ -41,7 +41,6 @@
 static int separate_path_and_file(JCR *jcr, char *fname, char *ofile);
 static int path_already_seen(JCR *jcr, char *path, int pnl);
 
-
 /*
  * Create the file, or the directory
  *
@@ -306,15 +305,6 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          Dmsg1(400, "FT_SPEC %s\n", attr->ofname);
          return CF_CREATED;
 
-      case FT_LNK:
-         Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname, attr->olname);
-         if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
-            berrno be;
-            Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
-                  attr->ofname, attr->olname, be.bstrerror());
-            return CF_ERROR;
-         }
-         return CF_CREATED;
 
       case FT_LNKSAVED:                  /* Hard linked, file already saved */
          Dmsg2(130, "Hard link %s => %s\n", attr->ofname, attr->olname);
@@ -366,6 +356,45 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 
          }
          return CF_CREATED;
+
+#endif /* HAVE_WIN32 */
+#ifdef HAVE_WIN32
+      case FT_LNK:
+         /*
+          * Handle Windows Symlink-Like Reparse Points
+          * - Directory Symlinks
+          * - File Symlinks
+          * - Volume Mount Points
+          * - Junctions
+          */
+         Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname, attr->olname);
+         if (attr->statp.st_rdev & FILE_ATTRIBUTE_VOLUME_MOUNT_POINT) {
+            /*
+             * We do not restore volume mount points
+             */
+            Dmsg0(130, "Skipping Volume Mount Point\n");
+            return CF_SKIP;
+         }
+         if (win32_symlink(attr->olname, attr->ofname, attr->statp.st_rdev) != 0 && errno != EEXIST) {
+            berrno be;
+            Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
+                  attr->ofname, attr->olname, be.bstrerror());
+            return CF_ERROR;
+         }
+         return CF_CREATED;
+#else
+      case FT_LNK:
+         /*
+          * Unix/Linux symlink handling
+          */
+         Dmsg2(130, "FT_LNK should restore: %s -> %s\n", attr->ofname, attr->olname);
+         if (symlink(attr->olname, attr->ofname) != 0 && errno != EEXIST) {
+            berrno be;
+            Qmsg3(jcr, M_ERROR, 0, _("Could not symlink %s -> %s: ERR=%s\n"),
+                  attr->ofname, attr->olname, be.bstrerror());
+            return CF_ERROR;
+         }
+         return CF_CREATED;
 #endif
       } /* End inner switch */
 
@@ -381,7 +410,6 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
          return CF_ERROR;
       }
-
       /*
        * If we are using the Win32 Backup API, we open the directory so
        * that the security info will be read and saved.
