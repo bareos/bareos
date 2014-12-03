@@ -1586,9 +1586,9 @@ static bool backup_cmd(JCR *jcr)
     */
    if (jcr->VSS) {
       if (g_pVSSClient->InitializeForBackup(jcr)) {
-         int drive_count, vmp_count;
+         int drive_count;
          char szWinDriveLetters[27];
-         dlist *szWinVolumeMountpoints = NULL;
+         bool onefs_disabled;
 
          generate_plugin_event(jcr, bEventVssBackupAddComponents);
 
@@ -1603,15 +1603,22 @@ static bool backup_cmd(JCR *jcr)
          generate_plugin_event(jcr, bEventVssPrepareSnapshot, szWinDriveLetters);
 
          drive_count = get_win32_driveletters(jcr->ff->fileset, szWinDriveLetters);
-         vmp_count = get_win32_virtualmountpoints(jcr->ff->fileset, &szWinVolumeMountpoints);
 
-         if (drive_count > 0 || vmp_count > 0) {
-            Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\" VMP(s)=%d\n"),
-                 g_pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None", vmp_count);
-            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters, szWinVolumeMountpoints)) {
+         onefs_disabled = win32_onefs_is_disabled(jcr->ff->fileset);
+
+         if (drive_count > 0) {
+            Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"),
+                 g_pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None");
+
+            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters, onefs_disabled)) {
                berrno be;
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"), be.bstrerror());
             } else {
+               /*
+                * Inform about VMPs if we have them
+                */
+               g_pVSSClient->ShowVolumeMountPointStats(jcr);
+
                /*
                 * Tell user if snapshot creation of a specific drive failed
                 */
@@ -1631,12 +1638,8 @@ static bool backup_cmd(JCR *jcr)
                }
             }
 
-            if (szWinVolumeMountpoints) {
-               szWinVolumeMountpoints->destroy();
-               free(szWinVolumeMountpoints);
-            }
          } else {
-            Jmsg(jcr, M_FATAL, 0, _("No drive letters or Volume Mount Points found for generating VSS snapshots.\n"));
+            Jmsg(jcr, M_FATAL, 0, _("No drive letters found for generating VSS snapshots.\n"));
          }
       } else {
          berrno be;

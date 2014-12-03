@@ -105,6 +105,9 @@ class IXMLDOMDocument;
 #include "Win2003/vsbackup.h"
 #endif
 
+#define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
+
+
 /* In VSSAPI.DLL */
 typedef HRESULT (STDAPICALLTYPE* t_CreateVssBackupComponents)(OUT IVssBackupComponents **);
 typedef void (APIENTRY* t_VssFreeSnapshotProperties)(IN VSS_SNAPSHOT_PROP*);
@@ -306,6 +309,68 @@ static inline wstring GetUniqueVolumeNameForPath(wstring path)
     return volumeUniqueName;
 }
 
+static inline POOLMEM *GetMountedVolumeForMountPointPath(POOLMEM *volumepath, POOLMEM *mountpoint)
+{
+   POOLMEM *fullPath, *buf, *vol;
+   int len;
+
+   /*
+    * GetUniqueVolumeNameForPath() should be used here
+    */
+   len = strlen(volumepath) + 1;
+   fullPath = get_pool_memory(PM_FNAME);
+   pm_strcpy(fullPath, volumepath);
+   pm_strcat(fullPath, mountpoint);
+
+   buf = get_pool_memory(PM_FNAME);
+   GetVolumeNameForVolumeMountPoint(fullPath, buf, len);
+
+   Dmsg3(200, "%s%s mounts volume %s\n", volumepath, mountpoint, buf);
+
+   vol = get_pool_memory(PM_FNAME);
+   UTF8_2_wchar(&vol, buf);
+
+   free_pool_memory(fullPath);
+   free_pool_memory(buf);
+
+   return vol;
+}
+
+static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
+                                          IVssBackupComponents *pVssObj,
+                                          POOLMEM *volumepath,
+                                          POOLMEM *mountpoint)
+{
+   bool retval = false;
+   HRESULT hr;
+   POOLMEM *vol = NULL;
+   POOLMEM *pvol;
+   VSS_ID pid;
+
+   vol = GetMountedVolumeForMountPointPath(volumepath, mountpoint);
+   hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
+
+   pvol = get_pool_memory(PM_FNAME);
+   wchar_2_UTF8(&pvol, (wchar_t *)vol);
+
+   if (SUCCEEDED(hr)) {
+      pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t *)vol);
+      Dmsg1(200, "%s added to snapshotset \n", pvol);
+      retval = true;
+   } else if((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+      Dmsg1(200, "%s already in snapshotset, skipping.\n" ,pvol);
+   } else {
+      Dmsg3(200, "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n", vol, mountpoint, hr);
+   }
+
+   free_pool_memory(pvol);
+   if (vol) {
+      free_pool_memory(vol);
+   }
+
+   return retval;
+}
+
 /*
  * Helper macro for quick treatment of case statements for error codes
  */
@@ -375,10 +440,12 @@ VSSClientGeneric::~VSSClientGeneric()
  */
 bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 {
+   VMPs = 0;
+   VMP_snapshots = 0;
    HRESULT hr;
    CComPtr<IVssAsync> pAsync1;
    VSS_BACKUP_TYPE backup_type;
-   IVssBackupComponents* pVssObj = (IVssBackupComponents*)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
 
    if (!(p_CreateVssBackupComponents && p_VssFreeSnapshotProperties)) {
       Dmsg2(0, "VSSClientGeneric::Initialize: p_CreateVssBackupComponents=0x%08X, p_VssFreeSnapshotProperties=0x%08X\n", p_CreateVssBackupComponents, p_VssFreeSnapshotProperties);
@@ -447,7 +514,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * Define shorthand VssObject with time
     */
-   pVssObj = (IVssBackupComponents*)m_pVssObject;
+   pVssObj = (IVssBackupComponents *)m_pVssObject;
 
 
    if (!bDuringRestore) {
@@ -580,7 +647,7 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
 /*
  * Add all drive letters that need to be snapshotted.
  */
-void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters)
+void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters, bool onefs_disabled)
 {
    wstring volume;
    wchar_t szDrive[3];
@@ -600,43 +667,89 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *sz
       /*
        * Store uniquevolumname.
        */
+
       if (SUCCEEDED(pVssObj->AddToSnapshotSet((LPWSTR)volume.c_str(), GUID_NULL, &pid))) {
          if (debug_level >= 200) {
+
             POOLMEM *szBuf = get_pool_memory(PM_FNAME);
 
             wchar_2_UTF8(&szBuf, volume.c_str());
-            Dmsg1(200, "VSSClientGeneric::AddDriveSnapshots added snapshot for drive with volumename %s\n", szBuf);
-
+            Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
             free_pool_memory(szBuf);
          }
          wcsncpy(m_wszUniqueVolumeName[szDriveLetters[i]-'A'], (LPWSTR)volume.c_str(), MAX_PATH);
       } else {
          szDriveLetters[i] = tolower(szDriveLetters[i]);
       }
+      if (onefs_disabled) {
+         AddVolumeMountPointSnapshots(pVssObj, (LPWSTR)volume.c_str());
+      } else {
+         Jmsg(m_jcr, M_INFO, 0, "VolumeMountpoints are not processed as onefs = yes.\n");
+      }
    }
 }
 
 /*
  * Add all volume mountpoints that need to be snapshotted.
+ * Volumes can be mounted multiple times, but can only be added to the snapshotset once.
+ * So we skip adding a volume if it is already in snapshotset.
+ * We count the total number of vmps and the number of volumes we added to the snapshotset.
  */
-void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, dlist *szVmps)
+void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume)
 {
-   dlistString *vmp;
-   POOLMEM *volume;
-   VSS_ID pid;
+   BOOL b;
+   int len;
+   HANDLE hMount;
+   POOLMEM *mp, *path;
 
-   if (szVmps) {
-      volume = get_pool_memory(PM_FNAME);
-      foreach_dlist(vmp, szVmps) {
-         Dmsg1(200, "VSSClientGeneric::AddVolumeMountPointSnapshots added snapshot for volume mountpoint with volumename %s\n", vmp->c_str());
-         UTF8_2_wchar(&volume, vmp->c_str());
-         pVssObj->AddToSnapshotSet((LPWSTR)volume, GUID_NULL, &pid);
+   mp = get_pool_memory(PM_FNAME);
+   path = get_pool_memory(PM_FNAME);
+
+   wchar_2_UTF8(&path, volume);
+
+   len = wcslen(volume) + 1;
+
+   hMount = FindFirstVolumeMountPoint(path, mp, len);
+   if (hMount != INVALID_HANDLE_VALUE) {
+      /*
+       * Count number of vmps.
+       */
+      VMPs += 1;
+      if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+         /*
+          * Count vmps that were snapshotted
+          */
+         VMP_snapshots += 1;
       }
-      free_pool_memory(volume);
+
+      while ((b = FindNextVolumeMountPoint(hMount, mp, len))) {
+         /*
+          * Count number of vmps.
+          */
+         VMPs += 1;
+         if (HandleVolumeMountPoint(this, pVssObj, path, mp)) {
+            /*
+             * Count vmps that were snapshotted
+             */
+            VMP_snapshots += 1;
+         }
+      }
+   }
+
+   FindVolumeMountPointClose(hMount);
+
+   free_pool_memory(path);
+   free_pool_memory(mp);
+}
+
+void VSSClientGeneric::ShowVolumeMountPointStats(JCR *jcr)
+{
+   if (VMPs) {
+      Jmsg(jcr, M_INFO, 0, _("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs, VMP_snapshots);
    }
 }
 
-bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, dlist *szVmps)
+bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled)
 {
    IVssBackupComponents *pVssObj;
    CComPtr<IVssAsync> pAsync1;
@@ -670,10 +783,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, dlist *szVmps)
     * AddToSnapshotSet
     */
    if (szDriveLetters) {
-      AddDriveSnapshots(pVssObj, szDriveLetters);
-   }
-   if (szVmps) {
-      AddVolumeMountPointSnapshots(pVssObj, szVmps);
+      AddDriveSnapshots(pVssObj, szDriveLetters, onefs_disabled);
    }
 
    /*
@@ -860,10 +970,10 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
     * Get list all shadow copies.
     */
    CComPtr<IVssEnumObject> pIEnumSnapshots;
-   HRESULT hr = pVssObj->Query( GUID_NULL,
-         VSS_OBJECT_NONE,
-         VSS_OBJECT_SNAPSHOT,
-         (IVssEnumObject**)(&pIEnumSnapshots) );
+   HRESULT hr = pVssObj->Query(GUID_NULL,
+                               VSS_OBJECT_NONE,
+                               VSS_OBJECT_SNAPSHOT,
+                               (IVssEnumObject**)(&pIEnumSnapshots));
 
    /*
     * If there are no shadow copies, just return
@@ -885,7 +995,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
        * Get the next element
        */
       ULONG ulFetched;
-      hr = (pIEnumSnapshots.p)->Next( 1, &Prop, &ulFetched );
+      hr = (pIEnumSnapshots.p)->Next(1, &Prop, &ulFetched);
 
       /*
        * We reached the end of list
