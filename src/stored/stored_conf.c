@@ -64,7 +64,7 @@ static RES_ITEM store_items[] = {
    { "sdsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
    { "workingdirectory", CFG_TYPE_DIR, ITEM(res_store.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
    { "piddirectory", CFG_TYPE_DIR, ITEM(res_store.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_store.subsys_directory), 0, 0, NULL },
+   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_store.subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL },
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
    { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
 #endif

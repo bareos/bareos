@@ -11,7 +11,6 @@ Storage {
   SDPort = @sd_port@                  # Directors port
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  Subsys Directory = "@subsysdir@"
 }
 
 #

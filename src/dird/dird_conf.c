@@ -105,6 +105,7 @@ static RES_ITEM dir_items[] = {
    { "BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR },
 #endif
    { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0" },
+   { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1" },
    { "MaximumConsoleConnections", CFG_TYPE_PINT32, ITEM(res_dir.MaxConsoleConnect), 0, CFG_ITEM_DEFAULT, "20" },
    { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
@@ -1693,6 +1694,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dir.pid_directory) {
          free(res->res_dir.pid_directory);
+      }
+      if (res->res_dir.subsys_directory) {
+         free(res->res_dir.subsys_directory);
       }
       if (res->res_dir.backend_directories) {
          delete res->res_dir.backend_directories;
