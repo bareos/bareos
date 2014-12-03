@@ -75,9 +75,8 @@ Director, Console, File, Storage, and Monitor services.
    \label{UADef}
 
 \subsection*{Bareos Console}
-
    The Bareos Console service is the program that allows the
-   administrator or user to communicate with the Bareos Director
+   administrator or user to communicate with the Bareos Director.
    Currently, the Bareos Console is available in two versions:
    a text-based console and a QT-based GUI interface.
    The first and simplest is to run the Console program in a shell window
@@ -85,9 +84,9 @@ Director, Console, File, Storage, and Monitor services.
    completely adequate.  The second version is a GUI interface that
    is far from complete, but quite functional as it has most the
    capabilities of the shell Console. For more
-   details see the \ilink{Bareos Console Design Document}{_ConsoleChapter}.
+   details see the \nameref{_ConsoleChapter}.
 
-\subsection*{Bareos File}
+\subsection*{Bareos File Daemon}
    \label{FDDef}
    The Bareos File service (also known as the Client program) is the software
    program that is installed on the machine to be backed up.
@@ -95,13 +94,10 @@ Director, Console, File, Storage, and Monitor services.
    operating system on which it runs and is responsible for providing the
    file attributes and data when requested by the Director.  The File
    services are also responsible for the file system dependent part of
-   restoring the file attributes and data during a recovery operation.  For
-   more details see the File Services Daemon Design Document in the Bareos
-   Developer's Guide.  This program runs as a daemon on the machine to be
-   backed up.
-   In addition to Unix/Linux File daemons, there are File daemons for Windows and MacOS.
+   restoring the file attributes and data during a recovery operation.
+   This program runs as a daemon on the machine to be backed up.
 
-\subsection*{Bareos Storage}
+\subsection*{Bareos Storage Daemon}
    \label{SDDef}
    The Bareos Storage services consist of the software programs that
    perform the storage and recovery of the file attributes and data to the
@@ -128,34 +124,11 @@ Director, Console, File, Storage, and Monitor services.
    SQLite) provide quite a number of features, including rapid indexing,
    arbitrary queries, and security.  Although the Bareos project plans to support other
    major SQL databases, the current Bareos implementation interfaces only
-   to MySQL, PostgreSQL and SQLite.  For the technical and porting details
-   see the Catalog Services Design Document in the developer's documented.
+   to MySQL, PostgreSQL and SQLite.
 
-   The packages for MySQL and PostgreSQL are available for several operating
-   systems.
-   %Alternatively, installing from the
-   %source is quite easy, see the \ilink{ Installing and Configuring
-   %MySQL}{MySqlChapter} chapter of this document for the details.  For
-   %more information on MySQL, please see:
-   %\elink{www.mysql.com}{http://www.mysql.com}.  Or see the \ilink{
-   %Installing and Configuring PostgreSQL}{PostgreSqlChapter} chapter of this
-   %document for the details.  For more information on PostgreSQL, please
-   %see: \elink{www.postgresql.org}{http://www.postgresql.org}.
-
-   %Configuring and building SQLite is even easier.  For the details of
-   %configuring SQLite, please see the \ilink{ Installing and Configuring
-   %SQLite}{SqlLiteChapter} chapter of this document.
-
-\subsection*{Bareos Tray Monitor}
-   \label{MonDef}
-   A Bareos Tray Monitor service is the program that allows the
-   user to watch current status of Bareos Directors,
-   Bareos File Daemons and Bareos Storage Daemons.
-   Currently, a QT version is available, which works with Linux and Windows.
-
-   To perform a successful save or restore, the following four daemons must be
-   configured and running: the Director daemon, the File daemon, the Storage
-   daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
+To perform a successful save or restore, the following four daemons must be
+configured and running: the Director daemon, the File daemon, the Storage
+daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
 
 
 \section{Bareos Packages}

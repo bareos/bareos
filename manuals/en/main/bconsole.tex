@@ -1,9 +1,11 @@
 
 \chapter{Bareos Console}
 \label{_ConsoleChapter}
+\label{sec:bconsole}
 \index[general]{Bareos Console}
 \index[general]{bconsole}
 \index[general]{Command!bconsole}
+
 
 
 The {\bf Bareos Console} (\command{bconsole}) is a program that
@@ -41,6 +43,7 @@ program, please see the \ilink{Console Configuration}{ConsoleConfChapter} chapte
 
 The console program can be run with the following options:
 
+\index[console]{Command Line Options}
 \begin{commandOut}{bconsole command line options}{}{bconsole -?}
 Usage: bconsole [-s] [-c config_file] [-d debug_level]
        -D <dir>    select a Director
@@ -325,6 +328,7 @@ Please note, this list is incomplete.
 
 \section{Console Commands}
 \index[general]{Console!Commands}
+    \label{sec:ConsoleCommands}
 
 The following commands are currently implemented:
 
@@ -982,6 +986,26 @@ following command in interactive mode or in a RunScript:
 This is possible to specify the volume name, the media type, the pool, the
 storage, etc\dots (see \texttt{help purge}) Be sure that your storage device is
 idle when you decide to run this command.
+
+\item [resolve]
+   \index[general]{Console!Command!resolve}
+    In the configuration files, Addresses can (and normally should) be specified as DNS names.
+    As the different components of Bareos will establish network connections to other Bareos components,
+    it is important that DNS name resolution works on involved components and delivers the same results.
+    The \bcommand{resolve} command can be used to test DNS resolution of a given hostname 
+    on director, storage daemonm or client.
+
+\begin{bconsole}{resolve example}
+*<input>resolve www.bareos.com</input>
+bareos-dir resolves www.bareos.com to host[ipv4:84.44.166.242]
+
+*<input>resolve client=client1-fd www.bareos.com</input>
+client1-fd resolves www.bareos.com to host[ipv4:84.44.166.242]
+
+*<input>resolve storage=File www.bareos.com</input>
+bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
+\end{bconsole}
+
 
 \item [query]
    \index[general]{Console!Command!query}

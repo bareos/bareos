@@ -496,7 +496,14 @@ have been deleted.
 \end{description}
 }
 
-\defDirective{Dir}{Job}{Max Diff Interval}{}{}{
+\defDirective{Dir}{Job}{Max Diff Interval}{}{}{%
+The time specifies the maximum allowed age (counting from start time) of
+the most recent successful Differential backup that is required in order to run
+Incremental backup jobs. If the most recent Differential backup
+is older than this interval, Incremental backups will be
+upgraded to Differential backups automatically. If this directive is not present,
+or specified as 0, then the age of the previous Differential backup is not
+considered.
 }
 
 \defDirective{Dir}{Job}{Max Full Interval}{}{}{%
@@ -527,6 +534,16 @@ If the delay is set to 3600 (one hour) and the job has not begun to run
 by 2:00am, the job will be canceled.  This can be useful, for example,
 to prevent jobs from running during day time hours.  The default is 0
 which indicates no limit.
+}
+
+\defDirective{Dir}{Job}{Max Virtual Full Interval}{}{14.4.0}{%
+The time specifies the maximum allowed age (counting from start time) of
+the most recent successful Virtual Full backup that is required in order to run
+Incremental or Differential backup jobs. If the most recent Virtual Full backup
+is older than this interval, Incremental and Differential backups will be
+upgraded to Virtual Full backups automatically. If this directive is not present,
+or specified as 0, then the age of the previous Virtual Full backup is not
+considered.
 }
 
 \defDirective{Dir}{Job}{Max Wait Time}{}{}{%
@@ -1266,7 +1283,9 @@ any text after the last quote character.
 % /dev/null to prevent the script from blocking.
 }
 
-\defDirective{Dir}{Job}{Save File History}{}{}{
+\defDirective{Dir}{Job}{Save File History}{}{14.2.0}{%
+\index[dir]{NDMP!File History}%
+Allow disabling storing the file history, as this causes problems problems with some implementations of NDMP (out-of-order metadata).
 }
 
 \defDirective{Dir}{Job}{Schedule}{}{}{%

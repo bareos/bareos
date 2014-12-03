@@ -3,8 +3,8 @@
 
 
 When each of the Bareos programs starts, it reads a configuration file
-specified on the command line or the default {\bf bareos-dir.conf}, {\bf
-bareos-fd.conf}, {\bf bareos-sd.conf}, or {\bf console.conf} for the Director
+specified on the command line or the default \file{bareos-dir.conf}, 
+\file{bareos-fd.conf}, \file{bareos-sd.conf}, or \file{console.conf} for the Director
 daemon, the File daemon, the Storage daemon, and the Console program
 respectively.
 
@@ -39,19 +39,19 @@ The following configuration files must be defined:
 
 \begin{itemize}
 \item
-   \ilink{Console}{ConsoleConfChapter} -- to define the resources for
+   \nameref{ConsoleConfChapter} -- to define the resources for
    the Console program (user interface to the Director).  It defines which
 Directors are  available so that you may interact with them.
 \item
-   \ilink{Director}{DirectorChapter} -- to define the resources
+   \nameref{DirectorChapter} -- to define the resources
    necessary for the Director. You define all the Clients  and Storage daemons
 that you use in this configuration file.
 \item
-   \ilink{Client}{FiledConfChapter} -- to define the resources for
+   \nameref{FiledConfChapter} -- to define the resources for
    each client to be backed up. That is, you will have a separate  Client
 resource file on each machine that runs a File daemon.
 \item
-   \ilink{Storage}{StoredConfChapter} -- to define the resources to
+   \nameref{StoredConfChapter} -- to define the resources to
    be used by each Storage daemon. Normally, you will have  a single Storage
 daemon that controls your tape drive or tape  drives. However, if you have
 tape drives on several machines,  you will have at least one Storage daemon
@@ -108,13 +108,20 @@ Director {
 \hide{$}
 
 Defines the Director resource with the name "MyDir" and a working directory
-\$HOME/bareos/bin/working. In general, if you want spaces in a name to the
+\$HOME/bareos/bin/working.
+
+\subsection{Quotes}
+\label{sec:Quotes}
+In general, if you want spaces in a name to the
 right of the first equal sign (=), you must enclose that name within double
 quotes. Otherwise quotes are not generally necessary because once defined,
 quoted strings and unquoted strings are all equal.
 
-\label{Comments}
+However, if the configure directive defines a numbers, the number never has surrounding quotes.
+This is even true if the number is specified together with its unit, like \parameter{365 days}.
+
 \subsection{Comments}
+\label{Comments}
 \index[general]{Comments}
 
 When reading the configuration file, blank lines are ignored and everything
@@ -123,7 +130,7 @@ semicolon (;) is a logical end of line, and anything after the semicolon is
 considered as the next statement. If a statement appears on a line by itself,
 a semicolon is not necessary to terminate it, so generally in the examples in
 this manual, you will not see many semicolons.
-\label{Case1}
+
 
 \subsection{Upper and Lower Case and Spaces}
 \index[general]{Spaces!Upper/Lower Case}
@@ -188,13 +195,27 @@ overwhelming, but in reality, it is all pretty logical and straightforward.
 \item [acl]
     \index[general]{Data Type!acl}
     \label{DataTypeAcl}
-This directive defines what is premitted to access.
+This directive defines what is permitted to access.
 It does this by a list of strings, separated by \parameter{,}.
 
 The special keyword \parameter{*all*} allows unrestricted access.
 
 Depending on the type of the ACL, the strings can by either resource names, paths or bconsole commands.
- 
+
+
+\item [auth-type]
+    \index[general]{Data Type!auth-type}
+    \label{DataTypeAuthType}
+Specifies the authentication type that must be supplied when connecting to
+a backup protocol that uses a specific authentication type.
+Currently only used for \nameref{NDMPResource}.
+
+The following values are allowed:
+\begin{enumerate}
+\item None - Use no password
+\item Clear - Use clear text password
+\item MD5 - Use MD5 hashing
+\end{enumerate}
 
 
 \item [directory]
@@ -210,12 +231,16 @@ constructs such as {\bf \$HOME} are interpreted to be  their correct values.
     \label{DataTypeInteger}
    A 32 bit integer value. It may be positive or negative.
 
+   Don't use quotes around the number, see \nameref{sec:Quotes}.
+
 
 \item [long integer]
     \index[general]{Data Type!long integer}
     \label{DataTypeLongInteger}
    A 64 bit integer value. Typically these  are values such as bytes that can
 exceed 4 billion and thus  require a 64 bit value.
+
+   Don't use quotes around the number, see \nameref{sec:Quotes}.
 
 
 \item [name]
@@ -254,11 +279,16 @@ right side of an equal (i.e.  they are values to be associated with a keyword).
     \label{DataTypePositiveInteger}
    A 32 bit positive integer value.
 
+   Don't use quotes around the number, see \nameref{sec:Quotes}.
+
 
 \item [speed]
     \index[general]{Data Type!speed}
     \label{DataTypeSpeed}
     The speed parameter can be specified as k/s, kb/s, m/s or mb/s.
+
+    Don't use quotes around the parameter, see \nameref{sec:Quotes}.
+
 
 \item [string]
     \index[general]{Data Type!string}
@@ -331,6 +361,9 @@ only IPv4 resolutions will be permitted,  and likewise with ip6.
     \label{DataTypeNetPort}
     Specify a network port (a positive  integer).
 
+    Don't use quotes around the parameter, see \nameref{sec:Quotes}.
+
+
 \item [resource]
     \index[general]{Data Type!resource}
     \label{DataTypeRes}
@@ -366,6 +399,8 @@ modifiers are permitted:
 \item [gb]
    1,000,000,000 (gigabytes)
 \end{description}
+
+    Don't use quotes around the parameter, see \nameref{sec:Quotes}.
 
 
 \item [time]
@@ -430,6 +465,21 @@ wish.  For example:
 \normalsize
 
 are valid date specifications.
+
+    Don't use quotes around the parameter, see \nameref{sec:Quotes}.
+
+
+\item [audit-command-list]
+    \index[general]{Data Type!audit command list}
+    \label{DataTypeAuditCommandList}
+    Specifies the commands that should be logged on execution (audited).
+    E.g.
+\begin{bconfig}{}
+Audit Events = label
+Audit Events = restore
+\end{bconfig}
+    Based on the type \dtStringList.
+
 
 
 \item [\yesno]

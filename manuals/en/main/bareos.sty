@@ -40,6 +40,8 @@
 \csdef{dtAcl}{\ilink{acl}{DataTypeAcl}}
 \csdef{dtAddress}{\ilink{net-address}{DataTypeNetAddress}}
 \csdef{dtAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\csdef{dtAuditCommandList}{\ilink{audit-command-list}{DataTypeAuditCommandList}}
+\csdef{dtAuthType}{\ilink{None{\textbar}Clear{\textbar}MD5}{DataTypeAuthType}}
 \csdef{dtAutopassword}{\ilink{password}{DataTypePassword}}
 \csdef{dtBoolean}{\ilink{\yesno}{DataTypeYesNo}}
 \csdef{dtDirectory}{\ilink{directory}{DataTypeDirectory}}
@@ -104,23 +106,24 @@
 %
 % specific types of text
 %
+\newcommand{\bcommand}[1]{\path|#1|}
+\newcommand{\bnfvar}[1]{\lt#1\gt}
 \newcommand{\commandPrompt}{root{\at}linux:\~{}\# }
 \newcommand{\command}[1]{\path|#1|}
-\newcommand{\bcommand}[1]{\path|#1|}
-\newcommand{\file}[1]{\path|#1|}
-\newcommand{\directory}[1]{\path|#1|}
-\newcommand{\package}[1]{\path|#1|}
-\newcommand{\name}[1]{\textbf{#1}}
-\newcommand{\user}[1]{\path|#1|}
-\newcommand{\group}[1]{\path|#1|}
-\newcommand{\parameter}[1]{\path|#1|}
-\newcommand{\variable}[1]{\path|#1|}
 % to also link to a directive, use \linkResourceDirective}{Dir|Sd|Fd}{Resource}{Directive Name}
 \newcommand{\configdirective}[1]{\textbf{#1}}
 \newcommand{\configline}[1]{\path|#1|}
-\newcommand{\host}[1]{\path|#1|}
+\newcommand{\directory}[1]{\path|#1|}
 \newcommand{\email}[1]{\url{#1}}
-\newcommand{\bnfvar}[1]{\lt#1\gt}
+\newcommand{\file}[1]{\path|#1|}
+\newcommand{\group}[1]{\path|#1|}
+\newcommand{\host}[1]{\path|#1|}
+\newcommand{\name}[1]{\textbf{#1}}
+\newcommand{\user}[1]{\path|#1|}
+\newcommand{\package}[1]{\path|#1|}
+\newcommand{\parameter}[1]{\path|#1|}
+\newcommand{\registrykey}[1]{\path|#1|}
+\newcommand{\variable}[1]{\path|#1|}
 
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}

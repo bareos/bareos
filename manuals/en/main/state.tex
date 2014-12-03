@@ -180,6 +180,10 @@
 %    simply doing two restores, one for each Job.
 %    Normally this can happen only if you manually enter specific
 %    JobIds to be restored in a single restore Job.
+\item \label{MultipleCatalogs} It is possible to configure the Bareos Director to use multiple Catalogs.
+   However, this is either adviced, not supported.
+   Multiple catalogs require more management because in general
+   you must know what catalog contains what data, e.g. currently, all Pools are defined in each catalog.
 \item Bareos can generally restore any backup made from one client
    to any other client. However, if the architecture is significantly
    different (i.e. 32 bit architecture to 64 bit or Win32 to Unix),
@@ -190,6 +194,7 @@
 \end{itemize}
 
 \subsection{Design Limitations or Restrictions}
+\label{sec:DesignLimitations}
 \index[general]{Restrictions!Design Limitations}
 \index[general]{Design!Limitations}
 

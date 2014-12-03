@@ -17,6 +17,8 @@ resource.
 }
 
 \defDirective{Dir}{Storage}{Auth Type}{}{}{%
+Specifies the authentication type that must be supplied when connecting to
+a backup protocol that uses a specific authentication type.
 }
 
 \defDirective{Dir}{Storage}{Auto Changer}{}{}{%
@@ -45,9 +47,11 @@ details of using autochangers.
 }
 
 \defDirective{Dir}{Storage}{Collect Statistics}{}{}{%
+Collect statistic information. These information will be collected by the Director (see \linkResourceDirective{Dir}{Director}{Statistics Collect Interval}) and stored in the Catalog.
 }
 
 \defDirective{Dir}{Storage}{Description}{}{}{%
+Information.
 }
 
 \defDirective{Dir}{Storage}{Device}{}{}{%

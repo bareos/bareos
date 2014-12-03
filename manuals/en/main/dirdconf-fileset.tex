@@ -1,5 +1,4 @@
 
-
 \subsection{FileSet Include Ressource}
 \label{fileset-include}
 
@@ -413,6 +412,11 @@ convert them to Wild statements which are much more efficient.
 The directives within an Options resource may be one of the following:
 
 \begin{description}
+    \xdirective{Dir}{}{AutoExclude}{\dtYesNo}{}{yes}{14.2.2}{%
+        Automatically exclude files not intended for backup.
+        Currently only used for Windows, to exclude files defined in the registry key \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup}, see section \nameref{FilesNotToBackup}.
+    }
+
     \item [compression={\textless}GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
     \begin{description}
         \item [compression=GZIP] \hfill \\

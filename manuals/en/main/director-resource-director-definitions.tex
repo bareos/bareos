@@ -17,6 +17,7 @@ defines, how these messages are handled.
 }
 
 \defDirective{Dir}{Director}{Audit Events}{}{14.2.0}{%
+Specify which commands (see \nameref{sec:ConsoleCommands}) will be audited. If nothing is specified (and \linkResourceDirective{Dir}{Director}{Auditing} is enabled), all commands will be audited.
 }
 
 \defDirective{Dir}{Director}{Description}{}{}{%
@@ -127,6 +128,7 @@ This directive sets the loglevel for the NDMP protocol library.
 
 
 \defDirective{Dir}{Director}{Omit Defaults}{}{}{%
+When showing the configuration, omit those parameter that have there default value assigned.
 }
 
 \defDirective{Dir}{Director}{Optimize For Size}{}{}{%
@@ -134,14 +136,16 @@ If set to \parameter{yes} this directive will use the optimizations
 for memory size over speed. So it will try to use less memory which may lead
 to a somewhat lower speed. Its currently mostly used for keeping all hardlinks
 in memory.
+
+If none of \linkResourceDirective{Dir}{Director}{Optimize For Size} and \linkResourceDirective{Dir}{Director}{Optimize For Speed} is enabled, \linkResourceDirective{Dir}{Director}{Optimize For Size} is enabled by default.
 }
 
 \defDirective{Dir}{Director}{Optimize For Speed}{}{}{%
 If set to \parameter{yes} this directive will use the
 optimizations for speed over the memory size. So it will try to use more memory
 which lead to a somewhat higher speed. Its currently mostly used for keeping all
-hardlinks in memory. Its relates to the \configdirective{Optimize For Size} option set either
-one to \parameter{yes} as they are mutually exclusive.
+hardlinks in memory. Its relates to the \linkResourceDirective{Dir}{Director}{Optimize For Size}
+option set either one to \parameter{yes} as they are mutually exclusive.
 }
 
 
@@ -208,6 +212,9 @@ the Director will cancel the job.  The default is 30 minutes.
 
 
 \defDirective{Dir}{Director}{Statistics Collect Interval}{}{14.2.0}{%
+Bareos offers the possibilty to collect statistic information from its connected devices.
+To do so, \linkResourceDirective{Dir}{Storage}{Collect Statistics} must be enabled.
+This interval defines, how often the Director connects to the attached Storage Daemons to collect the statistic information.
 }
 
 

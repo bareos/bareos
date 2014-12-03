@@ -150,10 +150,12 @@ Send the message to the standard output (normally not used).
 }
 
 \defDirective{Dir}{Messages}{Syslog}{}{}{%
-Send the message to the system log (syslog)  using the facility specified in
-the {\bf address} field.  Note, for the moment, the {\bf address} field is
-ignored  and the message is always sent to the \parameter{LOG_DAEMON} facility with
-level \parameter{LOG_ERR}. See \command{man 3 syslog} for more details.
+Send the message to the system log (syslog).
+
+Since \sinceVersion{dir}{Syslog Level}{14.4.0}
+the facility can be specified in the {\bf address} field 
+and the loglevel correspond to the Bareos \nameref{MessageTypes}.
+The defaults are \parameter{DAEMON} and \parameter{LOG_ERR}.
 
 Although the {\bf syslog} destination is not used in the default Bareos
 config files, in certain cases where Bareos encounters errors in trying

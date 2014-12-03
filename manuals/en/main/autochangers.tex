@@ -11,9 +11,11 @@ order to work with an autochanger, Bareos requires a number of things, each of
 which is explained in more detail after this list:
 
 \begin{itemize}
+\item The package \package{bareos-storage-tape} must be installed.
+
 \item A script that actually controls the autochanger according  to commands
    sent by Bareos. Bareos contains the script \command{mtx-changer}, that utilize the command \command{mtx}.
-   It's config file is normally located at \path|/etc/bareos/mtx-changer.conf|
+   It's config file is normally located at \file{/etc/bareos/mtx-changer.conf}
 
 \item That each Volume (tape) to be used must be defined in the Catalog and
    have a Slot number assigned to it so that Bareos knows where the Volume is

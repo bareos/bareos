@@ -68,12 +68,9 @@ way or another.
 \item
    \nameref{DirectorResourceCatalog} -- to define in what database to
    keep the list of files and the Volume names where they are backed up.
-   Most people only use a single catalog.  However, if you want to
-   scale the Director to many clients, multiple catalogs can be helpful.
-   Multiple catalogs require a bit more management because in general
-   you must know what catalog contains what data.  Currently, all
-   Pools are defined in each catalog.  This restriction will be removed
-   in a later release.
+   Most people only use a single catalog.
+   It is possible, however not adviced and not supported to use multiple catalogs,
+   see \nameref{MultipleCatalogs}.
 \item
    \nameref{DirectorResourceMessages} -- to define where error and
    information messages are to be sent or logged. You may define

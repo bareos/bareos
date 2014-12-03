@@ -389,11 +389,12 @@ one or the other.  If not configuration error will result.
 }
 
 \defDirective{Dir}{Pool}{Use Catalog}{}{}{%
+Store information into Catalog. In all pratical use cases, leave this value to its defaults.
+
 }
 
 \defDirective{Dir}{Pool}{Use Volume Once}{}{}{%
-The default is {\bf no}.
-Use \configdirective{Maximum Volume Jobs = 1} instead.
+Use \linkResourceDirective{Dir}{Pool}{Maximum Volume Jobs} = 1 instead.
 }
 
 \defDirective{Dir}{Pool}{Volume Retention}{}{}{%

@@ -128,6 +128,11 @@ The database preparation scripts have following configuration options:
         \end{itemize}
 \end{description}
 
+Reading the settings from the configuration file \configFileDirUnix is of course only possible,
+if the current user have read access to this file.
+The normal PostgreSQL administrator user (\user{postgres}) don't have these permissions.
+So if you plan to use non-default database settings, you might add the user \user{postgres} to the group \group{bareos}.
+
 The database preparation scripts need to have password-less administrator access to the database.
 Depending on the distribution you're using, this require additional configuration.
 See the following section about howto achieve this for the different database systems.

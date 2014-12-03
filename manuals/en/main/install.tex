@@ -75,6 +75,7 @@ The package \package{bareos} is only a meta package, that contains dependencies 
 If you want to setup a distributed environment (like one Director, separate database server, multiple Storage daemons)
 you have to choose the corresponding Bareos packages to install on each hosts instead of just installing the \package{bareos} package.
 
+
 \subsection{Install on RedHat based Linux Distributions}
 
 \subsubsection{RHEL$\ge$6, CentOS$\ge$6, Fedora}
@@ -328,7 +329,7 @@ However, this script requires administration access to the database.
 Depending on your distribution and your database, this requires different preparations.
 More details can be found in chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
 
-\warning{If you're updating to Bareos $<=$ 13.2.3 and had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \ilink{Catalog Maintenance}{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts. Newer versions of Bareos read this variables from the Director configuration file \configFileDirUnix. However, make sure, the user running the database scripts has read access to this file (or set the environment variables). The \user{postgres} user normally does not have the required permissions.}
+\warning{If you're updating to Bareos $<=$ 13.2.3 and had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \nameref{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts. Newer versions of Bareos read this variables from the Director configuration file \configFileDirUnix. However, make sure, the user running the database scripts has read access to this file (or set the environment variables). The \user{postgres} user normally does not have the required permissions.}
 
 \subsubsection{PostgreSQL}
 If your are using PostgreSQL and your PostgreSQL administrator is \user{postgres} (default), use following commands:
