@@ -56,9 +56,6 @@ If you use another prefix for your cleaning tapes, you can set this directive
 accordingly.
 }
 
-\defDirective{Dir}{Pool}{Copy Pool}{}{}{%
-}
-
 \defDirective{Dir}{Pool}{Description}{}{}{%
 }
 
@@ -219,12 +216,35 @@ made to disk files do not become too numerous or consume too much space.
 }
 
 \defDirective{Dir}{Pool}{Migration High Bytes}{}{}{%
+This directive specifies the number of bytes in the Pool which will
+   trigger a migration if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy
+   has been specified. The fact that the Pool
+   usage goes above this level does not automatically trigger a migration
+   job. However, if a migration job runs and has the PoolOccupancy selection
+   type set, the Migration High Bytes will be applied.  Bareos does not
+   currently restrict a pool to have only a single \linkResourceDirective{Dir}{Storage}{Media Type}, so you
+   must keep in mind that if you mix Media Types in a Pool, the results
+   may not be what you want, as the Pool count of all bytes will be
+   for all Media Types combined.
 }
 
 \defDirective{Dir}{Pool}{Migration Low Bytes}{}{}{%
+This directive specifies the number of bytes in the Pool which will
+   stop a migration if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy
+   has been specified and triggered by more than 
+   \linkResourceDirective{Dir}{Pool}{Migration High Bytes}
+   being in the pool. In other words, once a migration job
+   is started with {\bf PoolOccupancy} migration selection and it
+   determines that there are more than Migration High Bytes, the
+   migration job will continue to run jobs until the number of
+   bytes in the Pool drop to or below Migration Low Bytes.
 }
 
 \defDirective{Dir}{Pool}{Migration Time}{}{}{%
+If \linkResourceDirective{Dir}{Job}{Selection Type} = PoolTime, 
+the time specified here will be used. 
+If the previous Backup Job or Jobs selected have been in the Pool longer than
+the specified time, then they will be migrated.
 }
 
 \defDirective{Dir}{Pool}{Minimum Blocksize}{}{}{%
@@ -237,8 +257,11 @@ The name of the pool.
 }
 
 \defDirective{Dir}{Pool}{Next Pool}{}{}{%
-This directive specifies the Next pool a Migration or Copy Job
+This directive specifies the pool a Migration or Copy Job
 and a Virtual Backup Job will write their data too.
+This directive is required to define the Pool into which
+   the data will be migrated. Without this directive, the migration job
+   will terminate in error.
 }
 
 \defDirective{Dir}{Pool}{Pool Type}{}{}{%
@@ -386,6 +409,9 @@ but the value, if any, in the Pool resource overrides any value
 in the Job. This Storage resource definition is not required by either
 the Job resource or in the Pool, but it must be specified in
 one or the other.  If not configuration error will result.
+  We highly recommend
+   that you define the Storage resource to be used in the Pool rather
+   than elsewhere (job, schedule run, ...).
 }
 
 \defDirective{Dir}{Pool}{Use Catalog}{}{}{%

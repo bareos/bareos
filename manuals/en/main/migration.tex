@@ -39,12 +39,14 @@ can be based on quite a number of different criteria such as:
 The details of these selection criteria will be defined below.
 
 To run a Migration job, you must first define a Job resource very similar
-to a Backup Job but with {\bf Type = Migrate} instead of {\bf Type =
-Backup}.  One of the key points to remember is that the Pool that is
+to a Backup Job but with \linkResourceDirective{Dir}{Job}{Type} = Migrate 
+instead of \linkResourceDirective{Dir}{Job}{Type} = Backup.
+One of the key points to remember is that the Pool that is
 specified for the migration job is the only pool from which jobs will
 be migrated, with one exception noted below. In addition, the Pool to
-which the selected Job or Jobs will be migrated is defined by the {\bf
-Next Pool = ...} in the Pool resource specified for the Migration Job.
+which the selected Job or Jobs will be migrated is defined by the
+\linkResourceDirective{Dir}{Pool}{Next Pool} = ... in the Pool resource 
+specified for the Migration Job.
 
 Bareos permits Pools to contain Volumes with different Media Types.
 However, when doing migration, this is a very undesirable condition.  For
@@ -54,8 +56,9 @@ the same Media Type for all migration jobs.
 The migration job normally is either manually started or starts
 from a Schedule much like a backup job. It searches
 for a previous backup Job or Jobs that match the parameters you have
-specified in the migration Job resource, primarily a {\bf Selection Type}
-(detailed a bit later).  Then for
+specified in the migration Job resource, primarily a 
+\linkResourceDirective{Dir}{Job}{Selection Type}.  
+Then for
 each previous backup JobId found, the Migration Job will run a new Job which
 copies the old Job data from the previous Volume to a new Volume in
 the Migration Pool.  It is possible that no prior Jobs are found for
@@ -84,207 +87,13 @@ a number of volumes for migration, you may have a large number of
 Jobs that start. Because each job must read the same Volume, they will
 run consecutively (not simultaneously).
 
-\section{Migration and Copy Job Resource Directives}
 
-The following directives can appear in a Director's Job resource, and they
-are used to define a Migration job.
-
-\begin{description}
-\directive{dir}{Pool}{pool-name}{required}{}{}
-   The Pool specified in the Migration
-   control Job is not a new directive for the Job resource, but it is
-   particularly important because it determines what Pool will be examined
-   for finding JobIds to migrate.  The exception to this is when {\bf
-   Selection Type = SQLQuery}, and although a Pool directive must still be
-   specified, no Pool is used, unless you specifically include it in the
-   SQL query.  Note, in any case, the Pool resource defined by the Pool
-   directove must contain a {\bf Next Pool = ...} directive to define the
-   Pool to which the data will be migrated.
-
-\directive{dir}{Type}{Migrate{\textbar}Copy}{required}{}{}
-\begin{description}
-\item [Migrate]
-   defines the job that is run as being a
-   Migration Job.  A Migration Job is a sort of control job and does not have
-   any Files associated with it, and in that sense they are more or less like
-   an Admin job.  Migration jobs simply check to see if there is anything to
-   Migrate then possibly start and control new Backup jobs to migrate the data
-   from the specified Pool to another Pool.  Note, any original JobId that
-   is migrated will be marked as having been migrated, and the original
-   JobId can nolonger be used for restores; all restores will be done from
-   the new migrated Job.
-
-\item [Copy]
-   defines the job that is run as being a
-   Copy Job.  A Copy Job is a sort of control job and does not have
-   any Files associated with it, and in that sense they are more or less like
-   an Admin job.  Copy jobs simply check to see if there is anything to
-   Copy then possibly start and control new Backup jobs to copy the data
-   from the specified Pool to another Pool.  Note that when a copy is
-   made, the original JobIds are left unchanged. The new copies can not
-   be used for restoration unless you specifically choose them by JobId.
-   If you subsequently delete a JobId that has a copy, the copy will be
-   automatically upgraded to a Backup rather than a Copy, and it will
-   subsequently be used for restoration.
-\end{description}
-
-\directive{dir}{Selection Type}{selection-type-keyword}{required}{}{}
-  The {\textless}selection-type-keyword{\textgreater} determines how the migration job
-  will go about selecting what JobIds to migrate. In most cases, it is
-  used in conjunction with a {\bf Selection Pattern} to give you fine
-  control over exactly what JobIds are selected.  The possible values
-  for {\textless}selection-type-keyword{\textgreater} are:
-  \begin{description}
-  \item [SmallestVolume] This selection keyword selects the volume with the
-        fewest bytes from the Pool to be migrated.  The Pool to be migrated
-        is the Pool defined in the Migration Job resource.  The migration
-        control job will then start and run one migration backup job for
-        each of the Jobs found on this Volume.  The Selection Pattern, if
-        specified, is not used.
-
-  \item [OldestVolume] This selection keyword selects the volume with the
-        oldest last write time in the Pool to be migrated.  The Pool to be
-        migrated is the Pool defined in the Migration Job resource.  The
-        migration control job will then start and run one migration backup
-        job for each of the Jobs found on this Volume.  The Selection
-        Pattern, if specified, is not used.
-
-  \item [Client] The Client selection type, first selects all the Clients
-        that have been backed up in the Pool specified by the Migration
-        Job resource, then it applies the {\bf Selection Pattern} (defined
-        below) as a regular expression to the list of Client names, giving
-        a filtered Client name list.  All jobs that were backed up for those
-        filtered (regexed) Clients will be migrated.
-        The migration control job will then start and run one migration
-        backup job for each of the JobIds found for those filtered Clients.
-
-  \item [Volume] The Volume selection type, first selects all the Volumes
-        that have been backed up in the Pool specified by the Migration
-        Job resource, then it applies the {\bf Selection Pattern} (defined
-        below) as a regular expression to the list of Volume names, giving
-        a filtered Volume list.  All JobIds that were backed up for those
-        filtered (regexed) Volumes will be migrated.
-        The migration control job will then start and run one migration
-        backup job for each of the JobIds found on those filtered Volumes.
-
-  \item [Job] The Job selection type, first selects all the Jobs (as
-        defined on the {\bf Name} directive in a Job resource)
-        that have been backed up in the Pool specified by the Migration
-        Job resource, then it applies the {\bf Selection Pattern} (defined
-        below) as a regular expression to the list of Job names, giving
-        a filtered Job name list.  All JobIds that were run for those
-        filtered (regexed) Job names will be migrated.  Note, for a given
-        Job named, they can be many jobs (JobIds) that ran.
-        The migration control job will then start and run one migration
-        backup job for each of the Jobs found.
-
-  \item [SQLQuery] The SQLQuery selection type, used the {\bf Selection
-        Pattern} as an SQL query to obtain the JobIds to be migrated.
-        The Selection Pattern must be a valid SELECT SQL statement for your
-        SQL engine, and it must return the JobId as the first field
-        of the SELECT.
-
-  \item [PoolOccupancy] This selection type will cause the Migration job
-        to compute the total size of the specified pool for all Media Types
-        combined. If it exceeds the {\bf Migration High Bytes} defined in
-        the Pool, the Migration job will migrate all JobIds beginning with
-        the oldest Volume in the pool (determined by Last Write time) until
-        the Pool bytes drop below the {\bf Migration Low Bytes} defined in the
-        Pool. This calculation should be consider rather approximative because
-        it is made once by the Migration job before migration is begun, and
-        thus does not take into account additional data written into the Pool
-        during the migration.  In addition, the calculation of the total Pool
-        byte size is based on the Volume bytes saved in the Volume (Media) database
-        entries. The bytes calculate for Migration is based on the value stored
-        in the Job records of the Jobs to be migrated. These do not include the
-        Storage daemon overhead as is in the total Pool size. As a consequence,
-        normally, the migration will migrate more bytes than strictly necessary.
-
-  \item [PoolTime] The PoolTime selection type will cause the Migration job to
-        look at the time each JobId has been in the Pool since the job ended.
-        All Jobs in the Pool longer than the time specified on {\bf Migration Time}
-        directive in the Pool resource will be migrated.
-
-  \item [PoolUncopiedJobs] This selection which copies all jobs from a pool
-        to an other pool which were not copied before is available only for copy Jobs.
-
-  \end{description}
-
-
-\directive{dir}{Selection Pattern}{quoted-string}{}{}{}
-  The Selection Patterns permitted for each Selection-type-keyword are
-  described above.
-
-  For the OldestVolume and SmallestVolume, this
-  Selection pattern is not used (ignored).
-
-  For the Client, Volume, and Job
-  keywords, this pattern must be a valid regular expression that will filter
-  the appropriate item names found in the Pool.
-
-  For the SQLQuery keyword, this pattern must be a valid SELECT SQL statement
-  that returns JobIds.
-
-\directive{dir}{Purge Migration Job}{yes{\textbar}no}{}{no}{}
-  This directive may be added to the Migration Job definition in the Director
-  configuration file to purge the job migrated at the end of a migration.
-
-\end{description}
-
-\section{Migration Pool Resource Directives}
-
-The following directives can appear in a Director's Pool resource, and they
-are used to define a Migration job.
-
-\begin{description}
-\item [Migration Time = {\textless}time-specification{\textgreater}]
-   If a PoolTime migration is done, the time specified here in seconds (time
-   modifiers are permitted -- e.g. hours, ...) will be used. If the
-   previous Backup Job or Jobs selected have been in the Pool longer than
-   the specified PoolTime, then they will be migrated.
-
-\item [Migration High Bytes =  {\textless}byte-specification{\textgreater}]
-   This directive specifies the number of bytes in the Pool which will
-   trigger a migration if a {\bf PoolOccupancy} migration selection
-   type has been specified. The fact that the Pool
-   usage goes above this level does not automatically trigger a migration
-   job. However, if a migration job runs and has the PoolOccupancy selection
-   type set, the Migration High Bytes will be applied.  Bareos does not
-   currently restrict a pool to have only a single Media Type, so you
-   must keep in mind that if you mix Media Types in a Pool, the results
-   may not be what you want, as the Pool count of all bytes will be
-   for all Media Types combined.
-
-\item [Migration Low Bytes = {\textless}byte-specification{\textgreater}]
-   This directive specifies the number of bytes in the Pool which will
-   stop a migration if a {\bf PoolOccupancy} migration selection
-   type has been specified and triggered by more than Migration High
-   Bytes being in the pool. In other words, once a migration job
-   is started with {\bf PoolOccupancy} migration selection and it
-   determines that there are more than Migration High Bytes, the
-   migration job will continue to run jobs until the number of
-   bytes in the Pool drop to or below Migration Low Bytes.
-
-\item [Next Pool = {\textless}pool-specification{\textgreater}]
-   The Next Pool directive specifies the pool to which Jobs will be
-   migrated. This directive is required to define the Pool into which
-   the data will be migrated. Without this directive, the migration job
-   will terminate in error.
-
-\item [Storage = {\textless}storage-specification{\textgreater}]
-   The Storage directive specifies what Storage resource will be used
-   for all Jobs that use this Pool. It takes precedence over any other
-   Storage specifications that may have been given such as in the
-   Schedule Run directive, or in the Job resource.  We highly recommend
-   that you define the Storage resource to be used in the Pool rather
-   than elsewhere (job, schedule run, ...).
-\end{description}
 
 \section{Important Migration Considerations}
 \index[general]{Important Migration Considerations}
 \begin{itemize}
 \item Each Pool into which you migrate Jobs or Volumes {\bf must}
-      contain Volumes of only one Media Type.
+      contain Volumes of only one \linkResourceDirective{Dir}{Storage}{Media Type}.
 
 \item Migration takes place on a JobId by JobId basis. That is
       each JobId is migrated in its entirety and independently
@@ -312,7 +121,7 @@ are used to define a Migration job.
 
 \item If you keep Volumes of different Media Types in the same Pool,
       it is not clear how well migration will work.  We recommend only
-      one Media Type per pool.
+      one \linkResourceDirective{Dir}{Storage}{Media Type} per pool.
 
 \item It is possible to get into a resource deadlock where Bareos does
       not find enough drives to simultaneously read and write all the
@@ -337,10 +146,11 @@ are used to define a Migration job.
       must take care to ensure that you don't try to read and write to the
       same device or Bareos may block waiting to reserve a drive that it
       will never find. In general, ensure that all your migration
-      pools contain only one Media Type, and that you always
+      pools contain only one \linkResourceDirective{Dir}{Storage}{Media Type},
+      and that you always
       migrate to pools with different Media Types.
 
-\item The {\bf Next Pool = ...} directive must be defined in the Pool
+\item The \linkResourceDirective{Dir}{Pool}{Next Pool} = ... directive must be defined in the Pool
      referenced in the Migration Job to define the Pool into which the
      data will be migrated.
 
@@ -356,9 +166,40 @@ are used to define a Migration job.
      occupancy, smallest, oldest, ...) need additional testing.
 \end{itemize}
 
+\section{Configure Copy or Migration Jobs}
 
-\section{Example Migration Jobs}
-\index[general]{Example Migration Jobs}
+The following directives can be used to define a Copy or Migration job:
+
+\paragraph{Job Resource}
+
+\begin{itemize}
+    \item \linkResourceDirective{Dir}{Job}{Type} = Migrate{\textbar}Copy
+    \item \linkResourceDirective{Dir}{Job}{Selection Type}
+        \item \linkResourceDirective{Dir}{Job}{Selection Pattern}
+    \item \linkResourceDirective{Dir}{Job}{Pool} \\
+        For \linkResourceDirective{Dir}{Job}{Selection Type} other than SQLQuery, 
+        this defines what Pool will be examined for finding JobIds to migrate
+    \item \linkResourceDirective{Dir}{Job}{Purge Migration Job}
+\end{itemize}
+
+\paragraph{Pool Resource}
+
+\begin{itemize}
+    \item \linkResourceDirective{Dir}{Pool}{Next Pool} \\
+        to what pool Jobs will be migrated
+    \item \linkResourceDirective{Dir}{Pool}{Migration Time} \\
+        if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolTime
+    \item \linkResourceDirective{Dir}{Pool}{Migration High Bytes} \\
+        if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy
+    \item \linkResourceDirective{Dir}{Pool}{Migration Low Bytes} \\
+        optional if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy is used
+    \item \linkResourceDirective{Dir}{Pool}{Storage} \\
+        if Copy/Migration involves multiple Storage Daemon, see \nameref{sec:CopyMigrationJobsMultipleStorageDaemons}
+\end{itemize}
+
+
+\subsection{Example Migration Jobs}
+\index[general]{Example!Migration Jobs}
 
 When you specify a Migration Job, you must specify all the standard
 directives as for a Job.  However, certain such as the Level, Client, and
@@ -372,8 +213,7 @@ resources; the Pool to be migrated (File) contains a Next Pool
 directive that defines the output Pool (where the data is written
 by the migration job).
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Backup Job}
 # Define the backup Job
 Job {
   Name = "NightlySave"
@@ -410,7 +250,7 @@ Pool {
 Storage {
   Name = File
   Address = rufus
-  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Password = "secret"
   Device = "File"          # same as Device in Storage daemon
   Media Type = File        # same as MediaType in Storage daemon
 }
@@ -419,13 +259,11 @@ Storage {
 Storage {
   Name = DLTDrive
   Address = rufus
-  Password = "ccV3lVTsQRsdIUGyab0N4sMDavui2hOBkmpBU0aQKOr9"
+  Password = "secret"
   Device = "HP DLT 80"      # same as Device in Storage daemon
   Media Type = DLT8000      # same as MediaType in Storage daemon
 }
-
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 Where we have included only the essential information -- i.e. the
 Director, FileSet, Catalog, Client, Schedule, and Messages resources are
@@ -436,87 +274,62 @@ to File storage using the Default pool to specify the Storage as File.
 
 Now, if we add the following Job resource to this conf file.
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Migrate Job: migrate all Volumes named File}
 Job {
   Name = "migrate-volume"
   Type = Migrate
   Level = Full
-  Client = rufus-fd
-  FileSet = "Full Set"
   Messages = Standard
   Pool = Default
   Maximum Concurrent Jobs = 4
   Selection Type = Volume
   Selection Pattern = "File"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 and then run the job named {\bf migrate-volume}, all volumes in the Pool
 named Default (as specified in the migrate-volume Job that match the
 regular expression pattern {\bf File} will be migrated to tape storage
-DLTDrive because the {\bf Next Pool} in the Default Pool specifies that
+DLTDrive because the \linkResourceDirective{Dir}{Pool}{Next Pool} in the Default Pool specifies that
 Migrations should go to the pool named {\bf Tape}, which uses
 Storage {\bf DLTDrive}.
 
 If instead, we use a Job resource as follows:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Migrate Job: migrate all jobs named *Save}
 Job {
   Name = "migrate"
   Type = Migrate
   Level = Full
-  Client = rufus-fd
-  FileSet="Full Set"
   Messages = Standard
   Pool = Default
   Maximum Concurrent Jobs = 4
   Selection Type = Job
   Selection Pattern = ".*Save"
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 All jobs ending with the name Save will be migrated from the File Default to
 the Tape Pool, or from File storage to Tape storage.
 
-\subsection{Multiple Storage Daemons}
+\subsubsection{Multiple Storage Daemons}
+    \label{sec:CopyMigrationJobsMultipleStorageDaemons}
 
-Beginning from Bareos 13.2, Migration and Copy jobs are also possible from one Storage daemon to another Storage Daemon.
+Beginning from Bareos \sinceVersion{dir}{Copy and Migration Jobs between different Storage Daemons}{13.2.0}, 
+Migration and Copy jobs are also possible from one Storage daemon to another Storage Daemon.
 
 Please note:
 \begin{itemize}
  \item the director must have two different storage resources configured (e.g. storage1 and storage2)
     \item each storage needs an own device and an individual pool (e.g. pool1, pool2)
     \item each pool is linked to its own storage via the storage directive in the pool resource
-    \item to configure the migration from pool1 to pool2, the \configdirective{Next Pool} directive of pool1 has to point to pool2
+    \item to configure the migration from pool1 to pool2, the \linkResourceDirective{Dir}{Pool}{Next Pool} directive of pool1 has to point to pool2
     \item the copy job itself has to be of type copy/migrate (exactly as already known in copy- and migration jobs)
 \end{itemize}
 
 Example:
 
 \begin{bconfig}{bareos-dir.conf: Copy Job between different Storage Daemons}
-
-# Fake fileset for copy jobs
-Fileset {
-  Name = None
-  Include {
-    Options {
-      signature = MD5
-    }
-  }
-}
-
-# Fake client for copy jobs
-Client {
-  Name = None
-  Address = localhost
-  Password = "NoNe"
-  Catalog = MyCatalog
-}
-
 # Source storage for migration
 Storage {
    Name = storage1
@@ -538,7 +351,7 @@ Storage {
 Pool {
    Name = pool1
    Storage = storage1
-   NextPool = File2    # This points to the target storage
+   Next Pool = pool2    # This points to the target storage
 }
 
 Pool {
@@ -550,8 +363,6 @@ Job {
    Name = CopyToRemote
    Type = Copy
    Messages = Standard
-   Client = None
-   FileSet = None
    Selection Type = PoolUncopiedJobs
    Spool Data = Yes
    Pool = pool1
