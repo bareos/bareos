@@ -84,6 +84,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit
     * Special case *all* gives full access
     */
    if (list->size() == 1 && bstrcasecmp("*all*", (char *)list->get(0))) {
+      retval = true;
       goto bail_out;
    }
 
