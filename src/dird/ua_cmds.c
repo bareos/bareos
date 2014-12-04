@@ -186,6 +186,8 @@ static struct cmdstruct commands[] = {
      NT_(""), true, true },
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
      NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false, true },
+   { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
+     NT_("client=<client-name> | storage=<storage-name> <host-name>"), false, true },
    { NT_("run"), run_cmd, _("Run a job"),
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> level=<level>\n"
          "\tstorage=<storage-name> where=<directory-prefix> when=<universal-time-specification>\n"
@@ -215,8 +217,6 @@ static struct cmdstruct commands[] = {
      NT_(""), true, false },
    { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
      NT_("on | off"), true, true },
-   { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
-     NT_("client=<client-name> | storage=<storage-name> <host-name>"), false, true },
    { NT_("unmount"), unmount_cmd, _("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<num> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
