@@ -41,6 +41,12 @@ struct s_addr_port {
    char *port;
 };
 
+/*
+ * Sanity check for the lengths of the Hello messages.
+ */
+#define MIN_MSG_LEN 15
+#define MAX_MSG_LEN (int)sizeof(name) + 25
+
 static void *handle_connection_request(void *arg)
 {
    BSOCK *bs = (BSOCK *)arg;
@@ -57,7 +63,7 @@ static void *handle_connection_request(void *arg)
    /*
     * Do a sanity check on the message received
     */
-   if (bs->msglen < 25 || bs->msglen > (int)sizeof(name)) {
+   if (bs->msglen < MIN_MSG_LEN || bs->msglen > MAX_MSG_LEN) {
       Dmsg1(000, "<filed: %s", bs->msg);
       Emsg2(M_ERROR, 0, _("Invalid connection from %s. Len=%d\n"), bs->who(), bs->msglen);
       bmicrosleep(5, 0);   /* make user wait 5 seconds */
