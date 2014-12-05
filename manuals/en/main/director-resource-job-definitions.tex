@@ -181,7 +181,7 @@ Differential backup.  This directive is optional.
 
 \defDirective{Dir}{Job}{Differential Max Runtime}{}{}{%
 The time specifies the maximum allowed time that a Differential backup job may
-run, counted from when the job starts, ({\bf not} necessarily the same as when
+run, counted from when the job starts ({\bf not} necessarily the same as when
 the job was scheduled).
 }
 
@@ -190,9 +190,17 @@ This directive has been deprecated in favor of
 \linkResourceDirective{Dir}{Job}{Differential Max Runtime}.
 }
 
+\defDirective{Dir}{Job}{Dir Plugin Options}{}{}{%
+These settings are plugin specific, see \nameref{dirPlugins}.
+}
+
 \defDirective{Dir}{Job}{Enabled}{}{}{%
 This directive allows you to enable or disable automatic execution
   via the scheduler of a Job.
+}
+
+\defDirective{Dir}{Job}{FD Plugin Options}{}{}{%
+These settings are plugin specific, see \nameref{fdPlugins}.
 }
 
 \defDirective{Dir}{Job}{File Set}{}{}{%
@@ -212,10 +220,15 @@ It will override any Pool specification during a Full backup.  This
 directive is optional.
 }
 
-\defDirective{Dir}{Job}{Full Max Runtime}{}{}{
+\defDirective{Dir}{Job}{Full Max Runtime}{}{}{%
+The time specifies the maximum allowed time that a Full backup job may
+run, counted from when the job starts ({\bf not} necessarily the same as when
+the job was scheduled).
 }
 
-\defDirective{Dir}{Job}{Full Max Wait Time}{}{}{
+\defDirective{Dir}{Job}{Full Max Wait Time}{}{}{%
+This directive has been deprecated in favor of
+\linkResourceDirective{Dir}{Job}{Full Max Runtime}.
 }
 
 \defDirective{Dir}{Job}{Incremental Backup Pool}{}{}{%
@@ -1312,6 +1325,10 @@ many different times, and each {\bf run} directive permits overriding
 the default Job Level Pool, Storage, and Messages resources.  This gives
 considerable flexibility in what can be done with a single Job.  For
 additional details, see \nameref{DirectorResourceSchedule}.
+}
+
+\defDirective{Dir}{Job}{SD Plugin Options}{}{}{%
+These settings are plugin specific, see \nameref{sdPlugins}.
 }
 
 \defDirective{Dir}{Job}{Selection Pattern}{}{}{%
