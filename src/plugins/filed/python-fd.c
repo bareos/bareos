@@ -1488,8 +1488,11 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
             goto bail_out;
          }
 
-         flags = PyString_AsString(pSavePkt->flags);
-         memcpy(sp->flags, flags, sizeof(sp->flags));
+         if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
+            memcpy(sp->flags, flags, sizeof(sp->flags));
+         } else {
+            goto bail_out;
+         }
       } else {
          goto bail_out;
       }
