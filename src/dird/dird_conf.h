@@ -91,6 +91,11 @@ class DEVICERES;
 class RUNSCRIPTRES;
 
 /*
+ * Print configuration file schema in json format
+ */
+bool print_config_schema_json(POOL_MEM &buff);
+
+/*
  *   Director Resource
  *
  */

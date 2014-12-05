@@ -25,7 +25,7 @@
  */
 
 struct RES_ITEM;                        /* Declare forward referenced structure */
-class RES;                              /* Declare forware referenced structure */
+class RES;                              /* Declare forward referenced structure */
 
 /*
  * Parser state
@@ -99,6 +99,18 @@ struct RES_ITEM {
    int32_t code;                        /* Item code/additional info */
    uint32_t flags;                      /* Flags: See CFG_ITEM_* */
    const char *default_value;           /* Default value */
+   /*
+    * version string in format: [start_version]-[end_version]
+    * start_version: directive has been introduced in this version
+    * end_version:   directive is deprecated since this version
+    */
+   const char *versions;
+   /*
+    * description of the directive, used for the documentation.
+    * Full sentence.
+    * Every new directive should have a description.
+    */
+   const char *description;
 };
 
 /* For storing name_addr items in res_items table */
@@ -242,6 +254,7 @@ struct DATATYPE_NAME {
    const char *description;
 };
 
+
 /*
  * Base Class for all Resource Classes
  */
@@ -299,7 +312,9 @@ typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str);
  */
 class CONFIG {
 public:
-   /* members */
+   /*
+    * Members
+    */
    const char *m_cf;                    /* Config file */
    LEX_ERROR_HANDLER *m_scan_error;     /* Error handler if non-null */
    LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
@@ -318,7 +333,9 @@ public:
    RES **m_res_head;                    /* Pointer to defined resources */
    brwlock_t m_res_lock;                /* Resource lock */
 
-   /* methods */
+   /*
+    * Methods
+    */
    void init(
       const char *cf,
       LEX_ERROR_HANDLER *scan_error,
@@ -339,12 +356,23 @@ public:
    RES **save_resources();
    RES **new_res_head();
    void init_resource(int type, RES_ITEM *items, int pass);
+   void dump_resources(void sendit(void *sock, const char *fmt, ...), void *sock);
 };
 
 CONFIG *new_config_parser();
 
+void prtmsg(void *sock, const char *fmt, ...);
 
-/* Resource routines */
+/*
+ * Data type routines
+ */
+DATATYPE_NAME *get_datatype(int number);
+const char *datatype_to_str(int type);
+const char *datatype_to_description(int type);
+
+/*
+ * Resource routines
+ */
 RES *GetResWithName(int rcode, const char *name);
 RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
@@ -356,20 +384,27 @@ void save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
 
-bool print_config_schema_json(POOL_MEM &buff);
-bool print_res_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item );
+/*
+ * JSON print functions.
+ */
+bool print_items_schema_json(POOL_MEM &buff, int level, const char *name, RES_ITEM items[], const bool last = false);
+bool print_items_schema_json(POOL_MEM &buff, int level, const char *name, s_kw items[], const bool last = false);
 
-/* JSON output helper functions */
+bool print_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item, const bool last = false);
+bool print_item_schema_json(POOL_MEM &buff, int level, s_kw *item, const bool last = false);
+
+/*
+ * JSON output helper functions
+ */
 void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string);
-void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string);
-void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value);
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value);
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value);
+void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string, const bool last = false);
+void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last = false);
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last = false);
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value, const bool last = false);
 
-
-
-
-/* Loop through each resource of type, returning in var */
+/*
+ * Loop through each resource of type, returning in var
+ */
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type) \
         for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (RES *)var));)

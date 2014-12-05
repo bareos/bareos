@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,11 +51,13 @@ static void usage()
       PROG_COPYRIGHT
       "\nVersion: %s (%s) %s %s %s\n\n"
       "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
-      "       -c <file>     set configuration file to file\n"
-      "       -d <nn>       set debug level to <nn>\n"
-      "       -dt           print timestamp in debug output\n"
-      "       -t            test - read configuration and exit\n"
-      "       -?            print this message.\n"
+      "        -c <file>   set configuration file to file\n"
+      "        -d <nn>     set debug level to <nn>\n"
+      "        -dt         print timestamp in debug output\n"
+      "        -t          test - read configuration and exit\n"
+      "        -xc         print configuration and exit\n"
+      "        -xs         print configuration file schema in JSON format and exit\n"
+      "        -?          print this message.\n"
       "\n"), 2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
 #if HAVE_WIN32
    QMessageBox::information(0, "Help", out);
@@ -68,7 +70,7 @@ static void usage()
 static void parse_command_line(int argc, char* argv[], cl_opts& cl)
 {
    int ch;
-   while ((ch = getopt(argc, argv, "bc:d:th?f:s:")) != -1) {
+   while ((ch = getopt(argc, argv, "bc:d:th?f:s:x:")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (cl.configfile) {
@@ -90,6 +92,17 @@ static void parse_command_line(int argc, char* argv[], cl_opts& cl)
 
       case 't':
          cl.test_config_only = true;
+         break;
+
+      case 'x':                    /* export configuration/schema and exit */
+         if (*optarg == 's') {
+            cl.export_config_schema = true;
+         } else if (*optarg == 'c') {
+            cl.export_config = true;
+         } else {
+            usage();
+            exit(1);
+         }
          break;
 
       case 'h':
@@ -185,9 +198,24 @@ int main(int argc, char *argv[])
    cl_opts cl; // remember some command line options
    parse_command_line(argc, argv, cl);
 
+   if (cl.export_config_schema) {
+      my_config = new_config_parser();
+      init_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
+      POOL_MEM buffer;
+      print_config_schema_json(buffer);
+      printf( "%s\n", buffer.c_str() );
+      fflush(stdout);
+      exit(0);
+   }
+
    // read the config file
    my_config = new_config_parser();
    parse_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
+
+   if (cl.export_config) {
+      my_config->dump_resources(prtmsg, NULL);
+      exit(0);
+   }
 
    // this is the Qt core application
    // with its message handler

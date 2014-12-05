@@ -129,4 +129,7 @@ union URES {
    RES hdr;
 };
 
+void init_tmon_config(CONFIG *config, const char *configfile, int exit_code);
+bool print_config_schema_json(POOL_MEM &buffer);
+
 #endif /* TRAY_CONF_H_INCLUDED */

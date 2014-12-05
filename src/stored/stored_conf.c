@@ -56,177 +56,177 @@ static int32_t res_all_size = sizeof(res_all);
  * Globals for the Storage daemon.
  */
 static RES_ITEM store_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdaddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "sdsourceaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0" },
-   { "workingdirectory", CFG_TYPE_DIR, ITEM(res_store.working_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_WORKINGDIR },
-   { "piddirectory", CFG_TYPE_DIR, ITEM(res_store.pid_directory), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_PIDDIR },
-   { "subsysdirectory", CFG_TYPE_DIR, ITEM(res_store.subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "SdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
+   { "SdAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
+   { "SdAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.SDaddrs), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
+   { "SdSourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.SDsrc_addr), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store.working_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_WORKINGDIR, NULL, NULL },
+   { "PidDirectory", CFG_TYPE_DIR, ITEM(res_store.pid_directory), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_PIDDIR, NULL, NULL },
+   { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_store.subsys_directory), CFG_ITEM_DEPRECATED, 0, NULL, NULL, NULL },
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-   { "backenddirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store.backend_directories), 0, CFG_ITEM_DEFAULT, _PATH_BAREOS_BACKENDDIR },
+   { "BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_store.backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
-   { "plugindirectory", CFG_TYPE_DIR, ITEM(res_store.plugin_directory), 0, 0, NULL },
-   { "pluginnames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store.plugin_names), 0, 0, NULL },
-   { "scriptsdirectory", CFG_TYPE_DIR, ITEM(res_store.scripts_directory), 0, 0, NULL },
-   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_store.max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "20" },
-   { "messages", CFG_TYPE_RES, ITEM(res_store.messages), R_MSGS, 0, NULL },
-   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_store.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_store.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
-   { "maximumnetworkbuffersize", CFG_TYPE_PINT32, ITEM(res_store.max_network_buffer_size), 0, 0, NULL },
-   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_store.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_store.tls_enable), 0, 0, NULL },
-   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_store.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_store.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_store.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL },
-   { "tlskey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_store.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_store.tls_allowed_cns), 0, 0, NULL },
-   { "clientconnectwait", CFG_TYPE_TIME, ITEM(res_store.client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */ },
-   { "verid", CFG_TYPE_STR, ITEM(res_store.verid), 0, 0, NULL },
-   { "compatible", CFG_TYPE_BOOL, ITEM(res_store.compatible), 0, CFG_ITEM_DEFAULT, "true" },
-   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth_per_job), 0, 0, NULL },
-   { "allowbandwidthbursting", CFG_TYPE_BOOL, ITEM(res_store.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false" },
-   { "ndmpenable", CFG_TYPE_BOOL, ITEM(res_store.ndmp_enable), 0, CFG_ITEM_DEFAULT, "false" },
-   { "ndmpsnooping", CFG_TYPE_BOOL, ITEM(res_store.ndmp_snooping), 0, CFG_ITEM_DEFAULT, "false" },
-   { "ndmploglevel", CFG_TYPE_PINT32, ITEM(res_store.ndmploglevel), 0, CFG_ITEM_DEFAULT, "4" },
-   { "ndmpaddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
-   { "ndmpaddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
-   { "ndmpport", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000" },
-   { "autoxflateonreplication", CFG_TYPE_BOOL, ITEM(res_store.autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false" },
-   { "absolutejobtimeout", CFG_TYPE_PINT32, ITEM(res_store.jcr_watchdog_time), 0, 0, NULL },
-   { "collectdevicestatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false" },
-   { "collectjobstatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_job_stats), 0, CFG_ITEM_DEFAULT, "false" },
-   { "statisticscollectinterval", CFG_TYPE_PINT32, ITEM(res_store.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30" },
-   { "devicereservebymediatype", CFG_TYPE_BOOL, ITEM(res_store.device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_store.plugin_directory), 0, 0, NULL, NULL, NULL },
+   { "PluginNames", CFG_TYPE_PLUGIN_NAMES, ITEM(res_store.plugin_names), 0, 0, NULL, NULL, NULL },
+   { "ScriptsDirectory", CFG_TYPE_DIR, ITEM(res_store.scripts_directory), 0, 0, NULL, NULL, NULL },
+   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store.max_concurrent_jobs), 0, CFG_ITEM_DEFAULT, "20", NULL, NULL },
+   { "Messages", CFG_TYPE_RES, ITEM(res_store.messages), R_MSGS, 0, NULL, NULL, NULL },
+   { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
+   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
+   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { "MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_store.max_network_buffer_size), 0, 0, NULL, NULL, NULL },
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_store.tls_authenticate), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_store.tls_require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_store.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_store.tls_crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_store.tls_dhfile), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_store.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
+   { "ClientConnectWait", CFG_TYPE_TIME, ITEM(res_store.client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
+   { "VerId", CFG_TYPE_STR, ITEM(res_store.verid), 0, 0, NULL, NULL, NULL },
+   { "Compatible", CFG_TYPE_BOOL, ITEM(res_store.compatible), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
+   { "AllowBandwidthBursting", CFG_TYPE_BOOL, ITEM(res_store.allow_bw_bursting), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "NdmpEnable", CFG_TYPE_BOOL, ITEM(res_store.ndmp_enable), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "NdmpSnooping", CFG_TYPE_BOOL, ITEM(res_store.ndmp_snooping), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_store.ndmploglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
+   { "NdmpAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
+   { "NdmpAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
+   { "NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
+   { "AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store.autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store.jcr_watchdog_time), 0, 0, NULL, NULL, NULL },
+   { "CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_job_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
+   { "DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store.device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
  * Directors that can speak to the Storage daemon
  */
 static RES_ITEM dir_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, 0, NULL },
-   { "tlsauthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "tlsdhfile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL },
-   { "tlsallowedcn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL },
-   { "maximumbandwidthperjob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL },
-   { "keyencryptionkey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, 0, NULL, NULL, NULL },
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
+   { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
+   { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL, NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
  * NDMP DMA's that can speak to the Storage daemon
  */
 static RES_ITEM ndmp_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_ndmp.hdr.name), 0, CFG_ITEM_REQUIRED, 0 },
-   { "description", CFG_TYPE_STR, ITEM(res_ndmp.hdr.desc), 0, 0, 0 },
-   { "username", CFG_TYPE_STR, ITEM(res_ndmp.username), 0, CFG_ITEM_REQUIRED, 0 },
-   { "password", CFG_TYPE_AUTOPASSWORD, ITEM(res_ndmp.password), 0, CFG_ITEM_REQUIRED, 0 },
-   { "authtype", CFG_TYPE_AUTHTYPE, ITEM(res_ndmp.AuthType), 0, CFG_ITEM_DEFAULT, "None" },
-   { "loglevel", CFG_TYPE_PINT32, ITEM(res_ndmp.LogLevel), 0, CFG_ITEM_DEFAULT, "4" },
-   { NULL, 0, { 0 }, 0, 0, 0 }
+   { "Name", CFG_TYPE_NAME, ITEM(res_ndmp.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_ndmp.hdr.desc), 0, 0, 0, NULL, NULL },
+   { "Username", CFG_TYPE_STR, ITEM(res_ndmp.username), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL },
+   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_ndmp.password), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL },
+   { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_ndmp.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
+   { "LogLevel", CFG_TYPE_PINT32, ITEM(res_ndmp.LogLevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, 0, NULL, NULL }
 };
 
 /*
  * Device definition
  */
 static RES_ITEM dev_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_dev.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_dev.hdr.desc), 0, 0, NULL },
-   { "mediatype", CFG_TYPE_STRNAME, ITEM(res_dev.media_type), 0, CFG_ITEM_REQUIRED, NULL },
-   { "devicetype", CFG_TYPE_DEVTYPE, ITEM(res_dev.dev_type), 0, 0, NULL },
-   { "archivedevice", CFG_TYPE_STRNAME, ITEM(res_dev.device_name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "diagnosticdevice", CFG_TYPE_STRNAME, ITEM(res_dev.diag_device_name), 0, 0, NULL },
-   { "hardwareendoffile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOF, CFG_ITEM_DEFAULT, "on" },
-   { "hardwareendofmedium", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOM, CFG_ITEM_DEFAULT, "on" },
-   { "backwardspacerecord", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSR, CFG_ITEM_DEFAULT, "on" },
-   { "backwardspacefile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSF, CFG_ITEM_DEFAULT, "on" },
-   { "bsfateom", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSFATEOM, CFG_ITEM_DEFAULT, "off" },
-   { "twoeof", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_TWOEOF, CFG_ITEM_DEFAULT, "off" },
-   { "forwardspacerecord", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FSR, CFG_ITEM_DEFAULT, "on" },
-   { "forwardspacefile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FSF, CFG_ITEM_DEFAULT, "on" },
-   { "fastforwardspacefile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FASTFSF, CFG_ITEM_DEFAULT, "on" },
-   { "removablemedia", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_REM, CFG_ITEM_DEFAULT, "on" },
-   { "randomaccess", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_RACCESS, CFG_ITEM_DEFAULT, "off" },
-   { "automaticmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_AUTOMOUNT, CFG_ITEM_DEFAULT, "off" },
-   { "labelmedia", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_LABEL, CFG_ITEM_DEFAULT, "off" },
-   { "alwaysopen", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_ALWAYSOPEN, CFG_ITEM_DEFAULT, "on" },
-   { "autochanger", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_AUTOCHANGER, CFG_ITEM_DEFAULT, "off" },
-   { "closeonpoll", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_CLOSEONPOLL, CFG_ITEM_DEFAULT, "off" },
-   { "blockpositioning", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_POSITIONBLOCKS, CFG_ITEM_DEFAULT, "on" },
-   { "usemtiocget", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_MTIOCGET, CFG_ITEM_DEFAULT, "on" },
-   { "checklabels", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_CHECKLABELS, CFG_ITEM_DEFAULT, "off" },
-   { "requiresmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off" },
-   { "offlineonunmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off" },
-   { "blockchecksum", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on" },
-   { "autoselect", CFG_TYPE_BOOL, ITEM(res_dev.autoselect), 0, CFG_ITEM_DEFAULT, "true" },
-   { "changerdevice", CFG_TYPE_STRNAME, ITEM(res_dev.changer_name), 0, 0, NULL },
-   { "changercommand", CFG_TYPE_STRNAME, ITEM(res_dev.changer_command), 0, 0, NULL },
-   { "alertcommand", CFG_TYPE_STRNAME, ITEM(res_dev.alert_command), 0, 0, NULL },
-   { "maximumchangerwait", CFG_TYPE_TIME, ITEM(res_dev.max_changer_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */ },
-   { "maximumopenwait", CFG_TYPE_TIME, ITEM(res_dev.max_open_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */ },
-   { "maximumopenvolumes", CFG_TYPE_PINT32, ITEM(res_dev.max_open_vols), 0, CFG_ITEM_DEFAULT, "1" },
-   { "maximumnetworkbuffersize", CFG_TYPE_PINT32, ITEM(res_dev.max_network_buffer_size), 0, 0, NULL },
-   { "volumepollinterval", CFG_TYPE_TIME, ITEM(res_dev.vol_poll_interval), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */ },
-   { "maximumrewindwait", CFG_TYPE_TIME, ITEM(res_dev.max_rewind_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */ },
-   { "labelblocksize", CFG_TYPE_PINT32, ITEM(res_dev.label_block_size), 0, CFG_ITEM_DEFAULT, "64512"/* DEFAULT_BLOCK_SIZE */ },
-   { "minimumblocksize", CFG_TYPE_PINT32, ITEM(res_dev.min_block_size), 0, 0, NULL },
-   { "maximumblocksize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev.max_block_size), 0, 0, NULL },
-   { "maximumvolumesize", CFG_TYPE_SIZE64, ITEM(res_dev.max_volume_size), 0, CFG_ITEM_DEPRECATED, NULL },
-   { "maximumfilesize", CFG_TYPE_SIZE64, ITEM(res_dev.max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000" },
-   { "volumecapacity", CFG_TYPE_SIZE64, ITEM(res_dev.volume_capacity), 0, 0, NULL },
-   { "maximumconcurrentjobs", CFG_TYPE_PINT32, ITEM(res_dev.max_concurrent_jobs), 0, 0, NULL },
-   { "spooldirectory", CFG_TYPE_DIR, ITEM(res_dev.spool_directory), 0, 0, NULL },
-   { "maximumspoolsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_spool_size), 0, 0, NULL },
-   { "maximumjobspoolsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_job_spool_size), 0, 0, NULL },
-   { "driveindex", CFG_TYPE_PINT32, ITEM(res_dev.drive_index), 0, 0, NULL },
-   { "maximumpartsize", CFG_TYPE_SIZE64, ITEM(res_dev.max_part_size), 0, CFG_ITEM_DEPRECATED, NULL },
-   { "mountpoint", CFG_TYPE_STRNAME, ITEM(res_dev.mount_point), 0, 0, NULL },
-   { "mountcommand", CFG_TYPE_STRNAME, ITEM(res_dev.mount_command), 0, 0, NULL },
-   { "unmountcommand", CFG_TYPE_STRNAME, ITEM(res_dev.unmount_command), 0, 0, NULL },
-   { "writepartcommand", CFG_TYPE_STRNAME, ITEM(res_dev.write_part_command), 0, CFG_ITEM_DEPRECATED, NULL },
-   { "freespacecommand", CFG_TYPE_STRNAME, ITEM(res_dev.free_space_command), 0, CFG_ITEM_DEPRECATED, NULL },
-   { "labeltype", CFG_TYPE_LABEL, ITEM(res_dev.label_type), 0, 0, NULL },
-   { "norewindonclose", CFG_TYPE_BOOL, ITEM(res_dev.norewindonclose), 0, CFG_ITEM_DEFAULT, "true" },
-   { "drivetapealertenabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_tapealert_enabled), 0, 0, NULL },
-   { "drivecryptoenabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_crypto_enabled), 0, 0, NULL },
-   { "querycryptostatus", CFG_TYPE_BOOL, ITEM(res_dev.query_crypto_status), 0, 0, NULL },
-   { "autodeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL },
-   { "autodeflatealgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL },
-   { "autodeflatelevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6" },
-   { "autoinflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL },
-   { "collectstatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_dev.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_dev.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "MediaType", CFG_TYPE_STRNAME, ITEM(res_dev.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "DeviceType", CFG_TYPE_DEVTYPE, ITEM(res_dev.dev_type), 0, 0, NULL, NULL, NULL },
+   { "ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev.device_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev.diag_device_name), 0, 0, NULL, NULL, NULL },
+   { "HardwareEndOfFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "HardwareEndOfMedium", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOM, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "BackwardSpaceRecord", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSR, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "BackwardSpaceFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "BsfAtEom", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BSFATEOM, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "TwoEof", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_TWOEOF, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "ForwardSpaceRecord", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FSR, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "ForwardSpaceFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FSF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "FastForwardSpaceFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_FASTFSF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "RemovableMedia", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_REM, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "RandomAccess", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_RACCESS, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "AutomaticMount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_AUTOMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "LabelMedia", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_LABEL, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "AlwaysOpen", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_ALWAYSOPEN, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "Autochanger", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_AUTOCHANGER, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "CloseOnPoll", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_CLOSEONPOLL, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "BlockPositioning", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_POSITIONBLOCKS, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "UseMtiocget", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_MTIOCGET, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "CheckLabels", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_CHECKLABELS, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "RequiresMount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_REQMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "OfflineOnUnmount", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_OFFLINEUNMOUNT, CFG_ITEM_DEFAULT, "off", NULL, NULL },
+   { "BlockChecksum", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_BLOCKCHECKSUM, CFG_ITEM_DEFAULT, "on", NULL, NULL },
+   { "AutoSelect", CFG_TYPE_BOOL, ITEM(res_dev.autoselect), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_dev.changer_name), 0, 0, NULL, NULL, NULL },
+   { "ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_dev.changer_command), 0, 0, NULL, NULL, NULL },
+   { "AlertCommand", CFG_TYPE_STRNAME, ITEM(res_dev.alert_command), 0, 0, NULL, NULL, NULL },
+   { "MaximumChangerWait", CFG_TYPE_TIME, ITEM(res_dev.max_changer_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL },
+   { "MaximumOpenWait", CFG_TYPE_TIME, ITEM(res_dev.max_open_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL },
+   { "MaximumOpenVolumes", CFG_TYPE_PINT32, ITEM(res_dev.max_open_vols), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
+   { "MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_dev.max_network_buffer_size), 0, 0, NULL, NULL, NULL },
+   { "VolumePollInterval", CFG_TYPE_TIME, ITEM(res_dev.vol_poll_interval), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL },
+   { "MaximumRewindWait", CFG_TYPE_TIME, ITEM(res_dev.max_rewind_wait), 0, CFG_ITEM_DEFAULT, "300" /* 5 minutes */, NULL, NULL },
+   { "LabelBlockSize", CFG_TYPE_PINT32, ITEM(res_dev.label_block_size), 0, CFG_ITEM_DEFAULT, "64512"/* DEFAULT_BLOCK_SIZE */, NULL, NULL },
+   { "MinimumBlockSize", CFG_TYPE_PINT32, ITEM(res_dev.min_block_size), 0, 0, NULL, NULL, NULL },
+   { "MaximumBlockSize", CFG_TYPE_MAXBLOCKSIZE, ITEM(res_dev.max_block_size), 0, 0, NULL, NULL, NULL },
+   { "MaximumVolumeSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_volume_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
+   { "MaximumFileSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_file_size), 0, CFG_ITEM_DEFAULT, "1000000000", NULL, NULL },
+   { "VolumeCapacity", CFG_TYPE_SIZE64, ITEM(res_dev.volume_capacity), 0, 0, NULL, NULL, NULL },
+   { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dev.max_concurrent_jobs), 0, 0, NULL, NULL, NULL },
+   { "SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev.spool_directory), 0, 0, NULL, NULL, NULL },
+   { "MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_spool_size), 0, 0, NULL, NULL, NULL },
+   { "MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_job_spool_size), 0, 0, NULL, NULL, NULL },
+   { "DriveIndex", CFG_TYPE_PINT32, ITEM(res_dev.drive_index), 0, 0, NULL, NULL, NULL },
+   { "MaximumPartSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_part_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
+   { "MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev.mount_point), 0, 0, NULL, NULL, NULL },
+   { "MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev.mount_command), 0, 0, NULL, NULL, NULL },
+   { "UnmountCommand", CFG_TYPE_STRNAME, ITEM(res_dev.unmount_command), 0, 0, NULL, NULL, NULL },
+   { "WritePartCommand", CFG_TYPE_STRNAME, ITEM(res_dev.write_part_command), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
+   { "FreeSpaceCommand", CFG_TYPE_STRNAME, ITEM(res_dev.free_space_command), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
+   { "LabelType", CFG_TYPE_LABEL, ITEM(res_dev.label_type), 0, 0, NULL, NULL, NULL },
+   { "NoRewindOnClose", CFG_TYPE_BOOL, ITEM(res_dev.norewindonclose), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_tapealert_enabled), 0, 0, NULL, NULL, NULL },
+   { "DriveCryptoEnabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_crypto_enabled), 0, 0, NULL, NULL, NULL },
+   { "QueryCryptoStatus", CFG_TYPE_BOOL, ITEM(res_dev.query_crypto_status), 0, 0, NULL, NULL, NULL },
+   { "AutoDeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL, NULL, NULL },
+   { "AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL, NULL, NULL },
+   { "AutoDeflateLevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", NULL, NULL },
+   { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, NULL, NULL },
+   { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
  * Autochanger definition
  */
 static RES_ITEM changer_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_changer.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_changer.hdr.desc), 0, 0, NULL },
-   { "device", CFG_TYPE_ALIST_RES, ITEM(res_changer.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL },
-   { "changerdevice", CFG_TYPE_STRNAME, ITEM(res_changer.changer_name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "changercommand", CFG_TYPE_STRNAME, ITEM(res_changer.changer_command), 0, CFG_ITEM_REQUIRED, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_changer.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_changer.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "Device", CFG_TYPE_ALIST_RES, ITEM(res_changer.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_changer.changer_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "ChangerCommand", CFG_TYPE_STRNAME, ITEM(res_changer.changer_command), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 // { "mountanonymousvolumes", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_ANONVOLS, CFG_ITEM_DEFAULT, "off" },
@@ -240,12 +240,12 @@ static RES_ITEM changer_items[] = {
  * This is the master resource definition
  */
 static RES_TABLE resources[] = {
-   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "ndmp", ndmp_items, R_NDMP, sizeof(NDMPRES) },
-   { "storage", store_items, R_STORAGE, sizeof(STORES) },
-   { "device", dev_items, R_DEVICE, sizeof(DEVRES) },
-   { "messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
-   { "autochanger", changer_items, R_AUTOCHANGER, sizeof(AUTOCHANGERRES)  },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "Ndmp", ndmp_items, R_NDMP, sizeof(NDMPRES) },
+   { "Storage", store_items, R_STORAGE, sizeof(STORES) },
+   { "Device", dev_items, R_DEVICE, sizeof(DEVRES) },
+   { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
+   { "Autochanger", changer_items, R_AUTOCHANGER, sizeof(AUTOCHANGERRES)  },
    { NULL, NULL, 0 }
 };
 
@@ -443,140 +443,37 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
  */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
+   POOL_MEM buf;
    URES *res = (URES *)reshdr;
-   char buf[1000];
+   BRSRES *resclass;
    int recurse = 1;
-   IPADDR *addr;
+
    if (res == NULL) {
       sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), res_to_str(type), type);
       return;
    }
-   sendit(sock, _("dump_resource type=%d\n"), type);
+
    if (type < 0) { /* no recursion */
       type = - type;
       recurse = 0;
    }
+
    switch (type) {
-   case R_DIRECTOR:
-      sendit(sock, "Director: name=%s\n", res->res_dir.hdr.name);
-      break;
-   case R_NDMP:
-      sendit(sock, "NDMP DMA: name=%s\n", res->res_dir.hdr.name);
-      break;
-   case R_STORAGE:
-      sendit(sock, "Storage: name=%s SDaddr=%s HB=%s\n",
-             res->res_store.hdr.name,
-             NPRT(get_first_address(res->res_store.SDaddrs, buf, sizeof(buf))),
-             edit_utime(res->res_store.heartbeat_interval, buf, sizeof(buf)));
-      if (res->res_store.SDaddrs) {
-         foreach_dlist(addr, res->res_store.SDaddrs) {
-            sendit(sock, "        SDaddr=%s SDport=%d\n",
-                   addr->get_address(buf, sizeof(buf)),
-                   addr->get_port_host_order());
-         }
-      }
-      if (res->res_store.NDMPaddrs) {
-         foreach_dlist(addr, res->res_store.NDMPaddrs) {
-            sendit(sock, "        NDMPaddr=%s NDMPport=%d\n",
-                   addr->get_address(buf, sizeof(buf)),
-                   addr->get_port_host_order());
-         }
-      }
-      break;
-   case R_DEVICE:
-      sendit(sock, "Device: name=%s MediaType=%s Device=%s DiagDevice=%s LabelType=%d\n",
-             res->res_dev.hdr.name,
-             res->res_dev.media_type,
-             res->res_dev.device_name,
-             NPRT(res->res_dev.diag_device_name),
-             res->res_dev.label_type);
-      sendit(sock, "        rew_wait=%" lld " min_bs=%d max_bs=%d chgr_wait=%" lld "\n",
-             res->res_dev.max_rewind_wait, res->res_dev.min_block_size,
-             res->res_dev.max_block_size, res->res_dev.max_changer_wait);
-      sendit(sock, "        max_jobs=%d max_files=%" lld " max_size=%" lld "\n",
-             res->res_dev.max_volume_jobs, res->res_dev.max_volume_files,
-             res->res_dev.max_volume_size);
-      sendit(sock, "        max_file_size=%" lld " capacity=%" lld "\n",
-             res->res_dev.max_file_size, res->res_dev.volume_capacity);
-      sendit(sock, "        spool_directory=%s\n", NPRT(res->res_dev.spool_directory));
-      sendit(sock, "        max_spool_size=%" lld " max_job_spool_size=%" lld "\n",
-             res->res_dev.max_spool_size, res->res_dev.max_job_spool_size);
-      if (res->res_dev.changer_res) {
-         sendit(sock, "         changer=%p\n", res->res_dev.changer_res);
-      }
-      bstrncpy(buf, "        ", sizeof(buf));
-      if (res->res_dev.cap_bits & CAP_EOF) {
-         bstrncat(buf, "CAP_EOF ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_BSR) {
-         bstrncat(buf, "CAP_BSR ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_BSF) {
-         bstrncat(buf, "CAP_BSF ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_FSR) {
-         bstrncat(buf, "CAP_FSR ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_FSF) {
-         bstrncat(buf, "CAP_FSF ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_EOM) {
-         bstrncat(buf, "CAP_EOM ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_REM) {
-         bstrncat(buf, "CAP_REM ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_RACCESS) {
-         bstrncat(buf, "CAP_RACCESS ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_AUTOMOUNT) {
-         bstrncat(buf, "CAP_AUTOMOUNT ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_LABEL) {
-         bstrncat(buf, "CAP_LABEL ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_ANONVOLS) {
-         bstrncat(buf, "CAP_ANONVOLS ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_ALWAYSOPEN) {
-         bstrncat(buf, "CAP_ALWAYSOPEN ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_CHECKLABELS) {
-         bstrncat(buf, "CAP_CHECKLABELS ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_REQMOUNT) {
-         bstrncat(buf, "CAP_REQMOUNT ", sizeof(buf));
-      }
-      if (res->res_dev.cap_bits & CAP_OFFLINEUNMOUNT) {
-         bstrncat(buf, "CAP_OFFLINEUNMOUNT ", sizeof(buf));
-      }
-      bstrncat(buf, "\n", sizeof(buf));
-      sendit(sock, buf);
-      break;
-   case R_AUTOCHANGER:
-      DEVRES *dev;
-      sendit(sock, "Changer: name=%s Changer_devname=%s\n      Changer_cmd=%s\n",
-             res->res_changer.hdr.name,
-             res->res_changer.changer_name, res->res_changer.changer_command);
-      foreach_alist(dev, res->res_changer.device) {
-         sendit(sock, "   --->Device: name=%s\n", dev->hdr.name);
-      }
-      bstrncat(buf, "\n", sizeof(buf));
-      sendit(sock, buf);
-      break;
-   case R_MSGS:
-      sendit(sock, "Messages: name=%s\n", res->res_msgs.hdr.name);
-      if (res->res_msgs.mail_cmd)
-         sendit(sock, "      mailcmd=%s\n", res->res_msgs.mail_cmd);
-      if (res->res_msgs.operator_cmd)
-         sendit(sock, "      opcmd=%s\n", res->res_msgs.operator_cmd);
-      break;
-   default:
-      sendit(sock, _("Warning: unknown resource type %d\n"), type);
+   case R_MSGS: {
+      MSGSRES *resclass = (MSGSRES *)reshdr;
+      resclass->print_config(buf);
       break;
    }
-   if (recurse && res->res_dir.hdr.next)
+   default:
+      resclass = (BRSRES *)reshdr;
+      resclass->print_config(buf);
+      break;
+   }
+   sendit(sock, "%s", buf.c_str());
+
+   if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, (RES *)res->res_dir.hdr.next, sendit, sock);
+   }
 }
 
 /*
@@ -976,10 +873,8 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
+void init_sd_config(CONFIG *config, const char *configfile, int exit_code)
 {
-   bool retval;
-
    config->init(configfile,
                 NULL,
                 NULL,
@@ -993,6 +888,13 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+}
+
+bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
+{
+   bool retval;
+
+   init_sd_config( config, configfile, exit_code );
    retval = config->parse_config();
 
    if (retval) {
@@ -1008,4 +910,36 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
    }
 
    return retval;
+}
+
+/*
+ * Print configuration file schema in json format
+ */
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   RES_TABLE *resources = my_config->m_resources;
+
+   add_json_object_start(buffer, 0, "");
+
+   add_json_pair(buffer, 1, "format-version", 2);
+   add_json_pair(buffer, 1, "component", "bareos-sd");
+   add_json_pair(buffer, 1, "version", VERSION);
+
+   /*
+    * Resources
+    */
+   add_json_object_start(buffer, 1, "resource");
+   add_json_object_start(buffer, 2, "bareos-sd");
+
+   for (int r = 0; resources[r].name; r++) {
+      RES_TABLE resource = my_config->m_resources[r];
+      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+   }
+
+   add_json_object_end(buffer, 2, "bareos-sd", true);
+   add_json_object_end(buffer, 1, "resource", true);
+
+   add_json_object_end(buffer, 0, "", true);
+
+   return true;
 }

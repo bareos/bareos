@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
 extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code);
+extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
 static bool check_resources();
@@ -56,20 +57,22 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bareos-fd [-f -s] [-c config_file] [-d debug_level]\n"
+"Usage: bareos-fd [options] [-c config_file]\n"
 "        -b          backup only mode\n"
 "        -c <file>   use <file> as configuration file\n"
 "        -d <nn>     set debug level to <nn>\n"
-"        -dt         print a timestamp in debug output\n"
+"        -dt         print timestamp in debug output\n"
 "        -f          run in foreground (for debugging)\n"
-"        -g          groupid\n"
+"        -g <group>  run as group <group>\n"
 "        -k          keep readall capabilities\n"
 "        -m          print kaboom output (for debugging)\n"
 "        -r          restore only mode\n"
 "        -s          no signals (for debugging)\n"
 "        -t          test configuration file and exit\n"
-"        -u          userid\n"
+"        -u <user>   run as user <user>\n"
 "        -v          verbose user messages\n"
+"        -xc         print configuration and exit\n"
+"        -xs         print configuration file schema in JSON format and exit\n"
 "        -?          print this message.\n"
 "\n"), 2000, VERSION, BDATE);
 
@@ -90,6 +93,8 @@ int main (int argc, char *argv[])
 {
    int ch;
    bool test_config = false;
+   bool export_config = false;
+   bool export_config_schema = false;
    bool keep_readall_caps = false;
    char *uid = NULL;
    char *gid = NULL;
@@ -104,7 +109,7 @@ int main (int argc, char *argv[])
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
 
-   while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "bc:d:fg:kmrstu:vx:?")) != -1) {
       switch (ch) {
       case 'b':
          backup_only_mode = true;
@@ -164,10 +169,20 @@ int main (int argc, char *argv[])
          verbose++;
          break;
 
+      case 'x':                    /* export configuration/schema and exit */
+         if (*optarg == 's') {
+            export_config_schema = true;
+         } else if (*optarg == 'c') {
+            export_config = true;
+         } else {
+            usage();
+         }
+         break;
+
       case '?':
       default:
          usage();
-
+         break;
       }
    }
    argc -= optind;
@@ -182,6 +197,10 @@ int main (int argc, char *argv[])
    }
    if (argc) {
       usage();
+   }
+
+   if (configfile == NULL) {
+      configfile = bstrdup(CONFIG_FILE);
    }
 
    if (!uid && keep_readall_caps) {
@@ -204,12 +223,22 @@ int main (int argc, char *argv[])
       watchdog_sleep_time = 120;      /* long timeout for debugging */
    }
 
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
+   if (export_config_schema) {
+      my_config = new_config_parser();
+      init_fd_config(my_config, configfile, M_ERROR_TERM);
+      POOL_MEM buffer;
+      print_config_schema_json(buffer);
+      printf( "%s\n", buffer.c_str() );
+      goto bail_out;
    }
 
    my_config = new_config_parser();
    parse_fd_config(my_config, configfile, M_ERROR_TERM);
+
+   if (export_config) {
+      my_config->dump_resources(prtmsg, NULL);
+      goto bail_out;
+   }
 
    if (init_crypto() != 0) {
       Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
@@ -262,7 +291,8 @@ int main (int argc, char *argv[])
 
    terminate_filed(0);
 
-   exit(0);                           /* should never get here */
+bail_out:
+   exit(0);
 }
 
 void terminate_filed(int sig)

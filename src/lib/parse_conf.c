@@ -58,6 +58,8 @@
 #define MAX_PATH  1024
 #endif
 
+extern void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock);
+
 /*
  * Define the Union of all the common resource structure definitions.
  */
@@ -75,7 +77,7 @@ static bool find_config_file(const char *config_file, char *full_path, int max_p
 /*
  * Simply print a message
  */
-static void prtmsg(void *sock, const char *fmt, ...)
+void prtmsg(void *sock, const char *fmt, ...)
 {
    va_list arg_ptr;
 
@@ -649,5 +651,14 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
    }
    default:
       break;
+   }
+}
+
+void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...), void *sock)
+{
+   for (int i = m_r_first; i <= m_r_last; i++) {
+      if (m_res_head[i - m_r_first]) {
+         ::dump_resource(i,m_res_head[i - m_r_first],sendit,sock);
+      }
    }
 }

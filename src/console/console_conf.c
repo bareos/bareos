@@ -70,44 +70,44 @@ static int32_t res_all_size = sizeof(res_all);
 
 /*  Console "globals" */
 static RES_ITEM cons_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL },
-   { "rcfile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL },
-   { "historyfile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL },
-   { "historylength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100" },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL },
-   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL },
-   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_cons.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL },
-   { "tlskey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL },
-   { "director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL },
-   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_cons.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource." },
+   { "Description", CFG_TYPE_STR, ITEM(res_cons.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "RcFile", CFG_TYPE_DIR, ITEM(res_cons.rc_file), 0, 0, NULL, NULL, NULL },
+   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL, NULL, NULL },
+   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "TlsAuthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_cons.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
+   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*  Director's that we can contact */
 static RES_ITEM dir_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "tlsauthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsenable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL },
-   { "tlsrequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL },
-   { "tlsverifypeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true" },
-   { "tlscacertificatefile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL },
-   { "tlscacertificatedir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL },
-   { "tlscertificaterevocationlist", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL },
-   { "tlscertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL },
-   { "tlskey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL },
-   { "heartbeatinterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
+   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "TlsAuthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -115,37 +115,36 @@ static RES_ITEM dir_items[] = {
  * It must have one item for each of the resources.
  */
 static RES_TABLE resources[] = {
-   { "console", cons_items, R_CONSOLE, sizeof(CONRES) },
-   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "Console", cons_items, R_CONSOLE, sizeof(CONRES) },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
    { NULL, NULL, 0 }
 };
 
 /* Dump contents of resource */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
+   POOL_MEM buf;
    URES *res = (URES *)reshdr;
+   BRSRES *resclass;
    bool recurse = true;
 
    if (res == NULL) {
-      printf(_("No record for %d %s\n"), type, res_to_str(type));
+      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), res_to_str(type), type);
       return;
    }
    if (type < 0) {                    /* no recursion */
       type = - type;
       recurse = false;
    }
+
    switch (type) {
-   case R_CONSOLE:
-      printf(_("Console: name=%s rcfile=%s histfile=%s histsize=%d\n"), reshdr->name,
-             res->res_cons.rc_file, res->res_cons.history_file, res->res_cons.history_length);
-      break;
-   case R_DIRECTOR:
-      printf(_("Director: name=%s address=%s DIRport=%d\n"), reshdr->name,
-              res->res_dir.address, res->res_dir.DIRport);
-      break;
-   default:
-      printf(_("Unknown resource type %d\n"), type);
+      default:
+         resclass = (BRSRES *)reshdr;
+         resclass->print_config(buf);
+         break;
    }
+   sendit(sock, "%s", buf.c_str());
+
    if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, res->res_dir.hdr.next, sendit, sock);
    }
@@ -312,7 +311,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
-bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
+void init_cons_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -327,5 +326,43 @@ bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+}
+
+bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
+{
+   init_cons_config(config, configfile, exit_code);
    return config->parse_config();
+}
+
+/*
+ * Print configuration file schema in json format
+ */
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   bool datatype_last;
+   RES_TABLE *resources = my_config->m_resources;
+
+   add_json_object_start(buffer, 0, "");
+
+   add_json_pair(buffer, 1, "format-version", 2);
+   add_json_pair(buffer, 1, "component", "bconsole");
+   add_json_pair(buffer, 1, "version", VERSION);
+
+   /*
+    * Resources
+    */
+   add_json_object_start(buffer, 1, "resource");
+   add_json_object_start(buffer, 2, "bconsole");
+
+   for (int r = 0; resources[r].name; r++) {
+      RES_TABLE resource = my_config->m_resources[r];
+      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+   }
+
+   add_json_object_end(buffer, 2, "bconsole", true);
+   add_json_object_end(buffer, 1, "resource", true);
+
+   add_json_object_end(buffer, 0, "", true);
+
+   return true;
 }

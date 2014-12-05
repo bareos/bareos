@@ -104,3 +104,7 @@ union URES {
 };
 
 extern CONRES *me;                    /* "Global" Client resource */
+extern CONFIG *my_config;             /* Our Global config */
+
+void init_cons_config(CONFIG *config, const char *configfile, int exit_code);
+bool print_config_schema_json(POOL_MEM &buffer);

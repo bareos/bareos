@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,7 @@
 
 /* Imported functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
 void terminate_stored(int sig);
@@ -71,13 +72,15 @@ PROG_COPYRIGHT
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -f          run in foreground (for debugging)\n"
-"        -g <group>  set groupid to group\n"
+"        -g <group>  run as group <group>\n"
 "        -m          print kaboom output (for debugging)\n"
 "        -p          proceed despite I/O errors\n"
 "        -s          no signals (for debugging)\n"
-"        -t          test - read config and exit\n"
-"        -u <user>   userid to <user>\n"
+"        -t          test - read configuration and exit\n"
+"        -u <user>   run as user <user>\n"
 "        -v          verbose user messages\n"
+"        -xc         print configuration and exit\n"
+"        -xs         print configuration file schema in JSON format and exit\n"
 "        -?          print this message.\n"
 "\n"), 2000, VERSION, BDATE);
 
@@ -86,7 +89,7 @@ PROG_COPYRIGHT
 
 /*********************************************************************
  *
- *  Main Bareos Unix Storage Daemon
+ *  Main Bareos Storage Daemon
  *
  */
 #if defined(HAVE_WIN32)
@@ -98,6 +101,8 @@ int main (int argc, char *argv[])
    int ch;
    bool no_signals = false;
    bool test_config = false;
+   bool export_config = false;
+   bool export_config_schema = false;
    pthread_t thid;
    char *uid = NULL;
    char *gid = NULL;
@@ -121,7 +126,7 @@ int main (int argc, char *argv[])
       Emsg1(M_ABORT, 0, _("Tape block size (%d) is not a power of 2\n"), TAPE_BSIZE);
    }
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mpstu:vx:?")) != -1) {
       switch (ch) {
       case 'c':                    /* configuration file */
          if (configfile != NULL) {
@@ -173,6 +178,16 @@ int main (int argc, char *argv[])
          verbose++;
          break;
 
+      case 'x':                    /* export configuration/schema and exit */
+         if (*optarg == 's') {
+            export_config_schema = true;
+         } else if (*optarg == 'c') {
+            export_config = true;
+         } else {
+            usage();
+         }
+         break;
+
       case '?':
       default:
          usage();
@@ -190,8 +205,13 @@ int main (int argc, char *argv[])
       argc--;
       argv++;
    }
-   if (argc)
+   if (argc) {
       usage();
+   }
+
+   if (configfile == NULL) {
+      configfile = bstrdup(CONFIG_FILE);
+   }
 
    /*
     * See if we want to drop privs.
@@ -204,12 +224,22 @@ int main (int argc, char *argv[])
       init_signals(terminate_stored);
    }
 
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
+   if (export_config_schema) {
+      my_config = new_config_parser();
+      init_sd_config(my_config, configfile, M_ERROR_TERM);
+      POOL_MEM buffer;
+      print_config_schema_json(buffer);
+      printf( "%s\n", buffer.c_str() );
+      goto bail_out;
    }
 
    my_config = new_config_parser();
    parse_sd_config(my_config, configfile, M_ERROR_TERM);
+
+   if (export_config) {
+      my_config->dump_resources(prtmsg, NULL);
+      goto bail_out;
+   }
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
@@ -290,7 +320,11 @@ int main (int argc, char *argv[])
     */
    start_socket_server(me->SDaddrs);
 
-   exit(1);                           /* to keep compiler quiet */
+   /* to keep compiler quiet */
+   terminate_stored(0);
+
+bail_out:
+   return 0;
 }
 
 /* Return a new Session Id */

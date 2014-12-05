@@ -43,6 +43,8 @@
 #include "bareos.h"
 #include "tray_conf.h"
 
+extern CONFIG *my_config;             /* Our Global config */
+
 /*
  * Define the first and last resource ID record
  * types. Note, these should be unique for each
@@ -71,15 +73,15 @@ int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static RES_ITEM mon_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0 },
-   { "description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0 },
-   { "requiressl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "refreshinterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60" },
-   { "fdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { "sdconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { "dirconnecttimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL },
+   { "RequireSsl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_monitor.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "RefreshInterval", CFG_TYPE_TIME, ITEM(res_monitor.RefreshInterval), 0, CFG_ITEM_DEFAULT, "60", NULL, NULL },
+   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
+   { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
+   { "DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -88,12 +90,12 @@ static RES_ITEM mon_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL },
-   { "dirport", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT },
-   { "address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
+   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -102,13 +104,13 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL },
-   { "address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "fdport", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -117,15 +119,15 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL },
-   { "sdport", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT },
-   { "address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL },
-   { "sdaddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL },
-   { "password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL },
-   { "sdpassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL },
-   { "enablessl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false" },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
+   { "Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, 0, NULL, NULL, NULL },
+   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL },
+   { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -134,10 +136,10 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM con_font_items[] = {
-   { "name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
-   { "description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL },
-   { "font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+   { "Name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
@@ -150,11 +152,11 @@ static RES_ITEM con_font_items[] = {
  *  name items rcode res_head
  */
 static RES_TABLE resources[] = {
-   { "monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
-   { "director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "storage", store_items, R_STORAGE, sizeof(STORERES) },
-   { "consolefont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
+   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
+   { "Storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
    { NULL, NULL, 0, 0 }
 };
 
@@ -163,12 +165,13 @@ static RES_TABLE resources[] = {
  */
 void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
 {
+   POOL_MEM buf;
    URES *res = (URES *)reshdr;
+   BRSRES *resclass;
    bool recurse = true;
-   char ed1[100], ed2[100];
 
    if (res == NULL) {
-      sendit(sock, _("No %s resource defined\n"), res_to_str(type));
+      sendit(sock, _("Warning: no \"%s\" resource (%d) defined.\n"), res_to_str(type), type);
       return;
    }
    if (type < 0) { /* no recursion */
@@ -176,32 +179,13 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       recurse = false;
    }
    switch (type) {
-   case R_MONITOR:
-      sendit(sock, _("Monitor: name=%s FDtimeout=%s SDtimeout=%s\n"),
-             reshdr->name,
-             edit_uint64(res->res_monitor.FDConnectTimeout, ed1),
-             edit_uint64(res->res_monitor.SDConnectTimeout, ed2));
-      break;
-   case R_DIRECTOR:
-      sendit(sock, _("Director: name=%s address=%s FDport=%d\n"),
-             res->res_dir.hdr.name, res->res_dir.address, res->res_dir.DIRport);
-      break;
-   case R_CLIENT:
-      sendit(sock, _("Client: name=%s address=%s FDport=%d\n"),
-             res->res_client.hdr.name, res->res_client.address, res->res_client.FDport);
-      break;
-   case R_STORAGE:
-      sendit(sock, _("Storage: name=%s address=%s SDport=%d\n"),
-             res->res_store.hdr.name, res->res_store.address, res->res_store.SDport);
-      break;
-   case R_CONSOLE_FONT:
-      sendit(sock, _("ConsoleFont: name=%s font face=%s\n"),
-             reshdr->name, NPRT(res->con_font.fontface));
-      break;
-   default:
-      sendit(sock, _("Unknown resource type %d in dump_resource.\n"), type);
-      break;
+      default:
+         resclass = (BRSRES *)reshdr;
+         resclass->print_config(buf);
+         break;
    }
+   sendit(sock, "%s", buf.c_str());
+
    if (recurse && res->res_monitor.hdr.next) {
       dump_resource(type, res->res_monitor.hdr.next, sendit, sock);
    }
@@ -373,7 +357,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
-bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
+void init_tmon_config(CONFIG *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -388,5 +372,42 @@ bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+}
+
+bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
+{
+   init_tmon_config(config, configfile, exit_code);
    return config->parse_config();
+}
+
+/*
+ * Print configuration file schema in json format
+ */
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   RES_TABLE *resources = my_config->m_resources;
+
+   add_json_object_start(buffer, 0, "");
+
+   add_json_pair(buffer, 1, "format-version", 2);
+   add_json_pair(buffer, 1, "component", "bareos-tray-monitor");
+   add_json_pair(buffer, 1, "version", VERSION);
+
+   /*
+    * Resources
+    */
+   add_json_object_start(buffer, 1, "resource");
+   add_json_object_start(buffer, 2, "bareos-tray-monitor");
+
+   for (int r = 0; resources[r].name; r++) {
+      RES_TABLE resource = my_config->m_resources[r];
+      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+   }
+
+   add_json_object_end(buffer, 2, "bareos-tray-monitor", true);
+   add_json_object_end(buffer, 1, "resource", true);
+
+   add_json_object_end(buffer, 0, "", true);
+
+   return true;
 }

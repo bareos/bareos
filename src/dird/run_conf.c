@@ -139,7 +139,7 @@ static void set_defaults()
 /*
  * Keywords (RHS) permitted in Run records
  */
-static struct s_kw RunFields[] = {
+struct s_kw RunFields[] = {
    { "pool", 'P' },
    { "fullpool", 'f' },
    { "incrementalpool", 'i' },

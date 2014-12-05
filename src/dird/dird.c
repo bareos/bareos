@@ -51,6 +51,7 @@ static void cleanup_old_files();
 extern "C" void reload_config(int sig);
 extern void invalidate_schedules();
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
+extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
 void init_job_server(int max_workers);
@@ -118,20 +119,21 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bareos-dir [-f -s] [-c config_file] [-d debug_level] [config_file]\n"
-"       -c <file>   set configuration file to file\n"
-"       -d <nn>     set debug level to <nn>\n"
-"       -dt         print timestamp in debug output\n"
-"       -f          run in foreground (for debugging)\n"
-"       -g          groupid\n"
-"       -m          print kaboom output (for debugging)\n"
-"       -r <job>    run <job> now\n"
-"       -s          no signals\n"
-"       -t          test - read configuration and exit\n"
-"       -u          userid\n"
-"       -v          verbose user messages\n"
-"       -x          print configuration file schema in JSON format and exit\n"
-"       -?          print this message.\n"
+"Usage: bareos-dir [options] [-c config_file] [-d debug_level] [config_file]\n"
+"        -c <file>   use <file> as configuration file\n"
+"        -d <nn>     set debug level to <nn>\n"
+"        -dt         print timestamp in debug output\n"
+"        -f          run in foreground (for debugging)\n"
+"        -g <group>  run as group <group>\n"
+"        -m          print kaboom output (for debugging)\n"
+"        -r <job>    run <job> now\n"
+"        -s          no signals (for debugging)\n"
+"        -t          test - read configuration and exit\n"
+"        -u <user>   run as user <user>\n"
+"        -v          verbose user messages\n"
+"        -xc         print configuration and exit\n"
+"        -xs         print configuration file schema in JSON format and exit\n"
+"        -?          print this message.\n"
 "\n"), 2000, VERSION, BDATE);
 
    exit(1);
@@ -154,6 +156,7 @@ int main (int argc, char *argv[])
    cat_op mode;
    bool no_signals = false;
    bool test_config = false;
+   bool export_config = false;
    bool export_config_schema = false;
    char *uid = NULL;
    char *gid = NULL;
@@ -171,7 +174,7 @@ int main (int argc, char *argv[])
 
    console_command = run_console_command;
 
-   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx?")) != -1) {
+   while ((ch = getopt(argc, argv, "c:d:fg:mr:stu:vx:?")) != -1) {
       switch (ch) {
       case 'c':                    /* specify config file */
          if (configfile != NULL) {
@@ -229,14 +232,20 @@ int main (int argc, char *argv[])
          verbose++;
          break;
 
-      case 'x':                    /* export configuration file schema (json) and exit */
-         export_config_schema = true;
+      case 'x':                    /* export configuration/schema and exit */
+         if (*optarg == 's') {
+            export_config_schema = true;
+         } else if (*optarg == 'c') {
+            export_config = true;
+         } else {
+            usage();
+         }
          break;
 
       case '?':
       default:
          usage();
-
+         break;
       }
    }
    argc -= optind;
@@ -280,6 +289,11 @@ int main (int argc, char *argv[])
 
    my_config = new_config_parser();
    parse_dir_config(my_config, configfile, M_ERROR_TERM);
+
+   if (export_config) {
+      my_config->dump_resources(prtmsg, NULL);
+      goto bail_out;
+   }
 
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));

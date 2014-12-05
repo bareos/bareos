@@ -79,6 +79,8 @@ void catalog_update(JCR *jcr, BSOCK *bs);
 bool despool_attributes_from_file(JCR *jcr, const char *file);
 
 /* dird_conf.c */
+bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type,
+                                RES_ITEM items[], const bool last = false);
 const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
@@ -112,6 +114,10 @@ bool response(JCR *jcr, BSOCK *fd, char *resp, const char *cmd, e_prtmsg prtmsg)
 
 /* inc_conf.c */
 void find_used_compressalgos(POOL_MEM* compressalgos, JCR* jcr);
+bool print_incexc_schema_json(POOL_MEM &buffer, int level,
+                              const int type, const bool last = false);
+bool print_options_schema_json(POOL_MEM &buffer, int level,
+                               const int type, const bool last = false);
 
 /* job.c */
 bool allow_duplicate_job(JCR *jcr);

@@ -50,58 +50,58 @@ static INCEXE res_incexe;
  * new Include/Exclude items
  * name handler value code flags default_value
  */
-static RES_ITEM newinc_items[] = {
-   { "file", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL },
-   { "plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL },
-   { "excludedircontaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL },
-   { "options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+RES_ITEM newinc_items[] = {
+   { "File", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Options", CFG_TYPE_OPTIONS, { 0 }, 0, 0, NULL, NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 /*
  * Items that are valid in an Options resource
  * name handler value code flags default_value
  */
-static RES_ITEM options_items[] = {
-   { "compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "basejob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "onefs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "hardlinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "readfifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "mtimeonly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "keepatime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL },
-   { "regexdir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL },
-   { "regexfile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL },
-   { "base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL },
-   { "wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL },
-   { "wilddir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL },
-   { "wildfile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL },
-   { "exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "aclsupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL },
-   { "ignorecase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "fstype", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL },
-   { "hfsplussupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "noatime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "enhancedwild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "drivetype", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL },
-   { "checkfilechanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "strippath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "honornodumpflag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "xattrsupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "autoexclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL },
-   { "meta", CFG_TYPE_META, { 0 }, 0, 0, 0 },
-   { NULL, 0, { 0 }, 0, 0, NULL }
+RES_ITEM options_items[] = {
+   { "Compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "BaseJob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Accurate", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Verify", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "OneFs", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Recurse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Sparse", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "HardLinks", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "ReadFifo", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Replace", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Portable", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "MtimeOnly", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "KeepAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Regex", CFG_TYPE_REGEX, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "RegexDir", CFG_TYPE_REGEX, { 0 }, 1, 0, NULL, NULL, NULL },
+   { "RegexFile", CFG_TYPE_REGEX, { 0 }, 2, 0, NULL, NULL, NULL },
+   { "Base", CFG_TYPE_BASE, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Wild", CFG_TYPE_WILD, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "WildDir", CFG_TYPE_WILD, { 0 }, 1, 0, NULL, NULL, NULL },
+   { "WildFile", CFG_TYPE_WILD, { 0 }, 2, 0, NULL, NULL, NULL },
+   { "Exclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "AclSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Plugin", CFG_TYPE_PLUGIN, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "IgnoreCase", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "FsType", CFG_TYPE_FSTYPE, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "HfsPlusSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "NoAtime", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "EnhancedWild", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "DriveType", CFG_TYPE_DRIVETYPE, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "CheckFileChanges", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "StripPath", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "HonornoDumpFlag", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "XAttrSupport", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "AutoExclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
 #include "inc_conf.h"
@@ -812,4 +812,16 @@ void store_inc(LEX *lc, RES_ITEM *item, int index, int pass)
       return;
    }
    scan_err0(lc, _("Old style Include/Exclude not supported\n"));
+}
+
+bool print_incexc_schema_json(POOL_MEM &buffer, int level,
+                              const int type, const bool last)
+{
+   return print_datatype_schema_json(buffer, level, type, newinc_items, last);
+}
+
+bool print_options_schema_json(POOL_MEM &buffer, int level,
+                               const int type, const bool last)
+{
+   return print_datatype_schema_json(buffer, level, type, options_items, last);
 }

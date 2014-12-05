@@ -31,7 +31,6 @@
 
 /* Forward referenced subroutines */
 static void scan_types(LEX *lc, MSGSRES *msg, int dest, char *where, char *cmd);
-static const char *datatype_to_str(int type);
 
 extern CONFIG *my_config;             /* Our Global config */
 
@@ -1831,35 +1830,41 @@ static void add_indent(POOL_MEM &cfg_str, int level)
    }
 }
 
-void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value)
+void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last)
 {
    POOL_MEM temp;
 
    add_indent(cfg_str, level);
-   Mmsg(temp, "\"%s\": %s,\n", string, value);
+   Mmsg(temp, "\"%s\": %s", string, value);
    pm_strcat(cfg_str, temp.c_str());
+   if ( last ) {
+      pm_strcat(cfg_str, "\n");
+   } else {
+      pm_strcat(cfg_str, ",\n");
+   }
 }
 
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value)
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last)
 {
    POOL_MEM temp;
 
    Mmsg(temp, "\"%s\"", value);
-   add_json_pair_plain(cfg_str, level, string, temp.c_str());
+   add_json_pair_plain(cfg_str, level, string, temp.c_str(), last);
 }
 
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value)
+void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value, const bool last)
 {
    POOL_MEM temp;
 
    Mmsg(temp, "%d", value);
-   add_json_pair_plain(cfg_str, level, string, temp.c_str());
+   add_json_pair_plain(cfg_str, level, string, temp.c_str(), last);
 }
 
 void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string)
 {
-   add_indent(cfg_str, level);
    POOL_MEM temp;
+
+   add_indent(cfg_str, level);
    if (bstrcmp(string, "")) {
       Mmsg(temp, "{\n");
    } else {
@@ -1868,12 +1873,10 @@ void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string)
    pm_strcat(cfg_str, temp.c_str());
 }
 
-void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string)
+void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string, const bool last)
 {
-   add_indent(cfg_str, level + 1);
-   pm_strcat(cfg_str, "\"\": null\n");
    add_indent(cfg_str, level);
-   if (bstrcmp(string, "")) {
+   if (last) {
       pm_strcat(cfg_str, "}\n");
    } else {
       pm_strcat(cfg_str, "},\n");
@@ -1894,62 +1897,67 @@ void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string)
  *     [ "deprecated": true, ]
  *     [ "equals": true, ]
  *     ...
+ *     "type": "RES_ITEM"
  *   }
  */
-bool print_res_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item)
+bool print_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item, const bool last)
 {
-    add_json_object_start(buff, level, item->name);
+   add_json_object_start(buff, level, item->name);
 
-    add_json_pair(buff, level + 1, "datatype", datatype_to_str(item->type));
-    add_json_pair(buff, level + 1, "datatype_number", item->type);
-    add_json_pair(buff, level + 1, "code", item->code);
+   add_json_pair(buff, level + 1, "datatype", datatype_to_str(item->type));
 
-    if (item->flags & CFG_ITEM_ALIAS) {
-       add_json_pair(buff, level + 1, "alias", "true");
-    }
-    if (item->flags & CFG_ITEM_DEFAULT) {
-       add_json_pair(buff, level + 1, "default_value", item->default_value);
-    }
-    if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
-       add_json_pair(buff, level + 1, "platform_specific", "true");
-    }
-    if (item->flags & CFG_ITEM_DEPRECATED) {
-       add_json_pair_plain(buff, level + 1, "deprecated", "true");
-    }
-    if (item->flags & CFG_ITEM_NO_EQUALS) {
-       add_json_pair_plain(buff, level + 1, "equals", "false");
-    } else {
-       add_json_pair_plain(buff, level + 1, "equals", "true");
-    }
-    if (item->flags & CFG_ITEM_REQUIRED) {
-       add_json_pair_plain(buff, level + 1, "required", "true");
-    }
-    add_json_object_end(buff, level, item->name);
+   if (item->flags & CFG_ITEM_ALIAS) {
+      add_json_pair(buff, level + 1, "alias", "true");
+   }
+   if (item->flags & CFG_ITEM_DEFAULT) {
+      add_json_pair(buff, level + 1, "default_value", item->default_value);
+   }
+   if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
+      add_json_pair(buff, level + 1, "platform_specific", "true");
+   }
+   if (item->flags & CFG_ITEM_DEPRECATED) {
+      add_json_pair_plain(buff, level + 1, "deprecated", "true");
+   }
+   if (item->flags & CFG_ITEM_NO_EQUALS) {
+      add_json_pair_plain(buff, level + 1, "equals", "false");
+   } else {
+      add_json_pair_plain(buff, level + 1, "equals", "true");
+   }
+   if (item->flags & CFG_ITEM_REQUIRED) {
+      add_json_pair_plain(buff, level + 1, "required", "true");
+   }
+   if (item->versions) {
+      add_json_pair(buff, level + 1, "versions", item->versions);
+   }
+   if (item->description) {
+      add_json_pair(buff, level + 1, "description", item->description);
+   }
+
+   add_json_pair(buff, level + 1, "code", item->code, true);
+
+   add_json_object_end(buff, level, item->name, last);
 
    return true;
 }
 
-/*
- * Print configuration file schema in json format
- */
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_item_schema_json(POOL_MEM &buff, int level, s_kw *item, const bool last)
 {
-   RES_TABLE *resources = my_config->m_resources;
+   add_json_object_start(buff, level, item->name);
+   add_json_pair(buff, level + 1, "token", item->token, true);
+   add_json_object_end(buff, level, item->name, last);
 
-   add_json_object_start(buffer, 0, "");
-   for (int r = 0; resources[r].name; r++) {
-      RES_TABLE resource = my_config->m_resources[r];
+   return true;
+}
 
-      add_json_object_start(buffer, 1, resource.name);
-      if (resource.items) {
-         RES_ITEM* items = resource.items;
-         for (int i = 0; items[i].name; i++) {
-            print_res_item_schema_json(buffer, 2, &items[i]);
-         }
+bool print_items_schema_json(POOL_MEM &buffer, int level, const char *name, RES_ITEM items[], const bool last)
+{
+   add_json_object_start(buffer, level, name);
+   if (items) {
+      for (int i = 0; items[i].name; i++) {
+         print_item_schema_json(buffer, level+1, &items[i], items[i+1].name == NULL);
       }
-      add_json_object_end(buffer, 1, resource.name);
    }
-   add_json_object_end(buffer, 0, "");
+   add_json_object_end(buffer, level, name, last);
 
    return true;
 }
@@ -2041,13 +2049,38 @@ static DATATYPE_NAME datatype_names[] = {
    { 0, NULL, NULL }
 };
 
-static const char *datatype_to_str(int type)
+DATATYPE_NAME *get_datatype(int number)
 {
-   for (int i=0; datatype_names[i].name; i++) {
+   int size = sizeof(datatype_names) / sizeof(datatype_names[0]);
+
+   if (number >= size) {
+      /*
+       * Last entry of array is a dummy entry
+       */
+      number=size - 1;
+   }
+
+   return &(datatype_names[number]);
+}
+
+const char *datatype_to_str(int type)
+{
+   for (int i = 0; datatype_names[i].name; i++) {
       if (datatype_names[i].number == type) {
          return datatype_names[i].name;
       }
    }
 
    return "unknown";
+}
+
+const char *datatype_to_description(int type)
+{
+   for (int i = 0; datatype_names[i].name; i++) {
+      if (datatype_names[i].number == type) {
+         return datatype_names[i].description;
+      }
+   }
+
+   return NULL;
 }
