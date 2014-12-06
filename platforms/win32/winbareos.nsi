@@ -1646,6 +1646,11 @@ Section Uninstall
   KillProcWMI::KillProc "bconsole.exe"
   KillProcWMI::KillProc "bat.exe"
 
+  # be sure and also kill the other daemons
+  KillProcWMI::KillProc "bareos-fd.exe"
+  KillProcWMI::KillProc "bareos-sd.exe"
+  KillProcWMI::KillProc "bareos-dir.exe"
+
   StrCmp $SilentKeepConfig "yes" ConfDeleteSkip # keep if silent and  $SilentKeepConfig is yes
 
   MessageBox MB_YESNO|MB_ICONQUESTION \
