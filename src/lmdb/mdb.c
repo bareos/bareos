@@ -201,7 +201,9 @@ union semun {
 #endif
 
 #if defined(_WIN32) || (defined(EOWNERDEAD) && !defined(MDB_USE_SYSV_SEM))
+#ifdef PTHREAD_MUTEX_ROBUST
 #define MDB_ROBUST_SUPPORTED	1
+#endif
 #endif
 
 	/** Wrapper around __func__, which is a C99 feature */

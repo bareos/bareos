@@ -36,6 +36,7 @@ LIBBAREOSLMDB_OBJS = $(LIBBAREOSLMDB_SRCS:.c=.o)
 LIBBAREOSLMDB_LOBJS = $(LIBBAREOSLMDB_SRCS:.c=.lo)
 
 INCLUDES += -I. -I$(srcdir) -I$(basedir) -I$(basedir)/include
+CPPFLAGS += -D__USE_XOPEN2K8
 
 .SUFFIXES:	.c .cc .o .lo .ch .dvi .pdf .tex .view .w .1
 .PHONY:
