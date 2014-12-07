@@ -25,7 +25,7 @@ Upgrade:
     * every file from /usr/share/dbconfig-common/data/bareos-database-common/upgrade/DATABASE/*, that is larger than parameter $2 (package version of replaced package) will be installed.
         * even if the filename "is larger" than current package version
         * dbconfig does not store the installed version. It uses only the old and the current package version.
-    * in Baroes, different branches can each do a database version update, example:
+    * in Bareos, different branches can each do a database version update, example:
       * 12.4.6: 2001
       * 12.4.7: 2002
       * 12.4.8: 2003
