@@ -45,36 +45,8 @@ char SD_IMP_EXP *configfile;
 STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
 CONFIG SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
-#ifdef DEBUG
-char *rec_state_bits_to_str(DEV_RECORD *rec)
-{
-   static char buf[200];
-   buf[0] = 0;
-   if (rec->state_bits & REC_NO_HEADER) {
-      strcat(buf, _("Nohdr,"));
-   }
-   if (is_partial_record(rec)) {
-      strcat(buf, _("partial,"));
-   }
-   if (rec->state_bits & REC_BLOCK_EMPTY) {
-      strcat(buf, _("empty,"));
-   }
-   if (rec->state_bits & REC_NO_MATCH) {
-      strcat(buf, _("Nomatch,"));
-   }
-   if (rec->state_bits & REC_CONTINUATION) {
-      strcat(buf, _("cont,"));
-   }
-   if (buf[0]) {
-      buf[strlen(buf)-1] = 0;
-   }
-   return buf;
-}
-#endif
-
 /*
- * Setup a "daemon" JCR for the various standalone
- *  tools (e.g. bls, bextract, bscan, ...)
+ * Setup a "daemon" JCR for the various standalone tools (e.g. bls, bextract, bscan, ...)
  */
 JCR *setup_jcr(const char *name, char *dev_name,
                BSR *bsr, DIRRES *director, DCR *dcr,
@@ -310,18 +282,20 @@ static DEVRES *find_device_res(char *device_name, bool readonly)
  */
 void display_tape_error_status(JCR *jcr, DEVICE *dev)
 {
-   uint32_t status;
+   char *status;
 
    status = dev->status_dev();
-   Dmsg1(20, "Device status: %x\n", status);
-   if (status & BMT_EOD)
+
+   if (bit_is_set(BMT_EOD, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Data\n"));
-   else if (status & BMT_EOT)
+   else if (bit_is_set(BMT_EOT, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of Tape\n"));
-   else if (status & BMT_EOF)
+   else if (bit_is_set(BMT_EOF, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected End of File\n"));
-   else if (status & BMT_DR_OPEN)
+   else if (bit_is_set(BMT_DR_OPEN, status))
       Jmsg(jcr, M_ERROR, 0, _("Tape Door is Open\n"));
-   else if (!(status & BMT_ONLINE))
+   else if (!bit_is_set(BMT_ONLINE, status))
       Jmsg(jcr, M_ERROR, 0, _("Unexpected Tape is Off-line\n"));
+
+   free(status);
 }

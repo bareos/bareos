@@ -163,7 +163,7 @@ public:
    bool query_crypto_status;          /* Query device for crypto status */
    bool collectstats;                 /* Set if statistics should be collected */
    uint32_t drive_index;              /* Autochanger drive index */
-   uint32_t cap_bits;                 /* Capabilities of this device */
+   char cap_bits[CAP_BYTES];          /* Capabilities of this device */
    utime_t max_changer_wait;          /* Changer timeout */
    utime_t max_rewind_wait;           /* Maximum secs to wait for rewind */
    utime_t max_open_wait;             /* Maximum secs to wait for open */

@@ -41,7 +41,7 @@
 
 /* m_blocked states (mutually exclusive) */
 enum {
-   BST_NOT_BLOCKED = 0,               /* not blocked */
+   BST_NOT_BLOCKED = 0,               /* Not blocked */
    BST_UNMOUNTED,                     /* User unmounted device */
    BST_WAITING_FOR_SYSOP,             /* Waiting for operator to mount tape */
    BST_DOING_ACQUIRE,                 /* Opening/validating/moving tape */

@@ -848,7 +848,7 @@ static bool reserve_device_for_read(DCR *dcr)
    if (dev->is_busy()) {
       Dmsg4(dbglvl, "Device %s is busy ST_READREADY=%d num_writers=%d reserved=%d.\n",
          dev->print_name(),
-         dev->state & ST_READREADY ? 1 : 0, dev->num_writers, dev->num_reserved());
+         bit_is_set(ST_READREADY, dev->state) ? 1 : 0, dev->num_writers, dev->num_reserved());
       Mmsg(jcr->errmsg, _("3602 JobId=%u device %s is busy (already reading/writing).\n"),
             jcr->JobId, dev->print_name());
       queue_reserve_message(jcr);

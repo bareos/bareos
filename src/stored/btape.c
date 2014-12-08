@@ -690,41 +690,40 @@ static void bsrcmd()
 }
 
 /*
- * List device capabilities as defined in the
- *  stored.conf file.
+ * List device capabilities as defined in the stored.conf file.
  */
 static void capcmd()
 {
    printf(_("Configured device capabilities:\n"));
-   printf("%sEOF ", dev->capabilities & CAP_EOF ? "" : "!");
-   printf("%sBSR ", dev->capabilities & CAP_BSR ? "" : "!");
-   printf("%sBSF ", dev->capabilities & CAP_BSF ? "" : "!");
-   printf("%sFSR ", dev->capabilities & CAP_FSR ? "" : "!");
-   printf("%sFSF ", dev->capabilities & CAP_FSF ? "" : "!");
-   printf("%sFASTFSF ", dev->capabilities & CAP_FASTFSF ? "" : "!");
-   printf("%sBSFATEOM ", dev->capabilities & CAP_BSFATEOM ? "" : "!");
-   printf("%sEOM ", dev->capabilities & CAP_EOM ? "" : "!");
-   printf("%sREM ", dev->capabilities & CAP_REM ? "" : "!");
-   printf("%sRACCESS ", dev->capabilities & CAP_RACCESS ? "" : "!");
-   printf("%sAUTOMOUNT ", dev->capabilities & CAP_AUTOMOUNT ? "" : "!");
-   printf("%sLABEL ", dev->capabilities & CAP_LABEL ? "" : "!");
-   printf("%sANONVOLS ", dev->capabilities & CAP_ANONVOLS ? "" : "!");
-   printf("%sALWAYSOPEN ", dev->capabilities & CAP_ALWAYSOPEN ? "" : "!");
-   printf("%sMTIOCGET ", dev->capabilities & CAP_MTIOCGET ? "" : "!");
+   printf("%sEOF ", dev->has_cap(CAP_EOF) ? "" : "!");
+   printf("%sBSR ", dev->has_cap(CAP_BSR) ? "" : "!");
+   printf("%sBSF ", dev->has_cap(CAP_BSF) ? "" : "!");
+   printf("%sFSR ", dev->has_cap(CAP_FSR) ? "" : "!");
+   printf("%sFSF ", dev->has_cap(CAP_FSF) ? "" : "!");
+   printf("%sFASTFSF ", dev->has_cap(CAP_FASTFSF) ? "" : "!");
+   printf("%sBSFATEOM ", dev->has_cap(CAP_BSFATEOM) ? "" : "!");
+   printf("%sEOM ", dev->has_cap(CAP_EOM) ? "" : "!");
+   printf("%sREM ", dev->has_cap(CAP_REM) ? "" : "!");
+   printf("%sRACCESS ", dev->has_cap(CAP_RACCESS) ? "" : "!");
+   printf("%sAUTOMOUNT ", dev->has_cap(CAP_AUTOMOUNT) ? "" : "!");
+   printf("%sLABEL ", dev->has_cap(CAP_LABEL) ? "" : "!");
+   printf("%sANONVOLS ", dev->has_cap(CAP_ANONVOLS) ? "" : "!");
+   printf("%sALWAYSOPEN ", dev->has_cap(CAP_ALWAYSOPEN) ? "" : "!");
+   printf("%sMTIOCGET ", dev->has_cap(CAP_MTIOCGET) ? "" : "!");
    printf("\n");
 
    printf(_("Device status:\n"));
    printf("%sOPENED ", dev->is_open() ? "" : "!");
    printf("%sTAPE ", dev->is_tape() ? "" : "!");
    printf("%sLABEL ", dev->is_labeled() ? "" : "!");
-   printf("%sMALLOC ", dev->state & ST_MALLOC ? "" : "!");
+   printf("%sMALLOC ", bit_is_set(ST_MALLOC, dev->state) ? "" : "!");
    printf("%sAPPEND ", dev->can_append() ? "" : "!");
    printf("%sREAD ", dev->can_read() ? "" : "!");
    printf("%sEOT ", dev->at_eot() ? "" : "!");
-   printf("%sWEOT ", dev->state & ST_WEOT ? "" : "!");
+   printf("%sWEOT ", bit_is_set(ST_WEOT, dev->state) ? "" : "!");
    printf("%sEOF ", dev->at_eof() ? "" : "!");
-   printf("%sNEXTVOL ", dev->state & ST_NEXTVOL ? "" : "!");
-   printf("%sSHORT ", dev->state & ST_SHORT ? "" : "!");
+   printf("%sNEXTVOL ", bit_is_set(ST_NEXTVOL, dev->state) ? "" : "!");
+   printf("%sSHORT ", bit_is_set(ST_SHORT, dev->state) ? "" : "!");
    printf("\n");
 
    printf(_("Device parameters:\n"));
@@ -798,7 +797,7 @@ static bool re_read_block_test()
    bool rc = false;
    int len;
 
-   if (!(dev->capabilities & CAP_BSR)) {
+   if (!dev->has_cap(CAP_BSR)) {
       Pmsg0(-1, _("Skipping read backwards test because BSR turned off.\n"));
       return true;
    }
@@ -1775,7 +1774,7 @@ static void testcmd()
          if (status == -2) {
             Pmsg0(-1, _("\n\nIt looks like the append failed. Attempting again.\n"
                      "Setting \"BSF at EOM = yes\" and retrying append test.\n"));
-            dev->capabilities |= CAP_BSFATEOM; /* backspace on eom */
+            dev->set_cap(CAP_BSFATEOM); /* Backspace on eom */
             status = append_test();
             if (status == 1) {
                Pmsg0(-1, _("\n\nIt looks like the test worked this time, please add:\n\n"
@@ -2096,7 +2095,7 @@ static void scan_blocks()
             printf(_("End of File mark.\n"));
             continue;
          }
-         if (dev->state & ST_SHORT) {
+         if (bit_is_set(ST_SHORT, dev->state)) {
             if (blocks > 0) {
                if (blocks==1) {
                   printf(_("1 block of %d bytes in file %d\n"), block_size, dev->file);
@@ -2150,18 +2149,45 @@ bail_out:
       edit_uint64_with_commas(bytes, ec1));
 }
 
-
 static void statcmd()
 {
    int debug = debug_level;
+   char *status;
+
+   status = dev->status_dev();
+
+   Pmsg0(0, _("Device status:"));
+   if (bit_is_set(BMT_TAPE, status))
+      Pmsg0(0, " TAPE");
+   if (bit_is_set(BMT_EOF, status))
+      Pmsg0(0, " EOF");
+   if (bit_is_set(BMT_BOT, status))
+      Pmsg0(0, " BOT");
+   if (bit_is_set(BMT_EOT, status))
+      Pmsg0(0, " EOT");
+   if (bit_is_set(BMT_SM, status))
+      Pmsg0(0, " SETMARK");
+   if (bit_is_set(BMT_EOD, status))
+      Pmsg0(0, " EOD");
+   if (bit_is_set(BMT_WR_PROT, status))
+      Pmsg0(0, " WRPROT");
+   if (bit_is_set(BMT_ONLINE, status))
+      Pmsg0(0, " ONLINE");
+   if (bit_is_set(BMT_DR_OPEN, status))
+      Pmsg0(0, " DOOROPEN");
+   if (bit_is_set(BMT_IM_REP_EN, status))
+      Pmsg0(0, " IMMREPORT");
+
+   free(status);
+
+   Pmsg1(0, _(". ERR=%s\n"), dev->bstrerror());
+
    debug_level = 30;
-   Pmsg2(0, _("Device status: %u. ERR=%s\n"), dev->status_dev(), dev->bstrerror());
 #ifdef xxxx
    dump_volume_label(dev);
 #endif
    debug_level = debug;
 }
-
 
 /*
  * First we label the tape, then we fill

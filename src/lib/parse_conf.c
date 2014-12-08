@@ -498,9 +498,9 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
             switch (items[i].type) {
             case CFG_TYPE_BIT:
                if (bstrcasecmp(items[i].default_value, "on")) {
-                  *(items[i].ui32value) |= items[i].code;
+                  set_bit(items[i].code, items[i].bitvalue);
                } else if (bstrcasecmp(items[i].default_value, "off")) {
-                  *(items[i].ui32value) &= ~(items[i].code);
+                  clear_bit(items[i].code, items[i].bitvalue);
                }
                break;
             case CFG_TYPE_BOOL:

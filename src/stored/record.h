@@ -69,22 +69,36 @@ enum rec_state {
 
  */
 
-/* Record state bit definitions */
-#define REC_NO_HEADER        (1<<0)   /* No header read */
-#define REC_PARTIAL_RECORD   (1<<1)   /* returning partial record */
-#define REC_BLOCK_EMPTY      (1<<2)   /* not enough data in block */
-#define REC_NO_MATCH         (1<<3)   /* No match on continuation data */
-#define REC_CONTINUATION     (1<<4)   /* Continuation record found */
-#define REC_ISTAPE           (1<<5)   /* Set if device is tape */
+/*
+ * Record state bit definitions
+ */
+enum {
+   REC_NO_HEADER = 0,                 /* No header read */
+   REC_PARTIAL_RECORD = 1,            /* Returning partial record */
+   REC_BLOCK_EMPTY = 2,               /* Not enough data in block */
+   REC_NO_MATCH = 3,                  /* No match on continuation data */
+   REC_CONTINUATION = 4,              /* Continuation record found */
+   REC_ISTAPE = 5                     /* Set if device is tape */
+};
 
-#define is_partial_record(r) ((r)->state_bits & REC_PARTIAL_RECORD)
-#define is_block_empty(r)    ((r)->state_bits & REC_BLOCK_EMPTY)
+/*
+ * Keep this set to the last entry in the enum.
+ */
+#define REC_STATE_MAX REC_ISTAPE
+
+/*
+ * Make sure you have enough bits to store all above bit fields.
+ */
+#define REC_STATE_BYTES nbytes_for_bits(REC_STATE_MAX + 1)
+
+#define is_partial_record(r) (bit_is_set(REC_PARTIAL_RECORD, (r)->state_bits))
+#define is_block_empty(r) (bit_is_set(REC_BLOCK_EMPTY, (r)->state_bits))
 
 /*
  * DEV_RECORD for reading and writing records.
  * It consists of a Record Header, and the Record Data
  *
- *  This is the memory structure for the record header.
+ * This is the memory structure for the record header.
  */
 struct BSR;                           /* satisfy forward reference */
 struct DEV_RECORD {
@@ -102,7 +116,7 @@ struct DEV_RECORD {
    uint32_t data_len;                 /* Current record length */
    uint32_t remainder;                /* Remaining bytes to read/write */
    uint32_t remlen;                   /* Temp remainder bytes */
-   uint32_t state_bits;               /* State bits */
+   char state_bits[REC_STATE_BYTES];  /* State bits */
    rec_state state;                   /* State of write_record_to_block */
    BSR *bsr;                          /* Pointer to bsr that matched */
    uint8_t ser_buf[WRITE_RECHDR_LENGTH]; /* Serialized record header goes here */

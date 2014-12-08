@@ -423,7 +423,7 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
          }
 
          rctx->records_processed = 0;
-         rctx->rec->state_bits = 0;
+         clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
          rctx->lastFileIndex = READ_NO_FILEINDEX;
 
          if (!read_next_record_from_block(dcr, rctx, &done)) {
@@ -817,7 +817,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
 
          read_context_set_record(dcr, rctx);
          rctx->records_processed = 0;
-         rctx->rec->state_bits = 0;
+         clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
          rctx->lastFileIndex = READ_NO_FILEINDEX;
       }
    }

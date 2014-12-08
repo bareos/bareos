@@ -247,7 +247,12 @@ void empty_record(DEV_RECORD *rec)
    rec->VolSessionId = rec->VolSessionTime = 0;
    rec->FileIndex = rec->Stream = 0;
    rec->data_len = rec->remainder = 0;
-   rec->state_bits &= ~(REC_PARTIAL_RECORD | REC_BLOCK_EMPTY | REC_NO_MATCH | REC_CONTINUATION);
+
+   clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
+   clear_bit(REC_BLOCK_EMPTY, rec->state_bits);
+   clear_bit(REC_NO_MATCH, rec->state_bits);
+   clear_bit(REC_CONTINUATION, rec->state_bits);
+
    rec->state = st_none;
 }
 
@@ -655,9 +660,9 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
    /*
     * Clear state flags
     */
-   rec->state_bits = 0;
+   clear_all_bits(REC_STATE_MAX, rec->state_bits);
    if (dcr->block->dev->is_tape()) {
-      rec->state_bits |= REC_ISTAPE;
+      set_bit(REC_ISTAPE, rec->state_bits);
    }
    rec->Block = ((DEVICE *)(dcr->block->dev))->EndBlock;
    rec->File = ((DEVICE *)(dcr->block->dev))->EndFile;
@@ -698,7 +703,7 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
        */
       if (rec->remainder && (rec->VolSessionId != VolSessionId ||
                              rec->VolSessionTime != VolSessionTime)) {
-         rec->state_bits |= REC_NO_MATCH;
+         set_bit(REC_NO_MATCH, rec->state_bits);
          Dmsg0(450, "remainder and VolSession doesn't match\n");
          return false;             /* This is from some other Session */
       }
@@ -708,13 +713,12 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
        * of a previous partially written record.
        */
       if (Stream < 0) {               /* continuation record? */
-         Dmsg1(500, "Got negative Stream => continuation. remainder=%d\n",
-            rec->remainder);
-         rec->state_bits |= REC_CONTINUATION;
+         Dmsg1(500, "Got negative Stream => continuation. remainder=%d\n", rec->remainder);
+         set_bit(REC_CONTINUATION, rec->state_bits);
          if (!rec->remainder) {       /* if we didn't read previously */
             rec->data_len = 0;        /* return data as if no continuation */
          } else if (rec->Stream != -Stream) {
-            rec->state_bits |= REC_NO_MATCH;
+            set_bit(REC_NO_MATCH, rec->state_bits);
             return false;             /* This is from some other Session */
          }
          rec->Stream = -Stream;       /* set correct Stream */
@@ -749,7 +753,8 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
        * then reread.
        */
       Dmsg0(450, "read_record_block: nothing\n");
-      rec->state_bits |= (REC_NO_HEADER | REC_BLOCK_EMPTY);
+      set_bit(REC_NO_HEADER, rec->state_bits);
+      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
       empty_block(dcr->block);                 /* mark block empty */
       return false;
    }
@@ -760,7 +765,8 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
        * Something is wrong, force read of next block, abort
        *   continuing with this block.
        */
-      rec->state_bits |= (REC_NO_HEADER | REC_BLOCK_EMPTY);
+      set_bit(REC_NO_HEADER, rec->state_bits);
+      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
       empty_block(dcr->block);
       Jmsg2(dcr->jcr, M_WARNING, 0, _("Sanity check failed. maxlen=%d datalen=%d. Block discarded.\n"),
          MAX_BLOCK_LENGTH, data_bytes);
@@ -795,7 +801,8 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
       rec->data_len += remlen;
       rec->remainder = 1;             /* partial record transferred */
       Dmsg1(450, "read_record_block: partial xfered=%d\n", rec->data_len);
-      rec->state_bits |= (REC_PARTIAL_RECORD | REC_BLOCK_EMPTY);
+      set_bit(REC_PARTIAL_RECORD, rec->state_bits);
+      set_bit(REC_BLOCK_EMPTY, rec->state_bits);
       return true;
    }
    rec->remainder = 0;

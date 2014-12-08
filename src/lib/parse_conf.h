@@ -95,6 +95,7 @@ struct RES_ITEM {
       RES **resvalue;
       alist **alistvalue;
       dlist **dlistvalue;
+      char *bitvalue;
    };
    int32_t code;                        /* Item code/additional info */
    uint32_t flags;                      /* Flags: See CFG_ITEM_* */

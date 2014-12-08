@@ -77,25 +77,32 @@ static void handle_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *s
 static char *rec_state_bits_to_str(DEV_RECORD *rec)
 {
    static char buf[200];
+
    buf[0] = 0;
-   if (rec->state_bits & REC_NO_HEADER) {
-      bstrncat(buf, "Nohdr,", sizeof(buf));
+   if (bit_is_set(REC_NO_HEADER, rec->state_bits)) {
+      bstrncat(buf, _("Nohdr,"), sizeof(buf));
    }
+
    if (is_partial_record(rec)) {
-      bstrncat(buf, "partial,", sizeof(buf));
+      bstrncat(buf, _("partial,"), sizeof(buf));
    }
-   if (rec->state_bits & REC_BLOCK_EMPTY) {
-      bstrncat(buf, "empty,", sizeof(buf));
+
+   if (bit_is_set(REC_BLOCK_EMPTY, rec->state_bits)) {
+      bstrncat(buf, _("empty,"), sizeof(buf));
    }
-   if (rec->state_bits & REC_NO_MATCH) {
-      bstrncat(buf, "Nomatch,", sizeof(buf));
+
+   if (bit_is_set(REC_NO_MATCH, rec->state_bits)) {
+      bstrncat(buf, _("Nomatch,"), sizeof(buf));
    }
-   if (rec->state_bits & REC_CONTINUATION) {
-      bstrncat(buf, "cont,", sizeof(buf));
+
+   if (bit_is_set(REC_CONTINUATION, rec->state_bits)) {
+      bstrncat(buf, _("cont,"), sizeof(buf));
    }
+
    if (buf[0]) {
       buf[strlen(buf)-1] = 0;
    }
+
    return buf;
 }
 
@@ -330,7 +337,7 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
             Dmsg4(dbglvl, "BSR no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
                rec->remainder, rec->FileIndex, dev->file, dev->block_num);
             rec->remainder = 0;
-            rec->state_bits &= ~REC_PARTIAL_RECORD;
+            clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
             if (try_device_repositioning(jcr, rec, dcr)) {
                return false;
             }
@@ -419,7 +426,7 @@ bool read_records(DCR *dcr,
             rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber, rctx->rec->remainder);
 
       rctx->records_processed = 0;
-      rctx->rec->state_bits = 0;
+      clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
       rctx->lastFileIndex = READ_NO_FILEINDEX;
       Dmsg1(dbglvl, "Block %s empty\n", is_block_empty(rctx->rec) ? "is" : "NOT");
 
@@ -427,7 +434,6 @@ bool read_records(DCR *dcr,
        * Process the block and read all records in the block and send
        * them to the defined callback.
        */
-      rctx->rec->state_bits = 0;
       while (ok && !is_block_empty(rctx->rec)) {
          if (!read_next_record_from_block(dcr, rctx, &done)) {
             break;

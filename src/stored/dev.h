@@ -110,71 +110,100 @@ enum {
 /*
  * Generic status bits returned from status_dev()
  */
-#define BMT_TAPE           (1 << 0)   /* is tape device */
-#define BMT_EOF            (1 << 1)   /* just read EOF */
-#define BMT_BOT            (1 << 2)   /* at beginning of tape */
-#define BMT_EOT            (1 << 3)   /* end of tape reached */
-#define BMT_SM             (1 << 4)   /* DDS setmark */
-#define BMT_EOD            (1 << 5)   /* DDS at end of data */
-#define BMT_WR_PROT        (1 << 6)   /* tape write protected */
-#define BMT_ONLINE         (1 << 7)   /* tape online */
-#define BMT_DR_OPEN        (1 << 8)   /* tape door open */
-#define BMT_IM_REP_EN      (1 << 9)   /* immediate report enabled */
+enum {
+   BMT_TAPE = 0,                      /* Is tape device */
+   BMT_EOF = 1,                       /* Just read EOF */
+   BMT_BOT = 2,                       /* At beginning of tape */
+   BMT_EOT = 3,                       /* End of tape reached */
+   BMT_SM = 4,                        /* DDS setmark */
+   BMT_EOD = 5,                       /* DDS at end of data */
+   BMT_WR_PROT = 6,                   /* Tape write protected */
+   BMT_ONLINE = 7,                    /* Tape online */
+   BMT_DR_OPEN = 8,                   /* Tape door open */
+   BMT_IM_REP_EN = 9                  /* Immediate report enabled */
+};
+
+/*
+ * Keep this set to the last entry in the enum.
+ */
+#define BMT_MAX BMT_IM_REP_EN
+
+/*
+ * Make sure you have enough bits to store all above bit fields.
+ */
+#define BMT_BYTES nbytes_for_bits(BMT_MAX + 1)
 
 /*
  * Bits for device capabilities
  */
-#define CAP_EOF            (1 << 0)   /* has MTWEOF */
-#define CAP_BSR            (1 << 1)   /* has MTBSR */
-#define CAP_BSF            (1 << 2)   /* has MTBSF */
-#define CAP_FSR            (1 << 3)   /* has MTFSR */
-#define CAP_FSF            (1 << 4)   /* has MTFSF */
-#define CAP_EOM            (1 << 5)   /* has MTEOM */
-#define CAP_REM            (1 << 6)   /* is removable media */
-#define CAP_RACCESS        (1 << 7)   /* is random access device */
-#define CAP_AUTOMOUNT      (1 << 8)   /* Read device at start to see what is there */
-#define CAP_LABEL          (1 << 9)   /* Label blank tapes */
-#define CAP_ANONVOLS       (1 << 10)  /* Mount without knowing volume name */
-#define CAP_ALWAYSOPEN     (1 << 11)  /* always keep device open */
-#define CAP_AUTOCHANGER    (1 << 12)  /* AutoChanger */
-#define CAP_OFFLINEUNMOUNT (1 << 13)  /* Offline before unmount */
-#define CAP_STREAM         (1 << 14)  /* Stream device */
-#define CAP_BSFATEOM       (1 << 15)  /* Backspace file at EOM */
-#define CAP_FASTFSF        (1 << 16)  /* Fast forward space file */
-#define CAP_TWOEOF         (1 << 17)  /* Write two eofs for EOM */
-#define CAP_CLOSEONPOLL    (1 << 18)  /* Close device on polling */
-#define CAP_POSITIONBLOCKS (1 << 19)  /* Use block positioning */
-#define CAP_MTIOCGET       (1 << 20)  /* Basic support for fileno and blkno */
-#define CAP_REQMOUNT       (1 << 21)  /* Require mount/unmount */
-#define CAP_CHECKLABELS    (1 << 22)  /* Check for ANSI/IBM labels */
-#define CAP_BLOCKCHECKSUM  (1 << 23)  /* Create/test block checksum */
-#define CAP_IOERRATEOM     (1 << 24)  /* IOError at EOM */
-#define CAP_IBMLINTAPE     (1 << 25)  /* Using IBM lin_tape driver */
+enum {
+   CAP_EOF = 0,                       /* Has MTWEOF */
+   CAP_BSR = 1,                       /* Has MTBSR */
+   CAP_BSF = 2,                       /* Has MTBSF */
+   CAP_FSR = 3,                       /* Has MTFSR */
+   CAP_FSF = 4,                       /* Has MTFSF */
+   CAP_EOM = 5,                       /* Has MTEOM */
+   CAP_REM = 6,                       /* Is removable media */
+   CAP_RACCESS = 7,                   /* Is random access device */
+   CAP_AUTOMOUNT = 8,                 /* Read device at start to see what is there */
+   CAP_LABEL = 9,                     /* Label blank tapes */
+   CAP_ANONVOLS = 10,                 /* Mount without knowing volume name */
+   CAP_ALWAYSOPEN = 11,               /* Always keep device open */
+   CAP_AUTOCHANGER = 12,              /* AutoChanger */
+   CAP_OFFLINEUNMOUNT = 13,           /* Offline before unmount */
+   CAP_STREAM = 14,                   /* Stream device */
+   CAP_BSFATEOM = 15,                 /* Backspace file at EOM */
+   CAP_FASTFSF = 16,                  /* Fast forward space file */
+   CAP_TWOEOF = 17,                   /* Write two eofs for EOM */
+   CAP_CLOSEONPOLL = 18,              /* Close device on polling */
+   CAP_POSITIONBLOCKS = 19,           /* Use block positioning */
+   CAP_MTIOCGET = 20,                 /* Basic support for fileno and blkno */
+   CAP_REQMOUNT = 21,                 /* Require mount/unmount */
+   CAP_CHECKLABELS = 22,              /* Check for ANSI/IBM labels */
+   CAP_BLOCKCHECKSUM = 23,            /* Create/test block checksum */
+   CAP_IOERRATEOM = 24,               /* IOError at EOM */
+   CAP_IBMLINTAPE = 25                /* Using IBM lin_tape driver */
+};
+
+/*
+ * Keep this set to the last entry in the enum.
+ */
+#define CAP_MAX CAP_IBMLINTAPE
+
+/*
+ * Make sure you have enough bits to store all above bit fields.
+ */
+#define CAP_BYTES nbytes_for_bits(CAP_MAX + 1)
 
 /*
  * Device state bits
  */
-#define ST_XXXXXX          (1 << 0)   /* was ST_OPENED */
-#define ST_XXXXX           (1 << 1)   /* was ST_TAPE */
-#define ST_XXXX            (1 << 2)   /* was ST_FILE */
-#define ST_XXX             (1 << 3)   /* was ST_FIFO */
-#define ST_XX              (1 << 4)   /* was ST_DVD */
-#define ST_X               (1 << 5)   /* was ST_PROG */
+enum {
+   ST_LABEL = 0,                      /* Label found */
+   ST_MALLOC = 1,                     /* Dev packet malloc'ed in init_dev() */
+   ST_APPENDREADY = 2,                /* Ready for Bareos append */
+   ST_READREADY = 3,                  /* Ready for Bareos read */
+   ST_EOT = 4,                        /* At end of tape */
+   ST_WEOT = 5,                       /* Got EOT on write */
+   ST_EOF = 6,                        /* Read EOF i.e. zero bytes */
+   ST_NEXTVOL = 7,                    /* Start writing on next volume */
+   ST_SHORT = 8,                      /* Short block read */
+   ST_MOUNTED = 9,                    /* The device is mounted to the mount point */
+   ST_MEDIA = 10,                     /* Media found in mounted device */
+   ST_OFFLINE = 11,                   /* Set offline by operator */
+   ST_PART_SPOOLED = 12,              /* Spooling part */
+   ST_CRYPTOKEY = 13                  /* The device has a crypto key loaded */
+};
 
-#define ST_LABEL           (1 << 6)   /* label found */
-#define ST_MALLOC          (1 << 7)   /* dev packet malloc'ed in init_dev() */
-#define ST_APPENDREADY     (1 << 8)   /* Ready for Bareos append */
-#define ST_READREADY       (1 << 9)   /* Ready for Bareos read */
-#define ST_EOT             (1 << 10)  /* at end of tape */
-#define ST_WEOT            (1 << 11)  /* Got EOT on write */
-#define ST_EOF             (1 << 12)  /* Read EOF i.e. zero bytes */
-#define ST_NEXTVOL         (1 << 13)  /* Start writing on next volume */
-#define ST_SHORT           (1 << 14)  /* Short block read */
-#define ST_MOUNTED         (1 << 15)  /* the device is mounted to the mount point */
-#define ST_MEDIA           (1 << 16)  /* Media found in mounted device */
-#define ST_OFFLINE         (1 << 17)  /* set offline by operator */
-#define ST_PART_SPOOLED    (1 << 18)  /* spooling part */
-#define ST_CRYPTOKEY       (1 << 19)  /* The device has a crypto key loaded */
+/*
+ * Keep this set to the last entry in the enum.
+ */
+#define ST_MAX ST_CRYPTOKEY
+
+/*
+ * Make sure you have enough bits to store all above bit fields.
+ */
+#define ST_BYTES nbytes_for_bits(ST_MAX + 1)
 
 /*
  * Volume Catalog Information structure definition
@@ -257,8 +286,8 @@ public:
    int dev_prev_blocked;              /* Previous blocked state */
    int num_waiting;                   /* Number of threads waiting */
    int num_writers;                   /* Number of writing threads */
-   int capabilities;                  /* Capabilities mask */
-   int state;                         /* State mask */
+   char capabilities[CAP_BYTES];      /* Capabilities mask */
+   char state[ST_BYTES];              /* State mask */
    int dev_errno;                     /* Our own errno */
    int oflags;                        /* Read/write flags */
    int open_mode;                     /* Parameter passed to open_dev (useful to reopen the device) */
@@ -322,45 +351,46 @@ public:
    /* Methods */
    btime_t get_timer_count();         /* Return the last timer interval (ms) */
 
-   int has_cap(int cap) const { return capabilities & cap; }
-   void clear_cap(int cap) { capabilities &= ~cap; }
-   void set_cap(int cap) { capabilities |= cap; }
-   bool do_checksum() const { return (capabilities & CAP_BLOCKCHECKSUM) != 0; }
-   int is_autochanger() const { return capabilities & CAP_AUTOCHANGER; }
-   int requires_mount() const { return capabilities & CAP_REQMOUNT; }
-   int is_removable() const { return capabilities & CAP_REM; }
-   int is_tape() const { return (dev_type == B_TAPE_DEV); }
-   int is_file() const { return (dev_type == B_FILE_DEV ||
-                                 dev_type == B_GFAPI_DEV ||
-                                 dev_type == B_OBJECT_STORE_DEV ||
-                                 dev_type == B_RADOS_DEV ||
-                                 dev_type == B_CEPHFS_DEV ||
-                                 dev_type == B_ELASTO_DEV); }
-   int is_fifo() const { return dev_type == B_FIFO_DEV; }
-   int is_vtl() const  { return dev_type == B_VTL_DEV; }
-   int is_open() const { return m_fd >= 0; }
-   int is_offline() const { return state & ST_OFFLINE; }
-   int is_labeled() const { return state & ST_LABEL; }
-   int is_mounted() const { return state & ST_MOUNTED; }
-   int is_unmountable() const { return ((is_file() && is_removable())); }
+   bool has_cap(int cap) const { return bit_is_set(cap, capabilities) ; }
+   void clear_cap(int cap) { clear_bit(cap, capabilities); }
+   void set_cap(int cap) { set_bit(cap, capabilities);  }
+   bool do_checksum() const { return bit_is_set(CAP_BLOCKCHECKSUM, capabilities); }
+   bool is_autochanger() const { return bit_is_set(CAP_AUTOCHANGER, capabilities); }
+   bool requires_mount() const { return bit_is_set(CAP_REQMOUNT, capabilities); }
+   bool is_removable() const { return bit_is_set(CAP_REM, capabilities); }
+   bool is_tape() const { return (dev_type == B_TAPE_DEV); }
+   bool is_file() const { return (dev_type == B_FILE_DEV ||
+                                  dev_type == B_GFAPI_DEV ||
+                                  dev_type == B_OBJECT_STORE_DEV ||
+                                  dev_type == B_RADOS_DEV ||
+                                  dev_type == B_CEPHFS_DEV ||
+                                  dev_type == B_ELASTO_DEV); }
+   bool is_fifo() const { return dev_type == B_FIFO_DEV; }
+   bool is_vtl() const  { return dev_type == B_VTL_DEV; }
+   bool is_open() const { return m_fd >= 0; }
+   bool is_offline() const { return bit_is_set(ST_OFFLINE, state); }
+   bool is_labeled() const { return bit_is_set(ST_LABEL, state); }
+   bool is_mounted() const { return bit_is_set(ST_MOUNTED, state); }
+   bool is_unmountable() const { return ((is_file() && is_removable())); }
    int num_reserved() const { return m_num_reserved; };
-   int is_part_spooled() const { return state & ST_PART_SPOOLED; }
-   int have_media() const { return state & ST_MEDIA; }
-   int is_short_block() const { return state & ST_SHORT; }
-   int is_busy() const { return (state & ST_READREADY) || num_writers || num_reserved(); }
-   int at_eof() const { return state & ST_EOF; }
-   int at_eot() const { return state & ST_EOT; }
-   int at_weot() const { return state & ST_WEOT; }
-   int can_append() const { return state & ST_APPENDREADY; }
-   int is_crypto_enabled() const { return state & ST_CRYPTOKEY; }
+   bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); }
+   bool have_media() const { return bit_is_set(ST_MEDIA, state); }
+   bool is_short_block() const { return bit_is_set(ST_SHORT, state); }
+   bool is_busy() const { return bit_is_set(ST_READREADY, state) || num_writers || num_reserved(); }
+   bool at_eof() const { return bit_is_set(ST_EOF, state); }
+   bool at_eot() const { return bit_is_set(ST_EOT, state); }
+   bool at_weot() const { return bit_is_set(ST_WEOT, state); }
+   bool can_append() const { return bit_is_set(ST_APPENDREADY, state); }
+   bool is_crypto_enabled() const { return bit_is_set(ST_CRYPTOKEY, state); }
+
    /*
     * can_write() is meant for checking at the end of a job to see
     * if we still have a tape (perhaps not if at end of tape
     * and the job is canceled).
     */
-   int can_write() const { return is_open() && can_append() &&
-                            is_labeled() && !at_weot(); }
-   int can_read() const   { return state & ST_READREADY; }
+   bool can_write() const { return is_open() && can_append() &&
+                                   is_labeled() && !at_weot(); }
+   bool can_read() const { return bit_is_set(ST_READREADY, state); }
    bool can_steal_lock() const { return m_blocked &&
                     (m_blocked == BST_UNMOUNTED ||
                      m_blocked == BST_WAITING_FOR_SYSOP ||
@@ -375,35 +405,38 @@ public:
    const char *archive_name() const;
    const char *name() const;
    const char *print_name() const;    /* Name for display purposes */
-   void set_eot() { state |= ST_EOT; };
-   void set_eof() { state |= ST_EOF; };
-   void set_append() { state |= ST_APPENDREADY; };
-   void set_labeled() { state |= ST_LABEL; };
-   inline void set_read() { state |= ST_READREADY; };
-   void set_offline() { state |= ST_OFFLINE; };
-   void set_mounted() { state |= ST_MOUNTED; };
-   void set_media() { state |= ST_MEDIA; };
-   void set_short_block() { state |= ST_SHORT; };
-   void set_crypto_enabled() { state |= ST_CRYPTOKEY; };
-   void set_part_spooled(int val) { if (val) state |= ST_PART_SPOOLED; \
-          else state &= ~ST_PART_SPOOLED;
+   void set_eot() { set_bit(ST_EOT, state); };
+   void set_eof() { set_bit(ST_EOF, state); };
+   void set_append() { set_bit(ST_APPENDREADY, state); };
+   void set_labeled() { set_bit(ST_LABEL, state); };
+   inline void set_read() { set_bit(ST_READREADY, state); };
+   void set_offline() { set_bit(ST_OFFLINE, state); };
+   void set_mounted() { set_bit(ST_MOUNTED, state); };
+   void set_media() { set_bit(ST_MEDIA, state); };
+   void set_short_block() { set_bit(ST_SHORT, state); };
+   void set_crypto_enabled() { set_bit(ST_CRYPTOKEY, state); };
+   void set_part_spooled(int val) {
+      if (val)
+         set_bit(ST_PART_SPOOLED, state);
+      else
+         clear_bit(ST_PART_SPOOLED, state);
    };
    bool is_volume_to_unload() const { \
       return m_unload && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
    void set_load() { m_load = true; };
    void inc_reserved() { m_num_reserved++; }
    void dec_reserved() { m_num_reserved--; ASSERT(m_num_reserved>=0); };
-   void clear_append() { state &= ~ST_APPENDREADY; };
-   void clear_read() { state &= ~ST_READREADY; };
-   void clear_labeled() { state &= ~ST_LABEL; };
-   void clear_offline() { state &= ~ST_OFFLINE; };
-   void clear_eot() { state &= ~ST_EOT; };
-   void clear_eof() { state &= ~ST_EOF; };
+   void clear_append() { clear_bit(ST_APPENDREADY, state); };
+   void clear_read() { clear_bit(ST_READREADY, state); };
+   void clear_labeled() { clear_bit(ST_LABEL, state); };
+   void clear_offline() { clear_bit(ST_OFFLINE, state); };
+   void clear_eot() { clear_bit(ST_EOT, state); };
+   void clear_eof() { clear_bit(ST_EOF, state); };
    void clear_opened() { m_fd = -1; };
-   void clear_mounted() { state &= ~ST_MOUNTED; };
-   void clear_media() { state &= ~ST_MEDIA; };
-   void clear_short_block() { state &= ~ST_SHORT; };
-   void clear_crypto_enabled() { state &= ~ST_CRYPTOKEY; };
+   void clear_mounted() { clear_bit(ST_MOUNTED, state); };
+   void clear_media() { clear_bit(ST_MEDIA, state); };
+   void clear_short_block() { clear_bit(ST_SHORT, state); };
+   void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); };
    void clear_unload() { m_unload = false; UnloadVolName[0] = 0; };
    void clear_load() { m_load = false; };
    char *bstrerror(void) { return errmsg; };
@@ -412,8 +445,8 @@ public:
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
-     bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
-     setVolCatInfo(false);
+      bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
+      setVolCatInfo(false);
    };
    char *getVolCatName() { return VolCatInfo.VolCatName; };
 
@@ -460,7 +493,7 @@ public:
     * Generic operations.
     */
    virtual void open_device(DCR *dcr, int omode);
-   virtual uint32_t status_dev();
+   virtual char *status_dev();
    virtual bool eod(DCR *dcr);
    virtual void set_ateof();
    virtual void set_ateot();

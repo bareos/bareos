@@ -158,7 +158,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
          device->dev_type = B_TAPE_DEV;
       } else if (S_ISFIFO(statp.st_mode)) {
          device->dev_type = B_FIFO_DEV;
-      } else if (!(device->cap_bits & CAP_REQMOUNT)) {
+      } else if (!bit_is_set(CAP_REQMOUNT, device->cap_bits)) {
          Jmsg2(jcr, M_ERROR, 0,
                _("%s is an unknown device type. Must be tape or directory, st_mode=%x\n"),
                device->device_name, statp.st_mode);
@@ -252,7 +252,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
     */
    Mmsg(dev->prt_name, "\"%s\" (%s)", device->hdr.name, device->device_name);
    Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-   dev->capabilities = device->cap_bits;
+   copy_bits(CAP_MAX, device->cap_bits, dev->capabilities);
 
    /*
     * current block sizes
@@ -283,7 +283,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    device->dev = dev;
 
    if (dev->is_fifo()) {
-      dev->capabilities |= CAP_STREAM; /* set stream device */
+      dev->set_cap(CAP_STREAM);       /* set stream device */
    }
 
    /*
@@ -528,7 +528,8 @@ void DEVICE::set_label_blocksize(DCR *dcr)
  */
 bool DEVICE::open(DCR *dcr, int omode)
 {
-   int preserve = 0;
+   char preserve[ST_BYTES];
+
    if (is_open()) {
       if (open_mode == omode) {
          return true;
@@ -536,9 +537,17 @@ bool DEVICE::open(DCR *dcr, int omode)
          d_close(m_fd);
          clear_opened();
          Dmsg0(100, "Close fd for mode change.\n");
-         preserve = state & (ST_LABEL | ST_APPENDREADY | ST_READREADY);
+
+         clear_all_bits(ST_MAX, preserve);
+         if (bit_is_set(ST_LABEL, state))
+            set_bit(ST_LABEL, preserve);
+         if (bit_is_set(ST_APPENDREADY, state))
+            set_bit(ST_APPENDREADY, preserve);
+         if (bit_is_set(ST_READREADY, state))
+            set_bit(ST_READREADY, preserve);
       }
    }
+
    if (dcr) {
       dcr->setVolCatName(dcr->VolumeName);
       VolCatInfo = dcr->VolCatInfo;    /* structure assign */
@@ -546,13 +555,24 @@ bool DEVICE::open(DCR *dcr, int omode)
 
    Dmsg4(100, "open dev: type=%d dev_name=%s vol=%s mode=%s\n", dev_type,
          print_name(), getVolCatName(), mode_to_str(omode));
-   state &= ~(ST_LABEL | ST_APPENDREADY | ST_READREADY | ST_EOT | ST_WEOT | ST_EOF);
+
+   clear_bit(ST_LABEL, state);
+   clear_bit(ST_APPENDREADY, state);
+   clear_bit(ST_READREADY, state);
+   clear_bit(ST_EOT, state);
+   clear_bit(ST_WEOT, state);
+   clear_bit(ST_EOF, state);
+
    label_type = B_BAREOS_LABEL;
 
    Dmsg1(100, "call open_device mode=%s\n", mode_to_str(omode));
    open_device(dcr, omode);
 
-   state |= preserve;                 /* reset any important state info */
+   /*
+    * Reset any important state info
+    */
+   clone_bits(ST_MAX, preserve, state);
+
    Dmsg2(100, "preserve=0x%x fd=%d\n", preserve, m_fd);
 
    return m_fd >= 0;
@@ -647,7 +667,14 @@ void DEVICE::open_device(DCR *dcr, int omode)
 bool DEVICE::rewind(DCR *dcr)
 {
    Dmsg3(400, "rewind res=%d fd=%d %s\n", num_reserved(), m_fd, print_name());
-   state &= ~(ST_EOT | ST_EOF | ST_WEOT); /* Remove EOF/EOT flags */
+
+   /*
+    * Remove EOF/EOT flags
+    */
+   clear_bit(ST_EOT, state);
+   clear_bit(ST_EOF, state);
+   clear_bit(ST_WEOT, state);
+
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
@@ -689,7 +716,9 @@ void DEVICE::set_ateot()
    /*
     * Make volume effectively read-only
     */
-   state |= (ST_EOF | ST_EOT | ST_WEOT);
+   set_bit(ST_EOF, state);
+   set_bit(ST_EOT, state);
+   set_bit(ST_WEOT, state);
    clear_append();
 }
 
@@ -781,21 +810,25 @@ bool DEVICE::update_pos(DCR *dcr)
    return ok;
 }
 
-uint32_t DEVICE::status_dev()
+char *DEVICE::status_dev()
 {
-   uint32_t status = 0;
+   char *status;
 
-   if (state & (ST_EOT | ST_WEOT)) {
-      status |= BMT_EOD;
+   status = (char *)malloc(BMT_BYTES);
+   clear_all_bits(BMT_MAX, status);
+
+   if (bit_is_set(ST_EOT, state) || bit_is_set(ST_WEOT, state)) {
+      set_bit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
 
-   if (state & ST_EOF) {
-      status |= BMT_EOF;
+   if (bit_is_set(ST_EOF, state)) {
+      set_bit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
 
-   status |= BMT_ONLINE | BMT_BOT;
+   set_bit(BMT_ONLINE, status);
+   set_bit(BMT_BOT, status);
 
    return status;
 }
@@ -931,8 +964,16 @@ bool DEVICE::close(DCR *dcr)
     */
    clear_opened();
 
-   state &= ~(ST_LABEL | ST_READREADY | ST_APPENDREADY | ST_EOT | ST_WEOT |
-              ST_EOF | ST_MOUNTED | ST_MEDIA | ST_SHORT);
+   clear_bit(ST_LABEL, state);
+   clear_bit(ST_READREADY, state);
+   clear_bit(ST_APPENDREADY, state);
+   clear_bit(ST_EOT, state);
+   clear_bit(ST_WEOT, state);
+   clear_bit(ST_EOF, state);
+   clear_bit(ST_MOUNTED, state);
+   clear_bit(ST_MEDIA, state);
+   clear_bit(ST_SHORT, state);
+
    label_type = B_BAREOS_LABEL;
    file = block_num = 0;
    file_size = 0;

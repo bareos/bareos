@@ -36,7 +36,7 @@ public:
     * Interface from DEVICE
     */
    virtual void open_device(DCR *dcr, int omode);
-   virtual uint32_t status_dev();
+   virtual char *status_dev();
    virtual bool eod(DCR *dcr);
    virtual void set_ateof();
    virtual void set_ateot();

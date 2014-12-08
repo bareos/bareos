@@ -592,9 +592,9 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
 
    if (pass == 2) {
       if (!*(item->value)) {
-         *item->alistvalue = New(alist(10, owned_by_alist));
+         *(item->alistvalue) = New(alist(10, owned_by_alist));
       }
-      list = *item->alistvalue;
+      list = *(item->alistvalue);
 
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
@@ -635,10 +635,10 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
-      if (!*item->alistvalue) {
-         *item->alistvalue = New(alist(10, owned_by_alist));
+      if (!*(item->alistvalue)) {
+         *(item->alistvalue) = New(alist(10, owned_by_alist));
       }
-      list = *item->alistvalue;
+      list = *(item->alistvalue);
 
       lex_get_token(lc, T_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
@@ -683,10 +683,10 @@ static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 2) {
       lex_get_token(lc, T_STRING);   /* scan next item */
 
-      if (!*item->alistvalue) {
+      if (!*(item->alistvalue)) {
          *(item->alistvalue) = New(alist(10, owned_by_alist));
       }
-      list = *item->alistvalue;
+      list = *(item->alistvalue);
 
       plugin_names = bstrdup(lc->str);
       plugin_name = plugin_names;
@@ -941,9 +941,9 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
-      *(item->ui32value) |= item->code;
+      set_bit(item->code, item->bitvalue);
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
-      *(item->ui32value) &= ~(item->code);
+      clear_bit(item->code, item->bitvalue);
    } else {
       scan_err2(lc, _("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE", lc->str); /* YES and NO must not be translated */
       return;
@@ -1712,8 +1712,8 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          * One line for each member of the list
          */
          char *value;
-         alist* list;
-         list = (alist *) *(items[i].value);
+         alist *list;
+         list = *(items[i].alistvalue);
 
          if (list != NULL) {
             foreach_alist(value, list) {
@@ -1737,10 +1737,10 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           */
          int cnt = 0;
          RES *res;
-         alist* list;
+         alist *list;
          POOL_MEM res_names;
 
-         list = (alist *) *(items[i].value);
+         list = *(items[i].alistvalue);
          if (list != NULL) {
             Mmsg(temp, "%s = ", items[i].name);
             indent_config_item(cfg_str, 1, temp.c_str());
@@ -1764,7 +1764,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       case CFG_TYPE_RES: {
          RES *res;
 
-         res = (RES *)*(items[i].value);
+         res = *(items[i].resvalue);
          if (res != NULL && res->name != NULL) {
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
             indent_config_item(cfg_str, 1, temp.c_str());
@@ -1772,7 +1772,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          break;
       }
       case CFG_TYPE_BIT:
-         if (*(items[i].ui32value) & items[i].code) {
+         if (bit_is_set(items[i].code, items[i].bitvalue)) {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("yes"));
          } else {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));

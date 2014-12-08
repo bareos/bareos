@@ -498,7 +498,7 @@ static int check_resources()
 
    DEVRES *device;
    foreach_res(device, R_DEVICE) {
-      if (device->drive_crypto_enabled && device->cap_bits & CAP_LABEL) {
+      if (device->drive_crypto_enabled && bit_is_set(CAP_LABEL, device->cap_bits)) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
               device->hdr.name, configfile);
          OK = false;
@@ -655,7 +655,7 @@ void *device_initialization(void *arg)
          get_autochanger_loaded_slot(dcr);
       }
 
-      if (device->cap_bits & CAP_ALWAYSOPEN) {
+      if (bit_is_set(CAP_ALWAYSOPEN, device->cap_bits)) {
          Dmsg1(20, "calling first_open_device %s\n", dev->print_name());
          if (!first_open_device(dcr)) {
             Jmsg1(NULL, M_ERROR, 0, _("Could not open device %s\n"), dev->print_name());
@@ -666,7 +666,7 @@ void *device_initialization(void *arg)
          }
       }
 
-      if (device->cap_bits & CAP_AUTOMOUNT && dev->is_open()) {
+      if (bit_is_set(CAP_AUTOMOUNT, device->cap_bits) && dev->is_open()) {
          switch (read_dev_volume_label(dcr)) {
          case VOL_OK:
             memcpy(&dev->VolCatInfo, &dcr->VolCatInfo, sizeof(dev->VolCatInfo));

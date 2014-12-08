@@ -311,7 +311,9 @@ void generic_tape_device::set_ateot()
    /*
     * Make volume effectively read-only
     */
-   state |= (ST_EOF | ST_EOT | ST_WEOT);
+   set_bit(ST_EOF, state);
+   set_bit(ST_EOT, state);
+   set_bit(ST_WEOT, state);
    clear_append();
 }
 
@@ -325,7 +327,15 @@ bool generic_tape_device::offline()
 {
    struct mtop mt_com;
 
-   state &= ~(ST_APPENDREADY | ST_READREADY | ST_EOT | ST_EOF | ST_WEOT);  /* remove EOF/EOT flags */
+   /*
+    * Remove EOF/EOT flags.
+    */
+   clear_bit(ST_APPENDREADY, state);
+   clear_bit(ST_READREADY, state);
+   clear_bit(ST_EOT, state);
+   clear_bit(ST_EOF, state);
+   clear_bit(ST_WEOT, state);
+
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
@@ -1102,7 +1112,14 @@ bool generic_tape_device::rewind(DCR *dcr)
    bool first = true;
 
    Dmsg3(400, "rewind res=%d fd=%d %s\n", num_reserved(), m_fd, prt_name);
-   state &= ~(ST_EOT | ST_EOF | ST_WEOT); /* Remove EOF/EOT flags */
+
+   /*
+    * Remove EOF/EOT flags.
+    */
+   clear_bit(ST_EOT, state);
+   clear_bit(ST_EOF, state);
+   clear_bit(ST_WEOT, state);
+
    block_num = file = 0;
    file_size = 0;
    file_addr = 0;
@@ -1217,22 +1234,25 @@ static bool do_mount(DCR *dcr, int mount, int dotimeout)
    return true;
 }
 
-uint32_t generic_tape_device::status_dev()
+char *generic_tape_device::status_dev()
 {
    struct mtget mt_stat;
-   uint32_t status = 0;
+   char *status;
 
-   if (state & (ST_EOT | ST_WEOT)) {
-      status |= BMT_EOD;
+   status = (char *)malloc(BMT_BYTES);
+   clear_all_bits(BMT_MAX, status);
+
+   if (bit_is_set(ST_EOT, state) || bit_is_set(ST_WEOT, state)) {
+      set_bit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
 
-   if (state & ST_EOF) {
-      status |= BMT_EOF;
+   if (bit_is_set(ST_EOF, state)) {
+      set_bit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
 
-   status |= BMT_TAPE;
+   set_bit(BMT_TAPE, status);
    Pmsg0(-20,_(" Bareos status:"));
    Pmsg2(-20,_(" file=%d block=%d\n"), file, block_num);
    if (d_ioctl(m_fd, MTIOCGET, (char *)&mt_stat) < 0) {
@@ -1247,72 +1267,72 @@ uint32_t generic_tape_device::status_dev()
 
 #if defined(HAVE_LINUX_OS)
    if (GMT_EOF(mt_stat.mt_gstat)) {
-      status |= BMT_EOF;
+      set_bit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
    if (GMT_BOT(mt_stat.mt_gstat)) {
-      status |= BMT_BOT;
+      set_bit(BMT_BOT, status);
       Pmsg0(-20, " BOT");
    }
    if (GMT_EOT(mt_stat.mt_gstat)) {
-      status |= BMT_EOT;
+      set_bit(BMT_EOT, status);
       Pmsg0(-20, " EOT");
    }
    if (GMT_SM(mt_stat.mt_gstat)) {
-      status |= BMT_SM;
+      set_bit(BMT_SM, status);
       Pmsg0(-20, " SM");
    }
    if (GMT_EOD(mt_stat.mt_gstat)) {
-      status |= BMT_EOD;
+      set_bit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
    if (GMT_WR_PROT(mt_stat.mt_gstat)) {
-      status |= BMT_WR_PROT;
+      set_bit(BMT_WR_PROT, status);
       Pmsg0(-20, " WR_PROT");
    }
    if (GMT_ONLINE(mt_stat.mt_gstat)) {
-      status |= BMT_ONLINE;
+      set_bit(BMT_ONLINE, status);
       Pmsg0(-20, " ONLINE");
    }
    if (GMT_DR_OPEN(mt_stat.mt_gstat)) {
-      status |= BMT_DR_OPEN;
+      set_bit(BMT_DR_OPEN, status);
       Pmsg0(-20, " DR_OPEN");
    }
    if (GMT_IM_REP_EN(mt_stat.mt_gstat)) {
-      status |= BMT_IM_REP_EN;
+      set_bit(BMT_IM_REP_EN, status);
       Pmsg0(-20, " IM_REP_EN");
    }
 #elif defined(HAVE_WIN32)
    if (GMT_EOF(mt_stat.mt_gstat)) {
-      status |= BMT_EOF;
+      set_bit(BMT_EOF, status);
       Pmsg0(-20, " EOF");
    }
    if (GMT_BOT(mt_stat.mt_gstat)) {
-      status |= BMT_BOT;
+      set_bit(BMT_BOT, status);
       Pmsg0(-20, " BOT");
    }
    if (GMT_EOT(mt_stat.mt_gstat)) {
-      status |= BMT_EOT;
+      set_bit(BMT_EOT, status);
       Pmsg0(-20, " EOT");
    }
    if (GMT_EOD(mt_stat.mt_gstat)) {
-      status |= BMT_EOD;
+      set_bit(BMT_EOD, status);
       Pmsg0(-20, " EOD");
    }
    if (GMT_WR_PROT(mt_stat.mt_gstat)) {
-      status |= BMT_WR_PROT;
+      set_bit(BMT_WR_PROT, status);
       Pmsg0(-20, " WR_PROT");
    }
    if (GMT_ONLINE(mt_stat.mt_gstat)) {
-      status |= BMT_ONLINE;
+      set_bit(BMT_ONLINE, status);
       Pmsg0(-20, " ONLINE");
    }
    if (GMT_DR_OPEN(mt_stat.mt_gstat)) {
-      status |= BMT_DR_OPEN;
+      set_bit(BMT_DR_OPEN, status);
       Pmsg0(-20, " DR_OPEN");
    }
    if (GMT_IM_REP_EN(mt_stat.mt_gstat)) {
-      status |= BMT_IM_REP_EN;
+      set_bit(BMT_IM_REP_EN, status);
       Pmsg0(-20, " IM_REP_EN");
    }
 #endif /* HAVE_LINUX_OS || HAVE_WIN32 */
