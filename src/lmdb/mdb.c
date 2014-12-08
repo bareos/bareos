@@ -123,6 +123,10 @@ union semun {
 #endif /* MDB_USE_SYSV_SEM */
 #endif /* !_WIN32 */
 
+#if defined(__SUNPRO_C)
+#include "mbarrier.h"
+#endif
+
 #ifdef USE_VALGRIND
 #include <valgrind/memcheck.h>
 #define VGMEMP_CREATE(h,r,z)    VALGRIND_CREATE_MEMPOOL(h,r,z)
@@ -3632,7 +3636,11 @@ mdb_env_write_meta(MDB_txn *txn)
 		mp->mm_last_pg = txn->mt_next_pgno - 1;
 #if !(defined(_MSC_VER) || defined(__i386__) || defined(__x86_64__))
 		/* LY: issue a memory barrier, if not x86. ITS#7969 */
+#if defined(__SUNPRO_C)
+		__machine_rw_barrier();
+#elif defined(__GNUC__)
 		__sync_synchronize();
+#endif
 #endif
 		mp->mm_txnid = txn->mt_txnid;
 		if (!(env->me_flags & (MDB_NOMETASYNC|MDB_NOSYNC))) {
