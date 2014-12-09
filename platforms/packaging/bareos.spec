@@ -65,6 +65,7 @@ Vendor: 	The Bareos Team
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define glusterfs 0
+%define ceph 0
 %define install_suse_fw 0
 %define systemd 0
 %define python_plugins 1
@@ -109,12 +110,23 @@ Vendor: 	The Bareos Team
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
 %define systemd_support 1
 %define glusterfs 1
-BuildRequires: glusterfs-devel glusterfs-api-devel
+%endif
+
+%if 0%{?rhel_version} >= 700
+%define ceph 1
 %endif
 
 %if 0%{?systemd_support}
 BuildRequires: systemd
 %{?systemd_requires}
+%endif
+
+%if 0%{?glusterfs}
+BuildRequires: glusterfs-devel glusterfs-api-devel
+%endif
+
+%if 0%{?ceph}
+BuildRequires: ceph-devel
 %endif
 
 Source0: %{name}_%{version}.tar.gz
@@ -277,6 +289,14 @@ Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
 Requires:   glusterfs
+%endif
+
+%if 0%{?ceph}
+%package    storage-ceph
+Summary:    CEPH support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
 %endif
 
 %package    storage-tape
@@ -457,6 +477,13 @@ This package contains the Storage Daemon tape support
 %{dscr}
 
 This package contains the Storage backend for GlusterFS.
+%endif
+
+%if 0%{?ceph}
+%description storage-ceph
+%{dscr}
+
+This package contains the Storage backend for CEPH.
 %endif
 
 %description storage-fifo
@@ -814,6 +841,14 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
 %attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-gluster.conf
+%endif
+
+%if 0%{?ceph}
+%files storage-ceph
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-rados*.so
+%{backend_dir}/libbareossd-cephfs*.so
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-ceph-rados.conf
 %endif
 
 %endif # not client_only
