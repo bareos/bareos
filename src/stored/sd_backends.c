@@ -169,7 +169,8 @@ DEVICE *init_backend_dev(JCR *jcr, int device_type)
 
       return backend_shared_library->backend_instantiate(jcr, device_type);
    } else {
-      Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for .\n"));
+      Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for libbareossd-%s%s\n"),
+           backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
       return (DEVICE *)NULL;
    }
 }
