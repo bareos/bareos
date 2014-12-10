@@ -2127,7 +2127,11 @@ static void filed_free_jcr(JCR *jcr)
    free_bootstrap(jcr);
    free_runscripts(jcr->RunScripts);
    delete jcr->RunScripts;
-   free_path_list(jcr);
+
+   if (jcr->path_list) {
+      free_path_list(jcr->path_list);
+      jcr->path_list = NULL;
+   }
 
    if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));

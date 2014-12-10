@@ -55,73 +55,75 @@ typedef struct PrivateCurDir {
    char fname[1];
 } CurDir;
 
-/* Initialize the path hash table */
-static bool path_list_init(JCR *jcr)
+/*
+ * Initialize the path hash table
+ */
+htable *path_list_init()
 {
+   htable *path_list;
    CurDir *elt = NULL;
-   jcr->path_list = (htable *)malloc(sizeof(htable));
 
-   /* Hard to know in advance how many directories will
-    * be stored in this hash
+   path_list = (htable *)malloc(sizeof(htable));
+
+   /*
+    * Hard to know in advance how many directories will be stored in this hash
     */
-   jcr->path_list->init(elt, &elt->link, 10000);
-   return true;
+   path_list->init(elt, &elt->link, 10000);
+
+   return path_list;
 }
 
-/* Add a path to the hash when we create a directory
- * with the replace=NEVER option
+/*
+ * Add a path to the hash when we create a directory with the replace=NEVER option
  */
-bool path_list_add(JCR *jcr, uint32_t len, char *fname)
+bool path_list_add(htable *path_list, uint32_t len, char *fname)
 {
-   bool ret = true;
    CurDir *item;
 
-   if (!jcr->path_list) {
-      path_list_init(jcr);
-   }
-
-   /* we store CurDir, fname in the same chunk */
-   item = (CurDir *)jcr->path_list->hash_malloc(sizeof(CurDir)+len+1);
-
-   memset(item, 0, sizeof(CurDir));
-   memcpy(item->fname, fname, len+1);
-
-   jcr->path_list->insert(item->fname, item);
-
-   Dmsg1(dbglvl, "add fname=<%s>\n", fname);
-   return ret;
-}
-
-void free_path_list(JCR *jcr)
-{
-   if (jcr->path_list) {
-      jcr->path_list->destroy();
-      free(jcr->path_list);
-      jcr->path_list = NULL;
-   }
-}
-
-bool path_list_lookup(JCR *jcr, char *fname)
-{
-   bool found=false;
-   char bkp;
-
-   if (!jcr->path_list) {
+   if (!path_list) {
       return false;
    }
 
-   /* Strip trailing / */
-   int len = strlen(fname);
+   /*
+    * We store CurDir, fname in the same chunk
+    */
+   item = (CurDir *)path_list->hash_malloc(sizeof(CurDir) + len + 1);
+
+   memset(item, 0, sizeof(CurDir));
+   memcpy(item->fname, fname, len + 1);
+
+   path_list->insert(item->fname, item);
+
+   Dmsg1(dbglvl, "add fname=<%s>\n", fname);
+
+   return true;
+}
+
+bool path_list_lookup(htable *path_list, char *fname)
+{
+   int len;
+   bool found = false;
+   char bkp;
+
+   if (!path_list) {
+      return false;
+   }
+
+   /*
+    * Strip trailing /
+    */
+   len = strlen(fname);
    if (len == 0) {
       return false;
    }
    len--;
    bkp = fname[len];
+
    if (fname[len] == '/') {       /* strip any trailing slash */
       fname[len] = 0;
    }
 
-   CurDir *temp = (CurDir *)jcr->path_list->lookup(fname);
+   CurDir *temp = (CurDir *)path_list->lookup(fname);
    if (temp) {
       found=true;
    }
@@ -130,6 +132,12 @@ bool path_list_lookup(JCR *jcr, char *fname)
 
    fname[len] = bkp;            /* restore last / */
    return found;
+}
+
+void free_path_list(htable *path_list)
+{
+   path_list->destroy();
+   free(path_list);
 }
 
 static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
@@ -151,8 +159,14 @@ static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
    }
 
    if (jcr->keep_path_list) {
-      /* When replace=NEVER, we keep track of all directories newly created */
-      path_list_add(jcr, strlen(path), path);
+      /*
+       * When replace = NEVER, we keep track of all directories newly created
+       */
+      if (!jcr->path_list) {
+         jcr->path_list = path_list_init();
+      }
+
+      path_list_add(jcr->path_list, strlen(path), path);
    }
 
    *created = true;
