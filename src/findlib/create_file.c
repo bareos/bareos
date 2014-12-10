@@ -87,7 +87,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 
 #ifdef HAVE_WIN32
    if (!bfd->use_backup_api) {
-      // eliminate invalid windows filename characters from foreign filenames
+      /*
+       * Eliminate invalid windows filename characters from foreign filenames
+       */
       char *ch = (char *)attr->ofname;
       if (ch[0] != 0 && ch[1] != 0) {
          ch += 2;
@@ -125,8 +127,10 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          }
          break;
       case REPLACE_NEVER:
-         /* Set attributes if we created this directory */
-         if (attr->type == FT_DIREND && path_list_lookup(jcr, attr->ofname)) {
+         /*
+          * Set attributes if we created this directory
+          */
+         if (attr->type == FT_DIREND && path_list_lookup(jcr->path_list, attr->ofname)) {
             break;
          }
          Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Already exists: %s\n"), attr->ofname);
@@ -225,7 +229,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 
          return CF_EXTRACT;
 
-#ifndef HAVE_WIN32  // none of these exist in MS Windows
+#ifndef HAVE_WIN32 /* None of these exist in MS Windows */
       case FT_RAW:                    /* Bareos raw device e.g. /dev/sda1 */
       case FT_FIFO:                   /* Bareos fifo to save data */
       case FT_SPEC:
@@ -279,7 +283,9 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          if (attr->type == FT_RAW || attr->type == FT_FIFO) {
             btimer_t *tid;
             Dmsg1(400, "FT_RAW|FT_FIFO %s\n", attr->ofname);
-            /* Timeout open() in 60 seconds */
+            /*
+             * Timeout open() in 60 seconds
+             */
             if (attr->type == FT_FIFO) {
                Dmsg0(400, "Set FIFO timer\n");
                tid = start_thread_timer(jcr, pthread_self(), 60);
@@ -304,7 +310,6 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          }
          Dmsg1(400, "FT_SPEC %s\n", attr->ofname);
          return CF_CREATED;
-
 
       case FT_LNKSAVED:                  /* Hard linked, file already saved */
          Dmsg2(130, "Hard link %s => %s\n", attr->ofname, attr->olname);
