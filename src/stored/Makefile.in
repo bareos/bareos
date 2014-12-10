@@ -125,7 +125,7 @@ libbareossd.a: $(LIBBAREOSSD_OBJS)
 
 libbareossd.la: Makefile $(LIBBAREOSSD_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOSSD_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE)
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(LIBBAREOSSD_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSD_LT_RELEASE) -lbareos -lbareoscfg
 
 dev.lo: dev.c
 	@echo "Compiling $<"
