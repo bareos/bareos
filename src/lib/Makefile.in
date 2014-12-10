@@ -168,7 +168,7 @@ libbareoscfg.a: $(LIBBAREOSCFG_OBJS)
 libbareoscfg.la: Makefile $(LIBBAREOSCFG_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOSCFG_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSCFG_LT_RELEASE) \
-	                $(LIBS)
+	                $(LIBS) -lbareos
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
