@@ -20,7 +20,7 @@
 
 
 Name:           mingw32-winbareos
-Version:        14.2.1
+Version:        14.2.2
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
