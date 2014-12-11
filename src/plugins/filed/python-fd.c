@@ -3046,7 +3046,7 @@ static inline const char *print_flags_bitmap(PyObject *bitmap)
       int cnt;
       char *flags;
 
-      if (PyByteArray_Size(bitmap) != sizeof(visual_bitmap)) {
+      if (PyByteArray_Size(bitmap) != FOPTS_BYTES) {
          return "Unknown";
       }
 
