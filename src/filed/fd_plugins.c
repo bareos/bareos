@@ -541,6 +541,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    POOL_MEM fname(PM_FNAME);
    POOL_MEM link(PM_FNAME);
    alist *plugin_ctx_list;
+   char flags[FOPTS_BYTES];
 
    cmd = ff_pkt->top_fname;
    plugin_ctx_list = jcr->plugin_ctx_list;
@@ -619,13 +620,17 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          ff_pkt = jcr->ff;
 
          /*
+          * Save original flags.
+          */
+         memcpy(flags, ff_pkt->flags, sizeof(flags));
+
+         /*
           * Copy fname and link because save_file() zaps them.  This avoids zaping the plugin's strings.
           */
          ff_pkt->type = sp.type;
          if (IS_FT_OBJECT(sp.type)) {
             if (!sp.object_name) {
-               Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no object_name in startBackupFile packet.\n"),
-                  cmd);
+               Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no object_name in startBackupFile packet.\n"), cmd);
                goto bail_out;
             }
             ff_pkt->fname = cmd;                 /* full plugin string */
@@ -636,8 +641,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             ff_pkt->object_len = sp.object_len;
          } else {
             if (!sp.fname) {
-               Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no fname in startBackupFile packet.\n"),
-                  cmd);
+               Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no fname in startBackupFile packet.\n"), cmd);
                goto bail_out;
             }
 
@@ -716,6 +720,12 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
           * Call Bareos core code to backup the plugin's file
           */
          save_file(jcr, ff_pkt, true);
+
+         /*
+          * Restore original flags.
+          */
+         memcpy(ff_pkt->flags, flags, sizeof(flags));
+
          ret = plug_func(ctx->plugin)->endBackupFile(ctx);
          if (ret == bRC_More || ret == bRC_OK) {
             accurate_mark_file_as_seen(jcr, fname.c_str());

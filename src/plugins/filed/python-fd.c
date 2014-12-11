@@ -1551,8 +1551,11 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
             goto bail_out;
          }
 
-         flags = PyString_AsString(pSavePkt->flags);
-         memcpy(sp->flags, flags, sizeof(sp->flags));
+         if ((flags = PyByteArray_AsString(pSavePkt->flags))) {
+            memcpy(sp->flags, flags, sizeof(sp->flags));
+         } else {
+            goto bail_out;
+         }
       } else {
          goto bail_out;
       }
@@ -3046,21 +3049,20 @@ static inline const char *print_flags_bitmap(PyObject *bitmap)
       int cnt;
       char *flags;
 
-      if (PyByteArray_Size(bitmap) != FOPTS_BYTES) {
-         return "Unknown";
-      }
+      if (PyByteArray_Size(bitmap) == FOPTS_BYTES) {
+         if ((flags = PyByteArray_AsString(bitmap))) {
+            memset(visual_bitmap, 0, sizeof(visual_bitmap));
+            for (cnt = 0; cnt <= FO_MAX; cnt++) {
+               if (bit_is_set(cnt, flags)) {
+                  visual_bitmap[cnt] = '1';
+               } else {
+                  visual_bitmap[cnt] = '0';
+               }
+            }
 
-      flags = PyString_AsString(bitmap);
-      memset(visual_bitmap, 0, sizeof(visual_bitmap));
-      for (cnt = 0; cnt <= FO_MAX; cnt++) {
-         if (bit_is_set(cnt, flags)) {
-            visual_bitmap[cnt] = '1';
-         } else {
-            visual_bitmap[cnt] = '0';
+            return visual_bitmap;
          }
       }
-
-      return visual_bitmap;
    }
 
    return "Unknown";
