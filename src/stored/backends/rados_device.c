@@ -268,21 +268,16 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
 
 /*
  * Write data to a volume using librados.
+ *
+ * Seems the API changed everything earlier then 0.69 returns bytes written.
  */
+#if LIBRADOS_VERSION_CODE <= 17408
 ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
 {
    if (m_ctx) {
       int nr_written;
 
-#ifdef HAVE_RADOS_STRIPER
-      if (m_striper) {
-         nr_written = rados_striper_write(m_striper, getVolCatName(), (char *)buffer, count, m_offset);
-      } else {
-#endif
-         nr_written = rados_write(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
-#ifdef HAVE_RADOS_STRIPER
-      }
-#endif
+      nr_written = rados_write(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
 
       if (nr_written >= 0) {
          m_offset += nr_written;
@@ -296,6 +291,35 @@ ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
       return -1;
    }
 }
+#else
+ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
+{
+   if (m_ctx) {
+      int status;
+
+#ifdef HAVE_RADOS_STRIPER
+      if (m_striper) {
+         status = rados_striper_write(m_striper, getVolCatName(), (char *)buffer, count, m_offset);
+      } else {
+#endif
+         status = rados_write(m_ctx, getVolCatName(), (char *)buffer, count, m_offset);
+#ifdef HAVE_RADOS_STRIPER
+      }
+#endif
+
+      if (status == 0) {
+         m_offset += count;
+         return count;
+      } else {
+         errno = -status;
+         return -1;
+      }
+   } else {
+      errno = EBADF;
+      return -1;
+   }
+}
+#endif
 
 int rados_device::d_close(int fd)
 {
