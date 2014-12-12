@@ -403,7 +403,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
     * copy inc_options for this file into the ff packet
     */
    if (inc) {
-      clone_bits(FO_MAX, inc->options, ff->flags);
+      copy_bits(FO_MAX, inc->options, ff->flags);
       ff->Compress_algo = inc->algo;
       ff->Compress_level = inc->level;
    }

@@ -52,7 +52,7 @@
 /*
  * Clear all bits
  */
-#define clear_all_bits(b, var) memset(var, 0, nbytes_for_bits((b)))
+#define clear_all_bits(b, var) memset((var), 0, nbytes_for_bits((b)))
 
 /*
  * Set range of bits
@@ -81,5 +81,10 @@
       if (bit_is_set(bit, (var1))) \
          set_bit(bit, (var2)); \
 }
+
+/*
+ * Copy all bits from var1 to var2
+ */
+#define copy_bits(b, var1, var2) memcpy((var2), (var1), nbytes_for_bits((b)))
 
 #endif /* __BITS_H_ */
