@@ -235,6 +235,13 @@ class BareosFdPluginBaseclass(object):
             restorepkt.create_status = bCFs['CF_EXTRACT']
         return bRCs['bRC_OK']
 
+    def set_file_attributes(self, context, restorepkt):
+        bareosfd.DebugMessage(
+            context, 100,
+            "set_file_attributes() entry point in Python called with %s\n" %
+            (str(restorepkt)))
+        return bRCs['bRC_OK'];
+
     def check_file(self, context, fname):
         bareosfd.DebugMessage(
             context, 100,
