@@ -467,7 +467,7 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
    memset(sp, 0, sizeof(struct save_pkt));
    sp->pkt_size = sp->pkt_end = sizeof(struct save_pkt);
    sp->portable = true;
-   clone_bits(FO_MAX, ff_pkt->flags, sp->flags);
+   copy_bits(FO_MAX, ff_pkt->flags, sp->flags);
    sp->cmd = cmd;
    sp->link = ff_pkt->link;
    sp->statp = ff_pkt->statp;
@@ -599,7 +599,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.pkt_end = sizeof(sp);
          sp.portable = true;
          sp.no_read = false;
-         clone_bits(FO_MAX, ff_pkt->flags, sp.flags);
+         copy_bits(FO_MAX, ff_pkt->flags, sp.flags);
          sp.cmd = cmd;
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n", &sp.statp.st_size, &sp.statp.st_blocks, &sp);
 
@@ -622,7 +622,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          /*
           * Save original flags.
           */
-         memcpy(flags, ff_pkt->flags, sizeof(flags));
+         copy_bits(FO_MAX, ff_pkt->flags, flags);
 
          /*
           * Copy fname and link because save_file() zaps them.  This avoids zaping the plugin's strings.
@@ -724,7 +724,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          /*
           * Restore original flags.
           */
-         memcpy(ff_pkt->flags, flags, sizeof(flags));
+         copy_bits(FO_MAX, flags, ff_pkt->flags);
 
          ret = plug_func(ctx->plugin)->endBackupFile(ctx);
          if (ret == bRC_More || ret == bRC_OK) {
@@ -825,7 +825,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          sp.pkt_size = sizeof(sp);
          sp.pkt_end = sizeof(sp);
          sp.portable = true;
-         clone_bits(FO_MAX, ff_pkt->flags, sp.flags);
+         copy_bits(FO_MAX, ff_pkt->flags, sp.flags);
          sp.cmd = cmd;
          Dmsg3(dbglvl, "startBackup st_size=%p st_blocks=%p sp=%p\n",
                &sp.statp.st_size, &sp.statp.st_blocks, &sp);

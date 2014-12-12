@@ -138,7 +138,7 @@ int find_files(JCR *jcr, FF_PKT *ff,
             findFOPTS *fo;
 
             fo = (findFOPTS *)incexe->opts_list.get(j);
-            clone_bits(FO_MAX, fo->flags, ff->flags);
+            copy_bits(FO_MAX, fo->flags, ff->flags);
             ff->Compress_algo = fo->Compress_algo;
             ff->Compress_level = fo->Compress_level;
             ff->strip_path = fo->strip_path;
@@ -257,7 +257,7 @@ bool accept_file(FF_PKT *ff)
       findFOPTS *fo;
 
       fo = (findFOPTS *)incexe->opts_list.get(j);
-      clone_bits(FO_MAX, fo->flags, ff->flags);
+      copy_bits(FO_MAX, fo->flags, ff->flags);
       ff->Compress_algo = fo->Compress_algo;
       ff->Compress_level = fo->Compress_level;
       ff->fstypes = fo->fstype;
