@@ -14,7 +14,7 @@ BuildRequires:  sed
 BuildRequires:  opsi-utils
 BuildRequires:  winbareos-nsi = %{version}
 
-Source0:        bareos_%{version}.tar.gz
+Source0:        bareos-%{version}.tar.gz
 
 %description
 Bareos - Backup Archiving Recovery Open Sourced.
@@ -40,8 +40,12 @@ Using OPSI, the package can be distributed to Windows systems.
 %build
 cd platforms
 
-sed -i -e 's/^version: $PackageVersion/version: %{release}/i' \
-       -e 's/^version: $ProductVersion/version: %{version}/i' opsi/OPSI/control
+# OPSI ProductVersion is at most 32 characters long
+VERSION32C=$(sed -r -e 's/(.{1,32}).*/\1/' -e 's/\.*$//' <<< %{version})
+
+# set version and release for OPSI
+sed -i -e "s/^version: \$PackageVersion/version: %{release}/i" \
+       -e "s/^version: \$ProductVersion/version: $VERSION32C/i" opsi/OPSI/control
 
 WINBAREOS32=`ls -1 /winbareos-*-32-bit-*.exe`
 WINBAREOS64=`ls -1 /winbareos-*-64-bit-*.exe`
@@ -66,7 +70,7 @@ cp -a platforms/winbareos*.opsi* $RPM_BUILD_ROOT%{opsidest}
 
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+[ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 
 %files
