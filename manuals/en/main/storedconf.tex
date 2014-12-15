@@ -223,7 +223,7 @@ Specifies port number on which the Storage daemon listens for NDMP Tape Server
 connections.
 }
 
-\xdirective{dir}{}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4}{%
+\xdirective{dir}{}{AutoXflateOnReplication}{yes{\textbar}no}{required}{yes}{13.4.0}{%
 \label{storage-storage-autoxflateonreplication}%
 This directive controls the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
 plugin when replicating data inside one or
@@ -443,7 +443,6 @@ at the beginning of the job.
 A FIFO device can also be used to test your configuration, see the \ilink{Howto section}{TestUsingFifoDevice}.
 
    \item[Ceph Object Store] \label{CephArchiveType}
-   New since version \sinceVersion{sd}{Ceph}{14.2.2}.
    Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
    working Ceph object store and the package \file{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration. 
    Assuming that you have an object store with name \file{your_bareos_store} 
@@ -455,13 +454,13 @@ Device {
    Media Type = RadosFile
    Archive Device = /etc/ceph/ceph.conf:your_bareos_store
    LabelMedia = yes
-   Random Access = Yes
+   Random Access = yes
    AutomaticMount = yes
    RemovableMedia = no
    AlwaysOpen = no
 }
    \end{bconfig}
-
+   \sinceVersion{sd}{Ceph Backend}{14.2.2}
 
 \end{description}
 
@@ -483,6 +482,7 @@ may be one of the following:
   or write-only device.
 \item [Rados]
   The Rados device is used to access a Ceph object store.
+  \sinceVersion{sd}{Ceph (Rados)}{14.2.2}
 \end{description}
 
 The Device Type directive is not required, and if not specified, Bareos
@@ -955,7 +955,7 @@ Please read chapter \nameref{Tapespeed and blocksizes},
 to see how to tune this value in a safe manner.
 }
 
-\xdirective{dir}{}{Label block size}{\dtSize}{}{64512}{14.2}{
+\xdirective{dir}{}{Label block size}{\dtSize}{}{64512}{14.2.0}{
 The storage daemon will write the label blocks with the size configured here.
 Usually, you will not need to change this directive.
 
@@ -1209,7 +1209,7 @@ this device. This directory is also used to store  temporary part files when
 writing to a device that requires mount (USB).  The default is to use the
 working directory.
 
-\xdirective{dir}{}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflate}{in{\textbar}out{\textbar}both}{}{}{13.4.0}{%
 \label{storage-device-autodeflate}%
 This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
  which allow you to transform
@@ -1239,7 +1239,7 @@ Or when your filesystem doesn't have the option to transparently compress
 data you write to it but you want the data to be compressed when written.
 }
 
-\xdirective{dir}{}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflateAlgorithm}{GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC}{}{}{13.4.0}{%
 \label{storage-device-autodeflatealgorithm}%
 This option specifies the compression algorithm used for the autodeflate option
 which is performed by the autoxflate-sd plugin. The algorithms supported are:
@@ -1251,13 +1251,13 @@ which is performed by the autoxflate-sd plugin. The algorithms supported are:
 \item LZ4HC
 \end{itemize}}
 
-\xdirective{dir}{}{AutoDeflateLevel}{0--9}{}{}{13.4}{%
+\xdirective{dir}{}{AutoDeflateLevel}{0--9}{}{}{13.4.0}{%
 \label{storage-device-autodeflatelevel}%
 This option specifies the level to be used when compressing when you select a
 compression algorithm that has different levels.}
 
 
-\xdirective{dir}{}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4}{%
+\xdirective{dir}{}{AutoInflate}{in{\textbar}out{\textbar}both}{}{}{13.4.0}{%
 \label{storage-device-autoinflate}%
 This is a parameter used by the \ilink{autoxflate-sd plugin}{plugin-autoxflate-sd}
 which allow you to transform
