@@ -14,7 +14,7 @@ BuildRequires:  sed
 BuildRequires:  opsi-utils
 BuildRequires:  winbareos-nsi = %{version}
 
-Source0:        bareos_%{version}.tar.gz
+Source0:        bareos-%{version}.tar.gz
 
 %description
 Bareos - Backup Archiving Recovery Open Sourced.
