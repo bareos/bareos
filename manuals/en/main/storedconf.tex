@@ -380,7 +380,7 @@ conf  file on the
 \nameref{DirectorResourceStorage}  in its Storage
 resource.
 
-\directive{sd}{Archive Device}{device {\textbar} directory {\textbar} fifo}{required}{}{}
+\directive{sd}{Archive Device}{device {\textbar} directory {\textbar} fifo  {\textbar} Ceph object store}{required}{}{}
 Specifies where to read and write the backup data.
 The type of the Archive Device can be specified by the {\bf Device Type} directive.
 If Device Type is not specified, Bareos tries to guess the Device Type
@@ -441,10 +441,32 @@ noted above, you may use the {\bf RunBeforeJob}  to start the writer program
 at the beginning of the job.
 
 A FIFO device can also be used to test your configuration, see the \ilink{Howto section}{TestUsingFifoDevice}.
+
+   \item[Ceph Object Store] \label{CephArchiveType}
+   New since version \sinceVersion{sd}{Ceph}{14.2.2}.
+   Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
+   working Ceph object store and the package \file{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration. 
+   Assuming that you have an object store with name \file{your_bareos_store} 
+   and your Ceph access is configured in \file{/etc/ceph/ceph.conf}, you can use following snippet to configure it as storage device:
+   \begin{bconfig}{Ceph Object Store Device}
+Device {
+   Name = RadosStorage
+   Device Type = rados
+   Media Type = RadosFile
+   Archive Device = /etc/ceph/ceph.conf:your_bareos_store
+   LabelMedia = yes
+   Random Access = Yes
+   AutomaticMount = yes
+   RemovableMedia = no
+   AlwaysOpen = no
+}
+   \end{bconfig}
+
+
 \end{description}
 
 
-\directive{sd}{Device Type}{tape {\textbar} file {\textbar} fifo}{}{}{}
+\directive{sd}{Device Type}{tape {\textbar} file {\textbar} fifo  {\textbar} rados }{}{}{}
 The Device Type specification allows you to explicitly tell Bareos
 what kind of device you are defining. It the {\bf type-specification}
 may be one of the following:
@@ -459,6 +481,8 @@ may be one of the following:
 \item [Fifo]
   The device is a first-in-first out sequential access read-only
   or write-only device.
+\item [Rados]
+  The Rados device is used to access a Ceph object store.
 \end{description}
 
 The Device Type directive is not required, and if not specified, Bareos
