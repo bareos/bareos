@@ -468,8 +468,8 @@ Device {
 
    \item[Ceph Object Store] \label{CephArchiveType}
    Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
-   working Ceph object store and the package \package{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration. 
-   Assuming that you have an object store with name \file{your_bareos_store} 
+   working Ceph object store and the package \package{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration.
+   Assuming that you have an object store with name \file{your_bareos_store}
    and your Ceph access is configured in \file{/etc/ceph/ceph.conf}, you can use following snippet to configure it as storage device:
    \begin{bconfig}{Ceph Object Store Device}
 Device {
@@ -504,8 +504,8 @@ may be one of the following:
 \item [Fifo]
   The device is a first-in-first-out sequential access read-only
   or write-only device.
-\item [gfapi]
-  The gfapi device is used to access a GlusterFS storeage.
+\item [GFAPI]
+  The gfapi device is used to access a GlusterFS storage.
   \sinceVersion{sd}{GlusterFS (gfapi)}{14.2.2}
 \item [Rados]
   The Rados device is used to access a Ceph object store.
