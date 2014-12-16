@@ -76,16 +76,19 @@ Please keep in mind if you use the trusted security method you have to use the s
 \subsubsection{MSSQL Plugin Installation}
 \label{MssqlPluginInstallation}
 
+For Bareos $<$ 14.2, install the Bareos MSSQL plugin onto the MSSQL server you want to backup.
+Bareos $>=$ 14.2 also allows to backup remote MSSQL servers (option \parameter{serveraddress}). 
+
 \paragraph{Bareos Windows-Installer}
 
-Install the bareos fileadaemon on the MSSQL server computer and install also the component "Bareos FileDameon Plugins".
-Make sure, that you install the file daemon {\bf without the "compatible" option}.\\
+Install the Bareos filedaemon including the component "Bareos FileDameon Plugins".
+Make sure, that you install the file daemon {\bf without the "compatible" option}.
 
 \paragraph{Manual install}
 
 After downloading the plugin you need to copy it into \path|C:\Program Files\Bareos\Plugins|.
 Then you need to define the plugin directory and which plugin the {\bf bareos-filedaemon} should use.
-You have to edit the {\bf bareos-filedaemon} ressource in  \path|C:\Program Data\bareos-fd.conf| as followed.\\
+You have to edit the {\bf bareos-filedaemon} ressource in  \path|C:\Program Data\bareos-fd.conf| as follows:
 
 \begin{bconfig}{MSSQL plugin configuration}
 FileDaemon {
@@ -123,6 +126,7 @@ Plugin Info:
  License    : Bareos AGPLv3
  Usage      :
   mssqlvdi:
+  serveraddress=<hostname>:
   instance=<instance name>:
   database=<database name>:
   username=<database username>:
@@ -162,6 +166,7 @@ Used options in the plugin string are:
 \begin{description}
   \item[mssqlvdi]
   This is the reference to the MSSQL plugin.
+  \item[serveraddress] (\sinceVersion{fd}{MSSQL: serveraddress}{14.2.2}) Defines the server address to connect to (if empty defaults to localhost).
   \item[instance] Defines the instance within the database server.
   \item[database] Defines the database that should get backuped.
   \item[username and password] Username and Password are required, when the connection is done using a MSSQL user. If the systemaccount the bareos-fd runs with has succifient permissions, this is not required.
@@ -169,7 +174,7 @@ Used options in the plugin string are:
 
 It is recommend to define an additional restore job. 
 
-For every database seperat job and FileSet are required.
+For every database separate job and FileSet are required.
 
 \subsubsection{Run Backups}
 
@@ -273,7 +278,9 @@ Incremental FileSet example:
 
 \subsubsection{Restores}
 
-If you want to perfom a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
+If you want to perfom a restore of a full backup without differentials or incrementals you have
+some options which helps you to restore even the corrupted database still exist.
+But you have to specifiy the options like plugin, instance and database during every backup.
 
 \begin{description}
   \item[replace=\textless yes{\textbar}no\textgreater]
@@ -283,6 +290,15 @@ If you want to perfom a restore of a full backup without differentials or increm
   \item[database]
   Defines the database you want to backup.
 \end{description}
+
+If you want to restore the actual backup to a set of backup files which you can use to
+restore a database under an new name or perform any kind of special operations using
+for example the sql management studio, you can use a where setting for the restore
+other then '/'. When the where is set to '/' it will restore to the Virtual Device Interface
+(VDI).
+
+When you specify for restore a where path which is lets say 'c:/temp' the plugin will restore
+the selected backup files under a relocated path under c:/temp/@MSSQL@/...
 
 Example for a full restore:
 
@@ -351,7 +367,7 @@ Using Catalog "MyCatalog"
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.4.bsr
-Where:           /tmp
+Where:           /
 Replace:         Always
 FileSet:         Mssql
 Backup Client:   mssqlserver-fd
@@ -383,7 +399,7 @@ Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=my
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.4.bsr
-Where:           /tmp
+Where:           /
 Replace:         Always
 FileSet:         Mssql
 Backup Client:   mssqlserver-fd
@@ -519,7 +535,7 @@ Select Restore Job (1-2): <input>1</input>
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
-Where:           /tmp
+Where:           /
 Replace:         Always
 FileSet:         Mssql
 Backup Client:   mssqlserver-fd
@@ -551,7 +567,7 @@ Please enter Plugin Options string: <input>mssqlvdi:instance=default:database=my
 Run Restore job
 JobName:         RestoreMSSQL
 Bootstrap:       /var/lib/bareos/bareos-dir.restore.6.bsr
-Where:           /tmp
+Where:           /
 Replace:         Always
 FileSet:         Mssql
 Backup Client:   mssqlserver-fd
