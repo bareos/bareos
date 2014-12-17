@@ -602,7 +602,6 @@ apply_dbconfig_settings()
     if [ "$dbc_authmethod_user" != "ident" ] && [ "$dbc_dbpass" ]; then
         set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbpassword" "$dbc_dbpass"
     fi
-
 }
 
 get_local_hostname()
