@@ -34,3 +34,8 @@ You can find a copy of this license in [LICENSE.txt](LICENSE.txt).
 * Twitter Bootstrap - Apache License v2.0
 * jQuery - MIT License
 * jqplot - dual licensed under MIT License and GPL Version 2 License
+
+### BUGTRACKER
+
+[http://bugs.bareos.org](http://bugs.bareos.orgi)
+
