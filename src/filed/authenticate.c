@@ -329,13 +329,19 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
        */
       if (initiate) {
          verify_list = me->tls_allowed_cns;
+         if (!bnet_tls_server(me->tls_ctx, bs, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+            auth_success = false;
+            goto auth_fatal;
+         }
+      } else {
+         if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+            auth_success = false;
+            goto auth_fatal;
+         }
       }
 
-      if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
-         Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
-         auth_success = false;
-         goto auth_fatal;
-      }
       if (me->tls_authenticate) {           /* tls authentication only? */
          bs->free_tls();                    /* yes, shutdown tls */
       }
