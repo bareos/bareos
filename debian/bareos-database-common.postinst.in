@@ -49,8 +49,8 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         # run dbconfig
         dbc_go bareos-database-common $param1 $param2 $@
 
-        # apply the dbconfig settings
-        apply_dbconfig_settings
+        # apply the dbconfig settings, ignore errors
+        @scriptdir@/bareos-config apply_dbconfig_settings || true
     fi
 fi
 
