@@ -1,7 +1,7 @@
 
 Name:          bareos-webui
 Provides:      bareos-console-web
-Version:       0.1
+Version:       14.2.0
 Release:       0%{?dist}
 Summary:       Bareos Web User Interface
 
