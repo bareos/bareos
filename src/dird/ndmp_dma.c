@@ -37,6 +37,10 @@
 #define MAX_PAGES 2400
 #define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE)  /* approx 10MB */
 
+#define SMTAPE_MIN_BLOCKSIZE 4096 /* 4 Kb */
+#define SMTAPE_MAX_BLOCKSIZE 262144 /* 256 Kb */
+#define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /* 4 Kb */
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Imported variables */
@@ -1254,7 +1258,27 @@ static inline bool build_ndmp_job(JCR *jcr,
       goto bail_out;
    }
 
-   job->record_size = jcr->res.client->ndmp_blocksize;
+   if (bstrcasecmp(jcr->backup_format, "smtape")) {
+      /*
+       * SMTAPE only wants certain blocksizes.
+       */
+      if (jcr->res.client->ndmp_blocksize < SMTAPE_MIN_BLOCKSIZE ||
+          jcr->res.client->ndmp_blocksize > SMTAPE_MAX_BLOCKSIZE) {
+         Jmsg(jcr, M_FATAL, 0,
+              _("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d and %d, but is set to %d\n"),
+              SMTAPE_MIN_BLOCKSIZE, SMTAPE_MAX_BLOCKSIZE, jcr->res.client->ndmp_blocksize);
+      }
+
+      if ((jcr->res.client->ndmp_blocksize % SMTAPE_BLOCKSIZE_INCREMENTS) != 0) {
+         Jmsg(jcr, M_FATAL, 0,
+              _("For SMTAPE NDMP jobs the NDMP blocksize needs to be in increments of %d bytes, but is set to %d\n"),
+              SMTAPE_BLOCKSIZE_INCREMENTS, jcr->res.client->ndmp_blocksize);
+      }
+
+      job->record_size = jcr->res.client->ndmp_blocksize;
+   } else {
+      job->record_size = jcr->res.client->ndmp_blocksize;
+   }
 
    return true;
 
