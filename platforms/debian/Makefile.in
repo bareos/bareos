@@ -50,26 +50,42 @@ install-dbconfig:
 	@echo "Installing dbconfig files ..."
 	@$(INSTALL_PROGRAM) set_dbconfig_vars.sh $(DESTDIR)/${scriptdir}/
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/
+	#
+	# mysql
+	#
 	@$(SYMLINK) $(scriptdir)/ddl/creates/mysql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
-	@$(SYMLINK) $(scriptdir)/ddl/creates/postgresql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
-	@$(SYMLINK) $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
-	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/mysql.*.sql; do \
 		BASENAME=`basename $$i`; \
 		VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/mysql/$$VERSION; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/$$VERSION; \
 	done
+	#
+	# postgresql
+	#
+	@$(SYMLINK) $(scriptdir)/ddl/creates/postgresql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/
+	# if the initial install has not used dbconfig,
+	# the bareos database user might not have the required permissions
+	# to drop tables. Therefore droping tables will be done as database admin user.
+	# Tables are created by the bareos database user,
+	# because otherwise it do not receive the required permissions.
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/postgresql.*.sql; do \
 		BASENAME=`basename $$i`; \
 		VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+		grep -E -i "^DROP|^--|^$$" $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+		sed 's/^DROP/-- upgrade-dbadmin: DROP/' $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/$$VERSION; \
 	done
-	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/
+	#
+	# sqlite
+	#
+	@$(SYMLINK) $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
+	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/sqlite3.*.sql; do \
 		BASENAME=`basename $$i`; \
 		VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/sqlite3/$$VERSION; \
+		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/$$VERSION; \
 	done
 
 clean:

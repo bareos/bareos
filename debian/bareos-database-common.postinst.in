@@ -46,6 +46,9 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         # dbc_dbfile_owner: only required for sqlite3
         dbc_dbfile_owner=`get_user_dir`:`get_group_dir`
 
+        # substitution is only done on installs, not on updates!
+        #dbc_sql_substitutions="yes"
+
         # run dbconfig
         dbc_go bareos-database-common $param1 $param2 $@
 
