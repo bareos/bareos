@@ -58,7 +58,7 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
                         # empty passwords require special treatment, see below
                         bareos_database_password=`get_database_password` || true
                         # if password is given, set authmethod to password,
-                        # otherwise postgresql configuration will stay at default ident
+                        # otherwise postgresql configuration will stay at default "ident" method.
                         if [ "${bareos_database_password}" ]; then
                             dbc_authmethod_user="password"
                         fi
