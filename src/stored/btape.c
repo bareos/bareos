@@ -1109,7 +1109,7 @@ static void speed_test()
    }
 }
 
-const int num_recs = 10000;
+const uint64_t num_recs = 10000LL;
 
 static bool write_two_files()
 {
@@ -1125,10 +1125,11 @@ static bool write_two_files()
     * doesn't insert any additional EOF marks
     */
    if (dev->max_block_size) {
-      dev->max_file_size = (uint64_t)2 * (num_recs * dev->max_block_size);
+      dev->max_file_size = 2LL * num_recs * (uint64_t)dev->max_block_size;
    } else {
-      dev->max_file_size = 2 * (num_recs * DEFAULT_BLOCK_SIZE);
+      dev->max_file_size = 2LL * num_recs * (uint64_t)DEFAULT_BLOCK_SIZE;
    }
+   Dmsg1(100, "max_file_size was set to %lld\n", dev->max_file_size);
 
    Pmsg2(-1, _("\n=== Write, rewind, and re-read test ===\n\n"
       "I'm going to write %d records and an EOF\n"

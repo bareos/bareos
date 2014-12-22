@@ -503,7 +503,7 @@ bool DCR::write_block_to_dev()
          }
       }
 
-      Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+      Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
                wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
 
       if (wlen-blen > 0) {
@@ -511,7 +511,7 @@ bool DCR::write_block_to_dev()
       }
    }
 
-   Dmsg4(100, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
+   Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
                wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
 
 
