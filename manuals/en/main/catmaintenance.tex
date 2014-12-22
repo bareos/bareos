@@ -29,9 +29,7 @@ This might require some more manual configuration.
 \index[general]{Platform!Ubuntu!dbconfig-common}
 \label{sec:dbconfig}
 
-Since Bareos \sinceVersion{dir}{dbconfig-common (Debian)}{14.2.0} the Debian (and Ubuntu) based packages support the \package{dbconfig-common} mechanism to create and update the Bareos database.
-If this is properly configured, there is no need to manual create and update the Bareos database. 
-Instead, this will be done automatically during package installation and update, according to the user choices.
+Since Bareos \sinceVersion{dir}{dbconfig-common (Debian)}{14.2.0} the Debian (and Ubuntu) based packages support the \package{dbconfig-common} mechanism to create and update the Bareos database, according to the user choices.
 
 The first choice is, if \package{dbconfig-common} should be used at all.
 If you decide against it, the database must be configured manually, see \nameref{CatMaintenanceManualConfiguration}.
@@ -39,6 +37,7 @@ If you decide against it, the database must be configured manually, see \nameref
 If you decided to use \package{dbconfig-common}, the next question will only be asked, if more than one
 Bareos database backend (\package{bareos-database-*}) is installed.
 If this is the case, select the database backend you want to use.
+
 
 \begin{center}
 \includegraphics[width=0.45\textwidth]{\idir dbconfig-1-enable}
@@ -55,6 +54,11 @@ Settings are stored in the file \file{/etc/dbconfig-common/bareos-database-commo
 The Bareos database backend will get automatically configured in \file{/etc/bareos/bareos-dir.conf}.
 A later reconfiguration might require manual adapt changes.
 
+\warning{When using the PostgreSQL backend and updating to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions (\command{grant_bareos_privileges}), normally by}
+\begin{commands}{}
+<command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
+\end{commands}
+For details see chapter \nameref{CatMaintenanceManualConfiguration}.
 
 
 
@@ -209,12 +213,51 @@ This can be verified by the command \command{psql -l}, which  shows information 
         List of databases
    Name    |  Owner   | Encoding
 -----------+----------+-----------
- bareos    | root     | SQL_ASCII
+ bareos    | postgres | SQL_ASCII
  postgres  | postgres | UTF8
  template0 | postgres | UTF8
  template1 | postgres | UTF8
 (4 rows)
 \end{commands}
+
+The owner of the database may vary. The Bareos database maintance scripts don't change the default owner of the Bareos database, so it stays at the PostgreSQL administration user. The \command{grant_bareos_privileges} script grant the required permissions to the Bareos database user. In contrast, when installing (not updating) using \ilink{dbconfig}{sec:dbconfig}, the database owner will be identical with the Bareos database user.
+
+% \warning{When updating from Bareos $<$ 14.2 to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions, using the \command{grant_bareos_privileges} command.}
+
+% When updating from Bareos $<$ 14.2 to a version using dbconfig (Debian based distribution),
+% you should change the database owner to the Bareos database user:
+% \begin{commands}{Change the database owner to the Bareos database user (Debian)}
+% root@linux:~# <input>su - postgres</input>
+% postgres@linux:~# <input>psql</input>
+% psql (9.1.14)
+% Type "help" for help.
+% 
+% postgres=> <input>\l</input>
+%                              List of databases
+%    Name    |  Owner   | Encoding  | Collate | Ctype |   Access privileges   
+% -----------+----------+-----------+---------+-------+-----------------------
+%  bareos    | postgres | SQL_ASCII | C       | C     | 
+%  postgres  | postgres | SQL_ASCII | C       | C     | 
+%  template0 | postgres | SQL_ASCII | C       | C     | =c/postgres          +
+%            |          |           |         |       | postgres=CTc/postgres
+%  template1 | postgres | SQL_ASCII | C       | C     | =c/postgres          +
+%            |          |           |         |       | postgres=CTc/postgres
+% (4 rows)
+% 
+% postgres=> <input>ALTER DATABASE bareos OWNER TO bareos;</input>
+% ALTER DATABASE
+% postgres=> <input>\l</input>
+%                              List of databases
+%    Name    |  Owner   | Encoding  | Collate | Ctype |   Access privileges   
+% -----------+----------+-----------+---------+-------+-----------------------
+%  bareos    | bareos   | SQL_ASCII | C       | C     | 
+%  postgres  | postgres | SQL_ASCII | C       | C     | 
+%  template0 | postgres | SQL_ASCII | C       | C     | =c/postgres          +
+%            |          |           |         |       | postgres=CTc/postgres
+%  template1 | postgres | SQL_ASCII | C       | C     | =c/postgres          +
+%            |          |           |         |       | postgres=CTc/postgres
+% (4 rows)
+% \end{commands}
 
 By default, using PostgreSQL ident, a Unix user can access a database of the same name.
 Therefore the user \user{bareos} can access the database \path|bareos|.
@@ -234,36 +277,36 @@ bareos=> <input>\dt</input>
                  List of relations
  Schema |          Name          | Type  |  Owner
 --------+------------------------+-------+----------
- public | basefiles              | table | root
- public | cdimages               | table | root
- public | client                 | table | root
- public | counters               | table | root
- public | device                 | table | root
+ public | basefiles              | table | postgres
+ public | cdimages               | table | postgres
+ public | client                 | table | postgres
+ public | counters               | table | postgres
+ public | device                 | table | postgres
  public | devicestats            | table | postgres
- public | file                   | table | root
- public | filename               | table | root
- public | fileset                | table | root
- public | job                    | table | root
- public | jobhisto               | table | root
- public | jobmedia               | table | root
+ public | file                   | table | postgres
+ public | filename               | table | postgres
+ public | fileset                | table | postgres
+ public | job                    | table | postgres
+ public | jobhisto               | table | postgres
+ public | jobmedia               | table | postgres
  public | jobstats               | table | postgres
- public | location               | table | root
- public | locationlog            | table | root
- public | log                    | table | root
- public | media                  | table | root
- public | mediatype              | table | root
+ public | location               | table | postgres
+ public | locationlog            | table | postgres
+ public | log                    | table | postgres
+ public | media                  | table | postgres
+ public | mediatype              | table | postgres
  public | ndmpjobenvironment     | table | postgres
- public | ndmplevelmap           | table | root
- public | path                   | table | root
- public | pathhierarchy          | table | root
- public | pathvisibility         | table | root
- public | pool                   | table | root
- public | quota                  | table | root
- public | restoreobject          | table | root
- public | status                 | table | root
- public | storage                | table | root
- public | unsavedfiles           | table | root
- public | version                | table | root
+ public | ndmplevelmap           | table | postgres
+ public | path                   | table | postgres
+ public | pathhierarchy          | table | postgres
+ public | pathvisibility         | table | postgres
+ public | pool                   | table | postgres
+ public | quota                  | table | postgres
+ public | restoreobject          | table | postgres
+ public | status                 | table | postgres
+ public | storage                | table | postgres
+ public | unsavedfiles           | table | postgres
+ public | version                | table | postgres
 (30 rows)
 
 bareos=> <input>select * from Version;</input>
@@ -683,6 +726,61 @@ Job {
 \end{verbatim}
 
 
+\section{PostgreSQL}
+
+\label{RepairingPSQL}
+\subsection{Repairing Your PostgreSQL Database}
+\index[general]{Database!Repairing Your PostgreSQL}
+\index[general]{Repairing Your PostgreSQL Database}
+
+The same considerations apply that are indicated above for MySQL. That is,
+consult the PostgreSQL documents for how to repair the database, and also
+consider using \command{bareos-dbcheck} program if the conditions are reasonable for
+using (see above).
+
+\subsection{Compacting Your PostgreSQL Database}
+\index[general]{Database!Compacting Your PostgreSQL}
+\index[general]{Compacting Your PostgreSQL Database}
+\label{CompactingPostgres}
+
+Over time, as noted above, your database will tend to grow. I've noticed that
+even though Bareos regularly prunes files, PostgreSQL has a {\bf VACUUM}
+command that will compact your database for you. Alternatively you may want to
+use the {\bf vacuumdb} command, which can be run from a cron job.
+
+All database programs have some means of writing the database out in ASCII
+format and then reloading it. Doing so will re-create the database from
+scratch producing a compacted result, so below, we show you how you can do
+this for PostgreSQL.
+
+For a {\bf PostgreSQL} database, you could write the Bareos database as an
+ASCII file (bareos.sql) then reload it by doing the following:
+
+\footnotesize
+\begin{verbatim}
+pg_dump -c bareos > bareos.sql
+cat bareos.sql | psql bareos
+rm -f bareos.sql
+\end{verbatim}
+\normalsize
+
+Depending on the size of your database, this will take more or less time and a
+fair amount of disk space. For example, you can {\bf cd} to the location of
+the Bareos database (typically /usr/local/pgsql/data or possible
+/var/lib/pgsql/data) and check the size.
+
+There are certain PostgreSQL users who do not recommend the above
+procedure. They have the following to say:
+PostgreSQL does not
+need to be dumped/restored to keep the database efficient.  A normal
+process of vacuuming will prevent the database from every getting too
+large.  If you want to fine-tweak the database storage, commands such
+as VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you
+from having to do a dump/restore.
+
+Finally, you might want to look at the PostgreSQL documentation on
+this subject at
+\url{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}.
 
 \section{MySQL}
 \label{CompactingMySQL}
@@ -818,62 +916,6 @@ set:
 \end{verbatim}
 \normalsize
 
-\section{PostgreSQL}
-
-\label{RepairingPSQL}
-\subsection{Repairing Your PostgreSQL Database}
-\index[general]{Database!Repairing Your PostgreSQL}
-\index[general]{Repairing Your PostgreSQL Database}
-
-The same considerations apply that are indicated above for MySQL. That is,
-consult the PostgreSQL documents for how to repair the database, and also
-consider using \command{bareos-dbcheck} program if the conditions are reasonable for
-using (see above).
-
-\subsection{Compacting Your PostgreSQL Database}
-\index[general]{Database!Compacting Your PostgreSQL}
-\index[general]{Compacting Your PostgreSQL Database}
-\label{CompactingPostgres}
-
-Over time, as noted above, your database will tend to grow. I've noticed that
-even though Bareos regularly prunes files, PostgreSQL has a {\bf VACUUM}
-command that will compact your database for you. Alternatively you may want to
-use the {\bf vacuumdb} command, which can be run from a cron job.
-
-All database programs have some means of writing the database out in ASCII
-format and then reloading it. Doing so will re-create the database from
-scratch producing a compacted result, so below, we show you how you can do
-this for PostgreSQL.
-
-For a {\bf PostgreSQL} database, you could write the Bareos database as an
-ASCII file (bareos.sql) then reload it by doing the following:
-
-\footnotesize
-\begin{verbatim}
-pg_dump -c bareos > bareos.sql
-cat bareos.sql | psql bareos
-rm -f bareos.sql
-\end{verbatim}
-\normalsize
-
-Depending on the size of your database, this will take more or less time and a
-fair amount of disk space. For example, you can {\bf cd} to the location of
-the Bareos database (typically /usr/local/pgsql/data or possible
-/var/lib/pgsql/data) and check the size.
-
-There are certain PostgreSQL users who do not recommend the above
-procedure. They have the following to say:
-PostgreSQL does not
-need to be dumped/restored to keep the database efficient.  A normal
-process of vacuuming will prevent the database from every getting too
-large.  If you want to fine-tweak the database storage, commands such
-as VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you
-from having to do a dump/restore.
-
-Finally, you might want to look at the PostgreSQL documentation on
-this subject at
-\elink{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}
-{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}.
 
 
 

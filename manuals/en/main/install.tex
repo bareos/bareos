@@ -310,6 +310,11 @@ Take a look in the \ilink{Release Notes}{releasenotes} to see, what Bareos updat
 
 Since Bareos \sinceVersion{dir}{dbconfig-common (Debian)}{14.2.0} the Debian (and Ubuntu) based packages support the \package{dbconfig-common} mechanism to create and update the Bareos database.
 If this is properly configured, the database schema will be automatically adapted by the Bareos packages.
+
+\warning{When using the PostgreSQL backend and updating to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions, normally by}
+\begin{commands}{}
+<command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
+\end{commands}
 For details see \nameref{sec:dbconfig}.
 
 If you disabled the usage of \package{dbconfig-common}, 
