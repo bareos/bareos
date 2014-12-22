@@ -316,4 +316,5 @@ Console {
   Name = @basename@-mon
   Password = "@mon_dir_password@"
   CommandACL = status, .status
+  JobACL = *all*
 }
