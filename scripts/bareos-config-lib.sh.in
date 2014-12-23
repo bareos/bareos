@@ -194,54 +194,23 @@ get_database_utility_path()
 setup_sd_user()
 {
     #
-    # Guaranties that storage-daemon user and group exists
+    # guaranties that storage-daemon user and group exists
     # and storage-daemon user belongs to the required groups.
     #
     # normally, storage-daemon user
     # is already installed by the package preinstall script.
     #
 
+    #
+    # See what secondary groups exist for the sd user to be added to.
+    #
     ADD_GROUPS=""
-    getent passwd ${STORAGE_DAEMON_USER} > /dev/null
-    if [ $? = 0 ]; then
-        #
-        # Build a list of all groups the user is already in.
-        #
-        CUR_ADD_GROUPS=`id -Gn ${STORAGE_DAEMON_USER}`
-        for sec_group in ${CUR_ADD_GROUPS}
-        do
-            [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
-        done
-
-        #
-        # See what secondary groups exist for the SD user to be added to.
-        #
-        for sec_group in ${SEC_GROUPS}; do
-            cnt=`getent group ${sec_group} | wc -l`
-            if [ ${cnt} -gt 0 ]; then
-                found=0
-                for group in ${CUR_ADD_GROUPS}
-                do
-                    if [ ${group} = ${sec_group} ]; then
-                        found=1
-                    fi
-                done
-
-                if [ ${found} = 0 ]; then
-                    [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="${sec_group}" || ADD_GROUPS="${ADD_GROUPS} ${sec_group}"
-                    [ -z "${USERMOD_CMDLINE}" ] && USERMOD_CMDLINE="usermod -G ${sec_group}" || USERMOD_CMDLINE="${USERMOD_CMDLINE},${sec_group}"
-                fi
-            fi
-        done
-    else
-        NEW_ADD_GROUPS=""
-        for sec_group in ${SEC_GROUPS}; do
-            cnt=`getent group ${sec_group} | wc -l`
-            if [ ${cnt} -gt 0 ]; then
-                [ -z "${NEW_ADD_GROUPS}" ] && NEW_ADD_GROUPS="-G ${sec_group}" || NEW_ADD_GROUPS="${NEW_ADD_GROUPS},${sec_group}"
-            fi
-        done
-    fi
+    for sec_group in ${SEC_GROUPS}; do
+        cnt=`getent group ${sec_group} | wc -l`
+        if [ ${cnt} -gt 0 ]; then
+            [ -z "${ADD_GROUPS}" ] && ADD_GROUPS="-G ${sec_group}" || ADD_GROUPS="${ADD_GROUPS},${sec_group}"
+        fi
+    done
 
     getent group ${STORAGE_DAEMON_GROUP} > /dev/null || groupadd -r ${STORAGE_DAEMON_GROUP}
 
@@ -250,25 +219,19 @@ setup_sd_user()
     #
     if [ "${STORAGE_DAEMON_USER}" != "root" ]; then
         getent passwd ${STORAGE_DAEMON_USER} > /dev/null
-        if [ $? != 0 ]; then
-            #
-            # Create a new storage_daemon_user
-            #
-            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${NEW_ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
+        if [ $? -ne 0 ]; then
+            # create a new storage_daemon_user
+            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
         fi
 
-        #
-        # If the user was already created before,
-        # Make sure the correct primary group is set otherwise fix it.
-        #
+        # if the user has already created before,
+        # make sure the correct primary group is set otherwise fix it.
         if [ "`id -gn ${STORAGE_DAEMON_USER}`" != "${STORAGE_DAEMON_GROUP}" ]; then
             usermod -g ${STORAGE_DAEMON_GROUP} ${STORAGE_DAEMON_USER}
         fi
 
-        #
-        # Add the storage_daemon_user to additional groups (if needed)
-        #
-        [ -n "${ADD_GROUPS}" ] && ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}
+        # add the storage_daemon_user to additional groups (if defined)
+        [ "${ADD_GROUPS}" ] && usermod ${ADD_GROUPS} ${STORAGE_DAEMON_USER}
     fi
 }
 
@@ -589,7 +552,7 @@ translate_sql_files()
         mkdir -p `dirname $dest_file`
         get_translated_sql_file ${SOURCE_DIR}/$i > $dest_file
         # in case of errors, remove file
-        if [ $? != 0 ]; then
+        if [ $? -ne 0 ]; then
             rm -f $dest_file
         fi
     done
