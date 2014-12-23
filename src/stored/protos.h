@@ -241,10 +241,6 @@ extern int reservations_lock_count;
 #endif
 
 /* sd_backends.c */
-DEVICE *init_backend_dev(JCR *jcr, int device_type);
-void dev_flush_backends();
-
-/* sd_backends.c */
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 void sd_set_backend_dirs(alist *new_backend_dirs);
 DEVICE *init_backend_dev(JCR *jcr, int device_type);
