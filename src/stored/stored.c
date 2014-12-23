@@ -748,6 +748,10 @@ void terminate_stored(int sig)
       }
    }
 
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+   dev_flush_backends();
+#endif
+
    if (configfile) {
       free(configfile);
       configfile = NULL;

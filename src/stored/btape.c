@@ -340,6 +340,10 @@ static void terminate_btape(int status)
       dev->term();
    }
 
+#if defined(HAVE_DYNAMIC_SD_BACKENDS)
+    dev_flush_backends();
+#endif
+
    if (configfile) {
       free(configfile);
    }
