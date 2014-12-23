@@ -231,7 +231,7 @@ setup_sd_user()
         fi
 
         # add the storage_daemon_user to additional groups (if defined)
-        [ "${ADD_GROUPS}" ] && usermod ${ADD_GROUPS} ${STORAGE_DAEMON_USER}
+        [ "${ADD_GROUPS}" ] && usermod -a ${ADD_GROUPS} ${STORAGE_DAEMON_USER}
     fi
 }
 
