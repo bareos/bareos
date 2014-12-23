@@ -1028,7 +1028,7 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM **d
 /*
  * Retrieve the symlink target
  */
-static inline ssize_t get_symlink_data(const char *filename, POOLMEM *symlinktarget)
+static inline ssize_t get_symlink_data(const char *filename, POOLMEM **symlinktarget)
 {
    ssize_t nrconverted = -1;
    HANDLE h = INVALID_HANDLE_VALUE;
@@ -1115,7 +1115,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *symlinktar
           * convert to UTF-8
           */
          path = get_pool_memory(PM_FNAME);
-         nrconverted = wchar_2_UTF8(path, (wchar_t *)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
+         nrconverted = wchar_2_UTF8(&path, (wchar_t *)(rdb->SymbolicLinkReparseBuffer.PathBuffer + offset));
 
          ofs = 0;
          if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
@@ -1336,7 +1336,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             slt = get_pool_memory(PM_NAME);
             slt = check_pool_memory_size(slt, MAX_PATH * sizeof(WCHAR));
 
-            if (get_symlink_data(filename, slt)) {
+            if (get_symlink_data(filename, &slt)) {
                Dmsg2(dbglvl, "Symlinked Directory %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
@@ -1351,7 +1351,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             sb->st_mode |= S_IFLNK;
 
             POOLMEM *slt = get_pool_memory(PM_NAME);
-            if (get_symlink_data(filename, slt)) {
+            if (get_symlink_data(filename, &slt)) {
                Dmsg2(dbglvl, "Symlinked File %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
@@ -1801,8 +1801,15 @@ int waitpid(int, int*, int)
  */
 ssize_t readlink(const char *path, char *buf, size_t bufsiz)
 {
+   POOLMEM *slt = get_pool_memory(PM_NAME);
+
    Dmsg1(dbglvl, "readlink called for path %s\n", path);
-   get_symlink_data(path, buf);
+   get_symlink_data(path, &slt);
+
+   strncpy(buf, slt, bufsiz - 1);
+   buf[bufsiz] = '\0';
+   free_pool_memory(slt);
+
    return strlen(buf);
 }
 
