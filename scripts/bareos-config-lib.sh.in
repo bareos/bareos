@@ -233,6 +233,14 @@ setup_sd_user()
                 fi
             fi
         done
+    else
+        NEW_ADD_GROUPS=""
+        for sec_group in ${SEC_GROUPS}; do
+            cnt=`getent group ${sec_group} | wc -l`
+            if [ ${cnt} -gt 0 ]; then
+                [ -z "${NEW_ADD_GROUPS}" ] && NEW_ADD_GROUPS="-G ${sec_group}" || NEW_ADD_GROUPS="${NEW_ADD_GROUPS},${sec_group}"
+            fi
+        done
     fi
 
     getent group ${STORAGE_DAEMON_GROUP} > /dev/null || groupadd -r ${STORAGE_DAEMON_GROUP}
@@ -246,7 +254,7 @@ setup_sd_user()
             #
             # Create a new storage_daemon_user
             #
-            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
+            useradd -r --comment "bareos" --home ${WORKING_DIR} -g ${STORAGE_DAEMON_GROUP} ${NEW_ADD_GROUPS} --shell /bin/false ${STORAGE_DAEMON_USER}
         fi
 
         #
@@ -258,7 +266,7 @@ setup_sd_user()
         fi
 
         #
-        # add the storage_daemon_user to additional groups (if defined)
+        # Add the storage_daemon_user to additional groups (if needed)
         #
         [ -n "${ADD_GROUPS}" ] && ${USERMOD_CMDLINE} ${STORAGE_DAEMON_USER}
     fi
