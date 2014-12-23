@@ -1115,7 +1115,8 @@ static bool write_two_files()
 {
    DEV_BLOCK *block;
    DEV_RECORD *rec;
-   int len, i, j;
+   int len, j;
+   unsigned int i;
    int *p;
    bool rc = false;       /* bad return code */
    DEVICE *dev = dcr->dev;
