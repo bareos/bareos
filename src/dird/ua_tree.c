@@ -775,8 +775,9 @@ static int lsmarkcmd(UAContext *ua, TREE_CTX *tree)
 /*
  * This is actually the long form used for "dir"
  */
-static void ls_output(guid_list *guid, POOLMEM *buf, const char *fname,
-                      const char *tag, struct stat *statp, bool dot_cmd)
+static inline void ls_output(guid_list *guid, POOLMEM **buf,
+                             const char *fname, const char *tag,
+                             struct stat *statp, bool dot_cmd)
 {
    char mode_str[11];
    char time_str[22];
@@ -888,7 +889,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
             memset(&statp, 0, sizeof(statp));
          }
 
-         ls_output(guid, buf, cwd, tag, &statp, dot_cmd);
+         ls_output(guid, &buf, cwd, tag, &statp, dot_cmd);
          ua->send_msg("%s\n", buf);
 
          free_pool_memory(cwd);
