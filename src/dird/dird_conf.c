@@ -139,6 +139,28 @@ static RES_ITEM dir_items[] = {
 };
 
 /*
+ * Profile Resource
+ *
+ * name handler value code flags default_value
+ */
+static RES_ITEM profile_items[] = {
+   { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL },
+   { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL },
+   { "JobACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Job_ACL, 0, NULL },
+   { "ClientACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Client_ACL, 0, NULL },
+   { "StorageACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Storage_ACL, 0, NULL },
+   { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Schedule_ACL, 0, NULL },
+   { "RunACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Run_ACL, 0, NULL },
+   { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Pool_ACL, 0, NULL },
+   { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Command_ACL, 0, NULL },
+   { "FileSetACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), FileSet_ACL, 0, NULL },
+   { "CatalogACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Catalog_ACL, 0, NULL },
+   { "WhereACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Where_ACL, 0, NULL },
+   { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), PluginOptions_ACL, 0, NULL },
+   { NULL, 0, { 0 }, 0, 0, NULL }
+};
+
+/*
  * Console Resource
  *
  * name handler value code flags default_value
@@ -169,6 +191,7 @@ static RES_ITEM con_items[] = {
    { "TlsKey", CFG_TYPE_DIR, ITEM(res_con.tls_keyfile), 0, 0, NULL },
    { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_con.tls_dhfile), 0, 0, NULL },
    { "TlsAllowedCN", CFG_TYPE_ALIST_STR, ITEM(res_con.tls_allowed_cns), 0, 0, NULL },
+   { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL }
 };
 
@@ -495,6 +518,7 @@ static RES_TABLE resources[] = {
    { "Pool", pool_items, R_POOL, sizeof(POOLRES) },
    { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { "Counter", counter_items, R_COUNTER, sizeof(COUNTERRES) },
+   { "Profile", profile_items, R_PROFILE, sizeof(PROFILERES) },
    { "Console", con_items, R_CONSOLE, sizeof(CONRES) },
    { "Device", NULL, R_DEVICE, sizeof(DEVICERES) }, /* info obtained from SD */
    { NULL, NULL, 0, 0 }
@@ -1543,6 +1567,10 @@ void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt,
       res->res_dir.print_config(buf);
       sendit(sock, "%s", buf.c_str());
       break;
+   case R_PROFILE:
+      res->res_profile.print_config(buf);
+      sendit(sock, "%s", buf.c_str());
+      break;
    case R_CONSOLE:
       res->res_con.print_config(buf);
       sendit(sock, "%s", buf.c_str());
@@ -1749,7 +1777,15 @@ void free_resource(RES *sres, int type)
       break;
    case R_DEVICE:
    case R_COUNTER:
-       break;
+      break;
+   case R_PROFILE:
+      for (int i = 0; i < Num_ACL; i++) {
+         if (res->res_profile.ACL_lists[i]) {
+            delete res->res_profile.ACL_lists[i];
+            res->res_profile.ACL_lists[i] = NULL;
+         }
+      }
+      break;
    case R_CONSOLE:
       if (res->res_con.password.value) {
          free(res->res_con.password.value);
@@ -1777,6 +1813,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_con.tls_allowed_cns) {
          delete res->res_con.tls_allowed_cns;
+      }
+      if (res->res_con.profiles) {
+         delete res->res_con.profiles;
       }
       for (int i = 0; i < Num_ACL; i++) {
          if (res->res_con.ACL_lists[i]) {
@@ -2047,6 +2086,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
     */
    if (pass == 2) {
       switch (type) {
+      case R_PROFILE:
       case R_CATALOG:
       case R_MSGS:
       case R_FILESET:
@@ -2085,6 +2125,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.hdr.name);
          } else {
             res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
+            res->res_con.profiles = res_all.res_con.profiles;
          }
          break;
       case R_DIRECTOR:

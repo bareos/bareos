@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +36,111 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event)
    return acl_access_ok(ua, acl, item, strlen(item), audit_event);
 }
 
+/*
+ * Loop over the items in the alist and verify if they match the given item
+ * that access was requested for.
+ */
+static inline bool find_in_acl_list(alist *list, int acl, const char *item, int len)
+{
+   int rc;
+   regex_t preg;
+   bool retval = false;
+   const char *list_value;
+
+   /*
+    * See if we have an empty list.
+    */
+   if (!list) {
+      /*
+       * Empty list for Where => empty where accept anything.
+       * For any other list, reject everything.
+       */
+      if (len == 0 && acl == Where_ACL) {
+         Dmsg0(1400, "Empty Where_ACL allowing restore anywhere\n");
+         retval = true;
+      }
+      goto bail_out;
+   }
+
+   /*
+    * Search list for item
+    */
+   for (int i = 0; i < list->size(); i++) {
+      list_value = (char *)list->get(i);
+
+      /*
+       * See if this is a deny acl.
+       */
+      if (*list_value == '!') {
+         if (bstrcasecmp(item, list_value + 1)) {
+            /*
+             * Explicit deny.
+             */
+            Dmsg3(1400, "Deny ACL found %s in %d %s\n", item, acl, list_value);
+            goto bail_out;
+         }
+
+         /*
+          * If we didn't get an exact match see if we can use the pattern as a regex.
+          */
+         rc = regcomp(&preg, list_value + 1, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+         if (rc != 0) {
+            /*
+             * Not a valid regular expression so skip it.
+             */
+            Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
+            continue;
+         }
+
+         if (regexec(&preg, item, 0, NULL, 0) == 0) {
+            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
+            regfree(&preg);
+            goto bail_out;
+         }
+
+         regfree(&preg);
+      } else {
+         /*
+          * Special case *all* gives full access
+          */
+         if (bstrcasecmp("*all*", list_value)) {
+            Dmsg2(1400, "Global ACL found in %d %s\n", acl, list_value);
+            retval = true;
+            goto bail_out;
+         }
+
+         if (bstrcasecmp(item, list_value)) {
+            Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, list_value);
+            retval = true;
+            goto bail_out;
+         }
+
+         /*
+          * If we didn't get an exact match see if we can use the pattern as a regex.
+          */
+         rc = regcomp(&preg, list_value, REG_EXTENDED | REG_ICASE | REG_NOSUB);
+         if (rc != 0) {
+            /*
+             * Not a valid regular expression so skip it.
+             */
+            Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
+            continue;
+         }
+
+         if (regexec(&preg, item, 0, NULL, 0) == 0) {
+            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
+            retval = true;
+            regfree(&preg);
+            goto bail_out;
+         }
+
+         regfree(&preg);
+      }
+   }
+
+bail_out:
+   return retval;
+}
 
 /*
  * This version expects the length of the item which we must check.
@@ -42,7 +148,6 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event)
 bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event)
 {
    bool retval = false;
-   alist *list;
 
    /*
     * The resource name contains nasty characters
@@ -64,38 +169,27 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit
     */
    if (!ua->cons) {
       Dmsg0(1400, "Root cons access OK.\n");
-      retval = true;                  /* No cons resource -> root console OK for everything */
-      goto bail_out;
-   }
-
-   list = ua->cons->ACL_lists[acl];
-   if (!list) {                       /* Empty list */
-      /*
-       * Empty list for Where => empty where accept anything.
-       * For any other list, reject everything.
-       */
-      if (len == 0 && acl == Where_ACL) {
-         retval = true;
-      }
-      goto bail_out;
-   }
-
-   /*
-    * Special case *all* gives full access
-    */
-   if (list->size() == 1 && bstrcasecmp("*all*", (char *)list->get(0))) {
       retval = true;
       goto bail_out;
    }
 
+   retval = find_in_acl_list(ua->cons->ACL_lists[acl], acl, item, len);
+
    /*
-    * Search list for item
+    * If we didn't find a matching ACL try to use the profiles this console is connected to.
     */
-   for (int i=0; i<list->size(); i++) {
-      if (bstrcasecmp(item, (char *)list->get(i))) {
-         Dmsg3(1400, "ACL found %s in %d %s\n", item, acl, (char *)list->get(i));
-         retval = true;
-         goto bail_out;
+   if (!retval && ua->cons->profiles && ua->cons->profiles->size()) {
+      PROFILERES *profile;
+
+      foreach_alist(profile, ua->cons->profiles) {
+         retval = find_in_acl_list(profile->ACL_lists[acl], acl, item, len);
+
+         /*
+          * If we found a match break the loop.
+          */
+         if (retval) {
+            break;
+         }
       }
    }
 
