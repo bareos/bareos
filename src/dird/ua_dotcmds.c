@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,12 +49,15 @@ extern int qhelp_cmd(UAContext *ua, const char *cmd);
 extern bool dot_status_cmd(UAContext *ua, const char *cmd);
 
 /* Forward referenced functions */
+static bool catalogscmd(UAContext *ua, const char *cmd);
 static bool admin_cmds(UAContext *ua, const char *cmd);
+static bool jobdefscmd(UAContext *ua, const char *cmd);
 static bool jobscmd(UAContext *ua, const char *cmd);
 static bool filesetscmd(UAContext *ua, const char *cmd);
 static bool clientscmd(UAContext *ua, const char *cmd);
 static bool msgscmd(UAContext *ua, const char *cmd);
 static bool poolscmd(UAContext *ua, const char *cmd);
+static bool schedulecmd(UAContext *ua, const char *cmd);
 static bool storagecmd(UAContext *ua, const char *cmd);
 static bool defaultscmd(UAContext *ua, const char *cmd);
 static bool typescmd(UAContext *ua, const char *cmd);
@@ -65,9 +68,8 @@ static bool volstatuscmd(UAContext *ua, const char *cmd);
 static bool mediatypescmd(UAContext *ua, const char *cmd);
 static bool locationscmd(UAContext *ua, const char *cmd);
 static bool mediacmd(UAContext *ua, const char *cmd);
+static bool profilescmd(UAContext *ua, const char *cmd);
 static bool aopcmd(UAContext *ua, const char *cmd);
-static bool catalogscmd(UAContext *ua, const char *cmd);
-static bool schedulecmd(UAContext *ua, const char *cmd);
 
 static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd);
 static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd);
@@ -102,6 +104,7 @@ static struct cmdstruct commands[] = {
    { NT_(".exit"), admin_cmds, NULL, false, false },
    { NT_(".filesets"), filesetscmd, NULL, false, false },
    { NT_(".help"), dot_help_cmd, NULL, false, false },
+   { NT_(".jobdefs"), jobdefscmd, NULL, true, false },
    { NT_(".jobs"), jobscmd, NULL, true, false },
    { NT_(".levels"), levelscmd, NULL, false, false },
    { NT_(".messages"), getmsgscmd, NULL, false, false },
@@ -116,7 +119,8 @@ static struct cmdstruct commands[] = {
    { NT_(".media"), mediacmd, NULL, true, false },
    { NT_(".mediatypes"), mediatypescmd, NULL, true, false },
    { NT_(".locations"), locationscmd, NULL, true, false },
-   { NT_(".actiononpurge"),aopcmd, NULL, true, false },
+   { NT_(".profiles"), profilescmd, NULL, true, false },
+   { NT_(".actiononpurge"), aopcmd, NULL, true, false },
    { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, true, true },
    { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, true, true },
    { NT_(".bvfs_update"), dot_bvfs_update, NULL, true, true },
@@ -826,6 +830,21 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
 }
 #endif
 
+static bool jobdefscmd(UAContext *ua, const char *cmd)
+{
+   JOBRES *jobdefs;
+
+   LockRes();
+   foreach_res(jobdefs, R_JOBDEFS) {
+      if (acl_access_ok(ua, Job_ACL, jobdefs->name())) {
+         ua->send_msg("%s\n", jobdefs->name());
+      }
+   }
+   UnlockRes();
+
+   return true;
+}
+
 /*
  * Can use an argument to filter on JobType
  * .jobs [type=B]
@@ -833,6 +852,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
 static bool jobscmd(UAContext *ua, const char *cmd)
 {
    JOBRES *job;
+
    uint32_t type = 0;
    int pos;
    if ((pos = find_arg_with_value(ua, "type")) >= 0) {
@@ -847,12 +867,14 @@ static bool jobscmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
    return true;
 }
 
 static bool filesetscmd(UAContext *ua, const char *cmd)
 {
    FILESETRES *fs;
+
    LockRes();
    foreach_res(fs, R_FILESET) {
       if (acl_access_ok(ua, FileSet_ACL, fs->name())) {
@@ -860,12 +882,14 @@ static bool filesetscmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
    return true;
 }
 
 static bool catalogscmd(UAContext *ua, const char *cmd)
 {
    CATRES *cat;
+
    LockRes();
    foreach_res(cat, R_CATALOG) {
       if (acl_access_ok(ua, Catalog_ACL, cat->name())) {
@@ -873,12 +897,14 @@ static bool catalogscmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
    return true;
 }
 
 static bool clientscmd(UAContext *ua, const char *cmd)
 {
    CLIENTRES *client;
+
    LockRes();
    foreach_res(client, R_CLIENT) {
       if (acl_access_ok(ua, Client_ACL, client->name())) {
@@ -886,23 +912,27 @@ static bool clientscmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
    return true;
 }
 
 static bool msgscmd(UAContext *ua, const char *cmd)
 {
    MSGSRES *msgs = NULL;
+
    LockRes();
    foreach_res(msgs, R_MSGS) {
       ua->send_msg("%s\n", msgs->name());
    }
    UnlockRes();
+
    return true;
 }
 
 static bool poolscmd(UAContext *ua, const char *cmd)
 {
    POOLRES *pool;
+
    LockRes();
    foreach_res(pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
@@ -910,12 +940,14 @@ static bool poolscmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
    return true;
 }
 
 static bool storagecmd(UAContext *ua, const char *cmd)
 {
    STORERES *store;
+
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
@@ -923,6 +955,20 @@ static bool storagecmd(UAContext *ua, const char *cmd)
       }
    }
    UnlockRes();
+
+   return true;
+}
+
+static bool profilescmd(UAContext *ua, const char *cmd)
+{
+   PROFILERES *profile;
+
+   LockRes();
+   foreach_res(profile, R_PROFILE) {
+      ua->send_msg("%s\n", profile->name());
+   }
+   UnlockRes();
+
    return true;
 }
 
@@ -1098,7 +1144,6 @@ static bool schedulecmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-
 static bool locationscmd(UAContext *ua, const char *cmd)
 {
    if (!open_client_db(ua)) {
@@ -1116,7 +1161,10 @@ static bool locationscmd(UAContext *ua, const char *cmd)
 static bool levelscmd(UAContext *ua, const char *cmd)
 {
    int i;
-   /* Note some levels are blank, which means none is needed */
+
+   /*
+    * Note some levels are blank, which means none is needed
+    */
    if (ua->argc == 1) {
       for (i=0; joblevels[i].level_name; i++) {
          if (joblevels[i].level_name[0] != ' ') {
@@ -1125,7 +1173,10 @@ static bool levelscmd(UAContext *ua, const char *cmd)
       }
    } else if (ua->argc == 2) {
       int jobtype = 0;
-      /* Assume that first argument is the Job Type */
+
+      /*
+       * Assume that first argument is the Job Type
+       */
       for (i=0; jobtypes[i].type_name; i++) {
          if (bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
             jobtype = jobtypes[i].job_type;

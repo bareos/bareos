@@ -43,6 +43,7 @@ enum {
    R_POOL,
    R_MSGS,
    R_COUNTER,
+   R_PROFILE,
    R_CONSOLE,
    R_DEVICE,
    R_FIRST = R_DIRECTOR,
@@ -190,12 +191,21 @@ enum {
 };
 
 /*
+ * Profile Resource
+ */
+class PROFILERES : public BRSRES {
+public:
+   alist *ACL_lists[Num_ACL];         /* Pointers to ACLs */
+};
+
+/*
  * Console Resource
  */
 class CONRES : public BRSRES {
 public:
    s_password password;               /* UA server password */
-   alist *ACL_lists[Num_ACL];         /* pointers to ACLs */
+   alist *ACL_lists[Num_ACL];         /* Pointers to ACLs */
+   alist *profiles;                   /* Pointers to profile resources */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
@@ -209,7 +219,6 @@ public:
    bool tls_require;                  /* Require TLS */
    bool tls_verify_peer;              /* TLS Verify Peer Certificate */
 };
-
 
 /*
  * Catalog Resource
@@ -278,7 +287,6 @@ public:
    bool StrictQuotas;                 /* Enable strict quotas? */
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
    int64_t max_bandwidth;             /* Limit speed on this client */
-
 };
 
 /*
@@ -575,6 +583,7 @@ public:
 union URES {
    DIRRES res_dir;
    CONRES res_con;
+   PROFILERES res_profile;
    CLIENTRES res_client;
    STORERES res_store;
    CATRES res_cat;

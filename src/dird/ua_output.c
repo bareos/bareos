@@ -190,6 +190,7 @@ static struct showstruct avail_resources[] = {
    { NT_("filesets"), R_FILESET },
    { NT_("pools"), R_POOL },
    { NT_("messages"), R_MSGS },
+   { NT_("profiles"), R_PROFILE },
    { NT_("consoles"), R_CONSOLE },
    { NT_("all"), -1 },
    { NT_("help"), -2 },
