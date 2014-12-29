@@ -145,6 +145,33 @@ static void show_disabled_clients(UAContext *ua)
   }
 }
 
+/*
+ * Enter with Resources locked
+ */
+static void show_disabled_schedules(UAContext *ua)
+{
+   SCHEDRES *sched;
+   bool first = true;
+
+   foreach_res(sched, R_SCHEDULE) {
+      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+         continue;
+      }
+
+      if (!sched->enabled) {
+         if (first) {
+            first = false;
+            ua->send_msg(_("Disabled Scedules:\n"));
+         }
+         ua->send_msg("   %s\n", sched->name());
+     }
+  }
+
+  if (first) {
+     ua->send_msg(_("No disabled Schedules.\n"));
+  }
+}
+
 struct showstruct {
    const char *res_name;
    int type;
@@ -176,10 +203,10 @@ static struct showstruct avail_resources[] = {
  *  show all
  *  show <resource-keyword-name> - e.g. show directors
  *  show <resource-keyword-name>=<name> - e.g. show director=HeadMan
- *  show disabled - shows disabled jobs and clients
+ *  show disabled - shows disabled jobs, clients and schedules
  *  show disabled jobs - shows disabled jobs
  *  show disabled clients - shows disabled clients
- *
+ *  show disabled schedules - shows disabled schedules
  */
 int show_cmd(UAContext *ua, const char *cmd)
 {
@@ -197,9 +224,12 @@ int show_cmd(UAContext *ua, const char *cmd)
             show_disabled_jobs(ua);
          } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
             show_disabled_clients(ua);
+         } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("schedules"))) {
+            show_disabled_schedules(ua);
          } else {
             show_disabled_jobs(ua);
             show_disabled_clients(ua);
+            show_disabled_schedules(ua);
          }
 
          goto bail_out;
@@ -208,10 +238,12 @@ int show_cmd(UAContext *ua, const char *cmd)
       type = 0;
       res_name = ua->argk[i];
       if (!ua->argv[i]) {             /* was a name given? */
-         /* No name, dump all resources of specified type */
+         /*
+          * No name, dump all resources of specified type
+          */
          recurse = 1;
          len = strlen(res_name);
-         for (j=0; avail_resources[j].res_name; j++) {
+         for (j = 0; avail_resources[j].res_name; j++) {
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                if (type > 0) {
@@ -223,10 +255,12 @@ int show_cmd(UAContext *ua, const char *cmd)
             }
          }
       } else {
-         /* Dump a single resource with specified name */
+         /*
+          * Dump a single resource with specified name
+          */
          recurse = 0;
          len = strlen(res_name);
-         for (j=0; avail_resources[j].res_name; j++) {
+         for (j = 0; avail_resources[j].res_name; j++) {
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                res = (RES *)GetResWithName(type, ua->argv[i]);
@@ -272,6 +306,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          break;
       }
    }
+
 bail_out:
    UnlockRes();
    return 1;
