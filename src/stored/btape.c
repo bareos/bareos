@@ -1119,9 +1119,8 @@ static bool write_two_files()
 {
    DEV_BLOCK *block;
    DEV_RECORD *rec;
-   int len, j;
-   unsigned int i;
-   int *p;
+   uint32_t len;
+   uint32_t *p;
    bool rc = false;       /* bad return code */
    DEVICE *dev = dcr->dev;
 
@@ -1147,16 +1146,16 @@ static bool write_two_files()
    rec = new_record();
    rec->data = check_pool_memory_size(rec->data, block->buf_len);
    rec->data_len = block->buf_len-100;
-   len = rec->data_len/sizeof(i);
+   len = rec->data_len / sizeof(uint32_t);
 
    if (!dev->rewind(dcr)) {
       Pmsg1(0, _("Bad status from rewind. ERR=%s\n"), dev->bstrerror());
       goto bail_out;
    }
 
-   for (i=1; i<=num_recs; i++) {
-      p = (int *)rec->data;
-      for (j=0; j<len; j++) {
+   for (uint32_t i = 1; i <= num_recs; i++) {
+      p = (uint32_t *)rec->data;
+      for (uint32_t j = 0; j < len; j++) {
          *p++ = i;
       }
       if (!write_record_to_block(dcr, rec)) {
@@ -1170,9 +1169,9 @@ static bool write_two_files()
    }
    Pmsg2(0, _("Wrote %d blocks of %d bytes.\n"), num_recs, rec->data_len);
    weofcmd();
-   for (i=num_recs+1; i<=2*num_recs; i++) {
-      p = (int *)rec->data;
-      for (j=0; j<len; j++) {
+   for (uint32_t i = num_recs + 1; i <= 2 * num_recs; i++) {
+      p = (uint32_t *)rec->data;
+      for (uint32_t j = 0; j < len; j++) {
          *p++ = i;
       }
       if (!write_record_to_block(dcr, rec)) {
@@ -1196,22 +1195,22 @@ bail_out:
    if (!rc) {
       exit_code = 1;
    }
-   return rc;
 
+   return rc;
 }
 
 /*
  * This test writes Bareos blocks to the tape in
- *   several files. It then rewinds the tape and attepts
- *   to read these blocks back checking the data.
+ * several files. It then rewinds the tape and attepts
+ * to read these blocks back checking the data.
  */
 static bool write_read_test()
 {
    DEV_BLOCK *block;
    DEV_RECORD *rec;
    bool rc = false;
-   int len, i, j;
-   int *p;
+   uint32_t len;
+   uint32_t *p;
 
    rec = new_record();
 
@@ -1230,11 +1229,13 @@ static bool write_read_test()
    }
 
    rec->data = check_pool_memory_size(rec->data, block->buf_len);
-   rec->data_len = block->buf_len-100;
-   len = rec->data_len/sizeof(i);
+   rec->data_len = block->buf_len - 100;
+   len = rec->data_len / sizeof(uint32_t);
 
-   /* Now read it back */
-   for (i=1; i<=2*num_recs; i++) {
+   /*
+    * Now read it back
+    */
+   for (uint32_t i = 1; i <= 2 * num_recs; i++) {
 read_again:
       if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
          berrno be;
@@ -1253,16 +1254,15 @@ read_again:
          Pmsg2(0, _("Read record failed. Block %d! ERR=%s\n"), i, be.bstrerror(dev->dev_errno));
          goto bail_out;
       }
-      p = (int *)rec->data;
-      for (j=0; j<len; j++) {
+      p = (uint32_t *)rec->data;
+      for (uint32_t j = 0; j < len; j++) {
          if (*p != i) {
-            Pmsg3(0, _("Bad data in record. Expected %d, got %d at byte %d. Test failed!\n"),
-               i, *p, j);
+            Pmsg3(0, _("Bad data in record. Expected %d, got %d at byte %d. Test failed!\n"), i, *p, j);
             goto bail_out;
          }
          p++;
       }
-      if (i == num_recs || i == 2*num_recs) {
+      if (i == num_recs || i == 2 * num_recs) {
          Pmsg1(-1, _("%d blocks re-read correctly.\n"), num_recs);
       }
    }
@@ -1279,8 +1279,8 @@ bail_out:
 
 /*
  * This test writes Bareos blocks to the tape in
- *   several files. It then rewinds the tape and attepts
- *   to read these blocks back checking the data.
+ * several files. It then rewinds the tape and attepts
+ * to read these blocks back checking the data.
  */
 static bool position_test()
 {
