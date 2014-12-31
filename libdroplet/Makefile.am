@@ -108,7 +108,8 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/vfs.h \
 	include/droplet/task.h \
 	include/droplet/addrlist.h \
-	include/droplet/queue.h
+	include/droplet/queue.h \
+	include/droplet/json_adapter.h
 
 libdropletdroplets3includedir = $(includedir)/droplet-3.0/droplet/s3
 libdropletdroplets3include_HEADERS = \
