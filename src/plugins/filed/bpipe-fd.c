@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -133,13 +133,14 @@ enum plugin_argument_type {
 struct plugin_argument {
    const char *name;
    enum plugin_argument_type type;
+   int cmp_length;
 };
 
 static plugin_argument plugin_arguments[] = {
-   { "file", argument_file },
-   { "reader", argument_reader },
-   { "writer", argument_writer },
-   { NULL, argument_none }
+   { "file=", argument_file, 4 },
+   { "reader=", argument_reader, 6 },
+   { "writer=", argument_writer, 6 },
+   { NULL, argument_none, 0 }
 };
 
 #ifdef __cplusplus
@@ -669,7 +670,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    char *plugin_definition, *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    bool keep_existing;
-   bool allow_old_plugin_definition = true;
+   bool compatible = true;
 
    if (!p_ctx || !value) {
       return bRC_Error;
@@ -694,6 +695,41 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
     * Skip the first ':'
     */
    bp++;
+
+   /*
+    * See if we are parsing a new plugin definition e.g. one with keywords.
+    */
+   argument = bp;
+   while (argument) {
+      if (strlen(argument) == 0) {
+         break;
+      }
+
+      for (i = 0; plugin_arguments[i].name; i++) {
+         if (bstrncasecmp(argument, plugin_arguments[i].name, strlen(plugin_arguments[i].name))) {
+            compatible = false;
+            break;
+         }
+
+         /*
+          * Parsing something fishy ? e.g. partly with known keywords.
+          */
+         if (!plugin_arguments[i].name && !compatible) {
+            Jmsg(ctx, M_FATAL, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+            Dmsg(ctx, dbglvl, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         }
+      }
+
+      argument = strchr(argument, ':');
+      if (argument) {
+         argument++;
+      }
+   }
+
+   /*
+    * Start processing the definition, if compatible is left set we are pretending that we are
+    * parsing a plugin definition in the old syntax and hope for the best.
+    */
    cnt = 1;
    while (bp) {
       if (strlen(bp) == 0) {
@@ -708,21 +744,12 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        * of the argument, argument_value to the beginning of the argument_value.
        */
       argument = bp;
-      argument_value = strchr(bp, '=');
-      if (!argument_value) {
-         char **str_destination = NULL;
-         bool *bool_destination = NULL;
+      if (!compatible) {
+         argument_value = strchr(bp, '=');
+      }
 
-         /*
-          * We seem to be parsing an old bpipe plugin definition.
-          * Only allow that when we didn't see any argument in the form of
-          * <argument> = <argument_value>
-          */
-         if (!allow_old_plugin_definition) {
-            Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-            Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
-            goto bail_out;
-         }
+      if (compatible) {
+         char **str_destination = NULL;
 
          /*
           * See if there are more arguments and setup for the next run.
@@ -762,19 +789,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                set_string(str_destination, argument);
             }
          }
-
-         /*
-          * Set any boolean variable.
-          */
-         if (bool_destination) {
-            *bool_destination = parse_boolean(argument);
-         }
       } else {
-         /*
-          * When we encounter one argument in the form <argument> = <argument_value>
-          * we don't allow any old style bpipe plugin definition configuration data.
-          */
-         allow_old_plugin_definition = false;
          *argument_value++ = '\0';
 
          /*
@@ -786,9 +801,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          }
 
          for (i = 0; plugin_arguments[i].name; i++) {
-            if (bstrcasecmp(argument, plugin_arguments[i].name)) {
+            if (bstrncasecmp(argument, plugin_arguments[i].name, plugin_arguments[i].cmp_length)) {
                char **str_destination = NULL;
-               bool *bool_destination = NULL;
 
                switch (plugin_arguments[i].type) {
                case argument_file:
@@ -816,13 +830,6 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                       */
                      set_string(str_destination, argument);
                   }
-               }
-
-               /*
-                * Set any boolean variable.
-                */
-               if (bool_destination) {
-                  *bool_destination = parse_boolean(argument_value);
                }
 
                /*
