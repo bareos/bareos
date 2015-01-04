@@ -28,6 +28,7 @@ WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bareos-fd.@fd_port@.pid
 StandardOutput=syslog
 ExecStart=@sbindir@/bareos-fd -c @sysconfdir@/bareos-fd.conf
+SuccessExitStatus=0 15
 Restart=on-failure
 # IOSchedulingClass=idle
 

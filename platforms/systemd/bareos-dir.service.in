@@ -34,6 +34,7 @@ PIDFile=@piddir@/bareos-dir.@dir_port@.pid
 # StandardOutput=syslog
 ExecStartPre=@sbindir@/bareos-dir -c @sysconfdir@/bareos-dir.conf -t -f
 ExecStart=@sbindir@/bareos-dir -c @sysconfdir@/bareos-dir.conf
+SuccessExitStatus=0 1 15
 # This daemon should be able to reload the conf file
 #ExecReload=/sbin/killproc -p @piddir@/bareos-dir.pid -HUP @sbindir@/bareos-dir
 #Restart=on-failure
