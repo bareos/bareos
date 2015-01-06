@@ -956,6 +956,9 @@ dpl_close(dpl_vfile_t *vfile)
 {
   DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "close vfile=%p", vfile);
 
+  if (NULL != vfile->stream)
+    dpl_stream_close(vfile->ctx, vfile->stream);
+
   if (NULL != vfile->bucket)
     free(vfile->bucket);
 
@@ -1090,6 +1093,235 @@ dpl_pread(dpl_vfile_t *vfile,
 }
 
 /**
+ * Write Metadata to a streamed file (only works on files opened with STREAM flag)
+ *
+ * @param vfile     the vfile descriptor
+ * @param metadata  the metadata to write
+ * @param sysmd     the sysmd to write
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_putmd(dpl_vfile_t *vfile, dpl_dict_t *metadata, dpl_sysmd_t *sysmd)
+{
+  dpl_status_t ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_putmd vfile=%p md=%p sysmd=%p",
+            vfile, metadata, sysmd);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+  {
+    ret = DPL_EINVAL;
+    goto end;
+  }
+
+  ret = dpl_stream_putmd(vfile->ctx, vfile->stream, metadata, sysmd);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Write-Append to a file (only works on files opened with STREAM flag)
+ *
+ * @param vfile   the vfile descriptor
+ * @param buf     the data to write
+ * @param len     the amount of data to write
+ * @param statusp the pointer to the status to return after successful write op
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_put(dpl_vfile_t *vfile, char *buf, unsigned int len,
+                struct json_object **statusp)
+{
+  dpl_status_t ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_put vfile=%p", vfile);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+  {
+    ret = DPL_EINVAL;
+    goto end;
+  }
+
+  ret = dpl_stream_put(vfile->ctx, vfile->stream, buf, len, statusp);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Read Metadata from a stream
+ *
+ * @param vfile     the vfile descriptor
+ * @param metadatap the pointer to return the metadata through
+ * @param sysmdp    the pointer to return the sysmd through
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_getmd(dpl_vfile_t *vfile, dpl_dict_t **metadatap, dpl_sysmd_t **sysmdp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS,
+            "fstream_getmd vfile=%p mdp=%p sysmdp=%p",
+            vfile, metadatap, sysmdp);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+  {
+    ret = DPL_EINVAL;
+    goto end;
+  }
+
+  ret = dpl_stream_getmd(vfile->ctx, vfile->stream, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Read sequentially from a stream
+ *
+ * @param vfile   the vfile descriptor
+ * @param len     the amount of data to read
+ * @param bufp    the pointer to return the buffer of read data
+ * @param lenp    the pointer to the amount of data read
+ * @param statusp the pointer to the status to return after successful read op
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_get(dpl_vfile_t *vfile, unsigned int len,
+                char **bufp, unsigned int *lenp,
+                struct json_object **statusp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_get vfile=%p", vfile);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+  {
+    ret = DPL_EINVAL;
+    goto end;
+  }
+
+  ret = dpl_stream_get(vfile->ctx, vfile->stream, len, bufp, lenp, statusp);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Set stream to a saved state to "resume" reading/writing from there.
+ *
+ * @param vfile   the vfile descriptor
+ * @param len     the amount of data to read
+ * @param bufp    the pointer to return the buffer of read data
+ * @param lenp    the pointer to the amount of data read
+ * @param statusp the pointer to the status to return after successful read op
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_resume(dpl_vfile_t *vfile, struct json_object *status)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_resume vfile=%p", vfile);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+  {
+    ret = DPL_EINVAL;
+    goto end;
+  }
+
+  ret = dpl_stream_resume(vfile->ctx, vfile->stream, status);
+  if (DPL_SUCCESS != ret)
+    {
+      goto end;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Flush stream's write-data before closing
+ *
+ * @param vfile   the vfile descriptor
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_fstream_flush(dpl_vfile_t *vfile)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "fstream_flush vfile=%p", vfile->ctx);
+
+  if (0 == (vfile->flags & DPL_VFILE_FLAG_STREAM))
+    {
+      ret = DPL_EINVAL;
+      goto end;
+    }
+
+  ret = dpl_stream_flush(vfile->ctx, vfile->stream);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+  DPL_TRACE(vfile->ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
  * Open a file
  *
  * @param ctx
@@ -1099,6 +1331,7 @@ dpl_pread(dpl_vfile_t *vfile,
  * @param metadata
  * @param sysmd
  * @param query_params
+ * @param stream_status
  * @param vfilep
  *
  * @return dpl_status_t
@@ -1112,6 +1345,7 @@ dpl_open(dpl_ctx_t *ctx,
          dpl_dict_t *metadata,
          dpl_sysmd_t *sysmd,
          dpl_dict_t *query_params,
+         struct json_object *stream_status,
          dpl_vfile_t **vfilep)
 {
   dpl_status_t ret, ret2;
@@ -1213,6 +1447,20 @@ dpl_open(dpl_ctx_t *ctx,
 	  ret = DPL_ENOMEM;
 	  goto end;
 	}
+    }
+  if (flag & DPL_VFILE_FLAG_STREAM)
+    {
+      ret = dpl_stream_open(ctx, bucket, path, vfile->option, vfile->condition,
+                            vfile->metadata, vfile->sysmd, &vfile->stream);
+      if (DPL_SUCCESS != ret)
+          goto end;
+
+      if (NULL != stream_status)
+        {
+          ret = dpl_stream_resume(ctx, vfile->stream, stream_status);
+          if (DPL_SUCCESS != ret)
+              goto end;
+        }
     }
 
   if (vfilep)

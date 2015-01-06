@@ -74,6 +74,7 @@ typedef enum
     DPL_VFILE_FLAG_RDONLY =  (1u<<2),     /*!< open in read-only mode */
     DPL_VFILE_FLAG_WRONLY =  (1u<<3),     /*!< open in write-only mode */
     DPL_VFILE_FLAG_RDWR =    (1u<<4),     /*!< open in read-write mode */
+    DPL_VFILE_FLAG_STREAM =  (1u<<5),     /*!< open in stream mode (required for read/append) */
   } dpl_vfile_flag_t;
 
 typedef struct
@@ -87,6 +88,7 @@ typedef struct
   dpl_dict_t *metadata;
   dpl_sysmd_t *sysmd;
   dpl_dict_t *query_params;
+  dpl_stream_t *stream;
 } dpl_vfile_t;
 
 /* PROTO vfs.c */
@@ -101,7 +103,13 @@ dpl_status_t dpl_chdir(dpl_ctx_t *ctx, const char *locator);
 dpl_status_t dpl_close(dpl_vfile_t *vfile);
 dpl_status_t dpl_pwrite(dpl_vfile_t *vfile, char *buf, unsigned int len, unsigned long long offset);
 dpl_status_t dpl_pread(dpl_vfile_t *vfile, unsigned int len, unsigned long long offset, char **bufp, unsigned int *buf_lenp);
-dpl_status_t dpl_open(dpl_ctx_t *ctx,const char *locator, dpl_vfile_flag_t flag, dpl_option_t *option, dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_dict_t *query_params, dpl_vfile_t **vfilep);
+dpl_status_t dpl_fstream_putmd(dpl_vfile_t *vfile, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_fstream_put(dpl_vfile_t *vfile, char *buf, unsigned int len, struct json_object **statusp);
+dpl_status_t dpl_fstream_getmd(dpl_vfile_t *vfile, dpl_dict_t **metadatap, dpl_sysmd_t **sysmdp);
+dpl_status_t dpl_fstream_get(dpl_vfile_t *vfile, unsigned int len, char ** bufp, unsigned int *buf_lenp, struct json_object **statusp);
+dpl_status_t dpl_fstream_resume(dpl_vfile_t *vfile, struct json_object *status);
+dpl_status_t dpl_fstream_flush(dpl_vfile_t *vfile);
+dpl_status_t dpl_open(dpl_ctx_t *ctx,const char *locator, dpl_vfile_flag_t flag, dpl_option_t *option, dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_dict_t *query_params, struct json_object *stream_status, dpl_vfile_t **vfilep);
 dpl_status_t dpl_fput(dpl_ctx_t *ctx, const char *locator, dpl_option_t *option, dpl_condition_t *condition, dpl_range_t *range, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, char *data_buf, unsigned int data_len);
 dpl_status_t dpl_fget(dpl_ctx_t *ctx, const char *locator, const dpl_option_t *option, const dpl_condition_t *condition, const dpl_range_t *range, char **data_bufp, unsigned int *data_lenp, dpl_dict_t **metadatap, dpl_sysmd_t *sysmdp);
 dpl_status_t dpl_mkdir(dpl_ctx_t *ctx, const char *locator, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
