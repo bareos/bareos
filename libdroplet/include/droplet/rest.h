@@ -59,4 +59,16 @@ dpl_status_t dpl_delete_id(dpl_ctx_t *ctx, const char *bucket, const char *id, c
 dpl_status_t dpl_delete_all_id(dpl_ctx_t *ctx, const char *bucket, const char *ressource, dpl_locators_t *locators, const dpl_option_t *option, const dpl_condition_t *condition, dpl_vec_t **objects);
 dpl_status_t dpl_copy_id(dpl_ctx_t *ctx, const char *src_bucket, const char *src_id, const char *dst_bucket, const char *dst_path, const dpl_option_t *option, dpl_ftype_t object_type, dpl_copy_directive_t copy_directive, const dpl_dict_t *metadata, const dpl_sysmd_t *sysmd, const dpl_condition_t *condition);
 dpl_status_t dpl_genurl(dpl_ctx_t *ctx, const char *bucket, const char *path, const dpl_option_t *option, time_t expires, char *buf, unsigned int len, unsigned int *lenp);
+
+struct json_object;
+dpl_status_t dpl_stream_open(dpl_ctx_t *ctx, const char *bucket, const char *path, const dpl_option_t *option, const dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_stream_t **streamp);
+dpl_status_t dpl_stream_openid(dpl_ctx_t *ctx, const char *bucket, const char *id,   const dpl_option_t *option, const dpl_condition_t *condition, dpl_dict_t *metadata, dpl_sysmd_t *sysmd, dpl_stream_t **streamp);
+dpl_status_t dpl_stream_resume(dpl_ctx_t *ctx, dpl_stream_t *stream, struct json_object *status);
+dpl_status_t dpl_stream_getmd(dpl_ctx_t *ctx, dpl_stream_t *stream, dpl_dict_t **metadatap, dpl_sysmd_t **sysmdp);
+dpl_status_t dpl_stream_get(dpl_ctx_t *ctx, dpl_stream_t *stream, unsigned int len, char **data_bufp, unsigned int *data_lenp, struct json_object **statusp);
+dpl_status_t dpl_stream_putmd(dpl_ctx_t *ctx, dpl_stream_t *stream, dpl_dict_t *metadata, dpl_sysmd_t *sysmd);
+dpl_status_t dpl_stream_put(dpl_ctx_t *ctx, dpl_stream_t *stream, char *buf, unsigned int len, struct json_object **statusp);
+dpl_status_t dpl_stream_flush(dpl_ctx_t *ctx, dpl_stream_t *stream);
+void         dpl_stream_close(dpl_ctx_t *ctx, dpl_stream_t *stream);
+
 #endif

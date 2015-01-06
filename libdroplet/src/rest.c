@@ -1315,4 +1315,485 @@ dpl_copy_id(dpl_ctx_t *ctx,
   return ret;
 }
 
+/**
+ * Create a streaming object to read from/write to using an object path
+ * The returned stream is not reentrant, and should not be used by multiple
+ * threads at the same time.
+ *
+ * @param ctx       the droplet context
+ * @param bucket    the name of the bucket
+ * @param path      the path of the object
+ * @param option    Optional. The dict of options for this stream object
+ * @param condition Optional. The condition
+ * @param streamp   Mandatory. The pointer to return the stream through
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOMEM
+ */
+dpl_status_t
+dpl_stream_open(dpl_ctx_t *ctx, const char *bucket, const char *path,
+                const dpl_option_t *option, const dpl_condition_t *condition,
+                dpl_dict_t *metadata, dpl_sysmd_t *sysmd,
+                dpl_stream_t **streamp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+  dpl_stream_t  *stream = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "stream_open bucket=%s path=%s"
+            " option=%p condition=%p metadata=%p sysmd=%p",
+            bucket, path, option, condition, metadata, sysmd);
+
+  stream = calloc(1, sizeof(*stream));
+  if (NULL == stream)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  stream->bucket = strdup(bucket);
+  if (NULL == stream->bucket)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  stream->locator_is_id = 0;
+  stream->locator = strdup(path);
+  if (NULL == stream->locator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != option)
+    {
+      stream->options = dpl_option_dup(option);
+      if (NULL == stream->options)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != condition)
+    {
+      stream->condition = dpl_condition_dup(condition);
+      if (NULL == stream->condition)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != metadata)
+    {
+      stream->md = dpl_dict_dup(metadata);
+      if (NULL == stream->md)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != sysmd)
+    {
+      stream->sysmd = dpl_sysmd_dup(sysmd);
+      if (NULL == stream->sysmd)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  *streamp = stream;
+  stream = NULL;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  if (NULL != stream)
+    dpl_stream_close(ctx, stream);
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d stream=%p", ret);
+
+  return ret;
+}
+
+/**
+ * Create a streaming object to read from/write to using an object ID
+ * The returned stream is not reentrant, and should not be used by multiple
+ * threads at the same time.
+ *
+ * @param ctx       the droplet context
+ * @param bucket    the name of the bucket
+ * @param id        the id of the object
+ * @param option    Optional. The dict of options for this stream object
+ * @param condition Optional. The condition
+ * @param streamp   Mandatory. The pointer to return the stream through
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+
+dpl_status_t
+dpl_stream_openid(dpl_ctx_t *ctx, const char *bucket, const char *id,
+                  const dpl_option_t *option, const dpl_condition_t *condition,
+                  dpl_dict_t *metadata, dpl_sysmd_t *sysmd,
+                  dpl_stream_t **streamp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+  dpl_stream_t  *stream = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "stream_open bucket=%s id=%s"
+            " option=%p condition=%pi metadata=%p sysmd=%p",
+            bucket, id, option, condition, metadata, sysmd);
+
+  stream = calloc(1, sizeof(*stream));
+  if (NULL == stream)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  stream->bucket = strdup(bucket);
+  if (NULL == stream->bucket)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  stream->locator_is_id = 1;
+  stream->locator = strdup(id);
+  if (NULL == stream->locator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL != option)
+    {
+      stream->options = dpl_option_dup(option);
+      if (NULL == stream->options)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != condition)
+    {
+      stream->condition = dpl_condition_dup(condition);
+      if (NULL == stream->condition)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != metadata)
+    {
+      stream->md = dpl_dict_dup(metadata);
+      if (NULL == stream->md)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  if (NULL != sysmd)
+    {
+      stream->sysmd = dpl_sysmd_dup(sysmd);
+      if (NULL == stream->sysmd)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  *streamp = stream;
+  ret = DPL_SUCCESS;
+
+end:
+
+  if (NULL != stream)
+    dpl_stream_close(ctx, stream);
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d stream=%p", ret);
+
+  return ret;
+}
+
+/**
+ * Resume a streaming (Write) operation using the json object returned by the
+ * last successful call to a stream write operation.
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ * @param status    the json status object
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_resume(dpl_ctx_t *ctx, dpl_stream_t *stream, struct json_object *status)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_resume ctx=%p stream=%p status=%p", ctx, stream, status);
+
+  if (NULL == ctx->backend->stream_resume)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_resume(ctx, stream, status);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Read the Object's metadata from the stream
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ * @param metadatap the pointer to the metadata to return
+ * @param sysmdp    the pointer to the sysmd to return
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_getmd(dpl_ctx_t *ctx, dpl_stream_t *stream,
+                 dpl_dict_t **metadatap, dpl_sysmd_t **sysmdp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_getmd ctx=%p stream=%p mdp=%p sysmdp=%p",
+            ctx, stream, metadatap, sysmdp);
+
+  if (NULL == ctx->backend->stream_getmd)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_getmd(ctx, stream, metadatap, sysmdp);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Read the Object's Data into the streamed object
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ * @param len       the size of the data to read
+ * @param data_bufp pointer to return the read data
+ * @param data_lenp pointer to return the size of the data read
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_get(dpl_ctx_t *ctx, dpl_stream_t *stream,
+               unsigned int len, char **data_bufp, unsigned int *data_lenp,
+               struct json_object **statusp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_get ctx=%p stream=%p len=%u", ctx, stream, len);
+
+  if (NULL == ctx->backend->stream_get)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_get(ctx, stream, len, data_bufp, data_lenp, statusp);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Write the Object's Metadata into the streamed object
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ * @param metadata  the metadata to write
+ * @param sysmd     the sysmd to write
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_putmd(dpl_ctx_t *ctx, dpl_stream_t *stream,
+                 dpl_dict_t *metadata, dpl_sysmd_t *sysmd)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_putmd ctx=%p stream=%p md=%p sysmd=%p",
+            ctx, stream, metadata, sysmd);
+
+  if (NULL == ctx->backend->stream_putmd)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_putmd(ctx, stream, metadata, sysmd);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Write the Object's Data into the streamed object
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ * @param buf       the data to write
+ * @param len       the size of the data to write
+ * @param statusp   The pointer to a json status object, to return
+ *                  backend-specific status to caller
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_put(dpl_ctx_t *ctx, dpl_stream_t *stream,
+               char *buf, unsigned int len, struct json_object **statusp)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_put ctx=%p stream=%p buf=%p len=%u status=%p",
+            ctx, stream, buf, len, statusp);
+
+  if (NULL == ctx->backend->stream_put)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_put(ctx, stream, buf, len, statusp);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+/**
+ * Flush (finalize) streamed upload
+ *
+ * @param ctx     the droplet context
+ * @param stream  the droplet stream
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+dpl_status_t
+dpl_stream_flush(dpl_ctx_t *ctx, dpl_stream_t *stream)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_flush ctx=%p stream=%p", ctx, stream);
+
+  if (NULL == ctx->backend->stream_flush)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret = ctx->backend->stream_flush(ctx, stream);
+  if (DPL_SUCCESS != ret)
+      goto end;
+
+  ret = DPL_SUCCESS;
+
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  return ret;
+}
+
+
+/**
+ * Releases resources associated to the stream stream
+ *
+ * @param ctx       the droplet context
+ * @param stream    the droplet stream
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ */
+void
+dpl_stream_close(dpl_ctx_t *ctx, dpl_stream_t *stream)
+{
+  DPL_TRACE(ctx, DPL_TRACE_REST,
+            "stream_close ctx=%p stream=%p", ctx, stream);
+
+  if (stream->condition)
+    dpl_condition_free(stream->condition);
+
+  if (stream->options)
+    dpl_option_free(stream->options);
+
+  if (stream->locator)
+    free(stream->locator);
+
+  if (stream->bucket)
+    free(stream->bucket);
+
+  if (stream->status)
+      json_object_put(stream->status);
+
+  free(stream);
+}
+
 /* @} */

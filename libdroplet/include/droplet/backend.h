@@ -58,6 +58,14 @@
 #define DCL_BACKEND_COPY_FN(fn)                 DCL_BACKEND_FN(fn, const char *, const char *, const char *, const char *, const char *, const char *, const dpl_option_t *, dpl_ftype_t, dpl_copy_directive_t, const dpl_dict_t *, const dpl_sysmd_t *, const dpl_condition_t *, char **)
 #define DCL_BACKEND_GET_ID_SCHEME_FN(fn)        DCL_BACKEND_FN(fn, dpl_id_scheme_t **)
 
+struct json_object;
+#define DCL_BACKEND_STREAM_RESUME_FN(fn)        DCL_BACKEND_FN(fn, dpl_stream_t *, struct json_object *)
+#define DCL_BACKEND_STREAM_GETMD_FN(fn)         DCL_BACKEND_FN(fn, dpl_stream_t *, dpl_dict_t **, dpl_sysmd_t **)
+#define DCL_BACKEND_STREAM_GET_FN(fn)           DCL_BACKEND_FN(fn, dpl_stream_t *, unsigned int, char **, unsigned int*, struct json_object **)
+#define DCL_BACKEND_STREAM_PUTMD_FN(fn)         DCL_BACKEND_FN(fn, dpl_stream_t *, dpl_dict_t *, dpl_sysmd_t *)
+#define DCL_BACKEND_STREAM_PUT_FN(fn)           DCL_BACKEND_FN(fn, dpl_stream_t *, char *, unsigned int, struct json_object **)
+#define DCL_BACKEND_STREAM_FLUSH_FN(fn)         DCL_BACKEND_FN(fn, dpl_stream_t *)
+
 typedef DCL_BACKEND_GET_CAPABILITIES_FN(*dpl_get_capabilities_t);
 typedef DCL_BACKEND_LOGIN_FN(*dpl_login_t);
 typedef DCL_BACKEND_LIST_ALL_MY_BUCKETS_FN(*dpl_list_all_my_buckets_t);
@@ -75,6 +83,12 @@ typedef DCL_BACKEND_DELETE_ALL_ID_FN(*dpl_delete_all_id_t);
 typedef DCL_BACKEND_GENURL_FN(*dpl_genurl_t);
 typedef DCL_BACKEND_COPY_FN(*dpl_copy_t);
 typedef DCL_BACKEND_GET_ID_SCHEME_FN(*dpl_get_id_scheme_t);
+typedef DCL_BACKEND_STREAM_RESUME_FN(*dpl_stream_resume_t);
+typedef DCL_BACKEND_STREAM_GETMD_FN(*dpl_stream_getmd_t);
+typedef DCL_BACKEND_STREAM_GET_FN(*dpl_stream_get_t);
+typedef DCL_BACKEND_STREAM_PUTMD_FN(*dpl_stream_putmd_t);
+typedef DCL_BACKEND_STREAM_PUT_FN(*dpl_stream_put_t);
+typedef DCL_BACKEND_STREAM_FLUSH_FN(*dpl_stream_flush_t);
 
 typedef struct dpl_backend_s
 {
@@ -104,6 +118,12 @@ typedef struct dpl_backend_s
   dpl_genurl_t                  genurl;
   dpl_copy_t                    copy;
   dpl_copy_t                    copy_id;
+  dpl_stream_resume_t           stream_resume;
+  dpl_stream_getmd_t            stream_getmd;
+  dpl_stream_get_t              stream_get;
+  dpl_stream_putmd_t            stream_putmd;
+  dpl_stream_put_t              stream_put;
+  dpl_stream_flush_t            stream_flush;
 } dpl_backend_t;
 
 #endif

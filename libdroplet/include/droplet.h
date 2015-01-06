@@ -582,6 +582,22 @@ typedef struct dpl_ctx
 
 /**/
 
+typedef struct
+{
+    char                *bucket;
+    int                 locator_is_id;
+    char                *locator;
+    dpl_option_t        *options;
+    dpl_condition_t     *condition;
+
+    struct json_object  *status;
+
+    dpl_dict_t          *md;
+    dpl_sysmd_t         *sysmd;
+} dpl_stream_t;
+
+/**/
+
 typedef enum
   {
     DPL_BEHAVIOR_MD5 =         (1u<<0),     /*!< MD5 is computed for object */
