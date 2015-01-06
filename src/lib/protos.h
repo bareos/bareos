@@ -60,7 +60,7 @@ bool bnet_sig(BSOCK *bs, int sig);
 bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock,
                      alist *verify_list);
 bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock,
-                     alist *verify_list);
+                     bool verify_peer, alist *verify_list);
 int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen);
 BSOCK *dup_bsock(BSOCK *bsock);
 const char *bnet_strerror(BSOCK *bsock);
@@ -345,6 +345,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata,
                              const char *dhfile,
+                             const char *cipherlist,
                              bool verify_peer);
 void free_tls_context(TLS_CONTEXT *ctx);
 #ifdef HAVE_TLS
@@ -364,6 +365,7 @@ bool get_tls_require(TLS_CONTEXT *ctx);
 void set_tls_require(TLS_CONTEXT *ctx, bool value);
 bool get_tls_enable(TLS_CONTEXT *ctx);
 void set_tls_enable(TLS_CONTEXT *ctx, bool value);
+bool get_tls_verify_peer(TLS_CONTEXT *ctx);
 
 /* util.c */
 void escape_string(char *snew, char *old, int len);

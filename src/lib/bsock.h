@@ -122,7 +122,8 @@ public:
    const char *bstrerror();           /* last error on socket */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
    bool authenticate_with_director(const char *name, const char *password,
-                                   TLS_CONTEXT *tls_ctx, char *response, int response_len);
+                                   TLS_CONTEXT *tls_ctx, alist *verify_list,
+                                   char *response, int response_len);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);

@@ -85,6 +85,8 @@ static RES_ITEM cons_items[] = {
    { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL, NULL, NULL },
    { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL, NULL, NULL },
    { "TlsKey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_cons.tls_cipherlist), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_cons.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
@@ -106,6 +108,8 @@ static RES_ITEM dir_items[] = {
    { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
    { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
    { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls_cipherlist), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
@@ -204,6 +208,12 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.tls_keyfile) {
          free(res->res_cons.tls_keyfile);
       }
+      if (res->res_cons.tls_cipherlist) {
+         free(res->res_cons.tls_cipherlist);
+      }
+      if (res->res_cons.tls_allowed_cns) {
+         delete res->res_cons.tls_allowed_cns;
+      }
       break;
    case R_DIRECTOR:
       if (res->res_dir.address) {
@@ -226,6 +236,12 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dir.tls_keyfile) {
          free(res->res_dir.tls_keyfile);
+      }
+      if (res->res_dir.tls_cipherlist) {
+         free(res->res_dir.tls_cipherlist);
+      }
+      if (res->res_dir.tls_allowed_cns) {
+         delete res->res_dir.tls_allowed_cns;
       }
       break;
    default:

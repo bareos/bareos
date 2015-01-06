@@ -51,6 +51,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata,
                              const char *dhfile,
+                             const char *cipherlist,
                              bool verify_peer)
 {
    return NULL;
@@ -82,6 +83,11 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
    if (ctx) {
       ctx->tls_enable = value;
    }
+}
+
+bool get_tls_verify_peer(TLS_CONTEXT *ctx)
+{
+   return (ctx) ? ctx->verify_peer : false;
 }
 
 /*

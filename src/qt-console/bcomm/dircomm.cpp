@@ -111,13 +111,19 @@ bool DirComm::connect_dir()
       bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ",
                 cons->name());
 
-      /* Initialize TLS context:
-       * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+      /*
+       * Initialize TLS context.
        */
       cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-         cons->tls_ca_certdir, cons->tls_crlfile, cons->tls_certfile,
-         cons->tls_keyfile, tls_pem_callback, &buf, NULL, cons->tls_verify_peer);
+                                      cons->tls_ca_certdir,
+                                      cons->tls_crlfile,
+                                      cons->tls_certfile,
+                                      cons->tls_keyfile,
+                                      tls_pem_callback,
+                                      &buf,
+                                      NULL,
+                                      cons->tls_cipherlist,
+                                      cons->tls_verify_peer);
 
       if (!cons->tls_ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Console \"%s\".\n"),
@@ -138,17 +144,23 @@ bool DirComm::connect_dir()
       bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ",
                 m_console->m_dir->name());
 
-      /* Initialize TLS context:
-       * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
+      /*
+       * Initialize TLS context.
+       */
       m_console->m_dir->tls_ctx = new_tls_context(m_console->m_dir->tls_ca_certfile,
-                          m_console->m_dir->tls_ca_certdir, m_console->m_dir->tls_crlfile,
-                          m_console->m_dir->tls_certfile, m_console->m_dir->tls_keyfile,
-                          tls_pem_callback, &buf, NULL, m_console->m_dir->tls_verify_peer);
+                                                  m_console->m_dir->tls_ca_certdir,
+                                                  m_console->m_dir->tls_crlfile,
+                                                  m_console->m_dir->tls_certfile,
+                                                  m_console->m_dir->tls_keyfile,
+                                                  tls_pem_callback,
+                                                  &buf,
+                                                  NULL,
+                                                  m_console->m_dir->tls_cipherlist,
+                                                  m_console->m_dir->tls_verify_peer);
 
       if (!m_console->m_dir->tls_ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Director \"%s\".\n"),
-            m_console->m_dir->name());
+                                  m_console->m_dir->name());
          mainWin->set_status("Connection failed");
          if (mainWin->m_connDebug) {
             Pmsg2(000, "DirComm %i BAILING Failed to initialize TLS context for Director %s\n", m_conn, m_console->m_dir->name());
@@ -555,6 +567,7 @@ bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *con
 {
    const char *name;
    char *password;
+   alist *verify_list = NULL;
    TLS_CONTEXT *tls_ctx = NULL;
    BSOCK *dir = jcr->dir_bsock;
 
@@ -564,12 +577,14 @@ bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *con
       name = cons->hdr.name;
       password = cons->password.value;
       tls_ctx = cons->tls_ctx;
+      verify_list = cons->tls_allowed_cns;
    } else {
       ASSERT(director->password.encoding == p_encoding_md5);
       name = "*UserAgent*";
       password = director->password.value;
       tls_ctx = director->tls_ctx;
+      verify_list = director->tls_allowed_cns;
    }
 
-   return dir->authenticate_with_director(name, password, tls_ctx, errmsg, errmsg_len);
+   return dir->authenticate_with_director(name, password, tls_ctx, verify_list, errmsg, errmsg_len);
 }

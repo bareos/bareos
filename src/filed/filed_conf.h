@@ -64,6 +64,7 @@ struct DIRRES {
    char *tls_certfile;                /* TLS Server Certificate File */
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
+   char *tls_cipherlist;              /* TLS Cipher List */
    alist *tls_allowed_cns;            /* TLS Allowed Common Names */
    alist *allowed_script_dirs;        /* Only allow to run scripts in this directories */
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
@@ -105,6 +106,7 @@ struct CLIENTRES {
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
+   char *tls_cipherlist;              /* TLS Cipher List */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool always_use_lmdb;              /* Use LMDB for accurate data */
    uint32_t lmdb_threshold;           /* Switch to using LDMD when number of accurate entries exceeds treshold. */

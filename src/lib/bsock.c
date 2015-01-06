@@ -242,7 +242,8 @@ static char OKhello[] =
  * Authenticate Director
  */
 bool BSOCK::authenticate_with_director(const char *name, const char *password,
-                                       TLS_CONTEXT *tls_ctx, char *response, int response_len)
+                                       TLS_CONTEXT *tls_ctx, alist *verify_list,
+                                       char *response, int response_len)
 {
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
@@ -307,7 +308,7 @@ bool BSOCK::authenticate_with_director(const char *name, const char *password,
          /*
           * Engage TLS! Full Speed Ahead!
           */
-         if (!bnet_tls_client(tls_ctx, dir, NULL)) {
+         if (!bnet_tls_client(tls_ctx, dir, get_tls_verify_peer(tls_ctx), verify_list)) {
             bsnprintf(response, response_len, _("TLS negotiation failed with Director at \"%s:%d\"\n"),
                       dir->host(), dir->port());
             goto bail_out;

@@ -230,7 +230,6 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
    int tls_remote_need = BNET_TLS_NONE;
    bool compatible = true;
    bool auth_success = false;
-   alist *verify_list = NULL;
    btimer_t *tid = NULL;
 
    /*
@@ -327,18 +326,23 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
    }
 
    if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
+      alist *verify_list = NULL;
+
+      if (me->tls_verify_peer) {
+         verify_list = me->tls_allowed_cns;
+      }
+
       /*
        * See if we are handshaking a passive client connection.
        */
       if (initiate) {
-         verify_list = me->tls_allowed_cns;
          if (!bnet_tls_server(me->tls_ctx, bs, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
             auth_success = false;
             goto auth_fatal;
          }
       } else {
-         if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
+         if (!bnet_tls_client(me->tls_ctx, bs, me->tls_verify_peer, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
             auth_success = false;
             goto auth_fatal;

@@ -42,6 +42,7 @@ struct TLS_Context {
    gnutls_certificate_client_credentials gnutls_cred;
 
    CRYPTO_PEM_PASSWD_CB *pem_callback;
+   const char *cipher_list;
    const void *pem_userdata;
    unsigned char *dhdata;
    bool verify_peer;
@@ -106,6 +107,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata,
                              const char *dhfile,
+                             const char *cipherlist,
                              bool verify_peer)
 {
    int error;
@@ -116,6 +118,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
 
    ctx->pem_callback = pem_callback;
    ctx->pem_userdata = pem_userdata;
+   ctx->cipher_list = cipherlist;
    ctx->verify_peer = verify_peer;
 
    error = gnutls_certificate_allocate_credentials(&ctx->gnutls_cred);
@@ -271,6 +274,11 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
    if (ctx) {
       ctx->tls_enable = value;
    }
+}
+
+bool get_tls_verify_peer(TLS_CONTEXT *ctx)
+{
+   return (ctx) ? ctx->verify_peer : false;
 }
 
 /*
@@ -481,7 +489,11 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
    /*
     * Set the default ciphers to use for the TLS connection.
     */
-   gnutls_priority_set_direct(tls->gnutls_state, TLS_DEFAULT_CIPHERS, NULL);
+   if (ctx->cipher_list) {
+      gnutls_priority_set_direct(tls->gnutls_state, ctx->cipher_list, NULL);
+   } else {
+      gnutls_priority_set_direct(tls->gnutls_state, TLS_DEFAULT_CIPHERS, NULL);
+   }
 
    /*
     * Link the credentials and the session.

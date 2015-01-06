@@ -67,6 +67,8 @@ struct CONRES {
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
+   char *tls_cipherlist;              /* TLS Cipher List */
+   alist *tls_allowed_cns;            /* TLS Allowed Common Names */
    char *director;                    /* bind to director */
    utime_t heartbeat_interval;        /* Interval to send heartbeats to Dir */
 
@@ -89,6 +91,8 @@ struct DIRRES {
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
+   char *tls_cipherlist;              /* TLS Cipher List */
+   alist *tls_allowed_cns;            /* TLS Allowed Common Names */
    utime_t heartbeat_interval;        /* Interval to send heartbeats to Dir */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */

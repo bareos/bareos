@@ -425,6 +425,7 @@ static int check_resources()
                                           NULL,
                                           NULL,
                                           store->tls_dhfile,
+                                          store->tls_cipherlist,
                                           store->tls_verify_peer);
 
          if (!store->tls_ctx) {
@@ -481,6 +482,7 @@ static int check_resources()
                                              NULL,
                                              NULL,
                                              director->tls_dhfile,
+                                             director->tls_cipherlist,
                                              director->tls_verify_peer);
 
          if (!director->tls_ctx) {

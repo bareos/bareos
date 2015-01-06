@@ -749,14 +749,18 @@ static bool check_resources()
        */
       if (OK && (need_tls || me->tls_require)) {
          /*
-          * Initialize TLS context:
-          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          * Initialize TLS context.
           */
          me->tls_ctx = new_tls_context(me->tls_ca_certfile,
-            me->tls_ca_certdir, me->tls_crlfile, me->tls_certfile,
-            me->tls_keyfile, NULL, NULL, me->tls_dhfile,
-            me->tls_verify_peer);
+                                       me->tls_ca_certdir,
+                                       me->tls_crlfile,
+                                       me->tls_certfile,
+                                       me->tls_keyfile,
+                                       NULL,
+                                       NULL,
+                                       me->tls_dhfile,
+                                       me->tls_cipherlist,
+                                       me->tls_verify_peer);
 
          if (!me->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
@@ -828,14 +832,18 @@ static bool check_resources()
        */
       if (OK && (need_tls || cons->tls_require)) {
          /*
-          * Initialize TLS context:
-          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          * Initialize TLS context.
           */
          cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-                                         cons->tls_ca_certdir, cons->tls_crlfile, cons->tls_certfile,
-                                         cons->tls_keyfile, NULL, NULL,
-                                         cons->tls_dhfile, cons->tls_verify_peer);
+                                         cons->tls_ca_certdir,
+                                         cons->tls_crlfile,
+                                         cons->tls_certfile,
+                                         cons->tls_keyfile,
+                                         NULL,
+                                         NULL,
+                                         cons->tls_dhfile,
+                                         cons->tls_cipherlist,
+                                         cons->tls_verify_peer);
          if (!cons->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                cons->name(), configfile);
@@ -885,14 +893,19 @@ static bool check_resources()
        */
       if (OK && (need_tls || client->tls_require)) {
          /*
-          * Initialize TLS context:
-          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+          * Initialize TLS context.
           */
          client->tls_ctx = new_tls_context(client->tls_ca_certfile,
-                                           client->tls_ca_certdir, client->tls_crlfile, client->tls_certfile,
-                                           client->tls_keyfile, NULL, NULL, NULL,
-                                           true);
+                                           client->tls_ca_certdir,
+                                           client->tls_crlfile,
+                                           client->tls_certfile,
+                                           client->tls_keyfile,
+                                           NULL,
+                                           NULL,
+                                           NULL,
+                                           client->tls_cipherlist,
+                                           client->tls_verify_peer);
+
          if (!client->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
@@ -935,13 +948,19 @@ static bool check_resources()
        */
       if (OK && (need_tls || store->tls_require)) {
         /*
-         * Initialize TLS context:
-         * Args: CA certfile, CA certdir, Certfile, Keyfile,
-         * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
+         * Initialize TLS context.
          */
          store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-                                          store->tls_ca_certdir, store->tls_crlfile, store->tls_certfile,
-                                          store->tls_keyfile, NULL, NULL, NULL, true);
+                                          store->tls_ca_certdir,
+                                          store->tls_crlfile,
+                                          store->tls_certfile,
+                                          store->tls_keyfile,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          store->tls_cipherlist,
+                                          store->tls_verify_peer);
+
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);

@@ -294,7 +294,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, bool initiate, cons
             goto auth_fatal;
          }
       } else {
-         if (!bnet_tls_client(me->tls_ctx, bs, verify_list)) {
+         if (!bnet_tls_client(me->tls_ctx, bs, me->tls_verify_peer, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
                  what, bs->host(), bs->port());
             auth_success = false;

@@ -1091,6 +1091,7 @@ int main(int argc, char *argv[])
    bool export_config = false;
    bool export_config_schema = false;
    JCR jcr;
+   alist *verify_list = NULL;
    TLS_CONTEXT *tls_ctx = NULL;
    POOL_MEM history_file;
    utime_t heart_beat;
@@ -1275,6 +1276,7 @@ int main(int argc, char *argv[])
                                       tls_pem_callback,
                                       &errmsg,
                                       NULL,
+                                      cons->tls_cipherlist,
                                       cons->tls_verify_peer);
 
       if (!cons->tls_ctx) {
@@ -1308,6 +1310,7 @@ int main(int argc, char *argv[])
                                      tls_pem_callback,
                                      &errmsg,
                                      NULL,
+                                     dir->tls_cipherlist,
                                      dir->tls_verify_peer);
 
       if (!dir->tls_ctx) {
@@ -1344,14 +1347,16 @@ int main(int argc, char *argv[])
       ASSERT(cons->password.encoding == p_encoding_md5);
       password = cons->password.value;
       tls_ctx = cons->tls_ctx;
+      verify_list = cons->tls_allowed_cns;
    } else {
       name = "*UserAgent*";
       ASSERT(dir->password.encoding == p_encoding_md5);
       password = dir->password.value;
       tls_ctx = dir->tls_ctx;
+      verify_list = dir->tls_allowed_cns;
    }
 
-   if (!UA_sock->authenticate_with_director(name, password, tls_ctx, errmsg, errmsg_len)) {
+   if (!UA_sock->authenticate_with_director(name, password, tls_ctx, verify_list, errmsg, errmsg_len)) {
       sendit(errmsg);
       terminate_console(0);
       return 1;

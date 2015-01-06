@@ -65,6 +65,8 @@ public:
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
+   char *tls_cipherlist;              /* TLS Cipher List */
+   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    utime_t heartbeat_interval;        /* Dir heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
@@ -94,6 +96,8 @@ public:
    char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
    char *tls_certfile;                /* TLS Client Certificate File */
    char *tls_keyfile;                 /* TLS Client Key File */
+   char *tls_cipherlist;              /* TLS Cipher List */
+   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    utime_t heartbeat_interval;        /* Cons heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */

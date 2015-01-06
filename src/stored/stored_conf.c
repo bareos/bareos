@@ -87,6 +87,7 @@ static RES_ITEM store_items[] = {
    { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL, NULL, NULL },
    { "TlsKey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL, NULL, NULL },
    { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_store.tls_dhfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_store.tls_cipherlist), 0, 0, NULL, NULL, NULL },
    { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_store.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "ClientConnectWait", CFG_TYPE_TIME, ITEM(res_store.client_wait), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
    { "VerId", CFG_TYPE_STR, ITEM(res_store.verid), 0, 0, NULL, NULL, NULL },
@@ -126,6 +127,7 @@ static RES_ITEM dir_items[] = {
    { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
    { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
    { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls_cipherlist), 0, 0, NULL, NULL, NULL },
    { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
    { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL, NULL, NULL },
@@ -534,6 +536,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.tls_dhfile) {
          free(res->res_dir.tls_dhfile);
       }
+      if (res->res_dir.tls_cipherlist) {
+         free(res->res_dir.tls_cipherlist);
+      }
       if (res->res_dir.tls_allowed_cns) {
          delete res->res_dir.tls_allowed_cns;
       }
@@ -612,6 +617,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_store.tls_dhfile) {
          free(res->res_store.tls_dhfile);
+      }
+      if (res->res_store.tls_cipherlist) {
+         free(res->res_store.tls_cipherlist);
       }
       if (res->res_store.tls_allowed_cns) {
          delete res->res_store.tls_allowed_cns;

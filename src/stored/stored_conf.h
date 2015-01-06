@@ -61,6 +61,7 @@ public:
    char *tls_certfile;                /* TLS Server Certificate File */
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
+   char *tls_cipherlist;              /* TLS Cipher List */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
    s_password keyencrkey;             /* Key Encryption Key */
@@ -122,6 +123,7 @@ public:
    char *tls_certfile;                /* TLS Server Certificate File */
    char *tls_keyfile;                 /* TLS Server Key File */
    char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
+   char *tls_cipherlist;              /* TLS Cipher List */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */

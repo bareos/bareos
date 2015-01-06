@@ -381,6 +381,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              CRYPTO_PEM_PASSWD_CB *pem_callback,
                              const void *pem_userdata,
                              const char *dhfile,
+                             const char *cipherlist,
                              bool verify_peer)
 {
    TLS_CONTEXT *ctx;
@@ -505,7 +506,11 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
       SSL_CTX_set_options(ctx->openssl, SSL_OP_SINGLE_DH_USE);
    }
 
-   if (SSL_CTX_set_cipher_list(ctx->openssl, TLS_DEFAULT_CIPHERS) != 1) {
+   if (!cipherlist) {
+      cipherlist = TLS_DEFAULT_CIPHERS;
+   }
+
+   if (SSL_CTX_set_cipher_list(ctx->openssl, cipherlist) != 1) {
       Jmsg0(NULL, M_ERROR, 0,
              _("Error setting cipher list, no valid ciphers available\n"));
       goto err;
@@ -571,6 +576,11 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
    if (ctx) {
       ctx->tls_enable = value;
    }
+}
+
+bool get_tls_verify_peer(TLS_CONTEXT *ctx)
+{
+   return (ctx) ? ctx->verify_peer : false;
 }
 
 /*

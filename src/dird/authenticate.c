@@ -64,7 +64,8 @@ static char Dir_sorry[] =
  */
 static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, const char *passwd, bool initiate,
                                         bool tls_enable, bool tls_require, bool tls_authenticate,
-                                        alist *verify_list, TLS_CONTEXT *tls_ctx, const char *what)
+                                        bool tls_verify_peer, alist *verify_list,
+                                        TLS_CONTEXT *tls_ctx, const char *what)
 {
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
@@ -180,7 +181,7 @@ static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, const char *passwd,
             goto auth_fatal;
          }
       } else {
-         if (!bnet_tls_client(tls_ctx, bs, verify_list)) {
+         if (!bnet_tls_client(tls_ctx, bs, tls_verify_peer, verify_list)) {
             if (jcr) {
                Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
                     what, bs->host(), bs->port());
@@ -231,7 +232,7 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
    ASSERT(store->password.encoding == p_encoding_md5);
    auth_success = two_way_authenticate(sd, jcr, store->password.value, false,
                                        store->tls_enable, store->tls_require, store->tls_authenticate,
-                                       NULL, store->tls_ctx, "Storage daemon");
+                                       store->tls_verify_peer, NULL, store->tls_ctx, "Storage daemon");
    if (!auth_success) {
       Dmsg0(dbglvl, _("Director and Storage daemon passwords or names not the same.\n"));
       Jmsg(jcr, M_FATAL, 0,
@@ -271,6 +272,7 @@ bool authenticate_with_file_daemon(JCR *jcr)
    CLIENTRES *client = jcr->res.client;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
+   alist *verify_list = NULL;
 
    /*
     * Send my name to the File daemon then do authentication
@@ -285,10 +287,14 @@ bool authenticate_with_file_daemon(JCR *jcr)
    }
    Dmsg1(dbglvl, "Sent: %s", fd->msg);
 
+   if (client->tls_verify_peer) {
+      verify_list = client->tls_allowed_cns;
+   }
+
    ASSERT(client->password.encoding == p_encoding_md5);
    auth_success = two_way_authenticate(fd, jcr, client->password.value, false,
                                        client->tls_enable, client->tls_require, client->tls_authenticate,
-                                       client->tls_allowed_cns, client->tls_ctx, "File daemon");
+                                       client->tls_verify_peer, verify_list, client->tls_ctx, "File daemon");
    if (!auth_success) {
       Dmsg0(dbglvl, _("Director and File daemon passwords or names not the same.\n"));
       Jmsg(jcr, M_FATAL, 0,
@@ -339,7 +345,7 @@ bool authenticate_file_daemon(JCR *jcr, char *client_name)
          ASSERT(client->password.encoding == p_encoding_md5);
          auth_success = two_way_authenticate(fd, NULL, client->password.value, true,
                                              client->tls_enable, client->tls_require, client->tls_authenticate,
-                                             client->tls_allowed_cns, client->tls_ctx, "File daemon");
+                                             client->tls_verify_peer, client->tls_allowed_cns, client->tls_ctx, "File daemon");
       }
    }
 
@@ -404,7 +410,7 @@ bool authenticate_user_agent(UAContext *uac)
       ASSERT(me->password.encoding == p_encoding_md5);
       auth_success = two_way_authenticate(ua, NULL, me->password.value, true,
                                           me->tls_enable, me->tls_require, me->tls_authenticate,
-                                          (me->tls_verify_peer) ? me->tls_allowed_cns : NULL, me->tls_ctx, "Console");
+                                          me->tls_verify_peer, me->tls_allowed_cns, me->tls_ctx, "Console");
    } else {
       unbash_spaces(name);
       cons = (CONRES *)GetResWithName(R_CONSOLE, name);
@@ -412,7 +418,7 @@ bool authenticate_user_agent(UAContext *uac)
          ASSERT(cons->password.encoding == p_encoding_md5);
          auth_success = two_way_authenticate(ua, NULL, cons->password.value, true,
                                              cons->tls_enable, cons->tls_require, cons->tls_authenticate,
-                                             (cons->tls_verify_peer) ? cons->tls_allowed_cns : NULL, cons->tls_ctx, "Console");
+                                             cons->tls_verify_peer, cons->tls_allowed_cns, cons->tls_ctx, "Console");
 
          if (auth_success) {
             uac->cons = cons;           /* save console resource pointer */
