@@ -1505,6 +1505,8 @@ FunctionEnd
 Function getDatabaseParameters
   Push $R0
 strcmp $Upgrading "yes" skip
+strcmp $InstallDirector "no" skip
+
 # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
