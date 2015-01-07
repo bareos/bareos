@@ -290,7 +290,7 @@ move:
     MessageBox MB_OK|MB_ICONINFORMATION \
       "Existing config file saved as $APPDATA\${PRODUCT_NAME}\${fname}.old" \
       /SD IDOK
-    GOTO +3
+    GOTO skipmsgbox
 keep:
     Rename "$PLUGINSDIR\${fname}" "$APPDATA\${PRODUCT_NAME}\${fname}.new"
     StrCmp $Upgrading "yes" skipmsgbox        # during upgrade keep existing file without messagebox
