@@ -345,7 +345,9 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
   dpl_status_t ret, ret2;
   int iret;
   char path[MAXPATHLEN];
+  char objpath[MAXPATHLEN];
   struct dirent entry, *entryp;
+  struct stat   st;
   dpl_vec_t     *common_prefixes = NULL;
   dpl_vec_t     *objects = NULL;
   dpl_common_prefix_t *common_prefix = NULL;
@@ -451,9 +453,16 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
           iret = stat(objpath, &st);
           if (0 != iret)
             {
-              perror("stat");
-              ret = DPL_FAILURE;
-              goto end;
+              // It might be a broken link -> ENOENT, not an error, size=0
+              if (errno != ENOENT)
+                {
+                  // Do not map errno here, since it makes the whole listing fail,
+                  // and we don't want to thwart the meaning of the error for the directory.
+                  perror("stat");
+                  ret = DPL_FAILURE;
+                  goto end;
+                }
+              st.st_size = 0;
             }
           object->size = st.st_size;
 
@@ -1035,6 +1044,318 @@ dpl_posix_copy(dpl_ctx_t *ctx,
   return ret;
 }
 
+dpl_status_t
+dpl_posix_stream_resume(dpl_ctx_t *ctx,
+                        dpl_stream_t *stream,
+                        struct json_object *status)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ctx=%p stream=%p status=%p",
+            ctx, stream, status);
+
+  if (NULL != stream->status)
+    {
+      json_object_put(stream->status);
+    }
+
+  stream->status = json_object_get(status);
+
+  ret = DPL_SUCCESS;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_stream_getmd(dpl_ctx_t *ctx,
+                       dpl_stream_t *stream,
+                       dpl_dict_t **metadatap,
+                       dpl_sysmd_t **sysmdp)
+{
+  dpl_dict_t      *all_mds = NULL;
+  dpl_status_t    ret = DPL_FAILURE;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  ret = dpl_posix_head_raw(ctx, stream->bucket, stream->locator,
+                           NULL, NULL, DPL_FTYPE_REG, NULL,
+                           &all_mds, NULL);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = dpl_posix_get_metadata_from_values(all_mds,
+                                           metadatap,
+                                           sysmdp ? *sysmdp : NULL);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = DPL_SUCCESS;
+end:
+
+  if (all_mds)
+      dpl_dict_free(all_mds);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_stream_get(dpl_ctx_t *ctx,
+                     dpl_stream_t *stream,
+                     unsigned int len,
+                     char **bufp,
+                     unsigned int *lenp,
+                     struct json_object **statusp)
+{
+  dpl_status_t        ret = DPL_FAILURE;
+  int                 iret;
+  struct json_object  *offset_object = NULL;
+  unsigned int        cur_off = 0;
+  char                path[MAXPATHLEN];
+  char                *buf = NULL;
+  int                 fd = -1;
+  int                 rd = 0;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ctx=%p stream=%p len=%u", ctx, stream, len);
+
+  if (stream->locator_is_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  iret = snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", stream->locator);
+  if (iret > sizeof(path))
+    {
+      ret = DPL_ENAMETOOLONG;
+      goto end;
+    }
+
+  buf = malloc(len);
+  if (NULL == buf)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  if (NULL == stream->status)
+    {
+      offset_object = json_object_new_int64(0);
+      if (NULL == offset_object)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      stream->status = json_object_new_object();
+      if (NULL == stream->status)
+        {
+          json_object_put(offset_object);
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      json_object_object_add(stream->status, "offset", offset_object);
+    }
+  else
+    {
+      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == FALSE)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  cur_off = json_object_get_int64(offset_object);
+
+  fd = open(path, O_RDONLY);
+  if (-1 == fd)
+    {
+      ret = dpl_posix_map_errno();
+      perror("open");
+      goto end;
+    }
+  rd = pread(fd, buf, len, cur_off);
+  if (rd < 0)
+    {
+      ret = dpl_posix_map_errno();
+      perror("pread");
+      goto end;
+    }
+
+  offset_object = json_object_new_int64(cur_off + rd);
+  if (NULL == offset_object)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  json_object_object_del(stream->status, "offset");
+  json_object_object_add(stream->status, "offset", offset_object);
+
+  // Grab status object for the caller and return it.
+  if (statusp)
+    {
+      *statusp = stream->status;
+      json_object_get(*statusp);
+    }
+  if (lenp)
+    *lenp = rd;
+  if (bufp)
+    {
+      *bufp = buf;
+      buf = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  if (-1 != fd)
+    close(fd);
+  if (NULL != buf)
+    free(buf);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_stream_putmd(dpl_ctx_t *ctx,
+                       dpl_stream_t *stream,
+                       dpl_dict_t *metadata,
+                       dpl_sysmd_t *sysmd)
+{
+  dpl_status_t  ret = DPL_FAILURE;
+  char path[MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
+
+  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", stream->locator);
+
+  ret = dpl_posix_setattr(path, metadata, sysmd);
+  if (DPL_SUCCESS != ret)
+    goto end;
+
+  ret = DPL_SUCCESS;
+end:
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_stream_put(dpl_ctx_t *ctx,
+                     dpl_stream_t *stream,
+                     char *buf,
+                     unsigned int len,
+                     struct json_object **statusp)
+{
+  dpl_status_t        ret = DPL_FAILURE;
+  int                 iret;
+  struct json_object  *offset_object = NULL;
+  unsigned int        cur_off = 0;
+  char                path[MAXPATHLEN];
+  int                 fd = -1;
+  int                 written = 0;
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ctx=%p stream=%p buf=%p len=%u", ctx, stream, buf, len);
+
+  if (stream->locator_is_id)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  iret = snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", stream->locator);
+  if (iret > sizeof(path))
+    {
+      ret = DPL_ENAMETOOLONG;
+      goto end;
+    }
+
+  if (NULL == stream->status)
+    {
+      offset_object = json_object_new_int64(0);
+      if (NULL == offset_object)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      stream->status = json_object_new_object();
+      if (NULL == stream->status)
+        {
+          json_object_put(offset_object);
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+
+      json_object_object_add(stream->status, "offset", offset_object);
+    }
+  else
+    {
+      if (json_object_object_get_ex(stream->status, "offset", &offset_object) == FALSE)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+
+  cur_off = json_object_get_int64(offset_object);
+
+  fd = open(path, O_CREAT|O_TRUNC|O_WRONLY, 0600);
+  if (-1 == fd)
+    {
+      ret = dpl_posix_map_errno();
+      perror("open");
+      goto end;
+    }
+  written = pwrite(fd, buf, len, cur_off);
+  if (written < len)
+    {
+      ret = dpl_posix_map_errno();
+      perror("pwrite");
+      goto end;
+    }
+
+  offset_object = json_object_new_int64(cur_off + written);
+  if (NULL == offset_object)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+  json_object_object_del(stream->status, "offset");
+  json_object_object_add(stream->status, "offset", offset_object);
+
+  // Grab status object for the caller and return it.
+  if (statusp)
+    {
+      *statusp = stream->status;
+      json_object_get(*statusp);
+    }
+
+  ret = DPL_SUCCESS;
+
+end:
+  if (-1 != fd)
+    close(fd);
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_stream_flush(dpl_ctx_t *ctx,
+                       dpl_stream_t *stream)
+{
+  return DPL_SUCCESS;
+}
+
 dpl_backend_t
 dpl_backend_posix = 
   {
@@ -1048,4 +1369,10 @@ dpl_backend_posix =
     .head_raw 		= dpl_posix_head_raw,
     .deletef 		= dpl_posix_delete,
     .copy               = dpl_posix_copy,
+    .stream_resume      = dpl_posix_stream_resume,
+    .stream_getmd       = dpl_posix_stream_getmd,
+    .stream_get         = dpl_posix_stream_get,
+    .stream_putmd       = dpl_posix_stream_putmd,
+    .stream_put         = dpl_posix_stream_put,
+    .stream_flush       = dpl_posix_stream_flush,
   };
