@@ -958,6 +958,240 @@ bool print_config_schema_json(POOL_MEM &buffer)
    return true;
 }
 
+/*
+ * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
+ */
+static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
+{
+   uint32_t offset;
+
+   for (int i = 0; items[i].name; i++) {
+      if (!bit_is_set(i, dest->hdr.item_present) &&
+           bit_is_set(i, source->hdr.item_present)) {
+         offset = (char *)(items[i].value) - (char *)&res_all;
+         switch (items[i].type) {
+         case CFG_TYPE_STR:
+         case CFG_TYPE_DIR: {
+            char **def_svalue, **svalue;
+
+            /*
+             * Handle strings and directory strings
+             */
+            def_svalue = (char **)((char *)(source) + offset);
+            svalue = (char **)((char *)dest + offset);
+            if (*svalue) {
+               free(*svalue);
+            }
+            *svalue = bstrdup(*def_svalue);
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         case CFG_TYPE_RES: {
+            char **def_svalue, **svalue;
+
+            /*
+             * Handle resources
+             */
+            def_svalue = (char **)((char *)(source) + offset);
+            svalue = (char **)((char *)dest + offset);
+            if (*svalue) {
+               Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
+            }
+            *svalue = *def_svalue;
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         case CFG_TYPE_ALIST_STR: {
+            const char *str;
+            alist *orig_list, **new_list;
+
+            /*
+             * Handle alist strings
+             */
+            orig_list = *(alist **)((char *)(source) + offset);
+
+            /*
+             * See if there is anything on the list.
+             */
+            if (orig_list && orig_list->size()) {
+               new_list = (alist **)((char *)(dest) + offset);
+
+               if (!*new_list) {
+                  *new_list = New(alist(10, owned_by_alist));
+               }
+
+               foreach_alist(str, orig_list) {
+                  (*new_list)->append(bstrdup(str));
+               }
+
+               set_bit(i, dest->hdr.item_present);
+               set_bit(i, dest->hdr.inherit_content);
+            }
+            break;
+         }
+         case CFG_TYPE_ALIST_RES: {
+            RES *res;
+            alist *orig_list, **new_list;
+
+            /*
+             * Handle alist resources
+             */
+            orig_list = *(alist **)((char *)(source) + offset);
+
+            /*
+             * See if there is anything on the list.
+             */
+            if (orig_list && orig_list->size()) {
+               new_list = (alist **)((char *)(dest) + offset);
+
+               if (!*new_list) {
+                  *new_list = New(alist(10, not_owned_by_alist));
+               }
+
+               foreach_alist(res, orig_list) {
+                  (*new_list)->append(res);
+               }
+
+               set_bit(i, dest->hdr.item_present);
+               set_bit(i, dest->hdr.inherit_content);
+            }
+            break;
+         }
+         case CFG_TYPE_ACL: {
+            const char *str;
+            alist *orig_list, **new_list;
+
+            /*
+             * Handle ACL lists.
+             */
+            orig_list = ((alist **)((char *)(source) + offset))[items[i].code];
+
+            /*
+             * See if there is anything on the list.
+             */
+            if (orig_list && orig_list->size()) {
+               new_list = &(((alist **)((char *)(dest) + offset))[items[i].code]);
+
+               if (!*new_list) {
+                  *new_list = New(alist(10, owned_by_alist));
+               }
+
+               foreach_alist(str, orig_list) {
+                  (*new_list)->append(bstrdup(str));
+               }
+
+               set_bit(i, dest->hdr.item_present);
+               set_bit(i, dest->hdr.inherit_content);
+            }
+            break;
+         }
+         case CFG_TYPE_BIT:
+         case CFG_TYPE_PINT32:
+         case CFG_TYPE_JOBTYPE:
+         case CFG_TYPE_PROTOCOLTYPE:
+         case CFG_TYPE_LEVEL:
+         case CFG_TYPE_INT32:
+         case CFG_TYPE_SIZE32:
+         case CFG_TYPE_MIGTYPE:
+         case CFG_TYPE_REPLACE: {
+            uint32_t *def_ivalue, *ivalue;
+
+            /*
+             * Handle integer fields
+             *    Note, our store_bit does not handle bitmaped fields
+             */
+            def_ivalue = (uint32_t *)((char *)(source) + offset);
+            ivalue = (uint32_t *)((char *)dest + offset);
+            *ivalue = *def_ivalue;
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         case CFG_TYPE_TIME:
+         case CFG_TYPE_SIZE64:
+         case CFG_TYPE_INT64:
+         case CFG_TYPE_SPEED: {
+            int64_t *def_lvalue, *lvalue;
+
+            /*
+             * Handle 64 bit integer fields
+             */
+            def_lvalue = (int64_t *)((char *)(source) + offset);
+            lvalue = (int64_t *)((char *)dest + offset);
+            *lvalue = *def_lvalue;
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         case CFG_TYPE_BOOL: {
+            bool *def_bvalue, *bvalue;
+
+            /*
+             * Handle bool fields
+             */
+            def_bvalue = (bool *)((char *)(source) + offset);
+            bvalue = (bool *)((char *)dest + offset);
+            *bvalue = *def_bvalue;
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         case CFG_TYPE_AUTOPASSWORD: {
+            s_password *s_pwd, *d_pwd;
+
+            /*
+             * Handle password fields
+             */
+            s_pwd = (s_password *)((char *)(source) + offset);
+            d_pwd = (s_password *)((char *)(dest) + offset);
+
+            d_pwd->encoding = s_pwd->encoding;
+            d_pwd->value = bstrdup(s_pwd->value);
+            set_bit(i, dest->hdr.item_present);
+            set_bit(i, dest->hdr.inherit_content);
+            break;
+         }
+         default:
+            Dmsg2(200, "Don't know how to propagate resource %s of configtype %d\n", items[i].name, items[i].type);
+            break;
+         }
+      }
+   }
+}
+
+/*
+ * Ensure that all required items are present
+ */
+static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type)
+{
+   bool retval = true;
+
+   for (int i = 0; items[i].name; i++) {
+      if (items[i].flags & CFG_ITEM_REQUIRED) {
+         if (!bit_is_set(i, res->hdr.item_present)) {
+            Jmsg(NULL, M_ERROR_TERM, 0,
+                 _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
+                 items[i].name, res_type, res->name());
+            retval = false;
+            goto bail_out;
+         }
+      }
+
+      /*
+       * If this triggers, take a look at lib/parse_conf.h
+       */
+      if (i >= MAX_RES_ITEMS) {
+         Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), res_type);
+         goto bail_out;
+      }
+   }
+
+bail_out:
+   return retval;
+}
+
 char *CATRES::display(POOLMEM *dst)
 {
    Mmsg(dst, "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
@@ -2456,31 +2690,13 @@ void save_resource(int type, RES_ITEM *items, int pass)
    int rindex = type - R_FIRST;
    bool error = false;
 
-   /*
-    * Check Job requirements after applying JobDefs
-    */
-   if (type != R_JOBDEFS && type != R_JOB) {
+   switch (type) {
+   case R_JOBDEFS:
+      break;
+   case R_JOB:
       /*
-       * Ensure that all required items are present
-       */
-      for (int i = 0; items[i].name; i++) {
-         if (items[i].flags & CFG_ITEM_REQUIRED) {
-            if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
-                Emsg2(M_ERROR_TERM, 0,
-                      _("%s item is required in %s resource, but not found.\n"),
-                      items[i].name, resources[rindex]);
-            }
-         }
-         /*
-          * If this triggers, take a look at lib/parse_conf.h
-          */
-         if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources[rindex]);
-         }
-      }
-   } else if (type == R_JOB) {
-      /*
-       * Ensure that the name item is present
+       * Check Job requirements after applying JobDefs
+       * Ensure that the name item is present however.
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
@@ -2488,6 +2704,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
                    _("%s item is required in %s resource, but not found.\n"),
                    items[0].name, resources[rindex]);
          }
+      }
+      break;
+   default:
+      /*
+       * Ensure that all required items are present
+       */
+      if (!validate_resource(items, &res_all.res_dir, resources[rindex].name)) {
+         return;
       }
    }
 
@@ -2711,26 +2935,34 @@ void save_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
-bool populate_jobdefs()
+/*
+ * Populate Job Defaults (e.g. JobDefs)
+ */
+static inline bool populate_jobdefs()
 {
-   JOBRES *job;
+   JOBRES *job, *jobdefs;
    bool retval = true;
 
+   /*
+    * Propagate the content of a JobDefs to an other.
+    */
+   foreach_res(jobdefs, R_JOBDEFS) {
+      /*
+       * Don't allow the JobDefs pointing to itself.
+       */
+      if (!jobdefs->jobdefs || jobdefs->jobdefs == jobdefs) {
+         continue;
+      }
+
+      propagate_resource(job_items, jobdefs->jobdefs, jobdefs);
+   }
+
+   /*
+    * Propagate the content of the JobDefs to the actual Job.
+    */
    foreach_res(job, R_JOB) {
       if (job->jobdefs) {
-         JOBRES *jobdefs = job->jobdefs;
-
-         /*
-          * Handle Storage alists specifically
-          */
-         if (jobdefs->storage && !job->storage) {
-            STORERES *store;
-
-            job->storage = New(alist(10, not_owned_by_alist));
-            foreach_alist(store, jobdefs->storage) {
-               job->storage->append(store);
-            }
-         }
+         jobdefs = job->jobdefs;
 
          /*
           * Handle RunScripts alists specifically
@@ -2752,168 +2984,15 @@ bool populate_jobdefs()
          /*
           * Transfer default items from JobDefs Resource
           */
-         for (int i = 0; job_items[i].name; i++) {
-            char **def_svalue, **svalue;   /* string value */
-            uint32_t *def_ivalue, *ivalue; /* integer value */
-            bool *def_bvalue, *bvalue;     /* bool value */
-            int64_t *def_lvalue, *lvalue;  /* 64 bit values */
-            uint32_t offset;
-
-            Dmsg4(1400, "Job \"%s\", field \"%s\" bit=%d def=%d\n",
-                  job->name(), job_items[i].name,
-                  bit_is_set(i, job->hdr.item_present),
-                  bit_is_set(i, jobdefs->hdr.item_present));
-
-            if (!bit_is_set(i, job->hdr.item_present) &&
-                 bit_is_set(i, jobdefs->hdr.item_present)) {
-               Dmsg2(400, "Job \"%s\", field \"%s\": getting default.\n",
-                     job->name(), job_items[i].name);
-               offset = (char *)(job_items[i].value) - (char *)&res_all;
-               switch (job_items[i].type) {
-               case CFG_TYPE_STR:
-               case CFG_TYPE_DIR:
-                  /*
-                   * Handle strings and directory strings
-                   */
-                  def_svalue = (char **)((char *)(jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_svalue=%s item %d offset=%u\n",
-                        job->name(), job_items[i].name, *def_svalue, i, offset);
-                  svalue = (char **)((char *)job + offset);
-                  if (*svalue) {
-                     free(*svalue);
-                  }
-                  *svalue = bstrdup(*def_svalue);
-                  set_bit(i, job->hdr.item_present);
-                  set_bit(i, job->hdr.inherit_content);
-                  break;
-               case CFG_TYPE_RES:
-                  /*
-                   * Handle resources
-                   */
-                  def_svalue = (char **)((char *)(jobdefs) + offset);
-                  Dmsg4(400, "Job \"%s\", field \"%s\" item %d offset=%u\n",
-                        job->name(), job_items[i].name, i, offset);
-                  svalue = (char **)((char *)job + offset);
-                  if (*svalue) {
-                     Pmsg1(000, _("Hey something is wrong. p=0x%lu\n"), *svalue);
-                  }
-                  *svalue = *def_svalue;
-                  set_bit(i, job->hdr.item_present);
-                  set_bit(i, job->hdr.inherit_content);
-                  break;
-               case CFG_TYPE_ALIST_STR: {
-                  const char *str;
-                  alist *orig_list, **new_list;
-
-                  /*
-                   * Handle alist strings
-                   */
-                  orig_list = *(alist **)((char *)(jobdefs) + offset);
-
-                  /*
-                   * See if there is anything on the list.
-                   */
-                  if (orig_list && orig_list->size()) {
-                     new_list = (alist **)((char *)(job) + offset);
-
-                     if (!*new_list) {
-                        *new_list = New(alist(10, owned_by_alist));
-                     }
-
-                     foreach_alist(str, orig_list) {
-                        (*new_list)->append(bstrdup(str));
-                     }
-
-                     set_bit(i, job->hdr.item_present);
-                     set_bit(i, job->hdr.inherit_content);
-                  }
-                  break;
-               }
-               case CFG_TYPE_ALIST_RES:
-                  /*
-                   * Handle alist resources
-                   */
-                  if (bit_is_set(i, jobdefs->hdr.item_present)) {
-                     set_bit(i, job->hdr.item_present);
-                     set_bit(i, job->hdr.inherit_content);
-                  }
-                  break;
-               case CFG_TYPE_BIT:
-               case CFG_TYPE_PINT32:
-               case CFG_TYPE_JOBTYPE:
-               case CFG_TYPE_PROTOCOLTYPE:
-               case CFG_TYPE_LEVEL:
-               case CFG_TYPE_INT32:
-               case CFG_TYPE_SIZE32:
-               case CFG_TYPE_MIGTYPE:
-               case CFG_TYPE_REPLACE:
-                  /*
-                   * Handle integer fields
-                   *    Note, our store_bit does not handle bitmaped fields
-                   */
-                  def_ivalue = (uint32_t *)((char *)(jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_ivalue=%d item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_ivalue, i, offset);
-                  ivalue = (uint32_t *)((char *)job + offset);
-                  *ivalue = *def_ivalue;
-                  set_bit(i, job->hdr.item_present);
-                  set_bit(i, job->hdr.inherit_content);
-                  break;
-               case CFG_TYPE_TIME:
-               case CFG_TYPE_SIZE64:
-               case CFG_TYPE_INT64:
-               case CFG_TYPE_SPEED:
-                  /*
-                   * Handle 64 bit integer fields
-                   */
-                  def_lvalue = (int64_t *)((char *)(jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_lvalue=%" lld " item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_lvalue, i, offset);
-                  lvalue = (int64_t *)((char *)job + offset);
-                  *lvalue = *def_lvalue;
-                  set_bit(i, job->hdr.item_present);
-                  set_bit(i, job->hdr.inherit_content);
-                  break;
-               case CFG_TYPE_BOOL:
-                  /*
-                   * Handle bool fields
-                   */
-                  def_bvalue = (bool *)((char *)(jobdefs) + offset);
-                  Dmsg5(400, "Job \"%s\", field \"%s\" def_bvalue=%d item %d offset=%u\n",
-                       job->name(), job_items[i].name, *def_bvalue, i, offset);
-                  bvalue = (bool *)((char *)job + offset);
-                  *bvalue = *def_bvalue;
-                  set_bit(i, job->hdr.item_present);
-                  set_bit(i, job->hdr.inherit_content);
-                  break;
-               default:
-                  break;
-               }
-            }
-         }
+         propagate_resource(job_items, jobdefs, job);
       }
 
       /*
        * Ensure that all required items are present
        */
-      for (int i = 0; job_items[i].name; i++) {
-         if (job_items[i].flags & CFG_ITEM_REQUIRED) {
-            if (!bit_is_set(i, job->hdr.item_present)) {
-               Jmsg(NULL, M_ERROR_TERM, 0,
-                    _("\"%s\" directive in Job \"%s\" resource is required, but not found.\n"),
-                    job_items[i].name, job->name());
-               retval = false;
-               goto bail_out;
-            }
-         }
-
-         /*
-          * If this triggers, take a look at lib/parse_conf.h
-          */
-         if (i >= MAX_RES_ITEMS) {
-            Emsg0(M_ERROR_TERM, 0, _("Too many items in Job resource\n"));
-            goto bail_out;
-         }
+      if (!validate_resource(job_items, job, "Job")) {
+         retval = false;
+         goto bail_out;
       }
 
       /*
@@ -2952,6 +3031,19 @@ bool populate_jobdefs()
          break;
       }
    } /* End loop over Job res */
+
+bail_out:
+   return retval;
+}
+
+bool populate_defs()
+{
+   bool retval;
+
+   retval = populate_jobdefs();
+   if (!retval) {
+      goto bail_out;
+   }
 
 bail_out:
    return retval;

@@ -84,7 +84,7 @@ bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type,
 const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
-bool populate_jobdefs();
+bool populate_defs();
 
 /* expand.c */
 int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);

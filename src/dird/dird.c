@@ -777,7 +777,7 @@ static bool check_resources()
       goto bail_out;
    }
 
-   if (!populate_jobdefs()) {
+   if (!populate_defs()) {
       OK = false;
       goto bail_out;
    }
