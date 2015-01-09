@@ -54,6 +54,11 @@ libdroplet_la_SOURCES = \
 	src/backend/s3/backend/list_bucket_attrs.c \
 	src/backend/s3/backend/make_bucket.c \
 	src/backend/s3/backend/put.c \
+	src/backend/s3/backend/multipart.c \
+	src/backend/s3/backend/stream_resume.c \
+	src/backend/s3/backend/stream_get.c \
+	src/backend/s3/backend/stream_put.c \
+	src/backend/s3/backend/stream_flush.c \
 	src/backend/cdmi/backend.c \
 	src/backend/cdmi/replyparser.c \
 	src/backend/cdmi/reqbuilder.c \

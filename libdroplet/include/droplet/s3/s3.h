@@ -38,6 +38,7 @@
 #include <droplet/s3/reqbuilder.h>
 #include <droplet/s3/replyparser.h>
 #include <droplet/s3/backend.h>
+#include <droplet/s3/multipart.h>
 
 /* #define DPRINTF(fmt,...) fprintf(stderr, "[s3] " fmt, ##__VA_ARGS__) */
 #define DPRINTF(fmt,...)

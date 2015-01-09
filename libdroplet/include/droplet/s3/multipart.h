@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 SCALITY SA. All rights reserved.
+ * Copyright (C) 2015 SCALITY SA. All rights reserved.
  * http://www.scality.com
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,35 +32,27 @@
  * https://github.com/scality/Droplet
  */
 
-#ifndef __DROPLET_S3_BACKEND_H__
-#define __DROPLET_S3_BACKEND_H__ 1
+#ifndef __DROPLET_S3_MULTIPART_H__
+#define __DROPLET_S3_MULTIPART_H__ 1
 
-DCL_BACKEND_GET_CAPABILITIES_FN(dpl_s3_get_capabilities);
-DCL_BACKEND_LIST_ALL_MY_BUCKETS_FN(dpl_s3_list_all_my_buckets);
-DCL_BACKEND_LIST_BUCKET_FN(dpl_s3_list_bucket);
-DCL_BACKEND_LIST_BUCKET_ATTRS_FN(dpl_s3_list_bucket_attrs);
-DCL_BACKEND_MAKE_BUCKET_FN(dpl_s3_make_bucket);
-DCL_BACKEND_DELETE_BUCKET_FN(dpl_s3_delete_bucket);
-DCL_BACKEND_PUT_FN(dpl_s3_put);
-DCL_BACKEND_GET_FN(dpl_s3_get);
-DCL_BACKEND_HEAD_FN(dpl_s3_head);
-DCL_BACKEND_HEAD_RAW_FN(dpl_s3_head_raw);
-DCL_BACKEND_DELETE_FN(dpl_s3_delete);
-DCL_BACKEND_DELETE_ALL_FN(dpl_s3_delete_all);
-DCL_BACKEND_GENURL_FN(dpl_s3_genurl);
-DCL_BACKEND_COPY_FN(dpl_s3_copy);
-DCL_BACKEND_STREAM_RESUME_FN(dpl_s3_stream_resume);
-DCL_BACKEND_STREAM_GET_FN(dpl_s3_stream_get);
-DCL_BACKEND_STREAM_PUT_FN(dpl_s3_stream_put);
-DCL_BACKEND_STREAM_FLUSH_FN(dpl_s3_stream_flush);
-
-DCL_BACKEND_STREAM_RESUME_FN(dpl_s3_stream_resume);
-DCL_BACKEND_STREAM_GETMD_FN(dpl_s3_stream_getmd);
-DCL_BACKEND_STREAM_GET_FN(dpl_s3_stream_get);
-DCL_BACKEND_STREAM_PUTMD_FN(dpl_s3_stream_putmd);
-DCL_BACKEND_STREAM_PUT_FN(dpl_s3_stream_put);
-DCL_BACKEND_STREAM_FLUSH_FN(dpl_s3_stream_flush);
-
-extern dpl_backend_t dpl_backend_s3;
+dpl_status_t dpl_s3_stream_multipart_init(dpl_ctx_t *ctx,
+                                          const char *bucket,
+                                          const char *resource,
+                                          const char **uploadidp);
+dpl_status_t dpl_s3_stream_multipart_complete(dpl_ctx_t *ctx,
+                                              const char *bucket,
+                                              const char *resource,
+                                              const char *uploadid,
+                                              struct json_object *parts,
+                                              unsigned int n_parts,
+                                              const dpl_dict_t *metadata,
+                                              const dpl_sysmd_t *sysmd);
+dpl_status_t dpl_s3_stream_multipart_put(dpl_ctx_t *ctx,
+                                         const char *bucket,
+                                         const char *resource,
+                                         const char *uploadid,
+					 unsigned int partnb,
+                                         char *buf, unsigned int len,
+                                         const char **etagp);
 
 #endif

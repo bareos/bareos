@@ -316,7 +316,9 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
   char *line = NULL;
   size_t chunk_len = 0;
   ssize_t chunk_remain = 0;
+  ssize_t chunk_cc = 0;
   ssize_t chunk_off = 0;
+  int connclose = 0;
   int chunked = 0;
 #define MODE_REPLY  0
 #define MODE_HEADER  1
@@ -339,9 +341,16 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
         {
           DPRINTF("chunk_len=%ld chunk_off=%ld\n", chunk_len, chunk_off);
 
-          if (chunk_off < chunk_len)
+          /*
+           * Two types of chunk read:
+           *  1) We have chunk length (through chunked transfer encoding or
+           *  Content-length)
+           *  2) We have a 'Connection: close' header, and want to ensure that
+           *  a potential unannounced body is read
+           */
+          if (chunk_off < chunk_len || connclose)
             {
-              chunk_remain = chunk_len - chunk_off;
+              chunk_remain = chunk_len ? chunk_len - chunk_off : -1;
 
               DPL_TRACE(conn->ctx, DPL_TRACE_IO, "read conn=%p https=%d size=%ld (remain %ld)", conn, conn->ctx->use_https, conn->read_buf_size, chunk_remain);
 
@@ -381,7 +390,11 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                       goto end;
                     }
 
-                  recvfl = (chunk_remain >= conn->read_buf_size) ? MSG_WAITALL : 0;
+                  /*
+                   * We want to read as much as possible in a connclose case,
+                   * since we do not know the size of the body in advance.
+                   */
+                  recvfl = (chunk_remain >= conn->read_buf_size || connclose) ? MSG_WAITALL : 0;
 
                   conn->cc = recv(conn->fd, conn->read_buf, conn->read_buf_size, recvfl);
                   if (-1 == conn->cc)
@@ -415,16 +428,20 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
               if (conn->ctx->trace_buffers)
                 dpl_dump_simple(conn->read_buf, conn->cc, conn->ctx->trace_binary);
 
-              chunk_remain = MIN(conn->cc, chunk_len - chunk_off);
-              ret2 = buffer_func(cb_arg, conn->read_buf, chunk_remain);
+              chunk_cc = connclose ? conn->cc : MIN(conn->cc, chunk_len - chunk_off);
+              ret2 = buffer_func(cb_arg, conn->read_buf, chunk_cc);
               if (DPL_SUCCESS != ret2)
                 {
                   DPL_TRACE(conn->ctx, DPL_TRACE_ERR, "buffer_func");
                   ret = DPL_FAILURE;
                   goto end;
                 }
-              conn->read_buf_pos = chunk_remain;
-              chunk_off += chunk_remain;
+              /*
+               * With connclose, no other buffer than body should reach the
+               * read_buf, consume all
+               */
+              conn->read_buf_pos = connclose ? 0 : chunk_cc;
+              chunk_off += chunk_cc;
 
               continue ;
             }
@@ -533,6 +550,13 @@ dpl_read_http_reply_buffered(dpl_conn_t *conn,
                       {
                         if (!strcasecmp(p, "chunked"))
                           chunked = 1;
+                      }
+                  }
+                else if (!strcasecmp(line, "Connection"))
+                  {
+                    if (!strcasecmp(p, "close"))
+                      {
+                        connclose = 1;
                       }
                   }
                 else

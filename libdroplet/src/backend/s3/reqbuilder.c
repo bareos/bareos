@@ -275,7 +275,7 @@ dpl_s3_req_build(const dpl_req_t *req,
   dpl_dict_t *headers = NULL;
   int ret, ret2;
   const char *method = dpl_method_str(req->method);
-  char resource_ue[DPL_URL_LENGTH(strlen(req->resource)) + 1];
+  char resource_ue[DPL_URL_LENGTH(strlen(req->resource) + (req->subresource ? strlen(req->subresource) : 0)) + 1];
 
   DPL_TRACE(req->ctx, DPL_TRACE_REQ, "req_build method=%s bucket=%s resource=%s subresource=%s", method, req->bucket, req->resource, req->subresource);
 
@@ -289,6 +289,13 @@ dpl_s3_req_build(const dpl_req_t *req,
     {
       resource_ue[0] = '/'; //some servers do not like encoded slash
       dpl_url_encode(req->resource + 1, resource_ue + 1);
+    }
+
+  // Append subresource
+  if (req->subresource)
+    {
+      dpl_url_encode("?", resource_ue + strlen(resource_ue));
+      dpl_url_encode(req->subresource, resource_ue + strlen(resource_ue));
     }
 
   headers = dpl_dict_new(13);
