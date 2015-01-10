@@ -932,10 +932,6 @@ extern int		ndmra_destroy (struct ndm_session *sess);
  ****************************************************************
  */
 
-#ifndef NDM_N_IMAGE_STREAM_BUF
-#define NDM_N_IMAGE_STREAM_BUF	(100*1024)
-#endif
-
 enum ndmis_connect_status {
 	NDMIS_CONN_IDLE = 0,
 	NDMIS_CONN_LISTEN,
@@ -975,7 +971,7 @@ struct ndm_image_stream {
 	/* transfer stuff */
 	int			transfer_mode;
 	struct ndmchan		chan;
-	char			buf[NDM_N_IMAGE_STREAM_BUF];
+	char *			buf;
 };
 
 extern int		ndmis_initialize (struct ndm_session *sess);
