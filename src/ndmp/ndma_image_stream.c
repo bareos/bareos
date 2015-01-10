@@ -93,6 +93,13 @@ ndmis_initialize (struct ndm_session *sess)
 	NDMOS_MACRO_ZEROFILL (sess->plumb.image_stream);
 	NDMOS_MACRO_ZEROFILL (&sess->plumb.image_stream->chan);
 
+	sess->plumb.image_stream->buf = NDMOS_API_MALLOC (sess->control_acb->job.record_size);
+	if (!sess->plumb.image_stream->buf) {
+		NDMOS_API_FREE (sess->plumb.image_stream);
+		return -1;
+	}
+	NDMOS_MACRO_ZEROFILL (sess->plumb.image_stream->buf);
+
 	ndmis_reinit_remote (sess);
 
 	sess->plumb.image_stream->data_ep.name = "DATA";
@@ -123,11 +130,13 @@ ndmis_destroy (struct ndm_session *sess)
 		return 0;
 	}
 
+	NDMOS_API_FREE (sess->plumb.image_stream->buf);
 	NDMOS_API_FREE (sess->plumb.image_stream);
 	sess->plumb.image_stream = NULL;
 
 	return 0;
 }
+
 /* Belay -- Cancel partially issued activation/start */
 int
 ndmis_belay (struct ndm_session *sess)
