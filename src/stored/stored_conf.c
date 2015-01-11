@@ -439,7 +439,9 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *reshdr,
+                   void sendit(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data)
 {
    URES *res = (URES *)reshdr;
    char buf[1000];

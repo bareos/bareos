@@ -128,7 +128,9 @@ static RES_TABLE resources[] = {
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *reshdr,
+                   void sendit(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data)
 {
    URES *res = (URES *)reshdr;
    bool recurse = true;
@@ -157,7 +159,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
       printf(_("Unknown resource type %d\n"), type);
    }
    if (recurse && res->dir_res.hdr.next) {
-      dump_resource(type, res->dir_res.hdr.next, sendit, sock);
+      dump_resource(type, res->dir_res.hdr.next, sendit, sock, hide_sensitive_data);
    }
 }
 

@@ -314,7 +314,7 @@ bool CONFIG::parse_config()
       if (debug_level >= 900 && pass == 2) {
          int i;
          for (i = m_r_first; i <= m_r_last; i++) {
-            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL);
+            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL, false);
          }
       }
       lc = lex_close_file(lc);
