@@ -58,8 +58,6 @@
 #define MAX_PATH  1024
 #endif
 
-extern void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock);
-
 /*
  * Define the Union of all the common resource structure definitions.
  */
@@ -316,7 +314,7 @@ bool CONFIG::parse_config()
       if (debug_level >= 900 && pass == 2) {
          int i;
          for (i = m_r_first; i <= m_r_last; i++) {
-            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL);
+            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL, false);
          }
       }
       lc = lex_close_file(lc);
@@ -654,11 +652,12 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
-void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...), void *sock)
+void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
+                            void *sock, bool hide_sensitive_data)
 {
    for (int i = m_r_first; i <= m_r_last; i++) {
       if (m_res_head[i - m_r_first]) {
-         ::dump_resource(i,m_res_head[i - m_r_first],sendit,sock);
+         dump_resource(i,m_res_head[i - m_r_first],sendit, sock, hide_sensitive_data);
       }
    }
 }

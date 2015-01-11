@@ -36,6 +36,7 @@ extern jobq_t job_queue;              /* job queue */
 
 /* Imported functions */
 extern int autodisplay_cmd(UAContext *ua, const char *cmd);
+extern int configure_cmd(UAContext *ua, const char *cmd);
 extern int gui_cmd(UAContext *ua, const char *cmd);
 extern int label_cmd(UAContext *ua, const char *cmd);
 extern int list_cmd(UAContext *ua, const char *cmd);
@@ -108,6 +109,8 @@ static struct cmdstruct commands[] = {
      NT_("on | off"), false, true },
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
      NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false, true },
+   { NT_("configure"), configure_cmd, _("Configure director"),
+     NT_("terminal"), false, true },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),

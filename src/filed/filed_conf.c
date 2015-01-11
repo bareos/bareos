@@ -167,7 +167,9 @@ static RES_TABLE resources[] = {
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *reshdr,
+                   void sendit(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data)
 {
    POOL_MEM buf;
    URES *res = (URES *)reshdr;
@@ -198,7 +200,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    sendit(sock, "%s", buf.c_str());
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock);
+      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data);
    }
 }
 

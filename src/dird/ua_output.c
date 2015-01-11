@@ -215,8 +215,15 @@ int show_cmd(UAContext *ua, const char *cmd)
    int recurse;
    char *res_name;
    RES *res = NULL;
+   bool hide_sensitive_data;
 
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
+
+   /*
+    * When the console has no access to the configure cmd then any show cmd
+    * will suppress all sensitive information like for instance passwords.
+    */
+   hide_sensitive_data = !acl_access_ok(ua, Command_ACL, "configure", false);
 
    LockRes();
    for (i = 1; i < ua->argc; i++) {
@@ -284,7 +291,7 @@ int show_cmd(UAContext *ua, const char *cmd)
                continue;
             default:
                if (my_config->m_res_head[j - my_config->m_r_first]) {
-                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua);
+                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua, hide_sensitive_data);
                }
                break;
             }
@@ -292,7 +299,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          break;
       case -2:
          ua->send_msg(_("Keywords for the show command are:\n"));
-         for (j=0; avail_resources[j].res_name; j++) {
+         for (j = 0; avail_resources[j].res_name; j++) {
             ua->error_msg("%s\n", _(avail_resources[j].res_name));
          }
          goto bail_out;
@@ -303,7 +310,7 @@ int show_cmd(UAContext *ua, const char *cmd)
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         dump_resource(recurse ? type : -type, res, bsendmsg, ua);
+         dump_resource(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data);
          break;
       }
    }

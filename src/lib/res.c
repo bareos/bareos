@@ -1380,7 +1380,7 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
    indent_config_item(cfg_str, 1, temp.c_str());
 }
 
-bool MSGSRES::print_config(POOL_MEM &buff)
+bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
 {
    int len;
    POOLMEM *cmdbuf;
@@ -1458,7 +1458,7 @@ bool MSGSRES::print_config(POOL_MEM &buff)
    return true;
 }
 
-bool BRSRES::print_config(POOL_MEM &buff)
+bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
@@ -1621,17 +1621,22 @@ bool BRSRES::print_config(POOL_MEM &buff)
 
             password = items[i].pwdvalue;
             if (password && password->value != NULL) {
-               switch (password->encoding) {
-               case p_encoding_clear:
-                  Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
-                  Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
-                  break;
-               case p_encoding_md5:
-                  Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-                  Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
-                  break;
-               default:
-                  break;
+               if (hide_sensitive_data) {
+                  Dmsg1(200, "%s = \"****************\"\n", items[i].name);
+                  Mmsg(temp, "%s = \"****************\"\n", items[i].name);
+               } else {
+                  switch (password->encoding) {
+                  case p_encoding_clear:
+                     Dmsg2(200, "%s = \"%s\"\n", items[i].name, password->value);
+                     Mmsg(temp, "%s = \"%s\"\n", items[i].name, password->value);
+                     break;
+                  case p_encoding_md5:
+                     Dmsg2(200, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                     Mmsg(temp, "%s = \"[md5]%s\"\n", items[i].name, password->value);
+                     break;
+                  default:
+                     break;
+                  }
                }
                indent_config_item(cfg_str, 1, temp.c_str());
             }
@@ -1811,7 +1816,7 @@ bool BRSRES::print_config(POOL_MEM &buff)
           * This is a non-generic type call back to the daemon to get things printed.
           */
          if (my_config->m_print_res) {
-            my_config->m_print_res(items, i, cfg_str);
+            my_config->m_print_res(items, i, cfg_str, hide_sensitive_data);
          }
          break;
       }

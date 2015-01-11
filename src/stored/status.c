@@ -123,7 +123,7 @@ static void list_resources(STATUS_PKT *sp)
       sendit(msg, len, sp);
    }
 
-   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->m_r_first], sp);
+   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->m_r_first], sp, false);
 
    if (!sp->api) {
       len = pm_strcpy(msg, "====\n\n");

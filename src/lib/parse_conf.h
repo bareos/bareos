@@ -264,7 +264,7 @@ public:
 
    /* Methods */
    char *name() const;
-   bool print_config(POOL_MEM &buf);
+   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false);
 };
 
 inline char *BRSRES::name() const { return this->hdr.name; }
@@ -300,12 +300,12 @@ public:
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
-   bool print_config(POOL_MEM& buff);
+   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false);
 };
 
 typedef void (INIT_RES_HANDLER)(RES_ITEM *item, int pass);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
-typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str);
+typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data);
 
 /*
  * New C++ configuration routines
@@ -356,7 +356,8 @@ public:
    RES **save_resources();
    RES **new_res_head();
    void init_resource(int type, RES_ITEM *items, int pass);
-   void dump_resources(void sendit(void *sock, const char *fmt, ...), void *sock);
+   void dump_resources(void sendit(void *sock, const char *fmt, ...),
+                       void *sock, bool hide_sensitive_data = false);
 };
 
 CONFIG *new_config_parser();
@@ -377,7 +378,8 @@ RES *GetResWithName(int rcode, const char *name);
 RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);
-void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...), void *sock);
+void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data = false);
 void free_resource(RES *res, int type);
 void init_resource(int type, RES_ITEM *item);
 void save_resource(int type, RES_ITEM *item, int pass);

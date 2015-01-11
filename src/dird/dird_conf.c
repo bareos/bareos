@@ -1375,7 +1375,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 }
 
-bool FILESETRES::print_config(POOL_MEM &buff)
+bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
@@ -1779,7 +1779,9 @@ const char *level_to_str(int level)
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt, ...), void *sock)
+void dump_resource(int type, RES *ures,
+                   void sendit(void *sock, const char *fmt, ...),
+                   void *sock, bool hide_sensitive_data)
 {
    URES *res = (URES *)ures;
    bool recurse = true;
@@ -1798,71 +1800,71 @@ void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt,
 
    switch (type) {
    case R_DIRECTOR:
-      res->res_dir.print_config(buf);
+      res->res_dir.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_PROFILE:
-      res->res_profile.print_config(buf);
+      res->res_profile.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CONSOLE:
-      res->res_con.print_config(buf);
+      res->res_con.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_COUNTER:
-      res->res_counter.print_config(buf);
+      res->res_counter.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
       if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.hdr.name)) {
-         res->res_client.print_config(buf);
+         res->res_client.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_DEVICE:
-      res->res_dev.print_config(buf);
+      res->res_dev.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
       if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.hdr.name)) {
-         res->res_store.print_config(buf);
+         res->res_store.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_CATALOG:
       if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.hdr.name)) {
-         res->res_cat.print_config(buf);
+         res->res_cat.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_JOBDEFS:
    case R_JOB:
       if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
-         res->res_job.print_config(buf);
+         res->res_job.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_FILESET: {
       if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.hdr.name)) {
-         res->res_fs.print_config(buf);
+         res->res_fs.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    }
    case R_SCHEDULE:
       if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.hdr.name)) {
-         res->res_sch.print_config(buf);
+         res->res_sch.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_POOL:
       if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.hdr.name)) {
-        res->res_pool.print_config(buf);
+        res->res_pool.print_config(buf, hide_sensitive_data);
         sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_MSGS:
-      res->res_msgs.print_config(buf);
+      res->res_msgs.print_config(buf, hide_sensitive_data);
       sendit(sock, "%s", buf.c_str());
       break;
    default:
@@ -1871,7 +1873,7 @@ void dump_resource(int type, RES *ures, void sendit(void *sock, const char *fmt,
    }
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock);
+      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data);
    }
 }
 
@@ -3592,7 +3594,7 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for print_config
  * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
  */
-static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str)
+static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data)
 {
    POOL_MEM temp;
 

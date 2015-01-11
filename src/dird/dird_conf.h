@@ -97,7 +97,6 @@ bool print_config_schema_json(POOL_MEM &buff);
 
 /*
  *   Director Resource
- *
  */
 class DIRRES: public BRSRES {
 public:
@@ -518,7 +517,7 @@ public:
    bool enable_vss;                   /* Enable Volume Shadow Copy */
 
    /* Methods */
-   bool print_config(POOL_MEM& buff);
+   bool print_config(POOL_MEM& buff, bool hide_sensitive_data);
 };
 
 /*
