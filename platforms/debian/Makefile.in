@@ -56,9 +56,11 @@ install-dbconfig:
 	@$(SYMLINK) $(scriptdir)/ddl/creates/mysql.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/mysql
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/mysql.*.sql; do \
-		BASENAME=`basename $$i`; \
-		VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/$$VERSION; \
+		if [ -r $$i ]; then \
+		    BASENAME=`basename $$i`; \
+		    VERSION=`echo $$BASENAME | sed -r 's/mysql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		    $(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/mysql/$$VERSION; \
+		fi; \
 	done
 	#
 	# postgresql
@@ -72,10 +74,12 @@ install-dbconfig:
 	# Tables are created by the bareos database user,
 	# because otherwise it do not receive the required permissions.
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/postgresql.*.sql; do \
-		BASENAME=`basename $$i`; \
-		VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		grep -E -i "^DROP|^--|^$$" $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
-		sed 's/^DROP/-- upgrade-dbadmin: DROP/' $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/$$VERSION; \
+		if [ -r $$i ]; then \
+		    BASENAME=`basename $$i`; \
+		    VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		    grep -E -i "^DROP|^--|^$$" $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+		    sed 's/^DROP/-- upgrade-dbadmin: DROP/' $$i > $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/$$VERSION; \
+		fi; \
 	done
 	#
 	# sqlite
@@ -83,9 +87,11 @@ install-dbconfig:
 	@$(SYMLINK) $(scriptdir)/ddl/creates/sqlite3.sql $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/install/sqlite3
 	@$(MKDIR) $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/
 	for i in $(DESTDIR)/$(scriptdir)/ddl/updates/sqlite3.*.sql; do \
-		BASENAME=`basename $$i`; \
-		VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		$(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/$$VERSION; \
+		if [ -r $$i ]; then \
+		    BASENAME=`basename $$i`; \
+		    VERSION=`echo $$BASENAME | sed -r 's/sqlite3\.[0-9]*_([0-9]*)\.sql/\1/'`; \
+		    $(SYMLINK) $(scriptdir)/ddl/updates/$$BASENAME $(DESTDIR)/usr/share/dbconfig-common/data/bareos-database-common/upgrade/sqlite3/$$VERSION; \
+		fi; \
 	done
 
 clean:
