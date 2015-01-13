@@ -432,6 +432,13 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
       }
 
       /*
+       * See if we are processing some sort of label?
+       */
+      if (rctx->rec->FileIndex < 0) {
+         continue;
+      }
+
+      /*
        * Here we should have read a record from the block which contains some data.
        * Its either:
        *
@@ -460,6 +467,7 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
          *data_length = 0;
          return true;
       default:
+         Jmsg1(jcr, M_ERROR, 0, _("Encountered an unknown stream type %d\n"), rctx->rec->maskedStream);
          *data_length = 0;
          return true;
       }
