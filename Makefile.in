@@ -37,7 +37,7 @@ LIBTOOL_DEPS = @LIBTOOL_DEPS@
 
 #-------------------------------------------------------------------------
 
-all: Makefile
+all: info Makefile
 	@for I in ${all_subdirs}; \
 	  do (cd $$I; echo "==>Entering directory `pwd`"; \
 	      $(MAKE) DESTDIR=$(DESTDIR) $@ || (echo ""; echo ""; echo "  ====== Error in `pwd` ======"; \
@@ -155,12 +155,18 @@ Makefiles:
 	(cd src/qt-console; \
 	 chmod 755 install_conf_file)
 
+info:
+	@mkdir -p build/
+	scripts/git-info.sh build/
+	cp -a config.out build/
+
 clean:
 	@for I in ${all_subdirs} ; \
 	  do (cd $$I; echo "==>Entering directory `pwd`"; ${MAKE} $@ || exit 1); done
 	@$(RMF) *~ 1 2 3 core core.* config.guess console.log console.sum
 	@$(RMF) examples/1 examples/2 examples/devices/1 examples/devices/2
 	@$(RMF) -r autom4te.cache
+	@$(RMF) -r build/
 	@find . -name ".#*" -exec $(RMF) {} \;
 
 # clean for distribution
