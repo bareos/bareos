@@ -65,6 +65,7 @@ Vendor: 	The Bareos Team
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define glusterfs 0
+%define have_git 1
 %define ceph 0
 %define install_suse_fw 0
 %define systemd 0
@@ -98,6 +99,7 @@ Vendor: 	The Bareos Team
 %define build_qt_monitor 0
 %define build_sqlite3 0
 %define python_plugins 0
+%define have_git 0
 %endif
 
 # centos/rhel 5 : segfault when building qt monitor
@@ -129,7 +131,11 @@ BuildRequires: glusterfs-devel glusterfs-api-devel
 BuildRequires: ceph-devel
 %endif
 
-Source0: %{name}_%{version}.tar.gz
+%if 0%{?have_git}
+BuildRequires: git-core
+%endif
+
+Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: elfutils
 BuildRequires: gcc
@@ -914,6 +920,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
 %doc AGPL-3.0.txt AUTHORS LICENSE README.*
+%doc build/
 
 %if !0%{?client_only}
 
