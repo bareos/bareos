@@ -844,7 +844,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
    }
 
    guid = new_guid_list();
-   buf = get_pool_memory(PM_NAME);
+   buf = get_pool_memory(PM_FNAME);
 
    foreach_child(node, tree->node) {
       const char *tag;
@@ -998,7 +998,7 @@ static int cdcmd(UAContext *ua, TREE_CTX *tree)
        * Try once more if Win32 drive -- make absolute
        */
       if (ua->argk[1][1] == ':') {  /* win32 drive */
-         cwd = get_pool_memory(PM_NAME);
+         cwd = get_pool_memory(PM_FNAME);
          pm_strcpy(cwd, "/");
          pm_strcat(cwd, ua->argk[1]);
          node = tree_cwd(cwd, tree->root, tree->node);
