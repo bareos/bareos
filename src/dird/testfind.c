@@ -347,8 +347,8 @@ static void count_files(FF_PKT *ar)
 {
    int fnl, pnl;
    char *l, *p;
-   POOL_MEM file(PM_NAME);
-   POOL_MEM spath(PM_NAME);
+   POOL_MEM file(PM_FNAME);
+   POOL_MEM spath(PM_FNAME);
 
    num_files++;
 
