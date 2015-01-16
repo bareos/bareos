@@ -107,6 +107,7 @@ Vendor: 	The Bareos Team
 %define build_bat 0
 %define build_qt_monitor 0
 %define python_plugins 0
+%define have_git 0
 %endif
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
