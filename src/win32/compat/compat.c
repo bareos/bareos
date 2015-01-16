@@ -1209,7 +1209,11 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 
             pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
             pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
-            pftCreationTime = (FILETIME *)&binfo.ChangeTime;
+            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+               pftCreationTime = (FILETIME *)&binfo.CreationTime;
+            } else {
+               pftCreationTime = (FILETIME *)&binfo.ChangeTime;
+            }
          } else {
 #endif
             pftLastAccessTime = &info_w.ftLastAccessTime;
@@ -1244,7 +1248,11 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 
             pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
             pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
-            pftCreationTime = (FILETIME *)&binfo.ChangeTime;
+            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+               pftCreationTime = (FILETIME *)&binfo.CreationTime;
+            } else {
+               pftCreationTime = (FILETIME *)&binfo.ChangeTime;
+            }
          } else {
 #endif
             pftLastAccessTime = &info_a.ftLastAccessTime;
@@ -1438,7 +1446,11 @@ int fstat(intptr_t fd, struct stat *sb)
 
       sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
       sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-      sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+      if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+         sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+      } else {
+         sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+      }
    } else {
 #endif
       sb->st_atime = cvt_ftime_to_utime(info.ftLastAccessTime);
@@ -1664,7 +1676,11 @@ int stat(const char *filename, struct stat *sb)
 
             sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
             sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-            sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+               sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+            } else {
+               sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+            }
 
             CloseHandle(h);
          } else {
