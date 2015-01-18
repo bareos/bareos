@@ -343,7 +343,6 @@ bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
  */
 bool print_config_schema_json(POOL_MEM &buffer)
 {
-   bool datatype_last;
    RES_TABLE *resources = my_config->m_resources;
 
    add_json_object_start(buffer, 0, "");
