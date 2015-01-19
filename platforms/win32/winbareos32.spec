@@ -129,7 +129,7 @@ cp qt-tray-monitor/bareos-tray-monitor.exe \
    stored/bls.exe \
    stored/bextract.exe \
    dird/bareos-dir.exe \
-   dird/dbcheck.exe \
+   dird/bareos-dbcheck.exe \
    tools/bsmtp.exe \
    stored/libbareossd*.dll \
    cats/libbareoscats*.dll \

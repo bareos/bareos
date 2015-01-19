@@ -111,7 +111,7 @@ for file in \
    bareos-fd.exe \
    bareos-sd.exe \
    bareos-dir.exe \
-   dbcheck.exe \
+   bareos-dbcheck.exe \
    bconsole.exe \
    bsmtp.exe \
    btape.exe \
