@@ -629,7 +629,7 @@ SectionIn 2
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   File "bareos-dir.exe"
-  File "dbcheck.exe"
+  File "bareos-dbcheck.exe"
   File "bsmtp.exe"
   File "libbareoscats.dll"
   File "libbareoscats-postgresql.dll"
@@ -1680,7 +1680,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bareos-fd.exe"
   Delete "$INSTDIR\bareos-sd.exe"
   Delete "$INSTDIR\bareos-dir.exe"
-  Delete "$INSTDIR\dbcheck.exe"
+  Delete "$INSTDIR\bareos-dbcheck.exe"
   Delete "$INSTDIR\btape.exe"
   Delete "$INSTDIR\bls.exe"
   Delete "$INSTDIR\bextract.exe"

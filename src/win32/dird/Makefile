@@ -54,21 +54,21 @@ WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
 DBCHKRESSRCS = dbcheckres.rc
 DBCHKRESOBJS = $(DBCHKRESSRCS:.rc=.o)
 
-all: bareos-dir.exe dbcheck.exe
+all: bareos-dir.exe bareos-dbcheck.exe
 
 bareos-dir.exe: DLL_USAGE = -DUSING_DLL
 bareos-dir.exe: $(SVROBJS) $(WINDRESOBJS)
 	$(CXX) $(LDFLAGS_WINAPP) $(SVROBJS) $(WINDRESOBJS) $(LDLIBS) -o $@
 
-dbcheck.exe: DLL_USAGE = -DUSING_DLL
-dbcheck.exe: $(DBCHKOBJS) $(DBCHKRESOBJS)
+bareos-dbcheck.exe: DLL_USAGE = -DUSING_DLL
+bareos-dbcheck.exe: $(DBCHKOBJS) $(DBCHKRESOBJS)
 	$(CXX) $(LDFLAGS_CONS) $(DBCHKOBJS) $(LDLIBS) $(DBCHKRESOBJS) -o $@
 
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f bareos-dir.exe dbcheck.exe
+	rm -f bareos-dir.exe bareos-dbcheck.exe
 
 # inference rules
 .c.o:
