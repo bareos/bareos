@@ -333,7 +333,8 @@ public:
                                  dev_type == B_GFAPI_DEV ||
                                  dev_type == B_OBJECT_STORE_DEV ||
                                  dev_type == B_RADOS_DEV ||
-                                 dev_type == B_CEPHFS_DEV); }
+                                 dev_type == B_CEPHFS_DEV ||
+                                 dev_type == B_ELASTO_DEV); }
    int is_fifo() const { return dev_type == B_FIFO_DEV; }
    int is_vtl() const  { return dev_type == B_VTL_DEV; }
    int is_open() const { return m_fd >= 0; }
