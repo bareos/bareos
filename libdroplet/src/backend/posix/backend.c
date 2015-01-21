@@ -112,7 +112,9 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+  snprintf(path, sizeof (path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
 
   iret = stat(path, &st);
   if (-1 == iret)
@@ -298,7 +300,9 @@ dpl_posix_head(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+  snprintf(path, sizeof (path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
 
   ret2 = dpl_posix_head_raw(ctx, bucket, resource, subresource, option,
                             object_type, condition, &all_mds, locationp);
@@ -568,7 +572,9 @@ dpl_posix_put(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+  snprintf(path, sizeof (path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
 
   switch (object_type)
     {
@@ -708,7 +714,9 @@ dpl_posix_get(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+  snprintf(path, sizeof (path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
 
   switch (object_type)
     {
@@ -833,7 +841,9 @@ dpl_posix_delete(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  snprintf(path, sizeof (path), "/%s/%s", ctx->base_path ? ctx->base_path : "", resource);
+  snprintf(path, sizeof (path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
 
   switch (object_type)
     {
@@ -911,8 +921,12 @@ dpl_posix_copy(dpl_ctx_t *ctx,
   char src_path[MAXPATHLEN];
   char dst_path[MAXPATHLEN];
 
-  snprintf(src_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", src_resource);
-  snprintf(dst_path, sizeof (src_path), "/%s/%s", ctx->base_path ? ctx->base_path : "", dst_resource);
+  snprintf(src_path, sizeof (src_path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           src_resource ? src_resource : "");
+  snprintf(dst_path, sizeof (src_path), "/%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           dst_resource ? src_resource : "");
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "directive: %s: %s -> %s",
             dpl_copy_directive_to_str(copy_directive), src_path, dst_path);
