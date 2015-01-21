@@ -49,6 +49,37 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+static dpl_status_t
+dpl_posix_map_errno()
+{
+    switch (errno)
+    {
+    case 0:
+        return DPL_SUCCESS;
+    case ENOENT:
+        return DPL_ENOENT;
+    case EINVAL:
+        return DPL_EINVAL;
+    case ENOMEM:
+        return DPL_ENOMEM;
+    case EIO:
+        return DPL_EIO;
+    case ENOTDIR:
+        return DPL_ENOTDIR;
+    case EEXIST:
+        return DPL_EEXIST;
+    case ENOTSUP:
+        return DPL_ENOTSUPP;
+    case EPERM:
+        return DPL_EPERM;
+    case ERANGE:
+        return DPL_ERANGEUNAVAIL;
+    default:
+        break;
+    }
+    return DPL_FAILURE;
+}
+
 dpl_status_t
 dpl_posix_get_capabilities(dpl_ctx_t *ctx,
                            dpl_capability_t *maskp)
@@ -86,7 +117,7 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
   iret = stat(path, &st);
   if (-1 == iret)
     {
-      ret = DPL_FAILURE;
+      ret = dpl_posix_map_errno();
       goto end;
     }
 
@@ -330,8 +361,8 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
   dir = opendir(path);
   if (NULL == dir)
     {
+      ret = dpl_posix_map_errno();
       perror("opendir");
-      ret = DPL_FAILURE;
       goto end;
     }
 
@@ -354,8 +385,8 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
       iret = readdir_r(dir, &entry, &entryp);
       if (0 != iret)
         {
+          ret = dpl_posix_map_errno();
           perror("readdir");
-          ret = DPL_FAILURE;
           goto end;
         }
       
@@ -562,8 +593,8 @@ dpl_posix_put(dpl_ctx_t *ctx,
             }
           else
             {
+              ret = dpl_posix_map_errno();
               perror("mkdir");
-              ret = DPL_FAILURE;
             }
           goto end;
         }
@@ -578,8 +609,8 @@ dpl_posix_put(dpl_ctx_t *ctx,
             }
           else
             {
+              ret = dpl_posix_map_errno();
               perror("creat");
-              ret = DPL_FAILURE;
             }
           goto end;
         }
@@ -613,14 +644,14 @@ dpl_posix_put(dpl_ctx_t *ctx,
       iret = ftruncate(fd, offset + length);
       if (-1 == iret)
         {
-          ret = DPL_FAILURE;
+          ret = dpl_posix_map_errno();
           goto end;
         }
 
       cc = pwrite(fd, data_buf, length, offset);
       if (-1 == cc)
         {
-          ret = DPL_FAILURE;
+          ret = dpl_posix_map_errno();
           goto end;
         }
       
@@ -697,8 +728,8 @@ dpl_posix_get(dpl_ctx_t *ctx,
       fd = open(path, O_RDONLY);
       if (-1 == fd)
         {
+          ret = dpl_posix_map_errno();
           perror("open");
-          ret = DPL_FAILURE;
           goto end;
         }
       break ;
@@ -707,8 +738,8 @@ dpl_posix_get(dpl_ctx_t *ctx,
   iret = fstat(fd, &st);
   if (-1 == iret)
     {
+      ret = dpl_posix_map_errno();
       perror("fstat");
-      ret = DPL_FAILURE;
       goto end;
     }
 
@@ -752,7 +783,7 @@ dpl_posix_get(dpl_ctx_t *ctx,
   cc = pread(fd, data_buf, length, offset);
   if (-1 == cc)
     {
-      ret = DPL_FAILURE;
+      ret = dpl_posix_map_errno();
       goto end;
     }
   
@@ -816,8 +847,8 @@ dpl_posix_delete(dpl_ctx_t *ctx,
       iret = unlink(path);
       if (-1 == iret)
         {
+          ret = dpl_posix_map_errno();
           perror("unlink");
-          ret = DPL_FAILURE;
           goto end;
         }
       ret = DPL_SUCCESS;
@@ -832,8 +863,8 @@ dpl_posix_delete(dpl_ctx_t *ctx,
             }
           else
             {
+              ret = dpl_posix_map_errno();
               perror("rmdir");
-              ret = DPL_FAILURE;
             }
           goto end;
         }
@@ -912,8 +943,8 @@ dpl_posix_copy(dpl_ctx_t *ctx,
       iret = link(src_path, dst_path);
       if (-1 == iret)
         {
+          ret = dpl_posix_map_errno();
           perror("link");
-          ret = DPL_FAILURE;
           goto end;
         }
       break ;
@@ -921,8 +952,8 @@ dpl_posix_copy(dpl_ctx_t *ctx,
       iret = symlink(src_path, dst_path);
       if (-1 == iret)
         {
+          ret = dpl_posix_map_errno();
           perror("symlink");
-          ret = DPL_FAILURE;
           goto end;
         }
       break ;
@@ -930,8 +961,8 @@ dpl_posix_copy(dpl_ctx_t *ctx,
       iret = rename(src_path, dst_path);
       if (-1 == iret)
         {
+          ret = dpl_posix_map_errno();
           perror("rename");
-          ret = DPL_FAILURE;
           goto end;
         }
       break ;
