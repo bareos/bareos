@@ -35,7 +35,8 @@
 #include "stored.h"
 
 /* Forward referenced functions */
-static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, bool readonly);
+static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
+                                   const char *VolumeName, bool readonly);
 static DEVRES *find_device_res(char *device_name, bool readonly);
 static void my_free_jcr(JCR *jcr);
 
@@ -76,11 +77,11 @@ char *rec_state_bits_to_str(DEV_RECORD *rec)
  *  tools (e.g. bls, bextract, bscan, ...)
  */
 JCR *setup_jcr(const char *name, char *dev_name,
-               BSR *bsr, DIRRES *director,
+               BSR *bsr, DIRRES *director, DCR *dcr,
                const char *VolumeName, bool readonly)
 {
-   DCR *dcr;
    JCR *jcr = new_jcr(sizeof(JCR), my_free_jcr);
+
    jcr->bsr = bsr;
    jcr->director = director;
    jcr->VolSessionId = 1;
@@ -107,15 +108,17 @@ JCR *setup_jcr(const char *name, char *dev_name,
    init_autochangers();
    create_volume_lists();
 
-   dcr = setup_to_access_device(jcr, dev_name, VolumeName, readonly);
-   if (!dcr) {
+   if (!setup_to_access_device(dcr, jcr, dev_name, VolumeName, readonly)) {
       return NULL;
    }
+
    if (!bsr && VolumeName) {
       bstrncpy(dcr->VolumeName, VolumeName, sizeof(dcr->VolumeName));
    }
+
    bstrncpy(dcr->pool_name, "Default", sizeof(dcr->pool_name));
    bstrncpy(dcr->pool_type, "Backup", sizeof(dcr->pool_type));
+
    return jcr;
 }
 
@@ -124,12 +127,12 @@ JCR *setup_jcr(const char *name, char *dev_name,
  *   If the caller wants read access, acquire the device, otherwise,
  *     the caller will do it.
  */
-static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeName, bool readonly)
+static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
+                                   const char *VolumeName, bool readonly)
 {
    DEVICE *dev;
    char *p;
    DEVRES *device;
-   DCR *dcr;
    char VolName[MAX_NAME_LENGTH];
 
    init_reservations_lock();
@@ -162,17 +165,16 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
 
    if ((device = find_device_res(dev_name, readonly)) == NULL) {
       Jmsg2(jcr, M_FATAL, 0, _("Cannot find device \"%s\" in config file %s.\n"),
-           dev_name, configfile);
-      return NULL;
+            dev_name, configfile);
+      return false;
    }
 
    dev = init_dev(jcr, device);
    if (!dev) {
       Jmsg1(jcr, M_FATAL, 0, _("Cannot init device %s\n"), dev_name);
-      return NULL;
+      return false;
    }
    device->dev = dev;
-   dcr = New(DCR);
    jcr->dcr = dcr;
    setup_new_dcr_device(jcr, dcr, dev, NULL);
    if (!readonly) {
@@ -189,19 +191,18 @@ static DCR *setup_to_access_device(JCR *jcr, char *dev_name, const char *VolumeN
    if (readonly) {                    /* read only access? */
       Dmsg0(100, "Acquire device for read\n");
       if (!acquire_device_for_read(dcr)) {
-         return NULL;
+         return false;
       }
       jcr->read_dcr = dcr;
    } else {
       if (!first_open_device(dcr)) {
          Jmsg1(jcr, M_FATAL, 0, _("Cannot open %s\n"), dev->print_name());
-         return NULL;
+         return false;
       }
    }
 
-   return dcr;
+   return true;
 }
-
 
 /*
  * Called here when freeing JCR so that we can get rid
