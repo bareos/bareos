@@ -68,7 +68,7 @@ void ser_block_header(DEV_BLOCK *block);
 /* butil.c -- utilities for SD tool programs */
 void print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
 JCR *setup_jcr(const char *name, char *dev_name,
-               BSR *bsr, DIRRES *director,
+               BSR *bsr, DIRRES *director, DCR* dcr,
                const char *VolumeName, bool readonly);
 void display_tape_error_status(JCR *jcr, DEVICE *dev);
 

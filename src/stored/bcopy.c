@@ -83,6 +83,7 @@ int main (int argc, char *argv[])
    char *DirectorName = NULL;
    DIRRES *director = NULL;
    bool ignore_label_errors = false;
+   DCR *in_dcr, *out_dcr;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -191,11 +192,15 @@ int main (int argc, char *argv[])
     * Setup and acquire input device for reading
     */
    Dmsg0(100, "About to setup input jcr\n");
-   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, iVolumeName, true); /* read device */
+
+   in_dcr = New(DCR);
+   in_jcr = setup_jcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName, true); /* read device */
    if (!in_jcr) {
       exit(1);
    }
+
    in_jcr->ignore_label_errors = ignore_label_errors;
+
    in_dev = in_jcr->dcr->dev;
    if (!in_dev) {
       exit(1);
@@ -205,14 +210,18 @@ int main (int argc, char *argv[])
     * Setup output device for writing
     */
    Dmsg0(100, "About to setup output jcr\n");
-   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, oVolumeName, false); /* write device */
+
+   out_dcr = New(DCR);
+   out_jcr = setup_jcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName, false); /* write device */
    if (!out_jcr) {
       exit(1);
    }
+
    out_dev = out_jcr->dcr->dev;
    if (!out_dev) {
       exit(1);
    }
+
    Dmsg0(100, "About to acquire device for writing\n");
 
    /*

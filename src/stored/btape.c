@@ -290,20 +290,23 @@ int main(int margc, char *margv[])
       exit(1);
    }
 
-   jcr = setup_jcr("btape", margv[0], bsr, director, NULL, false); /* write device */
+   dcr = New(BTAPE_DCR);
+   jcr = setup_jcr("btape", margv[0], bsr, director, dcr, NULL, false); /* write device */
    if (!jcr) {
       exit(1);
    }
+
    dev = jcr->dcr->dev;
    if (!dev) {
       exit(1);
    }
+
    if (!dev->is_tape()) {
       Pmsg0(000, _("btape only works with tape storage.\n"));
       usage();
       exit(1);
    }
-   dcr = jcr->dcr;
+
    if (!open_the_device()) {
       exit(1);
    }

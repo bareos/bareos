@@ -135,6 +135,7 @@ int main (int argc, char *argv[])
    char *VolumeName = NULL;
    char *DirectorName = NULL;
    DIRRES *director = NULL;
+   DCR *dcr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    alist *backend_directories = NULL;
 #endif
@@ -292,18 +293,20 @@ int main (int argc, char *argv[])
    /* Check that working directory is good */
    if (stat(working_directory, &stat_buf) != 0) {
       Emsg1(M_ERROR_TERM, 0, _("Working Directory: %s not found. Cannot continue.\n"),
-         working_directory);
+            working_directory);
    }
    if (!S_ISDIR(stat_buf.st_mode)) {
       Emsg1(M_ERROR_TERM, 0, _("Working Directory: %s is not a directory. Cannot continue.\n"),
-         working_directory);
+            working_directory);
    }
 
-   bjcr = setup_jcr("bscan", argv[0], bsr, director, VolumeName, true); /* read device */
+   dcr = New(DCR);
+   bjcr = setup_jcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
    if (!bjcr) {
       exit(1);
    }
    dev = bjcr->read_dcr->dev;
+
    if (showProgress) {
       char ed1[50];
       struct stat sb;
