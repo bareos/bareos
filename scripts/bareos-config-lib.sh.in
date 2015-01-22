@@ -375,11 +375,11 @@ get_database_param()
 
     # use || to prevent errors
     rc=0
-    DBCHECK_OUTPUT=`$DBCHECK` || rc=$?
+    temp_log="/tmp/bareos-config.$$.log"
+    DBCHECK_OUTPUT=`$DBCHECK 2>> $temp_log` || rc=$?
     if [ $rc != 0 ]; then
-        temp_log="/tmp/bareos-config.$$.log"
-        echo "executing: $DBCHECK" >> $temp_log
         echo "${DBCHECK_OUTPUT}" >> $temp_log
+        echo "Error: executing $DBCHECK" >> $temp_log
         echo "" >> $temp_log
 
         # if default value is given, return it anyway
@@ -391,6 +391,11 @@ get_database_param()
         fi
 
         return 1
+    fi
+
+    # if $temp_log exists, but have only size 0, remove it.
+    if [ -e $temp_log ] && ! [ -s $temp_log ]; then
+        rm $temp_log
     fi
 
     # DBCHECK gets the database parameter from the Director config file in a standard format,
