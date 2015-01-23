@@ -367,12 +367,12 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, DB_LIST_HANDLER *send
          mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
          Mmsg(mdb->cmd,
            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-             "FROM Job WHERE Name='%s' ORDER BY StartTime,JobId ASC", esc);
+             "FROM Job WHERE Name='%s' ORDER BY JobId ASC", esc);
       } else if (jr->Job[0] != 0) {
          mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
          Mmsg(mdb->cmd,
             "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-            "FROM Job WHERE Job='%s' ORDER BY StartTime,JobId ASC", esc);
+            "FROM Job WHERE Job='%s' ORDER BY JobId ASC", esc);
       } else if (jr->JobId != 0) {
          Mmsg(mdb->cmd,
             "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
@@ -380,7 +380,7 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, DB_LIST_HANDLER *send
       } else {                           /* all records */
          Mmsg(mdb->cmd,
            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-           "FROM Job ORDER BY StartTime,JobId ASC%s", limit);
+           "FROM Job ORDER BY JobId ASC%s", limit);
       }
    }
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
