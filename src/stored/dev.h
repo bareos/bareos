@@ -269,6 +269,7 @@ public:
    int label_type;                    /* Bareos/ANSI/IBM label types */
    uint32_t drive_index;              /* Autochanger drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
+   POOLMEM *dev_options;              /* Device specific options */
    POOLMEM *prt_name;                 /* Name used for display purposes */
    char *errmsg;                      /* Nicely edited error message */
    uint32_t block_num;                /* Current block number base 0 */

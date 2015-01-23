@@ -156,6 +156,7 @@ static RES_ITEM dev_items[] = {
    { "MediaType", CFG_TYPE_STRNAME, ITEM(res_dev.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "DeviceType", CFG_TYPE_DEVTYPE, ITEM(res_dev.dev_type), 0, 0, NULL, NULL, NULL },
    { "ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev.device_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "DeviceOptions", CFG_TYPE_STR, ITEM(res_dev.device_options), 0, 0, NULL, NULL, NULL },
    { "DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev.diag_device_name), 0, 0, NULL, NULL, NULL },
    { "HardwareEndOfFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
    { "HardwareEndOfMedium", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOM, CFG_ITEM_DEFAULT, "on", NULL, NULL },
@@ -634,6 +635,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dev.device_name) {
          free(res->res_dev.device_name);
+      }
+      if (res->res_dev.device_options) {
+         free(res->res_dev.device_options);
       }
       if (res->res_dev.diag_device_name) {
          free(res->res_dev.diag_device_name);

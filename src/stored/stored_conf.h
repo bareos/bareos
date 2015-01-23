@@ -148,6 +148,7 @@ public:
 
    char *media_type;                  /* User assigned media type */
    char *device_name;                 /* Archive device name */
+   char *device_options;              /* Device specific option string */
    char *diag_device_name;            /* Diagnostic device name */
    char *changer_name;                /* Changer device name */
    char *changer_command;             /* Changer command  -- external program */

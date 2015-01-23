@@ -239,8 +239,12 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    /*
     * Copy user supplied device parameters from Resource
     */
-   dev->dev_name = get_memory(strlen(device->device_name)+1);
+   dev->dev_name = get_memory(strlen(device->device_name) + 1);
    pm_strcpy(dev->dev_name, device->device_name);
+   if (device->device_options) {
+      dev->dev_options = get_memory(strlen(device->device_options) + 1);
+      pm_strcpy(dev->dev_options, device->device_options);
+   }
    dev->prt_name = get_memory(strlen(device->device_name) + strlen(device->hdr.name) + 20);
 
    /*
@@ -1161,6 +1165,10 @@ void DEVICE::term()
    if (dev_name) {
       free_memory(dev_name);
       dev_name = NULL;
+   }
+   if (dev_options) {
+      free_memory(dev_options);
+      dev_options = NULL;
    }
    if (prt_name) {
       free_memory(prt_name);
