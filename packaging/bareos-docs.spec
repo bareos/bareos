@@ -17,8 +17,9 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 # bareos-database-sqlite3 is the database backend
 # that has minimal additional dependencies
-BuildRequires:  bareos >= 14.3.0
-BuildRequires:  bareos-database-sqlite3
+BuildRequires:  bareos-common >= 14.3.0
+BuildRequires:  bareos-director bareos-database-sqlite3
+BuildRequires:  bareos-storage bareos-filedaemon bareos-bconsole bareos-traymonitor
 BuildRequires:  python
 BuildRequires:  texlive-latex
 BuildRequires:  texlive-tex4ht ImageMagick
