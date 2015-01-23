@@ -33,6 +33,7 @@
 class object_store_device: public DEVICE {
 private:
    char *m_object_configstring;
+   char *m_profile;
    char *m_object_bucketname;
    dpl_ctx_t *m_ctx;
    dpl_vfile_t *m_vfd;

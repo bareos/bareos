@@ -31,6 +31,25 @@
 #include "backends/gfapi_device.h"
 
 /*
+ * Options that can be specified for this device type.
+ */
+enum device_option_type {
+   argument_none = 0,
+   argument_uri
+};
+
+struct device_option {
+   const char *name;
+   enum device_option_type type;
+   int compare_size;
+};
+
+static device_option device_options[] = {
+   { "uri=", argument_uri, 4 },
+   { NULL, argument_none }
+};
+
+/*
  * Parse a gluster definition into something we can use for setting
  * up the right connection to a gluster management server and get access
  * to a gluster volume.
@@ -306,15 +325,64 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
    /*
     * Parse the gluster URI.
     */
-   if (!m_gfapi_volume) {
-      m_gfapi_volume = bstrdup(dev_name);
-      if (!parse_gfapi_devicename(m_gfapi_volume,
+   if (!m_gfapi_configstring) {
+      char *bp, *next_option;
+      bool done;
+
+      if (!dev_options) {
+         Mmsg0(errmsg, _("No device options configured\n"));
+         Emsg0(M_FATAL, 0, errmsg);
+         goto bail_out;
+      }
+
+      m_gfapi_configstring = bstrdup(dev_options);
+
+      bp = m_gfapi_configstring;
+      while (bp) {
+         next_option = strchr(bp, ',');
+         if (next_option) {
+            *next_option++ = '\0';
+         }
+
+         done = false;
+         for (int i = 0; !done && device_options[i].name; i++) {
+            /*
+             * Try to find a matching device option.
+             */
+            if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
+               switch (device_options[i].type) {
+               case argument_uri:
+                  m_gfapi_uri = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               default:
+                  break;
+               }
+            }
+         }
+
+         if (!done) {
+            Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+            Emsg0(M_FATAL, 0, errmsg);
+            goto bail_out;
+         }
+
+         bp = next_option;
+      }
+
+      if (!m_gfapi_uri) {
+         Mmsg0(errmsg, _("No GFAPI URI configured\n"));
+         Emsg0(M_FATAL, 0, errmsg);
+         goto bail_out;
+      }
+
+      if (!parse_gfapi_devicename(m_gfapi_uri,
                                   &m_transport,
                                   &m_servername,
                                   &m_volumename,
                                   &m_basedir,
                                   &m_serverport)) {
-         Mmsg1(errmsg, _("Unable to parse device URI %s.\n"), dev_name);
+         Mmsg1(errmsg, _("Unable to parse device URI %s.\n"), dev_options);
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
@@ -497,6 +565,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
          berrno be;
 
          Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
+         Dmsg1(100, "%s", errmsg);
          return false;
       }
 
@@ -541,9 +610,9 @@ gfapi_device::~gfapi_device()
       m_glfs = NULL;
    }
 
-   if (m_gfapi_volume) {
-      free(m_gfapi_volume);
-      m_gfapi_volume = NULL;
+   if (m_gfapi_configstring) {
+      free(m_gfapi_configstring);
+      m_gfapi_configstring = NULL;
    }
 
    free_pool_memory(m_virtual_filename);
@@ -551,7 +620,7 @@ gfapi_device::~gfapi_device()
 
 gfapi_device::gfapi_device()
 {
-   m_gfapi_volume = NULL;
+   m_gfapi_configstring = NULL;
    m_transport = NULL;
    m_servername = NULL;
    m_volumename = NULL;

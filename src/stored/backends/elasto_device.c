@@ -30,11 +30,15 @@
 #include "stored.h"
 #include "elasto_device.h"
 
+#define ELASTO_GRANULARITY 512
+
  /*
   * Options that can be specified for this device type.
  */
 enum device_option_type {
    argument_none = 0,
+   argument_publishfile,
+   argument_basedir,
    argument_insecure_http
 };
 
@@ -45,7 +49,9 @@ struct device_option {
 };
 
 static device_option device_options[] = {
-   { "insecure_http", argument_insecure_http, 14 },
+   { "publish_file=", argument_publishfile, 13 },
+   { "basedir=", argument_basedir, 9 },
+   { "insecure_http", argument_insecure_http, 13 },
    { NULL, argument_none }
 };
 
@@ -60,57 +66,80 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
    struct elasto_fauth auth;
    struct elasto_fstat efstat;
 
-#if 1
-   Mmsg1(errmsg, _("Elasto Storage devices are not yet supported, please disable %s\n"), dev_name);
-   return -1;
-#endif
+   /*
+    * Elasto only allows reads/writes in chunks of 512 bytes so
+    * make sure the minimum blocksize and maximum blocksize are set correctly.
+    */
+   if (min_block_size == 0 || (min_block_size % ELASTO_GRANULARITY) != 0) {
+      Emsg2(M_ABORT, 0, _("Device minimum block size (%d) not multiple of elasto blocksize size (%d)\n"),
+            min_block_size, ELASTO_GRANULARITY);
+      goto bail_out;
+   }
+
+   if (max_block_size == 0 || (max_block_size % ELASTO_GRANULARITY) != 0) {
+      Emsg2(M_ABORT, 0, _("Device maximum block size (%d) not multiple of elasto blocksize size (%d)\n"),
+            max_block_size, ELASTO_GRANULARITY);
+      goto bail_out;
+   }
 
    if (!m_elasto_configstring) {
       char *bp, *next_option;
+      bool done;
 
-      m_elasto_configstring = bstrdup(dev_name);
-      bp = strchr(m_elasto_configstring, ':');
-      if (!bp) {
-         Mmsg1(errmsg, _("Unable to parse device %s.\n"), dev_name);
+      if (!dev_options) {
+         Mmsg0(errmsg, _("No device options configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
-      } else {
-         *bp++ = '\0';
-         m_elasto_ps_file = m_elasto_configstring;
-         m_basedir = bp;
+      }
 
-         /*
-          * See if there are any options.
-          */
-         bp = strchr(m_basedir, ':');
-         if (bp) {
-            *bp++ = '\0';
+      m_elasto_configstring = bstrdup(dev_options);
 
-            while (bp) {
-               next_option = strchr(bp, ',');
-               if (next_option) {
-                  *next_option++ = '\0';
+      bp = m_elasto_configstring;
+      while (bp) {
+         next_option = strchr(bp, ',');
+         if (next_option) {
+            *next_option++ = '\0';
+         }
+
+         done = false;
+         for (int i = 0; !done && device_options[i].name; i++) {
+            /*
+             * Try to find a matching device option.
+             */
+            if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
+               switch (device_options[i].type) {
+               case argument_publishfile:
+                  m_elasto_ps_file = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               case argument_basedir:
+                  m_basedir = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               case argument_insecure_http:
+                  m_insecure_http = true;
+                  done = true;
+                  break;
+               default:
+                  break;
                }
-
-               for (int i = 0; device_options[i].name; i++) {
-                  /*
-                   * Try to find a matching device option.
-                   */
-                  if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
-                     switch (device_options[i].type) {
-                     case argument_insecure_http:
-                        m_insecure_http = true;
-                        break;
-                     default:
-                        break;
-                     }
-                  }
-               }
-
-               bp = next_option;
             }
          }
+
+         if (!done) {
+            Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+            Emsg0(M_FATAL, 0, errmsg);
+            goto bail_out;
+         }
+
+         bp = next_option;
       }
+   }
+
+   if (!m_elasto_ps_file) {
+      Mmsg0(errmsg, _("No publish file configured\n"));
+      Emsg0(M_FATAL, 0, errmsg);
+      goto bail_out;
    }
 
    /*
@@ -125,13 +154,17 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
    auth.az.ps_path = m_elasto_ps_file;
    auth.insecure_http = m_insecure_http;
 
+   if (m_basedir) {
 #if 0
-   status = elasto_fmkdir(&auth, m_basedir);
-   if (status < 0) {
-      goto bail_out;
-   }
+      status = elasto_fmkdir(&auth, m_basedir);
+      if (status < 0) {
+         goto bail_out;
+      }
 #endif
-   Mmsg(m_virtual_filename, "%s/%s", m_basedir, getVolCatName());
+      Mmsg(m_virtual_filename, "%s/%s", m_basedir, getVolCatName());
+   } else {
+      Mmsg(m_virtual_filename, "%s", getVolCatName());
+   }
 
    if (flags & O_CREAT) {
       elasto_flags = ELASTO_FOPEN_CREATE;

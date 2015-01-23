@@ -31,6 +31,27 @@
 #include "backends/cephfs_device.h"
 
 /*
+ * Options that can be specified for this device type.
+ */
+enum device_option_type {
+   argument_none = 0,
+   argument_conffile,
+   argument_basedir
+};
+
+struct device_option {
+   const char *name;
+   enum device_option_type type;
+   int compare_size;
+};
+
+static device_option device_options[] = {
+   { "conffile=", argument_conffile, 9 },
+   { "basedir=", argument_basedir, 9 },
+   { NULL, argument_none }
+};
+
+/*
  * Open a volume using libcephfs.
  */
 int cephfs_device::d_open(const char *pathname, int flags, int mode)
@@ -39,18 +60,61 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
    berrno be;
 
    if (!m_cephfs_configstring) {
-      char *bp;
+      char *bp, *next_option;
+      bool done;
 
-      m_cephfs_configstring = bstrdup(dev_name);
-      bp = strchr(m_cephfs_configstring, ':');
-      if (!bp) {
-         m_cephfs_conffile = m_cephfs_configstring;
-      } else {
-         *bp++ = '\0';
-         m_cephfs_conffile = m_cephfs_configstring;
-         m_basedir = bp;
+      if (!dev_options) {
+         Mmsg0(errmsg, _("No device options configured\n"));
+         Emsg0(M_FATAL, 0, errmsg);
+         goto bail_out;
+      }
+
+      m_cephfs_configstring = bstrdup(dev_options);
+
+      bp = m_cephfs_configstring;
+      while (bp) {
+         next_option = strchr(bp, ',');
+         if (next_option) {
+            *next_option++ = '\0';
+         }
+
+         done = false;
+         for (int i = 0; !done && device_options[i].name; i++) {
+            /*
+             * Try to find a matching device option.
+             */
+            if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
+               switch (device_options[i].type) {
+               case argument_conffile:
+                  m_cephfs_conffile = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               case argument_basedir:
+                  m_basedir = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               default:
+                  break;
+               }
+            }
+         }
+
+         if (!done) {
+            Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+            Emsg0(M_FATAL, 0, errmsg);
+            goto bail_out;
+         }
+
+         bp = next_option;
       }
    }
+
+   if (!m_cephfs_conffile) {
+      Mmsg0(errmsg, _("No cephfs config file configured\n"));
+      Emsg0(M_FATAL, 0, errmsg);
+      goto bail_out;
+   }
+
 
    if (!m_cmount) {
       status = ceph_create(&m_cmount, NULL);
@@ -231,6 +295,7 @@ bool cephfs_device::d_truncate(DCR *dcr)
          berrno be;
 
          Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
+         Dmsg1(100, "%s", errmsg);
          return false;
       }
 

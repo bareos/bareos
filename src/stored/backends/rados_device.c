@@ -35,6 +35,8 @@
  */
 enum device_option_type {
    argument_none = 0,
+   argument_conffile,
+   argument_poolname,
    argument_striped,
    argument_stripe_unit,
    argument_stripe_count
@@ -47,6 +49,8 @@ struct device_option {
 };
 
 static device_option device_options[] = {
+   { "conffile=", argument_conffile, 9 },
+   { "poolname=", argument_poolname, 9 },
 #ifdef HAVE_RADOS_STRIPER
    { "striped", argument_striped, 7 },
    { "stripe_unit=", argument_stripe_unit, 11 },
@@ -67,57 +71,77 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
 
    if (!m_rados_configstring) {
       char *bp, *next_option;
+      bool done;
 
-      m_rados_configstring = bstrdup(dev_name);
-      bp = strchr(m_rados_configstring, ':');
-      if (!bp) {
-         Mmsg1(errmsg, _("Unable to parse device %s.\n"), dev_name);
+      if (!dev_options) {
+         Mmsg0(errmsg, _("No device options configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      *bp++ = '\0';
-      m_rados_conffile = m_rados_configstring;
-      m_rados_poolname = bp;
+      m_rados_configstring = bstrdup(dev_options);
 
-      /*
-       * See if there are any options.
-       */
-      bp = strchr(m_rados_poolname, ':');
-      if (bp) {
-         *bp++ = '\0';
+      bp = m_rados_configstring;
+      while (bp) {
+         next_option = strchr(bp, ',');
+         if (next_option) {
+            *next_option++ = '\0';
+         }
 
-         while (bp) {
-            next_option = strchr(bp, ',');
-            if (next_option) {
-               *next_option++ = '\0';
-            }
-
-            for (int i = 0; device_options[i].name; i++) {
-               /*
-                * Try to find a matching device option.
-                */
-               if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
-                  switch (device_options[i].type) {
+         done = false;
+         for (int i = 0; !done && device_options[i].name; i++) {
+            /*
+             * Try to find a matching device option.
+             */
+            if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
+               switch (device_options[i].type) {
+               case argument_conffile:
+                  m_rados_conffile = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               case argument_poolname:
+                  m_rados_poolname = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
 #ifdef HAVE_RADOS_STRIPER
-                  case argument_striped:
-                     m_stripe_volume = true;
-                     break;
-                  case argument_stripe_unit:
-                     m_stripe_unit = str_to_int64(bp + device_options[i].compare_size);
-                     break;
-                  case argument_stripe_count:
-                     m_stripe_count = str_to_int64(bp + device_options[i].compare_size);
-                     break;
+               case argument_striped:
+                  m_stripe_volume = true;
+                  done = true;
+                  break;
+               case argument_stripe_unit:
+                  m_stripe_unit = str_to_int64(bp + device_options[i].compare_size);
+                  done = true;
+                  break;
+               case argument_stripe_count:
+                  m_stripe_count = str_to_int64(bp + device_options[i].compare_size);
+                  done = true;
+                  break;
 #endif
-                  default:
-                     break;
-                  }
+               default:
+                  break;
                }
             }
-
-            bp = next_option;
          }
+
+         if (!done) {
+            Mmsg1(errmsg, _("Unable to parse device option: %s\n"), bp);
+            Emsg0(M_FATAL, 0, errmsg);
+            goto bail_out;
+         }
+
+         bp = next_option;
+      }
+
+      if (!m_rados_conffile) {
+         Mmsg0(errmsg, _("No rados config file configured\n"));
+         Emsg0(M_FATAL, 0, errmsg);
+         goto bail_out;
+      }
+
+      if (!m_rados_poolname) {
+         Mmsg0(errmsg, _("No rados pool configured\n"));
+         Emsg0(M_FATAL, 0, errmsg);
+         goto bail_out;
       }
    }
 
@@ -402,6 +426,7 @@ bool rados_device::d_truncate(DCR *dcr)
       status = rados_stat(m_ctx, getVolCatName(), &object_size, &object_mtime);
       if (status < 0) {
          Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror(-status));
+         Dmsg1(100, "%s", errmsg);
          return false;
       }
 
@@ -409,6 +434,7 @@ bool rados_device::d_truncate(DCR *dcr)
          status = rados_remove(m_ctx, getVolCatName());
          if (status < 0) {
             Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), getVolCatName(), be.bstrerror(-status));
+            Dmsg1(100, "%s", errmsg);
             return false;
          }
       }

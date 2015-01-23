@@ -106,7 +106,7 @@ libbareossd-cephfs.la: Makefile $(CHEPHFS_LOBJS)
 libbareossd-elasto.la: Makefile $(ELASTO_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(ELASTO_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-cephfs-$(LIBBAREOSSD_LT_RELEASE).so $(ELASTO_LIBS) -lbareos
+							   -soname libbareossd-elasto-$(LIBBAREOSSD_LT_RELEASE).so $(ELASTO_LIBS) -lbareos
 
 libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
 	@echo "Making $@ ..."
@@ -162,6 +162,7 @@ devclean: realclean
 	(cd $(srcdir); $(RMF) Makefile)
 
 libtool-install: all
+	$(RMF) $(DESTDIR)$(backenddir)/libbareossd-*.so
 	$(MKDIR) $(DESTDIR)$(backenddir)
 	@for backend in $(BUILD_BACKENDS); do \
 	   $(LIBTOOL_INSTALL_FINISH) $(INSTALL_LIB) $$backend $(DESTDIR)$(backenddir); \

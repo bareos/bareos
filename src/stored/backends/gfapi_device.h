@@ -31,7 +31,8 @@
 
 class gfapi_device: public DEVICE {
 private:
-   char *m_gfapi_volume;
+   char *m_gfapi_configstring;
+   char *m_gfapi_uri;
    char *m_transport;
    char *m_servername;
    char *m_volumename;
