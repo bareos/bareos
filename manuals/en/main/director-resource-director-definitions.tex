@@ -180,12 +180,27 @@ Directory} as  defined above.
 }
 
 
-\defDirective{Dir}{Director}{Plugin Directory}{}{14.2.0}{%
-If a directory is specified, the Bareos Director tries to load 
-all \ilink{Director plugins}{dirPlugins} that are located in this directory.
-If \configdirective{Plugin Names} is also specified,
-only the specified plugins get loaded.
+\defDirective{Dir}{Director}{Plugin Directory}{}{}{%
+%If a directory is specified, the Bareos Director tries to load 
+%all \ilink{Director plugins}{dirPlugins} that are located in this directory.
+%If \configdirective{Plugin Names} is also specified,
+%only the specified plugins get loaded.
 }
+
+
+
+\defDirective{Dir}{Director}{Plugin Names}{}{}{%
+If a \linkResourceDirective{Dir}{Director}{Plugin Directory} is specified
+\configdirective{Plugin Names} defines, which \ilink{Director plugins}{dirPlugins} get loaded.
+
+If \configdirective{Plugin Names} is not defined, all plugins get loaded,
+otherwise the defined ones.
+%
+% \begin{bconfig}{Plugin Names}
+% Plugin Names = python:otherplugin
+% \end{bconfig}
+}
+
 
 
 \defDirective{Dir}{Director}{Query File}{}{}{%
@@ -200,7 +215,6 @@ command of the Console.
 
 
 \defDirective{Dir}{Director}{Scripts Directory}{}{}{%
-This directive is currently unused.
 }
 
 
@@ -271,19 +285,4 @@ as {\bf \$HOME} will be properly expanded.
 
 The working directory specified must already exist and be
 readable and writable by the Bareos daemon referencing it.
-}
-
-
-\defDirective{Dir}{Director}{Plugin Names}{}{14.2.0}{%
-If a \configdirective{Plugin Directory} is specified
-\configdirective{Plugin Names} defines, which \ilink{Director plugins}{dirPlugins} get loaded.
-
-If \configdirective{Plugin Names} is not defined, all plugins get loaded,
-otherwise the defined ones.
- 
-Only the basename is given, the file extension \path|-dir.so| is added automatically.
-
-% \begin{bconfig}{Plugin Names}
-% Plugin Names = python:otherplugin
-% \end{bconfig}
 }

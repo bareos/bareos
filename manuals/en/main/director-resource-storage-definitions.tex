@@ -8,8 +8,8 @@ directive is required.
 }
 
 \defDirective{Dir}{Storage}{Allow Compression}{}{}{%
-This directive is optional, and if you specify {\bf No} (the default is {\bf
-  Yes}), it will cause backups jobs running on this storage resource to run
+This directive is optional, and if you specify {\bf No},
+it will cause backups jobs running on this storage resource to run
 without client File Daemon compression.  This effectively overrides
 compression options in FileSets used by jobs which use this storage
 resource.
@@ -22,7 +22,7 @@ a backup protocol that uses a specific authentication type.
 }
 
 \defDirective{Dir}{Storage}{Auto Changer}{}{}{%
-If you specify {\bf yes} for this command (the default is {\bf no}),
+If you specify {\bf yes} for this command,
 when you use the {\bf label} command or the {\bf add} command to create
 a new Volume, {\bf Bareos} will also request the Autochanger Slot
 number.  This simplifies creating database entries for Volumes in an
@@ -36,14 +36,13 @@ autochanger's magazine.  If no {\bf in changer} volume is found, Bareos
 will attempt recycling, pruning, ..., and if still no volume is found,
 Bareos will search for any volume whether or not in the magazine.  By
 privileging in changer volumes, this procedure minimizes operator
-intervention.  The default is {\bf no}.
+intervention.
 
 For the autochanger to be used, you must also specify {\bf Autochanger =
-yes} in the \ilink{Device Resource}{Autochanger} in the Storage daemon's
+yes} in the \linkResourceDirective{Sd}{Device}{Autochanger} in the Storage daemon's
 configuration file as well as other important Storage daemon
 configuration information.  Please consult the \nameref{AutochangersChapter} chapter for the
 details of using autochangers.
-\label{Autochanger1}
 }
 
 \defDirective{Dir}{Storage}{Collect Statistics}{}{}{%
@@ -183,6 +182,9 @@ The password is plain text.
 }
 
 \defDirective{Dir}{Storage}{Port}{}{}{%
+Where port is the port to use to  contact the storage daemon for information
+and to start jobs.  This same port number must appear in the Storage resource
+of the  Storage daemon's configuration file.
 }
 
 \defDirective{Dir}{Storage}{Protocol}{}{}{%
@@ -195,9 +197,6 @@ The password is plain text.
 }
 
 \defDirective{Dir}{Storage}{SD Port}{}{}{%
-Where port is the port to use to  contact the storage daemon for information
-and to start jobs.  This same port number must appear in the Storage resource
-of the  Storage daemon's configuration file. The default is 9103.
 }
 
 \defDirective{Dir}{Storage}{Sdd Port}{}{}{%

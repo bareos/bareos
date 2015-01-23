@@ -247,15 +247,15 @@ and finally the chapter on
 \begin{description}
 
 \item [Administrator]
-   \index[fd]{Administrator}
+   \index[general]{Administrator}
    The person or persons responsible for administrating the Bareos system.
 
 \item [Backup]
-   \index[fd]{Backup}
+   \index[general]{Backup}
    The term Backup refers to a Bareos Job that saves files.
 
 \item [Bootstrap File]
-   \index[fd]{Bootstrap File}
+   \index[general]{Bootstrap File}
    The bootstrap file is an ASCII file containing a compact form of
    commands that allow Bareos or the stand-alone file extraction utility
    (bextract) to restore the contents of one or more Volumes, for
@@ -264,7 +264,7 @@ and finally the chapter on
    a bootstrap file from a Catalog to extract any file or files you wish.
 
 \item [Catalog]
-   \index[fd]{Catalog}
+   \index[general]{Catalog}
    The Catalog is used to store summary information about the Jobs,
    Clients, and Files that were backed up and on what Volume or Volumes.
    The information saved in the Catalog permits the administrator or user
@@ -281,41 +281,41 @@ and finally the chapter on
    simple backup and archive programs such as dump and tar.
 
 \item [Client]
-   \index[fd]{Client}
+   \index[general]{Client}
    In Bareos's terminology, the word Client refers to the machine being
    backed up, and it is synonymous with the File services or File daemon,
    and quite often, it is referred to it as the FD. A Client is defined in a
    configuration file resource.
 
 \item [Console]
-   \index[fd]{Console}
+   \index[general]{Console}
    The program that interfaces to the Director allowing  the user or system
    administrator to control Bareos.
 
 \item [Daemon]
-   \index[fd]{Daemon}
+   \index[general]{Daemon}
    Unix terminology for a program that is always present in  the background to
    carry out a designated task. On Windows systems, as well as some Unix
    systems, daemons are called Services.
 
 \item [Directive]
-   \index[fd]{Directive}
+   \index[general]{Directive}
    The term directive is used to refer to a statement or a record within a
    Resource in a configuration file that defines one specific setting.  For
    example, the {\bf Name} directive defines the name of the Resource.
 
 \item [Director]
-   \index[fd]{Director}
+   \index[general]{Director}
    The main Bareos server daemon that schedules and directs all  Bareos
    operations. Occasionally, the project refers to the Director as DIR.
 
 \item [Differential]
-   \index[fd]{Differential}
+   \index[general]{Differential}
    A backup that includes all files changed since the last  Full save started.
    Note, other backup programs may define this differently.
 
 \item [File Attributes]
-   \index[fd]{File Attributes}
+   \index[general]{File Attributes}
    The File Attributes are all the information  necessary about a file to
    identify it and all its properties such as  size, creation date, modification
    date, permissions, etc. Normally, the  attributes are handled entirely by
@@ -323,14 +323,13 @@ and finally the chapter on
    attributes do not include the  file's data.
 
 \item [File Daemon]
-   \index[fd]{File Daemon}
+   \index[general]{File Daemon}
    The daemon running on the client  computer to be backed up. This is also
    referred to as the File  services, and sometimes as the Client services or the
    FD.
 
 \label{FileSetDef}
 \item [FileSet]
-\index[fd]{a name}
    A FileSet is a Resource contained in a configuration file that defines
    the files to be backed up.  It consists of a list of included files or
    directories, a list of excluded files, and how the file is to be stored
@@ -339,14 +338,14 @@ and finally the chapter on
    chapter of this document.
 
 \item [Incremental]
-   \index[fd]{Incremental}
+   \index[general]{Incremental}
    A backup that includes all files changed since the  last Full, Differential,
    or Incremental backup started. It is normally  specified on the {\bf Level}
    directive within the Job resource  definition, or in a Schedule resource.
 
 \label{JobDef}
 \item [Job]
-    \index[fd]{Job}
+    \index[general]{Job}
    A Bareos Job is a configuration resource that defines the work that
    Bareos must perform to backup or restore a particular Client.  It
    consists of the {\bf Type} (backup, restore, verify, etc), the {\bf
@@ -357,12 +356,12 @@ and finally the chapter on
    Director chapter of this document.
 
 \item [Monitor]
-   \index[fd]{Monitor}
+   \index[general]{Monitor}
    The program that interfaces to all the daemons  allowing the user or
    system administrator to monitor Bareos status.
 
 \item [Resource]
-   \index[fd]{Resource}
+   \index[general]{Resource}
    A resource is a part of a configuration file that defines a specific
    unit of information that is available to Bareos.  It consists of several
    directives (individual configuration statements).  For example, the {\bf
@@ -370,7 +369,7 @@ and finally the chapter on
    schedule, Volume pool, backup type, backup level, ...
 
 \item [Restore]
-   \index[fd]{Restore}
+   \index[general]{Restore}
    A restore is a configuration resource that describes the operation of
    recovering a file from backup media.  It is the inverse of a save,
    except that in most cases, a restore will normally have a small set of
@@ -379,7 +378,7 @@ and finally the chapter on
    a full Restore of all files that were on the system.
 
 \item [Schedule]
-   \index[fd]{Schedule}
+   \index[general]{Schedule}
    A Schedule is a configuration resource that defines when the Bareos Job
    will be scheduled for execution.  To use the Schedule, the Job resource
    will refer to the name of the Schedule.  For more details, see the
@@ -387,13 +386,13 @@ and finally the chapter on
    chapter of this document.
 
 \item [Service]
-   \index[fd]{Service}
+   \index[general]{Service}
    This is a program that remains permanently in memory awaiting
    instructions.  In Unix environments, services are also known as
    {\bf daemons}.
 
 \item [Storage Coordinates]
-   \index[fd]{Storage Coordinates}
+   \index[general]{Storage Coordinates}
    The information returned from the Storage Services that uniquely locates
    a file on a backup medium.  It consists of two parts: one part pertains
    to each file saved, and the other part pertains to the whole Job.
@@ -403,20 +402,20 @@ and finally the chapter on
    location of the information on the backup Volume.
 
 \item [Storage Daemon]
-   \index[fd]{Storage Daemon}
+   \index[general]{Storage Daemon}
    The Storage daemon, sometimes referred to as the SD, is the code that
    writes the attributes and data to a storage Volume (usually a tape or
    disk).
 
 \item [Session]
-   \index[sd]{Session}
+   \index[general]{Session}
    Normally refers to the internal conversation between the File daemon and
    the Storage daemon.  The File daemon opens a {\bf session} with the
    Storage daemon to save a FileSet or to restore it.  A session has a
    one-to-one correspondence to a Bareos Job (see above).
 
 \item [Verify]
-   \index[sd]{Verify}
+   \index[general]{Verify}
    A verify is a job that compares the current file attributes to the
    attributes that have previously been stored in the Bareos Catalog.  This
    feature can be used for detecting changes to critical system files
@@ -434,14 +433,14 @@ and finally the chapter on
    original files on disk.
 
 %\item [*Archive]
-%   \index[fd]{*Archive}
+%   \index[general]{*Archive}
 %   An Archive operation is done after a Save, and it  consists of removing the
 %   Volumes on which data is saved from active  use. These Volumes are marked as
 %   Archived, and may no longer be  used to save files. All the files contained
 %   on an Archived Volume  are removed from the Catalog. NOT YET IMPLEMENTED.
 
 \item [Retention Period]
-   \index[fd]{Retention Period}
+   \index[general]{Retention Period}
    There are various kinds of retention periods that Bareos recognizes.
    The most important are the {\bf File} Retention Period, {\bf Job}
    Retention Period, and the {\bf Volume} Retention Period.  Each of these
@@ -485,7 +484,7 @@ and finally the chapter on
    retention periods defined.
 
 \item [Scan]
-   \index[sd]{Scan}
+   \index[general]{Scan}
    A Scan operation causes the contents of a Volume or a series of Volumes
    to be scanned.  These Volumes with the information on which files they
    contain are restored to the Bareos Catalog.  Once the information is
@@ -498,7 +497,7 @@ and finally the chapter on
    details.
 
 \item [Volume]
-   \index[sd]{Volume}
+   \index[general]{Volume}
    A Volume is an archive unit, normally a tape or a named disk file where
    Bareos stores the data from one or more backup jobs.  All Bareos Volumes
    have a software label written to the Volume by Bareos so that it

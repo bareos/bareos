@@ -137,7 +137,7 @@ precedence over the value passed from the Director to the SD.
 }
 
 \defDirective{Dir}{Pool}{Maximum Blocksize}{}{14.2.0}{%
-The \configdirective{Maximum Block Size} can be defined here or at \ilink{Storage Device resource}{storage-device-maximumblocksize}.
+The \configdirective{Maximum Block Size} can be defined here or at \linkResourceDirective{Sd}{Device}{Maximum Block Size}.
 If not defined, its default is 63 KB.
 Increasing this value could improve the throughput of writing to tapes a lot, see \ilink{Setting Block Sizes}{setblocksizes} chapter.
 }
@@ -248,7 +248,7 @@ the specified time, then they will be migrated.
 }
 
 \defDirective{Dir}{Pool}{Minimum Blocksize}{}{}{%
-The \configdirective{Minimum Block Size} can be defined here or at \ilink{Storage Device resource}{storage-device-minimumblocksize}.
+The \configdirective{Minimum Block Size} can be defined here or at \linkResourceDirective{Sd}{Device}{Minimum Block Size}.
 For details, see chapter \ilink{Setting Block Sizes}{setblocksizes}.
 }
 

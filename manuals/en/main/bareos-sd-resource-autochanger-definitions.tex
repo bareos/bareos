@@ -1,0 +1,35 @@
+\defDirective{Sd}{Autochanger}{Changer Command}{}{}{%
+This command specifies an external program to be called that will
+automatically change volumes as required by Bareos.  Most frequently,
+you will specify the Bareos supplied \command{mtx-changer} script as follows.
+If it is specified here, it needs not to be specified in the Device
+resource. If it is also specified in the Device resource, it will take
+precedence over the one specified in the Autochanger resource.
+}
+
+\defDirective{Sd}{Autochanger}{Changer Device}{}{}{%
+The specified {\bf name-string} gives the system file name of the autochanger
+device name. If specified in this resource, the Changer Device name
+is not needed in the Device resource. If it is specified in the Device
+resource (see above), it will take precedence over one specified in
+the Autochanger resource.
+}
+
+\defDirective{Sd}{Autochanger}{Description}{}{}{%
+}
+
+\defDirective{Sd}{Autochanger}{Device}{}{}{%
+Specifies the names of the Device resource or resources that correspond
+to the autochanger drive.  If you have a multiple drive autochanger, you
+must specify multiple Device names, each one referring to a separate
+Device resource that contains a Drive Index specification that
+corresponds to the drive number base zero.  You may specify multiple
+device names on a single line separated by commas, and/or you may
+specify multiple Device directives.
+}
+
+\defDirective{Sd}{Autochanger}{Name}{}{}{%
+Specifies the Name of the Autochanger.  This name is used in the
+Director's Storage definition to refer to the autochanger.
+}
+

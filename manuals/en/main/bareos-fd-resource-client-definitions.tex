@@ -1,0 +1,243 @@
+\defDirective{Fd}{Client}{Absolute Job Timeout}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Allow Bandwidth Bursting}{}{}{%
+This option sets if there is Bandwidth Limiting in effect if the limiting
+code can use bursting e.g. when from a certain timeslice not all bandwidth
+is used this bandwidth can be used in a next timeslice. Which mean you will
+get a smoother limiting which will be much closer to the actual limit set
+but it also means that sometimes the bandwidth will be above the setting here.
+}
+
+\defDirective{Fd}{Client}{Allowed Job Command}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Allowed Script Dir}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Always Use LMDB}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Compatible}{}{}{%
+This directive enables the compatible mode of the file daemon. In
+this mode the file daemon will try to be as compatible to a native
+Bacula file daemon as possible. Enabling this option means that
+certain new options available in Bareos cannot be used as they would
+lead to data not being able to be restored by a Native Bareos file daemon.
+When you want to use bareos-only features, you have to set it to false.
+}
+
+\defDirective{Fd}{Client}{Description}{}{}{%
+}
+
+\defDirective{Fd}{Client}{FD Address}{}{}{%
+This record is optional,  and if it is specified, it will cause the File
+daemon server (for  Director connections) to bind to the specified {\bf
+IP-Address},  which is either a domain name or an IP address specified as a
+dotted quadruple.
+}
+
+\defDirective{Fd}{Client}{FD Addresses}{}{}{%
+Specify the ports and addresses on which the File daemon listens for
+Director connections.  Probably the simplest way to explain is to show
+an example:
+
+\bconfigInput{config/SdDeviceArchiveDevice3.conf}
+
+where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
+can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
+a symbolic name (only in the ip specification).  Also, the port can be specified
+as a number or as the mnemonic value from  the /etc/services file.  If a port
+is not specified, the default will be used. If an ip  section is specified,
+the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
+only IPv4 resolutions will be permitted,  and likewise with ip6.
+}
+
+\defDirective{Fd}{Client}{FD Port}{}{}{%
+This specifies the port number  on which the Client listens for Director
+connections. It must agree  with the FDPort specified in the Client resource
+of the Director's  configuration file.
+}
+
+\defDirective{Fd}{Client}{FD Source Address}{}{}{%
+This record is optional,  and if it is specified, it will cause the File
+daemon server (for  Storage connections) to bind to the specified {\bf
+IP-Address},  which is either a domain name or an IP address specified as a
+dotted quadruple. If this record is not specified, the kernel will choose
+the best address according to the routing table (the default).
+}
+
+\defDirective{Fd}{Client}{Heartbeat Interval}{}{}{%
+This record defines an interval of time in seconds.  For each heartbeat that the
+File daemon receives from the Storage daemon, it will forward it to the
+Director.  In addition, if no heartbeat has been received from the
+Storage daemon and thus forwarded the File daemon will send a heartbeat
+signal to the Director and to the Storage daemon to keep the channels
+active.  Setting the interval to 0 (zero) disables the heartbeat.
+This feature is particularly useful if you have a router
+that does not follow Internet standards and times out a valid
+connection after a short duration despite the fact that keepalive is
+set. This usually results in a broken pipe error message.
+
+% If you continue getting broken pipe error messages despite using the
+% Heartbeat Interval, and you are using Windows, you should consider
+% upgrading your ethernet driver.  This is a known problem with NVidia
+% NForce 3 drivers (4.4.2 17/05/2004), or try the following workaround
+% suggested by Thomas Simmons for Win32 machines:
+%
+% Browse to:
+% Start {\textgreater} Control Panel {\textgreater} Network Connections
+%
+% Right click the connection for the nvidia adapter and select properties.
+% Under the General tab, click "Configure...". Under the Advanced tab set
+% "Checksum Offload" to disabled and click OK to save the change.
+
+% Lack of communications, or communications that get interrupted can
+% also be caused by Linux firewalls where you have a rule that throttles
+% connections or traffic.
+}
+
+\defDirective{Fd}{Client}{LMDB Threshold}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Maximum Bandwidth Per Job}{}{}{%
+The speed parameter specifies the maximum allowed bandwidth that a job may
+use. The speed parameter should be specified in k/s, kb/s, m/s or mb/s.
+}
+
+\defDirective{Fd}{Client}{Maximum Concurrent Jobs}{}{}{%
+where {\textless}number{\textgreater} is the maximum number of Jobs that should run
+concurrently. Each contact from the Director (e.g. status request, job start
+request) is considered as a Job, so if you want to be able to do a {\bf
+status} request in the console at the same time as a Job is running, you
+will need to set this value greater than 1.
+}
+
+\defDirective{Fd}{Client}{Maximum Network Buffer Size}{}{}{%
+where {\textless}bytes{\textgreater} specifies the initial network buffer  size to use with
+the File daemon. This size will be adjusted down  if it is too large until it
+is accepted by the OS. Please use  care in setting this value since if it is
+too large, it will  be trimmed by 512 bytes until the OS is happy, which may
+require  a large number of system calls. The default value is 65,536 bytes.
+
+Note, on certain Windows machines, there are reports that the
+transfer rates are very slow and this seems to be related to
+the default 65,536 size. On systems where the transfer rates
+seem abnormally slow compared to other systems, you might try
+setting the Maximum Network Buffer Size to 32,768 in both the
+File daemon and in the Storage daemon.
+}
+
+\defDirective{Fd}{Client}{Messages}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Name}{}{}{%
+The client name that must be used  by the Director when connecting. Generally,
+it is a good idea  to use a name related to the machine so that error messages
+can be easily identified if you have multiple Clients.  This directive is
+required.
+}
+
+\defDirective{Fd}{Client}{Pid Directory}{}{}{%
+This directive specifies a directory in which the File Daemon
+may put its process Id file files. The process Id file is used to  shutdown
+Bareos and to prevent multiple copies of  Bareos from running simultaneously.
+
+The Bareos file daemon uses a platform specific default value,
+that is defined at compile time.
+Typically on Linux systems, it is set to \path|/var/lib/bareos/| or \path|/var/run/|.
+}
+
+\defDirective{Fd}{Client}{Pki Cipher}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Pki Encryption}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Pki Key Pair}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Pki Master Key}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Pki Signatures}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Pki Signer}{}{}{%
+See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+}
+
+\defDirective{Fd}{Client}{Plugin Directory}{}{}{%
+This directive specifies a directory in which the File Daemon searches for
+plugins with the name {\bf {\textless}pluginname{\textgreater}-fd.so} which it will load at startup.
+Typically on Linux systems, it is set to \path|/usr/lib/bareos/plugins/| or \path|/usr/lib64/bareos/plugins/|.
+}
+
+\defDirective{Fd}{Client}{Plugin Names}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Scripts Directory}{}{}{%
+}
+
+\defDirective{Fd}{Client}{SD Connect Timeout}{}{}{%
+This  record defines an interval of time that  the File daemon will try to
+connect to the  Storage daemon. If no connection
+is made in the specified time interval, the File daemon  cancels the Job.
+}
+
+\defDirective{Fd}{Client}{Sub Sys Directory}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Authenticate}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS CA Certificate Dir}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS CA Certificate File}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Certificate}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Certificate Revocation List}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Enable}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Key}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Require}{}{}{%
+}
+
+\defDirective{Fd}{Client}{TLS Verify Peer}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Ver Id}{}{}{%
+}
+
+\defDirective{Fd}{Client}{Working Directory}{}{}{%
+This directive is optional and specifies a directory in which the File
+daemon  may put its status files.
+%\TODO{This directory should be used only by {\bf
+%Bareos}, but may be shared by other Bareos daemons provided the daemon
+%names on the {\bf Name} definition are unique for each daemon.}
+
+% The bareos file daemon uses a platform specific default value, that is defined at compile time.
+% For Linux systems, the default is \path|/var/lib/bareos/|.
+% For Windows systems it is \%TEMP\%.
+
+On Win32 systems, in some circumstances you may need to specify a drive
+letter in the specified working directory path.  Also, please be sure
+that this directory is writable by the SYSTEM user otherwise restores
+may fail (the bootstrap file that is transferred to the File daemon from
+the Director is temporarily put in this directory before being passed
+to the Storage daemon).
+}

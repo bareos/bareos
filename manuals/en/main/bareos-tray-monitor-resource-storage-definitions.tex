@@ -1,0 +1,35 @@
+\defDirective{Console}{Storage}{Address}{}{}{%
+Where the address is a host name, a fully qualified domain name, or a network
+address in  dotted quad notation for a Bareos Storage daemon.  This record is
+required.
+}
+
+\defDirective{Console}{Storage}{Description}{}{}{%
+}
+
+\defDirective{Console}{Storage}{Enable SSL}{}{}{%
+}
+
+\defDirective{Console}{Storage}{Name}{}{}{%
+The Storage name used to identify  the Director in the list of monitored
+daemons. It is not required  to be the same as the one defined in the Storage's
+configuration file. This record is required.
+}
+
+\defDirective{Console}{Storage}{Password}{}{}{%
+This is the password to be used  when establishing a connection with the
+Storage services. This  same password also must appear in the Director
+resource of the Storage  daemon's configuration file. This record is required.
+}
+
+\defDirective{Console}{Storage}{SD Address}{}{}{%
+}
+
+\defDirective{Console}{Storage}{SD Password}{}{}{%
+}
+
+\defDirective{Console}{Storage}{SD Port}{}{}{%
+Where port is the port to use to  contact the storage daemon for information
+and to start jobs. This same port number must appear in the Storage resource
+of the  Storage daemon's configuration file.
+}

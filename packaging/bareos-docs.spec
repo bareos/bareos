@@ -2,7 +2,7 @@
 #
 # spec file for package bareos-docs
 #
-# Copyright (c) 2013-2014  Bareos GmbH & Co. KG
+# Copyright (c) 2013-2015  Bareos GmbH & Co. KG
 #
 
 Name:           bareos-docs

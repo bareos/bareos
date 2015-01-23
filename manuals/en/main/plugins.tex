@@ -157,10 +157,10 @@ into the stream going to the device (called OUT) and coming from the device (cal
 
 Each stream passes first the inflate function block, then the deflate function block.
 
-The inflate blocks are controlled by the setting of the \ilink{AutoInflate}{storage-device-autoinflate} directive.
+The inflate blocks are controlled by the setting of the \linkResourceDirective{Sd}{Device}{Auto Inflate} directive.
 
-The deflate blocks are controlled by the setting of the \ilink{Autodeflate}{storage-device-autodeflate},
-\ilink{AutodeflateAlgorithm}{storage-device-autodeflatealgorithm} and \ilink{AutodeflateLevel}{storage-device-autodeflatelevel} directives.
+The deflate blocks are controlled by the setting of the \linkResourceDirective{Sd}{Device}{Auto Deflate},
+\linkResourceDirective{Sd}{Device}{Auto Deflate Algorithm} and \linkResourceDirective{Sd}{Device}{Auto Deflate Level} directives.
 
 The inflate blocks, if enabled, will uncompress data if it is compressed using the
 algorithm that was used during compression.
@@ -192,7 +192,7 @@ autoxflate-sd.c: FileStorage OUT:[SD->inflate=yes->deflate=yes->DEV] IN:[DEV->in
 autoxflate-sd.c: deflate ratio: 50.59%
 \end{bmessage}
 
-Additional \ilink{AutoXFlateOnReplication}{storage-storage-autoxflateonreplication} can be configured at the Storage resource.
+Additional \linkResourceDirective{Sd}{Storage}{Auto XFlate On Replication} can be configured at the Storage resource.
 
 
 \subsection{scsicrypto-sd}
