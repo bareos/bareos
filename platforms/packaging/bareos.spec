@@ -277,9 +277,12 @@ Requires:   %{name}-common = %{version}
 Requires:   %{name}-database-common = %{version}
 Requires:   %{name}-database-tools
 %if 0%{?suse_version}
+Requires(pre): pwdutils
 # Don't use this option on anything other then SUSE derived distributions
 # as Fedora & others don't know this tag
 Recommends: logrotate
+%else
+Requires(pre): shadow-utils
 %endif
 Provides:   %{name}-dir
 
@@ -288,6 +291,11 @@ Summary:    Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
+%if 0%{?suse_version}
+Requires(pre): pwdutils
+%else
+Requires(pre): shadow-utils
+%endif
 
 %if 0%{?glusterfs}
 %package    storage-glusterfs
@@ -327,11 +335,21 @@ Summary:    Bareos File daemon (backup and restore client)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
 Provides:   %{name}-fd
+%if 0%{?suse_version}
+Requires(pre): pwdutils
+%else
+Requires(pre): shadow-utils
+%endif
 
 %package    common
 Summary:    Common files, required by multiple Bareos packages
 Group:      Productivity/Archiving/Backup
 Requires:   openssl
+%if 0%{?suse_version}
+Requires(pre): pwdutils
+%else
+Requires(pre): shadow-utils
+%endif
 Provides:   %{name}-libs
 
 %package    database-common
