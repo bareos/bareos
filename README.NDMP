@@ -278,7 +278,7 @@ Client {
   Name = <ndmp_data_server>-ndmp
   Address = ...
   Port = 10000
-  Protocol = NDMPv4
+  Protocol = NDMPv4                   # Need to specify protocol before password as protocol determines password encoding used.
   Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
   Username = "ndmp"                   # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
   Password = "test"                   # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
@@ -304,7 +304,7 @@ Storage {
   Name = NDMPFile
   Address = ...                       # N.B. Use a fully qualified name here
   Port = 10000
-  Protocol = NDMPv4
+  Protocol = NDMPv4                   # Need to specify protocol before password as protocol determines password encoding used.
   Auth Type = Clear                   # Clear == Clear Text, MD5 == Challenge protocol
   Username = ndmp                     # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Password = test                     # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
