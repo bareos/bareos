@@ -503,6 +503,12 @@ static inline bool validate_client(JCR *jcr)
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
+      if (jcr->res.client->password.encoding != p_encoding_clear) {
+         Jmsg(jcr, M_FATAL, 0,
+              _("Client %s, has incompatible password encoding for running NDMP backup.\n"),
+              jcr->res.client->name());
+         return false;
+      }
       break;
    default:
       Jmsg(jcr, M_FATAL, 0,
@@ -520,6 +526,12 @@ static inline bool validate_storage(JCR *jcr, STORERES *store)
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
+      if (store->password.encoding != p_encoding_clear) {
+         Jmsg(jcr, M_FATAL, 0,
+              _("Storage %s, has incompatible password encoding for running NDMP backup.\n"),
+              store->name());
+         return false;
+      }
       break;
    default:
       Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for NDMP backup\n"),
