@@ -27,6 +27,10 @@ BuildRequires:  mingw64-cross-nsis
 
 BuildRequires:  mingw32-openssl
 BuildRequires:  mingw64-openssl
+
+BuildRequires:  mingw32-libopenssl
+BuildRequires:  mingw64-libopenssl
+
 BuildRequires:  mingw32-sed
 BuildRequires:  mingw64-sed
 
