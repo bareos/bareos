@@ -182,7 +182,7 @@ struct ndmp_backup_format_option {
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"dump", true, true, true, true },
    { (char *)"tar", true, false, true, true },
-   { (char *)"smtape", false, false, false, true },
+   { (char *)"smtape", false, true, false, true },
    { (char *)"zfs", false, true, false, true },
    { NULL, false, false, false }
 };
@@ -1759,7 +1759,7 @@ static inline bool extract_post_backup_stats(JCR *jcr,
    }
 
    /*
-    * If this was a NDMP backup with backup type dump save the last used dump level.
+    * If we are doing a backup type that uses dumplevels save the last used dump level.
     */
    if (nbf_options && nbf_options->uses_level) {
       db_update_ndmp_level_mapping(jcr, jcr->db, &jcr->jr,

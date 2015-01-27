@@ -105,7 +105,7 @@ static workq_t ndmp_workq;         /* Queue for processing NDMP connections */
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"dump", true },
    { (char *)"tar", false },
-   { (char *)"smtape", false },
+   { (char *)"smtape", true },
    { (char *)"zfs", true },
    { NULL, false }
 };
