@@ -24,12 +24,14 @@ BuildRequires:  mingw32-filesystem
 BuildRequires:  mingw64-filesystem
 BuildRequires:  mingw64-cross-nsis
 
-BuildRequires: mingw32-openssl
-#mingw32-libopenssl mingw32-libgcc mingw32-openssl mingw32-libstdc++ mingw32-pthreads mingw32-libqt4 mingw32-libqt4-win32 mingw32-zlib mingw32-libpng
-BuildRequires: mingw64-openssl
-BuildRequires: mingw32-sed
-BuildRequires: mingw64-sed
+BuildRequires:  mingw32-openssl
+BuildRequires:  mingw64-openssl
 
+BuildRequires:  mingw32-libopenssl
+BuildRequires:  mingw64-libopenssl
+
+BuildRequires:  mingw32-sed
+BuildRequires:  mingw64-sed
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
