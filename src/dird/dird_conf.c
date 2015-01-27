@@ -1024,7 +1024,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                      break;
                }
 
-               if (! bstrcmp(when, "never")) { /* suppress default value */
+               if (!bstrcmp(when, "never")) { /* suppress default value */
                   Mmsg(temp, "runswhen = %s\n", when);
                   indent_config_item(cfg_str, 2, temp.c_str());
                }
@@ -1087,6 +1087,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    POOL_MEM temp;
    RUNRES *run;
    bool all_set;
+   int i, nr_items;
    int interval_start;
    char *weekdays[] = {
       (char *)"Sun",
@@ -1096,6 +1097,20 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
       (char *)"Thu",
       (char *)"Fri",
       (char *)"Sat"
+   };
+   char *months[] = {
+      (char *)"Jan",
+      (char *)"Feb",
+      (char *)"Mar",
+      (char *)"Apr",
+      (char *)"May",
+      (char *)"Jun",
+      (char *)"Jul",
+      (char *)"Aug",
+      (char *)"Sep",
+      (char *)"Oct",
+      (char *)"Nov",
+      (char *)"Dec"
    };
    char *ordinals[] = {
       (char *)"1st",
@@ -1109,6 +1124,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    if (run != NULL) {
       while (run) {
          POOL_MEM run_str; /* holds the complete run= ... line */
+         POOL_MEM interval; /* is one entry of day/month/week etc. */
 
          indent_config_item(cfg_str, 1, "run = ");
 
@@ -1148,8 +1164,8 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          if (run->level) {
             for (int j = 0; joblevels[j].level_name; j++) {
                if (joblevels[j].level == run->level) {
-                  Mmsg(temp, "level=%s ", joblevels[j].level_name);
-                  pm_strcat(run_str, temp.c_str());
+                  pm_strcat(run_str, joblevels[j].level_name);
+                  pm_strcat(run_str, " ");
                   break;
                }
             }
@@ -1191,43 +1207,58 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
          /*
           * run->mday , output is just the number comma separated
           */
-         all_set = true;
-         interval_start = -1;
-
-         POOL_MEM t; /* is one entry of day/month/week etc. */
-
          pm_strcpy(temp, "");
-         for (int i = 0; i < 32; i++) {  /* search for one more than needed to detect also intervals that stop on last value  */
-            if (bit_is_set(i, run->mday)) {
-               if (interval_start == -1) {   /* bit is set and we are not in an interval */
-                  interval_start = i;        /* start an interval */
-                  Dmsg1(200, "starting interval at %d\n", i + 1);
-                  Mmsg(t, ",%d", i + 1);
-                  pm_strcat(temp, t.c_str());
-               }
-            }
 
+         /*
+          * First see if not all bits are set.
+          */
+         all_set = true;
+         nr_items = 31;
+         for (i = 0; i < nr_items; i++) {
             if (!bit_is_set(i, run->mday)) {
-               if (interval_start != -1) {   /* bit is unset and we are in an interval */
-                  if ((i - interval_start) > 1) {
-                     Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1, i);
-                     Mmsg(t, "-%d", i);
-                     pm_strcat(temp, t.c_str());
-
-                  }
-                  interval_start = -1;       /* end the interval */
-               }
-            }
-
-            if ((!bit_is_set(i, run->mday)) && (i != 31)) {
                all_set = false;
             }
          }
 
-         if (!all_set) {                     /* suppress output if all bits are set */
+         if (!all_set) {
+            interval_start = -1;
+
+            for (i = 0; i < nr_items; i++) {
+               if (bit_is_set(i, run->mday)) {
+                  if (interval_start == -1) {   /* bit is set and we are not in an interval */
+                     interval_start = i;        /* start an interval */
+                     Dmsg1(200, "starting interval at %d\n", i + 1);
+                     Mmsg(interval, ",%d", i + 1);
+                     pm_strcat(temp, interval.c_str());
+                  }
+               }
+
+               if (!bit_is_set(i, run->mday)) {
+                  if (interval_start != -1) {   /* bit is unset and we are in an interval */
+                     if ((i - interval_start) > 1) {
+                        Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1, i);
+                        Mmsg(interval, "-%d", i);
+                        pm_strcat(temp, interval.c_str());
+                     }
+                     interval_start = -1;       /* end the interval */
+                  }
+               }
+            }
+
+            /*
+             * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
+             */
+            i = nr_items - 1;
+            if (interval_start != -1 && bit_is_set(i, run->mday)) {
+               if ((i - interval_start) > 1) {
+                  Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1, i + 1);
+                  Mmsg(interval, "-%d", i + 1);
+                  pm_strcat(temp, interval.c_str());
+               }
+            }
+
             pm_strcat(temp, " ");
             pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-            all_set = true;
          }
 
          /*
@@ -1235,132 +1266,224 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           *                    first, second, third... is also allowed
           *                    but we ignore that for now
           */
-         interval_start = -1;
-
          all_set = true;
-         pm_strcpy(temp, "");
-         for (int i = 0; i < 5; i++) {
-            if (bit_is_set(i, run->wom)) {
-               if (interval_start == -1) {   /* bit is set and we are not in an interval */
-                  interval_start = i;        /* start an interval */
-                  Dmsg1(200, "starting interval at %s\n", ordinals[i]);
-                  Mmsg(t, ",%s", ordinals[i]);
-                  pm_strcat(temp, t.c_str());
-               }
-            }
-
-            if (! bit_is_set(i, run->wom)) {
-               if (interval_start != -1) {   /* bit is unset and we are in an interval */
-                  if ((i - interval_start) > 1) {
-                     Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i-1]);
-                     Mmsg(t, "-%s", ordinals[i-1]);
-                     pm_strcat(temp, t.c_str());
-
-                  }
-                  interval_start = -1;       /* end the interval */
-               }
-            }
-
-            if ((!bit_is_set(i, run->wom)) && (i != 5)) {
+         nr_items = 5;
+         for (i = 0; i < nr_items; i++) {
+            if (!bit_is_set(i, run->wom)) {
                all_set = false;
             }
          }
 
+         if (!all_set) {
+            interval_start = -1;
 
-         if (!all_set) {                     /* suppress output if all bits are set */
+            pm_strcpy(temp, "");
+            for (i = 0; i < nr_items; i++) {
+               if (bit_is_set(i, run->wom)) {
+                  if (interval_start == -1) {   /* bit is set and we are not in an interval */
+                     interval_start = i;        /* start an interval */
+                     Dmsg1(200, "starting interval at %s\n", ordinals[i]);
+                     Mmsg(interval, ",%s", ordinals[i]);
+                     pm_strcat(temp, interval.c_str());
+                  }
+               }
+
+               if (!bit_is_set(i, run->wom)) {
+                  if (interval_start != -1) {   /* bit is unset and we are in an interval */
+                     if ((i - interval_start) > 1) {
+                        Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i - 1]);
+                        Mmsg(interval, "-%s", ordinals[i - 1]);
+                        pm_strcat(temp, interval.c_str());
+                     }
+                     interval_start = -1;       /* end the interval */
+                  }
+               }
+            }
+
+            /*
+             * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
+             */
+            i = nr_items - 1;
+            if (interval_start != -1 && bit_is_set(i, run->wom)) {
+               if ((i - interval_start) > 1) {
+                  Dmsg2(200, "found end of interval from %s to %s\n", ordinals[interval_start], ordinals[i]);
+                  Mmsg(interval, "-%s", ordinals[i]);
+                  pm_strcat(temp, interval.c_str());
+               }
+            }
+
             pm_strcat(temp, " ");
             pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-            all_set = true;
          }
-
 
          /*
           * run->wday output is Sun, Mon, ..., Sat comma separated
           */
          all_set = true;
-         pm_strcpy(temp, "");
-         for (int i = 0; i < 7; i++) {
-            if (bit_is_set(i, run->wday)) {
-               if (interval_start == -1) {   /* bit is set and we are not in an interval */
-                  interval_start = i;        /* start an interval */
-                  Dmsg1(200, "starting interval at %s\n", weekdays[i]);
-                  Mmsg(t, ",%s", weekdays[i]);
-                  pm_strcat(temp, t.c_str());
-               }
-            }
-
+         nr_items = 7;
+         for (i = 0; i < nr_items; i++) {
             if (!bit_is_set(i, run->wday)) {
-               if (interval_start != -1) {   /* bit is unset and we are in an interval */
-                  if ((i - interval_start) > 1) {
-                     Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i-1]);
-                     Mmsg(t, "-%s", weekdays[i-1]);
-                     pm_strcat(temp, t.c_str());
-
-                  }
-                  interval_start = -1;       /* end the interval */
-               }
-            }
-
-            if ((! bit_is_set(i, run->wday)) && (i != 7)) {
                all_set = false;
             }
          }
 
-         if (!all_set) {                     /* suppress output if all bits are set */
+         if (!all_set) {
+            interval_start = -1;
+
+            pm_strcpy(temp, "");
+            for (i = 0; i < nr_items; i++) {
+               if (bit_is_set(i, run->wday)) {
+                  if (interval_start == -1) {   /* bit is set and we are not in an interval */
+                     interval_start = i;        /* start an interval */
+                     Dmsg1(200, "starting interval at %s\n", weekdays[i]);
+                     Mmsg(interval, ",%s", weekdays[i]);
+                     pm_strcat(temp, interval.c_str());
+                  }
+               }
+
+               if (!bit_is_set(i, run->wday)) {
+                  if (interval_start != -1) {   /* bit is unset and we are in an interval */
+                     if ((i - interval_start) > 1) {
+                        Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i - 1]);
+                        Mmsg(interval, "-%s", weekdays[i - 1]);
+                        pm_strcat(temp, interval.c_str());
+                     }
+                     interval_start = -1;       /* end the interval */
+                  }
+               }
+            }
+
+            /*
+             * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
+             */
+            i = nr_items - 1;
+            if (interval_start != -1 && bit_is_set(i, run->wday)) {
+               if ((i - interval_start) > 1) {
+                  Dmsg2(200, "found end of interval from %s to %s\n", weekdays[interval_start], weekdays[i]);
+                  Mmsg(interval, "-%s", weekdays[i]);
+                  pm_strcat(temp, interval.c_str());
+               }
+            }
+
             pm_strcat(temp, " ");
             pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-            all_set = true;
+         }
+
+         /*
+          * run->month output is Jan, Feb, ..., Dec comma separated
+          */
+         all_set = true;
+         nr_items = 12;
+         for (i = 0; i < nr_items; i++) {
+            if (!bit_is_set(i, run->month)) {
+               all_set = false;
+            }
+         }
+
+         if (!all_set) {
+            interval_start = -1;
+
+            pm_strcpy(temp, "");
+            for (i = 0; i < nr_items; i++) {
+               if (bit_is_set(i, run->month)) {
+                  if (interval_start == -1) {   /* bit is set and we are not in an interval */
+                     interval_start = i;        /* start an interval */
+                     Dmsg1(200, "starting interval at %s\n", months[i]);
+                     Mmsg(interval, ",%s", months[i]);
+                     pm_strcat(temp, interval.c_str());
+                  }
+               }
+
+               if (!bit_is_set(i, run->month)) {
+                  if (interval_start != -1) {   /* bit is unset and we are in an interval */
+                     if ((i - interval_start) > 1) {
+                        Dmsg2(200, "found end of interval from %s to %s\n", months[interval_start], months[i - 1]);
+                        Mmsg(interval, "-%s", months[i - 1]);
+                        pm_strcat(temp, interval.c_str());
+                     }
+                     interval_start = -1;       /* end the interval */
+                  }
+               }
+            }
+
+            /*
+             * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
+             */
+            i = nr_items - 1;
+            if (interval_start != -1 && bit_is_set(i, run->month)) {
+               if ((i - interval_start) > 1) {
+                  Dmsg2(200, "found end of interval from %s to %s\n", months[interval_start], months[i]);
+                  Mmsg(interval, "-%s", months[i]);
+                  pm_strcat(temp, interval.c_str());
+               }
+            }
+
+            pm_strcat(temp, " ");
+            pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
          }
 
          /*
           * run->woy output is w00 - w53, comma separated
           */
          all_set = true;
-         pm_strcpy(temp, "");
-         for (int i = 0; i < 55; i++) {
-            if (bit_is_set(i, run->woy)) {
-               if (interval_start == -1) {   /* bit is set and we are not in an interval */
-                  interval_start = i;        /* start an interval */
-                  Dmsg1(200, "starting interval at w%02d\n", i);
-                  Mmsg(t, ",w%02d", i);
-                  pm_strcat(temp, t.c_str());
-               }
-            }
-            if (! bit_is_set(i, run->woy)) {
-               if (interval_start != -1) {   /* bit is unset and we are in an interval */
-                  if ((i - interval_start) > 1) {
-                     Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i-1);
-                     Mmsg(t, "-w%02d", i-1);
-                     pm_strcat(temp, t.c_str());
-
-                  }
-                  interval_start = -1;       /* end the interval */
-               }
-            }
-
-            if ((! bit_is_set(i, run->woy)) && (i != 54)) {
-                  all_set = false;
+         nr_items = 54;
+         for (i = 0; i < nr_items; i++) {
+            if (!bit_is_set(i, run->woy)) {
+               all_set = false;
             }
          }
 
-         if (!all_set) {                     /* suppress output if all bits are set */
+         if (!all_set) {
+            interval_start = -1;
+
+            pm_strcpy(temp, "");
+            for (i = 0; i < nr_items; i++) {
+               if (bit_is_set(i, run->woy)) {
+                  if (interval_start == -1) {   /* bit is set and we are not in an interval */
+                     interval_start = i;        /* start an interval */
+                     Dmsg1(200, "starting interval at w%02d\n", i);
+                     Mmsg(interval, ",w%02d", i);
+                     pm_strcat(temp, interval.c_str());
+                  }
+               }
+
+               if (!bit_is_set(i, run->woy)) {
+                  if (interval_start != -1) {   /* bit is unset and we are in an interval */
+                     if ((i - interval_start) > 1) {
+                        Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i - 1);
+                        Mmsg(interval, "-w%02d", i - 1);
+                        pm_strcat(temp, interval.c_str());
+                     }
+                     interval_start = -1;       /* end the interval */
+                  }
+               }
+            }
+
+            /*
+             * See if we are still in an interval and the last bit is also set then the interval stretches to the last item.
+             */
+            i = nr_items - 1;
+            if (interval_start != -1 && bit_is_set(i, run->woy)) {
+               if ((i - interval_start) > 1) {
+                  Dmsg2(200, "found end of interval from w%02d to w%02d\n", interval_start, i);
+                  Mmsg(interval, "-w%02d", i);
+                  pm_strcat(temp, interval.c_str());
+               }
+            }
+
             pm_strcat(temp, " ");
             pm_strcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-            all_set = true;
          }
 
          /*
           * run->hour output is HH:MM for hour and minute though its a bitfield.
           * only "hourly" sets all bits.
           */
-         all_set = true;
          pm_strcpy(temp, "");
-         for (int i = 0; i < 24; i++) {
+         for (i = 0; i < 24; i++) {
             if bit_is_set(i, run->hour) {
                Mmsg(temp, "at %02d:%02d\n", i, run->minute);
                pm_strcat(run_str, temp.c_str());
-            } else {
-               all_set = false;
             }
          }
 
@@ -1368,7 +1491,6 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
           * run->minute output is smply the minute in HH:MM
           */
          pm_strcat(cfg_str, run_str.c_str());
-         all_set = true;
 
          run = run->next;
       } /* loop over runs */
