@@ -1555,6 +1555,9 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                         }
                         pm_strcat(cfg_str, "\n");
                         break;
+                     case 'c':
+                        indent_config_item(cfg_str, 3, "CheckFileChanges = yes\n");
+                        break;
                      case 'd':
                         switch(*(p + 1)) {
                         case '1':
