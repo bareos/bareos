@@ -11,7 +11,7 @@
 %define __strip %{_mingw32_strip}
 %define __objdump %{_mingw32_objdump}
 %define _use_internal_dependency_generator 0
-%define __find_requires %{_mingw32_findrequires}
+#define __find_requires %{_mingw32_findrequires}
 %define __find_provides %{_mingw32_findprovides}
 #define __os_install_post #{_mingw32_debug_install_post} \
 #                          #{_mingw32_install_post}

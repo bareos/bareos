@@ -11,7 +11,7 @@
 %define __strip %{_mingw64_strip}
 %define __objdump %{_mingw64_objdump}
 %define _use_internal_dependency_generator 0
-%define __find_requires %{_mingw64_findrequires}
+#define __find_requires %{_mingw64_findrequires}
 %define __find_provides %{_mingw64_findprovides}
 #define __os_install_post #{_mingw64_debug_install_post} \
 #                          #{_mingw64_install_post}
