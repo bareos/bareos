@@ -40,6 +40,27 @@ BuildRequires:  mingw32-winbareos  = %{version}
 BuildRequires:  mingw64-winbareos  = %{version}
 BuildRequires:  mingw-debugsrc-devel = %{version}
 
+BuildRequires:  mingw32-libgcc
+BuildRequires:  mingw64-libgcc
+
+BuildRequires:  mingw32-readline
+BuildRequires:  mingw64-readline
+
+BuildRequires:  mingw32-libstdc++
+BuildRequires:  mingw64-libstdc++
+
+BuildRequires:  mingw32-pthreads
+BuildRequires:  mingw64-pthreads
+
+BuildRequires:  mingw32-libqt4
+BuildRequires:  mingw64-libqt4
+
+BuildRequires:  mingw32-lzo
+BuildRequires:  mingw64-lzo
+
+BuildRequires:  mingw32-libfastlz
+BuildRequires:  mingw64-libfastlz
+
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
@@ -101,7 +122,7 @@ for file in \
    QtGui4.dll \
    liblzo2-2.dll \
    libfastlz.dll \
-   libpng15-15.dll \
+   libpng*.dll \
    openssl.exe \
    sed.exe;\
    do
