@@ -131,10 +131,11 @@ bail_out:
  */
 int rerun_cmd(UAContext *ua, const char *cmd)
 {
-   int i, j, d, h, s;
+   int i, j, d, h, s, u;
    int days = 0;
    int hours = 0;
    int since_jobid = 0;
+   int until_jobid = 0;
    struct tm tm;
    JobId_t JobId;
    dbid_list ids;
@@ -143,9 +144,11 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    time_t schedtime;
    char dt[MAX_TIME_LENGTH];
    char ed1[50];
+   char ed2[50];
    bool yes = false;                 /* Was "yes" given on cmdline*/
    bool timeframe = false;           /* Should the selection happen based on timeframe? */
    bool since_jobid_given = false;   /* Was since_jobid given? */
+   bool until_jobid_given = false;   /* Was until_jobid given? */
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
 
@@ -162,10 +165,16 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    d = find_arg_with_value(ua, NT_("days"));
    h = find_arg_with_value(ua, NT_("hours"));
    s = find_arg_with_value(ua, NT_("since_jobid"));
+   u = find_arg_with_value(ua, NT_("until_jobid"));
 
    if (s > 0) {
       since_jobid = str_to_int64(ua->argv[s]);
       since_jobid_given = true;
+   }
+
+   if (u > 0) {
+      until_jobid = str_to_int64(ua->argv[u]);
+      until_jobid_given = true;
    }
 
    if (d > 0 || h > 0) {
@@ -182,7 +191,7 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    }
 
    if (j >= 0 && since_jobid_given) {
-      ua->send_msg("Please specifiy either jobid or since_jobid\n");
+      ua->send_msg("Please specifiy either jobid or since_jobid (and optionally until_jobid)\n");
       goto bail_out;
    }
 
@@ -208,8 +217,14 @@ int rerun_cmd(UAContext *ua, const char *cmd)
       strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
 
       if (since_jobid_given) {
-         Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s ORDER BY JobId",
-              edit_int64(since_jobid, ed1));
+         if (until_jobid_given) {
+            Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s AND JobId <= %s ORDER BY JobId",
+                 edit_int64(since_jobid, ed1), edit_int64(until_jobid, ed2));
+         } else {
+            Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND JobId >= %s ORDER BY JobId",
+                 edit_int64(since_jobid, ed1));
+         }
+
       } else {
          Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' ORDER BY JobId", dt);
       }
