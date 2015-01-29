@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -188,7 +188,7 @@ static struct cmdstruct commands[] = {
    { NT_("reload"), reload_cmd, _("Reload conf file"),
      NT_(""), true, true },
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
-     NT_("jobid=<jobid> | since_jobid=<jobid> | days=<nr_days> | hours=<nr_hours> | yes"), false, true },
+     NT_("jobid=<jobid> | since_jobid=<jobid> [ until_jobid=<jobid> ] | days=<nr_days> | hours=<nr_hours> | yes"), false, true },
    { NT_("resolve"), resolve_cmd, _("Resolve a hostname"),
      NT_("client=<client-name> | storage=<storage-name> <host-name>"), false, true },
    { NT_("run"), run_cmd, _("Run a job"),
