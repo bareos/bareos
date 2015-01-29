@@ -743,10 +743,25 @@ using (see above).
 \index[general]{Compacting Your PostgreSQL Database}
 \label{CompactingPostgres}
 
-Over time, as noted above, your database will tend to grow. I've noticed that
-even though Bareos regularly prunes files, PostgreSQL has a {\bf VACUUM}
-command that will compact your database for you. Alternatively you may want to
-use the {\bf vacuumdb} command, which can be run from a cron job.
+Over time, as noted above, your database will tend to grow until Bareos starts
+deleting old expired records based on retention periods. After that starts,
+it is expected that the database size remains constant, provided that the amount
+of clients and files being backed up is constant.
+
+Note that PostgreSQL uses multiversion concurrency control (MVCC), so that
+an UPDATE or DELETE of a row does not immediately remove the old version of the
+row.  Space occupied by outdated or deleted row versions is only reclaimed for
+reuse by new rows when running \textbf{VACUUM}. Such outdated or deleted row versions
+are also referred to as \emph{dead tuples}.
+
+Since PostgreSQL Version 8.3, autovacuum is enabled by default, so that setting
+up a cron job to run VACUUM is not necesary in most of the cases. Note that
+there are two variants of VACUUM: standard VACUUM and VACUUM FULL. Standard
+VACUUM only marks old row versions for reuse, it does not free any allocated
+disk space to the operating system. Only VACUUM FULL can free up disk space,
+but it requires exclusive table locks so that it can not be used in parallel
+with production database operations and temporarily requires up to as much
+additional disk space that the table being processed occupies.
 
 All database programs have some means of writing the database out in ASCII
 format and then reloading it. Doing so will re-create the database from
@@ -754,7 +769,7 @@ scratch producing a compacted result, so below, we show you how you can do
 this for PostgreSQL.
 
 For a {\bf PostgreSQL} database, you could write the Bareos database as an
-ASCII file (bareos.sql) then reload it by doing the following:
+ASCII file (\texttt{bareos.sql}) then reload it by doing the following:
 
 \footnotesize
 \begin{verbatim}
@@ -766,21 +781,161 @@ rm -f bareos.sql
 
 Depending on the size of your database, this will take more or less time and a
 fair amount of disk space. For example, you can {\bf cd} to the location of
-the Bareos database (typically /usr/local/pgsql/data or possible
-/var/lib/pgsql/data) and check the size.
+the Bareos database (typically \texttt{/var/lib/pgsql/data} or possible
+\texttt{/usr/local/pgsql/data}) and check the size.
 
-There are certain PostgreSQL users who do not recommend the above
-procedure. They have the following to say:
-PostgreSQL does not
+Except from special cases PostgreSQL does not
 need to be dumped/restored to keep the database efficient.  A normal
-process of vacuuming will prevent the database from every getting too
+process of vacuuming will prevent the database from getting too
 large.  If you want to fine-tweak the database storage, commands such
-as VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you
+as VACUUM, VACUUM FULL, REINDEX, and CLUSTER exist specifically to keep you
 from having to do a dump/restore.
 
-Finally, you might want to look at the PostgreSQL documentation on
-this subject at
-\url{http://www.postgresql.org/docs/8.1/interactive/maintenance.html}.
+More details on this subject can be found in the PostgreSQL documentation.
+The page \url{http://www.postgresql.org/docs/} contains links to the documentation
+for all PostgreSQL versions. The section \emph{Routine Vacuuming} explains
+how VACUUM works and why it is required, see
+\url{http://www.postgresql.org/docs/current/static/routine-vacuuming.html}
+for the current PostgreSQL version.
+
+\subsubsection{What To Do When The Database Keeps Growing}
+Especially when a high number of files are beeing backed up or when working with
+high retention periods, it is probable that autovacuuming will not work.
+When starting to use Bareos with an empty Database, it is normal that the file
+table and other tables grow, but the growth rate should drop as soon as jobs are deleted by
+retention or pruning. The file table is usually the largest table in Bareos.
+
+The reason for autovacuuming not beeing triggered is then probably the default
+setting of \texttt{autovacuum\_vacuum\_scale\_factor = 0.2}, the current value can
+be shown with the following query or looked up in \texttt{postgresql.conf}:
+
+\begin{commands}{SQL statement to show the autovacuum\_vacuum\_scale\_factor parameter}
+bareos=# show autovacuum_vacuum_scale_factor;
+ autovacuum_vacuum_scale_factor
+ --------------------------------
+  0.2
+  (1 row)
+\end{commands}
+
+In essence, this means that a VACUUM is only triggered when 20\% of table size
+are obsolete. Consequently, the larger the table is, the less frequently VACUUM
+will be triggered by autovacuum. This make sense because vacuuming has a
+performance impact. While it is possible to override the autovacuum parameters
+on a table-by-table basis, it can then still be triggered at any time.
+
+To learn more details about autovacuum see
+\url{http://www.postgresql.org/docs/current/static/routine-vacuuming.html#AUTOVACUUM}
+
+The following example shows how to configure running VACUUM on the file table by
+using an admin-job in Bareos. The job will be scheduled to run at a time that should
+not run in parallel with normal backup jobs, here by scheduling it to run after
+the BackupCatalog job.
+
+First step is to check the amount of dead tuples and if autovacuum triggers VACUUM:
+
+\begin{commands}{Check dead tuples and vacuuming on PostgreSQL}
+bareos=# SELECT relname, n_dead_tup, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze
+FROM pg_stat_user_tables WHERE n_dead_tup > 0 ORDER BY n_dead_tup DESC;
+-[ RECORD 1 ]----+------------------------------
+relname          | file
+n_dead_tup       | 2955116
+last_vacuum      |
+last_autovacuum  |
+last_analyze     |
+last_autoanalyze |
+-[ RECORD 2 ]----+------------------------------
+relname          | log
+n_dead_tup       | 111298
+last_vacuum      |
+last_autovacuum  |
+last_analyze     |
+last_autoanalyze |
+-[ RECORD 3 ]----+------------------------------
+relname          | job
+n_dead_tup       | 1785
+last_vacuum      |
+last_autovacuum  | 2015-01-08 01:13:20.70894+01
+last_analyze     |
+last_autoanalyze | 2014-12-27 18:00:58.639319+01
+...
+\end{commands}
+
+In the above example, the file table has a high number of dead tuples and it
+has not been vacuumed. Same for the log table, but the dead tuple count is not
+very high. On the job table autovacuum has been triggered.
+
+Note that the statistics views in PostgreSQL are not persistent, their values
+are reset on restart of the PostgreSQL service.
+
+To setup a scheduled admin job for vacuuming the file table, the following must be done:
+
+\begin{enumerate}
+\item Create a file with the SQL statements for example\\
+\texttt{/usr/local/lib/bareos/scripts/postgresql\_file\_table\_maintenance.sql}\\
+with the following content:
+\begin{commands}{SQL Script for vacuuming the file table on PostgreSQL}
+\t \x
+SELECT relname, n_dead_tup, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze
+FROM pg_stat_user_tables WHERE relname='file';
+VACUUM VERBOSE ANALYZE file;
+SELECT relname, n_dead_tup, last_vacuum, last_autovacuum, last_analyze, last_autoanalyze
+FROM pg_stat_user_tables WHERE relname='file';
+\t \x
+SELECT table_name,
+  pg_size_pretty(pg_total_relation_size(table_name)) AS total_sz,
+  pg_size_pretty(pg_total_relation_size(table_name) - pg_relation_size(table_name)) AS idx_sz
+  FROM ( SELECT ('"' || relname || '"' ) AS table_name
+    FROM pg_stat_user_tables WHERE relname != 'batch' ) AS all_tables
+  ORDER BY pg_total_relation_size(table_name) DESC LIMIT 5;
+\end{commands}
+The SELECT statements are for informational purposes only, the final statement
+shows the total and index disk usage of the 5 largest tables.
+
+\item Create a shell script that runs the SQL statements, for example\\
+\texttt{/usr/local/lib/bareos/scripts/postgresql\_file\_table\_maintenance.sh}\\
+with the following content:
+\begin{commands}{SQL Script for vacuuming the file table on PostgreSQL}
+#!/bin/sh
+psql bareos < /usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sql
+\end{commands}
+
+\item As in PostgreSQL only the database owner or a database superuser is allowed
+to run VACUUM, the script will be run as the \texttt{postgres} user. To permit
+the \texttt{bareos} user to run the script via \texttt{sudo}, write the following
+sudo rule to a file by executing \texttt{visudo -f /etc/sudoers.d/bareos\_postgres\_vacuum}:
+\begin{commands}{sudo rule for allowing bareos to run a script as postgres}
+bareos ALL = (postgres) NOPASSWD: /usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh
+\end{commands}
+and make sure that \texttt{/etc/sudoers} includes it, usually by the line
+\footnotesize
+\begin{verbatim}
+#includedir /etc/sudoers.d
+\end{verbatim}
+\normalsize
+
+\item Create the following admin job in the director configuration
+\begin{commands}{SQL Script for vacuuming the file table on PostgreSQL}
+# PostgreSQL file table maintenance job
+Job {
+  Name = FileTableMaintJob
+  JobDefs = DefaultJob
+  Schedule = "WeeklyCycleAfterBackup"
+  Type = Admin
+  Priority = 20
+
+  RunScript {
+    RunsWhen = Before
+    RunsOnClient = no
+    Fail Job On Error = yes
+    Command = "sudo -u postgres /usr/local/lib/bareos/scripts/postgresql_file_table_maintenance.sh"
+  }
+}
+\end{commands}
+In this example the job will be run by the schedule WeeklyCycleAfterBackup,
+the \texttt{Priority} should be set to a higher value than \texttt{Priority}
+in the BackupCatalog job.
+\end{enumerate}
+
 
 \section{MySQL}
 \label{CompactingMySQL}
