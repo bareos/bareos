@@ -39,7 +39,7 @@ FileSet {
       signature = MD5
       compression = gzip
     }
-    Plugin = "bpipe:<path>:<backup-command>:<restore-command>"
+    Plugin = "bpipe:file=<filepath>:reader=<readprogram>:writer=<writeprogram>
   }
 }
 \end{bconfig}
@@ -49,21 +49,21 @@ Everything after the first colon is ignored by the File daemon but is passed to 
 meaning of the rest of the string as he wishes. The full syntax of the plugin directive as interpreted by the bpipe plugin is:
 
 \begin{bconfig}{bpipe directive}
-Plugin = "<plugin>:<path>:<backup-command>:<restore-command>"
+Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
 \end{bconfig}
 
 \begin{description}
 \item[plugin] is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
 
-\item[path] specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This
+\item[filepath] specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This
 pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is /MySQL/mydump.sql, the data
 backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique
 to avoid a conflict with a path and filename that actually exists on your system.
 
-\item[backup-command] for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe
+\item[readprogram] for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe
 will call this program by doing a popen on it.
 
-\item[restore-command] for the bpipe plugin specifies the "writer" program that is called by the plugin during restore to write the data back 
+\item[writeprogram] for the bpipe plugin specifies the "writer" program that is called by the plugin during restore to write the data back 
 to the filesystem.
 \end{description}
 
@@ -73,7 +73,7 @@ or output, ...), then we recommend that you put your command or commands in a sh
 backup a file with reader program, when running the writer program during the restore, Bareos will not automatically create the path
 to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.
 
-See the examples about \ilink{Backup PostgreSQL}{backup-postgresql} and \ilink{Backup MySQL}{backup-mysql}.
+See the examples about \nameref{backup-postgresql} and \nameref{backup-mysql}.
 
 
 \subsection{PGSQL Plugin}
