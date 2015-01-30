@@ -2576,8 +2576,6 @@ dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
   char *bucket = NULL;
   char *path = NULL;
   char *target = NULL;
-  int pathlen;
-  char *targetpath = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "readlink locator=%s", locator);
 
@@ -2627,38 +2625,10 @@ dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
       goto end;
     }
 
-  // get_noredirect does not ensure that the bucket is prepended to the path
-  // Check and prepend it if need be
-  if (strchr(target, ':') == NULL)
-    {
-      pathlen = snprintf(NULL, 0, "%s:/%s", bucket, target);
-      if (pathlen <= 0)
-      {
-        ret = DPL_FAILURE;
-        goto end;
-      }
-
-      targetpath = malloc(pathlen);
-      if (targetpath == NULL)
-      {
-        ret = DPL_ENOMEM;
-        goto end;
-      }
-
-      ret2 = snprintf(targetpath, pathlen, "%s:/%s", bucket, target);
-      if (ret2 <= 0)
-        {
-          ret = DPL_FAILURE;
-          goto end;
-        }
-    }
-  else
-      targetpath = strdup(target);
-
   if (target_locatorp)
     {
-      *target_locatorp = targetpath;
-      targetpath = NULL;
+      *target_locatorp = target;
+      target = NULL;
     }
 
   ret = DPL_SUCCESS;
@@ -2668,7 +2638,6 @@ dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
   free(bucket);
   free(nlocator);
   free(target);
-  free(targetpath);
 
   DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
 

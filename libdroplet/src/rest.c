@@ -664,8 +664,8 @@ dpl_get_noredirect(dpl_ctx_t *ctx,
   dpl_status_t ret, ret2;
   int loclen = 0;
   char *new_location = NULL;
-  char *new_location_resource;
-  char *new_location_subresource;
+  char *new_location_resource = NULL;
+  char *new_location_subresource = NULL;
 
   DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s path=%s", bucket, path);
 

@@ -43,6 +43,7 @@
 #include <utime.h>
 #include <pwd.h>
 #include <grp.h>
+#include <libgen.h>
 
 /** @file */
 
@@ -735,67 +736,88 @@ dpl_posix_put(dpl_ctx_t *ctx,
   return ret;
 }
 
-dpl_status_t
-dpl_posix_get(dpl_ctx_t *ctx,
-              const char *bucket,
-              const char *resource,
-              const char *subresource,
-              const dpl_option_t *option, 
-              dpl_ftype_t object_type,
-              const dpl_condition_t *condition,
-              const dpl_range_t *range,
-              char **data_bufp,
-              unsigned int *data_lenp,
-              dpl_dict_t **metadatap,
-              dpl_sysmd_t *sysmdp,
-              char **locationp)
+
+static dpl_status_t
+posix_readlink(dpl_ctx_t *ctx,
+               char *path,
+               const dpl_option_t *option,
+               char **locationp)
 {
   dpl_status_t ret;
   int iret;
-  char path[MAXPATHLEN];
+  struct stat st;
+  ssize_t cc;
+  uint64_t length;
+  char *target = NULL;
+
+  iret = lstat(path, &st);
+  if (-1 == iret)
+    {
+      ret = dpl_posix_map_errno();
+      perror("lstat");
+      goto end;
+    }
+  // Add one byte for the nul byte for readlink.
+  length = st.st_size + 1;
+
+  target = malloc(length);
+  if (NULL == target)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  cc = readlink(path, target, length);
+  if (cc != st.st_size)
+    {
+      ret = cc == -1 ? dpl_posix_map_errno() : DPL_FAILURE;
+      if (cc == -1)
+        perror("readlink");
+      goto end;
+    }
+  target[cc] = 0;
+
+  if (locationp)
+    {
+      *locationp = target;
+      target = NULL;
+    }
+
+  // "success" for a readlink
+  ret = DPL_EREDIRECT;
+
+ end:
+
+  if (NULL != target)
+    free(target);
+
+  return ret;
+}
+
+static dpl_status_t
+posix_get(const char *path,
+          const dpl_option_t *option,
+          const dpl_range_t *range,
+          char **data_bufp,
+          unsigned int *data_lenp,
+          dpl_dict_t **metadatap,
+          dpl_sysmd_t *sysmdp)
+{
+  dpl_status_t ret;
+  int iret;
   ssize_t cc;
   int fd = -1;
   uint64_t offset, length;
   struct stat st;
   u_int data_len;
   char *data_buf = NULL;
+  int do_alloc = !(option && option->mask & DPL_OPTION_NOALLOC);
 
-  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
-
-  snprintf(path, sizeof (path), "/%s/%s",
-           ctx->base_path ? ctx->base_path : "",
-           resource ? resource : "");
-
-  switch (object_type)
-    {
-    case DPL_FTYPE_UNDEF:
-    case DPL_FTYPE_CAP:
-    case DPL_FTYPE_DIR:
-    case DPL_FTYPE_DOM:
-    case DPL_FTYPE_CHRDEV:
-    case DPL_FTYPE_BLKDEV:
-    case DPL_FTYPE_FIFO:
-    case DPL_FTYPE_SOCKET:
-    case DPL_FTYPE_SYMLINK:
-      ret = DPL_EINVAL;
-      goto end;
-    case DPL_FTYPE_ANY:
-    case DPL_FTYPE_REG:
-      fd = open(path, O_RDONLY);
-      if (-1 == fd)
-        {
-          ret = dpl_posix_map_errno();
-          perror("open");
-          goto end;
-        }
-      break ;
-    }
-
-  iret = fstat(fd, &st);
+  iret = stat(path, &st);
   if (-1 == iret)
     {
       ret = dpl_posix_map_errno();
-      perror("fstat");
+      perror("stat");
       goto end;
     }
 
@@ -807,7 +829,7 @@ dpl_posix_get(dpl_ctx_t *ctx,
       
       offset = range->start;
       range_len = range->start - range->end;
-      if (data_len > range_len)
+      if (data_len < range_len)
         {
           ret = DPL_EINVAL;
           goto end;
@@ -821,7 +843,7 @@ dpl_posix_get(dpl_ctx_t *ctx,
       length = data_len;
     }
 
-  if (option && option->mask & DPL_OPTION_NOALLOC)
+  if (!do_alloc)
     {
       data_buf = *data_bufp;
       length = *data_lenp;
@@ -836,13 +858,21 @@ dpl_posix_get(dpl_ctx_t *ctx,
         }
     }
 
+  fd = open(path, O_RDONLY);
+  if (-1 == fd)
+    {
+      ret = dpl_posix_map_errno();
+      perror("open");
+      goto end;
+    }
+
   cc = pread(fd, data_buf, length, offset);
   if (-1 == cc)
     {
       ret = dpl_posix_map_errno();
       goto end;
     }
-  
+
   if (data_len != cc)
     {
       ret = DPL_FAILURE;
@@ -862,11 +892,62 @@ dpl_posix_get(dpl_ctx_t *ctx,
 
  end:
 
-  if ((option && !(option->mask & DPL_OPTION_NOALLOC)) && NULL != data_buf)
+  if (do_alloc && NULL != data_buf)
     free(data_buf);
 
   if (-1 != fd)
     close(fd);
+
+  return ret;
+}
+
+dpl_status_t
+dpl_posix_get(dpl_ctx_t *ctx,
+              const char *bucket,
+              const char *resource,
+              const char *subresource,
+              const dpl_option_t *option,
+              dpl_ftype_t object_type,
+              const dpl_condition_t *condition,
+              const dpl_range_t *range,
+              char **data_bufp,
+              unsigned int *data_lenp,
+              dpl_dict_t **metadatap,
+              dpl_sysmd_t *sysmdp,
+              char **locationp)
+{
+  dpl_status_t ret = DPL_FAILURE;
+  char path[MAXPATHLEN];
+
+  DPL_TRACE(ctx, DPL_TRACE_BACKEND, "object_type=%i", object_type);
+
+  snprintf(path, sizeof (path), "%s/%s",
+           ctx->base_path ? ctx->base_path : "",
+           resource ? resource : "");
+
+  switch (object_type)
+    {
+    case DPL_FTYPE_UNDEF:
+    case DPL_FTYPE_CAP:
+    case DPL_FTYPE_DIR:
+    case DPL_FTYPE_DOM:
+    case DPL_FTYPE_CHRDEV:
+    case DPL_FTYPE_BLKDEV:
+    case DPL_FTYPE_FIFO:
+    case DPL_FTYPE_SOCKET:
+      ret = DPL_EINVAL;
+      goto end;
+    case DPL_FTYPE_SYMLINK:
+      ret = posix_readlink(ctx, path, option, locationp);
+      break ;
+    case DPL_FTYPE_ANY:
+    case DPL_FTYPE_REG:
+      ret = posix_get(path, option, range,
+                      data_bufp, data_lenp, metadatap, sysmdp);
+      break ;
+    }
+
+ end:
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "ret=%d", ret);
 
@@ -974,7 +1055,7 @@ dpl_posix_copy(dpl_ctx_t *ctx,
            src_resource ? src_resource : "");
   snprintf(dst_path, sizeof (src_path), "/%s/%s",
            ctx->base_path ? ctx->base_path : "",
-           dst_resource ? src_resource : "");
+           dst_resource ? dst_resource : "");
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "directive: %s: %s -> %s",
             dpl_copy_directive_to_str(copy_directive), src_path, dst_path);
