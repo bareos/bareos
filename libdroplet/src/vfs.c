@@ -2568,6 +2568,114 @@ dpl_rename(dpl_ctx_t *ctx,
 }
 
 dpl_status_t
+dpl_readlink(dpl_ctx_t *ctx, const char *locator, char **target_locatorp)
+{
+  int ret, ret2;
+  dpl_fqn_t obj_fqn;
+  char *nlocator = NULL;
+  char *bucket = NULL;
+  char *path = NULL;
+  char *target = NULL;
+  int pathlen;
+  char *targetpath = NULL;
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "readlink locator=%s", locator);
+
+  nlocator = strdup(locator);
+  if (! nlocator)
+    {
+      ret = DPL_ENOMEM;
+      goto end;
+    }
+
+  path = index(nlocator, ':');
+  if (path)
+    {
+      *path++ = 0;
+      bucket = strdup(nlocator);
+      if (! bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+  else
+    {
+      dpl_ctx_lock(ctx);
+      bucket = strdup(ctx->cur_bucket);
+      dpl_ctx_unlock(ctx);
+      if (! bucket)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+      path = nlocator;
+    }
+
+  ret2 = make_abs_path(ctx, bucket, path, &obj_fqn);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  ret2 = dpl_get_noredirect(ctx, bucket, obj_fqn.path,
+                            DPL_FTYPE_SYMLINK, &target);
+  if (DPL_SUCCESS != ret2)
+    {
+      ret = ret2;
+      goto end;
+    }
+
+  // get_noredirect does not ensure that the bucket is prepended to the path
+  // Check and prepend it if need be
+  if (strchr(target, ':') == NULL)
+    {
+      pathlen = snprintf(NULL, 0, "%s:/%s", bucket, target);
+      if (pathlen <= 0)
+      {
+        ret = DPL_FAILURE;
+        goto end;
+      }
+
+      targetpath = malloc(pathlen);
+      if (targetpath == NULL)
+      {
+        ret = DPL_ENOMEM;
+        goto end;
+      }
+
+      ret2 = snprintf(targetpath, pathlen, "%s:/%s", bucket, target);
+      if (ret2 <= 0)
+        {
+          ret = DPL_FAILURE;
+          goto end;
+        }
+    }
+  else
+      targetpath = strdup(target);
+
+  if (target_locatorp)
+    {
+      *target_locatorp = targetpath;
+      targetpath = NULL;
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+
+  free(bucket);
+  free(nlocator);
+  free(target);
+  free(targetpath);
+
+  DPL_TRACE(ctx, DPL_TRACE_VFS, "ret=%d", ret);
+
+  return ret;
+}
+
+dpl_status_t
 dpl_symlink(dpl_ctx_t *ctx,
             const char *src_locator,
             const char *dst_locator)

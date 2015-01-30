@@ -637,6 +637,87 @@ dpl_get(dpl_ctx_t *ctx,
 }
 
 /** 
+ * get a path for SYMLINKS
+ *
+ * @param ctx the droplet context
+ * @param bucket the optional bucket
+ * @param path the mandat path
+ * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
+ * @param object_type DPL_FTYPE_ANY get any type of path
+ * @param condition the optional condition
+ * @param data_bufp the returned data buffer client shall free
+ * @param data_lenp the returned data length
+ * @param metadatap the returned user metadata client shall free
+ * @param sysmdp the returned system metadata passed through stack
+ *
+ * @return DPL_SUCCESS
+ * @return DPL_FAILURE
+ * @return DPL_ENOENT path does not exist
+ */
+dpl_status_t
+dpl_get_noredirect(dpl_ctx_t *ctx,
+                   const char *bucket,
+                   const char *path,
+                   dpl_ftype_t object_type,
+                   char **locationp)
+{
+  dpl_status_t ret, ret2;
+  int loclen = 0;
+  char *new_location = NULL;
+  char *new_location_resource;
+  char *new_location_subresource;
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "get bucket=%s path=%s", bucket, path);
+
+  if (NULL == ctx->backend->get)
+    {
+      ret = DPL_ENOTSUPP;
+      goto end;
+    }
+
+  ret2 = ctx->backend->get(ctx, bucket, path, NULL, NULL, object_type,
+                           NULL, NULL, NULL, NULL, NULL, NULL, &new_location);
+  if (DPL_EREDIRECT != ret2)
+    {
+      if (ret2 == DPL_SUCCESS)
+        {
+          ret = DPL_ENOTSUPP;
+          goto end;
+        }
+      ret = ret2;
+      goto end;
+    }
+
+  dpl_location_to_resource(ctx,
+                           new_location,
+                           &new_location_resource,
+                           &new_location_subresource);
+  loclen = strlen(new_location_resource);
+  if (NULL != locationp)
+    {
+      *locationp = strdup(new_location_resource);
+      if (NULL == *locationp)
+        {
+          ret = DPL_ENOMEM;
+          goto end;
+        }
+    }
+
+  ret = DPL_SUCCESS;
+
+ end:
+  if (new_location)
+    free(new_location);
+
+  DPL_TRACE(ctx, DPL_TRACE_REST, "ret=%d", ret);
+
+  if (DPL_SUCCESS == ret)
+    dpl_log_request(ctx, "LINKDATA", "OUT", loclen);
+
+  return ret;
+}
+
+/**
  * get user and system metadata
  * 
  * @param ctx the droplet context
