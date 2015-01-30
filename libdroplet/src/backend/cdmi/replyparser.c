@@ -755,6 +755,8 @@ dpl_cdmi_parse_list_bucket(dpl_ctx_t *ctx,
               object->path[name_len - 1] = '\0';
             }
 
+          object->type = DPL_FTYPE_UNDEF;
+
           ret2 = dpl_vec_add(objects, object);
           if (DPL_SUCCESS != ret2)
             {
