@@ -728,16 +728,6 @@ Job {
 
 \section{PostgreSQL}
 
-\label{RepairingPSQL}
-\subsection{Repairing Your PostgreSQL Database}
-\index[general]{Database!Repairing Your PostgreSQL}
-\index[general]{Repairing Your PostgreSQL Database}
-
-The same considerations apply that are indicated above for MySQL. That is,
-consult the PostgreSQL documents for how to repair the database, and also
-consider using \command{bareos-dbcheck} program if the conditions are reasonable for
-using (see above).
-
 \subsection{Compacting Your PostgreSQL Database}
 \index[general]{Database!Compacting Your PostgreSQL}
 \index[general]{Compacting Your PostgreSQL Database}
@@ -771,13 +761,11 @@ this for PostgreSQL.
 For a {\bf PostgreSQL} database, you could write the Bareos database as an
 ASCII file (\texttt{bareos.sql}) then reload it by doing the following:
 
-\footnotesize
-\begin{verbatim}
+\begin{commands}{}
 pg_dump -c bareos > bareos.sql
 cat bareos.sql | psql bareos
 rm -f bareos.sql
-\end{verbatim}
-\normalsize
+\end{commands}
 
 Depending on the size of your database, this will take more or less time and a
 fair amount of disk space. For example, you can {\bf cd} to the location of
@@ -799,6 +787,7 @@ how VACUUM works and why it is required, see
 for the current PostgreSQL version.
 
 \subsubsection{What To Do When The Database Keeps Growing}
+\label{PostgresSize}
 Especially when a high number of files are beeing backed up or when working with
 high retention periods, it is probable that autovacuuming will not work.
 When starting to use Bareos with an empty Database, it is normal that the file
@@ -937,11 +926,27 @@ in the BackupCatalog job.
 \end{enumerate}
 
 
+\subsection{Repairing Your PostgreSQL Database}
+\label{RepairingPSQL}
+\index[general]{Database!Repairing Your PostgreSQL}
+\index[general]{Repairing Your PostgreSQL Database}
+
+The same considerations apply as for \nameref{RepairingMySQL}.
+Consult the PostgreSQL documents for how to repair the database.
+
+For Bareos specific problems, 
+consider using \nameref{bareos-dbcheck} program .
+
+
+
+
 \section{MySQL}
-\label{CompactingMySQL}
+
+
 \subsection{Compacting Your MySQL Database}
 \index[general]{Database!Compacting Your MySQL}
 \index[general]{Compacting Your MySQL Database}
+\label{CompactingMySQL}
 
 Over time, as noted above, your database will tend to grow.
 Even though Bareos regularly prunes files, {\bf MySQL} does not automatically
@@ -977,11 +982,10 @@ rm -f bareos.sql
 Depending on the size of your database, this will take more or less time and a
 fair amount of disk space.
 
-\label{DatabaseRepair}
-\label{RepairingMySQL}
 \subsection{Repairing Your MySQL Database}
 \index[general]{Database!Repairing Your MySQL}
 \index[general]{Repairing Your MySQL Database}
+\label{RepairingMySQL}
 
 If you find that you are getting errors writing to your MySQL database, or
 Bareos hangs each time it tries to access the database, you should consider
@@ -1001,6 +1005,7 @@ other inconsistencies in the Bareos database.
 
 A typical cause of MySQL database problems is if your partition fills. In
 such a case, you will need to create additional space on the partition.
+
 
 
 \subsection{MySQL Table is Full}
@@ -1132,7 +1137,7 @@ sure your checkpoint\_segments is set to at least 8.
 \index[general]{Database Performance Issues Indexes}
 \index[general]{Performance!Database}
 
-\TODO{Is chapter needs verification/updating (by Stephan).}
+\TODO{This chapter needs verification/updating.}
 
 One of the most important considerations for improving performance on
 the Bareos database is to ensure that it has all the appropriate indexes.
