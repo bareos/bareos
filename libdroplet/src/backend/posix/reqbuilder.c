@@ -156,10 +156,10 @@ dpl_posix_setattr(const char *path,
     {
       ret2 = dpl_dict_iterate(metadata, cb_posix_setattr, (char *) path);
       if (DPL_SUCCESS != ret2)
-        {
+      {
           ret = ret2;
           goto end;
-        }
+      }
     }
      
   ret = DPL_SUCCESS;

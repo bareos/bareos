@@ -46,6 +46,19 @@
 //#define DPRINTF(fmt,...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define DPRINTF(fmt,...)
 
+struct metadata_conven
+{
+  dpl_dict_t *metadata;
+  dpl_sysmd_t *sysmdp;
+};
+
+static dpl_status_t
+cb_posix_get_metadatum_from_xattr_value(dpl_dict_var_t *var, void *cb_arg)
+{
+  struct metadata_conven *mc = (struct metadata_conven *) cb_arg;
+  return dpl_dict_add_value(mc->metadata, var->key, var->val, 0);
+}
+
 dpl_status_t
 dpl_posix_get_metadatum_from_value(const char *key,
                                    dpl_value_t *val,
@@ -57,6 +70,7 @@ dpl_posix_get_metadatum_from_value(const char *key,
   dpl_status_t ret, ret2;
   int iret;
   char buf[256];
+  struct metadata_conven mc = { .metadata=metadata, .sysmdp=sysmdp };
 
   if (sysmdp)
     {
@@ -148,8 +162,10 @@ dpl_posix_get_metadatum_from_value(const char *key,
                 }
             }
 
-          //add md into metadata
-          ret2 = dpl_dict_add_value(metadata, key, val, 0);
+          //add xattr's md into metadata
+          ret2 = dpl_dict_iterate(val->subdict,
+                                  cb_posix_get_metadatum_from_xattr_value,
+                                  &mc);
           if (DPL_SUCCESS != ret2)
             {
               ret = ret2;
@@ -164,12 +180,6 @@ dpl_posix_get_metadatum_from_value(const char *key,
 
   return ret;
 }
-
-struct metadata_conven
-{
-  dpl_dict_t *metadata;
-  dpl_sysmd_t *sysmdp;
-};
 
 static dpl_status_t
 cb_values_iterate(dpl_dict_var_t *var,
