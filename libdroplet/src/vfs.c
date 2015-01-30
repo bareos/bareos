@@ -423,7 +423,9 @@ dir_read(void *dir_hdl,
       memcpy(dirent->fqn.path, obj->path, path_len);
       dirent->fqn.path[path_len] = 0;
 
-      dirent->type = DPL_FTYPE_REG;
+      dirent->type = obj->type;
+      if (dirent->type == DPL_FTYPE_UNDEF)
+          dirent->type = DPL_FTYPE_REG;
 
       dirent->last_modified = obj->last_modified;
       dirent->size = obj->size;

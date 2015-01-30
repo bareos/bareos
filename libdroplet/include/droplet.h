@@ -453,6 +453,7 @@ typedef struct
   time_t last_modified;
   size_t size;
   char *etags;
+  dpl_ftype_t type;
 } dpl_object_t;
 
 typedef struct
