@@ -447,6 +447,45 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
               goto end;
             }
 
+          snprintf(objpath, sizeof(objpath), "/%s/%s", ctx->base_path ? ctx->base_path : "", object->path);
+          iret = stat(objpath, &st);
+          if (0 != iret)
+            {
+              perror("stat");
+              ret = DPL_FAILURE;
+              goto end;
+            }
+          object->size = st.st_size;
+
+          switch (entryp->d_type)
+          {
+          case DT_BLK:
+            object->type = DPL_FTYPE_BLKDEV;
+            break ;
+          case DT_CHR:
+            object->type = DPL_FTYPE_CHRDEV;
+            break ;
+          case DT_DIR:
+            object->type = DPL_FTYPE_DIR;
+            break ;
+          case DT_FIFO:
+            object->type = DPL_FTYPE_FIFO;
+            break ;
+          case DT_LNK:
+            object->type = DPL_FTYPE_SYMLINK;
+            break ;
+          case DT_SOCK:
+            object->type = DPL_FTYPE_SOCKET;
+            break ;
+          case DT_REG:
+            object->type = DPL_FTYPE_REG;
+            break ;
+          case DT_UNKNOWN:
+          default:
+            object->type = DPL_FTYPE_UNDEF;
+            break ;
+          }
+
           ret2 = dpl_vec_add(objects, object);
           if (DPL_SUCCESS != ret2)
             {
