@@ -38,8 +38,19 @@ BuildRequires:  mingw64-sed
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
 
-BuildRequires:  mingw32-winbareos = %{version}
-BuildRequires:  mingw64-winbareos = %{version}
+
+BuildRequires:  mingw32-winbareos-prevista = %{version}
+BuildRequires:  mingw64-winbareos-prevista = %{version}
+
+BuildRequires:  mingw32-winbareos-postvista = %{version}
+BuildRequires:  mingw64-winbareos-postvista = %{version}
+
+BuildRequires:  mingw32-winbareos-prevista-debug = %{version}
+BuildRequires:  mingw64-winbareos-prevista-debug = %{version}
+
+BuildRequires:  mingw32-winbareos-postvista-debug = %{version}
+BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
+
 BuildRequires:  mingw-debugsrc-devel = %{version}
 
 
@@ -90,93 +101,110 @@ bareos
 
 
 %build
+for flavor in postvista postvista-debug prevista prevista-debug;
+do
+   mkdir -p $RPM_BUILD_ROOT/$flavor/nsisplugins
 
-mkdir -p $RPM_BUILD_ROOT/nsisplugins
-cp %SOURCE5 $RPM_BUILD_ROOT/nsisplugins  #  KillProcWMI
-cp %SOURCE7 $RPM_BUILD_ROOT/nsisplugins  #  AccessControl
-cp %SOURCE8 $RPM_BUILD_ROOT/nsisplugins  #  LogEx
+   cp %SOURCE5 $RPM_BUILD_ROOT/$flavor/nsisplugins  #  KillProcWMI
+   cp %SOURCE7 $RPM_BUILD_ROOT/$flavor/nsisplugins  #  AccessControl
+   cp %SOURCE8 $RPM_BUILD_ROOT/$flavor/nsisplugins  #  LogEx
 
-mkdir $RPM_BUILD_ROOT/release32
-mkdir $RPM_BUILD_ROOT/release64
+   mkdir -p $RPM_BUILD_ROOT/$flavor/release32
+   mkdir -p $RPM_BUILD_ROOT/$flavor/release64
 
 # copy the sql ddls over
-cp -av /etc/mingw32-winbareos/ddl $RPM_BUILD_ROOT/release32
-cp -av /etc/mingw64-winbareos/ddl $RPM_BUILD_ROOT/release64
+   cp -av /etc/$flavor/mingw32-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release32
+   cp -av /etc/$flavor/mingw64-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release64
 
 # copy the sources over if we create debug package
-%if %{WIN_DEBUG} == "yes"
-cp -av /bareos-*debug*  $RPM_BUILD_ROOT/release32
-cp -av /bareos-*debug*  $RPM_BUILD_ROOT/release64
-%endif
+   %if %{WIN_DEBUG} == "yes"
+   cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release32
+   cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release64
+   %endif
 
 
 
-for file in \
-   bareos-fd.exe \
-   bareos-sd.exe \
-   bareos-dir.exe \
-   bareos-dbcheck.exe \
-   bconsole.exe \
-   bsmtp.exe \
-   btape.exe \
-   bls.exe \
-   bextract.exe \
-   bareos-tray-monitor.exe \
-   bat.exe \
-   bpipe-fd.dll \
-   mssqlvdi-fd.dll \
-   autoxflate-sd.dll \
-   libbareos.dll \
-   libbareosfind.dll \
-   libbareoslmdb.dll \
-   libbareoscats*.dll \
-   libbareossd*.dll \
-   libcrypto-*.dll \
-   libgcc_s_*-1.dll \
-   libhistory6.dll \
-   libreadline6.dll \
-   libssl-*.dll \
-   libstdc++-6.dll \
-   libtermcap-0.dll \
-   pthreadGCE2.dll \
-   zlib1.dll \
-   QtCore4.dll \
-   QtGui4.dll \
-   liblzo2-2.dll \
-   libfastlz.dll \
-   libpng*.dll \
-   openssl.exe \
-   sed.exe;\
-do
-   cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/release32
-   cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/release64
+   for file in \
+      bareos-fd.exe \
+      bareos-sd.exe \
+      bareos-dir.exe \
+      bareos-dbcheck.exe \
+      bconsole.exe \
+      bsmtp.exe \
+      btape.exe \
+      bls.exe \
+      bextract.exe \
+      bareos-tray-monitor.exe \
+      bat.exe \
+      bpipe-fd.dll \
+      mssqlvdi-fd.dll \
+      autoxflate-sd.dll \
+      libbareos.dll \
+      libbareosfind.dll \
+      libbareoslmdb.dll \
+      libbareoscats*.dll \
+      libbareossd*.dll ;
+   do
+      cp %{_mingw32_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release32
+      cp %{_mingw64_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release64
+   done
+
+
+   for file in \
+      libcrypto-*.dll \
+      libgcc_s_*-1.dll \
+      libhistory6.dll \
+      libreadline6.dll \
+      libssl-*.dll \
+      libstdc++-6.dll \
+      libtermcap-0.dll \
+      pthreadGCE2.dll \
+      zlib1.dll \
+      QtCore4.dll \
+      QtGui4.dll \
+      liblzo2-2.dll \
+      libfastlz.dll \
+      libpng*.dll \
+      openssl.exe \
+      sed.exe;
+   do
+      cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
+      cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
+   done
+
+   for cfg in /etc/$flavor/mingw32-winbareos/*.conf; do
+      cp $cfg $RPM_BUILD_ROOT/$flavor/release32
+   done
+
+   for cfg in /etc/$flavor/mingw64-winbareos/*.conf; do
+      cp $cfg $RPM_BUILD_ROOT/$flavor/release64
+   done
+
+   cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release32
+   cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release64
+
+   makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release32/winbareos.nsi
+   makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release64/winbareos.nsi
+
 done
-
-for cfg in /etc/mingw32-winbareos/*.conf; do
-   cp $cfg $RPM_BUILD_ROOT/release32
-done
-
-for cfg in /etc/mingw64-winbareos/*.conf; do
-   cp $cfg $RPM_BUILD_ROOT/release64
-done
-
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release32
-cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/release64
-
-makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release32/winbareos.nsi
-makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/release64/winbareos.nsi
 
 %install
-mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
-mkdir -p $RPM_BUILD_ROOT%{_mingw64_bindir}
 
-cp $RPM_BUILD_ROOT/release32/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-32-bit-r%release.exe
-cp $RPM_BUILD_ROOT/release64/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-64-bit-r%release.exe
+for flavor in postvista postvista-debug prevista prevista-debug;
+do
+   mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
+   mkdir -p $RPM_BUILD_ROOT%{_mingw64_bindir}
 
-rm -R $RPM_BUILD_ROOT/release32
-rm -R $RPM_BUILD_ROOT/release64
-rm -R $RPM_BUILD_ROOT/nsisplugins
-#rm -R $RPM_BUILD_ROOT/bareos-*
+   FLAVOR=`echo "%name" | sed 's/winbareos-nsi-//g'`
+
+   cp $RPM_BUILD_ROOT/$flavor/release32/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-$flavor-32-bit-r%release.exe
+   cp $RPM_BUILD_ROOT/$flavor/release64/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-$flavor-64-bit-r%release.exe
+
+   rm -R $RPM_BUILD_ROOT/$flavor/release32
+   rm -R $RPM_BUILD_ROOT/$flavor/release64
+   rm -R $RPM_BUILD_ROOT/$flavor/nsisplugins
+
+done
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -184,9 +212,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-
-/winbareos-%version-32-bit*.exe
-/winbareos-%version-64-bit*.exe
+/winbareos-*.exe
 
 #{_mingw32_bindir}
 #{_mingw64_bindir}
