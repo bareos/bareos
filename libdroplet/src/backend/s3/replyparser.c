@@ -401,6 +401,7 @@ parse_list_bucket_content(xmlNode *node,
             {
               object->size = strtoull((char *) tmp->children->content, NULL, 0);
             }
+          object->type = DPL_FTYPE_REG;
 
         }
       else if (tmp->type == XML_TEXT_NODE)
