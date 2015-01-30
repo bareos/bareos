@@ -1,8 +1,8 @@
-# If versionstring contains debug, enable debug during build
-%define WIN_DEBUG %(echo %version | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
+# If name contains debug, enable debug during build
+%define WIN_DEBUG %(echo %name | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
 
-# If versionstring contains prevista, build for windows < vista
-%define WIN_VISTACOMPAT %(echo %version | grep prevista >/dev/null 2>&1 && echo "no" || echo "yes")
+# If name contains prevista, build for windows < vista
+%define WIN_VISTACOMPAT %(echo %name | grep prevista >/dev/null 2>&1 && echo "no" || echo "yes")
 
 # Determine Windows Version (32/64) from name (mingw32-.../ming64-...)
 %define WIN_VERSION %(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
@@ -18,6 +18,8 @@
 #define __os_install_post #{_mingw32_debug_install_post} \
 #                          #{_mingw32_install_post}
 
+
+%define flavors "prevista postvista prevista-debug postvista-debug"
 
 Name:           mingw32-winbareos
 Version:        14.2.3
@@ -89,6 +91,33 @@ Group:          Development/Libraries
 %description devel
 bareos
 
+
+%package prevista
+Summary:        bareos
+%description prevista
+bareos
+
+%package prevista-debug
+Summary:        bareos
+%description prevista-debug
+bareos
+
+
+%package postvista
+Summary:        bareos
+%description postvista
+bareos
+
+%package postvista-debug
+Summary:        bareos
+%description postvista-debug
+bareos
+
+
+
+
+
+
 #{_mingw32_debug_package}
 
 %prep
@@ -107,67 +136,99 @@ tar xvf %SOURCE2
 tar xvf %SOURCE3
 tar xvf %SOURCE4
 
+CONTENT=`ls`
+
+for flavor in `echo "%flavors"`; do
+   mkdir $flavor
+   for content in $CONTENT; do
+      echo copying $content to $flavor
+      cp -a $content $flavor
+   done
+done
+
+
 %build
 
-cd src/win32/
-make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=%{WIN_VISTACOMPAT} %{?jobs:-j%jobs}
+#cd src/win32/
+#make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=%{WIN_VISTACOMPAT} %{?jobs:-j%jobs}
+
+
+cd postvista/src/win32/
+make WIN_DEBUG=no BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
+cd -
+
+cd postvista-debug/src/win32/
+make WIN_DEBUG=yes BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
+cd -
+
+cd prevista/src/win32/
+make WIN_DEBUG=no BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=no %{?jobs:-j%jobs}
+cd -
+
+cd prevista-debug/src/win32/
+make WIN_DEBUG=yes BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=no %{?jobs:-j%jobs}
+cd -
 
 %install
 
-mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
 
-mkdir -p $RPM_BUILD_ROOT/etc/%name
+for flavor in `echo "%flavors"`; do
 
-pushd src/win32
+   mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
 
-cp qt-tray-monitor/bareos-tray-monitor.exe \
-   qt-console/bat.exe \
-   console/bconsole.exe \
-   filed/bareos-fd.exe \
-   stored/bareos-sd.exe \
-   stored/btape.exe \
-   stored/bls.exe \
-   stored/bextract.exe \
-   dird/bareos-dir.exe \
-   dird/bareos-dbcheck.exe \
-   tools/bsmtp.exe \
-   stored/libbareossd*.dll \
-   cats/libbareoscats*.dll \
-   lib/libbareos.dll \
-   findlib/libbareosfind.dll \
-   lmdb/libbareoslmdb.dll \
-   plugins/filed/bpipe-fd.dll \
-   plugins/filed/mssqlvdi-fd.dll \
-   plugins/stored/autoxflate-sd.dll \
-   $RPM_BUILD_ROOT%{_mingw32_bindir}
+   mkdir -p $RPM_BUILD_ROOT/etc/$flavor/%name
 
-for cfg in  ../qt-tray-monitor/tray-monitor.fd.conf.in \
-   ../qt-tray-monitor/tray-monitor.fd-sd.conf.in \
-   ../qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in \
-   ../qt-console/bat.conf.in \
-   ../dird/bareos-dir.conf.in \
-   ../filed/bareos-fd.conf.in \
-   ../stored/bareos-sd.conf.in \
-   ../console/bconsole.conf.in \
-   ; do cp $cfg $RPM_BUILD_ROOT/etc/%name/$(basename $cfg .in)
-done
+   pushd $flavor/src/win32
 
-for cfg in $RPM_BUILD_ROOT/etc/%name/*.conf;
-do
-  sed -f %SOURCE1 $cfg -i ;
-done
+   cp qt-tray-monitor/bareos-tray-monitor.exe \
+      qt-console/bat.exe \
+      console/bconsole.exe \
+      filed/bareos-fd.exe \
+      stored/bareos-sd.exe \
+      stored/btape.exe \
+      stored/bls.exe \
+      stored/bextract.exe \
+      dird/bareos-dir.exe \
+      dird/bareos-dbcheck.exe \
+      tools/bsmtp.exe \
+      stored/libbareossd*.dll \
+      cats/libbareoscats*.dll \
+      lib/libbareos.dll \
+      findlib/libbareosfind.dll \
+      lmdb/libbareoslmdb.dll \
+      plugins/filed/bpipe-fd.dll \
+      plugins/filed/mssqlvdi-fd.dll \
+      plugins/stored/autoxflate-sd.dll \
+      $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
 
-popd
+   for cfg in  ../qt-tray-monitor/tray-monitor.fd.conf.in \
+      ../qt-tray-monitor/tray-monitor.fd-sd.conf.in \
+      ../qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in \
+      ../qt-console/bat.conf.in \
+      ../dird/bareos-dir.conf.in \
+      ../filed/bareos-fd.conf.in \
+      ../stored/bareos-sd.conf.in \
+      ../console/bconsole.conf.in \
+      ; do cp $cfg $RPM_BUILD_ROOT/etc/$flavor/%name/$(basename $cfg .in)
+   done
 
-mkdir -p  $RPM_BUILD_ROOT/etc/%name/ddl
-for i in creates drops grants updates; do
-   mkdir $RPM_BUILD_ROOT/etc/%name/ddl/$i/
-   cp -av src/cats/ddl/$i/postgres* $RPM_BUILD_ROOT/etc/%name/ddl/$i/
-done
+   for cfg in $RPM_BUILD_ROOT/etc/$flavor/%name/*.conf;
+   do
+     sed -f %SOURCE1 $cfg -i ;
+   done
 
-for sql in $RPM_BUILD_ROOT/etc/%name/ddl/*/*.sql;
-do
-   sed -f %SOURCE1 $sql -i ;
+   popd
+
+   mkdir -p  $RPM_BUILD_ROOT/etc/$flavor/%name/ddl
+   for i in creates drops grants updates; do
+      mkdir $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
+      cp -av src/cats/ddl/$i/postgres* $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
+   done
+
+   for sql in $RPM_BUILD_ROOT/etc/$flavor//%name/ddl/*/*.sql;
+   do
+      sed -f %SOURCE1 $sql -i ;
+   done
 done
 
 
@@ -176,11 +237,47 @@ done
 rm -rf $RPM_BUILD_ROOT
 
 %files
+#defattr(-,root,root)
+#/etc/%name/*.conf
+#/etc/%name/ddl/
+#dir %{_mingw32_bindir}
+#{_mingw32_bindir}/*.dll
+#{_mingw32_bindir}/*.exe
+
+
+%files prevista
 %defattr(-,root,root)
-/etc/%name/*.conf
-/etc/%name/ddl/
-%dir %{_mingw32_bindir}
-%{_mingw32_bindir}/*.dll
-%{_mingw32_bindir}/*.exe
+/etc/prevista/%name/*.conf
+/etc/prevista/%name/ddl/
+%dir %{_mingw32_bindir}/prevista
+%{_mingw32_bindir}/prevista/*.dll
+%{_mingw32_bindir}/prevista/*.exe
+
+
+%files postvista
+%defattr(-,root,root)
+/etc/postvista/%name/*.conf
+/etc/postvista/%name/ddl/
+%dir %{_mingw32_bindir}/postvista
+%{_mingw32_bindir}/postvista/*.dll
+%{_mingw32_bindir}/postvista/*.exe
+
+
+%files prevista-debug
+%defattr(-,root,root)
+/etc/prevista-debug/%name/*.conf
+/etc/prevista-debug/%name/ddl/
+%dir %{_mingw32_bindir}/prevista-debug
+%{_mingw32_bindir}/prevista-debug/*.dll
+%{_mingw32_bindir}/prevista-debug/*.exe
+
+
+%files postvista-debug
+%defattr(-,root,root)
+/etc/postvista-debug/%name/*.conf
+/etc/postvista-debug/%name/ddl/
+%dir %{_mingw32_bindir}/postvista-debug
+%{_mingw32_bindir}/postvista-debug/*.dll
+%{_mingw32_bindir}/postvista-debug/*.exe
 
 %changelog

@@ -26,8 +26,31 @@ URL:            http://bareos.org
 Source0:        bareos-%{version}.tar.bz2
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
+Provides:       %name = %version
 
 %description
+
+%package postvista
+Summary: postvista
+
+%package postvista-debug
+Summary: postvista-debug
+
+%package prevista
+Summary: prevista
+
+%package prevista-debug
+Summary: prevista-debug
+
+
+%description postvista
+
+%description postvista-debug
+
+%description prevista
+
+%description prevista-debug
+
 
 %prep
 %setup -q -n bareos-%{version}
@@ -44,5 +67,25 @@ cp  -av ../bareos-* $RPM_BUILD_ROOT/
 %files
 %defattr(-,root,root)
 /bareos-*
+
+
+
+%files postvista
+%defattr(-,root,root)
+/bareos-*
+
+%files postvista-debug
+%defattr(-,root,root)
+/bareos-*
+
+%files prevista
+%defattr(-,root,root)
+/bareos-*
+
+%files prevista-debug
+%defattr(-,root,root)
+/bareos-*
+
+
 
 %changelog
