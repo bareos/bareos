@@ -4,6 +4,7 @@
 @MCOMMON@
 
 PYTHON_CPPFLAGS += @PYTHON_INC@
+RADOS_CPPFLAGS += @RADOS_INC@
 
 srcdir = @srcdir@
 VPATH = @srcdir@:../../filed
@@ -45,6 +46,15 @@ python-fd.la: Makefile \
 	      ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared python-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
 	-L../../lib -lbareos @PYTHON_LIBS@
+
+rados-fd.lo: rados-fd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(RADOS_CPPFLAGS) -c $<
+
+rados-fd.la: Makefile \
+	     rados-fd$(DEFAULT_OBJECT_TYPE) \
+	     ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared rados-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareos @RADOS_LIBS@
 
 test-deltaseq-fd.la: Makefile test-deltaseq-fd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared test-deltaseq-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \

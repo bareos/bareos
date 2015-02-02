@@ -3752,6 +3752,18 @@ AC_TRY_LINK(
    ]
 )
 
+if test "x${have_ceph_rados}" = "xyes"; then
+   AC_CHECK_LIB(rados, rados_ioctx_set_namespace,
+      [
+         AC_DEFINE(HAVE_RADOS_NAMESPACES, 1, [Define to 1 if you have support for RADOS namespaces.])
+         AC_CHECK_LIB(rados, rados_nobjects_list_open,
+            [
+               AC_DEFINE(HAVE_RADOS_NOBJECTS_LIST, 1, [Define to 1 if you have support for RADOS NObject List API.])
+            ])
+      ]
+   )
+fi
+
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
@@ -4352,6 +4364,10 @@ if test X"$have_zlib" = "Xyes" -o \
         X"$have_lzo" = "Xyes" -o \
         X"$have_fastlz" = "Xyes" ; then
    BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+fi
+
+if test X"$have_ceph_rados" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} rados-fd.la"
 fi
 
 AC_SUBST(BUILD_FD_PLUGINS)
