@@ -4376,6 +4376,10 @@ if test X"$have_glusterfs" = "Xyes" ; then
    BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} gfapi-fd.la"
 fi
 
+if test X"$have_cephfs" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} cephfs-fd.la"
+fi
+
 AC_SUBST(BUILD_FD_PLUGINS)
 AC_SUBST(BUILD_SD_PLUGINS)
 AC_SUBST(BUILD_DIR_PLUGINS)

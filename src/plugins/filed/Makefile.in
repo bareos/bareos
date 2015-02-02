@@ -3,6 +3,7 @@
 #
 @MCOMMON@
 
+CEPHFS_CPPFLAGS += @CEPHFS_INC@
 PYTHON_CPPFLAGS += @PYTHON_INC@
 RADOS_CPPFLAGS += @RADOS_INC@
 GLUSTER_CPPFLAGS += @GLUSTER_INC@
@@ -38,6 +39,15 @@ example-plugin-fd.la: Makefile example-plugin-fd$(DEFAULT_OBJECT_TYPE)
 
 bpipe-fd.la: Makefile bpipe-fd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared bpipe-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+cephfs-fd.lo: cephfs-fd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(CEPHFS_CPPFLAGS) -c $<
+
+cephfs-fd.la: Makefile \
+	      cephfs-fd$(DEFAULT_OBJECT_TYPE) \
+	      ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared cephfs-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareos @CEPHFS_LIBS@
 
 gfapi-fd.lo: gfapi-fd.c
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_CPPFLAGS) -c $<
