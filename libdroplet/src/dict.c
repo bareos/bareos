@@ -363,7 +363,7 @@ dpl_dict_print(const dpl_dict_t *dict,
  *
  * @param dict the dict to add an entry to
  * @param key the key for the new
- * @param value the new value to be entered
+ * @param value the new value to be entered, any allocated value is duplicated, not consumed
  * @param lowered if nonzero, @a key is converted to lower case
  * @retval DPL_SUCCESS on success, or
  * @retval DPL_* a Droplet error code on failure

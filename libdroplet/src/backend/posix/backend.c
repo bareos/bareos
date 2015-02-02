@@ -253,7 +253,7 @@ dpl_posix_head_raw(dpl_ctx_t *ctx,
 
   value.type = DPL_VALUE_SUBDICT;
   value.subdict = subdict;
-  subdict = NULL;
+  // dpl_dict_add_value dups the value, so don't prevent freeing subdict
   ret2 = dpl_dict_add_value(metadata, "xattr", &value, 0);
   if (DPL_SUCCESS != ret2)
     {
