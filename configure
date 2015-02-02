@@ -31586,6 +31586,18 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
+for ac_func in glfs_readdirplus
+do :
+  ac_fn_c_check_func "$LINENO" "glfs_readdirplus" "ac_cv_func_glfs_readdirplus"
+if test "x$ac_cv_func_glfs_readdirplus" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_GLFS_READDIRPLUS 1
+_ACEOF
+
+fi
+done
+
+
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
@@ -31757,6 +31769,98 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
+if test "x${have_ceph_rados}" = "xyes"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rados_ioctx_set_namespace in -lrados" >&5
+$as_echo_n "checking for rados_ioctx_set_namespace in -lrados... " >&6; }
+if ${ac_cv_lib_rados_rados_ioctx_set_namespace+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrados  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rados_ioctx_set_namespace ();
+int
+main ()
+{
+return rados_ioctx_set_namespace ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_rados_rados_ioctx_set_namespace=yes
+else
+  ac_cv_lib_rados_rados_ioctx_set_namespace=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rados_rados_ioctx_set_namespace" >&5
+$as_echo "$ac_cv_lib_rados_rados_ioctx_set_namespace" >&6; }
+if test "x$ac_cv_lib_rados_rados_ioctx_set_namespace" = xyes; then :
+
+
+$as_echo "#define HAVE_RADOS_NAMESPACES 1" >>confdefs.h
+
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rados_nobjects_list_open in -lrados" >&5
+$as_echo_n "checking for rados_nobjects_list_open in -lrados... " >&6; }
+if ${ac_cv_lib_rados_rados_nobjects_list_open+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrados  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rados_nobjects_list_open ();
+int
+main ()
+{
+return rados_nobjects_list_open ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_rados_rados_nobjects_list_open=yes
+else
+  ac_cv_lib_rados_rados_nobjects_list_open=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_rados_rados_nobjects_list_open" >&5
+$as_echo "$ac_cv_lib_rados_rados_nobjects_list_open" >&6; }
+if test "x$ac_cv_lib_rados_rados_nobjects_list_open" = xyes; then :
+
+
+$as_echo "#define HAVE_RADOS_NOBJECTS_LIST 1" >>confdefs.h
+
+
+fi
+
+
+
+fi
+
+fi
 
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
@@ -32679,6 +32783,18 @@ if test X"$have_zlib" = "Xyes" -o \
         X"$have_lzo" = "Xyes" -o \
         X"$have_fastlz" = "Xyes" ; then
    BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+fi
+
+if test X"$have_ceph_rados" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} rados-fd.la"
+fi
+
+if test X"$have_glusterfs" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} gfapi-fd.la"
+fi
+
+if test X"$have_cephfs" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} cephfs-fd.la"
 fi
 
 

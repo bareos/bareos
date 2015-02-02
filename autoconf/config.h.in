@@ -387,6 +387,9 @@
 /* Define to 1 if you have gfapi lib */
 #undef HAVE_GFAPI
 
+/* Define to 1 if you have the `glfs_readdirplus' function. */
+#undef HAVE_GLFS_READDIRPLUS
+
 /* Define to 1 if GNUTLS library is available */
 #undef HAVE_GNUTLS
 
@@ -664,6 +667,12 @@
 
 /* Define to 1 if you have rados lib */
 #undef HAVE_RADOS
+
+/* Define to 1 if you have support for RADOS namespaces. */
+#undef HAVE_RADOS_NAMESPACES
+
+/* Define to 1 if you have support for RADOS NObject List API. */
+#undef HAVE_RADOS_NOBJECTS_LIST
 
 /* Define to 1 if you have radosstriper lib */
 #undef HAVE_RADOS_STRIPER
