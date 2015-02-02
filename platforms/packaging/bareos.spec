@@ -480,6 +480,32 @@ This package contains the python plugin for the storage daemon
 
 %endif
 
+%if 0%{?glusterfs}
+%package    filedaemon-glusterfs-plugin
+Summary:    GlusterFS plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   glusterfs
+
+%description filedaemon-glusterfs-plugin
+%{dscr}
+
+This package contains the GlusterFS plugin for the file daemon
+
+%endif
+
+%if 0%{?ceph}
+%package    filedaemon-ceph-plugin
+Summary:    CEPH plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+
+%description filedaemon-ceph-plugin
+%{dscr}
+
+This package contains the CEPH plugins for the file daemon
+
+%endif
 
 %description client
 %{dscr}
@@ -1062,7 +1088,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 /usr/include/bareos
 %{library_dir}/*.la
 
-
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin
 %defattr(-, root, root)
@@ -1091,6 +1116,17 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{plugin_dir}/bareos_sd_consts.py*
 
 %endif # python_plugins
+
+%if 0%{?glusterfs}
+%files filedaemon-glusterfs-plugin
+%{plugin_dir}/gfapi-fd.so
+%endif
+
+%if 0%{?ceph}
+%files filedaemon-ceph-plugin
+%{plugin_dir}/cephfs-fd.so
+%{plugin_dir}/rados-fd.so
+%endif
 
 #
 # Define some macros for updating the system settings.
