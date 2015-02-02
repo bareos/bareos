@@ -3632,6 +3632,8 @@ AC_TRY_LINK(
    ]
 )
 
+AC_CHECK_FUNCS(glfs_readdirplus)
+
 LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
@@ -4368,6 +4370,10 @@ fi
 
 if test X"$have_ceph_rados" = "Xyes" ; then
    BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} rados-fd.la"
+fi
+
+if test X"$have_glusterfs" = "Xyes" ; then
+   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} gfapi-fd.la"
 fi
 
 AC_SUBST(BUILD_FD_PLUGINS)

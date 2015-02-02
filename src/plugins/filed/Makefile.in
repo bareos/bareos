@@ -5,6 +5,7 @@
 
 PYTHON_CPPFLAGS += @PYTHON_INC@
 RADOS_CPPFLAGS += @RADOS_INC@
+GLUSTER_CPPFLAGS += @GLUSTER_INC@
 
 srcdir = @srcdir@
 VPATH = @srcdir@:../../filed
@@ -37,6 +38,15 @@ example-plugin-fd.la: Makefile example-plugin-fd$(DEFAULT_OBJECT_TYPE)
 
 bpipe-fd.la: Makefile bpipe-fd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared bpipe-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
+
+gfapi-fd.lo: gfapi-fd.c
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_CPPFLAGS) -c $<
+
+gfapi-fd.la: Makefile \
+	     gfapi-fd$(DEFAULT_OBJECT_TYPE) \
+	     ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared gfapi-fd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version \
+	-L../../lib -lbareos @GLUSTER_LIBS@
 
 python-fd.lo: python-fd.c python-fd.h
 	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
