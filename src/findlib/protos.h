@@ -88,10 +88,6 @@ void ff_pkt_set_link_digest(FF_PKT *ff_pkt,
                             uint32_t len);
 
 /* makepath.c */
-htable *path_list_init();
-bool path_list_lookup(htable *path_list, char *fname);
-bool path_list_add(htable *path_list, uint32_t len, char *fname);
-void free_path_list(htable *path_list);
 bool makepath(ATTR *attr, const char *path, mode_t mode,
               mode_t parent_mode, uid_t owner, gid_t group,
               bool keep_dir_modes);

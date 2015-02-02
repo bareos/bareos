@@ -278,6 +278,12 @@ void register_message_callback(void msg_callback(int type, char *msg));
 /* passphrase.c */
 char *generate_crypto_passphrase(int length);
 
+/* path_list.c */
+htable *path_list_init();
+bool path_list_lookup(htable *path_list, const char *fname);
+bool path_list_add(htable *path_list, uint32_t len, const char *fname);
+void free_path_list(htable *path_list);
+
 /* poll.c */
 int wait_for_readable_fd(int fd, int sec, bool ignore_interupts);
 int wait_for_writable_fd(int fd, int sec, bool ignore_interupts);
