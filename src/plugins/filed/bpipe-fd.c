@@ -823,12 +823,12 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                      /*
                       * Keep the first value, ignore any next setting.
                       */
-                     set_string_if_null(str_destination, argument);
+                     set_string_if_null(str_destination, argument_value);
                   } else {
                      /*
                       * Overwrite any existing value.
                       */
-                     set_string(str_destination, argument);
+                     set_string(str_destination, argument_value);
                   }
                }
 
