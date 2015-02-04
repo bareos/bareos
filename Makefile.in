@@ -158,7 +158,7 @@ Makefiles:
 info:
 	@mkdir -p build/
 	scripts/git-info.sh build/
-	cp -a config.out build/
+	$(CP) -p config.out build/
 
 clean:
 	@for I in ${all_subdirs} ; \
