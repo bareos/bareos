@@ -2,8 +2,6 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,27 +39,34 @@ bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *sto
       Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->MediaId);
       pm_strcpy(jcr->VolumeName, mr->VolumeName);
       set_storageid_in_mr(store, mr);
+
       return true;
    }
+
    return false;
 }
 
 /*
- *   Look for oldest Purged volume
+ * Look for oldest Purged volume
  */
 bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger,
                                   MEDIA_DBR *mr, STORERES *store)
 {
    bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
+   set_storageid_in_mr(store, mr);
+
    if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr)) {
+      Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
       set_storageid_in_mr(store, mr);
       if (recycle_volume(jcr, mr)) {
          Jmsg(jcr, M_INFO, 0, _("Recycled volume \"%s\"\n"), mr->VolumeName);
          Dmsg1(100, "return 1  recycle_oldest_purged_volume Vol=%s\n", mr->VolumeName);
+
          return true;
       }
    }
    Dmsg0(100, "return 0  recycle_oldest_purged_volume end\n");
+
    return false;
 }
 
@@ -77,5 +82,6 @@ int recycle_volume(JCR *jcr, MEDIA_DBR *mr)
    mr->RecycleCount++;
    mr->set_first_written = true;
    set_storageid_in_mr(NULL, mr);
+
    return db_update_media_record(jcr, jcr->db, mr);
 }

@@ -31,7 +31,7 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 #include "lib/crypto_cache.h"
 
-static const int dbglvl = 200;
+static const int dbglvl = 50;
 static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests sent to the Director */
@@ -100,16 +100,17 @@ bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
       pm_strcpy(ChangerName, "*");
    }
    ok = dir->fsend(Device_update,
-      jcr->Job,
-      dev_name.c_str(),
-      dev->can_append()!=0,
-      dev->can_read()!=0, dev->num_writers,
-      dev->is_open()!=0, dev->is_labeled()!=0,
-      dev->is_offline()!=0, dev->reserved_device,
-      dev->is_tape()?100000:1,
-      dev->autoselect, 0,
-      ChangerName.c_str(), MediaType.c_str(), VolumeName.c_str());
+                   jcr->Job,
+                   dev_name.c_str(),
+                   dev->can_append() != 0,
+                   dev->can_read() != 0, dev->num_writers,
+                   dev->is_open() != 0, dev->is_labeled() != 0,
+                   dev->is_offline() != 0, dev->reserved_device,
+                   dev->is_tape() ? 100000 : 1,
+                   dev->autoselect, 0,
+                   ChangerName.c_str(), MediaType.c_str(), VolumeName.c_str());
    Dmsg1(dbglvl, ">dird: %s", dir->msg);
+
    return ok;
 }
 
@@ -127,18 +128,19 @@ bool SD_DCR::dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
    bash_spaces(MediaType);
    /* This is mostly to indicate that we are here */
    ok = dir->fsend(Device_update,
-      jcr->Job,
-      dev_name.c_str(),         /* Changer name */
-      0, 0, 0,                  /* append, read, num_writers */
-      0, 0, 0,                  /* is_open, is_labeled, offline */
-      0, 0,                     /* reserved, max_writers */
-      0,                        /* Autoselect */
-      changer->device->size(),  /* Number of devices */
-      "0",                      /* PoolId */
-      "*",                      /* ChangerName */
-      MediaType.c_str(),        /* MediaType */
-      "*");                     /* VolName */
+                   jcr->Job,
+                   dev_name.c_str(),         /* Changer name */
+                   0, 0, 0,                  /* append, read, num_writers */
+                   0, 0, 0,                  /* is_open, is_labeled, offline */
+                   0, 0,                     /* reserved, max_writers */
+                   0,                        /* Autoselect */
+                   changer->device->size(),  /* Number of devices */
+                   "0",                      /* PoolId */
+                   "*",                      /* ChangerName */
+                   MediaType.c_str(),        /* MediaType */
+                   "*");                     /* VolName */
    Dmsg1(dbglvl, ">dird: %s", dir->msg);
+
    return ok;
 }
 #endif
@@ -231,7 +233,7 @@ static bool do_get_volume_info(DCR *dcr)
  *                              VolStatus==Recycle)
  *          false on failure
  *
- *          Volume information returned in dcr->VolCatInfo
+ * Volume information returned in dcr->VolCatInfo
  */
 bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
 {
@@ -260,7 +262,7 @@ bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
  *                also sets dcr->found_in_use if at least one
  *                in use volume was found.
  *
- *          Volume information returned in dcr
+ * Volume information returned in dcr
  */
 bool SD_DCR::dir_find_next_appendable_volume()
 {
@@ -279,7 +281,7 @@ bool SD_DCR::dir_find_next_appendable_volume()
     P(vol_info_mutex);
     clear_found_in_use();
     lastVolume[0] = 0;
-    for (int vol_index=1;  vol_index < 20; vol_index++) {
+    for (int vol_index = 1; vol_index < 20; vol_index++) {
        bash_spaces(media_type);
        bash_spaces(pool_name);
        dir->fsend(Find_media, jcr->Job, vol_index, pool_name, media_type);
@@ -306,7 +308,10 @@ bool SD_DCR::dir_find_next_appendable_volume()
              goto get_out;
           } else {
              Dmsg1(dbglvl, "Volume %s is in use.\n", VolumeName);
-             /* If volume is not usable, it is in use by someone else */
+
+             /*
+              * If volume is not usable, it is in use by someone else
+              */
              set_found_in_use();
              continue;
           }
@@ -320,6 +325,7 @@ bool SD_DCR::dir_find_next_appendable_volume()
 get_out:
     V(vol_info_mutex);
     unlock_volumes();
+
     return rtn;
 }
 
@@ -337,7 +343,9 @@ bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
    bool ok = false;
    POOL_MEM volume_name;
 
-   /* If system job, do not update catalog */
+   /*
+    * If system job, do not update catalog
+    */
    if (jcr->is_JobType(JT_SYSTEM)) {
       return true;
    }
@@ -348,10 +356,15 @@ bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
       return false;
    }
 
-   /* Lock during Volume update */
+   /*
+    * Lock during Volume update
+    */
    P(vol_info_mutex);
    Dmsg1(dbglvl, "Update cat VolBytes=%lld\n", vol->VolCatBytes);
-   /* Just labeled or relabeled the tape */
+
+   /*
+    * Just labeled or relabeled the tape
+    */
    if (label) {
       bstrncpy(vol->VolCatStatus, "Append", sizeof(vol->VolCatStatus));
    }
@@ -374,7 +387,9 @@ bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
               edit_uint64(vol->VolFirstWritten, ed5));
    Dmsg1(dbglvl, ">dird %s", dir->msg);
 
-   /* Do not lock device here because it may be locked from label */
+   /*
+    * Do not lock device here because it may be locked from label
+    */
    if (!jcr->is_canceled()) {
       if (!do_get_volume_info(this)) {
          Jmsg(jcr, M_FATAL, 0, "%s", jcr->errmsg);
@@ -383,7 +398,10 @@ bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
          goto bail_out;
       }
       Dmsg1(420, "get_volume_info() %s", dir->msg);
-      /* Update dev Volume info in case something changed (e.g. expired) */
+
+      /*
+       * Update dev Volume info in case something changed (e.g. expired)
+       */
       dev->VolCatInfo = VolCatInfo;
       ok = true;
    }
@@ -401,12 +419,16 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
    BSOCK *dir = jcr->dir_bsock;
    char ed1[50];
 
-   /* If system job, do not update catalog */
+   /*
+    * If system job, do not update catalog
+    */
    if (jcr->is_JobType(JT_SYSTEM)) {
       return true;
    }
 
-   /* Throw out records where FI is zero -- i.e. nothing done */
+   /*
+    * Throw out records where FI is zero -- i.e. nothing done
+    */
    if (!zero && VolFirstIndex == 0 &&
         (StartBlock != 0 || EndBlock != 0)) {
       Dmsg0(dbglvl, "JobMedia FI=0 StartBlock!=0 record suppressed\n");
@@ -419,7 +441,9 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
 
    WroteVol = false;
    if (zero) {
-      /* Send dummy place holder to avoid purging */
+      /*
+       * Send dummy place holder to avoid purging
+       */
       dir->fsend(Create_job_media, jcr->Job,
                  0 , 0, 0, 0, 0, 0, 0, 0, edit_uint64(VolMediaId, ed1));
    } else {
@@ -431,6 +455,7 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
                  edit_uint64(VolMediaId, ed1));
    }
    Dmsg1(dbglvl, ">dird %s", dir->msg);
+
    if (dir->recv() <= 0) {
       Dmsg0(dbglvl, "create_jobmedia error bnet_recv\n");
       Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: ERR=%s\n"),
@@ -438,11 +463,13 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
       return false;
    }
    Dmsg1(dbglvl, "<dird %s", dir->msg);
+
    if (!bstrcmp(dir->msg, OK_create)) {
       Dmsg1(dbglvl, "Bad response from Dir: %s\n", dir->msg);
       Jmsg(jcr, M_FATAL, 0, _("Error creating JobMedia record: %s\n"), dir->msg);
       return false;
    }
+
    return true;
 }
 
@@ -451,15 +478,17 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
  * We do the following:
  *  1. expand the bsock buffer to be large enough
  *  2. Write a "header" into the buffer with serialized data
- *    VolSessionId
- *    VolSeesionTime
- *    FileIndex
- *    Stream
- *    data length that follows
- *    start of raw byte data from the Device record.
+ *     VolSessionId
+ *     VolSeesionTime
+ *     FileIndex
+ *     Stream
+ *     data length that follows
+ *     start of raw byte data from the Device record.
+ *
  * Note, this is primarily for Attribute data, but can
- *   also handle any device record. The Director must know
- *   the raw byte data format that is defined for each Stream.
+ * also handle any device record. The Director must know
+ * the raw byte data format that is defined for each Stream.
+ *
  * Now Restore Objects pass through here STREAM_RESTORE_OBJECT
  */
 bool SD_DCR::dir_update_file_attributes(DEV_RECORD *record)
@@ -484,26 +513,28 @@ bool SD_DCR::dir_update_file_attributes(DEV_RECORD *record)
    ser_bytes(record->data, record->data_len);
    dir->msglen = ser_length(dir->msg);
    Dmsg1(1800, ">dird %s", dir->msg);    /* Attributes */
+
    return dir->send();
 }
 
 /**
- *   Request the sysop to create an appendable volume
+ * Request the sysop to create an appendable volume
  *
- *   Entered with device blocked.
- *   Leaves with device blocked.
+ * Entered with device blocked.
+ * Leaves with device blocked.
  *
- *   Returns: true  on success (operator issues a mount command)
- *            false on failure
- *              Note, must create dev->errmsg on error return.
+ * Returns: true  on success (operator issues a mount command)
+ *          false on failure
  *
- *    On success, dcr->VolumeName and dcr->VolCatInfo contain
- *      information on suggested volume, but this may not be the
- *      same as what is actually mounted.
+ * Note, must create dev->errmsg on error return.
  *
- *    When we return with success, the correct tape may or may not
- *      actually be mounted. The calling routine must read it and
- *      verify the label.
+ * On success, dcr->VolumeName and dcr->VolCatInfo contain
+ * information on suggested volume, but this may not be the
+ * same as what is actually mounted.
+ *
+ * When we return with success, the correct tape may or may not
+ * actually be mounted. The calling routine must read it and
+ * verify the label.
  */
 bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
 {
@@ -513,6 +544,7 @@ bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
    if (job_canceled(jcr)) {
       return false;
    }
+
    Dmsg0(dbglvl, "enter dir_ask_sysop_to_create_appendable_volume\n");
    ASSERT(dev->blocked());
    for ( ;; ) {
@@ -529,15 +561,15 @@ bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
       } else {
          if (status == W_TIMEOUT || status == W_MOUNT) {
             Mmsg(dev->errmsg, _(
-"Job %s is waiting. Cannot find any appendable volumes.\n"
-"Please use the \"label\" command to create a new Volume for:\n"
-"    Storage:      %s\n"
-"    Pool:         %s\n"
-"    Media type:   %s\n"),
-               jcr->Job,
-               dev->print_name(),
-               pool_name,
-               media_type);
+                 "Job %s is waiting. Cannot find any appendable volumes.\n"
+                 "Please use the \"label\" command to create a new Volume for:\n"
+                 "    Storage:      %s\n"
+                 "    Pool:         %s\n"
+                 "    Media type:   %s\n"),
+                 jcr->Job,
+                 dev->print_name(),
+                 pool_name,
+                 media_type);
             Jmsg(jcr, M_MOUNT, 0, "%s", dev->errmsg);
             Dmsg1(dbglvl, "%s", dev->errmsg);
          }
@@ -562,6 +594,7 @@ bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
          }
          continue;
       }
+
       if (status == W_ERROR) {
          berrno be;
          Mmsg0(dev->errmsg, _("pthread error in mount_next_volume.\n"));
@@ -574,6 +607,7 @@ bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
 get_out:
    jcr->sendJobStatus(JS_Running);
    Dmsg0(dbglvl, "leave dir_ask_sysop_to_mount_create_appendable_volume\n");
+
    return true;
 }
 
@@ -606,9 +640,8 @@ bool SD_DCR::dir_ask_sysop_to_mount_volume(int mode)
       }
 
       /*
-       * If we are not polling, and the wait timeout or the
-       *   user explicitly did a mount, send him the message.
-       *   Otherwise skip it.
+       * If we are not polling, and the wait timeout or the user explicitly did a mount,
+       * send him the message. Otherwise skip it.
        */
       if (!dev->poll && (status == W_TIMEOUT || status == W_MOUNT)) {
          const char *msg;
@@ -652,6 +685,7 @@ bool SD_DCR::dir_ask_sysop_to_mount_volume(int mode)
          }
          continue;
       }
+
       if (status == W_ERROR) {
          berrno be;
          Mmsg(dev->errmsg, _("pthread error in mount_volume\n"));
