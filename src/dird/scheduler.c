@@ -357,44 +357,46 @@ static void find_runs()
          Dmsg7(000, "run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
             hour, month, mday, wday, wom, woy, yday);
          Dmsg6(000, "bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-            bit_is_set(hour, run->hour),
-            bit_is_set(month, run->month),
-            bit_is_set(mday, run->mday),
-            bit_is_set(wday, run->wday),
-            bit_is_set(wom, run->wom),
-            bit_is_set(woy, run->woy));
+               bit_is_set(hour, run->hour),
+               bit_is_set(month, run->month),
+               bit_is_set(mday, run->mday),
+               bit_is_set(wday, run->wday),
+               bit_is_set(wom, run->wom),
+               bit_is_set(woy, run->woy));
 
          Dmsg7(000, "nh_run h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
-            nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
+               nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
          Dmsg6(000, "nh_bitset bsh=%d bsm=%d bsmd=%d bswd=%d bswom=%d bswoy=%d\n",
-            bit_is_set(nh_hour, run->hour),
-            bit_is_set(nh_month, run->month),
-            bit_is_set(nh_mday, run->mday),
-            bit_is_set(nh_wday, run->wday),
-            bit_is_set(nh_wom, run->wom),
-            bit_is_set(nh_woy, run->woy));
+               bit_is_set(nh_hour, run->hour),
+               bit_is_set(nh_month, run->month),
+               bit_is_set(nh_mday, run->mday),
+               bit_is_set(nh_wday, run->wday),
+               bit_is_set(nh_wom, run->wom),
+               bit_is_set(nh_woy, run->woy));
          Dmsg2(000, "run->last_set:%d, is_last_week:%d\n", run->last_set, is_last_week);
          Dmsg2(000, "run->last_set:%d, nh_is_last_week:%d\n", run->last_set, nh_is_last_week);
 #endif
 
          run_now = bit_is_set(hour, run->hour) &&
-            bit_is_set(mday, run->mday) &&
-            bit_is_set(wday, run->wday) &&
-            bit_is_set(month, run->month) &&
-           (bit_is_set(wom, run->wom) || (run->last_set && is_last_week)) &&
-            bit_is_set(woy, run->woy);
+                   bit_is_set(mday, run->mday) &&
+                   bit_is_set(wday, run->wday) &&
+                   bit_is_set(month, run->month) &&
+                  (bit_is_set(wom, run->wom) || (run->last_set && is_last_week)) &&
+                   bit_is_set(woy, run->woy);
 
          run_nh = bit_is_set(nh_hour, run->hour) &&
-            bit_is_set(nh_mday, run->mday) &&
-            bit_is_set(nh_wday, run->wday) &&
-            bit_is_set(nh_month, run->month) &&
-           (bit_is_set(wom, run->wom) || (run->last_set && nh_is_last_week)) &&
-            bit_is_set(nh_woy, run->woy);
+                  bit_is_set(nh_mday, run->mday) &&
+                  bit_is_set(nh_wday, run->wday) &&
+                  bit_is_set(nh_month, run->month) &&
+                 (bit_is_set(nh_wom, run->wom) || (run->last_set && nh_is_last_week)) &&
+                  bit_is_set(nh_woy, run->woy);
 
          Dmsg3(dbglvl, "run@%p: run_now=%d run_nh=%d\n", run, run_now, run_nh);
 
          if (run_now || run_nh) {
-           /* find time (time_t) job is to be run */
+           /*
+            * find time (time_t) job is to be run
+            */
            (void)localtime_r(&now, &tm);      /* reset tm structure */
            tm.tm_min = run->minute;     /* set run minute */
            tm.tm_sec = 0;               /* zero secs */
