@@ -504,6 +504,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
 
       Dmsg0(dbglvl, "lock volumes\n");
       free_temp_vol_list(temp_vol_list);
+      temp_vol_list = NULL;
    }
    if (ok) {
       Dmsg1(dbglvl, "OK dev found. Vol=%s from in-use vols list\n", rctx.VolumeName);
