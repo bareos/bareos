@@ -51,6 +51,7 @@ static bool foreground = false;
 static workq_t dir_workq;             /* queue of work from Director */
 static alist *sock_fds;
 static pthread_t tcp_server_tid;
+static CONFIG *config;
 
 static void usage()
 {

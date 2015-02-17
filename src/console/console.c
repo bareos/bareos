@@ -996,7 +996,7 @@ try_again:
          goto try_again;
       }
       delete UA_sock;
-      LockRes(config);
+      LockRes();
       for (i=0; i<item; i++) {
          dir = (DIRRES *)GetNextRes(R_DIRECTOR, (RES *)dir);
       }

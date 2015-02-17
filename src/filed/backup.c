@@ -1264,21 +1264,15 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
 #endif
 
    Dmsg1(300, "encode_and_send_attrs fname=%s\n", ff_pkt->fname);
-   /**
-    * Find what data stream we will use, then encode the attributes
-    */
+   /** Find what data stream we will use, then encode the attributes */
    if ((data_stream = select_data_stream(ff_pkt, me->compatible)) == STREAM_NONE) {
-      /*
-       * This should not happen
-       */
+      /* This should not happen */
       Jmsg0(jcr, M_FATAL, 0, _("Invalid file flags, no supported data stream type.\n"));
       return false;
    }
    encode_stat(attribs, &ff_pkt->statp, sizeof(ff_pkt->statp), ff_pkt->LinkFI, data_stream);
 
-   /**
-    * Now possibly extend the attributes
-    */
+   /** Now possibly extend the attributes */
    if (IS_FT_OBJECT(ff_pkt->type)) {
       attr_stream = STREAM_RESTORE_OBJECT;
    } else {

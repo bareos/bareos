@@ -145,6 +145,7 @@ static RES_ITEM dir_items[] = {
    { "verid", store_str, ITEM(res_dir.verid), 0, 0, NULL },
    { "optimizeforsize", store_bool, ITEM(res_dir.optimize_for_size), 0, ITEM_DEFAULT, "true" },
    { "optimizeforspeed", store_bool, ITEM(res_dir.optimize_for_speed), 0, ITEM_DEFAULT, "false" },
+   { "nokeepalive", store_bool, ITEM(res_dir.nokeepalive), 0, ITEM_DEFAULT, "false" },
    { "keyencryptionkey", store_clearpassword, ITEM(res_dir.keyencrkey), 1, 0, NULL },
    { "ndmpsnooping", store_bool, ITEM(res_dir.ndmp_snooping), 0, 0, NULL },
    { "ndmploglevel", store_pint32, ITEM(res_dir.ndmp_loglevel), 0, ITEM_DEFAULT, "4" },
@@ -325,6 +326,7 @@ RES_ITEM job_items[] = {
    { "verifyjob", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
    { "jobtoverify", store_res, ITEM(res_job.verify_job), R_JOB, 0, NULL },
    { "jobdefs", store_res, ITEM(res_job.jobdefs), R_JOBDEFS, 0, NULL },
+   { "catalog", store_res, ITEM(res_job.catalog), R_CATALOG, 0, NULL },
    { "run", store_alist_str, ITEM(res_job.run_cmds), 0, 0, NULL },
    /* Root of where to restore files */
    { "where", store_dir, ITEM(res_job.RestoreWhere), 0, 0, NULL },

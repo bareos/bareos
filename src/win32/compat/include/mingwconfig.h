@@ -407,6 +407,9 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
+/* Define to 1 if you have the `__builtin_va_copy' function. */
+#define HAVE___BUILTIN_VA_COPY 1
+
 /* Define to 1 if readline support should be enabled */
 #define HAVE_READLINE 1
 

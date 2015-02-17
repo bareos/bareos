@@ -1494,7 +1494,7 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
             jcr->res.catalog = job->client->catalog;
             pm_strcpy(jcr->res.catalog_source, _("Client resource"));
          } else {
-            jcr->res.catalog = (CATRES *)my_config->GetNextRes(R_CATALOG, NULL);
+            jcr->res.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
             pm_strcpy(jcr->res.catalog_source, _("Default catalog"));
          }
       }
