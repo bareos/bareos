@@ -1845,7 +1845,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       return bRC_Error;
    }
 
-   if (!bstrcasecmp(rp->where, "/")) {
+   if (strlen(rp->where) > 0) {
       p_ctx->RestoreToFile = true;
       p_ctx->RestoreFD = -1;
       rp->create_status = CF_CORE;
