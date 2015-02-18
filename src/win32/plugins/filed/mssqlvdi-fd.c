@@ -1799,7 +1799,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
 
    Dmsg(ctx, dbglvl, "mssqlvdi-fd: entering end_restore_job\n");
 
-   if (p_ctx->RecoverAfterRestore) {
+   if (!p_ctx->RestoreToFile && p_ctx->RecoverAfterRestore) {
       if (!perform_ado_recover(ctx)) {
          retval = bRC_Error;
       }
