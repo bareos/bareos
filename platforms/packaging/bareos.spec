@@ -97,7 +97,7 @@ BuildRequires: systemd
 %{?systemd_requires}
 %endif
 
-Source0: %{name}_%{version}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: gcc
 BuildRequires: gcc-c++
