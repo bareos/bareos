@@ -325,7 +325,7 @@ bail_out:
 ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
 {
    if (m_vfd) {
-      int buflen;
+      unsigned int buflen;
       dpl_status_t status;
 
       buflen = count;
