@@ -52,10 +52,12 @@ void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
  *  jcr->db
  *  jcr->pool
  *  MEDIA_DBR mr with PoolId set
+ *  unwanted_volumes -- list of volumes we don't want
  *  create -- whether or not to create a new volume
  *  prune -- whether or not to prune volumes
  */
-int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index, bool create, bool prune)
+int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
+                                const char *unwanted_volumes, bool create, bool prune)
 {
    int retry = 0;
    bool ok;
@@ -76,14 +78,13 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index, bool create,
     */
    db_lock(jcr->db);
    while (1) {
-      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));  /* want only appendable volumes */
-
       /*
        *  1. Look for volume with "Append" status.
        */
       set_storageid_in_mr(store, mr);
 
-      ok = db_find_next_volume(jcr, jcr->db, index, InChanger, mr);
+      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
+      ok = db_find_next_volume(jcr, jcr->db, index, InChanger, mr, unwanted_volumes);
       if (!ok) {
          /*
           * No volume found, apply algorithm
@@ -94,14 +95,14 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index, bool create,
          /*
           * 2. Try finding a recycled volume
           */
-         ok = find_recycled_volume(jcr, InChanger, mr, store);
+         ok = find_recycled_volume(jcr, InChanger, mr, store, unwanted_volumes);
          set_storageid_in_mr(store, mr);
          Dmsg2(dbglvl, "find_recycled_volume ok=%d FW=%d\n", ok, mr->FirstWritten);
          if (!ok) {
             /*
              * 3. Try recycling any purged volume
              */
-            ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store);
+            ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store, unwanted_volumes);
             set_storageid_in_mr(store, mr);
             if (!ok) {
                /*
@@ -111,7 +112,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index, bool create,
                   Dmsg0(dbglvl, "Call prune_volumes\n");
                   prune_volumes(jcr, InChanger, mr, store);
                }
-               ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store);
+               ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store, unwanted_volumes);
                set_storageid_in_mr(store, mr);  /* put StorageId in new record */
                if (!ok && create) {
                   Dmsg4(dbglvl, "after prune volumes_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
@@ -154,7 +155,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index, bool create,
              * Find oldest volume to recycle
              */
             set_storageid_in_mr(store, mr);
-            ok = db_find_next_volume(jcr, jcr->db, -1, InChanger, mr);
+            ok = db_find_next_volume(jcr, jcr->db, -1, InChanger, mr, unwanted_volumes);
             set_storageid_in_mr(store, mr);
             Dmsg1(dbglvl, "Find oldest=%d Volume\n", ok);
             if (ok && prune) {
@@ -421,11 +422,11 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
        * then try to take the oldest volume.
        */
       set_storageid_in_mr(store, &smr);  /* put StorageId in new record */
-      if (db_find_next_volume(jcr, jcr->db, 1, InChanger, &smr)) {
+      if (db_find_next_volume(jcr, jcr->db, 1, InChanger, &smr, NULL)) {
          found = true;
-      } else if (find_recycled_volume(jcr, InChanger, &smr, store)) {
+      } else if (find_recycled_volume(jcr, InChanger, &smr, store, NULL)) {
          found = true;
-      } else if (recycle_oldest_purged_volume(jcr, InChanger, &smr, store)) {
+      } else if (recycle_oldest_purged_volume(jcr, InChanger, &smr, store, NULL)) {
          found = true;
       }
 

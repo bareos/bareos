@@ -36,7 +36,7 @@ static pthread_mutex_t vol_info_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Requests sent to the Director */
 static char Find_media[] =
-   "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s\n";
+   "CatReq Job=%s FindMedia=%d pool_name=%s media_type=%s unwanted_volumes=%s\n";
 static char Get_Vol_Info[] =
    "CatReq Job=%s GetVolInfo VolName=%s write=%d\n";
 static char Update_media[] =
@@ -266,37 +266,40 @@ bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
  */
 bool SD_DCR::dir_find_next_appendable_volume()
 {
+    bool retval;
     BSOCK *dir = jcr->dir_bsock;
-    bool rtn;
-    char lastVolume[MAX_NAME_LENGTH];
+    POOL_MEM unwanted_volumes(PM_MESSAGE);
 
     Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n", is_reserved(), VolumeName);
 
     /*
-     * Try the twenty oldest or most available volumes.  Note,
+     * Try the twenty oldest or most available volumes. Note,
      * the most available could already be mounted on another
      * drive, so we continue looking for a not in use Volume.
      */
     lock_volumes();
     P(vol_info_mutex);
     clear_found_in_use();
-    lastVolume[0] = 0;
+
+    pm_strcpy(unwanted_volumes, "");
     for (int vol_index = 1; vol_index < 20; vol_index++) {
        bash_spaces(media_type);
        bash_spaces(pool_name);
-       dir->fsend(Find_media, jcr->Job, vol_index, pool_name, media_type);
+       bash_spaces(unwanted_volumes.c_str());
+       dir->fsend(Find_media, jcr->Job, vol_index, pool_name, media_type, unwanted_volumes.c_str());
        unbash_spaces(media_type);
        unbash_spaces(pool_name);
+       unbash_spaces(unwanted_volumes.c_str());
        Dmsg1(dbglvl, ">dird %s", dir->msg);
+
        if (do_get_volume_info(this)) {
-          /*
-           * Give up if we get the same volume name twice
-           */
-          if (lastVolume[0] && bstrcmp(lastVolume, VolumeName)) {
-             Dmsg1(dbglvl, "Got same vol = %s\n", lastVolume);
-             break;
+          if (vol_index == 1) {
+             pm_strcpy(unwanted_volumes, VolumeName);
+          } else {
+             pm_strcat(unwanted_volumes, ",");
+             pm_strcat(unwanted_volumes, VolumeName);
           }
-          bstrncpy(lastVolume, VolumeName, sizeof(lastVolume));
+
           if (can_i_write_volume()) {
              Dmsg1(dbglvl, "Call reserve_volume for write. Vol=%s\n", VolumeName);
              if (reserve_volume(this, VolumeName) == NULL) {
@@ -304,7 +307,7 @@ bool SD_DCR::dir_find_next_appendable_volume()
                 continue;
              }
              Dmsg1(dbglvl, "dir_find_next_appendable_volume return true. vol=%s\n", VolumeName);
-             rtn = true;
+             retval = true;
              goto get_out;
           } else {
              Dmsg1(dbglvl, "Volume %s is in use.\n", VolumeName);
@@ -319,14 +322,14 @@ bool SD_DCR::dir_find_next_appendable_volume()
        Dmsg2(dbglvl, "No vol. index %d return false. dev=%s\n", vol_index, dev->print_name());
        break;
     }
-    rtn = false;
+    retval = false;
     VolumeName[0] = 0;
 
 get_out:
     V(vol_info_mutex);
     unlock_volumes();
 
-    return rtn;
+    return retval;
 }
 
 /**

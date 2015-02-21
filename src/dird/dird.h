@@ -65,10 +65,10 @@ struct del_ctx {
 
 /* Flags for find_next_volume_for_append() */
 enum {
-  fnv_create_vol    = true,
+  fnv_create_vol = true,
   fnv_no_create_vol = false,
-  fnv_prune         = true,
-  fnv_no_prune      = false
+  fnv_prune = true,
+  fnv_no_prune = false
 };
 
 enum e_prtmsg {

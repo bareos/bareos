@@ -45,7 +45,7 @@
  * Requests from the Storage daemon
  */
 static char Find_media[] =
-   "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s\n";
+   "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s unwanted_volumes=%s\n";
 static char Get_Vol_Info[] =
    "CatReq Job=%127s GetVolInfo VolName=%127s write=%d\n";
 static char Update_media[] =
@@ -104,6 +104,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
    JOBMEDIA_DBR jm;
    char Job[MAX_NAME_LENGTH];
    char pool_name[MAX_NAME_LENGTH];
+   POOL_MEM unwanted_volumes(PM_MESSAGE);
    int index, ok, label, writing;
    POOLMEM *omsg;
    POOL_DBR pr;
@@ -122,17 +123,20 @@ void catalog_request(JCR *jcr, BSOCK *bs)
     */
    Dmsg1(100, "catreq %s", bs->msg);
    if (!jcr->db) {
-      omsg = get_memory(bs->msglen+1);
+      omsg = get_memory(bs->msglen + 1);
       pm_strcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request; DB not open: %s"), omsg);
       free_memory(omsg);
+
       return;
    }
+
    /*
     * Find next appendable medium for SD
     */
-   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType) == 4) {
+   unwanted_volumes.check_size(bs->msglen);
+   if (sscanf(bs->msg, Find_media, &Job, &index, &pool_name, &mr.MediaType, unwanted_volumes.c_str()) == 5) {
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       unbash_spaces(pr.Name);
@@ -141,9 +145,10 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          mr.PoolId = pr.PoolId;
          set_storageid_in_mr(jcr->res.wstore, &mr);
          mr.ScratchPoolId = pr.ScratchPoolId;
-         ok = find_next_volume_for_append(jcr, &mr, index, fnv_create_vol, fnv_prune);
+         ok = find_next_volume_for_append(jcr, &mr, index, unwanted_volumes.c_str(), fnv_create_vol, fnv_prune);
          Dmsg3(050, "find_media ok=%d idx=%d vol=%s\n", ok, index, mr.VolumeName);
       }
+
       /*
        * Send Find Media response to Storage daemon
        */
@@ -153,12 +158,12 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          bs->fsend(_("1901 No Media.\n"));
          Dmsg0(500, "1901 No Media.\n");
       }
-
-   /*
-    * Request to find specific Volume information
-    */
    } else if (sscanf(bs->msg, Get_Vol_Info, &Job, &mr.VolumeName, &writing) == 3) {
+      /*
+       * Request to find specific Volume information
+       */
       Dmsg1(100, "CatReq GetVolInfo Vol=%s\n", mr.VolumeName);
+
       /*
        * Find the Volume
        */
@@ -189,9 +194,11 @@ void catalog_request(JCR *jcr, BSOCK *bs)
                check_if_volume_valid_or_recyclable(jcr, &mr, &reason);
             }
          }
+
          if (!reason && mr.Enabled != 1) {
             reason = _("is not Enabled");
          }
+
          if (reason == NULL) {
             /*
              * Send Find Media response to Storage daemon
@@ -202,36 +209,34 @@ void catalog_request(JCR *jcr, BSOCK *bs)
             bs->fsend(_("1998 Volume \"%s\" catalog status is %s, %s.\n"), mr.VolumeName,
                mr.VolStatus, reason);
          }
-
       } else {
          bs->fsend(_("1997 Volume \"%s\" not in catalog.\n"), mr.VolumeName);
          Dmsg1(100, "1997 Volume \"%s\" not in catalog.\n", mr.VolumeName);
       }
-
-   /*
-    * Request to update Media record. Comes typically at the end
-    *  of a Storage daemon Job Session, when labeling/relabeling a
-    *  Volume, or when an EOF mark is written.
-    */
    } else if (sscanf(bs->msg, Update_media, &Job, &sdmr.VolumeName,
                      &sdmr.VolJobs, &sdmr.VolFiles, &sdmr.VolBlocks, &sdmr.VolBytes,
                      &sdmr.VolMounts, &sdmr.VolErrors, &sdmr.VolWrites, &sdmr.MaxVolBytes,
                      &VolLastWritten, &sdmr.VolStatus, &sdmr.Slot, &label, &sdmr.InChanger,
                      &sdmr.VolReadTime, &sdmr.VolWriteTime, &VolFirstWritten) == 18) {
+      /*
+       * Request to update Media record. Comes typically at the end
+       * of a Storage daemon Job Session, when labeling/relabeling a
+       * Volume, or when an EOF mark is written.
+       */
       db_lock(jcr->db);
-      Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName,
-         mr.VolStatus, sdmr.VolStatus);
+      Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName, mr.VolStatus, sdmr.VolStatus);
       bstrncpy(mr.VolumeName, sdmr.VolumeName, sizeof(mr.VolumeName)); /* copy Volume name */
       unbash_spaces(mr.VolumeName);
       if (!db_get_media_record(jcr, jcr->db, &mr)) {
-         Jmsg(jcr, M_ERROR, 0, _("Unable to get Media record for Volume %s: ERR=%s\n"),
-              mr.VolumeName, db_strerror(jcr->db));
-         bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"),
-            mr.VolumeName, db_strerror(jcr->db));
+         Jmsg(jcr, M_ERROR, 0, _("Unable to get Media record for Volume %s: ERR=%s\n"), mr.VolumeName, db_strerror(jcr->db));
+         bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName, db_strerror(jcr->db));
          goto bail_out;
 
       }
-      /* Set first written time if this is first job */
+
+      /*
+       * Set first written time if this is first job
+       */
       if (mr.FirstWritten == 0) {
          if (VolFirstWritten == 0) {
             mr.FirstWritten = jcr->start_time;   /* use Job start time as first write */
@@ -240,7 +245,10 @@ void catalog_request(JCR *jcr, BSOCK *bs)
          }
          mr.set_first_written = true;
       }
-      /* If we just labeled the tape set time */
+
+      /*
+       * If we just labeled the tape set time
+       */
       if (label || mr.LabelDate == 0) {
          mr.LabelDate = jcr->start_time;
          mr.set_label_date = true;
@@ -274,20 +282,25 @@ void catalog_request(JCR *jcr, BSOCK *bs)
 
       /*
        * Update to point to the last device used to write the Volume.
-       *   However, do so only if we are writing the tape, i.e.
-       *   the number of VolWrites has increased.
+       * However, do so only if we are writing the tape, i.e.
+       * the number of VolWrites has increased.
        */
       if (jcr->res.wstore && sdmr.VolWrites > mr.VolWrites) {
-         Dmsg2(050, "Update StorageId old=%d new=%d\n",
-               mr.StorageId, jcr->res.wstore->StorageId);
-         /* Update StorageId after write */
+         Dmsg2(050, "Update StorageId old=%d new=%d\n", mr.StorageId, jcr->res.wstore->StorageId);
+         /*
+          * Update StorageId after write
+          */
          set_storageid_in_mr(jcr->res.wstore, &mr);
       } else {
-         /* Nothing written, reset same StorageId */
+         /*
+          * Nothing written, reset same StorageId
+          */
          set_storageid_in_mr(NULL, &mr);
       }
 
-      /* Copy updated values to original media record */
+      /*
+       * Copy updated values to original media record
+       */
       mr.VolJobs      = sdmr.VolJobs;
       mr.VolFiles     = sdmr.VolFiles;
       mr.VolBlocks    = sdmr.VolBlocks;
@@ -302,9 +315,10 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.VolWriteTime = sdmr.VolWriteTime;
 
       Dmsg2(400, "db_update_media_record. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
+
       /*
-       * Update the database, then before sending the response to the
-       *  SD, check if the Volume has expired.
+       * Update the database, then before sending the response to the SD,
+       * check if the Volume has expired.
        */
       if (!db_update_media_record(jcr, jcr->db, &mr)) {
          Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"),
@@ -322,13 +336,12 @@ bail_out:
       Dmsg1(400, ">CatReq response: %s", bs->msg);
       Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
       return;
-   /*
-    * Request to create a JobMedia record
-    */
    } else if (sscanf(bs->msg, Create_job_media, &Job,
-      &jm.FirstIndex, &jm.LastIndex, &jm.StartFile, &jm.EndFile,
-      &jm.StartBlock, &jm.EndBlock, &Copy, &Stripe, &MediaId) == 10) {
-
+                     &jm.FirstIndex, &jm.LastIndex, &jm.StartFile, &jm.EndFile,
+                     &jm.StartBlock, &jm.EndBlock, &Copy, &Stripe, &MediaId) == 10) {
+      /*
+       * Request to create a JobMedia record
+       */
       if (jcr->mig_jcr) {
          jm.JobId = jcr->mig_jcr->JobId;
       } else {
@@ -336,18 +349,16 @@ bail_out:
       }
       jm.MediaId = MediaId;
       Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
-         jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
+            jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
       if (!db_create_jobmedia_record(jcr, jcr->db, &jm)) {
-         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"),
-            db_strerror(jcr->db));
+         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"), db_strerror(jcr->db));
          bs->fsend(_("1992 Create JobMedia error\n"));
       } else {
          Dmsg0(400, "JobMedia record created\n");
          bs->fsend(OK_create);
       }
-
    } else {
-      omsg = get_memory(bs->msglen+1);
+      omsg = get_memory(bs->msglen + 1);
       pm_strcpy(omsg, bs->msg);
       bs->fsend(_("1990 Invalid Catalog Request: %s"), omsg);
       Jmsg1(jcr, M_FATAL, 0, _("Invalid Catalog request: %s"), omsg);
@@ -356,6 +367,7 @@ bail_out:
 
    Dmsg1(400, ">CatReq response: %s", bs->msg);
    Dmsg1(400, "Leave catreq jcr 0x%x\n", jcr);
+
    return;
 }
 

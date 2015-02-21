@@ -308,69 +308,114 @@ bail_out:
 }
 
 /*
+ * Search a comma separated list of unwanted volume names and see if given VolumeName is on it.
+ */
+static inline bool is_on_unwanted_volumes_list(const char *VolumeName,
+                                               const char *unwanted_volumes)
+{
+   bool retval = false;
+   char *list_item, *bp, *unwanted_volumes_list;
+
+   unwanted_volumes_list = bstrdup(unwanted_volumes);
+   list_item = unwanted_volumes_list;
+   while (list_item) {
+      bp = strchr(list_item, ',');
+      if (bp) {
+         *bp++ = '\0';
+      }
+
+      if (bstrcmp(VolumeName, list_item)) {
+         retval = true;
+         goto bail_out;
+      }
+      list_item = bp;
+   }
+
+bail_out:
+   free(unwanted_volumes_list);
+   return retval;
+}
+
+/*
  * Find Available Media (Volume) for Pool
  *
  * Find a Volume for a given PoolId, MediaType, and Status.
+ * The unwanted_volumes variable lists the VolumeNames which we should skip if any.
  *
  * Returns: 0 on failure
  *          numrows on success
  */
-int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr)
+int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR *mr, const char *unwanted_volumes)
 {
-   SQL_ROW row = NULL;
+   char ed1[50];
    int num_rows = 0;
-   const char *order;
+   SQL_ROW row = NULL;
+   bool find_oldest = false;
+   bool found_candidate = false;
    char esc_type[MAX_ESCAPE_NAME_LENGTH];
    char esc_status[MAX_ESCAPE_NAME_LENGTH];
-   char ed1[50];
 
    db_lock(mdb);
+
    mdb->db_escape_string(jcr, esc_type, mr->MediaType, strlen(mr->MediaType));
    mdb->db_escape_string(jcr, esc_status, mr->VolStatus, strlen(mr->VolStatus));
 
-   if (item == -1) {       /* find oldest volume */
-      /* Find oldest volume */
+   if (item == -1) {
+      find_oldest = true;
+      item = 1;
+   }
+
+retry_fetch:
+   if (find_oldest) {
+      /*
+       * Find oldest volume(s)
+       */
       Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
-         "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
-         "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
-         "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN ('Full',"
-         "'Recycle','Purged','Used','Append') AND Enabled=1 "
-         "ORDER BY LastWritten LIMIT 1",
-         edit_int64(mr->PoolId, ed1), esc_type);
-     item = 1;
+                     "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
+                     "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
+                     "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
+                     "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
+                     "Enabled,LocationId,RecycleCount,InitialWrite,"
+                     "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
+                     "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
+                     "FROM Media WHERE PoolId=%s AND MediaType='%s' AND VolStatus IN ('Full',"
+                     "'Recycle','Purged','Used','Append') AND Enabled=1 "
+                     "ORDER BY LastWritten LIMIT %d",
+           edit_int64(mr->PoolId, ed1), esc_type, item);
    } else {
       POOL_MEM changer(PM_FNAME);
-      /* Find next available volume */
+      const char *order;
+
+      /*
+       * Find next available volume
+       */
       if (InChanger) {
-         Mmsg(changer, "AND InChanger=1 AND StorageId=%s",
-              edit_int64(mr->StorageId, ed1));
+         Mmsg(changer, "AND InChanger=1 AND StorageId=%s", edit_int64(mr->StorageId, ed1));
       }
+
       if (bstrcmp(mr->VolStatus, "Recycle") ||
           bstrcmp(mr->VolStatus, "Purged")) {
          order = "AND Recycle=1 ORDER BY LastWritten ASC,MediaId";  /* take oldest that can be recycled */
       } else {
          order = sql_media_order_most_recently_written[db_get_type_index(mdb)];    /* take most recently written */
       }
+
       Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
-         "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
-         "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
-         "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
-         "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
-         "Enabled,LocationId,RecycleCount,InitialWrite,"
-         "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
-         "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
-         "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
-         "AND VolStatus='%s' "
-         "%s "
-         "%s LIMIT %d",
-         edit_int64(mr->PoolId, ed1), esc_type,
-         esc_status, changer.c_str(), order, item);
+                     "VolBytes,VolMounts,VolErrors,VolWrites,MaxVolBytes,VolCapacityBytes,"
+                     "MediaType,VolStatus,PoolId,VolRetention,VolUseDuration,MaxVolJobs,"
+                     "MaxVolFiles,Recycle,Slot,FirstWritten,LastWritten,InChanger,"
+                     "EndFile,EndBlock,LabelType,LabelDate,StorageId,"
+                     "Enabled,LocationId,RecycleCount,InitialWrite,"
+                     "ScratchPoolId,RecyclePoolId,VolReadTime,VolWriteTime,"
+                     "ActionOnPurge,EncryptionKey,MinBlocksize,MaxBlocksize "
+                     "FROM Media WHERE PoolId=%s AND MediaType='%s' AND Enabled=1 "
+                     "AND VolStatus='%s' "
+                     "%s "
+                     "%s LIMIT %d",
+           edit_int64(mr->PoolId, ed1), esc_type,
+           esc_status, changer.c_str(), order, item);
    }
+
    Dmsg1(100, "fnextvol=%s\n", mdb->cmd);
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
@@ -379,78 +424,89 @@ int db_find_next_volume(JCR *jcr, B_DB *mdb, int item, bool InChanger, MEDIA_DBR
    num_rows = sql_num_rows(mdb);
    if (item > num_rows || item < 1) {
       Dmsg2(050, "item=%d got=%d\n", item, num_rows);
-      Mmsg2(&mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"),
-         item, num_rows);
+      Mmsg2(&mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"), item, num_rows);
       num_rows = 0;
       goto bail_out;
    }
 
-   /* Note, we previously seeked to the row using: sql_data_seek(mdb, item-1);
-    * but this failed on PostgreSQL, so now we loop over all the records.
-    * This should not be too horrible since the maximum Volumes we look at
-    * in any case is 20.
-    */
-   while (item-- > 0) {
+   for (int i = 0 ; i < item; i++) {
       if ((row = sql_fetch_row(mdb)) == NULL) {
-         Dmsg1(050, "Fail fetch item=%d\n", item+1);
-         Mmsg1(&mdb->errmsg, _("No Volume record found for item %d.\n"), item);
+         Dmsg1(050, "Fail fetch item=%d\n", i);
+         Mmsg1(&mdb->errmsg, _("No Volume record found for item %d.\n"), i);
          sql_free_result(mdb);
          num_rows = 0;
          goto bail_out;
       }
+
+      /*
+       * See if this is not on the unwanted volumes list.
+       */
+      if (unwanted_volumes && is_on_unwanted_volumes_list(row[1], unwanted_volumes)) {
+         continue;
+      }
+
+      /*
+       * Return fields in Media Record
+       */
+      mr->MediaId = str_to_int64(row[0]);
+      bstrncpy(mr->VolumeName, (row[1] != NULL) ? row[1] : "", sizeof(mr->VolumeName));
+      mr->VolJobs = str_to_int64(row[2]);
+      mr->VolFiles = str_to_int64(row[3]);
+      mr->VolBlocks = str_to_int64(row[4]);
+      mr->VolBytes = str_to_uint64(row[5]);
+      mr->VolMounts = str_to_int64(row[6]);
+      mr->VolErrors = str_to_int64(row[7]);
+      mr->VolWrites = str_to_int64(row[8]);
+      mr->MaxVolBytes = str_to_uint64(row[9]);
+      mr->VolCapacityBytes = str_to_uint64(row[10]);
+      bstrncpy(mr->MediaType, (row[11] != NULL) ? row[11] : "", sizeof(mr->MediaType));
+      bstrncpy(mr->VolStatus, (row[12] != NULL) ? row[12] : "", sizeof(mr->VolStatus));
+      mr->PoolId = str_to_int64(row[13]);
+      mr->VolRetention = str_to_uint64(row[14]);
+      mr->VolUseDuration = str_to_uint64(row[15]);
+      mr->MaxVolJobs = str_to_int64(row[16]);
+      mr->MaxVolFiles = str_to_int64(row[17]);
+      mr->Recycle = str_to_int64(row[18]);
+      mr->Slot = str_to_int64(row[19]);
+      bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "", sizeof(mr->cFirstWritten));
+      mr->FirstWritten = (time_t)str_to_utime(mr->cFirstWritten);
+      bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "", sizeof(mr->cLastWritten));
+      mr->LastWritten = (time_t)str_to_utime(mr->cLastWritten);
+      mr->InChanger = str_to_uint64(row[22]);
+      mr->EndFile = str_to_uint64(row[23]);
+      mr->EndBlock = str_to_uint64(row[24]);
+      mr->LabelType = str_to_int64(row[25]);
+      bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "", sizeof(mr->cLabelDate));
+      mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
+      mr->StorageId = str_to_int64(row[27]);
+      mr->Enabled = str_to_int64(row[28]);
+      mr->LocationId = str_to_int64(row[29]);
+      mr->RecycleCount = str_to_int64(row[30]);
+      bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "", sizeof(mr->cInitialWrite));
+      mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
+      mr->ScratchPoolId = str_to_int64(row[32]);
+      mr->RecyclePoolId = str_to_int64(row[33]);
+      mr->VolReadTime = str_to_int64(row[34]);
+      mr->VolWriteTime = str_to_int64(row[35]);
+      mr->ActionOnPurge = str_to_int64(row[36]);
+      bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
+      mr->MinBlocksize = str_to_int32(row[38]);
+      mr->MaxBlocksize = str_to_int32(row[39]);
+
+      sql_free_result(mdb);
+      found_candidate = true;
+      break;
    }
 
-   /* Return fields in Media Record */
-   mr->MediaId = str_to_int64(row[0]);
-   bstrncpy(mr->VolumeName, (row[1] != NULL) ? row[1] : "", sizeof(mr->VolumeName));
-   mr->VolJobs = str_to_int64(row[2]);
-   mr->VolFiles = str_to_int64(row[3]);
-   mr->VolBlocks = str_to_int64(row[4]);
-   mr->VolBytes = str_to_uint64(row[5]);
-   mr->VolMounts = str_to_int64(row[6]);
-   mr->VolErrors = str_to_int64(row[7]);
-   mr->VolWrites = str_to_int64(row[8]);
-   mr->MaxVolBytes = str_to_uint64(row[9]);
-   mr->VolCapacityBytes = str_to_uint64(row[10]);
-   bstrncpy(mr->MediaType, (row[11] != NULL) ? row[11] : "", sizeof(mr->MediaType));
-   bstrncpy(mr->VolStatus, (row[12] != NULL) ? row[12] : "", sizeof(mr->VolStatus));
-   mr->PoolId = str_to_int64(row[13]);
-   mr->VolRetention = str_to_uint64(row[14]);
-   mr->VolUseDuration = str_to_uint64(row[15]);
-   mr->MaxVolJobs = str_to_int64(row[16]);
-   mr->MaxVolFiles = str_to_int64(row[17]);
-   mr->Recycle = str_to_int64(row[18]);
-   mr->Slot = str_to_int64(row[19]);
-   bstrncpy(mr->cFirstWritten, (row[20] != NULL) ? row[20] : "", sizeof(mr->cFirstWritten));
-   mr->FirstWritten = (time_t)str_to_utime(mr->cFirstWritten);
-   bstrncpy(mr->cLastWritten, (row[21] != NULL) ? row[21] : "", sizeof(mr->cLastWritten));
-   mr->LastWritten = (time_t)str_to_utime(mr->cLastWritten);
-   mr->InChanger = str_to_uint64(row[22]);
-   mr->EndFile = str_to_uint64(row[23]);
-   mr->EndBlock = str_to_uint64(row[24]);
-   mr->LabelType = str_to_int64(row[25]);
-   bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "", sizeof(mr->cLabelDate));
-   mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
-   mr->StorageId = str_to_int64(row[27]);
-   mr->Enabled = str_to_int64(row[28]);
-   mr->LocationId = str_to_int64(row[29]);
-   mr->RecycleCount = str_to_int64(row[30]);
-   bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "", sizeof(mr->cInitialWrite));
-   mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
-   mr->ScratchPoolId = str_to_int64(row[32]);
-   mr->RecyclePoolId = str_to_int64(row[33]);
-   mr->VolReadTime = str_to_int64(row[34]);
-   mr->VolWriteTime = str_to_int64(row[35]);
-   mr->ActionOnPurge = str_to_int64(row[36]);
-   bstrncpy(mr->EncrKey, (row[37] != NULL) ? row[37] : "", sizeof(mr->EncrKey));
-   mr->MinBlocksize = str_to_int32(row[38]);
-   mr->MaxBlocksize = str_to_int32(row[39]);
-
-   sql_free_result(mdb);
+   if (!found_candidate && find_oldest) {
+      item++;
+      goto retry_fetch;
+   }
 
 bail_out:
    db_unlock(mdb);
    Dmsg1(050, "Rtn numrows=%d\n", num_rows);
+
    return num_rows;
 }
 

@@ -41,11 +41,11 @@ void prune_volumes(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
                    STORERES *store);
 
 /* autorecycle.c */
-bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger,
-                                  MEDIA_DBR *mr, STORERES *store);
-int recycle_volume(JCR *jcr, MEDIA_DBR *mr);
-bool find_recycled_volume(JCR *jcr, bool InChanger,
-                          MEDIA_DBR *mr, STORERES *store);
+bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
+                          STORERES *store, const char *unwanted_volumes);
+bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
+                                  STORERES *store, const char *unwanted_volumes);
+bool recycle_volume(JCR *jcr, MEDIA_DBR *mr);
 
 /* backup.c */
 int wait_for_job_termination(JCR *jcr, int timeout = 0);
@@ -189,7 +189,7 @@ void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 /* next_vol.c */
 void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr);
 int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
-                                bool create, bool purge);
+                                const char *unwanted_volumes, bool create, bool purge);
 bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr);
 void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **reason);
 bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,

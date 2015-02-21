@@ -30,11 +30,12 @@
 
 /* Forward referenced functions */
 
-bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store)
+bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
+                          STORERES *store, const char *unwanted_volumes)
 {
    bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
    set_storageid_in_mr(store, mr);
-   if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr)) {
+   if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr, unwanted_volumes)) {
       jcr->MediaId = mr->MediaId;
       Dmsg1(20, "Find_next_vol MediaId=%u\n", jcr->MediaId);
       pm_strcpy(jcr->VolumeName, mr->VolumeName);
@@ -49,13 +50,13 @@ bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *sto
 /*
  * Look for oldest Purged volume
  */
-bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger,
-                                  MEDIA_DBR *mr, STORERES *store)
+bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
+                                  STORERES *store, const char *unwanted_volumes)
 {
    bstrncpy(mr->VolStatus, "Purged", sizeof(mr->VolStatus));
    set_storageid_in_mr(store, mr);
 
-   if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr)) {
+   if (db_find_next_volume(jcr, jcr->db, 1, InChanger, mr, unwanted_volumes)) {
       Dmsg1(20, "Find_next_vol MediaId=%u\n", mr->MediaId);
       set_storageid_in_mr(store, mr);
       if (recycle_volume(jcr, mr)) {
@@ -73,7 +74,7 @@ bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger,
 /*
  * Recycle the specified volume
  */
-int recycle_volume(JCR *jcr, MEDIA_DBR *mr)
+bool recycle_volume(JCR *jcr, MEDIA_DBR *mr)
 {
    bstrncpy(mr->VolStatus, "Recycle", sizeof(mr->VolStatus));
    mr->VolJobs = mr->VolFiles = mr->VolBlocks = mr->VolErrors = 0;
