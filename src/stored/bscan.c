@@ -65,6 +65,7 @@ static POOL_DBR pr;
 static JOB_DBR jr;
 static CLIENT_DBR cr;
 static FILESET_DBR fsr;
+static ROBJECT_DBR rop;
 static ATTR_DBR ar;
 static FILE_DBR fr;
 static SESSION_LABEL label;
@@ -93,6 +94,7 @@ static int num_jobs = 0;
 static int num_pools = 0;
 static int num_media = 0;
 static int num_files = 0;
+static int num_restoreobjects = 0;
 
 #define CONFIG_FILE "bareos-sd.conf"
 
@@ -101,7 +103,7 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bscan [ options ] <bareos-archive>\n"
+"Usage: bscan [ options ] <device-name>\n"
 "       -B <drivername>   specify the database driver name (default NULL) <postgresql|mysql|sqlite3>\n"
 "       -b <bootstrap>    specify a bootstrap file\n"
 "       -c <file>         specify storage daemon configuration file (default: %s)\n"
@@ -123,7 +125,9 @@ PROG_COPYRIGHT
 "       -v                verbose\n"
 "       -V <Volumes>      specify Volume names (separated by |)\n"
 "       -w <directory>    specify working directory (default from configuration file)\n"
-"       -?                print this message\n\n"), 2001, VERSION, BDATE, CONFIG_FILE, backend_directory);
+"       -?                print this message\n\n"
+"example:\n"
+"bscan -B postgresql -V Full-0001 FileStorage\n"), 2001, VERSION, BDATE, CONFIG_FILE, backend_directory);
    exit(1);
 }
 
@@ -335,11 +339,13 @@ int main (int argc, char *argv[])
 
    do_scan();
    if (update_db) {
-      printf("Records added or updated in the catalog:\n%7d Media\n%7d Pool\n%7d Job\n%7d File\n",
-         num_media, num_pools, num_jobs, num_files);
+      printf("Records added or updated in the catalog:\n%7d Media\n"
+             "%7d Pool\n%7d Job\n%7d File\n%7d RestoreObject\n",
+             num_media, num_pools, num_jobs, num_files, num_restoreobjects);
    } else {
-      printf("Records would have been added or updated in the catalog:\n%7d Media\n%7d Pool\n%7d Job\n%7d File\n",
-         num_media, num_pools, num_jobs, num_files);
+      printf("Records would have been added or updated in the catalog:\n"
+             "%7d Media\n%7d Pool\n%7d Job\n%7d File\n%7d RestoreObject\n",
+             num_media, num_pools, num_jobs, num_files, num_restoreobjects);
    }
    db_flush_backends();
 
@@ -425,6 +431,41 @@ static void do_scan()
    }
 
    free_attr(attr);
+}
+
+/*
+ * Returns: true  if OK
+ *          false if error
+ */
+static inline bool unpack_restore_object(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ROBJECT_DBR *rop)
+{
+   char *bp;
+   uint32_t JobFiles;
+
+   if (sscanf(rec, "%d %d %d %d %d %d ",
+              &JobFiles, &rop->Stream, &rop->object_index, &rop->object_len,
+              &rop->object_full_len, &rop->object_compression) != 6) {
+      return false;
+   }
+
+   /*
+    * Skip over the first 6 fields we scanned in the previous scan.
+    */
+   bp = rec;
+   for (int i = 0; i < 6; i++) {
+      bp = strchr(bp, ' ');
+      if (bp) {
+         bp++;
+      } else {
+         return false;
+      }
+   }
+
+   rop->plugin_name = bp;
+   rop->object_name = rop->plugin_name + strlen(rop->plugin_name) + 1;
+   rop->object = rop->object_name + strlen(rop->object_name) + 1;
+
+   return true;
 }
 
 /*
@@ -765,6 +806,20 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       break;
 
    case STREAM_RESTORE_OBJECT:
+      if (!unpack_restore_object(bjcr, rec->Stream, rec->data, rec->data_len, &rop)) {
+         Emsg0(M_ERROR_TERM, 0, _("Cannot continue.\n"));
+      }
+      rop.FileIndex = mjcr->FileId;
+      rop.JobId = mjcr->JobId;
+
+
+      if (update_db) {
+         db_create_restore_object_record(mjcr, db, &rop);
+      }
+
+      num_restoreobjects++;
+
+      free_jcr(mjcr);                 /* done using JCR */
       break;
 
    /*
