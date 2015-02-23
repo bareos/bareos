@@ -399,8 +399,7 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
 }
 
 /*
- * Refresh the Volume information from the Pool record
- *   for all Volumes
+ * Refresh the Volume information from the Pool record for all Volumes
  */
 static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
 {
@@ -441,8 +440,15 @@ static void update_all_vols(UAContext *ua)
 
    for (i = 0; i<num_pools; i++) {
       pr.PoolId = ids[i];
-      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) { /* ***FIXME*** use acl? */
+      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
          ua->warning_msg(_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"), db_strerror(ua->db));
+         continue;
+      }
+
+      /*
+       * Check access to pool.
+       */
+      if (!acl_access_ok(ua, Pool_ACL, pr.Name, false)) {
          continue;
       }
 
@@ -452,8 +458,7 @@ static void update_all_vols(UAContext *ua)
       if (!db_update_media_defaults(ua->jcr, ua->db, &mr)) {
          ua->error_msg(_("Error updating Volume records: ERR=%s"), db_strerror(ua->db));
       } else {
-         ua->info_msg(_("All Volume defaults updated from \"%s\" Pool record.\n"),
-            pr.Name);
+         ua->info_msg(_("All Volume defaults updated from \"%s\" Pool record.\n"), pr.Name);
       }
    }
 
