@@ -696,10 +696,9 @@ If you wish to reuse the tape by giving it a new name, follow the following
 steps:
 
 \begin{itemize}
-\item Use the {\bf purge jobs volume} command in the Console  to mark the
-   Volume as {\bf Purged}. Check by using  {\bf list volumes}.
-\item In Bareos version 1.30 or greater, use the Console  {\bf relabel}
-   command to relabel the Volume.
+\item Use the \bcommand{purge jobs volume}{} command in the Console  to mark the
+   Volume as {\bf Purged}. Check by using  \bcommand{list volumes}{}.
+\item Use the Console  \bcommand{relabel}{} command to relabel the Volume.
 \end{itemize}
 
 Please note that the relabel command applies only to tape Volumes.
@@ -723,7 +722,7 @@ instructions below:
 
 where you replace {\bf /dev/nst0} with the appropriate  device name on your
 system.
-\item Use the {\bf label} command to write a new label to  the tape and to
+\item Use the \bcommand{label}{} command to write a new label to  the tape and to
    enter it in the catalog.
 \end{itemize}
 

@@ -339,7 +339,7 @@ it to be properly backed up, it is generally preferable to copy it, then
 delete the original.
 
 However, to manage deleted files or directories changes in the
-catalog during an Incremental backup you can use \ilink{accurate mode}{accuratemode}.
+catalog during an Incremental backup you can use \nameref{accuratemode}.
 This is quite memory consuming process.
 
 \item [Differential] \hfill \\
@@ -376,12 +376,7 @@ modified or its attributes were changed on or after this start time, it
 will then be backed up.  The start time used is displayed after the {\bf
 Since} on the Job report.  In rare cases, using the start time of the
 prior backup may cause some files to be backed up twice, but it ensures
-that no change is missed.  As with the Incremental option, you should
-ensure that the clocks on your server and client are synchronized or as
-close as possible to avoid the possibility of a file being skipped.
-Note, on versions 1.33 or greater Bareos automatically makes the
-necessary adjustments to the time between the server and the client so
-that the times Bareos uses are synchronized.
+that no change is missed.
 
 When Bareos does a Differential backup, all modified files that are
 still on the system are backed up.  However, any file that has been
@@ -420,6 +415,12 @@ cannot be read.  2.  More importantly, it reduces the number of Volumes
 that are needed to do a restore effectively eliminating the need to read
 all the volumes on which the preceding Incremental and Differential
 backups since the last Full are done.
+
+\item [VirtualFull] \hfill \\
+\index[dir]{VirtualFull Backup}
+When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching the Differential- and Incremental-Backups. This means, a Full backup will get available, without transfering all the data from the client to backup server again. The new Full backup will be stored in the pool defined in \linkResourceDirective{Dir}{Pool}{Next Pool}. The process of generating a VirtualFull backup is similar to the process described in  \nameref{MigrationChapter}.
+
+
 
 \end{description}
 

@@ -992,7 +992,7 @@ idle when you decide to run this command.
     In the configuration files, Addresses can (and normally should) be specified as DNS names.
     As the different components of Bareos will establish network connections to other Bareos components,
     it is important that DNS name resolution works on involved components and delivers the same results.
-    The \bcommand{resolve} command can be used to test DNS resolution of a given hostname 
+    The \bcommand{resolve}{} command can be used to test DNS resolution of a given hostname 
     on director, storage daemonm or client.
 
 \begin{bconsole}{resolve example}
@@ -1390,10 +1390,10 @@ media -- that is Bareos needs you to label a Volume.
 
 
 
-The command \bcommand{status scheduler} (\sinceVersion{console}{status scheduler}{12.4.4}) can be used to check when a certain schedule will trigger.
-This gives more information than \bcommand{status director}.
+The command \bcommand{status scheduler}{} (\sinceVersion{console}{status scheduler}{12.4.4}) can be used to check when a certain schedule will trigger.
+This gives more information than \bcommand{status director}{}.
 
-Called without parameters, \bcommand{status scheduler} shows a preview for all schedules for the next 14 days.
+Called without parameters, \bcommand{status scheduler}{} shows a preview for all schedules for the next 14 days.
 It first shows a list of the known schedules and the jobs that will be triggered by these jobs:
 
 \begin{bconsole}{status scheduler}
@@ -1439,7 +1439,7 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 ====
 \end{bconsole}
 
-\bcommand{status scheduler} accepts the following parameters:
+\bcommand{status scheduler}{} accepts the following parameters:
 \begin{description}
     \item[client=clientname] shows only the schedules that affect the given client.
     \item[job=jobname] shows only the schedules that affect the given job.
@@ -1448,7 +1448,7 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 \end{description}
 
 In case you are running a maintained version of Bareos,
-the command \bcommand{status subscriptions} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions
+the command \bcommand{status subscriptions}{} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions
 that are used.
 
 To enable this functionality, just add the configuration directive subscriptions to the director configuration in the director ressource:
@@ -1462,7 +1462,7 @@ Director {
 }
 \end{bconfig}
 
-Using the console command \bcommand{status subscriptions}, the status of
+Using the console command \bcommand{status subscriptions}{}, the status of
 the subscriptions can be checked any time interactively:
 
 \begin{bconsole}{status subscriptions}
@@ -1499,7 +1499,7 @@ Director {
 
 \item [umount]
    \index[general]{Console!Command!umount}
-   Alias for \bcommand{unmount}.
+   Alias for \bcommand{unmount}{}.
 
 \item [unmount]
    \index[general]{Console!Command!unmount}

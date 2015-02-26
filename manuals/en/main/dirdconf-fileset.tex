@@ -120,8 +120,7 @@ Include {
    examples below show you how to do this.  However, please note two
    things: \\
    1.  if you want the local filesystems, you probably should be
-   using the new {\bf fstype} directive, which was added in version 1.36.3
-   and set {\bf onefs=no}.
+   using the {\bf fstype} directive and set {\bf onefs=no}.
    \\
 
    2.  the exact syntax of the command needed in the examples below is very
@@ -895,8 +894,7 @@ Include {
 \item [checkfilechanges=yes{\textbar}no] \hfill \\
 \index[dir]{checkfilechanges}
 \index[dir]{Directive!checkfilechanges}
-   On versions 2.0.4 or greater,
-   if enabled, the Client will check size, age of each file after
+   If enabled, the Client will check size, age of each file after
    their backup to see if they have changed during backup. If time
    or size mismatch, an error will raise.
 
@@ -1500,8 +1498,7 @@ Bareos uses the system regex library and some of them are
 different on different OSes. The above has been reported not to work
 on FreeBSD. This can be tested by using the {\bf estimate job=job-name
 listing} command in the console and adapting the RegexFile expression
-appropriately. In a future version of Bareos, we will supply our own
-Regex code to avoid such system dependencies.
+appropriately.
 
 Please be aware that allowing Bareos to traverse or change file systems can be
 {\bf very} dangerous. For example, with the following:
