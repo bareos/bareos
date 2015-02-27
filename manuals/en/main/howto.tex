@@ -613,27 +613,49 @@ Job queued. JobId=14
 In this section, we describe different methods how to do backups of the PostgreSQL databases.
 
 
-\subsubsection{Backup of a PostgreSQL Database by using the RunBeforeJob directive}
+\subsubsection{Backup of a PostgreSQL Database by using the RunScript directive}
 \index[general]{RunScript!Example}
 
-One method to backup a PostgreSQL database is to call a \configdirective{RunBeforeJob} script to dump the database into a file and than backup it as a normal file.
-After the backup, the file can be removed by a \configdirective{RunAfterJob} script.
+One method to backup a PostgreSQL database is to use the \command{pg_dumpall} tool to dump the database
+into a file and then backup it as a normal file. After the backup, the file can be
+removed. It may also be an option not to remove it, so that the latest version is
+always available immediately. On the next job run it will be overwritten anyway.
 
-The RunBeforeJob directive is configured inside a Job Resource, e.g.:
-\begin{bconfig}{RunBeforeJob job resource for a PostgreSQL backup}
+This can be done by using \configdirective{RunScript} directives inside a
+Job Resource, for example:
+
+\begin{bconfig}{RunScript job resource for a PostgreSQL backup}
 Job {
   Name = "BackupDatabase"
   JobDefs = "DefaultJob"
+  Client = dbserver-fd
   Level = Full
   FileSet="Database"
 
-  # This creates a dump of our database in the local filesystem
-  RunBeforeJob = "pg_dumpall -U postgres > /var/lib/bareos/postgresql_dump.sql"
+  # This creates a dump of our database in the local filesystem on the client
+  RunScript {
+    FailJobOnError = Yes
+    RunsOnClient = Yes
+    RunsWhen = Before
+    Command = "sh -c 'pg_dumpall -U postgres > /var/lib/bareos/postgresql_dump.sql'"
+  }
 
-  # This deletes the dump in our local filesystem
-  RunAfterJob = "rm /var/lib/bareos/postgresql_dump.sql"
+  # This deletes the dump in our local filesystem on the client
+  RunScript {
+    RunsOnSuccess = Yes
+    RunsOnClient = Yes
+    RunsWhen = After
+    Command = "rm /var/lib/bareos/postgresql_dump.sql"
+  }
 }
 \end{bconfig}
+
+Note that redirecting the \command{pg_dumpall} output to a file requires
+to run the whole command line through a shell, otherwise the \command{pg_dumpall}
+would not know what do with the \command{>} character and the job would fail.
+As no shell features like redirection or piping are used for the \command{rm},
+the \command{sh -c} is not needed there.
+See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
 
 The corresponding FileSet configuration should look something like this, e.g.:
 \begin{bconfig}{FileSet for a PostgreSQL dump file}
@@ -709,28 +731,48 @@ For a full description, see \elink{https://github.com/bareos/contrib-pgsql-plugi
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
-\subsubsection{Backup of a MySQL Database by using the RunBeforeJob directive}
+\subsubsection{Backup of a MySQL Database by using the RunScript directive}
 \index[general]{RunScript!Example}
 
-One method to backup a MySQL database is to call a \configdirective{RunBeforeJob} script 
-to dump the database into a file and than backup it as a normal file.
-After the backup, the file can be removed by a \configdirective{RunAfterJob} script.
+One method to backup a MySQL database is to use the mysqldump tool to dump the database
+into a file and then backup it as a normal file. After the backup, the file can be
+removed. It may also be an option not to remove it, so that the latest version is
+always available immediately. On the next job run it will be overwritten anyway.
 
-The RunBeforeJob directive is configured inside a Job Resource, e.g.:
-\begin{bconfig}{RunBeforeJob job resource for a MySQL backup}
+This can be done by using \configdirective{RunScript} directives inside a
+Job Resource, for example:
+\begin{bconfig}{RunScript job resource for a MySQL backup}
 Job {
   Name = "BackupDatabase"
   JobDefs = "DefaultJob"
+  Client = dbserver-fd
   Level = Full
   FileSet="Database"
 
-  # This creates a dump of our database in the local filesystem
-  RunBeforeJob = "mysqldump --user=<username> --password=<password> --opt --all-databases > /var/lib/bareos/mysql_dump.sql"
+  # This creates a dump of our database in the local filesystem on the Client
+  RunScript {
+    FailJobOnError = Yes
+    RunsOnClient = Yes
+    RunsWhen = Before
+    Command = "sh -c 'mysqldump --user=<username> --password=<password> --opt --all-databases > /var/lib/bareos/mysql_dump.sql'"
+  }
 
-  # This deletes the dump in our local filesystem
-  RunAfterJob = "rm /var/lib/bareos/mysql_dump.sql"
+  # This deletes the dump in the local filesystem on the Client
+  RunScript {
+    RunsOnSuccess = Yes
+    RunsOnClient = Yes
+    RunsWhen = After
+    Command = "rm /var/lib/bareos/mysql_dump.sql"
+  }
 }
 \end{bconfig}
+
+Note that redirecting the \command{mysqldump} output to a file requires
+to run the whole command line through a shell, otherwise the \command{mysqldump}
+would not know what do with the \command{>} character and the job would fail.
+As no shell features like redirection or piping are used for the \command{rm},
+the \command{sh -c} is not needed there.
+See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
 
 The correspondig FileSet configuration should look something like this, e.g.:
 \begin{bconfig}{RunBeforeJob fileset MySQL dump}

@@ -1032,9 +1032,11 @@ of a shell script.
 
 In addition, the command string is parsed then fed to the OS,
 which means that the path will be searched to execute your specified
-command, but there is no shell interpretation, as a consequence, if you
+command, but there is no shell interpretation. As a consequence, if you
 invoke complicated commands or want any shell features such as redirection
 or piping, you must call a shell script and do it inside that script.
+Alternatively, it is possible to use \command{sh -c '...'} in the command
+definition to force shell interpretation, see example below.
 
 Before submitting the specified command to the operating system, Bareos
 performs character substitution of the following characters:
