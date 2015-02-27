@@ -156,18 +156,18 @@ it is required for all Jobtypes but Copy or Migrate jobs.
 }
 
 \defDirective{Dir}{Job}{Client Run After Job}{}{}{%
-The specified {\bf command} is run on the client machine as soon
-as data spooling is complete in order to allow restarting applications
-on the client as soon as possible. .
-
-Note, please see the notes above in {\bf RunScript}
-concerning Windows clients.
+This is a shortcut for the \linkResourceDirective{Dir}{Job}{Run Script} resource,
+that run on the client after a backup job.
 }
 
 \defDirective{Dir}{Job}{Client Run Before Job}{}{}{%
-This directive is the same as {\bf Run Before Job} except that the
-program is run on the client machine.  The same restrictions apply to
-Unix systems as noted above for the {\bf RunScript}.
+This is basically a shortcut for the \linkResourceDirective{Dir}{Job}{Run Script} resource,
+that run on the client before the backup job.
+
+\warning{For compatibility reasons, with this shortcut, the command is executed
+directly when the client receive it. And if the command is in error, other
+remote runscripts will be discarded. To be sure that all commands will be
+sent and executed, you have to use \linkResourceDirective{Dir}{Job}{Run Script} syntax.}
 }
 
 \defDirective{Dir}{Job}{Description}{}{}{
@@ -879,9 +879,6 @@ current job.  Note, in the case of the since keyword, the \%s must be
 enclosed in double quotes, and thus they must be preceded by a backslash
 since they are already inside quotes. For example:
 
-% \begin{bconfig}{}^^J
-%    run = "Nightly-backup level=\%l since=\\"\%s\\" storage=DDS-4"^^J
-% \end{bconfig}
 \bconfigInput{config/DirJobRun1.conf}
 
 A cloned job will not start additional clones, so it is not
@@ -900,64 +897,35 @@ directive), you will find it much easier to do using a \linkResourceDirective{Di
 resource, or a \linkResourceDirective{Dir}{Job}{Run Before Job} directive.
 }
 
-\defDirective{Dir}{Job}{Run After Failed Job}{}{}{
-The specified command is run as an external program after the current
-job terminates with any error status.  This directive is not required.  The
-command string must be a valid program name or name of a shell script. If
-the exit code of the program run is non-zero, Bareos will print a
-warning message. Before submitting the specified command to the
-operating system, Bareos performs character substitution as described above
-for the {\bf RunScript} directive. Note, if you wish that your script
-will run regardless of the exit status of the Job, you can use this:
+\defDirective{Dir}{Job}{Run After Failed Job}{}{}{%
+This is a shortcut for the \linkResourceDirective{Dir}{Job}{Run Script} resource,
+that runs a command after a failed job.
 
-% \begin{bconfig}{Run Script that runs after all jobs (successful and failed)}^^J
-% Run Script \{^^J
-% \ Command = "echo test"^^J
-% \ Runs When = After^^J
-% \ Runs On Failure = yes^^J
-% \ Runs On Client  = no^^J
-% \ Runs On Success = yes    \# default, you can drop this line^^J
-% \}^^J
-% \end{bconfig} 
+If the exit code of the program run is non-zero, Bareos will print a
+warning message.
+
 \bconfigInput{config/DirJobRunAfterFailedJob1.conf}
 }
 
 \defDirective{Dir}{Job}{Run After Job}{}{}{%
-The specified {\bf command} is run as an external program if the current
-job terminates normally (without error or without being canceled).  This
-directive is not required.  If the exit code of the program run is
-non-zero, Bareos will print a warning message.  Before submitting the
-specified command to the operating system, Bareos performs character
-substitution as described above for the {\bf RunScript} directive.
+This is a shortcut for the \linkResourceDirective{Dir}{Job}{Run Script} resource,
+that runs a command after a successful job (without error or without being canceled).
 
-%An example of the use of this directive is given in the
-%\ilink{Tips Chapter}{JobNotification} of this manual.
-
-See the \linkResourceDirective{Dir}{Job}{Run After Failed Job} if you
-want to run a script after the job has terminated with any
-non-normal status.
+If the exit code of the program run is
+non-zero, Bareos will print a warning message.
 }
 
 \defDirective{Dir}{Job}{Run Before Job}{}{}{%
-The specified command is run as an external program prior to running the
-current Job.  This directive is not required, but if it is defined, and if the
-exit code of the program run is non-zero, the current Bareos job will be
+This is a shortcut for the \linkResourceDirective{Dir}{Job}{Run Script} resource,
+that runs a command before a job.
+
+If the exit code of the program run is non-zero, the current Bareos job will be
 canceled.
 
-% \begin{bconfig}{}^^J
-% Run Before Job = "echo test"^^J
-% \end{bconfig}
 \bconfigInput{config/DirJobRunBeforeJob1.conf}
 
-   it's equivalent to :
+is equivalent to:
 
-% \begin{bconfig}{}^^J
-% RunScript \{^^J
-% \  Command = "echo test"^^J
-% \  Runs On Client = No^^J
-% \  Runs When = Before^^J
-% \}^^J
-% \end{bconfig}
 \bconfigInput{config/DirJobRunBeforeJob2.conf}
 %
 % Lutz Kittler has pointed out that using the RunBeforeJob directive can be a
@@ -983,19 +951,16 @@ program is executed on the Client side like in \texttt{ClientRunXXXJob}.
 of the OS. At this time, console command ouputs are redirected to log with
 the jobid 0.
 
-You can use following console command : \texttt{delete}, \texttt{disable},
+You can use following console command: \texttt{delete}, \texttt{disable},
 \texttt{enable}, \texttt{estimate}, \texttt{list}, \texttt{llist},
 \texttt{memory}, \texttt{prune}, \texttt{purge}, \texttt{reload},
 \texttt{status}, \texttt{setdebug}, \texttt{show}, \texttt{time},
 \texttt{trace}, \texttt{update}, \texttt{version}, \texttt{.client},
-\texttt{.jobs}, \texttt{.pool}, \texttt{.storage}.  See console chapter for
+\texttt{.jobs}, \texttt{.pool}, \texttt{.storage}.  
+See \nameref{sec:bconsole} for
 more information. You need to specify needed information on command line, nothing
 will be prompted. Example:
 
-% \begin{bconfig}{Run Script Console commands}^^J
-%    Console = "prune files client=\%c"^^J
-%    Console = "update stats age=3"^^J
-% \end{bconfig}
 \bconfigInput{config/DirJobRunScript1.conf}
 
 You can specify more than one Command/Console option per RunScript.
@@ -1003,42 +968,42 @@ You can specify more than one Command/Console option per RunScript.
 You can use following options may be specified in the body
 of the runscript:\\
 
-\begin{tabular}{|c|c|c|l}
+\begin{center}
+\begin{tabular}{|p{0.2\textwidth}|p{0.2\textwidth}|p{0.4\textwidth}|}
 \hline
-Options         & Value  & Default & Information   \\
+Options         & Value  & Information   \\
 \hline
 \hline
-Runs On Success & Yes{\textbar}No & {\bf Yes} & Run command if JobStatus is successful\\
+Runs On Success & \textbf{Yes} {\textbar} No & run if JobStatus is successful\\
 \hline
-Runs On Failure & Yes{\textbar}No & {\bf No} & Run command if JobStatus isn't successful\\
+Runs On Failure & Yes {\textbar} \textbf{No} & run if JobStatus isn't successful\\
 \hline
-Runs On Client  & Yes{\textbar}No & {\bf Yes} & Run command on client\\
+Runs On Client  & \textbf{Yes} {\textbar} No & run command on client\\
 \hline
-Runs When       & Before{\textbar}After{\textbar}Always{\textbar}\textsl{AfterVSS} & {\bf Never} & When run commands\\
+Runs When       & \textbf{\variable{Never}} {\textbar} \variable{Before} {\textbar} \variable{After} {\textbar} \variable{Always} {\textbar} \textsl{\variable{AfterVSS}} & When to run\\
 \hline
-Fail Job On Error & Yes/No & {\bf Yes} & Fail job if script returns
-                                          something different from 0 \\
+Fail Job On Error & \textbf{Yes} {\textbar} No & Fail job if script returns something different from 0\\
 \hline
-Command          &       &          & Path to your script\\
+Command          &       &   External command\\
 \hline
-Console          &       &          & Console command\\
+Console          &       &   Console command\\
 \hline
 \end{tabular}
-   \\
+ \end{center}
 
 Any output sent by the command to standard output will be included in the
 Bareos job report.  The command string must be a valid program name or name
 of a shell script.
 
-In addition, the command string is parsed then fed to the OS,
+\warning{The command string is parsed then fed to the OS,
 which means that the path will be searched to execute your specified
 command, but there is no shell interpretation. As a consequence, if you
 invoke complicated commands or want any shell features such as redirection
 or piping, you must call a shell script and do it inside that script.
 Alternatively, it is possible to use \command{sh -c '...'} in the command
-definition to force shell interpretation, see example below.
+definition to force shell interpretation, see example below.}
 
-Before submitting the specified command to the operating system, Bareos
+Before executing the specified command, Bareos
 performs character substitution of the following characters:
 
 \label{character substitution}
@@ -1105,27 +1070,7 @@ Keyword & RunsOnSuccess & RunsOnFailure  & FailJobOnError & Runs On Client & Run
 \end{tabular}
 
 Examples:
-% \begin{bconfig}{Run Script Examples}^^J
-% RunScript \{^^J
-% \ \   RunsWhen = Before^^J
-% \ \   FailJobOnError = No^^J
-% \ \   Command = "/etc/init.d/apache stop"^^J
-% \}^^J
-% ^^J
-% RunScript \{^^J
-% \ \   RunsWhen = After^^J
-% \ \   RunsOnFailure = yes^^J
-% \ \   Command = "/etc/init.d/apache start"^^J
-% \}^^J
-% \end{bconfig}
 \bconfigInput{config/DirJobRunScript2.conf}
-
-{\bf Notes about ClientRunBeforeJob}
-
-For compatibility reasons, with this shortcut, the command is executed
-directly when the client receive it. And if the command is in error, other
-remote runscripts will be discarded. To be sure that all commands will be
-sent and executed, you have to use RunScript syntax.
 
 {\bf Special Windows Considerations}
 \index[general]{Windows!Run Script}
