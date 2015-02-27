@@ -623,6 +623,27 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
 }
 
 /*
+ * Strip any backslashes in the string.
+ */
+static inline void strip_back_slashes(char *value)
+{
+   char *bp;
+
+   bp = value;
+   while (*bp) {
+      switch (*bp) {
+       case '\\':
+          bstrinlinecpy(bp, bp + 1);
+          break;
+       default:
+          break;
+       }
+
+       bp++;
+   }
+}
+
+/*
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
 static inline bool parse_boolean(const char *argument_value)
@@ -642,6 +663,7 @@ static inline void set_string_if_null(char **destination, char *value)
 {
    if (!*destination) {
       *destination = bstrdup(value);
+      strip_back_slashes(*destination);
    }
 }
 
@@ -655,6 +677,7 @@ static inline void set_string(char **destination, char *value)
    }
 
    *destination = bstrdup(value);
+   strip_back_slashes(*destination);
 }
 
 /*
@@ -754,10 +777,18 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          /*
           * See if there are more arguments and setup for the next run.
           */
-         bp = strchr(argument, ':');
-         if (bp) {
-            *bp++ = '\0';
-         }
+         bp = argument_value;
+         do {
+            bp = strchr(bp, ':');
+            if (bp) {
+               if (*(bp - 1) != '\\') {
+                  *bp++ = '\0';
+                  break;
+               } else {
+                  bp++;
+               }
+            }
+         } while (bp);
 
          /*
           * See which field this is in the argument string.
@@ -795,10 +826,18 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          /*
           * See if there are more arguments and setup for the next run.
           */
-         bp = strchr(argument_value, ':');
-         if (bp) {
-            *bp++ = '\0';
-         }
+         bp = argument_value;
+         do {
+            bp = strchr(bp, ':');
+            if (bp) {
+               if (*(bp - 1) != '\\') {
+                  *bp++ = '\0';
+                  break;
+               } else {
+                  bp++;
+               }
+            }
+         } while (bp);
 
          for (i = 0; plugin_arguments[i].name; i++) {
             if (bstrncasecmp(argument, plugin_arguments[i].name, plugin_arguments[i].cmp_length)) {
