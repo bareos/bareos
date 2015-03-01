@@ -6,20 +6,28 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+Release 15.1.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* Refactoring of Migrate/Copy selection code. (Mantis #342)
+* Major TLS overhaul. (Mantis #371)
+* Rados (CEPH) File Daemon plugin
+* GFAPI (GlusterFS) File daemon plugin
+* CEPHFS (CEPH) File daemon plugin
+* Cloud plugins switched to use device options config string.
+* Escape parsing in generic plugin option parser.
+
 Release 14.4.x
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
 
-* Allow multiple python DIR and SD plugins.
-* Class based Python DIR plugin wrappers.
-* Max VirtualFull Interval and Virtual Full Pool override.
 * Support to rados SD backend for libradosstriper
-* Syslog message destinations fixed, allow setting of syslog facility and correct log level.
-* Add ability to specify server address for ADO connect string in mssqlvdi plugin.
 * Refactor socket handling.
-* Refactor FileSet Options using bit operations (future readiness)
-* ANSI label compatibility with Bacula ANSI labels.
+
+(Most features from this release got backported to 14.2.x)
 
 Release 14.2.x
 ==============
@@ -76,6 +84,13 @@ Release 14.2.x
 * Use a special backend dir to store both catalog and storage backends.
 * Support for NotToBackup Registry Key on windows.
 * On the packaging side we now store the bareos libs in a subdir. (e.g. /usr/lib/bareos, /usr/lib64/bareos)
+* Allow multiple python DIR and SD plugins.
+* Class based Python DIR plugin wrappers.
+* Max VirtualFull Interval and Virtual Full Pool override.
+* Syslog message destinations fixed, allow setting of syslog facility and correct log level.
+* Add ability to specify server address for ADO connect string in mssqlvdi plugin.
+* Refactor FileSet Options using bit operations (future readiness)
+* ANSI label compatibility with Bacula ANSI labels.
 
 Release 14.1.x
 ==============
