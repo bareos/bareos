@@ -57,7 +57,7 @@ The package install provides a default configuration under /etc/bareos/bareos-di
 at the bottum of your /etc/bareos/bareos-dir.conf and edited to your needs.
 
 ```
-echo "@/etc/bareos/bareos-dir.d/bareos-webui.conf" >> /etc/bareos/bareos-dir.d/bareos-webui.conf
+echo "@/etc/bareos/bareos-dir.d/bareos-webui.conf" >> /etc/bareos/bareos-dir.conf
 ```
 
 **Note:** Most parts of the webui still use a direct connection to the catalog database to retrieve data, so the configured ACL
