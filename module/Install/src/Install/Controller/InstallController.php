@@ -245,7 +245,7 @@ class InstallController extends AbstractActionController
 		if(self::getDbDriverStatus() ==  0 &&
 			self::getDbHostStatus() == 0 &&
 			self::getDbUserStatus() == 0 &&
-			self::getDbPasswordStatus() == -1
+			self::getDbPasswordStatus() == 0
 			) {
 				try {
 					$config = $this->getServiceLocator()->get('Config');
