@@ -5,23 +5,25 @@ INSTALLATION
 ### SYSTEM REQUIREMENTS
 
 * A working Bareos environment, Bareos >= 12.4
-* An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenvif
+* An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv
 * PHP >= 5.3.3
     * PHP PDO Extension
     * PHP Sockets Extension
     * PHP OpenSSL Extension
 * Zend Framework 2.2.x or later
 
-	**Note:** Unfortunately, not all distributions offer a Zend Framework 2 package.
-	The following list shows where to get the Zend Framework 2 package.
+  **Note:** Unfortunately, not all distributions offer a Zend Framework 2 package.
+  The following list shows where to get the Zend Framework 2 package.
 
-	* RHEL, CentOS
-		* https://fedoraproject.org/wiki/EPEL
-		* https://apps.fedoraproject.org/packages/php-ZendFramework2
-        * Fedora
-		* https://apps.fedoraproject.org/packages/php-ZendFramework2
-        * SUSE, Debian, Ubuntu:
-		* http://download.bareos.org/bareos/contrib
+  * RHEL, CentOS
+    * https://fedoraproject.org/wiki/EPEL
+    * https://apps.fedoraproject.org/packages/php-ZendFramework2
+
+  * Fedora
+    * https://apps.fedoraproject.org/packages/php-ZendFramework2
+
+  * SUSE, Debian, Ubuntu
+    * http://download.bareos.org/bareos/contrib
 
 ### PACKAGE BASED INSTALLATION
 
@@ -245,8 +247,16 @@ If you do not use SELinux on your system, you can skip this step and go over to 
 
 To install bareos-webui on a system with SELinux enabled, the following additional steps must be performed.
 
+ * Allow HTTPD scripts and modules to connect to the network
+
 ```
-TODO
+setsebool -P httpd_can_network_connect on
+```
+
+ * Allow HTTPD to connect to a remote database
+
+```
+setsebool -P httpd_can_network_connect_db on
 ```
 
 #### Step 7 - Test your configuration
