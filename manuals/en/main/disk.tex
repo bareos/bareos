@@ -327,9 +327,7 @@ The example shown below shows a case where there are two clients, each
 using its own Pool and storing their Volumes in different directories.
 
 
-\label{Example2}
-\section{An Example}
-\index[general]{Example}
+\subsection{An Example}
 
 The following example is not very practical, but can be used to demonstrate
 the proof of concept in a relatively short period of time. The example
@@ -344,8 +342,7 @@ correct device for restores ...
 
 The Director's configuration file is as follows:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{}
 Director {
   Name = my-dir
   QueryFile = "~/bareos/bin/query.sql"
@@ -455,13 +452,11 @@ Pool {
   Recycle = yes
 }
 
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 and the Storage daemon's configuration file is:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{}
 Storage {
   Name = my-sd
   WorkingDirectory = "~/bareos/working"
@@ -498,14 +493,13 @@ Messages {
   Name = Standard
   director = my-dir = all
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 With a little bit of work, you can change the above example into a weekly or
 monthly cycle (take care about the amount of archive disk space used).
 
-\label{MultipleDisks}
 \section{Backing up to Multiple Disks}
+\label{MultipleDisks}
 \index[general]{Disks!Backing up to Multiple}
 \index[general]{Backing up to Multiple Disks}
 

@@ -103,13 +103,11 @@ Specification of this directive is optional, and if specified, it is
 used only for a restore job.  In addition, when running a Restore job
 from the console, this value can be changed.
 
-If you use the {\bf Restore} command in the Console program, to start a
+If you use the \ilink{restore}{restore_command} command in the Console program, to start a
 restore job, the {\bf bootstrap} file will be created automatically from
 the files you select to be restored.
 
-For additional details of the {\bf bootstrap} file, please see
-\ilink{Restoring Files with the Bootstrap File}{BootstrapChapter} chapter
-of this manual.
+For additional details see \nameref{BootstrapChapter} chapter.
 }
 
 \defDirective{Dir}{Job}{Cancel Lower Level Duplicates}{}{}{%
@@ -174,9 +172,10 @@ sent and executed, you have to use \linkResourceDirective{Dir}{Job}{Run Script} 
 }
 
 \defDirective{Dir}{Job}{Differential Backup Pool}{}{}{%
-The {\bf Differential Backup Pool} specifies a Pool to be used for
-Differential backups.  It will override any Pool specification during a
-Differential backup.  This directive is optional.
+The Differential Backup Pool specifies a Pool to be used for
+Differential backups.  
+It will override any \linkResourceDirective{Dir}{Job}{Pool} specification during a
+Differential backup.
 }
 
 \defDirective{Dir}{Job}{Differential Max Runtime}{}{}{%
@@ -215,9 +214,8 @@ and for versions after that for all Jobtypes but Copy and Migrate).
 }
 
 \defDirective{Dir}{Job}{Full Backup Pool}{}{}{%
-The {\bf Full Backup Pool} specifies a Pool to be used for Full backups.
-It will override any Pool specification during a Full backup.  This
-directive is optional.
+The Full Backup Pool specifies a Pool to be used for Full backups.
+It will override any \linkResourceDirective{Dir}{Job}{Pool} specification during a Full backup.
 }
 
 \defDirective{Dir}{Job}{Full Max Runtime}{}{}{%
@@ -232,9 +230,9 @@ This directive has been deprecated in favor of
 }
 
 \defDirective{Dir}{Job}{Incremental Backup Pool}{}{}{%
-The {\bf Incremental Backup Pool} specifies a Pool to be used for
-Incremental backups.  It will override any Pool specification during an
-Incremental backup.  This directive is optional.
+The Incremental Backup Pool specifies a Pool to be used for
+Incremental backups.  It will override any \linkResourceDirective{Dir}{Job}{Pool} specification during an
+Incremental backup.
 }
 
 \defDirective{Dir}{Job}{Incremental Max Runtime}{}{}{%
@@ -581,15 +579,14 @@ use.
 }
 
 \defDirective{Dir}{Job}{Maximum Concurrent Jobs}{}{}{%
-where {\textless}number{\textgreater} is the maximum number of Jobs from the current
+Specifies the maximum number of Jobs from the current
 Job resource that can run concurrently.  Note, this directive limits
 only Jobs with the same name as the resource in which it appears.  Any
 other restrictions on the maximum concurrent jobs such as in the
 Director, Client, or Storage resources will also apply in addition to
 the limit specified here.  The default is set to 1, but you may set it
 to a larger number.  We strongly recommend that you read the WARNING
-documented under \ilink{ Maximum Concurrent Jobs}{DirMaxConJobs} in the
-Director's resource.
+documented under \nameref{DirMaxConJobs}.
 }
 
 \defDirective{Dir}{Job}{Maxrun Sched Time}{}{}{%
