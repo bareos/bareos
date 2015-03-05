@@ -48,7 +48,6 @@
 #define SETTING_NO (char *)"no"
 #define SETTING_UNSET (char *)"unknown"
 
-
 #define COMPRESSOR_NAME_GZIP (char *)"GZIP"
 #define COMPRESSOR_NAME_LZO (char *)"LZO"
 #define COMPRESSOR_NAME_FZLZ (char *)"FASTLZ"
@@ -110,7 +109,6 @@ static psdFuncs pluginFuncs = {
    setPluginValue,
    handlePluginEvent
 };
-
 
 /*
  * Plugin private context
@@ -178,14 +176,12 @@ bRC DLL_IMP_EXP unloadPlugin()
 static bRC newPlugin(bpContext *ctx)
 {
    int JobId = 0;
+   struct plugin_ctx *p_ctx;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
    Dmsg(ctx, dbglvl, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
 
-   struct plugin_ctx *p_ctx;
-
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
-
    if (!p_ctx) {
       return bRC_Error;
    }
@@ -491,7 +487,6 @@ static bRC handle_write_translation(bpContext *ctx, void *value)
    return bRC_OK;
 }
 
-#if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)
 /*
  * Setup deflate for auto deflate of data streams.
  */
@@ -623,15 +618,15 @@ static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
 static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
 {
    ser_declare;
+   bool retval = false;
    comp_stream_header ch;
    DEV_RECORD *rec, *nrec;
-   bool retval = false;
+   struct plugin_ctx *p_ctx;
+   unsigned char *data = NULL;
    bool intermediate_value = false;
    unsigned int max_compression_length = 0;
-   unsigned char *data = NULL;
 
-   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
-
+   p_ctx = (struct plugin_ctx *)ctx->pContext;
    if (!p_ctx) {
       goto bail_out;
    }
@@ -780,14 +775,13 @@ static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
 {
    DEV_RECORD *rec, *nrec;
    bool retval = false;
+   struct plugin_ctx *p_ctx;
    bool intermediate_value = false;
 
-   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
-
+   p_ctx = (struct plugin_ctx *)ctx->pContext;
    if (!p_ctx) {
       goto bail_out;
    }
-
 
    /*
     * See what our starting point is. When dcr->after_rec is set we already have
@@ -868,6 +862,7 @@ static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
 
    p_ctx->inflate_bytes_in += rec->data_len;
    p_ctx->inflate_bytes_out += nrec->data_len;
+
    /*
     * If the input is just an intermediate value free it now.
     */
@@ -880,37 +875,3 @@ static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
 bail_out:
    return retval;
 }
-#else
-/*
- * Setup deflate for auto deflate of data streams.
- */
-static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
-{
-   return true;
-}
-
-/*
- * Setup inflation for auto inflation of data streams.
- */
-static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
-{
-   return true;
-}
-
-/*
- * Perform automatic compression of certain stream types when enabled in the config.
- */
-static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
-{
-   return false;
-}
-
-/*
- * Inflate (uncompress) the content of a read record and return
- * the data as an alternative datastream.
- */
-static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
-{
-   return false;
-}
-#endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */

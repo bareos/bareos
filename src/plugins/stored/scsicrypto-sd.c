@@ -331,6 +331,13 @@ static bRC do_set_scsi_encryption_key(void *value)
       return bRC_Error;
    }
 
+   /*
+    * See if device supports hardware encryption.
+    */
+   if (!device->drive_crypto_enabled) {
+      return bRC_OK;
+   }
+
    *StoredVolEncrKey = '\0';
    if (!get_volume_encryption_key(dcr, StoredVolEncrKey)) {
       Dmsg0(dbglvl, "scsicrypto-sd: Could not get_volume_encryption_key!\n");
@@ -355,16 +362,6 @@ static bRC do_set_scsi_encryption_key(void *value)
    if (!*StoredVolEncrKey) {
       Dmsg0(dbglvl, "scsicrypto-sd: No encryption key to load on device\n");
       return bRC_OK;
-   }
-
-   /*
-    * See if device supports hardware encryption.
-    */
-   if (!device->drive_crypto_enabled) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Trying to load encryption key on drive without support\n");
-      Emsg0(M_ERROR, 0,
-            _("scsicrypto-sd: Trying to load encryption key on drive without support\n"));
-      return bRC_Error;
    }
 
    /*
