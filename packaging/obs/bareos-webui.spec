@@ -77,9 +77,9 @@ make
 make DESTDIR=%{buildroot} install
 
 %post
-a2enmod setenv &> /dev/null
-a2enmod rewrite &> /dev/null
-a2enmod php5 &> /dev/null
+a2enmod setenv &> /dev/null || true
+a2enmod rewrite &> /dev/null || true
+a2enmod php5 &> /dev/null || true
 
 %clean
 rm -rf $RPM_BUILD_ROOT
