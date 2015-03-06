@@ -31,9 +31,8 @@
 #include "dird.h"
 
 /* Global variables */
-static int started = FALSE;
 static workq_t socket_workq;
-static alist *sock_fds;
+static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
 struct s_addr_port {
@@ -117,19 +116,16 @@ void start_socket_server(dlist *addrs)
       berrno be;
       Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
    }
-   started = TRUE;
 
    return;
 }
 
 void stop_socket_server()
 {
-   if (!started) {
-      return;
+   if (sock_fds) {
+      bnet_stop_thread_server_tcp(tcp_server_tid);
+      cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
+      delete sock_fds;
+      sock_fds = NULL;
    }
-
-   bnet_stop_thread_server_tcp(tcp_server_tid);
-   cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
-   delete sock_fds;
-   sock_fds = NULL;
 }

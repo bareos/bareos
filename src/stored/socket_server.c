@@ -32,7 +32,7 @@
 
 /* Global variables */
 static workq_t socket_workq;
-static alist *sock_fds;
+static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
 /*
@@ -123,8 +123,10 @@ void start_socket_server(dlist *addrs)
 
 void stop_socket_server()
 {
-   bnet_stop_thread_server_tcp(tcp_server_tid);
-   cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
-   delete sock_fds;
-   sock_fds = NULL;
+   if (sock_fds) {
+      bnet_stop_thread_server_tcp(tcp_server_tid);
+      cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
+      delete sock_fds;
+      sock_fds = NULL;
+   }
 }
