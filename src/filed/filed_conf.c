@@ -41,6 +41,7 @@
  * Kern Sibbald, September MM
  */
 
+#define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "filed.h"
 
@@ -598,31 +599,40 @@ bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
 /*
  * Print configuration file schema in json format
  */
+#ifdef HAVE_JANSSON
 bool print_config_schema_json(POOL_MEM &buffer)
 {
    RES_TABLE *resources = my_config->m_resources;
 
-   add_json_object_start(buffer, 0, "");
+   initialize_json();
 
-   add_json_pair(buffer, 1, "format-version", 2);
-   add_json_pair(buffer, 1, "component", "bareos-fd");
-   add_json_pair(buffer, 1, "version", VERSION);
+   json_t *json = json_object();
+   json_object_set_new(json, "format-version", json_integer(2));
+   json_object_set_new(json, "component", json_string("bareos-fd"));
+   json_object_set_new(json, "version", json_string(VERSION));
 
    /*
     * Resources
     */
-   add_json_object_start(buffer, 1, "resource");
-   add_json_object_start(buffer, 2, "bareos-fd");
+   json_t *resource = json_object();
+   json_object_set(json, "resource", resource);
+   json_t *bareos_fd = json_object();
+   json_object_set(resource, "bareos-fd", bareos_fd);
 
    for (int r = 0; resources[r].name; r++) {
       RES_TABLE resource = my_config->m_resources[r];
-      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+      json_object_set(bareos_fd, resource.name, json_items(resource.items));
    }
 
-   add_json_object_end(buffer, 2, "bareos-fd", true);
-   add_json_object_end(buffer, 1, "resource", true);
-
-   add_json_object_end(buffer, 0, "", true);
+   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   json_decref(json);
 
    return true;
 }
+#else
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   return false;
+}
+#endif

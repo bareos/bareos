@@ -155,6 +155,8 @@ UAContext *new_ua_context(JCR *jcr)
    ua->errmsg = get_pool_memory(PM_FNAME);
    ua->verbose = true;
    ua->automount = true;
+   ua->send = New(OUTPUT_FORMATTER(printit, ua));
+
    return ua;
 }
 
@@ -171,6 +173,9 @@ void free_ua_context(UAContext *ua)
    }
    if (ua->prompt) {
       free(ua->prompt);
+   }
+   if (ua->send) {
+      delete ua->send;
    }
    if (ua->UA_sock) {
       ua->UA_sock->close();

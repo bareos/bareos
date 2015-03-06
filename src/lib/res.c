@@ -26,6 +26,7 @@
  * Split from parse_conf.c April MMV
  */
 
+#define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "generic_res.h"
 
@@ -1828,68 +1829,9 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
    return true;
 }
 
-static void add_indent(POOL_MEM &cfg_str, int level)
-{
-   for (int i = 0; i < level; i++) {
-      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
-   }
-}
-
-void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last)
-{
-   POOL_MEM temp;
-
-   add_indent(cfg_str, level);
-   Mmsg(temp, "\"%s\": %s", string, value);
-   pm_strcat(cfg_str, temp.c_str());
-   if ( last ) {
-      pm_strcat(cfg_str, "\n");
-   } else {
-      pm_strcat(cfg_str, ",\n");
-   }
-}
-
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last)
-{
-   POOL_MEM temp;
-
-   Mmsg(temp, "\"%s\"", value);
-   add_json_pair_plain(cfg_str, level, string, temp.c_str(), last);
-}
-
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value, const bool last)
-{
-   POOL_MEM temp;
-
-   Mmsg(temp, "%d", value);
-   add_json_pair_plain(cfg_str, level, string, temp.c_str(), last);
-}
-
-void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string)
-{
-   POOL_MEM temp;
-
-   add_indent(cfg_str, level);
-   if (bstrcmp(string, "")) {
-      Mmsg(temp, "{\n");
-   } else {
-      Mmsg(temp, "\"%s\": {\n", string);
-   }
-   pm_strcat(cfg_str, temp.c_str());
-}
-
-void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string, const bool last)
-{
-   add_indent(cfg_str, level);
-   if (last) {
-      pm_strcat(cfg_str, "}\n");
-   } else {
-      pm_strcat(cfg_str, "},\n");
-   }
-}
-
+#ifdef HAVE_JANSSON
 /*
- * prints a resource item schema description in JSON format.
+ * resource item schema description in JSON format.
  * Example output:
  *
  *   "filesetacl": {
@@ -1905,67 +1847,66 @@ void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string, const
  *     "type": "RES_ITEM"
  *   }
  */
-bool print_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item, const bool last)
+json_t *json_item(RES_ITEM *item)
 {
-   add_json_object_start(buff, level, item->name);
+   json_t *json = json_object();
 
-   add_json_pair(buff, level + 1, "datatype", datatype_to_str(item->type));
+   json_object_set_new(json, "datatype", json_string(datatype_to_str(item->type)));
+   json_object_set_new(json, "code", json_integer(item->code));
 
    if (item->flags & CFG_ITEM_ALIAS) {
-      add_json_pair(buff, level + 1, "alias", "true");
+      json_object_set_new(json, "alias", json_true());
    }
    if (item->flags & CFG_ITEM_DEFAULT) {
-      add_json_pair(buff, level + 1, "default_value", item->default_value);
+      /* FIXME? would it be better to convert it to the right type before returning? */
+      json_object_set_new(json, "default_value", json_string(item->default_value));
    }
    if (item->flags & CFG_ITEM_PLATFORM_SPECIFIC) {
-      add_json_pair(buff, level + 1, "platform_specific", "true");
+      json_object_set_new(json, "platform_specific", json_true());
    }
    if (item->flags & CFG_ITEM_DEPRECATED) {
-      add_json_pair_plain(buff, level + 1, "deprecated", "true");
+      json_object_set_new(json, "deprecated", json_true());
    }
    if (item->flags & CFG_ITEM_NO_EQUALS) {
-      add_json_pair_plain(buff, level + 1, "equals", "false");
+      json_object_set_new(json, "equals", json_false());
    } else {
-      add_json_pair_plain(buff, level + 1, "equals", "true");
+      json_object_set_new(json, "equals", json_true());
    }
    if (item->flags & CFG_ITEM_REQUIRED) {
-      add_json_pair_plain(buff, level + 1, "required", "true");
+      json_object_set_new(json, "required", json_true());
    }
    if (item->versions) {
-      add_json_pair(buff, level + 1, "versions", item->versions);
+      json_object_set_new(json, "versions", json_string(item->versions));
    }
    if (item->description) {
-      add_json_pair(buff, level + 1, "description", item->description);
+      json_object_set_new(json, "description", json_string(item->description));
    }
 
-   add_json_pair(buff, level + 1, "code", item->code, true);
-
-   add_json_object_end(buff, level, item->name, last);
-
-   return true;
+   return json;
 }
 
-bool print_item_schema_json(POOL_MEM &buff, int level, s_kw *item, const bool last)
+json_t *json_item(s_kw *item)
 {
-   add_json_object_start(buff, level, item->name);
-   add_json_pair(buff, level + 1, "token", item->token, true);
-   add_json_object_end(buff, level, item->name, last);
+   json_t *json = json_object();
 
-   return true;
+   json_object_set_new(json, "token", json_integer(item->token));
+
+   return json;
 }
 
-bool print_items_schema_json(POOL_MEM &buffer, int level, const char *name, RES_ITEM items[], const bool last)
+json_t *json_items(RES_ITEM items[])
 {
-   add_json_object_start(buffer, level, name);
+   json_t *json = json_object();
+
    if (items) {
       for (int i = 0; items[i].name; i++) {
-         print_item_schema_json(buffer, level+1, &items[i], items[i+1].name == NULL);
+         json_object_set_new(json, items[i].name, json_item(&items[i]));
       }
    }
-   add_json_object_end(buffer, level, name, last);
 
-   return true;
+   return json;
 }
+#endif
 
 static DATATYPE_NAME datatype_names[] = {
    /*

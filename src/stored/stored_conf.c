@@ -26,6 +26,7 @@
  * Kern Sibbald, March MM
  */
 
+#define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "stored.h"
 
@@ -391,7 +392,7 @@ static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
    store_resource(CFG_TYPE_SIZE32, lc, item, index, pass);
    if (*(uint32_t *)(item->value) > MAX_BLOCK_LENGTH) {
       scan_err2(lc, _("Maximum Block Size configured value %u is greater than allowed maximum: %u"),
-         *(uint32_t *)(item->value), MAX_BLOCK_LENGTH );
+         *(uint32_t *)(item->value), MAX_BLOCK_LENGTH);
    }
 }
 
@@ -908,7 +909,7 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
 {
    bool retval;
 
-   init_sd_config( config, configfile, exit_code );
+   init_sd_config(config, configfile, exit_code);
    retval = config->parse_config();
 
    if (retval) {
@@ -929,31 +930,40 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
 /*
  * Print configuration file schema in json format
  */
+#ifdef HAVE_JANSSON
 bool print_config_schema_json(POOL_MEM &buffer)
 {
    RES_TABLE *resources = my_config->m_resources;
 
-   add_json_object_start(buffer, 0, "");
+   initialize_json();
 
-   add_json_pair(buffer, 1, "format-version", 2);
-   add_json_pair(buffer, 1, "component", "bareos-sd");
-   add_json_pair(buffer, 1, "version", VERSION);
+   json_t *json = json_object();
+   json_object_set_new(json, "format-version", json_integer(2));
+   json_object_set_new(json, "component", json_string("bareos-sd"));
+   json_object_set_new(json, "version", json_string(VERSION));
 
    /*
     * Resources
     */
-   add_json_object_start(buffer, 1, "resource");
-   add_json_object_start(buffer, 2, "bareos-sd");
+   json_t *resource = json_object();
+   json_object_set(json, "resource", resource);
+   json_t *bareos_sd = json_object();
+   json_object_set(resource, "bareos-sd", bareos_sd);
 
    for (int r = 0; resources[r].name; r++) {
       RES_TABLE resource = my_config->m_resources[r];
-      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+      json_object_set(bareos_sd, resource.name, json_items(resource.items));
    }
 
-   add_json_object_end(buffer, 2, "bareos-sd", true);
-   add_json_object_end(buffer, 1, "resource", true);
-
-   add_json_object_end(buffer, 0, "", true);
+   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   json_decref(json);
 
    return true;
 }
+#else
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   return false;
+}
+#endif

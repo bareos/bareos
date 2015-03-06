@@ -41,6 +41,7 @@
 #include "serial.h"
 #include "message.h"
 #include "lex.h"
+#include "output_formatter.h"
 #include "parse_conf.h"
 #include "tls.h"
 #include "address_conf.h"

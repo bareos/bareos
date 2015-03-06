@@ -43,6 +43,7 @@
  * Kern Sibbald, January MM
  */
 
+#define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "dird.h"
 
@@ -735,126 +736,100 @@ struct s_kw VolumeStatus[] = {
    { NULL, 0 }
 };
 
-static bool print_item_schema_json(POOL_MEM &buff, int level, s_jl *item, const bool last)
+#ifdef HAVE_JANSSON
+json_t *json_item(s_jl *item)
 {
-   add_json_object_start(buff, level, item->level_name);
-   add_json_pair(buff, level + 1, "level", item->level, false);
-   add_json_pair(buff, level + 1, "type", item->job_type, true);
-   add_json_object_end(buff, level, item->level_name, last);
+   json_t *json = json_object();
 
-   return true;
+   json_object_set_new(json, "level", json_integer(item->level));
+   json_object_set_new(json, "type",  json_integer(item->job_type));
+
+   return json;
 }
 
-static bool print_item_schema_json(POOL_MEM &buff, int level, s_jt *item, const bool last)
+json_t *json_item(s_jt *item)
 {
-   add_json_object_start(buff, level, item->type_name);
-   add_json_pair(buff, level + 1, "type", item->job_type, true);
-   add_json_object_end(buff, level, item->type_name, last);
+   json_t *json = json_object();
 
-   return true;
+   json_object_set_new(json, "type",  json_integer(item->job_type));
+
+   return json;
 }
 
-static void add_json_datatype_start(POOL_MEM &buffer, int level, const int type, const char *typeclass, bool values)
+json_t *json_datatype_header(const int type, const char *typeclass)
 {
-   bool last = false;
-   const char *datatype = datatype_to_str(type);
+   json_t *json = json_object();
    const char *description = datatype_to_description(type);
 
-   add_json_object_start(buffer, level, datatype);
-
-   if (!(description || typeclass || values)) {
-      last = true;
-   }
-
-   add_json_pair(buffer, level + 1, "number", type, last);
+   json_object_set_new(json, "number",  json_integer(type));
 
    if (description) {
-      if (!(typeclass || values)) {
-         last = true;
-      }
-      add_json_pair(buffer, level + 1, "description", description, last);
+      json_object_set_new(json, "description",  json_string(description));
    }
 
    if (typeclass) {
-      if (!values) {
-         last = true;
-      }
-      add_json_pair(buffer, level + 1, "class", typeclass, last);
+      json_object_set_new(json, "class",  json_string(typeclass));
    }
 
-   if (values) {
-      add_json_object_start(buffer, level + 1, "values");
-   }
+   return json;
 }
 
-static void add_json_datatype_end(POOL_MEM &buffer, int level, const int type, const bool values, const bool last = false)
+json_t *json_datatype(const int type)
 {
-   const char *datatype = datatype_to_str(type);
-
-   if (values) {
-      add_json_object_end(buffer, level + 1, "values", true);
-   }
-   add_json_object_end(buffer, level, datatype, last);
+   return json_datatype_header(type, NULL);
 }
 
-static bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, const bool last = false)
+json_t *json_datatype(const int type, s_kw items[])
 {
-   add_json_datatype_start(buffer, level, type, NULL, false);
-   add_json_datatype_end(buffer, level, type, false, last);
-
-   return true;
-}
-
-static bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, s_kw items[], const bool last = false)
-{
-   add_json_datatype_start(buffer, level, type, "keyword", items);
+   json_t *json = json_datatype_header(type, "keyword");
    if (items) {
+      json_t *values = json_object();
       for (int i = 0; items[i].name; i++) {
-         print_item_schema_json(buffer, level + 2, &items[i], !items[i + 1].name);
+         json_object_set_new(values, items[i].name, json_item(&items[i]));
       }
+      json_object_set_new(json, "values", values);
    }
-   add_json_datatype_end(buffer, level, type, items, last);
-
-   return true;
+   return json;
 }
 
-static bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, s_jl items[], const bool last = false)
+json_t *json_datatype(const int type, s_jl items[])
 {
-   add_json_datatype_start(buffer, level, type, "keyword", items);
+   // FIXME: level_name keyword is not unique
+   json_t *json = json_datatype_header(type, "keyword");
    if (items) {
+      json_t *values = json_object();
       for (int i = 0; items[i].level_name; i++) {
-         print_item_schema_json(buffer, level + 2, &items[i], !items[i + 1].level_name);
+         json_object_set_new(values, items[i].level_name,  json_item(&items[i]));
       }
+      json_object_set_new(json, "values", values);
    }
-   add_json_datatype_end(buffer, level, type, items, last);
-
-   return true;
+   return json;
 }
 
-static bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, s_jt items[], const bool last = false)
+json_t *json_datatype(const int type, s_jt items[])
 {
-   add_json_datatype_start(buffer, level, type, "keyword", items);
+   json_t *json = json_datatype_header(type, "keyword");
    if (items) {
+      json_t *values = json_object();
       for (int i = 0; items[i].type_name; i++) {
-         print_item_schema_json(buffer, level + 2, &items[i], !items[i + 1].type_name);
+         json_object_set_new(values, items[i].type_name,  json_item(&items[i]));
       }
+      json_object_set_new(json, "values", values);
    }
-   add_json_datatype_end(buffer, level, type, items, last);
-
-   return true;
+   return json;
 }
 
-bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, RES_ITEM items[], const bool last)
+json_t *json_datatype(const int type, RES_ITEM items[])
 {
-   add_json_datatype_start(buffer, level, type, "sub", items);
+   json_t *json = json_datatype_header(type, "sub");
    if (items) {
+      json_t *values = json_object();
+      json_object_set_new(json, "values", values);
       for (int i = 0; items[i].name; i++) {
-         print_item_schema_json(buffer, level + 2, &items[i], !items[i + 1].name);
+         json_object_set_new(values, items[i].name,  json_item(&items[i]));
       }
    }
-   add_json_datatype_end(buffer, level, type, items, last);
-
-   return true;
+   return json;
 }
 
 /*
@@ -862,101 +837,103 @@ bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type, RES
  */
 bool print_config_schema_json(POOL_MEM &buffer)
 {
-   bool last = true;
-   bool datatype_last;
    DATATYPE_NAME *datatype;
    RES_TABLE *resources = my_config->m_resources;
 
-   add_json_object_start(buffer, 0, "");
+   initialize_json();
 
-   add_json_pair(buffer, 1, "format-version", 2);
-   add_json_pair(buffer, 1, "component", "bareos-dir");
-   add_json_pair(buffer, 1, "version", VERSION);
+   json_t *json = json_object();
+   json_object_set_new(json, "format-version", json_integer(2));
+   json_object_set_new(json, "component", json_string("bareos-dir"));
+   json_object_set_new(json, "version", json_string(VERSION));
 
    /*
     * Resources
     */
-   add_json_object_start(buffer, 1, "resource");
-   add_json_object_start(buffer, 2, "bareos-dir");
+   json_t *resource = json_object();
+   json_object_set(json, "resource", resource);
+   json_t *bareos_dir = json_object();
+   json_object_set(resource, "bareos-dir", bareos_dir);
 
    for (int r = 0; resources[r].name; r++) {
       RES_TABLE resource = my_config->m_resources[r];
-      print_items_schema_json(buffer, 3, resource.name, resource.items, !resources[r + 1].name);
+      json_object_set(bareos_dir, resource.name, json_items(resource.items));
    }
-
-   add_json_object_end(buffer, 2, "bareos-dir", last);
-   add_json_object_end(buffer, 1, "resource");
 
    /*
     * Datatypes
     */
-   add_json_object_start(buffer, 1, "datatype");
+   json_t *json_datatype_obj = json_object();
+   json_object_set(resource, "datatype", json_datatype_obj);
 
    int d = 0;
    while (get_datatype(d)->name != NULL) {
       datatype = get_datatype(d);
-      datatype_last = !(get_datatype(d + 1)->name);
 
       switch (datatype->number) {
       case CFG_TYPE_RUNSCRIPT:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_RUNSCRIPT, runscript_items, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_RUNSCRIPT, runscript_items));
          break;
       case CFG_TYPE_INCEXC:
-         print_incexc_schema_json(buffer, 2, CFG_TYPE_INCEXC, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_incexc(CFG_TYPE_INCEXC));
          break;
       case CFG_TYPE_OPTIONS:
-         print_options_schema_json(buffer, 2, CFG_TYPE_OPTIONS, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_options(CFG_TYPE_OPTIONS));
          break;
       case CFG_TYPE_PROTOCOLTYPE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_PROTOCOLTYPE, backupprotocols, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_PROTOCOLTYPE, backupprotocols));
          break;
       case CFG_TYPE_AUTHPROTOCOLTYPE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_AUTHPROTOCOLTYPE, authprotocols, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_AUTHPROTOCOLTYPE, authprotocols));
          break;
       case CFG_TYPE_AUTHTYPE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_AUTHTYPE, authmethods, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_AUTHTYPE, authmethods));
          break;
       case CFG_TYPE_LEVEL:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_LEVEL, joblevels, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_LEVEL, joblevels));
          break;
       case CFG_TYPE_JOBTYPE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_JOBTYPE, jobtypes, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_JOBTYPE, jobtypes));
          break;
       case CFG_TYPE_MIGTYPE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_MIGTYPE, migtypes, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_MIGTYPE, migtypes));
          break;
       case CFG_TYPE_REPLACE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_REPLACE, ReplaceOptions, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_REPLACE, ReplaceOptions));
          break;
       case CFG_TYPE_ACTIONONPURGE:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_ACTIONONPURGE, ActionOnPurgeOptions, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_ACTIONONPURGE, ActionOnPurgeOptions));
          break;
       case CFG_TYPE_RUN:
-         print_datatype_schema_json(buffer, 2, CFG_TYPE_RUN, RunFields, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_RUN, RunFields));
          break;
       default:
-         print_datatype_schema_json(buffer, 2, datatype->number, datatype_last);
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(datatype->number));
          break;
       }
       d++;
    }
 
    /*
-    * Only used in ua_dotcmds, not a datatype
+    * following datatypes are ignored:
+    * - VolumeStatus: only used in ua_dotcmds, not a datatype
+    * - FS_option_kw: from inc_conf. Replaced by CFG_TYPE_OPTIONS", options_items.
+    * - FS_options: are they needed?
     */
-   //print_datatype_schema_json(buffer, 2, "VolumeStatus", VolumeStatus);
 
-   // from inc_conf
-   // replaced by "CFG_TYPE_OPTIONS", options_items
-   //print_items_schema_json(buffer, 2, "FS_option_kw", FS_option_kw);
-   //TODO? s_fs_opt FS_options
-
-   add_json_object_end(buffer, 1, "datatype", last);
-
-   add_json_object_end(buffer, 0, "", last);
+   pm_strcat(buffer, json_dumps(json, JSON_INDENT(2)));
+   json_decref(json);
 
    return true;
 }
+#else
+bool print_config_schema_json(POOL_MEM &buffer)
+{
+   pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+   return false;
+}
+#endif
+
 
 /*
  * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
@@ -1215,7 +1192,7 @@ static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_
 static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
-   RUNSCRIPT* runscript;
+   RUNSCRIPT *runscript;
    alist *list;
 
    list = *item->alistvalue;
@@ -3873,7 +3850,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
        */
       int cnt = 0;
       RES *res;
-      alist* list;
+      alist *list;
       POOL_MEM res_names;
 
       list = *(items[i].alistvalue);
@@ -4070,7 +4047,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
        */
       int cnt = 0;
       char *audit_event;
-      alist* list;
+      alist *list;
       POOL_MEM audit_events;
 
       list = *(items[i].alistvalue);

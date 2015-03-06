@@ -242,6 +242,9 @@ void remove_jcr_from_tsd(JCR *jcr);
 uint32_t get_jobid_from_tsd();
 uint32_t get_jobid_from_tid(pthread_t tid);
 
+/* json.c */
+void initialize_json();
+
 /* lex.c */
 LEX *lex_close_file(LEX *lf);
 LEX *lex_open_file(LEX *lf,

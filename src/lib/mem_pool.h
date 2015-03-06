@@ -88,6 +88,7 @@ class POOL_MEM {
 public:
    POOL_MEM() { mem = get_pool_memory(PM_NAME); *mem = 0; }
    POOL_MEM(int pool) { mem = get_pool_memory(pool); *mem = 0; }
+   POOL_MEM(const char *str) { mem = get_pool_memory(PM_NAME); *mem = 0; strcpy(str); }
    ~POOL_MEM() { free_pool_memory(mem); mem = NULL; }
    char *c_str() const { return mem; }
    POOLMEM *&addr() { return mem; }
@@ -98,8 +99,13 @@ public:
    }
    int32_t max_size();
    void realloc_pm(int32_t size);
+   int strcpy(POOL_MEM &str);
    int strcpy(const char *str);
+   int strcat(POOL_MEM &str);
    int strcat(const char *str);
+   size_t strlen() { return ::strlen(mem); };
+   int bsprintf(const char *fmt, ...);
+   int bvsprintf(const char *fmt, va_list arg_ptr);
 };
 
 int pm_strcat(POOLMEM **pm, const char *str);

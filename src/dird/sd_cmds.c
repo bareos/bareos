@@ -773,7 +773,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
       ua->send_msg("%s", sd->msg);
    }
 
-   sd->signal( BNET_TERMINATE);
+   sd->signal(BNET_TERMINATE);
    sd->close();
    delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;

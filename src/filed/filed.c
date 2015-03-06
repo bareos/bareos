@@ -224,11 +224,12 @@ int main (int argc, char *argv[])
    }
 
    if (export_config_schema) {
+      POOL_MEM buffer;
+
       my_config = new_config_parser();
       init_fd_config(my_config, configfile, M_ERROR_TERM);
-      POOL_MEM buffer;
       print_config_schema_json(buffer);
-      printf( "%s\n", buffer.c_str() );
+      printf("%s\n", buffer.c_str());
       goto bail_out;
    }
 

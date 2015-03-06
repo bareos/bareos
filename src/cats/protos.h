@@ -118,17 +118,17 @@ int db_get_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesystem
 bool db_get_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
 
 /* sql_list.c */
-void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);
-void db_list_job_records(JCR *jcr, B_DB *db, JOB_DBR *jr, DB_LIST_HANDLER sendit, void *ctx, e_list_type type);
-void db_list_job_totals(JCR *jcr, B_DB *db, JOB_DBR *jr, DB_LIST_HANDLER sendit, void *ctx);
-void db_list_files_for_job(JCR *jcr, B_DB *db, uint32_t jobid, DB_LIST_HANDLER sendit, void *ctx);
-void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
-void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
-void db_list_joblog_records(JCR *jcr, B_DB *mdb, JobId_t JobId, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
-bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query, DB_LIST_HANDLER *sendit, void *ctx, bool verbose, e_list_type type);
-void db_list_client_records(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
-void db_list_copies_records(JCR *jcr, B_DB *mdb, uint32_t limit, char *jobids, DB_LIST_HANDLER *sendit, void *ctx, e_list_type type);
-void db_list_base_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, DB_LIST_HANDLER *sendit, void *ctx);
+void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_job_records(JCR *jcr, B_DB *db, JOB_DBR *jr, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_job_totals(JCR *jcr, B_DB *db, JOB_DBR *jr, OUTPUT_FORMATTER *sendit);
+void db_list_files_for_job(JCR *jcr, B_DB *db, uint32_t jobid, OUTPUT_FORMATTER *sendit);
+void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_joblog_records(JCR *jcr, B_DB *mdb, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query, OUTPUT_FORMATTER *sendit, bool verbose, e_list_type type);
+void db_list_client_records(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_copies_records(JCR *jcr, B_DB *mdb, uint32_t limit, char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_base_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, OUTPUT_FORMATTER *sendit);
 
 /* sql_pooling.c */
 bool db_sql_pool_initialize(const char *db_drivername,

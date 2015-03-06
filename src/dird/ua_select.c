@@ -674,7 +674,7 @@ int select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
          goto bail_out;
       }
       mr->PoolId = pr.PoolId;
-      db_list_media_records(ua->jcr, ua->db, mr, printit, ua, HORZ_LIST);
+      db_list_media_records(ua->jcr, ua->db, mr, ua->send, HORZ_LIST);
       if (!get_cmd(ua, _("Enter *MediaId or Volume name: "))) {
          goto bail_out;
       }
@@ -750,7 +750,7 @@ POOLRES *get_pool_resource(UAContext *ua)
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
-   db_list_job_records(ua->jcr, ua->db, jr, printit, ua, HORZ_LIST);
+   db_list_job_records(ua->jcr, ua->db, jr, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }

@@ -2012,7 +2012,7 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
    if (!rc.job) {
       return false;
    } else if (!acl_access_ok(ua, Job_ACL, rc.job->name(), true)) {
-      ua->error_msg( _("No authorization. Job \"%s\".\n"), rc.job->name());
+      ua->error_msg(_("No authorization. Job \"%s\".\n"), rc.job->name());
       return false;
    }
 

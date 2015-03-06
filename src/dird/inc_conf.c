@@ -815,14 +815,14 @@ void store_inc(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_err0(lc, _("Old style Include/Exclude not supported\n"));
 }
 
-bool print_incexc_schema_json(POOL_MEM &buffer, int level,
-                              const int type, const bool last)
+#ifdef HAVE_JANSSON
+json_t *json_incexc(const int type)
 {
-   return print_datatype_schema_json(buffer, level, type, newinc_items, last);
+   return json_datatype(type, newinc_items);
 }
 
-bool print_options_schema_json(POOL_MEM &buffer, int level,
-                               const int type, const bool last)
+json_t *json_options(const int type)
 {
-   return print_datatype_schema_json(buffer, level, type, options_items, last);
+   return json_datatype(type, options_items);
 }
+#endif

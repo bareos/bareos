@@ -47,6 +47,8 @@ TSTFNDOBJS = $(TSTFNDSRCS:.c=.o)
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
+JANSSON_CPPFLAGS = @JANSSON_INC@
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -59,6 +61,10 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 all: Makefile bareos-dir bareos-dbcheck @STATIC_DIR@
 	@echo "==== Make of dird is good ===="
 	@echo " "
+
+dird_conf.o: dird_conf.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(JANSSON_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 bareos-dir: Makefile $(SVROBJS) \
 	    ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \

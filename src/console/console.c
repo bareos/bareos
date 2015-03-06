@@ -299,8 +299,10 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 
       tid = start_bsock_timer(UA_sock, timeout);
       while ((status = UA_sock->recv()) >= 0 ||
-             (status == BNET_SIGNAL && (UA_sock->msglen == BNET_START_RTREE ||
-                                        UA_sock->msglen == BNET_END_RTREE))) {
+             ((status == BNET_SIGNAL) && (
+              (UA_sock->msglen != BNET_EOD) &&
+              (UA_sock->msglen != BNET_MAIN_PROMPT) &&
+              (UA_sock->msglen != BNET_SUB_PROMPT)))) {
          if (status == BNET_SIGNAL) {
             if (UA_sock->msglen == BNET_START_RTREE) {
                file_selection = true;
@@ -321,7 +323,9 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
           * Suppress output if running in background or user hit ctl-c
           */
          if (!stop && !usrbrk()) {
-            sendit(UA_sock->msg);
+            if (UA_sock->msg) {
+               sendit(UA_sock->msg);
+            }
          }
       }
       stop_bsock_timer(tid);
@@ -1201,11 +1205,12 @@ int main(int argc, char *argv[])
    }
 
    if (export_config_schema) {
+      POOL_MEM buffer;
+
       my_config = new_config_parser();
       init_cons_config(my_config, configfile, M_ERROR_TERM);
-      POOL_MEM buffer;
       print_config_schema_json(buffer);
-      printf( "%s\n", buffer.c_str() );
+      printf("%s\n", buffer.c_str());
       exit(0);
    }
 

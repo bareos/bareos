@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -89,47 +89,50 @@ static int one_handler(void *ctx, int num_field, char **row);
 struct cmdstruct {
    const char *key;
    bool (*func)(UAContext *ua, const char *cmd);
-   const char *help;     /* Help */
-   const bool use_in_rs; /* Can be used in runscript */
+   const char *help;       /* Help */
+   const char *usage;      /* All arguments to build usage */
+   const bool use_in_rs;   /* Can be used in runscript */
    const bool audit_event; /* Log an audit event when this Command is executed */
 };
 static struct cmdstruct commands[] = {
-   { NT_(".api"), api_cmd, NULL, false, false },
-   { NT_(".backups"), backupscmd, NULL, false, false },
-   { NT_(".clients"), clientscmd, NULL, true, false },
-   { NT_(".catalogs"), catalogscmd, NULL, false, false },
-   { NT_(".defaults"), defaultscmd, NULL, false, false },
-   { NT_(".die"), admin_cmds, NULL, false, true },
-   { NT_(".dump"), admin_cmds, NULL, false, true },
-   { NT_(".exit"), admin_cmds, NULL, false, false },
-   { NT_(".filesets"), filesetscmd, NULL, false, false },
-   { NT_(".help"), dot_help_cmd, NULL, false, false },
-   { NT_(".jobdefs"), jobdefscmd, NULL, true, false },
-   { NT_(".jobs"), jobscmd, NULL, true, false },
-   { NT_(".levels"), levelscmd, NULL, false, false },
-   { NT_(".messages"), getmsgscmd, NULL, false, false },
-   { NT_(".msgs"), msgscmd, NULL, false, false },
-   { NT_(".pools"), poolscmd, NULL, true, false },
-   { NT_(".quit"), dot_quit_cmd, NULL, false, false },
-   { NT_(".sql"), sql_cmd, NULL, false, true },
-   { NT_(".schedule"), schedulecmd, NULL, false, false },
-   { NT_(".status"), dot_status_cmd, NULL, false, true },
-   { NT_(".storage"), storagecmd, NULL, true, false },
-   { NT_(".volstatus"), volstatuscmd, NULL, true, false },
-   { NT_(".media"), mediacmd, NULL, true, false },
-   { NT_(".mediatypes"), mediatypescmd, NULL, true, false },
-   { NT_(".locations"), locationscmd, NULL, true, false },
-   { NT_(".profiles"), profilescmd, NULL, true, false },
-   { NT_(".actiononpurge"), aopcmd, NULL, true, false },
-   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, true, true },
-   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, true, true },
-   { NT_(".bvfs_update"), dot_bvfs_update, NULL, true, true },
-   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL, true, true },
-   { NT_(".bvfs_versions"), dot_bvfs_versions, NULL, true, true },
-   { NT_(".bvfs_restore"), dot_bvfs_restore, NULL, true, true },
-   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup, NULL, true, true },
-   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, false, true },
-   { NT_(".types"), typescmd, NULL, false, false }
+   { NT_(".api"), api_cmd, _("Switch between different api modes"),
+     NT_("0 | 1 | 2 | off | json"), false, false },
+   { NT_(".backups"), backupscmd, NULL, NULL, false, false },
+   { NT_(".clients"), clientscmd, NULL, NULL, true, false },
+   { NT_(".catalogs"), catalogscmd, NULL, NULL, false, false },
+   { NT_(".defaults"), defaultscmd, NULL, NULL, false, false },
+   { NT_(".die"), admin_cmds, NULL, NULL, false, true },
+   { NT_(".dump"), admin_cmds, NULL, NULL, false, true },
+   { NT_(".exit"), admin_cmds, NULL, NULL, false, false },
+   { NT_(".filesets"), filesetscmd, NULL, NULL, false, false },
+   { NT_(".help"), dot_help_cmd, NULL, NULL, false, false },
+   { NT_(".jobdefs"), jobdefscmd, NULL, NULL, true, false },
+   { NT_(".jobs"), jobscmd, NULL,
+     NT_("type=<jobtype>"), true, false },
+   { NT_(".levels"), levelscmd, NULL, NULL, false, false },
+   { NT_(".messages"), getmsgscmd, NULL, NULL, false, false },
+   { NT_(".msgs"), msgscmd, NULL, NULL, false, false },
+   { NT_(".pools"), poolscmd, NULL, NULL, true, false },
+   { NT_(".quit"), dot_quit_cmd, NULL, NULL, false, false },
+   { NT_(".sql"), sql_cmd, NULL, NULL, false, true },
+   { NT_(".schedule"), schedulecmd, NULL, NULL, false, false },
+   { NT_(".status"), dot_status_cmd, NULL, NULL, false, true },
+   { NT_(".storage"), storagecmd, NULL, NULL, true, false },
+   { NT_(".volstatus"), volstatuscmd, NULL, NULL, true, false },
+   { NT_(".media"), mediacmd, NULL, NULL, true, false },
+   { NT_(".mediatypes"), mediatypescmd, NULL, NULL, true, false },
+   { NT_(".locations"), locationscmd, NULL, NULL, true, false },
+   { NT_(".profiles"), profilescmd, NULL, NULL, true, false },
+   { NT_(".actiononpurge"), aopcmd, NULL, NULL, true, false },
+   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, NULL, true, true },
+   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, NULL, true, true },
+   { NT_(".bvfs_update"), dot_bvfs_update, NULL, NULL, true, true },
+   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids, NULL, NULL, true, true },
+   { NT_(".bvfs_versions"), dot_bvfs_versions, NULL, NULL, true, true },
+   { NT_(".bvfs_restore"), dot_bvfs_restore, NULL, NULL, true, true },
+   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup, NULL, NULL, true, true },
+   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, NULL, false, true },
+   { NT_(".types"), typescmd, NULL, NULL, false, false }
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
@@ -194,7 +197,9 @@ bool do_a_dot_command(UAContext *ua)
          if (ua->api) {
             user->signal(BNET_CMD_BEGIN);
          }
+         ua->send->set_mode(ua->api);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
+         ua->send->finalize_result(ok);
          if (ua->api) {
             user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
          }
@@ -251,11 +256,34 @@ static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
    return true;
 }
 
+static int bvfs_stat(UAContext *ua, char *lstat)
+{
+   struct stat statp;
+   int32_t LinkFI;
+
+   memset(&statp, 0, sizeof(struct stat));
+   decode_stat(lstat, &statp, sizeof(statp), &LinkFI);
+
+   ua->send->object_start("stat");
+   ua->send->object_key_value("dev", statp.st_dev);
+   ua->send->object_key_value("ino", statp.st_ino);
+   ua->send->object_key_value("mode", statp.st_mode);
+   ua->send->object_key_value("nlink", statp.st_nlink);
+   ua->send->object_key_value("uid", statp.st_uid);
+   ua->send->object_key_value("gid", statp.st_gid);
+   ua->send->object_key_value("rdev", statp.st_rdev);
+   ua->send->object_key_value("size", statp.st_size);
+   ua->send->object_key_value("atime", statp.st_atime);
+   ua->send->object_key_value("mtime", statp.st_mtime);
+   ua->send->object_key_value("ctime", statp.st_ctime);
+   ua->send->object_end("stat");
+
+   return 0;
+}
+
 static int bvfs_result_handler(void *ctx, int fields, char **row)
 {
    UAContext *ua = (UAContext *)ctx;
-   struct stat statp;
-   int32_t LinkFI;
    char *fileid=row[BVFS_FileId];
    char *lstat=row[BVFS_LStat];
    char *jobid=row[BVFS_JobId];
@@ -270,25 +298,43 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       fileid = zero;
    }
 
-   memset(&statp, 0, sizeof(struct stat));
-   decode_stat(lstat, &statp, sizeof(statp), &LinkFI);
-
    Dmsg1(100, "type=%s\n", row[0]);
    if (bvfs_is_dir(row)) {
       char *path = bvfs_basename_dir(row[BVFS_Name]);
-      ua->send_msg("%s\t0\t%s\t%s\t%s\t%s\n", row[BVFS_PathId], fileid,
-                   jobid, lstat, path);
-
-   } else if (bvfs_is_version(row)) {
-      ua->send_msg("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n", row[BVFS_PathId],
-                   row[BVFS_FilenameId], fileid, jobid,
-                   lstat, row[BVFS_Md5], row[BVFS_VolName],
-                   row[BVFS_VolInchanger]);
-
+      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_key_value("Type", row[BVFS_Type]);
+      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->object_key_value("FilenameId", FileId_t(0), "%lld\t");
+      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->object_key_value("lstat", lstat, "%s\t");
+      ua->send->object_key_value("Name", path, "%s\n");
+      ua->send->object_key_value("Fullpath", row[BVFS_Name]);
+      bvfs_stat(ua, lstat);
+      ua->send->object_end(row[BVFS_Name]);
+  } else if (bvfs_is_version(row)) {
+      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_key_value("Type", row[BVFS_Type]);
+      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
+      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->object_key_value("lstat", lstat, "%s\t");
+      ua->send->object_key_value("MD5", row[BVFS_Md5], "%s\t");
+      ua->send->object_key_value("VolumeName", row[BVFS_VolName], "%s\t");
+      ua->send->object_key_value("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
+      ua->send->object_end(row[BVFS_Name]);
    } else if (bvfs_is_file(row)) {
-      ua->send_msg("%s\t%s\t%s\t%s\t%s\t%s\n", row[BVFS_PathId],
-                   row[BVFS_FilenameId], fileid, jobid,
-                   lstat, row[BVFS_Name]);
+      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_key_value("Type", row[BVFS_Type]);
+      ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
+      ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
+      ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
+      ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
+      ua->send->object_key_value("lstat", lstat, "%s\t");
+      ua->send->object_key_value("Name", row[BVFS_Name], "%s\n");
+      bvfs_stat(ua, lstat);
+      ua->send->object_end(row[BVFS_Name]);
    }
 
    return 0;
@@ -343,7 +389,7 @@ static bool bvfs_parse_arg(UAContext *ua,
    *jobid = NULL;
    *username = NULL;
 
-   for (int i=1; i<ua->argc; i++) {
+   for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("pathid"))) {
          if (is_a_number(ua->argv[i])) {
             *pathid = str_to_int64(ua->argv[i]);
@@ -611,7 +657,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
 
    /* Foreach different FileSet, we build a restore jobid list */
-   for (int i=0; i < ids.num_ids; i++) {
+   for (int i = 0; i < ids.num_ids; i++) {
       jr.FileSetId = ids.DBId[i];
       if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
          return true;
@@ -728,7 +774,7 @@ static bool admin_cmds(UAContext *ua, const char *cmd)
       return true;
    }
    /* General debug? */
-   for (i=1; i<ua->argc; i++) {
+   for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], "dir") ||
           bstrcasecmp(ua->argk[i], "director")) {
          dir = true;
@@ -835,11 +881,15 @@ static bool jobdefscmd(UAContext *ua, const char *cmd)
    JOBRES *jobdefs;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(jobdefs, R_JOBDEFS) {
       if (acl_access_ok(ua, Job_ACL, jobdefs->name())) {
-         ua->send_msg("%s\n", jobdefs->name());
+         ua->send->object_start("jobdefs");
+         ua->send->object_key_value("name", jobdefs->name(), "%s\n");
+         ua->send->object_end("jobdefs");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -859,13 +909,17 @@ static bool jobscmd(UAContext *ua, const char *cmd)
       type = ua->argv[pos][0];
    }
    LockRes();
+   ua->send->object_start();
    foreach_res(job, R_JOB) {
       if (!type || type == job->JobType) {
          if (acl_access_ok(ua, Job_ACL, job->name())) {
-            ua->send_msg("%s\n", job->name());
+            ua->send->object_start("jobs");
+            ua->send->object_key_value("name", job->name(), "%s\n");
+            ua->send->object_end("jobs");
          }
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -876,11 +930,15 @@ static bool filesetscmd(UAContext *ua, const char *cmd)
    FILESETRES *fs;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(fs, R_FILESET) {
       if (acl_access_ok(ua, FileSet_ACL, fs->name())) {
-         ua->send_msg("%s\n", fs->name());
+         ua->send->object_start("filesets");
+         ua->send->object_key_value("name", fs->name(), "%s\n");
+         ua->send->object_end("filesets");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -891,11 +949,15 @@ static bool catalogscmd(UAContext *ua, const char *cmd)
    CATRES *cat;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(cat, R_CATALOG) {
       if (acl_access_ok(ua, Catalog_ACL, cat->name())) {
-         ua->send_msg("%s\n", cat->name());
+         ua->send->object_start("catalogs");
+         ua->send->object_key_value("name", cat->name(), "%s\n");
+         ua->send->object_end("catalogs");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -906,11 +968,15 @@ static bool clientscmd(UAContext *ua, const char *cmd)
    CLIENTRES *client;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(client, R_CLIENT) {
       if (acl_access_ok(ua, Client_ACL, client->name())) {
-         ua->send_msg("%s\n", client->name());
+         ua->send->object_start("clients");
+         ua->send->object_key_value("name", client->name(), "%s\n");
+         ua->send->object_end("clients");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -921,9 +987,13 @@ static bool msgscmd(UAContext *ua, const char *cmd)
    MSGSRES *msgs = NULL;
 
    LockRes();
+   ua->send->object_start("messages");
    foreach_res(msgs, R_MSGS) {
-      ua->send_msg("%s\n", msgs->name());
+      ua->send->object_start();
+      ua->send->object_key_value("text", msgs->name(), "%s\n");
+      ua->send->object_end();
    }
+   ua->send->object_end("messages");
    UnlockRes();
 
    return true;
@@ -934,11 +1004,15 @@ static bool poolscmd(UAContext *ua, const char *cmd)
    POOLRES *pool;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
-         ua->send_msg("%s\n", pool->name());
+         ua->send->object_start("pools");
+         ua->send->object_key_value("name", pool->name(), "%s\n");
+         ua->send->object_end("pools");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -949,11 +1023,15 @@ static bool storagecmd(UAContext *ua, const char *cmd)
    STORERES *store;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
-         ua->send_msg("%s\n", store->name());
+         ua->send->object_start("storages");
+         ua->send->object_key_value("name", store->name(), "%s\n");
+         ua->send->object_end("storages");
       }
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -964,9 +1042,13 @@ static bool profilescmd(UAContext *ua, const char *cmd)
    PROFILERES *profile;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(profile, R_PROFILE) {
-      ua->send_msg("%s\n", profile->name());
+      ua->send->object_start("profiles");
+      ua->send->object_key_value("name", profile->name(), "%s\n");
+      ua->send->object_end("profiles");
    }
+   ua->send->object_end();
    UnlockRes();
 
    return true;
@@ -974,21 +1056,27 @@ static bool profilescmd(UAContext *ua, const char *cmd)
 
 static bool aopcmd(UAContext *ua, const char *cmd)
 {
-   int i;
-
-   for (i = 0; ActionOnPurgeOptions[i].name; i++) {
-      ua->send_msg("%s\n", ActionOnPurgeOptions[i].name);
+   ua->send->object_start();
+   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
+      ua->send->object_start("actiononpurge");
+      ua->send->object_key_value("name", ActionOnPurgeOptions[i].name, "%s\n");
+      ua->send->object_end("actionsonpurge");
    }
+   ua->send->object_end();
+
    return true;
 }
 
 static bool typescmd(UAContext *ua, const char *cmd)
 {
-   int i;
-
-   for (i = 0; jobtypes[i].type_name; i++) {
-      ua->send_msg("%s\n", jobtypes[i].type_name);
+   ua->send->object_start();
+   for (int i = 0; jobtypes[i].type_name; i++) {
+      ua->send->object_start("jobtypes");
+      ua->send->object_key_value("name", jobtypes[i].type_name, "%s\n");
+      ua->send->object_end("jobtypes");
    }
+   ua->send->object_end();
+
    return true;
 }
 
@@ -1002,11 +1090,31 @@ static bool typescmd(UAContext *ua, const char *cmd)
  */
 static bool api_cmd(UAContext *ua, const char *cmd)
 {
+   int value = 0;
+
    if (ua->argc == 2) {
-      ua->api = atoi(ua->argk[1]);
+      if (bstrcasecmp(ua->argk[1], "off")) {
+         ua->api = API_MODE_OFF;
+      } else if (bstrcasecmp(ua->argk[1], "on")) {
+         ua->api = API_MODE_ON;
+      } else if (bstrcasecmp(ua->argk[1], "json")) {
+         ua->api = API_MODE_JSON;
+      } else {
+         value = atoi(ua->argk[1]);
+         if ((value < API_MODE_OFF) || (value > API_MODE_JSON)) {
+            return false;
+         }
+         ua->api = value;
+      }
    } else {
       ua->api = 1;
    }
+
+   ua->send->set_mode(ua->api);
+   ua->send->object_start();
+   ua->send->object_key_value("api", "%s: ", ua->api, "%d\n");
+   ua->send->object_end();
+
    return true;
 }
 
@@ -1058,7 +1166,7 @@ static int sql_handler(void *ctx, int num_field, char **row)
    if (num_field == 0 || row == NULL || row[0] == NULL) {
       return 0;                       /* nothing returned */
    }
-   for (int i=0; num_field--; i++) {
+   for (int i = 0; num_field--; i++) {
       if (i == 0) {
          pm_strcpy(rows, NPRT(row[0]));
       } else {
@@ -1100,7 +1208,11 @@ static bool sql_cmd(UAContext *ua, const char *cmd)
 static int one_handler(void *ctx, int num_field, char **row)
 {
    UAContext *ua = (UAContext *)ctx;
-   ua->send_msg("%s\n", row[0]);
+
+   ua->send->object_start();
+   ua->send->object_key_value("name", row[0], "%s\n");
+   ua->send->object_end();
+
    return 0;
 }
 
@@ -1109,12 +1221,15 @@ static bool mediatypescmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
+
+   ua->send->object_start("mediatypes");
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
-                  one_handler, (void *)ua))
-   {
+                     "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
+                     one_handler, (void *)ua)) {
       ua->error_msg(_("List MediaType failed: ERR=%s\n"), db_strerror(ua->db));
    }
+   ua->send->object_end("mediatypes");
+
    return true;
 }
 
@@ -1123,12 +1238,15 @@ static bool mediacmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
+
+   ua->send->object_start("media");
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
-                  one_handler, (void *)ua))
-   {
+                     "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
+                     one_handler, (void *)ua)) {
       ua->error_msg(_("List Media failed: ERR=%s\n"), db_strerror(ua->db));
    }
+   ua->send->object_end("media");
+
    return true;
 }
 
@@ -1137,10 +1255,15 @@ static bool schedulecmd(UAContext *ua, const char *cmd)
    SCHEDRES *sched;
 
    LockRes();
+   ua->send->object_start();
    foreach_res(sched, R_SCHEDULE) {
-      ua->send_msg("%s\n", sched->hdr.name);
+      ua->send->object_start("schedules");
+      ua->send->object_key_value("name", sched->hdr.name, "%s\n");
+      ua->send->object_end("schedules");
    }
+   ua->send->object_end();
    UnlockRes();
+
    return true;
 }
 
@@ -1149,26 +1272,32 @@ static bool locationscmd(UAContext *ua, const char *cmd)
    if (!open_client_db(ua)) {
       return true;
    }
+
+   ua->send->object_start("locations");
    if (!db_sql_query(ua->db,
-                  "SELECT DISTINCT Location FROM Location ORDER BY Location",
-                  one_handler, (void *)ua))
-   {
+                     "SELECT DISTINCT Location FROM Location ORDER BY Location",
+                     one_handler, (void *)ua)) {
       ua->error_msg(_("List Location failed: ERR=%s\n"), db_strerror(ua->db));
    }
+   ua->send->object_end("locations");
+
    return true;
 }
 
 static bool levelscmd(UAContext *ua, const char *cmd)
 {
-   int i;
-
    /*
     * Note some levels are blank, which means none is needed
     */
+   ua->send->object_start();
    if (ua->argc == 1) {
-      for (i=0; joblevels[i].level_name; i++) {
+      for (int i = 0; joblevels[i].level_name; i++) {
          if (joblevels[i].level_name[0] != ' ') {
-            ua->send_msg("%s\n", joblevels[i].level_name);
+            ua->send->object_start("levels");
+            ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
+            ua->send->object_key_value("level", joblevels[i].level);
+            ua->send->object_key_value("jobtype", joblevels[i].job_type);
+            ua->send->object_end("levels");
          }
       }
    } else if (ua->argc == 2) {
@@ -1177,29 +1306,38 @@ static bool levelscmd(UAContext *ua, const char *cmd)
       /*
        * Assume that first argument is the Job Type
        */
-      for (i=0; jobtypes[i].type_name; i++) {
+      for (int i = 0; jobtypes[i].type_name; i++) {
          if (bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
             jobtype = jobtypes[i].job_type;
             break;
          }
       }
-      for (i=0; joblevels[i].level_name; i++) {
+
+      for (int i = 0; joblevels[i].level_name; i++) {
          if ((joblevels[i].job_type == jobtype) && (joblevels[i].level_name[0] != ' ')) {
-            ua->send_msg("%s\n", joblevels[i].level_name);
+            ua->send->object_start("levels");
+            ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
+            ua->send->object_key_value("level", joblevels[i].level);
+            ua->send->object_key_value("jobtype", joblevels[i].job_type);
+            ua->send->object_end("levels");
          }
       }
    }
+   ua->send->object_end();
 
    return true;
 }
 
 static bool volstatuscmd(UAContext *ua, const char *cmd)
 {
-   int i;
-
-   for (i = 0; VolumeStatus[i].name; i++) {
-      ua->send_msg("%s\n", VolumeStatus[i].name);
+   ua->send->object_start();
+   for (int i = 0; VolumeStatus[i].name; i++) {
+      ua->send->object_start("volstatus");
+      ua->send->object_key_value("name", VolumeStatus[i].name, "%s\n");
+      ua->send->object_end("volstatus");
    }
+   ua->send->object_end();
+
    return true;
 }
 

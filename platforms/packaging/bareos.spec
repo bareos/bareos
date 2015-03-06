@@ -196,6 +196,7 @@ BuildRequires: update-desktop-files
 %if 0%{?suse_version} > 1010
 # link identical files
 BuildRequires: fdupes
+BuildRequires: libjansson-devel
 BuildRequires: lsb-release
 %endif
 
@@ -225,6 +226,7 @@ BuildRequires: fedora-release
 %endif
 
 %if 0%{?rhel_version} >= 600 || 0%{?centos_version} >= 600 || 0%{?fedora_version} >= 14
+BuildRequires: jansson-devel
 BuildRequires: tcp_wrappers-devel
 %endif
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,6 +63,7 @@ public:
    uint32_t pint32_val;               /* Positive integer */
    int32_t int32_val;                 /* Positive/negative */
    int64_t int64_val;                 /* Big int */
+   OUTPUT_FORMATTER *send;            /* object instance to handle output */
 
    void signal(int sig) { UA_sock->signal(sig); };
 

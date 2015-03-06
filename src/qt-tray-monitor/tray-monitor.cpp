@@ -211,11 +211,12 @@ int main(int argc, char *argv[])
    parse_command_line(argc, argv, cl);
 
    if (cl.export_config_schema) {
+      POOL_MEM buffer;
+
       my_config = new_config_parser();
       init_tmon_config(my_config, cl.configfile, M_ERROR_TERM);
-      POOL_MEM buffer;
       print_config_schema_json(buffer);
-      printf( "%s\n", buffer.c_str() );
+      printf("%s\n", buffer.c_str());
       fflush(stdout);
       exit(0);
    }

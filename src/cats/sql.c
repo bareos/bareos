@@ -426,7 +426,7 @@ static int max_length(int max_length)
 /*
  * List dashes as part of header for listing SQL results in a table
  */
-void list_dashes(B_DB *mdb, DB_LIST_HANDLER *send, void *ctx)
+static void list_dashes(B_DB *mdb, OUTPUT_FORMATTER *send)
 {
    SQL_FIELD *field;
    int i, j;
@@ -434,7 +434,7 @@ void list_dashes(B_DB *mdb, DB_LIST_HANDLER *send, void *ctx)
    int num_fields;
 
    sql_field_seek(mdb, 0);
-   send(ctx, "+");
+   send->decoration("+");
    num_fields = sql_num_fields(mdb);
    for (i = 0; i < num_fields; i++) {
       field = sql_fetch_field(mdb);
@@ -443,33 +443,38 @@ void list_dashes(B_DB *mdb, DB_LIST_HANDLER *send, void *ctx)
       }
       len = max_length(field->max_length + 2);
       for (j = 0; j < len; j++) {
-         send(ctx, "-");
+         send->decoration("-");
       }
-      send(ctx, "+");
+      send->decoration("+");
    }
-   send(ctx, "\n");
+   send->decoration("\n");
 }
 
 /* Small handler to print the last line of a list xxx command */
+/*
 static void last_line_handler(void *vctx, const char *str)
 {
    LIST_CTX *ctx = (LIST_CTX *)vctx;
    bstrncat(ctx->line, str, sizeof(ctx->line));
 }
+*/
 
 int list_result(void *vctx, int nb_col, char **row)
 {
    SQL_FIELD *field;
    int i, col_len, max_len = 0;
    int num_fields;
-   char buf[2000], ewc[30];
+   char ewc[30];
+   POOL_MEM key;
+   POOL_MEM value;
 
    LIST_CTX *pctx = (LIST_CTX *)vctx;
-   DB_LIST_HANDLER *send = pctx->send;
+   OUTPUT_FORMATTER *send = pctx->send;
    e_list_type type = pctx->type;
    B_DB *mdb = pctx->mdb;
-   void *ctx = pctx->ctx;
    JCR *jcr = pctx->jcr;
+
+   send->object_start("row");
 
    num_fields = sql_num_fields(mdb);
    switch (type) {
@@ -527,10 +532,9 @@ int list_result(void *vctx, int nb_col, char **row)
          /*
           * Keep the result to display the same line at the end of the table
           */
-         list_dashes(mdb, last_line_handler, pctx);
-         send(ctx, pctx->line);
+         list_dashes(mdb, send);
 
-         send(ctx, "|");
+         send->decoration("|");
          sql_field_seek(mdb, 0);
          for (i = 0; i < num_fields; i++) {
             Dmsg1(800, "list_result looking at field %d\n", i);
@@ -539,11 +543,10 @@ int list_result(void *vctx, int nb_col, char **row)
                break;
             }
             max_len = max_length(field->max_length);
-            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
-            send(ctx, buf);
+            send->decoration(" %-*s |", max_len, field->name);
          }
-         send(ctx, "\n");
-         list_dashes(mdb, send, ctx);
+         send->decoration("\n");
+         list_dashes(mdb, send);
       }
       break;
    default:
@@ -561,37 +564,41 @@ int list_result(void *vctx, int nb_col, char **row)
             break;
          }
          if (row[i] == NULL) {
-            bsnprintf(buf, sizeof(buf), " %s", "NULL");
+            value.bsprintf(" %s", "NULL");
          } else {
-            bsnprintf(buf, sizeof(buf), " %s", row[i]);
+            value.bsprintf(" %s", row[i]);
          }
-         send(ctx, buf);
+         send->object_key_value(field->name, value.c_str(), "%s");
       }
       if (type != RAW_LIST) {
-         send(ctx, "\n");
+         send->decoration("\n");
       }
       break;
    case HORZ_LIST:
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
-      send(ctx, "|");
+      send->decoration("|");
       for (i = 0; i < num_fields; i++) {
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
+
          max_len = max_length(field->max_length);
          if (row[i] == NULL) {
-            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
+            value.bsprintf(" %-*s |", max_len, "NULL");
          } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-            bsnprintf(buf, sizeof(buf), " %*s |", max_len,
-                      add_commas(row[i], ewc));
+            value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
          } else {
-            bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
+            value.bsprintf(" %-*s |", max_len, row[i]);
          }
-         send(ctx, buf);
+
+         /*
+          * Use value format string to send preformated value.
+          */
+         send->object_key_value(field->name, row[i], value.c_str());
       }
-      send(ctx, "\n");
+      send->decoration("\n");
       break;
    case VERT_LIST:
       Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
@@ -602,20 +609,27 @@ int list_result(void *vctx, int nb_col, char **row)
             break;
          }
          if (row[i] == NULL) {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
+            key.bsprintf(" %*s: ", max_len, field->name);
+            value.bsprintf("%s\n", "NULL");
          } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
-                      add_commas(row[i], ewc));
+            key.bsprintf(" %*s: ", max_len, field->name);
+            value.bsprintf("%s\n", add_commas(row[i], ewc));
          } else {
-            bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
+            key.bsprintf(" %*s: ", max_len, field->name);
+            value.bsprintf("%s\n", row[i]);
          }
-         send(ctx, buf);
+
+         /*
+          * Use value format string to send preformated value.
+          */
+         send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
       }
-      send(ctx, "\n");
+      send->decoration("\n");
       break;
    default:
       break;
    }
+   send->object_end("row");
    return 0;
 }
 
@@ -624,17 +638,20 @@ int list_result(void *vctx, int nb_col, char **row)
  *  list on one line horizontally.
  * Return number of rows
  */
-int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_type type)
+int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 {
    SQL_FIELD *field;
    SQL_ROW row;
    int i, col_len, max_len = 0;
    int num_fields;
-   char buf[2000], ewc[30];
+   char ewc[30];
+   POOL_MEM key;
+   POOL_MEM value;
 
    Dmsg0(800, "list_result starts\n");
    if (sql_num_rows(mdb) == 0) {
-      send(ctx, _("No results to list.\n"));
+      send->decoration(_("No results to list.\n"));
+      send->object_end("table");
       return sql_num_rows(mdb);
    }
 
@@ -688,6 +705,7 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
    case RAW_LIST:
       Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         send->object_start(row[0]);
          sql_field_seek(mdb, 0);
          for (i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
@@ -695,21 +713,22 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
                break;
             }
             if (row[i] == NULL) {
-               bsnprintf(buf, sizeof(buf), " %s", "NULL");
+               value.bsprintf(" %s", "NULL");
             } else {
-               bsnprintf(buf, sizeof(buf), " %s", row[i]);
+               value.bsprintf(" %s", row[i]);
             }
-            send(ctx, buf);
+            send->object_key_value(field->name, value.c_str(), "%s");
          }
          if (type != RAW_LIST) {
-            send(ctx, "\n");
+            send->decoration("\n");
          }
+         send->object_end(row[0]);
       }
       break;
    case HORZ_LIST:
       Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
-      list_dashes(mdb, send, ctx);
-      send(ctx, "|");
+      list_dashes(mdb, send);
+      send->decoration("|");
       sql_field_seek(mdb, 0);
       for (i = 0; i < num_fields; i++) {
          Dmsg1(800, "list_result looking at field %d\n", i);
@@ -718,16 +737,16 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
             break;
          }
          max_len = max_length(field->max_length);
-         bsnprintf(buf, sizeof(buf), " %-*s |", max_len, field->name);
-         send(ctx, buf);
+         send->decoration(" %-*s |", max_len, field->name);
       }
-      send(ctx, "\n");
-      list_dashes(mdb, send, ctx);
+      send->decoration("\n");
+      list_dashes(mdb, send);
 
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         send->object_start(row[0]);
          sql_field_seek(mdb, 0);
-         send(ctx, "|");
+         send->decoration("|");
          for (i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
             if (!field) {
@@ -735,22 +754,26 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
             }
             max_len = max_length(field->max_length);
             if (row[i] == NULL) {
-               bsnprintf(buf, sizeof(buf), " %-*s |", max_len, "NULL");
+               value.bsprintf(" %-*s |", max_len, "NULL");
             } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-               bsnprintf(buf, sizeof(buf), " %*s |", max_len,
-                         add_commas(row[i], ewc));
+               value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
             } else {
-               bsnprintf(buf, sizeof(buf), " %-*s |", max_len, row[i]);
+               value.bsprintf(" %-*s |", max_len, row[i]);
             }
-            send(ctx, buf);
+            if (i == num_fields-1) {
+               value.strcat("\n");
+            }
+            /* use value format string to send preformated value */
+            send->object_key_value(field->name, row[i], value.c_str());
          }
-         send(ctx, "\n");
+         send->object_end(row[0]);
       }
-      list_dashes(mdb, send, ctx);
+      list_dashes(mdb, send);
       break;
    case VERT_LIST:
       Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         send->object_start(row[0]);
          sql_field_seek(mdb, 0);
          for (i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
@@ -758,16 +781,20 @@ int list_result(JCR *jcr, B_DB *mdb, DB_LIST_HANDLER *send, void *ctx, e_list_ty
                break;
             }
             if (row[i] == NULL) {
-               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, "NULL");
+               key.bsprintf(" %*s: ", max_len, field->name);
+               value.bsprintf("%s\n", "NULL");
             } else if (sql_field_is_numeric(mdb, field->type) && !jcr->gui && is_an_integer(row[i])) {
-               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name,
-                   add_commas(row[i], ewc));
+               key.bsprintf(" %*s: ", max_len, field->name);
+               value.bsprintf("%s\n", add_commas(row[i], ewc));
             } else {
-               bsnprintf(buf, sizeof(buf), " %*s: %s\n", max_len, field->name, row[i]);
+               key.bsprintf(" %*s: ", max_len, field->name);
+               value.bsprintf("%s\n", row[i]);
             }
-            send(ctx, buf);
+            /* use value format string to send preformated value */
+            send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
          }
-         send(ctx, "\n");
+         send->decoration("\n");
+         send->object_end(row[0]);
       }
       break;
    }

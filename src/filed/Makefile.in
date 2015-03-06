@@ -24,6 +24,7 @@ GETTEXT_LIBS = @LIBINTL@
 OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
 GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
+JANSSON_CPPFLAGS = @JANSSON_INC@
 COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 
 first_rule: all
@@ -56,6 +57,10 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/lmdb
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 #-------------------------------------------------------------------------
+filed_conf.o: filed_conf.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(JANSSON_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 compression.o: compression.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(COMPRESS_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
@@ -63,24 +68,6 @@ compression.o: compression.c
 all: Makefile bareos-fd @STATIC_FD@
 	@echo "==== Make of filed is good ===="
 	@echo " "
-
-win32/winlib.a:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bareos-fd.exe
-
-win32/winmain.o:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bareos-fd.exe
-
-win32/winres.res:
-	@if test -f win32/Makefile -a "${GMAKE}" != "none"; then \
-	   (cd win32; $(GMAKE) DESTDIR=$(DESTDIR)); \
-	fi
-	@rm -f bareos-fd.exe
 
 bareos-fd: Makefile $(SVROBJS) \
 	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \

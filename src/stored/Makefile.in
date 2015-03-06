@@ -92,6 +92,8 @@ GLUSTER_INC = @GLUSTER_INC@
 RADOS_INC = @RADOS_INC@
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
+JANSSON_CPPFLAGS = @JANSSON_INC@
+
 DEBUG = @DEBUG@
 GETTEXT_LIBS = @LIBINTL@
 DB_LIBS = @DB_LIBS@
@@ -150,6 +152,14 @@ object_storage_device.lo: object_storage_device.c
 rados_device.lo: rados_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(RADOS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+stored_conf.o: stored_conf.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(JANSSON_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+stored_conf.lo: stored_conf.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(JANSSON_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 bareos-sd: Makefile libbareossd$(DEFAULT_ARCHIVE_TYPE) $(SDOBJS) \
 	   ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \

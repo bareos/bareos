@@ -145,7 +145,7 @@ static struct cmdstruct commands[] = {
          "\tfiles jobid=<jobid> | files ujobid=<complete_name> | pools | jobtotals |\n"
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
-         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true, true },
+         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid> [ limit=<num> ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
          "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
@@ -202,7 +202,7 @@ static struct cmdstruct commands[] = {
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
          "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |\n"
-         "\tsubscriptions" ), true, true },
+         "\tsubscriptions"), true, true },
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
@@ -298,7 +298,9 @@ bool do_a_command(UAContext *ua)
          if (ua->api) {
             user->signal(BNET_CMD_BEGIN);
          }
+         ua->send->set_mode(ua->api);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
+         ua->send->finalize_result(ok);
          if (ua->api) {
             user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
          }
@@ -2389,22 +2391,29 @@ static int help_cmd(UAContext *ua, const char *cmd)
 {
    int i;
 
-   ua->send_msg(_("  Command       Description\n  =======       ===========\n"));
+   ua->send->decoration("%s", _("  Command       Description\n  =======       ===========\n"));
    for (i = 0; i < comsize; i++) {
       if (ua->argc == 2) {
          if (bstrcasecmp(ua->argk[1], commands[i].key)) {
-            ua->send_msg(_("  %-13s %s\n\nArguments:\n\t%s\n"), commands[i].key,
-                         commands[i].help, commands[i].usage);
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key, "  %-13s");
+            ua->send->object_key_value("description", commands[i].help, " %s\n\n");
+            ua->send->object_key_value("arguments", commands[i].usage, "Arguments:\n\t%s\n");
+            ua->send->object_end(commands[i].key);
             break;
          }
       } else {
-         ua->send_msg(_("  %-13s %s\n"), commands[i].key, commands[i].help);
+         ua->send->object_start(commands[i].key);
+         ua->send->object_key_value("command", commands[i].key, "  %-13s");
+         ua->send->object_key_value("description", commands[i].help, " %s\n");
+         ua->send->object_key_value("arguments", commands[i].usage);
+         ua->send->object_end(commands[i].key);
       }
    }
    if (i == comsize && ua->argc == 2) {
       ua->send_msg(_("\nCan't find %s command.\n\n"), ua->argk[1]);
    }
-   ua->send_msg(_("\nWhen at a prompt, entering a period cancels the command.\n\n"));
+   ua->send->decoration(_("\nWhen at a prompt, entering a period cancels the command.\n\n"));
    return 1;
 }
 
@@ -2612,7 +2621,7 @@ bool open_db(UAContext *ua, bool use_private)
    if (!ua->catalog) {
       ua->catalog = get_catalog_resource(ua);
       if (!ua->catalog) {
-         ua->error_msg( _("Could not find a Catalog resource\n"));
+         ua->error_msg(_("Could not find a Catalog resource\n"));
          return false;
       }
    }

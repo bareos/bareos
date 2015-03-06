@@ -3077,6 +3077,46 @@ AC_SUBST(FASTLZ_INC)
 AC_SUBST(FASTLZ_LIBS)
 AC_SUBST(FASTLZ_LIBS_NONSHARED)
 
+
+dnl
+dnl Check for jansson (json library)
+dnl
+JANSSON_LIBS="-ljansson"
+JANSSON_INC=""
+have_jansson=no
+AC_ARG_WITH(jansson,
+   AC_HELP_STRING([--with-jansson@<:@=DIR@:>@], [Directory holding jansson includes/libs]),
+   with_jansson_directory=${withval}
+)
+
+if test "x${with_jansson_directory}" != "xyes" && test x"${with_jansson_directory}" != "x"; then
+   #
+   # Make sure the $with_jansson_directory also makes sense
+   #
+   if test -d "${with_jansson_directory}/lib" -a -d "${with_jansson_directory}/include"; then
+      have_jansson=yes
+      JANSSON_INC="-I${with_jansson_directory}/include ${JANSSON_INC}"
+      JANSSON_LIBS="-L${with_jansson_directory}/lib ${JANSSON_LIBS}"
+   fi
+else
+   if test x$with_jansson_directory = xyes || test x"${with_jansson_directory}" = "x" && $PKGCONFIG jansson; then
+      have_jansson=yes
+      JANSSON_INC=`$PKGCONFIG --cflags janson`
+      JANSSON_LIBS=`$PKGCONFIG --libs jansson`
+   fi
+fi
+
+if test "x${have_jansson}" = "xyes"; then
+   AC_DEFINE(HAVE_JANSSON, 1, [Define to 1 if you have jansson lib])
+else
+   JANSSON_LIBS=""
+   JANSSON_INC=""
+fi
+
+AC_SUBST(JANSSON_INC)
+AC_SUBST(JANSSON_LIBS)
+
+
 dnl
 dnl Check if we have AFS on this system
 dnl
@@ -4705,6 +4745,7 @@ Configuration on `date`:
    ZLIB support:                 ${have_zlib}
    LZO support:                  ${have_lzo}
    FASTLZ support:               ${have_fastlz}
+   JANSSON support:              ${have_jansson}
    LMDB support:                 ${support_lmdb}
    NDMP support:                 ${support_ndmp}
    enable-smartalloc:            ${support_smartalloc}

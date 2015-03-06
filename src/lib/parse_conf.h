@@ -387,23 +387,14 @@ void save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
 
-/*
- * JSON print functions.
- */
-bool print_items_schema_json(POOL_MEM &buff, int level, const char *name, RES_ITEM items[], const bool last = false);
-bool print_items_schema_json(POOL_MEM &buff, int level, const char *name, s_kw items[], const bool last = false);
-
-bool print_item_schema_json(POOL_MEM &buff, int level, RES_ITEM *item, const bool last = false);
-bool print_item_schema_json(POOL_MEM &buff, int level, s_kw *item, const bool last = false);
-
+#ifdef HAVE_JANSSON
 /*
  * JSON output helper functions
  */
-void add_json_object_start(POOL_MEM &cfg_str, int level, const char *string);
-void add_json_object_end(POOL_MEM &cfg_str, int level, const char *string, const bool last = false);
-void add_json_pair_plain(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last = false);
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, const char *value, const bool last = false);
-void add_json_pair(POOL_MEM &cfg_str, int level, const char *string, int value, const bool last = false);
+json_t *json_item(s_kw *item);
+json_t *json_item(RES_ITEM *item);
+json_t *json_items(RES_ITEM items[]);
+#endif
 
 /*
  * Loop through each resource of type, returning in var
