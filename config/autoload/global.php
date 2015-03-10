@@ -54,12 +54,7 @@ function read_db_config($config, $file)
 
 	foreach($config as $instance) {
 
-		if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "no") {
-
-			next($config);
-
-                }
-		else {
+		if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
 
 			if(array_key_exists('dbaddress', $instance) && isset($instance['dbaddress'])) {
 				$arr['adapters'][key($config)] = array();
@@ -132,7 +127,9 @@ function read_db_config($config, $file)
                         }
 
 		}
+
 		next($config);
+
 	}
 
 	return $arr;
@@ -146,12 +143,7 @@ function read_dir_config($config, $file)
 
 	foreach($config as $instance) {
 
-                if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "no") {
-
-                        next($config);
-
-                }
-                else {
+                if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
 
 			if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
 				$arr[key($config)] = array();
@@ -232,7 +224,9 @@ function read_dir_config($config, $file)
                         }
 
 		}
+
 		next($config);
+
 	}
 
 	return $arr;
