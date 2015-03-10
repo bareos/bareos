@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -78,6 +78,7 @@ class JobTable implements ServiceLocatorAwareInterface
 				$bsqlch->strdbcompat("StartTime"),
 				$bsqlch->strdbcompat("EndTime"),
 				$bsqlch->strdbcompat("JobStatus"),
+				$bsqlch->strdbcompat("ClientId"),
 				'duration' => $duration,
 			)
 		);
@@ -140,9 +141,21 @@ class JobTable implements ServiceLocatorAwareInterface
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+                                $bsqlch->strdbcompat("JobId"),
+                                $bsqlch->strdbcompat("Name"),
+                                $bsqlch->strdbcompat("Type"),
+                                $bsqlch->strdbcompat("Level"),
+                                $bsqlch->strdbcompat("StartTime"),
+                                $bsqlch->strdbcompat("EndTime"),
+                                $bsqlch->strdbcompat("JobBytes"),
+                                $bsqlch->strdbcompat("JobStatus"),
+                                $bsqlch->strdbcompat("ClientId")
+                        )
+                );
 		$select->join(
 			$bsqlch->strdbcompat("Client"),
-			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"),
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
 		$select->where(
@@ -179,6 +192,18 @@ class JobTable implements ServiceLocatorAwareInterface
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
+		$select->columns(array(
+                                $bsqlch->strdbcompat("JobId"),
+                                $bsqlch->strdbcompat("Name"),
+                                $bsqlch->strdbcompat("Type"),
+                                $bsqlch->strdbcompat("Level"),
+                                $bsqlch->strdbcompat("StartTime"),
+                                $bsqlch->strdbcompat("EndTime"),
+                                $bsqlch->strdbcompat("JobBytes"),
+                                $bsqlch->strdbcompat("JobStatus"),
+                                $bsqlch->strdbcompat("ClientId")
+                        )
+                );
 		$select->join(
 			$bsqlch->strdbcompat("Client"),
 			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"),
@@ -225,45 +250,46 @@ class JobTable implements ServiceLocatorAwareInterface
 
 	public function getLast24HoursSuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
-		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {       
-                        $duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");                
+		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {
+                        $duration = new Expression("TIMESTAMPDIFF(SECOND, StartTime, EndTime)");
 			$interval = "now() - interval 1 day";
                 }
-                elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {    
+                elseif($this->getDbDriverConfig() == "Pdo_Pgsql" || $this->getDbDriverConfig() == "Pgsql") {
                         $duration = new Expression("DATE_PART('second', endtime::timestamp - starttime::timestamp)");
 			$interval = "now() - interval '1 day'";
                 }
-	
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
 		$select->columns(array(
                                 $bsqlch->strdbcompat("JobId"),
                                 $bsqlch->strdbcompat("Name"),
-                                $bsqlch->strdbcompat("Type"),                                                   
+                                $bsqlch->strdbcompat("Type"),
                                 $bsqlch->strdbcompat("Level"),
-                                $bsqlch->strdbcompat("StartTime"),                                              
+                                $bsqlch->strdbcompat("StartTime"),
                                 $bsqlch->strdbcompat("EndTime"),
 				$bsqlch->strdbcompat("JobBytes"),
-                                $bsqlch->strdbcompat("JobStatus"),                                              
+                                $bsqlch->strdbcompat("JobStatus"),
+				$bsqlch->strdbcompat("ClientId"),
                                 'duration' => $duration,
                         )
                 );
 		$select->join(
-			$bsqlch->strdbcompat("Client"), 
-			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			$bsqlch->strdbcompat("Client"),
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"),
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
 
 		$select->where(
-			"(" . 
+			"(" .
 			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'W' ) AND (" .
 			$bsqlch->strdbcompat("StartTime") . " >= " . $interval . " OR " .
 			$bsqlch->strdbcompat("EndTime") . " >= " . $interval . ")"
 		);
 
-		if($order_by != null && $order != null) { 
+		if($order_by != null && $order != null) {
 			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
 		}
 		else {
@@ -280,13 +306,13 @@ class JobTable implements ServiceLocatorAwareInterface
 					);
 			$paginator = new Paginator($paginatorAdapter);
 			return $paginator;
-		} 
+		}
 		else {
 			$resultSet = $this->tableGateway->selectWith($select);
 			return $resultSet;
 		}
 	}
-	
+
 	public function getLast24HoursUnsuccessfulJobs($paginated=false, $order_by=null, $order=null)
 	{
 		if($this->getDbDriverConfig() == "Pdo_Mysql" || $this->getDbDriverConfig() == "Mysqli") {
@@ -309,23 +335,24 @@ class JobTable implements ServiceLocatorAwareInterface
                                 $bsqlch->strdbcompat("StartTime"),
                                 $bsqlch->strdbcompat("EndTime"),
                                 $bsqlch->strdbcompat("JobStatus"),
+				$bsqlch->strdbcompat("ClientId"),
                                 'duration' => $duration,
                         )
                 );
 		$select->join(
-			$bsqlch->strdbcompat("Client"), 
-			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"), 
+			$bsqlch->strdbcompat("Client"),
+			$bsqlch->strdbcompat("Job.ClientId = Client.ClientId"),
 			array($bsqlch->strdbcompat("ClientName") => $bsqlch->strdbcompat("Name"))
 		);
 		$select->where(
-			"(" . 
+			"(" .
 			$bsqlch->strdbcompat("JobStatus") . " = 'A' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'E' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'e' OR " .
                         $bsqlch->strdbcompat("JobStatus") . " = 'f' ) AND (" .
                         $bsqlch->strdbcompat("StartTime") . " >= " . $interval . " OR " .
                         $bsqlch->strdbcompat("EndTime") . " >= " . $interval . ")"
-		);		
+		);
 
 		if($order_by != null && $order != null) {
 			$select->order($bsqlch->strdbcompat($order_by) . " " . $order);
@@ -346,20 +373,20 @@ class JobTable implements ServiceLocatorAwareInterface
 			return $paginator;
 		}
 		else {
-			$resultSet = $this->tableGateway->selectWith($select);      
+			$resultSet = $this->tableGateway->selectWith($select);
 			return $resultSet;
 		}
 	}
-	
-	public function getJobCountLast24HoursByStatus($status) 
+
+	public function getJobCountLast24HoursByStatus($status)
 	{
 		$current_time = date("Y-m-d H:i:s",time());
 		$back24h_time = date("Y-m-d H:i:s",time() - (60*60*23));
-	
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
-		
+
 		if($status == "C")
 		{
 			$select->where(
@@ -527,7 +554,7 @@ class JobTable implements ServiceLocatorAwareInterface
                                 $bsqlch->strdbcompat("EndTime") . " >= '" . $back24h_time . "'"
 			);
 		}
-				
+
 		$resultSetPrototype = new ResultSet();
 		$resultSetPrototype->setArrayObjectPrototype(new Job());
 		$rowset = new DbSelect(
@@ -535,11 +562,11 @@ class JobTable implements ServiceLocatorAwareInterface
 			$this->tableGateway->getAdapter(),
 			$resultSetPrototype
 		);
-		$num = $rowset->count();		  
-		
+		$num = $rowset->count();
+
 		return $num;
 	}
-	
+
 	public function getJobNum()
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
@@ -552,46 +579,46 @@ class JobTable implements ServiceLocatorAwareInterface
 			$this->tableGateway->getAdapter(),
 			$resultSetPrototype
 		);
-		$num = $rowset->count();		  
+		$num = $rowset->count();
 		return $num;
 	}
-	
-	public function getLastSuccessfulClientJob($id) 
+
+	public function getLastSuccessfulClientJob($id)
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
-		$select->where(	
+		$select->where(
 			$bsqlch->strdbcompat("ClientId") . " = " . $id . " AND (" .
 			$bsqlch->strdbcompat("JobStatus") . " = 'T' OR " .
 			$bsqlch->strdbcompat("JobStatus") . " = 'W')"
 		);
 		$select->order($bsqlch->strdbcompat("JobId") . " DESC");
 		$select->limit(1);
-		
+
 		$rowset = $this->tableGateway->selectWith($select);
 		$row = $rowset->current();
-		
+
 		if(!$row) {
 			// Note: If there is no record, a job for this client was never executed.
 			// Exception: throw new \Exception("Could not find row $jobid");
 			$row = null;
 		}
-		
+
 		return $row;
 	}
 
-	public function getStoredBytes7Days() 
+	public function getStoredBytes7Days()
 	{
 		$end = date("Y-m-d H:i:s",time());
 		$start = date("Y-m-d H:i:s",time() - (60*60*23*7));
-		
+
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
 		$select->columns(array(
 					$bsqlch->strdbcompat("EndTime"),
-					$bsqlch->strdbcompat("JobBytes"), 
+					$bsqlch->strdbcompat("JobBytes"),
 					true
 				)
 		);
@@ -600,19 +627,19 @@ class JobTable implements ServiceLocatorAwareInterface
 				$bsqlch->strdbcomapt("EndTime") . " <= '" . $end . "'"
 		);
 		$select->order($bsqlch->strdbcompat("EndTime" . " ASC"));
-		
+
 		$resultSet = $this->tableGateway->selectWith($select);
 		return $resultSet;
 	}
-	
-	public function getStoredBytes14Days() 
+
+	public function getStoredBytes14Days()
 	{
 		$bsqlch = new BareosSqlCompatHelper($this->getDbDriverConfig());
 		$select = new Select();
 		$select->from($bsqlch->strdbcompat("Job"));
-		
+
 		$resultSet = $this->tableGateway->selectWith($select);
 		return $resultSet;
 	}
-	
+
 }
