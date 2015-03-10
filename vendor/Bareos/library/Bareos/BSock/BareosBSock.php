@@ -237,7 +237,7 @@ class BareosBSock implements ServiceLocatorAwareInterface
 
 		if ($len === 0) {
 			$buffer = fread($this->socket, 4);
-			if($buffer === false){
+			if($buffer == false){
 				return false;
 			}
 			$msg_len = unpack('N', $buffer);
