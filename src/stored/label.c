@@ -341,6 +341,7 @@ static bool write_volume_label_to_block(DCR *dcr)
 bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
                                    const char *PoolName, bool relabel)
 {
+   DEV_RECORD *rec;
    JCR *jcr = dcr->jcr;
    DEVICE *dev = dcr->dev;
    DEV_BLOCK *block = dcr->block;
@@ -418,15 +419,18 @@ bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
       goto bail_out;
    }
 
-   create_volume_label_record(dcr, dev, dcr->rec);
-   dcr->rec->Stream = 0;
-   dcr->rec->maskedStream = 0;
+   rec = new_record();
+   create_volume_label_record(dcr, dev, rec);
+   rec->Stream = 0;
+   rec->maskedStream = 0;
 
-   if (!write_record_to_block(dcr, dcr->rec)) {
+   if (!write_record_to_block(dcr, rec)) {
       Dmsg2(130, "Bad Label write on %s: ERR=%s\n", dev->print_name(), dev->print_errmsg());
+      free_record(rec);
       goto bail_out;
    } else {
-      Dmsg2(130, "Wrote label of %d bytes to %s\n", dcr->rec->data_len, dev->print_name());
+      Dmsg2(130, "Wrote label of %d bytes to %s\n", rec->data_len, dev->print_name());
+      free_record(rec);
    }
 
    Dmsg0(130, "Call write_block_to_dev()\n");
