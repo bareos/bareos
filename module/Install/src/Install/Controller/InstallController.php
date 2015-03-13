@@ -30,6 +30,9 @@ use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Version\Version;
 use Zend\Db\Adapter\Driver\ConnectionInterface;
+use Zend\Db\Sql\Sql;
+use Zend\Db\ResultSet\ResultSet;
+use Bareos\Db\Sql\BareosSqlCompatHelper;
 use \Exception;
 
 class InstallController extends AbstractActionController
@@ -219,7 +222,7 @@ class InstallController extends AbstractActionController
 	{
 		$config = $this->getServiceLocator()->get('Config');
 		$adapter = array_keys($config['db']['adapters']);
-        $passwd = $config['db']['adapters'][$adapter[0]]['password'];
+		$passwd = $config['db']['adapters'][$adapter[0]]['password'];
 		if($passwd != "") {
 			$passwd = "SET";
                 	return $passwd;
@@ -250,12 +253,13 @@ class InstallController extends AbstractActionController
 				try {
 					$config = $this->getServiceLocator()->get('Config');
 					$adapter = array_keys($config['db']['adapters']);
-					$db = $config['db']['adapters'][$adapter[0]]['host'];
-					$dbAdapter = $this->getServiceLocator()->get($db);
+					//$db = $config['db']['adapters'][$adapter[0]]['host'];
+					$dbAdapter = $this->getServiceLocator()->get($adapter[0]);
 					$connection = $dbAdapter->getDriver()->getConnection()->connect();
 					return 0;
 				}
 				catch(\Exception $e) {
+					//echo $e->getMessage() . $e->getTraceAsString();
 					return -1;
 				}
 		}
@@ -267,14 +271,25 @@ class InstallController extends AbstractActionController
 	private function getDbReadAccessStatus()
 	{
 		if(self::getDbConnectionStatus() == 0) {
+
 			try {
+				// no beauty, but will work for the moment
 				$config = $this->getServiceLocator()->get('Config');
 				$adapter = array_keys($config['db']['adapters']);
-                $db = $config['db']['adapters'][$adapter[0]]['host'];
-                $dbAdapter = $this->getServiceLocator()->get($db);
-                $connection = $dbAdapter->getDriver()->getConnection()->connect();
-
-				if($connection->getCurrentSchema() != false) {
+				$driver = $config['db']['adapters'][$adapter[0]]['driver'];
+				$bsqlch = new BareosSqlCompatHelper($driver);
+				$dbAdapter = $this->getServiceLocator()->get($adapter[0]);
+				$sql = new Sql($dbAdapter);
+				$select = $sql->select();
+				$select->columns(array($bsqlch->strdbcompat("VersionId")));
+				$select->from($bsqlch->strdbcompat("Version"));
+				$statement = $sql->prepareStatementForSqlObject($select);
+				$results = $statement->execute();
+				$resultSet = new ResultSet;
+				$resultSet->initialize($results);
+				$result = $resultSet->toArray();
+				$versionid = $result[0][$bsqlch->strdbcompat("VersionId")];
+				if(is_int($versionid) || $versionid >= 2001) {
 					return 0;
 				}
 				else {
@@ -294,8 +309,8 @@ class InstallController extends AbstractActionController
 	{
 		$config = $this->getServiceLocator()->get('Config');
 		$dir = array_keys($config['directors']);
-        $director = $config['directors'][$dir[0]]['host'];
-        return $director;
+		$director = $config['directors'][$dir[0]]['host'];
+		return $director;
 	}
 
 	private function getDirectorStatus()
