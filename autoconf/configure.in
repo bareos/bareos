@@ -4448,6 +4448,7 @@ fi
 AC_CONFIG_FILES([
 autoconf/Make.common \
 Makefile \
+GNUmakefile \
 manpages/Makefile \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \

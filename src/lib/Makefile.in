@@ -94,6 +94,8 @@ all: Makefile libbareos$(DEFAULT_ARCHIVE_TYPE) libbareoscfg$(DEFAULT_ARCHIVE_TYP
 	@echo "==== Make of lib is good ===="
 	@echo " "
 
+libbareoscfg$(DEFAULT_ARCHIVE_TYPE): libbareos$(DEFAULT_ARCHIVE_TYPE)
+
 crypto_openssl.o: crypto_openssl.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(OPENSSL_INCLUDES) $(CXXFLAGS) $<
