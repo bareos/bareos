@@ -48,6 +48,10 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
+#ifndef compressBound
+#define compressBound(sourceLen) (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
+#endif
+
 /* Forward referenced functions */
 int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
@@ -1384,7 +1388,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
          /*
           * Big object, compress it
           */
-         comp_len = ff_pkt->object_len + 1000;
+         comp_len = compressBound(ff_pkt->object_len);
          POOLMEM *comp_obj = get_memory(comp_len);
          /*
           * FIXME: check Zdeflate error
