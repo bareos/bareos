@@ -785,7 +785,7 @@ static inline bool is_on_same_storage(JCR *jcr, char *new_one)
    if (!new_store) {
       Jmsg(jcr, M_WARNING, 0,
            _("Could not get storage resource '%s'.\n"), new_one);
-      return false;
+      return true;
    }
 
    /*
