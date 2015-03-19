@@ -390,14 +390,24 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
    ctx = (TLS_CONTEXT *)malloc(sizeof(TLS_CONTEXT));
 
    /*
-    * Allocate our OpenSSL TLSv1 Context
+    * Allocate our OpenSSL Context
+    * We allow tls 1.2. 1.1 and 1.0
     */
-   ctx->openssl = SSL_CTX_new(TLSv1_method());
-
+   ctx->openssl = SSL_CTX_new(SSLv23_method());
    if (!ctx->openssl) {
       openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
       goto err;
    }
+
+   /*
+    * Enable all Bug Workarounds
+    */
+   SSL_CTX_set_options(ctx->openssl, SSL_OP_ALL);
+
+   /*
+    * Disallow broken sslv2 and sslv3.
+    */
+   SSL_CTX_set_options(ctx->openssl, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
    /*
     * Set up pem encryption callback
