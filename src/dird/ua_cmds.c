@@ -1160,6 +1160,7 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
 
    /* Director */
    debug_level = level;
+   set_trace(trace_flag);
 
    /* Count Storage items */
    LockRes();
