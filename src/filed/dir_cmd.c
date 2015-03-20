@@ -439,6 +439,7 @@ static void *handle_director_connection(BSOCK *dir)
    jcr->crypto.pki_signers = me->pki_signers;
    jcr->crypto.pki_recipients = me->pki_recipients;
    dir->set_jcr(jcr);
+   set_jcr_in_tsd(jcr);
    enable_backup_privileges(NULL, 1 /* ignore_errors */);
 
    Dmsg0(120, "Calling Authenticate\n");

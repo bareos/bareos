@@ -240,6 +240,8 @@ static void *handle_director_connection(BSOCK *dir, char *job_name)
 
    Dmsg0(1000, "stored in start_job\n");
 
+   set_jcr_in_tsd(jcr);
+
    /*
     * Authenticate the Director
     */
