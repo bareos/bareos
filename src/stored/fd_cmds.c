@@ -244,7 +244,7 @@ void do_fd_commands(JCR *jcr)
       if (!found) {                   /* command not found */
          if (!job_canceled(jcr)) {
             Jmsg1(jcr, M_FATAL, 0, _("FD command not found: %s\n"), fd->msg);
-            Dmsg1(110, "<filed: Command not found: %s\n", fd->msg);
+            Dmsg1(110, "<filed: Command not found: %s", fd->msg);
          }
          fd->fsend(ferrmsg);
          break;
@@ -427,7 +427,7 @@ static bool read_close_session(JCR *jcr)
     * Send final close msg to File daemon
     */
    fd->fsend(OK_close, jcr->JobStatus);
-   Dmsg1(160, ">filed: %s\n", fd->msg);
+   Dmsg1(160, ">filed: %s", fd->msg);
 
    fd->signal(BNET_EOD);            /* send EOD to File daemon */
 

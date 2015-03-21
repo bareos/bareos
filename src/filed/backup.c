@@ -226,7 +226,7 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 
    Dmsg1(300, "Saving Finder Info for \"%s\"\n", bsctx.ff_pkt->fname);
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, STREAM_HFSPLUS_ATTRIBUTES);
-   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s", sd->msg);
    pm_memcpy(sd->msg, bsctx.ff_pkt->hfsinfo.fndrinfo, 32);
    sd->msglen = 32;
    if (bsctx.digest) {
@@ -359,7 +359,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
     * Send our header
     */
    sd->fsend("%ld %ld 0", bsctx.jcr->JobFiles, STREAM_SIGNED_DIGEST);
-   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
    /*
     * Encode signature data
@@ -391,7 +391,7 @@ static inline bool terminate_digest(b_save_ctx &bsctx)
    BSOCK *sd = bsctx.jcr->store_bsock;
 
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, bsctx.digest_stream);
-   Dmsg1(300, "filed>stored:header %s\n", sd->msg);
+   Dmsg1(300, "filed>stored:header %s", sd->msg);
 
    size = CRYPTO_DIGEST_MAX_SIZE;
 
@@ -1167,7 +1167,7 @@ static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
       }
       goto bail_out;
    }
-   Dmsg1(300, ">stored: datahdr %s\n", sd->msg);
+   Dmsg1(300, ">stored: datahdr %s", sd->msg);
 
    /*
     * Make space at beginning of buffer for fileAddr because this
@@ -1334,7 +1334,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       }
       return false;
    }
-   Dmsg1(300, ">stored: attrhdr %s\n", sd->msg);
+   Dmsg1(300, ">stored: attrhdr %s", sd->msg);
 
    /**
     * Send file attributes to Storage daemon
@@ -1438,7 +1438,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       unstrip_path(ff_pkt);
    }
 
-   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->msglen, sd->msg);
+   Dmsg2(300, ">stored: attr len=%d: %s", sd->msglen, sd->msg);
    if (!status && !jcr->is_job_canceled()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
    }

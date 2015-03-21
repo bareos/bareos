@@ -109,7 +109,7 @@ bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
       dev->is_tape()?100000:1,
       dev->autoselect, 0,
       ChangerName.c_str(), MediaType.c_str(), VolumeName.c_str());
-   Dmsg1(dbglvl, ">dird: %s\n", dir->msg);
+   Dmsg1(dbglvl, ">dird: %s", dir->msg);
    return ok;
 }
 
@@ -138,7 +138,7 @@ bool SD_DCR::dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
       "*",                      /* ChangerName */
       MediaType.c_str(),        /* MediaType */
       "*");                     /* VolName */
-   Dmsg1(dbglvl, ">dird: %s\n", dir->msg);
+   Dmsg1(dbglvl, ">dird: %s", dir->msg);
    return ok;
 }
 #endif
@@ -483,7 +483,7 @@ bool SD_DCR::dir_update_file_attributes(DEV_RECORD *record)
    ser_uint32(record->data_len);
    ser_bytes(record->data, record->data_len);
    dir->msglen = ser_length(dir->msg);
-   Dmsg1(1800, ">dird %s\n", dir->msg);    /* Attributes */
+   Dmsg1(1800, ">dird %s", dir->msg);    /* Attributes */
    return dir->send();
 }
 

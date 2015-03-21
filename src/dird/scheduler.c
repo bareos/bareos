@@ -354,7 +354,7 @@ static void find_runs()
    nh_woy = tm_woy(next_hour);        /* get week of year */
    nh_yday = tm.tm_yday;              /* get day of year */
 
-   Dmsg8(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n\n",
+   Dmsg8(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
          next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
 
    nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , nh_yday);

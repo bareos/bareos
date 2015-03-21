@@ -132,12 +132,12 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
     */
    if (!fd->fsend(rec_header, rec->VolSessionId, rec->VolSessionTime,
                   rec->FileIndex, rec->Stream, rec->data_len)) {
-      Pmsg1(000, _(">filed: Error Hdr=%s\n"), fd->msg);
+      Pmsg1(000, _(">filed: Error Hdr=%s"), fd->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Error sending to File daemon. ERR=%s\n"),
             fd->bstrerror());
       return false;
    } else {
-      Dmsg1(400, ">filed: Hdr=%s\n", fd->msg);
+      Dmsg1(400, ">filed: Hdr=%s", fd->msg);
    }
 
    /*
