@@ -1191,7 +1191,9 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
     int       len;
     va_list   arg_ptr;
     bool      details = true;
-    utime_t   mtime;
+    char      ed1[50];
+    btime_t    mtime;
+    uint32_t  usecs;
 
     if (level < 0) {
        details = false;
@@ -1200,8 +1202,9 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 
     if (level <= debug_level) {
        if (dbg_timestamp) {
-          mtime = time(NULL);
-          bstrftimes(buf, sizeof(buf), mtime);
+          mtime = get_current_btime();
+          usecs = mtime % 1000000;
+          bsnprintf(buf, sizeof(buf), "%s.%06d ", bstrftimes(ed1, sizeof(ed1), btime_to_utime(mtime)), usecs);
           len = strlen(buf);
           buf[len++] = ' ';
           buf[len] = 0;
