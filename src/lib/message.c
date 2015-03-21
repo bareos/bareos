@@ -1192,8 +1192,10 @@ static void pt_out(char *buf)
 void d_msg(const char *file, int line, int level, const char *fmt,...)
 {
    va_list ap;
+   char ed1[50];
    int len, maxlen;
-   utime_t mtime;
+   btime_t mtime;
+   uint32_t usecs;
    bool details = true;
    POOL_MEM buf(PM_EMSG),
             more(PM_EMSG);
@@ -1205,9 +1207,9 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 
    if (level <= debug_level) {
       if (dbg_timestamp) {
-         mtime = time(NULL);
-         bstrftimes(buf.c_str(), buf.max_size(), mtime);
-         pm_strcat(buf, " ");
+         mtime = get_current_btime();
+         usecs = mtime % 1000000;
+         Mmsg(buf, "%s.%06d ", bstrftimes(ed1, sizeof(ed1), btime_to_utime(mtime)), usecs);
          pt_out(buf.c_str());
       }
 
