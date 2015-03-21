@@ -248,7 +248,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
                    store->SDDport, tls_need, jcr->sd_auth_key);
          memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
-         Dmsg1(6, "dird>filed: %s\n", fd->msg);
+         Dmsg1(6, "dird>filed: %s", fd->msg);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
             goto bail_out;
          }
@@ -262,7 +262,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          fd->fsend(setauthorizationcmd, jcr->sd_auth_key);
          memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
-         Dmsg1(6, "dird>filed: %s\n", fd->msg);
+         Dmsg1(6, "dird>filed: %s", fd->msg);
          if (!response(jcr, fd, OKAuthorization, "Setauthorization", DISPLAY_ERROR)) {
             goto bail_out;
          }

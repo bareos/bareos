@@ -323,7 +323,7 @@ bool nextrun_cmd(JCR *jcr)
        */
       return true;
    default:
-      Dmsg1(200, "Nextrun_cmd: %s\n", jcr->dir_bsock->msg);
+      Dmsg1(200, "Nextrun_cmd: %s", jcr->dir_bsock->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s tries to use nextrun cmd while not part of protocol.\n"),
             (uint32_t)jcr->JobId, jcr->Job);
       return false;
@@ -341,7 +341,7 @@ bool finish_cmd(JCR *jcr)
     */
    switch (jcr->getJobProtocol()) {
    case PT_NDMP:
-      Dmsg1(200, "Finish_cmd: %s\n", jcr->dir_bsock->msg);
+      Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);
 
       jcr->end_time = time(NULL);
       dequeue_messages(jcr);             /* send any queued messages */
@@ -370,7 +370,7 @@ bool finish_cmd(JCR *jcr)
 
       return false;                      /* Continue DIR session ? */
    default:
-      Dmsg1(200, "Finish_cmd: %s\n", jcr->dir_bsock->msg);
+      Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Hey!!!! JobId %u Job %s tries to use finish cmd while not part of protocol.\n"),
             (uint32_t)jcr->JobId, jcr->Job);
       return false;                      /* Continue DIR session ? */
@@ -396,7 +396,7 @@ bool query_cmd(JCR *jcr)
 
    Dmsg1(100, "Query_cmd: %s", dir->msg);
    ok = sscanf(dir->msg, query_device, dev_name.c_str()) == 1;
-   Dmsg1(100, "<dird: %s\n", dir->msg);
+   Dmsg1(100, "<dird: %s", dir->msg);
    if (ok) {
       unbash_spaces(dev_name);
       foreach_res(device, R_DEVICE) {
@@ -436,12 +436,12 @@ bool query_cmd(JCR *jcr)
       unbash_spaces(dir->msg);
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(NO_device, dev_name.c_str());
-      Dmsg1(100, ">dird: %s\n", dir->msg);
+      Dmsg1(100, ">dird: %s", dir->msg);
    } else {
       unbash_spaces(dir->msg);
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(BAD_query, jcr->errmsg);
-      Dmsg1(100, ">dird: %s\n", dir->msg);
+      Dmsg1(100, ">dird: %s", dir->msg);
    }
 
    return true;

@@ -490,7 +490,7 @@ bool stats_cmd(JCR *jcr)
                        dev_stat->DevWriteTime, dev_stat->MediaId,
                        dev_stat->VolCatBytes, dev_stat->VolCatFiles,
                        dev_stat->VolCatBlocks);
-                  Dmsg1(100, ">dird: %s\n", msg.c_str());
+                  Dmsg1(100, ">dird: %s", msg.c_str());
                   dir->fsend(msg.c_str());
                }
 
@@ -520,7 +520,7 @@ bool stats_cmd(JCR *jcr)
                pm_strcpy(dev_tmp, dev_stats->DevName);
                bash_spaces(dev_tmp);
                Mmsg(msg, TapeAlerts, tape_alert->timestamp, dev_tmp.c_str(), tape_alert->flags);
-               Dmsg1(100, ">dird: %s\n", msg.c_str());
+               Dmsg1(100, ">dird: %s", msg.c_str());
                dir->fsend(msg.c_str());
 
                next_tape_alert = (struct device_tapealert *)dev_stats->tapealerts->next(tape_alert);
@@ -555,7 +555,7 @@ bool stats_cmd(JCR *jcr)
                   bash_spaces(dev_tmp);
                   Mmsg(msg, JobStats, job_stat->timestamp, job_stats->JobId,
                        job_stat->JobFiles, job_stat->JobBytes, dev_tmp.c_str());
-                  Dmsg1(100, ">dird: %s\n", msg.c_str());
+                  Dmsg1(100, ">dird: %s", msg.c_str());
                   dir->fsend(msg.c_str());
                }
 
