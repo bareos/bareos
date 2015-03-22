@@ -299,7 +299,25 @@ Version $>=$ #3%
 }%
 }
 
-\newcommand{\linkResourceDirective}[3]{%
+\makeatletter
+\newcommand{\linkResourceDirective}{%
+\@ifstar{%
+\linkResourceDirectiveStar%
+}{%
+\linkResourceDirectiveNostar%
+}%
+}
+\makeatother
+
+\newcommand{\linkResourceDirectiveStar}[3]{%
+\linkResourceDirectiveOpt{#1}{#2}{#3}{#3}%
+}
+
+\newcommand{\linkResourceDirectiveNostar}[3]{%
+\linkResourceDirectiveOpt{#1}{#2}{#3}{#3 $^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}%
+}
+
+\newcommand{\linkResourceDirectiveOpt}[4]{%
 % 1: config file (Dir | Sd | Fd)
 % 2: Resource
 % 3: Directive Name
@@ -314,16 +332,16 @@ Version $>=$ #3%
         \def\daemon{fd}%
     }{%
       \ifthenelse{\equal{#1}{Console}}{
-          \def\daemon{console}
+          \def\daemon{console}%
       }{%
         % hopefully, no translatation needed. Take original parameter
-        \def\daemon{#1}
+        \def\daemon{#1}%
       }%
     }%
   }%
 }%
 \index[\daemon]{Configuration Directive!#3}%
-\hyperlink{directive#1#2#3}{#3}%
+\hyperlink{directive#1#2#3}{#4}%
 }
 
 

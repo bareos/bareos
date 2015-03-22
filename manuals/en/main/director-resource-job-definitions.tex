@@ -1,4 +1,6 @@
 \defDirective{Dir}{Job}{Accurate}{}{}{%
+\label{accuratemode}%
+\label{accurate}%
 In accurate mode, the File daemon knowns exactly which files were present
 after the last backup. So it is able to handle deleted or renamed files.
 
@@ -8,15 +10,22 @@ directories that existed at the time of the last backup prior to
 that date including ensuring that deleted files are actually deleted,
 and renamed directories are restored properly.
 
-In this mode, the File daemon must keep data concerning all files in
-memory.  So If you do not have sufficient memory, the backup may
-either be terribly slow or fail.
+When doing \ilink{VirtualFull}{VirtualFull} backups, it is advised to use the accurate mode,
+otherwise the VirtualFull might contain already deleted files.
 
-%%   $$ memory = \sum_{i=1}^{n}(strlen(path_i + file_i) + sizeof(CurFile))$$
+However, using the accurate mode has also disadvantages:
+\begin{itemize}
+    \item The File daemon must keep data concerning all files in
+        memory.  So If you do not have sufficient memory, the backup may
+        either be terribly slow or fail.
+        %%   $$ memory = \sum_{i=1}^{n}(strlen(path_i + file_i) + sizeof(CurFile))$$
+        For 500.000 files (a typical desktop linux system), it will require
+        approximately 64 Megabytes of RAM on your File daemon to hold the
+        required information.
 
-For 500.000 files (a typical desktop linux system), it will require
-approximately 64 Megabytes of RAM on your File daemon to hold the
-required information.
+\end{itemize}
+
+
 }
 
 \defDirective{Dir}{Job}{Add Prefix}{}{}{%
@@ -415,10 +424,19 @@ all the volumes on which the preceding Incremental and Differential
 backups since the last Full are done.
 
 \item [VirtualFull] \hfill \\
-\index[dir]{VirtualFull Backup}
-When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching the Differential- and Incremental-Backups. This means, a Full backup will get available, without transfering all the data from the client to backup server again. The new Full backup will be stored in the pool defined in \linkResourceDirective{Dir}{Pool}{Next Pool}. The process of generating a VirtualFull backup is similar to the process described in  \nameref{MigrationChapter}.
+\index[dir]{VirtualFull Backup}%
+\label{VirtualFull}%
+When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching Differential- and Incremental-Backups. 
+It matches this according the
+\linkResourceDirective{Dir}{Client}{Name} and \linkResourceDirective{Dir}{FileSet}{Name}.
+This means, a new Full backup get created without transfering all the data from the client to the backup server again.
+The new Full backup will be stored in the pool defined in \linkResourceDirective{Dir}{Pool}{Next Pool}.
+%The process of generating a VirtualFull backup is similar to the process described in \nameref{MigrationChapter}.
 
+\warning{Opposite to the offer backup levels, VirtualFull may require read and write access to multiple volumes. In most cases you have to make sure, that Bareos does not try to read and write to the same Volume.}
 
+% move volumes from VFull to Full pool
+%echo "list volumes pool=VFull" | bconsole | awk -F '|' '{if ($4 ~ /Full|Used|Append/) { gsub(/^[ \t]+/,"",$3); gsub(/[ \t]+$/,"",$3); print "update volume="$3" pool=Full" }}' | bconsole
 
 \end{description}
 
@@ -431,7 +449,7 @@ When the Level is set to VirtualFull, a new Full backup is generated from the la
 \begin{description}
 
 \item [InitCatalog] \hfill \\
-\index[dir]{InitCatalog}
+\index[dir]{InitCatalog}%
 does a scan of the specified {\bf FileSet} and stores the file
 attributes in the Catalog database.  Since no file data is saved, you
 might ask why you would want to do this.  It turns out to be a very
@@ -450,7 +468,7 @@ compares the results of your {\bf InitCatalog} with the current state of
 the files.
 
 \item [Catalog] \hfill \\
-\index[dir]{Catalog}
+\index[dir]{Catalog}%
 Compares the current state of the files against the state previously
 saved during an {\bf InitCatalog}.  Any discrepancies are reported.  The
 items reported are determined by the {\bf verify} options specified on
@@ -465,7 +483,7 @@ Verify Catalog modifies the Catalog database while running in order to
 track new files.}
 
 \item [VolumeToCatalog] \hfill \\
-\index[dir]{VolumeToCatalog}
+\index[dir]{VolumeToCatalog}%
 This level causes Bareos to read the file attribute data written to the
 Volume from the last backup Job for the job specified on the {\bf VerifyJob}
 directive.  The file attribute data are compared to the
@@ -487,7 +505,7 @@ is because the Verify VolumeToCatalog modifies the Catalog database
 while running.}
 
 \item [DiskToCatalog] \hfill \\
-\index[dir]{DiskToCatalog}
+\index[dir]{DiskToCatalog}%
 This level causes Bareos to read the files as they currently are on
 disk, and to compare the current file attributes with the attributes
 saved in the catalog from the last backup for the job specified on the
@@ -1382,21 +1400,24 @@ It determines how a migration job
 }
 
 \defDirective{Dir}{Job}{Spool Attributes}{}{}{%
-The default is set to {\bf no}, which means that the File attributes are
+Is Spool Attributes is disabled, 
+the File attributes are
 sent by the Storage daemon to the Director as they are stored on tape.
 However, if you want to avoid the possibility that database updates will
-slow down writing to the tape, you may want to set the value to {\bf
-yes}, in which case the Storage daemon will buffer the File attributes
+slow down writing to the tape, you may want to set the value to \parameter{yes}, 
+in which case the Storage daemon will buffer the File attributes
 and Storage coordinates to a temporary file in the Working Directory,
 then when writing the Job data to the tape is completed, the attributes
 and storage coordinates will be sent to the Director.
 
 NOTE: When \linkResourceDirective{Dir}{Job}{Spool Data} is set to yes, Spool Attributes is also
 automatically set to yes.
+
+For details, see \nameref{sec:spooling}.
 }
 
 \defDirective{Dir}{Job}{Spool Data}{}{}{%
-If this directive is set  to {\bf yes} (default no), the Storage daemon will
+If this directive is set  to \parameter{yes}, the Storage daemon will
 be requested  to spool the data for this Job to disk rather than write it
 directly to the Volume (normally a tape).
 
@@ -1414,11 +1435,13 @@ using this option will probably just slow down the backup jobs.
 
 NOTE: When this directive is set to yes, \linkResourceDirective{Dir}{Job}{Spool Attributes} is also
 automatically set to yes.
+
+For details, see \nameref{sec:spooling}.
 }
 
 \defDirective{Dir}{Job}{Spool Size}{}{}{%
-where the bytes specify the maximum spool size for this job.
-The default is take from Device Maximum Spool Size limit.
+This specifies the maximum spool size for this job.
+The default is taken from \linkResourceDirective{Sd}{Device}{Maximum Spool Size} limit.
 }
 
 \defDirective{Dir}{Job}{Storage}{}{}{%

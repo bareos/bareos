@@ -24,7 +24,7 @@ only 5 steps are required to get to a running Bareos System:
 This will start a very basic Bareos installation which will regularly backup a directory to disk.
 In order to fit it to your needs, you'll have to adapt the configuration and might want to backup other clients.
 
-\section{Subscribe to a Software Repository}
+\section{Decide about the Bareos release to use}
     \label{sec:AddSoftwareRepository}
 
 \begin{itemize}
@@ -33,14 +33,14 @@ In order to fit it to your needs, you'll have to adapt the configuration and mig
 
 You'll find Bareos binary package repositories at \url{http://download.bareos.org/}.
 The lastet stable released version is available at \url{http://download.bareos.org/bareos/release/latest/}.
-Add the repository to your system.
 
 The public key to verify the repository is also in repository directory
 (\file{Release.key} for Debian based distributions, \file{repodata/repomd.xml.key} for RPM based distributions).
-See your distribution's documentation for details.
+
+Section \nameref{sec:InstallBareosPackages} describes how to add the software repository to your system.
 
 
-\section{Choose a Database Backend}
+\section{Decide about the Database Backend}
     \label{sec:ChooseDatabaseBackend}
 
 Next you have to decide, what database backend you want to use.

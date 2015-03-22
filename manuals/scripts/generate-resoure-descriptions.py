@@ -233,7 +233,7 @@ class BareosConfigurationSchema2Latex:
     def writeResourceDirectivesTable(self, daemon, resourcename, filename=None):
         ds=daemonName.getShort(daemon)
         self.open(filename, "w")
-        self.out.write( self.getLatexTable( self.schema.json["resource"][daemon][resourcename], latexDefine=ds+resourcename+"%(key)s", latexLink="\\linkResourceDirective{"+ds+"}{"+resourcename+"}{%(key)s}" ) )
+        self.out.write( self.getLatexTable( self.schema.json["resource"][daemon][resourcename], latexDefine=ds+resourcename+"%(key)s", latexLink="\\linkResourceDirective*{"+ds+"}{"+resourcename+"}{%(key)s}" ) )
         self.close()
 
     def writeDatatypeOptionsTable(self, filename=None):

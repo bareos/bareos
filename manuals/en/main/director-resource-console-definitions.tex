@@ -58,6 +58,12 @@ This directive is used to  specify a list of Pool resource names that can be
 accessed by the console.
 }
 
+\defDirective{Dir}{Console}{Profile}{}{}{%
+One or more Profile names can be assigned to a Console.
+If an ACL is not defined in the Console, the profiles of the Console will be checked in the order as specified here.
+The first found ACL will be used. See \nameref{DirectorResourceProfile}.
+}
+
 \defDirective{Dir}{Console}{Run ACL}{}{}{%
 }
 

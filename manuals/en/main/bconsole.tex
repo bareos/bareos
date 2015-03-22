@@ -913,7 +913,7 @@ mount [jobid=<id> | job=<job-name>]
 
    If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
    Device resource,  under most circumstances, Bareos will automatically access
-   the Volume unless you have explicitly {\bf unmount}ed it in  the Console
+   the Volume unless you have explicitly \bcommand{unmount}{}ed it in  the Console
    program.
 
 \item [move]
@@ -1044,7 +1044,7 @@ relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<newvolume-nam
 
 \item [release]
    \index[general]{Console!Command!release}
-   This command is used to cause the Storage daemon to rewind (release) the
+   This command is used to cause the Storage daemon to release (and rewind) the
    current tape in the drive, and to re-read the Volume label the next time
    the tape is used.
 
@@ -1053,12 +1053,12 @@ release storage=<storage-name>
 \end{bconsole}
 
    After a release command, the device is still kept open by Bareos (unless
-   Always Open is set to No in the Storage Daemon's configuration) so it
+   \linkResourceDirective{Sd}{Device}{Always Open}=No) so it
    cannot be used by another program.  However, with some tape drives, the
    operator can remove the current tape and to insert a different one, and
    when the next Job starts, Bareos will know to re-read the tape label to
    find out what tape is mounted.  If you want to be able to use the drive
-   with another program (e.g.  {\bf mt}), you must use the {\bf unmount}
+   with another program (e.g.  \command{mt}), you must use the \bcommand{unmount}
    command to cause Bareos to completely release (close) the device.
 
 \item [reload]
@@ -1519,6 +1519,8 @@ unmount [jobid=<id> | job=<job-name>]
    If the device you are unmounting is an autochanger, it will unload
    the drive you have specified on the command line. If no drive is
    specified, it will assume drive 1.
+
+   In most cases, it is preferable to use the \bcommand{release}{} instead.
 
 \item [update]
    \index[general]{Console!Command!update}
