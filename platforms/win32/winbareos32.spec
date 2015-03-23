@@ -20,6 +20,7 @@
 
 
 %define flavors "prevista postvista prevista-debug postvista-debug"
+%define dirs_with_unittests "lib findlib"
 
 Name:           mingw32-winbareos
 Version:        15.2.0
@@ -80,6 +81,8 @@ BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw32-libfastlz-devel
 BuildRequires:  mingw32-libsqlite3-0
 BuildRequires:  mingw32-libsqlite-devel
+BuildRequires:  mingw32-cmocka
+BuildRequires:  mingw32-cmocka-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
@@ -155,25 +158,22 @@ done
 
 %build
 
-#cd src/win32/
-#make WIN_DEBUG=%{WIN_DEBUG} BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=%{WIN_VISTACOMPAT} %{?jobs:-j%jobs}
+DIRS_WITH_UNITESTS="lib findlib";
 
+for flavor in `echo "%flavors"`; do
+   cd $flavor/src/win32/
+   WIN_VISTACOMPAT=$(echo $flavor | grep postvista >/dev/null && echo yes || echo no)
+   WIN_DEBUG=$(echo $flavor | grep debug >/dev/null && echo yes || echo no)
+   make WIN_DEBUG=$WIN_DEBUG BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=$WIN_VISTACOMPAT %{?jobs:-j%jobs}
+   cd -
 
-cd postvista/src/win32/
-make WIN_DEBUG=no BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
-cd -
+   for UNITTEST_DIR in `echo "%dirs_with_unittests"`; do
+      cd $flavor/src/win32/${UNITTEST_DIR}/unittests
+      make WIN_DEBUG=$WIN_DEBUG BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=$WIN_VISTACOMPAT %{?jobs:-j%jobs}
+      cd -
+   done
 
-cd postvista-debug/src/win32/
-make WIN_DEBUG=yes BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=yes %{?jobs:-j%jobs}
-cd -
-
-cd prevista/src/win32/
-make WIN_DEBUG=no BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=no %{?jobs:-j%jobs}
-cd -
-
-cd prevista-debug/src/win32/
-make WIN_DEBUG=yes BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VISTACOMPAT=no %{?jobs:-j%jobs}
-cd -
+done
 
 %install
 for flavor in `echo "%flavors"`; do
@@ -181,6 +181,9 @@ for flavor in `echo "%flavors"`; do
    mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
    mkdir -p $RPM_BUILD_ROOT/etc/$flavor/%name
 
+   for UNITTEST_DIR in `echo "%dirs_with_unittests"`; do
+      cp $flavor/src/win32/${UNITTEST_DIR}/unittests/*.exe $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
+   done
    pushd $flavor/src/win32
 
    cp qt-tray-monitor/bareos-tray-monitor.exe \

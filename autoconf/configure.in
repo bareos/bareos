@@ -876,6 +876,46 @@ AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown
 AC_CHECK_FUNCS(nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 
+
+
+dnl ---------------------------------------------------------------------------
+dnl - Check for cmocka unit test framework http://cmocka.cryptomilk.org/
+dnl ---------------------------------------------------------------------------
+
+AC_SUBST(CMOCKA_LIBS)
+AC_SUBST(CMOCKA_CFLAGS)
+AC_SUBST(UNITTEST_DIRS)
+
+AC_CHECK_HEADERS(
+ [setjmp.h cmocka.h],,,
+ [[#include <stdarg.h>
+ #include <stddef.h>
+ #ifdef HAVE_SETJMP_H
+ #include <setjmp.h>
+ #endif
+ ]]
+)
+
+UNITTEST_DIRS=
+
+if test "x$ac_cv_header_setjmp_h" = "xyes" && test "x$ac_cv_header_cmocka_h" = "xyes" ; then
+ AC_CHECK_LIB([cmocka], [_will_return],
+ [ CMOCKA_LIBS="-lcmocka"
+ AC_MSG_RESULT([libcmocka available, cmocka tests will be build])
+ have_cmocka="yes" ],
+ [AC_MSG_WARN([No libcmocka library found, cmocka tests will not be build])
+ have_cmocka="no" ])
+else
+ AC_MSG_WARN([Required header files for libcmocka are missing, cmocka tests will not be build])
+ have_cmocka="no"
+fi
+
+if test x$have_cmocka = xyes; then
+ AC_DEFINE(HAVE_CMOCKA, 1, [Define to 1 if cmocka support should be enabled])
+ UNITTEST_DIRS="src/lib/unittests src/findlib/unittests"
+fi
+
+
 dnl -----------------------------------------------------------------------
 dnl  Check for Python support
 dnl
@@ -2969,6 +3009,8 @@ AC_SUBST(LZO_LIBS)
 AC_SUBST(LZO_LIBS_NONSHARED)
 
 
+
+
 dnl
 dnl Check for fastlz
 dnl
@@ -4481,6 +4523,7 @@ src/qt-console/install_conf_file \
 src/dird/Makefile \
 src/dird/bareos-dir.conf \
 src/lib/Makefile \
+src/lib/unittests/Makefile \
 src/stored/Makefile \
 src/stored/bareos-sd.conf \
 src/stored/backends/Makefile \
@@ -4499,6 +4542,7 @@ src/cats/drop_bareos_database \
 src/cats/install-default-backend \
 src/cats/ddl/versions.map \
 src/findlib/Makefile \
+src/findlib/unittests/Makefile \
 src/lmdb/Makefile \
 src/ndmp/Makefile \
 src/tests/Makefile \
@@ -4684,7 +4728,7 @@ Configuration on `date`:
    Python support:               ${support_python} ${PYTHON_LIBS}
    systemd support:              ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:         ${batch_insert_db_backends}
-
+   cmocka support:               ${have_cmocka}
   " > config.out
 
 # create a small shell script useful for support with

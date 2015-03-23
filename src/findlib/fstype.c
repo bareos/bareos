@@ -24,35 +24,8 @@
  * Written by Preben 'Peppe' Guldberg, December MMIV
  */
 
-#ifndef TEST_PROGRAM
-
 #include "bareos.h"
 #include "find.h"
-
-#else /* Set up for testing a stand alone program */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#define SUPPORTEDOSES \
-   "HAVE_DARWIN_OS\n" \
-   "HAVE_FREEBSD_OS\n" \
-   "HAVE_HPUX_OS\n" \
-   "HAVE_IRIX_OS\n" \
-   "HAVE_LINUX_OS\n" \
-   "HAVE_NETBSD_OS\n" \
-   "HAVE_OPENBSD_OS\n" \
-   "HAVE_SUN_OS\n" \
-   "HAVE_OSF1_OS\n" \
-   "HAVE_WIN32\n"
-#define false              0
-#define true               1
-#define bstrncpy           strncpy
-#define bstrcmp(s1, s2)    !strcmp(s1, s2)
-#define Dmsg0(n,s)         fprintf(stderr, s)
-#define Dmsg1(n,s,a1)      fprintf(stderr, s, a1)
-#define Dmsg2(n,s,a1,a2)   fprintf(stderr, s, a1, a2)
-#endif
 
 /*
  * These functions should be implemented for each OS
@@ -200,12 +173,6 @@ bool fstype(const char *fname, char *fs, int fslen)
 bool fstype(const char *fname, char *fs, int fslen)
 {
    Dmsg0(10, "!!! fstype() not implemented for this OS. !!!\n");
-#ifdef TEST_PROGRAM
-   Dmsg1(10, "Please define one of the following when compiling:\n\n%s\n",
-         SUPPORTEDOSES);
-   exit(EXIT_FAILURE);
-#endif
-
    return false;
 }
 #endif
@@ -225,28 +192,3 @@ bool fstype_equals(const char *fname, const char *fstypename)
 
    return false;
 }
-
-#ifdef TEST_PROGRAM
-int main(int argc, char **argv)
-{
-   char *p;
-   char fs[1000];
-   int status = 0;
-
-   if (argc < 2) {
-      p = (argc < 1) ? "fstype" : argv[0];
-      printf("usage:\t%s path ...\n"
-            "\t%s prints the file system type and pathname of the paths.\n",
-            p, p);
-      return EXIT_FAILURE;
-   }
-   while (*++argv) {
-      if (!fstype(*argv, fs, sizeof(fs))) {
-         status = EXIT_FAILURE;
-      } else {
-         printf("%s\t%s\n", fs, *argv);
-      }
-   }
-   return status;
-}
-#endif

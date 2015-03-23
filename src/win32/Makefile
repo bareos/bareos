@@ -22,7 +22,7 @@ include Makefile.inc
 
 VERSION_STRING := $(shell grep 'VERSION "' ../include/version.h | cut -d ' ' -f3)
 
-all_subdirs = lib findlib lmdb filed console tools cats dird stored plugins
+all_subdirs = lib findlib lmdb filed console tools cats dird stored plugins lib/unittests
 ifeq ($(BUILD_QTGUI),yes)
 all_subdirs += qt-console qt-tray-monitor
 endif

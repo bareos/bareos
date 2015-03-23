@@ -94,6 +94,9 @@ all: Makefile libbareos$(DEFAULT_ARCHIVE_TYPE) libbareoscfg$(DEFAULT_ARCHIVE_TYP
 	@echo "==== Make of lib is good ===="
 	@echo " "
 
+check: libbareos$(DEFAULT_ARCHIVE_TYPE)
+	$(MAKE) -C unittests $@
+
 libbareoscfg$(DEFAULT_ARCHIVE_TYPE): libbareos$(DEFAULT_ARCHIVE_TYPE)
 
 crypto_openssl.o: crypto_openssl.c
@@ -176,62 +179,6 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
-lockmgr_test: Makefile
-	$(RMF) lockmgr.o
-	$(CXX) -D _TEST_IT $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) lockmgr.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ lockmgr.o $(DLIB) -lbareos -lm $(LIBS)
-	rm -f lockmgr.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) lockmgr.c
-
-base64_test: Makefile
-	$(RMF) base64.o
-	$(CXX) -DBIN_TEST $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) base64.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ base64.o $(DLIB) -lbareos -lm $(LIBS)
-	rm -f base64.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) base64.c
-
-rwlock_test: Makefile
-	$(RMF) rwlock.o
-	$(CXX) -DTEST_RWLOCK $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) rwlock.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ rwlock.o $(DLIB) -lbareos -lm $(LIBS)
-	rm -f rwlock.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) rwlock.c
-
-devlock_test: Makefile
-	$(RMF) devlock.o
-	$(CXX) -DTEST_devlock $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) devlock.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ devlock.o $(DLIB) -lbareos -lm $(LIBS)
-	$(RMF) devlock.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) devlock.c
-
-htable_test: Makefile
-	$(RMF) htable.o
-	$(CXX) -DTEST_SMALL_HTABLE -DTEST_NON_CHAR -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) htable.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ htable.o $(DLIB) -lbareos -lm $(LIBS)
-	$(RMF) htable.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) htable.c
-
-md5sum: Makefile md5.o
-	$(RMF) md5.o
-	$(CXX) -DMD5_SUM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) md5.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ md5.o $(DLIB) -lbareos -lm $(LIBS)
-	$(RMF) md5.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) md5.c
-
-bsnprintf: Makefile bsnprintf.o
-	$(RMF) bsnprintf.o
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) bsnprintf.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ bsnprintf.o $(DLIB) -lbareos -lm $(LIBS)
-	$(RMF) bsnprintf.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) bsnprintf.c
-
-ini: Makefile ini.o
-	$(RMF) ini.o
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE)  $(CXXFLAGS) ini.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -o $@ ini.o -lbareoscfg -lbareos $(DLIB) -lm $(LIBS)
-	$(RMF) ini.o
-	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ini.c
-
 install-includes:
 	$(MKDIR) $(DESTDIR)/$(includedir)/bareos
 	for I in $(INCLUDE_FILES); do \
@@ -254,7 +201,6 @@ libtool-clean:
 
 clean:	libtool-clean
 	@$(RMF) core a.out *.o *.bak *.tex *.pdf *~ *.intpro *.extpro 1 2 3
-	@$(RMF) rwlock_test md5sum
 
 realclean: clean
 	@$(RMF) tags

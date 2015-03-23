@@ -114,7 +114,6 @@ struct ini_items {
  * OptPrompt=comment
  * key2 = val
  *
- * For usage example, see ini.c TEST_PROGRAM
  */
 
 class ConfigFile

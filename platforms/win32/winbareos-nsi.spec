@@ -6,8 +6,6 @@
 %define __os_install_post %{_mingw64_debug_install_post} \
                           %{_mingw64_install_post}
 
-# If versionstring contains debug, enable debug during build
-%define WIN_DEBUG %(echo %version | grep debug >/dev/null 2>&1 && echo "yes" || echo "no")
 
 
 #!BuildIgnore: post-build-checks
@@ -76,6 +74,8 @@ BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw64-libfastlz
 
 BuildRequires:  osslsigncode
+BuildRequires:  mingw32-cmocka
+BuildRequires:  mingw64-cmocka
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
@@ -147,7 +147,9 @@ do
       libbareosfind.dll \
       libbareoslmdb.dll \
       libbareoscats-postgresql.dll libbareoscats-sqlite3.dll libbareoscats.dll\
-      libbareossd.dll ;
+      libbareossd.dll \
+      test_lib.exe \
+      test_findlib.exe ;
    do
       cp %{_mingw32_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release64
@@ -173,6 +175,7 @@ do
       libfastlz.dll \
       libpng*.dll \
       openssl.exe \
+      libcmocka.dll \
       sed.exe;
    do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32

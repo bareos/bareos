@@ -753,6 +753,9 @@ OPENSSL_INC
 OPENSSL_LIBS
 PYTHON_INC
 PYTHON_LIBS
+UNITTEST_DIRS
+CMOCKA_CFLAGS
+CMOCKA_LIBS
 DEBIAN_CONTROL
 READLINE_SRC
 CONS_LDFLAGS
@@ -22966,6 +22969,98 @@ fi
 done
 
 
+
+
+
+
+
+
+
+for ac_header in setjmp.h cmocka.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#include <stdarg.h>
+ #include <stddef.h>
+ #ifdef HAVE_SETJMP_H
+ #include <setjmp.h>
+ #endif
+
+
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+
+UNITTEST_DIRS=
+
+if test "x$ac_cv_header_setjmp_h" = "xyes" && test "x$ac_cv_header_cmocka_h" = "xyes" ; then
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for _will_return in -lcmocka" >&5
+$as_echo_n "checking for _will_return in -lcmocka... " >&6; }
+if ${ac_cv_lib_cmocka__will_return+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcmocka  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char _will_return ();
+int
+main ()
+{
+return _will_return ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_cmocka__will_return=yes
+else
+  ac_cv_lib_cmocka__will_return=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cmocka__will_return" >&5
+$as_echo "$ac_cv_lib_cmocka__will_return" >&6; }
+if test "x$ac_cv_lib_cmocka__will_return" = xyes; then :
+   CMOCKA_LIBS="-lcmocka"
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: libcmocka available, cmocka tests will be build" >&5
+$as_echo "libcmocka available, cmocka tests will be build" >&6; }
+ have_cmocka="yes"
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No libcmocka library found, cmocka tests will not be build" >&5
+$as_echo "$as_me: WARNING: No libcmocka library found, cmocka tests will not be build" >&2;}
+ have_cmocka="no"
+fi
+
+else
+ { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Required header files for libcmocka are missing, cmocka tests will not be build" >&5
+$as_echo "$as_me: WARNING: Required header files for libcmocka are missing, cmocka tests will not be build" >&2;}
+ have_cmocka="no"
+fi
+
+if test x$have_cmocka = xyes; then
+
+$as_echo "#define HAVE_CMOCKA 1" >>confdefs.h
+
+ UNITTEST_DIRS="src/lib/unittests src/findlib/unittests"
+fi
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python support" >&5
 $as_echo_n "checking for Python support... " >&6; }
 
@@ -30368,6 +30463,8 @@ fi
 
 
 
+
+
 FASTLZ_LIBS="-lfastlz"
 FASTLZ_INC=""
 have_fastlz=no
@@ -32859,7 +32956,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -33981,6 +34078,7 @@ do
     "src/dird/Makefile") CONFIG_FILES="$CONFIG_FILES src/dird/Makefile" ;;
     "src/dird/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/dird/bareos-dir.conf" ;;
     "src/lib/Makefile") CONFIG_FILES="$CONFIG_FILES src/lib/Makefile" ;;
+    "src/lib/unittests/Makefile") CONFIG_FILES="$CONFIG_FILES src/lib/unittests/Makefile" ;;
     "src/stored/Makefile") CONFIG_FILES="$CONFIG_FILES src/stored/Makefile" ;;
     "src/stored/bareos-sd.conf") CONFIG_FILES="$CONFIG_FILES src/stored/bareos-sd.conf" ;;
     "src/stored/backends/Makefile") CONFIG_FILES="$CONFIG_FILES src/stored/backends/Makefile" ;;
@@ -33999,6 +34097,7 @@ do
     "src/cats/install-default-backend") CONFIG_FILES="$CONFIG_FILES src/cats/install-default-backend" ;;
     "src/cats/ddl/versions.map") CONFIG_FILES="$CONFIG_FILES src/cats/ddl/versions.map" ;;
     "src/findlib/Makefile") CONFIG_FILES="$CONFIG_FILES src/findlib/Makefile" ;;
+    "src/findlib/unittests/Makefile") CONFIG_FILES="$CONFIG_FILES src/findlib/unittests/Makefile" ;;
     "src/lmdb/Makefile") CONFIG_FILES="$CONFIG_FILES src/lmdb/Makefile" ;;
     "src/ndmp/Makefile") CONFIG_FILES="$CONFIG_FILES src/ndmp/Makefile" ;;
     "src/tests/Makefile") CONFIG_FILES="$CONFIG_FILES src/tests/Makefile" ;;
@@ -35714,7 +35813,7 @@ Configuration on `date`:
    Python support:               ${support_python} ${PYTHON_LIBS}
    systemd support:              ${support_systemd} ${SYSTEMD_UNITDIR}
    Batch insert enabled:         ${batch_insert_db_backends}
-
+   cmocka support:               ${have_cmocka}
   " > config.out
 
 # create a small shell script useful for support with

@@ -97,9 +97,3 @@ void berrno::format_win32_message()
 #endif
 }
 
-#ifdef TEST_PROGRAM
-
-int main()
-{
-}
-#endif

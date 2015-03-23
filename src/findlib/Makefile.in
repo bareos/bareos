@@ -59,6 +59,9 @@ all: Makefile libbareosfind$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareos$(DEFAULT_ARC
 	@echo "==== Make of findlib is good ===="
 	@echo " "
 
+check: libbareosfind$(DEFAULT_ARCHIVE_TYPE)
+	$(MAKE) -C unittests $@
+
 acl.o: acl.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $(AFS_CFLAGS) $<

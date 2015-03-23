@@ -24,6 +24,9 @@ fd_subdirs = src scripts src/lib src/findlib @LMDB_DIR@ src/filed \
 # Non-client-only directores
 subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
 
+unittest_dirs = @UNITTEST_DIRS@
+unittest_base_dirs = $(unittest_dirs:/unittests= )
+
 all_subdirs = ${fd_subdirs} ${@ALL_DIRS@} manpages platforms
 
 DIST =	INSTALL README.configure configure Makefile Makefile.in ChangeLog
@@ -207,6 +210,10 @@ distcopy:
 distrib: configure autoconf/config.h.in distdirs distcopy
 
 test:
+
+check:
+	@for I in $(unittest_base_dirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
+	@for I in $(unittest_dirs); do (cd $$I && $(MAKE) DESTDIR=$(DESTDIR) $@ || exit 1); done
 
 
 tar.gz:  ../$(VERNAME).tar.gz

@@ -158,6 +158,7 @@ BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
 BuildRequires: libfastlz-devel
+BuildRequires: libcmocka-devel
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
 BuildRequires: sqlite3-devel
@@ -692,6 +693,9 @@ export MTX=/usr/sbin/mtx
 
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+
+# run unit tests
+%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
 
 
 

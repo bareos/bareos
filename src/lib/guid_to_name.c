@@ -173,26 +173,3 @@ char *guid_list::gid_to_name(gid_t gid, char *name, int maxlen)
    bstrncpy(name, item->name, maxlen);
    return name;
 }
-
-#ifdef TEST_PROGRAM
-
-int main()
-{
-   int i;
-   guid_list *list;
-   char ed1[50], ed2[50];
-   list = new_guid_list();
-   for (i=0; i<1001; i++) {
-      printf("uid=%d name=%s  gid=%d name=%s\n", i, list->uid_to_name(i, ed1, sizeof(ed1)),
-         i, list->gid_to_name(i, ed2, sizeof(ed2)));
-      printf("uid=%d name=%s  gid=%d name=%s\n", i, list->uid_to_name(i, ed1, sizeof(ed1)),
-         i, list->gid_to_name(i, ed2, sizeof(ed2)));
-   }
-
-   free_guid_list(list);
-   sm_dump(false);     /* unit test */
-
-   return 0;
-}
-
-#endif
