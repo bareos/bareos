@@ -78,6 +78,8 @@ Vendor: 	The Bareos Team
 %define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
+%define have_git 0
+%define python_plugins 0
 %endif
 
 %if 0%{?suse_version} > 1010
@@ -98,16 +100,16 @@ Vendor: 	The Bareos Team
 %define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
-%define python_plugins 0
 %define have_git 0
+%define python_plugins 0
 %endif
 
 # centos/rhel 5 : segfault when building qt monitor
 %if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
 %define build_bat 0
 %define build_qt_monitor 0
-%define python_plugins 0
 %define have_git 0
+%define python_plugins 0
 %endif
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
@@ -138,7 +140,7 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
-BuildRequires: elfutils
+#BuildRequires: elfutils
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -177,21 +179,33 @@ BuildRequires: python-devel >= 2.6
 
 %if 0%{?suse_version}
 
-# link identical files
-BuildRequires: fdupes
-BuildRequires: lsb-release
+# suse_version:
+#   1315: SLE_12
+#   1110: SLE_11
+#   1010: SLE_10
+
 BuildRequires: distribution-release
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
 BuildRequires: termcap
 BuildRequires: update-desktop-files
 
+%if 0%{?sles_version} == 10
+# SLES 10 on OBS
+BuildRequires: sled-release
+%else
 %if 0%{?sles_version} || 0%{?suse_version} == 1315
 BuildRequires: sles-release
 %else
 BuildRequires: openSUSE-release
 %endif
+%endif
 
+%if 0%{?suse_version} > 1010
+# link identical files
+BuildRequires: fdupes
+BuildRequires: lsb-release
+%endif
 
 %else
 # non suse
@@ -701,6 +715,11 @@ for F in  \
     %{script_dir}/disk-changer \
     %{script_dir}/mtx-changer \
     %{_sysconfdir}/bareos/mtx-changer.conf \
+%endif
+%if 0%{?install_suse_fw} == 0
+    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-dir \
+    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-sd \
+    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-fd \
 %endif
     %{script_dir}/bareos \
     %{script_dir}/bareos_config \
