@@ -35,7 +35,6 @@
 ./src/ndmp/ndma_ctrl_calls.c
 ./src/ndmp/ndmprotocol.c
 ./src/ndmp/ndml_md5.c
-./src/ndmp/ndmp2_xdr.c
 ./src/ndmp/ndmp4_xmt.c
 ./src/ndmp/ndmp2_translate.c
 ./src/ndmp/ndmp4_pp.c
@@ -43,7 +42,6 @@
 ./src/ndmp/ndml_conn.c
 ./src/ndmp/ndmp0_xmt.c
 ./src/ndmp/ndma_ctst_data.c
-./src/ndmp/ndmp3_xdr.c
 ./src/ndmp/ndmos_freebsd.c
 ./src/ndmp/ndmjob_main_util.c
 ./src/ndmp/ndmjob_args.c
@@ -53,12 +51,10 @@
 ./src/ndmp/ndmp9_xmt.c
 ./src/ndmp/ndma_ctst_tape.c
 ./src/ndmp/smc_parse.c
-./src/ndmp/ndmp0_xdr.c
 ./src/ndmp/ndmp0_pp.c
 ./src/ndmp/ndma_image_stream.c
 ./src/ndmp/ndma_tape_simulator.c
 ./src/ndmp/ndma_comm_job.c
-./src/ndmp/ndmp4_xdr.c
 ./src/ndmp/ndma_cops_backreco.c
 ./src/ndmp/ndml_fhh.c
 ./src/ndmp/ndmp2_enum_strs.c
@@ -73,7 +69,6 @@
 ./src/ndmp/ndml_config.c
 ./src/ndmp/ndmp2_pp.c
 ./src/ndmp/ndmjob_simulator.c
-./src/ndmp/ndmp9_xdr.c
 ./src/ndmp/smc_api.c
 ./src/ndmp/ndma_comm_dispatch.c
 ./src/ndmp/ndma_cops_query.c
@@ -366,17 +361,12 @@
 ./src/console/conio.h
 ./src/console/console_conf.h
 ./src/ndmp/ndmos.h
-./src/ndmp/ndmp0.h
 ./src/ndmp/ndmp9_enum_strs.h
-./src/ndmp/ndmp4.h
-./src/ndmp/ndmp3.h
 ./src/ndmp/md5.h
 ./src/ndmp/ndmp3_translate.h
 ./src/ndmp/ndmos_freebsd.h
 ./src/ndmp/ndmagents.h
-./src/ndmp/ndmp9.h
 ./src/ndmp/ndmp0_enum_strs.h
-./src/ndmp/ndmp2.h
 ./src/ndmp/ndmos_solaris.h
 ./src/ndmp/ndmp2_translate.h
 ./src/ndmp/smc_raw.h
@@ -520,7 +510,6 @@
 ./src/win32/stored/backends/win32_tape_device.h
 ./src/qt-tray-monitor/authenticate.h
 ./src/qt-tray-monitor/systemtrayicon.h
-./src/qt-tray-monitor/ui/ui_mainwindow.h
 ./src/qt-tray-monitor/monitoritem.h
 ./src/qt-tray-monitor/tray_conf.h
 ./src/qt-tray-monitor/traymenu.h
@@ -646,14 +635,8 @@
 ./src/qt-tray-monitor/tray_conf.cpp
 ./src/qt-tray-monitor/monitoritemthread.cpp
 ./src/qt-tray-monitor/tray-monitor.cpp
-./src/qt-tray-monitor/moc/moc_mainwindow.cpp
-./src/qt-tray-monitor/moc/moc_traymenu.cpp
-./src/qt-tray-monitor/moc/moc_monitoritemthread.cpp
-./src/qt-tray-monitor/moc/moc_monitoritem.cpp
-./src/qt-tray-monitor/moc/moc_systemtrayicon.cpp
 ./src/qt-tray-monitor/traymenu.cpp
 ./src/qt-tray-monitor/authenticate.cpp
-./src/qt-tray-monitor/qrc_main.cpp
 ./src/qt-tray-monitor/mainwindow.cpp
 ./src/qt-console/storage/storage.cpp
 ./src/qt-console/storage/content.cpp

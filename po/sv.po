@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bareos 2.1.x\n"
 "Report-Msgid-Bugs-To: info@bareos.org\n"
-"POT-Creation-Date: 2015-01-26 14:16+0100\n"
+"POT-Creation-Date: 2015-03-23 13:47+0100\n"
 "PO-Revision-Date: 2007-06-22 19:18+0200\n"
 "Last-Translator: Kern Sibbald <kern@bacula.org>\n"
 "Language-Team: Swedish <bacula-devel@lists.soureforge.net>\n"
@@ -235,14 +235,14 @@ msgid "Unknown resource type %d\n"
 msgstr ""
 
 #: src/console/console_conf.c:259 src/filed/filed_conf.c:397
-#: src/dird/dird_conf.c:2059 src/dird/dird_conf.c:2077
+#: src/dird/dird_conf.c:2184 src/dird/dird_conf.c:2202
 #: src/qt-tray-monitor/tray_conf.cpp:300 src/qt-console/bat_conf.cpp:274
 #, c-format
 msgid "%s item is required in %s resource, but not found.\n"
 msgstr ""
 
 #: src/console/console_conf.c:308 src/filed/filed_conf.c:480
-#: src/dird/dird_conf.c:2292 src/qt-tray-monitor/tray_conf.cpp:366
+#: src/dird/dird_conf.c:2417 src/qt-tray-monitor/tray_conf.cpp:366
 #: src/qt-console/bat_conf.cpp:335
 #, c-format
 msgid "Attempt to define second %s resource named \"%s\" is not permitted.\n"
@@ -839,26 +839,26 @@ msgid "Base"
 msgstr ""
 
 #: src/filed/status.c:531 src/lib/util.c:454 src/lib/util.c:500
-#: src/dird/ua_run.c:1069 src/stored/status.c:805
+#: src/dird/ua_run.c:1084 src/stored/status.c:805
 msgid "Full"
 msgstr ""
 
-#: src/filed/status.c:534 src/lib/util.c:457 src/dird/ua_run.c:1070
+#: src/filed/status.c:534 src/lib/util.c:457 src/dird/ua_run.c:1085
 #: src/stored/status.c:808
 msgid "Incremental"
 msgstr ""
 
-#: src/filed/status.c:537 src/lib/util.c:460 src/dird/ua_run.c:1071
+#: src/filed/status.c:537 src/lib/util.c:460 src/dird/ua_run.c:1086
 #: src/stored/status.c:811
 msgid "Differential"
 msgstr ""
 
-#: src/filed/status.c:540 src/lib/util.c:463 src/dird/ua_run.c:1072
+#: src/filed/status.c:540 src/lib/util.c:463 src/dird/ua_run.c:1087
 #: src/stored/status.c:814
 msgid "Since"
 msgstr ""
 
-#: src/filed/status.c:543 src/lib/util.c:466 src/dird/ua_run.c:1099
+#: src/filed/status.c:543 src/lib/util.c:466 src/dird/ua_run.c:1114
 #: src/stored/status.c:817
 msgid "Verify Catalog"
 msgstr ""
@@ -1049,13 +1049,13 @@ msgstr ""
 msgid "Command plugin: no fname in bareosCheckChanges packet.\n"
 msgstr ""
 
-#: src/filed/filed_conf.c:421 src/dird/dird_conf.c:2135
+#: src/filed/filed_conf.c:421 src/dird/dird_conf.c:2260
 #: src/stored/stored_conf.c:841
 #, c-format
 msgid "Cannot find Director resource %s\n"
 msgstr ""
 
-#: src/filed/filed_conf.c:430 src/dird/dird_conf.c:2220
+#: src/filed/filed_conf.c:430 src/dird/dird_conf.c:2345
 #, c-format
 msgid "Cannot find Client resource %s\n"
 msgstr ""
@@ -1553,7 +1553,7 @@ msgstr ""
 msgid "Unparseable size option: %s\n"
 msgstr ""
 
-#: src/filed/fileset.c:714 src/dird/dird_conf.c:1373 src/dird/testfind.c:645
+#: src/filed/fileset.c:714 src/dird/dird_conf.c:1498 src/dird/testfind.c:645
 #: src/findlib/match.c:301
 #, c-format
 msgid "Unknown include/exclude option: %c\n"
@@ -1978,11 +1978,11 @@ msgstr ""
 msgid "Verify Init Catalog"
 msgstr ""
 
-#: src/lib/util.c:472 src/dird/ua_run.c:1100
+#: src/lib/util.c:472 src/dird/ua_run.c:1115
 msgid "Verify Volume to Catalog"
 msgstr ""
 
-#: src/lib/util.c:475 src/dird/ua_run.c:1101
+#: src/lib/util.c:475 src/dird/ua_run.c:1116
 msgid "Verify Disk to Catalog"
 msgstr ""
 
@@ -2029,7 +2029,7 @@ msgstr ""
 #: src/lib/util.c:789 src/lib/util.c:799 src/lib/util.c:807 src/lib/util.c:814
 #: src/lib/util.c:821 src/lib/util.c:837 src/lib/util.c:847 src/lib/util.c:854
 #: src/lib/util.c:862 src/lib/util.c:865 src/lib/compression.c:79
-#: src/dird/dird_conf.c:3248 src/dird/dird_conf.c:3251
+#: src/dird/dird_conf.c:3373 src/dird/dird_conf.c:3376
 msgid "*none*"
 msgstr ""
 
@@ -3019,7 +3019,7 @@ msgstr ""
 msgid "Attempt to redefine name \"%s\" to \"%s\"."
 msgstr ""
 
-#: src/lib/res.c:515 src/dird/dird_conf.c:2969
+#: src/lib/res.c:515 src/dird/dird_conf.c:3094
 #, c-format
 msgid "Could not find config Resource %s referenced on line %d : %s\n"
 msgstr ""
@@ -3077,7 +3077,7 @@ msgid "expected a time period, got: %s"
 msgstr ""
 
 #: src/lib/res.c:949 src/lib/res.c:970 src/lib/ini.c:223
-#: src/dird/dird_conf.c:2947 src/dird/dird_conf.c:3063
+#: src/dird/dird_conf.c:3072 src/dird/dird_conf.c:3188
 #, c-format
 msgid "Expect %s, got: %s"
 msgstr ""
@@ -3323,14 +3323,14 @@ msgstr ""
 
 #: src/lib/parse_bsr.c:943 src/dird/ua_input.c:120 src/dird/dbcheck.c:1375
 #: src/dird/ua_update.c:257 src/dird/ua_update.c:277 src/dird/ua_update.c:709
-#: src/dird/ua_run.c:380 src/dird/ua_run.c:425 src/dird/backup.c:1054
+#: src/dird/ua_run.c:395 src/dird/ua_run.c:440 src/dird/backup.c:1054
 #: src/dird/backup.c:1055 src/dird/backup.c:1056 src/dird/backup.c:1065
 #: src/dird/backup.c:1066 src/dird/backup.c:1067
 msgid "yes"
 msgstr ""
 
 #: src/lib/parse_bsr.c:943 src/dird/ua_input.c:124 src/dird/ua_update.c:257
-#: src/dird/ua_update.c:277 src/dird/ua_update.c:709 src/dird/ua_run.c:382
+#: src/dird/ua_update.c:277 src/dird/ua_update.c:709 src/dird/ua_run.c:397
 #: src/dird/backup.c:1054 src/dird/backup.c:1055 src/dird/backup.c:1056
 #: src/dird/backup.c:1065 src/dird/backup.c:1066 src/dird/backup.c:1067
 msgid "no"
@@ -4308,7 +4308,7 @@ msgid ""
 "set\n"
 msgstr ""
 
-#: src/lib/parse_conf.c:575 src/lib/parse_conf.c:645 src/dird/dird_conf.c:2067
+#: src/lib/parse_conf.c:575 src/lib/parse_conf.c:645 src/dird/dird_conf.c:2192
 #: src/qt-tray-monitor/tray_conf.cpp:306
 #, c-format
 msgid "Too many items in %s resource\n"
@@ -4688,7 +4688,7 @@ msgstr ""
 msgid "Start Admin JobId %d, Job=%s\n"
 msgstr ""
 
-#: src/dird/admin.c:77 src/dird/migrate.c:1605 src/dird/ndmp_dma.c:2347
+#: src/dird/admin.c:77 src/dird/migrate.c:1605 src/dird/ndmp_dma.c:2359
 #: src/dird/vbackup.c:324 src/dird/backup.c:751
 #, c-format
 msgid "Error getting Job record for Job report: ERR=%s"
@@ -4706,8 +4706,8 @@ msgstr ""
 msgid "Admin Canceled"
 msgstr ""
 
-#: src/dird/admin.c:97 src/dird/restore.c:501 src/dird/ndmp_dma.c:2389
-#: src/dird/ndmp_dma.c:2863 src/dird/vbackup.c:366 src/dird/backup.c:796
+#: src/dird/admin.c:97 src/dird/restore.c:501 src/dird/ndmp_dma.c:2401
+#: src/dird/ndmp_dma.c:2875 src/dird/vbackup.c:366 src/dird/backup.c:796
 #, c-format
 msgid "Inappropriate term code: %c\n"
 msgstr ""
@@ -4849,7 +4849,7 @@ msgstr ""
 msgid "Pruned %d %s for client %s from catalog.\n"
 msgstr ""
 
-#: src/dird/ua_prune.c:811 src/dird/ua_run.c:469 src/dird/ua_select.c:265
+#: src/dird/ua_prune.c:811 src/dird/ua_run.c:484 src/dird/ua_select.c:265
 #: src/dird/ua_select.c:288 src/dird/ua_select.c:328 src/dird/ua_select.c:1443
 msgid "Job"
 msgstr ""
@@ -4917,165 +4917,165 @@ msgstr ""
 msgid "run override"
 msgstr ""
 
-#: src/dird/scheduler.c:478
+#: src/dird/scheduler.c:480
 msgid "Inserted job"
 msgstr ""
 
-#: src/dird/scheduler.c:486
+#: src/dird/scheduler.c:488
 msgid "Appended job"
 msgstr ""
 
-#: src/dird/scheduler.c:490
+#: src/dird/scheduler.c:492
 msgid "Run queue"
 msgstr ""
 
-#: src/dird/dird_conf.c:1558 src/qt-tray-monitor/tray_conf.cpp:172
+#: src/dird/dird_conf.c:1683 src/qt-tray-monitor/tray_conf.cpp:172
 #, c-format
 msgid "No %s resource defined\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:1637 src/qt-tray-monitor/tray_conf.cpp:203
+#: src/dird/dird_conf.c:1762 src/qt-tray-monitor/tray_conf.cpp:203
 #, c-format
 msgid "Unknown resource type %d in dump_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2023 src/qt-tray-monitor/tray_conf.cpp:267
+#: src/dird/dird_conf.c:2148 src/qt-tray-monitor/tray_conf.cpp:267
 #, c-format
 msgid "Unknown resource type %d in free_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2111
+#: src/dird/dird_conf.c:2236
 #, c-format
 msgid "Cannot find Pool resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2127
+#: src/dird/dird_conf.c:2252
 #, c-format
 msgid "Cannot find Console resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2145 src/stored/stored_conf.c:848
+#: src/dird/dird_conf.c:2270 src/stored/stored_conf.c:848
 #, c-format
 msgid "Cannot find Storage resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2158
+#: src/dird/dird_conf.c:2283
 #, c-format
 msgid "Cannot find Job resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2212
+#: src/dird/dird_conf.c:2337
 #, c-format
 msgid "Cannot find Counter resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2241
+#: src/dird/dird_conf.c:2366
 #, c-format
 msgid "Cannot find Schedule resource %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2247 src/qt-tray-monitor/tray_conf.cpp:328
+#: src/dird/dird_conf.c:2372 src/qt-tray-monitor/tray_conf.cpp:328
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2282
+#: src/dird/dird_conf.c:2407
 #, c-format
 msgid "Name item is required in %s resource, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2297
+#: src/dird/dird_conf.c:2422
 #, c-format
 msgid "Inserting %s res: %s index=%d pass=%d\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2387
+#: src/dird/dird_conf.c:2512
 #, c-format
 msgid "Hey something is wrong. p=0x%lu\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2492
+#: src/dird/dird_conf.c:2617
 #, c-format
 msgid "\"%s\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2503
+#: src/dird/dird_conf.c:2628
 msgid "Too many items in Job resource\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2524
+#: src/dird/dird_conf.c:2649
 #, c-format
 msgid ""
 "\"client\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2531
+#: src/dird/dird_conf.c:2656
 #, c-format
 msgid ""
 "\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2537
+#: src/dird/dird_conf.c:2662
 #, c-format
 msgid "No storage specified in Job \"%s\" nor in Pool.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2567
+#: src/dird/dird_conf.c:2692
 #, c-format
 msgid "Expected an Action On Purge option, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2644
+#: src/dird/dird_conf.c:2769
 #, c-format
 msgid "Expected a Migration Job Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2672
+#: src/dird/dird_conf.c:2797
 #, c-format
 msgid "Expected a Job Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2700
+#: src/dird/dird_conf.c:2825
 #, c-format
 msgid "Expected a Protocol Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2725
+#: src/dird/dird_conf.c:2850
 #, c-format
 msgid "Expected a Restore replacement option, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2753
+#: src/dird/dird_conf.c:2878
 #, c-format
 msgid "Expected a Auth Protocol Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2780 src/stored/stored_conf.c:319
+#: src/dird/dird_conf.c:2905 src/stored/stored_conf.c:319
 #, c-format
 msgid "Expected a Authentication Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2808
+#: src/dird/dird_conf.c:2933
 #, c-format
 msgid "Expected a Job Level keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:3086 src/dird/inc_conf.c:535
+#: src/dird/dird_conf.c:3211 src/dird/inc_conf.c:535
 #, c-format
 msgid "Expecting open brace. Got %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:3103 src/dird/inc_conf.c:550 src/dird/inc_conf.c:730
+#: src/dird/dird_conf.c:3228 src/dird/inc_conf.c:550 src/dird/inc_conf.c:730
 #, c-format
 msgid "Expecting keyword, got: %s\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:3110 src/dird/run_conf.c:200
+#: src/dird/dird_conf.c:3235 src/dird/run_conf.c:200
 #, c-format
 msgid "Expected an equals, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:3138 src/dird/inc_conf.c:592 src/dird/inc_conf.c:764
+#: src/dird/dird_conf.c:3263 src/dird/inc_conf.c:592 src/dird/inc_conf.c:764
 #, c-format
 msgid "Keyword %s not permitted in this resource"
 msgstr ""
@@ -5450,8 +5450,8 @@ msgid "No Volumes found, or no barcodes.\n"
 msgstr ""
 
 #: src/dird/ua_status.c:1503 src/dird/ua_label.c:150 src/dird/ua_impexp.c:1036
-#: src/dird/ua_update.c:1019 src/dird/ua_run.c:757 src/dird/ua_run.c:765
-#: src/dird/ua_run.c:1977
+#: src/dird/ua_update.c:1019 src/dird/ua_run.c:772 src/dird/ua_run.c:780
+#: src/dird/ua_run.c:1992
 msgid "command line"
 msgstr ""
 
@@ -5595,12 +5595,12 @@ msgstr ""
 msgid "Director"
 msgstr ""
 
-#: src/dird/ua_dotcmds.c:767 src/dird/ua_run.c:468 src/dird/ua_select.c:168
+#: src/dird/ua_dotcmds.c:767 src/dird/ua_run.c:483 src/dird/ua_select.c:168
 #: src/dird/ua_cmds.c:1337
 msgid "Storage"
 msgstr ""
 
-#: src/dird/ua_dotcmds.c:768 src/dird/ua_run.c:474 src/dird/ua_select.c:351
+#: src/dird/ua_dotcmds.c:768 src/dird/ua_run.c:489 src/dird/ua_select.c:351
 #: src/dird/ua_select.c:378 src/dird/ua_select.c:514 src/dird/ua_cmds.c:1338
 msgid "Client"
 msgstr ""
@@ -5656,11 +5656,11 @@ msgstr ""
 #: src/dird/ua_dotcmds.c:1234 src/dird/ua_dotcmds.c:1240
 #: src/dird/ua_dotcmds.c:1242 src/dird/migrate.c:1753 src/dird/migrate.c:1754
 #: src/dird/migrate.c:1756 src/dird/migrate.c:1759 src/dird/migrate.c:1761
-#: src/dird/ua_update.c:365 src/dird/ua_run.c:1151 src/dird/ua_run.c:1165
-#: src/dird/ua_run.c:1198 src/dird/ua_run.c:1200 src/dird/ua_run.c:1226
-#: src/dird/ua_run.c:1230 src/dird/ua_run.c:1478 src/dird/ua_run.c:1511
-#: src/dird/ua_run.c:1512 src/dird/ua_run.c:1513 src/dird/ua_run.c:1537
-#: src/dird/ua_run.c:1539 src/dird/ua_run.c:1541 src/dird/ua_select.c:591
+#: src/dird/ua_update.c:365 src/dird/ua_run.c:1166 src/dird/ua_run.c:1180
+#: src/dird/ua_run.c:1213 src/dird/ua_run.c:1215 src/dird/ua_run.c:1241
+#: src/dird/ua_run.c:1245 src/dird/ua_run.c:1493 src/dird/ua_run.c:1526
+#: src/dird/ua_run.c:1527 src/dird/ua_run.c:1528 src/dird/ua_run.c:1552
+#: src/dird/ua_run.c:1554 src/dird/ua_run.c:1556 src/dird/ua_select.c:591
 #: src/dird/ua_select.c:611 src/include/baconfig.h:88
 msgid "*None*"
 msgstr ""
@@ -5679,35 +5679,35 @@ msgid ""
 "client or disable compat mode.\n"
 msgstr ""
 
-#: src/dird/restore.c:417 src/dird/ndmp_dma.c:2780
+#: src/dird/restore.c:417 src/dird/ndmp_dma.c:2792
 msgid ""
 "Cannot restore without a bootstrap file.\n"
 "You probably ran a restore job directly. All restore jobs must\n"
 "be run using the restore command.\n"
 msgstr ""
 
-#: src/dird/restore.c:426 src/dird/ndmp_dma.c:2789
+#: src/dird/restore.c:426 src/dird/ndmp_dma.c:2801
 #, c-format
 msgid "Start Restore Job %s\n"
 msgstr ""
 
-#: src/dird/restore.c:471 src/dird/ndmp_dma.c:2833
+#: src/dird/restore.c:471 src/dird/ndmp_dma.c:2845
 msgid "Restore OK -- warning file count mismatch"
 msgstr ""
 
-#: src/dird/restore.c:473 src/dird/ndmp_dma.c:2835
+#: src/dird/restore.c:473 src/dird/ndmp_dma.c:2847
 msgid "Restore OK"
 msgstr ""
 
-#: src/dird/restore.c:477 src/dird/ndmp_dma.c:2839
+#: src/dird/restore.c:477 src/dird/ndmp_dma.c:2851
 msgid "Restore OK -- with warnings"
 msgstr ""
 
-#: src/dird/restore.c:481 src/dird/ndmp_dma.c:2843
+#: src/dird/restore.c:481 src/dird/ndmp_dma.c:2855
 msgid "*** Restore Error ***"
 msgstr ""
 
-#: src/dird/restore.c:491 src/dird/ndmp_dma.c:2853
+#: src/dird/restore.c:491 src/dird/ndmp_dma.c:2865
 msgid "Restore Canceled"
 msgstr ""
 
@@ -6467,7 +6467,7 @@ msgstr ""
 msgid "The defined FileSet resources are:\n"
 msgstr ""
 
-#: src/dird/ua_restore.c:1344 src/dird/ua_run.c:470 src/dird/ua_select.c:191
+#: src/dird/ua_restore.c:1344 src/dird/ua_run.c:485 src/dird/ua_select.c:191
 msgid "FileSet"
 msgstr ""
 
@@ -6668,7 +6668,7 @@ msgstr ""
 msgid "setup job failed.\n"
 msgstr ""
 
-#: src/dird/migrate.c:289 src/dird/migrate.c:290 src/dird/ndmp_dma.c:1944
+#: src/dird/migrate.c:289 src/dird/migrate.c:290 src/dird/ndmp_dma.c:1956
 #: src/dird/vbackup.c:80 src/dird/backup.c:107 src/dird/job.c:210
 #: src/dird/job.c:1173 src/dird/job.c:1472 src/dird/job.c:1528
 #: src/dird/job.c:1547
@@ -6694,7 +6694,7 @@ msgstr ""
 msgid "Run NextPool override"
 msgstr ""
 
-#: src/dird/migrate.c:359 src/dird/vbackup.c:97 src/dird/ua_run.c:870
+#: src/dird/migrate.c:359 src/dird/vbackup.c:97 src/dird/ua_run.c:885
 msgid "Storage from Run NextPool override"
 msgstr ""
 
@@ -7754,7 +7754,7 @@ msgstr ""
 msgid "New ActionOnPurge is: %s\n"
 msgstr ""
 
-#: src/dird/ua_update.c:615 src/dird/ua_run.c:465
+#: src/dird/ua_update.c:615 src/dird/ua_run.c:480
 msgid "Parameters to modify:\n"
 msgstr ""
 
@@ -7798,7 +7798,7 @@ msgstr ""
 msgid "Volume Files"
 msgstr ""
 
-#: src/dird/ua_update.c:626 src/dird/ua_run.c:483 src/dird/ua_select.c:602
+#: src/dird/ua_update.c:626 src/dird/ua_run.c:498 src/dird/ua_select.c:602
 #: src/dird/ua_select.c:720
 msgid "Pool"
 msgstr ""
@@ -7831,7 +7831,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: src/dird/ua_update.c:634 src/dird/ua_run.c:506 src/dird/ua_run.c:944
+#: src/dird/ua_update.c:634 src/dird/ua_run.c:521 src/dird/ua_run.c:959
 msgid "Select parameter to modify"
 msgstr ""
 
@@ -8264,150 +8264,162 @@ msgstr ""
 msgid "Too many failures. Giving up creating Volume name.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:509
+#: src/dird/ndmp_dma.c:508
+#, c-format
+msgid ""
+"Client %s, has incompatible password encoding for running NDMP backup.\n"
+msgstr ""
+
+#: src/dird/ndmp_dma.c:515
 #, c-format
 msgid ""
 "Client %s, with backup protocol %s  not compatible for running NDMP backup.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:525
+#: src/dird/ndmp_dma.c:531
+#, c-format
+msgid ""
+"Storage %s, has incompatible password encoding for running NDMP backup.\n"
+msgstr ""
+
+#: src/dird/ndmp_dma.c:537
 #, c-format
 msgid "Storage %s has illegal backup protocol %s for NDMP backup\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:579
+#: src/dird/ndmp_dma.c:591
 #, c-format
 msgid "Illegal protocol %d for NDMP Job\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:597
+#: src/dird/ndmp_dma.c:609
 #, c-format
 msgid "Illegal authtype %d for NDMP Job\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:628
+#: src/dird/ndmp_dma.c:640
 #, c-format
 msgid "Illegal Job Level %c for NDMP Job\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:636
+#: src/dird/ndmp_dma.c:648
 msgid ""
 "NDMP dump format doesn't support more than 8 incrementals, please run a "
 "Differential or a Full Backup\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1235
+#: src/dird/ndmp_dma.c:1247
 msgid "No backup type specified in NDMP job\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1268
+#: src/dird/ndmp_dma.c:1280
 #, c-format
 msgid ""
 "For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d and %d, but "
 "is set to %d\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1274
+#: src/dird/ndmp_dma.c:1286
 #, c-format
 msgid ""
 "For SMTAPE NDMP jobs the NDMP blocksize needs to be in increments of %d "
 "bytes, but is set to %d\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1303
+#: src/dird/ndmp_dma.c:1315
 #, c-format
 msgid "NDMP Job validation error = %s\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1327 src/dird/ndmp_dma.c:1345 src/dird/catreq.c:452
+#: src/dird/ndmp_dma.c:1339 src/dird/ndmp_dma.c:1357 src/dird/catreq.c:452
 #, c-format
 msgid "Attribute create error: ERR=%s"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1516
+#: src/dird/ndmp_dma.c:1528
 msgid "NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1536
+#: src/dird/ndmp_dma.c:1548
 #, c-format
 msgid "NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1561
+#: src/dird/ndmp_dma.c:1573
 msgid "NDMP protocol error, FHDB add_node call before add_dir.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1567
+#: src/dird/ndmp_dma.c:1579
 #, c-format
 msgid "NDMP protocol error, FHDB add_node request for unknown node %llu.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1603
+#: src/dird/ndmp_dma.c:1615
 msgid "NDMP protocol error, FHDB add_dirnode_root call more then once.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1947 src/dird/backup.c:110
+#: src/dird/ndmp_dma.c:1959 src/dird/backup.c:110
 msgid "No Storage specification found in Job or Pool.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1968
+#: src/dird/ndmp_dma.c:1980
 msgid ""
 "Write storage doesn't point to storage definition with paired storage "
 "option.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1992
+#: src/dird/ndmp_dma.c:2004
 #, c-format
 msgid "Start NDMP Backup JobId %s, Job=%s\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2354 src/dird/vbackup.c:331 src/dird/backup.c:758
+#: src/dird/ndmp_dma.c:2366 src/dird/vbackup.c:331 src/dird/backup.c:758
 #, c-format
 msgid "Error getting Client record for Job report: ERR=%s"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2362 src/dird/vbackup.c:339 src/dird/backup.c:766
+#: src/dird/ndmp_dma.c:2374 src/dird/vbackup.c:339 src/dird/backup.c:766
 #: src/stored/bscan.c:1255
 msgid "Backup OK"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2365 src/dird/vbackup.c:342 src/dird/backup.c:772
+#: src/dird/ndmp_dma.c:2377 src/dird/vbackup.c:342 src/dird/backup.c:772
 #: src/stored/bscan.c:1258
 msgid "Backup OK -- with warnings"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2369 src/dird/vbackup.c:346 src/dird/backup.c:776
+#: src/dird/ndmp_dma.c:2381 src/dird/vbackup.c:346 src/dird/backup.c:776
 #: src/stored/bscan.c:1262
 msgid "*** Backup Error ***"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2379 src/dird/vbackup.c:356 src/dird/backup.c:786
+#: src/dird/ndmp_dma.c:2391 src/dird/vbackup.c:356 src/dird/backup.c:786
 #: src/stored/bscan.c:1265
 msgid "Backup Canceled"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2406
+#: src/dird/ndmp_dma.c:2418
 msgid "Cannot NDMP restore without a file selection.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2473 src/stored/dir_cmd.c:1269
+#: src/dird/ndmp_dma.c:2485 src/stored/dir_cmd.c:1269
 msgid "Error parsing bootstrap file.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2483
+#: src/dird/ndmp_dma.c:2495
 #, c-format
 msgid ""
 "Read storage %s doesn't point to storage definition with paired storage "
 "option.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2614
+#: src/dird/ndmp_dma.c:2626
 msgid "Wrong BSR missing sessid and/or sesstime\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:3037 src/dird/ndmp_dma.c:3043 src/dird/ndmp_dma.c:3049
-#: src/dird/ndmp_dma.c:3054 src/dird/ndmp_dma.c:3060 src/dird/ndmp_dma.c:3066
-#: src/dird/ndmp_dma.c:3071 src/dird/ndmp_dma.c:3076
+#: src/dird/ndmp_dma.c:3049 src/dird/ndmp_dma.c:3055 src/dird/ndmp_dma.c:3061
+#: src/dird/ndmp_dma.c:3066 src/dird/ndmp_dma.c:3072 src/dird/ndmp_dma.c:3078
+#: src/dird/ndmp_dma.c:3083 src/dird/ndmp_dma.c:3088
 msgid "NDMP protocol not supported\n"
 msgstr ""
 
@@ -8516,262 +8528,262 @@ msgstr ""
 msgid "Error getting FileSet record for Job rerun: ERR=%s"
 msgstr ""
 
-#: src/dird/ua_run.c:229
+#: src/dird/ua_run.c:244
 msgid "rerun these jobids? (yes/no): "
 msgstr ""
 
-#: src/dird/ua_run.c:363
+#: src/dird/ua_run.c:378
 msgid "OK to run? (yes/mod/no): "
 msgstr ""
 
-#: src/dird/ua_run.c:387
+#: src/dird/ua_run.c:402
 #, c-format
 msgid "Illegal response %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:442
+#: src/dird/ua_run.c:457
 msgid "Job failed.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:445
+#: src/dird/ua_run.c:460
 #, c-format
 msgid "Job queued. JobId=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:452
+#: src/dird/ua_run.c:467
 msgid "Job not run.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:464 src/dird/ua_select.c:54
+#: src/dird/ua_run.c:479 src/dird/ua_select.c:54
 msgid "mod"
 msgstr ""
 
-#: src/dird/ua_run.c:467
+#: src/dird/ua_run.c:482
 msgid "Level"
 msgstr ""
 
-#: src/dird/ua_run.c:472
+#: src/dird/ua_run.c:487
 msgid "Restore Client"
 msgstr ""
 
-#: src/dird/ua_run.c:476
+#: src/dird/ua_run.c:491
 msgid "Backup Format"
 msgstr ""
 
-#: src/dird/ua_run.c:477
+#: src/dird/ua_run.c:492
 msgid "When"
 msgstr ""
 
-#: src/dird/ua_run.c:478
+#: src/dird/ua_run.c:493
 msgid "Priority"
 msgstr ""
 
-#: src/dird/ua_run.c:488
+#: src/dird/ua_run.c:503
 msgid "NextPool"
 msgstr ""
 
-#: src/dird/ua_run.c:490 src/dird/ua_run.c:495 src/dird/ua_run.c:503
+#: src/dird/ua_run.c:505 src/dird/ua_run.c:510 src/dird/ua_run.c:518
 msgid "Plugin Options"
 msgstr ""
 
-#: src/dird/ua_run.c:493
+#: src/dird/ua_run.c:508
 msgid "Verify Job"
 msgstr ""
 
-#: src/dird/ua_run.c:498
+#: src/dird/ua_run.c:513
 msgid "Bootstrap"
 msgstr ""
 
-#: src/dird/ua_run.c:499
+#: src/dird/ua_run.c:514
 msgid "Where"
 msgstr ""
 
-#: src/dird/ua_run.c:500
+#: src/dird/ua_run.c:515
 msgid "File Relocation"
 msgstr ""
 
-#: src/dird/ua_run.c:501
+#: src/dird/ua_run.c:516
 msgid "Replace"
 msgstr ""
 
-#: src/dird/ua_run.c:502
+#: src/dird/ua_run.c:517
 msgid "JobId"
 msgstr ""
 
-#: src/dird/ua_run.c:524 src/dird/ua_run.c:1983
+#: src/dird/ua_run.c:539 src/dird/ua_run.c:1998
 msgid "user selection"
 msgstr ""
 
-#: src/dird/ua_run.c:556
+#: src/dird/ua_run.c:571
 msgid "Please enter Backup Format: "
 msgstr ""
 
-#: src/dird/ua_run.c:567
+#: src/dird/ua_run.c:582
 msgid ""
 "Please enter desired start time as YYYY-MM-DD HH:MM:SS (return for now): "
 msgstr ""
 
-#: src/dird/ua_run.c:573 src/dird/ua_run.c:805
+#: src/dird/ua_run.c:588 src/dird/ua_run.c:820
 msgid "Invalid time, using current time.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:582
+#: src/dird/ua_run.c:597
 msgid "Enter new Priority: "
 msgstr ""
 
-#: src/dird/ua_run.c:584
+#: src/dird/ua_run.c:599
 msgid "Priority must be a positive integer.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:605
+#: src/dird/ua_run.c:620
 msgid "Please enter the Bootstrap file name: "
 msgstr ""
 
-#: src/dird/ua_run.c:617
+#: src/dird/ua_run.c:632
 #, c-format
 msgid "Warning cannot open %s: ERR=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:647
+#: src/dird/ua_run.c:662
 msgid "Please enter the full path prefix for restore (/ for none): "
 msgstr ""
 
-#: src/dird/ua_run.c:663 src/dird/ua_run.c:679 src/dird/ua_run.c:711
+#: src/dird/ua_run.c:678 src/dird/ua_run.c:694 src/dird/ua_run.c:726
 msgid "Please enter Plugin Options string: "
 msgstr ""
 
-#: src/dird/ua_run.c:691
+#: src/dird/ua_run.c:706
 msgid "Replace:\n"
 msgstr ""
 
-#: src/dird/ua_run.c:695
+#: src/dird/ua_run.c:710
 msgid "Select replace option"
 msgstr ""
 
-#: src/dird/ua_run.c:706
+#: src/dird/ua_run.c:721
 msgid ""
 "You must set the bootstrap file to NULL to be able to specify a JobId.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:760 src/dird/ua_run.c:768 src/dird/ua_run.c:781
+#: src/dird/ua_run.c:775 src/dird/ua_run.c:783 src/dird/ua_run.c:796
 msgid "user input"
 msgstr ""
 
-#: src/dird/ua_run.c:835
+#: src/dird/ua_run.c:850
 #, c-format
 msgid "Invalid replace option: %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:883 src/dird/ua_cmds.c:1575
+#: src/dird/ua_run.c:898 src/dird/ua_cmds.c:1575
 #, c-format
 msgid "Level \"%s\" not valid.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:933
+#: src/dird/ua_run.c:948
 #, c-format
 msgid "strip_prefix=%s add_prefix=%s add_suffix=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:936
+#: src/dird/ua_run.c:951
 msgid "This will replace your current Where value\n"
 msgstr ""
 
-#: src/dird/ua_run.c:937
+#: src/dird/ua_run.c:952
 msgid "Strip prefix"
 msgstr ""
 
-#: src/dird/ua_run.c:938
+#: src/dird/ua_run.c:953
 msgid "Add prefix"
 msgstr ""
 
-#: src/dird/ua_run.c:939
+#: src/dird/ua_run.c:954
 msgid "Add file suffix"
 msgstr ""
 
-#: src/dird/ua_run.c:940
+#: src/dird/ua_run.c:955
 msgid "Enter a regexp"
 msgstr ""
 
-#: src/dird/ua_run.c:941
+#: src/dird/ua_run.c:956
 msgid "Test filename manipulation"
 msgstr ""
 
-#: src/dird/ua_run.c:942
+#: src/dird/ua_run.c:957
 msgid "Use this ?"
 msgstr ""
 
-#: src/dird/ua_run.c:947
+#: src/dird/ua_run.c:962
 msgid "Please enter the path prefix to strip: "
 msgstr ""
 
-#: src/dird/ua_run.c:954
+#: src/dird/ua_run.c:969
 msgid "Please enter the path prefix to add (/ for none): "
 msgstr ""
 
-#: src/dird/ua_run.c:965
+#: src/dird/ua_run.c:980
 msgid "Please enter the file suffix to add: "
 msgstr ""
 
-#: src/dird/ua_run.c:972
+#: src/dird/ua_run.c:987
 msgid "Please enter a valid regexp (!from!to!): "
 msgstr ""
 
-#: src/dird/ua_run.c:984
+#: src/dird/ua_run.c:999
 #, c-format
 msgid "regexwhere=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:990
+#: src/dird/ua_run.c:1005
 #, c-format
 msgid "strip_prefix=%s add_prefix=%s add_suffix=%s result=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:997
+#: src/dird/ua_run.c:1012
 msgid "Cannot use your regexp\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1000
+#: src/dird/ua_run.c:1015
 msgid "Enter a period (.) to stop this test\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1001
+#: src/dird/ua_run.c:1016
 msgid "Please enter filename to test: "
 msgstr ""
 
-#: src/dird/ua_run.c:1003
+#: src/dird/ua_run.c:1018
 #, c-format
 msgid "%s -> %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1046
+#: src/dird/ua_run.c:1061
 msgid "Cannot use your regexp.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1067 src/dird/ua_run.c:1097
+#: src/dird/ua_run.c:1082 src/dird/ua_run.c:1112
 msgid "Levels:\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1073
+#: src/dird/ua_run.c:1088
 msgid "VirtualFull"
 msgstr ""
 
-#: src/dird/ua_run.c:1074 src/dird/ua_run.c:1103
+#: src/dird/ua_run.c:1089 src/dird/ua_run.c:1118
 msgid "Select level"
 msgstr ""
 
-#: src/dird/ua_run.c:1098
+#: src/dird/ua_run.c:1113
 msgid "Initialize Catalog"
 msgstr ""
 
-#: src/dird/ua_run.c:1102
+#: src/dird/ua_run.c:1117
 msgid "Verify Volume Data (not yet implemented)"
 msgstr ""
 
-#: src/dird/ua_run.c:1123
+#: src/dird/ua_run.c:1138
 msgid "Level not appropriate for this Job. Cannot be changed.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1155
+#: src/dird/ua_run.c:1170
 #, c-format
 msgid ""
 "Run Admin Job\n"
@@ -8783,7 +8795,7 @@ msgid ""
 "Priority: %d\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1207
+#: src/dird/ua_run.c:1222
 #, c-format
 msgid ""
 "Run Backup job\n"
@@ -8799,12 +8811,12 @@ msgid ""
 "%s%s%s"
 msgstr ""
 
-#: src/dird/ua_run.c:1247
+#: src/dird/ua_run.c:1262
 #, c-format
 msgid "Could not get job record for selected JobId. ERR=%s"
 msgstr ""
 
-#: src/dird/ua_run.c:1286
+#: src/dird/ua_run.c:1301
 #, c-format
 msgid ""
 "Run Verify Job\n"
@@ -8820,11 +8832,11 @@ msgid ""
 "Priority:    %d\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1315
+#: src/dird/ua_run.c:1330
 msgid "Please enter a JobId for restore: "
 msgstr ""
 
-#: src/dird/ua_run.c:1357
+#: src/dird/ua_run.c:1372
 #, c-format
 msgid ""
 "Run Restore job\n"
@@ -8843,7 +8855,7 @@ msgid ""
 "Plugin Options:  %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1417
+#: src/dird/ua_run.c:1432
 #, c-format
 msgid ""
 "Run Restore job\n"
@@ -8862,7 +8874,7 @@ msgid ""
 "Plugin Options:  %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1450
+#: src/dird/ua_run.c:1465
 #, c-format
 msgid ""
 "Run Restore job\n"
@@ -8870,17 +8882,17 @@ msgid ""
 "Bootstrap:  %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1458
+#: src/dird/ua_run.c:1473
 #, c-format
 msgid "RegexWhere: %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1461
+#: src/dird/ua_run.c:1476
 #, c-format
 msgid "Where:      %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1465
+#: src/dird/ua_run.c:1480
 #, c-format
 msgid ""
 "Replace:         %s\n"
@@ -8894,19 +8906,19 @@ msgid ""
 "Plugin Options:  %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1493
+#: src/dird/ua_run.c:1508
 msgid ""
 "Type: Copy\n"
 "Title: Run Copy Job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1495
+#: src/dird/ua_run.c:1510
 msgid ""
 "Type: Migration\n"
 "Title: Run Migration Job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1497
+#: src/dird/ua_run.c:1512
 #, c-format
 msgid ""
 "%sJobName:       %s\n"
@@ -8920,15 +8932,15 @@ msgid ""
 "Priority:      %d\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1519
+#: src/dird/ua_run.c:1534
 msgid "Run Copy job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1521
+#: src/dird/ua_run.c:1536
 msgid "Run Migration job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1523
+#: src/dird/ua_run.c:1538
 #, c-format
 msgid ""
 "%sJobName:       %s\n"
@@ -8942,217 +8954,217 @@ msgid ""
 "Priority:      %d\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1548
+#: src/dird/ua_run.c:1563
 #, c-format
 msgid "Unknown Job Type=%d\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1625
+#: src/dird/ua_run.c:1640
 #, c-format
 msgid "Value missing for keyword %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1632
+#: src/dird/ua_run.c:1647
 msgid "Job name specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1640
+#: src/dird/ua_run.c:1655
 msgid "JobId specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1649 src/dird/ua_run.c:1797
+#: src/dird/ua_run.c:1664 src/dird/ua_run.c:1812
 msgid "Client specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1657
+#: src/dird/ua_run.c:1672
 msgid "FileSet specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1665
+#: src/dird/ua_run.c:1680
 msgid "Level specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1674
+#: src/dird/ua_run.c:1689
 msgid "Storage specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1682
+#: src/dird/ua_run.c:1697
 msgid "RegexWhere or Where specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1687
+#: src/dird/ua_run.c:1702
 msgid "No authorization for \"regexwhere\" specification.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1694
+#: src/dird/ua_run.c:1709
 msgid "Where or RegexWhere specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1699
+#: src/dird/ua_run.c:1714
 msgid "No authoriztion for \"where\" specification.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1706
+#: src/dird/ua_run.c:1721
 msgid "Bootstrap specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1714
+#: src/dird/ua_run.c:1729
 msgid "Replace specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1722
+#: src/dird/ua_run.c:1737
 msgid "When specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1730
+#: src/dird/ua_run.c:1745
 msgid "Priority specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1735
+#: src/dird/ua_run.c:1750
 msgid "Priority must be positive nonzero setting it to 10.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1745
+#: src/dird/ua_run.c:1760
 msgid "Verify Job specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1773
+#: src/dird/ua_run.c:1788
 msgid "Migration Job specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1781
+#: src/dird/ua_run.c:1796
 msgid "Pool specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1789
+#: src/dird/ua_run.c:1804
 msgid "NextPool specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1805
+#: src/dird/ua_run.c:1820
 msgid "Restore Client specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1813
+#: src/dird/ua_run.c:1828
 msgid "Plugin Options specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1818
+#: src/dird/ua_run.c:1833
 msgid "No authorization for \"PluginOptions\" specification.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1825
+#: src/dird/ua_run.c:1840
 msgid "Spool flag specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1832
+#: src/dird/ua_run.c:1847
 msgid "Invalid spooldata flag.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1841
+#: src/dird/ua_run.c:1856
 msgid "IgnoreDuplicateCheck flag specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1848
+#: src/dird/ua_run.c:1863
 msgid "Invalid ignoreduplicatecheck flag.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1853
+#: src/dird/ua_run.c:1868
 msgid "Accurate flag specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1860
+#: src/dird/ua_run.c:1875
 msgid "Invalid accurate flag.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1865
+#: src/dird/ua_run.c:1880
 msgid "Backup Format specified twice.\n"
-msgstr ""
-
-#: src/dird/ua_run.c:1890
-#, c-format
-msgid "Invalid keyword: %s\n"
 msgstr ""
 
 #: src/dird/ua_run.c:1905
 #, c-format
-msgid "Catalog \"%s\" not found\n"
-msgstr ""
-
-#: src/dird/ua_run.c:1909
-#, c-format
-msgid "No authorization. Catalog \"%s\".\n"
+msgid "Invalid keyword: %s\n"
 msgstr ""
 
 #: src/dird/ua_run.c:1920
 #, c-format
+msgid "Catalog \"%s\" not found\n"
+msgstr ""
+
+#: src/dird/ua_run.c:1924
+#, c-format
+msgid "No authorization. Catalog \"%s\".\n"
+msgstr ""
+
+#: src/dird/ua_run.c:1935
+#, c-format
 msgid "Job \"%s\" not found\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1927
+#: src/dird/ua_run.c:1942
 msgid "A job name must be specified.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1933
+#: src/dird/ua_run.c:1948
 #, c-format
 msgid "No authorization. Job \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1941 src/dird/ua_run.c:1960
+#: src/dird/ua_run.c:1956 src/dird/ua_run.c:1975
 #, c-format
 msgid "Pool \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1951 src/dird/ua_run.c:1969
+#: src/dird/ua_run.c:1966 src/dird/ua_run.c:1984
 #, c-format
 msgid "No authorization. Pool \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1980 src/dird/ua_cmds.c:1408
+#: src/dird/ua_run.c:1995 src/dird/ua_cmds.c:1408
 #, c-format
 msgid "Storage \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1999 src/dird/job.c:1627
+#: src/dird/ua_run.c:2014 src/dird/job.c:1627
 msgid "No storage specified.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2002
+#: src/dird/ua_run.c:2017
 #, c-format
 msgid "No authorization. Storage \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2013 src/dird/ua_cmds.c:956 src/dird/ua_cmds.c:995
+#: src/dird/ua_run.c:2028 src/dird/ua_cmds.c:956 src/dird/ua_cmds.c:995
 #: src/dird/ua_cmds.c:1014 src/dird/ua_cmds.c:1389 src/dird/ua_cmds.c:1516
 #, c-format
 msgid "Client \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2022 src/dird/ua_run.c:2040
+#: src/dird/ua_run.c:2037 src/dird/ua_run.c:2055
 #, c-format
 msgid "No authorization. Client \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2031
+#: src/dird/ua_run.c:2046
 #, c-format
 msgid "Restore Client \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2049
+#: src/dird/ua_run.c:2064
 #, c-format
 msgid "FileSet \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2057
+#: src/dird/ua_run.c:2072
 #, c-format
 msgid "No authorization. FileSet \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2064
+#: src/dird/ua_run.c:2079
 #, c-format
 msgid "Verify Job \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2074
+#: src/dird/ua_run.c:2089
 #, c-format
 msgid "Migration Job \"%s\" not found.\n"
 msgstr ""
@@ -15468,11 +15480,11 @@ msgstr ""
 msgid "Volume Label"
 msgstr ""
 
-#: src/stored/bls.c:453 src/stored/label.c:1118 src/stored/bcopy.c:368
+#: src/stored/bls.c:453 src/stored/label.c:1122 src/stored/bcopy.c:368
 msgid "Begin Job Session"
 msgstr ""
 
-#: src/stored/bls.c:458 src/stored/label.c:1121 src/stored/bcopy.c:372
+#: src/stored/bls.c:458 src/stored/label.c:1125 src/stored/bcopy.c:372
 msgid "End Job Session"
 msgstr ""
 
@@ -15492,7 +15504,7 @@ msgstr ""
 msgid "End of object"
 msgstr ""
 
-#: src/stored/bls.c:474 src/stored/label.c:1130 src/stored/bcopy.c:380
+#: src/stored/bls.c:474 src/stored/label.c:1134 src/stored/bcopy.c:380
 msgid "Unknown"
 msgstr ""
 
@@ -15800,7 +15812,7 @@ msgstr ""
 msgid "Volume on %s has bad Bareos label type: %x\n"
 msgstr ""
 
-#: src/stored/label.c:259 src/stored/label.c:451 src/stored/mount.c:467
+#: src/stored/label.c:259 src/stored/label.c:455 src/stored/mount.c:467
 #, c-format
 msgid "Could not reserve volume %s on %s\n"
 msgstr ""
@@ -15810,57 +15822,57 @@ msgstr ""
 msgid "Cannot write Volume label to block for device %s\n"
 msgstr ""
 
-#: src/stored/label.c:378 src/stored/label.c:491 src/stored/mount.c:206
+#: src/stored/label.c:379 src/stored/label.c:495 src/stored/mount.c:206
 #, c-format
 msgid "Open device %s Volume \"%s\" failed: ERR=%s\n"
 msgstr ""
 
-#: src/stored/label.c:527
+#: src/stored/label.c:531
 #, c-format
 msgid "Rewind error on device %s: ERR=%s\n"
 msgstr ""
 
-#: src/stored/label.c:534
+#: src/stored/label.c:538
 #, c-format
 msgid "Truncate error on device %s: ERR=%s\n"
 msgstr ""
 
-#: src/stored/label.c:540
+#: src/stored/label.c:544
 #, c-format
 msgid "Failed to re-open after truncate on device %s: ERR=%s\n"
 msgstr ""
 
-#: src/stored/label.c:563
+#: src/stored/label.c:567
 #, c-format
 msgid "Unable to write device %s: ERR=%s\n"
 msgstr ""
 
-#: src/stored/label.c:594
+#: src/stored/label.c:598
 #, c-format
 msgid "Recycled volume \"%s\" on device %s, all previous data lost.\n"
 msgstr ""
 
-#: src/stored/label.c:597
+#: src/stored/label.c:601
 #, c-format
 msgid "Wrote label to prelabeled Volume \"%s\" on device %s\n"
 msgstr ""
 
-#: src/stored/label.c:814
+#: src/stored/label.c:818
 #, c-format
 msgid "Bad Volume session label = %d\n"
 msgstr ""
 
-#: src/stored/label.c:868
+#: src/stored/label.c:872
 #, c-format
 msgid "Expecting Volume Label, got FI=%s Stream=%s len=%d\n"
 msgstr ""
 
-#: src/stored/label.c:994
+#: src/stored/label.c:998
 #, c-format
 msgid "Unknown %d"
 msgstr ""
 
-#: src/stored/label.c:998
+#: src/stored/label.c:1002
 #, c-format
 msgid ""
 "\n"
@@ -15877,17 +15889,17 @@ msgid ""
 "HostName          : %s\n"
 msgstr ""
 
-#: src/stored/label.c:1020
+#: src/stored/label.c:1024
 #, c-format
 msgid "Date label written: %s\n"
 msgstr ""
 
-#: src/stored/label.c:1026
+#: src/stored/label.c:1030
 #, c-format
 msgid "Date label written: %04d-%02d-%02d at %02d:%02d\n"
 msgstr ""
 
-#: src/stored/label.c:1045
+#: src/stored/label.c:1049
 #, c-format
 msgid ""
 "\n"
@@ -15900,7 +15912,7 @@ msgid ""
 "ClientName        : %s\n"
 msgstr ""
 
-#: src/stored/label.c:1058
+#: src/stored/label.c:1062
 #, c-format
 msgid ""
 "Job (unique name) : %s\n"
@@ -15909,7 +15921,7 @@ msgid ""
 "JobLevel          : %c\n"
 msgstr ""
 
-#: src/stored/label.c:1067
+#: src/stored/label.c:1071
 #, c-format
 msgid ""
 "JobFiles          : %s\n"
@@ -15922,52 +15934,52 @@ msgid ""
 "JobStatus         : %c\n"
 msgstr ""
 
-#: src/stored/label.c:1088
+#: src/stored/label.c:1092
 #, c-format
 msgid "Date written      : %s\n"
 msgstr ""
 
-#: src/stored/label.c:1093
+#: src/stored/label.c:1097
 #, c-format
 msgid "Date written      : %04d-%02d-%02d at %02d:%02d\n"
 msgstr ""
 
-#: src/stored/label.c:1112
+#: src/stored/label.c:1116
 msgid "Fresh Volume"
 msgstr ""
 
-#: src/stored/label.c:1115
+#: src/stored/label.c:1119
 msgid "Volume"
 msgstr ""
 
-#: src/stored/label.c:1124 src/stored/read_record.c:66
+#: src/stored/label.c:1128 src/stored/read_record.c:66
 msgid "End of Media"
 msgstr ""
 
-#: src/stored/label.c:1127
+#: src/stored/label.c:1131
 msgid "End of Tape"
 msgstr ""
 
-#: src/stored/label.c:1147 src/stored/label.c:1155 src/stored/label.c:1188
+#: src/stored/label.c:1151 src/stored/label.c:1159 src/stored/label.c:1192
 #, c-format
 msgid "%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d DataLen=%d\n"
 msgstr ""
 
-#: src/stored/label.c:1152
+#: src/stored/label.c:1156
 msgid "End of physical tape.\n"
 msgstr ""
 
-#: src/stored/label.c:1167 src/stored/label.c:1176
+#: src/stored/label.c:1171 src/stored/label.c:1180
 #, c-format
 msgid "%s Record: File:blk=%u:%u SessId=%d SessTime=%d JobId=%d\n"
 msgstr ""
 
-#: src/stored/label.c:1169
+#: src/stored/label.c:1173
 #, c-format
 msgid "   Job=%s Date=%s Level=%c Type=%c\n"
 msgstr ""
 
-#: src/stored/label.c:1178
+#: src/stored/label.c:1182
 #, c-format
 msgid "   Date=%s Level=%c Type=%c Files=%s Bytes=%s Errors=%d Status=%c\n"
 msgstr ""
