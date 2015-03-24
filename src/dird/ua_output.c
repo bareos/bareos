@@ -908,12 +908,14 @@ void prtit(void *ctx, const char *msg)
 {
    UAContext *ua = (UAContext *)ctx;
 
-   ua->UA_sock->fsend("%s", msg);
+   if (ua) {
+      ua->send_msg("%s", msg);
+   }
 }
 
 /*
  * Format message and send to other end.
-
+ *
  * If the UA_sock is NULL, it means that there is no user
  * agent, so we are being called from BAREOS core. In
  * that case direct the messages to the Job.
