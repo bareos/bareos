@@ -154,6 +154,16 @@ bool do_native_vbackup(JCR *jcr)
    char *p;
    db_list_ctx jobids;
 
+   if (!jcr->rstorage) {
+      Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
+      return false;
+   }
+
+   if (!jcr->wstorage) {
+      Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
+      return false;
+   }
+
    Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->rstorage, jcr->wstorage);
    Dmsg2(100, "Read store=%s, write store=%s\n",
       ((STORERES *)jcr->rstorage->first())->name(),
