@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,8 @@ static int32_t res_all_size = sizeof(res_all);
  * name handler value code flags default_value
  */
 static RES_ITEM dir_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of the resource." },
+   { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Messages", CFG_TYPE_RES, ITEM(res_dir.messages), R_MSGS, 0, NULL, NULL, NULL },
    { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
@@ -143,7 +144,8 @@ static RES_ITEM dir_items[] = {
    { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_dir.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", "13.2.0-", NULL },
    { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL, "14.2.0-", NULL },
    { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
-   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL, "14.2.0-", NULL },
+   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL,
+     "14.2.0-", NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -153,19 +155,32 @@ static RES_ITEM dir_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM profile_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "JobACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Job_ACL, 0, NULL, NULL, NULL },
-   { "ClientACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Client_ACL, 0, NULL, NULL, NULL },
-   { "StorageACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Storage_ACL, 0, NULL, NULL, NULL },
-   { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Schedule_ACL, 0, NULL, NULL, NULL },
-   { "RunACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Run_ACL, 0, NULL, NULL, NULL },
-   { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Pool_ACL, 0, NULL, NULL, NULL },
-   { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Command_ACL, 0, NULL, NULL, NULL },
-   { "FileSetACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), FileSet_ACL, 0, NULL, NULL, NULL },
-   { "CatalogACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Catalog_ACL, 0, NULL, NULL, NULL },
-   { "WhereACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Where_ACL, 0, NULL, NULL, NULL },
-   { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), PluginOptions_ACL, 0, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
+   { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL, NULL,
+      "Additional information about the resource. Only used for UIs." },
+   { "JobACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Job_ACL, 0, NULL, NULL,
+      "Lists the Job resources, this resource has access to. The special keyword \"*all*\" allows access to all Job resources." },
+   { "ClientACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Client_ACL, 0, NULL, NULL,
+      "Lists the Client resources, this resource has access to. The special keyword \"*all*\" allows access to all Client resources." },
+   { "StorageACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Storage_ACL, 0, NULL, NULL,
+      "Lists the Storage resources, this resource has access to. The special keyword \"*all*\" allows access to all Storage resources." },
+   { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Schedule_ACL, 0, NULL, NULL,
+      "Lists the Schedule resources, this resource has access to. The special keyword \"*all*\" allows access to all Schedule resources." },
+   { "RunACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Run_ACL, 0, NULL, NULL,
+      "Lists the Run resources, this resource has access to. The special keyword \"*all*\" allows access to all Run resources." },
+   { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Pool_ACL, 0, NULL, NULL,
+      "Lists the Pool resources, this resource has access to. The special keyword \"*all*\" allows access to all Pool resources." },
+   { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Command_ACL, 0, NULL, NULL,
+      "Lists the commands, this resource has access to. The special keyword \"*all*\" allows using commands." },
+   { "FileSetACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), FileSet_ACL, 0, NULL, NULL,
+      "Lists the File Set resources, this resource has access to. The special keyword \"*all*\" allows access to all File Set resources." },
+   { "CatalogACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Catalog_ACL, 0, NULL, NULL,
+      "Lists the Catalog resources, this resource has access to. The special keyword \"*all*\" allows access to all Catalog resources." },
+   { "WhereACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Where_ACL, 0, NULL, NULL,
+      "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },
+   { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), PluginOptions_ACL, 0, NULL, NULL,
+      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -201,7 +216,9 @@ static RES_ITEM con_items[] = {
    { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_con.tls_dhfile), 0, 0, NULL, NULL, NULL },
    { "TlsCipherList", CFG_TYPE_STR, ITEM(res_con.tls_cipherlist), 0, 0, NULL, NULL, NULL },
    { "TlsAllowedCN", CFG_TYPE_ALIST_STR, ITEM(res_con.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
-   { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, NULL, NULL },
+   { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, "14.2.3-",
+      "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
+      "First the console ACL is checked then any profile the console is linked to." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -211,7 +228,8 @@ static RES_ITEM con_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cli_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
    { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
@@ -225,7 +243,8 @@ static RES_ITEM cli_items[] = {
    { "Catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL, NULL, NULL },
    { "Passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-", NULL },
    { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client.allow_client_connect), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "Enabled", CFG_TYPE_BOOL, ITEM(res_client.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "Enabled", CFG_TYPE_BOOL, ITEM(res_client.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
+      "En- or disable this resource." },
    { "HardQuota", CFG_TYPE_SIZE64, ITEM(res_client.HardQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SoftQuota", CFG_TYPE_SIZE64, ITEM(res_client.SoftQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SoftQuotaGracePeriod", CFG_TYPE_TIME, ITEM(res_client.SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
@@ -258,7 +277,8 @@ static RES_ITEM cli_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM store_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
    { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
@@ -272,7 +292,8 @@ static RES_ITEM store_items[] = {
    { "Device", CFG_TYPE_DEVICE, ITEM(res_store.device), R_DEVICE, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "Enabled", CFG_TYPE_BOOL, ITEM(res_store.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "Enabled", CFG_TYPE_BOOL, ITEM(res_store.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
+      "En- or disable this resource." },
    { "AllowCompression", CFG_TYPE_BOOL, ITEM(res_store.AllowCompress), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
@@ -300,7 +321,8 @@ static RES_ITEM store_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM cat_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL, NULL, NULL  },
    { "Address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL  },
    { "DbAddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL, NULL, NULL  },
@@ -333,7 +355,8 @@ static RES_ITEM cat_items[] = {
  * name handler value code flags default_value
  */
 RES_ITEM job_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job.JobType), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
@@ -386,7 +409,8 @@ RES_ITEM job_items[] = {
    { "PruneFiles", CFG_TYPE_BOOL, ITEM(res_job.PruneFiles), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "PruneVolumes", CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "PurgeMigrationJob", CFG_TYPE_BOOL, ITEM(res_job.PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "Enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "Enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
+      "En- or disable this resource." },
    { "SpoolAttributes", CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "SpoolData", CFG_TYPE_BOOL, ITEM(res_job.spool_data), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "SpoolSize", CFG_TYPE_SIZE64, ITEM(res_job.spool_size), 0, 0, NULL, NULL, NULL },
@@ -429,7 +453,8 @@ RES_ITEM job_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM fs_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Include", CFG_TYPE_INCEXC, { 0 }, 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
    { "Exclude", CFG_TYPE_INCEXC, { 0 }, 1, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
@@ -444,10 +469,12 @@ static RES_ITEM fs_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM sch_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL , NULL, NULL},
+   { "Name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL, NULL, NULL },
-   { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
+      "En- or disable this resource." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -457,7 +484,8 @@ static RES_ITEM sch_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM pool_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "PoolType", CFG_TYPE_STRNAME, ITEM(res_pool.pool_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL, NULL, NULL },
@@ -499,7 +527,8 @@ static RES_ITEM pool_items[] = {
  * name handler value code flags default_value
  */
 static RES_ITEM counter_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Minimum", CFG_TYPE_INT32, ITEM(res_counter.MinValue), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter.MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */, NULL, NULL },
