@@ -291,7 +291,7 @@ void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list
 
 /* ua_output.c */
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
-void prtit(void *ctx, const char *msg);
+void printit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool);
 RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);
 
