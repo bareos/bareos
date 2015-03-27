@@ -114,7 +114,9 @@ Vendor: 	The Bareos Team
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
 %define systemd_support 1
+%if 0%{?fedora_version} != 19
 %define glusterfs 1
+%endif
 %endif
 
 %if 0%{?rhel_version} >= 700

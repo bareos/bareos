@@ -62,9 +62,8 @@ static void usage()
 #if HAVE_WIN32
    QMessageBox::information(0, "Help", out);
 #else
-   fprintf(stderr, out.toUtf8());
+   fprintf(stderr, "%s", out.toUtf8());
 #endif
-
 }
 
 static void parse_command_line(int argc, char* argv[], cl_opts& cl)
