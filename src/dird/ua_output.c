@@ -391,11 +391,11 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    for (i = 1; i < ua->argc; i++) {
       /* List JOBS */
       if (bstrcasecmp(ua->argk[i], NT_("jobs"))) {
-         db_list_job_records(ua->jcr, ua->db, &jr, prtit, ua, llist);
+         db_list_job_records(ua->jcr, ua->db, &jr, printit, ua, llist);
 
          /* List JOBTOTALS */
       } else if (bstrcasecmp(ua->argk[i], NT_("jobtotals"))) {
-         db_list_job_totals(ua->jcr, ua->db, &jr, prtit, ua);
+         db_list_job_totals(ua->jcr, ua->db, &jr, printit, ua);
 
       /* List JOBID=nn */
       } else if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
@@ -403,7 +403,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             jobid = str_to_int64(ua->argv[i]);
             if (jobid > 0) {
                jr.JobId = jobid;
-               db_list_job_records(ua->jcr, ua->db, &jr, prtit, ua, llist);
+               db_list_job_records(ua->jcr, ua->db, &jr, printit, ua, llist);
             }
          }
 
@@ -412,13 +412,13 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   bstrcasecmp(ua->argk[i], NT_("jobname"))) && ua->argv[i]) {
          bstrncpy(jr.Name, ua->argv[i], MAX_NAME_LENGTH);
          jr.JobId = 0;
-         db_list_job_records(ua->jcr, ua->db, &jr, prtit, ua, llist);
+         db_list_job_records(ua->jcr, ua->db, &jr, printit, ua, llist);
 
       /* List UJOBID=xxx */
       } else if (bstrcasecmp(ua->argk[i], NT_("ujobid")) && ua->argv[i]) {
          bstrncpy(jr.Job, ua->argv[i], MAX_NAME_LENGTH);
          jr.JobId = 0;
-         db_list_job_records(ua->jcr, ua->db, &jr, prtit, ua, llist);
+         db_list_job_records(ua->jcr, ua->db, &jr, printit, ua, llist);
 
       /* List Base files */
       } else if (bstrcasecmp(ua->argk[i], NT_("basefiles"))) {
@@ -436,7 +436,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                continue;
             }
             if (jobid > 0) {
-               db_list_base_files_for_job(ua->jcr, ua->db, jobid, prtit, ua);
+               db_list_base_files_for_job(ua->jcr, ua->db, jobid, printit, ua);
             }
          }
 
@@ -457,7 +457,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                continue;
             }
             if (jobid > 0) {
-               db_list_files_for_job(ua->jcr, ua->db, jobid, prtit, ua);
+               db_list_files_for_job(ua->jcr, ua->db, jobid, printit, ua);
             }
          }
 
@@ -477,12 +477,12 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             } else {
                continue;
             }
-            db_list_jobmedia_records(ua->jcr, ua->db, jobid, prtit, ua, llist);
+            db_list_jobmedia_records(ua->jcr, ua->db, jobid, printit, ua, llist);
             done = true;
          }
          if (!done) {
             /* List for all jobs (jobid=0) */
-            db_list_jobmedia_records(ua->jcr, ua->db, 0, prtit, ua, llist);
+            db_list_jobmedia_records(ua->jcr, ua->db, 0, printit, ua, llist);
          }
 
       /* List JOBLOG */
@@ -501,12 +501,12 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             } else {
                continue;
             }
-            db_list_joblog_records(ua->jcr, ua->db, jobid, prtit, ua, llist);
+            db_list_joblog_records(ua->jcr, ua->db, jobid, printit, ua, llist);
             done = true;
          }
          if (!done) {
             /* List for all jobs (jobid=0) */
-            db_list_joblog_records(ua->jcr, ua->db, 0, prtit, ua, llist);
+            db_list_joblog_records(ua->jcr, ua->db, 0, printit, ua, llist);
          }
 
 
@@ -518,10 +518,10 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (ua->argv[i]) {
             bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
          }
-         db_list_pool_records(ua->jcr, ua->db, &pr, prtit, ua, llist);
+         db_list_pool_records(ua->jcr, ua->db, &pr, printit, ua, llist);
 
       } else if (bstrcasecmp(ua->argk[i], NT_("clients"))) {
-         db_list_client_records(ua->jcr, ua->db, prtit, ua, llist);
+         db_list_client_records(ua->jcr, ua->db, printit, ua, llist);
 
       /* List MEDIA or VOLUMES */
       } else if (bstrcasecmp(ua->argk[i], NT_("media")) ||
@@ -554,7 +554,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             /* List a specific volume? */
             if (ua->argv[i]) {
                bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
-               db_list_media_records(ua->jcr, ua->db, &mr, prtit, ua, llist);
+               db_list_media_records(ua->jcr, ua->db, &mr, printit, ua, llist);
                return 1;
             }
             /* Is a specific pool wanted? */
@@ -565,7 +565,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                      return 1;
                   }
                   mr.PoolId = pr.PoolId;
-                  db_list_media_records(ua->jcr, ua->db, &mr, prtit, ua, llist);
+                  db_list_media_records(ua->jcr, ua->db, &mr, printit, ua, llist);
                   return 1;
                }
             }
@@ -585,7 +585,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   ua->send_msg(_("Pool: %s\n"), pr.Name);
                }
                mr.PoolId = ids[i];
-               db_list_media_records(ua->jcr, ua->db, &mr, prtit, ua, llist);
+               db_list_media_records(ua->jcr, ua->db, &mr, printit, ua, llist);
             }
             free(ids);
             return 1;
@@ -615,7 +615,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                limit = atoi(ua->argv[j]);
             }
          }
-         db_list_copies_records(ua->jcr,ua->db,limit,jobids,prtit,ua,llist);
+         db_list_copies_records(ua->jcr,ua->db,limit,jobids,printit,ua,llist);
       } else if (bstrcasecmp(ua->argk[i], NT_("limit"))
                  || bstrcasecmp(ua->argk[i], NT_("days"))) {
          /* Ignore it */
@@ -904,7 +904,7 @@ int messages_cmd(UAContext *ua, const char *cmd)
 /*
  * Callback routine for "printing" database file listing
  */
-void prtit(void *ctx, const char *msg)
+void printit(void *ctx, const char *msg)
 {
    UAContext *ua = (UAContext *)ctx;
 

@@ -283,7 +283,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list,
 void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list);
 
 /* ua_output.c */
-void prtit(void *ctx, const char *msg);
+void printit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool);
 RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);
 
