@@ -777,7 +777,6 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          /*
           * See if there are more arguments and setup for the next run.
           */
-         bp = argument_value;
          do {
             bp = strchr(bp, ':');
             if (bp) {
