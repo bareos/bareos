@@ -46,23 +46,36 @@ static QApplication* app = NULL;
 
 static void usage()
 {
-   QString out;
-   out = out.sprintf( _(
-      PROG_COPYRIGHT
-      "\nVersion: %s (%s) %s %s %s\n\n"
-      "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
-      "        -c <file>   set configuration file to file\n"
-      "        -d <nn>     set debug level to <nn>\n"
-      "        -dt         print timestamp in debug output\n"
-      "        -t          test - read configuration and exit\n"
-      "        -xc         print configuration and exit\n"
-      "        -xs         print configuration file schema in JSON format and exit\n"
-      "        -?          print this message.\n"
-      "\n"), 2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
 #if HAVE_WIN32
+   QString out;
+
+   out = out.sprintf(_(PROG_COPYRIGHT
+                       "\nVersion: %s (%s) %s %s %s\n\n"
+                       "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
+                       "        -c <file>   set configuration file to file\n"
+                       "        -d <nn>     set debug level to <nn>\n"
+                       "        -dt         print timestamp in debug output\n"
+                       "        -t          test - read configuration and exit\n"
+                       "        -xc         print configuration and exit\n"
+                       "        -xs         print configuration file schema in JSON format and exit\n"
+                       "        -?          print this message.\n"
+                       "\n"),
+                     2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
+
    QMessageBox::information(0, "Help", out);
 #else
-   fprintf(stderr, "%s", out.toUtf8());
+   fprintf(stderr,_(PROG_COPYRIGHT
+                    "\nVersion: %s (%s) %s %s %s\n\n"
+                    "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
+                    "        -c <file>   set configuration file to file\n"
+                    "        -d <nn>     set debug level to <nn>\n"
+                    "        -dt         print timestamp in debug output\n"
+                    "        -t          test - read configuration and exit\n"
+                    "        -xc         print configuration and exit\n"
+                    "        -xs         print configuration file schema in JSON format and exit\n"
+                    "        -?          print this message.\n"
+                    "\n"),
+           2004, VERSION, BDATE, HOST_OS, DISTNAME, DISTVER);
 #endif
 }
 
