@@ -541,9 +541,9 @@ get_translated_sql_file()
         ${input_file}
 }
 
-get_database_grant_priviliges()
+get_database_grant_privileges()
 {
-    # Returns the DDL for granting priviliges for a database user.
+    # Returns the DDL for granting privileges for a database user.
     # Can be used, to get the SQL commands
     # to create additional database users.
     # If requested, this user can be limited to read-only database access.
