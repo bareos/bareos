@@ -32,7 +32,76 @@ Bareos-WebUI packages are available for a number of Linux distributions, see [Ba
 #### Step 1 - Adding the Repository
 
 Add the [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository that is matching your Linux distribution and install the bareos-webui package via your package manager.
-Please take a look at your distributions documentation or the [Bareos documentation](http://doc.bareos.org/) on how to achieve this.
+
+* RHEL, CentOS and Fedora
+
+```
+#
+# define parameter
+#
+
+DIST=CentOS_7
+# or
+# DIST=RHEL_6
+# DIST=RHEL_7
+# DIST=Fedora_20
+# DIST=Fedora_21
+# DIST=CentOS_6
+
+# add the Bareos contrib repository
+URL=http://download.bareos.org/bareos/contrib/$DIST
+wget -O /etc/yum.repos.d/bareos-webui.repo $DIST/contrib.repo
+
+# install bareos-webui package
+yum install bareos-webui
+```
+
+* SUSE Linux Enterprise Server (SLES), openSUSE
+
+```
+#
+# define parameter
+#
+
+DIST=SLE_12
+# or
+# DIST=SLE_11_SP3
+# DIST=openSUSE_13.1
+# DIST=openSUSE_13.2
+
+# add the Bareos contrib repository
+URL=http://download.bareos.org/bareos/contrib/$DIST
+zypper addrepo --refresh $URL/conrib.repo
+
+# install bareos-webui package
+zypper install bareos-webui
+```
+
+* Debian, Ubuntu
+
+```
+#
+# define parameter
+#
+
+DIST=Debian_7.0
+# or
+# DIST=Debian_6.0
+# DIST=xUbuntu_12.04
+# DIST=xUbuntu_14.04
+
+# add the Bareos contrib repository
+URL=http://download.bareos.org/bareos/contrib/$DIST
+printf "deb $URL /\n" >> /etc/apt/source.list.d/bareos.list
+
+# add package key
+wget -q $URL/Release.key -O- | apt-key add -
+
+# install bareos-webui package
+apt-get update
+apt-get install bareos-webui
+
+```
 
 #### Step 2 - Configuration of a restricted console
 
