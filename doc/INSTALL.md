@@ -50,7 +50,7 @@ DIST=CentOS_7
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-wget -O /etc/yum.repos.d/bareos-webui.repo $DIST/contrib.repo
+wget -O /etc/yum.repos.d/bareos-webui.repo $URL/contrib.repo
 
 # install bareos-webui package
 yum install bareos-webui
