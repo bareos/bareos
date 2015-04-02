@@ -83,7 +83,7 @@ static bool trace = true;
 #else
 static bool trace = false;
 #endif
-static int hangup = 0;
+static bool hangup = false;
 
 /* Constants */
 const char *host_os = HOST_OS;
@@ -1241,6 +1241,7 @@ void set_trace(int trace_flag)
    } else {
       trace = false;
    }
+
    if (!trace && trace_fd) {
       FILE *ltrace_fd = trace_fd;
       trace_fd = NULL;
@@ -1258,7 +1259,18 @@ void set_hangup(int hangup_value)
    }
 }
 
-int get_hangup(void)
+void set_timestamp(int timestamp_flag)
+{
+   if (timestamp_flag < 0) {
+      return;
+   } else if (timestamp_flag > 0) {
+      dbg_timestamp = true;
+   } else {
+      dbg_timestamp = false;
+   }
+}
+
+bool get_hangup(void)
 {
    return hangup;
 }
@@ -1266,6 +1278,11 @@ int get_hangup(void)
 bool get_trace(void)
 {
    return trace;
+}
+
+bool get_timestamp(void)
+{
+   return dbg_timestamp;
 }
 
 /*

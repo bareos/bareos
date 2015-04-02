@@ -208,7 +208,7 @@ static struct cmdstruct commands[] = {
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
          "\tlimit=<nn-kbs> yes"), true, true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
-     NT_("level=<nn> trace=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true, true },
+     NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true, true },
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
@@ -1073,11 +1073,21 @@ static int disable_cmd(UAContext *ua, const char *cmd)
    return 1;
 }
 
-static void do_storage_setdebug(UAContext *ua, STORERES *store, int level, int trace_flag)
+static void do_storage_setdebug(UAContext *ua, STORERES *store, int level,
+                                int trace_flag, int timestamp_flag)
 {
    BSOCK *sd;
    JCR *jcr = ua->jcr;
    USTORERES lstore;
+
+   switch (store->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      return;
+   default:
+      break;
+   }
 
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
@@ -1096,7 +1106,7 @@ static void do_storage_setdebug(UAContext *ua, STORERES *store, int level, int t
 
    Dmsg0(120, _("Connected to storage daemon\n"));
    sd = jcr->store_bsock;
-   sd->fsend("setdebug=%d trace=%d\n", level, trace_flag);
+   sd->fsend("setdebug=%d trace=%d timestamp=%d\n", level, trace_flag, timestamp_flag);
    if (sd->recv() >= 0) {
       ua->send_msg("%s", sd->msg);
    }
@@ -1111,15 +1121,27 @@ static void do_storage_setdebug(UAContext *ua, STORERES *store, int level, int t
 
 /*
  * For the client, we have the following values that can be set :
- *    level = debug level
- *    trace = send debug output to a file
- *    hangup = how many records to send to SD before hanging up
- *             obviously this is most useful for testing restarting
- *             failed jobs.
+ *
+ * level = debug level
+ * trace = send debug output to a file
+ * hangup = how many records to send to SD before hanging up
+ *          obviously this is most useful for testing restarting
+ *          failed jobs.
+ * timestamp = set debug msg timestamping
  */
-static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int trace, int hangup)
+static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int trace_flag,
+                               int hangup_flag, int timestamp_flag)
 {
    BSOCK *fd;
+
+   switch (client->Protocol) {
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      return;
+   default:
+      break;
+   }
 
    /*
     * Connect to File daemon
@@ -1139,7 +1161,12 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int 
 
    Dmsg0(120, "Connected to file daemon\n");
    fd = ua->jcr->file_bsock;
-   fd->fsend("setdebug=%d trace=%d hangup=%d\n", level, trace, hangup);
+   if (ua->jcr->FDVersion >= FD_VERSION_53) {
+      fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d\n", level, trace_flag, hangup_flag);
+   } else {
+      fd->fsend("setdebug=%d trace=%d hangup=%d\n", level, trace_flag, hangup_flag);
+   }
+
    if (fd->recv() >= 0) {
       ua->send_msg("%s", fd->msg);
    }
@@ -1152,7 +1179,8 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int 
    return;
 }
 
-static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup)
+static void do_all_setdebug(UAContext *ua, int level, int trace_flag,
+                            int hangup_flag, int timestamp_flag)
 {
    STORERES *store, **unique_store;
    CLIENTRES *client, **unique_client;
@@ -1170,13 +1198,16 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
       i++;
    }
    unique_store = (STORERES **) malloc(i * sizeof(STORERES));
-   /* Find Unique Storage address/port */
+
+   /*
+    * Find Unique Storage address/port
+    */
    store = (STORERES *)GetNextRes(R_STORAGE, NULL);
    i = 0;
    unique_store[i++] = store;
    while ((store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store))) {
       found = 0;
-      for (j=0; j<i; j++) {
+      for (j = 0; j < i; j++) {
          if (bstrcmp(unique_store[j]->address, store->address) &&
              unique_store[j]->SDport == store->SDport) {
             found = 1;
@@ -1190,13 +1221,17 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
    }
    UnlockRes();
 
-   /* Call each unique Storage daemon */
-   for (j=0; j<i; j++) {
-      do_storage_setdebug(ua, unique_store[j], level, trace_flag);
+   /*
+    * Call each unique Storage daemon
+    */
+   for (j = 0;  j < i; j++) {
+      do_storage_setdebug(ua, unique_store[j], level, trace_flag, timestamp_flag);
    }
    free(unique_store);
 
-   /* Count Client items */
+   /*
+    * Count Client items
+    */
    LockRes();
    client = NULL;
    i = 0;
@@ -1204,13 +1239,16 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
       i++;
    }
    unique_client = (CLIENTRES **) malloc(i * sizeof(CLIENTRES));
-   /* Find Unique Client address/port */
+
+   /*
+    * Find Unique Client address/port
+    */
    client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
    i = 0;
    unique_client[i++] = client;
    while ((client = (CLIENTRES *)GetNextRes(R_CLIENT, (RES *)client))) {
       found = 0;
-      for (j=0; j<i; j++) {
+      for (j = 0; j < i; j++) {
          if (bstrcmp(unique_client[j]->address, client->address) &&
              unique_client[j]->FDport == client->FDport) {
             found = 1;
@@ -1224,24 +1262,27 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag, int hangup
    }
    UnlockRes();
 
-   /* Call each unique File daemon */
-   for (j=0; j<i; j++) {
-      do_client_setdebug(ua, unique_client[j], level, trace_flag, hangup);
+   /*
+    * Call each unique File daemon
+    */
+   for (j = 0; j < i; j++) {
+      do_client_setdebug(ua, unique_client[j], level, trace_flag, hangup_flag, timestamp_flag);
    }
    free(unique_client);
 }
 
 /*
- * setdebug level=nn all trace=1/0
+ * setdebug level=nn all trace=1/0 timestamp=1/0
  */
 static int setdebug_cmd(UAContext *ua, const char *cmd)
 {
+   int i;
+   int level;
+   int trace_flag;
+   int hangup_flag;
+   int timestamp_flag;
    STORERES *store;
    CLIENTRES *client;
-   int level;
-   int trace_flag = -1;
-   int hangup = -1;
-   int i;
 
    Dmsg1(120, "setdebug:%s:\n", cmd);
 
@@ -1257,25 +1298,48 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       level = ua->pint32_val;
    }
 
-   /* Look for trace flag. -1 => not change */
+   /*
+    * Look for trace flag. -1 => not change
+    */
    i = find_arg_with_value(ua, NT_("trace"));
    if (i >= 0) {
       trace_flag = atoi(ua->argv[i]);
       if (trace_flag > 0) {
          trace_flag = 1;
       }
+   } else {
+      trace_flag = -1;
    }
 
-   /* Look for hangup (debug only)flag. -1 => not change */
+   /*
+    * Look for hangup (debug only) flag. -1 => not change
+    */
    i = find_arg_with_value(ua, NT_("hangup"));
    if (i >= 0) {
-      hangup = atoi(ua->argv[i]);
+      hangup_flag = atoi(ua->argv[i]);
+   } else {
+      hangup_flag = -1;
    }
 
-   /* General debug? */
+   /*
+    * Look for timestamp flag. -1 => not change
+    */
+   i = find_arg_with_value(ua, NT_("timestamp"));
+   if (i >= 0) {
+      timestamp_flag = atoi(ua->argv[i]);
+      if (timestamp_flag > 0) {
+         timestamp_flag = 1;
+      }
+   } else {
+      timestamp_flag = -1;
+   }
+
+   /*
+    * General debug?
+    */
    for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], "all")) {
-         do_all_setdebug(ua, level, trace_flag, hangup);
+         do_all_setdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
          return 1;
       }
       if (bstrcasecmp(ua->argk[i], "dir") ||
@@ -1290,13 +1354,13 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          if (ua->argv[i]) {
             client = GetClientResWithName(ua->argv[i]);
             if (client) {
-               do_client_setdebug(ua, client, level, trace_flag, hangup);
+               do_client_setdebug(ua, client, level, trace_flag, hangup_flag, timestamp_flag);
                return 1;
             }
          }
          client = select_client_resource(ua);
          if (client) {
-            do_client_setdebug(ua, client, level, trace_flag, hangup);
+            do_client_setdebug(ua, client, level, trace_flag, hangup_flag, timestamp_flag);
             return 1;
          }
       }
@@ -1308,7 +1372,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          if (ua->argv[i]) {
             store = GetStoreResWithName(ua->argv[i]);
             if (store) {
-               do_storage_setdebug(ua, store, level, trace_flag);
+               do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
                return 1;
             }
          }
@@ -1324,7 +1388,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
                break;
             }
 
-            do_storage_setdebug(ua, store, level, trace_flag);
+            do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
             return 1;
          }
       }
@@ -1338,10 +1402,12 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
    add_prompt(ua, _("Storage"));
    add_prompt(ua, _("Client"));
    add_prompt(ua, _("All"));
+
    switch(do_prompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
    case 0:                         /* Director */
       debug_level = level;
       set_trace(trace_flag);
+      set_timestamp(timestamp_flag);
       break;
    case 1:
       store = get_storage_resource(ua);
@@ -1355,21 +1421,22 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
          default:
             break;
          }
-         do_storage_setdebug(ua, store, level, trace_flag);
+         do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
       }
       break;
    case 2:
       client = select_client_resource(ua);
       if (client) {
-         do_client_setdebug(ua, client, level, trace_flag, hangup);
+         do_client_setdebug(ua, client, level, trace_flag, hangup_flag, timestamp_flag);
       }
       break;
    case 3:
-      do_all_setdebug(ua, level, trace_flag, hangup);
+      do_all_setdebug(ua, level, trace_flag, hangup_flag, timestamp_flag);
       break;
    default:
       break;
    }
+
    return 1;
 }
 

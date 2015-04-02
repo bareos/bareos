@@ -148,8 +148,12 @@ static char setauthorizationcmd[] =
    "setauthorization Authorization=%100s";
 static char setbandwidthcmd[] =
    "setbandwidth=%lld Job=%127s";
-static char setdebugcmd[] =
+static char setdebugv0cmd[] =
+    "setdebug=%d trace=%d";
+static char setdebugv1cmd[] =
    "setdebug=%d trace=%d hangup=%d";
+static char setdebugv2cmd[] =
+   "setdebug=%d trace=%d hangup=%d timestamp=%d";
 static char jobcmd[] =
    "JobId=%d Job=%127s SDid=%d SDtime=%d Authorization=%100s";
 static char storaddrv0cmd[] =
@@ -218,8 +222,10 @@ static char OKstoreend[] =
    "2000 OK storage end\n";
 static char OKjob[] =
    "2000 OK Job %s (%s) %s,%s,%s";
-static char OKsetdebug[] =
+static char OKsetdebugv0[] =
    "2000 OK setdebug=%d trace=%d hangup=%d\n";
+static char OKsetdebugv1[] =
+   "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d\n";
 static char BADjob[] =
    "2901 Bad Job\n";
 static char EndJob[] =
@@ -734,28 +740,39 @@ static bool setbandwidth_cmd(JCR *jcr)
 static bool setdebug_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int32_t level, trace, hangup;
+   int32_t level, trace_flag, hangup_flag, timestamp_flag;
    int scan;
 
    Dmsg1(50, "setdebug_cmd: %s", dir->msg);
-   scan = sscanf(dir->msg, setdebugcmd, &level, &trace, &hangup);
-   if (scan != 3) {
-      Dmsg2(20, "sscanf failed: msg=%s scan=%d\n", dir->msg, scan);
-      if (sscanf(dir->msg, "setdebug=%d trace=%d", &level, &trace) != 2) {
+   scan = sscanf(dir->msg, setdebugv2cmd, &level, &trace_flag, &hangup_flag, &timestamp_flag);
+   if (scan != 4) {
+      scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &hangup_flag);
+   }
+   if (scan != 3 && scan != 4) {
+      scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
+      if (scan != 2) {
          pm_strcpy(jcr->errmsg, dir->msg);
          dir->fsend(_("2991 Bad setdebug command: %s\n"), jcr->errmsg);
          return false;
       } else {
-         hangup = -1;
+         hangup_flag = -1;
       }
    }
+
    if (level >= 0) {
       debug_level = level;
    }
-   set_trace(trace);
-   set_hangup(hangup);
-   Dmsg3(50, "level=%d trace=%d hangup=%d\n", level, get_trace(), get_hangup());
-   return dir->fsend(OKsetdebug, level, get_trace(), get_hangup());
+
+   set_trace(trace_flag);
+   set_hangup(hangup_flag);
+   if (scan == 4) {
+      set_timestamp(timestamp_flag);
+      Dmsg4(50, "level=%d trace=%d hangup=%d timestamp=%d\n", level, get_trace(), get_hangup(), get_timestamp());
+      return dir->fsend(OKsetdebugv1, level, get_trace(), get_hangup(), get_timestamp());
+   } else {
+      Dmsg3(50, "level=%d trace=%d hangup=%d\n", level, get_trace(), get_hangup());
+      return dir->fsend(OKsetdebugv0, level, get_trace(), get_hangup());
+   }
 }
 
 static bool estimate_cmd(JCR *jcr)

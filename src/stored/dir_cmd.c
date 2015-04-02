@@ -52,8 +52,10 @@ extern bool init_done;
 /* Commands received from director that need scanning */
 static char setbandwidth[] =
    "setbandwidth=%lld Job=%127s";
-static char setdebugcmd[] =
+static char setdebugv0cmd[] =
    "setdebug=%d trace=%d";
+static char setdebugv1cmd[] =
+   "setdebug=%d trace=%d timestamp=%d";
 static char cancelcmd[] =
    "cancel Job=%127s";
 static char relabelcmd[] =
@@ -88,8 +90,10 @@ static char pluginoptionscmd[] =
 /* Responses sent to Director */
 static char derrmsg[] =
    "3900 Invalid command:";
-static char OK_setdebug[] =
+static char OKsetdebugv0[] =
    "3000 OK setdebug=%d\n";
+static char OKsetdebugv1[] =
+   "3000 OK setdebug=%d trace=%d timestamp=%d\n";
 static char invalid_cmd[] =
    "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] =
@@ -431,16 +435,29 @@ static bool setbandwidth_cmd(JCR *jcr)
 static bool setdebug_cmd(JCR *jcr)
 {
    BSOCK *dir = jcr->dir_bsock;
-   int32_t level, trace_flag;
+   int32_t level, trace_flag, timestamp_flag;
+   int scan;
 
    Dmsg1(10, "setdebug_cmd: %s", dir->msg);
-   if (sscanf(dir->msg, setdebugcmd, &level, &trace_flag) != 2 || level < 0) {
+   scan = sscanf(dir->msg, setdebugv1cmd, &level, &trace_flag, &timestamp_flag);
+   if (scan != 3) {
+      scan = sscanf(dir->msg, setdebugv0cmd, &level, &trace_flag);
+   }
+   if ((scan != 3 && scan != 2) || level < 0) {
       dir->fsend(BADcmd, "setdebug", dir->msg);
       return false;
    }
+
    debug_level = level;
    set_trace(trace_flag);
-   return dir->fsend(OK_setdebug, level);
+   if (scan == 3) {
+      set_timestamp(timestamp_flag);
+      Dmsg3(50, "level=%d trace=%d timestamp=%d\n", level, get_trace(), get_timestamp());
+      return dir->fsend(OKsetdebugv1, level, get_trace(), get_timestamp());
+   } else {
+      Dmsg2(50, "level=%d trace=%d\n", level, get_trace());
+      return dir->fsend(OKsetdebugv0, level);
+   }
 }
 
 /*
