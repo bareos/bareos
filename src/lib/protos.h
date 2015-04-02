@@ -271,7 +271,9 @@ void dequeue_messages(JCR *jcr);
 void set_trace(int trace_flag);
 bool get_trace(void);
 void set_hangup(int hangup_value);
-int get_hangup(void);
+bool get_hangup(void);
+void set_timestamp(int timestamp_flag);
+bool get_timestamp(void);
 void set_db_type(const char *name);
 void register_message_callback(void msg_callback(int type, char *msg));
 

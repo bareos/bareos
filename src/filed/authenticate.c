@@ -41,11 +41,12 @@ const int dbglvl = 50;
  *
  *  51 21Mar13 - Added reverse datachannel initialization
  *  52 13Jul13 - Added plugin options
+ *  53 02Apr15 - Added setdebug timestamp
  */
 static char OK_hello_compat[] =
    "2000 OK Hello 5\n";
 static char OK_hello[] =
-   "2000 OK Hello 52\n";
+   "2000 OK Hello 53\n";
 
 static char Dir_sorry[] =
    "2999 Authentication failed.\n";
