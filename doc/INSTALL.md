@@ -71,7 +71,7 @@ DIST=SLE_12
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-zypper addrepo --refresh $URL/bareos:conrib.repo
+zypper addrepo --refresh $URL/bareos:contrib.repo
 
 # install bareos-webui package
 zypper install bareos-webui
