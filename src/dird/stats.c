@@ -126,10 +126,10 @@ void *statistics_thread_runner(void *arg)
 {
    JCR *jcr;
    utime_t now;
-   STORERES *store;
-   BSOCK *sd;
+   POOL_MEM current_store(PM_NAME);
 
    memset(&cached_device, 0, sizeof(struct cached_device));
+   pm_strcpy(current_store, "");
 
    /*
     * Create a dummy JCR for the statistics thread.
@@ -185,19 +185,47 @@ void *statistics_thread_runner(void *arg)
          need_flush = true;
       }
 
-      store = (STORERES *)GetNextRes(R_STORAGE, NULL);
-      while (store) {
+      while (1) {
+         BSOCK *sd;
+         STORERES *store;
+         int64_t StorageId;
+
+         LockRes();
+         if ((current_store.c_str())[0]) {
+            store = (STORERES *)GetResWithName(R_STORAGE, current_store.c_str());
+         } else {
+            store = NULL;
+         }
+
+         store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+         if (!store) {
+            pm_strcpy(current_store, "");
+            UnlockRes();
+            break;
+         }
+
+         pm_strcpy(current_store, store->name());
          if (!store->collectstats) {
-            store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+            UnlockRes();
             continue;
          }
 
+         /*
+          * Try connecting 2 times with a max time to wait of 1 seconds.
+          * We don't want to lock the resources to long. And as the stored
+          * will cache the stats anyway we can always try collecting things
+          * in the next run.
+          */
          jcr->res.rstore = store;
-         if (!connect_to_storage_daemon(jcr, 5, 30, true)) {
-            store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+         if (!connect_to_storage_daemon(jcr, 2, 1, false)) {
+            UnlockRes();
             continue;
          }
+
+         StorageId = store->StorageId;
          sd = jcr->store_bsock;
+
+         UnlockRes();
 
          /*
           * Do our work retrieving the statistics from the remote SD.
@@ -222,7 +250,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg4(200, "MediaId=%ld, VolBytes=%llu, VolFiles=%llu, VolBlocks=%llu\n",
                            dsr.MediaId, dsr.VolCatBytes, dsr.VolCatFiles, dsr.VolCatBlocks);
 
-                     if (!lookup_device(jcr, DevName.c_str(), store->StorageId, &dsr.DeviceId)) {
+                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &dsr.DeviceId)) {
                         continue;
                      }
 
@@ -243,7 +271,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg3(200, "New stats [%lld]: Device %s TapeAlert %llu\n",
                            tsr.SampleTime, DevName.c_str(), tsr.AlertFlags);
 
-                     if (!lookup_device(jcr, DevName.c_str(), store->StorageId, &tsr.DeviceId)) {
+                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &tsr.DeviceId)) {
                         continue;
                      }
 
@@ -264,7 +292,7 @@ void *statistics_thread_runner(void *arg)
                      Dmsg5(200, "New Jobstats [%lld]: JobId %ld, JobFiles %lu, JobBytes %llu, DevName %s\n",
                            jsr.SampleTime, jsr.JobId, jsr.JobFiles, jsr.JobBytes, DevName.c_str());
 
-                     if (!lookup_device(jcr, DevName.c_str(), store->StorageId, &jsr.DeviceId)) {
+                     if (!lookup_device(jcr, DevName.c_str(), StorageId, &jsr.DeviceId)) {
                         continue;
                      }
 
@@ -284,7 +312,6 @@ void *statistics_thread_runner(void *arg)
          jcr->store_bsock->close();
          delete jcr->store_bsock;
          jcr->store_bsock = NULL;
-         store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
       }
 
       wait_for_next_run();
