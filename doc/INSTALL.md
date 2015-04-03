@@ -50,7 +50,7 @@ DIST=CentOS_7
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-wget -O /etc/yum.repos.d/bareos-webui.repo $URL/contrib.repo
+wget -O /etc/yum.repos.d/bareos:contrib.repo $URL/bareos:contrib.repo
 
 # install bareos-webui package
 yum install bareos-webui
@@ -71,7 +71,7 @@ DIST=SLE_12
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-zypper addrepo --refresh $URL/conrib.repo
+zypper addrepo --refresh $URL/bareos:conrib.repo
 
 # install bareos-webui package
 zypper install bareos-webui
@@ -92,7 +92,7 @@ DIST=Debian_7.0
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-printf "deb $URL /\n" >> /etc/apt/source.list.d/bareos.list
+printf "deb $URL /\n" >> /etc/apt/source.list.d/bareos_contrib.list
 
 # add package key
 wget -q $URL/Release.key -O- | apt-key add -
