@@ -1012,6 +1012,8 @@ static bool initialize_sql_pooling(void)
                                   catalog->db_port,
                                   catalog->db_socket,
                                   catalog->disable_batch_insert,
+                                  catalog->try_reconnect,
+                                  catalog->exit_on_fatal,
                                   catalog->pooling_min_connections,
                                   catalog->pooling_max_connections,
                                   catalog->pooling_increment_connections,

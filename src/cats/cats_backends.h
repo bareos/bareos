@@ -39,7 +39,9 @@ typedef B_DB *(*t_backend_instantiate)(JCR *jcr,
                                        const char *db_socket,
                                        bool mult_db_connections,
                                        bool disable_batch_insert,
-                                       bool need_private);
+                                       bool need_private,
+                                       bool try_reconnect,
+                                       bool exit_on_fatal);
 
 typedef void (*t_flush_backend)(void);
 }

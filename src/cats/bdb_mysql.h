@@ -45,7 +45,9 @@ public:
               const char *db_socket,
               bool mult_db_connections,
               bool disable_batch_insert,
-              bool is_private);
+              bool need_private,
+              bool try_reconnect,
+              bool exit_on_fatal);
    ~B_DB_MYSQL();
 
    /* low level operations */

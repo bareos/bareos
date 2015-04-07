@@ -238,8 +238,10 @@ public:
    char *db_user;
    char *db_name;
    char *db_driver;                   /* Select appropriate driver */
-   uint32_t mult_db_connections;      /* set if multiple connections wanted */
-   bool disable_batch_insert;         /* set if batch inserts should be disabled */
+   uint32_t mult_db_connections;      /* Set if multiple connections wanted */
+   bool disable_batch_insert;         /* Set if batch inserts should be disabled */
+   bool try_reconnect;                /* Try to reconnect a database connection when its dropped */
+   bool exit_on_fatal;                /* Make any fatal error in the connection to the database exit the program */
    uint32_t pooling_min_connections;  /* When using sql pooling start with this number of connections to the database */
    uint32_t pooling_max_connections;  /* When using sql pooling maximum number of connections to the database */
    uint32_t pooling_increment_connections; /* When using sql pooling increment the pool with this amount when its to small */

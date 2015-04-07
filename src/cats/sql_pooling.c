@@ -49,7 +49,9 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        const char *db_socket,
                                        bool mult_db_connections,
                                        bool disable_batch_insert,
-                                       bool need_private)
+                                       bool need_private,
+                                       bool try_reconnect,
+                                       bool exit_on_fatal)
 {
    B_DB *mdb;
 
@@ -70,7 +72,9 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                           db_socket,
                           mult_db_connections,
                           disable_batch_insert,
-                          need_private);
+                          need_private,
+                          try_reconnect,
+                          exit_on_fatal);
    if (mdb == NULL) {
       return NULL;
    }
@@ -132,6 +136,8 @@ bool db_sql_pool_initialize(const char *db_drivername,
                             int db_port,
                             const char *db_socket,
                             bool disable_batch_insert,
+                            bool try_reconnect,
+                            bool exit_on_fatal,
                             int min_connections,
                             int max_connections,
                             int increment_connections,
@@ -200,7 +206,9 @@ bool db_sql_pool_initialize(const char *db_drivername,
                              db_port,
                              db_socket,
                              true,
-                             disable_batch_insert);
+                             disable_batch_insert,
+                             try_reconnect,
+                             exit_on_fatal);
       if (mdb == NULL) {
          Jmsg(NULL, M_FATAL, 0, "%s", _("Could not init database connection"));
          goto bail_out;
@@ -535,7 +543,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_socket,
                                    bool mult_db_connections,
                                    bool disable_batch_insert,
-                                   bool need_private)
+                                   bool need_private,
+                                   bool try_reconnect,
+                                   bool exit_on_fatal)
 {
    int cnt = 0;
    SQL_POOL_DESCRIPTOR *wanted_pool;
@@ -566,7 +576,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                               db_socket,
                                               mult_db_connections,
                                               disable_batch_insert,
-                                              need_private);
+                                              need_private,
+                                              try_reconnect,
+                                              exit_on_fatal);
    }
 
    P(mutex);
@@ -625,7 +637,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                                                db_socket,
                                                                mult_db_connections,
                                                                disable_batch_insert,
-                                                               need_private);
+                                                               need_private,
+                                                               try_reconnect,
+                                                               exit_on_fatal);
                   goto bail_out;
                }
 
@@ -655,7 +669,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                                    db_socket,
                                                    mult_db_connections,
                                                    disable_batch_insert,
-                                                   need_private);
+                                                   need_private,
+                                                   try_reconnect,
+                                                   exit_on_fatal);
       goto bail_out;
    }
 
@@ -819,6 +835,8 @@ bool db_sql_pool_initialize(const char *db_drivername,
                             int db_port,
                             const char *db_socket,
                             bool disable_batch_insert,
+                            bool try_reconnect,
+                            bool exit_on_fatal,
                             int min_connections,
                             int max_connections,
                             int increment_connections,
@@ -858,7 +876,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_socket,
                                    bool mult_db_connections,
                                    bool disable_batch_insert,
-                                   bool need_private)
+                                   bool need_private,
+                                   bool try_reconnect,
+                                   bool exit_on_fatal)
 {
    return db_sql_get_non_pooled_connection(jcr,
                                            db_drivername,
@@ -870,7 +890,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                            db_socket,
                                            mult_db_connections,
                                            disable_batch_insert,
-                                           need_private);
+                                           need_private,
+                                           try_reconnect,
+                                           exit_on_fatal);
 }
 
 /*

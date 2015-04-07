@@ -89,7 +89,9 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
                    const char *db_socket,
                    bool mult_db_connections,
                    bool disable_batch_insert,
-                   bool need_private)
+                   bool need_private,
+                   bool try_reconnect,
+                   bool exit_on_fatal)
 {
    char *p;
    char new_db_driver[10];
@@ -167,6 +169,8 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    esc_obj = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
    m_is_private = need_private;
+   m_try_reconnect = try_reconnect;
+   m_exit_on_fatal = exit_on_fatal;
 
    /*
     * Initialize the private members.
@@ -674,8 +678,8 @@ bool B_DB_DBI::sql_query(const char *query, int flags)
    /*
     * We are starting a new query.  reset everything.
     */
-   m_num_rows     = -1;
-   m_row_number   = -1;
+   m_num_rows = -1;
+   m_row_number = -1;
    m_field_number = -1;
 
    if (m_result) {
@@ -1226,8 +1230,8 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
       /*
        * We are starting a new query.  reset everything.
        */
-      m_num_rows     = -1;
-      m_row_number   = -1;
+      m_num_rows = -1;
+      m_row_number = -1;
       m_field_number = -1;
 
       sql_free_result();
@@ -1461,7 +1465,9 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   const char *db_socket,
                                                   bool mult_db_connections,
                                                   bool disable_batch_insert,
-                                                  bool need_private)
+                                                  bool need_private,
+                                                  bool try_reconnect,
+                                                  bool exit_on_fatal)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -1473,7 +1479,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private)
+                       bool need_private,
+                       bool try_reconnect,
+                       bool exit_on_fatal)
 #endif
 {
    B_DB_DBI *mdb = NULL;
@@ -1520,7 +1528,9 @@ B_DB *db_init_database(JCR *jcr,
                       db_socket,
                       mult_db_connections,
                       disable_batch_insert,
-                      need_private));
+                      need_private,
+                      try_reconnect,
+                      exit_on_fatal));
 
 bail_out:
    V(mutex);

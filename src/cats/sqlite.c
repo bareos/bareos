@@ -71,7 +71,9 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
                          const char *db_socket,
                          bool mult_db_connections,
                          bool disable_batch_insert,
-                         bool need_private)
+                         bool need_private,
+                         bool try_reconnect,
+                         bool exit_on_fatal)
 {
    /*
     * Initialize the parent class members.
@@ -108,6 +110,8 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
    esc_obj  = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
    m_is_private = need_private;
+   m_try_reconnect = try_reconnect;
+   m_exit_on_fatal = exit_on_fatal;
 
    /*
     * Initialize the private members.
@@ -663,7 +667,9 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   const char *db_socket,
                                                   bool mult_db_connections,
                                                   bool disable_batch_insert,
-                                                  bool need_private)
+                                                  bool need_private,
+                                                  bool try_reconnect,
+                                                  bool exit_on_fatal)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -675,7 +681,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private)
+                       bool need_private,
+                       bool try_reconnect,
+                       bool exit_on_fatal)
 #endif
 {
    B_DB *mdb = NULL;
@@ -709,7 +717,9 @@ B_DB *db_init_database(JCR *jcr,
                          db_socket,
                          mult_db_connections,
                          disable_batch_insert,
-                         need_private));
+                         need_private,
+                         try_reconnect,
+                         exit_on_fatal));
 
 bail_out:
    V(mutex);

@@ -37,6 +37,7 @@
 #include "cats.h"
 #include "bdb_priv.h"
 #include <mysql.h>
+#include <errmsg.h>
 #include <bdb_mysql.h>
 
 /* -----------------------------------------------------------------------
@@ -63,7 +64,9 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private)
+                       bool need_private,
+                       bool try_reconnect,
+                       bool exit_on_fatal)
 {
    /*
     * Initialize the parent class members.
@@ -112,6 +115,8 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    esc_obj = get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
    m_is_private = need_private;
+   m_try_reconnect = try_reconnect;
+   m_exit_on_fatal = exit_on_fatal;
 
    /*
     * Initialize the private members.
@@ -169,15 +174,14 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
     * If connection fails, try at 5 sec intervals for 30 seconds.
     */
    for (int retry=0; retry < 6; retry++) {
-      m_db_handle = mysql_real_connect(
-           &(m_instance),           /* db */
-           m_db_address,            /* default = localhost */
-           m_db_user,               /* login name */
-           m_db_password,           /* password */
-           m_db_name,               /* database name */
-           m_db_port,               /* default port */
-           m_db_socket,             /* default = socket */
-           CLIENT_FOUND_ROWS);      /* flags */
+      m_db_handle = mysql_real_connect(&m_instance,        /* db */
+                                       m_db_address,       /* default = localhost */
+                                       m_db_user,          /* login name */
+                                       m_db_password,      /* password */
+                                       m_db_name,          /* database name */
+                                       m_db_port,          /* default port */
+                                       m_db_socket,        /* default = socket */
+                                       CLIENT_FOUND_ROWS); /* flags */
 
       /*
        * If no connect, try once more in case it is a timing problem
@@ -195,8 +199,8 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
 
    if (m_db_handle == NULL) {
       Mmsg2(&errmsg, _("Unable to connect to MySQL server.\n"
-"Database=%s User=%s\n"
-"MySQL connect failed either server not running or your authorization is incorrect.\n"),
+                       "Database=%s User=%s\n"
+                       "MySQL connect failed either server not running or your authorization is incorrect.\n"),
          m_db_name, m_db_user);
 #if MYSQL_VERSION_ID >= 40101
       Dmsg3(50, "Error %u (%s): %s\n",
@@ -303,6 +307,12 @@ bool B_DB_MYSQL::db_validate_connection(void)
    if (mysql_ping(m_db_handle) == 0) {
       Dmsg2(500, "db_validate_connection connection valid previous threadid %ld new threadid %ld\n",
             mysql_threadid, mysql_thread_id(m_db_handle));
+
+      if (mysql_thread_id(m_db_handle) != mysql_threadid) {
+         mysql_query(m_db_handle, "SET wait_timeout=691200");
+         mysql_query(m_db_handle, "SET interactive_timeout=691200");
+      }
+
       retval = true;
       goto bail_out;
    } else {
@@ -401,13 +411,55 @@ bool B_DB_MYSQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handl
    int status;
    SQL_ROW row;
    bool send = true;
+   bool retry = true;
    bool retval = false;
 
    Dmsg1(500, "db_sql_query starts with %s\n", query);
 
    db_lock(this);
+
+retry_query:
    status = mysql_query(m_db_handle, query);
-   if (status != 0) {
+
+   switch (status) {
+   case 0:
+      break;
+   case CR_SERVER_GONE_ERROR:
+   case CR_SERVER_LOST:
+      if (m_exit_on_fatal) {
+         /*
+          * Any fatal error should result in the daemon exiting.
+          */
+         Emsg0(M_FATAL, 0, "Fatal database error\n");
+      }
+
+      if (m_try_reconnect && !m_transaction) {
+         /*
+          * Only try reconnecting when no transaction is pending.
+          * Reconnecting within a transaction will lead to an aborted
+          * transaction anyway so we better follow our old error path.
+          */
+         if (retry) {
+            unsigned long mysql_threadid;
+
+            mysql_threadid = mysql_thread_id(m_db_handle);
+            if (mysql_ping(m_db_handle) == 0) {
+               /*
+                * See if the threadid changed e.g. new connection to the DB.
+                */
+               if (mysql_thread_id(m_db_handle) != mysql_threadid) {
+                  mysql_query(m_db_handle, "SET wait_timeout=691200");
+                  mysql_query(m_db_handle, "SET interactive_timeout=691200");
+               }
+
+               retry = false;
+               goto retry_query;
+            }
+         }
+      }
+
+      /* FALL THROUGH */
+   default:
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
       Dmsg0(500, "db_sql_query failed\n");
       goto bail_out;
@@ -448,14 +500,17 @@ bail_out:
 bool B_DB_MYSQL::sql_query(const char *query, int flags)
 {
    int status;
+   bool retry = true;
    bool retval = true;
 
    Dmsg1(500, "sql_query starts with '%s'\n", query);
+
    /*
     * We are starting a new query. reset everything.
     */
-   m_num_rows     = -1;
-   m_row_number   = -1;
+retry_query:
+   m_num_rows = -1;
+   m_row_number = -1;
    m_field_number = -1;
 
    if (m_result) {
@@ -464,7 +519,8 @@ bool B_DB_MYSQL::sql_query(const char *query, int flags)
    }
 
    status = mysql_query(m_db_handle, query);
-   if (status == 0) {
+   switch (status) {
+   case 0:
       Dmsg0(500, "we have a result\n");
       if (flags & QF_STORE_RESULT) {
          m_result = mysql_store_result(m_db_handle);
@@ -483,11 +539,49 @@ bool B_DB_MYSQL::sql_query(const char *query, int flags)
          m_num_rows = mysql_affected_rows(m_db_handle);
          Dmsg1(500, "we have %d rows\n", m_num_rows);
       }
-   } else {
+      break;
+   case CR_SERVER_GONE_ERROR:
+   case CR_SERVER_LOST:
+      if (m_exit_on_fatal) {
+         /*
+          * Any fatal error should result in the daemon exiting.
+          */
+         Emsg0(M_FATAL, 0, "Fatal database error\n");
+      }
+
+      if (m_try_reconnect && !m_transaction) {
+         /*
+          * Only try reconnecting when no transaction is pending.
+          * Reconnecting within a transaction will lead to an aborted
+          * transaction anyway so we better follow our old error path.
+          */
+         if (retry) {
+            unsigned long mysql_threadid;
+
+            mysql_threadid = mysql_thread_id(m_db_handle);
+            if (mysql_ping(m_db_handle) == 0) {
+               /*
+                * See if the threadid changed e.g. new connection to the DB.
+                */
+               if (mysql_thread_id(m_db_handle) != mysql_threadid) {
+                  mysql_query(m_db_handle, "SET wait_timeout=691200");
+                  mysql_query(m_db_handle, "SET interactive_timeout=691200");
+               }
+
+               retry = false;
+               goto retry_query;
+            }
+         }
+      }
+
+      /* FALL THROUGH */
+   default:
       Dmsg0(500, "we failed\n");
       m_status = 1;                   /* failed */
       retval = false;
+      break;
    }
+
    return retval;
 }
 
@@ -711,7 +805,9 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   const char *db_socket,
                                                   bool mult_db_connections,
                                                   bool disable_batch_insert,
-                                                  bool need_private)
+                                                  bool need_private,
+                                                  bool try_reconnect,
+                                                  bool exit_on_fatal)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -723,7 +819,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private)
+                       bool need_private,
+                       bool try_reconnect,
+                       bool exit_on_fatal)
 #endif
 {
    B_DB_MYSQL *mdb = NULL;
@@ -761,7 +859,9 @@ B_DB *db_init_database(JCR *jcr,
                         db_socket,
                         mult_db_connections,
                         disable_batch_insert,
-                        need_private));
+                        need_private,
+                        try_reconnect,
+                        exit_on_fatal));
 
 bail_out:
    V(mutex);

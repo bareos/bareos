@@ -65,7 +65,9 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
                                  const char *db_socket,
                                  bool mult_db_connections,
                                  bool disable_batch_insert,
-                                 bool need_private)
+                                 bool need_private,
+                                 bool try_reconnect,
+                                 bool exit_on_fatal)
 {
    /*
     * Initialize the parent class members.
@@ -118,6 +120,8 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    m_buf =  get_pool_memory(PM_FNAME);
    m_allow_transactions = mult_db_connections;
    m_is_private = need_private;
+   m_try_reconnect = try_reconnect;
+   m_exit_on_fatal = exit_on_fatal;
 
    /*
     * Initialize the private members.
@@ -162,7 +166,6 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
           * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII too
           */
          mdb->sql_query("SET client_encoding TO 'SQL_ASCII'");
-
       } else {
          /*
           * Something is wrong with database encoding
@@ -174,12 +177,12 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
          Dmsg1(50, "%s", mdb->errmsg);
       }
    }
+
    return retval;
 }
 
 /*
- * Now actually open the database.  This can generate errors,
- *   which are returned in the errmsg
+ * Now actually open the database.  This can generate errors, which are returned in the errmsg
  *
  * DO NOT close the database or delete mdb here !!!!
  */
@@ -195,10 +198,9 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&m_lock)) != 0) {
+   if ((errstat = rwl_init(&m_lock)) != 0) {
       berrno be;
-      Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
-            be.bstrerror(errstat));
+      Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
@@ -209,22 +211,28 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
       port = NULL;
    }
 
-   /* If connection fails, try at 5 sec intervals for 30 seconds. */
-   for (int retry=0; retry < 6; retry++) {
-      /* connect to the database */
-      m_db_handle = PQsetdbLogin(
-           m_db_address,         /* default = localhost */
-           port,                 /* default port */
-           NULL,                 /* pg options */
-           NULL,                 /* tty, ignored */
-           m_db_name,            /* database name */
-           m_db_user,            /* login name */
-           m_db_password);       /* password */
+   /*
+    * If connection fails, try at 5 sec intervals for 30 seconds.
+    */
+   for (int retry = 0; retry < 6; retry++) {
+      /*
+       * Connect to the database
+       */
+      m_db_handle = PQsetdbLogin(m_db_address,   /* default = localhost */
+                                 port,           /* default port */
+                                 NULL,           /* pg options */
+                                 NULL,           /* tty, ignored */
+                                 m_db_name,      /* database name */
+                                 m_db_user,      /* login name */
+                                 m_db_password); /* password */
 
-      /* If no connect, try once more in case it is a timing problem */
+      /*
+       * If no connect, try once more in case it is a timing problem
+       */
       if (PQstatus(m_db_handle) == CONNECTION_OK) {
          break;
       }
+
       bmicrosleep(5, 0);
    }
 
@@ -234,8 +242,8 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
 
    if (PQstatus(m_db_handle) != CONNECTION_OK) {
       Mmsg2(&errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
-         "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
-         m_db_name, m_db_user);
+                       "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
+            m_db_name, m_db_user);
       goto bail_out;
    }
 
@@ -336,6 +344,10 @@ bool B_DB_POSTGRESQL::db_validate_connection(void)
       if (PQstatus(m_db_handle) != CONNECTION_OK) {
          goto bail_out;
       }
+
+      sql_query("SET datestyle TO 'ISO, YMD'");
+      sql_query("SET cursor_tuple_fraction=1");
+      sql_query("SET standard_conforming_strings=on");
 
       /*
        * Retry the null query.
@@ -489,7 +501,6 @@ void B_DB_POSTGRESQL::db_end_transaction(JCR *jcr)
    db_unlock(this);
 }
 
-
 /*
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
@@ -502,7 +513,7 @@ bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
    bool retval = false;
    bool in_transaction = m_transaction;
 
-   Dmsg1(500, "db_sql_query starts with '%s'\n", query);
+   Dmsg1(500, "db_big_sql_query starts with '%s'\n", query);
 
    /* This code handles only SELECT queries */
    if (!bstrncasecmp(query, "SELECT", 6)) {
@@ -599,21 +610,23 @@ bail_out:
  * that no result has been stored.
  * This is where QUERY_DB comes with Postgresql.
  *
- *  Returns:  true  on success
- *            false on failure
- *
+ * Returns:  true  on success
+ *           false on failure
  */
 bool B_DB_POSTGRESQL::sql_query(const char *query, int flags)
 {
    int i;
+   bool retry = true;
    bool retval = false;
 
    Dmsg1(500, "sql_query starts with '%s'\n", query);
+
    /*
     * We are starting a new query. reset everything.
     */
-   m_num_rows     = -1;
-   m_row_number   = -1;
+retry_query:
+   m_num_rows = -1;
+   m_row_number = -1;
    m_field_number = -1;
 
    if (m_result) {
@@ -628,13 +641,11 @@ bool B_DB_POSTGRESQL::sql_query(const char *query, int flags)
       }
       bmicrosleep(5, 0);
    }
-   if (!m_result) {
-      Dmsg1(50, "Query failed: %s\n", query);
-      goto bail_out;
-   }
 
    m_status = PQresultStatus(m_result);
-   if (m_status == PGRES_TUPLES_OK || m_status == PGRES_COMMAND_OK) {
+   switch (m_status) {
+   case PGRES_TUPLES_OK:
+   case PGRES_COMMAND_OK:
       Dmsg0(500, "we have a result\n");
 
       /*
@@ -649,7 +660,48 @@ bool B_DB_POSTGRESQL::sql_query(const char *query, int flags)
       m_row_number = 0;      /* we can start to fetch something */
       m_status = 0;          /* succeed */
       retval = true;
-   } else {
+      break;
+   case PGRES_FATAL_ERROR:
+      Dmsg1(50, "Result status fatal: %s\n", query);
+      if (m_exit_on_fatal) {
+         /*
+          * Any fatal error should result in the daemon exiting.
+          */
+         Emsg0(M_FATAL, 0, "Fatal database error\n");
+      }
+
+      if (m_try_reconnect && !m_transaction) {
+         /*
+          * Only try reconnecting when no transaction is pending.
+          * Reconnecting within a transaction will lead to an aborted
+          * transaction anyway so we better follow our old error path.
+          */
+         if (retry) {
+            PQreset(m_db_handle);
+
+            /*
+             * See if we got a working connection again.
+             */
+            if (PQstatus(m_db_handle) == CONNECTION_OK) {
+               /*
+                * Reset the connection settings.
+                */
+               PQexec(m_db_handle, "SET datestyle TO 'ISO, YMD'");
+               PQexec(m_db_handle, "SET cursor_tuple_fraction=1");
+               m_result = PQexec(m_db_handle, "SET standard_conforming_strings=on");
+
+               switch (PQresultStatus(m_result)) {
+               case PGRES_COMMAND_OK:
+                  retry = false;
+                  goto retry_query;
+               default:
+                  break;
+               }
+            }
+         }
+      }
+      goto bail_out;
+   default:
       Dmsg1(50, "Result status failed: %s\n", query);
       goto bail_out;
    }
@@ -984,8 +1036,8 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
    /*
     * We are starting a new query.  reset everything.
     */
-   m_num_rows     = -1;
-   m_row_number   = -1;
+   m_num_rows = -1;
+   m_row_number = -1;
    m_field_number = -1;
 
    sql_free_result();
@@ -1131,7 +1183,9 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   const char *db_socket,
                                                   bool mult_db_connections,
                                                   bool disable_batch_insert,
-                                                  bool need_private)
+                                                  bool need_private,
+                                                  bool try_reconnect,
+                                                  bool exit_on_fatal)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -1143,7 +1197,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private)
+                       bool need_private,
+                       bool try_reconnect,
+                       bool exit_on_fatal)
 #endif
 {
    B_DB_POSTGRESQL *mdb = NULL;
@@ -1181,7 +1237,9 @@ B_DB *db_init_database(JCR *jcr,
                              db_socket,
                              mult_db_connections,
                              disable_batch_insert,
-                             need_private));
+                             need_private,
+                             try_reconnect,
+                             exit_on_fatal));
 
 bail_out:
    V(mutex);

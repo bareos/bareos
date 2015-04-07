@@ -36,7 +36,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections = false,
                        bool disable_batch_insert = false,
-                       bool is_private = false);
+                       bool is_private = false,
+                       bool try_reconnect = false,
+                       bool exit_on_fatal = false);
 
 /*
  * Glue functions from sql_glue.c

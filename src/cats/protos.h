@@ -139,6 +139,8 @@ bool db_sql_pool_initialize(const char *db_drivername,
                             int db_port,
                             const char *db_socket,
                             bool disable_batch_insert,
+                            bool try_reconnect,
+                            bool exit_on_fatal,
                             int min_connections,
                             int max_connections,
                             int increment_connections,
@@ -156,7 +158,9 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        const char *db_socket,
                                        bool mult_db_connections = false,
                                        bool disable_batch_insert = false,
-                                       bool need_private = false);
+                                       bool need_private = false,
+                                       bool try_reconnect = false,
+                                       bool exit_on_fatal = false);
 B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
@@ -167,7 +171,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_socket,
                                    bool mult_db_connections = false,
                                    bool disable_batch_insert = false,
-                                   bool need_private = false);
+                                   bool need_private = false,
+                                   bool try_reconnect = false,
+                                   bool exit_on_fatal = false);
 void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort=false);
 
 /* sql_update.c */
