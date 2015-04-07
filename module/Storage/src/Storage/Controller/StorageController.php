@@ -27,13 +27,13 @@ namespace Storage\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BSock\BareosBSock;
 
 class StorageController extends AbstractActionController
 {
 
 	protected $storageTable;
 	protected $bconsoleOutput = array();
+	protected $director;
 
 	public function indexAction()
 	{
@@ -69,13 +69,9 @@ class StorageController extends AbstractActionController
 				}
 				$result = $this->getStorageTable()->getStorage($id);
 				$cmd = "status storage=" . $result->name;
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'bconsoleOutput' => $bsock->send_command($cmd),
+						'bconsoleOutput' => $this->director->send_command($cmd),
 					)
 				);
 		}
@@ -93,13 +89,9 @@ class StorageController extends AbstractActionController
 				}
 				$result = $this->getStorageTable()->getStorage($id);
 				$cmd = "status storage=" . $result->name . " slots";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'bconsoleOutput' => $bsock->send_command($cmd),
+						'bconsoleOutput' => $this->director->send_command($cmd),
 					)
 				);
 		}

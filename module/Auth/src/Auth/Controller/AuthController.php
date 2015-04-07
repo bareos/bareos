@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@ use Zend\Session\Container;
 class AuthController extends AbstractActionController
 {
 
-	protected $bsock;
+	protected $director;
 
 	public function indexAction()
 	{
@@ -70,29 +70,21 @@ class AuthController extends AbstractActionController
 				$password = $form->getInputFilter()->getValue('password');
 
 				$config = $this->getServiceLocator()->get('Config');
-				$this->bsock = $this->getServiceLocator()->get('bsock');
-				$this->bsock->set_config($config['directors'][$director]);
-				$this->bsock->set_user_credentials($username, $password);
+				$this->director = $this->getServiceLocator()->get('director');
+				$this->director->set_config($config['directors'][$director]);
+				$this->director->set_user_credentials($username, $password);
 
-				if($this->bsock->auth($username, $password)) {
-					//$session = new Container('user');
+				if($this->director->auth($username, $password)) {
 					$_SESSION['bareos']['director'] = $director;
 					$_SESSION['bareos']['username'] = $username;
 					$_SESSION['bareos']['password'] = $password;
 					$_SESSION['bareos']['authenticated'] = true;
-					$_SESSION['bareos']['socket'] = $this->bsock;
-					$this->bsock->disconnect();
+					$this->director->disconnect();
 					return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
 				} else {
 
-					// todo - give user a message about what went wrong
-
-					// if we get false, wrong credentials(username, password) in this case, pass a message in auth action login and display
-					// if we get a exception the socket could not be initialized for whatever reason
-
-					$this->bsock->disconnect();
+					$this->director->disconnect();
 					session_destroy();
-					//return $this->redirect()->toRoute('auth', array('action' => 'login'));
 					$err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
 					return new ViewModel(
 						array(
@@ -104,14 +96,10 @@ class AuthController extends AbstractActionController
 
 			} else {
 
-				// todo - give user a message about what went wrong
-
 				// given credentials in login form could not be validated in this case
 				$err_msg = "Please provide a director, username and password.";
 
-				//$this->bsock->disconnect();
 				session_destroy();
-				//return $this->redirect()->toRoute('auth', array('action' => 'login'));
 
 				return new ViewModel(
                                                 array(
@@ -134,14 +122,9 @@ class AuthController extends AbstractActionController
 
 	public function logoutAction()
 	{
-
-		// todo - ask user if he's really sure to logout!
-		// "Do you really want to logout?"
-
-		unset($_SESSION['user']);
+		// todo - ask user if he's really wants to log out!
+		unset($_SESSION['bareos']);
 		session_destroy();
-		//$this->bsock = $this->getServiceLocator()->get('bsock');
-		//$this->bsock->disconnect();
 		return $this->redirect()->toRoute('auth', array('action' => 'login'));
 	}
 

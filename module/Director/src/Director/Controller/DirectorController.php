@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -28,24 +28,20 @@ namespace Director\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BSock\BareosBSock;
 
 class DirectorController extends AbstractActionController
 {
 
+	protected $director = null;
 	protected $directorOutput = array();
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$cmd = "status director";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'directorOutput' => $bsock->send_command($cmd),
+						'directorOutput' => $this->director->send_command($cmd),
 				));
 		}
 		else {
@@ -57,13 +53,9 @@ class DirectorController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$cmd = "messages";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'directorOutput' => $bsock->send_command($cmd),
+						'directorOutput' => $this->director->send_command($cmd),
 					));
 				}
 		else {
@@ -75,13 +67,9 @@ class DirectorController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$cmd = "show schedule";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'directorOutput' => $bsock->send_command($cmd),
+						'directorOutput' => $this->director->send_command($cmd),
 					));
 		}
 		else {
@@ -93,13 +81,9 @@ class DirectorController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$cmd = "status scheduler";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'directorOutput' => $bsock->send_command($cmd),
+						'directorOutput' => $this->director->send_command($cmd),
 					));
 		}
 		else {
@@ -111,13 +95,9 @@ class DirectorController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$cmd = "version";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
-						'directorOutput' => $bsock->send_command($cmd),
+						'directorOutput' => $this->director->send_command($cmd),
 					));
 		}
 		else {

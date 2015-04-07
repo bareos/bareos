@@ -58,13 +58,13 @@ return array(
             'Zend\Log\LoggerAbstractServiceFactory',
         ),
 		'services' => array(
-			'bsock' => new Bareos\BSock\BareosBSock(),
 		),
 		'shared' => array(
 		),
 		'factories' => array(
 			'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
 			'navigation' => 'Zend\Navigation\Service\DefaultNavigationFactory',
+			'director' => 'Bareos\BSock\BareosBSockServiceFactory',
 		),
         'aliases' => array(
             //'translator' => 'MvcTranslator',

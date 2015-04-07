@@ -28,7 +28,6 @@ namespace Job\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Bareos\BSock\BareosBSock;
 
 class JobController extends AbstractActionController
 {
@@ -36,6 +35,7 @@ class JobController extends AbstractActionController
 	protected $jobTable;
 	protected $logTable;
 	protected $bconsoleOutput = array();
+	protected $director = null;
 
 	public function indexAction()
 	{
@@ -185,14 +185,10 @@ class JobController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$jobid = (int) $this->params()->fromRoute('id', 0);
 				$cmd = "rerun jobid=" . $jobid . " yes";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(
 						array(
-							'bconsoleOutput' => $bsock->send_command($cmd),
+							'bconsoleOutput' => $this->director->send_command($cmd),
 							'jobid' => $jobid,
 						)
 				);
@@ -207,14 +203,10 @@ class JobController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true) {
 				$jobid = (int) $this->params()->fromRoute('id', 0);
 				$cmd = "cancel jobid=" . $jobid . " yes";
-				$config = $this->getServiceLocator()->get('Config');
-				$bsock = new BareosBSock();
-				$bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-				$bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-				$bsock->init();
+				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(
 						array(
-							'bconsoleOutput' => $bsock->send_command($cmd)
+							'bconsoleOutput' => $this->director->send_command($cmd)
 						)
 				);
 		}

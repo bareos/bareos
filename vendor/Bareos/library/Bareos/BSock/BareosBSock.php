@@ -4,8 +4,8 @@
  *
  * bareos-webui - Bareos Web-Frontend
  *
- * @link	  https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2014 Bareos GmbH & Co. KG
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2014-2015 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,12 +22,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
 namespace Bareos\BSock;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class BareosBSock implements ServiceLocatorAwareInterface
+class BareosBSock implements BareosBSockInterface
 {
 	const BNET_TLS_NONE = 0;	/* cannot do TLS */
 	const BNET_TLS_OK = 1;		/* can do, but not required on my end */
@@ -82,21 +80,10 @@ class BareosBSock implements ServiceLocatorAwareInterface
 		'allowed_cns' => null,
 	);
 
-	protected $serviceLocator;
 	private $socket = null;
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
-
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
-
 	/**
-	 * Initialize the connection
+	 * Initialize connection
 	 */
 	public function init()
 	{
@@ -107,6 +94,9 @@ class BareosBSock implements ServiceLocatorAwareInterface
 		}
 	}
 
+	/**
+	 * Authenticate
+	 */
 	public function auth($console, $password)
 	{
 		if(self::connect($console, $password)) {
@@ -116,6 +106,9 @@ class BareosBSock implements ServiceLocatorAwareInterface
 		}
 	}
 
+	/**
+	 * Set configuration
+	 */
 	private function set_config_keyword($setting, $key)
 	{
 		if (array_key_exists($key, $this->config)) {
@@ -125,6 +118,9 @@ class BareosBSock implements ServiceLocatorAwareInterface
 		}
 	}
 
+	/**
+	 * Set user credentials
+	 */
 	public function set_user_credentials($username=null, $password=null)
 	{
 		$this->config['console_name'] = $username;
@@ -149,7 +145,8 @@ class BareosBSock implements ServiceLocatorAwareInterface
 		}
 
 		if($this->config['debug']) {
-			var_dump($this->config);
+			// extended debug: print config array
+			//var_dump($this->config);
 		}
 	}
 
@@ -283,69 +280,144 @@ class BareosBSock implements ServiceLocatorAwareInterface
 				// signal received
 				switch ($len) {
 					case self::BNET_EOD:
-						if($this->config['debug']) {
+						if ($this->config['debug']) {
 							echo "Got BNET_EOD\n";
 						}
-						return $msg;
+						break;
 					case self::BNET_EOD_POLL:
+                                                if ($this->config['debug']) {
+							echo "Got BNET_EOD_POLL\n";
+						}
 						break;
 					case self::BNET_STATUS:
+						if ($this->config['debug']) {
+							echo "Got BNET_STATUS\n";
+						}
 						break;
 					case self::BNET_TERMINATE:
+						if ($this->config['debug']) {
+							echo "Got BNET_TERMINATE\n";
+						}
 						break;
 					case self::BNET_POLL:
+						if ($this->config['debug']) {
+							echo "Got BNET_POLL\n";
+						}
 						break;
 					case self::BNET_HEARTBEAT:
+						if ($this->config['debug']) {
+							echo "Got BNET_HEARTBEAT\n";
+						}
 						break;
 					case self::BNET_HB_RESPONSE:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_HB_RESPONSE\n";
+                                                }
 						break;
 					case self::BNET_xxxxxxPROMPT:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_xxxxxxPROMPT\n";
+                                                }
 						break;
 					case self::BNET_BTIME:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_BTIME\n";
+                                                }
 						break;
 					case self::BNET_BREAK:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_BREAK\n";
+                                                }
 						break;
 					case self::BNET_START_SELECT:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_START_SELECT\n";
+                                                }
 						break;
 					case self::BNET_END_SELECT:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_END_SELECT\n";
+                                                }
 						break;
 					case self::BNET_INVALID_CMD:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_INVALID_CMD\n";
+                                                }
 						break;
 					case self::BNET_CMD_FAILED:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_CMD_FAILED\n";
+                                                }
 						break;
 					case self::BNET_CMD_OK:
+						if ($this->config['debug']) {
+                                                        echo "Got BNET_CMD_OK\n";
+                                                }
 						break;
 					case self::BNET_CMD_BEGIN:
+						if ($this->config['debug']) {
+							echo "Got BNET_CMD_BEGIN\n";
+						}
 						break;
 					case self::BNET_MSGS_PENDING:
+						if ($this->config['debug']) {
+							echo "Got BNET_MSGS_PENDING\n";
+						}
 						break;
 					case self::BNET_MAIN_PROMPT:
-						if($this->config['debug']) {
+						if ($this->config['debug']) {
 							echo "Got BNET_MAIN_PROMPT\n";
 						}
-						return $msg;
+						break;
 					case self::BNET_SELECT_INPUT:
+						if ($this->config['debug']) {
+							echo "Got BNET_SELECT_INPUT\n";
+						}
 						break;
 					case self::BNET_WARNING_MSG:
+						if ($this->config['debug']) {
+							echo "Got BNET_WARNINGS_MSG\n";
+						}
 						break;
 					case self::BNET_ERROR_MSG:
+						if ($this->config['debug']) {
+							echo "Got BNET_ERROR_MSG\n";
+						}
 						break;
 					case self::BNET_INFO_MSG:
+						if ($this->config['debug']) {
+							echo "Got BNET_INFO_MSG\n";
+						}
 						break;
 					case self::BNET_RUN_CMD:
+						if ($this->config['debug']) {
+							echo "Got BNET_RUN_CMD\n";
+						}
 						break;
 					case self::BNET_YESNO:
+						if ($this->config['debug']) {
+							echo "Got BNET_YESNO\n";
+						}
 						break;
 					case self::BNET_START_RTREE:
+						if ($this->config['debug']) {
+							echo "Got BNET_START_RTREE\n";
+						}
 						break;
 					case self::BNET_END_RTREE:
+						if ($this->config['debug']) {
+							echo "Got BNET_END_RTREE\n";
+						}
 						break;
 					case self::BNET_SUB_PROMPT:
-						if($this->config['debug']) {
+						if ($this->config['debug']) {
 							echo "Got BNET_SUB_PROMPT\n";
 						}
-						return $msg;
+						break;
 					case self::BNET_TEXT_INPUT:
+						if ($this->config['debug']) {
+							echo "Got BNET_TEXT_INPUT\n";
+						}
 						break;
 					default:
 						throw new \Exception("Received unknown signal " . $len . "\n");
@@ -471,11 +543,15 @@ class BareosBSock implements ServiceLocatorAwareInterface
 	 */
 	public function disconnect()
 	{
-		fclose($this->socket);
-		if($this->config['debug']) {
-			echo "Connection to " . $this->config['host'] . " on port " . $this->config['port'] . " closed\n";
+		if ($this->socket != null) {
+			fclose($this->socket);
+			if ($this->config['debug']) {
+				echo "Connection to " . $this->config['host'] . " on port " . $this->config['port'] . " closed\n";
+			}
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	/**
