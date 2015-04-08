@@ -52,19 +52,39 @@ dpl_s3_head(dpl_ctx_t *ctx,
 
   DPL_TRACE(ctx, DPL_TRACE_BACKEND, "");
 
-  ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
-                         object_type, condition, &headers_reply, locationp);
-  if (DPL_SUCCESS != ret2)
+  /*
+   * We need to avoid attempting any access to the directory itself if the
+   * empty folder emulation is not enabled (empty folder emulation means that
+   * an empty object is used to create directories, instead of simply using the
+   * delimiters in the paths)
+   */
+  if (ctx->empty_folder_emulation && resource[strlen(resource)-1] == '/')
     {
-      ret = ret2;
-      goto end;
+      ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
+                             object_type, condition, &headers_reply, locationp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
+
+      ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
+      if (DPL_SUCCESS != ret2)
+        {
+          ret = ret2;
+          goto end;
+        }
     }
-  
-  ret2 = dpl_s3_get_metadata_from_headers(headers_reply, metadatap, sysmdp);
-  if (DPL_SUCCESS != ret2)
+  else if (NULL != sysmdp)
     {
-      ret = ret2;
-      goto end;
+      /*
+       * No emulation enabled, but we still need to return a valid minimal set
+       * of properties for the Droplet API to be usable, if required.
+       */
+      memset(sysmdp, 0, sizeof(*sysmdp));
+      sysmdp->mask = DPL_SYSMD_MASK_FTYPE | DPL_SYSMD_MASK_SIZE | DPL_SYSMD_MASK_PATH;
+      sysmdp->ftype = DPL_FTYPE_DIR;
+      snprintf(sysmdp->path, DPL_MAXPATHLEN, "%s", resource);
     }
 
   ret = DPL_SUCCESS;

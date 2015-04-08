@@ -525,6 +525,7 @@ typedef struct dpl_ctx
   unsigned int read_buf_size;
   char *encrypt_key;
   int encode_slashes;        /*!< client wants slashes encoded */
+  int empty_folder_emulation;/*!< folders are represented as empty objects (otherwise, they're purely virtual) */
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
   int max_redirects;         /*!< maximum number of redirects */

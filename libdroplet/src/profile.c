@@ -511,6 +511,18 @@ conf_cb_func(void *cb_arg,
           return -1;
         }
     }
+  else if (!strcmp(var, "empty_folder_emulation"))
+    {
+      if (!strcasecmp(value, "true"))
+        ctx->empty_folder_emulation = 1;
+      else if (!strcasecmp(value, "false"))
+        ctx->empty_folder_emulation = 0;
+      else
+        {
+          DPL_LOG(ctx, DPL_ERROR, "invalid boolean value for '%s'", var);
+          return -1;
+        }
+    }
   else if (!strcmp(var, "keep_alive"))
     {
       if (!strcasecmp(value, "true"))
