@@ -75,6 +75,8 @@ BuildRequires:  mingw64-lzo
 BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw64-libfastlz
 
+BuildRequires:  osslsigncode
+
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
 Source3:         directordialog.ini
@@ -84,6 +86,10 @@ Source6:         bareos.ico
 Source7:         AccessControl.dll
 Source8:         LogEx.dll
 Source9:         databasedialog.ini
+
+# code signing cert
+Source10:        ia.p12
+Source11:        signpassword
 %description
 bareos
 
@@ -109,20 +115,18 @@ do
    cp %SOURCE7 $RPM_BUILD_ROOT/$flavor/nsisplugins  #  AccessControl
    cp %SOURCE8 $RPM_BUILD_ROOT/$flavor/nsisplugins  #  LogEx
 
-   mkdir -p $RPM_BUILD_ROOT/$flavor/release32
-   mkdir -p $RPM_BUILD_ROOT/$flavor/release64
+   for BITS in 32 64; do
+      mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
 
-# copy the sql ddls over
-   cp -av /etc/$flavor/mingw32-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release32
-   cp -av /etc/$flavor/mingw64-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release64
+      # copy the sql ddls over
+      cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
 
-# copy the sources over if we create debug package
-   %if %{WIN_DEBUG} == "yes"
-   cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release32
-   cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release64
-   %endif
+      # copy the sources over if we create debug package
+      %if %{WIN_DEBUG} == "yes"
+      cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release${BITS}
+      %endif
 
-
+   done
 
    for file in \
       bareos-fd.exe \
@@ -142,11 +146,14 @@ do
       libbareos.dll \
       libbareosfind.dll \
       libbareoslmdb.dll \
-      libbareoscats*.dll \
-      libbareossd*.dll ;
+      libbareoscats-postgresql.dll libbareoscats-sqlite3.dll libbareoscats.dll\
+      libbareossd.dll ;
    do
       cp %{_mingw32_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release64
+
+      osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release32/$file
+      osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release64/$file
    done
 
 
@@ -172,20 +179,18 @@ do
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
 
-   for cfg in /etc/$flavor/mingw32-winbareos/*.conf; do
-      cp $cfg $RPM_BUILD_ROOT/$flavor/release32
+   for BITS in 32 64; do
+
+      for cfg in /etc/$flavor/mingw${BITS}-winbareos/*.conf; do
+         cp $cfg $RPM_BUILD_ROOT/$flavor/release${BITS}
+      done
+
+      cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 \
+               %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=${BITS} \
+               -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi
    done
-
-   for cfg in /etc/$flavor/mingw64-winbareos/*.conf; do
-      cp $cfg $RPM_BUILD_ROOT/$flavor/release64
-   done
-
-   cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release32
-   cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release64
-
-   makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=32 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release32/winbareos.nsi
-   makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=64 -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release64/winbareos.nsi
-
 done
 
 %install
@@ -196,14 +201,26 @@ do
    mkdir -p $RPM_BUILD_ROOT%{_mingw64_bindir}
 
    FLAVOR=`echo "%name" | sed 's/winbareos-nsi-//g'`
+   DESCRIPTION="Bareos installer version %version"
+   URL="http://www.bareos.com"
 
-   cp $RPM_BUILD_ROOT/$flavor/release32/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-$flavor-32-bit-r%release.exe
-   cp $RPM_BUILD_ROOT/$flavor/release64/Bareos*.exe $RPM_BUILD_ROOT/winbareos-%version-$flavor-64-bit-r%release.exe
+   for BITS in 32 64; do
+      cp $RPM_BUILD_ROOT/$flavor/release${BITS}/Bareos*.exe \
+           $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release-unsigned.exe
 
-   rm -R $RPM_BUILD_ROOT/$flavor/release32
-   rm -R $RPM_BUILD_ROOT/$flavor/release64
+      osslsigncode  -pkcs12 %SOURCE10 -pass `cat %SOURCE11` -n "${DESCRIPTION}" -i http://www.bareos.com/ \
+                    -in  $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release-unsigned.exe \
+                    -out $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release.exe
+
+      osslsigncode verify -in $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release.exe
+
+      rm $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release-unsigned.exe
+
+      rm -R $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+   done
+
    rm -R $RPM_BUILD_ROOT/$flavor/nsisplugins
-
 done
 
 %clean
