@@ -290,6 +290,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
                         NULL, /* metadata */
                         NULL, /* sysmd */
                         NULL, /* query_params */
+                        NULL, /* stream_status */
                         &m_vfd);
    } else {
       dpl_flags = DPL_VFILE_FLAG_RDWR;
@@ -301,6 +302,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
                         NULL, /* metadata */
                         NULL, /* sysmd */
                         NULL, /* query_params */
+                        NULL, /* stream_status */
                         &m_vfd);
    }
 
@@ -502,6 +504,7 @@ bool object_store_device::d_truncate(DCR *dcr)
                         NULL, /* metadata */
                         NULL, /* sysmd */
                         NULL, /* query_params */
+                        NULL, /* stream_status */
                         &m_vfd);
 
       switch (status) {
