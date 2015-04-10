@@ -466,6 +466,7 @@ dpl_posix_list_bucket(dpl_ctx_t *ctx,
               st.st_size = 0;
             }
           object->size = st.st_size;
+          object->last_modified = st.st_mtime;
 
           switch (entryp->d_type)
           {
