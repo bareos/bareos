@@ -844,7 +844,9 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     /* load CRL in the X509_STORE */
     X509_STORE *cert_store;
     X509_CRL *cert_crl; 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
     X509_VERIFY_PARAM *cert_verif_param;
+#endif
     BIO *in = NULL;
     int ret = 0;
     char *crl_issuer = NULL;
@@ -872,11 +874,13 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
     if (NULL != in)
       BIO_free(in);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
     /* set CRL verification */
     cert_verif_param = X509_VERIFY_PARAM_new();
     X509_VERIFY_PARAM_set_flags(cert_verif_param, X509_V_FLAG_CRL_CHECK);
     SSL_CTX_set1_param(ctx->ssl_ctx, cert_verif_param);
     X509_VERIFY_PARAM_free(cert_verif_param);
+#endif
   }
 
   if (ctx->ssl_cert_file != NULL) {
