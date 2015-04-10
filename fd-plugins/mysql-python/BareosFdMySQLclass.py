@@ -27,8 +27,16 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         '''
         BareosFdPluginBaseclass.parse_plugin_definition(self, context, plugindef)
 
-        f = os.popen("mysql -B -N -e 'show databases'")
-        self.databases = f.read().splitlines()
+        # if plugin has db configured (a list of comma separated databases to backup
+        # we use it here as lists of databases to backup
+        if self.options['db']:
+            self.databases = self.options['db'].split(',')
+        # Otherwise we backup all existing databases
+        else:
+            # TODO: exception handling, prereq check: does mysql binary exist?
+            f = os.popen("mysql -B -N -e 'show databases'")
+            self.databases = f.read().splitlines()
+
         DebugMessage(context, 100, "databases: %s\n"%(self.databases));
         return bRCs['bRC_OK'];
 
@@ -43,10 +51,16 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         db = self.databases.pop()
         statp = StatPacket()
         savepkt.statp = statp
-        savepkt.fname = "/_mysqlbackups_/"+db+".sql.gz"
+        savepkt.fname = "/_mysqlbackups_/"+db+".sql"
         savepkt.type = bFileType['FT_REG']
 
-        self.stream = os.popen("/usr/bin/mysqldump %s --events --single-transaction | gzip"%(db))
+        # TODO: exception handling, prereq check: does mysqldump binary exist?
+        # TODO: make dumpcommand and options configurable
+        dumpcommand = ("/usr/bin/mysqldump %s --events --single-transaction " %db)
+        DebugMessage(context, 100, "Dumper: '" + dumpcommand + "'\n")
+        #self.stream = os.popen("/usr/bin/mysqldump %s --events --single-transaction " %db)
+        # TODO: exception handling
+        self.stream = os.popen(dumpcommand)
 
         JobMessage(context, bJobMessageType['M_INFO'], "Starting backup of " + savepkt.fname + "\n");
         return bRCs['bRC_OK'];
@@ -56,11 +70,12 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
 
         if IOP.func == bIOPS['IO_OPEN']:
             try:
-                if IOP.flags & (O_CREAT | O_WRONLY):
+                if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                     self.file = open(IOP.fname, 'wb');
             except Exception,msg:
                 IOP.status = -1;
-                DebugMessage(context, 100, "Error opening file: " + msg + "\n");
+                DebugMessage(context, 100, "Error opening file: " + IOP.fname + "\n");
+                print msg;
                 return bRCs['bRC_Error'];
             return bRCs['bRC_OK']
 

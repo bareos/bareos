@@ -33,3 +33,13 @@ FileSet {
         }
 }
 ```
+
+#### Options ####
+
+By default all found databases are backuped, if the paramater 'db' is unset. You can have the plugin only certain databases saved, if you add
+the parameter db=db1,db2, with a comma separated list of datbases.
+Example plugin string:
+```
+               Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,mysql"
+```
+This will backup only the databases with name 'test' and 'mysql'.
