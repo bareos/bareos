@@ -34,13 +34,17 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 #!BuildIgnore: post-build-checks
 
-Source1:       fillup.sed
-Source2:       vss_headers.tar
-Source3:       vdi_headers.tar
-Source4:       pgsql-libpq.tar
+Source1:        fillup.sed
+Source2:        vss_headers.tar
+Source3:        vdi_headers.tar
+Source4:        pgsql-libpq.tar
 
-Patch1:        tray-monitor-conf.patch
-Patch2:        tray-monitor-conf-fd-sd.patch
+# code signing cert
+Source10:       ia.p12
+Source11:       signpassword
+
+Patch1:         tray-monitor-conf.patch
+Patch2:         tray-monitor-conf-fd-sd.patch
 
 BuildRequires:  mingw32-filesystem
 BuildRequires:  mingw32-cross-gcc
@@ -79,6 +83,8 @@ BuildRequires:  mingw32-libsqlite-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
+
+BuildRequires:  osslsigncode
 
 %description
 bareos
@@ -170,12 +176,9 @@ make WIN_DEBUG=yes BUILD_QTGUI=%{BUILD_QTGUI} WIN_VERSION=%{WIN_VERSION} WIN_VIS
 cd -
 
 %install
-
-
 for flavor in `echo "%flavors"`; do
 
    mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
-
    mkdir -p $RPM_BUILD_ROOT/etc/$flavor/%name
 
    pushd $flavor/src/win32
@@ -229,9 +232,21 @@ for flavor in `echo "%flavors"`; do
    do
       sed -f %SOURCE1 $sql -i ;
    done
+
+   # sign binary files
+   pushd $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
+   for BINFILE in *; do
+      mv $BINFILE $BINFILE.unsigned
+      osslsigncode -pkcs12 %SOURCE10 \
+                   -pass `cat %SOURCE11` \
+                   -n "${DESCRIPTION}" \
+                   -i http://www.bareos.com/ \
+                   -in  $BINFILE.unsigned \
+                   -out $BINFILE
+      rm *.unsigned
+   done
+   popd
 done
-
-
 
 %clean
 rm -rf $RPM_BUILD_ROOT
