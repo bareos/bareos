@@ -1072,4 +1072,5 @@ win32_tape_device::~win32_tape_device()
 
 win32_tape_device::win32_tape_device()
 {
+   set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }

@@ -473,7 +473,7 @@ bool DCR::write_block_to_dev()
 
    /*
     * Clear to the end of the buffer if it is not full,
-    *  and on tape devices, apply min and fixed blocking.
+    * and on devices with CAP_ADJWRITESIZE set, apply min and fixed blocking.
     */
    if (wlen != block->buf_len) {
       uint32_t blen;                  /* current buffer length */
@@ -481,39 +481,35 @@ bool DCR::write_block_to_dev()
       Dmsg2(250, "binbuf=%d buf_len=%d\n", block->binbuf, block->buf_len);
       blen = wlen;
 
-      /*
-       * Adjust write size to min/max for tapes only
-       */
-      if (dev->is_tape()) {
-         /*
-          * Check for fixed block size
-          */
+      if (dev->has_cap(CAP_ADJWRITESIZE)) {
          if (dev->min_block_size == dev->max_block_size) {
+            /*
+             * Fixed block size
+             */
             wlen = block->buf_len;    /* fixed block size already rounded */
-         /*
-          * Check for min block size
-          */
          } else if (wlen < dev->min_block_size) {
+            /*
+             * Min block size
+             */
             wlen =  ((dev->min_block_size + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
-         /*
-          * Ensure size is rounded
-          */
          } else {
+            /*
+             * Ensure size is rounded
+             */
             wlen = ((wlen + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
          }
       }
 
       Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
-               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+            wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
 
-      if (wlen-blen > 0) {
-         memset(block->bufp, 0, wlen-blen); /* clear garbage */
+      if (wlen - blen > 0) {
+         memset(block->bufp, 0, wlen - blen); /* clear garbage */
       }
    }
 
    Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
-               wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
-
+         wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
 
    checksum = ser_block_header(block, dev->do_checksum());
 
@@ -521,12 +517,14 @@ bool DCR::write_block_to_dev()
     * Limit maximum Volume size to value specified by user
     */
    hit_max1 = (dev->max_volume_size > 0) &&
-       ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >= dev->max_volume_size;
+              ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >= dev->max_volume_size;
    hit_max2 = (dev->VolCatInfo.VolCatMaxBytes > 0) &&
-       ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >= dev->VolCatInfo.VolCatMaxBytes;
+              ((dev->VolCatInfo.VolCatBytes + block->binbuf)) >= dev->VolCatInfo.VolCatMaxBytes;
+
    if (hit_max1 || hit_max2) {
       char ed1[50];
       uint64_t max_cap;
+
       Dmsg0(100, "==== Output bytes Triggered medium max capacity.\n");
       if (hit_max1) {
          max_cap = dev->max_volume_size;
@@ -538,6 +536,7 @@ bool DCR::write_block_to_dev()
       terminate_writing_volume(dcr);
       reread_last_block(dcr);   /* DEBUG */
       dev->dev_errno = ENOSPC;
+
       return false;
    }
 

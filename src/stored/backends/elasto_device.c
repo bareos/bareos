@@ -386,6 +386,7 @@ elasto_device::elasto_device()
    m_insecure_http = false;
    m_efh = NULL;
    m_virtual_filename = get_pool_memory(PM_FNAME);
+   set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
