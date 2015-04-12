@@ -372,8 +372,7 @@ void setup_tsd_key()
  * Create a Job Control Record and link it into JCR chain
  * Returns newly allocated JCR
  *
- * Note, since each daemon has a different JCR, he passes
- * us the size.
+ * Note, since each daemon has a different JCR, he passes us the size.
  */
 JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
 {
@@ -388,13 +387,14 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
 
    jcr = (JCR *)malloc(size);
    memset(jcr, 0, size);
+
    jcr->msg_queue = New(dlist(item, &item->link));
    if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, NULL)) != 0) {
       berrno be;
-      Jmsg(NULL, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"),
-         be.bstrerror(status));
+      Jmsg(NULL, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"), be.bstrerror(status));
    }
 
+   jcr->my_thread_id = pthread_self();
    jcr->job_end_push.init(1, false);
    jcr->sched_time = time(NULL);
    jcr->initial_sched_time = jcr->sched_time;
@@ -692,11 +692,9 @@ void JCR::my_thread_send_signal(int sig)
 {
    this->lock();
    if (this->is_killable() &&
-       !pthread_equal(this->my_thread_id, pthread_self()))
-   {
+       !pthread_equal(this->my_thread_id, pthread_self())) {
       Dmsg1(800, "Send kill to jid=%d\n", this->JobId);
       pthread_kill(this->my_thread_id, sig);
-
    } else if (!this->is_killable()) {
       Dmsg1(10, "Warning, can't send kill to jid=%d\n", this->JobId);
    }
@@ -1172,7 +1170,7 @@ static void jcr_timeout_check(watchdog_t *self)
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(
-"Watchdog sending kill after %d secs to thread stalled reading Storage daemon.\n"),
+                 "Watchdog sending kill after %d secs to thread stalled reading Storage daemon.\n"),
                  watchdog_time - timer_start);
             jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          }
@@ -1184,7 +1182,7 @@ static void jcr_timeout_check(watchdog_t *self)
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(
-"Watchdog sending kill after %d secs to thread stalled reading File daemon.\n"),
+                 "Watchdog sending kill after %d secs to thread stalled reading File daemon.\n"),
                  watchdog_time - timer_start);
             jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          }
@@ -1196,7 +1194,7 @@ static void jcr_timeout_check(watchdog_t *self)
             bs->timer_start = 0;      /* turn off timer */
             bs->set_timed_out();
             Qmsg(jcr, M_ERROR, 0, _(
-"Watchdog sending kill after %d secs to thread stalled reading Director.\n"),
+                 "Watchdog sending kill after %d secs to thread stalled reading Director.\n"),
                  watchdog_time - timer_start);
             jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          }
