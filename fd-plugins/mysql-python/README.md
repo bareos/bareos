@@ -67,3 +67,11 @@ Minimum privileges for the backup user are:
 GRANT USAGE ON *.* TO 'bareos'@'localhost' IDENTIFIED BY 'bareos';
 GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON *.* TO 'bareos'@'localhost'
 ```
+##### dumpbinary #####
+
+Command (with or without full path) to create the dumps. Default: mysqldump
+
+##### dumpoptions #####
+
+Options for dumpbinary, default: " --events --single-transaction"
+
