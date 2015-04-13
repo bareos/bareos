@@ -731,6 +731,51 @@ For a full description, see \elink{https://github.com/bareos/contrib-pgsql-plugi
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
+\subsubsection{Backup of a MySQL Databases by using the Python MySQL plugin}
+\index[general]{Plugin!Python!MySQL Backup}
+The Pyhton plugin from \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} makes a backup of all or selected 
+MySQL databases from the file-daemon or any other MySQL server.
+
+\begin{bconfig}{bareos-dir.conf: Python FD MySQL plugin}
+FileSet {
+    Name = ``mysql''
+    Include {
+    Options {
+        signature = MD5
+        compression = lz4
+    }
+    Plugin = ``python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb''
+    #Plugin = ``python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos''
+    }
+\end{bconfig}
+
+In the above example the plugin creates and saves a dump from the databases called \textit{test} and \textit{wikidb}, running on the file-daemon. The commented example below
+specifies an explicit MySQL server called \textit{dbhost}, and connects with user \textit{bareos}, password \textit{bareos}, to create and save a backup of all databases.
+
+You need to enable the plugin directory in the file-dameon config, too:
+
+\begin{bconfig}{bareos-fd.conf: enable Python FD plugins}
+FileDaemon {
+  Name = mysql-fd
+  ...
+  Plugin Directory = /usr/lib64/bareos/plugins
+}
+\end{bconfig}
+
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory /\_mysqlbackups\_.
+
+List of supported options:
+\begin{itemize}
+ \item \textit{db}, comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
+ \item \textit{dumpbinary}, command (with or without full path) to create the dumps. Default: mysqldump
+ \item \textit{dumpoptions}, options for dumpbinary, default: " --events --single-transaction"
+ \item \textit{mysqlhost}, MySQL host to connect to, default: localhost
+ \item \textit{mysqluser}, MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
+ \item \textit{mysqlpassword}, MySQL password. Default: unset (better use my.cnf to store passwords)
+\end{itemize}
+
+
+
 \subsubsection{Backup of a MySQL Database by using the RunScript directive}
 \index[general]{RunScript!Example}
 
