@@ -171,6 +171,9 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         '''
         Check, if dump was successfull.
         '''
+        # Usually the mysqldump process should have terminated here, but on some servers
+        # it has not always.
+        self.stream.wait()
         returnCode = self.stream.poll()
         if returnCode == None:
             JobMessage(context, bJobMessageType['M_ERROR'], "Dump command not finished properly for unknown reason")
