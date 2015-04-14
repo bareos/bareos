@@ -77,13 +77,19 @@ echo $this->doctype();
 				<a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
                 </div>
                 <div class="collapse navbar-collapse">
-				<?php
-		    		echo $this->navigation('navigation')
-			    		->menu()
-						->setMinDepth(0)
-						->setMaxDepth(0)
-						->setUlClass('nav navbar-nav');
-				?>
+			<?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
+			<ul class="nav navbar-nav navbar-right">
+				<li class="navbar-text">Signed in as:</li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+						&nbsp;<?php echo $_SESSION['bareos']['username']; ?> <span class="caret"></span>
+					</a>
+					<ul class="dropdown-menu" role="menu">
+						<li><a href="<?php echo $this->url('auth', array('action' => 'logout')); ?>">Logout</a></li>
+					</ul>
+				</li>
+			</ul>
                 </div>
             </div>
         </nav>

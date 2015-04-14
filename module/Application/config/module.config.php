@@ -191,12 +191,12 @@ return array(
 				'label' => 'Administration',
 				'route' => 'admin',
 			),
-			*/
 			array(
 				'label' => 'Logout',
 				'route' => 'auth',
 				'action' => 'logout',
 			),
+			*/
 		),
     ),
 );
