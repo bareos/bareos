@@ -38,10 +38,10 @@ class DashboardController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true) {
 			return new ViewModel(
 				array(
-					'lastSuccessfulJobs' => $this->getJobTable()->getLast24HoursSuccessfulJobs(),
-					'lastUnsuccessfulJobs' => $this->getJobTable()->getLast24HoursUnsuccessfulJobs(),
-					'waitingJobs' => $this->getJobTable()->getWaitingJobs(),
-					'runningJobs' => $this->getJobTable()->getRunningJobs(),
+					'runningJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("running"),
+                                        'waitingJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("waiting"),
+                                        'successfulJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("successful"),
+                                        'unsuccessfulJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("unsuccessful"),
 				)
 			);
 		}

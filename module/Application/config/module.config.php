@@ -182,7 +182,6 @@ return array(
 				'label' => 'Restore',
 				'route' => 'restore',
 			),
-			*/
 			array(
 				'label' => 'Statistics',
 				'route' => 'statistics',

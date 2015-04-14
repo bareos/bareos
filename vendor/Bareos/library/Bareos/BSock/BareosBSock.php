@@ -283,7 +283,7 @@ class BareosBSock implements BareosBSockInterface
 						if ($this->config['debug']) {
 							echo "Got BNET_EOD\n";
 						}
-						break;
+						return $msg;
 					case self::BNET_EOD_POLL:
                                                 if ($this->config['debug']) {
 							echo "Got BNET_EOD_POLL\n";
@@ -368,7 +368,7 @@ class BareosBSock implements BareosBSockInterface
 						if ($this->config['debug']) {
 							echo "Got BNET_MAIN_PROMPT\n";
 						}
-						break;
+						return $msg;
 					case self::BNET_SELECT_INPUT:
 						if ($this->config['debug']) {
 							echo "Got BNET_SELECT_INPUT\n";
@@ -413,7 +413,7 @@ class BareosBSock implements BareosBSockInterface
 						if ($this->config['debug']) {
 							echo "Got BNET_SUB_PROMPT\n";
 						}
-						break;
+						return $msg;
 					case self::BNET_TEXT_INPUT:
 						if ($this->config['debug']) {
 							echo "Got BNET_TEXT_INPUT\n";

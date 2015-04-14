@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -32,370 +32,103 @@ $this->headTitle($title);
 <h3 class="text-muted"><?php echo $this->translate($title); ?></h3>
 <hr />
 
-<!-- PANEL START -->
+<div class="row">
+
+<div class="col-md-8">
+
 <div class="panel panel-default">
-<div class="panel-heading">
-<h3 class="panel-title">Jobs during the past 24 hours</h3>
-</div>
-<div class="panel-body">
 
-<?php
-
-$flash = $this->flashMessenger();
-$flash->setMessageOpenFormat('
-                <div%s>
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
-                &times;
-                </button>
-                <ul><li>')
-        ->setMessageSeparatorString('</li><li>')
-        ->setMessageCloseString('</li></ul></div>');
-
-        echo $flash->render('error',   array('alert', 'alert-dismissable', 'alert-danger'));
-        echo $flash->render('info',    array('alert', 'alert-dismissable', 'alert-info'));
-        echo $flash->render('default', array('alert', 'alert-dismissable', 'alert-warning'));
-        echo $flash->render('success', array('alert', 'alert-dismissable', 'alert-success'));
-
-?>
-
-<!-- RUNNING JOBS -->
-<?php if(count($this->runningJobs) > 0) : ?>
-
-<div class="row">
-
-<div class="col-md-12">
-
-	<div class="panel panel-info">
-	
-            <div class="panel-heading">
+        <div class="panel-heading">
                 <h3 class="panel-title">
-		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseRunning"><?php echo count($this->runningJobs) . ' ';?><?php echo $this->translate('Running Job(s)') ?></a>
-		<span class="caret"></span>
-		</h3>
-            </div>
-  
-	    <div class="panel-body panel-collapse collapse out" id="collapseRunning">
-            
-            <table class="table table-striped table-hover" style="font-size: 9pt;">
-            
-            <tr>
-		<th><?php echo $this->translate("Job"); ?></th>
-		<th><?php echo $this->translate("Name"); ?></th>
-		<th><?php echo $this->translate("Client"); ?></th>
-		<th><?php echo $this->translate("Type"); ?></th>
-		<th><?php echo $this->translate("Level"); ?></th>
-		<th><?php echo $this->translate("Start"); ?></th>
-		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Action"); ?></th>
-	    </tr>
-            
-            <?php foreach ($this->runningJobs as $item) : ?>
+                <span class="glyphicon glyphicon-stats"></span>
+                <?php echo $this->translate('Jobs during the past 24 hours') ?>
+                </h3>
+        </div>
 
-	      <tr>
+        <div class="panel-body">
 
-	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $item->jobid)); ?>"><?php echo $this->escapeHtml($item->jobid); ?></a></td>
-	      <td><?php echo $this->escapeHtml($item->jobname); ?></td>
-	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $item->clientid)); ?>"><?php echo $this->escapeHtml($item->clientname); ?></a></td>
-	      <td><?php echo $this->printJobType($item->type); ?></td>
-	      <td><?php echo $this->printJobLevel($item->level); ?></td>
-	      <td><?php echo $this->printDate($item->starttime); ?></td>
-	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td>
+                <div class="col-md-4">
 
-		<div class="btn-group">
-			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
-			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-				<span class="caret"></span>
-				<span class="sr-only">Toggle Dropdown</span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-				<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
-	      			<li class="divider"></li>
-				<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
-			</ul>
-		</div>
+                <table class="table" style="font-size: 9pt;">
+                        <tr>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->translate("Running"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->runningJobs; ?></a></td>
+                        </tr>
+                        <tr>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->waitingJobs; ?></a></td>
+                        </tr>
+                        <tr>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->successfulJobs; ?></a></td>
+                        </tr>
+                        <tr>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
+                        </tr>
+                </table>
 
-	      </td>
-	      </tr>
+                </div>
 
-	    <?php endforeach; ?>
-	    </table>
-            
-            </div>
-            
-	</div>
-            
+                <div class="col-md-4">
+                        <div id="chart1" style="width:450px; height:300px;"></div>
+                </div>
+
+        </div>
+
+</div>
+
 </div>
 
 </div>
 
-<?php elseif(count($this->runningJobs) == 0) : ?>
-	<div class="alert alert-dismissable alert-info">
-	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-	<ul>
-	<li><?php echo $this->translate("No running jobs found."); ?></li>
-	</ul>
-	</div>
-<?php endif; ?>
+<script type="text/javascript">
 
-<!-- WAITING JOBS -->
-<?php if(count($this->waitingJobs) > 0) : ?>
+        function chart1() {
 
-<div class="row">
+                var data = [
+                        ['Running', <?php echo $this->runningJobs; ?>],
+                        ['Waiting', <?php echo $this->waitingJobs; ?>],
+                        ['Successful', <?php echo $this->successfulJobs; ?>],
+                        ['Unsuccessful', <?php echo $this->unsuccessfulJobs; ?>]
+                ];
 
-<div class="col-md-12">
+                var plot1 = jQuery.jqplot(
+                        'chart1',
+                        [data],
+                        {
+                                seriesColors: [ "#5bc0de", "#cccccc", "#5cb85c", "#d9534f" ],
+                                seriesDefaults: {
+                                        renderer: jQuery.jqplot.PieRenderer,
+                                        rendererOptions: {
+                                                fill: true,
+                                                sliceMargin: 5,
+                                                lineWidth: 3,
+                                                showDataLabels: true
+                                        },
+                                        shadow: true,
+                                },
+                                legend:{
+                                        show: true,
+                                        location: 'se',
+                                        xoffset: 1,
+                                        yoffset: 1,
+                                },
+                                grid: {
+                                        drawGridLines: true,
+                                        borderColor: 'transparent',
+                                        shadowColor: 'transparent',
+                                }
+                        }
+                );
 
-	<div class="panel panel-default">
-	
-            <div class="panel-heading">
-                <h3 class="panel-title">
-		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseWaiting"><?php echo count($this->waitingJobs) . ' '; ?><?php echo $this->translate('Waiting Job(s)') ?></a>
-		<span class="caret"></span>
-		</h3>
-            </div>
-  
-	    <div class="panel-body panel-collapse collapse out" id="collapseWaiting">
-            
-            <table class="table table-striped table-hover" style="font-size: 9pt;">
-            
-            <tr>
-		<th><?php echo $this->translate("Job"); ?></th>
-		<th><?php echo $this->translate("Name"); ?></th>
-		<th><?php echo $this->translate("Client"); ?></th>
-		<th><?php echo $this->translate("Type"); ?></th>
-		<th><?php echo $this->translate("Level"); ?></th>
-		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Action"); ?></th>
-	    </tr>
-            
-            <?php foreach ($this->waitingJobs as $item) : ?>
+        }
 
-	      <tr>
+        $(document).ready(
+                function(){
+                        chart1();
+                }
+        );
 
-	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $item->jobid)); ?>"><?php echo $this->escapeHtml($item->jobid); ?></a></td>
-	      <td><?php echo $this->escapeHtml($item->jobname); ?></td>
-	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $item->clientid)); ?>"><?php echo $this->escapeHtml($item->clientname); ?></a></td>
-	      <td><?php echo $this->printJobType($item->type); ?></td>
-	      <td><?php echo $this->printJobLevel($item->level); ?></td>
-	      <td><?php echo $this->printJobStatus($item->jobstatus); ?></td>
-	      <td>
+</script>
 
-		<div class="btn-group">
-			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
-			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-				<span class="caret"></span>
-				<span class="sr-only">Toggle Dropdown</span>
-			</button>
-		<ul class="dropdown-menu" role="menu">
-			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
-			<li class="divider"></li>
-			<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $item->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
-		<ul>
-		</div>
-
-		</td>
-	      </tr>
-
-	    <?php endforeach; ?>
-	    </table>
-            
-            </div>
-            
-	</div>
-            
-</div>
-
-</div>
-
-<?php elseif(count($this->waitingJobs) == 0) : ?>
-	<div class="alert alert-dismissable alert-info">
-	<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-	<ul>
-	<li><?php echo $this->translate("No waiting jobs found."); ?></li>
-	</ul>
-	</div>
-<?php endif; ?>
-
-<!-- UNSUCCESSFUL JOBS -->
-<?php if(count($this->lastUnsuccessfulJobs) > 0) : ?>
-
-<div class="row">
-
-<div class="col-md-12">
-
-	<div class="panel panel-danger">
-	
-            <div class="panel-heading">
-                <h3 class="panel-title">
-		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseUnsuccessful"><?php echo count($this->lastUnsuccessfulJobs) . ' '; ?><?php echo $this->translate('Unsuccessful Job(s)') ?></a>
-		<span class="caret"></span>
-		</h3>
-            </div>
-  
-	    <div class="panel-body panel-collapse collapse in" id="collapseUnsuccessful">
-            
-            <table class="table table-striped table-hover" style="font-size: 9pt;">
-            
-            <tr>
-		<th><?php echo $this->translate("Job"); ?></th>
-		<th><?php echo $this->translate("Name"); ?></th>
-		<th><?php echo $this->translate("Client"); ?></th>
-		<th><?php echo $this->translate("Type"); ?></th>
-		<th><?php echo $this->translate("Level"); ?></th>
-		<th><?php echo $this->translate("Start"); ?></th>
-		<th><?php echo $this->translate("End"); ?></th>
-		<th><?php echo $this->translate("Duration") ?></th>
-		<th><?php echo $this->translate("Status"); ?></th>
-		<th><?php echo $this->translate("Action"); ?></th>
-	    </tr>
-            
-            <?php foreach ($this->lastUnsuccessfulJobs as $jobUnsuccess) : ?>
-
-	      <tr>
-
-	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobUnsuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->jobid); ?></a></td>
-	      <td><?php echo $this->escapeHtml($jobUnsuccess->jobname); ?></td>
-	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $jobUnsuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobUnsuccess->clientname); ?></a></td>
-	      <td><?php echo $this->printJobType($jobUnsuccess->type); ?></td>
-	      <td><?php echo $this->printJobLevel($jobUnsuccess->level); ?></td>
-	      <td><?php echo $this->printDate($jobUnsuccess->starttime); ?></td>
-	      <td><?php echo $this->printDate($jobUnsuccess->endtime); ?></td>
-	      <td><?php echo $this->printJobDuration($jobUnsuccess->duration); ?></td>
-	      <td><?php echo $this->printJobStatus($jobUnsuccess->jobstatus); ?></td>
-	      <td>
-	      <?php if($jobUnsuccess->type == "B") : ?>
-	      	<div class="btn-group">
-			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
-			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-				<span class="caret"></span>
-				<span class="sr-only">Toggle Dropdown</span>
-			</button>
-		<ul class="dropdown-menu" role="menu">
-			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
-			<li class="divider"></li>
-	      		<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $jobUnsuccess->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-	      	</ul>
-		</div>
-	      <?php endif; ?>
-	      </td>
-	      </tr>
-
-	    <?php endforeach; ?>
-	    </table>
-            
-            </div>
-            
-	</div>
-            
-</div>
-
-</div>
-
-<?php elseif(count($this->lastUnsuccessfulJobs) == 0) : ?>
-
-<div class="alert alert-dismissable alert-info">
-<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-<ul>
-<li><?php echo $this->translate("No unsuccessful jobs found."); ?></li>
-</ul>
-</div>
-
-<?php endif; ?>
-
-
-<!-- SUCCESSFUL JOBS -->
-<?php if(count($this->lastSuccessfulJobs) > 0) : ?>
-
-<div class="row">
-
-<div class="col-md-12">
-
-	<div class="panel panel-success">
-	
-            <div class="panel-heading">
-                <h3 class="panel-title">
-		<span class="glyphicon glyphicon-list"></span>
-		<a data-toggle="collapse" href="#collapseSuccessful"><?php echo count($this->lastSuccessfulJobs) . ' '; ?><?php echo $this->translate('Successful Job(s)') ?></a>
-		<span class="caret"></span>
-		</h3>
-            </div>
-  
-	    <div class="panel-body panel-collapse collapse out" id="collapseSuccessful">
-            
-            <table class="table table-striped table-hover" style="font-size: 9pt;">
-            
-            <tr>
-		<th><?php echo $this->translate("Job"); ?></th>
-		<th><?php echo $this->translate("Name"); ?></th>
-		<th><?php echo $this->translate("Client"); ?></th>
-		<th><?php echo $this->translate("Type"); ?></th>
-		<th><?php echo $this->translate("Level"); ?></th>
-		<th><?php echo $this->translate("Start"); ?></th>
-		<th><?php echo $this->translate("End"); ?></th>
-		<th><?php echo $this->translate("Duration"); ?></th>
-		<th><?php echo $this->translate("Status"); ?></th>
-		<!--<th><?php echo $this->translate("Log"); ?></th>-->
-		<th><?php echo $this->translate("Action"); ?></th>
-	    </tr>
-            
-            <?php foreach ($this->lastSuccessfulJobs as $jobSuccess) : ?>
-
-	      <tr>
-
-	      <td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $jobSuccess->jobid)); ?>"><?php echo $this->escapeHtml($jobSuccess->jobid); ?></a></td>
-	      <td><?php echo $this->escapeHtml($jobSuccess->jobname); ?></td>
-	      <td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $jobSuccess->clientid)); ?>"><?php echo $this->escapeHtml($jobSuccess->clientname); ?></a></td>
-	      <td><?php echo $this->printJobType($jobSuccess->type); ?></td>
-	      <td><?php echo $this->printJobLevel($jobSuccess->level); ?></td>
-	      <td><?php echo $this->printDate($jobSuccess->starttime); ?></td>
-	      <td><?php echo $this->printDate($jobSuccess->endtime); ?></td>
-	      <td><?php echo $this->printJobDuration($jobSuccess->duration); ?></td>
-	      <td><?php echo $this->printJobStatus($jobSuccess->jobstatus); ?></td>
-	      <td>
-              <?php if($jobSuccess->type == "B") : ?>
-	      <div class="btn-group">
-		<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
-		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-			<span class="caret"></span>
-			<span class="sr-only">Toggle Dropdown</span>
-		</button>
-		<ul class="dropdown-menu" role="menu">
-			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $jobSuccess->jobid));?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
-			<li class="divider"></li>
-			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $jobSuccess->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<!-- <li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li> -->
-		</ul>
-	      </div>
-	      <?php endif; ?>
-	      </td>
-	  
-	      </tr>
-
-	    <?php endforeach; ?>
-	    </table>
-            
-            </div>
-            
-	</div>
-            
-</div>
-
-</div>
-
-<?php elseif(count($this->lastSuccessfulJobs) == 0) : ?>
-
-<div class="alert alert-dismissable alert-info">
-<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-<ul>
-<li><?php echo $this->translate("No successful jobs found."); ?></li>
-</ul>
-</div>
-
-<?php endif; ?>
-      
-<!-- PANEL END -->     
-</div>
-</div> 

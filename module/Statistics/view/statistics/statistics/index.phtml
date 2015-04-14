@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -32,127 +32,102 @@ $this->headTitle($title);
 <h3 class="text-muted"><?php echo $title; ?></h3>
 <hr />
 
-<ul class="nav nav-tabs">
-	<li class="active"><a href="<?php echo $this->url('statistics', array('action'=>'index')); ?>"><?php echo $this->translate('Jobs'); ?></a></li>
-	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'stored')); ?>"><?php echo $this->translate('Stored bytes'); ?></a></li>-->
-	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'client')); ?>"><?php echo $this->translate('Client'); ?></a></li>-->
-	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'backupjob')); ?>"><?php echo $this->translate('Backup job'); ?></a></li>-->
-	<!--<li><a href="<?php echo $this->url('statistics', array('action'=>'catalog')); ?>"><?php echo $this->translate('Catalog'); ?></a></li>-->
-</ul>
-
-<br />
-
 <script type="text/javascript">
 
-    function chart1() {
+	function chart1() {
 
-      var data = [
-	  ['Running', <?php echo $this->jobsRunning; ?>],
-	  ['Completed successful', <?php echo $this->jobsTerminated; ?>],
-	  ['Terminated with Errors', <?php echo $this->jobsTerminatedWithErrors; ?>],
-	  ['Non-fatal Errors', <?php echo $this->jobsWithNonFatalErrors; ?>],
-	  ['Fatal Errors', <?php echo $this->jobsWithFatalErrors; ?>],
-	  ['Canceled by user', <?php echo $this->jobsCanceled; ?>],
-	  ['Verify found difference', <?php echo $this->jobsVerifyFoundDiff; ?>],
-	  ['Waiting for Client', <?php echo $this->jobsWaitingForClient; ?>],
-	  ['Waiting for Storage daemon', <?php echo $this->jobsWaitingForStorageDaemon; ?>],
-	  ['Waiting for new media', <?php echo $this->jobsWaitingForNewMedia; ?>],
-	  ['Waiting for media mount', <?php echo $this->jobsWaitingForMediaMount; ?>],
-	  ['Waiting for storage resource', <?php echo $this->jobsWaitingForStorageResource; ?>],
-	  ['Waiting for job resource', <?php echo $this->jobsWaitingForJobResource; ?>],
-	  ['Waiting for client resource', <?php echo $this->jobsWaitingForClientResource; ?>],
-	  ['Waiting on maximum jobs', <?php echo $this->jobsWaitingOnMaximumJobs; ?>],
-	  ['Waiting on start time', <?php echo $this->jobsWaitingOnStartTime; ?>],
-	  ['Waiting on higher priority jobs', <?php echo $this->jobsWaitingOnHigherPriorityJobs; ?>],
-	  ['SD despooling attributes', <?php echo $this->jobsSDdespoolingAttributes; ?>],
-	  ['Doing batch insert file records', <?php echo $this->jobsBatchInsertFileRecords; ?>],
-	  ['Created not yet running', <?php echo $this->jobsCreatedNotRunning; ?>],
-	  ['Blocked', <?php echo $this->jobsBlocked; ?>]
-      ];
-      
-      var plot1 = jQuery.jqplot('chart1',[data],
-      {
-	seriesDefaults: {
-	  renderer: jQuery.jqplot.PieRenderer,
-	  rendererOptions: {
-	    //fill: false,
-	    //sliceMargin: 4,
-	    //lineWidth: 5,
-	    showDataLabels: true
-	  }
-      },
-	legend:{ 
-	  show: true,
-	  location: 'w'
-	},
-	grid: {
-	  drawGridLines: true
-        }
-      });
-      
-    }
+		var data = [
+			['Running', <?php echo $this->runningJobs; ?>],
+			['Waiting', <?php echo $this->waitingJobs; ?>],
+			['Successful', <?php echo $this->successfulJobs; ?>],
+			['Unsuccessful', <?php echo $this->unsuccessfulJobs; ?>]
+		];
 
-    $(document).ready(
-      function(){
-	chart1();
-      }
-    );
+		var plot1 = jQuery.jqplot(
+			'chart1',
+			[data],
+			{
+				seriesColors: [ "#5bc0de", "#cccccc", "#5cb85c", "#d9534f" ],
+				seriesDefaults: {
+					renderer: jQuery.jqplot.PieRenderer,
+					rendererOptions: {
+						fill: true,
+						sliceMargin: 5,
+						lineWidth: 3,
+						showDataLabels: true
+					},
+					shadow: true,
+				},
+				legend:{
+					show: true,
+					location: 'se',
+					xoffset: 1,
+					yoffset: 1,
+				},
+				grid: {
+					drawGridLines: true,
+					borderColor: 'transparent',
+					shadowColor: 'transparent',
+				}
+			}
+		);
+
+	}
+
+	$(document).ready(
+		function(){
+			chart1();
+		}
+	);
 
 </script>
 
-<!-- JOB STATISTICS -->
 <div class="row">
 
-<div class="col-md-12">
-        
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">
-	    	<span class="glyphicon glyphicon-stats"></span>
+<div class="col-md-8">
+
+<div class="panel panel-default">
+
+	<div class="panel-heading">
+		<h3 class="panel-title">
+		<span class="glyphicon glyphicon-stats"></span>
 		<?php echo $this->translate('Jobs during the past 24 hours') ?>
 		</h3>
-            </div>
-            
-            <div class="panel-body">
-            
-            <div class="col-md-5">
-            
-	      <table class="table table-striped table-hover" style="font-size: 9pt;">
-		<tr><td><b><?php echo $this->translate("Running"); ?></b></td><td><span class="badge"><?php echo $this->jobsRunning; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Completed successful"); ?></b></td><td><span class="badge"><?php echo $this->jobsTerminated; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Terminated with errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsTerminatedWithErrors; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Non-fatal errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsWithNonFatalErrors; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Fatal errors"); ?></b></td><td><span class="badge"><?php echo $this->jobsWithFatalErrors; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Canceled by user"); ?></b></td><td><span class="badge"><?php echo $this->jobsCanceled; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Verify found difference"); ?></b></td><td><span class="badge"><?php echo $this->jobsVerifyFoundDiff; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for client"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForClient; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for storage daemon"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForStorageDaemon; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for new media"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForNewMedia; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for media mount"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForMediaMount; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for storage resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForStorageResource; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for job resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForJobResource; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting for client resource"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingForClientResource; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting on maximum jobs"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnMaximumJobs; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting on start time"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnStartTime; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Waiting on higher priority jobs"); ?></b></td><td><span class="badge"><?php echo $this->jobsWaitingOnHigherPriorityJobs; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("SD despooling attributes"); ?></b></td><td><span class="badge"><?php echo $this->jobsSDdespoolingAttributes; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Doing batch insert file records"); ?></b></td><td><span class="badge"><?php echo $this->jobsBatchInsertFileRecords; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Created not yet running"); ?></b></td><td><span class="badge"><?php echo $this->jobsCreatedNotRunning; ?></span></td></tr>
-		<tr><td><b><?php echo $this->translate("Blocked"); ?></b></td><td><span class="badge"><?php echo $this->jobsBlocked; ?></span></td></tr>
-	      </table>
-	      
-            </div>
-            
-            <div class="col-md-7">
-            
-	      <div id="chart1" style="width:500px; height:500px;"></div>
-            
-            </div>
-            
-            </div>
-            
-        </div>
-        
+	</div>
+
+	<div class="panel-body">
+
+		<div class="col-md-4">
+
+		<table class="table" style="font-size: 9pt;">
+			<tr>
+				<td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->translate("Running"); ?></a></td>
+				<td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->runningJobs; ?></a></td>
+			</tr>
+			<tr>
+				<td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+				<td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->waitingJobs; ?></a></td>
+			</tr>
+			<tr>
+				<td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+				<td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->successfulJobs; ?></a></td>
+			</tr>
+			<tr>
+				<td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+				<td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
+			</tr>
+		</table>
+
+		</div>
+
+		<div class="col-md-4">
+			<div id="chart1" style="width:450px; height:300px;"></div>
+		</div>
+
+	</div>
+
+</div>
+
 </div>
 
 </div>
