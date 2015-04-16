@@ -126,6 +126,9 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       return true;              /* Not initialized properly */
    }
 
+   /*
+    * Apply path stripping for lookup in accurate data.
+    */
    strip_path(ff_pkt);
 
    if (S_ISDIR(ff_pkt->statp.st_mode)) {
@@ -137,8 +140,17 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    if (!accurate_lookup(jcr, fname, &payload)) {
       Dmsg1(dbglvl, "accurate %s (not found)\n", fname);
       status = true;
+      unstrip_path(ff_pkt);
       goto bail_out;
    }
+
+   /*
+    * Restore original name so we can check the actual file when we check
+    * the accurate options later on. This is mostly important for the
+    * calculate_and_compare_file_chksum() function as that needs to calulate
+    * the checksum of the real file and not try to open the stripped pathname.
+    */
+   unstrip_path(ff_pkt);
 
    ff_pkt->accurate_found = true;
    ff_pkt->delta_seq = payload->delta_seq;
@@ -279,7 +291,6 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    }
 
 bail_out:
-   unstrip_path(ff_pkt);
    return status;
 }
 
