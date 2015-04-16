@@ -285,7 +285,7 @@ void db_sql_pool_destroy(void)
 void db_sql_pool_flush(void)
 {
    SQL_POOL_ENTRY *spe;
-   SQL_POOL_DESCRIPTOR *spd;
+   SQL_POOL_DESCRIPTOR *spd, *spd_next;
 
    /*
     * See if pooling is enabled.
@@ -295,12 +295,17 @@ void db_sql_pool_flush(void)
    }
 
    P(mutex);
-   foreach_dlist(spd, db_pooling_descriptors) {
-      /*
-       * On a flush all current available pools are invalidated.
-       */
-      spd->active = false;
-      destroy_pool_descriptor(spd, true);
+   spd = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->first();
+   while (spd) {
+      spd_next = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->get_next(spd);
+      if (spd->active) {
+         /*
+          * On a flush all current available pools are invalidated.
+          */
+         spd->active = false;
+         destroy_pool_descriptor(spd, true);
+      }
+      spd = spd_next;
    }
    V(mutex);
 }
@@ -386,7 +391,7 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
 {
    int cnt;
    time_t now;
-   SQL_POOL_ENTRY *spe;
+   SQL_POOL_ENTRY *spe, *spe_next;
 
    time(&now);
    spd->last_update = now;
@@ -428,7 +433,10 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
    /*
     * Loop over all entries on the pool and see if the can be removed.
     */
-   foreach_dlist(spe, spd->pool_entries) {
+   spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+   while (spe) {
+      spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
+
       /*
         * See if this is a unreferenced connection.
         * And its been idle for more then idle_timeout seconds.
@@ -446,6 +454,8 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
             break;
          }
       }
+
+      spe = spe_next;
    }
 
    /*
@@ -672,8 +682,8 @@ bail_out:
  */
 void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
 {
-   SQL_POOL_ENTRY *spe;
-   SQL_POOL_DESCRIPTOR *spd;
+   SQL_POOL_ENTRY *spe, *spe_next;
+   SQL_POOL_DESCRIPTOR *spd, *spd_next;
    bool found = false;
    time_t now;
 
@@ -691,12 +701,20 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
     * See what connection is freed.
     */
    now = time(NULL);
-   foreach_dlist(spd, db_pooling_descriptors) {
+
+   spd = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->first();
+   while (spd) {
+      spd_next = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->get_next(spd);
+
       if (!spd->pool_entries) {
+         spd = spd_next;
          continue;
       }
 
-      foreach_dlist(spe, spd->pool_entries) {
+      spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+      while (spe) {
+         spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
+
          if (spe->db_handle == mdb) {
             found = true;
             if (!abort) {
@@ -744,6 +762,8 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
              */
             break;
          }
+
+         spe = spe_next;
       }
 
       /*
@@ -770,6 +790,8 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
       if (found) {
          break;
       }
+
+      spd = spd_next;
    }
 
    /*
