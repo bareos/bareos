@@ -130,7 +130,7 @@ Jobs per page:
 	<td><?php echo $this->printBytes($job->jobbytes); ?></td>
 	<td><?php echo $this->printJobStatus($job->jobstatus); ?></td>
 	<td>
-	
+
 	<div class="btn-group">
 		<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
 		<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
@@ -139,13 +139,14 @@ Jobs per page:
 		</button>
 		<ul class="dropdown-menu" role="menu">
 			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+			<?php if($job->type != "R") : ?>
 			<li class="divider"></li>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<!-- <li><a href="<?php ?>" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li> -->
+			<?php endif; ?>
 		</ul>
 	</div>
 	</td>
-	
+
 </tr>
 
 <?php endforeach; ?>
