@@ -752,13 +752,16 @@ FileSet {
 In the above example the plugin creates and saves a dump from the databases called \textit{test} and \textit{wikidb}, running on the file-daemon. The commented example below
 specifies an explicit MySQL server called \textit{dbhost}, and connects with user \textit{bareos}, password \textit{bareos}, to create and save a backup of all databases.
 
-You need to enable the plugin directory in the file-dameon config, too:
+You need to enable the plugin directory and disable bacula compatibility in the file-dameon config, too:
 
 \begin{bconfig}{bareos-fd.conf: enable Python FD plugins}
 FileDaemon {
   Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
+  # if compatible is set to yes, we are compatible with bacula
+  # if you want to use new bareos features, please set
+  compatible = no
 }
 \end{bconfig}
 
