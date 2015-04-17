@@ -939,6 +939,16 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
     * Acquire a cipher instance and set the ASN.1 cipher NID
     */
    switch (cipher) {
+   case CRYPTO_CIPHER_BLOWFISH_CBC:
+      /* Blowfish CBC */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_bf_cbc);
+      ec = EVP_bf_cbc();
+      break;
+   case CRYPTO_CIPHER_3DES_CBC:
+      /* 3DES CBC */
+      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_des_ede3_cbc);
+      ec = EVP_des_ede3_cbc();
+      break;
 #ifndef OPENSSL_NO_AES
    case CRYPTO_CIPHER_AES_128_CBC:
       /* AES 128 bit CBC */
@@ -1003,11 +1013,6 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       break;
 #endif
 #endif /* !OPENSSL_NO_SHA && !OPENSSL_NO_SHA1 */
-   case CRYPTO_CIPHER_BLOWFISH_CBC:
-      /* Blowfish CBC */
-      cs->cryptoData->contentEncryptionAlgorithm = OBJ_nid2obj(NID_bf_cbc);
-      ec = EVP_bf_cbc();
-      break;
    default:
       Jmsg0(NULL, M_ERROR, 0, _("Unsupported cipher type specified\n"));
       crypto_session_free(cs);

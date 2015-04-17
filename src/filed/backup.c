@@ -69,13 +69,11 @@ static void close_vss_backup_session(JCR *jcr);
  * also run a "heartbeat" monitor which reads the socket and
  * reacts accordingly (at the moment it has nothing to do
  * except echo the heartbeat to the Director).
- *
  */
-bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
+bool blast_data_to_storage_daemon(JCR *jcr, char *addr, crypto_cipher_t cipher)
 {
    BSOCK *sd;
    bool ok = true;
-   // TODO landonf: Allow user to specify encryption algorithm
 
    sd = jcr->store_bsock;
 
@@ -104,13 +102,15 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
       return false;
    }
 
-   if (!crypto_session_start(jcr)) {
+   if (!crypto_session_start(jcr, cipher)) {
       return false;
    }
 
    set_find_options((FF_PKT *)jcr->ff, jcr->incremental, jcr->mtime);
 
-   /** in accurate mode, we overload the find_one check function */
+   /**
+    * In accurate mode, we overload the find_one check function
+    */
    if (jcr->accurate) {
       set_find_changed_function((FF_PKT *)jcr->ff, accurate_check_file);
    }
@@ -133,7 +133,9 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr)
       jcr->xattr_data->u.build->content = get_pool_memory(PM_MESSAGE);
    }
 
-   /** Subroutine save_file() is called for each file */
+   /**
+    * Subroutine save_file() is called for each file
+    */
    if (!find_files(jcr, (FF_PKT *)jcr->ff, save_file, plugin_save)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);

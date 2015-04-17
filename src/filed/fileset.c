@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -531,20 +531,83 @@ static int set_options(findFOPTS *fo, const char *opts)
          switch(*(p + 1)) {
          case '1':
             fo->shadow_type = check_shadow_local_warn;
+            p++;
             break;
          case '2':
             fo->shadow_type = check_shadow_local_remove;
+            p++;
             break;
          case '3':
             fo->shadow_type = check_shadow_global_warn;
+            p++;
             break;
          case '4':
             fo->shadow_type = check_shadow_global_remove;
+            p++;
             break;
          }
          break;
       case 'e':
          set_bit(FO_EXCLUDE, fo->flags);
+         break;
+      case 'E':                          /* Encryption */
+         switch(*(p + 1)) {
+         case '3':
+            fo->Encryption_cipher = CRYPTO_CIPHER_3DES_CBC;
+            p++;
+            break;
+         case 'a':
+            switch(*(p + 2)) {
+            case '1':
+               fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC;
+               p += 2;
+               break;
+            case '2':
+               fo->Encryption_cipher = CRYPTO_CIPHER_AES_192_CBC;
+               p += 2;
+               break;
+            case '3':
+               fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC;
+               p += 2;
+               break;
+            }
+            break;
+         case 'b':
+            fo->Encryption_cipher = CRYPTO_CIPHER_BLOWFISH_CBC;
+            p++;
+            break;
+         case 'c':
+            switch(*(p + 2)) {
+            case '1':
+               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_128_CBC;
+               p += 2;
+               break;
+            case '2':
+               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_192_CBC;
+               p += 2;
+               break;
+            case '3':
+               fo->Encryption_cipher = CRYPTO_CIPHER_CAMELLIA_256_CBC;
+               p += 2;
+               break;
+            }
+            break;
+         case 'f':
+            set_bit(FO_FORCE_ENCRYPT, fo->flags);
+            p++;
+            break;
+         case 'h':
+            switch(*(p + 2)) {
+            case '1':
+               fo->Encryption_cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
+               p += 2;
+               break;
+            case '2':
+               fo->Encryption_cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
+               p += 2;
+               break;
+            }
+         }
          break;
       case 'f':
          set_bit(FO_MULTIFS, fo->flags);

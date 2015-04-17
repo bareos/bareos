@@ -36,7 +36,7 @@ bool authenticate_storagedaemon(JCR *jcr);
 bool authenticate_with_storagedaemon(JCR *jcr);
 
 /* backup.c */
-bool blast_data_to_storage_daemon(JCR *jcr, char *addr);
+bool blast_data_to_storage_daemon(JCR *jcr, char *addr, crypto_cipher_t cipher);
 bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream);
 void strip_path(FF_PKT *ff_pkt);
 void unstrip_path(FF_PKT *ff_pkt);
@@ -47,7 +47,7 @@ bool adjust_decompression_buffers(JCR *jcr);
 bool setup_compression_context(b_ctx &bctx);
 
 /* crypto.c */
-bool crypto_session_start(JCR *jcr);
+bool crypto_session_start(JCR *jcr, crypto_cipher_t cipher);
 void crypto_session_end(JCR *jcr);
 bool crypto_session_send(JCR *jcr, BSOCK *sd);
 bool verify_signature(JCR *jcr, r_ctx &rctx);

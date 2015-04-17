@@ -1488,15 +1488,130 @@ bail_out:
 }
 
 /**
+ * Clear a flag in the find options.
+ *
+ * We walk the list of include blocks and for each option block
+ * check if a certain flag is set and clear that.
+ */
+static inline void clear_flag_in_fileset(JCR *jcr, int flag, const char *warning)
+{
+   findFILESET *fileset;
+   bool cleared_flag = false;
+
+   fileset = jcr->ff->fileset;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         for (int j = 0; j < incexe->opts_list.size(); j++) {
+            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+            if (bit_is_set(flag, fo->flags)) {
+               clear_bit(flag, fo->flags);
+               cleared_flag = true;
+            }
+         }
+      }
+   }
+
+   if (cleared_flag) {
+      Jmsg(jcr, M_WARNING, 0, warning);
+   }
+}
+
+/**
+ * Find out what encryption cipher to use.
+ */
+static inline bool get_wanted_crypto_cipher(JCR *jcr, crypto_cipher_t *cipher)
+{
+   findFILESET *fileset;
+   bool force_encrypt = false;
+   crypto_cipher_t wanted_cipher = CRYPTO_CIPHER_NONE;
+
+   /*
+    * Walk the fileset and check for the FO_FORCE_ENCRYPT flag and any forced crypto cipher.
+    */
+   fileset = jcr->ff->fileset;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         for (int j = 0; j < incexe->opts_list.size(); j++) {
+            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+            if (bit_is_set(FO_FORCE_ENCRYPT, fo->flags)) {
+               force_encrypt = true;
+            }
+
+            if (fo->Encryption_cipher != CRYPTO_CIPHER_NONE) {
+               /*
+                * Make sure we have not found a cipher definition before.
+                */
+               if (wanted_cipher != CRYPTO_CIPHER_NONE) {
+                  Jmsg(jcr, M_FATAL, 0, _("Fileset contains multiple cipher settings\n"));
+                  return false;
+               }
+
+               /*
+                * See if pki_encrypt is already set for this Job.
+                */
+               if (!jcr->crypto.pki_encrypt) {
+                  if (!me->pki_keypair_file) {
+                     Jmsg(jcr, M_FATAL, 0, _("Fileset contains cipher settings but PKI Key Pair is not configured\n"));
+                     return false;
+                  }
+
+                  /*
+                   * Enable encryption and signing for this Job.
+                   */
+                  jcr->crypto.pki_sign = true;
+                  jcr->crypto.pki_encrypt = true;
+               }
+
+               wanted_cipher = (crypto_cipher_t)fo->Encryption_cipher;
+            }
+         }
+      }
+   }
+
+   /*
+    * See if fileset forced a certain cipher.
+    */
+   if (wanted_cipher == CRYPTO_CIPHER_NONE) {
+      wanted_cipher = me->pki_cipher;
+   }
+
+   /*
+    * See if we are in compatible mode then we are hardcoded to CRYPTO_CIPHER_AES_128_CBC.
+    */
+   if (me->compatible) {
+      wanted_cipher = CRYPTO_CIPHER_AES_128_CBC;
+   }
+
+   /*
+    * See if FO_FORCE_ENCRYPT is set and encryption is not configured for the filed.
+    */
+   if (force_encrypt && !jcr->crypto.pki_encrypt) {
+      Jmsg(jcr, M_FATAL, 0, _("Fileset forces encryption but encryption is not configured\n"));
+      return false;
+   }
+
+   *cipher = wanted_cipher;
+
+   return true;
+}
+
+/**
  * Do a backup.
  */
 static bool backup_cmd(JCR *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd = jcr->store_bsock;
    int ok = 0;
    int SDJobStatus;
    int32_t FileIndex;
+   BSOCK *dir = jcr->dir_bsock;
+   BSOCK *sd = jcr->store_bsock;
+   crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
 
    /*
     * See if we are in restore only mode then we don't allow a backup to be initiated.
@@ -1536,16 +1651,21 @@ static bool backup_cmd(JCR *jcr)
       Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
    }
 
+   if (!get_wanted_crypto_cipher(jcr, &cipher)) {
+      dir->fsend(BADcmd, "backup");
+      goto cleanup;
+   }
+
    /**
     * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
-   if (bit_is_set(FO_ACL, jcr->ff->flags) && !have_acl) {
-      Jmsg(jcr, M_WARNING, 0, _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
-      clear_bit(FO_ACL, jcr->ff->flags);
+   if (!have_acl) {
+      clear_flag_in_fileset(jcr, FO_ACL,
+                            _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
    }
-   if (bit_is_set(FO_XATTR, jcr->ff->flags) && !have_xattr) {
-      Jmsg(jcr, M_WARNING, 0, _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
-      clear_bit(FO_XATTR, jcr->ff->flags);
+   if (!have_xattr) {
+      clear_flag_in_fileset(jcr, FO_XATTR,
+                            _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
    }
 
    jcr->setJobStatus(JS_Blocked);
@@ -1676,7 +1796,7 @@ static bool backup_cmd(JCR *jcr)
     * Send Files to Storage daemon
     */
    Dmsg1(110, "begin blast ff=%p\n", (FF_PKT *)jcr->ff);
-   if (!blast_data_to_storage_daemon(jcr, NULL)) {
+   if (!blast_data_to_storage_daemon(jcr, NULL, cipher)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       bnet_suppress_error_messages(sd, 1);
       Dmsg0(110, "Error in blast_data.\n");

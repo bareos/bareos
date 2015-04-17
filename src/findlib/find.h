@@ -103,6 +103,7 @@ struct s_sz_matching {
 struct s_included_file {
    struct s_included_file *next;
    char options[FOPTS_BYTES];         /* Backup options */
+   uint32_t cipher;                   /* Encryption cipher forced by fileset */
    uint32_t algo;                     /* Compression algorithm. 4 letters stored as an integer */
    int level;                         /* Compression level */
    int len;                           /* Length of fname */
@@ -126,6 +127,7 @@ struct s_excluded_file {
  */
 struct findFOPTS {
    char flags[FOPTS_BYTES];           /* Backup options */
+   uint32_t Encryption_cipher;        /* Encryption cipher forced by fileset */
    uint32_t Compress_algo;            /* Compression algorithm. 4 letters stored as an integer */
    int Compress_level;                /* Compression level */
    int strip_path;                    /* Strip path count */

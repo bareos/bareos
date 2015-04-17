@@ -100,6 +100,7 @@ RES_ITEM options_items[] = {
    { "Size", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
    { "Shadowing", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
    { "AutoExclude", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
+   { "ForceEncryption", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
    { "Meta", CFG_TYPE_META, { 0 }, 0, 0, 0, NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };

@@ -496,6 +496,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
 }
 
 static struct s_kw CryptoCiphers[] = {
+   { "blowfish", CRYPTO_CIPHER_BLOWFISH_CBC },
+   { "3des", CRYPTO_CIPHER_3DES_CBC },
    { "aes128", CRYPTO_CIPHER_AES_128_CBC },
    { "aes192", CRYPTO_CIPHER_AES_192_CBC },
    { "aes256", CRYPTO_CIPHER_AES_256_CBC },
@@ -504,7 +506,6 @@ static struct s_kw CryptoCiphers[] = {
    { "camellia256", CRYPTO_CIPHER_CAMELLIA_256_CBC },
    { "aes128hmacsha1", CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 },
    { "aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 },
-   { "blowfish", CRYPTO_CIPHER_BLOWFISH_CBC },
    { NULL, 0 }
 };
 

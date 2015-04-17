@@ -59,27 +59,29 @@ typedef enum {
 /* Cipher Types */
 typedef enum {
    /* These are not stored on disk */
-   CRYPTO_CIPHER_AES_128_CBC,
-   CRYPTO_CIPHER_AES_192_CBC,
-   CRYPTO_CIPHER_AES_256_CBC,
-   CRYPTO_CIPHER_CAMELLIA_128_CBC,
-   CRYPTO_CIPHER_CAMELLIA_192_CBC,
-   CRYPTO_CIPHER_CAMELLIA_256_CBC,
-   CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1,
-   CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1,
-   CRYPTO_CIPHER_BLOWFISH_CBC
+   CRYPTO_CIPHER_NONE = 0,
+   CRYPTO_CIPHER_BLOWFISH_CBC = 1,
+   CRYPTO_CIPHER_3DES_CBC = 2,
+   CRYPTO_CIPHER_AES_128_CBC = 3,
+   CRYPTO_CIPHER_AES_192_CBC = 4,
+   CRYPTO_CIPHER_AES_256_CBC = 5,
+   CRYPTO_CIPHER_CAMELLIA_128_CBC = 6,
+   CRYPTO_CIPHER_CAMELLIA_192_CBC = 7,
+   CRYPTO_CIPHER_CAMELLIA_256_CBC = 8,
+   CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1 = 9,
+   CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1 = 10
 } crypto_cipher_t;
 
 /* Crypto API Errors */
 typedef enum {
-   CRYPTO_ERROR_NONE           = 0, /* No error */
-   CRYPTO_ERROR_NOSIGNER       = 1, /* Signer not found */
-   CRYPTO_ERROR_NORECIPIENT    = 2, /* Recipient not found */
+   CRYPTO_ERROR_NONE = 0,           /* No error */
+   CRYPTO_ERROR_NOSIGNER = 1,       /* Signer not found */
+   CRYPTO_ERROR_NORECIPIENT = 2,    /* Recipient not found */
    CRYPTO_ERROR_INVALID_DIGEST = 3, /* Unsupported digest algorithm */
    CRYPTO_ERROR_INVALID_CRYPTO = 4, /* Unsupported encryption algorithm */
-   CRYPTO_ERROR_BAD_SIGNATURE  = 5, /* Signature is invalid */
-   CRYPTO_ERROR_DECRYPTION     = 6, /* Decryption error */
-   CRYPTO_ERROR_INTERNAL       = 7  /* Internal Error */
+   CRYPTO_ERROR_BAD_SIGNATURE = 5,  /* Signature is invalid */
+   CRYPTO_ERROR_DECRYPTION = 6,     /* Decryption error */
+   CRYPTO_ERROR_INTERNAL = 7        /* Internal Error */
 } crypto_error_t;
 
 /* Message Digest Sizes */

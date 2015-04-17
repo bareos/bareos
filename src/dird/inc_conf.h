@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,7 +58,8 @@ enum {
    INC_KW_XATTR,
    INC_KW_SIZE,
    INC_KW_SHADOWING,
-   INC_KW_AUTO_EXCLUDE
+   INC_KW_AUTO_EXCLUDE,
+   INC_KW_FORCE_ENCRYPTION
 };
 
 /*
@@ -96,6 +97,7 @@ static struct s_kw FS_option_kw[] = {
    { "size", INC_KW_SIZE },
    { "shadowing", INC_KW_SHADOWING },
    { "autoexclude", INC_KW_AUTO_EXCLUDE },
+   { "forceencryption", INC_KW_FORCE_ENCRYPTION },
    { NULL, 0 }
 };
 
@@ -133,8 +135,16 @@ static struct s_fs_opt FS_options[] = {
    { "lzfast", INC_KW_COMPRESSION, "Zff" },
    { "lz4", INC_KW_COMPRESSION, "Zf4" },
    { "lz4hc", INC_KW_COMPRESSION, "Zfh" },
-   { "blowfish", INC_KW_ENCRYPTION, "B"}, /* ***FIXME*** not implemented */
-   { "3des", INC_KW_ENCRYPTION, "3"}, /* ***FIXME*** not implemented */
+   { "blowfish", INC_KW_ENCRYPTION, "Eb" },
+   { "3des", INC_KW_ENCRYPTION, "E3" },
+   { "aes128", INC_KW_ENCRYPTION, "Ea1" },
+   { "aes192", INC_KW_ENCRYPTION, "Ea2" },
+   { "aes256", INC_KW_ENCRYPTION, "Ea3" },
+   { "camellia128", INC_KW_ENCRYPTION, "Ec1" },
+   { "camellia192", INC_KW_ENCRYPTION, "Ec2" },
+   { "camellia256", INC_KW_ENCRYPTION, "Ec3" },
+   { "aes128hmacsha1", INC_KW_ENCRYPTION, "Eh1" },
+   { "aes256hmacsha1", INC_KW_ENCRYPTION, "Eh2" },
    { "yes", INC_KW_ONEFS, "0" },
    { "no", INC_KW_ONEFS, "f" },
    { "yes", INC_KW_RECURSE, "0" },
@@ -179,6 +189,8 @@ static struct s_fs_opt FS_options[] = {
    { "none", INC_KW_SHADOWING, "0" },
    { "yes", INC_KW_AUTO_EXCLUDE, "0" },
    { "no", INC_KW_AUTO_EXCLUDE, "x" },
+   { "yes", INC_KW_FORCE_ENCRYPTION, "Ef" },
+   { "no", INC_KW_FORCE_ENCRYPTION, "0" },
    { NULL, 0, 0 }
 };
 

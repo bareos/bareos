@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,8 +27,9 @@
  * filename/pathname patterns.
  *
  * Note, this file is used for the old style include and
- * excludes, so is deprecated. The new style code is
- * found in find.c.
+ * excludes, so is deprecated. The new style code is found in
+ * src/filed/fileset.c.
+ *
  * This code is still used for lists in testls and bextract.
  *
  * Kern E. Sibbald, December MMI
@@ -129,7 +130,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
 
    /* prefixed = preceded with options */
    if (prefixed) {
-      for (rp=fname; *rp && *rp != ' '; rp++) {
+      for (rp = fname; *rp && *rp != ' '; rp++) {
          switch (*rp) {
          case 'A':
             set_bit(FO_ACL, inc->options);
@@ -144,20 +145,83 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
             switch(*(rp + 1)) {
             case '1':
                inc->shadow_type = check_shadow_local_warn;
+               rp++;
                break;
             case '2':
                inc->shadow_type = check_shadow_local_remove;
+               rp++;
                break;
             case '3':
                inc->shadow_type = check_shadow_global_warn;
+               rp++;
                break;
             case '4':
                inc->shadow_type = check_shadow_global_remove;
+               rp++;
                break;
             }
             break;
          case 'e':
             set_bit(FO_EXCLUDE, inc->options);
+            break;
+         case 'E':
+            switch(*(rp + 1)) {
+            case '3':
+               inc->cipher = CRYPTO_CIPHER_3DES_CBC;
+               rp++;
+               break;
+            case 'a':
+               switch(*(rp + 2)) {
+               case '1':
+                  inc->cipher = CRYPTO_CIPHER_AES_128_CBC;
+                  rp += 2;
+                  break;
+               case '2':
+                  inc->cipher = CRYPTO_CIPHER_AES_192_CBC;
+                  rp += 2;
+                  break;
+               case '3':
+                  inc->cipher = CRYPTO_CIPHER_AES_256_CBC;
+                  rp += 2;
+                  break;
+               }
+               break;
+            case 'b':
+               inc->cipher = CRYPTO_CIPHER_BLOWFISH_CBC;
+               rp++;
+               break;
+            case 'c':
+               switch(*(rp + 2)) {
+               case '1':
+                  inc->cipher = CRYPTO_CIPHER_CAMELLIA_128_CBC;
+                  rp += 2;
+                  break;
+               case '2':
+                  inc->cipher = CRYPTO_CIPHER_CAMELLIA_192_CBC;
+                  rp += 2;
+                  break;
+               case '3':
+                  inc->cipher = CRYPTO_CIPHER_CAMELLIA_256_CBC;
+                  rp += 2;
+                  break;
+               }
+               break;
+            case 'f':
+               set_bit(FO_FORCE_ENCRYPT, inc->options);
+               rp++;
+               break;
+            case 'h':
+               switch(*(rp + 2)) {
+               case '1':
+                  inc->cipher = CRYPTO_CIPHER_AES_128_CBC_HMAC_SHA1;
+                  rp += 2;
+                  break;
+               case '2':
+                  inc->cipher = CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1;
+                  rp += 2;
+                  break;
+               }
+            }
             break;
          case 'f':
             set_bit(FO_MULTIFS, inc->options);

@@ -47,19 +47,8 @@ static void unser_crypto_packet_len(RESTORE_CIPHER_CTX *ctx)
    }
 }
 
-bool crypto_session_start(JCR *jcr)
+bool crypto_session_start(JCR *jcr, crypto_cipher_t cipher)
 {
-   crypto_cipher_t cipher;
-
-   /*
-    * See if we are in compatible mode then we are hardcoded to CRYPTO_CIPHER_AES_128_CBC.
-    */
-   if (me->compatible) {
-      cipher = CRYPTO_CIPHER_AES_128_CBC;
-   } else {
-      cipher = me->pki_cipher;
-   }
-
    /**
     * Create encryption session data and a cached, DER-encoded session data
     * structure. We use a single session key for each backup, so we'll encode
@@ -68,32 +57,44 @@ bool crypto_session_start(JCR *jcr)
    if (jcr->crypto.pki_encrypt) {
       uint32_t size = 0;
 
-      /** Create per-job session encryption context */
+      /**
+       * Create per-job session encryption context
+       */
       jcr->crypto.pki_session = crypto_session_new(cipher, jcr->crypto.pki_recipients);
       if (!jcr->crypto.pki_session) {
          Jmsg(jcr, M_FATAL, 0, _("Cannot create a new crypto session probably unsupported cipher configured.\n"));
          return false;
       }
 
-      /** Get the session data size */
+      /**
+       * Get the session data size
+       */
       if (!crypto_session_encode(jcr->crypto.pki_session, (uint8_t *)0, &size)) {
          Jmsg(jcr, M_FATAL, 0, _("An error occurred while encrypting the stream.\n"));
          return false;
       }
 
-      /** Allocate buffer */
+      /**
+       * Allocate buffer
+       */
       jcr->crypto.pki_session_encoded = get_memory(size);
 
-      /** Encode session data */
+      /**
+       * Encode session data
+       */
       if (!crypto_session_encode(jcr->crypto.pki_session, (uint8_t *)jcr->crypto.pki_session_encoded, &size)) {
          Jmsg(jcr, M_FATAL, 0, _("An error occurred while encrypting the stream.\n"));
          return false;
       }
 
-      /** ... and store the encoded size */
+      /**
+       * ... and store the encoded size
+       */
       jcr->crypto.pki_session_encoded_size = size;
 
-      /** Allocate the encryption/decryption buffer */
+      /**
+       * Allocate the encryption/decryption buffer
+       */
       jcr->crypto.crypto_buf = get_memory(CRYPTO_CIPHER_MAX_BLOCK_SIZE);
    }
 
