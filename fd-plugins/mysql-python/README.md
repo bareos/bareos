@@ -63,7 +63,7 @@ By default the opition string
 is used.
 
 You may overwrite the whole option string with parameter dumpoptions or just supress the latter two, which are needed to include drop and
-create database statements into the dump. With drop_and_recreate set to 'true', these options are skipped.
+create database statements into the dump. With drop_and_recreate set to 'false', these options are skipped.
 
 
 ##### Database access /  user and password  #####
