@@ -92,7 +92,7 @@ DIST=Debian_7.0
 
 # add the Bareos contrib repository
 URL=http://download.bareos.org/bareos/contrib/$DIST
-printf "deb $URL /\n" >> /etc/apt/source.list.d/bareos_contrib.list
+printf "deb $URL /\n" >> /etc/apt/sources.list.d/bareos_contrib.list
 
 # add package key
 wget -q $URL/Release.key -O- | apt-key add -
