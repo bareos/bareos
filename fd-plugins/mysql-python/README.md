@@ -54,6 +54,18 @@ By default the mysql connection is made to localhost. If want to connect to anot
 mysqlhost=hostname
 ```
 
+##### mysqldump options #####
+
+By default the opition string
+```
+--events --single-transaction --add-drop-database --databases
+```
+is used.
+
+You may overwrite the whole option string with parameter dumpoptions or just supress the latter two, which are needed to include drop and
+create database statements into the dump. With drop_and_recreate set to 'true', these options are skipped.
+
+
 ##### Database access /  user and password  #####
 
 By default the root user (the user, which runs the Bareos filedaemon) is used to connect to the database. We recommend that you set

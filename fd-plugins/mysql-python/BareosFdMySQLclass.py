@@ -53,10 +53,14 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         else:
             self.dumpbinary = "mysqldump"
 
+        # if dumpotions is set, we use that completely here, otherwise defaults
         if 'dumpoptions' in self.options:
             self.dumpoptions = self.options['dumpoptions']
         else:
-            self.dumpoptions = " --events --single-transaction"
+            self.dumpoptions = " --events --single-transaction "
+            # default is to add the drop statement
+            if not 'drop_and_recreate' in self.options or not self.options['drop_and_recreate'] == 'false':
+                self.dumpoptions += " --add-drop-database --databases "
 
         if 'mysqlhost' in self.options:
             self.mysqlhost = self.options['mysqlhost']
