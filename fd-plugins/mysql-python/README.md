@@ -83,7 +83,3 @@ GRANT SELECT, LOCK TABLES, SHOW VIEW, EVENT, TRIGGER ON *.* TO 'bareos'@'localho
 
 Command (with or without full path) to create the dumps. Default: mysqldump
 
-##### dumpoptions #####
-
-Options for dumpbinary, default: " --events --single-transaction"
-
