@@ -53,10 +53,14 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         else:
             self.dumpbinary = "mysqldump"
 
+        # if dumpotions is set, we use that completely here, otherwise defaults
         if 'dumpoptions' in self.options:
             self.dumpoptions = self.options['dumpoptions']
         else:
-            self.dumpoptions = " --events --single-transaction"
+            self.dumpoptions = " --events --single-transaction "
+            # default is to add the drop statement
+            if not 'drop_and_recreate' in self.options or not self.options['drop_and_recreate'] == 'false':
+                self.dumpoptions += " --add-drop-database --databases "
 
         if 'mysqlhost' in self.options:
             self.mysqlhost = self.options['mysqlhost']
@@ -81,6 +85,10 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             self.databases = showDb.stdout.read().splitlines()
             showDb.wait()
             returnCode = showDb.poll()
+            if returnCode == None:
+                JobMessage(context, bJobMessageType['M_FATAL'], "No databases specified and show databases failed for unknown reason");
+                DebugMessage(context, 10, "Failed mysql command: '%s'" %showDbCommand)
+                return bRCs['bRC_Error'];
             if returnCode != 0:
                 (stdOut, stdError) = showDb.communicate()    
                 JobMessage(context, bJobMessageType['M_FATAL'], "No databases specified and show databases failed. %s" %stdError);
@@ -167,13 +175,20 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         '''
         Check, if dump was successfull.
         '''
+        # Usually the mysqldump process should have terminated here, but on some servers
+        # it has not always.
+        self.stream.wait()
         returnCode = self.stream.poll()
-        DebugMessage(context, 100, "end_backup_file() entry point in Python called. Returncode: %d\n" %self.stream.returncode)
-        if returnCode != 0:
-            (stdOut, stdError) = self.stream.communicate()
-            if stdError == None:
-                stdError = ''
-            JobMessage(context, bJobMessageType['M_ERROR'], "Dump command returned non-zero value: %d, message: %s\n" %(returnCode,stdError));
+        if returnCode == None:
+            JobMessage(context, bJobMessageType['M_ERROR'], "Dump command not finished properly for unknown reason")
+            returnCode = -99
+        else:
+            DebugMessage(context, 100, "end_backup_file() entry point in Python called. Returncode: %d\n" %self.stream.returncode)
+            if returnCode != 0:
+                (stdOut, stdError) = self.stream.communicate()
+                if stdError == None:
+                    stdError = ''
+                JobMessage(context, bJobMessageType['M_ERROR'], "Dump command returned non-zero value: %d, message: %s\n" %(returnCode,stdError));
             
         if self.databases:
                 return bRCs['bRC_More']
