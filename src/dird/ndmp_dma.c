@@ -1279,12 +1279,14 @@ static inline bool build_ndmp_job(JCR *jcr,
          Jmsg(jcr, M_FATAL, 0,
               _("For SMTAPE NDMP jobs the NDMP blocksize needs to be between %d and %d, but is set to %d\n"),
               SMTAPE_MIN_BLOCKSIZE, SMTAPE_MAX_BLOCKSIZE, jcr->res.client->ndmp_blocksize);
+         goto bail_out;
       }
 
       if ((jcr->res.client->ndmp_blocksize % SMTAPE_BLOCKSIZE_INCREMENTS) != 0) {
          Jmsg(jcr, M_FATAL, 0,
               _("For SMTAPE NDMP jobs the NDMP blocksize needs to be in increments of %d bytes, but is set to %d\n"),
               SMTAPE_BLOCKSIZE_INCREMENTS, jcr->res.client->ndmp_blocksize);
+         goto bail_out;
       }
 
       job->record_size = jcr->res.client->ndmp_blocksize;
