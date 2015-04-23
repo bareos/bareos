@@ -424,12 +424,7 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
          /*
           * Prepare include block to do exclusion via wildcards in options
           */
-         if (ff->fileset->include_list.size() == 0) {
-            Dmsg0(100, "Fileset has no include block, inserting one at first position\n");
-            new_preinclude(ff->fileset);
-         } else {
-            Dmsg0(100, "Fileset has include block(s), using first one\n");
-         }
+         new_preinclude(ff->fileset);
 
          include = (findINCEXE*)ff->fileset->include_list.get(0);
 
