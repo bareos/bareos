@@ -190,17 +190,6 @@ BuildRequires: tcpd-devel
 BuildRequires: termcap
 BuildRequires: update-desktop-files
 
-%if 0%{?sles_version} == 10
-# SLES 10 on OBS
-BuildRequires: sled-release
-%else
-%if 0%{?sles_version} || 0%{?suse_version} == 1315
-BuildRequires: sles-release
-%else
-BuildRequires: openSUSE-release
-%endif
-%endif
-
 %if 0%{?suse_version} > 1010
 # link identical files
 BuildRequires: fdupes
