@@ -135,23 +135,11 @@ BuildRequires: termcap
 BuildRequires: pwdutils
 BuildRequires: tcpd-devel
 BuildRequires: update-desktop-files
-
-# SLE-12
-%if 0%{?suse_version} == 1315
-BuildRequires: sles-release
-%else
-# Some magic to be able to determine what platform we are running on.
-%if !0%{sles_version}
-BuildRequires: openSUSE-release
-%else
-%if 0%{?sles_version} && !0%{?sled_version}
-BuildRequires: sles-release
-%else
-BuildRequires: sled-release
-%endif
-%endif
 %endif
 
+%if 0%{?suse_version} > 1010
+# link identical files
+BuildRequires: fdupes
 BuildRequires: lsb-release
 
 %else
