@@ -223,9 +223,9 @@ static char OKstoreend[] =
 static char OKjob[] =
    "2000 OK Job %s (%s) %s,%s,%s";
 static char OKsetdebugv0[] =
-   "2000 OK setdebug=%d trace=%d hangup=%d\n";
+   "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[] =
-   "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d\n";
+   "2000 OK setdebug=%d trace=%d hangup=%d timestamp=%d tracefile=%s\n";
 static char BADjob[] =
    "2901 Bad Job\n";
 static char EndJob[] =
@@ -759,6 +759,9 @@ static bool setdebug_cmd(JCR *jcr)
       }
    }
 
+   POOL_MEM tracefilename(PM_FNAME);
+   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
+
    if (level >= 0) {
       debug_level = level;
    }
@@ -767,11 +770,11 @@ static bool setdebug_cmd(JCR *jcr)
    set_hangup(hangup_flag);
    if (scan == 4) {
       set_timestamp(timestamp_flag);
-      Dmsg4(50, "level=%d trace=%d hangup=%d timestamp=%d\n", level, get_trace(), get_hangup(), get_timestamp());
-      return dir->fsend(OKsetdebugv1, level, get_trace(), get_hangup(), get_timestamp());
+      Dmsg5(50, "level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n", level, get_trace(), get_hangup(), get_timestamp(), tracefilename.c_str());
+      return dir->fsend(OKsetdebugv1, level, get_trace(), get_hangup(), get_timestamp(), tracefilename.c_str());
    } else {
-      Dmsg3(50, "level=%d trace=%d hangup=%d\n", level, get_trace(), get_hangup());
-      return dir->fsend(OKsetdebugv0, level, get_trace(), get_hangup());
+      Dmsg4(50, "level=%d trace=%d hangup=%d tracefilename=%s\n", level, get_trace(), get_hangup(), tracefilename.c_str());
+      return dir->fsend(OKsetdebugv0, level, get_trace(), get_hangup(), tracefilename.c_str());
    }
 }
 

@@ -277,6 +277,8 @@ bool get_timestamp(void);
 void set_db_type(const char *name);
 void register_message_callback(void msg_callback(int type, char *msg));
 
+#define TRACEFILEDIRECTORY working_directory ? working_directory : "c:"
+
 /* passphrase.c */
 char *generate_crypto_passphrase(int length);
 

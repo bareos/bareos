@@ -1159,7 +1159,7 @@ static void pt_out(char *buf)
     if (trace) {
        if (!trace_fd) {
           char fn[200];
-          bsnprintf(fn, sizeof(fn), "%s/%s.trace", working_directory ? working_directory : "c:", my_name);
+          bsnprintf(fn, sizeof(fn), "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
           trace_fd = fopen(fn, "a+b");
        }
        if (trace_fd) {
@@ -1340,7 +1340,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
 
     if (level <= debug_level) {
        if (!trace_fd) {
-          bsnprintf(buf, sizeof(buf), "%s/%s.trace", working_directory ? working_directory : ".", my_name);
+          bsnprintf(buf, sizeof(buf), "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
           trace_fd = fopen(buf, "a+b");
        }
 
