@@ -530,6 +530,7 @@ bool DEVICE::open(DCR *dcr, int omode)
 {
    char preserve[ST_BYTES];
 
+   clear_all_bits(ST_MAX, preserve);
    if (is_open()) {
       if (open_mode == omode) {
          return true;
@@ -538,7 +539,6 @@ bool DEVICE::open(DCR *dcr, int omode)
          clear_opened();
          Dmsg0(100, "Close fd for mode change.\n");
 
-         clear_all_bits(ST_MAX, preserve);
          if (bit_is_set(ST_LABEL, state))
             set_bit(ST_LABEL, preserve);
          if (bit_is_set(ST_APPENDREADY, state))

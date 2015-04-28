@@ -2182,11 +2182,11 @@ static void statcmd()
 
    Pmsg1(0, _(". ERR=%s\n"), dev->bstrerror());
 
-   debug_level = 30;
 #ifdef xxxx
+   debug_level = 30;
    dump_volume_label(dev);
-#endif
    debug_level = debug;
+#endif
 }
 
 /*
