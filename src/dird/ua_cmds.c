@@ -1179,6 +1179,17 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int 
    return;
 }
 
+static void do_director_setdebug(UAContext *ua, int level, int trace_flag, int timestamp_flag)
+{
+   POOL_MEM tracefilename(PM_FNAME);
+
+   debug_level = level;
+   set_trace(trace_flag);
+   set_timestamp(timestamp_flag);
+   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
+   ua->send_msg("level=%d trace=%d hangup=%d timestamp=%d tracefilename=%s\n", level, get_trace(), get_hangup(), get_timestamp(), tracefilename.c_str());
+}
+
 static void do_all_setdebug(UAContext *ua, int level, int trace_flag,
                             int hangup_flag, int timestamp_flag)
 {
@@ -1187,8 +1198,7 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag,
    int i, j, found;
 
    /* Director */
-   debug_level = level;
-   set_trace(trace_flag);
+   do_director_setdebug(ua, level, trace_flag, timestamp_flag);
 
    /* Count Storage items */
    LockRes();
@@ -1344,8 +1354,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
       }
       if (bstrcasecmp(ua->argk[i], "dir") ||
           bstrcasecmp(ua->argk[i], "director")) {
-         debug_level = level;
-         set_trace(trace_flag);
+         do_director_setdebug(ua, level, trace_flag, timestamp_flag);
          return 1;
       }
       if (bstrcasecmp(ua->argk[i], "client") ||
@@ -1405,9 +1414,7 @@ static int setdebug_cmd(UAContext *ua, const char *cmd)
 
    switch(do_prompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
    case 0:                         /* Director */
-      debug_level = level;
-      set_trace(trace_flag);
-      set_timestamp(timestamp_flag);
+      do_director_setdebug(ua, level, trace_flag, timestamp_flag);
       break;
    case 1:
       store = get_storage_resource(ua);

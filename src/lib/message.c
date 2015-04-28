@@ -1160,7 +1160,7 @@ static void pt_out(char *buf)
       if (!trace_fd) {
          POOL_MEM fn(PM_FNAME);
 
-         Mmsg(fn, "%s/%s.trace", working_directory ? working_directory : "c:", my_name);
+         Mmsg(fn, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
          trace_fd = fopen(fn.c_str(), "a+b");
       }
       if (trace_fd) {
@@ -1391,7 +1391,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
       if (!trace_fd) {
          POOL_MEM fn(PM_FNAME);
 
-         Mmsg(fn, "%s/%s.trace", working_directory ? working_directory : "c:", my_name);
+         Mmsg(fn, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
          trace_fd = fopen(fn.c_str(), "a+b");
       }
 

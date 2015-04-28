@@ -90,9 +90,9 @@ static char pluginoptionscmd[] =
 static char derrmsg[] =
    "3900 Invalid command:";
 static char OKsetdebugv0[] =
-   "3000 OK setdebug=%d\n";
+   "3000 OK setdebug=%d tracefile=%s\n";
 static char OKsetdebugv1[] =
-   "3000 OK setdebug=%d trace=%d timestamp=%d\n";
+   "3000 OK setdebug=%d trace=%d timestamp=%d tracefile=%s\n";
 static char invalid_cmd[] =
    "3997 Invalid command for a Director with Monitor directive enabled.\n";
 static char OK_bootstrap[] =
@@ -389,15 +389,18 @@ static bool setdebug_cmd(JCR *jcr)
       return false;
    }
 
+   POOL_MEM tracefilename(PM_FNAME);
+   Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
+
    debug_level = level;
    set_trace(trace_flag);
    if (scan == 3) {
       set_timestamp(timestamp_flag);
-      Dmsg3(50, "level=%d trace=%d timestamp=%d\n", level, get_trace(), get_timestamp());
-      return dir->fsend(OKsetdebugv1, level, get_trace(), get_timestamp());
+      Dmsg4(50, "level=%d trace=%d timestamp=%d tracefilename=%s\n", level, get_trace(), get_timestamp(), tracefilename.c_str());
+      return dir->fsend(OKsetdebugv1, level, get_trace(), get_timestamp(), tracefilename.c_str());
    } else {
-      Dmsg2(50, "level=%d trace=%d\n", level, get_trace());
-      return dir->fsend(OKsetdebugv0, level);
+      Dmsg3(50, "level=%d trace=%d\n", level, get_trace(), tracefilename.c_str());
+      return dir->fsend(OKsetdebugv0, level, tracefilename.c_str());
    }
 }
 
