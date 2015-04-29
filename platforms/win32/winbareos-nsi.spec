@@ -122,9 +122,10 @@ do
       cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       # copy the sources over if we create debug package
-      %if %{WIN_DEBUG} == "yes"
-      cp -av /bareos-*debug*  $RPM_BUILD_ROOT/$flavor/release${BITS}
-      %endif
+      WIN_DEBUG=$(echo $flavor | grep debug >/dev/null && echo yes || echo no)
+      if [ "$WIN_DEBUG" == "yes" ]; then
+      cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
+      fi
 
    done
 
@@ -192,7 +193,7 @@ do
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=${BITS} \
-               -DWIN_DEBUG=%{WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi
+               -DWIN_DEBUG=${WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi
    done
 done
 
