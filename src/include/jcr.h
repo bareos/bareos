@@ -460,7 +460,6 @@ public:
    int32_t FDVersion;                     /* File daemon version number */
    int64_t spool_size;                    /* Spool size for this job */
    volatile bool sd_msg_thread_done;      /* Set when Storage message thread done */
-   bool wasVirtualFull;                   /* Set if job was VirtualFull */
    bool IgnoreDuplicateJobChecking;       /* Set in migration jobs */
    bool IgnoreLevelPoolOverides;          /* Set if a cmdline pool was specified */
    bool spool_data;                       /* Spool data in SD */

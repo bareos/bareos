@@ -48,9 +48,6 @@ extern struct s_kw ReplaceOptions[];
 static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now)
 {
    JOB_DBR jr;
-   CLIENT_DBR cr;
-   POOL_DBR pr;
-   FILESET_DBR fs;
    char dt[MAX_TIME_LENGTH];
    POOL_MEM cmdline(PM_MESSAGE);
 
@@ -63,6 +60,18 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
       goto bail_out;
    }
 
+   /*
+    * Only perform rerun on JobTypes where it makes sense.
+    */
+   switch (jr.JobType) {
+   case JT_BACKUP:
+   case JT_COPY:
+   case JT_MIGRATE:
+      break;
+   default:
+      return true;
+   }
+
    if (jr.JobLevel == L_NONE) {
       Mmsg(cmdline, "run job=\"%s\"", jr.Name);
    } else {
@@ -71,6 +80,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    pm_strcpy(ua->cmd, cmdline);
 
    if (jr.ClientId) {
+      CLIENT_DBR cr;
+
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jr.ClientId;
       if (!db_get_client_record(ua->jcr, ua->db, &cr)) {
@@ -83,6 +94,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    }
 
    if (jr.PoolId) {
+      POOL_DBR pr;
+
       memset(&pr, 0, sizeof(pr));
       pr.PoolId = jr.PoolId;
       if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
@@ -90,11 +103,67 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
               db_strerror(ua->jcr->db));
          goto bail_out;
       }
-      Mmsg(cmdline, " pool=\"%s\"", pr.Name);
-      pm_strcat(ua->cmd, cmdline);
+
+      /*
+       * Source pool.
+       */
+      switch (jr.JobType) {
+      case JT_COPY:
+      case JT_MIGRATE: {
+            JOBRES *job = NULL;
+
+            job = GetJobResWithName(jr.Name);
+            if (job) {
+               Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
+               pm_strcat(ua->cmd, cmdline);
+            }
+         break;
+      }
+      case JT_BACKUP:
+         switch (jr.JobLevel) {
+         case L_VIRTUAL_FULL: {
+            JOBRES *job = NULL;
+
+            job = GetJobResWithName(jr.Name);
+            if (job) {
+               Mmsg(cmdline, " pool=\"%s\"", job->pool->name());
+               pm_strcat(ua->cmd, cmdline);
+            }
+            break;
+         }
+         default:
+            Mmsg(cmdline, " pool=\"%s\"", pr.Name);
+            pm_strcat(ua->cmd, cmdline);
+            break;
+         }
+      }
+
+      /*
+       * Next pool.
+       */
+      switch (jr.JobType) {
+      case JT_COPY:
+      case JT_MIGRATE:
+         Mmsg(cmdline, " nextpool=\"%s\"", pr.Name);
+         pm_strcat(ua->cmd, cmdline);
+         break;
+      case JT_BACKUP:
+         switch (jr.JobLevel) {
+         case L_VIRTUAL_FULL:
+            Mmsg(cmdline, " nextpool=\"%s\"", pr.Name);
+            pm_strcat(ua->cmd, cmdline);
+
+            break;
+         default:
+            break;
+         }
+         break;
+      }
    }
 
    if (jr.FileSetId) {
+      FILESET_DBR fs;
+
       memset(&fs, 0, sizeof(fs));
       fs.FileSetId = jr.FileSetId;
       if (!db_get_fileset_record(ua->jcr, ua->db, &fs)) {
@@ -471,7 +540,7 @@ bail_out:
 
 int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
 {
-   int i, opt;
+   int opt;
 
    /*
     * At user request modify parameters of job to be run.
@@ -704,7 +773,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       case 11:
          /* Replace */
          start_prompt(ua, _("Replace:\n"));
-         for (i=0; ReplaceOptions[i].name; i++) {
+         for (int i = 0; ReplaceOptions[i].name; i++) {
             add_prompt(ua, ReplaceOptions[i].name);
          }
          opt = do_prompt(ua, "", _("Select replace option"), NULL, 0);
@@ -755,8 +824,6 @@ try_again:
  */
 static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
 {
-   int i;
-
    jcr->res.verify_job = rc.verify_job;
    jcr->res.previous_job = rc.previous_job;
    jcr->res.pool = rc.pool;
@@ -841,7 +908,7 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
 
    if (rc.replace) {
       jcr->replace = 0;
-      for (i=0; ReplaceOptions[i].name; i++) {
+      for (int i = 0; ReplaceOptions[i].name; i++) {
          if (bstrcasecmp(rc.replace, ReplaceOptions[i].name)) {
             jcr->replace = ReplaceOptions[i].token;
          }
@@ -887,7 +954,7 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       }
    }
    rc.replace = ReplaceOptions[0].name;
-   for (i=0; ReplaceOptions[i].name; i++) {
+   for (int i = 0; ReplaceOptions[i].name; i++) {
       if (ReplaceOptions[i].token == jcr->replace) {
          rc.replace = ReplaceOptions[i].name;
       }
