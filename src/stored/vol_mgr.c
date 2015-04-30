@@ -892,10 +892,9 @@ dlist *dup_vol_list(JCR *jcr)
    Dmsg0(dbglvl, "duplicate vol list\n");
    temp_vol_list = New(dlist(vol, &vol->link));
    foreach_vol(vol) {
-      VOLRES *nvol;
-      VOLRES *tvol = (VOLRES *)malloc(sizeof(VOLRES));
-      memset(tvol, 0, sizeof(VOLRES));
-      tvol->vol_name = bstrdup(vol->vol_name);
+      VOLRES *nvol, *tvol;
+
+      tvol = new_vol_item(NULL, vol->vol_name);
       tvol->dev = vol->dev;
       nvol = (VOLRES *)temp_vol_list->binary_insert(tvol, compare_by_volumename);
       if (tvol != nvol) {
