@@ -180,11 +180,11 @@ bool db_update_job_end_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
 
    db_lock(mdb);
    Mmsg(mdb->cmd,
-      "UPDATE Job SET JobStatus='%c',EndTime='%s',"
-"ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,VolSessionId=%u,"
-"VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
-"RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
-      (char)(jr->JobStatus), dt, jr->ClientId, edit_uint64(jr->JobBytes, ed1),
+      "UPDATE Job SET JobStatus='%c',Level='%c',EndTime='%s',"
+      "ClientId=%u,JobBytes=%s,ReadBytes=%s,JobFiles=%u,JobErrors=%u,VolSessionId=%u,"
+      "VolSessionTime=%u,PoolId=%u,FileSetId=%u,JobTDate=%s,"
+      "RealEndTime='%s',PriorJobId=%s,HasBase=%u,PurgedFiles=%u WHERE JobId=%s",
+      (char)(jr->JobStatus), (char)(jr->JobLevel), dt, jr->ClientId, edit_uint64(jr->JobBytes, ed1),
       edit_uint64(jr->ReadBytes, ed4),
       jr->JobFiles, jr->JobErrors, jr->VolSessionId, jr->VolSessionTime,
       jr->PoolId, jr->FileSetId, edit_uint64(JobTDate, ed2),

@@ -83,7 +83,6 @@ bool do_native_vbackup_init(JCR *jcr)
 
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   jcr->jr.JobLevel = L_FULL;      /* we want this to appear as a Full backup */
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
@@ -169,17 +168,16 @@ bool do_native_vbackup(JCR *jcr)
       ((STORERES *)jcr->rstorage->first())->name(),
       ((STORERES *)jcr->wstorage->first())->name());
 
-   jcr->wasVirtualFull = true;        /* remember where we came from */
-
-   /* Print Job Start message */
+   /*
+    * Print Job Start message
+    */
    Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
         edit_uint64(jcr->JobId, ed1), jcr->Job);
    if (!jcr->accurate) {
       Jmsg(jcr, M_WARNING, 0,
-_("This Job is not an Accurate backup so is not equivalent to a Full backup.\n"));
+           _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n"));
    }
 
-   jcr->jr.JobLevel = L_VIRTUAL_FULL;
    db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids);
    Dmsg1(10, "Accurate jobids=%s\n", jobids.list);
    if (jobids.count == 0) {
@@ -187,13 +185,11 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
       return false;
    }
 
-   jcr->jr.JobLevel = L_FULL;
-
    /*
     * Now we find the last job that ran and store it's info in
-    *  the previous_jr record.  We will set our times to the
-    *  values from that job so that anything changed after that
-    *  time will be picked up on the next backup.
+    * the previous_jr record.  We will set our times to the
+    * values from that job so that anything changed after that
+    * time will be picked up on the next backup.
     */
    p = strrchr(jobids.list, ',');           /* find last jobid */
    if (p != NULL) {
@@ -201,9 +197,11 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
    } else {
       p = jobids.list;
    }
+
    memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
    jcr->previous_jr.JobId = str_to_int64(p);
    Dmsg1(10, "Previous JobId=%s\n", p);
+
    if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
       Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for previous Job: ERR=%s"),
                db_strerror(jcr->db));
@@ -223,6 +221,7 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
     */
    Dmsg0(110, "Open connection with storage daemon\n");
    jcr->setJobStatus(JS_WaitSD);
+
    /*
     * Start conversation with Storage daemon
     */
@@ -241,26 +240,30 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
 
    /*
     * We re-update the job start record so that the start
-    *  time is set after the run before job.  This avoids
-    *  that any files created by the run before job will
-    *  be saved twice.  They will be backed up in the current
-    *  job, but not in the next one unless they are changed.
-    *  Without this, they will be backed up in this job and
-    *  in the next job run because in that case, their date
-    *   is after the start of this run.
+    * time is set after the run before job.  This avoids
+    * that any files created by the run before job will
+    * be saved twice.  They will be backed up in the current
+    * job, but not in the next one unless they are changed.
+    * Without this, they will be backed up in this job and
+    * in the next job run because in that case, their date
+    * is after the start of this run.
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
    jcr->jr.JobTDate = jcr->start_time;
    jcr->setJobStatus(JS_Running);
 
-   /* Update job start record */
+   /*
+    * Update job start record
+    */
    if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
       return false;
    }
 
-   /* Declare the job started to start the MaxRunTime check */
+   /*
+    * Declare the job started to start the MaxRunTime check
+    */
    jcr->setJobStarted();
 
    /*
@@ -281,8 +284,10 @@ _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n")
 
    jcr->setJobStatus(JS_Running);
 
-   /* Pickup Job termination data */
-   /* Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors */
+   /*
+    * Pickup Job termination data
+    * Note, the SD stores in jcr->JobFiles/ReadBytes/JobBytes/JobErrors
+    */
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
    db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
@@ -309,8 +314,15 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
 
-   jcr->setJobLevel(L_FULL);         /* we want this to appear as a Full backup */
-   jcr->jr.JobLevel = L_FULL;         /* we want this to appear as a Full backup */
+   switch (jcr->JobStatus) {
+   case JS_Terminated:
+   case JS_Warnings:
+      jcr->jr.JobLevel = L_FULL;        /* we want this to appear as a Full backup */
+      break;
+   default:
+      break;
+   }
+
    jcr->JobFiles = jcr->SDJobFiles;
    jcr->JobBytes = jcr->SDJobBytes;
 
@@ -321,60 +333,64 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
 
    update_job_end(jcr, TermCode);
 
-   /* Update final items to set them to the previous job's values */
+   /*
+    * Update final items to set them to the previous job's values
+    */
    Mmsg(query, "UPDATE Job SET StartTime='%s',EndTime='%s',"
                "JobTDate=%s WHERE JobId=%s",
-      jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
-      edit_uint64(jcr->previous_jr.JobTDate, ec1),
-      edit_uint64(jcr->JobId, ec2));
+        jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
+        edit_uint64(jcr->previous_jr.JobTDate, ec1),
+        edit_uint64(jcr->JobId, ec2));
    db_sql_query(jcr->db, query.c_str());
 
-   /* Get the fully updated job record */
+   /*
+    * Get the fully updated job record
+    */
    if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+           db_strerror(jcr->db));
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
    if (!db_get_client_record(jcr, jcr->db, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+           db_strerror(jcr->db));
    }
 
    update_bootstrap_file(jcr);
 
    switch (jcr->JobStatus) {
-      case JS_Terminated:
-         term_msg = _("Backup OK");
-         break;
-      case JS_Warnings:
-         term_msg = _("Backup OK -- with warnings");
-         break;
-      case JS_FatalError:
-      case JS_ErrorTerminated:
-         term_msg = _("*** Backup Error ***");
-         msg_type = M_ERROR;          /* Generate error message */
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
+   case JS_Terminated:
+      term_msg = _("Backup OK");
+      break;
+   case JS_Warnings:
+      term_msg = _("Backup OK -- with warnings");
+      break;
+   case JS_FatalError:
+   case JS_ErrorTerminated:
+      term_msg = _("*** Backup Error ***");
+      msg_type = M_ERROR;          /* Generate error message */
+      if (jcr->store_bsock) {
+         jcr->store_bsock->signal(BNET_TERMINATE);
+         if (jcr->SD_msg_chan_started) {
+            pthread_cancel(jcr->SD_msg_chan);
          }
-         break;
-      case JS_Canceled:
-         term_msg = _("Backup Canceled");
-         if (jcr->store_bsock) {
-            jcr->store_bsock->signal(BNET_TERMINATE);
-            if (jcr->SD_msg_chan_started) {
-               pthread_cancel(jcr->SD_msg_chan);
-            }
+      }
+      break;
+   case JS_Canceled:
+      term_msg = _("Backup Canceled");
+      if (jcr->store_bsock) {
+         jcr->store_bsock->signal(BNET_TERMINATE);
+         if (jcr->SD_msg_chan_started) {
+            pthread_cancel(jcr->SD_msg_chan);
          }
-         break;
-      default:
-         term_msg = term_code;
-         sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
-         break;
+      }
+      break;
+   default:
+      term_msg = term_code;
+      sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+      break;
    }
 
    generate_backup_summary(jcr, &cr, msg_type, term_msg);
