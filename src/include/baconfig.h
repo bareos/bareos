@@ -632,6 +632,8 @@ int getdomainname(char *name, int len);
 #endif /* __cplusplus */
 #endif /* HAVE_DARWIN_OS */
 
+#define TRACEFILEDIRECTORY working_directory ? working_directory : "c:"
+
 #if defined(HAVE_WIN32)
 /*
  *   Windows
