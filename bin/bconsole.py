@@ -9,6 +9,7 @@ def getArguments():
     parser = argparse.ArgumentParser(description='Console to Bareos Director.' )
     parser.add_argument( '-d', '--debug', action='store_true', help="enable debugging output" )
     parser.add_argument( '-p', '--password', help="password to authenticate at Bareos Director" )
+    parser.add_argument( '--port', default=9101, help="Bareos Director network port" )
     parser.add_argument( 'host', default="localhost", help="Bareos Director host" )
     parser.add_argument( 'dirname', nargs='?', default=None, help="Bareos Director name" )
     args = parser.parse_args()
@@ -23,7 +24,7 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
 
     try:
-        director = bareos.bconsole( host=args.host, dirname=args.dirname )
+        director = bareos.bconsole( host=args.host, dirname=args.dirname, port=args.port )
     except RuntimeError as e:
         print str(e)
         sys.exit(1)
