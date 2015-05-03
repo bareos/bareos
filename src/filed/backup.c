@@ -727,28 +727,33 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    }
 
    /*
-    * Open any file with data that we intend to save, then save it.
-    *
-    * Note, if is_win32_backup, we must open the Directory so that
-    * the BackupRead will save its permissions and ownership streams.
+    * For a command plugin use the setting from the plugins savepkt no_read field
+    * which is saved in the ff_pkt->no_read variable. do_read is the inverted
+    * value of this variable as no_read == TRUE means do_read == FALSE
     */
-   if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)) {
+   if (ff_pkt->cmd_plugin) {
+      do_read = !ff_pkt->no_read;
+   } else {
+      /*
+       * Open any file with data that we intend to save, then save it.
+       *
+       * Note, if is_win32_backup, we must open the Directory so that
+       * the BackupRead will save its permissions and ownership streams.
+       */
+      if (ff_pkt->type != FT_LNKSAVED && S_ISREG(ff_pkt->statp.st_mode)) {
 #ifdef HAVE_WIN32
-      do_read = !is_portable_backup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
+         do_read = !is_portable_backup(&ff_pkt->bfd) || ff_pkt->statp.st_size > 0;
 #else
-      do_read = ff_pkt->statp.st_size > 0;
+         do_read = ff_pkt->statp.st_size > 0;
 #endif
-   } else if (ff_pkt->type == FT_RAW ||
-              ff_pkt->type == FT_FIFO ||
-              ff_pkt->type == FT_REPARSE ||
-              ff_pkt->type == FT_JUNCTION ||
-             (!is_portable_backup(&ff_pkt->bfd) &&
-              ff_pkt->type == FT_DIREND)) {
-      do_read = true;
-   }
-
-   if (ff_pkt->cmd_plugin && !ff_pkt->no_read) {
-      do_read = true;
+      } else if (ff_pkt->type == FT_RAW ||
+                 ff_pkt->type == FT_FIFO ||
+                 ff_pkt->type == FT_REPARSE ||
+                 ff_pkt->type == FT_JUNCTION ||
+                (!is_portable_backup(&ff_pkt->bfd) &&
+                 ff_pkt->type == FT_DIREND)) {
+         do_read = true;
+      }
    }
 
    Dmsg2(150, "type=%d do_read=%d\n", ff_pkt->type, do_read);
