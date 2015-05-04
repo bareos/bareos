@@ -23,7 +23,7 @@ class BareosBase64:
             val = val - (1<<bits)
         return val
 
-    def decode(self, base64):
+    def base64_to_int(self, base64):
         '''
         Convert the Base 64 characters in base64 to a value.
         '''
@@ -44,7 +44,7 @@ class BareosBase64:
 
         return -value if neg else value
 
-    def to_base64(self, value):
+    def int_to_base64(self, value):
         result = ""
         if value < 0:
             result = "-"
@@ -56,17 +56,17 @@ class BareosBase64:
             value = value >> 6
         return result;
 
-    def bin_to_base64(self, binary, compatible = False):
+    def string_to_base64(self, string, compatible = False):
         buf = ""
         j = 0
         reg = 0
         rem = 0
         char = 0
         i = 0
-        while i < len(binary):
+        while i < len(string):
             if rem < 6:
                 reg <<= 8
-                char = binary[i]
+                char = string[i]
                 if not compatible:
                     if char >= 128:
                         char = self.twos_comp(char,8)

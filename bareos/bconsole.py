@@ -3,14 +3,12 @@
 # Authentication code is taken from 
 # https://github.com/hanxiangduo/bacula-console-python
 
-from array  import array
-from bareos.bareosbase64 import BareosBase64
-import base64
-import ctypes
+from   array  import array
+from   bareos.bareosbase64 import BareosBase64
 import hashlib
 import hmac
 import logging
-from pprint import pprint
+from   pprint import pprint
 import random
 import re
 import socket
@@ -355,11 +353,7 @@ class bconsole:
         hmac_md5.update(chal)
 
         # base64 encoding
-        msg = base64.b64encode(hmac_md5.digest()).rstrip('=')
-        # cut off the '==' after the base64 encode
-        # because the bacula base64 encode
-        # is not compatible for the rest world
-        # so here we should do some to fix it
+        msg = BareosBase64().string_to_base64(bytearray( hmac_md5.digest() ))
 
         # send the base64 encoding to director
         self.send(msg)
@@ -372,7 +366,7 @@ class bconsole:
 
     def _cram_md5_challenge( self, clientname, password, tls_local_need=0, compatible=True ):
         '''
-        client launch the challenge, 
+        client launch the challenge,
         client confirm the dir is the correct director
         '''
 
@@ -386,32 +380,23 @@ class bconsole:
         # send the confirmation
         self.send(msg)
         # get the response
+        msg=self.recv().strip(chr(0))
+        self.logger.debug("received: " + msg)
 
-        # hash with password 
+        # hash with password
         hmac_md5 = hmac.new(password)
         hmac_md5.update(chal)
-        # encode to base64
-        hmac_comp = base64.b64encode(hmac_md5.digest()).rstrip('=')
-        msg=self.recv()
-        bbase64 = BareosBase64()
-        # TODO: here it an error, fix it. At the momemt, just ignore it.
-        if hmac_comp != msg:
-            self.logger.debug( "expected result:               " + hmac_comp )
-            #self.logger.debug( "de expected result: " + str(base64.b64decode(hmac_comp + "==")) )
-            self.logger.debug( "actual   result:               " + msg )
-            #self.logger.debug( "bbase decode:    " + str(bbase64.decode(msg)) )
-            #self.logger.debug( "hex      result: " + str(int(hmac_md5.hexdigest(),16)) )
-            #self.logger.debug( "hex      result: " + str(int(hmac_md5.hexdigest(),16) ))
-            #self.logger.debug( "bb to_base64:    " + bbase64.to_base64( int(hmac_md5.hexdigest(),16) ) )
-            #self.logger.debug( "hex digest:      " + str(hmac_md5.digest()) )
-            self.logger.debug( "bin_to_base64, compatible:     " + str(bbase64.bin_to_base64(bytearray( hmac_md5.digest() ), True) ) )
-            self.logger.debug( "bin_to_base64, not compatible: " + str(bbase64.bin_to_base64(bytearray( hmac_md5.digest() ), False) ) )
-        #is_correct = (hmac_comp == msg)
-        is_correct = True
+        bbase64compatible = BareosBase64().string_to_base64(bytearray( hmac_md5.digest() ), True)
+        bbase64notcompatible = BareosBase64().string_to_base64(bytearray( hmac_md5.digest() ), False)
+        self.logger.debug("string_to_base64, compatible:     " + bbase64compatible)
+        self.logger.debug("string_to_base64, not compatible: " + bbase64notcompatible)
+
+        is_correct = ((msg==bbase64compatible) or (msg==bbase64notcompatible))
+        # check against compatible base64 and Bareos specific base64
         if is_correct:
-            self.send("1000 OK auth\n")
+            self.send(self.DIRauthOK)
         else:
-            logger.error( "want %s but get %s" %(hmac_comp, msg) )
+            self.logger.error( "expected result: %s or %s, but get %s" %(bbase64compatible, bbase64notcompatible, msg) )
             self.send("1999 Authorization failed.\n")
 
         # check the response is equal to base64
