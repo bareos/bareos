@@ -159,6 +159,7 @@ class BareosBSock implements BareosBSockInterface
 	private function ntohl($buffer)
 	{
 		$len = array();
+		$actual_length = 0;
 
 		$len = unpack('N', $buffer);
 		$actual_length = (float) $len[1];
@@ -230,20 +231,20 @@ class BareosBSock implements BareosBSockInterface
 	private function receive($len=0)
 	{
 		$buffer = "";
-		$msg_len = array();
+		$msg_len = 0;
 
 		if ($len === 0) {
 			$buffer = fread($this->socket, 4);
 			if($buffer == false){
 				return false;
 			}
-			$msg_len = unpack('N', $buffer);
+			$msg_len = self::ntohl($buffer);
 		} else {
-			$msg_len[1] = $len;
+			$msg_len = $len;
 		}
 
-		if ($msg_len[1] > 0) {
-			$buffer = fread($this->socket, $msg_len[1]);
+		if ($msg_len > 0) {
+			$buffer = fread($this->socket, $msg_len);
 		}
 
 		return $buffer;
@@ -273,9 +274,18 @@ class BareosBSock implements BareosBSockInterface
 				break;
 			}
 
-			if ($len > 0 && $len < 1000000) {
-				$buffer = fread($this->socket, $len);
-				$msg .= $buffer;
+			if ($len > 0 && $len < 8192) {
+				$msg .= fread($this->socket, $len);
+			} elseif($len > 8192) {
+				$rlen = 8192;
+				while ($len > 0) {
+					$msg .= fread($this->socket, $rlen);
+					$len -= $rlen;
+					if($len < $rlen) {
+						$rlen = $len;
+					}
+				}
+				break;
 			} elseif ($len < 0) {
 				// signal received
 				switch ($len) {
