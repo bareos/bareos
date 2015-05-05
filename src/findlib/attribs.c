@@ -717,10 +717,13 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
        * Restore the compressed file attribute on the restored file.
        */
       if (atts.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED) {
-         uint16_t format = COMPRESSION_FORMAT_DEFAULT;
+         USHORT format = COMPRESSION_FORMAT_DEFAULT;
+         DWORD bytesreturned;
 
          Dmsg1(100, "Restore FILE_ATTRIBUTE_COMPRESSED on %s\n", attr->ofname);
-         DeviceIoControl(ofd->fh, FSCTL_SET_COMPRESSION, &format, sizeof(format), NULL, 0, NULL, NULL);
+         if (!DeviceIoControl(ofd->fh, FSCTL_SET_COMPRESSION, &format, sizeof(format), NULL, 0, &bytesreturned, NULL)) {
+            win_error(jcr, "DeviceIoControl FSCTL_SET_COMPRESSION", win32_ofile);
+         }
       }
 
       bclose(ofd);
