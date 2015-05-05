@@ -601,19 +601,6 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 }
 
 /*
- * Define attributes that are legal to set with SetFileAttributes()
- */
-#define SET_ATTRS ( \
-   FILE_ATTRIBUTE_ARCHIVE | \
-   FILE_ATTRIBUTE_HIDDEN | \
-   FILE_ATTRIBUTE_NORMAL | \
-   FILE_ATTRIBUTE_NOT_CONTENT_INDEXED | \
-   FILE_ATTRIBUTE_OFFLINE | \
-   FILE_ATTRIBUTE_READONLY | \
-   FILE_ATTRIBUTE_SYSTEM | \
-   FILE_ATTRIBUTE_TEMPORARY)
-
-/*
  * Do casting according to unknown type to keep compiler happy
  */
 #ifdef HAVE_TYPEOF
@@ -641,7 +628,6 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    int64_t val;
    WIN32_FILE_ATTRIBUTE_DATA atts;
    ULARGE_INTEGER li;
-   POOLMEM *win32_ofile;
 
    /** if we have neither Win ansi nor wchar API, get out */
    if (!(p_SetFileAttributesW || p_SetFileAttributesA)) {
@@ -682,10 +668,6 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    p += from_base64(&val, p);
    plug(atts.nFileSizeLow, val);
 
-   /** Convert to Windows path format */
-   win32_ofile = get_pool_memory(PM_FNAME);
-   unix_name_to_win32(&win32_ofile, attr->ofname);
-
    /** At this point, we have reconstructed the WIN32_FILE_ATTRIBUTE_DATA pkt */
 
    if (!is_bopen(ofd)) {
@@ -693,61 +675,16 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
       bopen(ofd, attr->ofname, O_WRONLY | O_BINARY, 0, 0); /* attempt to open the file */
    }
 
+   /*
+    * Restore file attributes and times on the restored file.
+    */
+   if (!win32_restore_file_attributes(attr->ofname, bget_handle(ofd), &atts)) {
+      win_error(jcr, "win32_restore_file_attributes:", attr->ofname);
+   }
+
    if (is_bopen(ofd)) {
-      /*
-       * Restore file times on the restored file.
-       */
-      Dmsg1(100, "SetFileTime %s\n", attr->ofname);
-      if (!SetFileTime(bget_handle(ofd),
-                       &atts.ftCreationTime,
-                       &atts.ftLastAccessTime,
-                       &atts.ftLastWriteTime)) {
-         win_error(jcr, "SetFileTime:", win32_ofile);
-      }
-
-      /*
-       * Restore the sparse file attribute on the restored file.
-       */
-      if (atts.dwFileAttributes & FILE_ATTRIBUTE_SPARSE_FILE) {
-         Dmsg1(100, "Restore FILE_ATTRIBUTE_SPARSE_FILE on %s\n", attr->ofname);
-         DeviceIoControl(ofd->fh, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, NULL, NULL);
-      }
-
-      /*
-       * Restore the compressed file attribute on the restored file.
-       */
-      if (atts.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED) {
-         USHORT format = COMPRESSION_FORMAT_DEFAULT;
-         DWORD bytesreturned;
-
-         Dmsg1(100, "Restore FILE_ATTRIBUTE_COMPRESSED on %s\n", attr->ofname);
-         if (!DeviceIoControl(ofd->fh, FSCTL_SET_COMPRESSION, &format, sizeof(format), NULL, 0, &bytesreturned, NULL)) {
-            win_error(jcr, "DeviceIoControl FSCTL_SET_COMPRESSION", win32_ofile);
-         }
-      }
-
       bclose(ofd);
    }
-
-   Dmsg1(100, "SetFileAtts %s\n", attr->ofname);
-   if (!(atts.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-      if (p_SetFileAttributesW) {
-         POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
-         make_win32_path_UTF8_2_wchar(&pwszBuf, attr->ofname);
-
-         BOOL b = p_SetFileAttributesW((LPCWSTR)pwszBuf, atts.dwFileAttributes & SET_ATTRS);
-         free_pool_memory(pwszBuf);
-
-         if (!b) {
-            win_error(jcr, "SetFileAttributesW:", win32_ofile);
-         }
-      } else {
-         if (!p_SetFileAttributesA(win32_ofile, atts.dwFileAttributes & SET_ATTRS)) {
-            win_error(jcr, "SetFileAttributesA:", win32_ofile);
-         }
-      }
-   }
-   free_pool_memory(win32_ofile);
 
    return true;
 }

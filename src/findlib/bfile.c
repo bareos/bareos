@@ -476,7 +476,7 @@ bool is_restore_stream_supported(int stream)
 
 HANDLE bget_handle(BFILE *bfd)
 {
-   return bfd->fh;
+   return (bfd->mode == BF_CLOSED) ? INVALID_HANDLE_VALUE : bfd->fh;
 }
 
 /*
