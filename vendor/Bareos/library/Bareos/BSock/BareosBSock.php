@@ -828,16 +828,39 @@ class BareosBSock implements BareosBSockInterface
 	 * Send a single command
 	 *
 	 * @param $cmd
+	 * @param $api
 	 * @return string
 	 */
-	public function send_command($cmd)
+	public function send_command($cmd, $api=0)
 	{
 		$result = "";
-		if(self::send($cmd)) {
+
+		if($api == 2) {
+			// switch to api 2 (json)
+			self::send(".api 2");
+			$debug = self::receive_message();
+			// use default catalog
+			self::send("use");
+			$debug = self::receive_message();
+			// send command
+			self::send($cmd);
 			$result = self::receive_message();
-			self::disconnect();
 		}
+		else {
+			if(self::send($cmd)) {
+				$result = self::receive_message();
+			}
+		}
+
 		return $result;
+	}
+
+	/**
+	 * Destructor
+	 */
+	public function __destruct()
+	{
+		self::disconnect();
 	}
 
 }
