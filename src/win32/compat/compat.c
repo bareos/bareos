@@ -2624,6 +2624,92 @@ int win32_unlink(const char *filename)
    return nRetCode;
 }
 
+/*
+ * Define attributes that are legal to set with SetFileAttributes()
+ */
+#define SET_ATTRS ( \
+   FILE_ATTRIBUTE_ARCHIVE | \
+   FILE_ATTRIBUTE_HIDDEN | \
+   FILE_ATTRIBUTE_NORMAL | \
+   FILE_ATTRIBUTE_NOT_CONTENT_INDEXED | \
+   FILE_ATTRIBUTE_OFFLINE | \
+   FILE_ATTRIBUTE_READONLY | \
+   FILE_ATTRIBUTE_SYSTEM | \
+   FILE_ATTRIBUTE_TEMPORARY)
+
+bool win32_restore_file_attributes(POOLMEM *ofname, HANDLE handle, WIN32_FILE_ATTRIBUTE_DATA *atts)
+{
+   bool retval = false;
+
+   Dmsg1(100, "SetFileAtts %s\n", ofname);
+   if (!(atts->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+      if (p_SetFileAttributesW) {
+         BOOL b;
+         POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
+
+         make_win32_path_UTF8_2_wchar(&pwszBuf, ofname);
+         b = p_SetFileAttributesW((LPCWSTR)pwszBuf, atts->dwFileAttributes & SET_ATTRS);
+         free_pool_memory(pwszBuf);
+
+         if (!b) {
+            goto bail_out;
+         }
+      } else {
+         BOOL b;
+         POOLMEM *win32_ofile = get_pool_memory(PM_FNAME);
+
+         unix_name_to_win32(&win32_ofile, ofname);
+         b = p_SetFileAttributesA(win32_ofile, atts->dwFileAttributes & SET_ATTRS);
+         free_pool_memory(win32_ofile);
+
+         if (!b) {
+            goto bail_out;
+         }
+      }
+   }
+
+   if (handle != INVALID_HANDLE_VALUE) {
+      /*
+       * Restore the sparse file attribute on the restored file.
+       */
+      if (atts->dwFileAttributes & FILE_ATTRIBUTE_SPARSE_FILE) {
+         Dmsg1(100, "Restore FILE_ATTRIBUTE_SPARSE_FILE on %s\n", ofname);
+         if (!DeviceIoControl(handle, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, NULL, NULL)) {
+            goto bail_out;
+         }
+      }
+
+      /*
+       * Restore the compressed file attribute on the restored file.
+       */
+      if (atts->dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED) {
+         USHORT format = COMPRESSION_FORMAT_DEFAULT;
+         DWORD bytesreturned;
+
+         Dmsg1(100, "Restore FILE_ATTRIBUTE_COMPRESSED on %s\n", ofname);
+         if (!DeviceIoControl(handle, FSCTL_SET_COMPRESSION, &format, sizeof(format), NULL, 0, &bytesreturned, NULL)) {
+            goto bail_out;
+         }
+      }
+
+      /*
+       * Restore file times on the restored file.
+       */
+      Dmsg1(100, "SetFileTime %s\n", ofname);
+      if (!SetFileTime(handle,
+                       &atts->ftCreationTime,
+                       &atts->ftLastAccessTime,
+                       &atts->ftLastWriteTime)) {
+         goto bail_out;
+      }
+   }
+
+   retval = true;
+
+bail_out:
+   return retval;
+}
+
 #include "mswinver.h"
 
 char WIN_VERSION_LONG[64];
