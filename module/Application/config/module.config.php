@@ -177,11 +177,11 @@ return array(
 				'label' => 'Logs',
 				'route' => 'log',
 			),
-			/*
 			array(
 				'label' => 'Restore',
 				'route' => 'restore',
 			),
+			/*
 			array(
 				'label' => 'Statistics',
 				'route' => 'statistics',
