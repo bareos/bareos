@@ -11,4 +11,5 @@
     rotate 6
     notifempty
     missingok
+    su bareos bareos
 }
