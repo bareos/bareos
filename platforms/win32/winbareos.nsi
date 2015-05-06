@@ -64,9 +64,10 @@ Var DirectorPassword      #XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX
 Var DirectorName
 Var DirectorMonPassword
 
-# Needed for Postgresql Database
+# Needed for PostgreSQL Database
 Var PostgresPath
 Var PostgresBinPath
+var PostgresPsqlExeFullPath
 Var DbDriver
 Var DbPassword
 Var DbPort
@@ -209,16 +210,18 @@ FunctionEnd
     StrCmp $WriteLogs "yes" 0 +2
       LogEx::Write "PostgresPath=$PostgresPath"
 
+    StrCpy $PostgresPsqlExeFullPath "$\"$PostgresBinPath\psql.exe$\""
+
     # set postgres username and password in environment
     System::Call 'kernel32::SetEnvironmentVariable(t "PGUSER", t "$DbAdminUser")i.r0'
     System::Call 'kernel32::SetEnvironmentVariable(t "PGPASSWORD", t "$DbAdminPassword")i.r0'
 
     DetailPrint "Now trying to log into the postgres server with the DbAdmin User and Password"
-    DetailPrint "Running $PostgresBinPath\psql.exe -c \copyright"
+    DetailPrint "Running $PostgresPsqlExeFullPath -c \copyright"
     StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Write "Running $PostgresBinPath\psql.exe -c \copyright"
+       LogEx::Write "Running $PostgresPsqlExeFullPath -c \copyright"
 
-    nsExec::Exec /TIMEOUT=10000 "$PostgresBinPath\psql.exe -c \copyright"
+    nsExec::Exec /TIMEOUT=10000 "$PostgresPsqlExeFullPath -c \copyright"
     Pop $0 # return value/error/timeout
     DetailPrint "Return Value is $0"
     StrCmp $WriteLogs "yes" 0 +2
@@ -237,18 +240,18 @@ FunctionEnd
          StrCmp $WriteLogs "yes" 0 +2
             LogEx::Write "connection timed out, probably password is wrong?"
        ${case} "error"
-         DetailPrint "could not execute $PostgresBinPath\psql.exe"
+         DetailPrint "could not execute $PostgresPsqlExeFullPath"
          StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "could not execute $PostgresBinPath\psql.exe"
+            LogEx::Write "could not execute $PostgresPsqlExeFullPath"
        ${case} "0"
          DetailPrint "success"
          StrCmp $WriteLogs "yes" 0 +2
             LogEx::Write "success"
          goto afterabort_${UniqueID}
        ${caseelse}
-         DetailPrint "Unknown problem executing $PostgresBinPath\psql.exe"
+         DetailPrint "Unknown problem executing $PostgresPsqlExeFullPath"
          StrCmp $WriteLogs "yes" 0 +2
-            LogEx::Write "Unknown problem executing $PostgresBinPath\psql.exe"
+            LogEx::Write "Unknown problem executing $PostgresPsqlExeFullPath"
     ${endselect}
    MessageBox MB_OK|MB_ICONSTOP "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service" /SD IDOK
    StrCmp $WriteLogs "yes" 0 +2
@@ -687,6 +690,14 @@ SectionIn 2
   DetailPrint "libeay32.dll"
   CopyFiles /SILENT "$PostgresBinPath\libeay32.dll" "$INSTDIR"
 
+
+  # Since PostgreSQL 9.4 unfortunately setting the PATH Variable is not enough
+  # to execute psql.exe It always complains about:
+  # > could not find a "psql.exe" to execute
+  # > psql.exe: could not find own program executable
+  # so we use the full path in the batch scripts
+
+
   #
   #  write database create batch file
   #
@@ -700,13 +711,13 @@ SectionIn 2
   FileWrite $R1 "cd $APPDATA\${PRODUCT_NAME}\scripts\$\r$\n"
 
   FileWrite $R1 "echo creating bareos database$\r$\n"
-  FileWrite $R1 "psql.exe -f postgresql-createdb.sql$\r$\n"
+  FileWrite $R1 "$PostgresPsqlExeFullPath -f postgresql-createdb.sql$\r$\n"
 
   FileWrite $R1 "echo creating bareos database tables$\r$\n"
-  FileWrite $R1 "psql.exe -f postgresql-create.sql $DbName$\r$\n"
+  FileWrite $R1 "$PostgresPsqlExeFullPath -f postgresql-create.sql $DbName$\r$\n"
 
   FileWrite $R1 "echo granting bareos database rights$\r$\n"
-  FileWrite $R1 "psql.exe -f postgresql-grant.sql $DbName$\r$\n"
+  FileWrite $R1 "$PostgresPsqlExeFullPath -f postgresql-grant.sql $DbName$\r$\n"
   FileClose $R1
 
   #
