@@ -20,9 +20,10 @@ FileDaemon {                          # definition of myself
   # Plugin Directory = @plugindir@
   # Plugin Names = ""
 
+
   # if compatible is set to yes, we are compatible with bacula
-  # if you want to use new bareos features, please set
-  # compatible = no
+  # if set to no, new bareos features are enabled which is the default
+  # compatible = yes
 }
 
 #

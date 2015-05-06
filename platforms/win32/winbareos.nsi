@@ -428,9 +428,9 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-mon#$HostName-mon#g$\r$\n"
 
   #
-  # If we do not want to be compatible we uncomment the setting for compatible
+  # If we want to be compatible we uncomment the setting for "compatible = yes"
   #
-  ${If} $ClientCompatible != ${BST_CHECKED}
+  ${If} $ClientCompatible == ${BST_CHECKED}
     FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
   ${EndIf}
 
