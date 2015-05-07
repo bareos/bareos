@@ -1570,6 +1570,9 @@ static inline bool PySavePacketToNative(PySavePacket *pSavePkt, struct save_pkt 
          } else {
             goto bail_out;
          }
+      } else {
+         sp->no_read = pSavePkt->no_read;
+         sp->delta_seq = pSavePkt->delta_seq;
       }
    } else {
       sp->no_read = pSavePkt->no_read;
