@@ -62,6 +62,7 @@ rc-files: tools/bsmtpres.rc \
 	  stored/storedres.rc \
 	  stored/bextractres.rc \
 	  stored/blsres.rc \
+	  stored/bscanres.rc \
 	  stored/btaperes.rc \
 	  dird/dirdres.rc \
 	  dird/dbcheckres.rc
@@ -74,6 +75,7 @@ rc-files: tools/bsmtpres.rc \
 	  stored/storedres.rc \
 	  stored/bextractres.rc \
 	  stored/blsres.rc \
+	  stored/bscanres.rc \
 	  stored/btaperes.rc \
 	  dird/dirdres.rc \
 	  dird/dbcheckres.rc \
@@ -120,4 +122,7 @@ stored/btaperes.rc: stored/btaperes.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 stored/blsres.rc: stored/blsres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+stored/bscanres.rc: stored/bscanres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@

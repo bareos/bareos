@@ -139,6 +139,7 @@ do
       btape.exe \
       bls.exe \
       bextract.exe \
+      bscan.exe \
       bareos-tray-monitor.exe \
       bat.exe \
       bpipe-fd.dll \

@@ -593,6 +593,7 @@ SectionIn 2
   File "btape.exe"
   File "bls.exe"
   File "bextract.exe"
+  File "bscan.exe"
 
   CreateDirectory "C:\bareos-storage"
 
@@ -1701,6 +1702,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\btape.exe"
   Delete "$INSTDIR\bls.exe"
   Delete "$INSTDIR\bextract.exe"
+  Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
   Delete "$INSTDIR\Plugins\bpipe-fd.dll"
   Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"

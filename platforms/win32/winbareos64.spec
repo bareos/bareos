@@ -194,6 +194,7 @@ for flavor in `echo "%flavors"`; do
       stored/btape.exe \
       stored/bls.exe \
       stored/bextract.exe \
+      stored/bscan.exe \
       dird/bareos-dir.exe \
       dird/bareos-dbcheck.exe \
       tools/bsmtp.exe \
