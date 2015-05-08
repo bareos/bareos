@@ -122,7 +122,7 @@ B_DB *db_init_database(JCR *jcr,
     */
    backend_interface_mapping = lookup_backend_interface_mapping(db_driver);
    if (backend_interface_mapping == NULL) {
-      Jmsg(jcr, M_ABORT, 0, _("Unknown database type: %s\n"), db_driver);
+      Jmsg(jcr, M_ABORT, 0, _("Unknown database driver: %s\n"), db_driver);
       return (B_DB *)NULL;
    }
 
