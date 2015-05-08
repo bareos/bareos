@@ -32,12 +32,48 @@ use Zend\ViewModel\JsonModel;
 class RestoreController extends AbstractActionController
 {
 
+	protected $restore_params = array();
+
 	/**
 	 *
 	 */
 	public function indexAction()
 	{
 		return new ViewModel();
+	}
+
+	/**
+	 * Retrieve restore parameters
+	 */
+	private function getRestoreParams()
+	{
+		if($this->params()->fromQuery('job')) {
+			$this->restore_params['job'] = $this->params()->fromQuery('job');
+		}
+		else {
+			$this->restore_params['job'] = null;
+		}
+
+		if($this->params()->fromQuery('client')) {
+                        $this->restore_params['client'] = $this->params()->fromQuery('client');
+                }
+                else {
+                        $this->restore_params['client'] = null;
+                }
+
+		if($this->params()->fromQuery('restoreclient')) {
+                        $this->restore_params['restoreclient'] = $this->params()->fromQuery('restoreclient');
+                }
+                else {
+                        $this->restore_params['restoreclient'] = null;
+                }
+
+		if($this->params()->fromQuery('fileset')) {
+                        $this->restore_params['fileset'] = $this->params()->fromQuery('fileset');
+                }
+                else {
+                        $this->restore_params['fileset'] = null;
+                }
 	}
 
 	/**
