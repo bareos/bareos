@@ -20,6 +20,7 @@ and frameworks.
 * [Twitter Bootstrap - Apache License v2.0](http://getbootstrap.com/)
 * [jQuery - MIT License](http://jquery.com/)
 * [jqplot - dual licensed under MIT License and GPL Version 2 License](http://www.jqplot.com/)
+* [jstree - MIT License](http://www.jstree.com/)
 * [composer - MIT License](https://getcomposer.org/)
 
 You can find a complete file listing in [LICENSE](LICENSE).
