@@ -200,6 +200,7 @@ for flavor in `echo "%flavors"`; do
       tools/bsmtp.exe \
       tools/bregex.exe \
       tools/bwild.exe \
+      tests/grow.exe \
       stored/libbareossd*.dll \
       cats/libbareoscats*.dll \
       lib/libbareos.dll \
