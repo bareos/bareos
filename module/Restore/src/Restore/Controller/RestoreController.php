@@ -60,7 +60,7 @@ class RestoreController extends AbstractActionController
 	}
 
 	/**
-	 * Get client list form director in long or short format
+	 * Get client list from director in long or short format
 	 *
 	 * @param $format
 	 * @return array
@@ -76,6 +76,25 @@ class RestoreController extends AbstractActionController
 		}
 		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 		return $clients['result'][0]['clients'];
+	}
+
+	/**
+	 * Get fileset list from director in long or short format
+	 *
+	 * @param $format
+	 * @return array
+	 */
+	private function getFilesets($format="long")
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($format == "long") {
+			$result = $director->send_command("llist filesets", 2);
+		}
+		elseif($format == "short") {
+			$result = $director->send_command("list filesets", 2);
+		}
+		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $filesets['result'][0]['filesets'];
 	}
 
 }
