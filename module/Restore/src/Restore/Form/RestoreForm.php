@@ -65,7 +65,7 @@ class RestoreForm extends Form
 		else {
 			$this->add(array(
 				'name' => 'job',
-				'type' = 'select',
+				'type' => 'select',
 				'options' => array(
 					'label' => 'Job',
 					'empty_option' => 'Please choose a job',
@@ -83,13 +83,13 @@ class RestoreForm extends Form
 				'name' => 'client',
 				'type' => 'select',
 				'options' => array(
-					'label' = 'Client',
+					'label' => 'Client',
 					'empty_option' => 'Please choose a client',
 					'value_options' => $this->getClientList()
 				),
-				'attributes' = array(
+				'attributes' => array(
 					'id' => 'client',
-					'value' => $restore_params['client'];
+					'value' => $restore_params['client']
 				)
 			));
 		}
@@ -98,11 +98,11 @@ class RestoreForm extends Form
                                 'name' => 'client',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' = 'Client',
+                                        'label' => 'Client',
                                         'empty_option' => 'Please choose a client',
                                         'value_options' => $this->getClientList()
                                 ),
-                                'attributes' = array(
+                                'attributes' => array(
                                         'id' => 'client'
                                 )
                         ));
@@ -114,13 +114,13 @@ class RestoreForm extends Form
                                 'name' => 'restoreclient',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' = 'Restore client',
+                                        'label' => 'Restore client',
                                         'empty_option' => 'Please choose a restore client',
                                         'value_options' => $this->getClientList()
                                 ),
-                                'attributes' = array(
+                                'attributes' => array(
                                         'id' => 'restoreclient',
-                                        'value' => $restore_params['restoreclient'];
+                                        'value' => $restore_params['restoreclient']
                                 )
                         ));
                 }
@@ -129,11 +129,11 @@ class RestoreForm extends Form
                                 'name' => 'restoreclient',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' = 'Restore client',
+                                        'label' => 'Restore client',
                                         'empty_option' => 'Please choose a restore client',
                                         'value_options' => $this->getClientList()
                                 ),
-                                'attributes' = array(
+                                'attributes' => array(
                                         'id' => 'restoreclient'
                                 )
                         ));
@@ -145,13 +145,13 @@ class RestoreForm extends Form
                                 'name' => 'fileset',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' = 'Fileset',
+                                        'label' => 'Fileset',
                                         'empty_option' => 'Please choose a fileset',
                                         'value_options' => $this->getFilesetList()
                                 ),
-                                'attributes' = array(
+                                'attributes' => array(
                                         'id' => 'fileset',
-                                        'value' => $restore_params['fileset'];
+                                        'value' => $restore_params['fileset']
                                 )
                         ));
                 }
@@ -160,11 +160,11 @@ class RestoreForm extends Form
                                 'name' => 'fileset',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' = 'Fileset',
+                                        'label' => 'Fileset',
                                         'empty_option' => 'Please choose a fileset',
                                         'value_options' => $this->getFilesetList()
                                 ),
-                                'attributes' = array(
+                                'attributes' => array(
                                         'id' => 'fileset'
                                 )
                         ));
@@ -190,13 +190,13 @@ class RestoreForm extends Form
 			'name' => 'where',
                         'type' => 'text',
                         'options' => array(
-                                'label' => 'Where',
+                                'label' => 'Where'
                                 ),
                         'attributes' => array(
-                                'value' => '/tmp/bareos-restore/',
+                                'value' => '/tmp/bareos-restore/'
                                 )
                         )
-		));
+		);
 
 		// Cross site request forgery
                 $this->add(new Element\Csrf('security'));
@@ -221,7 +221,7 @@ class RestoreForm extends Form
 		$selectData = array();
 		if(!empty($this->jobs)) {
 			foreach($this->jobs as $job) {
-				$selectData[$job['jobid']] = $job['jobid']
+				$selectData[$job['jobid']] = $job['jobid'];
 			}
 		}
 		return $selectData;
