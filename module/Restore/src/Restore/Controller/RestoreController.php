@@ -59,5 +59,24 @@ class RestoreController extends AbstractActionController
 		return $jobs['result'][0]['jobs'];
 	}
 
+	/**
+	 * Get client list form director in long or short format
+	 *
+	 * @param $format
+	 * @return array
+	 */
+	private function getClients($format="long")
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($format == "long") {
+			$result = $director->send_command("llist clients", 2);
+		}
+		elseif($format == "short") {
+			$result = $director->send_command("list clients", 2);
+		}
+		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $clients['result'][0]['clients'];
+	}
+
 }
 
