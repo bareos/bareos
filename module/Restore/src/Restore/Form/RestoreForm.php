@@ -170,6 +170,37 @@ class RestoreForm extends Form
                         ));
                 }
 
+		// Before
+		$this->add(array(
+                        'name' => 'before-date',
+                        'type' => 'date',
+                        'options' => array(
+                                'label' => 'Before',
+                                ),
+                        'attributes' => array(
+                                'min' => '1970-01-01',
+                                'max' => $this->today,
+                                'step' => '1',
+                                )
+                        )
+                );
+
+		// Where
+		$this->add(array(
+			'name' => 'where',
+                        'type' => 'text',
+                        'options' => array(
+                                'label' => 'Where',
+                                ),
+                        'attributes' => array(
+                                'value' => '/tmp/bareos-restore/',
+                                )
+                        )
+		));
+
+		// Cross site request forgery
+                $this->add(new Element\Csrf('security'));
+
 		// Submit button
 		$this->add(array(
 			'name' => 'submit',
