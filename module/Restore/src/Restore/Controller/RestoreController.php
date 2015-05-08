@@ -28,6 +28,7 @@ namespace Restore\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\ViewModel\JsonModel;
+use Zend\Restore\Form\RestoreForm;
 
 class RestoreController extends AbstractActionController
 {
@@ -39,7 +40,65 @@ class RestoreController extends AbstractActionController
 	 */
 	public function indexAction()
 	{
-		return new ViewModel();
+		if($_SESSION['bareos']['authenticated'] == true) {
+
+			$form = new RestoreForm(
+				$this->restore_params,
+				$this->getJobs("long"),
+				$this->getClients("long"),
+				$this->getFilesets("long")
+			);
+
+                        return new ViewModel(
+				'restore_params' => $this->restore_params,
+				'form' => $form
+			);
+
+                }
+                else {
+                        return $this->redirect()->toRoute('auth', array('action' => 'login'));
+                }
+	}
+
+	/**
+	 *
+	 */
+	public function confirmAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true) {
+
+                        // TODO
+
+			// 1. display restore job summary
+			// 2. submit restore job
+			// 3. modify restore job
+			// 4. cancel restore job
+
+                        return new ViewModel();
+
+                }
+                else {
+                        return $this->redirect()->toRoute('auth', array('action' => 'login'));
+                }
+	}
+
+	/**
+	 *
+	 */
+	public function queuedAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true) {
+
+			// TODO
+
+			// 1. display restore job queued
+
+			return new ViewModel();
+
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	/**
