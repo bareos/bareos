@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,13 +27,36 @@ namespace Restore\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\ViewModel\JsonModel;
 
-class RestoreController extends AbstractActionController 
+class RestoreController extends AbstractActionController
 {
-	
+
+	/**
+	 *
+	 */
 	public function indexAction()
 	{
 		return new ViewModel();
+	}
+
+	/**
+	 * Get job list from director in long or short format
+	 *
+	 * @param $format
+	 * @return array
+	 */
+	private function getJobs($format="long")
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($format == "long") {
+			$result = $director->send_command("llist jobs", 2);
+		}
+		elseif($format == "short") {
+			$result = $director->send_command("list jobs", 2);
+		}
+		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $jobs['result'][0]['jobs'];
 	}
 
 }
