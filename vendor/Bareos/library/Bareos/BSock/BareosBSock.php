@@ -835,21 +835,27 @@ class BareosBSock implements BareosBSockInterface
 	{
 		$result = "";
 
-		if($api == 2) {
-			// switch to api 2 (json)
-			self::send(".api 2");
-			$debug = self::receive_message();
-			// use default catalog
-			self::send("use");
-			$debug = self::receive_message();
-			// send command
-			self::send($cmd);
-			$result = self::receive_message();
+		switch($api) {
+			case 2:
+				self::send(".api 2");
+				$debug = self::receive_message();
+				break;
+			case 1:
+				self::send(".api 1");
+				$debug = self::receive_message();
+				break;
+			default:
+				self::send(".api 0");
+				$debug = self::receive_message();
+				break;
 		}
-		else {
-			if(self::send($cmd)) {
-				$result = self::receive_message();
-			}
+
+		if(self::send("use")) {
+			$debug = self::receive_message();
+		}
+
+		if(self::send($cmd)) {
+			$result = self::receive_message();
 		}
 
 		return $result;
