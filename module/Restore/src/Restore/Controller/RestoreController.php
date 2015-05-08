@@ -28,7 +28,7 @@ namespace Restore\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\ViewModel\JsonModel;
-use Zend\Restore\Form\RestoreForm;
+use Restore\Form\RestoreForm;
 
 class RestoreController extends AbstractActionController
 {
@@ -49,10 +49,10 @@ class RestoreController extends AbstractActionController
 				$this->getFilesets("long")
 			);
 
-                        return new ViewModel(
+                        return new ViewModel(array(
 				'restore_params' => $this->restore_params,
 				'form' => $form
-			);
+			));
 
                 }
                 else {
