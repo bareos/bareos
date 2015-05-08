@@ -47,6 +47,13 @@ class RestoreController extends AbstractActionController
 	 */
 	private function getRestoreParams()
 	{
+		if($this->params()->fromQuery('type')) {
+                        $this->restore_params['type'] = $this->params()->fromQuery('type');
+                }
+                else {
+                        $this->restore_params['type'] = null;
+                }
+
 		if($this->params()->fromQuery('job')) {
 			$this->restore_params['job'] = $this->params()->fromQuery('job');
 		}
