@@ -87,7 +87,7 @@ dpl_conn_get_nolock(dpl_ctx_t *ctx,
   return NULL;
 }
 
-static int 
+static int
 is_usable(dpl_conn_t *conn)
 {
   struct pollfd pfd;
@@ -396,7 +396,7 @@ init_ssl_conn(dpl_ctx_t *ctx, dpl_conn_t *conn)
     long ret_ssl = 0;
     ret_ssl = SSL_get_verify_result(conn->ssl);
     DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL certificate verification status: %ld: %s", ret_ssl, X509_verify_cert_error_string(ret_ssl));
-  } 
+  }
   DPL_TRACE(ctx, DPL_TRACE_SSL, "SSL cipher used: %s", SSL_get_cipher(conn->ssl));
 
   return 1;
@@ -547,7 +547,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx, int af,
 
   if (NULL != conn->host)
     free(conn->host);
-  
+
   conn->host = nstr;
 
   nstr = strdup(portstr);
@@ -556,7 +556,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx, int af,
 
   if (NULL != conn->port)
     free(conn->port);
-    
+
   conn->port = nstr;
 
   return conn;
@@ -569,7 +569,7 @@ dpl_conn_open_host(dpl_ctx_t *ctx, int af,
   return NULL;
 }
 
-void 
+void
 dpl_blacklist_host(dpl_ctx_t *ctx,
                    const char *host,
                    const char *portstr)
@@ -870,7 +870,8 @@ writev_all_ssl(dpl_conn_t *conn,
 
   for (i = 0;i < n_iov;i++)
     total_size += iov[i].iov_len;
-
+  if (total_size == 0)
+    return DPL_FAILURE;
   ptr = malloc(total_size);
   if (NULL == ptr)
     return DPL_FAILURE;
@@ -886,18 +887,10 @@ writev_all_ssl(dpl_conn_t *conn,
   if (ret <= 0)
     {
       DPL_SSL_PERROR(conn->ctx, "SSL_write");
-      ret = DPL_FAILURE;
-      goto end;
+      free(ptr);
+      return DPL_FAILURE;
     }
-
-  ret = DPL_SUCCESS;
-
- end:
-
-  if (NULL != ptr)
-    free(ptr);
-
-  return ret;
+  return DPL_SUCCESS;
 }
 
 /**
