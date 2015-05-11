@@ -25,7 +25,6 @@
  * Marco van Wieringen, August 2012
  */
 #define BUILD_PLUGIN
-#define BUILDING_DLL            /* required for Windows plugin */
 
 #include "bareos.h"
 #include "fd_plugins.h"
@@ -193,7 +192,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
 /*
  * Plugin called here when it is unloaded, normally when Bareos is going to exit.
  */
-bRC unloadPlugin()
+bRC DLL_IMP_EXP unloadPlugin()
 {
    /*
     * Terminate Python

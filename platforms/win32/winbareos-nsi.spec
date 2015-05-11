@@ -154,7 +154,10 @@ do
       bat.exe \
       bpipe-fd.dll \
       mssqlvdi-fd.dll \
+      python-fd.dll \
       autoxflate-sd.dll \
+      python-sd.dll \
+      python-dir.dll \
       libbareos.dll \
       libbareosfind.dll \
       libbareoslmdb.dll \

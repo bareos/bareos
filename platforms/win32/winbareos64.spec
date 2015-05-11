@@ -209,7 +209,10 @@ for flavor in `echo "%flavors"`; do
       lmdb/libbareoslmdb.dll \
       plugins/filed/bpipe-fd.dll \
       plugins/filed/mssqlvdi-fd.dll \
+      plugins/filed/python-fd.dll \
       plugins/stored/autoxflate-sd.dll \
+      plugins/stored/python-sd.dll \
+      plugins/dird/python-dir.dll \
       $RPM_BUILD_ROOT%{_mingw64_bindir}/$flavor
 
    for cfg in  ../qt-tray-monitor/tray-monitor.fd.conf.in \

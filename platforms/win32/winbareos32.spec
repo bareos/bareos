@@ -41,7 +41,6 @@ BuildRequires:  bareos-addons
 %define SIGNCERT ia.p12
 %define SIGNPWFILE signpassword
 
-
 Source1:        fillup.sed
 Patch1:         tray-monitor-conf.patch
 Patch2:         tray-monitor-conf-fd-sd.patch
@@ -209,7 +208,10 @@ for flavor in `echo "%flavors"`; do
       lmdb/libbareoslmdb.dll \
       plugins/filed/bpipe-fd.dll \
       plugins/filed/mssqlvdi-fd.dll \
+      plugins/filed/python-fd.dll \
       plugins/stored/autoxflate-sd.dll \
+      plugins/stored/python-sd.dll \
+      plugins/dird/python-dir.dll \
       $RPM_BUILD_ROOT%{_mingw32_bindir}/$flavor
 
    for cfg in  ../qt-tray-monitor/tray-monitor.fd.conf.in \

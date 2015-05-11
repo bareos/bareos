@@ -555,6 +555,7 @@ SectionIn 1 2 3
   SetOverwrite ifnewer
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
+  File "python-fd.dll"
 SectionEnd
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
@@ -606,6 +607,7 @@ SectionIn 2
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   File "autoxflate-sd.dll"
+  File "python-sd.dll"
 SectionEnd
 
 
@@ -746,17 +748,17 @@ SectionIn 2
   FileWrite $R1 'REM this script deletes the db dump $\r$\n'
   FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
   FileClose $R1
-
-
 SectionEnd
+
 
 Section /o "Director Plugins " SEC_DIRPLUGINS
 SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-#  File "autoxflate-sd.dll"
+  File "python-dir.dll"
 SectionEnd
+
 
 Section "Open Firewall for Director" SEC_FIREWALL_DIR
 SectionIn 2

@@ -37,23 +37,41 @@ INCLUDES = -I../../.. \
 	   -I../../include \
 	   -I../../compat/include
 endif
+PYTHON_INCLUDES = -I../python/include
 LDLIBS = ../../lib/libbareos.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
 	 $(MINGW_LIB)/libz.dll.a \
 	 $(MINGW_LIB)/libfastlz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-all: autoxflate-sd.dll
+ifeq ($(WIN_DEBUG),yes)
+OPT_CXXFLAGS = $(CXXFLAGS) -O2
+else
+OPT_CXXFLAGS = $(CXXFLAGS)
+endif
+
+all: autoxflate-sd.dll python-sd.dll
 
 autoxflate-sd.dll: DLL_USAGE = -DBUILDING_DLL
 autoxflate-sd.dll: autoxflate-sd.o
 	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a autoxflate-sd.o $(LDLIBS) -o $@
 
+ifeq ($(WIN_VERSION),64)
+python-sd.o: CXXFLAGS += -DMS_WIN64
+endif
+python-sd.o: python-sd.c
+	@echo "Compiling $<"
+	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(PYTHON_INCLUDES) -c -o $@ $<
+
+python-sd.dll: DLL_USAGE = -DBUILDING_DLL
+python-sd.dll: python-sd.o
+	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a python-sd.o $(LDLIBS) ../python/lib/$(WIN_VERSION)/python27.dll -o $@
+
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f autoxflate-sd.dll
+	rm -f autoxflate-sd.dll python-sd.dll autoxflate-sd.dll.a python-sd.dll.a
 
 # inference rules
 .c.o:

@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-all_subdirs = filed stored
+all_subdirs = filed stored dird
 
 all:
 	@for I in ${all_subdirs}; \

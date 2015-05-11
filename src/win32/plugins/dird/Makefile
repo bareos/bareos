@@ -18,21 +18,30 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-VPATH = .:../../../plugins/filed
+VPATH = .:../../../plugins/dird
 
 include ../../Makefile.inc
 
+ifeq ($(WIN_VERSION),32)
 INCLUDES = -I../../.. \
 	   -I../../../include \
-	   -I../../../filed \
-	   -I../../../plugins/filed \
+	   -I../../../dird \
+	   -I../../../plugins/dird \
 	   -I../../include \
 	   -I../../compat/include
-VDI_INCLUDES = -I../../vdi/include
+else
+INCLUDES = -I../../.. \
+	   -I../../../include \
+	   -I../../../dird \
+	   -I../../../plugins/dird \
+	   -I../../include \
+	   -I../../compat/include
+endif
 PYTHON_INCLUDES = -I../python/include
 LDLIBS = ../../lib/libbareos.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
-         $(MINGW_LIB)/libz.dll.a \
+	 $(MINGW_LIB)/libz.dll.a \
+	 $(MINGW_LIB)/libfastlz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 ifeq ($(WIN_DEBUG),yes)
@@ -41,37 +50,24 @@ else
 OPT_CXXFLAGS = $(CXXFLAGS)
 endif
 
-all: bpipe-fd.dll mssqlvdi-fd.dll python-fd.dll
-
-bpipe-fd.dll: DLL_USAGE = -DBUILDING_DLL
-bpipe-fd.dll: bpipe-fd.o
-	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a bpipe-fd.o $(LDLIBS) -o $@
-
-mssqlvdi-fd.o: CXXFLAGS += -fpermissive
-mssqlvdi-fd.o: mssqlvdi-fd.c
-	@echo "Compiling $<"
-	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(VDI_INCLUDES) -c -o $@ $<
-
-mssqlvdi-fd.dll: DLL_USAGE = -DBUILDING_DLL
-mssqlvdi-fd.dll: mssqlvdi-fd.o
-	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a mssqlvdi-fd.o $(LDLIBS) -o $@
+all: python-dir.dll
 
 ifeq ($(WIN_VERSION),64)
-python-fd.o: CXXFLAGS += -DMS_WIN64
+python-dir.o: CXXFLAGS += -DMS_WIN64
 endif
-python-fd.o: python-fd.c
+python-dir.o: python-dir.c
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(PYTHON_INCLUDES) -c -o $@ $<
 
-python-fd.dll: DLL_USAGE = -DBUILDING_DLL
-python-fd.dll: python-fd.o
-	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a python-fd.o $(LDLIBS) ../python/lib/$(WIN_VERSION)/python27.dll -o $@
+python-dir.dll: DLL_USAGE = -DBUILDING_DLL
+python-dir.dll: python-dir.o
+	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a python-dir.o $(LDLIBS) ../python/lib/$(WIN_VERSION)/python27.dll -o $@
 
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f bpipe-fd.dll mssqlvdi-fd.dll python-fd.dll bpipe-fd.dll.a mssqlvdi-fd.dll.a python-fd.dll.a
+	rm -f python-dir.dll python-dir.dll.a
 
 # inference rules
 .c.o:
