@@ -121,7 +121,7 @@ dpl_uks_gen_key_raw(BIGNUM *id,
   int off, i;
 
   BN_zero(id);
-  
+
   off = DPL_UKS_REPLICA_NBITS +
     DPL_UKS_CLASS_NBITS;
 
@@ -241,6 +241,7 @@ dpl_uks_gen_key_ext(BIGNUM *id,
   off = DPL_UKS_REPLICA_NBITS +
     DPL_UKS_CLASS_NBITS;
 
+  memset(entropy, 0, sizeof(entropy));
   if (!(mask & DPL_UKS_MASK_SPECIFIC))
     {
       specific = 0;
@@ -411,17 +412,17 @@ dpl_uks_set_class(BIGNUM *k,
                   int cl)
 {
   int i;
-  
+
   if (cl < 0 ||
       cl >= 1<<DPL_UKS_CLASS_NBITS)
     return DPL_FAILURE;
-  
+
   for (i = 0;i < DPL_UKS_CLASS_NBITS;i++)
     if (cl & 1<<i)
       BN_set_bit(k, DPL_UKS_REPLICA_NBITS + i);
     else
       BN_clear_bit(k, DPL_UKS_REPLICA_NBITS + i);
-  
+
   return DPL_SUCCESS;
 }
 
@@ -499,7 +500,7 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
       class = 1;
       break ;
     case DPL_STORAGE_CLASS_CUSTOM:
-      
+
       if (NULL == custom)
         {
           ret = DPL_EINVAL;
@@ -507,7 +508,7 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
         }
 
       class = atoi(custom);
-      
+
       if (class < 0 || class > 15)
         {
           ret = DPL_EINVAL;
@@ -541,7 +542,7 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
   }
 
   ret = DPL_SUCCESS;
-  
+
  end:
 
   free(id_str);
@@ -594,7 +595,7 @@ dpl_uks_bn2hex(const BIGNUM *id,
   return ret;
 }
 
-dpl_id_scheme_t dpl_id_scheme_uks = 
+dpl_id_scheme_t dpl_id_scheme_uks =
   {
     .name = "uks",
     .gen_random_key = dpl_uks_gen_random_key,
