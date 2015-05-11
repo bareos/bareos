@@ -1970,11 +1970,10 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                         indent_config_item(cfg_str, 3, "Compression = ");
                         p++;                   /* skip Z */
                         if (*p >= '0' && *p <= '9') {
-                           Mmsg(temp, "GZIP\n");
+                           Mmsg(temp, "GZIP");
                            pm_strcat(cfg_str, temp.c_str());
                            Mmsg(temp, "%c\n", *p);
                            pm_strcat(cfg_str, temp.c_str());
-                           p++; /* skip number */
                         } else if (*p == 'o') {
                            Mmsg(temp, "LZO\n");
                            pm_strcat(cfg_str, temp.c_str());
