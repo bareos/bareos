@@ -633,10 +633,10 @@ dpl_addrlist_add(dpl_addrlist_t *addrlist,
                              &hresult, &herr);
 
   if (ret != 0 || hresult == NULL) { /* workaround for CentOS: see #5748 */
-    free(new_host);
     free(hret);
     free(hbuf);
     DPL_LOG(NULL, DPL_ERROR, "cannot lookup host %s: %s\n", new_host, hstrerror(herr));
+    free(new_host);
     return DPL_FAILURE;
   }
 
