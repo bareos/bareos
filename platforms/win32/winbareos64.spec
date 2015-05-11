@@ -198,6 +198,8 @@ for flavor in `echo "%flavors"`; do
       dird/bareos-dir.exe \
       dird/bareos-dbcheck.exe \
       tools/bsmtp.exe \
+      tools/bregex.exe \
+      tools/bwild.exe \
       stored/libbareossd*.dll \
       cats/libbareoscats*.dll \
       lib/libbareos.dll \

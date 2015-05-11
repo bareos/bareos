@@ -136,6 +136,8 @@ do
       bareos-dbcheck.exe \
       bconsole.exe \
       bsmtp.exe \
+      bregex.exe \
+      bwild.exe \
       btape.exe \
       bls.exe \
       bextract.exe \

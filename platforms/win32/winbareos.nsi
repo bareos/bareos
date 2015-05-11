@@ -641,6 +641,8 @@ SectionIn 2
   File "bareos-dir.exe"
   File "bareos-dbcheck.exe"
   File "bsmtp.exe"
+  File "bregex.exe"
+  File "bwild.exe"
   File "libbareoscats.dll"
   File "libbareoscats-postgresql.dll"
 
@@ -1731,6 +1733,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\sed.exe"
 
   Delete "$INSTDIR\bsmtp.exe"
+  Delete "$INSTDIR\bregex.exe"
+  Delete "$INSTDIR\bwild.exe"
   Delete "$INSTDIR\*template"
 
 # delete unittest bin

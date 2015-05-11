@@ -36,20 +36,40 @@ LDLIBS = ../lib/libbareos.a \
 BSMTPSRCS = bsmtp.c
 BSMTPOBJS = $(BSMTPSRCS:.c=.o)
 
-WINDRESSRCS = bsmtpres.rc
-WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
+BSMTPRESSRCS = bsmtpres.rc
+BSMTPRESOBJS = $(BSMTPRESSRCS:.rc=.o)
 
-all: bsmtp.exe
+BREGEXSRCS = bregex.c
+BREGEXOBJS = $(BREGEXSRCS:.c=.o)
+
+BREGEXRESSRCS = bregexres.rc
+BREGEXRESOBJS = $(BREGEXRESSRCS:.rc=.o)
+
+BWILDSRCS = bwild.c
+BWILDOBJS = $(BWILDSRCS:.c=.o)
+
+BWILDRESSRCS = bwildres.rc
+BWILDRESOBJS = $(BWILDRESSRCS:.rc=.o)
+
+all: bsmtp.exe bregex.exe bwild.exe
 
 bsmtp.exe: DLL_USAGE = -DUSING_DLL
-bsmtp.exe: $(BSMTPOBJS) $(WINDRESOBJS)
-	$(CXX) $(LDFLAGS_CONS) $(BSMTPOBJS) $(LDLIBS) $(WINDRESOBJS) -o $@
+bsmtp.exe: $(BSMTPOBJS) $(BSMTPRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BSMTPOBJS) $(LDLIBS) $(BSMTPRESOBJS) -o $@
+
+bregex.exe: DLL_USAGE = -DUSING_DLL
+bregex.exe: $(BREGEXOBJS) $(BREGEXRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BREGEXOBJS) $(LDLIBS) $(BREGEXRESOBJS) -o $@
+
+bwild.exe: DLL_USAGE = -DUSING_DLL
+bwild.exe: $(BWILDOBJS) $(BWILDRESOBJS)
+	$(CXX) $(LDFLAGS_CONS) $(BWILDOBJS) $(LDLIBS) $(BWILDRESOBJS) -o $@
 
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f bsmtp.exe
+	rm -f bsmtp.exe bregex.exe bwild.exe
 
 # inference rules
 .c.o:

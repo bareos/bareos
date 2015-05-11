@@ -57,6 +57,8 @@ distclean:
 
 ifeq ($(BUILD_QTGUI),)
 rc-files: tools/bsmtpres.rc \
+	  tools/bregexres.rc \
+	  tools/bwildres.rc \
 	  console/consoleres.rc \
 	  filed/filedres.rc \
 	  stored/storedres.rc \
@@ -70,6 +72,8 @@ rc-files: tools/bsmtpres.rc \
 qt-gui:
 else
 rc-files: tools/bsmtpres.rc \
+	  tools/bregexres.rc \
+	  tools/bwildres.rc \
 	  console/consoleres.rc \
 	  filed/filedres.rc \
 	  stored/storedres.rc \
@@ -98,6 +102,12 @@ qt-tray-monitor/traymon.rc: qt-tray-monitor/traymon.rc.in
 endif
 
 tools/bsmtpres.rc: tools/bsmtpres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+tools/bregexres.rc: tools/bregexres.rc.in
+	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
+
+tools/bwildres.rc: tools/bwildres.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 console/consoleres.rc: console/consoleres.rc.in
