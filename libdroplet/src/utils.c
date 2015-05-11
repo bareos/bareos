@@ -237,7 +237,7 @@ dpl_dump_line(struct dpl_dump_ctx *ctx,
   if (ctx->binary)
     {
       fprintf(ctx->file, "%08d  ", (int) ctx->global_off + off - l);
-      
+
       i = 0;
       while (i < DPL_DUMP_LINE_SIZE)
         {
@@ -249,9 +249,9 @@ dpl_dump_line(struct dpl_dump_ctx *ctx,
             fprintf(ctx->file, " ");
           i++;
         }
-      
+
       fprintf(ctx->file, "  ");
-      
+
       i = 0;
       while (i < l)
         {
@@ -261,7 +261,7 @@ dpl_dump_line(struct dpl_dump_ctx *ctx,
             fprintf(ctx->file, ".");
           i++;
         }
-      
+
       fprintf(ctx->file, "\n");
     }
   else
@@ -475,7 +475,7 @@ dpl_iso8601totime(const char *str)
 }
 
 dpl_status_t
-dpl_timetoiso8601(time_t t, 
+dpl_timetoiso8601(time_t t,
                   char *buf,
                   int buf_size)
 {
@@ -723,7 +723,7 @@ dpl_base64_encode(const u_char *in_buf,
  *
  * @return out_len length of decoded output
  */
-u_int 
+u_int
 dpl_base64_decode(const u_char *in_buf,
                    u_int in_len,
                    u_char *out_buf)
@@ -952,14 +952,14 @@ dpl_uuid_rand(dpl_uuid_t *uuid)
       ret = DPL_FAILURE;
       goto end;
     }
-  
+
   uuid->time_hi_and_version = (uuid->time_hi_and_version & 0x0fff) |  0x4;
   uuid->clock_seq_hi_and_reserved = (uuid->clock_seq_hi_and_reserved & 0x0fff) | 0xa;
 
   ret = DPL_SUCCESS;
-  
+
  end:
-  
+
   return ret;
 }
 
@@ -1029,7 +1029,7 @@ dpl_copy_directive_to_str(dpl_copy_directive_t directive)
   return "impossible case";
 }
 
-u_int 
+u_int
 dpl_pow2_next(u_int v)
 {
   v--;
@@ -1039,7 +1039,7 @@ dpl_pow2_next(u_int v)
   v |= v >> 8;
   v |= v >> 16;
   v++;
-  
+
   return v;
 }
 
@@ -1288,4 +1288,15 @@ dpl_get_xattrs(char *path, dpl_dict_t *dict, char *prefix, int do_64encode)
     }
 
   return ret;
+}
+
+dpl_status_t
+dpl_append_str(const char *str_to_add, size_t len_str_to_add, char **buff, size_t *size_buff)
+{
+  if (*size_buff < len_str_to_add)
+    return DPL_FAILURE;
+  memcpy(*buff, str_to_add, len_str_to_add);
+  *buff += len_str_to_add;
+  *size_buff -= len_str_to_add;
+  return DPL_SUCCESS;
 }

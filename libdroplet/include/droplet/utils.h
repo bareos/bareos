@@ -208,14 +208,7 @@ int dpl_base64_init(void);
     *p = (Char);p++;len--;                                      \
   } while (0)
 
-#define DPL_APPEND_BUF(Buf, Len)                                \
-  do {                                                          \
-    if (len < (Len))                                            \
-      return DPL_FAILURE;                                       \
-    memcpy(p, (Buf), (Len)); p += (Len); len -= (Len);          \
-  } while (0)
-
-#define DPL_APPEND_STR(Str) DPL_APPEND_BUF((Str), strlen(Str))
+#define DPL_APPEND_STR(Str) dpl_append_str((Str), strlen(Str), &p, &len)
 
 /**/
 
@@ -225,6 +218,7 @@ int dpl_base64_init(void);
 
 /* PROTO utils.c */
 /* src/utils.c */
+dpl_status_t dpl_append_str(const char *str_to_add, size_t len_str_to_add, char **buff, size_t *size_buff);
 pid_t dpl_gettid(void);
 int dpl_gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
 int dpl_gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop);
