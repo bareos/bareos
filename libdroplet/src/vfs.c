@@ -486,6 +486,7 @@ __make_abs_path(dpl_ctx_t *ctx, const char *bucket,
 
   DPRINTF("make_abs_path() - '%s'\n", path);
 
+  obj_type = DPL_FTYPE_UNDEF;
   if (!is_rel_path(ctx, path)) {
     strcpy(obj_fqn->path, path + 1);
     return DPL_SUCCESS;
@@ -899,11 +900,11 @@ dpl_chdir(dpl_ctx_t *ctx,
 
   //recheck obj_type: append delim at the end of object to be compatible with all backend
   tmp_fqn = obj_fqn;
-  
+
   if (strcmp(tmp_fqn.path, ""))
     {
       int len = strlen(tmp_fqn.path);
-      
+
       //append delim if not present
       if (len >= 1 && *(tmp_fqn.path + len - 1) != '/')
         strcat(tmp_fqn.path, "/");
@@ -947,7 +948,7 @@ dpl_chdir(dpl_ctx_t *ctx,
   return ret;
 }
 
-/* 
+/*
  * vfile
  */
 
@@ -1488,18 +1489,18 @@ dpl_open(dpl_ctx_t *ctx,
  * blob operations
  */
 
-/** 
+/**
  * put a blob
- * 
- * @param ctx 
- * @param locator 
+ *
+ * @param ctx
+ * @param locator
  * @param option
  * @param condition
  * @param range if not NULL then put range
- * @param metadata 
- * @param sysmd 
- * @param data_len 
- * 
+ * @param metadata
+ * @param sysmd
+ * @param data_len
+ *
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
@@ -1574,18 +1575,18 @@ dpl_fput(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * get a blob
- * 
- * @param ctx 
- * @param locator 
+ *
+ * @param ctx
+ * @param locator
  * @param option
  * @param condition
  * @param range if not NULL then get range
- * @param metadata 
- * @param sysmd 
- * @param data_len 
- * 
+ * @param metadata
+ * @param sysmd
+ * @param data_len
+ *
  * @return DPL_SUCCESS
  * @return DPL_FAILURE
  */
@@ -1594,7 +1595,7 @@ dpl_fget(dpl_ctx_t *ctx,
 	 const char *locator,
 	 const dpl_option_t *option,
 	 const dpl_condition_t *condition,
-	 const dpl_range_t *range, 
+	 const dpl_range_t *range,
 	 char **data_bufp,
 	 unsigned int *data_lenp,
 	 dpl_dict_t **metadatap,
@@ -1734,7 +1735,7 @@ dpl_mkobj(dpl_ctx_t *ctx,
     }
 
   snprintf(resource, sizeof (resource), "%s%s", obj_fqn.path, obj_type_ext(obj_type));
-  
+
   ret2 = dpl_put(ctx, bucket, resource, NULL, obj_type, NULL, NULL, metadata, sysmd, NULL, 0);
   if (DPL_SUCCESS != ret2)
     {
@@ -1827,7 +1828,7 @@ dpl_rmdir(dpl_ctx_t *ctx,
       ret = ret2;
       goto end;
     }
- 
+
   fqn_append_trailing_slash(&obj_fqn);
 
   path_len = strlen(obj_fqn.path);
@@ -2541,14 +2542,14 @@ copy_name_to_path(dpl_ctx_t *ctx,
   return ret;
 }
 
-/** 
+/**
  * server side copy
- * 
- * @param ctx 
- * @param src_locator 
- * @param dst_locator 
- * 
- * @return 
+ *
+ * @param ctx
+ * @param src_locator
+ * @param dst_locator
+ *
+ * @return
  */
 dpl_status_t
 dpl_fcopy(dpl_ctx_t *ctx,
