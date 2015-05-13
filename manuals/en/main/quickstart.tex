@@ -245,31 +245,17 @@ bareos-tray-monitor -t -c /etc/bareos/tray-monitor.conf
 \index[general]{Testing Bareos Compatibility with Your Tape Drive}
 
 Before spending a lot of time on Bareos only to find that it doesn't work
-with your tape drive, please read the {\bf Testing Your Tape
-Drive} chapter of this manual.
-\debug{TapeTesting chapter is missing!}
+with your tape drive, please read the \nameref{TapeTestingChapter} section.
 If you have a modern
 standard SCSI tape drive on a Linux or Solaris, most likely it will work,
 but better test than be sorry.  For FreeBSD (and probably other xBSD
 flavors), reading the above mentioned tape testing chapter is a must.
-% refer to FreeBSD bacula documentation, because Bareos documentation is not available
-Also, for FreeBSD, please see \elink{The FreeBSD
-Diary}{http://www.freebsddiary.org/bacula.php} for a detailed description
-%TODO: fix elink so it shows URL in PDF
-on how to make Bacula work on your system. 
-This information should also work with Bareos. 
-% In addition, users of FreeBSD
-% prior to 4.9-STABLE dated Mon Dec 29 15:18:01 2003 UTC who plan to use tape
-% devices, please see the file {\bf platforms/freebsd/pthreads-fix.txt} in
-% the main Bareos directory concerning important information concerning
-% compatibility of Bareos and your system.  \label{notls}
 
-
-\label{Running1}
 
 \section{Running Bareos}
 \index[general]{Bareos!Running}
 \index[general]{Running Bareos}
+\label{Running1}
 
 Probably the most important part of running Bareos is being able to restore
 files. If you haven't tried recovering files at least once, when you actually
