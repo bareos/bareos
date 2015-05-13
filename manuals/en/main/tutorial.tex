@@ -774,10 +774,10 @@ that you would like backed up. The only part you need installed on the other
 machine is the {\bf bareos-filedaemon}. 
 
 This packages installs also its configuration file \path|/etc/bareos/bareos-fd.conf|
-an sets its hostname + \path|-fd| as FileDaemon name.
+and sets its hostname + \path|-fd| as FileDaemon name.
 However, the client does not known the Bareos Director, so this information must be given manually.
 
-Lets assume, your second like has the hostname {\bf client2}
+Lets assume, your second client has the hostname {\bf client2}
 and this name is resolvable by DNS from the client and from the Bareos Director.
 
 Specify the Bareos Director in the File Daemon configuration file \path|/etc/bareos/bareos-fd.conf|:
@@ -832,7 +832,7 @@ Client {
 \end{verbatim}
 \normalsize
 
-Using this, the client is know to the Bareos Director. Additional you must specify, what to do with this client.
+Using this, the client is known to the Bareos Director. Additional you must specify, what to do with this client.
 Therefore we specify a Job, which mostly takes its settings from the existing DefaultJob:
 
 \footnotesize
