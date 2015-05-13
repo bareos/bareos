@@ -826,8 +826,11 @@ Add this section to the existing Bareos Director configuration file \path|/etc/b
 \begin{verbatim}
 Client {
   Name = client2-fd
-  Address = client2             # the name has to be resolvable through DNS. If this is not possible, you can work with IP addresses
-  Password = "PASSWORD"         # password for FileDaemon which has to be the same like the password in the director ressource of the bareos-fd.conf on the backup client. Copy it the the client to this line.
+  Address = client2             # the name has to be resolvable through DNS. If this is not possible,
+                                # you can work with IP addresses
+  Password = "PASSWORD"         # password for FileDaemon which has to be the same like the password
+                                # in the director ressource of the bareos-fd.conf on the backup client.
+                                # Copy it the the client to this line.
 }
 \end{verbatim}
 \normalsize
