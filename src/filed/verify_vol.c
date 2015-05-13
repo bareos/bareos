@@ -232,6 +232,18 @@ void do_verify_volume(JCR *jcr)
          Dmsg2(20, "bfiled>bdird: SHA512 len=%d: msg=%s\n", dir->msglen, dir->msg);
          break;
 
+      case STREAM_RESTORE_OBJECT:
+         jcr->lock();
+         jcr->JobFiles++;
+         jcr->num_files_examined++;
+         jcr->unlock();
+
+         Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles, STREAM_RESTORE_OBJECT);
+         dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
+                    STREAM_RESTORE_OBJECT, "ReStOrEObJeCt", fname,
+                    0, ap, 0, 0);
+         break;
+
       /* Ignore everything else */
       default:
          break;
