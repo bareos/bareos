@@ -822,6 +822,11 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
             }
          }
          break;
+
+      case STREAM_RESTORE_OBJECT:
+         Dmsg1(400, "RESTORE_OBJECT %s\n", jcr->fname);
+         break;
+
       default:
          /*
           * Got Digest Signature from Storage daemon
