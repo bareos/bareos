@@ -83,6 +83,8 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             showDbCommand = "mysql %s -B -N -e 'show databases'" %self.mysqlconnect
             showDb = Popen(showDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
             self.databases = showDb.stdout.read().splitlines()
+            if 'performance_schema' in self.databases:
+                self.databases.remove('performance_schema')
             showDb.wait()
             returnCode = showDb.poll()
             if returnCode == None:
@@ -117,7 +119,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         savepkt.fname = "/_mysqlbackups_/"+db+".sql"
         savepkt.type = bFileType['FT_REG']
 
-        dumpcommand = ("%s %s %s %s" %(self.dumpbinary, db, self.mysqlconnect, self.dumpoptions))
+        dumpcommand = ("%s %s %s %s" %(self.dumpbinary, self.mysqlconnect, db, self.dumpoptions))
         DebugMessage(context, 100, "Dumper: '" + dumpcommand + "'\n")
         self.stream = Popen(dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
 
