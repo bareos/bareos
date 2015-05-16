@@ -210,6 +210,14 @@ void *statistics_thread_runner(void *arg)
             continue;
          }
 
+         switch (store->Protocol) {
+         case APT_NATIVE:
+            break;
+         default:
+            UnlockRes();
+            continue;
+         }
+
          /*
           * Try connecting 2 times with a max time to wait of 1 seconds.
           * We don't want to lock the resources to long. And as the stored
