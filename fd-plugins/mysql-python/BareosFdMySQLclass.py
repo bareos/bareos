@@ -130,7 +130,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         DebugMessage(context, 100, "Dumper: '" + dumpcommand + "'\n")
         self.stream = Popen(dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
 
-        JobMessage(context, bJobMessageType['M_DEBUG'], "Starting backup of " + savepkt.fname + "\n");
+        JobMessage(context, bJobMessageType['M_INFO'], "Starting backup of " + savepkt.fname + "\n");
         return bRCs['bRC_OK'];
 
 
