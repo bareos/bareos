@@ -90,6 +90,8 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             self.databases = showDb.stdout.read().splitlines()
             if 'performance_schema' in self.databases:
                 self.databases.remove('performance_schema')
+            if 'information_schema' in self.databases:
+                self.databases.remove('information_schema')
             showDb.wait()
             returnCode = showDb.poll()
             if returnCode == None:
