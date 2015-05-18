@@ -3,28 +3,6 @@
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
 #               2013-2015 Bareos GmbH & Co KG
 #
-#   Redesign of the bareos specfile: goals (20110922)
-#
-#   * only support platforms that are available in OBS
-#   * activate all options available (if reasonable)
-#   * single-dir-install is not supported
-#   * Single packages for:
-#       * console package
-#       * dir package
-#       * sd package ( bls + btape + bcopy + bextract )
-#       * fd package ( )
-#       * tray monitor
-#       * bareos-database-{sqlite,postgresql,mysql} (libs) (make_database/tables/grant rights)
-#       * sql common abstract sql libraries (without db)
-#       * libs common libraries (without db)
-#       * tools without link to db libs (bwild, bregex)
-#       * tools with link to db libs (dbcheck, bscan)
-#       * bat
-#
-#	Notice: the libbareoscats* package to be able to pass the shlib name policy are
-#	explicitly named
-#
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
 
 Name: 		bareos
 Version: 	15.2.0
@@ -64,6 +42,7 @@ Vendor: 	The Bareos Team
 %define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
+%define check_cmocka 1
 %define glusterfs 0
 %define have_git 1
 %define ceph 0
@@ -78,6 +57,7 @@ Vendor: 	The Bareos Team
 %define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
+%define check_cmocka 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -87,9 +67,18 @@ Vendor: 	The Bareos Team
 %define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
 %endif
 
+# SLES 11
+%if 0%{?suse_version} == 1110
+# cmocka package is broken on SLES11SP3, 32bit.
+# We disable it in all SLES11 build.
+%define check_cmocka 0
+%endif
+
 %if 0%{?suse_version} > 1140
 %define systemd_support 1
 %endif
+
+
 
 #
 # RedHat (CentOS, Fedora, RHEL) specific settings
@@ -100,6 +89,7 @@ Vendor: 	The Bareos Team
 %define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
+%define check_cmocka 0
 %define have_git 0
 %define python_plugins 0
 %endif
@@ -158,7 +148,6 @@ BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
 BuildRequires: libfastlz-devel
-BuildRequires: libcmocka-devel
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
 BuildRequires: sqlite3-devel
@@ -174,6 +163,10 @@ BuildRequires: mtx
 
 %if 0%{?build_bat} || 0%{?build_qt_monitor}
 BuildRequires: libqt4-devel
+%endif
+
+%if 0%{?check_cmocka}
+BuildRequires: libcmocka-devel >= 1.0.1
 %endif
 
 %if 0%{?python_plugins}
@@ -696,10 +689,9 @@ export MTX=/usr/sbin/mtx
 #Add flags
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
 
+%check
 # run unit tests
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
-
-
 
 %install
 %if 0%{?suse_version}
