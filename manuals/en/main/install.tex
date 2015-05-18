@@ -180,8 +180,9 @@ zypper install bareos bareos-database-$DATABASE
 # define parameter
 #
 
-DIST=Debian_7.0
+DIST=Debian_8.0
 # or
+# DIST=Debian_7.0
 # DIST=Debian_6.0
 # DIST=xUbuntu_14.04
 # DIST=xUbuntu_12.04
@@ -203,7 +204,8 @@ apt-get update
 apt-get install bareos bareos-database-$DATABASE
 \end{commands}
 
-
+If you prefer using the versions of Bareos directly integrated into the distributions, 
+please note that there are some differences, see \nameref{sec:DebianOrgLimitations}.
 
 \section{Prepare Bareos database}
     \label{sec:CreateDatabase}

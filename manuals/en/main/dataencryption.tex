@@ -10,6 +10,8 @@ file signatures are validated and any mismatches are reported.  At no time
 does the Director or the Storage Daemon have access to unencrypted file
 contents.
 
+\warning{These feature is only available, if Bareos is builed against OpenSSL.}
+
 
 It is very important to specify what this implementation does NOT
 do:
@@ -27,8 +29,8 @@ do:
 %       %\TODO{refer to SElinux?}
 
 \item The implementation does not encrypt file metadata such as file path
-  names, permissions, and ownership. Extended attributes are also currently
-  not encrypted. However, Mac OS X resource forks are encrypted.
+  names, permissions, ownership and extended attributes.
+  However, Mac OS X resource forks are encrypted.
 \end{itemize}
 
 Encryption and signing are implemented using RSA private keys coupled with
@@ -52,8 +54,8 @@ While less critical than the Master Keys, File Daemon Keys are also a prime
 candidate for off-site backups; burn the key pair to a CD and send the CD
 home with the owner of the machine.
 
-NOTE!!! If you lose your encryption keys, backups will be unrecoverable.
-{\bf ALWAYS} store a copy of your master keys in a secure, off-site location.
+\warning{If you lose your encryption keys, backups will be unrecoverable.
+{\bf always} store a copy of your master keys in a secure, off-site location.}
 
 The basic algorithm used for each backup session (Job) is:
 \begin{enumerate}
@@ -70,11 +72,11 @@ daemon, any master keys).
 
 The implementation uses 128bit AES-CBC, with RSA encrypted symmetric
 session keys. The RSA key is user supplied.
-If you are running OpenSSL 0.9.8 or later, the signed file hash uses
-SHA-256 -- otherwise, SHA-1 is used.
+If you are running OpenSSL $>=$ 0.9.8, the signed file hash uses
+SHA-256, otherwise SHA-1 is used.
 
 End-user configuration settings for the algorithms are not currently
-exposed -- only the algorithms listed above are used. However, the
+exposed, only the algorithms listed above are used. However, the
 data written to Volume supports arbitrary symmetric, asymmetric, and
 digest algorithms for future extensibility, and the back-end
 implementation currently supports:

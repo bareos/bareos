@@ -1,7 +1,7 @@
-\label{JobsandSchedules}
 \section{Understanding Jobs and Schedules}
 \index[general]{Jobs!Understanding}
 \index[general]{Schedules!Understanding}
+\label{JobsandSchedules}
 
 In order to make Bareos as flexible as possible, the directions given
 to Bareos are specified in several pieces.  The main instruction is the
@@ -28,10 +28,11 @@ back up, you should also have a job that backs up your catalog.
 Finally, be aware that in addition to the backup jobs there are
 restore, verify, and admin jobs, which have different requirements.
 
-\label{PoolsVolsLabels}
 \section{Understanding Pools, Volumes and Labels}
-\index[general]{Labels!Understanding Pools Volumes and}
-\index[general]{Understanding Pools, Volumes and Labels}
+\index[general]{Pools!Understanding}
+\index[general]{Volumes!Understanding}
+\index[general]{Labels!Understanding}
+\label{PoolsVolsLabels}
 
 If you have been using a program such as {\bf tar} to backup your system,
 Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a
@@ -196,7 +197,7 @@ be unique, and you will get many strange failures.
 % TODO: why not check for that and not allow sharing working directory?
 
 More information is in the
-\ilink{Director configuration}{DirectorChapter} chapter.
+\nameref{DirectorChapter} chapter.
 
 \subsection{Configuring the Storage daemon}
 \index[general]{Daemon!Configuring the Storage}
@@ -223,8 +224,7 @@ Further information is in the
 \ilink{Storage daemon configuration}{StoredConfChapter} chapter.
 
 \section{Testing your Configuration Files}
-\index[general]{Testing your Configuration Files}
-\index[general]{Files!Testing your Configuration}
+\index[general]{Testing!Configuration Files}
 
 You can test if your configuration file is syntactically correct by running
 the appropriate daemon with the {\bf -t} option. The daemon will process the
@@ -241,8 +241,8 @@ bareos-tray-monitor -t -c /etc/bareos/tray-monitor.conf
 
 \label{TapeTesting}
 \section{Testing Compatibility with Your Tape Drive}
-\index[general]{Drive!Testing Bareos Compatibility with Your Tape}
-\index[general]{Testing Bareos Compatibility with Your Tape Drive}
+\index[general]{Drive!Testing Compatibility with Your Tape}
+\index[general]{Testing Compatibility with Your Tape Drive}
 
 Before spending a lot of time on Bareos only to find that it doesn't work
 with your tape drive, please read the \nameref{TapeTestingChapter} section.
@@ -264,7 +264,7 @@ errors, than if you had already tried it once.
 
 To get a good idea how to use Bareos in a short time, we {\bf strongly}
 recommend that you follow the example in the
-\ilink{Running Bareos Chapter}{TutorialChapter} of this manual where
+\nameref{TutorialChapter} chapter of this manual where
 you will get detailed instructions on how to run Bareos.
 
 % \section{Log Rotation}

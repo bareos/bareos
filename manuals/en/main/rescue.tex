@@ -88,35 +88,27 @@ using it.
 Relax-and-Recover (ReaR) is quite easy to use with Bareos.
 
 \subsubsection{Installation}
-Bareos is a supported backend for ReaR since version 1.15. 
-Make sure you get at least that release.
-ReaR is included in some Linux distributions.
-If ReaR \textgreater= 1.15 is not part of your distribution, 
+Bareos is a supported backend for ReaR $>=$ 1.15.
+To use the \parameter{BAREOS_CLIENT} option, ReaR $>=$ 1.17 is required.
+If ReaR $>=$ 1.17 is not part of your distribution, 
 check the \elink{download section on the
 ReaR website}{http://relax-and-recover.org/download/}.
 
 \subsubsection{Configuration}
 Assuming you have a working Bareos configuration on the system you want to
-protect with ReaR, the only configuration for ReaR that is needed to use Bareos
-is:
+protect with ReaR and Bareos references this system by the name \parameter{bareosclient-fd}, 
+the only configuration for ReaR is:
 
-\parameter{
+\begin{config}{}
 BACKUP=BAREOS
-}
-
-\warning{Currently the Bareos client name (name of the file daemon resource)
-must start with the hostname of the system. This requirement will likely
-be removed in the future.}
-
-In our example we use \host{linux} as a
-hostname and \parameter{linux-fd} as a Bareos client name.
+BAREOS_CLIENT=bareosclient-fd
+\end{config}
 
 You also need to specify in your ReaR configuration file
 (\file{/etc/rear/local.conf})
 where
-you want to store your recovery images. Please refer to the ReaR documentation
-for details
-(\elink{http://relax-and-recover.org/documentation/}{http://relax-and-recover.org/documentation/}).
+you want to store your recovery images. 
+Please refer to the \elink{ReaR documentation}{http://relax-and-recover.org/documentation/} for details.
 
 For example, if you want to create an ISO
 image and store it to an NFS server
@@ -131,6 +123,7 @@ with the IP Address 192.168.10.1, you can use the following configuration:
 # be written to: /var/lib/rear/output/
 OUTPUT_URL=nfs://192.168.10.1/rear
 BACKUP=BAREOS
+BAREOS_CLIENT=bareosclient-fd
 \end{config}
 
 \subsubsection{Backup}

@@ -154,7 +154,7 @@
 % 1: version, 2: description
 \newcommand{\releasenote}[2]{
     \subsection*{bareos-#1}
-    \index[general]{#1!Release Notes}%
+    \index[general]{bareos-#1!Release Notes}%
     #2
 }
 
@@ -167,7 +167,7 @@
 Version $>=$ #3%
 %\index[#1]{#2}%
 % expand variables
-\edef\temp{\noexpand\index[general]{#3!#2}}%
+\edef\temp{\noexpand\index[general]{bareos-#3!#2}}%
 \temp%
 }
 }

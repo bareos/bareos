@@ -2,7 +2,7 @@
 %%
 
 The Bareos project provides and supports packages that have been released unter
-\elink{http://download.bareos.org/bareos/release/}{http://download.bareos.org/bareos/release/}
+\url{http://download.bareos.org/bareos/release/}
 
 However, the following tabular gives an overview, what components are expected on which plattforms to run:
 
@@ -63,6 +63,39 @@ However, the following tabular gives an overview, what components are expected o
 \paragraph{Notes}
 
 \begin{itemize}
-    \item by GNU/Linux, we mean 32/64bit Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES, Ubuntu, \dots
-    \item \index[general]{Platform!Univention Corporte Server}The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server
+    \item by GNU/Linux, we mean all x86 (32/64bit) versions of CentOS, Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES and Ubuntu that are officual supported  by the distribution itself.
 \end{itemize}
+
+\section{}
+
+\subsection{Univention Corporte Server}
+\index[general]{Platform!Univention Corporte Server}
+The Bareos version for the Univention App Center integraties into the Univention Enterprise Linux environment, making it easy to backup all the systems managed by the central Univention Corporate Server, see \url{http://www.bareos.org/en/HOWTO/articles/bareos-univention-documentation.html}.
+
+
+\subsection{Debian.org / Ubuntu Universe}
+\index[general]{Platform!Debian!Debian.org}
+\index[general]{Platform!Debian!8}
+\index[general]{Platform!Ubuntu!Universe}
+\index[general]{Platform!Ubuntu!Universe!15.04}
+\label{sec:DebianOrg}
+
+The distribution Debian $>=$ 8 do include a version of Bareos.
+Ubuntu Universe $>=$ 15.04 does also include these packages. 
+
+In the further text, these version will be named \name{Bareos (Debian.org)} 
+(also for the Ubuntu Universe version, as this is based on the Debian version).
+
+The source of these packages come from a seperate branch.
+For the release \name{bareos-14.2} this is
+\url{https://github.com/bareos/bareos/tree/bareos-14.2-debian} instead of the standard branch \url{https://github.com/bareos/bareos/tree/bareos-14.2}.
+
+The Bareos project tries to limit the differences between these branches to a minimum.
+
+\subsubsection{Limitations of the Debian.org/Ubuntu Universe version of Bareos}
+\label{sec:DebianOrgLimitations}
+
+    \begin{itemize}
+        \item Debian.org does not include the libfastlz compression library and thesefore the Bareos (Debian.org) packages do not offer the fileset options \parameter{compression=LZFAST}, \parameter{compression=LZ4} and \parameter{compression=LZ4HC}.
+        \item Debian.org prefers that Bareos (Debian.org) is linked against GnuTLS instead of OpenSSL. Therefore, the Bareos (Debian.org) package only support \nameref{sec:TransportEncryption} but no \nameref{DataEncryption}.
+    \end{itemize}
