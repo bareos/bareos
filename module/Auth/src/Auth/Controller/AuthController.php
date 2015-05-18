@@ -79,11 +79,8 @@ class AuthController extends AbstractActionController
 					$_SESSION['bareos']['username'] = $username;
 					$_SESSION['bareos']['password'] = $password;
 					$_SESSION['bareos']['authenticated'] = true;
-					$this->director->disconnect();
 					return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
 				} else {
-
-					$this->director->disconnect();
 					session_destroy();
 					$err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
 					return new ViewModel(
