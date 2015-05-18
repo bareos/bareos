@@ -62,6 +62,11 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             if not 'drop_and_recreate' in self.options or not self.options['drop_and_recreate'] == 'false':
                 self.dumpoptions += " --add-drop-database --databases "
 
+        # if defaultsfile is set
+        if 'defaultsfile' in self.options:
+            self.defaultsfile = self.options['defaultsfile']
+            self.mysqlconnect += " --defaults-file=" + self.defaultsfile
+
         if 'mysqlhost' in self.options:
             self.mysqlhost = self.options['mysqlhost']
             self.mysqlconnect += " -h " + self.mysqlhost
