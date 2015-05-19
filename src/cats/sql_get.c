@@ -331,8 +331,8 @@ bool db_get_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
       jr->JobId = str_to_int64(row[16]);
    }
    jr->FileSetId = str_to_int64(row[17]);
-   bstrncpy(jr->cSchedTime, (row[3] != NULL) ? row[18] : "", sizeof(jr->cSchedTime));
-   bstrncpy(jr->cRealEndTime, (row[3] != NULL) ? row[19] : "", sizeof(jr->cRealEndTime));
+   bstrncpy(jr->cSchedTime, (row[18] != NULL) ? row[18] : "", sizeof(jr->cSchedTime));
+   bstrncpy(jr->cRealEndTime, (row[19] != NULL) ? row[19] : "", sizeof(jr->cRealEndTime));
    jr->ReadBytes = str_to_int64(row[20]);
    jr->StartTime = str_to_utime(jr->cStartTime);
    jr->SchedTime = str_to_utime(jr->cSchedTime);
@@ -1071,13 +1071,13 @@ bool db_get_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
             mr->EndFile = str_to_uint64(row[23]);
             mr->EndBlock = str_to_uint64(row[24]);
             mr->LabelType = str_to_int64(row[25]);
-            bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[27] : "", sizeof(mr->cLabelDate));
+            bstrncpy(mr->cLabelDate, (row[26] != NULL) ? row[26] : "", sizeof(mr->cLabelDate));
             mr->LabelDate = (time_t)str_to_utime(mr->cLabelDate);
             mr->StorageId = str_to_int64(row[27]);
             mr->Enabled = str_to_int64(row[28]);
             mr->LocationId = str_to_int64(row[29]);
             mr->RecycleCount = str_to_int64(row[30]);
-            bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[32] : "", sizeof(mr->cInitialWrite));
+            bstrncpy(mr->cInitialWrite, (row[31] != NULL) ? row[31] : "", sizeof(mr->cInitialWrite));
             mr->InitialWrite = (time_t)str_to_utime(mr->cInitialWrite);
             mr->ScratchPoolId = str_to_int64(row[32]);
             mr->RecyclePoolId = str_to_int64(row[33]);
