@@ -62,6 +62,11 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             if not 'drop_and_recreate' in self.options or not self.options['drop_and_recreate'] == 'false':
                 self.dumpoptions += " --add-drop-database --databases "
 
+        # if defaultsfile is set
+        if 'defaultsfile' in self.options:
+            self.defaultsfile = self.options['defaultsfile']
+            self.mysqlconnect += " --defaults-file=" + self.defaultsfile
+
         if 'mysqlhost' in self.options:
             self.mysqlhost = self.options['mysqlhost']
             self.mysqlconnect += " -h " + self.mysqlhost
@@ -85,6 +90,8 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             self.databases = showDb.stdout.read().splitlines()
             if 'performance_schema' in self.databases:
                 self.databases.remove('performance_schema')
+            if 'information_schema' in self.databases:
+                self.databases.remove('information_schema')
             showDb.wait()
             returnCode = showDb.poll()
             if returnCode == None:
@@ -123,7 +130,7 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
         DebugMessage(context, 100, "Dumper: '" + dumpcommand + "'\n")
         self.stream = Popen(dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
 
-        JobMessage(context, bJobMessageType['M_DEBUG'], "Starting backup of " + savepkt.fname + "\n");
+        JobMessage(context, bJobMessageType['M_INFO'], "Starting backup of " + savepkt.fname + "\n");
         return bRCs['bRC_OK'];
 
 

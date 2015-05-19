@@ -65,11 +65,16 @@ is used.
 You may overwrite the whole option string with parameter dumpoptions or just supress the latter two, which are needed to include drop and
 create database statements into the dump. With drop_and_recreate set to 'false', these options are skipped.
 
+##### defaultsfile option ####
+
+This parameter allows to specify a defaultsfile that shall be used for mysql(client) and mysqldump command line utilities.
+
 
 ##### Database access /  user and password  #####
 
 By default the root user (the user, which runs the Bareos filedaemon) is used to connect to the database. We recommend that you set
-a password for the user and store it in your my.cnf. You can however set a user and / or password as plugin options:
+a password for the user and store it in your my.cnf or use the defaultsfile option to point to another client configuration file.
+You can however set a user and / or password as plugin options:
 ```
 mysqluser=username:mysqlpassword=secret
 ```
