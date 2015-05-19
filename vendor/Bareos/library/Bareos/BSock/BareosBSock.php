@@ -273,7 +273,6 @@ class BareosBSock implements BareosBSockInterface
 			if ($len == 0) {
 				break;
 			}
-
 			if ($len > 0 && $len < 8192) {
 				$msg .= fread($this->socket, $len);
 			} elseif($len > 8192) {
@@ -285,7 +284,6 @@ class BareosBSock implements BareosBSockInterface
 						$rlen = $len;
 					}
 				}
-				break;
 			} elseif ($len < 0) {
 				// signal received
 				switch ($len) {
@@ -834,6 +832,7 @@ class BareosBSock implements BareosBSockInterface
 	public function send_command($cmd, $api=0)
 	{
 		$result = "";
+		$debug = "";
 
 		switch($api) {
 			case 2:
