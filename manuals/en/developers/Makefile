@@ -21,6 +21,9 @@ FILES = generaldevel.md \
 
 all: html
 
+pdf:
+	# skipped, pdf will not be generated
+
 depend:
 	@for I in ${subdirs}; \
 		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) || exit 1); done
@@ -29,7 +32,7 @@ html: html/bareos-developer-guide.html
 
 html/bareos-developer-guide.html: depend bareos-developer-guide.css footer.html $(FILES)
 	mkdir -p html
-	$(PANDOC) -s -S --toc -c bareos-developer-guide.css -B footer.html -A footer.html  $(FILES) -o html/bareos-developer-guide.html
+	$(PANDOC) --standalone --smart --toc --css=bareos-developer-guide.css --include-after-body=footer.html $(FILES) --output=html/bareos-developer-guide.html
 	cp -a bareos-developer-guide.css html/
 
 check: html
