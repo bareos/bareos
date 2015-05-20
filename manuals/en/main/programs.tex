@@ -1,6 +1,6 @@
 
 \chapter{Bareos Programs}
-    \label{_UtilityChapter}
+    \label{sec:Utilities}
 
 This document describes the utility programs written to aid Bareos users and
 developers in dealing with Volumes external to Bareos adn to perform other useful tasks.
@@ -130,7 +130,7 @@ Console program accepts the following options:
    Generally anything between 50 and 200 is reasonable. 
    The higher the number, the more output is produced. The output is
    written to standard output.
-   The debug level can also be set during runtime, see section \ilink{bconsole: setdebug}{bconsole_setdebug}.
+   The debug level can also be set during runtime, see section \ilink{bconsole: setdebug}{bcommandSetdebug}.
 
 \item [-f]
    Run the daemon in the foreground. This option is  needed to run the daemon
@@ -429,10 +429,9 @@ bls: block.c:92    Rec: VId=1 VT=1035062102 FI=6 Strm=MD5 len=16 p=8101841
 \index[general]{Disaster!Recovery!bextract}
 
 
-If you find yourself using {\bf bextract}, you probably have done
+If you find yourself using \command{bextract}, you probably have done
 something wrong. For example, if you are trying to recover a file
-but are having problems, please see the \ilink{Restoring When Things Go
-Wrong}{database_restore} section of the Restore chapter of this manual.
+but are having problems, please see the \nameref{sec:RestoreCatalog} chapter.
 
 Normally, you will restore files by running a {\bf Restore} Job from the {\bf
 Console} program. However, {\bf bextract} can be used to extract a single file

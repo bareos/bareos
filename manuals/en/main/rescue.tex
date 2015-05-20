@@ -60,7 +60,7 @@ you should take into account before a disaster strikes.
 
 
 \section{Bare Metal Recovery of Bareos Clients}
-\label{baremetal_restore_client}
+\label{sec:BareMetalRestoreClient}
 
 A so called "Bare Metal" recovery is one where you start with an empty hard
 disk and you restore your machine.
@@ -75,6 +75,7 @@ Generally, following components are required for a Bare Metal Recovery:
 
 
 \subsection{Linux}
+\label{sec:rear}
 \index[general]{Disaster!Recovery!Linux}
 
 From the Relax-and-Recover web site
@@ -325,7 +326,7 @@ bconsole.
 
 \section{Restoring a Bareos Server}
 \index[general]{Restore!Baroes Server}
-\label{restore_server}
+\label{sec:RestoreServer}
 
 Above, we considered how to recover a client machine where a valid Bareos
 server was running on another machine. However, what happens if your server
@@ -377,7 +378,6 @@ myself. To do so, you might want to consider the following steps:
 \end{itemize}
 
 For additional details of restoring your database, please see the
-\ilink{Restoring When Things Go Wrong}{database_restore} section
-of the Console Restore Command chapter of this manual.
+\nameref{sec:RestoreCatalog} chapter.
 
 
