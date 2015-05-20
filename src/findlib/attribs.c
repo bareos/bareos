@@ -554,8 +554,10 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 
    unix_name_to_win32(&ff_pkt->sys_fname, ff_pkt->fname);
 
-   /** try unicode version */
    if (p_GetFileAttributesExW)  {
+      /**
+       * Try unicode version
+       */
       POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
       make_win32_path_UTF8_2_wchar(&pwszBuf, ff_pkt->fname);
 
@@ -567,8 +569,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
          win_error(jcr, "GetFileAttributesExW:", ff_pkt->sys_fname);
          return STREAM_UNIX_ATTRIBUTES;
       }
-   }
-   else {
+   } else {
       if (!p_GetFileAttributesExA)
          return STREAM_UNIX_ATTRIBUTES;
 
@@ -578,6 +579,13 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
          return STREAM_UNIX_ATTRIBUTES;
       }
    }
+
+   /*
+    * Instead of using the current dwFileAttributes use the
+    * ff_pkt->statp.st_rdev which contains the actual fileattributes we
+    * want to save for this file.
+    */
+   atts.dwFileAttributes = ff_pkt->statp.st_rdev;
 
    p += to_base64((uint64_t)atts.dwFileAttributes, p);
    *p++ = ' ';                        /* separate fields with a space */
@@ -597,6 +605,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
    *p++ = ' ';
    p += to_base64((uint64_t)atts.nFileSizeLow, p);
    *p = 0;
+
    return STREAM_UNIX_ATTRIBUTES_EX;
 }
 
