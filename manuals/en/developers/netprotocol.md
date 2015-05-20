@@ -4,12 +4,12 @@ TCP/IP Network Protocol {#_ChapterStart5}
 General
 -------
 
-This document describes the TCP/IP protocol used by Bacula to
+This document describes the TCP/IP protocol used by Bareos to
 communicate between the various daemons and services. The definitive
 definition of the protocol can be found in src/lib/bsock.h,
 src/lib/bnet.c and src/lib/bnet\_server.c.
 
-Bacula’s network protocol is basically a “packet oriented” protocol
+Bareos’s network protocol is basically a “packet oriented” protocol
 built on a standard TCP/IP streams. At the lowest level all packet
 transfers are done with read() and write() requests on system sockets.
 Pipes are not used as they are considered unreliable for large serial
@@ -43,7 +43,7 @@ bnet\_open
 To establish a connection to a server, use the subroutine:
 
 BSOCK \*bnet\_open(void \*jcr, char \*host, char \*service, int port,
-int \*fatal) bnet\_open(), if successful, returns the Bacula sock
+int \*fatal) bnet\_open(), if successful, returns the Bareos sock
 descriptor pointer to be used in subsequent bnet\_send() and
 bnet\_read() requests. If not successful, bnet\_open() returns a NULL.
 If fatal is set on return, it means that a fatal error occurred and that
@@ -161,7 +161,7 @@ of how to call it.
 Higher Level Conventions
 ------------------------
 
-Within Bacula, we have established the convention that any time a single
+Within Bareos, we have established the convention that any time a single
 record is passed, it is sent with bnet\_send() and read with
 bnet\_recv(). Thus the normal exchange between the server (S) and the
 client (C) are:

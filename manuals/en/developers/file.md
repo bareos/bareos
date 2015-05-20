@@ -7,11 +7,11 @@ evolved significantly. The basic idea has not changed though.
 This chapter is intended to be a technical discussion of the File daemon
 services and as such is not targeted at end users but rather at
 developers and system administrators that want or need to know more of
-the working details of <span>**Bacula**</span>.
+the working details of <span>**Bareos**</span>.
 
-The <span>**Bacula File Services**</span> consist of the programs that
+The <span>**Bareos File Services**</span> consist of the programs that
 run on the system to be backed up and provide the interface between the
-Host File system and Bacula – in particular, the Director and the
+Host File system and Bareos – in particular, the Director and the
 Storage services.
 
 When time comes for a backup, the Director gets in touch with the File

@@ -7,40 +7,40 @@ General
 This chapter is intended to be a technical discussion of the Catalog
 services and as such is not targeted at end users but rather at
 developers and system administrators that want or need to know more of
-the working details of <span>**Bacula**</span>.
+the working details of <span>**Bareos**</span>.
 
-The <span>**Bacula Catalog**</span> services consist of the programs
+The <span>**Bareos Catalog**</span> services consist of the programs
 that provide the SQL database engine for storage and retrieval of all
 information concerning files that were backed up and their locations on
 the storage media.
 
 We have investigated the possibility of using the following SQL engines
-for Bacula: Beagle, mSQL, GNU SQL, PostgreSQL, SQLite, Oracle, and
+for Bareos: Beagle, mSQL, GNU SQL, PostgreSQL, SQLite, Oracle, and
 MySQL. Each presents certain problems with either licensing or maturity.
 At present, we have chosen for development purposes to use MySQL,
 PostgreSQL and SQLite. MySQL was chosen because it is fast, proven to be
 reliable, widely used, and actively being developed. MySQL is released
 under the GNU GPL license. PostgreSQL was chosen because it is a
 full-featured, very mature database, and because Dan Langille did the
-Bacula driver for it. PostgreSQL is distributed under the BSD license.
+Bareos driver for it. PostgreSQL is distributed under the BSD license.
 SQLite was chosen because it is small, efficient, and can be directly
-embedded in <span>**Bacula**</span> thus requiring much less effort from
-the system administrator or person building <span>**Bacula**</span>. In
+embedded in <span>**Bareos**</span> thus requiring much less effort from
+the system administrator or person building <span>**Bareos**</span>. In
 our testing SQLite has performed very well, and for the functions that
 we use, it has never encountered any errors except that it does not
 appear to handle databases larger than 2GBytes. That said, we would not
 recommend it for serious production use.
 
-The Bacula SQL code has been written in a manner that will allow it to
+The Bareos SQL code has been written in a manner that will allow it to
 be easily modified to support any of the current SQL database systems on
 the market (for example: mSQL, iODBC, unixODBC, Solid, OpenLink ODBC,
 EasySoft ODBC, InterBase, Oracle8, Oracle7, and DB2).
 
 If you do not specify either <span>**`--`with-mysql**</span> or
 <span>**`--`with-postgresql**</span> or <span>**`--`with-sqlite**</span>
-on the ./configure line, Bacula will use its minimalist internal
+on the ./configure line, Bareos will use its minimalist internal
 database. This database is kept for build reasons but is no longer
-supported. Bacula <span>**requires**</span> one of the three databases
+supported. Bareos <span>**requires**</span> one of the three databases
 (MySQL, PostgreSQL, or SQLite) to run.
 
 ### Filenames and Maximum Filename Length
@@ -71,7 +71,7 @@ chapter of this manual.
 For the details of installing and configuring SQLite, please see the
 chapter of this manual.
 
-### Internal Bacula Catalog
+### Internal Bareos Catalog
 
 Please see the chapter of this manual for more details.
 
@@ -81,7 +81,7 @@ All discussions that follow pertain to the MySQL database. The details
 for the PostgreSQL and SQLite databases are essentially identical except
 for that all fields in the SQLite database are stored as ASCII text and
 some of the database creation statements are a bit different. The
-details of the internal Bacula catalog are not discussed here.
+details of the internal Bareos catalog are not discussed here.
 
 Because the Catalog database may contain very large amounts of data for
 large sites, we have made a modest attempt to normalize the data tables
@@ -90,12 +90,12 @@ significantly, it does, unfortunately, add some complications to the
 structures.
 
 In simple terms, the Catalog database must contain a record of all Jobs
-run by Bacula, and for each Job, it must maintain a list of all files
+run by Bareos, and for each Job, it must maintain a list of all files
 saved, with their File Attributes (permissions, create date, ...), and
 the location and Media on which the file is stored. This is seemingly a
 simple task, but it represents a huge amount interlinked data. Note: the
 list of files and their attributes is not maintained when using the
-internal Bacula database. The data stored in the File records, which
+internal Bareos database. The data stored in the File records, which
 allows the user or administrator to obtain a list of all files backed up
 during a job, is by far the largest volume of information put into the
 Catalog database.
@@ -210,7 +210,7 @@ seconds and creates a 7.35 MB database.
 </span>\
 
 The <span>**File**</span> table shown above contains one entry for each
-file backed up by Bacula. Thus a file that is backed up multiple times
+file backed up by Bareos. Thus a file that is backed up multiple times
 (as is normal) will have multiple entries in the File table. This will
 probably be the table with the most number of records. Consequently, it
 is essential to keep the size of this record to an absolute minimum. At
@@ -230,7 +230,7 @@ take care to periodically reduce the number of File records using the
  & <span>integer </span> & <span>Primary Key </span>\
  & <span>tinyblob </span> & <span>Unique Job Name </span>\
  & <span>tinyblob </span> & <span>Job Name </span>\
- & <span>tinyint </span> & <span>Used by Bacula for purging/retention
+ & <span>tinyint </span> & <span>Used by Bareos for purging/retention
 periods </span>\
  & <span>binary(1) </span> & <span>Job Type: Backup, Copy, Clone,
 Archive, Migration </span>\
@@ -260,7 +260,7 @@ used) </span>\
  & <span>tiny integer </span> & <span>Set when Base Job run </span>\
 
 The <span>**Job**</span> table contains one record for each Job run by
-Bacula. Thus normally, there will be one per day per machine added to
+Bareos. Thus normally, there will be one per day per machine added to
 the database. Note, the JobId is used to index Job records in the
 database, and it often is shown to the user in the Console program.
 However, care must be taken with its use as it is not unique from
@@ -369,7 +369,7 @@ start of the job, start of each new tape file, start of each new tape,
 end of the job. Since by default, a new tape file is written every 2GB,
 in general, you will have more than 2 JobMedia records per Job. The
 number can be varied by changing the “Maximum File Size” specified in
-the Device resource. This record allows Bacula to efficiently position
+the Device resource. This record allows Bareos to efficiently position
 close to (within 2GB) any given file in a backup. For restoring a full
 Job, these records are not very important, but if you want to retrieve a
 single file that was written near the end of a 100GB backup, the
@@ -412,7 +412,7 @@ backup.
 Recycle, Read-Only, Disabled, Error, Busy </span>\
  <span>tinyint </span> & <span>Whether or not Volume can be written
 </span>\
- & <span>tinyint </span> & <span>Whether or not Bacula can recycle the
+ & <span>tinyint </span> & <span>Whether or not Bareos can recycle the
 Volumes: Yes, No </span>\
  & <span>tinyint </span> & <span>What happens to a Volume after purging
 </span>\
@@ -466,7 +466,7 @@ Volume </span>\
  & <span>tinyint </span> & <span>Default Volume ActionOnPurge </span>\
  & <span>enum </span> & <span>Backup, Copy, Cloned, Archive, Migration
 </span>\
- & <span>tinyint </span> & <span>Type of label ANSI/Bacula </span>\
+ & <span>tinyint </span> & <span>Type of label ANSI/Bareos </span>\
  & <span>Tinyblob </span> & <span>Label format </span>\
  <span>tinyint </span> & <span>Whether or not Volume can be written
 </span>\
@@ -479,8 +479,8 @@ Volume </span>\
  & <span>bigint </span> & <span>Time before migration </span>\
 
 The <span>**Pool**</span> table contains one entry for each media pool
-controlled by Bacula in this database. One media record exists for each
-of the NumVols contained in the Pool. The PoolType is a Bacula defined
+controlled by Bareos in this database. One media record exists for each
+of the NumVols contained in the Pool. The PoolType is a Bareos defined
 keyword. The MediaType is defined by the administrator, and corresponds
 to the MediaType specified in the Director’s Storage definition record.
 The CurrentVol is the sequence number of the Media record for the
@@ -497,7 +497,7 @@ current volume.
  & <span>bigint </span> & <span>64 bit seconds to retain Job </span>\
 
 The <span>**Client**</span> table contains one entry for each machine
-backed up by Bacula in this database. Normally the Name is a fully
+backed up by Bareos in this database. Normally the Name is a fully
 qualified domain name.
 
 <span>|l|l|l|</span>\
@@ -594,9 +594,9 @@ The <span>**Log**</span> table contains a log of all Job output.
  & &\
  & <span>integer </span> & <span>Primary Key </span>\
 
-The <span>**Version**</span> table defines the Bacula database version
-number. Bacula checks this number before reading the database to ensure
-that it is compatible with the Bacula binary file.
+The <span>**Version**</span> table defines the Bareos database version
+number. Bareos checks this number before reading the database to ensure
+that it is compatible with the Bareos binary file.
 
 <span>|l|l|l|</span>\
  & &\
@@ -618,7 +618,7 @@ implemented.
 
 The commands used to create the MySQL tables are as follows:
 
-    USE bacula;
+    USE bareos;
     CREATE TABLE Filename (
       FilenameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
       Name BLOB NOT NULL,

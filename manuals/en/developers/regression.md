@@ -1,55 +1,44 @@
-Bacula Regression Testing {#_ChapterStart8}
+Bareos Regression Testing {#_ChapterStart8}
 =========================
 
 Setting up Regession Testing
 ----------------------------
 
 This document is intended mostly for developers who wish to ensure that
-their changes to Bacula don’t introduce bugs in the base code. However,
+their changes to Bareos don’t introduce bugs in the base code. However,
 you don’t need to be a developer to run the regression scripts, and we
 recommend them before putting your system into production, and before
 each upgrade, especially if you build from source code. They are simply
-shell scripts that drive Bacula through bconsole and then typically
+shell scripts that drive Bareos through bconsole and then typically
 compare the input and output with <span>**diff**</span>.
 
-You can find the existing regression scripts in the Bacula developer’s
+You can find the existing regression scripts in the Bareos developer’s
 <span>**git**</span> repository on SourceForge. We strongly recommend
 that you <span>**clone**</span> the repository because afterwards, you
 can easily get pull the updates that have been made.
 
 To get started, we recommend that you create a directory named
-<span>**bacula**</span>, under which you will put the current source
+<span>**bareos**</span>, under which you will put the current source
 code and the current set of regression scripts. Below, we will describe
 how to set this up.
 
-The top level directory that we call <span>**bacula**</span> can be
+The top level directory that we call <span>**bareos**</span> can be
 named anything you want. Note, all the standard regression scripts run
-as non-root and can be run on the same machine as a production Bacula
+as non-root and can be run on the same machine as a production Bareos
 system (the developers run it this way).
 
 To create the directory structure for the current trunk and to clone the
 repository, do the following (note, we assume you are working in your
 home directory in a non-root account):
 
-    git clone http://git.bacula.org/bacula bacula
+    git clone https://github.com/bareos/bareos-regress.git
 
-This will create the directory <span>**bacula**</span> and populate it
-with three directories: <span>**bacula**</span>, <span>**gui**</span>,
-and <span>**regress**</span>. <span>**bacula**</span> contains the
-Bacula source code; <span>**gui**</span> contains certain gui programs
-that you will not need, and <span>**regress**</span> contains all the
-regression scripts. The above should be needed only once. Thereafter to
+This will create the directory <span>**bareos-regress**</span>.
+The above should be needed only once. Thereafter to
 update to the latest code, you do:
 
-    cd bacula
+    cd bareos-regress
     git pull
-
-If you want to test with SQLite and it is not installed on your system,
-you will need to download the latest depkgs release from Source Forge
-and unpack it into <span>**depkgs**</span>, then simply:
-
-    cd depkgs
-    make
 
 There are two different aspects of regression testing that this document
 will discuss: 1. Running the Regression Script, 2. Writing a Regression
@@ -73,7 +62,7 @@ There is nothing you need to change in the source directory.
 
 To begin:
 
-    cd bacula/regress
+    cd bareos-regress
 
 The very first time you are going to run the regression scripts, you
 will need to create a custom config file for your system. We suggest
@@ -85,15 +74,11 @@ Then you can edit the <span>**config**</span> file directly.
 
 
     # Where to get the source to be tested
-    BACULA_SOURCE="${HOME}/bacula/bacula"
+    BAREOS_SOURCE="${HOME}/bareos/bareos"
 
     # Where to send email   !!!!! Change me !!!!!!!
     EMAIL=your-name@your-domain.com
     SMTP_HOST="localhost"
-
-    # Full "default" path where to find sqlite (no quotes!)
-    SQLITE3_DIR=${HOME}/depkgs/sqlite3
-    SQLITE_DIR=${HOME}/depkgs/sqlite
 
     TAPE_DRIVE="/dev/nst0"
     # if you don't have an autochanger set AUTOCHANGER to /dev/null
@@ -124,8 +109,8 @@ Then you can edit the <span>**config**</span> file directly.
     # non-networked machine
     HOST="localhost"
 
--   <span>**BACULA\_SOURCE**</span> should be the full path to the
-    Bacula source code that you wish to test. It will be loaded
+-   <span>**BAREOS_SOURCE**</span> should be the full path to the
+    Bareos source code that you wish to test. It will be loaded
     configured, compiled, and installed with the “make setup” command,
     which needs to be done only once each time you change the source
     code.
@@ -138,7 +123,7 @@ Then you can edit the <span>**config**</span> file directly.
 -   <span>**SMTP\_HOST**</span> defines where your SMTP server is.
 
 -   <span>**SQLITE\_DIR**</span> should be the full path to the sqlite
-    package, must be build before running a Bacula regression, if you
+    package, must be build before running a Bareos regression, if you
     are using SQLite. This variable is ignored if you are using MySQL or
     PostgreSQL. To use PostgreSQL, edit the Makefile and change (or add)
     WHICHDB?=“`--`with-postgresql”. For MySQL use
@@ -174,10 +159,10 @@ Then you can edit the <span>**config**</span> file directly.
     ./configure to be performed with tcpwrappers enabled.
 
 -   <span>**OPENSSL**</span> used to enable/disable SSL support for
-    Bacula communications and data encryption.
+    Bareos communications and data encryption.
 
 -   <span>**HOST**</span> is the hostname that it will use when building
-    the scripts. The Bacula daemons will be named \<HOST\>-dir,
+    the scripts. The Bareos daemons will be named \<HOST\>-dir,
     \<HOST\>-fd, ... It is also the name of the HOST machine that to
     connect to the daemons by the network. Hence the name should either
     be your real hostname (with an appropriate DNS or /etc/hosts entry)
@@ -185,10 +170,10 @@ Then you can edit the <span>**config**</span> file directly.
 
 -   <span>**bin**</span> is the binary location.
 
--   <span>**scripts**</span> is the bacula scripts location (where we
+-   <span>**scripts**</span> is the bareos scripts location (where we
     could find database creation script, autochanger handler, etc.)
 
-### Building the Test Bacula
+### Building the Test Bareos
 
 Once the above variables are set, you can build the setup by entering:
 
@@ -212,8 +197,8 @@ permissions to use the database named regress. There is no password on
 the regress account.
 
 You have probably already done this procedure for the user name and
-database named bacula. If not, the manual describes roughly how to do
-it, and the scripts in bacula/regress/build/src/cats named
+database named bareos. If not, the manual describes roughly how to do
+it, and the scripts in bareos/regress/build/src/cats named
 create\_mysql\_database, create\_postgresql\_database,
 grant\_mysql\_privileges, and grant\_postgresql\_privileges may be of a
 help to you.
@@ -252,7 +237,7 @@ run under my regular userid). The result should be something similar to:
 
     Test results
       ===== auto-label-test OK 12:31:33 =====
-      ===== backup-bacula-test OK 12:32:32 =====
+      ===== backup-bareos-test OK 12:32:32 =====
       ===== bextract-test OK 12:33:27 =====
       ===== bscan-test OK 12:34:47 =====
       ===== bsr-opt-test OK 12:35:46 =====
@@ -262,7 +247,7 @@ run under my regular userid). The result should be something similar to:
       ===== data-encrypt-test OK 12:41:11 =====
       ===== encrypt-bug-test OK 12:42:00 =====
       ===== fifo-test OK 12:43:46 =====
-      ===== backup-bacula-fifo OK 12:44:54 =====
+      ===== backup-bareos-fifo OK 12:44:54 =====
       ===== differential-test OK 12:45:36 =====
       ===== four-concurrent-jobs-test OK 12:47:39 =====
       ===== four-jobs-test OK 12:49:22 =====
@@ -300,7 +285,7 @@ and the working tape tests are run with
 
     Test results
 
-      ===== Bacula tape test OK =====
+      ===== Bareos tape test OK =====
       ===== Small File Size test OK =====
       ===== restore-by-file-tape test OK =====
       ===== incremental-tape test OK =====
@@ -308,8 +293,8 @@ and the working tape tests are run with
       ===== four-jobs-tape OK =====
 
 Each separate test is self contained in that it initializes to run
-Bacula from scratch (i.e. newly created database). It will also kill any
-Bacula session that is currently running. In addition, it uses ports
+Bareos from scratch (i.e. newly created database). It will also kill any
+Bareos session that is currently running. In addition, it uses ports
 8101, 8102, and 8103 so that it does not intefere with a production
 system.
 
@@ -320,12 +305,12 @@ Alternatively, you can do the ./do\_disk work by hand with:
 The above will then copy the source code within the regression tree (in
 directory regress/build), configure it, and build it. There should be no
 errors. If there are, please correct them before continuing. From this
-point on, as long as you don’t change the Bacula source code, you should
+point on, as long as you don’t change the Bareos source code, you should
 not need to repeat any of the above steps. If you pull down a new
 version of the source code, simply run <span>**make setup**</span>
 again.
 
-Once Bacula is built, you can run the basic disk only non-root
+Once Bareos is built, you can run the basic disk only non-root
 regression test by entering:
 
     make test
@@ -380,12 +365,12 @@ you have “regress” as the current directory), enter:
     tests/test-name
 
 where test-name should be the name of a test script – for example:
-<span>**tests/backup-bacula-test**</span>.
+<span>**tests/backup-bareos-test**</span>.
 
 Testing a Binary Installation
 -----------------------------
 
-If you have installed your Bacula from a binary release such as (rpms or
+If you have installed your Bareos from a binary release such as (rpms or
 debs), you can still run regression tests on it. First, make sure that
 your regression <span>**config**</span> file uses the same catalog
 backend as your installed binaries. Then define the variables `bin` and
@@ -393,15 +378,15 @@ backend as your installed binaries. Then define the variables `bin` and
 
 Example:
 
-    bin=/opt/bacula/bin
-    scripts=/opt/bacula/scripts
+    bin=/opt/bareos/bin
+    scripts=/opt/bareos/scripts
 
 The `./scripts/prepare-other-loc` will tweak the regress scripts to use
 your binary location. You will need to run it manually once before you
 run any regression tests.
 
     $ ./scripts/prepare-other-loc
-    $ ./tests/backup-bacula-test
+    $ ./tests/backup-bareos-test
     ...
 
 All regression scripts must be run by hand or by calling the test
@@ -426,7 +411,7 @@ If you wish to run a single test, you can simply:
 
 or, if the source code has been updated, you would do:
 
-    cd bacula
+    cd bareos
     git pull
     cd regress
     make setup
@@ -438,7 +423,7 @@ Writing a Regression Test
 Any developer, who implements a major new feature, should write a
 regression test that exercises and validates the new feature. Each
 regression test is a complete test by itself. It terminates any running
-Bacula, initializes the database, starts Bacula, then runs the test by
+Bareos, initializes the database, starts Bareos, then runs the test by
 using the console program.
 
 ### Running the Tests by Hand
@@ -462,10 +447,10 @@ The directory structure of the regression tests is:
         |                       "make distclean"
         |
         |------ bin          - This is the install directory for
-        |                        Bacula to be used testing
-        |------ build        - Where the Bacula source build tree is
+        |                        Bareos to be used testing
+        |------ build        - Where the Bareos source build tree is
         |------ tmp          - Most temp files go here
-        |------ working      - Bacula working directory
+        |------ working      - Bareos working directory
         |------ weird-files  - Weird files used in two of the tests.
 
 ### Adding a New Test
@@ -476,14 +461,14 @@ of the existing test scripts, and modify it to do the new test.
 When adding a new test, be extremely careful about adding anything to
 any of the daemons’ configuration files. The reason is that it may
 change the prompts that are sent to the console. For example, adding a
-Pool means that the current scripts, which assume that Bacula
+Pool means that the current scripts, which assume that Bareos
 automatically selects a Pool, will now be presented with a new prompt,
 so the test will fail. If you need to enhance the configuration files,
 consider making your own versions.
 
 ### Running a Test Under The Debugger
 
-You can run a test under the debugger (actually run a Bacula daemon
+You can run a test under the debugger (actually run a Bareos daemon
 under the debugger) by first setting the environment variable
 <span>**REGRESS\_WAIT**</span> with commands such as:
 
@@ -492,13 +477,13 @@ under the debugger) by first setting the environment variable
 
 Then executing the script. When the script prints the following line:
 
-    Start Bacula under debugger and enter anything when ready ...
+    Start Bareos under debugger and enter anything when ready ...
 
-You start the Bacula component you want to run under the debugger in a
+You start the Bareos component you want to run under the debugger in a
 different shell window. For example:
 
     cd .../regress/bin
-    gdb bacula-sd
+    gdb bareos-sd
     (possibly set breakpoints, ...)
     run -s -f
 

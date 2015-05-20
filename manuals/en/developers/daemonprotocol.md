@@ -5,14 +5,14 @@ General
 -------
 
 This document describes the protocols used between the various daemons.
-As Bacula has developed, it has become quite out of date. The general
+As Bareos has developed, it has become quite out of date. The general
 idea still holds true, but the details of the fields for each command,
 and indeed the commands themselves have changed considerably.
 
 It is intended to be a technical discussion of the general daemon
 protocols and as such is not targeted at end users but rather at
 developers and system administrators that want or need to know more of
-the working details of <span>**Bacula**</span>.
+the working details of <span>**Bareos**</span>.
 
 Low Level Network Protocol
 --------------------------
@@ -20,7 +20,7 @@ Low Level Network Protocol
 At the lowest level, the network protocol is handled by
 <span>**BSOCK**</span> packets which contain a lot of information about
 the status of the network connection: who is at the other end, etc. Each
-basic <span>**Bacula**</span> network read or write actually consists of
+basic <span>**Bareos**</span> network read or write actually consists of
 two low level network read/writes. The first write always sends four
 bytes of data in machine independent byte order. If data is to follow,
 the first four bytes are a positive non-zero integer indicating the

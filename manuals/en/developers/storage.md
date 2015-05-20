@@ -4,14 +4,14 @@ Storage Daemon Design {#_ChapterStart3}
 This chapter is intended to be a technical discussion of the Storage
 daemon services and as such is not targeted at end users but rather at
 developers and system administrators that want or need to know more of
-the working details of <span>**Bacula**</span>.
+the working details of <span>**Bareos**</span>.
 
 This document is somewhat out of date.
 
 SD Design Introduction
 ----------------------
 
-The Bacula Storage daemon provides storage resources to a Bacula
+The Bareos Storage daemon provides storage resources to a Bareos
 installation. An individual Storage daemon is associated with a physical
 permanent storage device (for example, a tape drive, CD writer, tape
 changer or jukebox, etc.), and may employ auxiliary storage resources

@@ -5,7 +5,7 @@ General
 -------
 
 This document is intended mostly for developers who wish to develop a
-new GUI interface to <span>**Bacula**</span>.
+new GUI interface to <span>**Bareos**</span>.
 
 ### Minimal Code in Console Program
 
@@ -14,18 +14,18 @@ exception of dbcheck and bscan). This is because at some point I would
 like to add user level security and access. If we have code spread
 everywhere such as in a GUI this will be more difficult. The other
 advantage is that any code you add to the Director is automatically
-available to both the tty console program and the WX program. The major
+available to both the tty console program and other programs. The major
 disadvantage is it increases the size of the code – however, compared to
-Networker the Bacula Director is really tiny.
+Networker the Bareos Director is really tiny.
 
 ### GUI Interface is Difficult
 
-Interfacing to an interactive program such as Bacula can be very
+Interfacing to an interactive program such as Bareos can be very
 difficult because the interfacing program must interpret all the prompts
 that may come. This can be next to impossible. There are are a number of
-ways that Bacula is designed to facilitate this:
+ways that Bareos is designed to facilitate this:
 
--   The Bacula network protocol is packet based, and thus pieces of
+-   The Bareos network protocol is packet based, and thus pieces of
     information sent can be ASCII or binary.
 
 -   The packet interface permits knowing where the end of a list is.
@@ -38,7 +38,7 @@ ways that Bacula is designed to facilitate this:
     Jobs, list of all Clients, list of all Pools, list of all Storage,
     ... Thus the GUI interface can get to virtually all information that
     the Director has in a deterministic way. See
-    <span>\<</span>bacula-source<span>\></span>/src/dird/ua\_dotcmds.c
+    <span>\<</span>bareos-source<span>\></span>/src/dird/ua\_dotcmds.c
     for more details on this.
 
 -   Most console commands allow all the arguments to be specified on the
@@ -46,7 +46,7 @@ ways that Bacula is designed to facilitate this:
 
 One of the first things to overcome is to be able to establish a
 conversation with the Director. Although you can write all your own
-code, it is probably easier to use the Bacula subroutines. The following
+code, it is probably easier to use the Bareos subroutines. The following
 code is used by the Console program to begin a conversation.
 
     static BSOCK *UA_sock = NULL;
@@ -97,7 +97,7 @@ directories.
 
 The Bvfs module works correctly with BaseJobs, Copy and Migration jobs.
 
-This project was funded by Bacula Systems.
+This project was funded by Bareos Systems.
 
 ### General notes {#general-notes .unnumbered}
 

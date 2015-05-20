@@ -1,9 +1,9 @@
 
-subdirs = manuals/en/main/
+subdirs = manuals/en/main/ manuals/en/developers/
 
 MAKE=make
 
-all: pdf html
+all:
 
 depend:
 	@for I in ${subdirs}; \

@@ -7,7 +7,7 @@ Introduction to TLS
 -------------------
 
 This patch includes all the back-end code necessary to add complete TLS
-data encryption support to Bacula. In addition, support for TLS in
+data encryption support to Bareos. In addition, support for TLS in
 Console/Director communications has been added as a proof of concept.
 Adding support for the remaining daemons will be straight-forward.
 Supported features of this patchset include:

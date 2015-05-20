@@ -1,12 +1,12 @@
-Bacula Porting Notes {#_ChapterStart1}
+Bareos Porting Notes {#_ChapterStart1}
 ====================
 
-This document is intended mostly for developers who wish to port Bacula
+This document is intended mostly for developers who wish to port Bareos
 to a system that is not <span>**officially**</span> supported.
 
-It is hoped that Bacula clients will eventually run on every imaginable
-system that needs backing up (perhaps even a Palm). It is also hoped
-that the Bacula Directory and Storage daemons will run on every system
+It is hoped that Bareos clients will eventually run on every imaginable
+system that needs backing up. It is also hoped
+that the Bareos Directory and Storage daemons will run on every system
 capable of supporting them.
 
 Porting Requirements
@@ -14,38 +14,15 @@ Porting Requirements
 
 In General, the following holds true:
 
--   <span>**Bacula**</span> has been compiled and run on Linux RedHat,
-    FreeBSD, and Solaris systems.
-
--   In addition, clients exist on Win32, and Irix
-
--   It requires GNU C++ to compile. You can try with other compilers,
-    but you are on your own. The Irix client is built with the Irix
-    complier, but, in general, you will need GNU.
-
 -   Your compiler must provide support for 64 bit signed and unsigned
     integers.
 
 -   You will need a recent copy of the <span>**autoconf**</span> tools
     loaded on your system (version 2.13 or later). The
     <span>**autoconf**</span> tools are used to build the configuration
-    program, but are not part of the Bacula source distribution.
+    program, but are not part of the Bareos source distribution.
 
--   There are certain third party packages that Bacula needs. Except for
-    MySQL, they can all be found in the <span>**depkgs**</span> and
-    <span>**depkgs1**</span> releases.
-
--   To build the Win32 binaries, we use Microsoft VC++ standard 2003.
-    Please see the instructions in bacula-source/src/win32/README.win32
-    for more details. If you want to use VC++ Express, please see
-    README.vc8. Our build is done under the most recent version of
-    Cygwin, but Cygwin is not used in the Bacula binaries that are
-    produced. Unfortunately, we do not have the resources to help you
-    build your own version of the Win32 FD, so you are pretty much on
-    your own. You can ask the bacula-devel list for help, but please
-    don’t expect much.
-
--   <span>**Bacula**</span> requires a good implementation of pthreads
+-   <span>**Bareos**</span> requires a good implementation of pthreads
     to work.
 
 -   The source code has been written with portability in mind and is
@@ -66,10 +43,10 @@ Steps to Take for Porting
 
         Configuration on Mon Oct 28 11:42:27 CET 2002:
           Host:                        i686-pc-linux-gnu -- redhat 7.3
-          Bacula version:              1.27 (26 October 2002)
+          Bareos version:              1.27 (26 October 2002)
           Source code location:        .
           Install binaries:            /sbin
-          Install config files:        /etc/bacula
+          Install config files:        /etc/bareos
           C Compiler:                  gcc
           C++ Compiler:                c++
           Compiler flags:              -g -O2
@@ -85,11 +62,10 @@ Steps to Take for Porting
           Director Port                9101
           File daemon Port             9102
           Storage daemon Port          9103
-          Working directory            /etc/bacula/working
+          Working directory            /etc/bareos/working
           SQL binaries Directory
           Large file support:          yes
           readline support:            yes
-          cweb support:                yes /home/kern/bacula/depkgs/cweb
           TCP Wrappers support:        no
           ZLIB support:                yes
           enable-smartalloc:           yes
@@ -109,7 +85,7 @@ Steps to Take for Porting
 
 -   To correct problems with detection of your system type or with
     routines and libraries, you must edit the file
-    <span>**<span>\<</span>bacula-src<span>\></span>/autoconf/configure.in**</span>.
+    <span>**<span>\<</span>bareos-src<span>\></span>/autoconf/configure.in**</span>.
     This is the “source” from which <span>**configure**</span> is built.
     In general, most of the changes for your system will be made in
     <span>**autoconf/aclocal.m4**</span> in the routine
@@ -119,7 +95,7 @@ Steps to Take for Porting
     <span>**unknown**</span> you will need to make changes. Then as
     mentioned above, you will need to set a number of system dependent
     items in <span>**configure.in**</span> in the <span>**case**</span>
-    statement at approximately line 1050 (depending on the Bacula
+    statement at approximately line 1050 (depending on the Bareos
     release).
 
 -   The items to in the case statement that corresponds to your system
@@ -133,8 +109,8 @@ Steps to Take for Porting
 
     -   PSCMD – set to the <span>**ps**</span> command that will provide
         the PID in the first field and the program name in the second
-        field. If this is not set properly, the <span>**bacula
-        stop**</span> script will most likely not be able to stop Bacula
+        field. If this is not set properly, the <span>**bareos
+        stop**</span> script will most likely not be able to stop Bareos
         in all cases.
 
     -   hostname – command to return the base host name (non-qualified)
@@ -160,11 +136,11 @@ Steps to Take for Porting
 
     -   PFILES – set to add any files that you may define is your
         platform subdirectory. These files are used for installation of
-        automatic system startup of Bacula daemons.
+        automatic system startup of Bareos daemons.
 
 -   To rebuild a new version of <span>**configure**</span> from a
     changed <span>**autoconf/configure.in**</span> you enter
-    <span>**make configure**</span> in the top level Bacula source
+    <span>**make configure**</span> in the top level Bareos source
     directory. You must have done a ./configure prior to trying to
     rebuild the configure script or it will get into an infinite loop.
 
@@ -179,18 +155,18 @@ Steps to Take for Porting
     won’t work.
 
 -   After you have a working <span>**configure**</span> script, you may
-    need to make a few system dependent changes to the way Bacula works.
+    need to make a few system dependent changes to the way Bareos works.
     Generally, these are done in <span>**src/baconfig.h**</span>. You
     can find a few examples of system dependent changes toward the end
     of this file. For example, on Irix systems, there is no definition
     for <span>**socklen\_t**</span>, so it is made in this file. If your
     system has structure alignment requirements, check the definition of
-    BALIGN in this file. Currently, all Bacula allocated memory is
+    BALIGN in this file. Currently, all Bareos allocated memory is
     aligned on a <span>**double**</span> boundary.
 
--   If you are having problems with Bacula’s type definitions, you might
+-   If you are having problems with Bareos’s type definitions, you might
     look at <span>**src/bc\_types.h**</span> where all the types such as
     <span>**uint32\_t**</span>, <span>**uint64\_t**</span>, etc. that
-    Bacula uses are defined.
+    Bareos uses are defined.
 
 

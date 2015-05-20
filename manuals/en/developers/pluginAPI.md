@@ -1,10 +1,10 @@
-Bacula FD Plugin API
+Bareos FD Plugin API
 ====================
 
-To write a Bacula plugin, you create a dynamic shared object program (or
+To write a Bareos plugin, you create a dynamic shared object program (or
 dll on Win32) with a particular name and two exported entry points,
 place it in the <span>**Plugins Directory**</span>, which is defined in
-the <span>**bacula-fd.conf**</span> file in the <span>**Client**</span>
+the <span>**bareos-fd.conf**</span> file in the <span>**Client**</span>
 resource, and when the FD starts, it will load all the plugins that end
 with <span>**-fd.so**</span> (or <span>**-fd.dll**</span> on Win32)
 found in that directory.
@@ -13,12 +13,12 @@ Normal vs Command vs Options Plugins
 ------------------------------------
 
 In general, there are three ways that plugins are called. The first way,
-is when a particular event is detected in Bacula, it will transfer
+is when a particular event is detected in Bareos, it will transfer
 control to each plugin that is loaded in turn informing the plugin of
 the event. This is very similar to how a <span>**RunScript**</span>
 works, and the events are very similar. Once the plugin gets control, it
-can interact with Bacula by getting and setting Bacula variables. In
-this way, it behaves much like a RunScript. Currently very few Bacula
+can interact with Bareos by getting and setting Bareos variables. In
+this way, it behaves much like a RunScript. Currently very few Bareos
 variables are defined, but they will be implemented as the need arises,
 and it is very extensible.
 
@@ -36,7 +36,7 @@ command line, which is a:
 
 directive that is placed in the Include section of a FileSet and is very
 similar to the “File = ” directive. When this Plugin directive is
-encountered by Bacula during backup, it passes the “command” part of the
+encountered by Bareos during backup, it passes the “command” part of the
 Plugin directive only to the plugin that is explicitly named in the
 first field of that command string. This allows that plugin to backup
 any file or files on the system that it wants. It can even create
@@ -55,7 +55,7 @@ The important features of the command plugin entry points are:
 
 The third type of plugin is the Options Plugin, this kind of plugin is
 useful to implement some custom filter on data. For example, you can
-implement a compression algorithm in a very simple way. Bacula will call
+implement a compression algorithm in a very simple way. Bareos will call
 this plugin for each file that is selected in a FileSet (according to
 Wild/Regex/Exclude/Include rules). As with all plugins, it gets notified
 of important events as noted above (details described below), but in
@@ -82,12 +82,12 @@ Once the File daemon loads the plugins, it asks the OS for the two entry
 points (loadPlugin and unloadPlugin) then calls the
 <span>**loadPlugin**</span> entry point (see below).
 
-Bacula passes information to the plugin through this call and it gets
-back information that it needs to use the plugin. Later, Bacula will
+Bareos passes information to the plugin through this call and it gets
+back information that it needs to use the plugin. Later, Bareos will
 call particular functions that are defined by the
 <span>**loadPlugin**</span> interface.
 
-When Bacula is finished with the plugin (when Bacula is going to exit),
+When Bareos is finished with the plugin (when Bareos is going to exit),
 it will call the <span>**unloadPlugin**</span> entry point.
 
 The two entry points are:
@@ -117,8 +117,8 @@ interface. Within this header file, it includes the following files:
 
 Aside from the <span>**bc\_types.h**</span> and
 <span>**confit.h**</span> headers, the plugin definition uses the
-minimum code from Bacula. The bc\_types.h file is required to ensure
-that the data type definitions in arguments correspond to the Bacula
+minimum code from Bareos. The bc\_types.h file is required to ensure
+that the data type definitions in arguments correspond to the Bareos
 core code.
 
 The return codes are defined as:
@@ -130,62 +130,62 @@ The return codes are defined as:
       bRC_More  = 3,                         /* More files to backup */
       bRC_Term  = 4,                         /* Unload me */
       bRC_Seen  = 5,                         /* Return code from checkFiles */
-      bRC_Core  = 6,                         /* Let Bacula core handles this file */
+      bRC_Core  = 6,                         /* Let Bareos core handles this file */
       bRC_Skip  = 7,                         /* Skip the proposed file */
     } bRC;
 
-At a future point in time, we hope to make the Bacula libbac.a into a
-shared object so that the plugin can use much more of Bacula’s
+At a future point in time, we hope to make the Bareos libbac.a into a
+shared object so that the plugin can use much more of Bareos’s
 infrastructure, but for this first cut, we have tried to minimize the
-dependence on Bacula.
+dependence on Bareos.
 
 loadPlugin
 ----------
 
 As previously mentioned, the <span>**loadPlugin**</span> entry point in
-the plugin is called immediately after Bacula loads the plugin when the
+the plugin is called immediately after Bareos loads the plugin when the
 File daemon itself is first starting. This entry point is only called
 once during the execution of the File daemon. In calling the plugin, the
-first two arguments are information from Bacula that is passed to the
+first two arguments are information from Bareos that is passed to the
 plugin, and the last two arguments are information about the plugin that
-the plugin must return to Bacula. The call is:
+the plugin must return to Bareos. The call is:
 
     bRC loadPlugin(bInfo *lbinfo, bFuncs *lbfuncs, pInfo **pinfo, pFuncs **pfuncs)
 
 and the arguments are:
 
 lbinfo
-:   This is information about Bacula in general. Currently, the only
+:   This is information about Bareos in general. Currently, the only
     value defined in the bInfo structure is the version, which is the
-    Bacula plugin interface version, currently defined as 1. The
+    Bareos plugin interface version, currently defined as 1. The
     <span>**size**</span> is set to the byte size of the structure. The
     exact definition of the bInfo structure as of this writing is:
 
-        typedef struct s_baculaInfo {
+        typedef struct s_bareosInfo {
            uint32_t size;
            uint32_t version;
         } bInfo;
 
 lbfuncs
-:   The bFuncs structure defines the callback entry points within Bacula
-    that the plugin can use register events, get Bacula values, set
-    Bacula values, and send messages to the Job output or debug output.
+:   The bFuncs structure defines the callback entry points within Bareos
+    that the plugin can use register events, get Bareos values, set
+    Bareos values, and send messages to the Job output or debug output.
 
     The exact definition as of this writing is:
 
-        typedef struct s_baculaFuncs {
+        typedef struct s_bareosFuncs {
            uint32_t size;
            uint32_t version;
-           bRC (*registerBaculaEvents)(bpContext *ctx, ...);
-           bRC (*getBaculaValue)(bpContext *ctx, bVariable var, void *value);
-           bRC (*setBaculaValue)(bpContext *ctx, bVariable var, void *value);
+           bRC (*registerBareosEvents)(bpContext *ctx, ...);
+           bRC (*getBareosValue)(bpContext *ctx, bVariable var, void *value);
+           bRC (*setBareosValue)(bpContext *ctx, bVariable var, void *value);
            bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
                int type, utime_t mtime, const char *fmt, ...);
            bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
                int level, const char *fmt, ...);
-           void *(*baculaMalloc)(bpContext *ctx, const char *file, int line,
+           void *(*bareosMalloc)(bpContext *ctx, const char *file, int line,
                size_t size);
-           void (*baculaFree)(bpContext *ctx, const char *file, int line, void *mem);
+           void (*bareosFree)(bpContext *ctx, const char *file, int line, void *mem);
         } bFuncs;
 
     We will discuss these entry points and how to use them a bit later
@@ -194,7 +194,7 @@ lbfuncs
 pInfo
 :   When the loadPlugin entry point is called, the plugin must
     initialize an information structure about the plugin and return a
-    pointer to this structure to Bacula.
+    pointer to this structure to Bareos.
 
     The exact definition as of this writing is:
 
@@ -212,9 +212,9 @@ pInfo
     Where:
 
     version
-    :   is the current Bacula defined plugin interface version,
+    :   is the current Bareos defined plugin interface version,
         currently set to 1. If the interface version differs from the
-        current version of Bacula, the plugin will not be run (not yet
+        current version of Bareos, the plugin will not be run (not yet
         implemented).
 
     plugin\_magic
@@ -224,7 +224,7 @@ pInfo
 
     plugin\_license
     :   is a pointer to a text string that describes the plugin license.
-        Bacula will only accept compatible licenses (not yet
+        Bareos will only accept compatible licenses (not yet
         implemented).
 
     plugin\_author
@@ -244,7 +244,7 @@ pInfo
     :   is a pointer to a string describing what the plugin does. The
         contents are determined by the plugin writer.
 
-    The pInfo structure must be defined in static memory because Bacula
+    The pInfo structure must be defined in static memory because Bareos
     does not copy it and may refer to the values at any time while the
     plugin is loaded. All values must be supplied or the plugin will not
     run (not yet implemented). All text strings must be either ASCII or
@@ -253,12 +253,12 @@ pInfo
 pFuncs
 :   When the loadPlugin entry point is called, the plugin must
     initialize an entry point structure about the plugin and return a
-    pointer to this structure to Bacula. This structure contains pointer
-    to each of the entry points that the plugin must provide for Bacula.
-    When Bacula is actually running the plugin, it will call the defined
+    pointer to this structure to Bareos. This structure contains pointer
+    to each of the entry points that the plugin must provide for Bareos.
+    When Bareos is actually running the plugin, it will call the defined
     entry points at particular times. All entry points must be defined.
 
-    The pFuncs structure must be defined in static memory because Bacula
+    The pFuncs structure must be defined in static memory because Bareos
     does not copy it and may refer to the values at any time while the
     plugin is loaded.
 
@@ -295,7 +295,7 @@ pFuncs
 
     Sample code for loadPlugin:
 
-          bfuncs = lbfuncs;                  /* set Bacula funct pointers */
+          bfuncs = lbfuncs;                  /* set Bareos funct pointers */
           binfo  = lbinfo;
           *pinfo  = &pluginInfo;             /* return pointer to our info */
           *pfuncs = &pluginFuncs;            /* return pointer to our functions */
@@ -309,14 +309,14 @@ Plugin Entry Points
 -------------------
 
 This section will describe each of the entry points (subroutines) within
-the plugin that the plugin must provide for Bacula, when they are called
+the plugin that the plugin must provide for Bareos, when they are called
 and their arguments. As noted above, pointers to these subroutines are
-passed back to Bacula in the pFuncs structure when Bacula calls the
+passed back to Bareos in the pFuncs structure when Bareos calls the
 loadPlugin() externally defined entry point.
 
 ### newPlugin(bpContext \*ctx)
 
-This is the entry point that Bacula will call when a new “instance” of
+This is the entry point that Bareos will call when a new “instance” of
 the plugin is created. This typically happens at the beginning of a Job.
 If 10 Jobs are running simultaneously, there will be at least 10
 instances of the plugin.
@@ -326,23 +326,23 @@ call, if the plugin needs to have its private working storage that is
 associated with the particular instance of the plugin, it should create
 it from the heap (malloc the memory) and store a pointer to its private
 working storage in the <span>**pContext**</span> variable. Note: since
-Bacula is a multi-threaded program, you must not keep any variable data
+Bareos is a multi-threaded program, you must not keep any variable data
 in your plugin unless it is truly meant to apply globally to the whole
 plugin. In addition, you must be aware that except the first and last
 call to the plugin (loadPlugin and unloadPlugin) all the other calls
-will be made by threads that correspond to a Bacula job. The bpContext
+will be made by threads that correspond to a Bareos job. The bpContext
 that will be passed for each thread will remain the same throughout the
 Job thus you can keep your private Job specific data in it
 (<span>**bContext**</span>).
 
     typedef struct s_bpContext {
       void *pContext;   /* Plugin private context */
-      void *bContext;   /* Bacula private context */
+      void *bContext;   /* Bareos private context */
     } bpContext;
 
 This context pointer will be passed as the first argument to all the
-entry points that Bacula calls within the plugin. Needless to say, the
-plugin should not change the bContext variable, which is Bacula’s
+entry points that Bareos calls within the plugin. Needless to say, the
+plugin should not change the bContext variable, which is Bareos’s
 private context pointer for this instance (Job) of this plugin.
 
 ### freePlugin(bpContext \*ctx)
@@ -357,31 +357,31 @@ called again if other jobs start.
 
 ### getPluginValue(bpContext \*ctx, pVariable var, void \*value)
 
-Bacula will call this entry point to get a value from the plugin. This
+Bareos will call this entry point to get a value from the plugin. This
 entry point is currently not called.
 
 ### setPluginValue(bpContext \*ctx, pVariable var, void \*value)
 
-Bacula will call this entry point to set a value in the plugin. This
+Bareos will call this entry point to set a value in the plugin. This
 entry point is currently not called.
 
 ### handlePluginEvent(bpContext \*ctx, bEvent \*event, void \*value)
 
-This entry point is called when Bacula encounters certain events
+This entry point is called when Bareos encounters certain events
 (discussed below). This is, in fact, the main way that most plugins get
 control when a Job runs and how they know what is happening in the job.
 It can be likened to the <span>**RunScript**</span> feature that calls
-external programs and scripts, and is very similar to the Bacula Python
-interface. When the plugin is called, Bacula passes it the pointer to an
+external programs and scripts, and is very similar to the Bareos Python
+interface. When the plugin is called, Bareos passes it the pointer to an
 event structure (bEvent), which currently has one item, the eventType:
 
     typedef struct s_bEvent {
        uint32_t eventType;
     } bEvent;
 
-which defines what event has been triggered, and for each event, Bacula
+which defines what event has been triggered, and for each event, Bareos
 will pass a pointer to a value associated with that event. If no value
-is associated with a particular event, Bacula will pass a NULL pointer,
+is associated with a particular event, Bareos will pass a NULL pointer,
 so the plugin must be careful to always check value pointer prior to
 dereferencing it.
 
@@ -470,9 +470,9 @@ bEventRestoreCommand
     “Plugin =” as the value.
 
     See the notes above concerning backup and the command string. This
-    is the point at which Bacula passes you the original command string
+    is the point at which Bareos passes you the original command string
     that was specified during the backup, so you will want to save it in
-    your pContext area for later use when Bacula calls the plugin again.
+    your pContext area for later use when Bareos calls the plugin again.
 
 bEventLevel
 :   is called when the level is set for a new Job. The value is a 32 bit
@@ -497,22 +497,22 @@ bEventHandleBackupFile
 :   is called for each file of a FileSet when using a Options Plugin. If
     the plugin returns CF\_OK, it will be used for the backup, if it
     returns CF\_SKIP, the file will be skipped. Anything else will
-    backup the file with Bacula core functions.
+    backup the file with Bareos core functions.
 
 During each of the above calls, the plugin receives either no specific
 value or only one value, which in some cases may not be sufficient.
 However, knowing the context of the event, the plugin can call back to
-the Bacula entry points it was passed during the
-<span>**loadPlugin**</span> call and get to a number of Bacula
-variables. (at the current time few Bacula variables are implemented,
+the Bareos entry points it was passed during the
+<span>**loadPlugin**</span> call and get to a number of Bareos
+variables. (at the current time few Bareos variables are implemented,
 but it easily extended at a future time and as needs require).
 
 ### startBackupFile(bpContext \*ctx, struct save\_pkt \*sp)
 
 This entry point is called only if your plugin is a command plugin, and
-it is called when Bacula encounters the “Plugin = ” directive in the
+it is called when Bareos encounters the “Plugin = ” directive in the
 Include section of the FileSet. Called when beginning the backup of a
-file. Here Bacula provides you with a pointer to the
+file. Here Bareos provides you with a pointer to the
 <span>**save\_pkt**</span> structure and you must fill in this packet
 with the “attribute” data of the file.
 
@@ -522,7 +522,7 @@ with the “attribute” data of the file.
        char *link;                        /* Link name if any */
        struct stat statp;                 /* System stat() packet for file */
        int32_t type;                      /* FT_xx for this file */
-       uint32_t flags;                    /* Bacula internal flags */
+       uint32_t flags;                    /* Bareos internal flags */
        bool portable;                     /* set if data format is portable */
        char *cmd;                         /* command */
        uint32_t delta_seq;                /* Delta sequence number */
@@ -556,7 +556,7 @@ memory leaks, you should store a pointer to all memory allocated in your
 pContext structure so that in subsequent calls or at termination, you
 can release it back to the system.
 
-Once the backup has begun, Bacula will call your plugin at the
+Once the backup has begun, Bareos will call your plugin at the
 <span>**pluginIO**</span> entry point to “read” the data to be backed
 up. Please see the <span>**bpipe-fd.c**</span> plugin for how to do I/O.
 
@@ -580,7 +580,7 @@ command string previously sent to the plugin and is in the plugin
 context (p\_ctx-\>fname) and is a malloc()ed string. This example
 creates a regular file (S\_IFREG), with various fields being created.
 
-In general, the sequence of commands issued from Bacula to the plugin to
+In general, the sequence of commands issued from Bareos to the plugin to
 do a backup while processing the “Plugin = ” directive are:
 
 1.  generate a bEventBackupCommand event to the specified plugin and
@@ -590,14 +590,14 @@ do a backup while processing the “Plugin = ” directive are:
     needed in save\_pkt to save as the file attributes and to put on the
     Volume and in the catalog.
 
-3.  call Bacula’s internal save\_file() subroutine to save the specified
+3.  call Bareos’s internal save\_file() subroutine to save the specified
     file. The plugin will then be called at pluginIO() to “open” the
     file, and then to read the file data. Note, if you are dealing with
     a virtual file, the “open” operation is something the plugin does
     internally and it doesn’t necessarily mean opening a file on the
     filesystem. For example in the case of the bpipe-fd.c program, it
     initiates a pipe to the requested program. Finally when the plugin
-    signals to Bacula that all the data was read, Bacula will call the
+    signals to Bareos that all the data was read, Bareos will call the
     plugin with the “close” pluginIO() function.
 
 ### endBackupFile(bpContext \*ctx)
@@ -617,7 +617,7 @@ written by the command plugin.
 
 Called for a command plugin to create a file during a Restore job before
 restoring the data. This entry point is called before any I/O is done on
-the file. After this call, Bacula will call pluginIO() to open the file
+the file. After this call, Bareos will call pluginIO() to open the file
 for write.
 
 The data in the restore\_pkt is passed to the plugin and is based on the
@@ -634,7 +634,7 @@ This call must return one of the following values:
        CF_ERROR,          /* error creating file */
        CF_EXTRACT,        /* file created, data to extract */
        CF_CREATED,        /* file created, no data to extract */
-       CF_CORE            /* let bacula core handles the file creation */
+       CF_CORE            /* let bareos core handles the file creation */
     };
 
 in the restore\_pkt value <span>**create\_status**</span>. For a normal
@@ -706,7 +706,7 @@ directory, you will want to do an stat() on the directory.
 
 Note, if you want the directory permissions and times to be correctly
 restored, you must create the directory <span>**after**</span> all the
-file directories have been sent to Bacula. That allows the restore
+file directories have been sent to Bareos. That allows the restore
 process to restore all the files in a directory using default directory
 options, then at the end, restore the directory permissions. If you do
 it the other way around, each time you restore a file, the OS will
@@ -810,13 +810,13 @@ IO\_LSEEK
     to the errno value, and if there is a Win32 error, win32 and lerror
     must be set.
 
-    Note: Bacula will call IO\_SEEK only when writing a sparse file.
+    Note: Bareos will call IO\_SEEK only when writing a sparse file.
 
 ### bool checkFile(bpContext \*ctx, char \*fname)
 
-If this entry point is set, Bacula will call it after backing up all
+If this entry point is set, Bareos will call it after backing up all
 file data during an Accurate backup. It will be passed the full filename
-for each file that Bacula is proposing to mark as deleted. Only files
+for each file that Bareos is proposing to mark as deleted. Only files
 previously backed up but not backed up in the current session will be
 marked to be deleted. If you return <span>**false**</span>, the file
 will be be marked deleted. If you return <span>**true**</span> the file
@@ -826,23 +826,23 @@ have not change (not backed up in the current job) are not marked to be
 deleted. This entry point will only be called during Accurate Incrmental
 and Differential backup jobs.
 
-Bacula Plugin Entrypoints
+Bareos Plugin Entrypoints
 -------------------------
 
-When Bacula calls one of your plugin entrypoints, you can call back to
-the entrypoints in Bacula that were supplied during the xxx plugin call
-to get or set information within Bacula.
+When Bareos calls one of your plugin entrypoints, you can call back to
+the entrypoints in Bareos that were supplied during the xxx plugin call
+to get or set information within Bareos.
 
-### bRC registerBaculaEvents(bpContext \*ctx, ...)
+### bRC registerBareosEvents(bpContext \*ctx, ...)
 
-This Bacula entrypoint will allow you to register to receive events that
+This Bareos entrypoint will allow you to register to receive events that
 are not autmatically passed to your plugin by default. This entrypoint
 currently is unimplemented.
 
-### bRC getBaculaValue(bpContext \*ctx, bVariable var, void \*value)
+### bRC getBareosValue(bpContext \*ctx, bVariable var, void \*value)
 
 Calling this entrypoint, you can obtain specific values that are
-available in Bacula. The following Variables can be referenced:
+available in Bareos. The following Variables can be referenced:
 
 -   bVarJobId returns an int
 
@@ -860,9 +860,9 @@ available in Bacula. The following Variables can be referenced:
 
 -   bVarAccurate returns an int
 
-### bRC setBaculaValue(bpContext \*ctx, bVariable var, void \*value)
+### bRC setBareosValue(bpContext \*ctx, bVariable var, void \*value)
 
-Calling this entrypoint allows you to set particular values in Bacula.
+Calling this entrypoint allows you to set particular values in Bareos.
 The only variable that can currently be set is
 <span>**bVarFileSeen**</span> and the value passed is a char \* that
 points to the full filename for a file that you are indicating has been
@@ -876,25 +876,25 @@ This call permits you to put a message in the Job Report.
 
 This call permits you to print a debug message.
 
-### void baculaMalloc(bpContext \*ctx, const char \*file, int line, size\_t size)
+### void bareosMalloc(bpContext \*ctx, const char \*file, int line, size\_t size)
 
-This call permits you to obtain memory from Bacula’s memory allocator.
+This call permits you to obtain memory from Bareos’s memory allocator.
 
-### void baculaFree(bpContext \*ctx, const char \*file, int line, void \*mem)
+### void bareosFree(bpContext \*ctx, const char \*file, int line, void \*mem)
 
-This call permits you to free memory obtained from Bacula’s memory
+This call permits you to free memory obtained from Bareos’s memory
 allocator.
 
-Building Bacula Plugins
+Building Bareos Plugins
 -----------------------
 
 There is currently one sample program
 <span>**example-plugin-fd.c**</span> and one working plugin
-<span>**bpipe-fd.c**</span> that can be found in the Bacula
+<span>**bpipe-fd.c**</span> that can be found in the Bareos
 <span>**src/plugins/fd**</span> directory. Both are built with the
 following:
 
-     cd <bacula-source>
+     cd <bareos-source>
      ./configure <your-options>
      make
      ...
@@ -902,7 +902,7 @@ following:
      make
      make test
 
-After building Bacula and changing into the src/plugins/fd directory,
+After building Bareos and changing into the src/plugins/fd directory,
 the <span>**make**</span> command will build the
 <span>**bpipe-fd.so**</span> plugin, which is a very useful and working
 program.
@@ -914,8 +914,8 @@ The <span>**make test**</span> command will build the
 
 If you execute <span>**./main**</span>, it will load and run the
 example-plugin-fd plugin simulating a small number of the calling
-sequences that Bacula uses in calling a real plugin. This allows you to
-do initial testing of your plugin prior to trying it with Bacula.
+sequences that Bareos uses in calling a real plugin. This allows you to
+do initial testing of your plugin prior to trying it with Bareos.
 
 You can get a good idea of how to write your own plugin by first
 studying the example-plugin-fd, and actually running it. Then it can

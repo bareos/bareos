@@ -1,4 +1,4 @@
-Bacula MD5 Algorithm {#MD5Chapter}
+Bareos MD5 Algorithm {#MD5Chapter}
 ====================
 
 Command Line Message Digest Utility 

@@ -12,7 +12,7 @@ record has a record header followed by record data.
 This chapter is intended to be a technical discussion of the Media
 Format and as such is not targeted at end users but rather at developers
 and system administrators that want or need to know more of the working
-details of <span>**Bacula**</span>.
+details of <span>**Bareos**</span>.
 
 Definitions
 -----------
@@ -25,9 +25,9 @@ Block
     header information followed by records. Clients of the Storage
     daemon (the File daemon) normally never see blocks. However, some of
     the Storage tools (bls, bscan, bextract, ...) may be use block
-    header information. In older Bacula tape versions, a block could
+    header information. In older Bareos tape versions, a block could
     contain records (see record definition below) from multiple jobs.
-    However, all blocks currently written by Bacula are block level
+    However, all blocks currently written by Bareos are block level
     BB02, and a given block contains records for only a single job.
     Different jobs simply have their own private blocks that are
     intermingled with the other blocks from other jobs on the Volume
@@ -164,45 +164,45 @@ the end of the file.
 Overall Format
 --------------
 
-A Bacula output file consists of Blocks of data. Each block contains a
+A Bareos output file consists of Blocks of data. Each block contains a
 block header followed by records. Each record consists of a record
 header followed by the record data. The first record on a tape will
 always be the Volume Label Record.
 
-No Record Header will be split across Bacula blocks. However, Record
-Data may be split across any number of Bacula blocks. Obviously this
+No Record Header will be split across Bareos blocks. However, Record
+Data may be split across any number of Bareos blocks. Obviously this
 will not be the case for the Volume Label which will always be smaller
-than the Bacula Block size.
+than the Bareos Block size.
 
 To simplify reading tapes, the Start of Session (SOS) and End of Session
 (EOS) records are never split across blocks. If this is about to happen,
-Bacula will write a short block before writing the session record
+Bareos will write a short block before writing the session record
 (actually, the SOS record should always be the first record in a block,
 excepting perhaps the Volume label).
 
 Due to hardware limitations, the last block written to the tape may not
-be fully written. If your drive permits backspace record, Bacula will
+be fully written. If your drive permits backspace record, Bareos will
 backup over the last record written on the tape, re-read it and verify
 that it was correctly written.
 
-When a new tape is mounted Bacula will write the full contents of the
+When a new tape is mounted Bareos will write the full contents of the
 partially written block to the new tape ensuring that there is no loss
-of data. When reading a tape, Bacula will discard any block that is not
+of data. When reading a tape, Bareos will discard any block that is not
 totally written, thus ensuring that there is no duplication of data. In
-addition, since Bacula blocks are sequentially numbered within a Job, it
+addition, since Bareos blocks are sequentially numbered within a Job, it
 is easy to ensure that no block is missing or duplicated.
 
 Serialization
 -------------
 
 All Block Headers, Record Headers, and Label Records are written using
-Bacula’s serialization routines. These routines guarantee that the data
+Bareos’s serialization routines. These routines guarantee that the data
 is written to the output volume in a machine independent format.
 
 Block Header
 ------------
 
-The format of the Block Header (version 1.27 and later) is:
+The format of the Block Header (Bacula version 1.27 and later) is:
 
        uint32_t CheckSum;                /* Block check sum */
        uint32_t BlockSize;               /* Block byte size including the header */
@@ -215,9 +215,9 @@ The Block header is a fixed length and fixed format and is followed by
 Record Headers and Record Data. The CheckSum field is a 32 bit checksum
 of the block data and the block header but not including the CheckSum
 field. The Block Header is always immediately followed by a Record
-Header. If the tape is damaged, a Bacula utility will be able to recover
+Header. If the tape is damaged, a Bareos utility will be able to recover
 as much information as possible from the tape by recovering blocks which
-are valid. The Block header is written using the Bacula serialization
+are valid. The Block header is written using the Bareos serialization
 routines and thus is guaranteed to be in machine independent format. See
 below for version 2 of the block header.
 
@@ -226,11 +226,11 @@ Record Header
 
 Each binary data record is preceded by a Record Header. The Record
 Header is fixed length and fixed format, whereas the binary data record
-is of variable length. The Record Header is written using the Bacula
+is of variable length. The Record Header is written using the Bareos
 serialization routines and thus is guaranteed to be in machine
 independent format.
 
-The format of the Record Header (version 1.27 or later) is:
+The format of the Record Header (Bacula version 1.27 or later) is:
 
       int32_t FileIndex;   /* File index supplied by File daemon */
       int32_t Stream;      /* Stream number supplied by File daemon */
@@ -309,7 +309,7 @@ The data record, on the other hand, may be split across multiple blocks
 and even multiple physical volumes. When a data record is split, the
 second (and possibly subsequent) piece of the data is preceded by a new
 Record Header. Thus each piece of data is always immediately preceded by
-a Record Header. When reading a record, if Bacula finds only part of the
+a Record Header. When reading a record, if Bareos finds only part of the
 data in the first record, it will automatically read the next record and
 concatenate the data record to form a full data record.
 
@@ -333,9 +333,9 @@ and fixed format and is followed by Record Headers and Record Data. The
 CheckSum field is a 32 bit CRC checksum of the block data and the block
 header but not including the CheckSum field. The Block Header is always
 immediately followed by a Record Header. If the tape is damaged, a
-Bacula utility will be able to recover as much information as possible
+Bareos utility will be able to recover as much information as possible
 from the tape by recovering blocks which are valid. The Block header is
-written using the Bacula serialization routines and thus is guaranteed
+written using the Bareos serialization routines and thus is guaranteed
 to be in machine independent format.
 
 Version 2 Record Header
@@ -357,7 +357,7 @@ Volume Label Format
 Tape volume labels are created by the Storage daemon in response to a
 <span>**label**</span> command given to the Console program, or
 alternatively by the <span>**btape**</span> program. created. Each
-volume is labeled with the following information using the Bacula
+volume is labeled with the following information using the Bareos
 serialization routines, which guarantee machine byte order independence.
 
 For Bacula versions 1.27 and later, the Volume Label Format is:
@@ -391,7 +391,7 @@ The Session Label is written at the beginning and end of each session as
 well as the last record on the physical medium. It has the following
 binary format:
 
-      char Id[32];              /* Bacula Immortal ... */
+      char Id[32];              /* Bacula/Bareos Immortal ... */
       uint32_t VerNum;          /* Label version number */
       uint32_t JobId;           /* Job id */
       uint32_t VolumeIndex;     /* sequence no of vol */
@@ -436,11 +436,11 @@ reading all the session data in many cases.
 Overall Storage Format
 ----------------------
 
-                   Current Bacula Tape Format
+                   Current Bacula/Bareos Tape Format
                          6 June 2001
                Version BB02 added 28 September 2002
                Version BB01 is the old deprecated format.
-       A Bacula tape is composed of tape Blocks.  Each block
+       A Bareos tape is composed of tape Blocks.  Each block
          has a Block header followed by the block data. Block
          Data consists of Records. Records consist of Record
          Headers followed by Record Data.
@@ -487,11 +487,11 @@ Overall Storage Format
        |              VolSessionTime   (uint32_t)              |
        :=======================================================:
        BBO2: Serves to identify the block as a
-         Bacula block and also servers as a block format identifier
+         Bacula/Bareos block and also servers as a block format identifier
          should we ever need to change the format.
        BlockSize: is the size in bytes of the block. When reading
          back a block, if the BlockSize does not agree with the
-         actual size read, Bacula discards the block.
+         actual size read, Bareos discards the block.
        CheckSum: a checksum for the Block.
        BlockNumber: is the sequential block number on the tape.
        VolSessionId: a unique sequential number that is assigned
@@ -572,9 +572,9 @@ Overall Storage Format
        |-------------------------------------------------------|
        :=======================================================:
 
-       Id: 32 byte Bacula identifier "Bacula 1.0 immortal\n"
+       Id: 32 byte identifier "Bacula 1.0 immortal\n"
        (old version also recognized:)
-       Id: 32 byte Bacula identifier "Bacula 0.9 mortal\n"
+       Id: 32 byte identifier "Bacula 0.9 mortal\n"
        LabelType (Saved in the FileIndex of the Header record).
            PRE_LABEL -1    Volume label on unwritten tape
            VOL_LABEL -2    Volume label after tape written
@@ -645,14 +645,14 @@ Overall Storage Format
        |              JobStatus        (uint32_t) VerNum 11    |
        :=======================================================:
        * => fields deprecated
-       Id: 32 byte Bacula Identifier "Bacula 1.0 immortal\n"
+       Id: 32 byte identifier "Bacula 1.0 immortal\n"
        LabelType (in FileIndex field of Header):
            EOM_LABEL -3     Label at EOM
            SOS_LABEL -4     Start of Session label
            EOS_LABEL -5     End of Session label
        VerNum: 11
        JobId: JobId
-       write_btime: Bacula time/date this tape record written
+       write_btime: Bareos time/date this tape record written
        write_date: Julian date tape this record written - deprecated
        write_time: Julian time tape this record written - deprecated.
        PoolName: Pool Name
@@ -775,10 +775,10 @@ The format of the Record Header (version 1.26 or earlier) is:
       int32_t Stream;           /* Stream number supplied by File daemon */
       uint32_t DataSize;        /* size of following data record in bytes */
 
-                   Current Bacula Tape Format
+                   Current Bacula/Bareos Tape Format
                          6 June 2001
                Version BB01 is the old deprecated format.
-       A Bacula tape is composed of tape Blocks.  Each block
+       A Bareos tape is composed of tape Blocks.  Each block
          has a Block header followed by the block data. Block
          Data consists of Records. Records consist of Record
          Headers followed by Record Data.
@@ -821,11 +821,11 @@ The format of the Record Header (version 1.26 or earlier) is:
        |              "BB01"           (char [4])              |
        :=======================================================:
        BBO1: Serves to identify the block as a
-         Bacula block and also servers as a block format identifier
+         Bareos block and also servers as a block format identifier
          should we ever need to change the format.
        BlockSize: is the size in bytes of the block. When reading
          back a block, if the BlockSize does not agree with the
-         actual size read, Bacula discards the block.
+         actual size read, Bareos discards the block.
        CheckSum: a checksum for the Block.
        BlockNumber: is the sequential block number on the tape.
        VolSessionId: a unique sequential number that is assigned
@@ -916,9 +916,9 @@ The format of the Record Header (version 1.26 or earlier) is:
        |-------------------------------------------------------|
        :=======================================================:
 
-       Id: 32 byte Bacula identifier "Bacula 1.0 immortal\n"
+       Id: 32 byte identifier "Bacula 1.0 immortal\n"
        (old version also recognized:)
-       Id: 32 byte Bacula identifier "Bacula 0.9 mortal\n"
+       Id: 32 byte identifier "Bacula 0.9 mortal\n"
        LabelType (Saved in the FileIndex of the Header record).
            PRE_LABEL -1    Volume label on unwritten tape
            VOL_LABEL -2    Volume label after tape written
@@ -988,14 +988,14 @@ The format of the Record Header (version 1.26 or earlier) is:
        |              JobStatus        (uint32_t) VerNum 11    |
        :=======================================================:
        * => fields deprecated
-       Id: 32 byte Bacula Identifier "Bacula 1.0 immortal\n"
+       Id: 32 byte Bareos Identifier "Bareos 1.0 immortal\n"
        LabelType (in FileIndex field of Header):
            EOM_LABEL -3     Label at EOM
            SOS_LABEL -4     Start of Session label
            EOS_LABEL -5     End of Session label
        VerNum: 11
        JobId: JobId
-       write_btime: Bacula time/date this tape record written
+       write_btime: Bareos time/date this tape record written
        write_date: Julian date tape this record written - deprecated
        write_time: Julian time tape this record written - deprecated.
        PoolName: Pool Name

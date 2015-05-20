@@ -1,17 +1,17 @@
-Bacula Memory Management {#_ChapterStart7}
+Bareos Memory Management {#_ChapterStart7}
 ========================
 
 General
 -------
 
 This document describes the memory management routines that are used in
-Bacula and is meant to be a technical discussion for developers rather
+Bareos and is meant to be a technical discussion for developers rather
 than part of the user manual.
 
-Since Bacula may be called upon to handle filenames of varying and more
+Since Bareos may be called upon to handle filenames of varying and more
 or less arbitrary length, special attention needs to be used in the code
 to ensure that memory buffers are sufficiently large. There are four
-possibilities for memory usage within <span>**Bacula**</span>. Each will
+possibilities for memory usage within <span>**Bareos**</span>. Each will
 be described in turn. They are:
 
 -   Statically allocated memory.
@@ -30,7 +30,7 @@ Statically allocated memory is of the form:
 
 The use of this kind of memory is discouraged except when you are 100%
 sure that the strings to be used will be of a fixed length. One example
-of where this is appropriate is for <span>**Bacula**</span> resource
+of where this is appropriate is for <span>**Bareos**</span> resource
 names, which are currently limited to 127 characters
 (MAX\_NAME\_LENGTH). Although this maximum size may change, particularly
 to accommodate Unicode, it will remain a relatively small value.
@@ -64,7 +64,7 @@ efficiently handle a high volume of dynamic memory usage, we have
 implemented routines between the C code and the malloc routines. The
 first is called “Pooled” memory, and is memory, which once allocated and
 then released, is not returned to the system memory pool, but rather
-retained in a Bacula memory pool. The next request to acquire pooled
+retained in a Bareos memory pool. The next request to acquire pooled
 memory will return any free memory block. In addition, each memory block
 has its current size associated with the block allowing for easy
 checking if the buffer is of sufficient size. This kind of memory would
@@ -74,7 +74,7 @@ to varying filename lengths.
 
 The non-pooled memory is handled by routines similar to those used for
 pooled memory, allowing for easy size checking. However, non-pooled
-memory is returned to the system rather than being saved in the Bacula
+memory is returned to the system rather than being saved in the Bareos
 pool. This kind of memory would normally be used in low volume
 situations (few malloc()s and free()s), but where the size of the buffer
 might have to be adjusted frequently.
@@ -117,7 +117,7 @@ To free memory acquired by either of the above two calls, use:
 where buffer is the memory buffer returned when the memory was acquired.
 If the memory was originally allocated as type PM\_NOPOOL, it will be
 released to the system, otherwise, it will be placed on the appropriate
-Bacula memory pool free chain to be used in a subsequent call for memory
+Bareos memory pool free chain to be used in a subsequent call for memory
 from that pool.
 
 ##### Determining the Memory Size: {#determining-the-memory-size .unnumbered}
@@ -146,7 +146,7 @@ where <span>**new-size**</span> is the buffer length needed. Note, if
 the buffer is already equal to or larger than <span>**new-size**</span>
 no buffer size change will occur. However, if a buffer size change is
 needed, the original contents of the buffer will be preserved, but the
-buffer address may change. Many of the low level Bacula subroutines
+buffer address may change. Many of the low level Bareos subroutines
 expect to be passed a pool memory buffer and use this call to ensure the
 buffer they use is sufficiently large.
 
@@ -157,7 +157,7 @@ program, use:
 
     void close_memory_pool();
 
-to free all unused memory retained in the Bacula memory pool. Note, any
+to free all unused memory retained in the Bareos memory pool. Note, any
 memory not returned to the pool via free\_pool\_memory() will not be
 released by this call.
 
