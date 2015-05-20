@@ -1443,7 +1443,7 @@ bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
       unstrip_path(ff_pkt);
    }
 
-   Dmsg2(300, ">stored: attr len=%d: %s", sd->msglen, sd->msg);
+   Dmsg2(300, ">stored: attr len=%d: %s\n", sd->msglen, sd->msg);
    if (!status && !jcr->is_job_canceled()) {
       Jmsg1(jcr, M_FATAL, 0, _("Network send error to SD. ERR=%s\n"), sd->bstrerror());
    }
