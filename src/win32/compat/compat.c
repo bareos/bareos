@@ -1294,13 +1294,12 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
        * We store the full windows file attributes into st_rdev.
        */
       sb->st_rdev = *pdwFileAttributes;
-      if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
-            (*pdwReserved0 & IO_REPARSE_TAG_DEDUP)) {
-         sb->st_rdev |= FILE_ATTRIBUTES_DEDUPED_ITEM;
-      }
    }
 
    if (is_directory) {
+      /*
+       * Directory
+       */
       sb->st_mode |= S_IFDIR;
 
       /*
@@ -1314,7 +1313,8 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
        * so it is like a Unix mount point (change of filesystem).
        */
       if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-         if (*pdwReserved0 == IO_REPARSE_TAG_MOUNT_POINT) {
+         switch (*pdwReserved0) {
+         case IO_REPARSE_TAG_MOUNT_POINT: {
             /*
              * A mount point can be:
              * Volume Mount Point "\\??\\volume{..."
@@ -1333,7 +1333,9 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
                }
             }
             free_pool_memory(vmp);
-        } else if (*pdwReserved0 == IO_REPARSE_TAG_SYMLINK) {
+            break;
+         }
+         case IO_REPARSE_TAG_SYMLINK: {
             POOLMEM *slt;
 
             Dmsg0(dbglvl, "We have a symlinked directory!\n");
@@ -1348,21 +1350,43 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
                Dmsg2(dbglvl, "Symlinked Directory %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
-         } else {
-            Dmsg0(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG\n");
+            break;
+         }
+         default:
+            Dmsg1(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
+            break;
          }
       }
-   } else { /* no directory */
+   } else {
+      /*
+       * No directory
+       */
       if ((*pdwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-         if (*pdwReserved0 & IO_REPARSE_TAG_SYMLINK) {
+         switch (*pdwReserved0) {
+         case IO_REPARSE_TAG_SYMLINK: {
+            POOLMEM *slt = get_pool_memory(PM_NAME);
+
             Dmsg0(dbglvl, "We have a symlinked file!\n");
             sb->st_mode |= S_IFLNK;
 
-            POOLMEM *slt = get_pool_memory(PM_NAME);
             if (get_symlink_data(filename, &slt)) {
                Dmsg2(dbglvl, "Symlinked File %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
+            break;
+         }
+         case IO_REPARSE_TAG_DEDUP:
+            Dmsg0(dbglvl, "We have a deduplicated file!\n");
+            sb->st_rdev |= FILE_ATTRIBUTES_DEDUPED_ITEM;
+
+            /*
+             * We treat a deduped file as a normal file.
+             */
+            sb->st_mode |= S_IFREG;
+            break;
+         default:
+            Dmsg1(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
+            break;
          }
       }
    }
@@ -2669,6 +2693,9 @@ bool win32_restore_file_attributes(POOLMEM *ofname, HANDLE handle, WIN32_FILE_AT
    }
 
    if (handle != INVALID_HANDLE_VALUE) {
+      if (atts->dwFileAttributes & FILE_ATTRIBUTES_DEDUPED_ITEM) {
+         Dmsg1(100, "File %s is a FILE_ATTRIBUTES_DEDUPED_ITEM\n", ofname);
+      }
       /*
        * Restore the sparse file attribute on the restored file.
        */
