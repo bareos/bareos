@@ -1,0 +1,147 @@
+\subsection{VMware Plugin}
+\label{VMwarePlugin}
+\index[general]{Plugin!VMware}
+
+The VMware\raisebox{.6ex}{\textsuperscript{\textregistered}} Plugin can be
+used for agentless backups of virtual machines running on
+VMware vSphere\raisebox{.6ex}{\textsuperscript{\textregistered}}.
+It makes use of CBT (Changed Block Tracking) to do space efficient
+full and incremental backups, see below for mandatory requirements.
+
+\subsubsection{Status}
+
+The current development status of the VMware\raisebox{.6ex}{\textsuperscript{\textregistered}}
+plugin is experimental.
+
+The Plugin can do full, differential and incremental backup and restore of VM disks.
+
+Current limitations amongst others are:
+\begin{itemize}
+\item it is not yet possible to exclude VM disks from backups
+\item the VM configuration is not yet backed up, so that it is not yet
+  possible to recreate a completely deleted VM
+\item the above implies that restore is still only possible to the same existing
+  VM with exising virtual disks
+\end{itemize}
+
+\subsubsection{Requirements}
+As the Plugin is based on the VMware vSphere® Storage APIs for Data Protection,
+which requires at least a VMware vSphere® Essentials License.
+It does not work with standalone unlicensed
+VMware® ESXi\raisebox{.6ex}{\textsuperscript{\texttrademark}}
+
+\subsubsection{Installation}
+
+Install the package \package{bareos-vmware-plugin} including its requirments
+by using an appropriate package management tool
+(eg. \command{yum}, \command{zypper}, \command{apt})
+
+\subsubsection{Configuration}
+
+First add a user account in vCenter that has full privileges by assigning
+the account to an administrator role or by adding the account to a group
+that is assigned to an administrator role. While any user account
+with full privileges could be used, it is better practice to create a separate
+user account, so that the actions by this account logged in vSphere are clearly
+distinguishable. In the future a more detailed set of required role privilges
+may be defined.
+
+When using the vCenter appliance with embedded SSO, a user account usually has the
+structure \command{<username>@vsphere.local}, it may be different when using
+Active Directory as SSO in vCenter. For the examples here, we will use
+\command{bakadm@vsphere.local} with the password \command{Bak.Adm-1234}.
+
+For more details regarding users and permissions in vSphere see
+\url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html} and
+\url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html}
+
+Make sure to add or enable the following settings in
+
+To define the backup of a VM in Bareos, a job definition and a fileset
+resource must be added to the Bareos director confguration.
+In vCenter, VMs are usually organized in datacenters and folders.
+The following example shows how to configure the backup of the VM
+named \textit{websrv1} in the datacenter \textit{mydc1}
+folder \textit{webservers} on the vCenter server \command{vcenter.example.org}:
+
+\begin{bconfig}{bareos-dir.conf: VMware Plugin Job and FileSet definition}
+Job {
+  Name = "vm-websrv1"
+  JobDefs = "DefaultJob"
+  FileSet = "vm-websrv1_fileset"
+}
+
+FileSet {
+  Name = "vm-websrv1_fileset"
+
+  Include {
+    Options {
+         signature = MD5
+         Compression = GZIP
+    }
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+  }
+}
+\end{bconfig}
+
+For VMs defined in the root-folder, \command{folder=/} must be specified
+in the Plugin definition.
+
+\subsubsection{Backup}
+
+Before running the first backup, CBT (Changed Block Tracking) must be
+enabled for the VMs to be backed up.
+
+As of \url{http://kb.vmware.com/kb/2075984} manually enabling CBT is
+currently not working properly. The API however works properly.
+To enable CBT use the Script \command{vmware_cbt_tool.py}, it is packaged
+in the bareos-vmware-plugin package:
+
+\begin{commands}{usage of vmware\_cbt\_tool.py}
+# vmware_cbt_tool.py --help
+usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
+                          DATACENTER -f FOLDER -v VMNAME [--enablecbt]
+                          [--disablecbt] [--resetcbt] [--info]
+
+Process args for enabling/disabling/resetting CBT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s HOST, --host HOST  Remote host to connect to
+  -o PORT, --port PORT  Port to connect on
+  -u USER, --user USER  User name to use when connecting to host
+  -p PASSWORD, --password PASSWORD
+                        Password to use when connecting to host
+  -d DATACENTER, --datacenter DATACENTER
+                        DataCenter Name
+  -f FOLDER, --folder FOLDER
+                        Folder Name
+  -v VMNAME, --vmname VMNAME
+                        Names of the Virtual Machines
+  --enablecbt           Enable CBT
+  --disablecbt          Disable CBT
+  --resetcbt            Reset CBT (disable, then enable)
+  --info                Show information (CBT supported and enabled or
+                        disabled)
+\end{commands}
+
+For the above configuration example, the command to enable CBT would be
+
+\begin{commands}{Example using vmware\_cbt\_tool.py}
+vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 \
+  -d mydc1 -f /webservers -v websrv1 --enablecbt
+\end{commands}
+
+Note: CBT does not work if the virtual hardware version is 6 or earlier.
+
+After enabling CBT, Backup Jobs can be run or scheduled as usual,
+for example in \command{bconsole}:
+
+\command{run job=vm-websrv1 level=Full}
+
+\subsubsection{Restore}
+
+For restore, the VM must be powered off and no snapshot must exist.
+In \command{bconsole} use the restore menu 5, select the correct FileSet
+and enter \command{mark *}, then \command{done}. After restore has finished,
+the VM can be powered on.
