@@ -1,4 +1,4 @@
-Bareos Regression Testing {#_ChapterStart8}
+Bareos Regression Testing
 =========================
 
 Setting up Regession Testing

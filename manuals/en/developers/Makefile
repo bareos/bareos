@@ -14,7 +14,6 @@ FILES = generaldevel.md \
       gui-interface.md \
       tls-techdoc.md \
       regression.md \
-      md5.md \
       mempool.md \
       netprotocol.md \
       smartall.md \
@@ -28,10 +27,10 @@ depend:
 
 html: html/bareos-developer-guide.html
 
-html/bareos-developer-guide.html: depend pandoc.css footer.html $(FILES)
+html/bareos-developer-guide.html: depend bareos-developer-guide.css footer.html $(FILES)
 	mkdir -p html
-	$(PANDOC) -s -S --toc -c pandoc.css -B footer.html -A footer.html  $(FILES) -o html/bareos-developer-guide.html
-	cp -a pandoc.css html/
+	$(PANDOC) -s -S --toc -c bareos-developer-guide.css -B footer.html -A footer.html  $(FILES) -o html/bareos-developer-guide.html
+	cp -a bareos-developer-guide.css html/
 
 check: html
 	true

@@ -1,7 +1,8 @@
-![image](\idir smartall.eps)
 
-Smart Memory Allocation {#_ChapterStart4}
+Smart Memory Allocation
 =======================
+
+![image](\idir smartall.eps)
 
 Few things are as embarrassing as a program that leaks, yet few errors
 are so easy to commit or as difficult to track down in a large,
@@ -373,20 +374,3 @@ returned by buffer allocation is <span>char </span> or
 <span>void </span>, and so forth, but following those changes it works
 in a variety of environments. I hope you’ll find SMARTALLOC as useful
 for your projects as I’ve found it in mine.
-
- (Zipped archive)
------------------
-
-SMARTALLOC is provided as , a archive containing source code,
-documentation, and a <span>Makefile</span> to build the software under
-Unix.
-
-###  Copying
-
-> SMARTALLOC is in the public domain. Permission to use, copy, modify,
-> and distribute this software and its documentation for any purpose and
-> without fee is hereby granted, without any conditions or restrictions.
-> This software is provided ”as is\`\` without express or implied
-> warranty.
-
-<span>* October 30th, 1998 *</span>

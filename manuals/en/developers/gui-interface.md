@@ -1,4 +1,4 @@
-Implementing a GUI Interface {#_ChapterStart .unnumbered}
+Implementing a GUI Interface
 ============================
 
 General

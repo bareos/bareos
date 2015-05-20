@@ -1,4 +1,4 @@
-Storage Daemon Design {#_ChapterStart3}
+Storage Daemon Design
 =====================
 
 This chapter is intended to be a technical discussion of the Storage

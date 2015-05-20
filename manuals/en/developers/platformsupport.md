@@ -1,4 +1,4 @@
-Platform Support {#_PlatformChapter}
+Platform Support
 ================
 
 General

@@ -1,4 +1,4 @@
-Storage Media Output Format {#_ChapterStart9}
+Storage Media Output Format
 ===========================
 
 General

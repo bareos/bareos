@@ -1,4 +1,4 @@
-Director Services Daemon {#_ChapterStart6}
+Director Services Daemon
 ========================
 
 This chapter is intended to be a technical discussion of the Director

@@ -1,5 +1,6 @@
 %Bareos Developer Guide
-Bareos Developer Notes {#_ChapterStart10}
+
+Bareos Developer Notes
 ======================
 
 This document is based on the Bacula Developer Guide

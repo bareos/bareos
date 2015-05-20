@@ -1,4 +1,4 @@
-Bareos Memory Management {#_ChapterStart7}
+Bareos Memory Management
 ========================
 
 General

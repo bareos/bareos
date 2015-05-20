@@ -1,4 +1,4 @@
-Daemon Protocol {#_ChapterStart2}
+Daemon Protocol
 ===============
 
 General

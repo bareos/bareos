@@ -1,4 +1,4 @@
-Bareos Porting Notes {#_ChapterStart1}
+Bareos Porting Notes
 ====================
 
 This document is intended mostly for developers who wish to port Bareos
