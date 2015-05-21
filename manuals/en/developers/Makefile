@@ -5,7 +5,6 @@ FILES = generaldevel.md \
       pluginAPI.md \
       platformsupport.md \
       daemonprotocol.md \
-      director.md \
       file.md \
       storage.md \
       catalog.md \

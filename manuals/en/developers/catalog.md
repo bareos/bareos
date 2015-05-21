@@ -142,20 +142,19 @@ new one be created, otherwise the existing RecordId should be used.
 Database Tables
 ---------------
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>Blob </span> & <span>Filename </span>\
+
+--------|------------
+integer | Primary Key
+Blob    | Filename
 
 The <span>**Filename**</span> table shown above contains the name of
 each file backed up with the path removed. If different directories or
 machines contain the same filename, only one copy will be saved in this
 table.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>Blob </span> & <span>Full Path </span>\
+--------|------------
+integer | Primary Key
+Blob    | Full Path
 
 The <span>**Path**</span> table contains shown above the path or
 directory names of all directories on the system or systems. The
@@ -194,20 +193,15 @@ Finally, saving only the full path name rather than splitting the path
 and the file, and indexing it on the first 50 characters takes 6 mins 43
 seconds and creates a 7.35 MB database.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>integer </span> & <span>The sequential file number in the Job
-</span>\
- & <span>integer </span> & <span>Link to Job Record </span>\
- & <span>integer </span> & <span>Link to Path Record </span>\
- & <span>integer </span> & <span>Link to Filename Record </span>\
- & <span>integer </span> & <span>Used to mark files during Verify Jobs
-</span>\
- & <span>tinyblob </span> & <span>File attributes in base64 encoding
-</span>\
- & <span>tinyblob </span> & <span>MD5/SHA1 signature in base64 encoding
-</span>\
+---------|---------------------------------------------
+integer  | Primary Key
+integer  | The sequential file number in the Job
+integer  | Link to Job Record
+integer  | Link to Path Record
+integer  | Link to Filename Record
+integer  | Used to mark files during Verify Jobs
+tinyblob | File attributes in base64 encoding
+tinyblob | MD5/SHA1 signature in base64 encoding
 
 The <span>**File**</span> table shown above contains one entry for each
 file backed up by Bareos. Thus a file that is backed up multiple times
@@ -225,39 +219,31 @@ the stand point of total database size. As a consequence, the user must
 take care to periodically reduce the number of File records using the
 <span>**retention**</span> command in the Console program.
 
-<span>|l|l|p<span>2.5in</span>|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>tinyblob </span> & <span>Unique Job Name </span>\
- & <span>tinyblob </span> & <span>Job Name </span>\
- & <span>tinyint </span> & <span>Used by Bareos for purging/retention
-periods </span>\
- & <span>binary(1) </span> & <span>Job Type: Backup, Copy, Clone,
-Archive, Migration </span>\
- & <span>binary(1) </span> & <span>Job Level </span>\
- & <span>integer </span> & <span>Client index </span>\
- & <span>binary(1) </span> & <span>Job Termination Status </span>\
- & <span>datetime </span> & <span>Time/date when Job scheduled </span>\
- & <span>datetime </span> & <span>Time/date when Job started </span>\
- & <span>datetime </span> & <span>Time/date when Job ended </span>\
- & <span>datetime </span> & <span>Time/date when original Job ended
-</span>\
- & <span>bigint </span> & <span>Start day in Unix format but 64 bits;
-used for Retention period. </span>\
- & <span>integer </span> & <span>Unique Volume Session ID </span>\
- & <span>integer </span> & <span>Unique Volume Session Time </span>\
- & <span>integer </span> & <span>Number of files saved in Job </span>\
- & <span>bigint </span> & <span>Number of bytes saved in Job </span>\
- & <span>integer </span> & <span>Number of errors during Job </span>\
- & <span>integer </span> & <span>Number of files not saved (not yet
-used) </span>\
- & <span>integer </span> & <span>Link to Pool Record </span>\
- & <span>integer </span> & <span>Link to FileSet Record </span>\
- & <span>integer </span> & <span>Link to prior Job Record when migrated
-</span>\
- & <span>tiny integer </span> & <span>Set when all File records purged
-</span>\
- & <span>tiny integer </span> & <span>Set when Base Job run </span>\
+------------------|------------------------------------------------------------------
+integer           |       Primary Key        
+tinyblob          |       Unique Job Name        
+tinyblob          |       Job Name        
+tinyint           | Used by Bareos for purging/retention periods
+binary(1)         | Job Type: Backup, Copy, Clone, Archive, Migration
+binary(1)         |       Job Level        
+integer           |       Client index        
+binary(1)         |       Job Termination Status        
+datetime          |       Time/date when Job scheduled        
+datetime          |       Time/date when Job started        
+datetime          |       Time/date when Job ended        
+datetime          | Time/date when original Job ended
+bigint            | Start day in Unix format but 64 bits; used for Retention period.
+integer           |       Unique Volume Session ID        
+integer           |       Unique Volume Session Time        
+integer           |       Number of files saved in Job        
+bigint            |       Number of bytes saved in Job        
+integer           |       Number of errors during Job        
+integer           | Number of files not saved (not yet used)
+integer           |       Link to Pool Record        
+integer           |       Link to FileSet Record        
+integer           | Link to prior Job Record when migrated
+tiny integer      | Set when all File records purged
+tiny integer      |       Set when Base Job run        
 
 The <span>**Job**</span> table contains one record for each Job run by
 Bareos. Thus normally, there will be one per day per machine added to
@@ -284,58 +270,40 @@ For a given Storage daemon, the VolSessionId and VolSessionTime form a
 unique identification of the Job. This will be the case even if multiple
 Directors are using the same Storage daemon.
 
-The Job Type (or simply Type) can have one of the following values:
-
-<span>|l|l|</span> &\
- & <span>Backup Job </span>\
- & <span>Migrated Job </span>\
- & <span>Verify Job </span>\
- & <span>Restore Job </span>\
- & <span>Console program (not in database) </span>\
- & <span>Internal or system Job </span>\
- & <span>Admin Job </span>\
- & <span>Archive Job (not implemented) </span>\
- & <span>Copy Job </span>\
- & <span>Migration Job </span>\
-
-Note, the Job Type values noted above are not kept in an SQL table.
-
 The JobStatus field specifies how the job terminated, and can be one of
 the following:
 
-<span>|l|l|</span> &\
- & <span>Created but not yet running </span>\
- & <span>Running </span>\
- & <span>Blocked </span>\
- & <span>Terminated normally </span>\
- & <span>Terminated normally with warnings </span>\
- & <span>Terminated in Error </span>\
- & <span>Non-fatal error </span>\
- & <span>Fatal error </span>\
- & <span>Verify Differences </span>\
- & <span>Canceled by the user </span>\
- & <span>Incomplete Job </span>\
- & <span>Waiting on the File daemon </span>\
- & <span>Waiting on the Storage daemon </span>\
- & <span>Waiting for a new Volume to be mounted </span>\
- & <span>Waiting for a Mount </span>\
- & <span>Waiting for Storage resource </span>\
- & <span>Waiting for Job resource </span>\
- & <span>Waiting for Client resource </span>\
- & <span>Wating for Maximum jobs </span>\
- & <span>Waiting for Start Time </span>\
- & <span>Waiting for higher priority job to finish </span>\
- & <span>Doing batch insert file records </span>\
- & <span>SD despooling attributes </span>\
- & <span>Doing data despooling </span>\
- & <span>Committing data (last despool) </span>\
+  * Created but not yet running
+  * Running
+  * Blocked 
+  * Terminated normally 
+  * Terminated normally with warnings 
+  * Terminated in Error 
+  * Non-fatal error 
+  * Fatal error 
+  * Verify Differences 
+  * Canceled by the user 
+  * Incomplete Job 
+  * Waiting on the File daemon 
+  * Waiting on the Storage daemon 
+  * Waiting for a new Volume to be mounted 
+  * Waiting for a Mount 
+  * Waiting for Storage resource 
+  * Waiting for Job resource 
+  * Waiting for Client resource 
+  * Wating for Maximum jobs 
+  * Waiting for Start Time 
+  * Waiting for higher priority job to finish 
+  * Doing batch insert file records 
+  * SD despooling attributes 
+  * Doing data despooling 
+  * Committing data (last despool) 
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>tinyblob </span> & <span>FileSet name </span>\
- & <span>tinyblob </span> & <span>MD5 checksum of FileSet </span>\
- & <span>datetime </span> & <span>Time and date Fileset created </span>\
+---------|------------------------------
+integer  | Primary Key
+tinyblob | FileSet name
+tinyblob | MD5 checksum of FileSet
+datetime | Time and date Fileset created
 
 The <span>**FileSet**</span> table contains one entry for each FileSet
 that is used. The MD5 signature is kept to ensure that if the user
@@ -344,25 +312,17 @@ FileSet will be used. This is particularly important when doing an
 incremental update. If the user deletes a file or adds a file, we need
 to ensure that a Full backup is done prior to the next incremental.
 
-<span>|l|l|p<span>2.5in</span>|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>integer </span> & <span>Link to Job Record </span>\
- & <span>integer </span> & <span>Link to Media Record </span>\
- & <span>integer </span> & <span>The index (sequence number) of the
-first file written for this Job to the Media </span>\
- & <span>integer </span> & <span>The index of the last file written for
-this Job to the Media </span>\
- & <span>integer </span> & <span>The physical media (tape) file number
-of the first block written for this Job </span>\
- & <span>integer </span> & <span>The physical media (tape) file number
-of the last block written for this Job </span>\
- & <span>integer </span> & <span>The number of the first block written
-for this Job </span>\
- & <span>integer </span> & <span>The number of the last block written
-for this Job </span>\
- & <span>integer </span> & <span>The Volume use sequence number within
-the Job </span>\
+--------|---------------------------------------------------------------------------------
+integer | Primary Key
+integer | Link to Job Record
+integer | Link to Media Record
+integer | The index (sequence number) of the first file written for this Job to the Media
+integer | The index of the last file written for this Job to the Media
+integer | The physical media (tape) file number of the first block written for this Job
+integer | The physical media (tape) file number of the last block written for this Job
+integer | The number of the first block written for this Job
+integer | The number of the last block written for this Job
+integer | The Volume use sequence number within the Job
 
 The <span>**JobMedia**</span> table contains one entry at the following:
 start of the job, start of each new tape file, start of each new tape,
@@ -377,67 +337,49 @@ JobMedia records can speed it up by orders of magnitude by permitting
 forward spacing files and blocks rather than reading the whole 100GB
 backup.
 
-<span>|l|l|p<span>2.4in</span>|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>tinyblob </span> & <span>Volume name </span>\
- & <span>integer </span> & <span>Autochanger Slot number or zero
-</span>\
- & <span>integer </span> & <span>Link to Pool Record </span>\
- & <span>tinyblob </span> & <span>The MediaType supplied by the user
-</span>\
- & <span>integer </span> & <span>The MediaTypeId </span>\
- & <span>tinyint </span> & <span>The type of label on the Volume
-</span>\
- & <span>datetime </span> & <span>Time/date when first written </span>\
- & <span>datetime </span> & <span>Time/date when last written </span>\
- & <span>datetime </span> & <span>Time/date when tape labeled </span>\
- & <span>integer </span> & <span>Number of jobs written to this media
-</span>\
- & <span>integer </span> & <span>Number of files written to this media
-</span>\
- & <span>integer </span> & <span>Number of blocks written to this media
-</span>\
- & <span>integer </span> & <span>Number of time media mounted </span>\
- & <span>bigint </span> & <span>Number of bytes saved in Job </span>\
- & <span>integer </span> & <span>The number of parts for a Volume (DVD)
-</span>\
- & <span>integer </span> & <span>Number of errors during Job </span>\
- & <span>integer </span> & <span>Number of writes to media </span>\
- & <span>bigint </span> & <span>Maximum bytes to put on this media
-</span>\
- & <span>bigint </span> & <span>Capacity estimate for this volume
-</span>\
- & <span>enum </span> & <span>Status of media: Full, Archive, Append,
-Recycle, Read-Only, Disabled, Error, Busy </span>\
- <span>tinyint </span> & <span>Whether or not Volume can be written
-</span>\
- & <span>tinyint </span> & <span>Whether or not Bareos can recycle the
-Volumes: Yes, No </span>\
- & <span>tinyint </span> & <span>What happens to a Volume after purging
-</span>\
- & <span>bigint </span> & <span>64 bit seconds until expiration </span>\
- & <span>bigint </span> & <span>64 bit seconds volume can be used
-</span>\
- & <span>integer </span> & <span>maximum jobs to put on Volume </span>\
- & <span>integer </span> & <span>maximume EOF marks to put on Volume
-</span>\
- & <span>tinyint </span> & <span>Whether or not Volume in autochanger
-</span>\
- & <span>integer </span> & <span>Storage record ID </span>\
- & <span>integer </span> & <span>Device record ID </span>\
- & <span>integer </span> & <span>Method of addressing media </span>\
- & <span>bigint </span> & <span>Time Reading Volume </span>\
- & <span>bigint </span> & <span>Time Writing Volume </span>\
- & <span>integer </span> & <span>End File number of Volume </span>\
- & <span>integer </span> & <span>End block number of Volume </span>\
- & <span>integer </span> & <span>Location record ID </span>\
- & <span>integer </span> & <span>Number of times recycled </span>\
- & <span>datetime </span> & <span>When Volume first written </span>\
- & <span>integer </span> & <span>Id of Scratch Pool </span>\
- & <span>integer </span> & <span>Pool ID where to recycle Volume
-</span>\
- & <span>blob </span> & <span>User text field </span>\
+---------|----------------------------------------
+integer  | Primary Key 
+tinyblob | Volume name 
+integer  | Autochanger Slot number or zero
+integer  | Link to Pool Record 
+tinyblob | The MediaType supplied by the user
+integer  | The MediaTypeId 
+tinyint  | The type of label on the Volume
+datetime | Time/date when first written 
+datetime | Time/date when last written 
+datetime | Time/date when tape labeled 
+integer  | Number of jobs written to this media
+integer  | Number of files written to this media
+integer  | Number of blocks written to this media
+integer  | Number of time media mounted 
+bigint   | Number of bytes saved in Job 
+integer  | The number of parts for a Volume (DVD)
+integer  | Number of errors during Job 
+integer  | Number of writes to media 
+bigint   | Maximum bytes to put on this media
+bigint   | Capacity estimate for this volume
+enum     | Status of media: Full, Archive, Append, Recycle, Read-Only, Disabled, Error, Busy 
+tinyint  | Whether or not Volume can be written
+tinyint  | Whether or not Bareos can recycle the Volumes: Yes, No 
+tinyint  | What happens to a Volume after purging
+bigint   | 64 bit seconds until expiration 
+bigint   | 64 bit seconds volume can be used
+integer  | maximum jobs to put on Volume 
+integer  | maximume EOF marks to put on Volume
+tinyint  | Whether or not Volume in autochanger
+integer  | Storage record ID 
+integer  | Device record ID 
+integer  | Method of addressing media 
+bigint   | Time Reading Volume 
+bigint   | Time Writing Volume 
+integer  | End File number of Volume 
+integer  | End block number of Volume 
+integer  | Location record ID 
+integer  | Number of times recycled 
+datetime | When Volume first written 
+integer  | Id of Scratch Pool 
+integer  | Pool ID where to recycle Volume
+blob     | User text field 
 
 The <span>**Volume**</span> table (internally referred to as the Media
 table) contains one entry for each volume, that is each tape, cassette
@@ -445,38 +387,32 @@ table) contains one entry for each volume, that is each tape, cassette
 There is one Volume record created for each of the NumVols specified in
 the Pool resource record.
 
-<span>|l|l|p<span>2.4in</span>|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>Tinyblob </span> & <span>Pool Name </span>\
- & <span>Integer </span> & <span>Number of Volumes in the Pool </span>\
- & <span>Integer </span> & <span>Maximum Volumes in the Pool </span>\
- & <span>tinyint </span> & <span>Use volume once </span>\
- & <span>tinyint </span> & <span>Set to use catalog </span>\
- & <span>tinyint </span> & <span>Accept any volume from Pool </span>\
- & <span>bigint </span> & <span>64 bit seconds to retain volume </span>\
- & <span>bigint </span> & <span>64 bit seconds volume can be used
-</span>\
- & <span>integer </span> & <span>max jobs on volume </span>\
- & <span>integer </span> & <span>max EOF marks to put on Volume </span>\
- & <span>bigint </span> & <span>max bytes to write on Volume </span>\
- & <span>tinyint </span> & <span>yes|no for autopruning </span>\
- & <span>tinyint </span> & <span>yes|no for allowing auto recycling of
-Volume </span>\
- & <span>tinyint </span> & <span>Default Volume ActionOnPurge </span>\
- & <span>enum </span> & <span>Backup, Copy, Cloned, Archive, Migration
-</span>\
- & <span>tinyint </span> & <span>Type of label ANSI/Bareos </span>\
- & <span>Tinyblob </span> & <span>Label format </span>\
- <span>tinyint </span> & <span>Whether or not Volume can be written
-</span>\
- & <span>integer </span> & <span>Id of Scratch Pool </span>\
- & <span>integer </span> & <span>Pool ID where to recycle Volume
-</span>\
- & <span>integer </span> & <span>Pool ID of next Pool </span>\
- & <span>bigint </span> & <span>High water mark for migration </span>\
- & <span>bigint </span> & <span>Low water mark for migration </span>\
- & <span>bigint </span> & <span>Time before migration </span>\
+---------|----------------------------------------------
+integer  | Primary Key
+Tinyblob | Pool Name
+Integer  | Number of Volumes in the Pool
+Integer  | Maximum Volumes in the Pool
+tinyint  | Use volume once
+tinyint  | Set to use catalog
+tinyint  | Accept any volume from Pool
+bigint   | 64 bit seconds to retain volume
+bigint   | 64 bit seconds volume can be used
+integer  | max jobs on volume
+integer  | max EOF marks to put on Volume
+bigint   | max bytes to write on Volume
+tinyint  | yes|no for autopruning
+tinyint  | yes|no for allowing auto recycling of Volume
+tinyint  | Default Volume ActionOnPurge
+enum     | Backup, Copy, Cloned, Archive, Migration
+tinyint  | Type of label ANSI/Bareos
+Tinyblob | Label format
+tinyint  | Whether or not Volume can be written
+integer  | Id of Scratch Pool
+integer  | Pool ID where to recycle Volume
+integer  | Pool ID of next Pool
+bigint   | High water mark for migration
+bigint   | Low water mark for migration
+bigint   | Time before migration
 
 The <span>**Pool**</span> table contains one entry for each media pool
 controlled by Bareos in this database. One media record exists for each
@@ -486,125 +422,104 @@ to the MediaType specified in the Director’s Storage definition record.
 The CurrentVol is the sequence number of the Media record for the
 current volume.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>TinyBlob </span> & <span>File Services Name </span>\
- & <span>TinyBlob </span> & <span>uname -a from Client (not yet used)
-</span>\
- & <span>tinyint </span> & <span>yes|no for autopruning </span>\
- & <span>bigint </span> & <span>64 bit seconds to retain Files </span>\
- & <span>bigint </span> & <span>64 bit seconds to retain Job </span>\
+---------|---------------------------------------
+integer  | Primary Key
+TinyBlob | File Services Name
+TinyBlob | uname -a from Client (not yet used)
+tinyint  | yes|no for autopruning
+bigint   | 64 bit seconds to retain Files
+bigint   | 64 bit seconds to retain Job
 
 The <span>**Client**</span> table contains one entry for each machine
 backed up by Bareos in this database. Normally the Name is a fully
 qualified domain name.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Unique Id </span>\
- & <span>tinyblob </span> & <span>Resource name of Storage device
-</span>\
- & <span>tinyint </span> & <span>Set if it is an autochanger </span>\
+---------|----------------------------------
+integer  | Unique Id
+tinyblob | Resource name of Storage device
+tinyint  | Set if it is an autochanger
 
 The <span>**Storage**</span> table contains one entry for each Storage
 used.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>tinyblob </span> & <span>Counter name </span>\
- & <span>integer </span> & <span>Start/Min value for counter </span>\
- & <span>integer </span> & <span>Max value for counter </span>\
- & <span>integer </span> & <span>Current counter value </span>\
- & <span>tinyblob </span> & <span>Name of another counter </span>\
+---------|-----------------------------
+tinyblob | Counter name
+integer  | Start/Min value for counter
+integer  | Max value for counter
+integer  | Current counter value
+tinyblob | Name of another counter
 
 The <span>**Counter**</span> table contains one entry for each permanent
 counter defined by the user.
 
-<span>|l|l|p<span>2.5in</span>|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>tinyblob </span> & <span>Unique Job Name </span>\
- & <span>tinyblob </span> & <span>Job Name </span>\
- & <span>binary(1) </span> & <span>Job Type: Backup, Copy, Clone,
-Archive, Migration </span>\
- & <span>binary(1) </span> & <span>Job Level </span>\
- & <span>integer </span> & <span>Client index </span>\
- & <span>binary(1) </span> & <span>Job Termination Status </span>\
- & <span>datetime </span> & <span>Time/date when Job scheduled </span>\
- & <span>datetime </span> & <span>Time/date when Job started </span>\
- & <span>datetime </span> & <span>Time/date when Job ended </span>\
- & <span>datetime </span> & <span>Time/date when original Job ended
-</span>\
- & <span>bigint </span> & <span>Start day in Unix format but 64 bits;
-used for Retention period. </span>\
- & <span>integer </span> & <span>Unique Volume Session ID </span>\
- & <span>integer </span> & <span>Unique Volume Session Time </span>\
- & <span>integer </span> & <span>Number of files saved in Job </span>\
- & <span>bigint </span> & <span>Number of bytes saved in Job </span>\
- & <span>integer </span> & <span>Number of errors during Job </span>\
- & <span>integer </span> & <span>Number of files not saved (not yet
-used) </span>\
- & <span>integer </span> & <span>Link to Pool Record </span>\
- & <span>integer </span> & <span>Link to FileSet Record </span>\
- & <span>integer </span> & <span>Link to prior Job Record when migrated
-</span>\
- & <span>tiny integer </span> & <span>Set when all File records purged
-</span>\
- & <span>tiny integer </span> & <span>Set when Base Job run </span>\
+-------------|---------------------------------------------------
+integer      | Primary Key
+tinyblob     | Unique Job Name
+tinyblob     | Job Name
+binary(1)    | Job Type: Backup, Copy, Clone, Archive, Migration
+binary(1)    | Job Level
+integer      | Client index
+binary(1)    | Job Termination Status
+datetime     | Time/date when Job scheduled
+datetime     | Time/date when Job started
+datetime     | Time/date when Job ended
+datetime     | Time/date when original Job ended
+bigint       | Start day in Unix format but 64 bits; used for Retention period.
+integer      | Unique Volume Session ID
+integer      | Unique Volume Session Time
+integer      | Number of files saved in Job
+bigint       | Number of bytes saved in Job
+integer      | Number of errors during Job
+integer      | Number of files not saved (not yet used)
+integer      | Link to Pool Record
+integer      | Link to FileSet Record
+integer      | Link to prior Job Record when migrated
+tiny integer | Set when all File records purged
+tiny integer | Set when Base Job run
 
 The <span>bf JobHisto</span> table is the same as the Job table, but it
 keeps long term statistics (i.e. it is not pruned with the Job).
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>integer </span> & <span>Points to Job record </span>\
- & <span>datetime </span> & <span>Time/date log record created </span>\
- & <span>blob </span> & <span>Log text </span>\
+---------|---------------------------------------
+integer  | Primary Key
+integer  | Points to Job record
+datetime |  Time/date log record created
+blob     | Log text
 
 The <span>**Log**</span> table contains a log of all Job output.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>tinyblob </span> & <span>Text defining location </span>\
- & <span>integer </span> & <span>Relative cost of obtaining Volume
-</span>\
- & <span>tinyint </span> & <span>Whether or not Volume is enabled
-</span>\
+---------|-----------------------------------------
+integer  | Primary Key
+tinyblob | Text defining location
+integer  | Relative cost of obtaining Volume
+tinyint  | Whether or not Volume is enabled
 
 The <span>**Location**</span> table defines where a Volume is
 physically.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>datetime </span> & <span>Time/date log record created </span>\
- & <span>integer </span> & <span>Points to Media record </span>\
- & <span>integer </span> & <span>Points to Location record </span>\
- & <span>integer </span> & <span>enum: Full, Archive, Append, Recycle,
-Purged Read-only, Disabled, Error, Busy, Used, Cleaning </span>\
- & <span>tinyint </span> & <span>Whether or not Volume is enabled
-</span>\
+---------|-----------------------------------------------
+integer  | Primary Key
+datetime | Time/date log record created
+integer  |Points to Media record
+integer  | Points to Location record
+integer  | enum: Full, Archive, Append, Recycle, Purged Read-only, Disabled, Error, Busy, Used, Cleaning
+tinyint  | Whether or not Volume is enabled
 
 The <span>**Log**</span> table contains a log of all Job output.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
+--------|-------------
+integer | Primary Key
 
 The <span>**Version**</span> table defines the Bareos database version
 number. Bareos checks this number before reading the database to ensure
 that it is compatible with the Bareos binary file.
 
-<span>|l|l|l|</span>\
- & &\
- & <span>integer </span> & <span>Primary Key </span>\
- & <span>integer </span> & <span>JobId of Base Job </span>\
- & <span>integer </span> & <span>Reference to Job </span>\
- & <span>integer </span> & <span>Reference to File </span>\
- & <span>integer </span> & <span>File Index number </span>\
+--------|-----------------------
+integer | Primary Key
+integer | JobId of Base Job
+integer | Reference to Job
+integer | Reference to File
+integer | File Index number
 
 The <span>**BaseFiles**</span> table contains all the File references
 for a particular JobId that point to a Base file – i.e. they were
@@ -613,174 +528,3 @@ BaseJobId under FileId. FileIndex is the index of the file, and is used
 for optimization of Restore jobs to prevent the need to read the FileId
 record when creating the in memory tree. This record is not yet
 implemented.
-
-### MySQL Table Definition
-
-The commands used to create the MySQL tables are as follows:
-
-    USE bareos;
-    CREATE TABLE Filename (
-      FilenameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-      Name BLOB NOT NULL,
-      PRIMARY KEY(FilenameId),
-      INDEX (Name(30))
-      );
-    CREATE TABLE Path (
-       PathId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       Path BLOB NOT NULL,
-       PRIMARY KEY(PathId),
-       INDEX (Path(50))
-       );
-    CREATE TABLE File (
-       FileId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       FileIndex INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-       PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-       FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
-       MarkId INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       LStat TINYBLOB NOT NULL,
-       MD5 TINYBLOB NOT NULL,
-       PRIMARY KEY(FileId),
-       INDEX (JobId),
-       INDEX (PathId),
-       INDEX (FilenameId)
-       );
-    CREATE TABLE Job (
-       JobId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       Job TINYBLOB NOT NULL,
-       Name TINYBLOB NOT NULL,
-       Type BINARY(1) NOT NULL,
-       Level BINARY(1) NOT NULL,
-       ClientId INTEGER NOT NULL REFERENCES Client,
-       JobStatus BINARY(1) NOT NULL,
-       SchedTime DATETIME NOT NULL,
-       StartTime DATETIME NOT NULL,
-       EndTime DATETIME NOT NULL,
-       JobTDate BIGINT UNSIGNED NOT NULL,
-       VolSessionId INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolSessionTime INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       JobFiles INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       JobBytes BIGINT UNSIGNED NOT NULL,
-       JobErrors INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       JobMissingFiles INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       PoolId INTEGER UNSIGNED NOT NULL REFERENCES Pool,
-       FileSetId INTEGER UNSIGNED NOT NULL REFERENCES FileSet,
-       PurgedFiles TINYINT NOT NULL DEFAULT 0,
-       HasBase TINYINT NOT NULL DEFAULT 0,
-       PRIMARY KEY(JobId),
-       INDEX (Name(128))
-       );
-    CREATE TABLE FileSet (
-       FileSetId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       FileSet TINYBLOB NOT NULL,
-       MD5 TINYBLOB NOT NULL,
-       CreateTime DATETIME NOT NULL,
-       PRIMARY KEY(FileSetId)
-       );
-    CREATE TABLE JobMedia (
-       JobMediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-       MediaId INTEGER UNSIGNED NOT NULL REFERENCES Media,
-       FirstIndex INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       LastIndex INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       StartFile INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       EndFile INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       StartBlock INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       EndBlock INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolIndex INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       PRIMARY KEY(JobMediaId),
-       INDEX (JobId, MediaId)
-       );
-    CREATE TABLE Media (
-       MediaId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       VolumeName TINYBLOB NOT NULL,
-       Slot INTEGER NOT NULL DEFAULT 0,
-       PoolId INTEGER UNSIGNED NOT NULL REFERENCES Pool,
-       MediaType TINYBLOB NOT NULL,
-       FirstWritten DATETIME NOT NULL,
-       LastWritten DATETIME NOT NULL,
-       LabelDate DATETIME NOT NULL,
-       VolJobs INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolFiles INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolBlocks INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolMounts INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolBytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       VolErrors INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolWrites INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       VolCapacityBytes BIGINT UNSIGNED NOT NULL,
-       VolStatus ENUM('Full', 'Archive', 'Append', 'Recycle', 'Purged',
-        'Read-Only', 'Disabled', 'Error', 'Busy', 'Used', 'Cleaning') NOT NULL,
-       Recycle TINYINT NOT NULL DEFAULT 0,
-       VolRetention BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       VolUseDuration BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       MaxVolJobs INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       MaxVolFiles INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       MaxVolBytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       InChanger TINYINT NOT NULL DEFAULT 0,
-       MediaAddressing TINYINT NOT NULL DEFAULT 0,
-       VolReadTime BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       VolWriteTime BIGINT UNSIGNED NOT NULL DEFAULT 0,
-       PRIMARY KEY(MediaId),
-       INDEX (PoolId)
-       );
-    CREATE TABLE Pool (
-       PoolId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       Name TINYBLOB NOT NULL,
-       NumVols INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       MaxVols INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       UseOnce TINYINT NOT NULL,
-       UseCatalog TINYINT NOT NULL,
-       AcceptAnyVolume TINYINT DEFAULT 0,
-       VolRetention BIGINT UNSIGNED NOT NULL,
-       VolUseDuration BIGINT UNSIGNED NOT NULL,
-       MaxVolJobs INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       MaxVolFiles INTEGER UNSIGNED NOT NULL DEFAULT 0,
-       MaxVolBytes BIGINT UNSIGNED NOT NULL,
-       AutoPrune TINYINT DEFAULT 0,
-       Recycle TINYINT DEFAULT 0,
-       PoolType ENUM('Backup', 'Copy', 'Cloned', 'Archive', 'Migration', 'Scratch') NOT NULL,
-       LabelFormat TINYBLOB,
-       Enabled TINYINT DEFAULT 1,
-       ScratchPoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
-       RecyclePoolId INTEGER UNSIGNED DEFAULT 0 REFERENCES Pool,
-       UNIQUE (Name(128)),
-       PRIMARY KEY (PoolId)
-       );
-    CREATE TABLE Client (
-       ClientId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-       Name TINYBLOB NOT NULL,
-       Uname TINYBLOB NOT NULL,       /* full uname -a of client */
-       AutoPrune TINYINT DEFAULT 0,
-       FileRetention BIGINT UNSIGNED NOT NULL,
-       JobRetention  BIGINT UNSIGNED NOT NULL,
-       UNIQUE (Name(128)),
-       PRIMARY KEY(ClientId)
-       );
-    CREATE TABLE BaseFiles (
-       BaseId INTEGER UNSIGNED AUTO_INCREMENT,
-       BaseJobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-       JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-       FileId INTEGER UNSIGNED NOT NULL REFERENCES File,
-       FileIndex INTEGER UNSIGNED,
-       PRIMARY KEY(BaseId)
-       );
-    CREATE TABLE UnsavedFiles (
-       UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
-       JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-       PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-       FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
-       PRIMARY KEY (UnsavedId)
-       );
-    CREATE TABLE Version (
-       VersionId INTEGER UNSIGNED NOT NULL
-       );
-    -- Initialize Version
-    INSERT INTO Version (VersionId) VALUES (7);
-    CREATE TABLE Counters (
-       Counter TINYBLOB NOT NULL,
-       MinValue INTEGER,
-       MaxValue INTEGER,
-       CurrentValue INTEGER,
-       WrapCounter TINYBLOB NOT NULL,
-       PRIMARY KEY (Counter(128))
-       );

@@ -2,8 +2,6 @@
 Smart Memory Allocation
 =======================
 
-![image](\idir smartall.eps)
-
 Few things are as embarrassing as a program that leaks, yet few errors
 are so easy to commit or as difficult to track down in a large,
 complicated program as failure to release allocated memory. SMARTALLOC
