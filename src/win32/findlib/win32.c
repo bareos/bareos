@@ -265,7 +265,7 @@ bool expand_win32_fileset(findFILESET *fileset)
    for (i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findINCEXE *)fileset->include_list.get(i);
       foreach_dlist(node, &incexe->name_list) {
-         Dmsg1(000, "Checking %s\n", node->c_str());
+         Dmsg1(100, "Checking %s\n", node->c_str());
          if (bstrcmp(node->c_str(), "/")) {
             /*
              * Request for auto expansion but no support for it.
@@ -292,7 +292,7 @@ bool expand_win32_fileset(findFILESET *fileset)
                      if (*(bp + 2) == '\\') {
                         *(bp + 2) = '/';       /* 'x:\' -> 'x:/' */
                      }
-                     Dmsg1(000, "adding drive %s\n", bp);
+                     Dmsg1(100, "adding drive %s\n", bp);
                      incexe->name_list.append(new_dlistString(bp));
                   }
                   if ((bp = strchr(bp, '\0'))) {
