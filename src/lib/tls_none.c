@@ -68,7 +68,7 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value)
 
 bool get_tls_verify_peer(TLS_CONTEXT *ctx)
 {
-   return (ctx) ? ctx->verify_peer : false;
+   return false;
 }
 
 TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
