@@ -3,14 +3,17 @@
 Bareos Developer Notes
 ======================
 
-This document is based on the Bacula Developer Guide
-and currently only slightly adapted to Bareos.
-
-It is planed, to update it step by step in the upcoming months.
-
 This document is intended mostly for developers and describes how you
 can contribute to the Bareos project and the the general framework of
 making Bareos source changes.
+
+### History
+
+Bareos is a fork of the open source project Bacula version 5.2. In 2010 the Bacula community developer Marco van Wieringen started to collect rejected or neglected community contributions in his own branch. This branch was later on the base of Bareos and since then was enriched by a lot of new features.
+
+This documentation also bases on the original Bacula documentation, it is technically also a fork of the documenation created following the rules of the GNU Free Documentation License.
+
+Original author of Bacula and it’s documentation is Kern Sibbald. We thank Kern and all contributors to Bacula and it’s documentation. We maintain a list of contributors to Bacula (until the time we’ve started the fork) and Bareos in our AUTHORS file.
 
 ### Contributions
 
