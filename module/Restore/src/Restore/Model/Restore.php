@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,12 +25,112 @@
 
 namespace Restore\Model;
 
-class Restore 
+use Zend\InputFilter\InputFilter;
+use Zend\InputFilter\InputFilterAwareInterface;
+use Zend\InputFilter\InputFilterInterface;
+
+class Restore implements InputFilterAwareInterface
 {
 
-	public function exchangeArray($data)
+	protected $job;
+	protected $client;
+	protected $restoreclient;
+	protected $fileset;
+	protected $beforedate;
+
+	protected $inputFilter;
+
+	public function setInputFilter(InputFilterInterface $inputFilter)
 	{
-	
+		throw new \Exception("setInputFiler() not used");
 	}
-	
+
+	public function getInputFilter()
+	{
+		if(!$this->inputFilter) {
+
+			$inputFilter = new InputFilter();
+
+			$inputFilter->add(array(
+				'name' => 'job',
+				'required' => false,
+				'filters' => array(
+					array('name' => 'StripTags'),
+					array('name' => 'StringTrim'),
+				),
+				'validators' => array(
+				)
+			));
+
+			$inputFilter->add(array(
+                                'name' => 'client',
+                                'required' => false,
+                                'filters' => array(
+					array('name' => 'StripTags'),
+					array('name' => 'StringTrim'),
+				),
+                                'validators' => array(
+				)
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'restoreclient',
+                                'required' => false,
+                                'filters' => array(
+					array('name' => 'StripTags'),
+					array('name' => 'StringTrim'),
+				),
+                                'validators' => array(
+				)
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'fileset',
+                                'required' => false,
+                                'filters' => array(
+					array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+				),
+                                'validators' => array(
+				)
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'before',
+                                'required' => false,
+                                'filters' => array(
+					array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+				),
+                                'validators' => array(
+				)
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'where',
+                                'required' => false,
+                                'filters' => array(
+					array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+				),
+                                'validators' => array(
+					array(
+						'name' => 'StringLength',
+						'options' => array(
+							'encoding' => 'UTF-8',
+							'min' => 1,
+							'max' => 128
+						)
+					)
+				)
+                        ));
+
+			$this->inputFilter = $inputFilter;
+
+		}
+
+		return $inputFilter;
+
+	}
+
 }

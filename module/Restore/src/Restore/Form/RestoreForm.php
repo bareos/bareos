@@ -172,14 +172,15 @@ class RestoreForm extends Form
 
 		// Before
 		$this->add(array(
-                        'name' => 'before-date',
+                        'name' => 'before',
                         'type' => 'date',
                         'options' => array(
                                 'label' => 'Before',
+				'format' => 'Y-m-d'
                                 ),
                         'attributes' => array(
                                 'min' => '1970-01-01',
-                                'max' => $this->today,
+                                'max' => '2020-01-01',
                                 'step' => '1',
                                 )
                         )
@@ -198,8 +199,8 @@ class RestoreForm extends Form
                         )
 		);
 
-		// Cross site request forgery
-                $this->add(new Element\Csrf('security'));
+		// TODO - Cross site request forgery
+                //$this->add(new Element\Csrf('security'));
 
 		// Submit button
 		$this->add(array(
@@ -252,6 +253,7 @@ class RestoreForm extends Form
 				$selectData[$fileset['name']] = $fileset['name'];
 			}
 		}
+		$selectData = array('fileset-1'=>'fileset-1');
 		return $selectData;
 	}
 

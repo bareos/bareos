@@ -28,6 +28,7 @@ namespace Restore\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\ViewModel\JsonModel;
+use Restore\Model\Restore;
 use Restore\Form\RestoreForm;
 
 class RestoreController extends AbstractActionController
@@ -42,17 +43,50 @@ class RestoreController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 
+			$this->getRestoreParams();
+
 			$form = new RestoreForm(
 				$this->restore_params,
 				$this->getJobs("long"),
 				$this->getClients("long"),
-				$this->getFilesets("long")
+				null//$this->getFilesets("long")
 			);
 
-                        return new ViewModel(array(
-				'restore_params' => $this->restore_params,
-				'form' => $form
-			));
+			// Set the method attribute for the form
+			$form->setAttribute('method', 'post');
+
+			$request = $this->getRequest();
+
+			if($request->isPost()) {
+
+				$restore = new Restore();
+				$form->setInputFilter($restore->getInputFilter());
+				$form->setData( $request->getPost() );
+
+				if($form->isValid()) {
+					$job = $form->getInputFilter()->getValue('job');
+					$client = $form->getInputFilter()->getValue('client');
+					$restoreclient = $form->getInputFilter()->getValue('restoreclient');
+					$fileset = $form->getInputFilter()->getValue('fileset');
+					$before = $form->getInputFilter()->getValue('before');
+					$where = $form->getInputFilter()->getValue('where');
+
+					return $this->redirect()->toRoute('restore', array('action' => 'confirm'));
+				}
+				else {
+					return new ViewModel(array(
+						'restore_params' => $this->restore_params,
+						'form' => $form
+					));
+				}
+
+			}
+			else {
+				return new ViewModel(array(
+					'restore_params' => $this->restore_params,
+					'form' => $form
+				));
+			}
 
                 }
                 else {
