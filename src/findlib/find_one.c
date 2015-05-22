@@ -888,6 +888,7 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    bool done = false;
 
    ff_pkt->fname = ff_pkt->link = fname;
+   ff_pkt->type = FT_UNSET;
    if (lstat(fname, &ff_pkt->statp) != 0) {
        /*
         * Cannot stat file

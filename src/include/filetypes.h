@@ -72,6 +72,7 @@
 #define FT_PLUGIN_CONFIG 27           /* Object for Plugin configuration */
 #define FT_PLUGIN_CONFIG_FILLED 28    /* Object for Plugin configuration filled by Director */
 
+#define FT_UNSET     FT_MASK          /* Initial value when not determined yet  */
 /* Definitions for upper part of type word (see above). */
 #define AR_DATA_STREAM (1<<16)        /* Data stream id present */
 
