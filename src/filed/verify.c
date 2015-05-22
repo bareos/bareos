@@ -259,26 +259,21 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
 {
    BFILE bfd;
 
-   Dmsg0(50, "=== digest_file\n");
    binit(&bfd);
 
-   if (ff_pkt->statp.st_size > 0 ||
-       ff_pkt->type == FT_RAW ||
-       ff_pkt->type == FT_FIFO) {
-      int noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
+   int noatime = bit_is_set(FO_NOATIME, ff_pkt->flags) ? O_NOATIME : 0;
 
-      if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
-         ff_pkt->ff_errno = errno;
-         berrno be;
-         be.set_errno(bfd.berrno);
-         Dmsg2(100, "Cannot open %s: ERR=%s\n", ff_pkt->fname, be.bstrerror());
-         Jmsg(jcr, M_ERROR, 1, _("     Cannot open %s: ERR=%s.\n"),
-               ff_pkt->fname, be.bstrerror());
-         return 1;
-      }
-      read_digest(&bfd, digest, jcr);
-      bclose(&bfd);
+   if ((bopen(&bfd, ff_pkt->fname, O_RDONLY | O_BINARY | noatime, 0, ff_pkt->statp.st_rdev)) < 0) {
+      ff_pkt->ff_errno = errno;
+      berrno be;
+      be.set_errno(bfd.berrno);
+      Dmsg2(100, "Cannot open %s: ERR=%s\n", ff_pkt->fname, be.bstrerror());
+      Jmsg(jcr, M_ERROR, 1, _("     Cannot open %s: ERR=%s.\n"),
+            ff_pkt->fname, be.bstrerror());
+      return 1;
    }
+   read_digest(&bfd, digest, jcr);
+   bclose(&bfd);
 
    if (have_darwin_os) {
       /*
