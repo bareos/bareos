@@ -138,8 +138,11 @@
 /* Define to 1 if you have the `closefrom' function. */
 #undef HAVE_CLOSEFROM
 
-/* Define to 1 if you have the cmocka library */
+/* Define to 1 if cmocka support should be enabled */
 #undef HAVE_CMOCKA
+
+/* Define to 1 if you have the <cmocka.h> header file. */
+#undef HAVE_CMOCKA_H
 
 /* Define to 1 if you have compressBound */
 #undef HAVE_COMPRESS_BOUND
@@ -451,6 +454,9 @@
 /* Define to 1 if you are running IRIX */
 #undef HAVE_IRIX_OS
 
+/* Define to 1 if you have jansson lib */
+#undef HAVE_JANSSON
+
 /* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
 #undef HAVE_LANGINFO_CODESET
 
@@ -706,6 +712,9 @@
 
 /* Define to 1 if you have the `setenv' function. */
 #undef HAVE_SETENV
+
+/* Define to 1 if you have the <setjmp.h> header file. */
+#undef HAVE_SETJMP_H
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE

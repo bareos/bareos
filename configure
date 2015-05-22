@@ -671,6 +671,8 @@ ACL_LIBS
 AFS_LIBS_NONSHARED
 AFS_LIBS
 AFS_CFLAGS
+JANSSON_LIBS
+JANSSON_INC
 FASTLZ_LIBS_NONSHARED
 FASTLZ_LIBS
 FASTLZ_INC
@@ -1070,6 +1072,7 @@ with_x
 with_zlib
 with_lzo
 with_fastlz
+with_jansson
 enable_afs
 with_afsdir
 enable_acl
@@ -1841,6 +1844,7 @@ Optional Packages:
   --with-zlib[=DIR]       Directory holding zlib includes/libs
   --with-lzo[=DIR]        Directory holding lzo includes/libs
   --with-fastlz[=DIR]     Directory holding fastlz includes/libs
+  --with-jansson[=DIR]    Directory holding jansson includes/libs
   --with-afsdir[=DIR]     Directory holding AFS includes/libs
   --with-glusterfs[=DIR]  Directory holding GLUSTERFS includes/libs
   --with-droplet[=DIR]    Directory holding DROPLET includes/libs
@@ -30563,6 +30567,48 @@ fi
 
 
 
+
+JANSSON_LIBS="-ljansson"
+JANSSON_INC=""
+have_jansson=no
+
+# Check whether --with-jansson was given.
+if test "${with_jansson+set}" = set; then :
+  withval=$with_jansson; with_jansson_directory=${withval}
+
+fi
+
+
+if test "x${with_jansson_directory}" != "xyes" && test x"${with_jansson_directory}" != "x"; then
+   #
+   # Make sure the $with_jansson_directory also makes sense
+   #
+   if test -d "${with_jansson_directory}/lib" -a -d "${with_jansson_directory}/include"; then
+      have_jansson=yes
+      JANSSON_INC="-I${with_jansson_directory}/include ${JANSSON_INC}"
+      JANSSON_LIBS="-L${with_jansson_directory}/lib ${JANSSON_LIBS}"
+   fi
+else
+   if test x$with_jansson_directory = xyes || test x"${with_jansson_directory}" = "x" && $PKGCONFIG jansson; then
+      have_jansson=yes
+      JANSSON_INC=`$PKGCONFIG --cflags janson`
+      JANSSON_LIBS=`$PKGCONFIG --libs jansson`
+   fi
+fi
+
+if test "x${have_jansson}" = "xyes"; then
+
+$as_echo "#define HAVE_JANSSON 1" >>confdefs.h
+
+else
+   JANSSON_LIBS=""
+   JANSSON_INC=""
+fi
+
+
+
+
+
 AFS_CFLAGS=""
 AFS_LIBS=""
 support_afs=auto
@@ -35790,6 +35836,7 @@ Configuration on `date`:
    ZLIB support:                 ${have_zlib}
    LZO support:                  ${have_lzo}
    FASTLZ support:               ${have_fastlz}
+   JANSSON support:              ${have_jansson}
    LMDB support:                 ${support_lmdb}
    NDMP support:                 ${support_ndmp}
    enable-smartalloc:            ${support_smartalloc}
