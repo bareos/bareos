@@ -49,7 +49,7 @@ from pyVmomi import vmodl
 
 class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     '''
-    VMware related backup and restore stuff
+    VMware related backup and restore BAREOS fd-plugin methods
     '''
     def __init__(self, context, plugindef):
         bareosfd.DebugMessage(
@@ -68,8 +68,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def parse_plugin_definition(self, context, plugindef):
         '''
-        Parses the plugin argmuents and reads files from file given by
-        argument 'vmname'
+        Parses the plugin arguments
         '''
         bareosfd.DebugMessage(
             context, 100,
@@ -122,8 +121,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def start_backup_file(self, context, savepkt):
         '''
-        Defines the file to backup and creates the savepkt. In this example
-        only files (no directories) are allowed
+        Defines the file to backup and creates the savepkt.
         '''
         bareosfd.DebugMessage(
             context, 100,
@@ -379,7 +377,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bRCs['bRC_OK']
 
     def handle_plugin_event(self, context, event):
-
         if event in self.events:
             self.jobType = chr(bareosfd.GetValue(context, bVariable['bVarType']))
             bareosfd.DebugMessage(
@@ -721,7 +718,7 @@ class BareosVADPWrapper(object):
 
     def _get_dcftree(self, dcf, folder, vm_folder):
         '''
-        recursive function to get VMs with folder names
+        Recursive function to get VMs with folder names
         '''
         for vm_or_folder in vm_folder.childEntity:
             if isinstance(vm_or_folder, vim.VirtualMachine):
@@ -778,7 +775,7 @@ class BareosVADPWrapper(object):
 
     def get_vm_snap_disk_devices(self):
         '''
-        get the disk devices from the created snapshot
+        Get the disk devices from the created snapshot
         Assumption: Snapshot successfully created
         '''
         self.disk_devices = []
@@ -793,7 +790,7 @@ class BareosVADPWrapper(object):
 
     def get_vm_disk_devices(self):
         '''
-        get the disk devices from vm
+        Get the disk devices from vm
         '''
         self.disk_devices = []
         for hw_device in self.vm.config.hardware.device:
@@ -807,7 +804,7 @@ class BareosVADPWrapper(object):
 
     def get_vm_disk_root_filename(self, disk_device_backing):
         '''
-        get the disk name from the ende of the parents chain
+        Get the disk name from the ende of the parents chain
         When snapshots exist, the original disk filename is
         needed. If no snapshots exist, the disk has no parent
         and the filename is the same.
@@ -819,7 +816,7 @@ class BareosVADPWrapper(object):
 
     def get_vm_disk_cbt(self, context):
         '''
-        get CBT Information
+        Get CBT Information
         '''
         cbt_changeId = '*'
         if self.disk_device_to_backup['fileNameRoot'] in self.restore_objects_by_diskpath:
@@ -848,7 +845,7 @@ class BareosVADPWrapper(object):
 
     def check_vm_disks_match(self, context):
         '''
-        check if the backed up disks match selecte VM disks
+        Check if the backed up disks match selecte VM disks
         '''
         backed_up_disks = set(self.restore_objects_by_diskpath.keys())
         vm_disks = set([disk_dev['fileNameRoot'] for disk_dev in self.disk_devices])
@@ -875,7 +872,7 @@ class BareosVADPWrapper(object):
 
     def cbt2json(self, context):
         '''
-        convert CBT data into json serializable structure and
+        Convert CBT data into json serializable structure and
         return it as json string
         '''
 
@@ -915,7 +912,7 @@ class BareosVADPWrapper(object):
 
     def json2cbt(self, cbt_json_string):
         '''
-        convert JSON string from restore object to ordered dict
+        Convert JSON string from restore object to ordered dict
         to preserve the key order required for bareos_vadp_dumper
         to work properly
         return OrderedDict
