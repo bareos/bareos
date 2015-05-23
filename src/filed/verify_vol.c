@@ -240,9 +240,8 @@ void do_verify_volume(JCR *jcr)
          jcr->unlock();
 
          Dmsg2(400, "send inx=%d STREAM_RESTORE_OBJECT-%d\n", jcr->JobFiles, STREAM_RESTORE_OBJECT);
-         dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
-                    STREAM_RESTORE_OBJECT, "ReStOrEObJeCt", fname,
-                    0, ap, 0, 0);
+         dir->fsend("%d %d %s %s%c%c%c", jcr->JobFiles,
+                    STREAM_RESTORE_OBJECT, "ReStOrEObJeCt", fname, 0, 0, 0);
          break;
 
       /* Ignore everything else */
