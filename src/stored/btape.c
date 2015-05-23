@@ -2151,7 +2151,9 @@ bail_out:
 
 static void statcmd()
 {
+#ifdef xxxx
    int debug = debug_level;
+#endif
    char *status;
 
    status = dev->status_dev();
