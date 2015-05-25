@@ -22975,22 +22975,16 @@ done
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cmocka support" >&5
+$as_echo_n "checking for cmocka support... " >&6; }
 
+for ac_header in \
+    setjmp.h \
+    cmocka.h \
 
-
-
-
-for ac_header in setjmp.h cmocka.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#include <stdarg.h>
- #include <stddef.h>
- #ifdef HAVE_SETJMP_H
- #include <setjmp.h>
- #endif
-
-
-"
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
@@ -23041,20 +23035,24 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_cmocka__will_return" >&5
 $as_echo "$ac_cv_lib_cmocka__will_return" >&6; }
 if test "x$ac_cv_lib_cmocka__will_return" = xyes; then :
-   CMOCKA_LIBS="-lcmocka"
- { $as_echo "$as_me:${as_lineno-$LINENO}: result: libcmocka available, cmocka tests will be build" >&5
-$as_echo "libcmocka available, cmocka tests will be build" >&6; }
- have_cmocka="yes"
+
+         CMOCKA_LIBS="-lcmocka"
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+         have_cmocka="yes"
+
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No libcmocka library found, cmocka tests will not be build" >&5
-$as_echo "$as_me: WARNING: No libcmocka library found, cmocka tests will not be build" >&2;}
- have_cmocka="no"
+
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+         have_cmocka="no"
+
 fi
 
 else
- { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Required header files for libcmocka are missing, cmocka tests will not be build" >&5
-$as_echo "$as_me: WARNING: Required header files for libcmocka are missing, cmocka tests will not be build" >&2;}
- have_cmocka="no"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    have_cmocka="no"
 fi
 
 if test x$have_cmocka = xyes; then
@@ -23063,6 +23061,10 @@ $as_echo "#define HAVE_CMOCKA 1" >>confdefs.h
 
  UNITTEST_DIRS="src/lib/unittests src/findlib/unittests"
 fi
+
+
+
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Python support" >&5
