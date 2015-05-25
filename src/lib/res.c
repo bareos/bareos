@@ -1726,7 +1726,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                      continue;
                   }
                }
-               Mmsg(temp, "%s = %s\n", items[i].name, value);
+               Mmsg(temp, "%s = \"%s\"\n", items[i].name, value);
                indent_config_item(cfg_str, 1, temp.c_str());
             }
          }
