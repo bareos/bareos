@@ -168,8 +168,6 @@ static RES_ITEM profile_items[] = {
       "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },
    { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Schedule_ACL, 0, NULL, NULL,
       "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },
-   { "RunACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Run_ACL, 0, NULL, NULL,
-      "Lists the Run resources, this resource has access to. The special keyword *all* allows access to all Run resources." },
    { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Pool_ACL, 0, NULL, NULL,
       "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },
    { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Command_ACL, 0, NULL, NULL,
