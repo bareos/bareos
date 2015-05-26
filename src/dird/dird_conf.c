@@ -864,7 +864,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
     * Datatypes
     */
    json_t *json_datatype_obj = json_object();
-   json_object_set(resource, "datatype", json_datatype_obj);
+   json_object_set(json, "datatype", json_datatype_obj);
 
    int d = 0;
    while (get_datatype(d)->name != NULL) {
