@@ -139,23 +139,33 @@ static struct cmdstruct commands[] = {
    { NT_("label"), label_cmd, _("Label a tape"),
      NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ barcodes ] [ encrypt ]"), false, true },
    { NT_("list"), list_cmd, _("List objects from catalog"),
-     NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
-         "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
-         "\tbasefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
-         "\tfiles jobid=<jobid> | files ujobid=<complete_name> |\n"
-         "\tfileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets | pools | jobtotals |\n"
-         "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
-         "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
-         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid> [ limit=<num> ]"), true, true },
+     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+         "clients | copies jobid=<jobid> |\n"
+         "files jobid=<jobid> | files ujobid=<complete_name> |\n"
+         "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets |\n"
+         "jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> |\n"
+         "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
+         "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
+         "jobtotals |\n"
+         "media [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
+         "pools |\n"
+         "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "[ limit=<num> ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
-     NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
-         "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
-         "\tbasefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
-         "\tfiles jobid=<jobid> | files ujobid=<complete_name> |\n"
-         "\tfileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets | pools | jobtotals |\n"
-         "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
-         "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
-         "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true, true },
+     NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+         "clients | copies jobid=<jobid> |\n"
+         "files jobid=<jobid> | files ujobid=<complete_name> |\n"
+         "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets |\n"
+         "jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> |\n"
+         "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
+         "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
+         "jobtotals |\n"
+         "media [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
+         "pools |\n"
+         "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "[ limit=<num> ]"), true, true },
    { NT_("messages"), messages_cmd, _("Display pending messages"),
      NT_(""), false, false },
    { NT_("memory"), memory_cmd, _("Print current memory usage"),
@@ -208,13 +218,13 @@ static struct cmdstruct commands[] = {
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
          "\tjob=<job-name> | ujobid=<unique-jobid> state=<job_state> | all\n"
-         "\tlimit=<nn-kbs> yes"), true, true },
+         "\tlimit=<nn-kbs> [ yes ]"), true, true },
    { NT_("setdebug"), setdebug_cmd, _("Sets debug level"),
      NT_("level=<nn> trace=0/1 timestamp=0/1 client=<client-name> | dir | storage=<storage-name> | all"), true, true },
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
-     NT_("jobdefs=<job-defaults>| job=<job-name> | pool=<pool-name> | fileset=<fileset-name> |\n"
+     NT_("jobdefs=<job-defaults> | job=<job-name> | pool=<pool-name> | fileset=<fileset-name> |\n"
          "\tschedule=<schedule-name> | client=<client-name> | message=<message-resource-name> |\n"
          "\tprofile=<profile-name> | jobdefs | jobs | pools | filesets | schedules | clients |\n"
          "\tmessages | profiles | consoles | disabled | all"), true, true },
@@ -2400,7 +2410,7 @@ static int help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_start(commands[i].key);
             ua->send->object_key_value("command", commands[i].key, "  %-13s");
             ua->send->object_key_value("description", commands[i].help, " %s\n\n");
-            ua->send->object_key_value("arguments", commands[i].usage, "Arguments:\n\t%s\n");
+            ua->send->object_key_value("arguments", "Arguments:\n\t", commands[i].usage, "%s\n", 40);
             ua->send->object_end(commands[i].key);
             break;
          }
@@ -2408,7 +2418,7 @@ static int help_cmd(UAContext *ua, const char *cmd)
          ua->send->object_start(commands[i].key);
          ua->send->object_key_value("command", commands[i].key, "  %-13s");
          ua->send->object_key_value("description", commands[i].help, " %s\n");
-         ua->send->object_key_value("arguments", commands[i].usage);
+         ua->send->object_key_value("arguments", commands[i].usage, 0);
          ua->send->object_end(commands[i].key);
       }
    }
@@ -2417,38 +2427,6 @@ static int help_cmd(UAContext *ua, const char *cmd)
    }
    ua->send->decoration(_("\nWhen at a prompt, entering a period cancels the command.\n\n"));
    return 1;
-}
-
-/*
- * Output the usage string as a machine parseable string.
- * e.g. remove newlines and replace tabs with a single space.
- */
-static inline void usage_to_machine(UAContext *ua, struct cmdstruct *cmd)
-{
-   char *p;
-   POOL_MEM usage(PM_MESSAGE);
-
-   pm_strcpy(usage, cmd->usage);
-   p = usage.c_str();
-   while (*p) {
-      switch (*p) {
-      case '\n':
-         /*
-          * Copy the rest of the string over the unwanted character.
-          * Use bstrinlinecpy as we are doing an inline copy which
-          * isn't officially supported by (b)strcpy.
-          */
-         bstrinlinecpy(p, p + 1);
-         continue;
-      case '\t':
-         *p = ' ';
-         break;
-      default:
-         break;
-      }
-      p++;
-   }
-   ua->send_msg("%s\n", usage.c_str());
 }
 
 int qhelp_cmd(UAContext *ua, const char *cmd)
@@ -2461,7 +2439,11 @@ int qhelp_cmd(UAContext *ua, const char *cmd)
    j = find_arg(ua, NT_("all"));
    if (j >= 0) {
       for (i = 0; i < comsize; i++) {
-         ua->send_msg("%s\n", commands[i].key);
+         ua->send->object_start(commands[i].key);
+         ua->send->object_key_value("command", commands[i].key, "%s\n");
+         ua->send->object_key_value("description", commands[i].help);
+         ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
+         ua->send->object_end(commands[i].key);
       }
       return 1;
    }
@@ -2473,7 +2455,11 @@ int qhelp_cmd(UAContext *ua, const char *cmd)
    if (j >= 0 && ua->argk[j]) {
       for (i = 0; i < comsize; i++) {
          if (bstrcmp(commands[i].key, ua->argv[j])) {
-            usage_to_machine(ua, &commands[i]);
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key);
+            ua->send->object_key_value("description", commands[i].help);
+            ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+            ua->send->object_end(commands[i].key);
             break;
          }
       }
@@ -2484,8 +2470,11 @@ int qhelp_cmd(UAContext *ua, const char *cmd)
     * Want to display everything
     */
    for (i = 0; i < comsize; i++) {
-      ua->send_msg("%s %s -- ", commands[i].key, commands[i].help);
-      usage_to_machine(ua, &commands[i]);
+      ua->send->object_start(commands[i].key);
+      ua->send->object_key_value("command", commands[i].key, "%s ");
+      ua->send->object_key_value("description", commands[i].help, "%s -- ");
+      ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+      ua->send->object_end(commands[i].key);
    }
    return 1;
 }

@@ -58,9 +58,9 @@ public:
    void object_key_value(const char *key, uint64_t value);
    void object_key_value(const char *key, uint64_t value, const char *value_fmt);
    void object_key_value(const char *key, const char *key_fmt, uint64_t value, const char *value_fmt);
-   void object_key_value(const char *key, const char *value);
-   void object_key_value(const char *key, const char *value, const char *value_fmt);
-   void object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt);
+   void object_key_value(const char *key, const char *value, int wrap = -1);
+   void object_key_value(const char *key, const char *value, const char *value_fmt, int wrap = -1);
+   void object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
 
    void finalize_result(bool result);
 
@@ -76,6 +76,15 @@ private:
    SEND_HANDLER *send_func;
    void *send_ctx;
    POOL_MEM *result_message_plain;
+
+   /*
+    * reformat string.
+    * remove newlines and replace tabs with a single space.
+    * wrap < 0: no modification
+    * wrap = 0: reformat to single line
+    * wrap > 0: if api==0: wrap after x characters, else no modifications
+    */
+   void rewrap(POOL_MEM &string, int wrap);
 
    void process_text_buffer();
 

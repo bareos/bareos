@@ -31,7 +31,13 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 
-OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg, void *send_ctx_arg, int api_mode)
+/*
+ * Extra bytes to allocate for the wrap buffer.
+ */
+#define WRAP_EXTRA_BYTES 50
+
+OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg, void *send_ctx_arg,
+                                   int api_mode)
 {
    initialize_json();
 
@@ -83,11 +89,13 @@ void OUTPUT_FORMATTER::object_start(const char *name)
          json_object_existing = json_object_get(json_object_current, name);
          if (json_object_existing) {
             if (json_is_array(json_object_existing)) {
-               Dmsg2(800, "json object %s (stack size: %d) already exits and is an array: appending\n",
+               Dmsg2(800,
+                     "json object %s (stack size: %d) already exits and is an array: appending\n",
                      name, result_stack_json->size());
                json_array_append_new(json_object_existing, json_object_new);
             } else {
-               Dmsg2(800, "json object %s (stack size: %d) already exits: converting to array and appending\n",
+               Dmsg2(800,
+                     "json object %s (stack size: %d) already exits: converting to array and appending\n",
                      name, result_stack_json->size());
                json_object_array = json_array();
                json_array_append_new(json_object_array, json_object_existing);
@@ -96,7 +104,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
             }
          } else {
             Dmsg2(800, "create new json object %s (stack size: %d)\n",
-               name, result_stack_json->size());
+                  name, result_stack_json->size());
             json_object_set(json_object_current, name, json_object_new);
          }
          result_stack_json->push(json_object_new);
@@ -148,12 +156,14 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value)
    object_key_value(key, NULL, value, NULL);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value, const char *value_fmt)
+void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value,
+                                        const char *value_fmt)
 {
    object_key_value(key, NULL, value, value_fmt);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, uint64_t value, const char *value_fmt)
+void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
+                                        uint64_t value, const char *value_fmt)
 {
    POOL_MEM string;
 
@@ -175,24 +185,29 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, ui
    }
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value)
+void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value, int wrap)
 {
-   object_key_value(key, NULL, value, NULL);
+   object_key_value(key, NULL, value, NULL, wrap);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value, const char *value_fmt)
+void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value,
+                                        const char *value_fmt, int wrap)
 {
-   object_key_value(key, NULL, value, value_fmt);
+   object_key_value(key, NULL, value, value_fmt, wrap);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt)
+void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
+                                        const char *value, const char *value_fmt,
+                                        int wrap)
 {
    POOL_MEM string;
+   POOL_MEM wvalue(value);
+   rewrap(wvalue, wrap);
 
    switch (api) {
 #if HAVE_JANSSON
    case API_MODE_JSON:
-      json_key_value_add(key, value);
+      json_key_value_add(key, wvalue.c_str());
       break;
 #endif
    default:
@@ -201,11 +216,91 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, co
          result_message_plain->strcat(string);
       }
       if (value_fmt) {
-         string.bsprintf(value_fmt, value);
+         string.bsprintf(value_fmt, wvalue.c_str());
          result_message_plain->strcat(string);
       }
-      Dmsg2(800, "obj: %s:%s\n", key, value);
+      Dmsg2(800, "obj: %s:%s\n", key, wvalue.c_str());
    }
+}
+
+void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
+{
+   char *p, *q;
+   int open = 0;
+   int charsinline = 0;
+   POOL_MEM rewrap_string(PM_MESSAGE);
+
+   /*
+    * wrap < 0: no modification
+    * wrap = 0: single line
+    * wrap > 0: wrap line after x characters (if api==0)
+    */
+   if (wrap < 0) {
+      return;
+   }
+
+   /*
+    * Allocate a wrap buffer that is big enough to hold the original
+    * string + WRAP_EXTRA_BYTES. This means we can accommodate enough
+    * line breaks and spaces to wrap the original string.
+    */
+   rewrap_string.check_size(string.max_size() + WRAP_EXTRA_BYTES);
+
+   /*
+    * Walk the input buffer and copy the data to the wrap buffer
+    * inserting line breaks as needed.
+    */
+   q = rewrap_string.c_str();
+   p = string.c_str();
+   while (*p) {
+      charsinline++;
+      switch (*p) {
+      case ' ':
+         if (api == 0 && wrap > 0 && charsinline >= wrap && open <= 0 && *(p + 1) != '|') {
+            *q++ = '\n';
+            *q++ = '\t';
+            charsinline = 0;
+         } else {
+            if (charsinline > 1) {
+               *q++ = ' ';
+            }
+         }
+         break;
+      case '|':
+         rewrap_string.strcat("|");
+         if (api == 0 && wrap > 0 && open <= 0) {
+            *q++ = '\n';
+            *q++ = '\t';
+            charsinline = 0;
+         }
+         break;
+      case '[':
+      case '<':
+         open++;
+         *q++ = *p;
+         break;
+      case ']':
+      case '>':
+         open--;
+         *q++ = *p;
+         break;
+      case '\n':
+      case '\t':
+         if (charsinline > 1) {
+            if (*(p + 1) != '\n' && *(p + 1) != '\t' && *(p + 1) != ' ') {
+               *q++ = ' ';
+            }
+         }
+         break;
+      default:
+         *q++ = *p;
+         break;
+      }
+      p++;
+   }
+   *q = '\0';
+
+   string.strcpy(rewrap_string);
 }
 
 void OUTPUT_FORMATTER::process_text_buffer()
@@ -218,7 +313,7 @@ void OUTPUT_FORMATTER::process_text_buffer()
 
 void OUTPUT_FORMATTER::finalize_result(bool result)
 {
-  switch (api) {
+   switch (api) {
 #if HAVE_JANSSON
    case API_MODE_JSON:
       json_finalize_result(result);
@@ -276,7 +371,7 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
    if (result) {
       json_object_set(msg_obj, "result", result_array_json);
    } else {
-      error_obj=json_object();
+      error_obj = json_object();
       json_object_set_new(error_obj, "code", json_integer(1));
       json_object_set_new(error_obj, "message", json_string("failed"));
       json_object_set(error_obj, "data", result_array_json);
