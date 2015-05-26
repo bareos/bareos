@@ -142,7 +142,8 @@ static struct cmdstruct commands[] = {
      NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
          "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "\tbasefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
-         "\tfiles jobid=<jobid> | files ujobid=<complete_name> | pools | jobtotals |\n"
+         "\tfiles jobid=<jobid> | files ujobid=<complete_name> |\n"
+         "\tfileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets | pools | jobtotals |\n"
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
          "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid> [ limit=<num> ]"), true, true },
@@ -150,7 +151,8 @@ static struct cmdstruct commands[] = {
      NT_("jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> | jobmedia jobid=<jobid> |\n"
          "\tjobmedia ujobid=<complete_name> | joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "\tbasefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
-         "\tfiles jobid=<jobid> | files ujobid=<complete_name> | pools | jobtotals |\n"
+         "\tfiles jobid=<jobid> | files ujobid=<complete_name> |\n"
+         "\tfileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets | pools | jobtotals |\n"
          "\tvolumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "\tmedia [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] | clients |\n"
          "\tnextvol job=<job-name> | nextvolume ujobid=<complete_name> | copies jobid=<jobid>"), true, true },

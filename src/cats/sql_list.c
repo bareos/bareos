@@ -534,4 +534,53 @@ bail_out:
    db_unlock(mdb);
 }
 
+/*
+ * List fileset
+ */
+void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sendit,
+                      e_list_type type)
+{
+   POOL_MEM str_limit(PM_MESSAGE);
+   char esc[MAX_ESCAPE_NAME_LENGTH];
+
+   db_lock(mdb);
+   if (jr->limit > 0) {
+      Mmsg(str_limit, " LIMIT %d", jr->limit);
+   }
+
+   if (jr->Name[0] != 0) {
+      mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+           "FROM Job, FileSet "
+           "WHERE Job.FileSetId = FileSet.FileSetId "
+           "AND Job.Name='%s'%s", esc, str_limit.c_str());
+   } else if (jr->Job[0] != 0) {
+      mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+           "FROM Job, FileSet "
+           "WHERE Job.FileSetId = FileSet.FileSetId "
+           "AND Job.Name='%s'%s", esc, str_limit.c_str());
+   } else if (jr->JobId != 0) {
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+           "FROM Job, FileSet "
+           "WHERE Job.FileSetId = FileSet.FileSetId "
+           "AND Job.JobId='%s'%s", edit_int64(jr->JobId, esc), str_limit.c_str());
+   } else {                           /* all records */
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+           "FROM FileSet ORDER BY FileSetId ASC%s", str_limit.c_str());
+   }
+
+   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
+      goto bail_out;
+   }
+   sendit->object_start("filesets");
+   list_result(jcr, mdb, sendit, type);
+   sendit->object_end("filesets");
+
+   sql_free_result(mdb);
+
+bail_out:
+   db_unlock(mdb);
+}
+
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

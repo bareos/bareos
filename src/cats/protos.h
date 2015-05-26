@@ -122,6 +122,7 @@ void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr, OUTPUT_FORMATTER *se
 void db_list_job_records(JCR *jcr, B_DB *db, JOB_DBR *jr, OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_job_totals(JCR *jcr, B_DB *db, JOB_DBR *jr, OUTPUT_FORMATTER *sendit);
 void db_list_files_for_job(JCR *jcr, B_DB *db, uint32_t jobid, OUTPUT_FORMATTER *sendit);
+void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_joblog_records(JCR *jcr, B_DB *mdb, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
