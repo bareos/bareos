@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Bareos 1.38\n"
 "Report-Msgid-Bugs-To: info@bareos.org\n"
-"POT-Creation-Date: 2015-03-23 13:47+0100\n"
+"POT-Creation-Date: 2015-05-27 16:16+0200\n"
 "PO-Revision-Date: 2009-10-18 14:04+0000\n"
 "Last-Translator: Eric Bollengier <eric@eb.homelinux.org>\n"
 "Language-Team: French <bareos-devel-fr@lists.sourceforge.net>\n"
@@ -243,25 +243,25 @@ msgid "Unknown resource type %d\n"
 msgstr ""
 
 #: src/console/console_conf.c:259 src/filed/filed_conf.c:397
-#: src/dird/dird_conf.c:2184 src/dird/dird_conf.c:2202
+#: src/dird/dird_conf.c:2183 src/dird/dird_conf.c:2201
 #: src/qt-tray-monitor/tray_conf.cpp:300 src/qt-console/bat_conf.cpp:274
 #, c-format
 msgid "%s item is required in %s resource, but not found.\n"
 msgstr ""
 
 #: src/console/console_conf.c:308 src/filed/filed_conf.c:480
-#: src/dird/dird_conf.c:2417 src/qt-tray-monitor/tray_conf.cpp:366
+#: src/dird/dird_conf.c:2416 src/qt-tray-monitor/tray_conf.cpp:366
 #: src/qt-console/bat_conf.cpp:335
 #, c-format
 msgid "Attempt to define second %s resource named \"%s\" is not permitted.\n"
 msgstr ""
 
-#: src/filed/compression.c:160 src/plugins/stored/autoxflate-sd.c:537
+#: src/filed/compression.c:160 src/plugins/stored/autoxflate-sd.c:532
 #, c-format
 msgid "Compression deflateParams error: %d\n"
 msgstr ""
 
-#: src/filed/compression.c:197 src/plugins/stored/autoxflate-sd.c:569
+#: src/filed/compression.c:197 src/plugins/stored/autoxflate-sd.c:564
 #, fuzzy, c-format
 msgid "Compression fastlzlibSetCompressor error: %d\n"
 msgstr "Erreur de décompression. ERR=%d\n"
@@ -271,117 +271,117 @@ msgstr "Erreur de décompression. ERR=%d\n"
 msgid "Space saved with Base jobs: %lld MB\n"
 msgstr ""
 
-#: src/filed/accurate.c:249
+#: src/filed/accurate.c:261
 #, fuzzy, c-format
 msgid "Cannot verify checksum for %s\n"
 msgstr "Impossible de trouver la ressource Schedule \"%s\"\n"
 
-#: src/filed/accurate.c:301
+#: src/filed/accurate.c:312
 #, fuzzy
 msgid "2991 Bad accurate command\n"
 msgstr "2991 Erreur dans la commande setdebug : %s\n"
 
-#: src/filed/dir_cmd.c:306
+#: src/filed/dir_cmd.c:312
 #, c-format
 msgid ""
 "Illegal \"%s\" command not allowed by Allowed Job Cmds setting of this "
 "filed.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:569 src/stored/dir_cmd.c:325
+#: src/filed/dir_cmd.c:576 src/stored/dir_cmd.c:331
 #, fuzzy, c-format
 msgid "Connection request from %s failed.\n"
 msgstr "Demande de connexion échouée.\n"
 
-#: src/filed/dir_cmd.c:594 src/filed/sd_cmds.c:42 src/stored/dir_cmd.c:336
+#: src/filed/dir_cmd.c:601 src/filed/sd_cmds.c:42 src/stored/dir_cmd.c:342
 #, fuzzy, c-format
 msgid "Invalid connection from %s. Len=%d\n"
 msgstr "Connexion invalide. Len=%d\n"
 
-#: src/filed/dir_cmd.c:621 src/stored/dir_cmd.c:562
+#: src/filed/dir_cmd.c:628 src/stored/dir_cmd.c:584
 #, fuzzy, c-format
 msgid "%s: Failed to resolve %s\n"
 msgstr "3912 Impossible de labéliser le Volume : ERR=%s\n"
 
-#: src/filed/dir_cmd.c:625 src/dird/ua_cmds.c:1448 src/stored/dir_cmd.c:566
+#: src/filed/dir_cmd.c:632 src/dird/ua_cmds.c:1523 src/stored/dir_cmd.c:588
 #, fuzzy, c-format
 msgid "%s resolves %s to %s\n"
 msgstr "%s ressource %s introuvable.\n"
 
-#: src/filed/dir_cmd.c:654 src/filed/dir_cmd.c:712 src/stored/dir_cmd.c:408
+#: src/filed/dir_cmd.c:661 src/filed/dir_cmd.c:719 src/stored/dir_cmd.c:414
 #, c-format
 msgid "2901 Job %s not found.\n"
 msgstr "2901 Le job %s est introuvable.\n"
 
-#: src/filed/dir_cmd.c:664
+#: src/filed/dir_cmd.c:671
 #, c-format
 msgid "2001 Job %s marked to be canceled.\n"
 msgstr "2001 Le job %s va être annulé.\n"
 
-#: src/filed/dir_cmd.c:667
+#: src/filed/dir_cmd.c:674
 msgid "2902 Error scanning cancel command.\n"
 msgstr "2902 Erreur dans le décodage de la commande d'annulation.\n"
 
-#: src/filed/dir_cmd.c:706 src/stored/dir_cmd.c:402
+#: src/filed/dir_cmd.c:713 src/stored/dir_cmd.c:408
 #, fuzzy, c-format
 msgid "2991 Bad setbandwidth command: %s\n"
 msgstr "2991 Erreur dans la commande setdebug : %s\n"
 
-#: src/filed/dir_cmd.c:745
+#: src/filed/dir_cmd.c:755
 #, c-format
 msgid "2991 Bad setdebug command: %s\n"
 msgstr "2991 Erreur dans la commande setdebug : %s\n"
 
-#: src/filed/dir_cmd.c:772 src/filed/dir_cmd.c:779
+#: src/filed/dir_cmd.c:793 src/filed/dir_cmd.c:800
 msgid "2992 Bad estimate command.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:778
+#: src/filed/dir_cmd.c:799
 #, c-format
 msgid "Bad estimate command: %s"
 msgstr ""
 
-#: src/filed/dir_cmd.c:805
+#: src/filed/dir_cmd.c:826
 #, c-format
 msgid "Bad Job Command: %s"
 msgstr ""
 
-#: src/filed/dir_cmd.c:837
+#: src/filed/dir_cmd.c:858
 #, fuzzy, c-format
 msgid "Bad RunBeforeJob command: %s\n"
 msgstr "Erreur dans la commande RunScript : %s\n"
 
-#: src/filed/dir_cmd.c:900
+#: src/filed/dir_cmd.c:921
 #, fuzzy, c-format
 msgid "Bad RunAfter command: %s\n"
 msgstr "Erreur dans la commande RunScript : %s\n"
 
-#: src/filed/dir_cmd.c:950
+#: src/filed/dir_cmd.c:971
 #, c-format
 msgid "Bad RunScript command: %s\n"
 msgstr "Erreur dans la commande RunScript : %s\n"
 
-#: src/filed/dir_cmd.c:982
+#: src/filed/dir_cmd.c:1003
 #, fuzzy, c-format
 msgid "Bad Plugin Options command: %s\n"
 msgstr "Erreur dans la commande RunScript : %s\n"
 
-#: src/filed/dir_cmd.c:1033
+#: src/filed/dir_cmd.c:1054
 #, fuzzy, c-format
 msgid "Bad RestoreObject command: %s\n"
 msgstr "Erreur dans la commande RunScript : %s\n"
 
-#: src/filed/dir_cmd.c:1133
+#: src/filed/dir_cmd.c:1154
 #, fuzzy
 msgid "2909 Bad RestoreObject command.\n"
 msgstr "2905 Erreur sur la commande RunScript.\n"
 
-#: src/filed/dir_cmd.c:1229 src/stored/dir_cmd.c:1256
+#: src/filed/dir_cmd.c:1250 src/stored/dir_cmd.c:1278
 #, c-format
 msgid "Could not create bootstrap file %s: ERR=%s\n"
 msgstr "Impossible de créer le fichier bootstrap %s : ERR=%s\n"
 
-#: src/filed/dir_cmd.c:1348
+#: src/filed/dir_cmd.c:1369
 #, fuzzy, c-format
 msgid ""
 "DIR and FD clocks differ by %lld seconds, FD automatically compensating.\n"
@@ -389,159 +389,159 @@ msgstr ""
 "L'horloge du client et du director ont %d secondes d'écart, le client s'est "
 "ajusté automatiquement.\n"
 
-#: src/filed/dir_cmd.c:1357
+#: src/filed/dir_cmd.c:1378
 #, c-format
 msgid "Unknown backup level: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1370
+#: src/filed/dir_cmd.c:1391
 #, c-format
 msgid "Bad level command: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1392
+#: src/filed/dir_cmd.c:1413
 #, c-format
 msgid "Bad session command: %s"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1456
+#: src/filed/dir_cmd.c:1477
 #, c-format
 msgid "Bad storage command: %s"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1487 src/dird/sd_cmds.c:112 src/stored/dir_cmd.c:1569
+#: src/filed/dir_cmd.c:1508 src/dird/sd_cmds.c:112 src/stored/dir_cmd.c:1591
 msgid "Storage daemon"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1493 src/stored/dir_cmd.c:1575
+#: src/filed/dir_cmd.c:1514 src/stored/dir_cmd.c:1597
 #, c-format
 msgid "Failed to connect to Storage daemon: %s:%d\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1505 src/stored/dir_cmd.c:1587
+#: src/filed/dir_cmd.c:1526 src/stored/dir_cmd.c:1609
 msgid "Failed to authenticate Storage daemon.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1535
+#: src/filed/dir_cmd.c:1556
 msgid "Filed in restore only mode, backups are not allowed, aborting...\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1573
+#: src/filed/dir_cmd.c:1594
 msgid ""
 "ACL support requested in fileset but not available on this platform. "
 "Disabling ...\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1577
+#: src/filed/dir_cmd.c:1598
 msgid ""
 "XATTR support requested in fileset but not available on this platform. "
 "Disabling ...\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1586
+#: src/filed/dir_cmd.c:1607
 msgid "Cannot contact Storage daemon\n"
 msgstr "Impossible de se connecter au démon Storage\n"
 
-#: src/filed/dir_cmd.c:1605
+#: src/filed/dir_cmd.c:1626
 #, c-format
 msgid "Bad response to append open: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1610
+#: src/filed/dir_cmd.c:1631
 msgid "Bad response from stored to open command\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1658
+#: src/filed/dir_cmd.c:1679
 #, fuzzy, c-format
 msgid "Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"
 msgstr "Création des snapshot VSS. Driver=\"%s\", Lecteur(s)=\"%s\"\n"
 
-#: src/filed/dir_cmd.c:1663
+#: src/filed/dir_cmd.c:1684
 #, fuzzy, c-format
 msgid "CreateSGenerate VSS snapshots failed. ERR=%s\n"
 msgstr "Erreur durant la création des snapshots VSS.\n"
 
-#: src/filed/dir_cmd.c:1675
+#: src/filed/dir_cmd.c:1696
 #, fuzzy, c-format
 msgid "Generate VSS snapshot of drive \"%c:\\\" failed.\n"
 msgstr "Erreur durant la création des snapshots VSS.\n"
 
-#: src/filed/dir_cmd.c:1684
+#: src/filed/dir_cmd.c:1705
 #, c-format
 msgid "VSS Writer (PrepareForBackup): %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1690
+#: src/filed/dir_cmd.c:1711
 msgid "No drive letters found for generating VSS snapshots.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1695
+#: src/filed/dir_cmd.c:1716
 #, fuzzy, c-format
 msgid "VSS was not initialized properly. ERR=%s\n"
 msgstr "Impossible d'initialiser le verrou sur la base. ERR=%s\n"
 
-#: src/filed/dir_cmd.c:1749
+#: src/filed/dir_cmd.c:1770
 msgid "Append Close with SD failed.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1753
+#: src/filed/dir_cmd.c:1774
 #, c-format
 msgid "Bad status %d returned from Storage Daemon.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1788 src/filed/dir_cmd.c:1794
+#: src/filed/dir_cmd.c:1809 src/filed/dir_cmd.c:1815
 #, c-format
 msgid "2994 Bad verify command: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1809 src/filed/dir_cmd.c:1849
+#: src/filed/dir_cmd.c:1830 src/filed/dir_cmd.c:1870
 #, c-format
 msgid "2994 Bad verify level: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1895
+#: src/filed/dir_cmd.c:1916
 msgid "Filed in backup only mode, restores are not allowed, aborting...\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1944
+#: src/filed/dir_cmd.c:1965
 #, c-format
 msgid "Bad replace command. CMD=%s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:1967
+#: src/filed/dir_cmd.c:1988
 #, c-format
 msgid "Bad where regexp. where=%s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2004
+#: src/filed/dir_cmd.c:2025
 #, c-format
 msgid "VSS was not initialized properly. VSS support is disabled. ERR=%s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2052
+#: src/filed/dir_cmd.c:2073
 #, c-format
 msgid "VSS Writer (RestoreComplete): %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2102
+#: src/filed/dir_cmd.c:2123
 msgid "Improper calling sequence.\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2122
+#: src/filed/dir_cmd.c:2143
 #, c-format
 msgid "Bad response to SD read open: %s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2127
+#: src/filed/dir_cmd.c:2148
 msgid "Bad response from stored to read open command\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2207 src/stored/mac.c:87
+#: src/filed/dir_cmd.c:2228 src/stored/mac.c:87
 #, c-format
 msgid "Comm error with SD. bad response to %s. ERR=%s\n"
 msgstr ""
 
-#: src/filed/dir_cmd.c:2210 src/stored/mac.c:90
+#: src/filed/dir_cmd.c:2231 src/stored/mac.c:90
 #, c-format
 msgid "Bad response to %s command. Wanted %s, got %s\n"
 msgstr ""
@@ -708,7 +708,7 @@ msgstr ""
 msgid "Logic error: output file should not be open\n"
 msgstr ""
 
-#: src/filed/status.c:83 src/dird/ua_cmds.c:2410
+#: src/filed/status.c:83 src/dird/ua_cmds.c:2485
 #, c-format
 msgid "%s Version: %s (%s) %s %s %s %s\n"
 msgstr ""
@@ -856,26 +856,26 @@ msgid "Base"
 msgstr "Base"
 
 #: src/filed/status.c:531 src/lib/util.c:454 src/lib/util.c:500
-#: src/dird/ua_run.c:1084 src/stored/status.c:805
+#: src/dird/ua_run.c:1151 src/stored/status.c:805
 msgid "Full"
 msgstr "Full"
 
-#: src/filed/status.c:534 src/lib/util.c:457 src/dird/ua_run.c:1085
+#: src/filed/status.c:534 src/lib/util.c:457 src/dird/ua_run.c:1152
 #: src/stored/status.c:808
 msgid "Incremental"
 msgstr "Incrémental"
 
-#: src/filed/status.c:537 src/lib/util.c:460 src/dird/ua_run.c:1086
+#: src/filed/status.c:537 src/lib/util.c:460 src/dird/ua_run.c:1153
 #: src/stored/status.c:811
 msgid "Differential"
 msgstr "Différentiel"
 
-#: src/filed/status.c:540 src/lib/util.c:463 src/dird/ua_run.c:1087
+#: src/filed/status.c:540 src/lib/util.c:463 src/dird/ua_run.c:1154
 #: src/stored/status.c:814
 msgid "Since"
 msgstr "Depuis"
 
-#: src/filed/status.c:543 src/lib/util.c:466 src/dird/ua_run.c:1114
+#: src/filed/status.c:543 src/lib/util.c:466 src/dird/ua_run.c:1181
 #: src/stored/status.c:817
 msgid "Verify Catalog"
 msgstr ""
@@ -920,53 +920,53 @@ msgstr ""
 msgid "Bareos Client: Last Job had Warnings"
 msgstr ""
 
-#: src/filed/authenticate.c:72
+#: src/filed/authenticate.c:73
 #, c-format
 msgid "I only authenticate directors, not %d\n"
 msgstr ""
 
-#: src/filed/authenticate.c:81 src/stored/authenticate.c:63
+#: src/filed/authenticate.c:82 src/stored/authenticate.c:63
 #, c-format
 msgid "Bad Hello command from Director at %s. Len=%d.\n"
 msgstr ""
 
-#: src/filed/authenticate.c:93 src/filed/sd_cmds.c:55
+#: src/filed/authenticate.c:94 src/filed/sd_cmds.c:55
 #: src/stored/authenticate.c:74
 #, c-format
 msgid "Bad Hello command from Director at %s: %s\n"
 msgstr ""
 
-#: src/filed/authenticate.c:105
+#: src/filed/authenticate.c:106
 #, c-format
 msgid "Connection from unknown Director %s at %s rejected.\n"
 msgstr ""
 "Connexion d'un Director inconnu %s à %s rejeté.\n"
 "\n"
 
-#: src/filed/authenticate.c:164
+#: src/filed/authenticate.c:165
 #, c-format
 msgid "Incorrect password given by Director at %s.\n"
 msgstr "Password incorrect donné par le Director à %s.\n"
 
-#: src/filed/authenticate.c:173 src/filed/authenticate.c:309
+#: src/filed/authenticate.c:174 src/filed/authenticate.c:310
 #: src/stored/authenticate.c:143 src/stored/authenticate.c:267
 msgid ""
 "Authorization problem: Remote server did not advertize required TLS "
 "support.\n"
 msgstr ""
 
-#: src/filed/authenticate.c:184 src/filed/authenticate.c:320
+#: src/filed/authenticate.c:185 src/filed/authenticate.c:321
 #: src/dird/authenticate.c:142 src/stored/authenticate.c:154
 #: src/stored/authenticate.c:278
 msgid "Authorization problem: Remote server requires TLS.\n"
 msgstr ""
 
-#: src/filed/authenticate.c:192 src/filed/authenticate.c:333
-#: src/filed/authenticate.c:339 src/dird/authenticate.c:430
+#: src/filed/authenticate.c:193 src/filed/authenticate.c:334
+#: src/filed/authenticate.c:340 src/dird/authenticate.c:430
 msgid "TLS negotiation failed.\n"
 msgstr ""
 
-#: src/filed/authenticate.c:300
+#: src/filed/authenticate.c:301
 #, fuzzy, c-format
 msgid ""
 "Authorization key rejected by %s daemon.\n"
@@ -975,7 +975,7 @@ msgstr ""
 "Connexion d'un Director inconnu %s à %s rejeté.\n"
 "\n"
 
-#: src/filed/authenticate.c:382 src/stored/dir_cmd.c:247
+#: src/filed/authenticate.c:383 src/stored/dir_cmd.c:253
 msgid "Unable to authenticate Director\n"
 msgstr ""
 
@@ -1000,8 +1000,8 @@ msgid "Plugin save packet not found.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
 #: src/filed/fd_plugins.c:940 src/filed/fd_plugins.c:957
-#: src/filed/backup.c:1008 src/filed/backup.c:1162 src/filed/backup.c:1234
-#: src/filed/backup.c:1246 src/filed/backup.c:1329 src/filed/backup.c:1439
+#: src/filed/backup.c:1017 src/filed/backup.c:1171 src/filed/backup.c:1243
+#: src/filed/backup.c:1255 src/filed/backup.c:1338 src/filed/backup.c:1448
 #: src/findlib/xattr.c:98 src/findlib/xattr.c:113 src/findlib/xattr.c:121
 #: src/findlib/acl.c:107 src/findlib/acl.c:122 src/findlib/acl.c:130
 #: src/stored/mac.c:291 src/stored/mac.c:304 src/stored/mac.c:325
@@ -1071,13 +1071,13 @@ msgstr ""
 msgid "Command plugin: no fname in bareosCheckChanges packet.\n"
 msgstr ""
 
-#: src/filed/filed_conf.c:421 src/dird/dird_conf.c:2260
+#: src/filed/filed_conf.c:421 src/dird/dird_conf.c:2259
 #: src/stored/stored_conf.c:841
 #, c-format
 msgid "Cannot find Director resource %s\n"
 msgstr "Impossible de trouver la ressource Director \"%s\"\n"
 
-#: src/filed/filed_conf.c:430 src/dird/dird_conf.c:2345
+#: src/filed/filed_conf.c:430 src/dird/dird_conf.c:2344
 #, c-format
 msgid "Cannot find Client resource %s\n"
 msgstr "Impossible de trouver la ressource Client \"%s\"\n"
@@ -1230,7 +1230,7 @@ msgstr ""
 msgid "     Could not stat %s: ERR=%s\n"
 msgstr ""
 
-#: src/filed/verify.c:140 src/filed/backup.c:605
+#: src/filed/verify.c:140 src/filed/backup.c:609
 #, c-format
 msgid "     Unchanged file skipped: %s\n"
 msgstr ""
@@ -1260,22 +1260,22 @@ msgstr ""
 msgid "     Unknown file type %d: %s\n"
 msgstr ""
 
-#: src/filed/verify.c:231 src/filed/verify.c:434 src/filed/backup.c:282
+#: src/filed/verify.c:231 src/filed/verify.c:429 src/filed/backup.c:286
 #, c-format
 msgid "%s digest initialization failed\n"
 msgstr ""
 
-#: src/filed/verify.c:275
+#: src/filed/verify.c:271
 #, c-format
 msgid "     Cannot open %s: ERR=%s.\n"
 msgstr ""
 
-#: src/filed/verify.c:291
+#: src/filed/verify.c:286
 #, c-format
 msgid "     Cannot open resource fork for %s: ERR=%s.\n"
 msgstr ""
 
-#: src/filed/verify.c:354
+#: src/filed/verify.c:349
 #, c-format
 msgid "Error reading file %s: ERR=%s\n"
 msgstr ""
@@ -1289,126 +1289,126 @@ msgstr "Job non trouvé : %s\n"
 msgid "Unable to authenticate File daemon\n"
 msgstr ""
 
-#: src/filed/backup.c:93
+#: src/filed/backup.c:97
 msgid "Cannot set buffer size FD->SD.\n"
-msgstr ""
-
-#: src/filed/backup.c:139
-#, c-format
-msgid "Encountered %ld acl errors while doing backup\n"
 msgstr ""
 
 #: src/filed/backup.c:143
 #, c-format
+msgid "Encountered %ld acl errors while doing backup\n"
+msgstr ""
+
+#: src/filed/backup.c:147
+#, c-format
 msgid "Encountered %ld xattr errors while doing backup\n"
 msgstr ""
 
-#: src/filed/backup.c:196
+#: src/filed/backup.c:200
 #, fuzzy, c-format
 msgid "     Cannot open resource fork for \"%s\": ERR=%s.\n"
 msgstr "Impossible d'ouvrir le fichier %s : ERR=%s\n"
 
-#: src/filed/backup.c:300
+#: src/filed/backup.c:304
 #, c-format
 msgid "%s signature digest initialization failed\n"
 msgstr ""
 
-#: src/filed/backup.c:330
+#: src/filed/backup.c:334
 #, fuzzy
 msgid "Failed to allocate memory for crypto signature.\n"
 msgstr "Impossible de se connecter au Director\n"
 
-#: src/filed/backup.c:335 src/filed/backup.c:343 src/filed/backup.c:364
+#: src/filed/backup.c:339 src/filed/backup.c:347 src/filed/backup.c:368
 msgid "An error occurred while signing the stream.\n"
 msgstr ""
 
-#: src/filed/backup.c:402
+#: src/filed/backup.c:406
 msgid "An error occurred finalizing signing the stream.\n"
 msgstr ""
 
-#: src/filed/backup.c:542
+#: src/filed/backup.c:546
 #, c-format
 msgid "     Recursion turned off. Will not descend from %s into %s\n"
 msgstr ""
 
-#: src/filed/backup.c:549
+#: src/filed/backup.c:553
 #, c-format
 msgid "     %s is a different filesystem. Will not descend from %s into it.\n"
 msgstr ""
 
-#: src/filed/backup.c:555
+#: src/filed/backup.c:559
 #, c-format
 msgid "     Disallowed filesystem. Will not descend from %s into %s\n"
 msgstr ""
 
-#: src/filed/backup.c:560
+#: src/filed/backup.c:564
 #, c-format
 msgid "     Disallowed drive type. Will not descend into %s\n"
 msgstr ""
 
-#: src/filed/backup.c:571
+#: src/filed/backup.c:575
 #, c-format
 msgid "     Socket file skipped: %s\n"
 msgstr ""
 
-#: src/filed/backup.c:584
+#: src/filed/backup.c:588
 #, c-format
 msgid "     Could not access \"%s\": ERR=%s\n"
 msgstr "     Impossible d'acceder à \"%s\" : ERR=%s\n"
 
-#: src/filed/backup.c:591
+#: src/filed/backup.c:595
 #, c-format
 msgid "     Could not follow link \"%s\": ERR=%s\n"
 msgstr "     Impossible de suivre le lien \"%s\" : ERR=%s\n"
 
-#: src/filed/backup.c:598
+#: src/filed/backup.c:602
 #, c-format
 msgid "     Could not stat \"%s\": ERR=%s\n"
 msgstr "     Impossible d'acceder à \"%s\" : ERR=%s\\n\n"
 
-#: src/filed/backup.c:608
+#: src/filed/backup.c:612
 #, c-format
 msgid "     Archive file not saved: %s\n"
 msgstr ""
 
-#: src/filed/backup.c:612
+#: src/filed/backup.c:616
 #, c-format
 msgid "     Could not open directory \"%s\": ERR=%s\n"
 msgstr "     Impossible d'ouvrir le répertoire \"%s\" : ERR=%s\n"
 
-#: src/filed/backup.c:621
+#: src/filed/backup.c:625
 #, c-format
 msgid "     Unknown file type %d; not saved: %s\n"
 msgstr "     Type de fichier inconnu %d ; non sauvé : %s\n"
 
-#: src/filed/backup.c:767
+#: src/filed/backup.c:776
 #, c-format
 msgid "     Cannot open \"%s\": ERR=%s.\n"
 msgstr "     Impossible d'ouvrir \"%s\" : ERR=%s.\n"
 
-#: src/filed/backup.c:1071
+#: src/filed/backup.c:1080
 msgid "Encrypted file but no EFS support functions\n"
 msgstr ""
 
-#: src/filed/backup.c:1208
+#: src/filed/backup.c:1217
 #, c-format
 msgid "Read error on file %s. ERR=%s\n"
 msgstr ""
 
-#: src/filed/backup.c:1210
+#: src/filed/backup.c:1219
 #, c-format
 msgid "Too many errors. JobErrors=%d.\n"
 msgstr ""
 
-#: src/filed/backup.c:1222
+#: src/filed/backup.c:1231
 msgid "Encryption padding error\n"
 msgstr ""
 
-#: src/filed/backup.c:1292
+#: src/filed/backup.c:1301
 msgid "Invalid file flags, no supported data stream type.\n"
 msgstr ""
 
-#: src/filed/backup.c:1577
+#: src/filed/backup.c:1586
 #, c-format
 msgid "VSS Writer (BackupComplete): %s\n"
 msgstr ""
@@ -1593,7 +1593,7 @@ msgstr ""
 msgid "Unparseable size option: %s\n"
 msgstr "Option d'écrasement (Replace) invalide : %s\n"
 
-#: src/filed/fileset.c:714 src/dird/dird_conf.c:1498 src/dird/testfind.c:645
+#: src/filed/fileset.c:714 src/dird/dird_conf.c:1497 src/dird/testfind.c:645
 #: src/findlib/match.c:301
 #, c-format
 msgid "Unknown include/exclude option: %c\n"
@@ -2038,11 +2038,11 @@ msgstr ""
 msgid "Verify Init Catalog"
 msgstr ""
 
-#: src/lib/util.c:472 src/dird/ua_run.c:1115
+#: src/lib/util.c:472 src/dird/ua_run.c:1182
 msgid "Verify Volume to Catalog"
 msgstr ""
 
-#: src/lib/util.c:475 src/dird/ua_run.c:1116
+#: src/lib/util.c:475 src/dird/ua_run.c:1183
 msgid "Verify Disk to Catalog"
 msgstr ""
 
@@ -2092,7 +2092,7 @@ msgstr "Nom de Volume invalide : %s\n"
 #: src/lib/util.c:789 src/lib/util.c:799 src/lib/util.c:807 src/lib/util.c:814
 #: src/lib/util.c:821 src/lib/util.c:837 src/lib/util.c:847 src/lib/util.c:854
 #: src/lib/util.c:862 src/lib/util.c:865 src/lib/compression.c:79
-#: src/dird/dird_conf.c:3373 src/dird/dird_conf.c:3376
+#: src/dird/dird_conf.c:3372 src/dird/dird_conf.c:3375
 msgid "*none*"
 msgstr ""
 
@@ -2939,7 +2939,7 @@ msgstr "JCR use_count=%d JobId=%d\n"
 msgid "pthread_setspecific failed: ERR=%s\n"
 msgstr "Erreur sur l'ouverture du périphérique. ERR=%s\n"
 
-#: src/lib/jcr.c:1175
+#: src/lib/jcr.c:1173
 #, c-format
 msgid ""
 "Watchdog sending kill after %d secs to thread stalled reading Storage "
@@ -2948,7 +2948,7 @@ msgstr ""
 "Le watchdog a envoyé un signal après %d secs au thread bloqué en écoute du "
 "SD.\n"
 
-#: src/lib/jcr.c:1187
+#: src/lib/jcr.c:1185
 #, c-format
 msgid ""
 "Watchdog sending kill after %d secs to thread stalled reading File daemon.\n"
@@ -2956,7 +2956,7 @@ msgstr ""
 "Le watchdog a envoyé un signal après %d secs au thread bloqué en écoute du "
 "FD.\n"
 
-#: src/lib/jcr.c:1199
+#: src/lib/jcr.c:1197
 #, c-format
 msgid ""
 "Watchdog sending kill after %d secs to thread stalled reading Director.\n"
@@ -3110,7 +3110,7 @@ msgstr ""
 msgid "Attempt to redefine name \"%s\" to \"%s\"."
 msgstr ""
 
-#: src/lib/res.c:515 src/dird/dird_conf.c:3094
+#: src/lib/res.c:515 src/dird/dird_conf.c:3093
 #, c-format
 msgid "Could not find config Resource %s referenced on line %d : %s\n"
 msgstr ""
@@ -3169,7 +3169,7 @@ msgid "expected a time period, got: %s"
 msgstr ""
 
 #: src/lib/res.c:949 src/lib/res.c:970 src/lib/ini.c:223
-#: src/dird/dird_conf.c:3072 src/dird/dird_conf.c:3188
+#: src/dird/dird_conf.c:3071 src/dird/dird_conf.c:3187
 #, c-format
 msgid "Expect %s, got: %s"
 msgstr "Attendait %s, a pas : %s"
@@ -3420,15 +3420,15 @@ msgid "done        : %s\n"
 msgstr ""
 
 #: src/lib/parse_bsr.c:943 src/dird/ua_input.c:120 src/dird/dbcheck.c:1375
-#: src/dird/ua_update.c:257 src/dird/ua_update.c:277 src/dird/ua_update.c:709
-#: src/dird/ua_run.c:395 src/dird/ua_run.c:440 src/dird/backup.c:1054
+#: src/dird/ua_update.c:257 src/dird/ua_update.c:277 src/dird/ua_update.c:714
+#: src/dird/ua_run.c:464 src/dird/ua_run.c:509 src/dird/backup.c:1054
 #: src/dird/backup.c:1055 src/dird/backup.c:1056 src/dird/backup.c:1065
 #: src/dird/backup.c:1066 src/dird/backup.c:1067
 msgid "yes"
 msgstr "oui"
 
 #: src/lib/parse_bsr.c:943 src/dird/ua_input.c:124 src/dird/ua_update.c:257
-#: src/dird/ua_update.c:277 src/dird/ua_update.c:709 src/dird/ua_run.c:397
+#: src/dird/ua_update.c:277 src/dird/ua_update.c:714 src/dird/ua_run.c:466
 #: src/dird/backup.c:1054 src/dird/backup.c:1055 src/dird/backup.c:1056
 #: src/dird/backup.c:1065 src/dird/backup.c:1066 src/dird/backup.c:1067
 msgid "no"
@@ -3827,72 +3827,72 @@ msgstr ""
 msgid "Error initializing SSL context"
 msgstr "Erreur pendant l'initialisation du contexte SSL"
 
-#: src/lib/tls_openssl.c:422
+#: src/lib/tls_openssl.c:432
 msgid "Error loading certificate verification stores"
 msgstr ""
 
-#: src/lib/tls_openssl.c:427
+#: src/lib/tls_openssl.c:437
 msgid ""
 "Either a certificate file or a directory must be specified as a verification "
 "store\n"
 msgstr ""
 
-#: src/lib/tls_openssl.c:442 src/lib/tls_openssl.c:448
-#: src/lib/tls_openssl.c:453
+#: src/lib/tls_openssl.c:452 src/lib/tls_openssl.c:458
+#: src/lib/tls_openssl.c:463
 #, fuzzy
 msgid "Error loading revocation list file"
 msgstr "Erreur dans le chargement du certificat"
 
-#: src/lib/tls_openssl.c:467
+#: src/lib/tls_openssl.c:477
 msgid "Error loading certificate file"
 msgstr "Erreur dans le chargement du certificat"
 
-#: src/lib/tls_openssl.c:477
+#: src/lib/tls_openssl.c:487
 msgid "Error loading private key"
 msgstr "Erreur dans le chargement de la clef privée"
 
-#: src/lib/tls_openssl.c:487
+#: src/lib/tls_openssl.c:497
 msgid "Unable to open DH parameters file"
 msgstr "Impossible d'ouvrir le fichier de paramètre DH"
 
-#: src/lib/tls_openssl.c:493
+#: src/lib/tls_openssl.c:503
 msgid "Unable to load DH parameters from specified file"
 msgstr "Impossible de charger les paramètres DH à partir du fichier spécifié"
 
-#: src/lib/tls_openssl.c:497
+#: src/lib/tls_openssl.c:507
 msgid "Failed to set TLS Diffie-Hellman parameters"
 msgstr "Impossible de positionner les paramètres TLS Diffie-Hellman"
 
-#: src/lib/tls_openssl.c:510
+#: src/lib/tls_openssl.c:520
 msgid "Error setting cipher list, no valid ciphers available\n"
 msgstr ""
 
-#: src/lib/tls_openssl.c:601
+#: src/lib/tls_openssl.c:611
 msgid "Peer failed to present a TLS certificate\n"
 msgstr ""
 
-#: src/lib/tls_openssl.c:655
+#: src/lib/tls_openssl.c:665
 #, c-format
 msgid "Peer %s failed to present a TLS certificate\n"
 msgstr ""
 
-#: src/lib/tls_openssl.c:781
+#: src/lib/tls_openssl.c:791
 msgid "Error creating file descriptor-based BIO"
 msgstr ""
 
-#: src/lib/tls_openssl.c:795
+#: src/lib/tls_openssl.c:805
 msgid "Error creating new SSL object"
 msgstr "Erreur pendant la création d'un nouvel objet SSL"
 
-#: src/lib/tls_openssl.c:853 src/lib/tls_openssl.c:864
+#: src/lib/tls_openssl.c:863 src/lib/tls_openssl.c:874
 msgid "Connect failure"
 msgstr "Erreur de connexion"
 
-#: src/lib/tls_openssl.c:941 src/lib/tls_openssl.c:945
+#: src/lib/tls_openssl.c:951 src/lib/tls_openssl.c:955
 msgid "TLS shutdown failure."
 msgstr ""
 
-#: src/lib/tls_openssl.c:993 src/lib/tls_openssl.c:1006
+#: src/lib/tls_openssl.c:1003 src/lib/tls_openssl.c:1016
 msgid "TLS read/write failure."
 msgstr ""
 
@@ -4423,7 +4423,7 @@ msgid ""
 "set\n"
 msgstr ""
 
-#: src/lib/parse_conf.c:575 src/lib/parse_conf.c:645 src/dird/dird_conf.c:2192
+#: src/lib/parse_conf.c:575 src/lib/parse_conf.c:645 src/dird/dird_conf.c:2191
 #: src/qt-tray-monitor/tray_conf.cpp:306
 #, c-format
 msgid "Too many items in %s resource\n"
@@ -4716,72 +4716,72 @@ msgstr ""
 msgid "Msg delivery error: fopen %s failed: ERR=%s\n"
 msgstr "fopen %s en erreur : ERR=%s\n"
 
-#: src/lib/message.c:1365
+#: src/lib/message.c:1385
 #, c-format
 msgid "%s: ABORTING due to ERROR in %s:%d\n"
 msgstr ""
 
-#: src/lib/message.c:1369
+#: src/lib/message.c:1389
 #, c-format
 msgid "%s: ERROR TERMINATION at %s:%d\n"
 msgstr ""
 
-#: src/lib/message.c:1374
+#: src/lib/message.c:1394
 #, c-format
 msgid "%s: Fatal Error because: "
 msgstr "%s : Erreur Fatale car : "
 
-#: src/lib/message.c:1376
+#: src/lib/message.c:1396
 #, c-format
 msgid "%s: Fatal Error at %s:%d because:\n"
 msgstr "%s : Erreur Fatale à %s:%d car :\n"
 
-#: src/lib/message.c:1380
+#: src/lib/message.c:1400
 #, c-format
 msgid "%s: ERROR: "
 msgstr "%s : ERREUR : "
 
-#: src/lib/message.c:1382
+#: src/lib/message.c:1402
 #, c-format
 msgid "%s: ERROR in %s:%d "
 msgstr "%s : ERREUR dans %s:%d "
 
-#: src/lib/message.c:1385
+#: src/lib/message.c:1405
 #, c-format
 msgid "%s: Warning: "
 msgstr "%s : Attention : "
 
-#: src/lib/message.c:1388
+#: src/lib/message.c:1408
 #, c-format
 msgid "%s: Security violation: "
 msgstr ""
 
-#: src/lib/message.c:1480
+#: src/lib/message.c:1500
 #, c-format
 msgid "%s ABORTING due to ERROR\n"
 msgstr ""
 
-#: src/lib/message.c:1483
+#: src/lib/message.c:1503
 #, c-format
 msgid "%s ERROR TERMINATION\n"
 msgstr ""
 
-#: src/lib/message.c:1486
+#: src/lib/message.c:1506
 #, fuzzy, c-format
 msgid "%s JobId %u: Fatal error: "
 msgstr "%s : %s Erreur fatale : "
 
-#: src/lib/message.c:1495
+#: src/lib/message.c:1515
 #, fuzzy, c-format
 msgid "%s JobId %u: Error: "
 msgstr "%s : %s Erreur : "
 
-#: src/lib/message.c:1501
+#: src/lib/message.c:1521
 #, fuzzy, c-format
 msgid "%s JobId %u: Warning: "
 msgstr "%s : Attention : "
 
-#: src/lib/message.c:1507
+#: src/lib/message.c:1527
 #, c-format
 msgid "%s JobId %u: Security violation: "
 msgstr ""
@@ -4820,8 +4820,8 @@ msgstr "Impossible d'ouvrir le fichier de configuration \"%s\" : %s\n"
 msgid "Start Admin JobId %d, Job=%s\n"
 msgstr ""
 
-#: src/dird/admin.c:77 src/dird/migrate.c:1605 src/dird/ndmp_dma.c:2359
-#: src/dird/vbackup.c:324 src/dird/backup.c:751
+#: src/dird/admin.c:77 src/dird/migrate.c:1605 src/dird/ndmp_dma.c:2361
+#: src/dird/vbackup.c:340 src/dird/backup.c:751
 #, fuzzy, c-format
 msgid "Error getting Job record for Job report: ERR=%s"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
@@ -4838,8 +4838,8 @@ msgstr "*** Admin en Erreur ***"
 msgid "Admin Canceled"
 msgstr "Admin Annulé"
 
-#: src/dird/admin.c:97 src/dird/restore.c:501 src/dird/ndmp_dma.c:2401
-#: src/dird/ndmp_dma.c:2875 src/dird/vbackup.c:366 src/dird/backup.c:796
+#: src/dird/admin.c:97 src/dird/restore.c:501 src/dird/ndmp_dma.c:2403
+#: src/dird/ndmp_dma.c:2877 src/dird/vbackup.c:382 src/dird/backup.c:796
 #, c-format
 msgid "Inappropriate term code: %c\n"
 msgstr ""
@@ -4991,7 +4991,7 @@ msgstr "Début de purge des Jobs du catalogue (prune).\n"
 msgid "Pruned %d %s for client %s from catalog.\n"
 msgstr "Purge du catalogue (prune) de %d %s du client %s.\n"
 
-#: src/dird/ua_prune.c:811 src/dird/ua_run.c:484 src/dird/ua_select.c:265
+#: src/dird/ua_prune.c:811 src/dird/ua_run.c:553 src/dird/ua_select.c:265
 #: src/dird/ua_select.c:288 src/dird/ua_select.c:328 src/dird/ua_select.c:1443
 msgid "Job"
 msgstr "Job"
@@ -5074,153 +5074,153 @@ msgstr ""
 msgid "Run queue"
 msgstr ""
 
-#: src/dird/dird_conf.c:1683 src/qt-tray-monitor/tray_conf.cpp:172
+#: src/dird/dird_conf.c:1682 src/qt-tray-monitor/tray_conf.cpp:172
 #, c-format
 msgid "No %s resource defined\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:1762 src/qt-tray-monitor/tray_conf.cpp:203
+#: src/dird/dird_conf.c:1761 src/qt-tray-monitor/tray_conf.cpp:203
 #, c-format
 msgid "Unknown resource type %d in dump_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2148 src/qt-tray-monitor/tray_conf.cpp:267
+#: src/dird/dird_conf.c:2147 src/qt-tray-monitor/tray_conf.cpp:267
 #, c-format
 msgid "Unknown resource type %d in free_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2236
+#: src/dird/dird_conf.c:2235
 #, c-format
 msgid "Cannot find Pool resource %s\n"
 msgstr "Impossible de trouver la ressource Pool \"%s\"\n"
 
-#: src/dird/dird_conf.c:2252
+#: src/dird/dird_conf.c:2251
 #, c-format
 msgid "Cannot find Console resource %s\n"
 msgstr "Impossible de trouver la ressource Console \"%s\"\n"
 
-#: src/dird/dird_conf.c:2270 src/stored/stored_conf.c:848
+#: src/dird/dird_conf.c:2269 src/stored/stored_conf.c:848
 #, c-format
 msgid "Cannot find Storage resource %s\n"
 msgstr "Impossible de trouver la ressource Storage \"%s\"\n"
 
-#: src/dird/dird_conf.c:2283
+#: src/dird/dird_conf.c:2282
 #, c-format
 msgid "Cannot find Job resource %s\n"
 msgstr "Impossible de trouver la ressource Job \"%s\"\n"
 
-#: src/dird/dird_conf.c:2337
+#: src/dird/dird_conf.c:2336
 #, c-format
 msgid "Cannot find Counter resource %s\n"
 msgstr "Impossible de trouver la ressource Counter \"%s\"\n"
 
-#: src/dird/dird_conf.c:2366
+#: src/dird/dird_conf.c:2365
 #, c-format
 msgid "Cannot find Schedule resource %s\n"
 msgstr "Impossible de trouver la ressource Schedule \"%s\"\n"
 
-#: src/dird/dird_conf.c:2372 src/qt-tray-monitor/tray_conf.cpp:328
+#: src/dird/dird_conf.c:2371 src/qt-tray-monitor/tray_conf.cpp:328
 #, c-format
 msgid "Unknown resource type %d in save_resource.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2407
+#: src/dird/dird_conf.c:2406
 #, c-format
 msgid "Name item is required in %s resource, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2422
+#: src/dird/dird_conf.c:2421
 #, c-format
 msgid "Inserting %s res: %s index=%d pass=%d\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2512
+#: src/dird/dird_conf.c:2511
 #, c-format
 msgid "Hey something is wrong. p=0x%lu\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2617
+#: src/dird/dird_conf.c:2616
 #, c-format
 msgid "\"%s\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2628
+#: src/dird/dird_conf.c:2627
 msgid "Too many items in Job resource\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2649
+#: src/dird/dird_conf.c:2648
 #, c-format
 msgid ""
 "\"client\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2656
+#: src/dird/dird_conf.c:2655
 #, c-format
 msgid ""
 "\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"
 msgstr ""
 
-#: src/dird/dird_conf.c:2662
+#: src/dird/dird_conf.c:2661
 #, c-format
 msgid "No storage specified in Job \"%s\" nor in Pool.\n"
 msgstr "Pas de Storage spécifié dans le job \"%s\" ni dans le Pool.\n"
 
-#: src/dird/dird_conf.c:2692
+#: src/dird/dird_conf.c:2691
 #, fuzzy, c-format
 msgid "Expected an Action On Purge option, got: %s"
 msgstr "Attendait un niveau de remplacement, eu : %s"
 
-#: src/dird/dird_conf.c:2769
+#: src/dird/dird_conf.c:2768
 #, c-format
 msgid "Expected a Migration Job Type keyword, got: %s"
 msgstr "Attendait un type de Job de Migration, eu : %s"
 
-#: src/dird/dird_conf.c:2797
+#: src/dird/dird_conf.c:2796
 #, c-format
 msgid "Expected a Job Type keyword, got: %s"
 msgstr ""
 
-#: src/dird/dird_conf.c:2825
+#: src/dird/dird_conf.c:2824
 #, fuzzy, c-format
 msgid "Expected a Protocol Type keyword, got: %s"
 msgstr "Attendait un type de Job de Migration, eu : %s"
 
-#: src/dird/dird_conf.c:2850
+#: src/dird/dird_conf.c:2849
 #, c-format
 msgid "Expected a Restore replacement option, got: %s"
 msgstr "Attendait un niveau de remplacement, eu : %s"
 
-#: src/dird/dird_conf.c:2878
+#: src/dird/dird_conf.c:2877
 #, fuzzy, c-format
 msgid "Expected a Auth Protocol Type keyword, got: %s"
 msgstr "Attendait un type de Job de Migration, eu : %s"
 
-#: src/dird/dird_conf.c:2905 src/stored/stored_conf.c:319
+#: src/dird/dird_conf.c:2904 src/stored/stored_conf.c:319
 #, fuzzy, c-format
 msgid "Expected a Authentication Type keyword, got: %s"
 msgstr "Attendait un type de Job de Migration, eu : %s"
 
-#: src/dird/dird_conf.c:2933
+#: src/dird/dird_conf.c:2932
 #, c-format
 msgid "Expected a Job Level keyword, got: %s"
 msgstr "Attendait un niveau de sauvegarde, eu : %s"
 
-#: src/dird/dird_conf.c:3211 src/dird/inc_conf.c:535
+#: src/dird/dird_conf.c:3210 src/dird/inc_conf.c:535
 #, c-format
 msgid "Expecting open brace. Got %s"
 msgstr "Attendait {, eu : %s"
 
-#: src/dird/dird_conf.c:3228 src/dird/inc_conf.c:550 src/dird/inc_conf.c:730
+#: src/dird/dird_conf.c:3227 src/dird/inc_conf.c:550 src/dird/inc_conf.c:730
 #, c-format
 msgid "Expecting keyword, got: %s\n"
 msgstr "Attendait un mot clef, eu : %s\n"
 
-#: src/dird/dird_conf.c:3235 src/dird/run_conf.c:200
+#: src/dird/dird_conf.c:3234 src/dird/run_conf.c:200
 #, c-format
 msgid "Expected an equals, got: %s"
 msgstr "Attendait un égale, pas : %s"
 
-#: src/dird/dird_conf.c:3263 src/dird/inc_conf.c:592 src/dird/inc_conf.c:764
+#: src/dird/dird_conf.c:3262 src/dird/inc_conf.c:592 src/dird/inc_conf.c:764
 #, c-format
 msgid "Keyword %s not permitted in this resource"
 msgstr ""
@@ -5291,7 +5291,7 @@ msgstr "JobId %d a utilisé %d volume(s) : %s\n"
 msgid "No Pool specified.\n"
 msgstr "Pas de Pool spécifié.\n"
 
-#: src/dird/ua_output.c:575 src/dird/ua_update.c:438 src/dird/ua_select.c:581
+#: src/dird/ua_output.c:575 src/dird/ua_update.c:437 src/dird/ua_select.c:581
 #, c-format
 msgid "Error obtaining pool ids. ERR=%s\n"
 msgstr "Erreur pendant lors de la récupération du pool. ERR=%s\n"
@@ -5356,7 +5356,7 @@ msgstr "Pool %s créé en base.\n"
 msgid "You have no messages.\n"
 msgstr "Vous n'avez pas de messages.\n"
 
-#: src/dird/ua_output.c:979
+#: src/dird/ua_output.c:981
 msgid "Message too long to display.\n"
 msgstr ""
 
@@ -5616,12 +5616,12 @@ msgid "No Volumes found, or no barcodes.\n"
 msgstr "Pas de volume à labéliser ou pas de codebar.\n"
 
 #: src/dird/ua_status.c:1503 src/dird/ua_label.c:150 src/dird/ua_impexp.c:1036
-#: src/dird/ua_update.c:1019 src/dird/ua_run.c:772 src/dird/ua_run.c:780
-#: src/dird/ua_run.c:1992
+#: src/dird/ua_update.c:1024 src/dird/ua_run.c:839 src/dird/ua_run.c:847
+#: src/dird/ua_run.c:2059
 msgid "command line"
 msgstr ""
 
-#: src/dird/ua_status.c:1508 src/dird/ua_label.c:364 src/dird/ua_update.c:1039
+#: src/dird/ua_status.c:1508 src/dird/ua_label.c:364 src/dird/ua_update.c:1044
 msgid "No slots in changer to scan.\n"
 msgstr "Pas de slot dans le magasin à scanner.\n"
 
@@ -5637,7 +5637,7 @@ msgid ""
 "+--------------------------|\n"
 msgstr ""
 
-#: src/dird/ua_status.c:1541 src/dird/ua_update.c:1067
+#: src/dird/ua_status.c:1541 src/dird/ua_update.c:1072
 #, c-format
 msgid "Slot %d greater than max %d ignored.\n"
 msgstr "Le slot %d est ignoré car il est supérieur au maximum %d.\n"
@@ -5734,7 +5734,7 @@ msgid "Unable to get Job record for JobId=%s: ERR=%s\n"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
 
 #: src/dird/ua_dotcmds.c:654 src/dird/sd_cmds.c:742 src/dird/sd_cmds.c:894
-#: src/dird/ua_cmds.c:1083 src/dird/ua_cmds.c:2047 src/dird/job.c:163
+#: src/dird/ua_cmds.c:1093 src/dird/ua_cmds.c:2122 src/dird/job.c:163
 #: src/dird/job.c:168 src/dird/job.c:174 src/dird/job.c:1040
 #: src/dird/job.c:1509 src/dird/job.c:1513 src/dird/job.c:1517
 msgid "unknown source"
@@ -5744,18 +5744,18 @@ msgstr "source inconnue"
 msgid "Could not open SD socket.\n"
 msgstr "Impossible d'ouvrir la socket avec le SD.\n"
 
-#: src/dird/ua_dotcmds.c:662 src/dird/sd_cmds.c:764 src/dird/ua_cmds.c:1097
+#: src/dird/ua_dotcmds.c:662 src/dird/sd_cmds.c:764 src/dird/ua_cmds.c:1107
 msgid "Connected to storage daemon\n"
 msgstr "Connecté au Storage Daemon\n"
 
 #: src/dird/ua_dotcmds.c:681 src/dird/fd_cmds.c:988 src/dird/fd_cmds.c:1039
-#: src/dird/ua_cmds.c:783 src/dird/ua_cmds.c:1132 src/dird/ua_cmds.c:1672
+#: src/dird/ua_cmds.c:783 src/dird/ua_cmds.c:1154 src/dird/ua_cmds.c:1747
 #, c-format
 msgid "Connecting to Client %s at %s:%d\n"
 msgstr "Connexion au client %s (%s:%d)\n"
 
-#: src/dird/ua_dotcmds.c:684 src/dird/ua_cmds.c:787 src/dird/ua_cmds.c:1136
-#: src/dird/ua_cmds.c:1675
+#: src/dird/ua_dotcmds.c:684 src/dird/ua_cmds.c:787 src/dird/ua_cmds.c:1158
+#: src/dird/ua_cmds.c:1750
 msgid "Failed to connect to Client.\n"
 msgstr "Impossible de se connecter au Client.\n"
 
@@ -5764,21 +5764,21 @@ msgstr "Impossible de se connecter au Client.\n"
 msgid "Unknown command: %s\n"
 msgstr "Erreur inconnue."
 
-#: src/dird/ua_dotcmds.c:765 src/dird/ua_cmds.c:1335
+#: src/dird/ua_dotcmds.c:765 src/dird/ua_cmds.c:1409
 msgid "Available daemons are: \n"
 msgstr "Les démons disponibles sont :\n"
 
-#: src/dird/ua_dotcmds.c:766 src/dird/ua_cmds.c:1336
+#: src/dird/ua_dotcmds.c:766 src/dird/ua_cmds.c:1410
 msgid "Director"
 msgstr "Director"
 
-#: src/dird/ua_dotcmds.c:767 src/dird/ua_run.c:483 src/dird/ua_select.c:168
-#: src/dird/ua_cmds.c:1337
+#: src/dird/ua_dotcmds.c:767 src/dird/ua_run.c:552 src/dird/ua_select.c:168
+#: src/dird/ua_cmds.c:1411
 msgid "Storage"
 msgstr "Stockage"
 
-#: src/dird/ua_dotcmds.c:768 src/dird/ua_run.c:489 src/dird/ua_select.c:351
-#: src/dird/ua_select.c:378 src/dird/ua_select.c:514 src/dird/ua_cmds.c:1338
+#: src/dird/ua_dotcmds.c:768 src/dird/ua_run.c:558 src/dird/ua_select.c:351
+#: src/dird/ua_select.c:378 src/dird/ua_select.c:514 src/dird/ua_cmds.c:1412
 msgid "Client"
 msgstr "Client"
 
@@ -5787,8 +5787,8 @@ msgid "Select daemon type to make die"
 msgstr "Sélectionnez le composant a tuer"
 
 #: src/dird/ua_dotcmds.c:789 src/dird/ua_label.c:142 src/dird/ua_impexp.c:1030
-#: src/dird/ua_purge.c:777 src/dird/ua_cmds.c:1320 src/dird/ua_cmds.c:1352
-#: src/dird/ua_cmds.c:2041
+#: src/dird/ua_purge.c:777 src/dird/ua_cmds.c:1394 src/dird/ua_cmds.c:1426
+#: src/dird/ua_cmds.c:2116
 msgid "Storage has non-native protocol.\n"
 msgstr ""
 
@@ -5834,11 +5834,11 @@ msgstr "Erreur sur l'ouverture du périphérique. ERR=%s\n"
 #: src/dird/ua_dotcmds.c:1234 src/dird/ua_dotcmds.c:1240
 #: src/dird/ua_dotcmds.c:1242 src/dird/migrate.c:1753 src/dird/migrate.c:1754
 #: src/dird/migrate.c:1756 src/dird/migrate.c:1759 src/dird/migrate.c:1761
-#: src/dird/ua_update.c:365 src/dird/ua_run.c:1166 src/dird/ua_run.c:1180
-#: src/dird/ua_run.c:1213 src/dird/ua_run.c:1215 src/dird/ua_run.c:1241
-#: src/dird/ua_run.c:1245 src/dird/ua_run.c:1493 src/dird/ua_run.c:1526
-#: src/dird/ua_run.c:1527 src/dird/ua_run.c:1528 src/dird/ua_run.c:1552
-#: src/dird/ua_run.c:1554 src/dird/ua_run.c:1556 src/dird/ua_select.c:591
+#: src/dird/ua_update.c:365 src/dird/ua_run.c:1233 src/dird/ua_run.c:1247
+#: src/dird/ua_run.c:1280 src/dird/ua_run.c:1282 src/dird/ua_run.c:1308
+#: src/dird/ua_run.c:1312 src/dird/ua_run.c:1560 src/dird/ua_run.c:1593
+#: src/dird/ua_run.c:1594 src/dird/ua_run.c:1595 src/dird/ua_run.c:1619
+#: src/dird/ua_run.c:1621 src/dird/ua_run.c:1623 src/dird/ua_select.c:591
 #: src/dird/ua_select.c:611 src/include/baconfig.h:88
 msgid "*None*"
 msgstr ""
@@ -5857,36 +5857,36 @@ msgid ""
 "client or disable compat mode.\n"
 msgstr ""
 
-#: src/dird/restore.c:417 src/dird/ndmp_dma.c:2792
+#: src/dird/restore.c:417 src/dird/ndmp_dma.c:2794
 msgid ""
 "Cannot restore without a bootstrap file.\n"
 "You probably ran a restore job directly. All restore jobs must\n"
 "be run using the restore command.\n"
 msgstr ""
 
-#: src/dird/restore.c:426 src/dird/ndmp_dma.c:2801
+#: src/dird/restore.c:426 src/dird/ndmp_dma.c:2803
 #, c-format
 msgid "Start Restore Job %s\n"
 msgstr "Démarrage du Job de restauration %s\n"
 
-#: src/dird/restore.c:471 src/dird/ndmp_dma.c:2845
+#: src/dird/restore.c:471 src/dird/ndmp_dma.c:2847
 msgid "Restore OK -- warning file count mismatch"
 msgstr "Restauration Ok -- attention le nombre de fichier ne correspond pas"
 
-#: src/dird/restore.c:473 src/dird/ndmp_dma.c:2847
+#: src/dird/restore.c:473 src/dird/ndmp_dma.c:2849
 msgid "Restore OK"
 msgstr "Restauration OK"
 
-#: src/dird/restore.c:477 src/dird/ndmp_dma.c:2851
+#: src/dird/restore.c:477 src/dird/ndmp_dma.c:2853
 #, fuzzy
 msgid "Restore OK -- with warnings"
 msgstr "Backup OK -- avec des erreurs"
 
-#: src/dird/restore.c:481 src/dird/ndmp_dma.c:2855
+#: src/dird/restore.c:481 src/dird/ndmp_dma.c:2857
 msgid "*** Restore Error ***"
 msgstr "*** Restauration en erreur ***"
 
-#: src/dird/restore.c:491 src/dird/ndmp_dma.c:2865
+#: src/dird/restore.c:491 src/dird/ndmp_dma.c:2867
 msgid "Restore Canceled"
 msgstr "Restauration annulée"
 
@@ -6103,7 +6103,7 @@ msgstr "bget_dirmsg : signal bnet inconnu %d\n"
 
 #: src/dird/getmsg.c:196 src/dird/getmsg.c:205 src/dird/getmsg.c:218
 #: src/dird/getmsg.c:252 src/dird/getmsg.c:274 src/dird/getmsg.c:300
-#: src/dird/stats.c:233 src/dird/stats.c:254 src/dird/stats.c:275
+#: src/dird/stats.c:269 src/dird/stats.c:290 src/dird/stats.c:311
 #, c-format
 msgid "Malformed message: %s\n"
 msgstr "Message mal formé : %s\n"
@@ -6511,7 +6511,7 @@ msgstr ""
 msgid "Unknown keyword: %s\n"
 msgstr "Mot clef inconnu : %s\n"
 
-#: src/dird/ua_restore.c:564 src/dird/ua_update.c:965
+#: src/dird/ua_restore.c:564 src/dird/ua_update.c:970
 #, c-format
 msgid "Improper date format: %s\n"
 msgstr "Format de date invalide : %s\n"
@@ -6742,7 +6742,7 @@ msgstr "FileSet"
 msgid "The defined FileSet resources are:\n"
 msgstr "Les FileSet définis sont :\n"
 
-#: src/dird/ua_restore.c:1344 src/dird/ua_run.c:485 src/dird/ua_select.c:191
+#: src/dird/ua_restore.c:1344 src/dird/ua_run.c:554 src/dird/ua_select.c:191
 msgid "FileSet"
 msgstr "FileSet"
 
@@ -6951,14 +6951,14 @@ msgstr "La ressource Pool \"%s\" est introuvable !\n"
 msgid "setup job failed.\n"
 msgstr "Job échoué.\n"
 
-#: src/dird/migrate.c:289 src/dird/migrate.c:290 src/dird/ndmp_dma.c:1956
+#: src/dird/migrate.c:289 src/dird/migrate.c:290 src/dird/ndmp_dma.c:1958
 #: src/dird/vbackup.c:80 src/dird/backup.c:107 src/dird/job.c:210
 #: src/dird/job.c:1173 src/dird/job.c:1472 src/dird/job.c:1528
 #: src/dird/job.c:1547
 msgid "Pool resource"
 msgstr "Ressource Pool"
 
-#: src/dird/migrate.c:302 src/dird/jobq.c:759 src/dird/jobq.c:764
+#: src/dird/migrate.c:302 src/dird/jobq.c:745 src/dird/jobq.c:750
 msgid "previous Job"
 msgstr ""
 
@@ -6972,34 +6972,34 @@ msgstr ""
 msgid "Pool resource \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/migrate.c:357 src/dird/migrate.c:358 src/dird/vbackup.c:95
-#: src/dird/vbackup.c:96
+#: src/dird/migrate.c:357 src/dird/migrate.c:358 src/dird/vbackup.c:94
+#: src/dird/vbackup.c:95
 msgid "Run NextPool override"
 msgstr ""
 
-#: src/dird/migrate.c:359 src/dird/vbackup.c:97 src/dird/ua_run.c:885
+#: src/dird/migrate.c:359 src/dird/vbackup.c:96 src/dird/ua_run.c:952
 #, fuzzy
 msgid "Storage from Run NextPool override"
 msgstr "Sélectionnez le Pool"
 
-#: src/dird/migrate.c:366 src/dird/migrate.c:367 src/dird/vbackup.c:104
-#: src/dird/vbackup.c:105
+#: src/dird/migrate.c:366 src/dird/migrate.c:367 src/dird/vbackup.c:103
+#: src/dird/vbackup.c:104
 #, fuzzy
 msgid "Job's NextPool resource"
 msgstr "Sélectionnez le Pool"
 
-#: src/dird/migrate.c:368 src/dird/vbackup.c:106
+#: src/dird/migrate.c:368 src/dird/vbackup.c:105
 #, fuzzy
 msgid "Storage from Job's NextPool resource"
 msgstr "Sélectionnez le Pool"
 
-#: src/dird/migrate.c:374 src/dird/migrate.c:375 src/dird/vbackup.c:112
-#: src/dird/vbackup.c:113
+#: src/dird/migrate.c:374 src/dird/migrate.c:375 src/dird/vbackup.c:111
+#: src/dird/vbackup.c:112
 #, fuzzy
 msgid "Job Pool's NextPool resource"
 msgstr "Sélectionnez le Pool"
 
-#: src/dird/migrate.c:376 src/dird/vbackup.c:114
+#: src/dird/migrate.c:376 src/dird/vbackup.c:113
 #, fuzzy
 msgid "Storage from Pool's NextPool resource"
 msgstr "Sélectionnez le Pool"
@@ -8028,7 +8028,7 @@ msgstr ""
 msgid "Invalid slot, it must be between 0 and MaxVols=%d\n"
 msgstr "Slot invalide, il doit être compris entre 0 et MaxVols=%d\n"
 
-#: src/dird/ua_update.c:304 src/dird/ua_update.c:738
+#: src/dird/ua_update.c:304 src/dird/ua_update.c:743
 #, c-format
 msgid "Error updating media record Slot: ERR=%s"
 msgstr ""
@@ -8058,219 +8058,219 @@ msgstr ""
 msgid "Volume defaults updated from \"%s\" Pool record.\n"
 msgstr ""
 
-#: src/dird/ua_update.c:420 src/dird/ua_update.c:453
+#: src/dird/ua_update.c:419 src/dird/ua_update.c:459
 #, c-format
 msgid "Error updating Volume records: ERR=%s"
 msgstr ""
 
-#: src/dird/ua_update.c:422 src/dird/ua_update.c:455
+#: src/dird/ua_update.c:421 src/dird/ua_update.c:461
 #, c-format
 msgid "All Volume defaults updated from \"%s\" Pool record.\n"
 msgstr ""
 
-#: src/dird/ua_update.c:445
+#: src/dird/ua_update.c:444
 #, c-format
 msgid "Updating all pools, but skipped PoolId=%d. ERR=%s\n"
 msgstr ""
 
-#: src/dird/ua_update.c:471
+#: src/dird/ua_update.c:476
 #, fuzzy, c-format
 msgid "Error updating media record Enabled: ERR=%s"
 msgstr "Impossible de mettre à jour les informations du Volume : ERR=%s"
 
-#: src/dird/ua_update.c:474
+#: src/dird/ua_update.c:479
 #, fuzzy, c-format
 msgid "New Enabled is: %d\n"
 msgstr "Le nouveau flag Enabled est : %d\n"
 
-#: src/dird/ua_update.c:489
+#: src/dird/ua_update.c:494
 #, fuzzy, c-format
 msgid "Error updating media record ActionOnPurge: ERR=%s"
 msgstr "Impossible de mettre à jour les informations du Volume : ERR=%s"
 
-#: src/dird/ua_update.c:492
+#: src/dird/ua_update.c:497
 #, fuzzy, c-format
 msgid "New ActionOnPurge is: %s\n"
 msgstr "La nouvelle durée d'utilisation est : %s\n"
 
-#: src/dird/ua_update.c:615 src/dird/ua_run.c:480
+#: src/dird/ua_update.c:620 src/dird/ua_run.c:549
 msgid "Parameters to modify:\n"
 msgstr "Paramètre à modifier :\n"
 
-#: src/dird/ua_update.c:616
+#: src/dird/ua_update.c:621
 msgid "Volume Status"
 msgstr "Statut d'un volume"
 
-#: src/dird/ua_update.c:617
+#: src/dird/ua_update.c:622
 msgid "Volume Retention Period"
 msgstr "Période de rétention d'un volume"
 
-#: src/dird/ua_update.c:618
+#: src/dird/ua_update.c:623
 msgid "Volume Use Duration"
 msgstr "Durée d'utilisation d'un volume"
 
-#: src/dird/ua_update.c:619
+#: src/dird/ua_update.c:624
 msgid "Maximum Volume Jobs"
 msgstr "Nombre maximum de job sur un volume"
 
-#: src/dird/ua_update.c:620
+#: src/dird/ua_update.c:625
 msgid "Maximum Volume Files"
 msgstr "Nombre maximum de fichier sur un volume"
 
-#: src/dird/ua_update.c:621
+#: src/dird/ua_update.c:626
 msgid "Maximum Volume Bytes"
 msgstr "Taille maximum d'un volume"
 
-#: src/dird/ua_update.c:622
+#: src/dird/ua_update.c:627
 msgid "Recycle Flag"
 msgstr "Flag de recyclage"
 
-#: src/dird/ua_update.c:623
+#: src/dird/ua_update.c:628
 msgid "Slot"
 msgstr ""
 
-#: src/dird/ua_update.c:624
+#: src/dird/ua_update.c:629
 msgid "InChanger Flag"
 msgstr "Flag InChanger"
 
-#: src/dird/ua_update.c:625
+#: src/dird/ua_update.c:630
 msgid "Volume Files"
 msgstr "Fichiers du Volume"
 
-#: src/dird/ua_update.c:626 src/dird/ua_run.c:498 src/dird/ua_select.c:602
+#: src/dird/ua_update.c:631 src/dird/ua_run.c:567 src/dird/ua_select.c:602
 #: src/dird/ua_select.c:720
 msgid "Pool"
 msgstr "Pool"
 
-#: src/dird/ua_update.c:627
+#: src/dird/ua_update.c:632
 msgid "Volume from Pool"
 msgstr ""
 
-#: src/dird/ua_update.c:628
+#: src/dird/ua_update.c:633
 msgid "All Volumes from Pool"
 msgstr ""
 
-#: src/dird/ua_update.c:629
+#: src/dird/ua_update.c:634
 msgid "All Volumes from all Pools"
 msgstr ""
 
-#: src/dird/ua_update.c:630
+#: src/dird/ua_update.c:635
 msgid "Enabled"
 msgstr ""
 
-#: src/dird/ua_update.c:631
+#: src/dird/ua_update.c:636
 msgid "RecyclePool"
 msgstr "RecyclePool"
 
-#: src/dird/ua_update.c:632
+#: src/dird/ua_update.c:637
 msgid "Action On Purge"
 msgstr ""
 
-#: src/dird/ua_update.c:633
+#: src/dird/ua_update.c:638
 msgid "Done"
 msgstr "Fin"
 
-#: src/dird/ua_update.c:634 src/dird/ua_run.c:521 src/dird/ua_run.c:959
+#: src/dird/ua_update.c:639 src/dird/ua_run.c:590 src/dird/ua_run.c:1026
 msgid "Select parameter to modify"
 msgstr "Sélectionnez le paramètre à modifier"
 
-#: src/dird/ua_update.c:642
+#: src/dird/ua_update.c:647
 #, c-format
 msgid "Updating Volume \"%s\"\n"
 msgstr "Mise à jour du Volume \"%s\"\n"
 
-#: src/dird/ua_update.c:647
+#: src/dird/ua_update.c:652
 #, c-format
 msgid "Current Volume status is: %s\n"
 msgstr "Le statut actuel du volume (Volume status) est : %s\n"
 
-#: src/dird/ua_update.c:648
+#: src/dird/ua_update.c:653
 msgid "Possible Values are:\n"
 msgstr "Les valeurs possibles sont :\n"
 
-#: src/dird/ua_update.c:659
+#: src/dird/ua_update.c:664
 msgid "Choose new Volume Status"
 msgstr "Saisissez le nouveau statut du volume (Volume Status)"
 
-#: src/dird/ua_update.c:665
+#: src/dird/ua_update.c:670
 #, c-format
 msgid "Current retention period is: %s\n"
 msgstr "La période de rétention actuelle est : %s\n"
 
-#: src/dird/ua_update.c:667
+#: src/dird/ua_update.c:672
 msgid "Enter Volume Retention period: "
 msgstr "Saisissez la période de rétention du volume : "
 
-#: src/dird/ua_update.c:674
+#: src/dird/ua_update.c:679
 #, c-format
 msgid "Current use duration is: %s\n"
 msgstr "La durée d'utilisation actuelle est : %s\n"
 
-#: src/dird/ua_update.c:676
+#: src/dird/ua_update.c:681
 msgid "Enter Volume Use Duration: "
 msgstr "Saisissez la durée d'utilisation du volume : "
 
-#: src/dird/ua_update.c:683
+#: src/dird/ua_update.c:688
 #, c-format
 msgid "Current max jobs is: %u\n"
 msgstr "Le nombre maximum de Job actuel est : %u\n"
 
-#: src/dird/ua_update.c:684
+#: src/dird/ua_update.c:689
 msgid "Enter new Maximum Jobs: "
 msgstr "Saisissez la valeur du nombre maximum de Job : "
 
-#: src/dird/ua_update.c:691
+#: src/dird/ua_update.c:696
 #, c-format
 msgid "Current max files is: %u\n"
 msgstr "Le nombre maximum de fichier actuel est : %u\n"
 
-#: src/dird/ua_update.c:692
+#: src/dird/ua_update.c:697
 msgid "Enter new Maximum Files: "
 msgstr "Saisissez la valeur du nombre maximum de fichier (Maximum Files) : "
 
-#: src/dird/ua_update.c:699
+#: src/dird/ua_update.c:704
 #, c-format
 msgid "Current value is: %s\n"
 msgstr "La valeur actuelle est : %s\n"
 
-#: src/dird/ua_update.c:700
+#: src/dird/ua_update.c:705
 msgid "Enter new Maximum Bytes: "
 msgstr "Saisissez la nouvelle taille maximum (octets) : "
 
-#: src/dird/ua_update.c:708
+#: src/dird/ua_update.c:713
 #, c-format
 msgid "Current recycle flag is: %s\n"
 msgstr "Le flag de recyclage courant est : %s\n"
 
-#: src/dird/ua_update.c:710
+#: src/dird/ua_update.c:715
 msgid "Enter new Recycle status: "
 msgstr ""
 
-#: src/dird/ua_update.c:717
+#: src/dird/ua_update.c:722
 #, c-format
 msgid "Current Slot is: %d\n"
 msgstr "Le slot courant est : %d\n"
 
-#: src/dird/ua_update.c:718
+#: src/dird/ua_update.c:723
 msgid "Enter new Slot: "
 msgstr "Saisissez le nouveau slot : "
 
-#: src/dird/ua_update.c:725
+#: src/dird/ua_update.c:730
 #, c-format
 msgid "Current InChanger flag is: %d\n"
 msgstr "Le flag InChanger courant est : %d\n"
 
-#: src/dird/ua_update.c:726
+#: src/dird/ua_update.c:731
 #, fuzzy, c-format
 msgid "Set InChanger flag for Volume \"%s\": yes/no: "
 msgstr "Positionner le flag InChanger ? oui/non : "
 
-#: src/dird/ua_update.c:740
+#: src/dird/ua_update.c:745
 #, c-format
 msgid "New InChanger flag is: %d\n"
 msgstr "Le nouveau flag InChanger est : %d\n"
 
-#: src/dird/ua_update.c:747
+#: src/dird/ua_update.c:752
 msgid ""
 "Warning changing Volume Files can result\n"
 "in loss of data on your Volume\n"
@@ -8280,117 +8280,117 @@ msgstr ""
 "vous faire perdre des données du Volume\n"
 "\n"
 
-#: src/dird/ua_update.c:749
+#: src/dird/ua_update.c:754
 #, c-format
 msgid "Current Volume Files is: %u\n"
 msgstr "Le nombre courant de fichier sur le Volume est : %u\n"
 
-#: src/dird/ua_update.c:750
+#: src/dird/ua_update.c:755
 msgid "Enter new number of Files for Volume: "
 msgstr "Saisissez le nouveau nombre de fichiers du Volume : "
 
-#: src/dird/ua_update.c:755
+#: src/dird/ua_update.c:760
 msgid "Normally, you should only increase Volume Files by one!\n"
 msgstr ""
 "Logiquement, vous devez augmenter le nombre de fichier du Volume d'un !\n"
 
-#: src/dird/ua_update.c:756
+#: src/dird/ua_update.c:761
 #, fuzzy
 msgid "Increase Volume Files? (yes/no): "
 msgstr "Le nouveau nombre de fichier du Volume est : %u\n"
 
-#: src/dird/ua_update.c:766
+#: src/dird/ua_update.c:771
 #, c-format
 msgid "New Volume Files is: %u\n"
 msgstr "Le nouveau nombre de fichier du Volume est : %u\n"
 
-#: src/dird/ua_update.c:777
+#: src/dird/ua_update.c:782
 #, c-format
 msgid "Current Pool is: %s\n"
 msgstr "Le pool courant est : %s\n"
 
-#: src/dird/ua_update.c:778
+#: src/dird/ua_update.c:783
 msgid "Enter new Pool name: "
 msgstr "Saisissez le nouveau nom pour ce pool : "
 
-#: src/dird/ua_update.c:799
+#: src/dird/ua_update.c:804
 #, c-format
 msgid "Current Enabled is: %d\n"
 msgstr "La valeur actuelle de Enabled est : %d\n"
 
-#: src/dird/ua_update.c:800
+#: src/dird/ua_update.c:805
 msgid "Enter new Enabled: "
 msgstr "Saisissez la nouvelle valeur pour Enabled : "
 
-#: src/dird/ua_update.c:818
+#: src/dird/ua_update.c:823
 #, c-format
 msgid "Current RecyclePool is: %s\n"
 msgstr "Le RecyclePool courant est : %s\n"
 
-#: src/dird/ua_update.c:820
+#: src/dird/ua_update.c:825
 msgid "No current RecyclePool\n"
 msgstr "Pas de RecyclePool courant\n"
 
-#: src/dird/ua_update.c:830
+#: src/dird/ua_update.c:835
 #, fuzzy, c-format
 msgid "Current ActionOnPurge is: %s\n"
 msgstr "La valeur actuelle est : %s\n"
 
-#: src/dird/ua_update.c:832
+#: src/dird/ua_update.c:837
 msgid "Enter new ActionOnPurge (one of: Truncate, None): "
 msgstr ""
 
-#: src/dird/ua_update.c:840
+#: src/dird/ua_update.c:845
 msgid "Selection terminated.\n"
 msgstr "Sélection terminée.\n"
 
-#: src/dird/ua_update.c:860
+#: src/dird/ua_update.c:865
 #, c-format
 msgid "Updating %i job(s).\n"
 msgstr ""
 
-#: src/dird/ua_update.c:892
+#: src/dird/ua_update.c:897
 #, c-format
 msgid "db_update_pool_record returned %d. ERR=%s\n"
 msgstr "db_update_pool_record a retourné %d. ERR=%s\n"
 
-#: src/dird/ua_update.c:899
+#: src/dird/ua_update.c:904
 msgid "Pool DB record updated from resource.\n"
 msgstr ""
 "Les paramètres du Pool en base ont été mis à jour depuis la configuration.\n"
 
-#: src/dird/ua_update.c:926
+#: src/dird/ua_update.c:931
 #, fuzzy
 msgid "Expect JobId keyword, not found.\n"
 msgstr "%s ressource %s introuvable.\n"
 
-#: src/dird/ua_update.c:951
+#: src/dird/ua_update.c:956
 #, fuzzy
 msgid "Neither Client nor StartTime specified.\n"
 msgstr "Pas de storage sélectionné.\n"
 
-#: src/dird/ua_update.c:1052
+#: src/dird/ua_update.c:1057
 #, fuzzy
 msgid "No Volumes found to update, or no barcodes.\n"
 msgstr "Pas de volume à labéliser ou pas de codebar.\n"
 
-#: src/dird/ua_update.c:1113
+#: src/dird/ua_update.c:1118
 #, c-format
 msgid "No VolName for Slot=%d InChanger set to zero.\n"
 msgstr "Pas de volume sur le Slot %d. Mise à zéro de InChanger.\n"
 
-#: src/dird/ua_update.c:1136
+#: src/dird/ua_update.c:1141
 #, c-format
 msgid "Catalog record for Volume \"%s\" updated to reference slot %d.\n"
 msgstr ""
 "Mise à jour des informations du volume \"%s\" dans le catalogue (Slot=%d).\n"
 
-#: src/dird/ua_update.c:1140
+#: src/dird/ua_update.c:1145
 #, c-format
 msgid "Catalog record for Volume \"%s\" is up to date.\n"
 msgstr "Le volume \"%s\" est à jour dans le catalogue.\n"
 
-#: src/dird/ua_update.c:1143 src/dird/ua_update.c:1280
+#: src/dird/ua_update.c:1148 src/dird/ua_update.c:1285
 #, c-format
 msgid "Volume \"%s\" not found in catalog. Slot=%d InChanger set to zero.\n"
 msgstr ""
@@ -8680,107 +8680,107 @@ msgid ""
 "is set to %d\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1286
+#: src/dird/ndmp_dma.c:1287
 #, c-format
 msgid ""
 "For SMTAPE NDMP jobs the NDMP blocksize needs to be in increments of %d "
 "bytes, but is set to %d\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1315
+#: src/dird/ndmp_dma.c:1317
 #, fuzzy, c-format
 msgid "NDMP Job validation error = %s\n"
 msgstr "Erreur pendant le re-positionnement. ERR=%s\n"
 
-#: src/dird/ndmp_dma.c:1339 src/dird/ndmp_dma.c:1357 src/dird/catreq.c:452
+#: src/dird/ndmp_dma.c:1341 src/dird/ndmp_dma.c:1359 src/dird/catreq.c:452
 #, fuzzy, c-format
 msgid "Attribute create error: ERR=%s"
 msgstr "Erreur sur l'autochangeur : ERR=%s\n"
 
-#: src/dird/ndmp_dma.c:1528
+#: src/dird/ndmp_dma.c:1530
 msgid "NDMP protocol error, FHDB add_dir call before add_dirnode_root.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1548
+#: src/dird/ndmp_dma.c:1550
 #, c-format
 msgid "NDMP protocol error, FHDB add_dir for unknown parent inode %d.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1573
+#: src/dird/ndmp_dma.c:1575
 msgid "NDMP protocol error, FHDB add_node call before add_dir.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1579
+#: src/dird/ndmp_dma.c:1581
 #, c-format
 msgid "NDMP protocol error, FHDB add_node request for unknown node %llu.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1615
+#: src/dird/ndmp_dma.c:1617
 msgid "NDMP protocol error, FHDB add_dirnode_root call more then once.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:1959 src/dird/backup.c:110
+#: src/dird/ndmp_dma.c:1961 src/dird/backup.c:110
 msgid "No Storage specification found in Job or Pool.\n"
 msgstr "Pas de Storage défini dans le Job ou le Pool.\n"
 
-#: src/dird/ndmp_dma.c:1980
+#: src/dird/ndmp_dma.c:1982
 msgid ""
 "Write storage doesn't point to storage definition with paired storage "
 "option.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2004
+#: src/dird/ndmp_dma.c:2006
 #, fuzzy, c-format
 msgid "Start NDMP Backup JobId %s, Job=%s\n"
 msgstr "Démarrage du backup JobId %s, Job=%s\n"
 
-#: src/dird/ndmp_dma.c:2366 src/dird/vbackup.c:331 src/dird/backup.c:758
+#: src/dird/ndmp_dma.c:2368 src/dird/vbackup.c:347 src/dird/backup.c:758
 #, fuzzy, c-format
 msgid "Error getting Client record for Job report: ERR=%s"
 msgstr "Impossible de mettre à jour les informations du Volume : ERR=%s"
 
-#: src/dird/ndmp_dma.c:2374 src/dird/vbackup.c:339 src/dird/backup.c:766
+#: src/dird/ndmp_dma.c:2376 src/dird/vbackup.c:355 src/dird/backup.c:766
 #: src/stored/bscan.c:1255
 msgid "Backup OK"
 msgstr "Backup OK"
 
-#: src/dird/ndmp_dma.c:2377 src/dird/vbackup.c:342 src/dird/backup.c:772
+#: src/dird/ndmp_dma.c:2379 src/dird/vbackup.c:358 src/dird/backup.c:772
 #: src/stored/bscan.c:1258
 msgid "Backup OK -- with warnings"
 msgstr "Backup OK -- avec des erreurs"
 
-#: src/dird/ndmp_dma.c:2381 src/dird/vbackup.c:346 src/dird/backup.c:776
+#: src/dird/ndmp_dma.c:2383 src/dird/vbackup.c:362 src/dird/backup.c:776
 #: src/stored/bscan.c:1262
 msgid "*** Backup Error ***"
 msgstr "*** Backup en erreur ***"
 
-#: src/dird/ndmp_dma.c:2391 src/dird/vbackup.c:356 src/dird/backup.c:786
+#: src/dird/ndmp_dma.c:2393 src/dird/vbackup.c:372 src/dird/backup.c:786
 #: src/stored/bscan.c:1265
 msgid "Backup Canceled"
 msgstr "Backup annulé"
 
-#: src/dird/ndmp_dma.c:2418
+#: src/dird/ndmp_dma.c:2420
 msgid "Cannot NDMP restore without a file selection.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2485 src/stored/dir_cmd.c:1269
+#: src/dird/ndmp_dma.c:2487 src/stored/dir_cmd.c:1291
 msgid "Error parsing bootstrap file.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2495
+#: src/dird/ndmp_dma.c:2497
 #, c-format
 msgid ""
 "Read storage %s doesn't point to storage definition with paired storage "
 "option.\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:2626
+#: src/dird/ndmp_dma.c:2628
 msgid "Wrong BSR missing sessid and/or sesstime\n"
 msgstr ""
 
-#: src/dird/ndmp_dma.c:3049 src/dird/ndmp_dma.c:3055 src/dird/ndmp_dma.c:3061
-#: src/dird/ndmp_dma.c:3066 src/dird/ndmp_dma.c:3072 src/dird/ndmp_dma.c:3078
-#: src/dird/ndmp_dma.c:3083 src/dird/ndmp_dma.c:3088
+#: src/dird/ndmp_dma.c:3051 src/dird/ndmp_dma.c:3057 src/dird/ndmp_dma.c:3063
+#: src/dird/ndmp_dma.c:3068 src/dird/ndmp_dma.c:3074 src/dird/ndmp_dma.c:3080
+#: src/dird/ndmp_dma.c:3085 src/dird/ndmp_dma.c:3090
 msgid "NDMP protocol not supported\n"
 msgstr ""
 
@@ -8839,328 +8839,328 @@ msgstr ""
 msgid "Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"
 msgstr ""
 
-#: src/dird/jobq.c:802
+#: src/dird/jobq.c:788
 #, c-format
 msgid ""
 "Job canceled. Attempt to read and write same device.\n"
 "    Read storage \"%s\" (From %s) -- Write storage \"%s\" (From %s)\n"
 msgstr ""
 
-#: src/dird/vbackup.c:165
+#: src/dird/vbackup.c:164
 #, fuzzy, c-format
 msgid "Start Virtual Backup JobId %s, Job=%s\n"
 msgstr "Démarrage du backup JobId %s, Job=%s\n"
 
-#: src/dird/vbackup.c:169
+#: src/dird/vbackup.c:168
 msgid ""
 "This Job is not an Accurate backup so is not equivalent to a Full backup.\n"
 msgstr ""
 
-#: src/dird/vbackup.c:176
+#: src/dird/vbackup.c:174
 #, fuzzy
 msgid "No previous Jobs found.\n"
 msgstr "Aucun Job trouvé pour la migration.\n"
 
-#: src/dird/vbackup.c:198
+#: src/dird/vbackup.c:196
 #, fuzzy, c-format
 msgid "Error getting Job record for previous Job: ERR=%s"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
 
-#: src/dird/vbackup.c:204
+#: src/dird/vbackup.c:202
 #, fuzzy
 msgid "Could not get or create the FileSet record.\n"
 msgstr "Impossible de créer la structure BSOCK cliente.\n"
 
-#: src/dird/ua_run.c:61
+#: src/dird/ua_run.c:58
 #, fuzzy, c-format
 msgid "Error getting Job record for Job rerun: ERR=%s"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
 
-#: src/dird/ua_run.c:77
+#: src/dird/ua_run.c:88
 #, fuzzy, c-format
 msgid "Error getting Client record for Job rerun: ERR=%s"
 msgstr "Impossible de mettre à jour les informations du Volume : ERR=%s"
 
-#: src/dird/ua_run.c:89
+#: src/dird/ua_run.c:102
 #, fuzzy, c-format
 msgid "Error getting Pool record for Job rerun: ERR=%s"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
 
-#: src/dird/ua_run.c:101
+#: src/dird/ua_run.c:170
 #, fuzzy, c-format
 msgid "Error getting FileSet record for Job rerun: ERR=%s"
 msgstr "Impossible de mettre à jour les informations du Volume : ERR=%s"
 
-#: src/dird/ua_run.c:244
+#: src/dird/ua_run.c:313
 #, fuzzy
 msgid "rerun these jobids? (yes/no): "
 msgstr "Le nouveau nombre de fichier du Volume est : %u\n"
 
-#: src/dird/ua_run.c:378
+#: src/dird/ua_run.c:447
 msgid "OK to run? (yes/mod/no): "
 msgstr "OK pour le lancement ? (oui/mod/non) : "
 
-#: src/dird/ua_run.c:402
+#: src/dird/ua_run.c:471
 #, c-format
 msgid "Illegal response %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:457
+#: src/dird/ua_run.c:526
 msgid "Job failed.\n"
 msgstr "Job échoué.\n"
 
-#: src/dird/ua_run.c:460
+#: src/dird/ua_run.c:529
 #, c-format
 msgid "Job queued. JobId=%s\n"
 msgstr "Job mis en queue. JobId=%s\n"
 
-#: src/dird/ua_run.c:467
+#: src/dird/ua_run.c:536
 msgid "Job not run.\n"
 msgstr "Job non lancé.\n"
 
-#: src/dird/ua_run.c:479 src/dird/ua_select.c:54
+#: src/dird/ua_run.c:548 src/dird/ua_select.c:54
 msgid "mod"
 msgstr "mod"
 
-#: src/dird/ua_run.c:482
+#: src/dird/ua_run.c:551
 msgid "Level"
 msgstr "Type"
 
-#: src/dird/ua_run.c:487
+#: src/dird/ua_run.c:556
 #, fuzzy
 msgid "Restore Client"
 msgstr "Restauration annulée"
 
-#: src/dird/ua_run.c:491
+#: src/dird/ua_run.c:560
 #, fuzzy
 msgid "Backup Format"
 msgstr "Backup OK"
 
-#: src/dird/ua_run.c:492
+#: src/dird/ua_run.c:561
 msgid "When"
 msgstr "Quand"
 
-#: src/dird/ua_run.c:493
+#: src/dird/ua_run.c:562
 msgid "Priority"
 msgstr "Priorité"
 
-#: src/dird/ua_run.c:503
+#: src/dird/ua_run.c:572
 #, fuzzy
 msgid "NextPool"
 msgstr "Pool"
 
-#: src/dird/ua_run.c:505 src/dird/ua_run.c:510 src/dird/ua_run.c:518
+#: src/dird/ua_run.c:574 src/dird/ua_run.c:579 src/dird/ua_run.c:587
 msgid "Plugin Options"
 msgstr ""
 
-#: src/dird/ua_run.c:508
+#: src/dird/ua_run.c:577
 msgid "Verify Job"
 msgstr "Job de vérification"
 
-#: src/dird/ua_run.c:513
+#: src/dird/ua_run.c:582
 msgid "Bootstrap"
 msgstr "Bootstrap"
 
-#: src/dird/ua_run.c:514
+#: src/dird/ua_run.c:583
 msgid "Where"
 msgstr "Destination"
 
-#: src/dird/ua_run.c:515
+#: src/dird/ua_run.c:584
 msgid "File Relocation"
 msgstr ""
 
-#: src/dird/ua_run.c:516
+#: src/dird/ua_run.c:585
 msgid "Replace"
 msgstr "Écrasement"
 
-#: src/dird/ua_run.c:517
+#: src/dird/ua_run.c:586
 msgid "JobId"
 msgstr "JobId"
 
-#: src/dird/ua_run.c:539 src/dird/ua_run.c:1998
+#: src/dird/ua_run.c:608 src/dird/ua_run.c:2065
 msgid "user selection"
 msgstr ""
 
-#: src/dird/ua_run.c:571
+#: src/dird/ua_run.c:640
 #, fuzzy
 msgid "Please enter Backup Format: "
 msgstr "Saisissez le JobId pour la restauration : "
 
-#: src/dird/ua_run.c:582
+#: src/dird/ua_run.c:651
 msgid ""
 "Please enter desired start time as YYYY-MM-DD HH:MM:SS (return for now): "
 msgstr ""
 "Saisissez la date de lancement (YYYY-MM-DD HH:MM:SS) (ou maintenant) : "
 
-#: src/dird/ua_run.c:588 src/dird/ua_run.c:820
+#: src/dird/ua_run.c:657 src/dird/ua_run.c:887
 msgid "Invalid time, using current time.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:597
+#: src/dird/ua_run.c:666
 msgid "Enter new Priority: "
 msgstr "Saisissez la nouvelle priorité : "
 
-#: src/dird/ua_run.c:599
+#: src/dird/ua_run.c:668
 msgid "Priority must be a positive integer.\n"
 msgstr "La priorité doit être un entier positif.\n"
 
-#: src/dird/ua_run.c:620
+#: src/dird/ua_run.c:689
 msgid "Please enter the Bootstrap file name: "
 msgstr "Saisissez le nom du fichier Bootstrap : "
 
 # Impossible d'ouvrir %s : ERR=%s
-#: src/dird/ua_run.c:632
+#: src/dird/ua_run.c:701
 #, c-format
 msgid "Warning cannot open %s: ERR=%s\n"
 msgstr "Impossible d'ouvrir %s : ERR=%s\n"
 
-#: src/dird/ua_run.c:662
+#: src/dird/ua_run.c:731
 #, fuzzy
 msgid "Please enter the full path prefix for restore (/ for none): "
 msgstr "Saisissez le chemin (prefix) pour la restauration (/ pour aucun) : "
 
-#: src/dird/ua_run.c:678 src/dird/ua_run.c:694 src/dird/ua_run.c:726
+#: src/dird/ua_run.c:747 src/dird/ua_run.c:763 src/dird/ua_run.c:795
 #, fuzzy
 msgid "Please enter Plugin Options string: "
 msgstr "Saisissez le début du chemin (prefix) à enlever : "
 
-#: src/dird/ua_run.c:706
+#: src/dird/ua_run.c:775
 msgid "Replace:\n"
 msgstr "Écrasement :\n"
 
-#: src/dird/ua_run.c:710
+#: src/dird/ua_run.c:779
 msgid "Select replace option"
 msgstr "Saisissez l'option d'écrasement"
 
-#: src/dird/ua_run.c:721
+#: src/dird/ua_run.c:790
 msgid ""
 "You must set the bootstrap file to NULL to be able to specify a JobId.\n"
 msgstr ""
 "Vous ne devez pas spécifié de fichier bootstrap pour pouvoir utiliser un "
 "JobId.\n"
 
-#: src/dird/ua_run.c:775 src/dird/ua_run.c:783 src/dird/ua_run.c:796
+#: src/dird/ua_run.c:842 src/dird/ua_run.c:850 src/dird/ua_run.c:863
 msgid "user input"
 msgstr ""
 
-#: src/dird/ua_run.c:850
+#: src/dird/ua_run.c:917
 #, c-format
 msgid "Invalid replace option: %s\n"
 msgstr "Option d'écrasement (Replace) invalide : %s\n"
 
-#: src/dird/ua_run.c:898 src/dird/ua_cmds.c:1575
+#: src/dird/ua_run.c:965 src/dird/ua_cmds.c:1650
 #, fuzzy, c-format
 msgid "Level \"%s\" not valid.\n"
 msgstr "Le type %s est invalide.\n"
 
-#: src/dird/ua_run.c:948
+#: src/dird/ua_run.c:1015
 #, c-format
 msgid "strip_prefix=%s add_prefix=%s add_suffix=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:951
+#: src/dird/ua_run.c:1018
 msgid "This will replace your current Where value\n"
 msgstr ""
 
-#: src/dird/ua_run.c:952
+#: src/dird/ua_run.c:1019
 msgid "Strip prefix"
 msgstr ""
 
-#: src/dird/ua_run.c:953
+#: src/dird/ua_run.c:1020
 msgid "Add prefix"
 msgstr ""
 
-#: src/dird/ua_run.c:954
+#: src/dird/ua_run.c:1021
 msgid "Add file suffix"
 msgstr ""
 
-#: src/dird/ua_run.c:955
+#: src/dird/ua_run.c:1022
 msgid "Enter a regexp"
 msgstr ""
 
-#: src/dird/ua_run.c:956
+#: src/dird/ua_run.c:1023
 msgid "Test filename manipulation"
 msgstr ""
 
-#: src/dird/ua_run.c:957
+#: src/dird/ua_run.c:1024
 msgid "Use this ?"
 msgstr ""
 
-#: src/dird/ua_run.c:962
+#: src/dird/ua_run.c:1029
 #, fuzzy
 msgid "Please enter the path prefix to strip: "
 msgstr "Saisissez le début du chemin (prefix) à enlever : "
 
-#: src/dird/ua_run.c:969
+#: src/dird/ua_run.c:1036
 #, fuzzy
 msgid "Please enter the path prefix to add (/ for none): "
 msgstr "Saisissez le chemin (prefix) à ajouter (/ pour aucun) : "
 
-#: src/dird/ua_run.c:980
+#: src/dird/ua_run.c:1047
 #, fuzzy
 msgid "Please enter the file suffix to add: "
 msgstr "Saisissez une extention à ajouter aux fichiers : "
 
-#: src/dird/ua_run.c:987
+#: src/dird/ua_run.c:1054
 msgid "Please enter a valid regexp (!from!to!): "
 msgstr "Saisissez une regexp valide (!rechercher!remplacer!) : "
 
-#: src/dird/ua_run.c:999
+#: src/dird/ua_run.c:1066
 #, c-format
 msgid "regexwhere=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1005
+#: src/dird/ua_run.c:1072
 #, c-format
 msgid "strip_prefix=%s add_prefix=%s add_suffix=%s result=%s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1012
+#: src/dird/ua_run.c:1079
 msgid "Cannot use your regexp\n"
 msgstr "Impossible d'utiliser votre regexp\n"
 
-#: src/dird/ua_run.c:1015
+#: src/dird/ua_run.c:1082
 msgid "Enter a period (.) to stop this test\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1016
+#: src/dird/ua_run.c:1083
 msgid "Please enter filename to test: "
 msgstr "Saisissez un nom de fichier à tester : "
 
-#: src/dird/ua_run.c:1018
+#: src/dird/ua_run.c:1085
 #, c-format
 msgid "%s -> %s\n"
 msgstr "%s -> %s\n"
 
-#: src/dird/ua_run.c:1061
+#: src/dird/ua_run.c:1128
 msgid "Cannot use your regexp.\n"
 msgstr "Impossible d'utiliser votre regexp.\n"
 
-#: src/dird/ua_run.c:1082 src/dird/ua_run.c:1112
+#: src/dird/ua_run.c:1149 src/dird/ua_run.c:1179
 msgid "Levels:\n"
 msgstr "Types :\n"
 
-#: src/dird/ua_run.c:1088
+#: src/dird/ua_run.c:1155
 msgid "VirtualFull"
 msgstr ""
 
-#: src/dird/ua_run.c:1089 src/dird/ua_run.c:1118
+#: src/dird/ua_run.c:1156 src/dird/ua_run.c:1185
 msgid "Select level"
 msgstr "Saisissez le type"
 
-#: src/dird/ua_run.c:1113
+#: src/dird/ua_run.c:1180
 msgid "Initialize Catalog"
 msgstr "Initialisez le catalogue"
 
-#: src/dird/ua_run.c:1117
+#: src/dird/ua_run.c:1184
 msgid "Verify Volume Data (not yet implemented)"
 msgstr "Vérification des données sur le volume (pas encore implémenté)"
 
-#: src/dird/ua_run.c:1138
+#: src/dird/ua_run.c:1205
 msgid "Level not appropriate for this Job. Cannot be changed.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1170
+#: src/dird/ua_run.c:1237
 #, fuzzy, c-format
 msgid ""
 "Run Admin Job\n"
@@ -9179,7 +9179,7 @@ msgstr ""
 "Quand    : %s\n"
 "Priorité : %d\n"
 
-#: src/dird/ua_run.c:1222
+#: src/dird/ua_run.c:1289
 #, fuzzy, c-format
 msgid ""
 "Run Backup job\n"
@@ -9204,12 +9204,12 @@ msgstr ""
 "Quand    : %s\n"
 "Priorité : %d\n"
 
-#: src/dird/ua_run.c:1262
+#: src/dird/ua_run.c:1329
 #, fuzzy, c-format
 msgid "Could not get job record for selected JobId. ERR=%s"
 msgstr "Impossible de récupérer le Job du JobId=%s : ERR=%s\n"
 
-#: src/dird/ua_run.c:1301
+#: src/dird/ua_run.c:1368
 #, fuzzy, c-format
 msgid ""
 "Run Verify Job\n"
@@ -9236,11 +9236,11 @@ msgstr ""
 "Quand      : %s\n"
 "Priorité   : %d\n"
 
-#: src/dird/ua_run.c:1330
+#: src/dird/ua_run.c:1397
 msgid "Please enter a JobId for restore: "
 msgstr "Saisissez le JobId pour la restauration : "
 
-#: src/dird/ua_run.c:1372
+#: src/dird/ua_run.c:1439
 #, fuzzy, c-format
 msgid ""
 "Run Restore job\n"
@@ -9271,7 +9271,7 @@ msgstr ""
 "Catalogue :       %s\n"
 "Priorité :        %d\n"
 
-#: src/dird/ua_run.c:1432
+#: src/dird/ua_run.c:1499
 #, fuzzy, c-format
 msgid ""
 "Run Restore job\n"
@@ -9303,7 +9303,7 @@ msgstr ""
 "Priorité :       %d\n"
 "Options Plugins: %s\n"
 
-#: src/dird/ua_run.c:1465
+#: src/dird/ua_run.c:1532
 #, c-format
 msgid ""
 "Run Restore job\n"
@@ -9314,17 +9314,17 @@ msgstr ""
 "JobName :    %s\n"
 "Bootstrap :  %s\n"
 
-#: src/dird/ua_run.c:1473
+#: src/dird/ua_run.c:1540
 #, c-format
 msgid "RegexWhere: %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1476
+#: src/dird/ua_run.c:1543
 #, c-format
 msgid "Where:      %s\n"
 msgstr "Where :     %s\n"
 
-#: src/dird/ua_run.c:1480
+#: src/dird/ua_run.c:1547
 #, fuzzy, c-format
 msgid ""
 "Replace:         %s\n"
@@ -9346,19 +9346,19 @@ msgstr ""
 "Priorité :        %d\n"
 "Options Plugins : %s\n"
 
-#: src/dird/ua_run.c:1508
+#: src/dird/ua_run.c:1575
 msgid ""
 "Type: Copy\n"
 "Title: Run Copy Job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1510
+#: src/dird/ua_run.c:1577
 msgid ""
 "Type: Migration\n"
 "Title: Run Migration Job\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1512
+#: src/dird/ua_run.c:1579
 #, fuzzy, c-format
 msgid ""
 "%sJobName:       %s\n"
@@ -9383,17 +9383,17 @@ msgstr ""
 "Catalogue   : %s\n"
 "Priorité    : %d\n"
 
-#: src/dird/ua_run.c:1534
+#: src/dird/ua_run.c:1601
 #, fuzzy
 msgid "Run Copy job\n"
 msgstr "Sélectionnez le Job de restauration"
 
-#: src/dird/ua_run.c:1536
+#: src/dird/ua_run.c:1603
 #, fuzzy
 msgid "Run Migration job\n"
 msgstr "Sélectionnez le Job de restauration"
 
-#: src/dird/ua_run.c:1538
+#: src/dird/ua_run.c:1605
 #, fuzzy, c-format
 msgid ""
 "%sJobName:       %s\n"
@@ -9418,231 +9418,231 @@ msgstr ""
 "Catalogue   : %s\n"
 "Priorité    : %d\n"
 
-#: src/dird/ua_run.c:1563
+#: src/dird/ua_run.c:1630
 #, c-format
 msgid "Unknown Job Type=%d\n"
 msgstr "Job du Type=%d inconnu\n"
 
-#: src/dird/ua_run.c:1640
+#: src/dird/ua_run.c:1707
 #, c-format
 msgid "Value missing for keyword %s\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1647
+#: src/dird/ua_run.c:1714
 msgid "Job name specified twice.\n"
 msgstr "Le job est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1655
+#: src/dird/ua_run.c:1722
 msgid "JobId specified twice.\n"
 msgstr "Le JobId est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1664 src/dird/ua_run.c:1812
+#: src/dird/ua_run.c:1731 src/dird/ua_run.c:1879
 msgid "Client specified twice.\n"
 msgstr "Le client est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1672
+#: src/dird/ua_run.c:1739
 msgid "FileSet specified twice.\n"
 msgstr "Le FileSet est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1680
+#: src/dird/ua_run.c:1747
 msgid "Level specified twice.\n"
 msgstr "Le type (Level) est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1689
+#: src/dird/ua_run.c:1756
 msgid "Storage specified twice.\n"
 msgstr "Le Storage est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1697
+#: src/dird/ua_run.c:1764
 msgid "RegexWhere or Where specified twice.\n"
 msgstr "RegexWhere ou Where est déjà spécifiée.\n"
 
-#: src/dird/ua_run.c:1702
+#: src/dird/ua_run.c:1769
 #, fuzzy
 msgid "No authorization for \"regexwhere\" specification.\n"
 msgstr "La destination (Where) est déjà spécifiée.\n"
 
-#: src/dird/ua_run.c:1709
+#: src/dird/ua_run.c:1776
 msgid "Where or RegexWhere specified twice.\n"
 msgstr "RegexWhere ou Where est déjà spécifiée.\n"
 
-#: src/dird/ua_run.c:1714
+#: src/dird/ua_run.c:1781
 #, fuzzy
 msgid "No authoriztion for \"where\" specification.\n"
 msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
-#: src/dird/ua_run.c:1721
+#: src/dird/ua_run.c:1788
 msgid "Bootstrap specified twice.\n"
 msgstr "Le bootstrap est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1729
+#: src/dird/ua_run.c:1796
 msgid "Replace specified twice.\n"
 msgstr "L'option d'écrasement (Replace) est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1737
+#: src/dird/ua_run.c:1804
 msgid "When specified twice.\n"
 msgstr "La planification (When) est déjà spécifiée.\n"
 
-#: src/dird/ua_run.c:1745
+#: src/dird/ua_run.c:1812
 msgid "Priority specified twice.\n"
 msgstr "La priorité (Priority) est déjà spécifiée.\n"
 
-#: src/dird/ua_run.c:1750
+#: src/dird/ua_run.c:1817
 msgid "Priority must be positive nonzero setting it to 10.\n"
 msgstr ""
 "La priorité doit être supérieure à zéro. Utilisation d'une priorité de 10.\n"
 
-#: src/dird/ua_run.c:1760
+#: src/dird/ua_run.c:1827
 msgid "Verify Job specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1788
+#: src/dird/ua_run.c:1855
 msgid "Migration Job specified twice.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1796
+#: src/dird/ua_run.c:1863
 msgid "Pool specified twice.\n"
 msgstr "Le pool est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1804
+#: src/dird/ua_run.c:1871
 #, fuzzy
 msgid "NextPool specified twice.\n"
 msgstr "Le pool est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1820
+#: src/dird/ua_run.c:1887
 #, fuzzy
 msgid "Restore Client specified twice.\n"
 msgstr "Le client est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1828
+#: src/dird/ua_run.c:1895
 #, fuzzy
 msgid "Plugin Options specified twice.\n"
 msgstr "Le client est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1833
+#: src/dird/ua_run.c:1900
 #, fuzzy
 msgid "No authorization for \"PluginOptions\" specification.\n"
 msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
-#: src/dird/ua_run.c:1840
+#: src/dird/ua_run.c:1907
 #, fuzzy
 msgid "Spool flag specified twice.\n"
 msgstr "Le pool est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1847
+#: src/dird/ua_run.c:1914
 #, fuzzy
 msgid "Invalid spooldata flag.\n"
 msgstr "Période invalide.\n"
 
-#: src/dird/ua_run.c:1856
+#: src/dird/ua_run.c:1923
 #, fuzzy
 msgid "IgnoreDuplicateCheck flag specified twice.\n"
 msgstr "Le pool est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1863
+#: src/dird/ua_run.c:1930
 #, fuzzy
 msgid "Invalid ignoreduplicatecheck flag.\n"
 msgstr "Période invalide.\n"
 
-#: src/dird/ua_run.c:1868
+#: src/dird/ua_run.c:1935
 #, fuzzy
 msgid "Accurate flag specified twice.\n"
 msgstr "Le pool est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1875
+#: src/dird/ua_run.c:1942
 #, fuzzy
 msgid "Invalid accurate flag.\n"
 msgstr "Période invalide.\n"
 
-#: src/dird/ua_run.c:1880
+#: src/dird/ua_run.c:1947
 #, fuzzy
 msgid "Backup Format specified twice.\n"
 msgstr "Le bootstrap est déjà spécifié.\n"
 
-#: src/dird/ua_run.c:1905
+#: src/dird/ua_run.c:1972
 #, c-format
 msgid "Invalid keyword: %s\n"
 msgstr "Argument invalide : %s\n"
 
-#: src/dird/ua_run.c:1920
+#: src/dird/ua_run.c:1987
 #, c-format
 msgid "Catalog \"%s\" not found\n"
 msgstr "Le catalogue \"%s\" est introuvable\n"
 
-#: src/dird/ua_run.c:1924
+#: src/dird/ua_run.c:1991
 #, c-format
 msgid "No authorization. Catalog \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1935
+#: src/dird/ua_run.c:2002
 #, c-format
 msgid "Job \"%s\" not found\n"
 msgstr "Le job \"%s\" est introuvable\n"
 
-#: src/dird/ua_run.c:1942
+#: src/dird/ua_run.c:2009
 msgid "A job name must be specified.\n"
 msgstr "Un nom de Job doit être spécifié.\n"
 
-#: src/dird/ua_run.c:1948
+#: src/dird/ua_run.c:2015
 #, c-format
 msgid "No authorization. Job \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1956 src/dird/ua_run.c:1975
+#: src/dird/ua_run.c:2023 src/dird/ua_run.c:2042
 #, c-format
 msgid "Pool \"%s\" not found.\n"
 msgstr "Le pool  \"%s\" est introuvable.\n"
 
-#: src/dird/ua_run.c:1966 src/dird/ua_run.c:1984
+#: src/dird/ua_run.c:2033 src/dird/ua_run.c:2051
 #, c-format
 msgid "No authorization. Pool \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:1995 src/dird/ua_cmds.c:1408
+#: src/dird/ua_run.c:2062 src/dird/ua_cmds.c:1483
 #, c-format
 msgid "Storage \"%s\" not found.\n"
 msgstr "Le Storage \"%s\" est introuvable.\n"
 
-#: src/dird/ua_run.c:2014 src/dird/job.c:1627
+#: src/dird/ua_run.c:2081 src/dird/job.c:1627
 msgid "No storage specified.\n"
 msgstr "Pas de storage sélectionné.\n"
 
-#: src/dird/ua_run.c:2017
+#: src/dird/ua_run.c:2084
 #, c-format
 msgid "No authorization. Storage \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2028 src/dird/ua_cmds.c:956 src/dird/ua_cmds.c:995
-#: src/dird/ua_cmds.c:1014 src/dird/ua_cmds.c:1389 src/dird/ua_cmds.c:1516
+#: src/dird/ua_run.c:2095 src/dird/ua_cmds.c:956 src/dird/ua_cmds.c:995
+#: src/dird/ua_cmds.c:1014 src/dird/ua_cmds.c:1464 src/dird/ua_cmds.c:1591
 #, c-format
 msgid "Client \"%s\" not found.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
-#: src/dird/ua_run.c:2037 src/dird/ua_run.c:2055
+#: src/dird/ua_run.c:2104 src/dird/ua_run.c:2122
 #, c-format
 msgid "No authorization. Client \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2046
+#: src/dird/ua_run.c:2113
 #, fuzzy, c-format
 msgid "Restore Client \"%s\" not found.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
-#: src/dird/ua_run.c:2064
+#: src/dird/ua_run.c:2131
 #, c-format
 msgid "FileSet \"%s\" not found.\n"
 msgstr "Le FileSet \"%s\" est introuvable.\n"
 
-#: src/dird/ua_run.c:2072
+#: src/dird/ua_run.c:2139
 #, c-format
 msgid "No authorization. FileSet \"%s\".\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2079
+#: src/dird/ua_run.c:2146
 #, c-format
 msgid "Verify Job \"%s\" not found.\n"
 msgstr ""
 
-#: src/dird/ua_run.c:2089
+#: src/dird/ua_run.c:2156
 #, c-format
 msgid "Migration Job \"%s\" not found.\n"
 msgstr ""
@@ -10052,7 +10052,7 @@ msgid "Connecting to Storage daemon %s at %s:%d ...\n"
 msgstr "Connexion au Storage Daemon %s (%s:%d)...\n"
 
 #: src/dird/sd_cmds.c:145 src/dird/sd_cmds.c:631 src/dird/sd_cmds.c:677
-#: src/dird/ua_cmds.c:837 src/dird/ua_cmds.c:1093
+#: src/dird/ua_cmds.c:837 src/dird/ua_cmds.c:1103
 msgid "Failed to connect to Storage daemon.\n"
 msgstr "Impossible de se connecter au Storage daemon.\n"
 
@@ -10103,7 +10103,7 @@ msgstr "Le Device \"%s\" a %d slots.\n"
 msgid "Job resource"
 msgstr "Pool à partir de sa définition"
 
-#: src/dird/sd_cmds.c:749 src/dird/ua_cmds.c:833 src/dird/ua_cmds.c:1089
+#: src/dird/sd_cmds.c:749 src/dird/ua_cmds.c:833 src/dird/ua_cmds.c:1099
 #, c-format
 msgid "Connecting to Storage daemon %s at %s:%d\n"
 msgstr "Connexion au Storage Daemon %s (%s:%d)\n"
@@ -10529,7 +10529,7 @@ msgstr "Les ressources de Stockage définies sont :\n"
 msgid "Select Storage resource"
 msgstr "Sélectionnez la ressource de Stockage"
 
-#: src/dird/ua_select.c:220 src/dird/ua_cmds.c:2540
+#: src/dird/ua_select.c:220 src/dird/ua_cmds.c:2615
 msgid "Could not find a Catalog resource\n"
 msgstr "Impossible de trouver un Catalogue\n"
 
@@ -10831,7 +10831,7 @@ msgstr ""
 msgid "Confirm cancel?"
 msgstr "Confirmez l'annulation : "
 
-#: src/dird/ua_select.c:1467 src/dird/ua_cmds.c:1031 src/dird/ua_cmds.c:1534
+#: src/dird/ua_select.c:1467 src/dird/ua_cmds.c:1031 src/dird/ua_cmds.c:1609
 #, c-format
 msgid "Job \"%s\" not found.\n"
 msgstr "Job \"%s\" non trouvé.\n"
@@ -11136,7 +11136,7 @@ msgstr "InChanger ? oui/non : "
 msgid "%d Volumes created in pool %s\n"
 msgstr "%d Volumes créés dans le pool %s\n"
 
-#: src/dird/ua_cmds.c:498 src/dird/ua_cmds.c:1465
+#: src/dird/ua_cmds.c:498 src/dird/ua_cmds.c:1540
 msgid "Turn on or off? "
 msgstr "Activer ou désactiver ? (on/off) "
 
@@ -11221,107 +11221,107 @@ msgstr "le client \"%s\" est introuvable.\n"
 msgid "Job \"%s\" %sabled\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1253
+#: src/dird/ua_cmds.c:1305
 msgid "Enter new debug level: "
 msgstr "Saisissez le nouveau niveau de debug : "
 
-#: src/dird/ua_cmds.c:1339
+#: src/dird/ua_cmds.c:1413
 msgid "All"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1340
+#: src/dird/ua_cmds.c:1415
 msgid "Select daemon type to set debug level"
 msgstr "Sélectionnez le composant a mettre à jour"
 
-#: src/dird/ua_cmds.c:1394 src/dird/ua_cmds.c:1520 src/dird/ua_cmds.c:2470
+#: src/dird/ua_cmds.c:1469 src/dird/ua_cmds.c:1595 src/dird/ua_cmds.c:2545
 #, fuzzy, c-format
 msgid "No authorization for Client \"%s\"\n"
 msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
-#: src/dird/ua_cmds.c:1401 src/dird/ua_cmds.c:1525
+#: src/dird/ua_cmds.c:1476 src/dird/ua_cmds.c:1600
 msgid "Client name missing.\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1413
+#: src/dird/ua_cmds.c:1488
 #, fuzzy, c-format
 msgid "No authorization for Storage \"%s\"\n"
 msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
-#: src/dird/ua_cmds.c:1420
+#: src/dird/ua_cmds.c:1495
 #, fuzzy
 msgid "Storage name missing.\n"
 msgstr "La valeur actuelle est : %s\n"
 
-#: src/dird/ua_cmds.c:1445
+#: src/dird/ua_cmds.c:1520
 #, fuzzy, c-format
 msgid "%s Failed to resolve %s\n"
 msgstr "3912 Impossible de labéliser le Volume : ERR=%s\n"
 
-#: src/dird/ua_cmds.c:1538 src/dird/ua_cmds.c:1612 src/dird/ua_cmds.c:2492
+#: src/dird/ua_cmds.c:1613 src/dird/ua_cmds.c:1687 src/dird/ua_cmds.c:2567
 #, c-format
 msgid "No authorization for Job \"%s\"\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1543
+#: src/dird/ua_cmds.c:1618
 msgid "Job name missing.\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1553
+#: src/dird/ua_cmds.c:1628
 #, fuzzy, c-format
 msgid "Fileset \"%s\" not found.\n"
 msgstr "Le FileSet \"%s\" est introuvable.\n"
 
-#: src/dird/ua_cmds.c:1557
+#: src/dird/ua_cmds.c:1632
 #, fuzzy, c-format
 msgid "No authorization for FileSet \"%s\"\n"
 msgstr "Pas d'enregistrement trouvé en base pour : %s\n"
 
-#: src/dird/ua_cmds.c:1562
+#: src/dird/ua_cmds.c:1637
 msgid "Fileset name missing.\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1579
+#: src/dird/ua_cmds.c:1654
 msgid "Level value missing.\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1587
+#: src/dird/ua_cmds.c:1662
 #, fuzzy
 msgid "Invalid value for accurate. It must be yes or no.\n"
 msgstr "Saisie invalide. Veuillez répondre oui ou non.\n"
 
-#: src/dird/ua_cmds.c:1592
+#: src/dird/ua_cmds.c:1667
 #, fuzzy
 msgid "Accurate value missing.\n"
 msgstr "La valeur actuelle est : %s\n"
 
-#: src/dird/ua_cmds.c:1607
+#: src/dird/ua_cmds.c:1682
 msgid "No job specified.\n"
 msgstr "Pas de job sélectionné.\n"
 
-#: src/dird/ua_cmds.c:1621
+#: src/dird/ua_cmds.c:1696
 #, fuzzy, c-format
 msgid "Wrong job specified of type %s.\n"
 msgstr "Pas de job sélectionné.\n"
 
-#: src/dird/ua_cmds.c:1634
+#: src/dird/ua_cmds.c:1709
 #, fuzzy
 msgid "No client specified or selected.\n"
 msgstr "Le client est déjà spécifié.\n"
 
-#: src/dird/ua_cmds.c:1639
+#: src/dird/ua_cmds.c:1714
 #, fuzzy
 msgid "No fileset specified or selected.\n"
 msgstr "Aucun fichier sélectionné pour la restauration.\n"
 
-#: src/dird/ua_cmds.c:1693
+#: src/dird/ua_cmds.c:1768
 msgid "Error sending include list.\n"
 msgstr "Erreur pendant l'envoi de la liste d'inclusion.\n"
 
-#: src/dird/ua_cmds.c:1698
+#: src/dird/ua_cmds.c:1773
 msgid "Error sending exclude list.\n"
 msgstr "Erreur pendant l'envoi de la liste d'exclusion.\n"
 
-#: src/dird/ua_cmds.c:1788
+#: src/dird/ua_cmds.c:1863
 msgid ""
 "In general it is not a good idea to delete either a\n"
 "Pool or a Volume since they may contain data.\n"
@@ -11331,45 +11331,45 @@ msgstr ""
 "n'est pas une bonne idée car ils peuvent contenir des données.\n"
 "\n"
 
-#: src/dird/ua_cmds.c:1791
+#: src/dird/ua_cmds.c:1866
 msgid "Choose catalog item to delete"
 msgstr "Choisissez l'objet du catalogue à supprimer"
 
-#: src/dird/ua_cmds.c:1802
+#: src/dird/ua_cmds.c:1877
 msgid "Nothing done.\n"
 msgstr "Rien de fait.\n"
 
-#: src/dird/ua_cmds.c:1841 src/dird/ua_cmds.c:1856 src/dird/ua_cmds.c:1866
+#: src/dird/ua_cmds.c:1916 src/dird/ua_cmds.c:1931 src/dird/ua_cmds.c:1941
 #, c-format
 msgid "Illegal JobId %s ignored\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1869
+#: src/dird/ua_cmds.c:1944
 msgid "Enter JobId to delete: "
 msgstr "Saisissez le JobId à supprimer : "
 
-#: src/dird/ua_cmds.c:1905
+#: src/dird/ua_cmds.c:1980
 #, fuzzy, c-format
 msgid "Are you sure you want to delete %d JobIds ? (yes/no): "
 msgstr "Êtes vous certain de vouloir supprimer ce Pool ? (oui/non) : "
 
-#: src/dird/ua_cmds.c:1915
+#: src/dird/ua_cmds.c:1990
 #, c-format
 msgid "Illegal JobId range %s - %s should define increasing JobIds, ignored\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1919
+#: src/dird/ua_cmds.c:1994
 #, c-format
 msgid "Illegal JobId range %s - %s, ignored\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1934
+#: src/dird/ua_cmds.c:2009
 #, fuzzy, c-format
 msgid "Jobid %s and associated records deleted from the catalog.\n"
 msgstr ""
 "Le Job %s et les enregistrements associés ont été supprimés du catalogue.\n"
 
-#: src/dird/ua_cmds.c:1950
+#: src/dird/ua_cmds.c:2025
 #, c-format
 msgid ""
 "\n"
@@ -11380,38 +11380,38 @@ msgstr ""
 "Cette commande va supprimer le Volume %s\n"
 "et tous les Jobs sauvegardés sur celui-ci du Catalogue\n"
 
-#: src/dird/ua_cmds.c:1957
+#: src/dird/ua_cmds.c:2032
 #, fuzzy, c-format
 msgid "Are you sure you want to delete Volume \"%s\"? (yes/no): "
 msgstr "Êtes vous certain de vouloir supprimer ce Volume ? (oui/non) : "
 
-#: src/dird/ua_cmds.c:1970
+#: src/dird/ua_cmds.c:2045
 msgid "Can't list jobs on this volume\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:1995
+#: src/dird/ua_cmds.c:2070
 #, fuzzy, c-format
 msgid "Are you sure you want to delete Pool \"%s\"? (yes/no): "
 msgstr "Êtes vous certain de vouloir supprimer ce Pool ? (oui/non) : "
 
-#: src/dird/ua_cmds.c:2116
+#: src/dird/ua_cmds.c:2191
 #, c-format
 msgid "Using Catalog name=%s DB=%s\n"
 msgstr "Utilisation du Catalogue name=%s DB=%s\n"
 
-#: src/dird/ua_cmds.c:2184
+#: src/dird/ua_cmds.c:2259
 msgid "ERR: Can't open db\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:2231
+#: src/dird/ua_cmds.c:2306
 msgid "Wait on mount timed out\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:2241
+#: src/dird/ua_cmds.c:2316
 msgid "ERR: Job was not found\n"
 msgstr "ERR: Job %s non trouvé\n"
 
-#: src/dird/ua_cmds.c:2317
+#: src/dird/ua_cmds.c:2392
 #, fuzzy
 msgid ""
 "  Command       Description\n"
@@ -11420,7 +11420,7 @@ msgstr ""
 "  Commande   Description\n"
 "  ========   ===========\n"
 
-#: src/dird/ua_cmds.c:2321
+#: src/dird/ua_cmds.c:2396
 #, c-format
 msgid ""
 "  %-13s %s\n"
@@ -11429,12 +11429,12 @@ msgid ""
 "\t%s\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:2326
+#: src/dird/ua_cmds.c:2401
 #, fuzzy, c-format
 msgid "  %-13s %s\n"
 msgstr "  %-10s %s\n"
 
-#: src/dird/ua_cmds.c:2330
+#: src/dird/ua_cmds.c:2405
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -11442,7 +11442,7 @@ msgid ""
 "\n"
 msgstr ": est une commande invalide.\n"
 
-#: src/dird/ua_cmds.c:2332
+#: src/dird/ua_cmds.c:2407
 msgid ""
 "\n"
 "When at a prompt, entering a period cancels the command.\n"
@@ -11451,17 +11451,17 @@ msgstr ""
 "\n"
 "Sur une question, tapez un point (.) pour annuler la commande en cours.\n"
 
-#: src/dird/ua_cmds.c:2453 src/dird/ua_cmds.c:2480 src/dird/ua_cmds.c:2502
+#: src/dird/ua_cmds.c:2528 src/dird/ua_cmds.c:2555 src/dird/ua_cmds.c:2577
 #, c-format
 msgid "No authorization for Catalog \"%s\"\n"
 msgstr ""
 
-#: src/dird/ua_cmds.c:2567
+#: src/dird/ua_cmds.c:2642
 #, c-format
 msgid "Could not open catalog database \"%s\".\n"
 msgstr "Impossible d'ouvrir le catalogue \"%s\".\n"
 
-#: src/dird/ua_cmds.c:2582
+#: src/dird/ua_cmds.c:2657
 #, c-format
 msgid "Using Catalog \"%s\"\n"
 msgstr "Utilisation du Catalogue \"%s\"\n"
@@ -12214,7 +12214,7 @@ msgstr ""
 msgid "Could not lock database"
 msgstr "Impossible d'ouvrir la base de données \"%s\".\n"
 
-#: src/win32/compat/compat.c:3418
+#: src/win32/compat/compat.c:3531
 #, fuzzy
 msgid ""
 "\n"
@@ -12232,20 +12232,20 @@ msgid ""
 "Fileset has autoexclude disabled, ignoring FilesNotToBackup Registry key\n"
 msgstr ""
 
-#: src/win32/findlib/win32.c:539
+#: src/win32/findlib/win32.c:534
 #, c-format
 msgid "Created %d wildcard excludes from FilesNotToBackup Registry key\n"
 msgstr ""
 
-#: src/win32/findlib/win32.c:543
+#: src/win32/findlib/win32.c:538
 msgid "Failed to open FilesNotToBackup Registry Key\n"
 msgstr ""
 
-#: src/win32/findlib/win32.c:716
+#: src/win32/findlib/win32.c:711
 msgid "Encrypted file restore but no EFS support functions\n"
 msgstr ""
 
-#: src/win32/findlib/win32.c:724
+#: src/win32/findlib/win32.c:719
 msgid "Failed to start encrypted data restore copy thread\n"
 msgstr ""
 
@@ -12523,7 +12523,7 @@ msgid ""
 "max_connections = %d, increment_connections = %d"
 msgstr ""
 
-#: src/cats/sql_pooling.c:205 src/cats/sql_pooling.c:359
+#: src/cats/sql_pooling.c:205 src/cats/sql_pooling.c:364
 #, fuzzy
 msgid "Could not init database connection"
 msgstr "Impossible d'initialiser le Python\n"
@@ -14122,12 +14122,12 @@ msgstr ""
 msgid "Unable to set file flags %s: ERR=%s\n"
 msgstr ""
 
-#: src/findlib/attribs.c:765
+#: src/findlib/attribs.c:714
 #, c-format
 msgid "Error in %s file %s: ERR=%s\n"
 msgstr ""
 
-#: src/findlib/attribs.c:781
+#: src/findlib/attribs.c:730
 #, c-format
 msgid "Error in %s: ERR=%s\n"
 msgstr ""
@@ -15806,83 +15806,83 @@ msgstr "Écriture blk_block=%u, dev_blk_num=%u VolBytes=%s rate=%.1f KB/s\n"
 msgid "Cannot open Dev=%s, Vol=%s\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:227 src/stored/stored.c:596
+#: src/stored/dir_cmd.c:231 src/stored/stored.c:596
 #, fuzzy, c-format
 msgid "Unable to init job start cond variable: ERR=%s\n"
 msgstr "Impossible d'initialiser le muxtex : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:237
+#: src/stored/dir_cmd.c:241
 #, fuzzy, c-format
 msgid "Unable to init job end cond variable: ERR=%s\n"
 msgstr "Impossible d'initialiser le muxtex : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:463
+#: src/stored/dir_cmd.c:485
 msgid "3903 Error scanning cancel command.\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:473 src/stored/dir_cmd.c:478
+#: src/stored/dir_cmd.c:495 src/stored/dir_cmd.c:500
 #, c-format
 msgid "3904 Job %s not found.\n"
 msgstr "3904 Job %s non trouvé.\n"
 
-#: src/stored/dir_cmd.c:540
+#: src/stored/dir_cmd.c:562
 #, fuzzy, c-format
 msgid "3000 JobId=%ld Job=\"%s\" marked to be %s.\n"
 msgstr "JobId %s, Job %s marqué pour être annulé.\n"
 
-#: src/stored/dir_cmd.c:656 src/stored/dir_cmd.c:1026
-#: src/stored/dir_cmd.c:1113 src/stored/dir_cmd.c:1222
-#: src/stored/dir_cmd.c:1358 src/stored/dir_cmd.c:1399
+#: src/stored/dir_cmd.c:678 src/stored/dir_cmd.c:1048
+#: src/stored/dir_cmd.c:1135 src/stored/dir_cmd.c:1244
+#: src/stored/dir_cmd.c:1380 src/stored/dir_cmd.c:1421
 #, c-format
 msgid "3999 Device \"%s\" not found or could not be opened.\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:661
+#: src/stored/dir_cmd.c:683
 #, c-format
 msgid "3903 Error scanning label command: %s\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:721
+#: src/stored/dir_cmd.c:743
 #, fuzzy, c-format
 msgid "3910 Unable to open device \"%s\": ERR=%s\n"
 msgstr "3910 Impossible d'ouvrir le device %s : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:737
+#: src/stored/dir_cmd.c:759
 #, c-format
 msgid "3920 Cannot label Volume because it is already labeled: \"%s\"\n"
 msgstr ""
 "3920 Impossible de labéliser le Volume car il possède déjà le label : \"%s"
 "\"\n"
 
-#: src/stored/dir_cmd.c:744
+#: src/stored/dir_cmd.c:766
 msgid "3921 Wrong volume mounted.\n"
 msgstr "3921 Mauvais volume monté.\n"
 
-#: src/stored/dir_cmd.c:748
+#: src/stored/dir_cmd.c:770
 msgid "3922 Cannot relabel an ANSI/IBM labeled Volume.\n"
 msgstr "3922 Impossible de re-labéliser un Volume ANSI/IBM.\n"
 
-#: src/stored/dir_cmd.c:755
+#: src/stored/dir_cmd.c:777
 #, c-format
 msgid "3912 Failed to label Volume: ERR=%s\n"
 msgstr "3912 Impossible de labéliser le Volume : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:765
+#: src/stored/dir_cmd.c:787
 #, fuzzy, c-format
 msgid "3914 Failed to label Volume (no media): ERR=%s\n"
 msgstr "3912 Impossible de labéliser le Volume : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:768
+#: src/stored/dir_cmd.c:790
 #, c-format
 msgid "3913 Cannot label Volume. Unknown status %d from read_volume_label()\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:804
+#: src/stored/dir_cmd.c:826
 #, c-format
 msgid "3001 Mounted Volume: %s\n"
 msgstr "3001 Volume monté : %s\n"
 
-#: src/stored/dir_cmd.c:808 src/stored/dir_cmd.c:1434
+#: src/stored/dir_cmd.c:830 src/stored/dir_cmd.c:1456
 #, fuzzy, c-format
 msgid ""
 "3902 Cannot mount Volume on Storage Device \"%s\" because:\n"
@@ -15891,14 +15891,14 @@ msgstr ""
 "3902 Impossible de monté le volume dans le storage device %s car :\n"
 "%s"
 
-#: src/stored/dir_cmd.c:836 src/stored/reserve.c:643
+#: src/stored/dir_cmd.c:858 src/stored/reserve.c:643
 #, c-format
 msgid ""
 "\n"
 "     Device \"%s\" requested by DIR could not be opened or does not exist.\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:858 src/stored/reserve.c:639
+#: src/stored/dir_cmd.c:880 src/stored/reserve.c:639
 #, c-format
 msgid ""
 "\n"
@@ -15906,22 +15906,23 @@ msgid ""
 "does not exist.\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:922
+#: src/stored/dir_cmd.c:944
 #, fuzzy
 msgid "Specified slot ignored. "
 msgstr "fopen %s en erreur : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:937 src/stored/dir_cmd.c:988
+#: src/stored/dir_cmd.c:959 src/stored/dir_cmd.c:1010
 #, fuzzy, c-format
 msgid "3901 Unable to open device \"%s\": ERR=%s\n"
 msgstr "3910 Impossible d'ouvrir le device %s : ERR=%s\n"
 
-#: src/stored/dir_cmd.c:956 src/stored/dir_cmd.c:981
+#: src/stored/dir_cmd.c:978 src/stored/dir_cmd.c:1003
 #, fuzzy, c-format
 msgid "3001 Device \"%s\" is mounted with Volume \"%s\"\n"
 msgstr "3001 Device %s est monté avec le volume \"%s\"\n"
 
-#: src/stored/dir_cmd.c:958 src/stored/dir_cmd.c:983 src/stored/dir_cmd.c:995
+#: src/stored/dir_cmd.c:980 src/stored/dir_cmd.c:1005
+#: src/stored/dir_cmd.c:1017
 #, fuzzy, c-format
 msgid ""
 "3905 Device \"%s\" open but no Bareos volume is mounted.\n"
@@ -15931,143 +15932,143 @@ msgstr ""
 "Si ce n'est pas une cartouche vierge, essayer de la démonter puis de la "
 "remonter.\n"
 
-#: src/stored/dir_cmd.c:967
+#: src/stored/dir_cmd.c:989
 #, fuzzy, c-format
 msgid "3001 Device \"%s\" is doing acquire.\n"
 msgstr "3902 Le Device %s est occupé en acquisition.\n"
 
-#: src/stored/dir_cmd.c:971 src/stored/dir_cmd.c:1086
+#: src/stored/dir_cmd.c:993 src/stored/dir_cmd.c:1108
 #, fuzzy, c-format
 msgid "3903 Device \"%s\" is being labeled.\n"
 msgstr "3934 Device %s est en cours d'initialisation.\n"
 
-#: src/stored/dir_cmd.c:993
+#: src/stored/dir_cmd.c:1015
 #, fuzzy, c-format
 msgid "3001 Device \"%s\" is already mounted with Volume \"%s\"\n"
 msgstr "3001 Device %s est déjà monté avec le volume \"%s\"\n"
 
-#: src/stored/dir_cmd.c:1003
+#: src/stored/dir_cmd.c:1025
 #, fuzzy, c-format
 msgid "3002 Device \"%s\" is mounted.\n"
 msgstr "3002 Le device %s est monté.\n"
 
-#: src/stored/dir_cmd.c:1005 src/stored/dir_cmd.c:1060
-#: src/stored/dir_cmd.c:1076 src/stored/dir_cmd.c:1105
+#: src/stored/dir_cmd.c:1027 src/stored/dir_cmd.c:1082
+#: src/stored/dir_cmd.c:1098 src/stored/dir_cmd.c:1127
 #, c-format
 msgid "3907 %s"
 msgstr "3907 %s"
 
-#: src/stored/dir_cmd.c:1008
+#: src/stored/dir_cmd.c:1030
 #, fuzzy, c-format
 msgid "3906 File device \"%s\" is always mounted.\n"
 msgstr "3906 Le device fichier %s est toujours monté.\n"
 
-#: src/stored/dir_cmd.c:1016
+#: src/stored/dir_cmd.c:1038
 #, fuzzy, c-format
 msgid "3930 Device \"%s\" is being released.\n"
 msgstr "3934 Device %s est en cours d'initialisation.\n"
 
-#: src/stored/dir_cmd.c:1020
+#: src/stored/dir_cmd.c:1042
 #, fuzzy, c-format
 msgid "3905 Unknown wait state %d\n"
 msgstr "est dans un état inconnu %c"
 
-#: src/stored/dir_cmd.c:1030
+#: src/stored/dir_cmd.c:1052
 #, c-format
 msgid "3909 Error scanning mount command: %s\n"
 msgstr "3909 Erreur pendant la lecture de la commande de montage : %s\n"
 
-#: src/stored/dir_cmd.c:1058 src/stored/dir_cmd.c:1107
+#: src/stored/dir_cmd.c:1080 src/stored/dir_cmd.c:1129
 #, fuzzy, c-format
 msgid "3002 Device \"%s\" unmounted.\n"
 msgstr "3002 Le device %s est démonté.\n"
 
-#: src/stored/dir_cmd.c:1064
+#: src/stored/dir_cmd.c:1086
 #, fuzzy, c-format
 msgid "3901 Device \"%s\" is already unmounted.\n"
 msgstr "3901 Le device %s est déjà démonté.\n"
 
-#: src/stored/dir_cmd.c:1079
+#: src/stored/dir_cmd.c:1101
 #, fuzzy, c-format
 msgid "3001 Device \"%s\" unmounted.\n"
 msgstr "3001 Le device %s est démonté.\n"
 
-#: src/stored/dir_cmd.c:1083
+#: src/stored/dir_cmd.c:1105
 #, fuzzy, c-format
 msgid "3902 Device \"%s\" is busy in acquire.\n"
 msgstr "3902 Le Device %s est occupé en acquisition.\n"
 
-#: src/stored/dir_cmd.c:1118
+#: src/stored/dir_cmd.c:1140
 #, c-format
 msgid "3907 Error scanning unmount command: %s\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:1144
+#: src/stored/dir_cmd.c:1166
 #, fuzzy
 msgid "3916 Error scanning action_on_purge command\n"
 msgstr "2902 Erreur dans le décodage de la commande d'annulation.\n"
 
-#: src/stored/dir_cmd.c:1187
+#: src/stored/dir_cmd.c:1209
 #, fuzzy, c-format
 msgid "3921 Device \"%s\" already released.\n"
 msgstr "3921 Le Device %s est déjà libéré.\n"
 
-#: src/stored/dir_cmd.c:1194
+#: src/stored/dir_cmd.c:1216
 #, fuzzy, c-format
 msgid "3922 Device \"%s\" waiting for sysop.\n"
 msgstr "3922 Device %s est en attente d'une intervention sysop.\n"
 
-#: src/stored/dir_cmd.c:1200
+#: src/stored/dir_cmd.c:1222
 #, fuzzy, c-format
 msgid "3922 Device \"%s\" waiting for mount.\n"
 msgstr "3922 Le Device %s est en atttente d'un montage.\n"
 
-#: src/stored/dir_cmd.c:1204
+#: src/stored/dir_cmd.c:1226
 #, fuzzy, c-format
 msgid "3923 Device \"%s\" is busy in acquire.\n"
 msgstr "3902 Le Device %s est occupé en acquisition.\n"
 
-#: src/stored/dir_cmd.c:1208
+#: src/stored/dir_cmd.c:1230
 #, fuzzy, c-format
 msgid "3914 Device \"%s\" is being labeled.\n"
 msgstr "3934 Device %s est en cours d'initialisation.\n"
 
-#: src/stored/dir_cmd.c:1216
+#: src/stored/dir_cmd.c:1238
 #, fuzzy, c-format
 msgid "3022 Device \"%s\" released.\n"
 msgstr "3022 Le device %s est libéré.\n"
 
-#: src/stored/dir_cmd.c:1227
+#: src/stored/dir_cmd.c:1249
 #, c-format
 msgid "3927 Error scanning release command: %s\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:1338
+#: src/stored/dir_cmd.c:1360
 #, fuzzy, c-format
 msgid "3998 Device \"%s\" is not an autochanger.\n"
 msgstr "3995 Le Device %s n'est pas un autochangeur.\n"
 
-#: src/stored/dir_cmd.c:1362
+#: src/stored/dir_cmd.c:1384
 #, fuzzy, c-format
 msgid "3908 Error scanning autochanger drives/list/slots command: %s\n"
 msgstr "3909 Erreur pendant la lecture de la commande de montage : %s\n"
 
-#: src/stored/dir_cmd.c:1403
+#: src/stored/dir_cmd.c:1425
 #, c-format
 msgid "3909 Error scanning readlabel command: %s\n"
 msgstr ""
 
-#: src/stored/dir_cmd.c:1430
+#: src/stored/dir_cmd.c:1452
 #, c-format
 msgid "3001 Volume=%s Slot=%d\n"
 msgstr "3001 Volume=%s Slot=%d\n"
 
-#: src/stored/dir_cmd.c:1461
+#: src/stored/dir_cmd.c:1483
 #, fuzzy, c-format
 msgid "3931 Device \"%s\" is BLOCKED. user unmounted.\n"
 msgstr "3931 Device %s est BLOQUÉ, démonté par l'utilisateur.\n"
 
-#: src/stored/dir_cmd.c:1464
+#: src/stored/dir_cmd.c:1486
 #, fuzzy, c-format
 msgid ""
 "3932 Device \"%s\" is BLOCKED. user unmounted during wait for media/mount.\n"
@@ -16075,57 +16076,57 @@ msgstr ""
 "3932 Device %s est BLOQUÉ, démonté par l'utilisateur alors que bareos était "
 "en attente d'un média.\n"
 
-#: src/stored/dir_cmd.c:1467
+#: src/stored/dir_cmd.c:1489
 #, fuzzy, c-format
 msgid "3933 Device \"%s\" is BLOCKED waiting for media.\n"
 msgstr "3933 Device %s est bloqué en attente d'un media.\n"
 
-#: src/stored/dir_cmd.c:1470
+#: src/stored/dir_cmd.c:1492
 #, fuzzy, c-format
 msgid "3934 Device \"%s\" is being initialized.\n"
 msgstr "3934 Device %s est en cours d'initialisation.\n"
 
-#: src/stored/dir_cmd.c:1474
+#: src/stored/dir_cmd.c:1496
 #, fuzzy, c-format
 msgid "3935 Device \"%s\" is blocked labeling a Volume.\n"
 msgstr "3935 Device %s est bloqué par une labélisation de volume.\n"
 
-#: src/stored/dir_cmd.c:1478
+#: src/stored/dir_cmd.c:1500
 #, fuzzy, c-format
 msgid "3935 Device \"%s\" is blocked for unknown reason.\n"
 msgstr "3935 Device %s est bloqué pour une raison inconnue.\n"
 
-#: src/stored/dir_cmd.c:1483
+#: src/stored/dir_cmd.c:1505
 #, fuzzy, c-format
 msgid "3936 Device \"%s\" is busy reading.\n"
 msgstr "3936 Device %s est occupé en lecture.\n"
 
-#: src/stored/dir_cmd.c:1485
+#: src/stored/dir_cmd.c:1507
 #, fuzzy, c-format
 msgid "3937 Device \"%s\" is busy with writers=%d reserved=%d.\n"
 msgstr "3937 Device %s est occupé avec %d flux en écriture.\n"
 
-#: src/stored/dir_cmd.c:1633
+#: src/stored/dir_cmd.c:1655
 #, fuzzy, c-format
 msgid "Bad passiveclientcmd command: %s"
 msgstr "Erreur sur la commande : %s\n"
 
-#: src/stored/dir_cmd.c:1651
+#: src/stored/dir_cmd.c:1673
 #, fuzzy
 msgid "File Daemon"
 msgstr "FileSet"
 
-#: src/stored/dir_cmd.c:1657
+#: src/stored/dir_cmd.c:1679
 #, fuzzy, c-format
 msgid "Failed to connect to File daemon: %s:%d\n"
 msgstr "Impossible de se connecter au client.\n"
 
-#: src/stored/dir_cmd.c:1668
+#: src/stored/dir_cmd.c:1690
 #, fuzzy
 msgid "Failed to authenticate File daemon.\n"
 msgstr "Impossible de se connecter au client.\n"
 
-#: src/stored/dir_cmd.c:1702
+#: src/stored/dir_cmd.c:1724
 #, fuzzy, c-format
 msgid "Bad pluginoptionscmd command: %s"
 msgstr "Erreur dans la commande RunScript : %s\n"
@@ -17129,7 +17130,7 @@ msgstr ""
 
 #: src/stored/read.c:135
 #, c-format
-msgid ">filed: Error Hdr=%s\n"
+msgid ">filed: Error Hdr=%s"
 msgstr ""
 
 #: src/stored/read.c:136 src/stored/read.c:153
@@ -19213,64 +19214,60 @@ msgstr ""
 msgid "In free_jcr(), but still attached to device!!!!\n"
 msgstr ""
 
-#: src/plugins/filed/bpipe-fd.c:872
+#: src/plugins/filed/bpipe-fd.c:910
 #, fuzzy
 msgid "Plugin File argument not specified.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
-#: src/plugins/filed/bpipe-fd.c:878
+#: src/plugins/filed/bpipe-fd.c:916
 #, fuzzy
 msgid "Plugin Reader argument not specified.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
-#: src/plugins/filed/bpipe-fd.c:884
+#: src/plugins/filed/bpipe-fd.c:922
 #, fuzzy
 msgid "Plugin Writer argument not specified.\n"
 msgstr "le client \"%s\" est introuvable.\n"
 
-#: src/plugins/stored/autoxflate-sd.c:295
+#: src/plugins/stored/autoxflate-sd.c:291
 #, c-format
 msgid "autoxflate-sd.c: inflate ratio: %0.2f%%\n"
 msgstr ""
 
-#: src/plugins/stored/autoxflate-sd.c:304
+#: src/plugins/stored/autoxflate-sd.c:300
 #, c-format
 msgid "autoxflate-sd.c: deflate ratio: %0.2f%%\n"
 msgstr ""
 
-#: src/plugins/stored/autoxflate-sd.c:350
+#: src/plugins/stored/autoxflate-sd.c:346
 #, fuzzy, c-format
 msgid "Unexpected autodeflate setting on %s"
 msgstr "Attendait un type de lecteur, pas : %s\n"
 
-#: src/plugins/stored/autoxflate-sd.c:372
+#: src/plugins/stored/autoxflate-sd.c:368
 #, fuzzy, c-format
 msgid "Unexpected autoinflate setting on %s"
 msgstr "Attendait un type de lecteur, pas : %s\n"
 
-#: src/plugins/stored/autoxflate-sd.c:409
+#: src/plugins/stored/autoxflate-sd.c:405
 #, c-format
 msgid ""
 "autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate="
 "%s->deflate=%s->SD]\n"
 msgstr ""
 
-#: src/plugins/stored/autoxflate-sd.c:580
+#: src/plugins/stored/autoxflate-sd.c:575
 #, c-format
 msgid "autodeflation: Compressor on device %s is %s\n"
 msgstr ""
 
-#: src/plugins/stored/scsicrypto-sd.c:366
-msgid "scsicrypto-sd: Trying to load encryption key on drive without support\n"
-msgstr ""
-
-#: src/plugins/stored/scsicrypto-sd.c:395
+#: src/plugins/stored/scsicrypto-sd.c:392
 msgid ""
 "scsicrypto-sd: Failed to unwrap encryption key, probably wrong "
 "KeyEncryptionKey in config\n"
 msgstr ""
 
-#: src/plugins/stored/scsicrypto-sd.c:532
+#: src/plugins/stored/scsicrypto-sd.c:529
 #, c-format
 msgid ""
 "Read error on fd=%d at file:blk %u:%u on device %s. ERR=%s.\n"
