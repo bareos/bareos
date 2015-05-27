@@ -252,9 +252,9 @@ tab character.
 The closest set of parameters for the Linux <span>**indent**</span>
 program that will produce reasonably indented code are:
 
-    -nbad -bap -bbo -nbc -br -brs -c36 -cd36 -ncdb -ce -ci3 -cli0
-    -cp36 -d0 -di1 -ndj -nfc1 -nfca -hnl -i3 -ip0 -l85 -lp -npcs
-    -nprs -npsl -saf -sai -saw -nsob -nss -nbc -ncs -nbfda
+```
+indent -nbad -bap -bbo -nbc -br -brs -c36 -cd36 -ncdb -ce -ci3 -cli0 -cp36 -d0 -di1 -ndj -nfc1 -nfca -hnl -i3 -ip0 -l85 -lp -npcs -nprs -npsl -saf -sai -saw -nsob -nss -nbc -ncs -nbfda
+```
 
 You can put the above in your .indent.pro file, and then just invoke
 indent on your file. However, be warned. This does not produce perfect
