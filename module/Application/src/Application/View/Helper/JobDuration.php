@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -22,15 +22,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
 
-class JobDuration extends AbstractHelper 
+class JobDuration extends AbstractHelper
 {
     	public function __invoke($duration)
     	{
-		return sprintf('%02d:%02d:%02d', ($duration/3600),($duration/60%60), $duration%60);
+		return $duration;
     	}
 }
