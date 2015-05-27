@@ -253,12 +253,14 @@ The closest set of parameters for the Linux <span>**indent**</span>
 program that will produce reasonably indented code are:
 
 ```
-indent -nbad -bap -bbo -nbc -br -brs -c36 -cd36 -ncdb -ce -ci3 -cli0 -cp36 -d0 -di1 -ndj -nfc1 -nfca -hnl -i3 -ip0 -l85 -lp -npcs -nprs -npsl -saf -sai -saw -nsob -nss -nbc -ncs -nbfda
+indent -nbad -bap -bbo -nbc -br -brs -c36 -cd36 -ncdb -ce -ci3 -cli0 -cp36 -d0 -di1 -ndj -nfc1 -nfca -hnl -i3 -ip0 -l85 -lp -npcs -nprs -npsl -saf -sai -saw -nsob -nss -nbc -ncs -nbfda --no-tabs -T POOL_MEM -T json_t
 ```
 
 You can put the above in your .indent.pro file, and then just invoke
 indent on your file. However, be warned. This does not produce perfect
 indenting, and it will mess up C++ class statements pretty badly.
+
+Also typedefs/classes must be specified by the ```-T``` flag.
 
 Braces are required in all if statements (missing in some very old
 code). To avoid generating too many lines, the first brace appears on
