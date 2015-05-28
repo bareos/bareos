@@ -19,6 +19,19 @@ This chapter concentrates on things to do when updating an existing Baroes insta
 It is known, that \command{drop_database} scripts will not longer work on PostgreSQL $<$ 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL $>=$ 8.4.
 We plan to ensure this in future version of Bareos.
 
+\releasenote{14.2.5}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2015-06-01\\
+Database Version  & 2003 (unchanged)\\
+Release Ticket    & \ticket{447} \\
+Url               & \releaseUrlDownloadBareosCom{14.2} \\
+\end{tabular}
+
+This release contains several bugfixes and added the platforms \os{Debian}{8} and \os{Fedora}{21}.
+}
+
+
 \releasenote{14.2.4}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -28,7 +41,7 @@ Release Ticket    & \ticket{420} \\
 Url               & \releaseUrlDownloadBareosCom{14.2} \\
 \end{tabular}
 
-This release contains several bugfix, including one major bugfix (\ticket{437}), relevant for those of you using backup to disk with autolabeling enabled.
+This release contains several bugfixes, including one major bugfix (\ticket{437}), relevant for those of you using backup to disk with autolabeling enabled.
 
 It can lead to loss of a 64k block of data when all of this conditions apply:
 \begin{itemize}

@@ -142,6 +142,11 @@
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\registrykey}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
+\newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
+    \path|#1|\index[general]{Platform!#1}%
+}{%
+    \path|#1 #2|\index[general]{Platform!#1!#2}%
+}}
 
 \newcommand{\vmware}{VMware\registered}
 \newcommand{\vSphere}{VMware vSphere\registered}
