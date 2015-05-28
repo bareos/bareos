@@ -194,7 +194,7 @@ class RestoreForm extends Form
                                 'label' => 'Where'
                                 ),
                         'attributes' => array(
-                                'value' => '/tmp/bareos-restore/'
+                                'value' => '/tmp/bareos-restores/'
                                 )
                         )
 		);
@@ -250,10 +250,9 @@ class RestoreForm extends Form
 		$selectData = array();
 		if(!empty($this->filesets)) {
 			foreach($this->filesets as $fileset) {
-				$selectData[$fileset['name']] = $fileset['name'];
+				$selectData[$fileset['fileset']] = $fileset['fileset'];
 			}
 		}
-		$selectData = array('fileset-1'=>'fileset-1');
 		return $selectData;
 	}
 

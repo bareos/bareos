@@ -49,7 +49,7 @@ class RestoreController extends AbstractActionController
 				$this->restore_params,
 				$this->getJobs("long"),
 				$this->getClients("long"),
-				null//$this->getFilesets("long")
+				$this->getFilesets("long")
 			);
 
 			// Set the method attribute for the form
@@ -64,6 +64,7 @@ class RestoreController extends AbstractActionController
 				$form->setData( $request->getPost() );
 
 				if($form->isValid()) {
+
 					$job = $form->getInputFilter()->getValue('job');
 					$client = $form->getInputFilter()->getValue('client');
 					$restoreclient = $form->getInputFilter()->getValue('restoreclient');
@@ -71,7 +72,21 @@ class RestoreController extends AbstractActionController
 					$before = $form->getInputFilter()->getValue('before');
 					$where = $form->getInputFilter()->getValue('where');
 
-					return $this->redirect()->toRoute('restore', array('action' => 'confirm'));
+					return $this->redirect()->toRoute(
+						'restore',
+						array(
+							'controller'=>'restore',
+							'action' => 'queued'
+						),
+						array(
+							'query' => array(
+								'type' => $this->restore_params['type'],
+								'client' => $client,
+								'restoreclient' => $restoreclient,
+								'fileset' => $fileset,
+								'where' => $where
+							)
+						));
 				}
 				else {
 					return new ViewModel(array(
@@ -108,7 +123,10 @@ class RestoreController extends AbstractActionController
 			// 3. modify restore job
 			// 4. cancel restore job
 
-                        return new ViewModel();
+			$this->getRestoreParams();
+
+                        return new ViewModel(
+			);
 
                 }
                 else {
@@ -123,11 +141,18 @@ class RestoreController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
 
-			// TODO
+			$this->getRestoreParams();
 
-			// 1. display restore job queued
+			$result = $this->restore(
+				$this->restore_params['client'],
+				$this->restore_params['restoreclient'],
+				$this->restore_params['fileset'],
+				$this->restore_params['where']
+			);
 
-			return new ViewModel();
+			return new ViewModel(array(
+				'result' => $result
+			));
 
 		}
 		else {
@@ -174,6 +199,27 @@ class RestoreController extends AbstractActionController
                 else {
                         $this->restore_params['fileset'] = null;
                 }
+
+		if($this->params()->fromQuery('where')) {
+                        $this->restore_params['where'] = $this->params()->fromQuery('where');
+                }
+                else {
+                        $this->restore_params['where'] = null;
+                }
+	}
+
+	/**
+	 *
+	 */
+	private function restore($client=null, $restoreclient=null, $fileset=null, $where=null)
+	{
+		$director = $this->getServiceLocator()->get('director');
+
+		$cmd = "restore client=$client restoreclient=$restoreclient fileset=$fileset where=$where current select all done yes";
+
+		$result = $director->send_command($cmd, 0);
+
+		return $result;
 	}
 
 	/**

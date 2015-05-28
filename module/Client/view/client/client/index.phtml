@@ -39,7 +39,7 @@ Clients per page:
 	<th>Autoprune</th>
 	<th>Fileretention</th>
 	<th>Jobretention</th>
-	<!-- <th>Online status</th> -->
+	<th>Action</th>
 </tr>
 
 <?php foreach($this->paginator as $client) : ?>
@@ -52,7 +52,30 @@ Clients per page:
 	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
 	<td><?php echo $this->printRetention($client->fileretention) . " days"; ?></td>
 	<td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td>
-	<!-- <td></td> -->
+	<td>
+		<div class="btn-group">
+			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+			<span class="caret"></span>
+			<span class="sr-only">Toggle Dropdown</span>
+			</button>
+			<ul class="dropdown-menu" role="menu">
+			<li><a href="
+			<?php
+				echo $this->url(
+					'restore',
+					array('action' => 'index'),
+					array('query' => array(
+						'type' => 1,
+						'client' => $client->name,
+						'restoreclient' => $client->name
+					)
+				));
+			?>
+			"><span class="glyphicon glyphicon-import"></span> Restore most recent backup</a></li>
+			</ul>
+		</div>
+	</td>
 
 </tr>
 
