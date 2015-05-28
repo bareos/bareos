@@ -393,7 +393,11 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
     * Allocate our OpenSSL Context
     * We allow tls 1.2. 1.1 and 1.0
     */
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+   ctx->openssl = SSL_CTX_new(TLS_method());
+#else
    ctx->openssl = SSL_CTX_new(SSLv23_method());
+#endif
    if (!ctx->openssl) {
       openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
       goto err;
@@ -404,10 +408,12 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
     */
    SSL_CTX_set_options(ctx->openssl, SSL_OP_ALL);
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
    /*
     * Disallow broken sslv2 and sslv3.
     */
    SSL_CTX_set_options(ctx->openssl, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#endif
 
    /*
     * Set up pem encryption callback
