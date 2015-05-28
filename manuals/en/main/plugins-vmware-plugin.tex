@@ -2,15 +2,15 @@
 \label{VMwarePlugin}
 \index[general]{Plugin!VMware}
 
-The VMware\raisebox{.6ex}{\textsuperscript{\textregistered}} Plugin can be
+The \vmware\ Plugin can be
 used for agentless backups of virtual machines running on
-VMware vSphere\raisebox{.6ex}{\textsuperscript{\textregistered}}.
+\vSphere.
 It makes use of CBT (Changed Block Tracking) to do space efficient
 full and incremental backups, see below for mandatory requirements.
 
 \subsubsection{Status}
 
-The current development status of the VMware\raisebox{.6ex}{\textsuperscript{\textregistered}}
+The current development status of the \vmware\
 plugin is experimental.
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
@@ -25,10 +25,10 @@ Current limitations amongst others are:
 \end{itemize}
 
 \subsubsection{Requirements}
-As the Plugin is based on the VMware vSphere® Storage APIs for Data Protection,
-which requires at least a VMware vSphere® Essentials License.
+As the Plugin is based on the \vSphere\ Storage APIs for Data Protection,
+which requires at least a \vSphere\ Essentials License.
 It does not work with standalone unlicensed
-VMware® ESXi\raisebox{.6ex}{\textsuperscript{\texttrademark}}
+VMware® ESXi\trademark.
 
 \subsubsection{Installation}
 
@@ -98,7 +98,7 @@ To enable CBT use the Script \command{vmware_cbt_tool.py}, it is packaged
 in the bareos-vmware-plugin package:
 
 \begin{commands}{usage of vmware\_cbt\_tool.py}
-# vmware_cbt_tool.py --help
+# <parameter>vmware_cbt_tool.py --help</parameter>
 usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
                           DATACENTER -f FOLDER -v VMNAME [--enablecbt]
                           [--disablecbt] [--resetcbt] [--info]
@@ -128,8 +128,7 @@ optional arguments:
 For the above configuration example, the command to enable CBT would be
 
 \begin{commands}{Example using vmware\_cbt\_tool.py}
-vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 \
-  -d mydc1 -f /webservers -v websrv1 --enablecbt
+# <parameter>vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 -d mydc1 -f /webservers -v websrv1 --enablecbt</parameter>
 \end{commands}
 
 Note: CBT does not work if the virtual hardware version is 6 or earlier.
@@ -137,11 +136,11 @@ Note: CBT does not work if the virtual hardware version is 6 or earlier.
 After enabling CBT, Backup Jobs can be run or scheduled as usual,
 for example in \command{bconsole}:
 
-\command{run job=vm-websrv1 level=Full}
+\bcommand{run}{job=vm-websrv1 level=Full}
 
 \subsubsection{Restore}
 
 For restore, the VM must be powered off and no snapshot must exist.
 In \command{bconsole} use the restore menu 5, select the correct FileSet
-and enter \command{mark *}, then \command{done}. After restore has finished,
+and enter \bcommand{mark *}{}, then \bcommand{done}{}. After restore has finished,
 the VM can be powered on.

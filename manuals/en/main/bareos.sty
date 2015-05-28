@@ -115,6 +115,8 @@
 \newcommand{\lt}{\textless}
 \newcommand{\gt}{\textgreater}
 \newcommand{\pipe}{\textbar\ }
+\newcommand{\registered}{\raisebox{.6ex}{\textsuperscript{\textregistered}}}
+\newcommand{\trademark}{\raisebox{.6ex}{\textsuperscript{\texttrademark}}}
 % these characters must be quoted in Bareos config files: &<>()@^|
 \newcommand{\configCharsToQuote}{\parameter{&<>()@^}\textbar\ }
 
@@ -140,6 +142,9 @@
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\registrykey}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
+
+\newcommand{\vmware}{VMware\registered}
+\newcommand{\vSphere}{VMware vSphere\registered}
 
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}

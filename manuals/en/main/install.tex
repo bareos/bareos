@@ -346,7 +346,7 @@ su postgres -c /usr/lib/bareos/scripts/update_bareos_tables
 su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
 \end{commands}
 
-The \command{grant_bareos_privileges} command is required, if new databases tables are introduced. It does not hurt to run es multiple times.
+The \command{grant_bareos_privileges} command is required, if new databases tables are introduced. It does not hurt to run it multiple times.
 
 After this, restart the Bareos Director and verify it starts without problems.
 
