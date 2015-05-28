@@ -420,4 +420,6 @@ bool win32_restore_file_attributes(POOLMEM *ofname,
 #define IO_REPARSE_TAG_DEDUP (0x80000013)
 #endif
 
+#define HAVE_VA_COPY 1
+
 #endif /* __COMPAT_H_ */
