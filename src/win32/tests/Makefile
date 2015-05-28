@@ -37,20 +37,24 @@ LDLIBS = ../lib/libbareos.a \
 GROWSRCS = grow.c
 GROWOBJS = $(GROWSRCS:.c=.o)
 
-#WINDRESSRCS = growres.rc
-#WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
+BREGTESTSRCS = bregtest.c
+BREGTESTOBJS = $(BREGTESTSRCS:.c=.o)
 
-all: grow.exe
+all: grow.exe bregtest.exe
 
 grow.exe: DLL_USAGE = -DUSING_DLL
 grow.exe: $(GROWOBJS) $(WINDRESOBJS)
 	$(CXX) $(LDFLAGS_GROW) $(GROWOBJS) $(LDLIBS) -o $@
 
+bregtest.exe: DLL_USAGE = -DUSING_DLL
+bregtest.exe: $(BREGTESTOBJS) $(WINDRESOBJS)
+	$(CXX) $(LDFLAGS_BREGTEST) $(BREGTESTOBJS) $(LDLIBS) -o $@
+
 clean:
 	rm -f *.o
 
 distclean:: clean
-	rm -f grow.exe
+	rm -f *.exe
 
 # inference rules
 .c.o:
