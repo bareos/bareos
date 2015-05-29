@@ -137,19 +137,20 @@ static pFuncs pluginFuncs = {
  * Plugin private context
  */
 struct plugin_ctx {
-   int32_t backup_level;
-   bool python_loaded;
-   char *plugin_options;
-   char *module_path;
-   char *module_name;
-   char *fname;
-   char *link;
-   char *object_name;
-   char *object;
-   PyThreadState *interpreter;
-   PyObject *pModule;
-   PyObject *pDict;
-   PyObject *bpContext;
+   int32_t backup_level;              /* Backup level e.g. Full/Differential/Incremental */
+   utime_t since;                     /* Since time for Differential/Incremental */
+   bool python_loaded;                /* Plugin is loaded ? */
+   char *plugin_options;              /* Plugin Option string */
+   char *module_path;                 /* Plugin Module Path */
+   char *module_name;                 /* Plugin Module Name */
+   char *fname;                       /* Next filename to save */
+   char *link;                        /* Target symlink points to */
+   char *object_name;                 /* Restore Object Name */
+   char *object;                      /* Restore Object Content */
+   PyThreadState *interpreter;        /* Python interpreter for this instance of the plugin */
+   PyObject *pModule;                 /* Python Module pointer */
+   PyObject *pDict;                   /* Python Dictionary */
+   PyObject *bpContext;               /* Python representation of plugin context */
 };
 
 #include "python-fd.h"
@@ -237,7 +238,9 @@ static bRC newPlugin(bpContext *ctx)
     * any other events it is interested in.
     */
    bfuncs->registerBareosEvents(ctx,
-                                7,
+                                9,
+                                bEventLevel,
+                                bEventSince,
                                 bEventNewPluginOptions,
                                 bEventPluginCommand,
                                 bEventJobStart,
@@ -376,6 +379,9 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    switch (event->eventType) {
    case bEventLevel:
       p_ctx->backup_level = (int64_t)value;
+      break;
+   case bEventSince:
+      p_ctx->since = (int64_t)value;
       break;
    case bEventBackupCommand:
      /*
@@ -559,6 +565,15 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
    case L_DIFFERENTIAL:
+      /*
+       * If the plugin didn't set a save_time but we have a since time
+       * from the bEventSince event we use that as basis for the actual
+       * save_time to check.
+       */
+      if (sp->save_time == 0 && p_ctx->since) {
+         sp->save_time = p_ctx->since;
+      }
+
       switch (bfuncs->checkChanges(ctx, sp)) {
       case bRC_Seen:
          switch (sp->type) {
