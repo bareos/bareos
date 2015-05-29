@@ -34,15 +34,14 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 #!BuildIgnore: post-build-checks
 
+%define addonsdir /bareos-addons/
+BuildRequires:  bareos-addons
+
+%define SIGNCERT ia.p12
+%define SIGNPWFILE signpassword
+
+
 Source1:        fillup.sed
-Source2:        vss_headers.tar
-Source3:        vdi_headers.tar
-Source4:        pgsql-libpq.tar
-
-# code signing cert
-Source10:       ia.p12
-Source11:       signpassword
-
 Patch1:         tray-monitor-conf.patch
 Patch2:         tray-monitor-conf-fd-sd.patch
 
@@ -138,9 +137,10 @@ cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monito
 mv src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in src/qt-tray-monitor/tray-monitor.fd-sd.conf.in
 cp src/qt-tray-monitor/tray-monitor.conf.in.orig src/qt-tray-monitor/tray-monitor.fd-sd-dir.conf.in
 
-tar xvf %SOURCE2
-tar xvf %SOURCE3
-tar xvf %SOURCE4
+# unpack addons
+for i in `ls %addonsdir`; do
+   tar xvf %addonsdir/$i
+done
 
 CONTENT=`ls`
 
@@ -237,8 +237,8 @@ for flavor in `echo "%flavors"`; do
    pushd $RPM_BUILD_ROOT%{_mingw64_bindir}/$flavor
    for BINFILE in *; do
       mv $BINFILE $BINFILE.unsigned
-      osslsigncode -pkcs12 %SOURCE10 \
-                   -pass `cat %SOURCE11` \
+      osslsigncode -pkcs12 ${OLDPWD}/%SIGNCERT \
+                   -pass `cat ${OLDPWD}/%SIGNPWFILE` \
                    -n "${DESCRIPTION}" \
                    -i http://www.bareos.com/ \
                    -in  $BINFILE.unsigned \
@@ -252,12 +252,6 @@ done
 rm -rf $RPM_BUILD_ROOT
 
 %files
-#defattr(-,root,root)
-#/etc/%name/*.conf
-#/etc/%name/ddl/
-#dir %{_mingw64_bindir}
-#{_mingw64_bindir}/*.dll
-#{_mingw64_bindir}/*.exe
 
 
 %files prevista
