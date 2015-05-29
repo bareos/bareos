@@ -142,6 +142,7 @@ Jobs per page:
 			<?php if($job->type != "R") : ?>
 			<li class="divider"></li>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 2, 'job' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
 			<?php endif; ?>
 		</ul>
 	</div>

@@ -81,6 +81,7 @@ class RestoreController extends AbstractActionController
 						array(
 							'query' => array(
 								'type' => $this->restore_params['type'],
+								'job' => $this->restore_params['job'],
 								'client' => $client,
 								'restoreclient' => $restoreclient,
 								'fileset' => $fileset,
@@ -144,6 +145,8 @@ class RestoreController extends AbstractActionController
 			$this->getRestoreParams();
 
 			$result = $this->restore(
+				$this->restore_params['type'],
+				$this->restore_params['job'],
 				$this->restore_params['client'],
 				$this->restore_params['restoreclient'],
 				$this->restore_params['fileset'],
@@ -211,13 +214,25 @@ class RestoreController extends AbstractActionController
 	/**
 	 *
 	 */
-	private function restore($client=null, $restoreclient=null, $fileset=null, $where=null)
+	private function restore($type=null, $job=null, $client=null, $restoreclient=null, $fileset=null, $where=null)
 	{
+		$result = null;
 		$director = $this->getServiceLocator()->get('director');
 
-		$cmd = "restore client=$client restoreclient=$restoreclient fileset=$fileset where=$where current select all done yes";
-
-		$result = $director->send_command($cmd, 0);
+		switch ($type) {
+			// Restore most recent client (full)
+			case 1:
+				$cmd = "restore client=$client restoreclient=$restoreclient fileset=$fileset where=$where current select all done yes";
+				$result = $director->send_command($cmd, 0);
+				break;
+			// Restore specific job (jobid)
+			case 2:
+				$cmd = "restore jobid=$job client=$client restoreclient=$restoreclient where=$where all done yes";
+				$result = $director->send_command($cmd, 0);
+				break;
+			default:
+				break;
+		}
 
 		return $result;
 	}

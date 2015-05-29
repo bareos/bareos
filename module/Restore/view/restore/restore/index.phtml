@@ -44,13 +44,19 @@ $this->headTitle($title);
 
        <?php
 		switch($this->restore_params['type']) {
+			// Restore most recent client (full)
 			case 1:
 				echo $this->formRow($form->get('client')->setAttribute('class','form-control'));
 				echo $this->formRow($form->get('fileset')->setAttribute('class','form-control'));
 				echo $this->formRow($form->get('restoreclient')->setAttribute('class','form-control'));
 				echo $this->formRow($form->get('where')->setAttribute('class','form-control'));
 				break;
+			// Restore specific job (jobid)
 			case 2:
+				echo $this->formRow($form->get('job')->setAttribute('class', 'form-control'));
+				echo $this->formRow($form->get('client')->setAttribute('class','form-control'));
+                                echo $this->formRow($form->get('restoreclient')->setAttribute('class','form-control'));
+                                echo $this->formRow($form->get('where')->setAttribute('class','form-control'));
 				break;
 			default:
 				echo $this->formRow($form->get('job')->setAttribute('class', 'form-control'));

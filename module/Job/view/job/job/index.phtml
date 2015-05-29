@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -93,7 +93,7 @@ Jobs per page:
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'duration', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Duration"); ?></a></th>
 	<th><a href="<?php echo $this->url('job', array('order_by' => 'JobStatus', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Status"); ?></a></th>
 	<th><?php echo $this->translate("Action"); ?></th>
-	
+
 </tr>
 
 <?php foreach ($this->paginator as $job) : ?>
@@ -122,8 +122,10 @@ Jobs per page:
 			<li class="divider"></li>
 		<?php if($job->jobstatus == "T") : ?>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 2, 'job' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
 		<?php elseif($job->jobstatus == "E" || $job->jobstatus == "e" || $job->jobstatus == "f" || $job->jobstatus == "A") : ?>
 			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
+			<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 2, 'job' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
 		<?php else : ?>
 			<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
 		<?php endif; ?>
@@ -143,7 +145,7 @@ Jobs per page:
         </div>
         <?php endif; ?>
 	</td>
-	
+
 </tr>
 
 <?php endforeach; ?>
