@@ -737,6 +737,10 @@ static bRC checkFile(bpContext *ctx, char *fname)
       goto bail_out;
    }
 
+   if (!p_ctx->python_loaded) {
+      return bRC_OK;
+   }
+
    PyEval_AcquireThread(p_ctx->interpreter);
    retval = PyCheckFile(ctx, fname);
    PyEval_ReleaseThread(p_ctx->interpreter);
