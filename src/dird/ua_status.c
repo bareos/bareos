@@ -41,7 +41,8 @@ static void do_scheduler_status(UAContext *ua);
 static bool do_subscription_status(UAContext *ua);
 static void do_all_status(UAContext *ua);
 static void status_slots(UAContext *ua, STORERES *store);
-static void status_content(UAContext *ua, STORERES *store);
+static void status_content_api(UAContext *ua, STORERES *store);
+static void status_content_json(UAContext *ua, STORERES *store);
 
 static char OKqstatus[] =
    "1000 OK .status\n";
@@ -199,7 +200,17 @@ int status_cmd(UAContext *ua, const char *cmd)
                case APT_NDMPV4:
                   break;
                default:
-                  status_slots(ua, store);
+                  switch (ua->api) {
+                  case API_MODE_OFF:
+                     status_slots(ua, store);
+                     break;
+                  case API_MODE_ON:
+                     status_content_api(ua, store);
+                     break;
+                  case API_MODE_JSON:
+                     status_content_json(ua, store);
+                     break;
+                  }
                   break;
                }
             } else {
@@ -215,6 +226,7 @@ int status_cmd(UAContext *ua, const char *cmd)
                }
             }
          }
+
          return 1;
       }
    }
@@ -1286,7 +1298,7 @@ static void list_terminated_jobs(UAContext *ua)
    unlock_last_jobs_list();
 }
 
-static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name)
+static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_name)
 {
    char ed1[50], ed2[50], ed3[50];
    POOL_DBR pr;
@@ -1308,13 +1320,54 @@ static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name
                    edit_uint64(mr.VolBytes, ed1),
                    mr.VolStatus, mr.MediaType, pr.Name,
                    edit_uint64(mr.LastWritten, ed2),
-                   edit_uint64(mr.LastWritten+mr.VolRetention, ed3));
-
+                   edit_uint64(mr.LastWritten + mr.VolRetention, ed3));
    } else {                  /* Media unknown */
       ua->send_msg(slot_api_full_format,
                    type, Slot, 0, mr.VolumeName, "?", "?", "?", "?",
                    "0", "0");
+   }
+}
 
+static void content_send_info_json(UAContext *ua, const char *type, int Slot, char *vol_name)
+{
+   POOL_DBR pr;
+   MEDIA_DBR mr;
+
+   memset(&pr, 0, sizeof(pr));
+   memset(&mr, 0, sizeof(mr));
+
+   bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
+   if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+      pr.PoolId = mr.PoolId;
+      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+         strcpy(pr.Name, "?");
+      }
+
+      ua->send->object_start(type);
+      ua->send->object_key_value("slotnr", Slot, "%d\n");
+      ua->send->object_key_value("content", "full", "%s\n");
+      ua->send->object_key_value("mr_slotnr", mr.Slot, "%lld\n");
+      ua->send->object_key_value("mr_volname", mr.VolumeName, "%s\n");
+      ua->send->object_key_value("mr_volbytes", mr.VolBytes, "%lld\n");
+      ua->send->object_key_value("mr_volstatus", mr.VolStatus, "%s\n");
+      ua->send->object_key_value("mr_mediatype", mr.MediaType, "%s\n");
+      ua->send->object_key_value("pr_name", pr.Name, "%s\n");
+      ua->send->object_key_value("mr_lastwritten", mr.LastWritten, "%lld\n");
+      ua->send->object_key_value("mr_expire", mr.LastWritten + mr.VolRetention, "%lld\n");
+      ua->send->object_end(type);
+   } else {                  /* Media unknown */
+      ua->send->object_start(type);
+      ua->send->object_key_value("slotnr", Slot, "%d\n");
+      ua->send->object_key_value("content", "full", "%s\n");
+      ua->send->object_key_value("mr_slotnr", (uint64_t)0, "%lld\n");
+      ua->send->object_key_value("mr_volname", mr.VolumeName, "%s\n");
+      ua->send->object_key_value("mr_volbytes", "?", "%s\n");
+      ua->send->object_key_value("mr_volstatus", "?", "%s\n");
+      ua->send->object_key_value("mr_mediatype", "?", "%s\n");
+      ua->send->object_key_value("pr_name", "?", "%s\n");
+      ua->send->object_key_value("mr_lastwritten", (uint64_t)0, "%lld\n");
+      ua->send->object_key_value("mr_expire", (uint64_t)0, "%lld\n");
+      ua->send->object_end(type);
    }
 }
 
@@ -1350,9 +1403,8 @@ static void content_send_info(UAContext *ua, char type, int Slot, char *vol_name
  * S|1|1|vol1|31417344|Full|LTO1-ANSI|Inc|1250858902|1282394902
  * S|2||||||||
  * S|3|3|vol4|15869952|Append|LTO1-ANSI|Inc|1250858907|1282394907
- *
  */
-static void status_content(UAContext *ua, STORERES *store)
+static void status_content_api(UAContext *ua, STORERES *store)
 {
    bool found;
    vol_list_t *vl1, *vl2;
@@ -1391,10 +1443,10 @@ static void status_content(UAContext *ua, STORERES *store)
          case slot_content_full:
             switch (vl1->Type) {
             case slot_type_normal:
-               content_send_info(ua, 'S', vl1->Slot, vl1->VolName);
+               content_send_info_api(ua, 'S', vl1->Slot, vl1->VolName);
                break;
             case slot_type_import:
-               content_send_info(ua, 'I', vl1->Slot, vl1->VolName);
+               content_send_info_api(ua, 'I', vl1->Slot, vl1->VolName);
                break;
             default:
                break;
@@ -1413,10 +1465,10 @@ static void status_content(UAContext *ua, STORERES *store)
                   if (vl1->Slot == vl2->Loaded) {
                      switch (vl1->Type) {
                      case slot_type_normal:
-                        content_send_info(ua, 'S', vl1->Slot, vl2->VolName);
+                        content_send_info_api(ua, 'S', vl1->Slot, vl2->VolName);
                         break;
                      case slot_type_import:
-                        content_send_info(ua, 'I', vl1->Slot, vl2->VolName);
+                        content_send_info_api(ua, 'I', vl1->Slot, vl2->VolName);
                         break;
                      default:
                         break;
@@ -1470,6 +1522,130 @@ bail_out:
    return;
 }
 
+static void status_content_json(UAContext *ua, STORERES *store)
+{
+   bool found;
+   vol_list_t *vl1, *vl2;
+   dlist *vol_list = NULL;
+
+   if (!open_client_db(ua)) {
+      return;
+   }
+
+   vol_list = get_vol_list_from_SD(ua, store, true /* listall */ , true /* want to see all slots */);
+   if (!vol_list) {
+      ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
+      goto bail_out;
+   }
+
+   foreach_dlist(vl1, vol_list) {
+      switch (vl1->Type) {
+      case slot_type_drive:
+         ua->send->object_start("drive");
+         ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
+         switch (vl1->Content) {
+         case slot_content_full:
+            ua->send->object_key_value("content", "full", "%s\n");
+            ua->send->object_key_value("loaded", vl1->Loaded, "%d\n");
+            ua->send->object_key_value("volname", vl1->VolName, "%s\n");
+            break;
+         case slot_content_empty:
+            ua->send->object_key_value("content", "empty", "%s\n");
+            break;
+         default:
+            break;
+         }
+         ua->send->object_end("drive");
+         break;
+      case slot_type_normal:
+      case slot_type_import:
+         switch (vl1->Content) {
+         case slot_content_full:
+            switch (vl1->Type) {
+            case slot_type_normal:
+               content_send_info_json(ua, "slot", vl1->Slot, vl1->VolName);
+               break;
+            case slot_type_import:
+               content_send_info_json(ua, "import_slot", vl1->Slot, vl1->VolName);
+               break;
+            default:
+               break;
+            }
+            break;
+         case slot_content_empty:
+            /*
+             * See if this empty slot is empty because the volume is loaded
+             * in one of the drives.
+             */
+            found = false;
+            vl2 = (vol_list_t *)vol_list->first();
+            while (!found && vl2) {
+               switch (vl2->Type) {
+               case slot_type_drive:
+                  if (vl1->Slot == vl2->Loaded) {
+                     switch (vl1->Type) {
+                     case slot_type_normal:
+                        content_send_info_json(ua, "slot", vl1->Slot, vl2->VolName);
+                        break;
+                     case slot_type_import:
+                        content_send_info_json(ua, "import_slot", vl1->Slot, vl2->VolName);
+                        break;
+                     default:
+                        break;
+                     }
+                     found = true;
+
+                     /*
+                      * When we used this entry we can remove it from
+                      * the list so we limit the search time next round.
+                      */
+                     vol_list->remove(vl2);
+                     if (vl2->VolName) {
+                        free(vl2->VolName);
+                     }
+                     free(vl2);
+                     continue;
+                  }
+                  break;
+               default:
+                  break;
+               }
+               vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+            }
+            if (!found) {
+               switch (vl1->Type) {
+               case slot_type_normal:
+                  ua->send->object_start("slot");
+                  ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
+                  ua->send->object_key_value("content", "empty", "%s\n");
+                  ua->send->object_end("slot");
+                  break;
+               case slot_type_import:
+                  ua->send->object_start("import_slot");
+                  ua->send->object_key_value("number", vl1->Slot, "%d\n");
+                  ua->send->object_key_value("content", "empty", "%s\n");
+                  ua->send->object_end("import_slot");
+                  break;
+               default:
+                  break;
+               }
+            }
+            break;
+         }
+      default:
+         break;
+      }
+   }
+
+bail_out:
+   if (vol_list) {
+      free_vol_list(vol_list);
+   }
+   close_sd_bsock(ua);
+
+   return;
+}
+
 /*
  * Print slots from AutoChanger
  */
@@ -1487,11 +1663,6 @@ static void status_slots(UAContext *ua, STORERES *store_r)
     * Slot | Volume | Status | MediaType | Pool
     */
    const char *slot_hformat=" %4i%c| %16s | %9s | %14s | %24s |\n";
-
-   if (ua->api) {
-      status_content(ua, store_r);
-      return;
-   }
 
    if (!open_client_db(ua)) {
       return;
