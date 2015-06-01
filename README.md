@@ -9,7 +9,7 @@ incremental backups.
 The plugin uses the [VMware vSphere API Python Bindings](https://github.com/vmware/pyvmomi)
 and the [VMware Virtual Disk Development Kit (VDDK)](https://developercenter.vmware.com/web/sdk/55/vddk)
 
-Tthe status of the plugin is fresh and experimental.
+The status of the plugin is fresh and experimental.
 
 ### INSTALLATION
 
