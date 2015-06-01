@@ -27,7 +27,13 @@ INSTALLATION
 
 ### PACKAGE BASED INSTALLATION
 
-Bareos-WebUI packages are available for a number of Linux distributions, see [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository.
+Packages are available for a number of Linux distributions, please see:
+
+* [Version 14.2 (stable)](http://download.bareos.org/bareos/contrib/)
+* [Version 15.2 (experimental/nightly)](http://download.bareos.org/bareos/experimental/nightly/)
+
+**Note:** The experimental nightly webui build only works with and from Bareos 15.2 (experimental/nightly) onwards,
+as it makes use of the new JSON API.
 
 #### Step 1 - Adding the Repository
 
@@ -103,7 +109,7 @@ apt-get install bareos-webui
 
 ```
 
-#### Step 2 - Configuration of a restricted console
+#### Step 2 - Configuration of restricted consoles and profile resources
 
 You can have multiple Consoles with different names and passwords, sort of like multiple users, each with different privileges.
 As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to
@@ -114,7 +120,7 @@ It is required to add at least one restricted named console in your director con
 The restricted named consoles, configured in your bareos-dir.conf, are used for authentication and access control. The name
 and password directives of the restricted consoles are the credentials you have to provide during authentication to the webui
 as username and password. For full access and functionality relating the director connection the following commands are
-currently needed by the webui and have to be made available via the CommandACL in your restricted consoles.
+currently needed by the webui and have to be made available via the CommandACL in your profile the restricted consoles uses.
 
 * status
 * messages
@@ -123,12 +129,22 @@ currently needed by the webui and have to be made available via the CommandACL i
 * run
 * rerun
 * cancel
+* use
+* restore
+* list, llist
+* .api
+* .bvfs_update
+* .bvfs_lsdirs
+* .bvfs_lsfiles
+* .bvfs_versions
+* .bvfs_restore
 
-The package install provides a default configuration under /etc/bareos/bareos-dir.d/bareos-webui.conf, which has to be included
+The package install provides a default console and profile configuration under /etc/bareos/bareos-dir.d/, which have to be included
 at the bottum of your /etc/bareos/bareos-dir.conf and edited to your needs.
 
 ```
-echo "@/etc/bareos/bareos-dir.d/bareos-webui.conf" >> /etc/bareos/bareos-dir.conf
+echo "@/etc/bareos/bareos-dir.d/webui-consoles.conf" >> /etc/bareos/bareos-dir.conf
+echo "@/etc/bareos/bareos-dir.d/webui-profiles.conf" >> /etc/bareos/bareos-dir.conf
 ```
 
 **Note:** Most parts of the webui still use a direct connection to the catalog database to retrieve data, so the configured ACL
@@ -138,12 +154,38 @@ will be droped and fully replaced by the native connection to the director itsel
 
 ```
 #
+# Preparations:
+#
+# include this configuration file in bareos-dir.conf by
+# @/etc/bareos/bareos-dir.d/webui-consoles.conf
+#
+
+#
 # Restricted console used by bareos-webui
 #
 Console {
   Name = user1
-  Password = "password"
-  CommandACL = status, messages, show, version, run, rerun, cancel
+  Password = "CHANGEME"
+  Profile = webui
+}
+
+```
+For more details about console resource configuration in bareos, please have a look at the online [Bareos documentation](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#ConsoleResource).
+
+```
+#
+# Preparations:
+#
+# include this configuration file in bareos-dir.conf by
+# @/etc/bareos/bareos-dir.d/webui-profiles.conf
+#
+
+#
+# bareos-webui default profile resource
+#
+Profile {
+  Name = webui
+  CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore
   Job ACL = *all*
   Schedule ACL = *all*
   Catalog ACL = *all*
@@ -151,10 +193,11 @@ Console {
   Storage ACL = *all*
   Client ACL = *all*
   FileSet ACL = *all*
-  #Where ACL =
+  Where ACL = *all*
 }
+
 ```
-For more details about console resource configuration in bareos, please have a look at the online [Bareos documentation](http://doc.bareos.org/).
+For more details about profile resource configuration in bareos, please have a look at the online [Bareos documentation](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#ProfileResource).
 
 **Note:** Do not forget to reload your new director configuration.
 
