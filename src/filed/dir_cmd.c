@@ -2000,6 +2000,14 @@ static bool restore_cmd(JCR *jcr)
       if (!jcr->where_bregexp) {
          Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
          free_pool_memory(args);
+#if defined(WIN32_VSS)
+         if (jcr->VSS) {
+            /*
+             * clear mutex
+             */
+            V(vss_mutex);
+         }
+#endif
          return false;
       }
    } else {
