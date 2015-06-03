@@ -82,12 +82,24 @@ dpl_location_constraint(char *str)
 {
   if (!strcasecmp(str, ""))
     return DPL_LOCATION_CONSTRAINT_US_STANDARD;
-  else if (!strcasecmp(str, "EU"))
-    return DPL_LOCATION_CONSTRAINT_EU;
   else if (!strcasecmp(str, "us-west-1"))
     return DPL_LOCATION_CONSTRAINT_US_WEST_1;
+  else if (!strcasecmp(str, "us-west-2"))
+    return DPL_LOCATION_CONSTRAINT_US_WEST_2;
+  else if (!strcasecmp(str, "EU"))
+    return DPL_LOCATION_CONSTRAINT_EU;
+  else if (!strcasecmp(str, "eu-west-1"))
+    return DPL_LOCATION_CONSTRAINT_EU_WEST_1;
+  else if (!strcasecmp(str, "eu-central-1"))
+    return DPL_LOCATION_CONSTRAINT_EU_CENTRAL_1;
   else if (!strcasecmp(str, "ap-southeast-1"))
     return DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1;
+  else if (!strcasecmp(str, "ap-southeast-2"))
+    return DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_2;
+  else if (!strcasecmp(str, "ap-northeast-1"))
+    return DPL_LOCATION_CONSTRAINT_AP_NORTHEAST_1;
+  else if (!strcasecmp(str, "sa-east-1"))
+    return DPL_LOCATION_CONSTRAINT_SA_EAST_1;
 
   return -1;
 }
@@ -101,12 +113,24 @@ dpl_location_constraint_str(dpl_location_constraint_t location_constraint)
       return NULL;
     case DPL_LOCATION_CONSTRAINT_US_STANDARD:
       return "";
-    case DPL_LOCATION_CONSTRAINT_EU:
-      return "EU";
     case DPL_LOCATION_CONSTRAINT_US_WEST_1:
       return "us-west-1";
+    case DPL_LOCATION_CONSTRAINT_US_WEST_2:
+      return "us-west-2";
+    case DPL_LOCATION_CONSTRAINT_EU:
+      return "EU";
+    case DPL_LOCATION_CONSTRAINT_EU_WEST_1:
+      return "eu-west-1";
+    case DPL_LOCATION_CONSTRAINT_EU_CENTRAL_1:
+      return "eu-central-1";
     case DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_1:
       return "ap-southeast-1";
+    case DPL_LOCATION_CONSTRAINT_AP_SOUTHEAST_2:
+      return "ap-southeast-2";
+    case DPL_LOCATION_CONSTRAINT_AP_NORTHEAST_1:
+      return "ap-northeast-1";
+    case DPL_LOCATION_CONSTRAINT_SA_EAST_1:
+      return "sa-east-1";
     }
 
   return NULL;
