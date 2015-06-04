@@ -1069,7 +1069,8 @@ dpl_posix_copy(dpl_ctx_t *ctx,
       ret = DPL_ENOTSUPP;
       goto end;
     case DPL_COPY_DIRECTIVE_METADATA_REPLACE:
-      if (strcmp(src_resource, dst_resource))
+      if ((src_resource == NULL || dst_resource == NULL)
+	  	|| strcmp(src_resource, dst_resource))
         {
           ret = DPL_EINVAL;
           goto end;
