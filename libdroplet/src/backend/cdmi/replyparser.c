@@ -201,6 +201,11 @@ dpl_cdmi_get_metadatum_from_value(const char *key,
 
   DPRINTF("key=%s val.type=%d\n", key, val->type);
 
+  if (val == NULL)
+   {
+     ret = DPL_EINVAL;
+	 goto end;
+   }
   if (sysmdp)
     {
       if (!strcmp(key, "objectID"))
