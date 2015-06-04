@@ -137,6 +137,11 @@ dpl_swift_get_metadatum_from_value(const char *key,
       /*   } */
     }
 
+  if (val == NULL)
+    {
+	  ret = DPL_EINVAL;
+	  goto end;
+    }
   if (!strcmp(key, "metadata"))
     {
       //this is the metadata object
