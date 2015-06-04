@@ -816,7 +816,10 @@ convert_obj_to_value(dpl_ctx_t *ctx,
   switch (json_object_get_type(obj))
     {
     case json_type_null:
-      return DPL_ENOTSUPP;
+	  {
+        ret = DPL_ENOTSUPP;
+	  	goto end;
+	  }
     case json_type_array:
       {
         int n_items = json_object_array_length(obj);
