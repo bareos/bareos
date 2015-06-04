@@ -471,6 +471,7 @@ dpl_s3_stream_multipart_complete(dpl_ctx_t *ctx,
   ret = DPL_SUCCESS;
 
 end:
+  free(databuf);
   if (NULL != conn)
     {
       if (1 == connection_close)
