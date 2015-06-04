@@ -123,7 +123,7 @@ _multipart_parse_complete(const dpl_ctx_t *ctx,
         {
           if (!strcmp((char *)(elem->name), "Error"))
             {
-              ret = DPL_ERROR;
+              ret = DPL_FAILURE;
               break ;
             }
         }
