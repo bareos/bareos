@@ -267,7 +267,7 @@ void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
          }
          break;
       case '|':
-         rewrap_string.strcat("|");
+         *q++ = '|';
          if (api == 0 && wrap > 0 && open <= 0) {
             *q++ = '\n';
             *q++ = '\t';
