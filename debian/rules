@@ -82,7 +82,7 @@ CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) --enable-client-only
 CONFIGURE_FULL        = $(CONFIGURE_COMMON) --with-python --enable-bat --enable-traymonitor
 
 override_dh_auto_configure:
-	if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
+	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
 		echo "configure common configuration"; \
 		dh_auto_configure -- $(CONFIGURE_COMMON); \
 	else \
@@ -117,7 +117,8 @@ override_dh_makeshlibs:
 %:
 	PARALLEL="--parallel"; \
 	if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then PARALLEL=""; fi; \
-	dh $@ $$PARALLEL
+	if dh --list | grep -q systemd; then WITH="--with"; SYSTEMD="systemd"; fi; \
+	dh $@ $$PARALLEL $$WITH $$SYSTEMD
 
 gen-debian-copyright:
 	(cd debian; make copyright)

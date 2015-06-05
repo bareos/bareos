@@ -33,4 +33,6 @@ Restart=on-failure
 # IOSchedulingClass=idle
 
 [Install]
+Alias=bareos-fd.service
+Alias=bareos-filedaemon.service
 WantedBy=multi-user.target

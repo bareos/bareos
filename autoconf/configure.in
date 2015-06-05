@@ -4377,32 +4377,49 @@ dnl -------------------------------------------
 AC_MSG_CHECKING(for systemd support)
 AC_ARG_WITH(systemd,
    AC_HELP_STRING([--with-systemd@<:@=UNITDIR@:>@], [Include systemd support. UNITDIR is where systemd system .service files are located, default is to ask systemctl.]),
-   [
-       if test "$withval" != "no"; then
-	   if test "$withval" = "yes"; then
-	       SYSTEMD_UNITDIR="`systemctl show | grep UnitPath | cut -d " " -f2`"
-	   else
-	       SYSTEMD_UNITDIR="${withval}"
-	   fi
+    with_systemd_unitdir=${withval}
+)
 
-	   PFILES="${PFILES} \
+if test "x${with_systemd_unitdir}" != "xyes" && test x"${with_systemd_unitdir}" != "x"; then
+   #
+   # Make sure the $with_systemd_unitdir also makes sense
+   #
+   if test -d "${with_systemd_unitdir}"; then
+       SYSTEMD_UNITDIR="${with_systemd_unitdir}"
+       support_systemd=yes
+   fi
+else
+   if test "x${with_systemd_unitdir}" = xyes || test x"${with_systemd_unitdir}" = "x"; then
+        AC_CHECK_PROG(support_systemd, systemctl, yes, no)
+        if test "x${support_systemd}" = "xyes"; then
+            # SYSTEMD_UNITDIR="`systemctl show | grep UnitPath | cut -d " " -f2`"
+            if test -d "/usr/lib/systemd/system"; then
+                SYSTEMD_UNITDIR="/usr/lib/systemd/system"
+            elif test -d "/lib/systemd/system"; then
+                SYSTEMD_UNITDIR="/lib/systemd/system"
+            else
+                support_systemd=no
+            fi
+        fi
+   fi
+fi
+
+if test "x${support_systemd}" = "xyes"; then
+    AC_MSG_RESULT(yes)
+    PFILES="${PFILES} \
 		   platforms/systemd/Makefile \
 		   platforms/systemd/bareos.conf \
 		   platforms/systemd/bareos-dir.service \
 		   platforms/systemd/bareos-fd.service \
-		   platforms/systemd/bareos-sd.service"
-	   AC_DEFINE(HAVE_SYSTEMD, 1, [Define to 1 if systemd support should be enabled])
-	   AC_MSG_RESULT(yes)
-	   support_systemd="yes"
-       else
-	   AC_MSG_RESULT(no)
-	   support_systemd="no"
-       fi
-   ],[
-       support_systemd="no"
-       AC_MSG_RESULT(no)
-   ]
-)
+		   platforms/systemd/bareos-sd.service \
+		   debian/bareos-filedaemon.service \
+		   debian/bareos-storage.service \
+		   debian/bareos-director.service"
+    AC_DEFINE(HAVE_SYSTEMD, 1, [Define to 1 if systemd support should be enabled])
+else
+    AC_MSG_RESULT(no)
+fi
+
 AC_SUBST(SYSTEMD_UNITDIR)
 
 AC_SUBST(hostname)

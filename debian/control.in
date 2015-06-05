@@ -35,6 +35,8 @@ Build-Depends: acl-dev,
  po-debconf (>= 0.8.2),
  python-dev,
  zlib1g-dev
+# dh-systemd:
+#   not available on all platforms
 # libfastlz-dev:
 #   installed in OBS via dsc file,
 #   not part of Debian/Ubuntu.
