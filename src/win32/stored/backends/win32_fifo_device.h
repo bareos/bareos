@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +19,18 @@
    02110-1301, USA.
 */
 /*
- * UNIX FIFO API device abstraction.
+ * WIN32 FIFO API device abstraction.
  *
  * Marco van Wieringen, June 2014
  */
 
-#ifndef UNIX_FIFO_DEVICE_H
-#define UNIX_FIFO_DEVICE_H
+#ifndef WIN32_FIFO_DEVICE_H
+#define WIN32_FIFO_DEVICE_H
 
-class unix_fifo_device: public DEVICE {
+class win32_fifo_device: public DEVICE {
 public:
-   unix_fifo_device();
-   ~unix_fifo_device();
+   win32_fifo_device();
+   ~win32_fifo_device();
 
    /*
     * Interface from DEVICE
@@ -47,4 +47,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DCR *dcr);
 };
-#endif /* UNIX_FIFO_DEVICE_H */
+#endif /* WIN32_FIFO_DEVICE_H */

@@ -92,9 +92,10 @@
 #include "backends/generic_tape_device.h"
 #ifdef HAVE_WIN32
 #include "backends/win32_tape_device.h"
+#include "backends/win32_fifo_device.h"
 #else
-#include "backends/unix_fifo_device.h"
 #include "backends/unix_tape_device.h"
+#include "backends/unix_fifo_device.h"
 #endif
 #endif /* HAVE_DYNAMIC_SD_BACKENDS */
 
@@ -203,6 +204,9 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 #ifdef HAVE_WIN32
    case B_TAPE_DEV:
       dev = New(win32_tape_device);
+      break;
+   case B_FIFO_DEV:
+      dev = New(win32_fifo_device);
       break;
 #else
    case B_TAPE_DEV:

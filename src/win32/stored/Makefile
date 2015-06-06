@@ -40,7 +40,8 @@ LDLIBS_FIND = ../lib/libbareos.a \
 	      $(MINGW_LIB)/libpthreadGCE2.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-DEVICE_API_SRCS = generic_tape_device.c win32_tape_device.c win32_file_device.c
+DEVICE_API_SRCS = generic_tape_device.c win32_tape_device.c \
+		  win32_fifo_device.c win32_file_device.c
 
 # objects used in all daemons collected in (shared) library.
 LIBBAREOSSD_SRCS = acquire.c ansi_label.c askdir.c autochanger.c block.c \
