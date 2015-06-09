@@ -1508,6 +1508,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
          default:
             break;
          }
+         break;
       default:
          break;
       }
@@ -1631,7 +1632,10 @@ static void status_content_json(UAContext *ua, STORERES *store)
                }
             }
             break;
+         default:
+            break;
          }
+         break;
       default:
          break;
       }
