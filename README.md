@@ -21,6 +21,8 @@ and frameworks.
 * [jQuery - MIT License](http://jquery.com/)
 * [jqplot - dual licensed under MIT License and GPL Version 2 License](http://www.jqplot.com/)
 * [jstree - MIT License](http://www.jstree.com/)
+* [Moments.js - MIT License](http://momentjs.com/)
+* [Bootstrap 3 Datepicker - MIT License](http://eonasdan.github.io/bootstrap-datetimepicker/)
 * [composer - MIT License](https://getcomposer.org/)
 
 You can find a complete file listing in [LICENSE](LICENSE).

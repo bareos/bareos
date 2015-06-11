@@ -118,16 +118,16 @@ Jobs per page:
 			<span class="sr-only">Toggle Dropdown</span>
 		</button>
 		<ul class="dropdown-menu" role="menu">
-			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+			<li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
 			<li class="divider"></li>
 		<?php if($job->jobstatus == "T") : ?>
-			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 2, 'job' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run</a></li>
+			<!--<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 'job', 'jobid' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore</a></li>-->
 		<?php elseif($job->jobstatus == "E" || $job->jobstatus == "e" || $job->jobstatus == "f" || $job->jobstatus == "A") : ?>
-			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run job</a></li>
-			<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 2, 'job' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Rerun"); ?>"><span class="glyphicon glyphicon-repeat"></span> Re-run</a></li>
+			<!--<li><a href="<?php echo $this->url('restore', array('action' => 'index'), array('query' => array('type' => 'job', 'jobid' => $job->jobid, 'client' => $job->clientname, 'restoreclient' => $job->clientname))); ?>"><span class="glyphicon glyphicon-import"></span> Restore</a></li>-->
 		<?php else : ?>
-			<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel job</a></li>
+			<li><a href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("Cancel"); ?>"><span class="glyphicon glyphicon-trash"></span> Cancel</a></li>
 		<?php endif; ?>
 		</ul>
 	</div>
@@ -140,7 +140,7 @@ Jobs per page:
                         <span class="sr-only">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu" role="menu">
-                        <li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View logs"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
+                        <li><a href="<?php echo $this->url('log', array('action' => 'job', 'id' => $job->jobid)); ?>" title="<?php echo $this->translate("View messages"); ?>"><span class="glyphicon glyphicon-file"></span> View messages</a></li>
                 </ul>
         </div>
         <?php endif; ?>

@@ -47,21 +47,28 @@ $this->headTitle($title);
 </div>
 </div>
 
-</div>
 
-<!--
 <div class="col-md-5">
 
 <div class="panel panel-default">
-
 <div class="panel-heading">
-<h3 class="panel-title">todo placeholder (client stats)</h3>
+<h3 class="panel-title">Actions</h3>
 </div>
 
 <div class="panel-body">
+<a class="btn btn-primary btn-block" href="<?php echo $this->url(
+						'restore',
+						array('action' => 'index'),
+						array('query' => array(
+							'type' => 'client',
+							'client' => $client->name,
+							'restoreclient' => $client->name
+							)
+						)); ?>" role="button">Restore</a>
 </div>
 </div>
--->
+
+</div>
 
 <!-- bconsoleOutput start -->
 <div class="row">

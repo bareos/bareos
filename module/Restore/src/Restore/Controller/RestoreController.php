@@ -45,15 +45,41 @@ class RestoreController extends AbstractActionController
 
 			$this->getRestoreParams();
 
+			if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+				$latestbackup = $this->getClientBackups($this->restore_params['client'], "any", "desc", 1);
+				$this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+			}
+
+			if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
+				$jobids = $this->restore_params['jobid'];
+			}
+			else {
+				$jobids = $this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+			}
+
+			if($this->restore_params['type'] == "client") {
+				$backups = $this->getClientBackups($this->restore_params['client'], "any", "desc");
+			}
+
+			$jobs = $this->getJobs(2);
+                        $clients = $this->getClients(0);
+                        $filesets = $this->getFilesets(0);
+                        $restorejobs = $this->getRestoreJobs(0);
+
+			// Create the form
 			$form = new RestoreForm(
 				$this->restore_params,
-				$this->getJobs("long"),
-				$this->getClients("long"),
-				$this->getFilesets("long")
+				$jobs,
+				$clients,
+				$filesets,
+				$restorejobs,
+				$jobids,
+				$backups
 			);
 
 			// Set the method attribute for the form
 			$form->setAttribute('method', 'post');
+			$form->setAttribute('onsubmit','return getFiles()');
 
 			$request = $this->getRequest();
 
@@ -65,29 +91,29 @@ class RestoreController extends AbstractActionController
 
 				if($form->isValid()) {
 
-					$job = $form->getInputFilter()->getValue('job');
-					$client = $form->getInputFilter()->getValue('client');
-					$restoreclient = $form->getInputFilter()->getValue('restoreclient');
-					$fileset = $form->getInputFilter()->getValue('fileset');
-					$before = $form->getInputFilter()->getValue('before');
-					$where = $form->getInputFilter()->getValue('where');
+					if($this->restore_params['type'] == "client") {
 
-					return $this->redirect()->toRoute(
-						'restore',
-						array(
-							'controller'=>'restore',
-							'action' => 'queued'
-						),
-						array(
-							'query' => array(
-								'type' => $this->restore_params['type'],
-								'job' => $this->restore_params['job'],
-								'client' => $client,
-								'restoreclient' => $restoreclient,
-								'fileset' => $fileset,
-								'where' => $where
-							)
-						));
+						$type = $this->restore_params['type'];
+						$jobid = $form->getInputFilter()->getValue('jobid');
+						$client = $form->getInputFilter()->getValue('client');
+						$restoreclient = $form->getInputFilter()->getValue('restoreclient');
+						$restorejob = $form->getInputFilter()->getValue('restorejob');
+						$where = $form->getInputFilter()->getValue('where');
+						$fileid = $form->getInputFilter()->getValue('checked_files');
+						$dirid = $form->getInputFilter()->getValue('checked_directories');
+						$jobids = $form->getInputFilter()->getValue('jobids_hidden');
+						$replace = $form->getInputFilter()->getValue('replace');
+
+						$result = $this->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+
+					}
+
+					return new ViewModel(array(
+                                                'restore_params' => $this->restore_params,
+                                                'form' => $form,
+						'result' => $result
+                                        ));
+
 				}
 				else {
 					return new ViewModel(array(
@@ -111,56 +137,99 @@ class RestoreController extends AbstractActionController
 	}
 
 	/**
-	 *
+	 * Delivers a subtree as Json for JStree
 	 */
-	public function confirmAction()
+	public function filebrowserAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
-
-                        // TODO
-
-			// 1. display restore job summary
-			// 2. submit restore job
-			// 3. modify restore job
-			// 4. cancel restore job
-
-			$this->getRestoreParams();
-
-                        return new ViewModel(
-			);
-
+                        $result = new ViewModel(array(
+                                'items' => $this->buildSubtree()
+                        ));
+                        $this->layout('layout/json');
+                        return $result;
                 }
-                else {
+                else{
                         return $this->redirect()->toRoute('auth', array('action' => 'login'));
                 }
 	}
 
 	/**
-	 *
+	 * Builds a subtree as Json for JStree
 	 */
-	public function queuedAction()
+	private function buildSubtree()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
 
-			$this->getRestoreParams();
+		$this->getRestoreParams();
 
-			$result = $this->restore(
-				$this->restore_params['type'],
-				$this->restore_params['job'],
-				$this->restore_params['client'],
-				$this->restore_params['restoreclient'],
-				$this->restore_params['fileset'],
-				$this->restore_params['where']
-			);
-
-			return new ViewModel(array(
-				'result' => $result
-			));
-
+		// Get directories
+		if($this->restore_params['type'] == "client") {
+			$directories = $this->getDirectories($this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets'], $this->restore_params['mergejobs']), $this->restore_params['id']);
 		}
 		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			$directories = $this->getDirectories($this->restore_params['jobid'], $this->restore_params['id']);
 		}
+
+		// Get files
+		if($this->restore_params['type'] == "client") {
+			$files = $this->getFiles($this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets'], $this->restore_params['mergejobs']), $this->restore_params['id']);
+		}
+		else {
+			$files = $this->getFiles($this->restore_params['jobid'], $this->restore_params['id']);
+		}
+
+		$dnum = count($directories);
+		$fnum = count($files);
+		$tmp = $dnum;
+
+		// Build Json for JStree
+		$items = '[';
+
+		foreach($directories as $dir) {
+			if($dir['name'] == ".") {
+				--$dnum;
+				next($directories);
+			}
+			elseif($dir['name'] == "..") {
+				--$dnum;
+				next($directories);
+			}
+			else {
+				--$dnum;
+				$items .= '{';
+				$items .= '"id":"' . $dir['pathid'] . '"';
+				$items .= ',"text":"' . $dir["name"] . '"';
+				$items .= ',"icon":"glyphicon glyphicon-folder-close"';
+				$items .= ',"state":""';
+				$items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
+				$items .= ',"children":true';
+				$items .= '}';
+				if($dnum > 0) {
+					$items .= ",";
+				}
+			}
+		}
+
+		if( $tmp > 2 && $fnum > 0 ) {
+			$items .= ",";
+		}
+
+		foreach($files as $file) {
+			$items .= '{';
+			$items .= '"id":"' . $file["fileid"] . '"';
+			$items .= ',"text":"' . $file["name"] . '"';
+			$items .= ',"icon":"glyphicon glyphicon-file"';
+			$items .= ',"state":""';
+			$items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
+			$items .= '}';
+			--$fnum;
+			if($fnum > 0) {
+				$items .= ",";
+			}
+		}
+
+		$items .= ']';
+
+		return $items;
 	}
 
 	/**
@@ -175,11 +244,11 @@ class RestoreController extends AbstractActionController
                         $this->restore_params['type'] = null;
                 }
 
-		if($this->params()->fromQuery('job')) {
-			$this->restore_params['job'] = $this->params()->fromQuery('job');
+		if($this->params()->fromQuery('jobid')) {
+			$this->restore_params['jobid'] = $this->params()->fromQuery('jobid');
 		}
 		else {
-			$this->restore_params['job'] = null;
+			$this->restore_params['jobid'] = null;
 		}
 
 		if($this->params()->fromQuery('client')) {
@@ -196,11 +265,25 @@ class RestoreController extends AbstractActionController
                         $this->restore_params['restoreclient'] = null;
                 }
 
+		if($this->params()->fromQuery('restorejob')) {
+                        $this->restore_params['restorejob'] = $this->params()->fromQuery('restorejob');
+                }
+                else {
+                        $this->restore_params['restorejob'] = null;
+                }
+
 		if($this->params()->fromQuery('fileset')) {
                         $this->restore_params['fileset'] = $this->params()->fromQuery('fileset');
                 }
                 else {
                         $this->restore_params['fileset'] = null;
+                }
+
+		if($this->params()->fromQuery('before')) {
+                        $this->restore_params['before'] = $this->params()->fromQuery('before');
+                }
+                else {
+                        $this->restore_params['before'] = null;
                 }
 
 		if($this->params()->fromQuery('where')) {
@@ -209,31 +292,179 @@ class RestoreController extends AbstractActionController
                 else {
                         $this->restore_params['where'] = null;
                 }
+
+		if($this->params()->fromQuery('fileid')) {
+                        $this->restore_params['fileid'] = $this->params()->fromQuery('fileid');
+                }
+                else {
+                        $this->restore_params['fileid'] = null;
+                }
+
+		if($this->params()->fromQuery('dirid')) {
+                        $this->restore_params['dirid'] = $this->params()->fromQuery('dirid');
+                }
+                else {
+                        $this->restore_params['dirid'] = null;
+                }
+
+		if($this->params()->fromQuery('id')) {
+                        $this->restore_params['id'] = $this->params()->fromQuery('id');
+                }
+                else {
+                        $this->restore_params['id'] = null;
+                }
+
+		if($this->params()->fromQuery('jobids')) {
+                        $this->restore_params['jobids'] = $this->params()->fromQuery('jobids');
+                }
+                else {
+                        $this->restore_params['jobids'] = null;
+                }
+
+		if($this->params()->fromQuery('mergefilesets')) {
+                        $this->restore_params['mergefilesets'] = $this->params()->fromQuery('mergefilesets');
+                }
+                else {
+                        $this->restore_params['mergefilesets'] = 0;
+                }
+
+		if($this->params()->fromQuery('mergejobs')) {
+                        $this->restore_params['mergejobs'] = $this->params()->fromQuery('mergejobs');
+                }
+                else {
+                        $this->restore_params['mergejobs'] = 0;
+                }
+
+		if($this->params()->fromQuery('replace')) {
+                        $this->restore_params['replace'] = $this->params()->fromQuery('replace');
+                }
+                else {
+                        $this->restore_params['replace'] = null;
+                }
+
+		if($this->params()->fromQuery('replaceoptions')) {
+                        $this->restore_params['replaceoptions'] = $this->params()->fromQuery('replaceoptions');
+                }
+                else {
+                        $this->restore_params['replaceoptions'] = null;
+                }
+
+		if($this->params()->fromQuery('versions')) {
+                        $this->restore_params['versions'] = $this->params()->fromQuery('versions');
+                }
+                else {
+                        $this->restore_params['versions'] = null;
+                }
+
 	}
 
 	/**
 	 *
 	 */
-	private function restore($type=null, $job=null, $client=null, $restoreclient=null, $fileset=null, $where=null)
+	private function restore($type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
 	{
 		$result = null;
 		$director = $this->getServiceLocator()->get('director');
 
-		switch ($type) {
-			// Restore most recent client (full)
-			case 1:
-				$cmd = "restore client=$client restoreclient=$restoreclient fileset=$fileset where=$where current select all done yes";
-				$result = $director->send_command($cmd, 0);
-				break;
-			// Restore specific job (jobid)
-			case 2:
-				$cmd = "restore jobid=$job client=$client restoreclient=$restoreclient where=$where all done yes";
-				$result = $director->send_command($cmd, 0);
-				break;
-			default:
-				break;
+		if($type == "client") {
+                        $result = $director->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+		}
+		elseif($type == "job") {
+			// TODO
+                        //$result = $director->restore();
 		}
 
+		return $result;
+	}
+
+	/**
+	 *
+	 * @param $jobid
+	 * @param $pathid
+	 * @return array
+	 */
+	private function getDirectories($jobid=null, $pathid=null)
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($pathid == null || $pathid == "#") {
+			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid path=/", 2, $jobid);
+		}
+		else {
+			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid pathid=$pathid", 2, $jobid);
+		}
+		$directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $directories['result']['directories'];
+	}
+
+	/**
+	 *
+	 * @param $jobid
+	 * @param $pathid
+	 * @return array
+	 */
+	private function getFiles($jobid=null, $pathid=null)
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($pathid == null || $pathid == "#") {
+			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid path=/", 2);
+		}
+		else {
+			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid pathid=$pathid", 2);
+		}
+		$files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $files['result']['files'];
+	}
+
+	/**
+	 * TODO
+	 */
+	private function getRevisions($jobid=null, $filenameid=null)
+	{
+		$director = $this->getServiceLocator()->get('director');
+
+		// TODO
+
+	}
+
+	/**
+	 * Get all JobIds needed to restore a particular job.
+	 * With the all option set to true the director will
+	 * use all definded filesets for a client.
+	 *
+	 * @param $jobid
+	 * @return mixed
+	 */
+	private function getJobIds($jobid=null, $mergefilesets=0, $mergejobs=0)
+	{
+		$result = null;
+		$director = $this->getServiceLocator()->get('director');
+
+		if($mergefilesets == 0) {
+                        $cmd = ".bvfs_get_jobids jobid=$jobid all";
+			$result = $director->send_command($cmd, 2);
+                }
+                elseif($mergefilesets == 1) {
+                        $cmd = ".bvfs_get_jobids jobid=$jobid";
+			$result = $director->send_command($cmd, 2);
+                }
+
+		if($mergejobs == 1) {
+			return $jobid;
+		}
+
+		$jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $result = "";
+                $jnum = count($jobids['result']['jobids']);
+
+                foreach($jobids['result']['jobids'] as $jobid) {
+                        $result .= $jobid['id'];
+                        --$jnum;
+                        if($jnum > 0) {
+                                $result .= ",";
+                        }
+                }
+
+		$this->restore_params['jobids'] = $result;
 		return $result;
 	}
 
@@ -243,17 +474,19 @@ class RestoreController extends AbstractActionController
 	 * @param $format
 	 * @return array
 	 */
-	private function getJobs($format="long")
+	private function getJobs($format=2)
 	{
 		$director = $this->getServiceLocator()->get('director');
-		if($format == "long") {
+		if($format == 2) {
 			$result = $director->send_command("llist jobs", 2);
 		}
-		elseif($format == "short") {
+		elseif($format == 1) {
 			$result = $director->send_command("list jobs", 2);
 		}
+		elseif($format == 0) {
+		}
 		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $jobs['result'][0]['jobs'];
+		return $jobs['result']['jobs'];
 	}
 
 	/**
@@ -262,17 +495,20 @@ class RestoreController extends AbstractActionController
 	 * @param $format
 	 * @return array
 	 */
-	private function getClients($format="long")
+	private function getClients($format=2)
 	{
 		$director = $this->getServiceLocator()->get('director');
-		if($format == "long") {
+		if($format == 2) {
 			$result = $director->send_command("llist clients", 2);
 		}
-		elseif($format == "short") {
+		elseif($format == 1) {
 			$result = $director->send_command("list clients", 2);
 		}
+		elseif($format == 0) {
+			$result = $director->send_command(".clients", 2);
+		}
 		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $clients['result'][0]['clients'];
+                return $clients['result']['clients'];
 	}
 
 	/**
@@ -281,18 +517,49 @@ class RestoreController extends AbstractActionController
 	 * @param $format
 	 * @return array
 	 */
-	private function getFilesets($format="long")
+	private function getFilesets($format=2)
 	{
 		$director = $this->getServiceLocator()->get('director');
-		if($format == "long") {
+		if($format == 2) {
 			$result = $director->send_command("llist filesets", 2);
 		}
-		elseif($format == "short") {
+		elseif($format == 1) {
 			$result = $director->send_command("list filesets", 2);
 		}
+		elseif($format == 0) {
+			$result = $director->send_command(".filesets", 2);
+		}
 		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $filesets['result'][0]['filesets'];
+		return $filesets['result']['filesets'];
+	}
+
+	/**
+	 * Get restore job list from director
+	 */
+	private function getRestoreJobs($format=0)
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($format == 0) {
+			$result = $director->send_command(".jobs type=R", 2);
+		}
+		$restorejobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $restorejobs['result']['jobs'];
+	}
+
+	/**
+	 * Get client backup list from director
+	 */
+	private function getClientBackups($client=null, $fileset=null, $order=null, $limit=null)
+	{
+		$director = $this->getServiceLocator()->get('director');
+		if($limit != null) {
+			$result = $director->send_command("list backups client=$client fileset=$fileset order=$order limit=$limit", 2);
+		}
+		else {
+			$result = $director->send_command("list backups client=$client fileset=$fileset order=$order", 2);
+		}
+		$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $backups['result']['backups'];
 	}
 
 }
-

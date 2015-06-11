@@ -52,15 +52,42 @@ class Restore implements InputFilterAwareInterface
 			$inputFilter = new InputFilter();
 
 			$inputFilter->add(array(
-				'name' => 'job',
+				'name' => 'jobid',
 				'required' => false,
 				'filters' => array(
 					array('name' => 'StripTags'),
 					array('name' => 'StringTrim'),
 				),
 				'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 64
+                                                )
+                                        )
 				)
 			));
+
+			$inputFilter->add(array(
+                                'name' => 'backups',
+                                'required' => false,
+                                'filters' => array(
+                                        array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+                                ),
+                                'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
+                                )
+                        ));
 
 			$inputFilter->add(array(
                                 'name' => 'client',
@@ -70,6 +97,14 @@ class Restore implements InputFilterAwareInterface
 					array('name' => 'StringTrim'),
 				),
                                 'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
 				)
                         ));
 
@@ -81,6 +116,14 @@ class Restore implements InputFilterAwareInterface
 					array('name' => 'StringTrim'),
 				),
                                 'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
 				)
                         ));
 
@@ -92,6 +135,14 @@ class Restore implements InputFilterAwareInterface
                                         array('name' => 'StringTrim'),
 				),
                                 'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
 				)
                         ));
 
@@ -103,12 +154,20 @@ class Restore implements InputFilterAwareInterface
                                         array('name' => 'StringTrim'),
 				),
                                 'validators' => array(
+					array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
 				)
                         ));
 
 			$inputFilter->add(array(
                                 'name' => 'where',
-                                'required' => false,
+                                'required' => true,
                                 'filters' => array(
 					array('name' => 'StripTags'),
                                         array('name' => 'StringTrim'),
@@ -123,6 +182,76 @@ class Restore implements InputFilterAwareInterface
 						)
 					)
 				)
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'restorejob',
+                                'required' => true,
+                                'filters' => array(
+                                        array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+                                ),
+                                'validators' => array(
+                                        array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8',
+                                                        'min' => 1,
+                                                        'max' => 128
+                                                )
+                                        )
+                                )
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'checked_files',
+                                'required' => false,
+                                'filters' => array(
+                                        array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+                                ),
+                                'validators' => array(
+                                        array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8'
+                                                )
+                                        )
+                                )
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'checked_directories',
+                                'required' => false,
+                                'filters' => array(
+                                        array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+                                ),
+                                'validators' => array(
+                                        array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8'
+                                                )
+                                        )
+                                )
+                        ));
+
+			$inputFilter->add(array(
+                                'name' => 'jobids_hidden',
+                                'required' => false,
+                                'filters' => array(
+                                        array('name' => 'StripTags'),
+                                        array('name' => 'StringTrim'),
+                                ),
+                                'validators' => array(
+                                        array(
+                                                'name' => 'StringLength',
+                                                'options' => array(
+                                                        'encoding' => 'UTF-8'
+                                                )
+                                        )
+                                )
                         ));
 
 			$this->inputFilter = $inputFilter;

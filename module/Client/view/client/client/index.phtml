@@ -54,7 +54,7 @@ Clients per page:
 	<td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td>
 	<td>
 		<div class="btn-group">
-			<button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></button>
+			<div type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></div>
 			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
 			<span class="caret"></span>
 			<span class="sr-only">Toggle Dropdown</span>
@@ -66,13 +66,13 @@ Clients per page:
 					'restore',
 					array('action' => 'index'),
 					array('query' => array(
-						'type' => 1,
+						'type' => 'client',
 						'client' => $client->name,
 						'restoreclient' => $client->name
 					)
 				));
 			?>
-			"><span class="glyphicon glyphicon-import"></span> Restore most recent backup</a></li>
+			"><span class="glyphicon glyphicon-import"></span> Restore</a></li>
 			</ul>
 		</div>
 	</td>

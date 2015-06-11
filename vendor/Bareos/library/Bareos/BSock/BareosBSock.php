@@ -829,7 +829,7 @@ class BareosBSock implements BareosBSockInterface
 	 * @param $api
 	 * @return string
 	 */
-	public function send_command($cmd, $api=0)
+	public function send_command($cmd, $api=0, $jobid=null)
 	{
 		$result = "";
 		$debug = "";
@@ -853,8 +853,58 @@ class BareosBSock implements BareosBSockInterface
 			$debug = self::receive_message();
 		}
 
+		if($jobid != null) {
+			if(self::send(".bvfs_update jobid=$jobid")) {
+				$debug = self::receive_message();
+			}
+		}
+
 		if(self::send($cmd)) {
 			$result = self::receive_message();
+		}
+
+		return $result;
+	}
+
+	/**
+	 *
+	 *
+	 * @param $type
+	 * @param $jobid
+	 * @param $client
+	 * @param $restoreclient
+	 * @param $restorejob
+	 * @param $where
+	 * @param $fileid
+	 * @param $dirid
+	 * @param $jobids
+	 *
+	 * @return string
+	 */
+	public function restore($type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+	{
+		$result = "";
+		$debug = "";
+		$rnd = rand(1000,1000000);
+
+		if(self::send(".api 0")) {
+                        $debug = self::receive_message();
+                }
+
+		if(self::send(".bvfs_update jobid=$jobids")) {
+                        $debug = self::receive_message();
+                }
+
+		if(self::send(".bvfs_restore jobid=$jobids fileid=$fileid dirid=$dirid path=b2000$rnd")) {
+			$debug = self::receive_message();
+		}
+
+		if(self::send("restore file=?b2000$rnd client=$client restoreclient=$restoreclient restorejob=$restorejob where=$where replace=$replace yes")) {
+			$result = self::receive_message();
+		}
+
+		if(self::send(".bvfs_cleanup path=b2000$rnd")) {
+			$debug = self::receive_message();
 		}
 
 		return $result;
