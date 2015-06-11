@@ -174,7 +174,7 @@ class bconsole:
                 self.socket.settimeout(0.1)
                 try:
                     header = self.socket.recv(4)
-                except Timeout:
+                except socket.timeout:
                     self.logger.debug( "timeout on receiving header" )
                     pass
                 else:
