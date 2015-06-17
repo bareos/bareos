@@ -24,24 +24,24 @@ Release 15.2.x
 * Windows binaries are code signed.
 * Fixes to FD plugin framework to fix original mis-design.
 * Rerun overhaul
-  * Rerun now also works with virtual full backups.
-  * Only allow rerun of Backup/Copy/Migration Jobs
+   * Rerun now also works with virtual full backups.
+   * Only allow rerun of Backup/Copy/Migration Jobs
 * Storage daemon reservation logic enhanced to exchange already tried
   volume names when reservation fails of the earlier returned volume name.
 * Fileset encryption overhaul.
-  * Add new fileset option that forces encryption.
-  * Implement the encryption=<cipher> fileset option
+   * Add new fileset option that forces encryption.
+   * Implement the encryption=<cipher> fileset option
 * Make resource propagation a standard operation.
 * Refactor storage daemon flag handling.
-  * Changed all defines to an enum and switch to using bit operations.
+   * Changed all defines to an enum and switch to using bit operations.
 * Preliminary code to make database connection more robust
-  * Allow reconnect of database connection when no transaction is pending.
-  * Allow setting of database connection failure to be fatal.
-  * Both disabled by default.
+   * Allow reconnect of database connection when no transaction is pending.
+   * Allow setting of database connection failure to be fatal.
+   * Both disabled by default.
 * Debug printing enhancements:
-  * Increase debug message timestamp resolution to include usecs.
-  * When printing protocol messages drop printing \n
-  * Set JCR in TSD for stored and filed.
+   * Increase debug message timestamp resolution to include usecs.
+   * When printing protocol messages drop printing \n
+   * Set JCR in TSD for stored and filed.
 
 Release 15.1.x
 ==============
@@ -73,9 +73,9 @@ Release 14.2.x
 
 * Configuration engine refactoring in preparation for configuration API.
 * Accurate mode refactoring
-  * Data storage abstraction
-  * In memory hashtable (same as previously)
-  * LMDB (Lightning Memory DB same as used in OpenLDAP.)
+   * Data storage abstraction
+   * In memory hashtable (same as previously)
+   * LMDB (Lightning Memory DB same as used in OpenLDAP.)
 * Python FD plugin base class abstraction for Python plugin writers.
 * Added missing methods to Python FD class should now have all methods and structures that C plugin has.
 * Fixed most important high level coding problems found by Coverity scans.
@@ -84,9 +84,9 @@ Release 14.2.x
 * Cleanup of more global variables.
 * Make scripting more robust for getting the database engine used.
 * Debian packaging got major overhaul.
-  * dbconfig used for database configuration on debian based distributions.
-  * dh_installinit used for init scripts on debian based distributions.
-  * The LICENSE text is more inline with what debian requires for the debian packaging.
+   * dbconfig used for database configuration on debian based distributions.
+   * dh_installinit used for init scripts on debian based distributions.
+   * The LICENSE text is more inline with what debian requires for the debian packaging.
 * Bug fixes to bugs found by Coverity scans.
 * Added prototype of CRL (Certificate Revocation List) reload logic for openssl.
 * Limit storage list to autochangers automatically when a command makes sense only on autochangers.
@@ -96,23 +96,23 @@ Release 14.2.x
 * Traymonitor now shows a red icon when there are connection or authentication problems with a server.
 * CentOS 7 and RHEL7 support added to build system.
 * Fixed several problems with copy and migration jobs to make them work better.
-  * Do not cancel the copy/migration job on certain events.
-  * When you configure your Copy and Migration Jobs now without a dummy client/fileset you get the following:
-    * Jobs now show the actual client of the original job.
-    * Jobs now show the actual level of the the original job.
-    * Jobs now show the actual fileset of the original job.
-  * The jobs data spooling setting is now only used when its not enabled already.
-    * In the old situation the disabling of data spooling in the Job would disable a command line override to enable spooling.
-  * The printing of Client and FileSet and Level is restored now they are set with sensible info.
-  * Disabled checking client concurrency for Copy and Migration Jobs.
-    * As the client is not contacted anyway we are now only limited by the storage concurrency.
-  * Allow to read from file type devices multiple times
-    * A read volume on a file type device can now be reserved by multiple jobs and when the jobs
-      use the same volume they can execute at the same time when the right concurrency is met on the other resources.
+   * Do not cancel the copy/migration job on certain events.
+   * When you configure your Copy and Migration Jobs now without a dummy client/fileset you get the following:
+      * Jobs now show the actual client of the original job.
+      * Jobs now show the actual level of the the original job.
+      * Jobs now show the actual fileset of the original job.
+   * The jobs data spooling setting is now only used when its not enabled already.
+      * In the old situation the disabling of data spooling in the Job would disable a command line override to enable spooling.
+   * The printing of Client and FileSet and Level is restored now they are set with sensible info.
+   * Disabled checking client concurrency for Copy and Migration Jobs.
+      * As the client is not contacted anyway we are now only limited by the storage concurrency.
+   * Allow to read from file type devices multiple times
+      * A read volume on a file type device can now be reserved by multiple jobs and when the jobs
+        use the same volume they can execute at the same time when the right concurrency is met on the other resources.
 * Added a prototype of a CEPHFS storage backend.
 * Added support for dynamic loading of storage backends in the storage daemon.
-  * File storage is always loaded.
-  * Tape/GFAPI/RADOS/... can be loaded dynamically (simular to what we alread had for database backends.)
+   * File storage is always loaded.
+   * Tape/GFAPI/RADOS/... can be loaded dynamically (simular to what we alread had for database backends.)
 * All shared code between the different storage programs (bareos-sd, btape, ...) is now in a new shared library.
 * VTAPE is removed from the code base (Use MHVTL).
 * Initial support for TAPEALERT is added.
@@ -137,9 +137,9 @@ Release 14.1.x
 * Windows DIR.
 * Support for different blocksizes (e.g. per volume blocksize) for better performance.
 * Preliminary support for Cloud storage backends:
-  * GFAPI (Gluster FileSystem) (tested simple backup and restore, needs more tests)
-  * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (Due to unusable VFS abstraction not working).
-  * Rados (CEPH) (tested simple backup and restore, needs more tests)
+   * GFAPI (Gluster FileSystem) (tested simple backup and restore, needs more tests)
+   * Object storage (S3/Swift etc.) using libdroplet (Needs patched bareos libdroplet) (Due to unusable VFS abstraction not working).
+   * Rados (CEPH) (tested simple backup and restore, needs more tests)
 
 Release 13.4.x
 ==============
@@ -156,10 +156,10 @@ Release 13.4.x
 * Bpipe plugin upgraded to new plugin config parser.
 * Socket abstraction (TCP supported, prototype for SCTP and UDT sockets).
 * Windows enhancements
-  * Volume Mountpoints support (VMP).
-  * Use GetFileInformationByHandleEx to get real changetime.
-  * Windows dedup support
-  * Initial support for Windows EFS filesystems
+   * Volume Mountpoints support (VMP).
+   * Use GetFileInformationByHandleEx to get real changetime.
+   * Windows dedup support
+   * Initial support for Windows EFS filesystems
 
 Release 13.3.x
 ==============
