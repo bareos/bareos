@@ -6,6 +6,43 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+Release 15.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+* Lots of refactoring of old code.
+* Systemd support for Debian >= 8 and Ubuntu >= 15.04
+* Volume manager cleanup in storage daemon.
+* New JSON API support using JANSSON for director
+* Replace own JSON representation code with JANSSON
+* Allow scanning and storing restore objects with bscan.
+* Unit tests created using CMOCKA
+* Add support for RESTORE_OBJECTS in verify jobs
+* Windows API fixes (deduped file backup, compressed file attributes)
+* Windows build got more executable (grow, bscan, bwild, bregex)
+* Windows binaries are code signed.
+* Fixes to FD plugin framework to fix original mis-design.
+* Rerun overhaul
+  * Rerun now also works with virtual full backups.
+  * Only allow rerun of Backup/Copy/Migration Jobs
+* Storage daemon reservation logic enhanced to exchange already tried
+  volume names when reservation fails of the earlier returned volume name.
+* Fileset encryption overhaul.
+  * Add new fileset option that forces encryption.
+  * Implement the encryption=<cipher> fileset option
+* Make resource propagation a standard operation.
+* Refactor storage daemon flag handling.
+  * Changed all defines to an enum and switch to using bit operations.
+* Preliminary code to make database connection more robust
+  * Allow reconnect of database connection when no transaction is pending.
+  * Allow setting of database connection failure to be fatal.
+  * Both disabled by default.
+* Debug printing enhancements:
+  * Increase debug message timestamp resolution to include usecs.
+  * When printing protocol messages drop printing \n
+  * Set JCR in TSD for stored and filed.
+
 Release 15.1.x
 ==============
 
