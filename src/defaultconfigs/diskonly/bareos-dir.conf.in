@@ -160,6 +160,7 @@ FileSet {
       FS Type = ext3  # others will be ignored
       FS Type = ext4
       FS Type = xfs
+      FS Type = zfs
       FS Type = reiserfs
       FS Type = jfs
       FS Type = btrfs
