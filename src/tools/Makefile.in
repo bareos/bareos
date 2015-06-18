@@ -91,7 +91,7 @@ bpluginfo: Makefile bpluginfo.o ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 
 timelimit.o: timelimit.c
 	@echo "Compiling $<"
-	${CC} ${DEFS} ${DEBUG} $(CFLAGS) -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
+	${CC} ${DEFS} ${DEBUG} $(CFLAGS) $(CPPFLAGS) -DHAVE_ERRNO_H -DHAVE_SETITIMER -DHAVE_SIGACTION -c timelimit.c
 
 timelimit: timelimit.o
 	@echo "Linking $@ ..."
