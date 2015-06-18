@@ -36,18 +36,21 @@ class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass
     listed there Filename is taken from plugin argument 'filename'
     '''
 
-    def parse_plugin_definition(self, context, plugindef):
+    def __init__(self, context, plugindef):
+        bareosfd.DebugMessage(
+           context, 100,
+           "Constructor called in module %s with plugindef=%s\n"
+           % (__name__, plugindef))
+        # Last argument of super constructor is a list of mandatory arguments
+        super(BareosFdPluginLocalFileset, self).__init__(context, plugindef, ['filename'])
+
+    def start_backup_job(self, context):
         '''
-        Parses the plugin argmuents and reads files from file given by
-        argument 'filename'
+        At this point, plugin options were passed and checked already.
+        We try to read from filename and setup the list of file to backup
+        in self.files_to_backup
         '''
-        # BareosFdPluginBaseclass.parse_plugin_definition(self, context, plugindef); # noqa
-        super(BareosFdPluginLocalFileset, self).parse_plugin_definition(
-            context, plugindef)
-        if ('filename' not in self.options):
-            bareosfd.DebugMessage(context, 100,
-                                  "Option \'filename\' not defined.\n")
-            return bRCs['bRC_Error']
+
         bareosfd.DebugMessage(context, 100,
                               "Using %s to search for local files\n"
                               % (self.options['filename']))
