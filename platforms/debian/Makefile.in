@@ -77,8 +77,8 @@ install-dbconfig:
 		if [ -r $$i ]; then \
 		    BASENAME=`basename $$i`; \
 		    VERSION=`echo $$BASENAME | sed -r 's/postgresql\.[0-9]*_([0-9]*)\.sql/\1/'`; \
-		    grep -E -i "^DROP|^--|^$$" $$i > $(DESTDIR)/${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
-		    sed 's/^DROP/-- upgrade-dbadmin: DROP/' $$i > $(DESTDIR)/${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql/$$VERSION; \
+		    grep -E -i "^ALTER|^DROP|^--|^$$" $$i > $(DESTDIR)/${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/$$VERSION; \
+		    sed -e 's/^ALTER/-- upgrade-dbadmin: ALTER/' -e 's/^DROP/-- upgrade-dbadmin: DROP/' $$i > $(DESTDIR)/${datarootdir}/dbconfig-common/data/bareos-database-common/upgrade/pgsql/$$VERSION; \
 		fi; \
 	done
 	#

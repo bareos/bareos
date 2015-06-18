@@ -3,15 +3,17 @@
 # as /etc/bareos/bareos-fd.conf
 #
 
-  Director {
+Director {
     Name = ${server_name}-dir
     Password = "$password"
-  }
-  FileDaemon {
+}
+
+FileDaemon {
     Name = ${client_name}-fd
-    Maximum Concurrent Jobs = 20
-  }
-  Messages {
+}
+
+Messages {
     Name = Standard
     director = ${server_name}-dir = all, !skipped, !restored
-  }
+}
+

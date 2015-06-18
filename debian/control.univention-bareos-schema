@@ -1,8 +1,8 @@
 Package: univention-bareos-schema
 Architecture: all
-Depends: shell-univention-lib (>> 2.0.17-1.125)
-Breaks: univention-ldap-server (<< 9.0.20-1.580.201303211526)
-Description: LDAP schema extension for Bareos
+Depends: shell-univention-lib (>> 2.0.17-1.125),
+ univention-ldap-server (>= 9.0.20-1.580.201303211526)
+Description: Backup Archiving Recovery Open Sourced - LDAP schema extension
  This package provides the LDAP schema extension
  which enables the backup configuration for client
  systems from the Univention Management Console

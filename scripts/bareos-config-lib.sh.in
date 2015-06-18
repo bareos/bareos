@@ -335,8 +335,18 @@ set_config_param()
     # set parameter values to a Bareos configuration file
     #
 
+    # Limitations:
+    # - multiple directives in one line,
+    #   separated by ";"
+    #   (could by handled by RS="\n|;", but this could cause problems with other lines)
+    #   Possible workaround: get expanded config by "bareos-* -xc"
+    # - Name directive must come before directive to modify,
+    #   preferably Name is the first directive of a resource
+    # - does not handle includes ("@" and include scripts)
+    #   Possible workaround: get expanded config by "bareos-* -xc"
+
     # configuration file
-    CFG_FILE="${1}"
+    FILE="${1}"
     # section, currently ignored
     SECTION="${2}"
     # name of the section, currently ignored
@@ -346,16 +356,72 @@ set_config_param()
     # value to set
     VALUE="${5}"
 
-    if ! [ -r "${CFG_FILE}" ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't read ${CFG_FILE}"
+    if ! [ -w "${FILE}" ]; then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access ${CFG_FILE}"
         return 1
     fi
 
-    if egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE}; then
-        sed -r -i "s#^[ 	]*${PARAM}[ 	]*=.*#  ${PARAM} = \"${VALUE}\"#" ${CFG_FILE}
-        echo "$CFG_FILE: set ${SECTION} ${NAME} ${PARAM} = ${VALUE}"
-    else
-        echo "FAILED to set ${SECTION} ${NAME} ${PARAM} = ${VALUE} ($CFG_FILE)"
+    TEMP=`mktemp`
+    awk -v SECTION="$SECTION" -v NAME="$NAME" -v PARAM="$PARAM" -v VALUE="$VALUE" '
+  BEGIN {
+    IGNORECASE = 1;
+    FS = "=";
+    # could add ; as Record Seperator, but this may causes problems if line contains this character.
+    #RS="\n|;"
+    done = 0
+    printed = 0
+  };
+  level == 1 && /}/ && resourcetype == SECTION && name == NAME && done == 0 {
+        printf "  %s = %s\n", PARAM, VALUE
+        printf "}\n"
+        printed = 1
+        done = 1
+  };
+  /}/ {
+    resourcetype="";
+    level--;
+  };
+  /{/ {
+        level++;
+  };
+  level == 1 && /{/ {
+        resourcetype=$1;
+        gsub("[ {]","",resourcetype)
+  };
+  level == 1 && resourcetype == SECTION && $1 ~ /Name/ {
+        name = $2
+        gsub("[ \"]","",name)
+        #printf "%s: %s\n", resourcetype, name
+  };
+  level == 1 && resourcetype == SECTION && name == NAME {
+        param = $1
+        gsub("[ \"]","",param)
+        #printf "found %s => %s\n", param, $2
+  };
+  level == 1 && resourcetype == SECTION && name == NAME && param == PARAM {
+        printf "%s= %s\n", $1, VALUE
+        printed = 1
+        done = 1
+  };
+  printed == 0 {
+    print $0
+  }
+  printed == 1 {
+    printed = 0
+  }
+    ' "$FILE" > "$TEMP"
+    if [ $? -ne 0 ]; then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replace failed"
+        rm "$TEMP"
+        return 1
+    fi
+
+    chown --reference="${FILE}" "$TEMP"
+    chmod --reference="${FILE}" "$TEMP"
+
+    if ! mv "$TEMP" "$FILE"; then
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing $FILE failed"
+        rm -f "$TEMP"
         return 1
     fi
 }

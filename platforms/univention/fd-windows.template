@@ -10,14 +10,17 @@
 # setup.exe /DIRECTORNAME=${server_name} /CLIENTNAME=${client_name} /CLIENTPASSWORD="${password}"
 #
 
-  Director {
+Director {
     Name = ${server_name}-dir
     Password = "$password"
-  }
-  FileDaemon {
+}
+
+FileDaemon {
     Name = ${client_name}-fd
-  }
-  Messages {
+}
+
+Messages {
     Name = Standard
     director = ${server_name}-dir = all, !skipped, !restored
-  }
+}
+

@@ -1,7 +1,7 @@
 [Application]
 ID=bareos
 Name=Bareos Backup
-Version=12.4.4ucs3-1
+Version=@VERSION@
 
 EmailRequired=True
 NotifyVendor=True
@@ -16,10 +16,7 @@ LongDescription=Bareos (Backup Archiving Recovery Open Sourced) is a reliable,
   new practical console commands. The source code of Bareos is available
   on Github under the AGPL v3 license. Additionally
   Bareos offers binary package repositories for the most important Linux
-  distributions as well as for Windows. ATTENTION: After installation,
-  you need to review at least the UCR variables
-  bareos/filestorage, bareos/backup_myself and bareos/max_*_volumes
-  for proper operation.
+  distributions as well as for Windows.
 
 Screenshot=
 Categories=Administration
@@ -36,6 +33,15 @@ ConflictedSystemPackages=univention-bacula,bacula-director-common,bacula-fd,bacu
 DefaultPackages=univention-bareos
 DefaultPackagesMaster=univention-bareos-schema
 
+# allow installation on these server roles
+ServerRole=domaincontroller_master,domaincontroller_backup,domaincontroller_slave
+
+# whether a "Shop" button is displayed in the App details, leading to the ShopURL
+#UseShop=True
+
+# URL that the user is directed to. Only makes sense in combination with UseShop=True.
+#ShopURL=https://shop.maintain.com/application
+
 [de]
 Description=Leistungsfähige Open-Source-Backup-Lösung
 LongDescription=Bareos (Backup Archiving Recovery Open Sourced) ist eine zuverlässige,
@@ -48,6 +54,3 @@ LongDescription=Bareos (Backup Archiving Recovery Open Sourced) ist eine zuverl�
   Quellcode von Bareos ist auf Github verfügbar und steht unter der Lizenz
   AGPL v3. Zudem stellt Bareos fertige Pakete über Repositories für die
   wichtigsten Linux Distributionen sowie für Windows bereit.
-  ACHTUNG: Nach der Installation sollten die UCR-Variablen
-  bareos/filestorage, bareos/backup_myself und bareos/max_*_volumes geprüft werden,
-  um einen korrekten Betrieb zu gewährleisten.

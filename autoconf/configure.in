@@ -4214,7 +4214,9 @@ debian|ubuntu|univention)
             debian/univention-bareos-schema.postinst \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
-            platforms/univention/Makefile"
+            platforms/univention/Makefile \
+            platforms/univention/AppCenter/univention-bareos.ini \
+            platforms/univention/AppCenter/LICENSE_AGREEMENT"
          ;;
    esac
    AC_SUBST_FILE(DEBIAN_CONTROL_UNIVENTION_BAREOS)

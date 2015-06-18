@@ -2,10 +2,6 @@ Client {
   Name = "${client_name}-fd"
   Address = "$client_name"
   Password = "${password}"
-
-  File Retention = 30 days            # 30 days
-  Job Retention = 6 months            # six months
-  AutoPrune = no                      # Prune expired Jobs/Files
 }
 
 Job {

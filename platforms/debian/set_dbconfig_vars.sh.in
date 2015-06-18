@@ -15,8 +15,8 @@ else
 
     #dbc_dbserver=
     #dbc_dbport=
-    dbname=`get_database_name`
-    dbuser=`get_database_user`
+    dbname=`get_database_name @db_name@`
+    dbuser=`get_database_user @db_user@`
     dbpass=`get_database_password`
     case "`get_database_driver`" in
         postgresql)
