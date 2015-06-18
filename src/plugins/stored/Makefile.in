@@ -26,7 +26,7 @@ BUILD_PLUGINS = @BUILD_SD_PLUGINS@
 
 # inference rules
 .c.lo:
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) -c $<
 
 all: Makefile $(BUILD_PLUGINS)
 
@@ -35,7 +35,7 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 		&& CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 autoxflate-sd.lo: autoxflate-sd.c
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(COMPRESS_CPPFLAGS) -c $<
 
 autoxflate-sd.la: Makefile \
 		  autoxflate-sd$(DEFAULT_OBJECT_TYPE) \
@@ -46,7 +46,7 @@ example-plugin-sd.la: Makefile example-plugin-sd$(DEFAULT_OBJECT_TYPE)
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -shared example-plugin-sd.lo -o $@ -rpath $(plugindir) -module -export-dynamic -avoid-version
 
 python-sd.lo: python-sd.c python-sd.h
-	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
+	$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(PYTHON_CPPFLAGS) -c $<
 
 python-sd.la: Makefile \
 	      python-sd$(DEFAULT_OBJECT_TYPE) \
@@ -66,7 +66,7 @@ scsitapealert-sd.la: Makefile \
 
 plugtest: Makefile sd_plugins.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
-	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
+	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../stored/sd_plugins.c
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -o $@ sd_plugins.o -lbareos $(DLIB) -lm $(LIBS)
 
 install: all
