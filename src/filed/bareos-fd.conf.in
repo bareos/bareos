@@ -39,6 +39,9 @@ FileDaemon {                          # this is me
   # Plugin Directory = @plugindir@
   # Plugin Names = ""
 
+  # Not all installations need heartbeat, but most do, and it won't hurt
+  Heartbeat Interval = 1m
+
   # if compatible is set to yes, we are compatible with bacula
   # if you want to use new bareos features, please set
   # compatible = no
