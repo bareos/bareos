@@ -54,6 +54,10 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
+  
+  # Not all installations need heartbeat, but most do, and it won't hurt
+  Heartbeat Interval = 1m
+
 
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@
