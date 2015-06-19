@@ -39,9 +39,8 @@ FileDaemon {                          # this is me
   # Plugin Directory = @plugindir@
   # Plugin Names = ""
 
-  # if compatible is set to yes, we are compatible with bacula
-  # if you want to use new bareos features, please set
-  # compatible = no
+  # If Bacula compatibility is needed, set this to "yes"
+  Compatible = No
 }
 
 # Send all messages except skipped files back to Director
