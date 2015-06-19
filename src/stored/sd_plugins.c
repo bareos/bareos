@@ -773,9 +773,9 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
 static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
-   va_list arg_ptr;
-   char buf[2000];
    JCR *jcr;
+   va_list arg_ptr;
+   POOL_MEM buffer(PM_MESSAGE);
 
    if (ctx) {
       jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
@@ -784,9 +784,10 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
    }
 
    va_start(arg_ptr, fmt);
-   bvsnprintf(buf, sizeof(buf), fmt, arg_ptr);
+   buffer.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
-   Jmsg(jcr, type, mtime, "%s", buf);
+   Jmsg(jcr, type, mtime, "%s", buffer.c_str());
+
    return bRC_OK;
 }
 
@@ -794,12 +795,13 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
-   char buf[2000];
+   POOL_MEM buffer(PM_MESSAGE);
 
    va_start(arg_ptr, fmt);
-   bvsnprintf(buf, sizeof(buf), fmt, arg_ptr);
+   buffer.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
-   d_msg(file, line, level, "%s", buf);
+   d_msg(file, line, level, "%s", buffer.c_str());
+
    return bRC_OK;
 }
 
