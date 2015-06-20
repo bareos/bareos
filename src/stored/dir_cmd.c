@@ -105,7 +105,7 @@ static char OKpassive[] =
 extern bool finish_cmd(JCR *jcr);
 extern bool job_cmd(JCR *jcr);
 extern bool nextrun_cmd(JCR *jcr);
-extern bool qstatus_cmd(JCR *jcr);
+extern bool dotstatus_cmd(JCR *jcr);
 //extern bool query_cmd(JCR *jcr);
 extern bool status_cmd(JCR *sjcr);
 extern bool use_cmd(JCR *jcr);
@@ -174,7 +174,7 @@ static struct s_cmds cmds[] = {
    { "setbandwidth=", setbandwidth_cmd, false },
    { "setdebug=", setdebug_cmd, false },    /* Set debug level */
    { "status", status_cmd, true },
-   { ".status", qstatus_cmd, true },
+   { ".status", dotstatus_cmd, true },
    { "unmount", unmount_cmd, false },
    { "use storage=", use_cmd, false },
    { NULL, NULL, false } /* list terminator */
