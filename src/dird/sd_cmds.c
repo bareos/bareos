@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ static char canceljobcmd[] =
 static char dotstatuscmd[] =
    ".status %s\n";
 static char statuscmd[] =
-   "status\n";
+   "status %s\n";
 static char bandwidthcmd[] =
    "setbandwidth=%lld Job=%s\n";
 static char pluginoptionscmd[] =
@@ -772,8 +772,26 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
    sd = ua->jcr->store_bsock;
    if (cmd) {
       sd->fsend(dotstatuscmd, cmd);
+
    } else {
-      sd->fsend(statuscmd);
+      int cnt = 0;
+      DEVICERES *device;
+      POOL_MEM devicenames;
+
+      /*
+       * Build a list of devicenames that belong to this storage defintion.
+       */
+      foreach_alist(device, store->device) {
+         if (cnt == 0) {
+            pm_strcpy(devicenames, device->name());
+         } else {
+            pm_strcat(devicenames, ",");
+            pm_strcat(devicenames, device->name());
+         }
+      }
+
+      bash_spaces(devicenames);
+      sd->fsend(statuscmd, devicenames.c_str());
    }
 
    while (sd->recv() >= 0) {

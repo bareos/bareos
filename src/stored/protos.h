@@ -162,6 +162,13 @@ void free_bsr(BSR *bsr);
 void free_restore_volume_list(JCR *jcr);
 void create_restore_volume_list(JCR *jcr);
 
+/* status.c */
+bool status_cmd(JCR *jcr);
+bool dotstatus_cmd(JCR *jcr);
+#if defined(HAVE_WIN32)
+char *bareos_status(char *buf, int buf_len);
+#endif
+
 /* read.c */
 bool do_read_data(JCR *jcr);
 

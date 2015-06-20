@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,10 +38,12 @@ extern BSOCK *filed_chan;
 extern void *start_heap;
 
 /* Static variables */
-static char qstatus[] =
+static char statuscmd[] =
+   "status %s\n";
+static char dotstatuscmd[] =
    ".status %127s\n";
 
-static char OKqstatus[] =
+static char OKdotstatus[] =
    "3000 OK .status\n";
 static char DotStatusJob[] =
    "JobId=%d JobStatus=%c JobErrors=%d\n";
@@ -61,14 +63,14 @@ static void list_terminated_jobs(STATUS_PKT *sp);
 static void list_running_jobs(STATUS_PKT *sp);
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp);
 static void list_status_header(STATUS_PKT *sp);
-static void list_devices(JCR *jcr, STATUS_PKT *sp);
+static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames);
 
 static const char *level_to_str(int level);
 
 /*
  * Status command from Director
  */
-static void output_status(JCR *jcr, STATUS_PKT *sp)
+static void output_status(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
 {
    int len;
    POOL_MEM msg(PM_MESSAGE);
@@ -93,7 +95,7 @@ static void output_status(JCR *jcr, STATUS_PKT *sp)
    /*
     * List devices
     */
-   list_devices(jcr, sp);
+   list_devices(jcr, sp, devicenames);
 
    if (!sp->api) {
       len = Mmsg(msg, _("Used Volume status:\n"));
@@ -152,7 +154,37 @@ static find_device(char *devname)
 }
 #endif
 
-static void list_devices(JCR *jcr, STATUS_PKT *sp)
+static bool need_to_list_device(const char *devicenames, const char *devicename)
+{
+   char *cur, *bp;
+   POOL_MEM namelist;
+
+   /*
+    * Make a local copy that we can split on ','
+    */
+   pm_strcpy(namelist, devicenames);
+
+   /*
+    * See if devicename is in the list.
+    */
+   cur = namelist.c_str();
+   while (cur) {
+      bp = strchr(cur, ',');
+      if (bp) {
+         *bp++ = '\0';
+      }
+
+      if (bstrcasecmp(cur, devicename)) {
+         return true;
+      }
+
+      cur = bp;
+   }
+
+   return false;
+}
+
+static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
 {
    int len;
    int bpb;
@@ -168,6 +200,13 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
    }
 
    foreach_res(changer, R_AUTOCHANGER) {
+      /*
+       * See if we need to list this autochanger.
+       */
+      if (devicenames && !need_to_list_device(devicenames, changer->hdr.name)) {
+         continue;
+      }
+
       len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"), changer->hdr.name);
       sendit(msg, len, sp);
 
@@ -183,6 +222,30 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
    }
 
    foreach_res(device, R_DEVICE) {
+      /*
+       * See if we need to check for devicenames at all.
+       */
+      if (devicenames) {
+         /*
+          * See if this device is part of an autochanger.
+          */
+         if (device->changer_res) {
+            /*
+             * See if we need to list this particular device part of the given autochanger.
+             */
+            if (!need_to_list_device(devicenames, device->changer_res->hdr.name)) {
+               continue;
+            }
+         } else {
+            /*
+             * Try matching a non autochanger device.
+             */
+            if (!need_to_list_device(devicenames, device->hdr.name)) {
+               continue;
+            }
+         }
+      }
+
       dev = device->dev;
       if (dev && dev->is_open()) {
          if (dev->is_labeled()) {
@@ -226,8 +289,10 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
             len = Mmsg(msg, _("\nDevice %s open but no Bareos volume is currently mounted.\n"), dev->print_name());
             sendit(msg, len, sp);
          }
+
          trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
          send_blocked_status(dev, sp);
+
          if (dev->can_append()) {
             bpb = dev->VolCatInfo.VolCatBlocks;
             if (bpb <= 0) {
@@ -255,10 +320,12 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
                        edit_uint64_with_commas(bpb, b3));
             sendit(msg, len, sp);
          }
+
          len = Mmsg(msg, _("    Positioned at File=%s Block=%s\n"),
                     edit_uint64_with_commas(dev->file, b1),
                     edit_uint64_with_commas(dev->block_num, b2));
          sendit(msg, len, sp);
+
          trigger_device_status_hook(jcr, device, sp, bsdEventVolumeStatus);
       } else {
          if (dev) {
@@ -877,32 +944,46 @@ static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
  */
 bool status_cmd(JCR *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   POOL_MEM devicenames;
    STATUS_PKT sp;
+   BSOCK *dir = jcr->dir_bsock;
+
+   sp.bs = dir;
+   devicenames.check_size(dir->msglen);
+   if (sscanf(dir->msg, statuscmd, devicenames.c_str()) != 1) {
+      pm_strcpy(jcr->errmsg, dir->msg);
+      dir->fsend(_("3900 No arg in status command: %s\n"), jcr->errmsg);
+      dir->signal(BNET_EOD);
+
+      return false;
+   }
+   unbash_spaces(devicenames);
 
    dir->fsend("\n");
-   sp.bs = dir;
-   output_status(jcr, &sp);
+   output_status(jcr, &sp, devicenames.c_str());
    dir->signal(BNET_EOD);
+
    return true;
 }
 
 /*
  * .status command from Director
  */
-bool qstatus_cmd(JCR *jcr)
+bool dotstatus_cmd(JCR *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM cmd;
    JCR *njcr;
-   s_last_job* job;
+   POOL_MEM cmd;
    STATUS_PKT sp;
+   s_last_job* job;
+   BSOCK *dir = jcr->dir_bsock;
 
    sp.bs = dir;
-   if (sscanf(dir->msg, qstatus, cmd.c_str()) != 1) {
+   cmd.check_size(dir->msglen);
+   if (sscanf(dir->msg, dotstatuscmd, cmd.c_str()) != 1) {
       pm_strcpy(jcr->errmsg, dir->msg);
       dir->fsend(_("3900 No arg in .status command: %s\n"), jcr->errmsg);
       dir->signal(BNET_EOD);
+
       return false;
    }
    unbash_spaces(cmd);
@@ -910,7 +991,7 @@ bool qstatus_cmd(JCR *jcr)
    Dmsg1(200, "cmd=%s\n", cmd.c_str());
 
    if (bstrcasecmp(cmd.c_str(), "current")) {
-      dir->fsend(OKqstatus, cmd.c_str());
+      dir->fsend(OKdotstatus, cmd.c_str());
       foreach_jcr(njcr) {
          if (njcr->JobId != 0) {
             dir->fsend(DotStatusJob, njcr->JobId, njcr->JobStatus, njcr->JobErrors);
@@ -918,7 +999,7 @@ bool qstatus_cmd(JCR *jcr)
       }
       endeach_jcr(njcr);
    } else if (bstrcasecmp(cmd.c_str(), "last")) {
-      dir->fsend(OKqstatus, cmd.c_str());
+      dir->fsend(OKdotstatus, cmd.c_str());
       if ((last_jobs) && (last_jobs->size() > 0)) {
          job = (s_last_job*)last_jobs->last();
          dir->fsend(DotStatusJob, job->JobId, job->JobStatus, job->Errors);
@@ -934,7 +1015,7 @@ bool qstatus_cmd(JCR *jcr)
        list_jobs_waiting_on_reservation(&sp);
    } else if (bstrcasecmp(cmd.c_str(), "devices")) {
        sp.api = true;
-       list_devices(jcr, &sp);
+       list_devices(jcr, &sp, NULL);
    } else if (bstrcasecmp(cmd.c_str(), "volumes")) {
        sp.api = true;
        list_volumes(sendit, &sp);
@@ -954,6 +1035,7 @@ bool qstatus_cmd(JCR *jcr)
       return false;
    }
    dir->signal(BNET_EOD);
+
    return true;
 }
 
