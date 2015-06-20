@@ -337,8 +337,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
         res_head[rindex] = (RES *)res; /* store first entry */
-         Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
-         res->res_monitor.hdr.name, rindex);
+         Dmsg3(900, "Inserting first %s res: %s index=%d\n",
+               res_to_str(type), res->res_monitor.name(), rindex);
       } else {
          RES *next, *last;
          /*
@@ -346,15 +346,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          for (last = next = res_head[rindex]; next; next=next->next) {
             last = next;
-            if (strcmp(next->name, res->res_monitor.hdr.name) == 0) {
+            if (strcmp(next->name, res->res_monitor.name()) == 0) {
                Emsg2(M_ERROR_TERM, 0,
                      _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-               resources[rindex].name, res->res_monitor.hdr.name);
+               resources[rindex].name, res->res_monitor.name());
             }
          }
          last->next = (RES *)res;
-         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(type),
-         res->res_monitor.hdr.name, rindex, pass);
+         Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
+               res_to_str(type), res->res_monitor.name(), rindex, pass);
       }
    }
 }

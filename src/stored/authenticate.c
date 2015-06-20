@@ -80,7 +80,7 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
    director = NULL;
    unbash_spaces(dirname);
    foreach_res(director, rcode) {
-      if (bstrcmp(director->hdr.name, dirname)) {
+      if (bstrcmp(director->name(), dirname)) {
          break;
       }
    }

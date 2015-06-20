@@ -222,7 +222,7 @@ static int check_resources()
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required.\n"),
-                             director->hdr.name, configfile);
+                             director->name(), configfile);
          ok = false;
       }
    }
@@ -251,7 +251,7 @@ static int check_resources()
       if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir) && tls_needed) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s.\n"),
-                             cons->hdr.name, configfile);
+                             cons->name(), configfile);
          ok = false;
       }
    }

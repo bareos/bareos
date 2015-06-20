@@ -425,8 +425,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
             /*
              * Resources containing another resource
              */
-            if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+            if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+               Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
                res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
@@ -434,8 +434,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
             }
             break;
          case R_CLIENT:
-            if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.hdr.name)) == NULL) {
-               Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.hdr.name);
+            if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.name())) == NULL) {
+               Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_client.plugin_names = res_all.res_client.plugin_names;
                res->res_client.pki_signing_key_files = res_all.res_client.pki_signing_key_files;
@@ -483,15 +483,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          for (last = next = res_head[rindex]; next; next = next->next) {
             last = next;
-            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
+            if (bstrcmp(next->name, res->res_dir.name())) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
+                  resources[rindex].name, res->res_dir.name());
             }
          }
          last->next = (RES *)res;
          Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
+               res->res_dir.name());
       }
    }
 }

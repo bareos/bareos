@@ -62,7 +62,7 @@ static bool authenticate_director(JCR *jcr)
    bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
 
-   bstrncpy(bashed_name, monitor->hdr.name, sizeof(bashed_name));
+   bstrncpy(bashed_name, monitor->name(), sizeof(bashed_name));
    bash_spaces(bashed_name);
 
    /*
@@ -118,7 +118,7 @@ static bool authenticate_storage_daemon(JCR *jcr, STORERES* store)
    /*
     * Send my name to the Storage daemon then do authentication
     */
-   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
+   bstrncpy(dirname, monitor->name(), sizeof(dirname));
    bash_spaces(dirname);
 
    /*
@@ -175,7 +175,7 @@ static bool authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
    /*
     * Send my name to the File daemon then do authentication
     */
-   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
+   bstrncpy(dirname, monitor->name(), sizeof(dirname));
    bash_spaces(dirname);
 
    /*

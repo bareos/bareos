@@ -346,15 +346,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
-            if (strcmp(next->name, res->dir_res.hdr.name) == 0) {
+            if (strcmp(next->name, res->dir_res.name()) == 0) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->dir_res.hdr.name);
+                  resources[rindex].name, res->dir_res.name());
             }
          }
          last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->dir_res.hdr.name);
+         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->dir_res.name());
       }
    }
 }

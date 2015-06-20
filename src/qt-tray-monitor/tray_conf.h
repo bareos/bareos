@@ -58,24 +58,20 @@ enum {
 };
 
 /*
- *   Director Resource
- *
+ * Director Resource
  */
-struct DIRRES {
-   RES hdr;
-
+class DIRRES : public BRSRES {
+public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
 };
 
 /*
- *   Tray Monitor Resource
- *
+ * Tray Monitor Resource
  */
-struct MONITORRES {
-   RES hdr;
-
+class MONITORRES : public BRSRES {
+public:
    bool require_ssl;                  /* Require SSL for all connections */
    MSGSRES *messages;                 /* Daemon message handler */
    s_password password;               /* UA server password */
@@ -86,12 +82,10 @@ struct MONITORRES {
 };
 
 /*
- *   Client Resource
- *
+ * Client Resource
  */
-struct CLIENTRES {
-   RES hdr;
-
+class CLIENTRES : public BRSRES {
+public:
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
    s_password password;
@@ -99,21 +93,18 @@ struct CLIENTRES {
 };
 
 /*
- *   Store Resource
- *
+ * Store Resource
  */
-struct STORERES {
-   RES hdr;
-
+class STORERES : public BRSRES {
+public:
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
 };
 
-struct CONFONTRES {
-   RES hdr;
-
+class CONFONTRES : public BRSRES {
+public:
    char *fontface;                    /* Console Font specification */
 };
 

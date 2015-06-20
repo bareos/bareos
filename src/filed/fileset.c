@@ -40,7 +40,7 @@ extern "C" char *job_code_callback_filed(JCR *jcr, const char* param)
    switch (param[0]) {
    case 'D':
       if (jcr->director) {
-         return jcr->director->hdr.name;
+         return jcr->director->name();
       }
       break;
    }

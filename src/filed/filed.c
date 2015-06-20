@@ -358,7 +358,7 @@ static bool check_resources()
               configfile);
          OK = false;
       }
-      my_name_is(0, NULL, me->hdr.name);
+      my_name_is(0, NULL, me->name());
       if (!me->messages) {
          me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
@@ -402,7 +402,7 @@ static bool check_resources()
 
          if (!me->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
-                                me->hdr.name, configfile);
+                                me->name(), configfile);
             OK = false;
          }
 
@@ -425,7 +425,7 @@ static bool check_resources()
       if ((me->pki_encrypt || me->pki_sign) && !me->pki_keypair_file) {
          Emsg2(M_FATAL, 0, _("\"PKI Key Pair\" must be defined for File"
             " daemon \"%s\" in %s if either \"PKI Sign\" or"
-            " \"PKI Encrypt\" are enabled.\n"), me->hdr.name, configfile);
+            " \"PKI Encrypt\" are enabled.\n"), me->name(), configfile);
          OK = false;
       }
 
@@ -440,13 +440,13 @@ static bool check_resources()
          } else {
             if (!crypto_keypair_load_cert(me->pki_keypair, me->pki_keypair_file)) {
                Emsg2(M_FATAL, 0, _("Failed to load public certificate for File"
-                     " daemon \"%s\" in %s.\n"), me->hdr.name, configfile);
+                     " daemon \"%s\" in %s.\n"), me->name(), configfile);
                OK = false;
             }
 
             if (!crypto_keypair_load_key(me->pki_keypair, me->pki_keypair_file, NULL, NULL)) {
                Emsg2(M_FATAL, 0, _("Failed to load private key for File"
-                     " daemon \"%s\" in %s.\n"), me->hdr.name, configfile);
+                     " daemon \"%s\" in %s.\n"), me->name(), configfile);
                OK = false;
             }
          }
@@ -476,14 +476,14 @@ static bool check_resources()
                      if (crypto_keypair_has_key(filepath)) {
                         if (!crypto_keypair_load_key(keypair, filepath, NULL, NULL)) {
                            Emsg3(M_FATAL, 0, _("Failed to load private key from file %s for File"
-                              " daemon \"%s\" in %s.\n"), filepath, me->hdr.name, configfile);
+                              " daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
                            OK = false;
                         }
                      }
 
                   } else {
                      Emsg3(M_FATAL, 0, _("Failed to load trusted signer certificate"
-                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->hdr.name, configfile);
+                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
                      OK = false;
                   }
                }
@@ -514,7 +514,7 @@ static bool check_resources()
                      me->pki_recipients->append(keypair);
                   } else {
                      Emsg3(M_FATAL, 0, _("Failed to load master key certificate"
-                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->hdr.name, configfile);
+                        " from file %s for File daemon \"%s\" in %s.\n"), filepath, me->name(), configfile);
                      OK = false;
                   }
                }
@@ -549,13 +549,13 @@ static bool check_resources()
 
       if (!director->tls_certfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-               director->hdr.name, configfile);
+               director->name(), configfile);
          OK = false;
       }
 
       if (!director->tls_keyfile && need_tls) {
          Emsg2(M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-               director->hdr.name, configfile);
+               director->name(), configfile);
          OK = false;
       }
 
@@ -564,7 +564,7 @@ static bool check_resources()
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required"
                              " when using \"TLS Verify Peer\".\n"),
-                             director->hdr.name, configfile);
+                             director->name(), configfile);
          OK = false;
       }
 
@@ -586,7 +586,7 @@ static bool check_resources()
 
          if (!director->tls_ctx) {
             Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
-                                director->hdr.name, configfile);
+                                director->name(), configfile);
             OK = false;
          }
 

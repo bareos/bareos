@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -256,7 +256,7 @@ int main (int argc, char *argv[])
       terminate_stored(0);
    }
 
-   my_name_is(0, (char **)NULL, me->hdr.name);     /* Set our real name */
+   my_name_is(0, (char **)NULL, me->name());     /* Set our real name */
 
    if (!foreground) {
       daemon_start();                 /* become daemon */
@@ -394,13 +394,13 @@ static int check_resources()
 
       if (!store->tls_certfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Storage \"%s\" in %s.\n"),
-              store->hdr.name, configfile);
+              store->name(), configfile);
          OK = false;
       }
 
       if (!store->tls_keyfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Storage \"%s\" in %s.\n"),
-              store->hdr.name, configfile);
+              store->name(), configfile);
          OK = false;
       }
 
@@ -409,7 +409,7 @@ static int check_resources()
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              store->hdr.name, configfile);
+              store->name(), configfile);
          OK = false;
       }
 
@@ -431,7 +431,7 @@ static int check_resources()
 
          if (!store->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
-                 store->hdr.name, configfile);
+                 store->name(), configfile);
             OK = false;
          }
 
@@ -451,13 +451,13 @@ static int check_resources()
 
       if (!director->tls_certfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-              director->hdr.name, configfile);
+              director->name(), configfile);
          OK = false;
       }
 
       if (!director->tls_keyfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-              director->hdr.name, configfile);
+              director->name(), configfile);
          OK = false;
       }
 
@@ -466,7 +466,7 @@ static int check_resources()
               " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
               " when using \"TLS Verify Peer\".\n"),
-              director->hdr.name, configfile);
+              director->name(), configfile);
          OK = false;
       }
 
@@ -488,7 +488,7 @@ static int check_resources()
 
          if (!director->tls_ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
-                 director->hdr.name, configfile);
+                 director->name(), configfile);
             OK = false;
          }
 
@@ -501,7 +501,7 @@ static int check_resources()
    foreach_res(device, R_DEVICE) {
       if (device->drive_crypto_enabled && bit_is_set(CAP_LABEL, device->cap_bits)) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
-              device->hdr.name, configfile);
+              device->name(), configfile);
          OK = false;
       }
    }

@@ -83,7 +83,7 @@ bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
    DEVRES *device = dev->device;
    bool ok;
 
-   pm_strcpy(dev_name, device->hdr.name);
+   pm_strcpy(dev_name, device->name());
    bash_spaces(dev_name);
    if (dev->is_labeled()) {
       pm_strcpy(VolumeName, dev->VolHdr.VolumeName);
@@ -94,7 +94,7 @@ bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
    pm_strcpy(MediaType, device->media_type);
    bash_spaces(MediaType);
    if (device->changer_res) {
-      pm_strcpy(ChangerName, device->changer_res->hdr.name);
+      pm_strcpy(ChangerName, device->changer_res->name());
       bash_spaces(ChangerName);
    } else {
       pm_strcpy(ChangerName, "*");
@@ -121,7 +121,7 @@ bool SD_DCR::dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
    DEVRES *device;
    bool ok;
 
-   pm_strcpy(dev_name, changer->hdr.name);
+   pm_strcpy(dev_name, changer->name());
    bash_spaces(dev_name);
    device = (DEVRES *)changer->device->first();
    pm_strcpy(MediaType, device->media_type);

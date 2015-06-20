@@ -252,8 +252,8 @@ static DEVRES *find_device_res(char *device_name, bool readonly)
          }
       }
       foreach_res(device, R_DEVICE) {
-         Dmsg2(900, "Compare %s and %s\n", device->hdr.name, device_name);
-         if (bstrcmp(device->hdr.name, device_name)) {
+         Dmsg2(900, "Compare %s and %s\n", device->name(), device_name);
+         if (bstrcmp(device->name(), device_name)) {
             found = true;
             break;
          }

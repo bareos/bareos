@@ -51,9 +51,8 @@ enum {
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
-struct CONRES {
-   RES hdr;
-
+class CONRES : public BRSRES {
+public:
    char *rc_file;                     /* startup file */
    char *history_file;                /* command history file */
    s_password password;               /* UA server password */
@@ -76,9 +75,8 @@ struct CONRES {
 };
 
 /* Director */
-struct DIRRES {
-   RES hdr;
-
+class DIRRES : public BRSRES {
+public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    s_password password;               /* UA server password */

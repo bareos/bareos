@@ -293,7 +293,7 @@ void update_job_statistics(JCR *jcr, utime_t now)
    job_stat->JobFiles = jcr->JobFiles;
    job_stat->JobBytes = jcr->JobBytes;
    if (jcr->dcr) {
-      job_stat->DevName = bstrdup(jcr->dcr->device->hdr.name);
+      job_stat->DevName = bstrdup(jcr->dcr->device->name());
    } else {
       job_stat->DevName = bstrdup("unknown");
    }
@@ -371,7 +371,7 @@ void *statistics_thread_runner(void *arg)
 
                dev = device->dev;
                if (dev && dev->initiated) {
-                  update_device_statistics(device->hdr.name, dev, now);
+                  update_device_statistics(device->name(), dev, now);
                }
             }
          }

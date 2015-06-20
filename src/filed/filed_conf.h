@@ -48,9 +48,8 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-struct DIRRES {
-   RES hdr;
-
+class DIRRES : public BRSRES {
+public:
    s_password password;               /* Director password */
    char *address;                     /* Director address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
@@ -72,9 +71,8 @@ struct DIRRES {
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };
 
-struct CLIENTRES {
-   RES hdr;
-
+class CLIENTRES : public BRSRES {
+public:
    dlist *FDaddrs;
    dlist *FDsrc_addr;                 /* Address to source connections from */
    char *working_directory;

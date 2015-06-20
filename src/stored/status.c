@@ -135,15 +135,20 @@ static void list_resources(STATUS_PKT *sp)
 #ifdef xxxx
 static find_device(char *devname)
 {
+   bool found;
+   DEVRES *device;
+   AUTOCHANGERRES *changer;
+
    foreach_res(device, R_DEVICE) {
-      if (strcasecmp(device->hdr.name, devname) == 0) {
+      if (strcasecmp(device->name(), devname) == 0) {
          found = true;
          break;
       }
    }
+
    if (!found) {
       foreach_res(changer, R_AUTOCHANGER) {
-         if (strcasecmp(changer->hdr.name, devname) == 0) {
+         if (strcasecmp(changer->name(), devname) == 0) {
             break;
          }
       }
@@ -167,7 +172,7 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
    }
 
    foreach_res(changer, R_AUTOCHANGER) {
-      len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"), changer->hdr.name);
+      len = Mmsg(msg, _("Autochanger \"%s\" with devices:\n"), changer->name());
       sendit(msg, len, sp);
 
       foreach_alist(device, changer->device) {
@@ -175,7 +180,7 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
             len = Mmsg(msg, "   %s\n", device->dev->print_name());
             sendit(msg, len, sp);
          } else {
-            len = Mmsg(msg, "   %s\n", device->hdr.name);
+            len = Mmsg(msg, "   %s\n", device->name());
             sendit(msg, len, sp);
          }
       }
@@ -265,7 +270,7 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp)
             sendit(msg, len, sp);
             send_blocked_status(dev, sp);
          } else {
-            len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"), device->hdr.name);
+            len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"), device->name());
             sendit(msg, len, sp);
          }
       }

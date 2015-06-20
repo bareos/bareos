@@ -173,7 +173,7 @@ int main (int argc, char *argv[])
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
-         if (bstrcmp(director->hdr.name, DirectorName)) {
+         if (bstrcmp(director->name(), DirectorName)) {
             break;
          }
       }

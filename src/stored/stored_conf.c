@@ -509,7 +509,6 @@ void free_resource(RES *sres, int type)
       free(res->res_dir.hdr.desc);
    }
 
-
    switch (type) {
    case R_DIRECTOR:
       if (res->res_dir.password.value) {
@@ -750,15 +749,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
          /*
           * Resources containing a resource or an alist
           */
-         if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+         if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
             res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
          }
          break;
       case R_STORAGE:
-         if ((res = (URES *)GetResWithName(R_STORAGE, res_all.res_dir.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
+         if ((res = (URES *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
          } else {
             res->res_store.plugin_names = res_all.res_store.plugin_names;
             res->res_store.messages = res_all.res_store.messages;
@@ -767,8 +766,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          }
          break;
       case R_AUTOCHANGER:
-         if ((res = (URES *)GetResWithName(type, res_all.res_changer.hdr.name)) == NULL) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.hdr.name);
+         if ((res = (URES *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
          } else {
             /*
              * We must explicitly copy the device alist pointer
@@ -798,6 +797,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_dir.hdr.name);
          res_all.res_dir.hdr.name = NULL;
       }
+
       if (res_all.res_dir.hdr.desc) {
          free(res_all.res_dir.hdr.desc);
          res_all.res_dir.hdr.desc = NULL;
@@ -821,15 +821,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          for (last = next = res_head[rindex]; next; next = next->next) {
             last = next;
-            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
+            if (bstrcmp(next->name, res->res_dir.name())) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second \"%s\" resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
+                  resources[rindex].name, res->res_dir.name());
             }
          }
          last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
+         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
       }
    }
 }

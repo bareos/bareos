@@ -20,10 +20,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+
 /*
  * Resource codes -- they must be sequential for indexing
  */
-
 enum {
    R_DIRECTOR = 3001,
    R_NDMP,
@@ -44,10 +44,8 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-class DIRRES {
+class DIRRES : public BRSRES {
 public:
-   RES hdr;
-
    s_password password;               /* Director password */
    char *address;                     /* Director IP address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
@@ -80,10 +78,8 @@ public:
 };
 
 /* Storage daemon "global" definitions */
-class STORES {
+class STORES : public BRSRES {
 public:
-   RES hdr;
-
    dlist *SDaddrs;
    dlist *SDsrc_addr;                 /* Address to source connections from */
    dlist *NDMPaddrs;
@@ -132,10 +128,8 @@ public:
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
 };
 
-class AUTOCHANGERRES {
+class AUTOCHANGERRES : public BRSRES {
 public:
-   RES hdr;
-
    alist *device;                     /* List of DEVRES device pointers */
    char *changer_name;                /* Changer device name */
    char *changer_command;             /* Changer command  -- external program */
@@ -143,10 +137,8 @@ public:
 };
 
 /* Device specific definitions */
-class DEVRES {
+class DEVRES : public BRSRES {
 public:
-   RES hdr;
-
    char *media_type;                  /* User assigned media type */
    char *device_name;                 /* Archive device name */
    char *device_options;              /* Device specific option string */
@@ -213,4 +205,3 @@ union URES {
 
 void init_sd_config(CONFIG *config, const char *configfile, int exit_code);
 bool print_config_schema_json(POOL_MEM &buffer);
-

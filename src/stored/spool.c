@@ -146,7 +146,7 @@ static void make_unique_data_spool_filename(DCR *dcr, POOLMEM **name)
       dir = working_directory;
    }
    Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
-        dcr->jcr->Job, dcr->device->hdr.name);
+        dcr->jcr->Job, dcr->device->name());
 }
 
 

@@ -48,11 +48,9 @@ enum {
    R_BACKUP
 };
 
-
 /* Definition of the contents of each Resource */
-class DIRRES {
+class DIRRES : public BRSRES {
 public:
-   RES   hdr;
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    s_password password;               /* UA server password */
@@ -70,22 +68,15 @@ public:
    utime_t heartbeat_interval;        /* Dir heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
-
-   /* Methods */
-   char *name() const;
 };
 
-inline char *DIRRES::name() const { return hdr.name; }
-
-
-struct CONFONTRES {
-   RES   hdr;
+class CONFONTRES : public BRSRES {
+public:
    char *fontface;                    /* Console Font specification */
 };
 
-class CONRES {
+class CONRES : public BRSRES {
 public:
-   RES   hdr;
    s_password password;               /* UA server password */
    bool tls_authenticate;             /* Authenticate with tls */
    bool tls_enable;                   /* Enable TLS on all connections */
@@ -101,13 +92,7 @@ public:
    utime_t heartbeat_interval;        /* Cons heartbeat interval */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
-
-   /* Methods */
-   char *name() const;
 };
-
-inline char *CONRES::name() const { return hdr.name; }
-
 
 /* Define the Union of all the above
  * resource structure definitions.

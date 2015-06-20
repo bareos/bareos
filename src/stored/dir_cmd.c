@@ -791,7 +791,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
    unbash_spaces(devname);
    foreach_res(device, R_DEVICE) {
       /* Find resource, and make sure we were able to open it */
-      if (bstrcmp(device->hdr.name, devname.c_str())) {
+      if (bstrcmp(device->name(), devname.c_str())) {
          if (!device->dev) {
             device->dev = init_dev(jcr, device);
          }
@@ -801,7 +801,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
                  devname.c_str());
             continue;
          }
-         Dmsg1(20, "Found device %s\n", device->hdr.name);
+         Dmsg1(20, "Found device %s\n", device->name());
          found = true;
          break;
       }
@@ -809,10 +809,10 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
    if (!found) {
       foreach_res(changer, R_AUTOCHANGER) {
          /* Find resource, and make sure we were able to open it */
-         if (bstrcmp(devname.c_str(), changer->hdr.name)) {
+         if (bstrcmp(devname.c_str(), changer->name())) {
             /* Try each device in this AutoChanger */
             foreach_alist(device, changer->device) {
-               Dmsg1(100, "Try changer device %s\n", device->hdr.name);
+               Dmsg1(100, "Try changer device %s\n", device->name());
                if (!device->dev) {
                   device->dev = init_dev(jcr, device);
                }
@@ -820,7 +820,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
                   Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
                   Jmsg(jcr, M_WARNING, 0, _("\n"
                      "     Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
-                       device->hdr.name, devname.c_str());
+                       device->name(), devname.c_str());
                   continue;
                }
                if (!device->dev->autoselect) {
@@ -828,7 +828,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
                   continue;              /* device is not available */
                }
                if (drive < 0 || drive == (int)device->dev->drive_index) {
-                  Dmsg1(20, "Found changer device %s\n", device->hdr.name);
+                  Dmsg1(20, "Found changer device %s\n", device->name());
                   found = true;
                   break;
                }
@@ -841,7 +841,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
    }
 
    if (found) {
-      Dmsg1(100, "Found device %s\n", device->hdr.name);
+      Dmsg1(100, "Found device %s\n", device->name());
       dcr = New(SD_DCR);
       setup_new_dcr_device(jcr, dcr, device->dev, blocksizes);
       dcr->set_will_write();
@@ -1208,7 +1208,7 @@ static inline bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    }
    P(bsr_mutex);
    bsr_uniq++;
-   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->hdr.name,
+   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
       jcr->Job, bsr_uniq);
    V(bsr_mutex);
    Dmsg1(400, "bootstrap=%s\n", fname);

@@ -255,7 +255,8 @@ void free_resource(RES *sres, int type)
    }
 }
 
-/* Save the new resource by chaining it into the head list for
+/*
+ * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
@@ -278,24 +279,36 @@ void save_resource(int type, RES_ITEM *items, int pass)
       }
    }
 
-   /* During pass 2, we looked up pointers to all the resources
+   /*
+    * During pass 2, we looked up pointers to all the resources
     * referrenced in the current resource, , now we
     * must copy their address from the static record to the allocated
     * record.
     */
    if (pass == 2) {
       switch (type) {
-         /* Resources not containing a resource */
          case R_CONSOLE:
-         case R_DIRECTOR:
+            if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
+               Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
+            } else {
+               res->res_cons.tls_allowed_cns = res_all.res_cons.tls_allowed_cns;
+            }
             break;
-
+         case R_DIRECTOR:
+            if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+               Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+            } else {
+               res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+            }
+            break;
          default:
             Emsg1(M_ERROR, 0, _("Unknown resource type %d\n"), type);
             error = 1;
             break;
       }
-      /* Note, the resoure name was already saved during pass 1,
+
+      /*
+       * Note, the resoure name was already saved during pass 1,
        * so here, we can just release it.
        */
       if (res_all.res_dir.hdr.name) {
@@ -309,7 +322,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
       return;
    }
 
-   /* Common */
+   /*
+    * Common
+    */
    if (!error) {
       res = (URES *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
@@ -319,15 +334,14 @@ void save_resource(int type, RES_ITEM *items, int pass)
          RES *next, *last;
          for (last=next=res_head[rindex]; next; next=next->next) {
             last = next;
-            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
+            if (bstrcmp(next->name, res->res_dir.name())) {
                Emsg2(M_ERROR_TERM, 0,
                      _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                     resources[rindex].name, res->res_dir.hdr.name);
+                     resources[rindex].name, res->res_dir.name());
             }
          }
          last->next = (RES *)res;
-         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
-               res->res_dir.hdr.name);
+         Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
       }
    }
 }

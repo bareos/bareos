@@ -993,7 +993,7 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    if (director) {    /* Command line choice overwrite the no choose option */
       LockRes();
       foreach_res(dir, R_DIRECTOR) {
-         if (bstrcmp(dir->hdr.name, director)) {
+         if (bstrcmp(dir->name(), director)) {
             break;
          }
       }
@@ -1011,8 +1011,7 @@ try_again:
       LockRes();
       numdir = 0;
       foreach_res(dir, R_DIRECTOR) {
-         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->hdr.name,
-                  dir->address, dir->DIRport);
+         senditf( _("%2d:  %s at %s:%d\n"), 1+numdir++, dir->name(), dir->address, dir->DIRport);
       }
       UnlockRes();
       if (get_cmd(stdin, _("Select Director by entering a number: "),
@@ -1046,7 +1045,7 @@ try_again:
    LockRes();
    for (i=0; i<numcon; i++) {
       cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
-      if (cons->director && bstrcmp(cons->director, dir->hdr.name)) {
+      if (cons->director && bstrcmp(cons->director, dir->name())) {
          break;
       }
       cons = NULL;
@@ -1237,7 +1236,7 @@ int main(int argc, char *argv[])
    if (list_directors) {
       LockRes();
       foreach_res(dir, R_DIRECTOR) {
-         senditf("%s\n", dir->hdr.name);
+         senditf("%s\n", dir->name());
       }
       UnlockRes();
    }
@@ -1266,7 +1265,7 @@ int main(int argc, char *argv[])
       /*
        * Generate passphrase prompt
        */
-      bsnprintf(errmsg, errmsg_len, "Passphrase for Console \"%s\" TLS private key: ", cons->hdr.name);
+      bsnprintf(errmsg, errmsg_len, "Passphrase for Console \"%s\" TLS private key: ", cons->name());
 
       /*
        * Initialize TLS context:
@@ -1285,7 +1284,7 @@ int main(int argc, char *argv[])
                                       cons->tls_verify_peer);
 
       if (!cons->tls_ctx) {
-         senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->hdr.name);
+         senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->name());
          terminate_console(0);
          return 1;
       }
@@ -1301,7 +1300,7 @@ int main(int argc, char *argv[])
       /*
        * Generate passphrase prompt
        */
-      bsnprintf(errmsg, errmsg_len, "Passphrase for Director \"%s\" TLS private key: ", dir->hdr.name);
+      bsnprintf(errmsg, errmsg_len, "Passphrase for Director \"%s\" TLS private key: ", dir->name());
 
       /*
        * Initialize TLS context:
@@ -1319,7 +1318,7 @@ int main(int argc, char *argv[])
                                      dir->tls_verify_peer);
 
       if (!dir->tls_ctx) {
-         senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->hdr.name);
+         senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->name());
          terminate_console(0);
          return 1;
       }
@@ -1348,7 +1347,7 @@ int main(int argc, char *argv[])
     * If cons == NULL, default console will be used
     */
    if (cons) {
-      name = cons->hdr.name;
+      name = cons->name();
       ASSERT(cons->password.encoding == p_encoding_md5);
       password = cons->password.value;
       tls_ctx = cons->tls_ctx;
@@ -1491,7 +1490,7 @@ static int check_resources()
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required.\n"),
-                             director->hdr.name, configfile);
+                             director->name(), configfile);
          OK = false;
       }
    }
@@ -1523,7 +1522,7 @@ static int check_resources()
       if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir) && tls_needed) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s.\n"),
-                             cons->hdr.name, configfile);
+                             cons->name(), configfile);
          OK = false;
       }
    }

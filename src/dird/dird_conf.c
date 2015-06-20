@@ -2189,7 +2189,7 @@ void dump_resource(int type, RES *ures,
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
-      if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.name())) {
          res->res_client.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
@@ -2199,39 +2199,39 @@ void dump_resource(int type, RES *ures,
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
-      if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.name())) {
          res->res_store.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_CATALOG:
-      if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.name())) {
          res->res_cat.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_JOBDEFS:
    case R_JOB:
-      if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.name())) {
          res->res_job.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_FILESET: {
-      if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.hdr.name)) {
+      if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.name())) {
          res->res_fs.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    }
    case R_SCHEDULE:
-      if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.name())) {
          res->res_sch.print_config(buf, hide_sensitive_data);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_POOL:
-      if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.hdr.name)) {
+      if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.name())) {
         res->res_pool.print_config(buf, hide_sensitive_data);
         sendit(sock, "%s", buf.c_str());
       }
@@ -2716,8 +2716,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
           *
           * Find resource saved in pass 1
           */
-         if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_con.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Pool resource %s\n"), res_all.res_con.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
          } else {
             /*
              * Explicitly copy resource pointers from this pass (res_all)
@@ -2732,16 +2732,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
          }
          break;
       case R_CONSOLE:
-         if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          } else {
             res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
             res->res_con.profiles = res_all.res_con.profiles;
          }
          break;
       case R_DIRECTOR:
-         if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
             res->res_dir.plugin_names = res_all.res_dir.plugin_names;
             res->res_dir.messages = res_all.res_dir.messages;
@@ -2750,8 +2750,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          }
          break;
       case R_STORAGE:
-         if (!(res = (URES *)GetResWithName(type, res_all.res_store.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.hdr.name);
+         if (!(res = (URES *)GetResWithName(type, res_all.res_store.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
          } else {
             res->res_store.paired_storage = res_all.res_store.paired_storage;
 
@@ -2763,8 +2763,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_JOBDEFS:
       case R_JOB:
-         if (!(res = (URES *)GetResWithName(type, res_all.res_dir.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"), res_all.res_dir.hdr.name);
+         if (!(res = (URES *)GetResWithName(type, res_all.res_job.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
          } else {
             res->res_job.messages = res_all.res_job.messages;
             res->res_job.schedule = res_all.res_job.schedule;
@@ -2817,16 +2817,16 @@ void save_resource(int type, RES_ITEM *items, int pass)
          }
          break;
       case R_COUNTER:
-         if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
          } else {
             res->res_counter.Catalog = res_all.res_counter.Catalog;
             res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
          }
          break;
       case R_CLIENT:
-         if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
          } else {
             if (res_all.res_client.catalog) {
                res->res_client.catalog = res_all.res_client.catalog;
@@ -2846,8 +2846,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
           * in by run_conf.c during pass 2, so here we jam the pointer
           * into the Schedule resource.
           */
-         if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.hdr.name))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.hdr.name);
+         if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
+            Emsg1(M_ERROR_TERM, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
          } else {
             res->res_sch.run = res_all.res_sch.run;
          }
@@ -2884,10 +2884,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
       if (!res_head[rindex]) {
          res_head[rindex] = (RES *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
-               res->res_dir.hdr.name, rindex);
+               res->res_dir.name(), rindex);
       } else {
          RES *next, *last;
-         if (!res->res_dir.hdr.name) {
+         if (!res->res_dir.name()) {
             Emsg1(M_ERROR_TERM, 0, _("Name item is required in %s resource, but not found.\n"),
                   resources[rindex]);
          }
@@ -2896,15 +2896,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
           */
          for (last = next = res_head[rindex]; next; next = next->next) {
             last = next;
-            if (bstrcmp(next->name, res->res_dir.hdr.name)) {
+            if (bstrcmp(next->name, res->res_dir.name())) {
                Emsg2(M_ERROR_TERM, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
-                  resources[rindex].name, res->res_dir.hdr.name);
+                  resources[rindex].name, res->res_dir.name());
             }
          }
          last->next = (RES *)res;
          Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
-               res->res_dir.hdr.name, rindex, pass);
+               res->res_dir.name(), rindex, pass);
       }
    }
 }
@@ -3067,8 +3067,8 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
          memset(res, 0, resources[rindex].size);
          res->res_dev.hdr.name = bstrdup(lc->str);
          res_head[rindex] = (RES *)res; /* store first entry */
-         Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(R_DEVICE),
-               res->res_dir.hdr.name, rindex);
+         Dmsg3(900, "Inserting first %s res: %s index=%d\n",
+               res_to_str(R_DEVICE), res->res_dir.name(), rindex);
       } else {
          RES *next;
          /*
@@ -3085,8 +3085,8 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
             memset(res, 0, resources[rindex].size);
             res->res_dev.hdr.name = bstrdup(lc->str);
             next->next = (RES *)res;
-            Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n", res_to_str(R_DEVICE),
-               res->res_dir.hdr.name, rindex, pass);
+            Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
+                  res_to_str(R_DEVICE), res->res_dir.name(), rindex, pass);
          }
       }
 

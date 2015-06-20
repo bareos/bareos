@@ -668,7 +668,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
          break;
       case bsdVarStorage:
          if (jcr->dcr && jcr->dcr->device) {
-            *((char **)value) = jcr->dcr->device->hdr.name;
+            *((char **)value) = jcr->dcr->device->name();
             Dmsg1(dbglvl, "sd-plugin: return bsdVarStorage=%s\n", NPRT(*((char **)value)));
          } else {
             ret = bRC_Error;
@@ -826,7 +826,7 @@ static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags)
    utime_t now;
    now = (utime_t)time(NULL);
 
-   update_device_tapealert(dcr->device->hdr.name, flags, now);
+   update_device_tapealert(dcr->device->name(), flags, now);
 }
 
 static DEV_RECORD *bareosNewRecord(bool with_data)

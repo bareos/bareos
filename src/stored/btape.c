@@ -264,7 +264,7 @@ int main(int margc, char *margv[])
 
    if (DirectorName) {
       foreach_res(director, R_DIRECTOR) {
-         if (bstrcmp(director->hdr.name, DirectorName)) {
+         if (bstrcmp(director->name(), DirectorName)) {
             break;
          }
       }

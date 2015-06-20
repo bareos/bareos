@@ -1191,7 +1191,7 @@ static bool bootstrap_cmd(JCR *jcr)
    free_bootstrap(jcr);
    P(bsr_mutex);
    bsr_uniq++;
-   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->hdr.name,
+   Mmsg(fname, "%s/%s.%s.%d.bootstrap", me->working_directory, me->name(),
       jcr->Job, bsr_uniq);
    V(bsr_mutex);
    Dmsg1(400, "bootstrap=%s\n", fname);

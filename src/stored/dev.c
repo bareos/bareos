@@ -249,12 +249,12 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       dev->dev_options = get_memory(strlen(device->device_options) + 1);
       pm_strcpy(dev->dev_options, device->device_options);
    }
-   dev->prt_name = get_memory(strlen(device->device_name) + strlen(device->hdr.name) + 20);
+   dev->prt_name = get_memory(strlen(device->device_name) + strlen(device->name()) + 20);
 
    /*
     * We edit "Resource-name" (physical-name)
     */
-   Mmsg(dev->prt_name, "\"%s\" (%s)", device->hdr.name, device->device_name);
+   Mmsg(dev->prt_name, "\"%s\" (%s)", device->name(), device->device_name);
    Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
    copy_bits(CAP_MAX, device->cap_bits, dev->capabilities);
 
@@ -1187,7 +1187,7 @@ ssize_t DEVICE::write(const void *buf, size_t len)
  */
 const char *DEVICE::name() const
 {
-   return device->hdr.name;
+   return device->name();
 }
 
 /*

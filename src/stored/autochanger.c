@@ -58,13 +58,13 @@ bool init_autochangers()
          if (!device->changer_name) {
             Jmsg(NULL, M_ERROR, 0,
                _("No Changer Name given for device %s. Cannot continue.\n"),
-               device->hdr.name);
+               device->name());
             OK = false;
          }
          if (!device->changer_command) {
             Jmsg(NULL, M_ERROR, 0,
                _("No Changer Command given for device %s. Cannot continue.\n"),
-               device->hdr.name);
+               device->name());
             OK = false;
          }
       }
@@ -323,7 +323,7 @@ static void lock_changer(DCR *dcr)
    AUTOCHANGERRES *changer_res = dcr->device->changer_res;
    if (changer_res) {
       int errstat;
-      Dmsg1(200, "Locking changer %s\n", changer_res->hdr.name);
+      Dmsg1(200, "Locking changer %s\n", changer_res->name());
       if ((errstat=rwl_writelock(&changer_res->changer_lock)) != 0) {
          berrno be;
          Jmsg(dcr->jcr, M_ERROR_TERM, 0, _("Lock failure on autochanger. ERR=%s\n"),
@@ -337,7 +337,7 @@ static void unlock_changer(DCR *dcr)
    AUTOCHANGERRES *changer_res = dcr->device->changer_res;
    if (changer_res) {
       int errstat;
-      Dmsg1(200, "Unlocking changer %s\n", changer_res->hdr.name);
+      Dmsg1(200, "Unlocking changer %s\n", changer_res->name());
       if ((errstat=rwl_writeunlock(&changer_res->changer_lock)) != 0) {
          berrno be;
          Jmsg(dcr->jcr, M_ERROR_TERM, 0, _("Unlock failure on autochanger. ERR=%s\n"),
