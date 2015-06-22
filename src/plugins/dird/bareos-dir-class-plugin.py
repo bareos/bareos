@@ -32,7 +32,7 @@ import bareos_dir_consts
 # This module contains the wrapper functions called by the Bareos-Dir, the
 # functions call the corresponding methods from your plugin class
 import BareosDirWrapper
-from BareosDirWrapper import *
+from BareosDirWrapper import *  # noqa
 
 # This module contains the used plugin class
 import BareosDirPluginBaseclass

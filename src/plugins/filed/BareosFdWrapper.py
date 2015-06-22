@@ -65,6 +65,7 @@ def plugin_io(context, IOP):
 def create_file(context, restorepkt):
     return bareos_fd_plugin_object.create_file(context, restorepkt)
 
+
 def set_file_attributes(context, restorepkt):
     return bareos_fd_plugin_object.set_file_attributes(context, restorepkt)
 

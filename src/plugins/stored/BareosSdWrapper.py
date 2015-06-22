@@ -19,25 +19,22 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Bareos-fd-mock-test a simple example for a python Bareos FD Plugin using the baseclass
-# and doing nothing
-# You may take this as a skeleton for your plugin
-#
 # Author: Maik Aussendorf
 #
+# The BareosSdWrapper module. Here is a global object bareos_sd_plugin_object
+# and wrapper functions, which are directly called out of the bareos-sd. They
+# are intended to pass the call to a method of an object of type
+# BareosSdPluginBaseclass (or derived)
 
-# Provided by the Bareos FD Python plugin interface
-import bareosfd
-import bareos_fd_consts
-import BareosFdWrapper
-from BareosFdWrapper import *  # noqa
-import BareosFdPluginBaseclass
+# use this as global plugin object among your python-sd-plugin modules
+bareos_sd_plugin_object = None
 
 
-def load_bareos_plugin(context, plugindef):
-    bareosfd.DebugMessage(context, 100, "------ Plugin loader called with " + plugindef + "\n")
-    BareosFdWrapper.bareos_fd_plugin_object = \
-        BareosFdPluginBaseclass.BareosFdPluginBaseclass(context, plugindef)
-    return bareos_fd_consts.bRCs['bRC_OK']
+def parse_plugin_definition(context, plugindef):
+    return bareos_sd_plugin_object.parse_plugin_definition(context, plugindef)
 
-# the rest is done in the Plugin module
+
+def handle_plugin_event(context, event):
+    return bareos_sd_plugin_object.handle_plugin_event(context, event)
+
+# vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4

@@ -1103,6 +1103,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{plugin_dir}/python-sd.so
 %{plugin_dir}/bareos-sd.py*
 %{plugin_dir}/bareos_sd_consts.py*
+%{plugin_dir}/BareosSdPluginBaseclass.py*
+%{plugin_dir}/BareosSdWrapper.py*
+%{plugin_dir}/bareos-sd-class-plugin.py*
 
 %endif # python_plugins
 

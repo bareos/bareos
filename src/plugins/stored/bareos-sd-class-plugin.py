@@ -19,25 +19,36 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Bareos-fd-mock-test a simple example for a python Bareos FD Plugin using the baseclass
-# and doing nothing
-# You may take this as a skeleton for your plugin
+# bareos-sd-class-plugin.py a simple example for a python Bareos sd Plugin using
+# BareosSdPluginBaseclass.
 #
 # Author: Maik Aussendorf
 #
 
-# Provided by the Bareos FD Python plugin interface
-import bareosfd
-import bareos_fd_consts
-import BareosFdWrapper
-from BareosFdWrapper import *  # noqa
-import BareosFdPluginBaseclass
+# Provided by the Bareos SD Python plugin interface
+import bareos_sd_consts
+
+# This module contains the wrapper functions called by the Bareos-SD, the
+# functions call the corresponding methods from your plugin class
+import BareosSdWrapper
+from BareosSdWrapper import *  # noqa
+
+# This module contains the used plugin class
+import BareosSdPluginBaseclass
 
 
 def load_bareos_plugin(context, plugindef):
-    bareosfd.DebugMessage(context, 100, "------ Plugin loader called with " + plugindef + "\n")
-    BareosFdWrapper.bareos_fd_plugin_object = \
-        BareosFdPluginBaseclass.BareosFdPluginBaseclass(context, plugindef)
-    return bareos_fd_consts.bRCs['bRC_OK']
+    '''
+    This function is called by the Bareos-SD to load the plugin
+    We use it to instantiate the plugin class
+    '''
+    # BareosSdWrapper.bareos_sd_plugin_object is the module attribute that
+    # holds the plugin class object
+    BareosSdWrapper.bareos_sd_plugin_object = \
+        BareosSdPluginBaseclass.BareosSdPluginBaseclass(
+            context, plugindef)
+    return bareos_sd_consts.bRCs['bRC_OK']
 
 # the rest is done in the Plugin module
+
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
