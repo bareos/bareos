@@ -349,7 +349,7 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
 
       Mmsg(q, uar_print_jobs, jobids.list);
       ua->send_msg(_("The restore will use the following job(s) as Base\n"));
-      db_list_sql_query(ua->jcr, ua->db, q.c_str(), ua->send, true, HORZ_LIST);
+      db_list_sql_query(ua->jcr, ua->db, q.c_str(), ua->send, HORZ_LIST, true);
    }
    pm_strcpy(rx->BaseJobIds, jobids.list);
 }
@@ -645,7 +645,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, uar_list_jobs, ua->send, true, HORZ_LIST);
+         db_list_sql_query(ua->jcr, ua->db, uar_list_jobs, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -663,7 +663,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          free(fname);
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, rx->query, ua->send, true, HORZ_LIST);
+         db_list_sql_query(ua->jcr, ua->db, rx->query, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -683,7 +683,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, true, HORZ_LIST);
+         db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -1461,7 +1461,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       /*
        * Display a list of Jobs selected for this restore
        */
-      db_list_sql_query(ua->jcr, ua->db, uar_list_temp, ua->send, true, HORZ_LIST);
+      db_list_sql_query(ua->jcr, ua->db, uar_list_temp, ua->send, HORZ_LIST, true);
       ok = true;
    } else {
       ua->warning_msg(_("No jobs found.\n"));

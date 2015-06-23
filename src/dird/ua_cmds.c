@@ -140,6 +140,7 @@ static struct cmdstruct commands[] = {
      NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ barcodes ] [ encrypt ]"), false, true },
    { NT_("list"), list_cmd, _("List objects from catalog"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+         "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] |\n"
          "clients | copies jobid=<jobid> |\n"
          "files jobid=<jobid> | files ujobid=<complete_name> |\n"
          "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets |\n"
@@ -151,9 +152,10 @@ static struct cmdstruct commands[] = {
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
-         "[ limit=<num> ]"), true, true },
+         "[ limit=<number> ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
+         "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] |\n"
          "clients | copies jobid=<jobid> |\n"
          "files jobid=<jobid> | files ujobid=<complete_name> |\n"
          "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] | filesets |\n"

@@ -902,7 +902,7 @@ static bool update_pool(UAContext *ua)
    }
    query = get_pool_memory(PM_MESSAGE);
    Mmsg(query, list_pool, edit_int64(pr.PoolId, ed1));
-   db_list_sql_query(ua->jcr, ua->db, query, ua->send, true, HORZ_LIST);
+   db_list_sql_query(ua->jcr, ua->db, query, ua->send, HORZ_LIST, true);
    free_pool_memory(query);
    ua->info_msg(_("Pool DB record updated from resource.\n"));
    return true;

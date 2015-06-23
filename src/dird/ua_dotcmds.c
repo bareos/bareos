@@ -61,7 +61,6 @@ static bool schedulecmd(UAContext *ua, const char *cmd);
 static bool storagecmd(UAContext *ua, const char *cmd);
 static bool defaultscmd(UAContext *ua, const char *cmd);
 static bool typescmd(UAContext *ua, const char *cmd);
-static bool backupscmd(UAContext *ua, const char *cmd);
 static bool levelscmd(UAContext *ua, const char *cmd);
 static bool getmsgscmd(UAContext *ua, const char *cmd);
 static bool volstatuscmd(UAContext *ua, const char *cmd);
@@ -96,7 +95,6 @@ struct cmdstruct {
 static struct cmdstruct commands[] = {
    { NT_(".api"), api_cmd, _("Switch between different api modes"),
      NT_("0 | 1 | 2 | off | json"), false, false },
-   { NT_(".backups"), backupscmd, NULL, NULL, false, false },
    { NT_(".clients"), clientscmd, NULL, NULL, true, false },
    { NT_(".catalogs"), catalogscmd, NULL, NULL, false, false },
    { NT_(".defaults"), defaultscmd, NULL, NULL, false, false },
@@ -922,13 +920,14 @@ static bool jobdefscmd(UAContext *ua, const char *cmd)
  */
 static bool jobscmd(UAContext *ua, const char *cmd)
 {
-   JOBRES *job;
-
-   uint32_t type = 0;
    int pos;
+   JOBRES *job;
+   uint32_t type = 0;
+
    if ((pos = find_arg_with_value(ua, "type")) >= 0) {
       type = ua->argv[pos][0];
    }
+
    LockRes();
    ua->send->object_start();
    foreach_res(job, R_JOB) {
@@ -1135,45 +1134,6 @@ static bool api_cmd(UAContext *ua, const char *cmd)
    ua->send->object_start();
    ua->send->object_key_value("api", "%s: ", ua->api, "%d\n");
    ua->send->object_end();
-
-   return true;
-}
-
-static int client_backups_handler(void *ctx, int num_field, char **row)
-{
-   UAContext *ua = (UAContext *)ctx;
-   ua->send_msg("| %s | %s | %s | %s | %s | %s | %s | %s |\n",
-      row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8]);
-   return 0;
-}
-
-/*
- * Return the backups for this client
- *
- * .backups client=xxx fileset=yyy
- */
-static bool backupscmd(UAContext *ua, const char *cmd)
-{
-   if (!open_client_db(ua)) {
-      return true;
-   }
-   if (ua->argc != 3 ||
-       !bstrcmp(ua->argk[1], "client") ||
-       !bstrcmp(ua->argk[2], "fileset")) {
-      return true;
-   }
-
-   if (!acl_access_ok(ua, Client_ACL, ua->argv[1], true) ||
-       !acl_access_ok(ua, FileSet_ACL, ua->argv[2], true)) {
-      ua->error_msg(_("Access to specified Client or FileSet not allowed.\n"));
-      return true;
-   }
-
-   Mmsg(ua->cmd, client_backups, ua->argv[1], ua->argv[2]);
-   if (!db_sql_query(ua->db, ua->cmd, client_backups_handler, (void *)ua)) {
-      ua->error_msg(_("Query failed: %s. ERR=%s\n"), ua->cmd, db_strerror(ua->db));
-      return true;
-   }
 
    return true;
 }

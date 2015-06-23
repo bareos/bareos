@@ -38,12 +38,14 @@
 /* Imported subroutines */
 
 /* Imported variables */
+extern struct s_jl joblevels[];
 
 /* Imported functions */
 
 /* Forward referenced functions */
 static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
 static bool list_nextvol(UAContext *ua, int ndays);
+static bool parse_list_backups_cmd(UAContext *ua);
 
 /*
  * Turn auto display of console messages on/off
@@ -114,12 +116,12 @@ static void show_disabled_jobs(UAContext *ua)
             ua->send_msg(_("Disabled Jobs:\n"));
          }
          ua->send_msg("   %s\n", job->name());
-     }
-  }
+      }
+   }
 
-  if (first) {
-     ua->send_msg(_("No disabled Jobs.\n"));
-  }
+   if (first) {
+      ua->send_msg(_("No disabled Jobs.\n"));
+   }
 }
 
 /*
@@ -141,12 +143,12 @@ static void show_disabled_clients(UAContext *ua)
             ua->send_msg(_("Disabled Clients:\n"));
          }
          ua->send_msg("   %s\n", client->name());
-     }
-  }
+      }
+   }
 
-  if (first) {
-     ua->send_msg(_("No disabled Clients.\n"));
-  }
+   if (first) {
+      ua->send_msg(_("No disabled Clients.\n"));
+   }
 }
 
 /*
@@ -168,12 +170,12 @@ static void show_disabled_schedules(UAContext *ua)
             ua->send_msg(_("Disabled Scedules:\n"));
          }
          ua->send_msg("   %s\n", sched->name());
-     }
-  }
+      }
+   }
 
-  if (first) {
-     ua->send_msg(_("No disabled Schedules.\n"));
-  }
+   if (first) {
+      ua->send_msg(_("No disabled Schedules.\n"));
+   }
 }
 
 struct showstruct {
@@ -232,11 +234,14 @@ bool show_cmd(UAContext *ua, const char *cmd)
    LockRes();
    for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], _("disabled"))) {
-         if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
+         if (((i + 1) < ua->argc) &&
+             bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
             show_disabled_jobs(ua);
-         } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
+         } else if (((i + 1) < ua->argc) &&
+                    bstrcasecmp(ua->argk[i + 1], NT_("clients"))) {
             show_disabled_clients(ua);
-         } else if (((i + 1) < ua->argc) && bstrcasecmp(ua->argk[i + 1], NT_("schedules"))) {
+         } else if (((i + 1) < ua->argc) &&
+                    bstrcasecmp(ua->argk[i + 1], NT_("schedules"))) {
             show_disabled_schedules(ua);
          } else {
             show_disabled_jobs(ua);
@@ -249,7 +254,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
 
       type = 0;
       res_name = ua->argk[i];
-      if (!ua->argv[i]) {             /* was a name given? */
+      if (!ua->argv[i]) {          /* was a name given? */
          /*
           * No name, dump all resources of specified type
           */
@@ -295,7 +300,8 @@ bool show_cmd(UAContext *ua, const char *cmd)
                continue;
             default:
                if (my_config->m_res_head[j - my_config->m_r_first]) {
-                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first], bsendmsg, ua, hide_sensitive_data);
+                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first],
+                                bsendmsg, ua, hide_sensitive_data);
                }
                break;
             }
@@ -370,6 +376,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    JOB_DBR jr;
    POOL_DBR pr;
    MEDIA_DBR mr;
+   bool retval = true;
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -636,7 +643,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
              */
             if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
                ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"),
-                        db_strerror(ua->db));
+                             db_strerror(ua->db));
                return true;
             }
             if (num_pools <= 0) {
@@ -665,8 +672,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (j >= 0) {
             n = atoi(ua->argv[j]);
             if ((n < 0) || (n > 50)) {
-              ua->warning_msg(_("Ignoring invalid value for days. Max is 50.\n"));
-              n = 1;
+               ua->warning_msg(_("Ignoring invalid value for days. Max is 50.\n"));
+               n = 1;
             }
          }
          list_nextvol(ua, n);
@@ -687,6 +694,12 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             }
          }
          db_list_copies_records(ua->jcr, ua->db, limit, jobids, ua->send, llist);
+      } else if (bstrcasecmp(ua->argk[i], NT_("backups"))) {
+         retval=false;
+         if (parse_list_backups_cmd(ua)) {
+            retval=db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, llist, "backups");
+         }
+         return retval;
       } else if (bstrcasecmp(ua->argk[i], NT_("limit")) ||
                  bstrcasecmp(ua->argk[i], NT_("days"))) {
          /*
@@ -696,6 +709,233 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          ua->error_msg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[i]));
       }
    }
+   return true;
+}
+
+
+static inline bool parse_jobstatus_selection_param(POOL_MEM &selection,
+                                                   UAContext *ua,
+                                                   const char *default_selection)
+{
+   int pos;
+
+   selection.strcpy("");
+   if ((pos = find_arg_with_value(ua, "jobstatus")) >= 0) {
+      int cnt = 0;
+      int jobstatus;
+      POOL_MEM temp;
+      char *cur_stat, *bp;
+
+      cur_stat = ua->argv[pos];
+      while (cur_stat) {
+         bp = strchr(cur_stat, ',');
+         if (bp) {
+            *bp++ = '\0';
+         }
+
+         /*
+          * Try matching the status to an internal Job Termination code.
+          */
+         if (strlen(cur_stat) == 1 && cur_stat[0] >= 'A' && cur_stat[0] <= 'z') {
+            jobstatus = cur_stat[0];
+         } else if (bstrcasecmp(cur_stat, "terminated")) {
+            jobstatus = JS_Terminated;
+         } else if (bstrcasecmp(cur_stat, "warnings")) {
+            jobstatus = JS_Warnings;
+         } else if (bstrcasecmp(cur_stat, "canceled")) {
+            jobstatus = JS_Canceled;
+         } else if (bstrcasecmp(cur_stat, "running")) {
+            jobstatus = JS_Running;
+         } else if (bstrcasecmp(cur_stat, "error")) {
+            jobstatus = JS_Error;
+         } else if (bstrcasecmp(cur_stat, "fatal")) {
+            jobstatus = JS_FatalError;
+         } else {
+            cur_stat = bp;
+            continue;
+         }
+
+         if (cnt == 0) {
+            Mmsg(temp, " AND JobStatus IN ('%c'", jobstatus);
+            pm_strcat(selection, temp.c_str());
+         } else {
+            Mmsg(temp, ",'%c'", jobstatus);
+            pm_strcat(selection, temp.c_str());
+         }
+         cur_stat = bp;
+         cnt++;
+      }
+
+      /*
+       * Close set if we opened one.
+       */
+      if (cnt > 0) {
+         pm_strcat(selection, ")");
+      }
+   }
+
+   if (selection.strlen() == 0) {
+      /*
+       * When no explicit Job Termination code specified use default
+       */
+      selection.strcpy(default_selection);
+   }
+
+   return true;
+}
+
+static inline bool parse_level_selection_param(POOL_MEM &selection,
+                                               UAContext *ua,
+                                               const char *default_selection)
+{
+   int pos;
+
+   selection.strcpy("");
+   if ((pos = find_arg_with_value(ua, "level")) >= 0) {
+      int cnt = 0;
+      POOL_MEM temp;
+      char *cur_level, *bp;
+
+      cur_level = ua->argv[pos];
+      while (cur_level) {
+         bp = strchr(cur_level, ',');
+         if (bp) {
+            *bp++ = '\0';
+         }
+
+         /*
+          * Try mapping from text level to internal level.
+          */
+         for (int i = 0; joblevels[i].level_name; i++) {
+            if (joblevels[i].job_type == JT_BACKUP &&
+                bstrncasecmp(joblevels[i].level_name, cur_level,
+                             strlen(cur_level))) {
+
+               if (cnt == 0) {
+                  Mmsg(temp, " AND Level IN ('%c'", joblevels[i].level);
+                  pm_strcat(selection, temp.c_str());
+               } else {
+                  Mmsg(temp, ",'%c'", joblevels[i].level);
+                  pm_strcat(selection, temp.c_str());
+               }
+            }
+         }
+         cur_level = bp;
+         cnt++;
+      }
+
+      /*
+       * Close set if we opened one.
+       */
+      if (cnt > 0) {
+         pm_strcat(selection, ")");
+      }
+   }
+   if (selection.strlen() == 0) {
+      selection.strcpy(default_selection);
+   }
+
+   return true;
+}
+
+static inline bool parse_fileset_selection_param(POOL_MEM &selection,
+                                                 UAContext *ua,
+                                                 bool listall)
+{
+   int fileset;
+
+   pm_strcpy(selection, "");
+   fileset = find_arg_with_value(ua, "fileset");
+   if (bstrcasecmp(ua->argv[fileset], "any") || (listall && fileset < 0)) {
+      FILESETRES *fs;
+      POOL_MEM temp(PM_MESSAGE);
+
+      LockRes();
+      foreach_res(fs, R_FILESET) {
+         if (!acl_access_ok(ua, FileSet_ACL, fs->name(), false)) {
+            continue;
+         }
+         if (selection.strlen() == 0) {
+            temp.bsprintf("FileSet='%s'", fs->name());
+         } else {
+            temp.bsprintf(" OR FileSet='%s'", fs->name());
+         }
+         pm_strcat(selection, temp.c_str());
+      }
+      UnlockRes();
+   } else {
+      if (!acl_access_ok(ua, FileSet_ACL, ua->argv[fileset], true)) {
+         ua->error_msg(_("Access to specified FileSet not allowed.\n"));
+         return false;
+      } else {
+         selection.bsprintf("FileSet='%s'", ua->argv[fileset]);
+      }
+   }
+
+   return true;
+}
+
+static bool parse_list_backups_cmd(UAContext *ua)
+{
+   int pos, client;
+   POOL_MEM temp(PM_MESSAGE),
+            fileset(PM_MESSAGE),
+            selection(PM_MESSAGE),
+            criteria(PM_MESSAGE);
+
+   client = find_arg_with_value(ua, "client");
+   if (client < 0) {
+      return false;
+   }
+
+   if (!acl_access_ok(ua, Client_ACL, ua->argv[client], true)) {
+      ua->error_msg(_("Access to specified Client not allowed.\n"));
+      return false;
+   }
+
+   pm_strcpy(selection, "");
+
+   /*
+    * Build a selection pattern based on the jobstatus and level arguments.
+    */
+   parse_jobstatus_selection_param(temp, ua, " AND JobStatus IN ('T','W')");
+   pm_strcat(selection, temp.c_str());
+
+   parse_level_selection_param(temp, ua, "");
+   pm_strcat(selection, temp.c_str());
+
+   if (!parse_fileset_selection_param(fileset, ua, true)) {
+      return false;
+   }
+
+   /*
+    * Build a criteria pattern if the order and/or limit argument are given.
+    */
+   pm_strcpy(criteria, "");
+   if ((pos = find_arg_with_value(ua, "order")) >= 0) {
+      if (bstrncasecmp(ua->argv[pos], "ascending", strlen(ua->argv[pos]))) {
+         pm_strcat(criteria, " ASC");
+      } else if (bstrncasecmp(ua->argv[pos], "descending", strlen(ua->argv[pos]))) {
+         pm_strcat(criteria, " DESC");
+      } else {
+         return false;
+      }
+   }
+
+   if ((pos = find_arg_with_value(ua, "limit")) >= 0) {
+      int limit;
+      POOL_MEM temp;
+
+      limit = atoi(ua->argv[pos]);
+      if (limit) {
+         Mmsg(temp, " LIMIT %d", limit);
+         pm_strcat(criteria, temp.c_str());
+      }
+   }
+
+   Mmsg(ua->cmd, client_backups, ua->argv[client], fileset.c_str(),
+        selection.c_str(), criteria.c_str());
+
    return true;
 }
 

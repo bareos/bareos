@@ -126,8 +126,8 @@ bool query_cmd(UAContext *ua, const char *cmd)
          query = substitute_prompts(ua, query, prompt, nprompt);
          Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, false, VERT_LIST);
-         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, true, HORZ_LIST)) {
+            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, VERT_LIST, false);
+         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, HORZ_LIST, true)) {
             ua->send_msg("%s\n", query);
          }
          query[0] = 0;
@@ -138,8 +138,8 @@ bool query_cmd(UAContext *ua, const char *cmd)
       query = substitute_prompts(ua, query, prompt, nprompt);
       Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, false, VERT_LIST);
-         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, true, HORZ_LIST)) {
+            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, VERT_LIST, false);
+         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, HORZ_LIST, true)) {
             ua->error_msg("%s\n", query);
          }
    }
@@ -271,7 +271,7 @@ bool sqlquery_cmd(UAContext *ua, const char *cmd)
       if (ua->cmd[len-1] == ';') {
          ua->cmd[len-1] = 0;          /* zap ; */
          /* Submit query */
-         db_list_sql_query(ua->jcr, ua->db, query.c_str(), ua->send, true, HORZ_LIST);
+         db_list_sql_query(ua->jcr, ua->db, query.c_str(), ua->send, HORZ_LIST, true);
          *query.c_str() = 0;         /* start new query */
          msg = _("Enter SQL query: ");
       } else {

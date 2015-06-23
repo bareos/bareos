@@ -44,8 +44,16 @@
 /*
  * Submit general SQL query
  */
-bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query, OUTPUT_FORMATTER *sendit,
-                       bool verbose, e_list_type type)
+bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
+                       OUTPUT_FORMATTER *sendit, e_list_type type,
+                       bool verbose)
+{
+   return db_list_sql_query(jcr, mdb, query, sendit, type, "query", verbose);
+}
+
+bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
+                       OUTPUT_FORMATTER *sendit, e_list_type type,
+                       const char *description, bool verbose)
 {
    bool retval = false;
 
@@ -58,9 +66,9 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query, OUTPUT_FORMATTER 
       goto bail_out;
    }
 
-   sendit->object_start("query");
+   sendit->object_start(description);
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("query");
+   sendit->object_end(description);
    sql_free_result(mdb);
    retval = true;
 
