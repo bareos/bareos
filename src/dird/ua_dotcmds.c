@@ -636,36 +636,64 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
       return true;
    }
 
-   /* When in level base, we don't rely on any Full/Incr/Diff */
-   if (jr.JobLevel == L_BASE) {
-      ua->send_msg("%s\n", edit_int64(jr.JobId, ed1));
-      return true;
-   }
-
-   /* If we have the "all" option, we do a search on all defined fileset
-    * for this client
+   /*
+    * When in level base, we don't rely on any Full/Incr/Diff
     */
-   if (find_arg(ua, "all") > 0) {
-      edit_int64(jr.ClientId, ed1);
-      Mmsg(query, uar_sel_filesetid, ed1);
-      db_get_query_dbids(ua->jcr, ua->db, query, ids);
+   if (jr.JobLevel == L_BASE) {
+      jobids.add(edit_int64(jr.JobId, ed1));
    } else {
-      ids.num_ids = 1;
-      ids.DBId[0] = jr.FileSetId;
-   }
-
-   jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-
-   /* Foreach different FileSet, we build a restore jobid list */
-   for (int i = 0; i < ids.num_ids; i++) {
-      jr.FileSetId = ids.DBId[i];
-      if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
-         return true;
+      /*
+       * If we have the "all" option, we do a search on all defined fileset for this client
+       */
+      if (find_arg(ua, "all") > 0) {
+         edit_int64(jr.ClientId, ed1);
+         Mmsg(query, uar_sel_filesetid, ed1);
+         db_get_query_dbids(ua->jcr, ua->db, query, ids);
+      } else {
+         ids.num_ids = 1;
+         ids.DBId[0] = jr.FileSetId;
       }
-      jobids.add(tempids);
+
+      jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
+
+      /*
+       * Foreach different FileSet, we build a restore jobid list
+       */
+      for (int i = 0; i < ids.num_ids; i++) {
+         jr.FileSetId = ids.DBId[i];
+         if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
+            return true;
+         }
+         jobids.add(tempids);
+      }
    }
 
-   ua->send_msg("%s\n", jobids.list);
+   switch (ua->api) {
+   case API_MODE_JSON: {
+      char *cur_id, *bp;
+
+      ua->send->object_start();
+      cur_id = jobids.list;
+      while (cur_id && strlen(cur_id)) {
+         bp = strchr(cur_id, ',');
+         if (bp) {
+            *bp++ = '\0';
+         }
+
+         ua->send->object_start("jobids");
+         ua->send->object_key_value("id", cur_id, "%s\n");
+         ua->send->object_end("jobids");
+
+         cur_id = bp;
+      }
+      ua->send->object_end();
+      break;
+   }
+   default:
+      ua->send_msg("%s\n", jobids.list);
+      break;
+   }
+
    return true;
 }
 
