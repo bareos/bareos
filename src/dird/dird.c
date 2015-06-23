@@ -285,6 +285,13 @@ int main (int argc, char *argv[])
    my_config = new_config_parser();
    parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
+   if (!test_config) {                /* we don't need to do this block in test mode */
+      if (background) {
+         daemon_start();
+         init_stack_dump();              /* grab new pid */
+      }
+   }
+
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
       goto bail_out;
@@ -296,10 +303,6 @@ int main (int argc, char *argv[])
    }
 
    if (!test_config) {                /* we don't need to do this block in test mode */
-      if (background) {
-         daemon_start();
-         init_stack_dump();              /* grab new pid */
-      }
       /* Create pid must come after we are a daemon -- so we have our final pid */
       create_pid_file(me->pid_directory, "bareos-dir",
                       get_first_port_host_order(me->DIRaddrs));

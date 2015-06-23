@@ -213,6 +213,11 @@ int main (int argc, char *argv[])
    my_config = new_config_parser();
    parse_fd_config(my_config, configfile, M_ERROR_TERM);
 
+   if (!foreground && !test_config) {
+      daemon_start();
+      init_stack_dump();              /* set new pid */
+   }
+
    if (init_crypto() != 0) {
       Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
       terminate_filed(1);
@@ -235,11 +240,6 @@ int main (int argc, char *argv[])
 
    if (test_config) {
       terminate_filed(0);
-   }
-
-   if (!foreground) {
-      daemon_start();
-      init_stack_dump();              /* set new pid */
    }
 
    set_thread_concurrency(me->MaxConcurrentJobs + 10);

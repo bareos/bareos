@@ -219,6 +219,11 @@ int main (int argc, char *argv[])
    my_config = new_config_parser();
    parse_sd_config(my_config, configfile, M_ERROR_TERM);
 
+   if (!foreground && !test_config) {
+      daemon_start();                 /* become daemon */
+      init_stack_dump();              /* pick up new pid */
+   }
+
    if (init_crypto() != 0) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
@@ -234,11 +239,6 @@ int main (int argc, char *argv[])
    }
 
    my_name_is(0, (char **)NULL, me->hdr.name);     /* Set our real name */
-
-   if (!foreground) {
-      daemon_start();                 /* become daemon */
-      init_stack_dump();              /* pick up new pid */
-   }
 
    create_pid_file(me->pid_directory, "bareos-sd",
                    get_first_port_host_order(me->SDaddrs));
