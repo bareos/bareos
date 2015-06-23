@@ -242,10 +242,6 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
-   if (init_crypto() != 0) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
-   }
-
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
    }
@@ -261,6 +257,10 @@ int main (int argc, char *argv[])
    if (!foreground) {
       daemon_start();                 /* become daemon */
       init_stack_dump();              /* pick up new pid */
+   }
+
+   if (init_crypto() != 0) {
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
    create_pid_file(me->pid_directory, "bareos-sd",

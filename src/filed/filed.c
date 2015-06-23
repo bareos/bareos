@@ -241,11 +241,6 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
-   if (init_crypto() != 0) {
-      Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
-      terminate_filed(1);
-   }
-
    if (!check_resources()) {
       Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
       terminate_filed(1);
@@ -268,6 +263,11 @@ int main (int argc, char *argv[])
    if (!foreground) {
       daemon_start();
       init_stack_dump();              /* set new pid */
+   }
+
+   if (init_crypto() != 0) {
+      Emsg0(M_ERROR, 0, _("Cryptography library initialization failed.\n"));
+      terminate_filed(1);
    }
 
    set_thread_concurrency(me->MaxConcurrentJobs + 10);
