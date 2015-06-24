@@ -7,7 +7,7 @@
 #   on the "Archive Device" directive in the Device
 #   resource.  If you change the Name and/or the
 #   "Media Type" in the Device resource, please ensure
-#   that dird.conf has corresponding changes.
+#   that the Bareos director has corresponding changes.
 #
 
 Storage {                             # definition of myself

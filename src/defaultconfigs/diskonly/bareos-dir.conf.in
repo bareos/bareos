@@ -1,6 +1,7 @@
 #
 # Default Bareos Director configuration file for disk-only backup
-# (C) 2013-2014 Bareos GmbH & Co.KG
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@ @DISTVER@
 #
 # Each configuration item has a reference number that shows
 # where this property can be changed in the configuration file.
@@ -54,6 +55,12 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
+
+  # Enable the Heartbeat if you experience connection losses
+  # (eg. because of your router or firewall configuration).
+  # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
+  #
+  # Heartbeat Interval = 1m
 
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@
@@ -222,9 +229,6 @@ Client {
   Name = @basename@-fd
   Address = @hostname@
   Password = "@fd_password@"          # password for FileDaemon
-  File Retention = 30 days            # 30 days
-  Job Retention = 6 months            # six months
-  AutoPrune = no                      # Prune expired Jobs/Files
 }
 
 #
