@@ -296,11 +296,6 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
-   if (init_crypto() != 0) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
-      goto bail_out;
-   }
-
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
       goto bail_out;
@@ -316,6 +311,11 @@ int main (int argc, char *argv[])
                       get_first_port_host_order(me->DIRaddrs));
       read_state_file(me->working_directory, "bareos-dir",
                       get_first_port_host_order(me->DIRaddrs));
+   }
+
+   if (init_crypto() != 0) {
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+      goto bail_out;
    }
 
    set_jcr_in_tsd(INVALID_JCR);
