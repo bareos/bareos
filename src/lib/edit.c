@@ -482,7 +482,7 @@ bool is_name_valid(const char *name, POOLMEM **msg)
    int len;
    const char *p;
    /* Special characters to accept */
-   const char *accept = ":.-_ ";
+   const char *accept = ":.-_/ ";
 
    /* No name is invalid */
    if (!name) {
