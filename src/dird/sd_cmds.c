@@ -781,6 +781,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
             pm_strcat(devicenames, ",");
             pm_strcat(devicenames, device->name());
          }
+         cnt++;
       }
 
       bash_spaces(devicenames);
