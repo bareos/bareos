@@ -340,6 +340,8 @@ set_config_param()
     #   separated by ";"
     #   (could by handled by RS="\n|;", but this could cause problems with other lines)
     #   Possible workaround: get expanded config by "bareos-* -xc"
+    # - "}" must be the only character in a line
+    # - between "{" and the first directive must be a line break
     # - Name directive must come before directive to modify,
     #   preferably Name is the first directive of a resource
     # - does not handle includes ("@" and include scripts)
@@ -388,7 +390,7 @@ set_config_param()
         resourcetype=$1;
         gsub("[ {]","",resourcetype)
   };
-  level == 1 && resourcetype == SECTION && $1 ~ /Name/ {
+  level == 1 && resourcetype == SECTION && $1 ~ /^[ ]*Name[ ]*$/ {
         name = $2
         gsub("[ \"]","",name)
         #printf "%s: %s\n", resourcetype, name
