@@ -182,6 +182,7 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
          string.bsprintf(value_fmt, value);
          result_message_plain->strcat(string);
       }
+      break;
    }
 }
 
@@ -220,6 +221,7 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
          result_message_plain->strcat(string);
       }
       Dmsg2(800, "obj: %s:%s\n", key, wvalue.c_str());
+      break;
    }
 }
 
