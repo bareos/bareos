@@ -853,8 +853,7 @@ void add_prompt(UAContext *ua, const char *prompt)
  *            index base 0 on success, and choice is copied to prompt if not NULL
  *            prompt is set to the chosen prompt item string
  */
-int do_prompt(UAContext *ua, const char *automsg, const char *msg,
-              char *prompt, int max_prompt)
+int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt, int max_prompt)
 {
    int i, item;
    POOL_MEM pmsg(PM_MESSAGE);
@@ -868,7 +867,9 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg,
       if (prompt) {
          bstrncpy(prompt, ua->prompt[1], max_prompt);
       }
-      ua->send_msg(_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
+      if (!ua->api) {
+         ua->send_msg(_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
+      }
       goto done;
    }
    /* If running non-interactive, bail out */
