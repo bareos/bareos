@@ -98,7 +98,7 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
  * prune stats
  * prune directory=xxx [client=xxx] [recursive]
  */
-int prune_cmd(UAContext *ua, const char *cmd)
+bool prune_cmd(UAContext *ua, const char *cmd)
 {
    CLIENTRES *client;
    POOLRES *pool;

@@ -32,7 +32,7 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static int update_volume(UAContext *ua);
+static bool update_volume(UAContext *ua);
 static bool update_pool(UAContext *ua);
 static bool update_job(UAContext *ua);
 static bool update_stats(UAContext *ua);
@@ -51,7 +51,7 @@ static void update_slots(UAContext *ua);
  *    update stats [days=...]
  *         updates long term statistics
  */
-int update_cmd(UAContext *ua, const char *cmd)
+bool update_cmd(UAContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("media"),  /* 0 */
@@ -65,27 +65,27 @@ int update_cmd(UAContext *ua, const char *cmd)
    };
 
    if (!open_client_db(ua)) {
-      return 1;
+      return true;
    }
 
    switch (find_arg_keyword(ua, kw)) {
    case 0:
    case 1:
       update_volume(ua);
-      return 1;
+      return true;
    case 2:
       update_pool(ua);
-      return 1;
+      return true;
    case 3:
    case 4:
       update_slots(ua);
-      return 1;
+      return true;
    case 5:
       update_job(ua);
-      return 1;
+      return true;
    case 6:
       update_stats(ua);
-      return 1;
+      return true;
    default:
       break;
    }
@@ -111,7 +111,7 @@ int update_cmd(UAContext *ua, const char *cmd)
    default:
       break;
    }
-   return 1;
+   return true;
 }
 
 static void update_volstatus(UAContext *ua, const char *val, MEDIA_DBR *mr)
@@ -240,44 +240,47 @@ static void update_volmaxbytes(UAContext *ua, char *val, MEDIA_DBR *mr)
 
 static void update_volrecycle(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
-   int recycle;
+   bool recycle;
    char ed1[50];
-
    POOL_MEM query(PM_MESSAGE);
+
    if (!is_yesno(val, &recycle)) {
       ua->error_msg(_("Invalid value. It must be yes or no.\n"));
       return;
    }
+
    Mmsg(query, "UPDATE Media SET Recycle=%d WHERE MediaId=%s",
-      recycle, edit_int64(mr->MediaId, ed1));
+        recycle ? 1 : 0, edit_int64(mr->MediaId, ed1));
+
    if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New Recycle flag is: %s\n"),
-         recycle==1?_("yes"):_("no"));
+                   recycle ? _("yes") : _("no"));
    }
 }
 
 static void update_volinchanger(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
-   int InChanger;
    char ed1[50];
-
+   bool InChanger;
    POOL_MEM query(PM_MESSAGE);
+
    if (!is_yesno(val, &InChanger)) {
       ua->error_msg(_("Invalid value. It must be yes or no.\n"));
       return;
    }
+
    Mmsg(query, "UPDATE Media SET InChanger=%d WHERE MediaId=%s",
-      InChanger, edit_int64(mr->MediaId, ed1));
+        InChanger ? 1 : 0, edit_int64(mr->MediaId, ed1));
+
    if (!db_sql_query(ua->db, query.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
    } else {
       ua->info_msg(_("New InChanger flag is: %s\n"),
-         InChanger==1?_("yes"):_("no"));
+                   InChanger ? _("yes") : _("no"));
    }
 }
-
 
 static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
@@ -505,7 +508,7 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
  *  writing on the volume, set it to anything other
  *  than Append.
  */
-static int update_volume(UAContext *ua)
+static bool update_volume(UAContext *ua)
 {
    POOLRES *pool;
    POOLMEM *query;
@@ -546,7 +549,7 @@ static int update_volume(UAContext *ua)
       if ((j = find_arg_with_value(ua, kw[i])) > 0) {
          /* If all from pool don't select a media record */
          if (i != AllFromPool && !select_media_dbr(ua, &mr)) {
-            return 0;
+            return false;
          }
          switch (i) {
          case 0:
@@ -586,10 +589,10 @@ static int update_volume(UAContext *ua)
             break;
          case 10:
             update_vol_from_pool(ua, &mr);
-            return 1;
+            return true;
          case 11:
             update_all_vols_from_pool(ua, ua->argv[j]);
-            return 1;
+            return true;
          case 12:
             update_volenabled(ua, ua->argv[j], &mr);
             break;
@@ -607,7 +610,7 @@ static int update_volume(UAContext *ua)
    /* Allow user to simply update all volumes */
    if (find_arg(ua, NT_("fromallpools")) > 0) {
       update_all_vols(ua);
-      return 1;
+      return true;
    }
 
    for ( ; !done; ) {
@@ -642,7 +645,7 @@ static int update_volume(UAContext *ua)
            * a Volume record */
       if ( i != 12 && i != 13 && i != 17) {
          if (!select_media_dbr(ua, &mr)) {  /* Get Volume record */
-            return 0;
+            return false;
          }
          ua->info_msg(_("Updating Volume \"%s\"\n"), mr.VolumeName);
       }
@@ -662,7 +665,7 @@ static int update_volume(UAContext *ua)
          }
          add_prompt(ua, NT_("Read-Only"));
          if (do_prompt(ua, "", _("Choose new Volume Status"), ua->cmd, sizeof(mr.VolStatus)) < 0) {
-            return 1;
+            return true;
          }
          update_volstatus(ua, ua->cmd, &mr);
          break;
@@ -670,7 +673,7 @@ static int update_volume(UAContext *ua)
          ua->info_msg(_("Current retention period is: %s\n"),
             edit_utime(mr.VolRetention, ed1, sizeof(ed1)));
          if (!get_cmd(ua, _("Enter Volume Retention period: "))) {
-            return 0;
+            return false;
          }
          update_volretention(ua, ua->cmd, &mr);
          break;
@@ -679,7 +682,7 @@ static int update_volume(UAContext *ua)
          ua->info_msg(_("Current use duration is: %s\n"),
             edit_utime(mr.VolUseDuration, ed1, sizeof(ed1)));
          if (!get_cmd(ua, _("Enter Volume Use Duration: "))) {
-            return 0;
+            return false;
          }
          update_voluseduration(ua, ua->cmd, &mr);
          break;
@@ -687,7 +690,7 @@ static int update_volume(UAContext *ua)
       case 3:                         /* Max Jobs */
          ua->info_msg(_("Current max jobs is: %u\n"), mr.MaxVolJobs);
          if (!get_pint(ua, _("Enter new Maximum Jobs: "))) {
-            return 0;
+            return false;
          }
          update_volmaxjobs(ua, ua->cmd, &mr);
          break;
@@ -695,7 +698,7 @@ static int update_volume(UAContext *ua)
       case 4:                         /* Max Files */
          ua->info_msg(_("Current max files is: %u\n"), mr.MaxVolFiles);
          if (!get_pint(ua, _("Enter new Maximum Files: "))) {
-            return 0;
+            return false;
          }
          update_volmaxfiles(ua, ua->cmd, &mr);
          break;
@@ -703,7 +706,7 @@ static int update_volume(UAContext *ua)
       case 5:                         /* Max Bytes */
          ua->info_msg(_("Current value is: %s\n"), edit_uint64(mr.MaxVolBytes, ed1));
          if (!get_cmd(ua, _("Enter new Maximum Bytes: "))) {
-            return 0;
+            return false;
          }
          update_volmaxbytes(ua, ua->cmd, &mr);
          break;
@@ -713,7 +716,7 @@ static int update_volume(UAContext *ua)
          ua->info_msg(_("Current recycle flag is: %s\n"),
             mr.Recycle==1?_("yes"):_("no"));
          if (!get_yesno(ua, _("Enter new Recycle status: "))) {
-            return 0;
+            return false;
          }
          update_volrecycle(ua, ua->cmd, &mr);
          break;
@@ -721,7 +724,7 @@ static int update_volume(UAContext *ua)
       case 7:                         /* Slot */
          ua->info_msg(_("Current Slot is: %d\n"), mr.Slot);
          if (!get_pint(ua, _("Enter new Slot: "))) {
-            return 0;
+            return false;
          }
          update_volslot(ua, ua->cmd, &mr);
          break;
@@ -731,7 +734,7 @@ static int update_volume(UAContext *ua)
          bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "),
             mr.VolumeName);
          if (!get_yesno(ua, buf)) {
-            return 0;
+            return false;
          }
          mr.InChanger = ua->pint32_val;
          /*
@@ -753,7 +756,7 @@ static int update_volume(UAContext *ua)
                         "in loss of data on your Volume\n\n"));
          ua->info_msg(_("Current Volume Files is: %u\n"), mr.VolFiles);
          if (!get_pint(ua, _("Enter new number of Files for Volume: "))) {
-            return 0;
+            return false;
          }
          VolFiles = ua->pint32_val;
          if (VolFiles != (int)(mr.VolFiles + 1)) {
@@ -777,33 +780,33 @@ static int update_volume(UAContext *ua)
          pr.PoolId = mr.PoolId;
          if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
             ua->error_msg("%s", db_strerror(ua->db));
-            return 0;
+            return false;
          }
          ua->info_msg(_("Current Pool is: %s\n"), pr.Name);
          if (!get_cmd(ua, _("Enter new Pool name: "))) {
-            return 0;
+            return false;
          }
          update_vol_pool(ua, ua->cmd, &mr, &pr);
-         return 1;
+         return true;
 
       case 11:
          update_vol_from_pool(ua, &mr);
-         return 1;
+         return true;
       case 12:
          pool = select_pool_resource(ua);
          if (pool) {
             update_all_vols_from_pool(ua, pool->name());
          }
-         return 1;
+         return true;
 
       case 13:
          update_all_vols(ua);
-         return 1;
+         return true;
 
       case 14:
          ua->info_msg(_("Current Enabled is: %d\n"), mr.Enabled);
          if (!get_cmd(ua, _("Enter new Enabled: "))) {
-            return 0;
+            return false;
          }
          if (bstrcasecmp(ua->cmd, "yes") || bstrcasecmp(ua->cmd, "true")) {
             mr.Enabled = 1;
@@ -825,17 +828,17 @@ static int update_volume(UAContext *ua)
             ua->info_msg(_("No current RecyclePool\n"));
          }
          if (!select_pool_dbr(ua, &pr, NT_("recyclepool"))) {
-            return 0;
+            return false;
          }
          update_vol_recyclepool(ua, pr.Name, &mr);
-         return 1;
+         return true;
 
       case 16:
          pm_strcpy(ret, "");
          ua->info_msg(_("Current ActionOnPurge is: %s\n"),
                       action_on_purge_to_string(mr.ActionOnPurge, ret));
          if (!get_cmd(ua, _("Enter new ActionOnPurge (one of: Truncate, None): "))) {
-            return 0;
+            return false;
          }
 
          update_vol_actiononpurge(ua, ua->cmd, &mr);
@@ -843,10 +846,10 @@ static int update_volume(UAContext *ua)
 
       default:                        /* Done or error */
          ua->info_msg(_("Selection terminated.\n"));
-         return 1;
+         return true;
       }
    }
-   return 1;
+   return true;
 }
 
 /*
@@ -954,7 +957,7 @@ static bool update_job(UAContext *ua)
    }
    if (!client_name && !start_time) {
       ua->error_msg(_("Neither Client nor StartTime specified.\n"));
-      return 0;
+      return false;
    }
    if (client_name) {
       if (!get_client_dbr(ua, &cr)) {

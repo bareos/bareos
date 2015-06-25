@@ -44,7 +44,7 @@ static void status_slots(UAContext *ua, STORERES *store);
 static void status_content_api(UAContext *ua, STORERES *store);
 static void status_content_json(UAContext *ua, STORERES *store);
 
-static char OKqstatus[] =
+static char OKdotstatus[] =
    "1000 OK .status\n";
 static char DotStatusJob[] =
    "JobId=%s JobStatus=%c JobErrors=%d\n";
@@ -69,7 +69,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
 
    if (bstrcasecmp(ua->argk[1], "dir")) {
       if (bstrcasecmp(ua->argk[2], "current")) {
-         ua->send_msg(OKqstatus, ua->argk[2]);
+         ua->send_msg(OKdotstatus, ua->argk[2]);
          foreach_jcr(njcr) {
             if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->res.job->name())) {
                ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1), njcr->JobStatus, njcr->JobErrors);
@@ -77,7 +77,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          }
          endeach_jcr(njcr);
       } else if (bstrcasecmp(ua->argk[2], "last")) {
-         ua->send_msg(OKqstatus, ua->argk[2]);
+         ua->send_msg(OKdotstatus, ua->argk[2]);
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
             if (acl_access_ok(ua, Job_ACL, job->Job)) {
@@ -133,19 +133,10 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* This is the *old* command handler, so we must return
- *  1 or it closes the connection
- */
-int qstatus_cmd(UAContext *ua, const char *cmd)
-{
-   dot_status_cmd(ua, cmd);
-   return 1;
-}
-
 /*
  * status command
  */
-int status_cmd(UAContext *ua, const char *cmd)
+bool status_cmd(UAContext *ua, const char *cmd)
 {
    STORERES *store;
    CLIENTRES *client;
@@ -157,10 +148,10 @@ int status_cmd(UAContext *ua, const char *cmd)
    for (i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("all"))) {
          do_all_status(ua);
-         return 1;
+         return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("dir"), 3)) {
          do_director_status(ua);
-         return 1;
+         return true;
       } else if (bstrcasecmp(ua->argk[i], NT_("client"))) {
          client = get_client_resource(ua);
          if (client) {
@@ -175,15 +166,15 @@ int status_cmd(UAContext *ua, const char *cmd)
                break;
             }
          }
-         return 1;
+         return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
          do_scheduler_status(ua);
-         return 1;
+         return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("sub"), 3)) {
          if (do_subscription_status(ua)) {
-            return 1;
+            return true;
          } else {
-            return 0;
+            return false;
          }
       } else {
          /*
@@ -227,7 +218,7 @@ int status_cmd(UAContext *ua, const char *cmd)
             }
          }
 
-         return 1;
+         return true;
       }
    }
    /* If no args, ask for status type */
@@ -242,7 +233,7 @@ int status_cmd(UAContext *ua, const char *cmd)
       add_prompt(ua, NT_("All"));
       Dmsg0(20, "do_prompt: select daemon\n");
       if ((item=do_prompt(ua, "",  _("Select daemon type for status"), prmt, sizeof(prmt))) < 0) {
-         return 1;
+         return true;
       }
       Dmsg1(20, "item=%d\n", item);
       switch (item) {
@@ -289,7 +280,7 @@ int status_cmd(UAContext *ua, const char *cmd)
          break;
       }
    }
-   return 1;
+   return true;
 }
 
 static void do_all_status(UAContext *ua)

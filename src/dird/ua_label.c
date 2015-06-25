@@ -492,12 +492,12 @@ bail_out:
  *
  *   label storage=xxx volume=vvv
  */
-int label_cmd(UAContext *ua, const char *cmd)
+bool label_cmd(UAContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, false);   /* standard label */
 }
 
-int relabel_cmd(UAContext *ua, const char *cmd)
+bool relabel_cmd(UAContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, true);    /* relabel tape */
 }

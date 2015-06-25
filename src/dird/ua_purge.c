@@ -34,10 +34,10 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static int purge_files_from_client(UAContext *ua, CLIENTRES *client);
-static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client);
-static int purge_quota_from_client(UAContext *ua, CLIENTRES *client);
-static int action_on_purge_cmd(UAContext *ua, const char *cmd);
+static bool purge_files_from_client(UAContext *ua, CLIENTRES *client);
+static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client);
+static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client);
+static bool action_on_purge_cmd(UAContext *ua, const char *cmd);
 
 static const char *select_jobsfiles_from_client =
    "SELECT JobId FROM Job "
@@ -56,7 +56,7 @@ static const char *select_jobs_from_client =
  *
  * N.B. Not all above is implemented yet.
  */
-int purge_cmd(UAContext *ua, const char *cmd)
+bool purge_cmd(UAContext *ua, const char *cmd)
 {
    int i;
    CLIENTRES *client;
@@ -100,7 +100,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
       "PRUNE command, which respects retention periods.\n"));
 
    if (!open_client_db(ua, true)) {
-      return 1;
+      return true;
    }
 
    memset(&jr, 0, sizeof(jr));
@@ -117,18 +117,18 @@ int purge_cmd(UAContext *ua, const char *cmd)
             edit_int64(jr.JobId, jobid);
             purge_files_from_jobs(ua, jobid);
          }
-         return 1;
+         return true;
       case 2:                         /* client */
          client = get_client_resource(ua);
          if (client) {
             purge_files_from_client(ua, client);
          }
-         return 1;
+         return true;
       case 3:                         /* Volume */
          if (select_media_dbr(ua, &mr)) {
             purge_files_from_volume(ua, &mr);
          }
-         return 1;
+         return true;
       }
    /* Jobs */
    case 1:
@@ -138,12 +138,12 @@ int purge_cmd(UAContext *ua, const char *cmd)
          if (client) {
             purge_jobs_from_client(ua, client);
          }
-         return 1;
+         return true;
       case 1:                         /* Volume */
          if (select_media_dbr(ua, &mr)) {
             purge_jobs_from_volume(ua, &mr, /*force*/true);
          }
-         return 1;
+         return true;
       }
    /* Volume */
    case 2:
@@ -180,7 +180,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
       if (find_arg(ua, "action") >= 0) {
          return action_on_purge_cmd(ua, ua->cmd);
       }
-      return 1;
+      return true;
    /* Quota */
    case 3:
       switch(find_arg_keyword(ua, quota_keywords)) {
@@ -189,7 +189,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
          if (client) {
             purge_quota_from_client(ua, client);
          }
-         return 1;
+         return true;
       }
    default:
       break;
@@ -218,7 +218,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
          purge_quota_from_client(ua, client);
       }
    }
-   return 1;
+   return true;
 }
 
 /*
@@ -229,7 +229,7 @@ int purge_cmd(UAContext *ua, const char *cmd)
  * the JobIds meeting the prune conditions, then delete all File records
  * pointing to each of those JobIds.
  */
-static int purge_files_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
 {
    struct del_ctx del;
    POOL_MEM query(PM_MESSAGE);
@@ -239,7 +239,7 @@ static int purge_files_from_client(UAContext *ua, CLIENTRES *client)
    memset(&cr, 0, sizeof(cr));
    bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
    if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
-      return 0;
+      return false;
    }
 
    memset(&del, 0, sizeof(del));
@@ -265,7 +265,7 @@ static int purge_files_from_client(UAContext *ua, CLIENTRES *client)
    if (del.JobId) {
       free(del.JobId);
    }
-   return 1;
+   return true;
 }
 
 
@@ -277,7 +277,7 @@ static int purge_files_from_client(UAContext *ua, CLIENTRES *client)
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds then delete the Job, Files, and JobMedia records in that list.
  */
-static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
 {
    struct del_ctx del;
    POOL_MEM query(PM_MESSAGE);
@@ -288,7 +288,7 @@ static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
 
    bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
    if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
-      return 0;
+      return false;
    }
 
    memset(&del, 0, sizeof(del));
@@ -318,7 +318,7 @@ static int purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
    if (del.PurgedFiles) {
       free(del.PurgedFiles);
    }
-   return 1;
+   return true;
 }
 
 
@@ -421,24 +421,24 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del)
  * end up creating it!
  */
 
-static int purge_quota_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client)
 {
    CLIENT_DBR cr;
 
    memset(&cr, 0, sizeof(cr));
    bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
    if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
-      return 0;
+      return false;
    }
    if (!db_create_quota_record(ua->jcr, ua->db, &cr)) {
-      return 0;
+      return false;
    }
    if (!db_reset_quota_record(ua->jcr, ua->db, &cr)) {
-      return 0;
+      return false;
    }
    ua->info_msg(_("Purged quota for Client \"%s\"\n"), cr.Name);
 
-   return 1;
+   return true;
 }
 
 /*
@@ -547,7 +547,7 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
       ua->error_msg(_("\nVolume \"%s\" has VolStatus \"%s\" and cannot be purged.\n"
                      "The VolStatus must be: Append, Full, Used, or Error to be purged.\n"),
                      mr->VolumeName, mr->VolStatus);
-      return 0;
+      return false;
    }
 
    /*
@@ -714,7 +714,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
  * Implement Bareos bconsole command  purge action
  * purge action= pool= volume= storage= devicetype=
  */
-static int action_on_purge_cmd(UAContext *ua, const char *cmd)
+static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
 {
    bool allpools = false;
    int drive = -1;
@@ -854,7 +854,7 @@ bail_out:
       free(results);
    }
 
-   return 1;
+   return true;
 }
 
 /*

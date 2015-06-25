@@ -103,7 +103,7 @@ void *handle_UA_client_request(BSOCK *user)
             if (console_msg_pending && acl_access_ok(ua, Command_ACL, "messages")) {
                if (ua->auto_display_messages) {
                   pm_strcpy(ua->cmd, "messages");
-                  qmessages_cmd(ua, ua->cmd);
+                  dot_messages_cmd(ua, ua->cmd);
                   ua->user_notified_msg_pending = false;
                } else if (!ua->gui && !ua->user_notified_msg_pending && console_msg_pending) {
                   if (ua->api) {

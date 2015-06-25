@@ -44,8 +44,8 @@ extern struct s_kw VolumeStatus[];
 
 /* Imported functions */
 extern void do_messages(UAContext *ua, const char *cmd);
-extern int quit_cmd(UAContext *ua, const char *cmd);
-extern int qhelp_cmd(UAContext *ua, const char *cmd);
+extern bool quit_cmd(UAContext *ua, const char *cmd);
+extern bool dot_help_cmd(UAContext *ua, const char *cmd);
 extern bool dot_status_cmd(UAContext *ua, const char *cmd);
 
 /* Forward referenced functions */
@@ -83,7 +83,6 @@ static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd);
 static bool api_cmd(UAContext *ua, const char *cmd);
 static bool sql_cmd(UAContext *ua, const char *cmd);
 static bool dot_quit_cmd(UAContext *ua, const char *cmd);
-static bool dot_help_cmd(UAContext *ua, const char *cmd);
 static int one_handler(void *ctx, int num_field, char **row);
 
 struct cmdstruct {
@@ -202,7 +201,7 @@ bool do_a_dot_command(UAContext *ua)
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
          ua->send->finalize_result(ok);
          if (ua->api) {
-            user->signal(ok?BNET_CMD_OK:BNET_CMD_FAILED);
+            user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
          }
          ua->gui = gui;
          found = true;
@@ -672,14 +671,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
 
 static bool dot_quit_cmd(UAContext *ua, const char *cmd)
 {
-   quit_cmd(ua, cmd);
-   return true;
-}
-
-static bool dot_help_cmd(UAContext *ua, const char *cmd)
-{
-   qhelp_cmd(ua, cmd);
-   return true;
+   return quit_cmd(ua, cmd);
 }
 
 static bool getmsgscmd(UAContext *ua, const char *cmd)

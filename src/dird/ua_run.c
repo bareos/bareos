@@ -186,7 +186,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    Dmsg1(100, "rerun cmdline=%s\n", ua->cmd);
 
    parse_ua_args(ua);
-   return (run_cmd(ua, ua->cmd) != 0);
+   return run_cmd(ua, ua->cmd);
 
 bail_out:
    return false;
@@ -198,7 +198,7 @@ bail_out:
  * Returns: 0 on error
  *          1 if OK
  */
-int rerun_cmd(UAContext *ua, const char *cmd)
+bool rerun_cmd(UAContext *ua, const char *cmd)
 {
    int i, j, d, h, s, u;
    int days = 0;
@@ -222,7 +222,7 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    const int secs_in_hour = 3600;
 
    if (!open_client_db(ua)) {
-      return 1;
+      return true;
    }
 
    now = (utime_t)time(NULL);
@@ -333,10 +333,10 @@ int rerun_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   return 1;
+   return true;
 
 bail_out:
-   return 0;
+   return false;
 }
 
 /*
@@ -350,7 +350,7 @@ bail_out:
  *          JobId if OK
  *
  */
-int run_cmd(UAContext *ua, const char *cmd)
+int do_run_cmd(UAContext *ua, const char *cmd)
 {
    JCR *jcr = NULL;
    RUN_CTX rc;
@@ -359,7 +359,7 @@ int run_cmd(UAContext *ua, const char *cmd)
    bool do_pool_overrides = true;
 
    if (!open_client_db(ua)) {
-      return 1;
+      return 0;
    }
 
    if (!scan_command_line_arguments(ua, rc)) {
@@ -535,7 +535,13 @@ start_job:
 bail_out:
    ua->send_msg(_("Job not run.\n"));
    free_jcr(jcr);
+
    return 0;                       /* do not run */
+}
+
+bool run_cmd(UAContext *ua, const char *cmd)
+{
+   return (do_run_cmd(ua, ua->cmd) != 0);
 }
 
 int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)

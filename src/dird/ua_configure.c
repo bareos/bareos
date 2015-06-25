@@ -29,8 +29,8 @@
 
 /* Forward referenced functions */
 
-int configure_cmd(UAContext *ua, const char *cmd)
+bool configure_cmd(UAContext *ua, const char *cmd)
 {
    ua->send_msg("Interactive configuration not implemented\n");
-   return 1;
+   return true;
 }

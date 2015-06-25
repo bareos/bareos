@@ -170,9 +170,9 @@ public:
    CATRES *catalog;
    int Priority;
    int files;
-   int spool_data;
-   int accurate;
-   int ignoreduplicatecheck;
+   bool spool_data;
+   bool accurate;
+   bool ignoreduplicatecheck;
    bool cloned;
    bool mod;
    bool spool_data_set;

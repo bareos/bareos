@@ -228,7 +228,7 @@ static inline void start_new_migration_job(JCR *jcr)
    Dmsg2(dbglevel, "=============== %s cmd=%s\n", jcr->get_OperationName(), ua->cmd);
    parse_ua_args(ua);                 /* parse command */
 
-   jobid = run_cmd(ua, ua->cmd);
+   jobid = do_run_cmd(ua, ua->cmd);
    if (jobid == 0) {
       Jmsg(jcr, M_ERROR, 0, _("Could not start migration job.\n"));
    } else {

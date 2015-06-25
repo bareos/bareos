@@ -47,7 +47,7 @@ static POOLMEM *substitute_prompts(UAContext *ua,
  *   SQL statement possibly terminated by ;
  *   :next query prompt
  */
-int query_cmd(UAContext *ua, const char *cmd)
+bool query_cmd(UAContext *ua, const char *cmd)
 {
    FILE *fd = NULL;
    POOLMEM *query = get_pool_memory(PM_MESSAGE);
@@ -152,7 +152,7 @@ bail_out:
    for (i=0; i<nprompt; i++) {
       free(prompt[i]);
    }
-   return 1;
+   return true;
 }
 
 static POOLMEM *substitute_prompts(UAContext *ua,
@@ -243,14 +243,14 @@ static POOLMEM *substitute_prompts(UAContext *ua,
 /*
  * Get general SQL query for Catalog
  */
-int sqlquery_cmd(UAContext *ua, const char *cmd)
+bool sqlquery_cmd(UAContext *ua, const char *cmd)
 {
    POOL_MEM query(PM_MESSAGE);
    int len;
    const char *msg;
 
    if (!open_client_db(ua, true)) {
-      return 1;
+      return true;
    }
    *query.c_str() = 0;
 
@@ -279,5 +279,5 @@ int sqlquery_cmd(UAContext *ua, const char *cmd)
       }
    }
    ua->send_msg(_("End query mode.\n"));
-   return 1;
+   return true;
 }

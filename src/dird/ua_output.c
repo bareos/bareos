@@ -42,13 +42,13 @@
 /* Imported functions */
 
 /* Forward referenced functions */
-static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
+static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
 static bool list_nextvol(UAContext *ua, int ndays);
 
 /*
  * Turn auto display of console messages on/off
  */
-int autodisplay_cmd(UAContext *ua, const char *cmd)
+bool autodisplay_cmd(UAContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("on"),
@@ -67,13 +67,13 @@ int autodisplay_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("ON or OFF keyword missing.\n"));
       break;
    }
-   return 1;
+   return true;
 }
 
 /*
  * Turn GUI mode on/off
  */
-int gui_cmd(UAContext *ua, const char *cmd)
+bool gui_cmd(UAContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("on"),
@@ -92,7 +92,7 @@ int gui_cmd(UAContext *ua, const char *cmd)
       ua->error_msg(_("ON or OFF keyword missing.\n"));
       break;
    }
-   return 1;
+   return true;
 }
 
 /*
@@ -213,7 +213,7 @@ static struct showstruct avail_resources[] = {
  *  show disabled clients - shows disabled clients
  *  show disabled schedules - shows disabled schedules
  */
-int show_cmd(UAContext *ua, const char *cmd)
+bool show_cmd(UAContext *ua, const char *cmd)
 {
    int i, j, type, len;
    int recurse;
@@ -321,7 +321,7 @@ int show_cmd(UAContext *ua, const char *cmd)
 
 bail_out:
    UnlockRes();
-   return 1;
+   return true;
 }
 
 /*
@@ -351,18 +351,18 @@ bail_out:
  */
 
 /* Do long or full listing */
-int llist_cmd(UAContext *ua, const char *cmd)
+bool llist_cmd(UAContext *ua, const char *cmd)
 {
    return do_list_cmd(ua, cmd, VERT_LIST);
 }
 
 /* Do short or summary listing */
-int list_cmd(UAContext *ua, const char *cmd)
+bool list_cmd(UAContext *ua, const char *cmd)
 {
    return do_list_cmd(ua, cmd, HORZ_LIST);
 }
 
-static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
+static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 {
    POOLMEM *VolumeName;
    int jobid, n;
@@ -372,7 +372,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    MEDIA_DBR mr;
 
    if (!open_client_db(ua, true)) {
-      return 1;
+      return true;
    }
 
    memset(&jr, 0, sizeof(jr));
@@ -613,7 +613,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (ua->argv[i]) {
                bstrncpy(mr.VolumeName, ua->argv[i], sizeof(mr.VolumeName));
                db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
-               return 1;
+               return true;
             }
 
             /*
@@ -623,11 +623,11 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                if (bstrcasecmp(ua->argk[i], NT_("pool"))) {
                   if (!get_pool_dbr(ua, &pr)) {
                      ua->error_msg(_("No Pool specified.\n"));
-                     return 1;
+                     return true;
                   }
                   mr.PoolId = pr.PoolId;
                   db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
-                  return 1;
+                  return true;
                }
             }
 
@@ -637,10 +637,10 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
                ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"),
                         db_strerror(ua->db));
-               return 1;
+               return true;
             }
             if (num_pools <= 0) {
-               return 1;
+               return true;
             }
             for (i = 0; i < num_pools; i++) {
                ua->send->object_start();
@@ -653,7 +653,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                ua->send->object_end();
             }
             free(ids);
-            return 1;
+            return true;
          }
       } else if (bstrcasecmp(ua->argk[i], NT_("nextvol")) ||
                  bstrcasecmp(ua->argk[i], NT_("nextvolume"))) {
@@ -696,7 +696,7 @@ static int do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          ua->error_msg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[i]));
       }
    }
-   return 1;
+   return true;
 }
 
 static bool list_nextvol(UAContext *ua, int ndays)
@@ -956,22 +956,22 @@ void do_messages(UAContext *ua, const char *cmd)
    Vw(con_lock);
 }
 
-int qmessages_cmd(UAContext *ua, const char *cmd)
+bool dot_messages_cmd(UAContext *ua, const char *cmd)
 {
    if (console_msg_pending && ua->auto_display_messages) {
       do_messages(ua, cmd);
    }
-   return 1;
+   return true;
 }
 
-int messages_cmd(UAContext *ua, const char *cmd)
+bool messages_cmd(UAContext *ua, const char *cmd)
 {
    if (console_msg_pending) {
       do_messages(ua, cmd);
    } else {
       ua->UA_sock->fsend(_("You have no messages.\n"));
    }
-   return 1;
+   return true;
 }
 
 /*

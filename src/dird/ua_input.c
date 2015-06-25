@@ -35,14 +35,14 @@
  * If subprompt is set, we send a BNET_SUB_PROMPT signal otherwise
  *   send a BNET_TEXT_INPUT signal.
  */
-int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
+bool get_cmd(UAContext *ua, const char *prompt, bool subprompt)
 {
-   BSOCK *sock = ua->UA_sock;
    int status;
+   BSOCK *sock = ua->UA_sock;
 
    ua->cmd[0] = 0;
    if (!sock || ua->batch) {          /* No UA or batch mode */
-      return 0;
+      return false;
    }
    if (!subprompt && ua->api) {
       sock->signal(BNET_TEXT_INPUT);
@@ -57,20 +57,20 @@ int get_cmd(UAContext *ua, const char *prompt, bool subprompt)
          continue;                    /* ignore signals */
       }
       if (is_bnet_stop(sock)) {
-         return 0;                    /* error or terminate */
+         return false;                /* error or terminate */
       }
       pm_strcpy(ua->cmd, sock->msg);
       strip_trailing_junk(ua->cmd);
       if (bstrcmp(ua->cmd, ".messages")) {
-         qmessages_cmd(ua, ua->cmd);
+         dot_messages_cmd(ua, ua->cmd);
       }
       /* Lone dot => break */
       if (ua->cmd[0] == '.' && ua->cmd[1] == 0) {
-         return 0;
+         return false;
       }
       break;
    }
-   return 1;
+   return true;
 }
 
 /*
@@ -111,20 +111,18 @@ bool get_pint(UAContext *ua, const char *prompt)
 /*
  * Test a yes or no response
  *  Returns:  false if failure
- *            true  if success => ret == 1 for yes
- *                                ret == 0 for no
+ *            true  if success => ret == true for yes
+ *                                ret == false for no
  */
-bool is_yesno(char *val, int *ret)
+bool is_yesno(char *val, bool *ret)
 {
    *ret = 0;
    if (bstrcasecmp(val,   _("yes")) ||
-       bstrcasecmp(val, NT_("yes")))
-   {
-      *ret = 1;
+       bstrcasecmp(val, NT_("yes"))) {
+      *ret = true;
    } else if (bstrcasecmp(val,   _("no")) ||
-              bstrcasecmp(val, NT_("no")))
-   {
-      *ret = 0;
+              bstrcasecmp(val, NT_("no"))) {
+      *ret = false;
    } else {
       return false;
    }
@@ -141,21 +139,28 @@ bool is_yesno(char *val, int *ret)
 bool get_yesno(UAContext *ua, const char *prompt)
 {
    int len;
-   int ret;
+   bool ret;
+
    ua->pint32_val = 0;
    for (;;) {
-      if (ua->api) ua->UA_sock->signal(BNET_YESNO);
+      if (ua->api) {
+         ua->UA_sock->signal(BNET_YESNO);
+      }
+
       if (!get_cmd(ua, prompt)) {
          return false;
       }
+
       len = strlen(ua->cmd);
       if (len < 1 || len > 3) {
          continue;
       }
+
       if (is_yesno(ua->cmd, &ret)) {
          ua->pint32_val = ret;
          return true;
       }
+
       ua->warning_msg(_("Invalid response. You must answer yes or no.\n"));
    }
 }

@@ -1963,8 +1963,10 @@ void create_clones(JCR *jcr)
    Dmsg2(900, "cloned=%d run_cmds=%p\n", jcr->cloned, jcr->res.job->run_cmds);
    if (!jcr->cloned && jcr->res.job->run_cmds) {
       char *runcmd;
+      JobId_t jobid;
       JOBRES *job = jcr->res.job;
       POOLMEM *cmd = get_pool_memory(PM_FNAME);
+
       UAContext *ua = new_ua_context(jcr);
       ua->batch = true;
       foreach_alist(runcmd, job->run_cmds) {
@@ -1972,12 +1974,12 @@ void create_clones(JCR *jcr)
          Mmsg(ua->cmd, "run %s cloned=yes", cmd);
          Dmsg1(900, "=============== Clone cmd=%s\n", ua->cmd);
          parse_ua_args(ua);                 /* parse command */
-         int status = run_cmd(ua, ua->cmd);
-         if (status == 0) {
-            Jmsg(jcr, M_ERROR, 0, _("Could not start clone job: \"%s\".\n"),
-                 ua->cmd);
+
+         jobid = do_run_cmd(ua, ua->cmd);
+         if (!jobid) {
+            Jmsg(jcr, M_ERROR, 0, _("Could not start clone job: \"%s\".\n"), ua->cmd);
          } else {
-            Jmsg(jcr, M_INFO, 0, _("Clone JobId %d started.\n"), status);
+            Jmsg(jcr, M_INFO, 0, _("Clone JobId %d started.\n"), jobid);
          }
       }
       free_ua_context(ua);
