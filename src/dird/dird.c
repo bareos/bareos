@@ -296,26 +296,29 @@ int main (int argc, char *argv[])
       goto bail_out;
    }
 
+   if (!test_config) {                /* we don't need to do this block in test mode */
+      if (background) {
+         daemon_start();
+         init_stack_dump();              /* grab new pid */
+      }
+   }
+
+   if (init_crypto() != 0) {
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+      goto bail_out;
+   }
+
    if (!check_resources()) {
       Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
       goto bail_out;
    }
 
    if (!test_config) {                /* we don't need to do this block in test mode */
-      if (background) {
-         daemon_start();
-         init_stack_dump();              /* grab new pid */
-      }
       /* Create pid must come after we are a daemon -- so we have our final pid */
       create_pid_file(me->pid_directory, "bareos-dir",
                       get_first_port_host_order(me->DIRaddrs));
       read_state_file(me->working_directory, "bareos-dir",
                       get_first_port_host_order(me->DIRaddrs));
-   }
-
-   if (init_crypto() != 0) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
-      goto bail_out;
    }
 
    set_jcr_in_tsd(INVALID_JCR);
