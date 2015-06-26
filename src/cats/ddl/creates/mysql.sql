@@ -47,6 +47,15 @@ CREATE TABLE File (
    INDEX (JobId, PathId, FilenameId)
 );
 
+--
+-- Possibly add one or more of the following indexes
+--  to the above File table if your Verifies are
+--  too slow, but they can slow down backups.
+--
+--  INDEX (PathId),
+--  INDEX (FilenameId),
+--
+
 CREATE TABLE RestoreObject (
    RestoreObjectId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    ObjectName BLOB NOT NULL,
@@ -63,14 +72,6 @@ CREATE TABLE RestoreObject (
    INDEX (JobId)
 );
 
---
--- Possibly add one or more of the following indexes
---  to the above File table if your Verifies are
---  too slow, but they can slow down backups.
---
---  INDEX (PathId),
---  INDEX (FilenameId),
---
 CREATE TABLE MediaType (
    MediaTypeId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    MediaType TINYBLOB NOT NULL,
