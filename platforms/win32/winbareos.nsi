@@ -41,6 +41,8 @@ SetCompressor lzma
 Var LocalHostAddress
 Var HostName
 
+var SEC_DIR_POSTGRES_DESCRIPTION
+
 # Config Parameters Dialog
 
 # Needed for Configuring client config file
@@ -65,6 +67,8 @@ Var DirectorName
 Var DirectorMonPassword
 
 # Needed for PostgreSQL Database
+Var IsPostgresInstalled
+
 Var PostgresPath
 Var PostgresBinPath
 var PostgresPsqlExeFullPath
@@ -187,30 +191,42 @@ FunctionEnd
 
 ; MUI end ------
 
+
+
+# check if postgres is installed and set the postgres variables if so
+!macro getPostgresVars
+
+SetShellVarContext all
+
+ClearErrors
+ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
+${If} ${Errors}
+   StrCpy $IsPostgresInstalled  "no"
+${Else}
+   StrCpy $IsPostgresInstalled  "yes"
+   StrCpy $R0 "$PostgresPath"
+   StrCpy $R1 "\bin"
+   StrCpy $PostgresBinPath "$R0$R1" # create postgresbinpath
+   StrCpy $PostgresPsqlExeFullPath "$\"$PostgresBinPath\psql.exe$\""
+${EndIf}
+!macroend
+
+
 # check for the connection of the admin user with DbAdminUser/DbAdminPass
 # if not successfull, abort
 # this will quit the silent installer
 # and jump back to the db param dialog in interactive installer
 !macro CheckDbAdminConnection
 
-
 !define UniqueID ${__LINE__} # create a unique Id to be able to use labels in the macro.
 # See http://nsis.sourceforge.net/Tutorial:_Using_labels_in_macro%27s
 
 
-# search for value of HKEY_LOCAL_MACHINE\SOFTWARE\PostgreSQL Global Development Group\PostgreSQL,  Key "Location"
-    ReadRegStr $PostgresPath HKLM "SOFTWARE\PostgreSQL Global Development Group\PostgreSQL" "Location"
-
     StrCmp $WriteLogs "yes" 0 +2
        LogEx::Init false $INSTDIR\sql.log
-# now check if we can login with DbAdminUser and DbAdminPassword
-    StrCpy $R0 "$PostgresPath"
-    StrCpy $R1 "\bin"
-    StrCpy $PostgresBinPath "$R0$R1" # create postgresbinpath
     StrCmp $WriteLogs "yes" 0 +2
       LogEx::Write "PostgresPath=$PostgresPath"
 
-    StrCpy $PostgresPsqlExeFullPath "$\"$PostgresBinPath\psql.exe$\""
 
     # set postgres username and password in environment
     System::Call 'kernel32::SetEnvironmentVariable(t "PGUSER", t "$DbAdminUser")i.r0'
@@ -253,9 +269,9 @@ FunctionEnd
          StrCmp $WriteLogs "yes" 0 +2
             LogEx::Write "Unknown problem executing $PostgresPsqlExeFullPath"
     ${endselect}
-   MessageBox MB_OK|MB_ICONSTOP "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service" /SD IDOK
+   MessageBox MB_OK|MB_ICONSTOP "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service$\r$\n($PostgresPsqlExeFullPath -c \copyright)" /SD IDOK
    StrCmp $WriteLogs "yes" 0 +2
-      LogEx::Write "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service"
+      LogEx::Write "Connection to db server with DbAdmin credentials failed.$\r$\nplease check username/password and service$\r$\n($PostgresPsqlExeFullPath -c \copyright)"
    StrCmp $WriteLogs "yes" 0 +2
       LogEx::Close
       FileOpen $R1 $TEMP\abortreason.txt w
@@ -366,9 +382,10 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
-InstType "Standard"
-InstType "Full"
-InstType "Minimal"
+InstType "Standard - FileDaemon + Plugins, Traymonitor"
+InstType "Full SQLite - All Daemons, Director with SQLite Backend (no DB Server needed)"
+InstType "Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needs local PostgreSQL Server)"
+InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 
 Section -StopDaemon
@@ -427,6 +444,7 @@ Section -SetPasswords
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PORT_XXX#$DbPort#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
   FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#$DbPassword#g$\r$\n"
+  FileWrite $R1 "s#QueryFile = #Working Directory = $\"C:/ProgramData/Bareos/Working$\"\n  QueryFile = #g$\r$\n"
 
   # backupcatalog backup scripts
   ${StrRep} '$0' "$APPDATA" '\' '/' # replace \ with / in APPDATA
@@ -492,7 +510,9 @@ IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check,
 
 StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not instaling director
 
+${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 !insertmacro CheckDbAdminConnection
+${EndIF}
 
 DataBaseCheckEnd:
 SectionEnd
@@ -500,7 +520,7 @@ SectionEnd
 !If ${WIN_DEBUG} == yes
 # install sourcecode if WIN_DEBUG is yes
 Section Sourcecode SEC_SOURCE
-   SectionIn 1 2 3
+   SectionIn 1 2 3 4
    SetShellVarContext all
    SetOutPath "C:\"
    SetOverwrite ifnewer
@@ -511,7 +531,7 @@ SectionEnd
 SubSection "File Daemon (Client)" SUBSEC_FD
 
 Section "File Daemon and base libs" SEC_FD
-SectionIn 1 2 3
+SectionIn 1 2 3 4
   SetShellVarContext all
   # TODO: only do this if the file exists
   #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
@@ -549,7 +569,7 @@ SectionIn 1 2 3
 SectionEnd
 
 Section /o "File Daemon Plugins " SEC_FDPLUGINS
-SectionIn 1 2 3
+SectionIn 1 2 3 4
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -563,7 +583,7 @@ SectionIn 1 2 3
 SectionEnd
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
-SectionIn 1 2 3
+SectionIn 1 2 3 4
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     #
@@ -589,7 +609,7 @@ SubSectionEnd #FileDaemon Subsection
 SubSection "Storage Daemon" SUBSEC_SD
 
 Section /o "Storage Daemon" SEC_SD
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -606,7 +626,7 @@ SectionIn 2
 SectionEnd
 
 Section /o "Storage Daemon Plugins " SEC_SDPLUGINS
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -620,7 +640,7 @@ SectionEnd
 
 
 Section "Open Firewall for Storage Daemon" SEC_FIREWALL_SD
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -640,7 +660,7 @@ SubSectionEnd # Storage Daemon Subsection
 SubSection "Director" SUBSEC_DIR
 
 Section /o "Director" SEC_DIR
-SectionIn 2
+SectionIn 2 3
 
   SetShellVarContext all
   CreateDirectory "$APPDATA\${PRODUCT_NAME}\logs"
@@ -654,21 +674,20 @@ SectionIn 2
   File "bregex.exe"
   File "bwild.exe"
   File "libbareoscats.dll"
-  File "libbareoscats-postgresql.dll"
 
-  # install sql ddl files
-  # SetOutPath "$APPDATA\${PRODUCT_NAME}\scripts"
-
-  # CopyFiles /SILENT "$PLUGINSDIR\ddl\*" "$APPDATA\${PRODUCT_NAME}\scripts"
-
-  #  File "libbareoscats-sqlite3.dll"
   !insertmacro InstallConfFile bareos-dir.conf
+
+SectionEnd
+
+
+Section /o "Director PostgreSQL Backend Support " SEC_DIR_POSTGRES
+SectionIn 3
+  SetShellVarContext all
+
+  File "libbareoscats-postgresql.dll"
 
   # edit sql ddl files
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-grant.sql"'
-  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\postgres.sed" -i-template "$PLUGINSDIR\postgresql-create.sql"'
-  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\postgresql-drop.sql"'
-
 
   # install edited sql ddl files
   Rename  "$PLUGINSDIR\postgresql-create.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-create.sql"
@@ -680,11 +699,11 @@ SectionIn 2
   FileWrite $R1 "CREATE DATABASE $DbName $DbEncoding TEMPLATE template0; $\r$\n"
   FileWrite $R1 "ALTER DATABASE $DbName SET datestyle TO 'ISO, YMD'; $\r$\n"
   FileClose $R1
+
   # install db-create script
   Rename  "$PLUGINSDIR\postgresql-createdb.sql" "$APPDATA\${PRODUCT_NAME}\scripts\postgresql-createdb.sql"
 
- # copy postgresql libs to our path
-
+  # copy postgresql libs to our path
   StrCpy $R0 "$PostgresPath"
   StrCpy $R1 "\bin"
 
@@ -702,7 +721,6 @@ SectionIn 2
 
   DetailPrint "libeay32.dll"
   CopyFiles /SILENT "$PostgresBinPath\libeay32.dll" "$INSTDIR"
-
 
   # Since PostgreSQL 9.4 unfortunately setting the PATH Variable is not enough
   # to execute psql.exe It always complains about:
@@ -759,8 +777,56 @@ SectionIn 2
 SectionEnd
 
 
-Section /o "Director Plugins " SEC_DIRPLUGINS
+
+
+Section /o "Director SQLite Backend Support " SEC_DIR_SQLITE
 SectionIn 2
+  SetShellVarContext all
+
+  File "sqlite3.exe"
+  File "libsqlite3-0.dll"
+  File "libbareoscats-sqlite3.dll"
+
+  Rename  "$PLUGINSDIR\sqlite3.sql" "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3.sql"
+
+  #  write database create batch file sqlite3
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat" w
+  FileWrite $R1 'REM  call this batch file to create the bareos database in sqlite3 $\r$\n'
+  FileWrite $R1 'REM $\r$\n'
+  FileWrite $R1 'REM $\r$\n'
+  FileWrite $R1 'REM  create sqlite3 database $\r$\n'
+
+  FileWrite $R1 "cd $APPDATA\${PRODUCT_NAME}\scripts\$\r$\n"
+
+  FileWrite $R1 "echo creating bareos database$\r$\n"
+  FileWrite $R1 "$\"$INSTDIR\sqlite3.exe$\" $\"$APPDATA\${PRODUCT_NAME}\\working\bareos.db$\" < $\"$APPDATA\${PRODUCT_NAME}\scripts\sqlite3.sql$\"$\r$\n"
+  FileClose $R1
+
+  #
+  # write database dump file
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\make_catalog_backup.bat" w
+  FileWrite $R1 '@echo off$\r$\n'
+  FileWrite $R1 'REM  call this batch file to create a db dump$\r$\n'
+  FileWrite $R1 'REM  create sqlite3 database dump$\r$\n'
+  FileWrite $R1 'echo dumping bareos database$\r$\n'
+  FileWrite $R1 "echo .dump | $\"$INSTDIR\sqlite3.exe$\" $\"$APPDATA\${PRODUCT_NAME}\\working\bareos.db$\" > $\"$APPDATA\${PRODUCT_NAME}\working\bareos.sql$\"$\r$\n"
+  FileClose $R1
+
+  #
+  # write delete sql dump file
+  #
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\scripts\delete_catalog_backup.bat" w
+  FileWrite $R1 '@echo off $\r$\n'
+  FileWrite $R1 'REM this script deletes the db dump $\r$\n'
+  FileWrite $R1 'del $APPDATA\${PRODUCT_NAME}\working\bareos.sql $\r$\n'
+  FileClose $R1
+
+SectionEnd
+
+Section /o "Director Plugins" SEC_DIRPLUGINS
+SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
@@ -773,7 +839,7 @@ SectionEnd
 
 
 Section "Open Firewall for Director" SEC_FIREWALL_DIR
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext current
   ${If} ${AtLeastWin7}
     DetailPrint  "Opening Firewall, OS is Win7+"
@@ -794,7 +860,7 @@ SubSectionEnd # Director Subsection
 SubSection "Consoles" SUBSEC_CONSOLES
 
 Section /o "Text Console (bconsole)" SEC_BCONSOLE
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -809,7 +875,7 @@ SectionIn 2
 SectionEnd
 
 Section /o "Tray-Monitor" SEC_TRAYMON
-SectionIn 1 2
+SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -836,7 +902,7 @@ ${EndIf}
 SectionEnd
 
 Section /o "Qt Console (BAT)" SEC_BAT
-SectionIn 2
+SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -873,6 +939,18 @@ SubSectionEnd # Consoles Subsection
   ; DIR
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR} "Installs the Bareos Director Daemon"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_DIR} "Programs belonging to the Bareos Director"
+
+
+${If} $IsPostgresInstalled == yes
+  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was found in $PostgresPath"
+${Else}
+  StrCpy $SEC_DIR_POSTGRES_DESCRIPTION "PostgreSQL Catalog Database Support - Needs PostgreSQL DB Server Installation which was NOT found"
+${EndIf}
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_POSTGRES} "$SEC_DIR_POSTGRES_DESCRIPTION"
+
+
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIR_SQLITE} "SQLite Catalog Database Support - Uses integrated SQLite Support"
+
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DIRPLUGINS} "Installs the Bareos Director Plugins"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_DIR} "Opens the needed ports for the Director Daemon in the windows firewall"
 
@@ -948,6 +1026,12 @@ Section -StartDaemon
     nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
     StrCmp $WriteLogs "yes" 0 +2
        LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
+
+
+# create sqlite3 db
+    nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat > $PLUGINSDIR\db_setup_output.log"
+
+
     #nsExec::ExecToStack "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
     #    Pop $0 # return value/error/timeout
     #    Pop $1 # printed text, up to ${NSIS_MAX_STRLEN}
@@ -1090,6 +1174,10 @@ Function .onInit
       Abort
     ${EndIf}
   ${EndIf}
+
+
+  !insertmacro getPostgresVars
+
 
   #
   # UPGRADE: if already installed allow to uninstall installed version
@@ -1261,6 +1349,7 @@ done:
   File "/oname=$PLUGINSDIR\postgresql-grant.sql" ".\ddl\grants\postgresql.sql"
   # File "/oname=$PLUGINSDIR\postgresql.sql" ".\ddl\updates\postgresql.sql"
 
+  File "/oname=$PLUGINSDIR\sqlite3.sql" ".\ddl\creates\sqlite3.sql"
 
 
   # make first section mandatory
@@ -1277,7 +1366,20 @@ done:
 
   # also install bconsole if director is selected
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
+
+${If} $IsPostgresInstalled == yes
+    SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
+    SectionSetFlags ${SEC_DIR_SQLITE} ${SF_UNSELECTED}
+${Else}
+    SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
+${EndIf}
+
   dontInstDir:
+
+${If} $IsPostgresInstalled == no
+   SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
+   InstTypeSetText 2 "(!)Full PostgreSQL - All Daemons,  Director PostgreSQL Backend (needed local PostgreSQL Server missing (!)"
+${EndIf}
 
   StrCmp $InstallStorage "no" dontInstSD
     SectionSetFlags ${SEC_SD} ${SF_SELECTED} # storage daemon
@@ -1534,13 +1636,14 @@ FunctionEnd
 
 
 #
-# Database Configuration Dialog (for bconsole and bat configuration)
+# Database Configuration Dialog
 #
 Function getDatabaseParameters
   Push $R0
 strcmp $Upgrading "yes" skip
 strcmp $InstallDirector "no" skip
 
+${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
@@ -1550,7 +1653,8 @@ strcmp $InstallDirector "no" skip
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
 
-  Pop $R0
+${EndIF}
+#  Pop $R0
 
 skip:
   Pop $R0
@@ -1567,8 +1671,10 @@ Function getDatabaseParametersLeave
 dbcheckend:
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
+${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
    !insertmacro CheckDbAdminConnection
    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+${EndIF}
 SkipDbCheck:
 
 FunctionEnd
@@ -1745,6 +1851,11 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareoslmdb.dll"
   Delete "$INSTDIR\libbareoscats.dll"
   Delete "$INSTDIR\libbareoscats-postgresql.dll"
+
+  Delete "$INSTDIR\libbareoscats-sqlite3.dll"
+  Delete "$INSTDIR\libsqlite3-0.dll"
+  Delete "$INSTDIR\sqlite3.exe"
+
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory6.dll"
@@ -1788,7 +1899,7 @@ ConfDeleteSkip:
   RMDir "$APPDATA\${PRODUCT_NAME}\logs"
   RMDir "$APPDATA\${PRODUCT_NAME}\working"
   RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
-  RMDir  "$APPDATA\${PRODUCT_NAME}"
+  RMDir "$APPDATA\${PRODUCT_NAME}"
 
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
@@ -1847,18 +1958,40 @@ Function .onSelChange
 Push $R0
 Push $R1
 
+#  !insertmacro StartRadioButtons $1
+#    !insertmacro RadioButton ${SEC_DIR_POSTGRES}
+#    !insertmacro RadioButton ${SEC_DIR_SQLITE}
+#  !insertmacro EndRadioButtons
+
+# if Postgres was not detected always disable postgresql backend and enable sqlite backend
+${If} $IsPostgresInstalled == no
+  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
+  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
+${EndIf}
+
   # Check if BAT was just selected then select SEC_BCONSOLE
   SectionGetFlags ${SEC_BAT} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
   StrCmp $R0 ${SF_SELECTED} 0 +2
   SectionSetFlags ${SEC_BCONSOLE} $R0
 
-  # if director is selected, we set InstallDirector to yes else no
+  # if director is selected, we set InstallDirector to yes and select textconsole
   StrCpy $InstallDirector "no"
   SectionGetFlags ${SEC_DIR} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
+  StrCmp $R0 ${SF_SELECTED} 0 +3
   StrCpy $InstallDirector "yes"
+  SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
+
+  SectionGetFlags ${SEC_DIR_SQLITE} $R0
+  IntOp $R0 $R0 & ${SF_SELECTED}
+  StrCmp $R0 ${SF_SELECTED} 0 +2
+  StrCpy $DbDriver "sqlite3"
+
+  SectionGetFlags ${SEC_DIR_POSTGRES} $R0
+  IntOp $R0 $R0 & ${SF_SELECTED}
+  StrCmp $R0 ${SF_SELECTED} 0 +2
+  StrCpy $DbDriver "postgresql"
 
 Pop $R1
 Pop $R0

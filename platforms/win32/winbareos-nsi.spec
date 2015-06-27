@@ -81,6 +81,9 @@ BuildRequires:  mingw64-lzo
 BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw64-libfastlz
 
+BuildRequires:  mingw32-sqlite
+BuildRequires:  mingw64-sqlite
+
 BuildRequires:  osslsigncode
 BuildRequires:  obs-name-resolution-settings
 
@@ -201,6 +204,8 @@ do
       libpng*.dll \
       openssl.exe \
       libcmocka.dll \
+      sqlite3.exe \
+      libsqlite3-0.dll \
       sed.exe;
    do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32

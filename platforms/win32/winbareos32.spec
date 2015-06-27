@@ -233,10 +233,14 @@ for flavor in `echo "%flavors"`; do
 
    popd
 
-   mkdir -p  $RPM_BUILD_ROOT/etc/$flavor/%name/ddl
+   mkdir -p $RPM_BUILD_ROOT/etc/$flavor/%name/ddl
    for i in creates drops grants updates; do
       mkdir $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
       cp -av src/cats/ddl/$i/postgres* $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
+   done
+
+   for i in creates updates; do
+      cp -av src/cats/ddl/$i/sqlite* $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
    done
 
    for sql in $RPM_BUILD_ROOT/etc/$flavor//%name/ddl/*/*.sql;

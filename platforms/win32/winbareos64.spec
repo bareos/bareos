@@ -239,6 +239,10 @@ for flavor in `echo "%flavors"`; do
       cp -av src/cats/ddl/$i/postgres* $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
    done
 
+   for i in creates updates; do
+      cp -av src/cats/ddl/$i/sqlite* $RPM_BUILD_ROOT/etc/$flavor/%name/ddl/$i/
+   done
+
    for sql in $RPM_BUILD_ROOT/etc/$flavor//%name/ddl/*/*.sql;
    do
       sed -f %SOURCE1 $sql -i ;
