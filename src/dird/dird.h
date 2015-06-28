@@ -71,6 +71,12 @@ enum {
   fnv_no_prune      = false
 };
 
+enum e_enabled_val {
+   VOL_NOT_ENABLED = 0,
+   VOL_ENABLED = 1,
+   VOL_ARCHIVED = 2
+};
+
 enum e_prtmsg {
    DISPLAY_ERROR,
    NO_DISPLAY

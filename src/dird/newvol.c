@@ -99,7 +99,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
          goto bail_out;
       }
       pr.NumVols++;
-      mr->Enabled = 1;
+      mr->Enabled = VOL_ENABLED;
       set_storageid_in_mr(store, mr);
       if (db_create_media_record(jcr, jcr->db, mr) &&
          db_update_pool_record(jcr, jcr->db, &pr)) {

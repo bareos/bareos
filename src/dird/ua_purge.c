@@ -806,7 +806,7 @@ static int action_on_purge_cmd(UAContext *ua, const char *cmd)
     * Look for all Purged volumes that can be recycled, are enabled and have more the 10,000 bytes.
     */
    mr.Recycle = 1;
-   mr.Enabled = 1;
+   mr.Enabled = VOL_ENABLED;
    mr.VolBytes = 10000;
    set_storageid_in_mr(store, &mr);
    bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));

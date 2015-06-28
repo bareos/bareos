@@ -473,8 +473,7 @@ static void update_volenabled(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
    set_storageid_in_mr(NULL, mr);
    if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-      ua->error_msg(_("Error updating media record Enabled: ERR=%s"),
-                    db_strerror(ua->db));
+      ua->error_msg(_("Error updating media record Enabled: ERR=%s"), db_strerror(ua->db));
    } else {
       ua->info_msg(_("New Enabled is: %d\n"), mr->Enabled);
    }
@@ -805,15 +804,7 @@ static int update_volume(UAContext *ua)
          if (!get_cmd(ua, _("Enter new Enabled: "))) {
             return 0;
          }
-         if (bstrcasecmp(ua->cmd, "yes") || bstrcasecmp(ua->cmd, "true")) {
-            mr.Enabled = 1;
-         } else if (bstrcasecmp(ua->cmd, "no") || bstrcasecmp(ua->cmd, "false")) {
-            mr.Enabled = 0;
-         } else if (bstrcasecmp(ua->cmd, "archived")) {
-            mr.Enabled = 2;
-         } else {
-            mr.Enabled = atoi(ua->cmd);
-         }
+
          update_volenabled(ua, ua->cmd, &mr);
          break;
 
@@ -1010,7 +1001,7 @@ static void update_slots(UAContext *ua)
    bool scan;
    int max_slots;
    int drive = -1;
-   int Enabled = 1;
+   int Enabled = VOL_ENABLED;
    bool have_enabled;
    int i;
 

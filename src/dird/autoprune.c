@@ -168,7 +168,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
       }
       Dmsg1(100, "Examine vol=%s\n", lmr.VolumeName);
       /* Don't prune archived volumes */
-      if (lmr.Enabled == 2) {
+      if (lmr.Enabled == VOL_ARCHIVED) {
          Dmsg1(100, "Vol=%s disabled\n", lmr.VolumeName);
          continue;
       }
