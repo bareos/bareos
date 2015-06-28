@@ -633,7 +633,7 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
          set_pool_dbr_defaults_in_media_dbr(mr, pr);
          mr->VolBytes = VolBytes;
          mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
-         mr->Enabled = 1;
+         mr->Enabled = VOL_ENABLED;
          set_storageid_in_mr(ua->jcr->res.wstore, mr);
          if (db_create_media_record(ua->jcr, ua->db, mr)) {
             ua->info_msg(_("Catalog record for Volume \"%s\", Slot %d  successfully created.\n"),

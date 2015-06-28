@@ -352,7 +352,7 @@ void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
    mr->LabelType = pr->LabelType;
    mr->MinBlocksize = pr->MinBlocksize;
    mr->MaxBlocksize = pr->MaxBlocksize;
-   mr->Enabled = 1;
+   mr->Enabled = VOL_ENABLED;
 }
 
 
@@ -481,7 +481,7 @@ static bool add_cmd(UAContext *ua, const char *cmd)
       bsnprintf(mr.VolumeName, sizeof(mr.VolumeName), name, i);
       mr.Slot = Slot++;
       mr.InChanger = InChanger;
-      mr.Enabled = 1;
+      mr.Enabled = VOL_ENABLED;
       set_storageid_in_mr(store, &mr);
       Dmsg1(200, "Create Volume %s\n", mr.VolumeName);
       if (!db_create_media_record(ua->jcr, ua->db, &mr)) {

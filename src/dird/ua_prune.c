@@ -222,9 +222,8 @@ bool prune_cmd(UAContext *ua, const char *cmd)
          return false;
       }
 
-      if (mr.Enabled == 2) {
-         ua->error_msg(_("Cannot prune Volume \"%s\" because it is archived.\n"),
-                       mr.VolumeName);
+      if (mr.Enabled == VOL_ARCHIVED) {
+         ua->error_msg(_("Cannot prune Volume \"%s\" because it is archived.\n"), mr.VolumeName);
          return false;
       }
 
@@ -848,7 +847,7 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
    bool ok = false;
    int count;
 
-   if (mr->Enabled == 2) {
+   if (mr->Enabled == VOL_ARCHIVED) {
       return false;                   /* Cannot prune archived volumes */
    }
 
@@ -887,7 +886,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
    utime_t now, period;
    char ed1[50], ed2[50];
 
-   if (mr->Enabled == 2) {
+   if (mr->Enabled == VOL_ARCHIVED) {
       return 0;                    /* cannot prune Archived volumes */
    }
 

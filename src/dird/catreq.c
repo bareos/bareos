@@ -195,7 +195,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
             }
          }
 
-         if (!reason && mr.Enabled != 1) {
+         if (!reason && mr.Enabled != VOL_ENABLED) {
             reason = _("is not Enabled");
          }
 
