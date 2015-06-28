@@ -134,9 +134,9 @@ bool is_yesno(char *val, int *ret)
 
 /*
  * Gets a yes or no response
- *  Returns:  false if failure
- *            true  if success => ua->pint32_val == 1 for yes
- *                                ua->pint32_val == 0 for no
+ * Returns:  false if failure
+ *           true  if success => ua->pint32_val == 1 for yes
+ *                               ua->pint32_val == 0 for no
  */
 bool get_yesno(UAContext *ua, const char *prompt)
 {
@@ -161,27 +161,29 @@ bool get_yesno(UAContext *ua, const char *prompt)
 }
 
 /*
- *  Gets an Enabled value => 0, 1, 2, yes, no, archived
- *  Returns: 0, 1, 2 if OK
- *           -1 on error
+ * Gets an Enabled value => 0, 1, 2, yes, no, archived
+ * Returns: 0, 1, 2 if OK
+ *          -1 on error
  */
 int get_enabled(UAContext *ua, const char *val)
 {
    int Enabled = -1;
 
    if (bstrcasecmp(val, "yes") || bstrcasecmp(val, "true")) {
-     Enabled = 1;
+     Enabled = VOL_ENABLED;
    } else if (bstrcasecmp(val, "no") || bstrcasecmp(val, "false")) {
-      Enabled = 0;
+      Enabled = VOL_NOT_ENABLED;
    } else if (bstrcasecmp(val, "archived")) {
-      Enabled = 2;
+      Enabled = VOL_ARCHIVED;
    } else {
       Enabled = atoi(val);
    }
+
    if (Enabled < 0 || Enabled > 2) {
       ua->error_msg(_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or 2\n"));
       return -1;
    }
+
    return Enabled;
 }
 
