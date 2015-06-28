@@ -36,8 +36,8 @@
  */
 #define WRAP_EXTRA_BYTES 50
 
-OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg, void *send_ctx_arg,
-                                   int api_mode)
+OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
+                                   void *send_ctx_arg, int api_mode)
 {
    initialize_json();
 
@@ -49,6 +49,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg, void *send_ctx_a
 #if HAVE_JANSSON
    result_array_json = json_array();
    result_stack_json = New(alist(10, false));
+   message_object_json = json_object();
 #endif
 }
 
@@ -313,6 +314,28 @@ void OUTPUT_FORMATTER::process_text_buffer()
    }
 }
 
+void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)
+{
+   switch (api) {
+#if HAVE_JANSSON
+   case API_MODE_JSON:
+      /*
+       * currently, only error message influence the JSON result.
+       * Other messages are not visible.
+       */
+      json_add_message(type, message);
+      break;
+#endif
+   default:
+      /*
+       * Send message immediately.
+       * Type is not relevant here (handled before).
+       */
+      send_func(send_ctx, message.c_str());
+      break;
+   }
+}
+
 void OUTPUT_FORMATTER::finalize_result(bool result)
 {
    switch (api) {
@@ -358,11 +381,39 @@ void OUTPUT_FORMATTER::json_add_result(json_t *json)
    json_array_append_new(result_array_json, json);
 }
 
+void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
+{
+   json_t *message_type_array;
+   json_t *message_json=json_string(message.c_str());
+   if (type != NULL) {
+      message_type_array = json_object_get(message_object_json, type);
+   } else {
+      message_type_array = json_object_get(message_object_json, "normal");
+   }
+   if (message_type_array==NULL) {
+      message_type_array=json_array();
+      json_object_set(message_object_json, type, message_type_array);
+   }
+   json_array_append_new(message_type_array,message_json);
+}
+
+bool OUTPUT_FORMATTER::json_has_error_message()
+{
+   bool retval = false;
+
+   if (json_object_get(message_object_json, MSG_TYPE_ERROR)) {
+      retval = true;
+   }
+
+   return retval;
+}
+
 void OUTPUT_FORMATTER::json_finalize_result(bool result)
 {
    POOL_MEM string;
    json_t *msg_obj = json_object();
    json_t *error_obj;
+   json_t *data_obj;
 
    /*
     * We mimic json-rpc result and error messages,
@@ -370,19 +421,23 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
     */
    json_object_set(msg_obj, "jsonrpc", json_string("2.0"));
    json_object_set(msg_obj, "id", json_null());
-   if (result) {
-      json_object_set(msg_obj, "result", result_array_json);
-   } else {
+
+   if (!result || json_has_error_message()) {
       error_obj = json_object();
       json_object_set_new(error_obj, "code", json_integer(1));
       json_object_set_new(error_obj, "message", json_string("failed"));
-      json_object_set(error_obj, "data", result_array_json);
+      data_obj = json_object();
+      json_object_set(data_obj, "result", result_array_json);
+      json_object_set(data_obj, "messages", message_object_json);
+      json_object_set(error_obj, "data", data_obj);
       json_object_set_new(msg_obj, "error", error_obj);
+   } else {
+      json_object_set(msg_obj, "result", result_array_json);
    }
-
    string.bsprintf("%s\n", json_dumps(msg_obj, UA_JSON_FLAGS));
    send_func(send_ctx, string.c_str());
    json_array_clear(result_array_json);
+   json_object_clear(message_object_json);
    json_object_clear(msg_obj);
 }
 #endif

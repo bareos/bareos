@@ -197,7 +197,6 @@ bool do_a_dot_command(UAContext *ua)
          }
          ua->send->set_mode(ua->api);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
-         ua->send->finalize_result(ok);
          if (ua->api) {
             user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
          }
@@ -211,6 +210,7 @@ bool do_a_dot_command(UAContext *ua)
       ua->error_msg("%s%s", ua->argk[0], _(": is an invalid command.\n"));
       ok = false;
    }
+   ua->send->finalize_result(ok);
 
    return ok;
 }
@@ -1102,32 +1102,34 @@ static bool typescmd(UAContext *ua, const char *cmd)
 
 /*
  * If this command is called, it tells the director that we
- *  are a program that wants a sort of API, and hence,
- *  we will probably suppress certain output, include more
- *  error codes, and most of all send back a good number
- *  of new signals that indicate whether or not the command
- *  succeeded.
+ * are a program that wants a sort of API, and hence,
+ * we will probably suppress certain output, include more
+ * error codes, and most of all send back a good number
+ * of new signals that indicate whether or not the command
+ * succeeded.
  */
 static bool api_cmd(UAContext *ua, const char *cmd)
 {
-   int value = 0;
-
-   if (ua->argc == 2) {
-      if (bstrcasecmp(ua->argk[1], "off")) {
-         ua->api = API_MODE_OFF;
-      } else if (bstrcasecmp(ua->argk[1], "on")) {
-         ua->api = API_MODE_ON;
-      } else if (bstrcasecmp(ua->argk[1], "json")) {
-         ua->api = API_MODE_JSON;
-      } else {
-         value = atoi(ua->argk[1]);
-         if ((value < API_MODE_OFF) || (value > API_MODE_JSON)) {
-            return false;
-         }
-         ua->api = value;
-      }
-   } else {
+   switch (ua->argc) {
+   case 1:
       ua->api = 1;
+      break;
+   case 2:
+      if (bstrcasecmp(ua->argk[1], "off") || bstrcasecmp(ua->argk[1], "0")) {
+         ua->api = API_MODE_OFF;
+         ua->batch = false;
+      } else if (bstrcasecmp(ua->argk[1], "on") || bstrcasecmp(ua->argk[1], "1")) {
+         ua->api = API_MODE_ON;
+         ua->batch = false;
+      } else if (bstrcasecmp(ua->argk[1], "json") || bstrcasecmp(ua->argk[1], "2")) {
+         ua->api = API_MODE_JSON;
+         ua->batch = true;
+      } else {
+         return false;
+      }
+      break;
+   default:
+      return false;
    }
 
    ua->send->set_mode(ua->api);

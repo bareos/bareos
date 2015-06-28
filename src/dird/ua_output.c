@@ -1160,7 +1160,11 @@ void printit(void *ctx, const char *msg)
 {
    UAContext *ua = (UAContext *)ctx;
 
-   ua->UA_sock->fsend("%s", msg);
+   if (ua->UA_sock) {
+      ua->UA_sock->fsend("%s", msg);
+   } else {                           /* No UA, send to Job */
+      Jmsg(ua->jcr, M_INFO, 0, "%s", msg);
+   }
 }
 
 /*
@@ -1263,9 +1267,11 @@ void bsendmsg(void *ctx, const char *fmt, ...)
 void UAContext::send_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
+   POOL_MEM message;
    va_start(arg_ptr, fmt);
-   bmsg(this, fmt, arg_ptr);
+   message.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
+   send->message(NULL, message);
 }
 
 /*
@@ -1274,13 +1280,15 @@ void UAContext::send_msg(const char *fmt, ...)
  */
 void UAContext::error_msg(const char *fmt, ...)
 {
-   BSOCK *bs = UA_sock;
    va_list arg_ptr;
+   BSOCK *bs = UA_sock;
+   POOL_MEM message;
 
    if (bs && api) bs->signal(BNET_ERROR_MSG);
    va_start(arg_ptr, fmt);
-   bmsg(this, fmt, arg_ptr);
+   message.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
+   send->message(MSG_TYPE_ERROR, message);
 }
 
 /*
@@ -1290,13 +1298,15 @@ void UAContext::error_msg(const char *fmt, ...)
  */
 void UAContext::warning_msg(const char *fmt, ...)
 {
-   BSOCK *bs = UA_sock;
    va_list arg_ptr;
+   BSOCK *bs = UA_sock;
+   POOL_MEM message;
 
    if (bs && api) bs->signal(BNET_WARNING_MSG);
    va_start(arg_ptr, fmt);
-   bmsg(this, fmt, arg_ptr);
+   message.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
+   send->message(MSG_TYPE_WARNING, message);
 }
 
 /*
@@ -1305,11 +1315,13 @@ void UAContext::warning_msg(const char *fmt, ...)
  */
 void UAContext::info_msg(const char *fmt, ...)
 {
-   BSOCK *bs = UA_sock;
    va_list arg_ptr;
+   BSOCK *bs = UA_sock;
+   POOL_MEM message;
 
    if (bs && api) bs->signal(BNET_INFO_MSG);
    va_start(arg_ptr, fmt);
-   bmsg(this, fmt, arg_ptr);
+   message.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
+   send->message(MSG_TYPE_INFO, message);
 }

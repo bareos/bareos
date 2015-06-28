@@ -314,7 +314,6 @@ bool do_a_command(UAContext *ua)
          }
          ua->send->set_mode(ua->api);
          ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
-         ua->send->finalize_result(ok);
          if (ua->api) {
             user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
          }
@@ -328,6 +327,7 @@ bool do_a_command(UAContext *ua)
       ua->error_msg(_("%s: is an invalid command.\n"), ua->argk[0]);
       ok = false;
    }
+   ua->send->finalize_result(ok);
 
    return ok;
 }

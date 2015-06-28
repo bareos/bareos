@@ -28,6 +28,10 @@
 #ifndef __OUTPUT_FORMATTER_H_
 #define __OUTPUT_FORMATTER_H_
 
+#define MSG_TYPE_INFO    "info"
+#define MSG_TYPE_WARNING "warning"
+#define MSG_TYPE_ERROR   "error"
+
 #if HAVE_JANSSON
 #define UA_JSON_FLAGS JSON_INDENT(2)
 
@@ -62,12 +66,16 @@ public:
    void object_key_value(const char *key, const char *value, const char *value_fmt, int wrap = -1);
    void object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
 
+   void message(const char *type, POOL_MEM &message);
+
    void finalize_result(bool result);
 
 #if HAVE_JANSSON
    void json_add_result(json_t *json);
    void json_key_value_add(const char *key, uint64_t value);
    void json_key_value_add(const char *key, const char *value);
+   void json_add_message(const char *type, POOL_MEM &message);
+   bool json_has_error_message();
    void json_finalize_result(bool result);
 #endif
 
@@ -91,6 +99,7 @@ private:
 #if HAVE_JANSSON
    json_t *result_array_json;
    alist *result_stack_json;
+   json_t *message_object_json;
 #endif
 };
 
