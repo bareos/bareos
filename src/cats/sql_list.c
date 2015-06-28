@@ -256,15 +256,10 @@ bail_out:
    db_unlock(mdb);
 }
 
-void db_list_copies_records(JCR *jcr, B_DB *mdb, uint32_t limit, char *JobIds,
+void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *JobIds,
                             OUTPUT_FORMATTER *send, e_list_type type)
 {
-   POOL_MEM str_limit(PM_MESSAGE);
    POOL_MEM str_jobids(PM_MESSAGE);
-
-   if (limit > 0) {
-      Mmsg(str_limit, " LIMIT %d", limit);
-   }
 
    if (JobIds && JobIds[0]) {
       Mmsg(str_jobids, " AND (Job.PriorJobId IN (%s) OR Job.JobId IN (%s)) ",
@@ -279,7 +274,7 @@ void db_list_copies_records(JCR *jcr, B_DB *mdb, uint32_t limit, char *JobIds,
      "JOIN JobMedia USING (JobId) "
      "JOIN Media    USING (MediaId) "
     "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
-        (char) JT_JOB_COPY, str_jobids.c_str(), str_limit.c_str());
+        (char) JT_JOB_COPY, str_jobids.c_str(), range);
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
@@ -346,19 +341,13 @@ bail_out:
  *  Currently, we return all jobs or if jr->JobId is set,
  *  only the job with the specified id.
  */
-void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sendit,
-                         e_list_type type)
+void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
+                         OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
-   char limit[100];
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    db_lock(mdb);
-   if (jr->limit > 0) {
-      snprintf(limit, sizeof(limit), " LIMIT %d", jr->limit);
-   } else {
-      limit[0] = 0;
-   }
    if (type == VERT_LIST) {
       if (jr->JobId == 0 && jr->Job[0] == 0) {
          Mmsg(mdb->cmd,
@@ -370,7 +359,7 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sen
             "Job.FileSetId,FileSet.FileSet "
             "FROM Job,Client,Pool,FileSet WHERE "
             "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
-            "AND FileSet.FileSetId=Job.FileSetId  ORDER BY StartTime%s", limit);
+            "AND FileSet.FileSetId=Job.FileSetId  ORDER BY StartTime%s", range);
       } else {                           /* single record */
          Mmsg(mdb->cmd,
             "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
@@ -402,7 +391,7 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sen
       } else {                           /* all records */
          Mmsg(mdb->cmd,
            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-           "FROM Job ORDER BY JobId ASC%s", limit);
+           "FROM Job ORDER BY JobId ASC%s", range);
       }
    }
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -545,37 +534,32 @@ bail_out:
 /*
  * List fileset
  */
-void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sendit,
-                      e_list_type type)
+void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
+                      OUTPUT_FORMATTER *sendit, e_list_type type)
 {
-   POOL_MEM str_limit(PM_MESSAGE);
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    db_lock(mdb);
-   if (jr->limit > 0) {
-      Mmsg(str_limit, " LIMIT %d", jr->limit);
-   }
-
    if (jr->Name[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
-           "AND Job.Name='%s'%s", esc, str_limit.c_str());
+           "AND Job.Name='%s'%s", esc, range);
    } else if (jr->Job[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
-           "AND Job.Name='%s'%s", esc, str_limit.c_str());
+           "AND Job.Name='%s'%s", esc, range);
    } else if (jr->JobId != 0) {
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
-           "AND Job.JobId='%s'%s", edit_int64(jr->JobId, esc), str_limit.c_str());
+           "AND Job.JobId='%s'%s", edit_int64(jr->JobId, esc), range);
    } else {                           /* all records */
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSetId, FileSet, MD5, CreateTime "
-           "FROM FileSet ORDER BY FileSetId ASC%s", str_limit.c_str());
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
+           "FROM FileSet ORDER BY FileSetId ASC%s", range);
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {

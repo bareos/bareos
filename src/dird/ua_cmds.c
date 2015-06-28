@@ -152,7 +152,7 @@ static struct cmdstruct commands[] = {
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
-         "[ limit=<number> ]"), true, true },
+         "[ limit=<number> [ offset=<number> ] ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] |\n"
@@ -167,7 +167,7 @@ static struct cmdstruct commands[] = {
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
-         "[ limit=<num> ]"), true, true },
+         "[ limit=<num> [ offset=<number> ] ]"), true, true },
    { NT_("messages"), messages_cmd, _("Display pending messages"),
      NT_(""), false, false },
    { NT_("memory"), memory_cmd, _("Print current memory usage"),
