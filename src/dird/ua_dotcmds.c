@@ -93,35 +93,52 @@ struct cmdstruct {
    const bool audit_event; /* Log an audit event when this Command is executed */
 };
 static struct cmdstruct commands[] = {
+   { NT_(".actiononpurge"), aopcmd, NULL, NULL, true, false },
    { NT_(".api"), api_cmd, _("Switch between different api modes"),
-     NT_("0 | 1 | 2 | off | json"), false, false },
-   { NT_(".clients"), clientscmd, NULL, NULL, true, false },
-   { NT_(".catalogs"), catalogscmd, NULL, NULL, false, false },
+     NT_("[ 0 | 1 | 2 | off | on | json ]"), false, false },
+   { NT_(".catalogs"), catalogscmd, _("List all catalog resources"),
+      NULL, false, false },
+   { NT_(".clients"), clientscmd, _("List all client resources"),
+      NULL, true, false },
    { NT_(".defaults"), defaultscmd, NULL, NULL, false, false },
    { NT_(".die"), admin_cmds, NULL, NULL, false, true },
    { NT_(".dump"), admin_cmds, NULL, NULL, false, true },
    { NT_(".exit"), admin_cmds, NULL, NULL, false, false },
-   { NT_(".filesets"), filesetscmd, NULL, NULL, false, false },
+   { NT_(".filesets"), filesetscmd, _("List all filesets"),
+      NULL, false, false },
    { NT_(".help"), dot_help_cmd, _("Print parsable information about a command"),
      NT_("[ all | item=cmd ]"), false, false },
-   { NT_(".jobdefs"), jobdefscmd, NULL, NULL, true, false },
-   { NT_(".jobs"), jobscmd, NULL,
+   { NT_(".jobdefs"), jobdefscmd, _("List add JobDef resources"),
+      NULL, true, false },
+   { NT_(".jobs"), jobscmd, _("List job resources"),
      NT_("type=<jobtype>"), true, false },
-   { NT_(".levels"), levelscmd, NULL, NULL, false, false },
-   { NT_(".messages"), getmsgscmd, NULL, NULL, false, false },
-   { NT_(".msgs"), msgscmd, NULL, NULL, false, false },
-   { NT_(".pools"), poolscmd, NULL, NULL, true, false },
-   { NT_(".quit"), dot_quit_cmd, NULL, NULL, false, false },
-   { NT_(".sql"), sql_cmd, NULL, NULL, false, true },
-   { NT_(".schedule"), schedulecmd, NULL, NULL, false, false },
-   { NT_(".status"), dot_status_cmd, NULL, NULL, false, true },
-   { NT_(".storage"), storagecmd, NULL, NULL, true, false },
-   { NT_(".volstatus"), volstatuscmd, NULL, NULL, true, false },
-   { NT_(".media"), mediacmd, NULL, NULL, true, false },
-   { NT_(".mediatypes"), mediatypescmd, NULL, NULL, true, false },
+   { NT_(".levels"), levelscmd, _("List all backup levels"),
+      NULL, false, false },
    { NT_(".locations"), locationscmd, NULL, NULL, true, false },
-   { NT_(".profiles"), profilescmd, NULL, NULL, true, false },
-   { NT_(".actiononpurge"), aopcmd, NULL, NULL, true, false },
+   { NT_(".messages"), getmsgscmd, NULL, NULL, false, false },
+   { NT_(".media"), mediacmd, _("List all medias"),
+      NULL, true, false },
+   { NT_(".mediatypes"), mediatypescmd, _("List all media types"),
+      NULL, true, false },
+   { NT_(".msgs"), msgscmd, _("List all message resources"),
+      NULL, false, false },
+   { NT_(".pools"), poolscmd, _("List all pool resources"),
+      NULL, true, false },
+   { NT_(".profiles"), profilescmd, _("List all profile resources"),
+      NULL, true, false },
+   { NT_(".quit"), dot_quit_cmd, _("Close connection"),
+      NULL, false, false },
+   { NT_(".sql"), sql_cmd, _("Send an arbitary SQL command"),
+      NT_("query=<sqlquery>"), false, true },
+   { NT_(".schedule"), schedulecmd, _("List all schedule resources"),
+      NULL, false, false },
+   { NT_(".status"), dot_status_cmd, NULL, NULL, false, true },
+   { NT_(".storages"), storagecmd, _("List all storage resources"),
+      NULL, true, false },
+   { NT_(".types"), typescmd, _("List all job types"),
+      NULL, false, false },
+   { NT_(".volstatus"), volstatuscmd, _("List all volume status"),
+      NULL, true, false },
    { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs, NULL, NULL, true, true },
    { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles, NULL, NULL, true, true },
    { NT_(".bvfs_update"), dot_bvfs_update, NULL, NULL, true, true },
@@ -129,8 +146,7 @@ static struct cmdstruct commands[] = {
    { NT_(".bvfs_versions"), dot_bvfs_versions, NULL, NULL, true, true },
    { NT_(".bvfs_restore"), dot_bvfs_restore, NULL, NULL, true, true },
    { NT_(".bvfs_cleanup"), dot_bvfs_cleanup, NULL, NULL, true, true },
-   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, NULL, false, true },
-   { NT_(".types"), typescmd, NULL, NULL, false, false }
+   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache, NULL, NULL, false, true }
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
@@ -254,13 +270,12 @@ static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
    return true;
 }
 
-static int bvfs_stat(UAContext *ua, char *lstat)
+static int bvfs_stat(UAContext *ua, char *lstat, int32_t *LinkFI)
 {
    struct stat statp;
-   int32_t LinkFI;
 
    memset(&statp, 0, sizeof(struct stat));
-   decode_stat(lstat, &statp, sizeof(statp), &LinkFI);
+   decode_stat(lstat, &statp, sizeof(statp), LinkFI);
 
    ua->send->object_start("stat");
    ua->send->object_key_value("dev", statp.st_dev);
@@ -288,6 +303,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
 
    char empty[] = "A A A A A A A A A A A A A A";
    char zero[] = "0";
+   int32_t LinkFI = 0;
 
    /* We need to deal with non existant path */
    if (!fileid || !is_a_number(fileid)) {
@@ -308,7 +324,8 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("lstat", lstat, "%s\t");
       ua->send->object_key_value("Name", path, "%s\n");
       ua->send->object_key_value("Fullpath", row[BVFS_Name]);
-      bvfs_stat(ua, lstat);
+      bvfs_stat(ua, lstat, &LinkFI);
+      ua->send->object_key_value("LinkFileIndex", LinkFI);
       ua->send->object_end(row[BVFS_Name]);
   } else if (bvfs_is_version(row)) {
       ua->send->object_start(row[BVFS_Name]);
@@ -331,18 +348,19 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->object_key_value("lstat", lstat, "%s\t");
       ua->send->object_key_value("Name", row[BVFS_Name], "%s\n");
-      bvfs_stat(ua, lstat);
+      bvfs_stat(ua, lstat, &LinkFI);
+      ua->send->object_key_value("LinkFileIndex", LinkFI);
       ua->send->object_end(row[BVFS_Name]);
    }
 
    return 0;
 }
 
-static bool bvfs_parse_arg_version(UAContext *ua,
-                                   char **client,
-                                   DBId_t *fnid,
-                                   bool *versions,
-                                   bool *copies)
+static inline bool bvfs_parse_arg_version(UAContext *ua,
+                                          char **client,
+                                          DBId_t *fnid,
+                                          bool *versions,
+                                          bool *copies)
 {
    *fnid = 0;
    *client = NULL;
@@ -350,7 +368,8 @@ static bool bvfs_parse_arg_version(UAContext *ua,
    *copies = false;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (fnid && bstrcasecmp(ua->argk[i], NT_("fnid"))) {
+      if (bstrcasecmp(ua->argk[i], NT_("fnid")) ||
+          bstrcasecmp(ua->argk[i], NT_("filenameid"))) {
          if (is_a_number(ua->argv[i])) {
             *fnid = str_to_int64(ua->argv[i]);
          }
