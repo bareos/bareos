@@ -1,5 +1,5 @@
-Implementing a GUI Interface
-============================
+API Interface
+=============
 
 General
 -------
@@ -9,14 +9,14 @@ new GUI interface to <span>**Bareos**</span>.
 
 ### Minimal Code in Console Program
 
-Until now, I have kept all the Catalog code in the Directory (with the
-exception of dbcheck and bscan). This is because at some point I would
-like to add user level security and access. If we have code spread
-everywhere such as in a GUI this will be more difficult. The other
+All the Catalog code is in the Directory (with the
+exception of ```dbcheck``` and ```bscan```).
+Therefore also user level security and access is implemented in this central place.
+If code would be spreaded
+everywhere such as in a GUI this will be more difficult.
+The other
 advantage is that any code you add to the Director is automatically
-available to both the tty console program and other programs. The major
-disadvantage is it increases the size of the code – however, compared to
-Networker the Bareos Director is really tiny.
+available to all interface programs, like the tty console and other programs.
 
 ### GUI Interface is Difficult
 
@@ -38,11 +38,11 @@ ways that Bareos is designed to facilitate this:
     Jobs, list of all Clients, list of all Pools, list of all Storage,
     ... Thus the GUI interface can get to virtually all information that
     the Director has in a deterministic way. See
-    <span>\<</span>bareos-source<span>\></span>/src/dird/ua\_dotcmds.c
+    ```<bareos-source>/src/dird/ua_dotcmds.c```
     for more details on this.
 
 -   Most console commands allow all the arguments to be specified on the
-    command line: e.g. <span>**run job=NightlyBackup level=Full**</span>
+    command line: e.g. ```run job=NightlyBackup level=Full```
 
 One of the first things to overcome is to be able to establish a
 conversation with the Director. Although you can write all your own
@@ -81,8 +81,68 @@ Then the read\_and\_process\_input routine looks like the following:
 
 For a GUI program things will be a bit more complicated. Basically in
 the very inner loop, you will need to check and see if any output is
-available on the UA\_sock. For an example, please take a look at the WX
-GUI interface code in:
+available on the UA\_sock.
+
+dot commands
+------------
+
+Besides the normal commands (like list, status, run, mount, ...)
+the Director offers a number of so called *dot commands*.
+They all begin with a period, are all non-interactive, easily parseable and are indended to be used by other Bareos interface programs (GUIs).
+
+See <bareos-source<span>>/src/dird/ua_dotcmds.c for more details.
+
+* .actiononpurge
+* .api [ 0 | 1 | 2 | off | json ]
+    * Switch between different api modes
+* .clients
+    * List all client resources
+* .catalogs
+    * List all catalog resources
+* .defaults
+* .filesets
+    * List all filesets
+* .help [ all | item=cmd ]
+    * Print parsable information about a command
+* .jobdefs
+    * List add JobDef resources
+* .jobs
+    * List job resources
+* .levels
+    * List all backup levels
+* .locations
+* .messages
+* .media
+    * List all medias
+* .mediatypes
+    * List all media types
+* .msgs
+    * List all message resources
+* .pools
+    * List all pool resources
+* .profiles
+    * List all profile resources
+* .quit
+    * Close connection
+* ```.sql query=<sqlquery>```
+    * Send an arbitary SQL command
+* .schedule
+    * List all schedule resources
+* .status
+* .storage
+    * List all storage resources
+* .types
+    * List all job types
+* .volstatus
+    * List all volume status
+* .bvfs_lsdirs
+* .bvfs_lsfiles
+* .bvfs_update
+* .bvfs_get_jobids
+* .bvfs_versions
+* .bvfs_restore
+* .bvfs_cleanup
+* .bvfs_clear_cache
 
 Bvfs API {#sec:bvfs}
 --------
