@@ -27,8 +27,8 @@
 import bareosfd
 from bareos_fd_consts import bJobMessageType, bFileType, bRCs
 import os
+import re
 import BareosFdPluginBaseclass
-
 
 class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass):  # noqa
     '''
@@ -44,7 +44,31 @@ class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass
         # Last argument of super constructor is a list of mandatory arguments
         super(BareosFdPluginLocalFileset, self).__init__(context, plugindef, ['filename'])
         self.files_to_backup=[]
+        self.allow=None
+        self.deny=None
 
+    def filename_is_allowed (self, context, filename, allowregex, denyregex):
+        '''
+        Check, if filename is allowed.
+        True, if matches allowreg and not denyregex.
+        If allowreg is None, filename always matches
+        If denyreg is None, it never matches
+        '''
+        if allowregex==None:
+            allowed=True
+        else:
+            allowed=allowregex.search(filename)
+        if denyregex==None:
+            denied=False
+        else:
+            denied=denyregex.search(filename)
+        if not allowed or denied:
+            bareosfd.DebugMessage(context, 100, 
+                                  "File %s denied by configuration\n" %filename)
+            bareosfd.JobMessage(context, bJobMessageType['M_ERROR'],
+                                "File %s denied by configuration\n" %filename)
+        return allowed and not denied
+        
     def start_backup_job(self, context):
         '''
         At this point, plugin options were passed and checked already.
@@ -68,18 +92,26 @@ class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass
                                   "File %s does not exist\n"
                                   % (self.options['filename']))
             return bRCs['bRC_Error']
-        #self.files_to_backup = config_file.read().splitlines()
+        # Check, if we have allow or deny regular expressions defined
+        if 'allow' in self.options:
+            self.allow=re.compile(self.options['allow'])
+        if 'deny' in self.options:
+            self.deny=re.compile(self.options['deny'])
+        
         for listItem in config_file.read().splitlines():
-            if os.path.isfile(listItem):
+            if os.path.isfile(listItem) and self.filename_is_allowed(context,listItem,self.allow,self.deny):
                 self.files_to_backup.append(listItem)
             if os.path.isdir(listItem):
-                bareosfd.DebugMessage(context, 150,
-                                  "Item %s is a directory\n"
-                                  %listItem)
                 for topdir, dirNames, fileNames in os.walk(listItem):
                     for fileName in fileNames:
-                        self.files_to_backup.append(os.path.join(topdir,fileName))
-        return bRCs['bRC_OK']
+                        if self.filename_is_allowed(context,os.path.join(topdir,fileName),self.allow,self.deny):
+                            self.files_to_backup.append(os.path.join(topdir,fileName))
+        if not self.files_to_backup:
+            bareosfd.JobMessage(context, bJobMessageType['M_ERROR'],
+                                "No (allowed) files to backup found\n")
+            return bRCs['bRC_Error']
+        else:
+            return bRCs['bRC_Cancel']
 
     def start_backup_file(self, context, savepkt):
         '''
