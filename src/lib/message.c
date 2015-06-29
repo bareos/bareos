@@ -1215,7 +1215,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
 
 #ifdef FULL_LOCATION
       if (details) {
-         Mmsg(buf, "%s: %s:%d-%u ", my_name, get_basename(file), line, get_jobid_from_tsd());
+         Mmsg(buf, "%s (%d): %s:%d-%u ", my_name, level, get_basename(file), line, get_jobid_from_tsd());
       }
 #endif
 
