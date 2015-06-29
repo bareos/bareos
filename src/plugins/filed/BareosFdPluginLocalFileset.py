@@ -43,6 +43,7 @@ class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass
            % (__name__, plugindef))
         # Last argument of super constructor is a list of mandatory arguments
         super(BareosFdPluginLocalFileset, self).__init__(context, plugindef, ['filename'])
+        self.files_to_backup=[]
 
     def start_backup_job(self, context):
         '''
@@ -67,7 +68,17 @@ class BareosFdPluginLocalFileset(BareosFdPluginBaseclass.BareosFdPluginBaseclass
                                   "File %s does not exist\n"
                                   % (self.options['filename']))
             return bRCs['bRC_Error']
-        self.files_to_backup = config_file.read().splitlines()
+        #self.files_to_backup = config_file.read().splitlines()
+        for listItem in config_file.read().splitlines():
+            if os.path.isfile(listItem):
+                self.files_to_backup.append(listItem)
+            if os.path.isdir(listItem):
+                bareosfd.DebugMessage(context, 150,
+                                  "Item %s is a directory\n"
+                                  %listItem)
+                for topdir, dirNames, fileNames in os.walk(listItem):
+                    for fileName in fileNames:
+                        self.files_to_backup.append(os.path.join(topdir,fileName))
         return bRCs['bRC_OK']
 
     def start_backup_file(self, context, savepkt):
