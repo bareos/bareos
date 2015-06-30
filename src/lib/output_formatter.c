@@ -47,8 +47,9 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
 
    result_message_plain = new POOL_MEM(PM_MESSAGE);
 #if HAVE_JANSSON
-   result_array_json = json_array();
+   result_json = json_object();
    result_stack_json = New(alist(10, false));
+   result_stack_json->push(result_json);
    message_object_json = json_object();
 #endif
 }
@@ -57,8 +58,8 @@ OUTPUT_FORMATTER::~OUTPUT_FORMATTER()
 {
    delete result_message_plain;
 #if HAVE_JANSSON
-   json_object_clear(result_array_json);
-   json_decref(result_array_json);
+   json_object_clear(result_json);
+   json_decref(result_json);
    delete result_stack_json;
 #endif
 }
@@ -68,7 +69,6 @@ void OUTPUT_FORMATTER::object_start(const char *name)
 #if HAVE_JANSSON
    json_t *json_object_current = NULL;
    json_t *json_object_existing = NULL;
-   json_t *json_object_array = NULL;
    json_t *json_object_new = json_object();
 #endif
 
@@ -78,31 +78,31 @@ void OUTPUT_FORMATTER::object_start(const char *name)
    case API_MODE_JSON:
       json_object_current = (json_t *)result_stack_json->last();
       if (json_object_current == NULL) {
-         json_object_current = json_object();
-         json_array_append_new(result_array_json, json_object_current);
+         Emsg0(M_ERROR, 0, "Failed to retrieve current JSON reference from stack.\n"
+                           "This should not happen. Giving up.\n");
+         return;
       }
       if (name == NULL) {
          /*
           * Add nameless object.
           */
-         result_stack_json->push(json_object_current);
+         if (json_is_array(json_object_current)) {
+            json_array_append_new(json_object_current, json_object_new);
+            result_stack_json->push(json_object_new);
+         } else {
+            /*
+             * nameless objects only are indented to be added to arrays.
+             * We do a workaround here, but this will only keep the last added entry (others will be overwritten).
+             */
+            Dmsg0(800, "Warning: requested to add a nameless object to another object. This does not match.\n");
+            result_stack_json->push(json_object_current);
+         }
       } else {
          json_object_existing = json_object_get(json_object_current, name);
          if (json_object_existing) {
-            if (json_is_array(json_object_existing)) {
-               Dmsg2(800,
-                     "json object %s (stack size: %d) already exits and is an array: appending\n",
-                     name, result_stack_json->size());
-               json_array_append_new(json_object_existing, json_object_new);
-            } else {
-               Dmsg2(800,
-                     "json object %s (stack size: %d) already exits: converting to array and appending\n",
-                     name, result_stack_json->size());
-               json_object_array = json_array();
-               json_array_append_new(json_object_array, json_object_existing);
-               json_array_append_new(json_object_array, json_object_new);
-               json_object_set(json_object_current, name, json_object_array);
-            }
+            Emsg2(M_ERROR, 0, "Failed to add JSON reference %s (stack size: %d) already exists.\n"
+                              "This should not happen. Ignoring.\n", name, result_stack_json->size());
+            return;
          } else {
             Dmsg2(800, "create new json object %s (stack size: %d)\n",
                   name, result_stack_json->size());
@@ -130,6 +130,63 @@ void OUTPUT_FORMATTER::object_end(const char *name)
 #endif
    default:
       process_text_buffer();
+      break;
+   }
+}
+
+void OUTPUT_FORMATTER::array_start(const char *name)
+{
+#if HAVE_JANSSON
+   json_t *json_object_current = NULL;
+   json_t *json_object_existing = NULL;
+   json_t *json_new = json_array();
+#endif
+
+   Dmsg1(800, "array start: %s\n", name);
+   switch (api) {
+#if HAVE_JANSSON
+   case API_MODE_JSON:
+      json_object_current = (json_t *)result_stack_json->last();
+      if (json_object_current == NULL) {
+         Emsg0(M_ERROR, 0, "Failed to retrieve current JSON reference from stack.\n"
+                           "This should not happen. Giving up.\n");
+         return;
+      }
+
+      if (!json_is_object(json_object_current)) {
+         Emsg0(M_ERROR, 0, "Failed to retrieve object from JSON stack.\n"
+                           "This should not happen. Giving up.\n");
+         return;
+      }
+
+      json_object_existing = json_object_get(json_object_current, name);
+      if (json_object_existing) {
+         Emsg2(M_ERROR, 0, "Failed to add JSON reference %s (stack size: %d) already exists.\n"
+                           "This should not happen. Ignoring.\n", name, result_stack_json->size());
+         return;
+      }
+      json_object_set(json_object_current, name, json_new);
+      result_stack_json->push(json_new);
+      Dmsg1(800, "result stack: %d\n", result_stack_json->size());
+      break;
+#endif
+   default:
+      break;
+   }
+}
+
+void OUTPUT_FORMATTER::array_end(const char *name)
+{
+   Dmsg1(800, "array end:   %s\n", name);
+   switch (api) {
+#if HAVE_JANSSON
+   case API_MODE_JSON:
+      result_stack_json->pop();
+      Dmsg1(800, "result stack: %d\n", result_stack_json->size());
+      break;
+#endif
+   default:
+      //process_text_buffer();
       break;
    }
 }
@@ -351,34 +408,31 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
 }
 
 #if HAVE_JANSSON
-void OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
+bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 {
    json_t *json_obj = NULL;
 
    json_obj = (json_t *)result_stack_json->last();
-   if (json_obj != NULL) {
-      json_object_set(json_obj, key, json_integer(value));
-   } else {
-      Emsg2(M_ERROR, 0, "no json object defined to add %s: %llu", key, value);
+   if (json_obj == NULL) {
+      Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
    }
+   json_object_set(json_obj, key, json_integer(value));
+
+   return true;
 }
 
-
-void OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
+bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
 {
    json_t *json_obj = NULL;
 
    json_obj = (json_t *)result_stack_json->last();
-   if (json_obj != NULL) {
-      json_object_set(json_obj, key, json_string(value));
-   } else {
-      Emsg2(M_ERROR, 0, "no json object defined to add %s: %s", key, value);
+   if (json_obj == NULL) {
+      Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
+      return false;
    }
-}
+   json_object_set(json_obj, key, json_string(value));
 
-void OUTPUT_FORMATTER::json_add_result(json_t *json)
-{
-   json_array_append_new(result_array_json, json);
+   return true;
 }
 
 void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
@@ -427,16 +481,21 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
       json_object_set_new(error_obj, "code", json_integer(1));
       json_object_set_new(error_obj, "message", json_string("failed"));
       data_obj = json_object();
-      json_object_set(data_obj, "result", result_array_json);
+      json_object_set(data_obj, "result", result_json);
       json_object_set(data_obj, "messages", message_object_json);
       json_object_set(error_obj, "data", data_obj);
       json_object_set_new(msg_obj, "error", error_obj);
    } else {
-      json_object_set(msg_obj, "result", result_array_json);
+      json_object_set(msg_obj, "result", result_json);
    }
+
    string.bsprintf("%s\n", json_dumps(msg_obj, UA_JSON_FLAGS));
    send_func(send_ctx, string.c_str());
-   json_array_clear(result_array_json);
+
+   while (result_stack_json->pop()) {};
+
+   json_object_clear(result_json);
+   result_stack_json->push(result_json);
    json_object_clear(message_object_json);
    json_object_clear(msg_obj);
 }

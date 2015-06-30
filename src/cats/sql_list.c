@@ -66,9 +66,9 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
       goto bail_out;
    }
 
-   sendit->object_start(description);
+   sendit->array_start(description);
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end(description);
+   sendit->array_end(description);
    sql_free_result(mdb);
    retval = true;
 
@@ -113,9 +113,9 @@ void db_list_pool_records(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr,
       goto bail_out;
    }
 
-   sendit->object_start("pools");
+   sendit->array_start("pools");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("pools");
+   sendit->array_end("pools");
 
    sql_free_result(mdb);
 
@@ -139,9 +139,9 @@ void db_list_client_records(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *sendit, e_lis
       goto bail_out;
    }
 
-   sendit->object_start("clients");
+   sendit->array_start("clients");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("clients");
+   sendit->array_end("clients");
 
    sql_free_result(mdb);
 
@@ -202,9 +202,9 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
       goto bail_out;
    }
 
-   sendit->object_start("media");
+   sendit->array_start("media");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("media");
+   sendit->array_end("media");
 
    sql_free_result(mdb);
 
@@ -246,9 +246,9 @@ void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, uint32_t JobId,
       goto bail_out;
    }
 
-   sendit->object_start("jobmedia");
+   sendit->array_start("jobmedia");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("jobmedia");
+   sendit->array_end("jobmedia");
 
    sql_free_result(mdb);
 
@@ -287,9 +287,9 @@ void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *JobIds
          send->decoration(_("The catalog contains copies as follows:\n"));
       }
 
-      send->object_start("copies");
+      send->array_start("copies");
       list_result(jcr, mdb, send, type);
-      send->object_end("copies");
+      send->array_end("copies");
    }
 
    sql_free_result(mdb);
@@ -325,9 +325,9 @@ void db_list_joblog_records(JCR *jcr, B_DB *mdb, uint32_t JobId,
       goto bail_out;
    }
 
-   sendit->object_start("joblog");
+   sendit->array_start("joblog");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("joblog");
+   sendit->array_end("joblog");
 
    sql_free_result(mdb);
 
@@ -397,9 +397,9 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
    }
-   sendit->object_start("jobs");
+   sendit->array_start("jobs");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("jobs");
+   sendit->array_end("jobs");
 
    sql_free_result(mdb);
 
@@ -423,7 +423,9 @@ void db_list_job_totals(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *send
       goto bail_out;
    }
 
+   sendit->array_start("jobs");
    list_result(jcr, mdb, sendit, HORZ_LIST);
+   sendit->array_end("jobs");
 
    sql_free_result(mdb);
 
@@ -435,7 +437,9 @@ void db_list_job_totals(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *send
       goto bail_out;
    }
 
+   sendit->object_start("jobtotals");
    list_result(jcr, mdb, sendit, HORZ_LIST);
+   sendit->object_end("jobtotals");
 
    sql_free_result(mdb);
 
@@ -479,11 +483,11 @@ void db_list_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, OUTPUT_FORMATTER 
            edit_int64(jobid, ed1), ed1);
    }
 
-   sendit->object_start();
+   sendit->array_start("filenames");
    if (!db_big_sql_query(mdb, mdb->cmd, list_result, &lctx)) {
        goto bail_out;
    }
-   sendit->object_end();
+   sendit->array_end("filenames");
 
    sql_free_result(mdb);
 
@@ -519,11 +523,11 @@ void db_list_base_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, OUTPUT_FORMA
            edit_int64(jobid, ed1));
    }
 
-   sendit->object_start("files");
+   sendit->array_start("files");
    if (!db_big_sql_query(mdb, mdb->cmd, list_result, &lctx)) {
        goto bail_out;
    }
-   sendit->object_end("files");
+   sendit->array_end("files");
 
    sql_free_result(mdb);
 
@@ -565,9 +569,9 @@ void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
    }
-   sendit->object_start("filesets");
+   sendit->array_start("filesets");
    list_result(jcr, mdb, sendit, type);
-   sendit->object_end("filesets");
+   sendit->array_end("filesets");
 
    sql_free_result(mdb);
 

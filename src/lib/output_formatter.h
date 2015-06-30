@@ -58,6 +58,8 @@ public:
 
    void object_start(const char *name = NULL);
    void object_end(const char *name = NULL);
+   void array_start(const char *name);
+   void array_end(const char *name);
    void decoration(const char *fmt, ...);
    void object_key_value(const char *key, uint64_t value);
    void object_key_value(const char *key, uint64_t value, const char *value_fmt);
@@ -72,8 +74,8 @@ public:
 
 #if HAVE_JANSSON
    void json_add_result(json_t *json);
-   void json_key_value_add(const char *key, uint64_t value);
-   void json_key_value_add(const char *key, const char *value);
+   bool json_key_value_add(const char *key, uint64_t value);
+   bool json_key_value_add(const char *key, const char *value);
    void json_add_message(const char *type, POOL_MEM &message);
    bool json_has_error_message();
    void json_finalize_result(bool result);
@@ -97,7 +99,7 @@ private:
    void process_text_buffer();
 
 #if HAVE_JANSSON
-   json_t *result_array_json;
+   json_t *result_json;
    alist *result_stack_json;
    json_t *message_object_json;
 #endif

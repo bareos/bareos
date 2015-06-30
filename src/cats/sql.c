@@ -475,7 +475,7 @@ int list_result(void *vctx, int nb_col, char **row)
    B_DB *mdb = pctx->mdb;
    JCR *jcr = pctx->jcr;
 
-   send->object_start("row");
+   send->object_start();
 
    num_fields = sql_num_fields(mdb);
    switch (type) {
@@ -630,7 +630,7 @@ int list_result(void *vctx, int nb_col, char **row)
    default:
       break;
    }
-   send->object_end("row");
+   send->object_end();
    return 0;
 }
 
@@ -652,7 +652,6 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
    Dmsg0(800, "list_result starts\n");
    if (sql_num_rows(mdb) == 0) {
       send->decoration(_("No results to list.\n"));
-      send->object_end("table");
       return sql_num_rows(mdb);
    }
 
@@ -706,7 +705,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
    case RAW_LIST:
       Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
-         send->object_start(row[0]);
+         send->object_start();
          sql_field_seek(mdb, 0);
          for (i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
@@ -723,7 +722,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
          if (type != RAW_LIST) {
             send->decoration("\n");
          }
-         send->object_end(row[0]);
+         send->object_end();
       }
       break;
    case HORZ_LIST:
@@ -745,7 +744,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
-         send->object_start(row[0]);
+         send->object_start();
          sql_field_seek(mdb, 0);
          send->decoration("|");
          for (i = 0; i < num_fields; i++) {
@@ -767,14 +766,14 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
             /* use value format string to send preformated value */
             send->object_key_value(field->name, row[i], value.c_str());
          }
-         send->object_end(row[0]);
+         send->object_end();
       }
       list_dashes(mdb, send);
       break;
    case VERT_LIST:
       Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
-         send->object_start(row[0]);
+         send->object_start();
          sql_field_seek(mdb, 0);
          for (i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
@@ -795,7 +794,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
             send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
          }
          send->decoration("\n");
-         send->object_end(row[0]);
+         send->object_end();
       }
       break;
    }

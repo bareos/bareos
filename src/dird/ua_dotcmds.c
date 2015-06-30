@@ -316,7 +316,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    Dmsg1(100, "type=%s\n", row[0]);
    if (bvfs_is_dir(row)) {
       char *path = bvfs_basename_dir(row[BVFS_Name]);
-      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
       ua->send->object_key_value("FilenameId", FileId_t(0), "%lld\t");
@@ -327,9 +327,9 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("Fullpath", row[BVFS_Name]);
       bvfs_stat(ua, lstat, &LinkFI);
       ua->send->object_key_value("LinkFileIndex", LinkFI);
-      ua->send->object_end(row[BVFS_Name]);
+      ua->send->object_end();
   } else if (bvfs_is_version(row)) {
-      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
       ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
@@ -339,9 +339,9 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("MD5", row[BVFS_Md5], "%s\t");
       ua->send->object_key_value("VolumeName", row[BVFS_VolName], "%s\t");
       ua->send->object_key_value("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
-      ua->send->object_end(row[BVFS_Name]);
+      ua->send->object_end();
    } else if (bvfs_is_file(row)) {
-      ua->send->object_start(row[BVFS_Name]);
+      ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
       ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
@@ -351,7 +351,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("Name", row[BVFS_Name], "%s\n");
       bvfs_stat(ua, lstat, &LinkFI);
       ua->send->object_key_value("LinkFileIndex", LinkFI);
-      ua->send->object_end(row[BVFS_Name]);
+      ua->send->object_end();
    }
 
    return 0;
@@ -545,7 +545,9 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 
    fs.set_offset(offset);
 
+   ua->send->array_start("files");
    fs.ls_files();
+   ua->send->array_end("files");
 
    return true;
 }
@@ -580,8 +582,10 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 
    fs.set_offset(offset);
 
+   ua->send->array_start("directories");
    fs.ls_special_dirs();
    fs.ls_dirs();
+   ua->send->array_end("directories");
 
    return true;
 }
@@ -612,7 +616,9 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    fs.set_see_copies(copies);
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_offset(offset);
+   ua->send->array_start("versions");
    fs.get_all_file_versions(pathid, fnid, client);
+   ua->send->array_end("versions");
 
    return true;
 }
@@ -690,7 +696,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    case API_MODE_JSON: {
       char *cur_id, *bp;
 
-      ua->send->object_start();
+      ua->send->array_start("jobids");
       cur_id = jobids.list;
       while (cur_id && strlen(cur_id)) {
          bp = strchr(cur_id, ',');
@@ -698,13 +704,13 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
             *bp++ = '\0';
          }
 
-         ua->send->object_start("jobids");
+         ua->send->object_start();
          ua->send->object_key_value("id", cur_id, "%s\n");
-         ua->send->object_end("jobids");
+         ua->send->object_end();
 
          cur_id = bp;
       }
-      ua->send->object_end();
+      ua->send->array_end("jobids");
       break;
    }
    default:
@@ -920,15 +926,15 @@ static bool jobdefscmd(UAContext *ua, const char *cmd)
    JOBRES *jobdefs;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("jobdefs");
    foreach_res(jobdefs, R_JOBDEFS) {
       if (acl_access_ok(ua, Job_ACL, jobdefs->name())) {
-         ua->send->object_start("jobdefs");
+         ua->send->object_start();
          ua->send->object_key_value("name", jobdefs->name(), "%s\n");
-         ua->send->object_end("jobdefs");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->object_end("jobdefs");
    UnlockRes();
 
    return true;
@@ -949,17 +955,17 @@ static bool jobscmd(UAContext *ua, const char *cmd)
    }
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("jobs");
    foreach_res(job, R_JOB) {
       if (!type || type == job->JobType) {
          if (acl_access_ok(ua, Job_ACL, job->name())) {
-            ua->send->object_start("jobs");
+            ua->send->object_start();
             ua->send->object_key_value("name", job->name(), "%s\n");
-            ua->send->object_end("jobs");
+            ua->send->object_end();
          }
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("jobs");
    UnlockRes();
 
    return true;
@@ -970,15 +976,15 @@ static bool filesetscmd(UAContext *ua, const char *cmd)
    FILESETRES *fs;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("filesets");
    foreach_res(fs, R_FILESET) {
       if (acl_access_ok(ua, FileSet_ACL, fs->name())) {
-         ua->send->object_start("filesets");
+         ua->send->object_start();
          ua->send->object_key_value("name", fs->name(), "%s\n");
-         ua->send->object_end("filesets");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("filesets");
    UnlockRes();
 
    return true;
@@ -989,15 +995,15 @@ static bool catalogscmd(UAContext *ua, const char *cmd)
    CATRES *cat;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("catalogs");
    foreach_res(cat, R_CATALOG) {
       if (acl_access_ok(ua, Catalog_ACL, cat->name())) {
-         ua->send->object_start("catalogs");
+         ua->send->object_start();
          ua->send->object_key_value("name", cat->name(), "%s\n");
-         ua->send->object_end("catalogs");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("catalogs");
    UnlockRes();
 
    return true;
@@ -1008,15 +1014,15 @@ static bool clientscmd(UAContext *ua, const char *cmd)
    CLIENTRES *client;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("clients");
    foreach_res(client, R_CLIENT) {
       if (acl_access_ok(ua, Client_ACL, client->name())) {
-         ua->send->object_start("clients");
+         ua->send->object_start();
          ua->send->object_key_value("name", client->name(), "%s\n");
-         ua->send->object_end("clients");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("clients");
    UnlockRes();
 
    return true;
@@ -1027,13 +1033,13 @@ static bool msgscmd(UAContext *ua, const char *cmd)
    MSGSRES *msgs = NULL;
 
    LockRes();
-   ua->send->object_start("messages");
+   ua->send->array_start("messages");
    foreach_res(msgs, R_MSGS) {
       ua->send->object_start();
       ua->send->object_key_value("text", msgs->name(), "%s\n");
       ua->send->object_end();
    }
-   ua->send->object_end("messages");
+   ua->send->array_end("messages");
    UnlockRes();
 
    return true;
@@ -1044,15 +1050,15 @@ static bool poolscmd(UAContext *ua, const char *cmd)
    POOLRES *pool;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("pools");
    foreach_res(pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
-         ua->send->object_start("pools");
+         ua->send->object_start();
          ua->send->object_key_value("name", pool->name(), "%s\n");
-         ua->send->object_end("pools");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("pools");
    UnlockRes();
 
    return true;
@@ -1063,15 +1069,15 @@ static bool storagecmd(UAContext *ua, const char *cmd)
    STORERES *store;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("storages");
    foreach_res(store, R_STORAGE) {
       if (acl_access_ok(ua, Storage_ACL, store->name())) {
-         ua->send->object_start("storages");
+         ua->send->object_start();
          ua->send->object_key_value("name", store->name(), "%s\n");
-         ua->send->object_end("storages");
+         ua->send->object_end();
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("storages");
    UnlockRes();
 
    return true;
@@ -1082,13 +1088,13 @@ static bool profilescmd(UAContext *ua, const char *cmd)
    PROFILERES *profile;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("profiles");
    foreach_res(profile, R_PROFILE) {
-      ua->send->object_start("profiles");
+      ua->send->object_start();
       ua->send->object_key_value("name", profile->name(), "%s\n");
-      ua->send->object_end("profiles");
+      ua->send->object_end();
    }
-   ua->send->object_end();
+   ua->send->array_end("profiles");
    UnlockRes();
 
    return true;
@@ -1096,26 +1102,26 @@ static bool profilescmd(UAContext *ua, const char *cmd)
 
 static bool aopcmd(UAContext *ua, const char *cmd)
 {
-   ua->send->object_start();
+   ua->send->array_start("actiononpurge");
    for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
-      ua->send->object_start("actiononpurge");
+      ua->send->object_start();
       ua->send->object_key_value("name", ActionOnPurgeOptions[i].name, "%s\n");
-      ua->send->object_end("actionsonpurge");
+      ua->send->object_end();
    }
-   ua->send->object_end();
+   ua->send->array_end("actiononpurge");
 
    return true;
 }
 
 static bool typescmd(UAContext *ua, const char *cmd)
 {
-   ua->send->object_start();
+   ua->send->array_start("jobtypes");
    for (int i = 0; jobtypes[i].type_name; i++) {
-      ua->send->object_start("jobtypes");
+      ua->send->object_start();
       ua->send->object_key_value("name", jobtypes[i].type_name, "%s\n");
-      ua->send->object_end("jobtypes");
+      ua->send->object_end();
    }
-   ua->send->object_end();
+   ua->send->array_end("jobtypes");
 
    return true;
 }
@@ -1240,13 +1246,13 @@ static bool mediatypescmd(UAContext *ua, const char *cmd)
       return true;
    }
 
-   ua->send->object_start("mediatypes");
+   ua->send->array_start("mediatypes");
    if (!db_sql_query(ua->db,
                      "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
                      one_handler, (void *)ua)) {
       ua->error_msg(_("List MediaType failed: ERR=%s\n"), db_strerror(ua->db));
    }
-   ua->send->object_end("mediatypes");
+   ua->send->array_end("mediatypes");
 
    return true;
 }
@@ -1257,13 +1263,13 @@ static bool mediacmd(UAContext *ua, const char *cmd)
       return true;
    }
 
-   ua->send->object_start("media");
+   ua->send->array_start("media");
    if (!db_sql_query(ua->db,
                      "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
                      one_handler, (void *)ua)) {
       ua->error_msg(_("List Media failed: ERR=%s\n"), db_strerror(ua->db));
    }
-   ua->send->object_end("media");
+   ua->send->array_end("media");
 
    return true;
 }
@@ -1273,13 +1279,13 @@ static bool schedulecmd(UAContext *ua, const char *cmd)
    SCHEDRES *sched;
 
    LockRes();
-   ua->send->object_start();
+   ua->send->array_start("schedules");
    foreach_res(sched, R_SCHEDULE) {
-      ua->send->object_start("schedules");
+      ua->send->object_start();
       ua->send->object_key_value("name", sched->hdr.name, "%s\n");
-      ua->send->object_end("schedules");
+      ua->send->object_end();
    }
-   ua->send->object_end();
+   ua->send->array_end("schedules");
    UnlockRes();
 
    return true;
@@ -1291,13 +1297,13 @@ static bool locationscmd(UAContext *ua, const char *cmd)
       return true;
    }
 
-   ua->send->object_start("locations");
+   ua->send->array_start("locations");
    if (!db_sql_query(ua->db,
                      "SELECT DISTINCT Location FROM Location ORDER BY Location",
                      one_handler, (void *)ua)) {
       ua->error_msg(_("List Location failed: ERR=%s\n"), db_strerror(ua->db));
    }
-   ua->send->object_end("locations");
+   ua->send->array_end("locations");
 
    return true;
 }
@@ -1307,15 +1313,15 @@ static bool levelscmd(UAContext *ua, const char *cmd)
    /*
     * Note some levels are blank, which means none is needed
     */
-   ua->send->object_start();
+   ua->send->array_start("levels");
    if (ua->argc == 1) {
       for (int i = 0; joblevels[i].level_name; i++) {
          if (joblevels[i].level_name[0] != ' ') {
-            ua->send->object_start("levels");
+            ua->send->object_start();
             ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
             ua->send->object_key_value("level", joblevels[i].level);
             ua->send->object_key_value("jobtype", joblevels[i].job_type);
-            ua->send->object_end("levels");
+            ua->send->object_end();
          }
       }
    } else if (ua->argc == 2) {
@@ -1333,28 +1339,28 @@ static bool levelscmd(UAContext *ua, const char *cmd)
 
       for (int i = 0; joblevels[i].level_name; i++) {
          if ((joblevels[i].job_type == jobtype) && (joblevels[i].level_name[0] != ' ')) {
-            ua->send->object_start("levels");
+            ua->send->object_start();
             ua->send->object_key_value("name", joblevels[i].level_name, "%s\n");
             ua->send->object_key_value("level", joblevels[i].level);
             ua->send->object_key_value("jobtype", joblevels[i].job_type);
-            ua->send->object_end("levels");
+            ua->send->object_end();
          }
       }
    }
-   ua->send->object_end();
+   ua->send->array_end("levels");
 
    return true;
 }
 
 static bool volstatuscmd(UAContext *ua, const char *cmd)
 {
-   ua->send->object_start();
+   ua->send->array_start("volstatus");
    for (int i = 0; VolumeStatus[i].name; i++) {
-      ua->send->object_start("volstatus");
+      ua->send->object_start();
       ua->send->object_key_value("name", VolumeStatus[i].name, "%s\n");
-      ua->send->object_end("volstatus");
+      ua->send->object_end();
    }
-   ua->send->object_end();
+   ua->send->array_end("volstatus");
 
    return true;
 }
