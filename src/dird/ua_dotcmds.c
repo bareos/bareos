@@ -100,7 +100,8 @@ static struct cmdstruct commands[] = {
       NULL, false, false },
    { NT_(".clients"), clientscmd, _("List all client resources"),
       NULL, true, false },
-   { NT_(".defaults"), defaultscmd, NULL, NULL, false, false },
+   { NT_(".defaults"), defaultscmd, _("Get default settings"),
+      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
    { NT_(".die"), admin_cmds, NULL, NULL, false, true },
    { NT_(".dump"), admin_cmds, NULL, NULL, false, true },
    { NT_(".exit"), admin_cmds, NULL, NULL, false, false },
@@ -1364,116 +1365,161 @@ static bool volstatuscmd(UAContext *ua, const char *cmd)
 static bool defaultscmd(UAContext *ua, const char *cmd)
 {
    char ed1[50];
+   int pos = 0;
 
-   if (ua->argc != 2 || !ua->argv[1]) {
-      return true;
-   }
-
-   if (bstrcmp(ua->argk[1], "job")) {
+   ua->send->object_start("defaults");
+   if ((pos = find_arg_with_value(ua, "job")) >= 0) {
       JOBRES *job;
 
       /*
        * Job defaults
        */
-      if (!acl_access_ok(ua, Job_ACL, ua->argv[1], true)) {
+      if (!acl_access_ok(ua, Job_ACL, ua->argv[pos], true)) {
          return true;
       }
 
-      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[1]);
+      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[pos]);
       if (job) {
          USTORERES store;
 
-         ua->send_msg("job=%s", job->name());
-         ua->send_msg("pool=%s", job->pool->name());
-         ua->send_msg("messages=%s", job->messages->name());
-         ua->send_msg("client=%s", (job->client) ? job->client->name() : _("*None*"));
+         ua->send->object_key_value("job", "%s=", job->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("pool", "%s=", job->pool->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("messages", "%s=", job->messages->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("client", "%s=", ((job->client) ? job->client->name() : _("*None*")), "%s");
+         ua->send->decoration("\n");
          get_job_storage(&store, job, NULL);
-         ua->send_msg("storage=%s", store.store->name());
-         ua->send_msg("where=%s", job->RestoreWhere ? job->RestoreWhere : "");
-         ua->send_msg("level=%s", level_to_str(job->JobLevel));
-         ua->send_msg("type=%s", job_type_to_str(job->JobType));
-         ua->send_msg("fileset=%s", (job->fileset) ? job->fileset->name() : _("*None*"));
-         ua->send_msg("enabled=%d", job->enabled);
-         ua->send_msg("catalog=%s", (job->client) ? job->client->catalog->name() : _("*None*"));
+         ua->send->object_key_value("storage", "%s=", store.store->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("level", "%s=", level_to_str(job->JobLevel), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("type", "%s=", job_type_to_str(job->JobType), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("fileset", "%s=", ((job->fileset) ? job->fileset->name() : _("*None*")), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("enabled", "%s=", job->enabled, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("catalog", "%s=", ((job->client) ? job->client->catalog->name() : _("*None*")), "%s");
+         ua->send->decoration("\n");
       }
-   } else if (bstrcmp(ua->argk[1], "client")) {
+   } else if ((pos = find_arg_with_value(ua, "client")) >= 0) {
       CLIENTRES *client;
 
       /*
        * Client defaults
        */
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[1], true)) {
+      if (!acl_access_ok(ua, Client_ACL, ua->argv[pos], true)) {
          return true;
       }
 
-      client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[1]);
+      client = (CLIENTRES *)GetResWithName(R_CLIENT, ua->argv[pos]);
       if (client) {
-         ua->send_msg("client=%s", client->name());
-         ua->send_msg("address=%s", client->address);
-         ua->send_msg("fdport=%d", client->FDport);
-         ua->send_msg("file_retention=%s", edit_uint64(client->FileRetention, ed1));
-         ua->send_msg("job_retention=%s", edit_uint64(client->JobRetention, ed1));
-         ua->send_msg("autoprune=%d", client->AutoPrune);
-         ua->send_msg("enabled=%d", client->enabled);
-         ua->send_msg("catalog=%s", client->catalog->name());
+         ua->send->object_key_value("client", "%s=", client->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("address", "%s=", client->address, "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("port", "%s=", client->FDport, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("file_retention", "%s=", edit_uint64(client->FileRetention, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("job_retention", "%s=", edit_uint64(client->JobRetention, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("autoprune", "%s=", client->AutoPrune, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("enabled", "%s=", client->enabled, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("catalog", "%s=", client->catalog->name(), "%s");
+         ua->send->decoration("\n");
       }
-   } else if (bstrcmp(ua->argk[1], "storage")) {
+   } else if ((pos = find_arg_with_value(ua, "storage")) >= 0) {
       STORERES *storage;
       DEVICERES *device;
+      POOL_MEM devices;
 
       /*
        * Storage defaults
        */
-      if (!acl_access_ok(ua, Storage_ACL, ua->argv[1], true)) {
+      if (!acl_access_ok(ua, Storage_ACL, ua->argv[pos], true)) {
          return true;
       }
 
-      storage = (STORERES *)GetResWithName(R_STORAGE, ua->argv[1]);
+      storage = (STORERES *)GetResWithName(R_STORAGE, ua->argv[pos]);
       if (storage) {
-         ua->send_msg("storage=%s", storage->name());
-         ua->send_msg("address=%s", storage->address);
-         ua->send_msg("enabled=%d", storage->enabled);
-         ua->send_msg("media_type=%s", storage->media_type);
-         ua->send_msg("sdport=%d", storage->SDport);
+         ua->send->object_key_value("storage", "%s=", storage->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("address", "%s=", storage->address, "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("port", "%s=", storage->SDport, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("enabled", "%s=", storage->enabled, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("media_type", "%s=", storage->media_type, "%s");
+         ua->send->decoration("\n");
          device = (DEVICERES *)storage->device->first();
-         ua->send_msg("device=%s", device->name());
+         devices.strcpy(device->name());
          if (storage->device->size() > 1) {
             while ((device = (DEVICERES *)storage->device->next())) {
-               ua->send_msg(",%s", device->name());
+               devices.strcat(",");
+               devices.strcat(device->name());
             }
          }
+         ua->send->object_key_value("device", "%s=", devices.c_str(), "%s");
+         ua->send->decoration("\n");
       }
-   } else if (bstrcmp(ua->argk[1], "pool")) {
+   } else if ((pos = find_arg_with_value(ua, "pool")) >= 0) {
       POOLRES *pool;
 
       /*
        * Pool defaults
        */
-      if (!acl_access_ok(ua, Pool_ACL, ua->argv[1], true)) {
+      if (!acl_access_ok(ua, Pool_ACL, ua->argv[pos], true)) {
          return true;
       }
 
-      pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[1]);
+      pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[pos]);
       if (pool) {
-         ua->send_msg("pool=%s", pool->name());
-         ua->send_msg("pool_type=%s", pool->pool_type);
-         ua->send_msg("label_format=%s", pool->label_format?pool->label_format:"");
-         ua->send_msg("use_volume_once=%d", pool->use_volume_once);
-         ua->send_msg("purge_oldest_volume=%d", pool->purge_oldest_volume);
-         ua->send_msg("recycle_oldest_volume=%d", pool->recycle_oldest_volume);
-         ua->send_msg("recycle_current_volume=%d", pool->recycle_current_volume);
-         ua->send_msg("max_volumes=%d", pool->max_volumes);
-         ua->send_msg("vol_retention=%s", edit_uint64(pool->VolRetention, ed1));
-         ua->send_msg("vol_use_duration=%s", edit_uint64(pool->VolUseDuration, ed1));
-         ua->send_msg("max_vol_jobs=%d", pool->MaxVolJobs);
-         ua->send_msg("max_vol_files=%d", pool->MaxVolFiles);
-         ua->send_msg("max_vol_bytes=%s", edit_uint64(pool->MaxVolBytes, ed1));
-         ua->send_msg("auto_prune=%d", pool->AutoPrune);
-         ua->send_msg("recycle=%d", pool->Recycle);
-         ua->send_msg("file_retention=%s", edit_uint64(pool->FileRetention, ed1));
-         ua->send_msg("job_retention=%s", edit_uint64(pool->JobRetention, ed1));
+         ua->send->object_key_value("pool", "%s=", pool->name(), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("pool_type", "%s=", pool->pool_type, "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("label_format", "%s=", (pool->label_format?pool->label_format:""), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("use_volume_once", "%s=", pool->use_volume_once, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("purge_oldest_volume=", "%s=", pool->purge_oldest_volume, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("recycle_oldest_volume", "%s=", pool->recycle_oldest_volume, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("max_volumes", "%s=", pool->max_volumes, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("vol_retention", "%s=", edit_uint64(pool->VolRetention, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("vol_use_duration", "%s=", edit_uint64(pool->VolUseDuration, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("max_vol_jobs", "%s=", pool->MaxVolJobs, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("max_vol_files", "%s=", pool->MaxVolFiles, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("max_vol_bytes", "%s=", edit_uint64(pool->MaxVolBytes, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("auto_prune", "%s=", pool->AutoPrune, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("recycle", "%s=", pool->Recycle, "%d");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("file_retention", "%s=", edit_uint64(pool->FileRetention, ed1), "%s");
+         ua->send->decoration("\n");
+         ua->send->object_key_value("job_retention", "%s=", edit_uint64(pool->JobRetention, ed1), "%s");
+         ua->send->decoration("\n");
       }
+   } else {
+      ua->send_msg(".defaults command requires a parameter.\n");
+      return false;
    }
+   ua->send->object_end("defaults");
 
    return true;
 }
