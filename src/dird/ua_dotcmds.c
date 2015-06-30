@@ -1186,25 +1186,40 @@ static int sql_handler(void *ctx, int num_field, char **row)
 
 static bool sql_cmd(UAContext *ua, const char *cmd)
 {
-   int index;
+   int pos;
+   bool retval = false;
 
    if (!open_client_db(ua, true)) {
-      return true;
+      return false;
    }
 
-   index = find_arg_with_value(ua, "query");
-   if (index < 0) {
+   pos = find_arg_with_value(ua, "query");
+   if (pos < 0) {
       ua->error_msg(_("query keyword not found.\n"));
-      return true;
+      return false;
    }
 
-   if (!db_sql_query(ua->db, ua->argv[index], sql_handler, (void *)ua)) {
-      Dmsg1(100, "Query failed: ERR=%s\n", db_strerror(ua->db));
-      ua->error_msg(_("Query failed: %s. ERR=%s\n"), ua->cmd, db_strerror(ua->db));
-      return true;
+   switch (ua->api) {
+   case API_MODE_ON:
+      /*
+       * BAT uses the ".sql" command and expects this format
+       */
+      retval = db_sql_query(ua->db, ua->argv[pos], sql_handler, (void *)ua);
+      break;
+   default:
+      /*
+       * General format
+       */
+      retval = db_list_sql_query(ua->jcr, ua->db, ua->argv[pos], ua->send, HORZ_LIST, false);
+      break;
    }
 
-   return true;
+   if (!retval) {
+      Dmsg1(100, "Query failed: ERR=%s", db_strerror(ua->db));
+      ua->error_msg(_("Query failed: %s. ERR=%s"), ua->cmd, db_strerror(ua->db));
+   }
+
+   return retval;
 }
 
 static int one_handler(void *ctx, int num_field, char **row)
