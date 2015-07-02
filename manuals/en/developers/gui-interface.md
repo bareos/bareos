@@ -1,4 +1,4 @@
-API Interface
+API Interface {#sec:api}
 =============
 
 General
@@ -83,23 +83,24 @@ For a GUI program things will be a bit more complicated. Basically in
 the very inner loop, you will need to check and see if any output is
 available on the UA\_sock.
 
-dot commands
+dot commands 
 ------------
 
 Besides the normal commands (like list, status, run, mount, ...)
 the Director offers a number of so called *dot commands*.
 They all begin with a period, are all non-interactive, easily parseable and are indended to be used by other Bareos interface programs (GUIs).
 
-See <bareos-source<span>>/src/dird/ua_dotcmds.c for more details.
+See <https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c> for more details.
 
 * .actiononpurge
-* .api [ 0 | 1 | 2 | off | json ]
-    * Switch between different api modes
+* .api [ 0 | 1 | 2 | off | on | json ]
+    * Switch between different [api modes](#sec:ApiMode)
 * .clients
     * List all client resources
 * .catalogs
     * List all catalog resources
-* .defaults
+* .defaults job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>
+    * List default settings
 * .filesets
     * List all filesets
 * .help [ all | item=cmd ]
@@ -144,11 +145,240 @@ See <bareos-source<span>>/src/dird/ua_dotcmds.c for more details.
 * .bvfs_cleanup
 * .bvfs_clear_cache
 
+API Modes {#sec:ApiMode}
+---------
+
+The ```.api``` command can be used to switch between the different API modes.
+Besides the ```.api``` command, there is also the ```gui on | off``` command.
+However, this command can be ignored, as it set to gui on in command execution anyway.
+
+### API mode 0 (off)
+
+```
+.api 0
+```
+
+By default, a console connection to the Director is in interactive mode, meaning the api mode is off.
+This is the normal mode you get when using the bconsole.
+The output should be human readable.
+
+
+### API mode 1 (on)
+
+To get better parsable output, a console connection could be switched to API mode 1 (on).
+
+```
+.api 1
+```
+
+or (form times where they have only been one API flavour)
+
+```
+.api
+```
+
+This mode is intended to create output that is earlier parsable.
+Internaly some commands vary there output for the API mode 1, but not all.
+
+In API mode 1 some output is only delimted by the end of a packet, by not a new line.
+bconsole does not display end of packets (for good reason, as some output (e.g. ```status```) is send in multiple packets).
+If running in a bconsole, this leads not parsable output for human.
+
+Example:
+```
+*.api 0
+api: 0
+*.defaults job=BackupClient1
+job=BackupClient1
+pool=Incremental
+messages=Standard
+client=client1.example.com-fd
+storage=File
+where=
+level=Incremental
+type=Backup
+fileset=SelfTest
+enabled=1
+catalog=MyCatalog
+*.api 1
+api: 1
+*.defaults job=BackupClient1
+job=BackupClient1pool=Incrementalmessages=Standardclient=client1.example.com-fdstorage=Filewhere=level=Incrementaltype=Backupfileset=SelfTestenabled=1catalog=MyCatalog
+```
+
+This mode is used by BAT.
+
+* [Signals](#sec:bnet_sig)
+
+### API mode 2 (json)
+
+The API mode 2 (or JSON mode) has been intrduced in Bareos-15.2 and differs from API mode 1 in several aspects:
+
+* JSON output
+* The JSON output is in the format of JSON-RPC 2.0 responce objects (<http://www.jsonrpc.org/specification#response_object>). This should make it easier to implement a full JSON-RPC service later.
+* No user interaction inside a command (meaning: if not all parameter are given to a ```run``` command, the command fails).
+* Each command creates exaclty one responce object.
+
+Currently a subset of the available commands return there result in JSON format, while others still write plain text output.
+When finished, it should be safe to run all commands in JSON mode.
+
+#### Examples
+
+* list
+    * e.g.
+```
+*list jobs
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "jobs": {
+      "1": {
+        "Type": "B",
+        "StartTime": "2015-06-25 16:51:38",
+        "JobFiles": "18",
+        "JobId": "1",
+        "Name": "BackupClient1",
+        "JobStatus": "T",
+        "Level": "F",
+        "JobBytes": "4651943"
+      },
+      "2": {
+        "Type": "B",
+        "StartTime": "2015-06-25 17:25:23",
+        "JobFiles": "0",
+        "JobId": "2",
+        "Name": "BackupClient1",
+        "JobStatus": "T",
+        "Level": "I",
+        "JobBytes": "0"
+      },
+      ...
+    }
+  }
+}
+```
+    * keys are the table names
+* llist
+    * e.g.
+```
+*llist jobs
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "jobs": {
+      "1": {
+        "Name": "BackupClient1",
+        "RealEndTime": "2015-06-25 16:51:40",
+        "Type": "B",
+        "SchedTime": "2015-06-25 16:51:33",
+        "PoolId": "1",
+        "Level": "F",
+        "JobFiles": "18",
+        "VolSessionId": "1",
+        "JobId": "1",
+        "Job": "BackupClient1.2015-06-25_16.51.35_04",
+        "PriorJobId": "0",
+        "EndTime": "2015-06-25 16:51:40",
+        "JobTDate": "1435243900",
+        "JobStatus": "T",
+        "JobMissingFiles": "0",
+        "JobErrors": "0",
+        "PurgedFiles": "0",
+        "StartTime": "2015-06-25 16:51:38",
+        "ClientName": "ting.dass-it-fd",
+        "ClientId": "1",
+        "VolSessionTime": "1435243839",
+        "FileSetId": "1",
+        "PooLname": "Full",
+        "FileSet": "SelfTest"
+      },
+      "2": {
+        "Name": "BackupClient1",
+        "RealEndTime": "2015-06-25 17:25:24",
+        "Type": "B",
+        "SchedTime": "2015-06-25 17:25:10",
+        "PoolId": "3",
+        "Level": "I",
+        "JobFiles": "0",
+        "VolSessionId": "2",
+        "JobId": "2",
+        "Job": "BackupClient1.2015-06-25_17.25.20_04",
+        "PriorJobId": "0",
+        "EndTime": "2015-06-25 17:25:24",
+        "JobTDate": "1435245924",
+        "JobStatus": "T",
+        "JobMissingFiles": "0",
+        "JobErrors": "0",
+        "PurgedFiles": "0",
+        "StartTime": "2015-06-25 17:25:23",
+        "ClientName": "ting.dass-it-fd",
+        "ClientId": "1",
+        "VolSessionTime": "1435243839",
+        "FileSetId": "1",
+        "PooLname": "Incremental",
+        "FileSet": "SelfTest"
+      },
+      ...
+    }
+  }
+}
+```
+    * like the list ```command```, but more values
+* .jobs
+    * e.g.
+```
+*.jobs
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "jobs": [
+      {
+        "name": "BackupClient1"
+      },
+      {
+        "name": "BackupCatalog"
+      },
+      {
+        "name": "RestoreFiles"
+      }
+    ]
+  }
+}
+```
+
+##### Example of a JSON-RPC Error Response
+
+Example of a JSON-RPC Error Response (<http://www.jsonrpc.org/specification#error_object>):
+```
+*gui
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "error": {
+    "data": {
+      "result": {},
+      "messages": {
+        "error": [
+          "ON or OFF keyword missing.\n"
+        ]
+      }
+    },
+    "message": "failed",
+    "code": 1
+  }
+}
+```
+
+  * an error response is emitted, if the command returns false or emitted an error message (```void UAContext::error_msg(const char *fmt, ...)```). Messages and the result so far will be part of the error response object.
+
+
 Bvfs API {#sec:bvfs}
 --------
 
-To help developers of restore GUI interfaces, we have added new *dot
-commands* that permit browsing the catalog in a very simple way.
+The BVFS commands are do provide a API browsing the catalog, which is required for restoring.
 
 Bat has now a bRestore panel that uses Bvfs to display files and
 directories.
@@ -157,25 +387,19 @@ directories.
 
 The Bvfs module works correctly with BaseJobs, Copy and Migration jobs.
 
-This project was funded by Bareos Systems.
+The initial version in Bacula have be founded by Bacula Systems.
 
 ### General notes {#general-notes .unnumbered}
 
--   All fields are separated by a tab
+-   All fields are separated by a tab (api mode 0 and 1)
 
 -   You can specify `limit=` and `offset=` to list smoothly records in
     very big directories
 
 -   All operations (except cache creation) are designed to run instantly
 
--   At this time, Bvfs works faster on PostgreSQL than MySQL catalog. If
-    you can contribute new faster SQL queries we will be happy, else
-    don’t complain about speed.
-
 -   The cache creation is dependent of the number of directories. As
     Bvfs shares information accross jobs, the first creation can be slow
-
--   All fields are separated by a tab
 
 -   Due to potential encoding problem, it’s advised to allways use
     pathid in queries.
@@ -287,6 +511,78 @@ In this example, to list files present in `regress/`, you can use
     1   45   55   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     ficheriro1.txt
     1   46   56   12    gD HRie IGk BAA I BMqe/K BMqcPE BMqe+3 D     ficheriro2.txt
 
+#### List Files, API modes
+
+```
+*.api 1
+*.bvfs_lsfiles jobid=1 pathid=1
+1   11  7   1   gD OEE4 IHo B GHH GHH A G9S BAA 4 BVjBQG BVjBQG BVjBQG A A C    bpluginfo
+1   12  4   1   gD OEE3 KH/ B GHH GHH A W BAA A BVjBQ7 BVjBQG BVjBQG A A C  bregex
+...
+```
+
+```
+*.api 2
+*.bvfs_lsfiles jobid=1 pathid=1
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "files": {
+      "bpluginfo": {
+        "JobId": 1,
+        "Type": "F",
+        "FileId": 7,
+        "lstat": "gD OEE4 IHo B GHH GHH A G9S BAA 4 BVjBQG BVjBQG BVjBQG A A C",
+        "PathId": 1,
+        "stat": {
+          "atime": 1435243526,
+          "ino": 3686712,
+          "dev": 2051,
+          "mode": 33256,
+          "gid": 25031,
+          "nlink": 1,
+          "uid": 25031,
+          "ctime": 1435243526,
+          "rdev": 0,
+          "size": 28498,
+          "mtime": 1435243526
+        },
+        "FilenameId": 11,
+        "Name": "bpluginfo",
+        "LinkFileIndex": 0
+      },
+      "bregex": {
+        "JobId": 1,
+        "Type": "F",
+        "FileId": 4,
+        "lstat": "gD OEE3 KH/ B GHH GHH A W BAA A BVjBQ7 BVjBQG BVjBQG A A C",
+        "PathId": 1,
+        "stat": {
+          "atime": 1435243579,
+          "ino": 3686711,
+          "dev": 2051,
+          "mode": 41471,
+          "gid": 25031,
+          "nlink": 1,
+          "uid": 25031,
+          "ctime": 1435243526,
+          "rdev": 0,
+          "size": 22,
+          "mtime": 1435243526
+        },
+        "FilenameId": 12,
+        "Name": "bregex",
+        "LinkFileIndex": 0
+      },
+      ...
+    }
+  }
+}
+```
+
+API mode JSON contains all information also available in the other API modes, but displays them more verbose.
+
 ### Restore set of files {#restore-set-of-files .unnumbered}
 
 Bvfs allows you to create a SQL table that contains files that you want
@@ -301,7 +597,7 @@ To include a directory (with `dirid`), Bvfs needs to run a query to
 select all files. This query could be time consuming.
 
 `hardlink` list is always composed of a serie of two numbers (jobid,
-fileindex). This information can be found in the LinkFI field of the
+fileindex). This information can be found in the LinkFileIndex (LinkFI) field of the
 LStat packet.
 
 The `path` argument represents the name of the table that Bvfs will

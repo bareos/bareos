@@ -108,7 +108,7 @@ than the record size sent. It returns:
 
 It should be noted that bnet\_recv() is a blocking read.
 
-bnet\_sig
+bnet\_sig {#sec:bnet_sig}
 ---------
 
 To send a “signal” from one daemon to another, one uses the subroutine:
