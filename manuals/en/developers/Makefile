@@ -15,6 +15,7 @@ FILES = generaldevel.md \
       regression.md \
       mempool.md \
       netprotocol.md \
+      directorConsole.md \
       smartall.md \
       fdl.md
 

@@ -1,4 +1,4 @@
-Daemon Protocol
+Daemon Protocol {#DaemonProtocol}
 ===============
 
 General
