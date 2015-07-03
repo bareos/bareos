@@ -92,58 +92,58 @@ They all begin with a period, are all non-interactive, easily parseable and are 
 
 See <https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c> for more details.
 
-* .actiononpurge
-* .api [ 0 | 1 | 2 | off | on | json ]
+* ```.actiononpurge```
+* .```api [ 0 | 1 | 2 | off | on | json ]```
     * Switch between different [api modes](#sec:ApiMode)
-* .clients
+* ```.clients```
     * List all client resources
-* .catalogs
+* ```.catalogs```
     * List all catalog resources
-* .defaults job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>
+* ```.defaults job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>```
     * List default settings
-* .filesets
+* ```.filesets```
     * List all filesets
-* .help [ all | item=cmd ]
+* ```.help [ all | item=cmd ]```
     * Print parsable information about a command
-* .jobdefs
+* ```.jobdefs```
     * List add JobDef resources
-* .jobs
+* ```.jobs```
     * List job resources
-* .levels
+* ```.levels```
     * List all backup levels
-* .locations
-* .messages
-* .media
+* ```.locations```
+* ```.messages```
+* ```.media```
     * List all medias
-* .mediatypes
+* ```.mediatypes```
     * List all media types
-* .msgs
+* ```.msgs```
     * List all message resources
-* .pools
+* ```.pools```
     * List all pool resources
-* .profiles
+* ```.profiles```
     * List all profile resources
-* .quit
+* ```.quit```
     * Close connection
 * ```.sql query=<sqlquery>```
     * Send an arbitary SQL command
-* .schedule
+* ```.schedule```
     * List all schedule resources
-* .status
-* .storages
+* ```.status```
+* ```.storages```
     * List all storage resources
-* .types
+* ```.types```
     * List all job types
-* .volstatus
+* ```.volstatus```
     * List all volume status
-* .bvfs_lsdirs
-* .bvfs_lsfiles
-* .bvfs_update
-* .bvfs_get_jobids
-* .bvfs_versions
-* .bvfs_restore
-* .bvfs_cleanup
-* .bvfs_clear_cache
+* ```.bvfs_lsdirs```
+* ```.bvfs_lsfiles```
+* ```.bvfs_update```
+* ```.bvfs_get_jobids```
+* ```.bvfs_versions```
+* ```.bvfs_restore```
+* ```.bvfs_cleanup```
+* ```.bvfs_clear_cache```
 
 API Modes {#sec:ApiMode}
 ---------
