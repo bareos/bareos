@@ -10,7 +10,7 @@ FILES = generaldevel.md \
       catalog.md \
       mediaformat.md \
       porting.md \
-      gui-interface.md \
+      api.md \
       tls-techdoc.md \
       regression.md \
       mempool.md \
