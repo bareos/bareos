@@ -130,7 +130,7 @@ See <https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c> for mor
 * .schedule
     * List all schedule resources
 * .status
-* .storage
+* .storages
     * List all storage resources
 * .types
     * List all job types
