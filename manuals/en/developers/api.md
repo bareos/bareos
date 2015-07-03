@@ -216,11 +216,30 @@ The API mode 2 (or JSON mode) has been intrduced in Bareos-15.2 and differs from
 
 * JSON output
 * The JSON output is in the format of JSON-RPC 2.0 responce objects (<http://www.jsonrpc.org/specification#response_object>). This should make it easier to implement a full JSON-RPC service later.
-* No user interaction inside a command (meaning: if not all parameter are given to a ```run``` command, the command fails).
+* No user interaction inside a command (meaning: if not all parameter are given to a `run` command, the command fails).
 * Each command creates exaclty one responce object.
 
 Currently a subset of the available commands return there result in JSON format, while others still write plain text output.
 When finished, it should be safe to run all commands in JSON mode.
+
+A successful responce should return 
+```
+"result": {
+    "<type_of_the_results>": [
+        {
+            <result_object_1_key_1>: <result_object_1_value_1>,
+            <result_object_1_key_2>: <result_object_1_value_2>,
+            ...
+        },
+        {
+            <result_object_2_key_1>: <result_object_2_value_1>,
+            <result_object_2_key_2>: <result_object_2_value_2>,
+            ...
+        },
+        ...
+    ]
+}
+```
 
 #### Examples
 
@@ -232,8 +251,8 @@ When finished, it should be safe to run all commands in JSON mode.
   "jsonrpc": "2.0",
   "id": null,
   "result": {
-    "jobs": {
-      "1": {
+    "jobs": [
+      {
         "Type": "B",
         "StartTime": "2015-06-25 16:51:38",
         "JobFiles": "18",
@@ -243,7 +262,7 @@ When finished, it should be safe to run all commands in JSON mode.
         "Level": "F",
         "JobBytes": "4651943"
       },
-      "2": {
+      {
         "Type": "B",
         "StartTime": "2015-06-25 17:25:23",
         "JobFiles": "0",
@@ -254,7 +273,7 @@ When finished, it should be safe to run all commands in JSON mode.
         "JobBytes": "0"
       },
       ...
-    }
+    ]
   }
 }
 ```
@@ -267,8 +286,8 @@ When finished, it should be safe to run all commands in JSON mode.
   "jsonrpc": "2.0",
   "id": null,
   "result": {
-    "jobs": {
-      "1": {
+    "jobs": [
+      {
         "Name": "BackupClient1",
         "RealEndTime": "2015-06-25 16:51:40",
         "Type": "B",
@@ -294,7 +313,7 @@ When finished, it should be safe to run all commands in JSON mode.
         "PooLname": "Full",
         "FileSet": "SelfTest"
       },
-      "2": {
+      {
         "Name": "BackupClient1",
         "RealEndTime": "2015-06-25 17:25:24",
         "Type": "B",
@@ -321,7 +340,7 @@ When finished, it should be safe to run all commands in JSON mode.
         "FileSet": "SelfTest"
       },
       ...
-    }
+    ]
   }
 }
 ```
@@ -413,12 +432,17 @@ session.
 To get all JobId needed to restore a particular job, you can use the
 `.bvfs_get_jobids` command.
 
-    .bvfs_get_jobids jobid=num [all]
+```
+.bvfs_get_jobids jobid=num [all]
+```
 
-    .bvfs_get_jobids jobid=10
-    1,2,5,10
-    .bvfs_get_jobids jobid=10 all
-    1,2,3,5,10
+Example:
+```
+*.bvfs_get_jobids jobid=10
+1,2,5,10
+*.bvfs_get_jobids jobid=10 all
+1,2,3,5,10
+```
 
 In this example, a normal restore will need to use JobIds 1,2,5,10 to
 compute a complete restore of the system.
@@ -431,11 +455,15 @@ this client.
 The `.bvfs_update` command computes the directory cache for jobs
 specified in argument, or for all jobs if unspecified.
 
-    .bvfs_update [jobid=numlist]
+```
+.bvfs_update [jobid=numlist]
+```
 
 Example:
+```
+*.bvfs_update jobid=1,2,3
+```
 
-    .bvfs_update jobid=1,2,3
 
 You can run the cache update process in a RunScript after the catalog
 backup.
@@ -447,21 +475,27 @@ Client with the `.bvfs_version` command. To avoid problems with
 encoding, this function uses only PathId and FilenameId. The jobid
 argument is mandatory but unused.
 
-    .bvfs_versions client=filedaemon pathid=num filenameid=num jobid=1
-    PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
-    PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
-    ...
+```
+*.bvfs_versions client=filedaemon pathid=num filenameid=num jobid=1
+PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
+PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
+...
+```
+
 
 Example:
 
-    .bvfs_versions client=localhost-fd pathid=1 fnid=47 jobid=1
-    1  47  52  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
+```
+*.bvfs_versions client=localhost-fd pathid=1 fnid=47 jobid=1
+1  47  52  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
+```
+
 
 ### List directories {#list-directories .unnumbered}
 
 Bvfs allows you to list directories in a specific path.
 
-    .bvfs_lsdirs pathid=num path=/apath jobid=numlist limit=num offset=num
+    *.bvfs_lsdirs pathid=num path=/apath jobid=numlist limit=num offset=num
     PathId  FilenameId  FileId  JobId  LStat  Path
     PathId  FilenameId  FileId  JobId  LStat  Path
     PathId  FilenameId  FileId  JobId  LStat  Path
@@ -471,19 +505,21 @@ You need to `pathid` or `path`. Using `path=` will list “/” on Unix and
 all drives on Windows. If FilenameId is 0, the record listed is a
 directory.
 
-    .bvfs_lsdirs pathid=4 jobid=1,11,12
+    *.bvfs_lsdirs pathid=4 jobid=1,11,12
     4       0       0       0       A A A A A A A A A A A A A A     .
     5       0       0       0       A A A A A A A A A A A A A A     ..
     3       0       0       0       A A A A A A A A A A A A A A     regress/
 
 In this example, to list directories present in `regress/`, you can use
 
-    .bvfs_lsdirs pathid=3 jobid=1,11,12
+    *.bvfs_lsdirs pathid=3 jobid=1,11,12
     3       0       0       0       A A A A A A A A A A A A A A     .
     4       0       0       0       A A A A A A A A A A A A A A     ..
     2       0       0       0       A A A A A A A A A A A A A A     tmp/
 
 ### List files {#list-files .unnumbered}
+
+#### API mode 0
 
 Bvfs allows you to list files in a specific path.
 
@@ -497,21 +533,22 @@ You need to `pathid` or `path`. Using `path=` will list “/” on Unix and
 all drives on Windows. If FilenameId is 0, the record listed is a
 directory.
 
-    .bvfs_lsfiles pathid=4 jobid=1,11,12
+    *.bvfs_lsfiles pathid=4 jobid=1,11,12
     4       0       0       0       A A A A A A A A A A A A A A     .
     5       0       0       0       A A A A A A A A A A A A A A     ..
     1       0       0       0       A A A A A A A A A A A A A A     regress/
 
 In this example, to list files present in `regress/`, you can use
 
-    .bvfs_lsfiles pathid=1 jobid=1,11,12
+    *.bvfs_lsfiles pathid=1 jobid=1,11,12
     1   47   52   12    gD HRid IGk BAA I BMqcPH BMqcPE BMqe+t A     titi
     1   49   53   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     toto
     1   48   54   12    gD HRie IGk BAA I BMqcPH BMqcPE BMqe+3 A     tutu
     1   45   55   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     ficheriro1.txt
     1   46   56   12    gD HRie IGk BAA I BMqe/K BMqcPE BMqe+3 D     ficheriro2.txt
 
-#### List Files, API modes
+
+#### API mode 1
 
 ```
 *.api 1
@@ -521,6 +558,8 @@ In this example, to list files present in `regress/`, you can use
 ...
 ```
 
+#### API mode 2
+
 ```
 *.api 2
 *.bvfs_lsfiles jobid=1 pathid=1
@@ -528,8 +567,8 @@ In this example, to list files present in `regress/`, you can use
   "jsonrpc": "2.0",
   "id": null,
   "result": {
-    "files": {
-      "bpluginfo": {
+    "files": [
+      {
         "JobId": 1,
         "Type": "F",
         "FileId": 7,
@@ -552,7 +591,7 @@ In this example, to list files present in `regress/`, you can use
         "Name": "bpluginfo",
         "LinkFileIndex": 0
       },
-      "bregex": {
+      {
         "JobId": 1,
         "Type": "F",
         "FileId": 4,
@@ -576,7 +615,7 @@ In this example, to list files present in `regress/`, you can use
         "LinkFileIndex": 0
       },
       ...
-    }
+    ]
   }
 }
 ```
@@ -589,9 +628,9 @@ Bvfs allows you to create a SQL table that contains files that you want
 to restore. This table can be provided to a restore command with the
 file option.
 
-    .bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b2num
+    *.bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b2num
     OK
-    restore file=?b2num ...
+    *restore file=?b2num ...
 
 To include a directory (with `dirid`), Bvfs needs to run a query to
 select all files. This query could be time consuming.
@@ -606,7 +645,7 @@ b2 and followed by digits).
 
 Example:
 
-    .bvfs_restore fileid=1,2,3,4 hardlink=10,15,10,20 jobid=10 path=b20001
+    *.bvfs_restore fileid=1,2,3,4 hardlink=10,15,10,20 jobid=10 path=b20001
     OK
 
 ### Cleanup after Restore {#cleanup-after-restore .unnumbered}
@@ -614,11 +653,11 @@ Example:
 To drop the table used by the restore command, you can use the
 `.bvfs_cleanup` command.
 
-    .bvfs_cleanup path=b20001
+    *.bvfs_cleanup path=b20001
 
 ### Clearing the BVFS Cache {#clearing-the-bvfs-cache .unnumbered}
 
 To clear the BVFS cache, you can use the `.bvfs_clear_cache` command.
 
-    .bvfs_clear_cache yes
+    *.bvfs_clear_cache yes
     OK
