@@ -1,5 +1,5 @@
-API Interface {#sec:api}
-=============
+API {#sec:api}
+==============
 
 General
 -------
@@ -38,7 +38,7 @@ ways that Bareos is designed to facilitate this:
     Jobs, list of all Clients, list of all Pools, list of all Storage,
     ... Thus the GUI interface can get to virtually all information that
     the Director has in a deterministic way. See
-    ```<bareos-source>/src/dird/ua_dotcmds.c```
+    <https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c>
     for more details on this.
 
 -   Most console commands allow all the arguments to be specified on the
