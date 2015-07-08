@@ -411,12 +411,14 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
 bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 {
    json_t *json_obj = NULL;
+   POOL_MEM lkey(key);
 
+   lkey.toLower();
    json_obj = (json_t *)result_stack_json->last();
    if (json_obj == NULL) {
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
    }
-   json_object_set(json_obj, key, json_integer(value));
+   json_object_set(json_obj, lkey.c_str(), json_integer(value));
 
    return true;
 }
@@ -424,13 +426,15 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
 {
    json_t *json_obj = NULL;
+   POOL_MEM lkey(key);
 
+   lkey.toLower();
    json_obj = (json_t *)result_stack_json->last();
    if (json_obj == NULL) {
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
       return false;
    }
-   json_object_set(json_obj, key, json_string(value));
+   json_object_set(json_obj, lkey.c_str(), json_string(value));
 
    return true;
 }
@@ -439,6 +443,7 @@ void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
 {
    json_t *message_type_array;
    json_t *message_json=json_string(message.c_str());
+
    if (type != NULL) {
       message_type_array = json_object_get(message_object_json, type);
    } else {

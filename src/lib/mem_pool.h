@@ -103,6 +103,7 @@ public:
    int strcpy(const char *str);
    int strcat(POOL_MEM &str);
    int strcat(const char *str);
+   void toLower();
    size_t strlen() { return ::strlen(mem); };
    int bsprintf(const char *fmt, ...);
    int bvsprintf(const char *fmt, va_list arg_ptr);

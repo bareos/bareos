@@ -718,6 +718,11 @@ int POOL_MEM::strcpy(const char *str)
    return len - 1;
 }
 
+void POOL_MEM::toLower()
+{
+   lcase(mem);
+}
+
 int POOL_MEM::bsprintf(const char *fmt, ...)
 {
    int len;
