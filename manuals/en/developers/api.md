@@ -212,7 +212,7 @@ This mode is used by BAT.
 
 ### API mode 2 (json)
 
-The API mode 2 (or JSON mode) has been intrduced in Bareos-15.2 and differs from API mode 1 in several aspects:
+The API mode 2 (or JSON mode) has been introduced in Bareos-15.2 and differs from API mode 1 in several aspects:
 
 * JSON output
 * The JSON output is in the format of JSON-RPC 2.0 responce objects (<http://www.jsonrpc.org/specification#response_object>). This should make it easier to implement a full JSON-RPC service later.
@@ -241,6 +241,8 @@ A successful responce should return
 }
 ```
 
+All keys are lower case.
+
 #### Examples
 
 * list
@@ -253,24 +255,24 @@ A successful responce should return
   "result": {
     "jobs": [
       {
-        "Type": "B",
-        "StartTime": "2015-06-25 16:51:38",
-        "JobFiles": "18",
-        "JobId": "1",
-        "Name": "BackupClient1",
-        "JobStatus": "T",
-        "Level": "F",
-        "JobBytes": "4651943"
+        "type": "B",
+        "starttime": "2015-06-25 16:51:38",
+        "jobfiles": "18",
+        "jobid": "1",
+        "name": "BackupClient1",
+        "jobstatus": "T",
+        "level": "F",
+        "jobbytes": "4651943"
       },
       {
-        "Type": "B",
-        "StartTime": "2015-06-25 17:25:23",
-        "JobFiles": "0",
-        "JobId": "2",
-        "Name": "BackupClient1",
-        "JobStatus": "T",
-        "Level": "I",
-        "JobBytes": "0"
+        "type": "B",
+        "starttime": "2015-06-25 17:25:23",
+        "jobfiles": "0",
+        "jobid": "2",
+        "name": "BackupClient1",
+        "jobstatus": "T",
+        "level": "I",
+        "jobbytes": "0"
       },
       ...
     ]
@@ -288,56 +290,56 @@ A successful responce should return
   "result": {
     "jobs": [
       {
-        "Name": "BackupClient1",
-        "RealEndTime": "2015-06-25 16:51:40",
+        "name": "BackupClient1",
+        "realendtime": "2015-06-25 16:51:40",
         "Type": "B",
-        "SchedTime": "2015-06-25 16:51:33",
-        "PoolId": "1",
-        "Level": "F",
-        "JobFiles": "18",
-        "VolSessionId": "1",
-        "JobId": "1",
-        "Job": "BackupClient1.2015-06-25_16.51.35_04",
-        "PriorJobId": "0",
-        "EndTime": "2015-06-25 16:51:40",
-        "JobTDate": "1435243900",
-        "JobStatus": "T",
-        "JobMissingFiles": "0",
-        "JobErrors": "0",
-        "PurgedFiles": "0",
-        "StartTime": "2015-06-25 16:51:38",
-        "ClientName": "ting.dass-it-fd",
-        "ClientId": "1",
-        "VolSessionTime": "1435243839",
-        "FileSetId": "1",
-        "PooLname": "Full",
-        "FileSet": "SelfTest"
+        "schedtime": "2015-06-25 16:51:33",
+        "poolid": "1",
+        "level": "F",
+        "jobfiles": "18",
+        "volsessionid": "1",
+        "jobid": "1",
+        "job": "BackupClient1.2015-06-25_16.51.35_04",
+        "priorjobid": "0",
+        "endtime": "2015-06-25 16:51:40",
+        "jobtdate": "1435243900",
+        "jobstatus": "T",
+        "jobmissingfiles": "0",
+        "joberrors": "0",
+        "purgedfiles": "0",
+        "starttime": "2015-06-25 16:51:38",
+        "clientname": "ting.dass-it-fd",
+        "clientid": "1",
+        "volsessiontime": "1435243839",
+        "filesetid": "1",
+        "poolname": "Full",
+        "fileset": "SelfTest"
       },
       {
-        "Name": "BackupClient1",
-        "RealEndTime": "2015-06-25 17:25:24",
-        "Type": "B",
-        "SchedTime": "2015-06-25 17:25:10",
-        "PoolId": "3",
-        "Level": "I",
-        "JobFiles": "0",
-        "VolSessionId": "2",
-        "JobId": "2",
-        "Job": "BackupClient1.2015-06-25_17.25.20_04",
-        "PriorJobId": "0",
-        "EndTime": "2015-06-25 17:25:24",
-        "JobTDate": "1435245924",
-        "JobStatus": "T",
-        "JobMissingFiles": "0",
+        "name": "BackupClient1",
+        "realendtime": "2015-06-25 17:25:24",
+        "type": "B",
+        "schedtime": "2015-06-25 17:25:10",
+        "poolid": "3",
+        "level": "I",
+        "jobfiles": "0",
+        "volsessionid": "2",
+        "jobid": "2",
+        "job": "BackupClient1.2015-06-25_17.25.20_04",
+        "priorjobid": "0",
+        "endtime": "2015-06-25 17:25:24",
+        "jobtdate": "1435245924",
+        "jobstatus": "T",
+        "jobmissingfiles": "0",
         "JobErrors": "0",
-        "PurgedFiles": "0",
-        "StartTime": "2015-06-25 17:25:23",
-        "ClientName": "ting.dass-it-fd",
-        "ClientId": "1",
-        "VolSessionTime": "1435243839",
-        "FileSetId": "1",
-        "PooLname": "Incremental",
-        "FileSet": "SelfTest"
+        "purgedfiles": "0",
+        "starttime": "2015-06-25 17:25:23",
+        "clientname": "ting.dass-it-fd",
+        "clientid": "1",
+        "volsessiontime": "1435243839",
+        "filesetid": "1",
+        "poolname": "Incremental",
+        "fileset": "SelfTest"
       },
       ...
     ]
@@ -569,11 +571,11 @@ In this example, to list files present in `regress/`, you can use
   "result": {
     "files": [
       {
-        "JobId": 1,
-        "Type": "F",
-        "FileId": 7,
+        "jobid": 1,
+        "type": "F",
+        "fileid": 7,
         "lstat": "gD OEE4 IHo B GHH GHH A G9S BAA 4 BVjBQG BVjBQG BVjBQG A A C",
-        "PathId": 1,
+        "pathid": 1,
         "stat": {
           "atime": 1435243526,
           "ino": 3686712,
@@ -587,16 +589,16 @@ In this example, to list files present in `regress/`, you can use
           "size": 28498,
           "mtime": 1435243526
         },
-        "FilenameId": 11,
-        "Name": "bpluginfo",
-        "LinkFileIndex": 0
+        "filenameid": 11,
+        "name": "bpluginfo",
+        "linkfileindex": 0
       },
       {
-        "JobId": 1,
-        "Type": "F",
-        "FileId": 4,
+        "jobid": 1,
+        "type": "F",
+        "fileid": 4,
         "lstat": "gD OEE3 KH/ B GHH GHH A W BAA A BVjBQ7 BVjBQG BVjBQG A A C",
-        "PathId": 1,
+        "pathid": 1,
         "stat": {
           "atime": 1435243579,
           "ino": 3686711,
@@ -610,9 +612,9 @@ In this example, to list files present in `regress/`, you can use
           "size": 22,
           "mtime": 1435243526
         },
-        "FilenameId": 12,
-        "Name": "bregex",
-        "LinkFileIndex": 0
+        "filenameid": 12,
+        "name": "bregex",
+        "linkfileindex": 0
       },
       ...
     ]
