@@ -33,7 +33,7 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt, co
 API mode 0 and 1 get the key and value, and write them as defined in the key_fmt and value_fmt strings.
 If the key_fmt string is not given, the key will not be written. If the value_fmt string is not given, the value will not be written.
 
-In API mode 2 (JSON), OUTPUT_FORMATTER stores the key value pair in its internal JSON object, to delivers it, when the response object is finished.
+In API mode 2 (JSON), OUTPUT_FORMATTER stores the key value pair in its internal JSON object, to delivers it, when the response object is finished. The keys will be transformed to lower case strings.
 
 ### decoration
 
