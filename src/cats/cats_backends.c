@@ -107,14 +107,14 @@ B_DB *db_init_database(JCR *jcr,
     * For dynamic loading catalog backends there must be a list of backend dirs set.
     */
    if (!backend_dirs) {
-      Jmsg(jcr, M_ABORT, 0, _("Catalog Backends Dir not configured.\n"));
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
    }
 
    /*
     * A db_driver is mandatory for dynamic loading of backends to work.
     */
    if (!db_driver) {
-      Jmsg(jcr, M_ABORT, 0, _("Driver type not specified in Catalog resource.\n"));
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Driver type not specified in Catalog resource.\n"));
    }
 
    /*
@@ -122,7 +122,7 @@ B_DB *db_init_database(JCR *jcr,
     */
    backend_interface_mapping = lookup_backend_interface_mapping(db_driver);
    if (backend_interface_mapping == NULL) {
-      Jmsg(jcr, M_ABORT, 0, _("Unknown database driver: %s\n"), db_driver);
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Unknown database driver: %s\n"), db_driver);
       return (B_DB *)NULL;
    }
 

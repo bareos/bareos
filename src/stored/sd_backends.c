@@ -82,7 +82,7 @@ DEVICE *init_backend_dev(JCR *jcr, int device_type)
     * For dynamic loading storage backends there must be a list of backend dirs set.
     */
    if (!backend_dirs) {
-      Jmsg(jcr, M_ABORT, 0, _("Catalog Backends Dir not configured.\n"));
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Catalog Backends Dir not configured.\n"));
    }
 
    backend_interface_mapping = lookup_backend_interface_mapping(device_type);
@@ -170,7 +170,7 @@ DEVICE *init_backend_dev(JCR *jcr, int device_type)
 
       return backend_shared_library->backend_instantiate(jcr, device_type);
    } else {
-      Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for libbareossd-%s%s\n"),
+      Jmsg(jcr, M_ERROR_TERM, 0, _("Unable to load any shared library for libbareossd-%s%s\n"),
            backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
       return (DEVICE *)NULL;
    }
