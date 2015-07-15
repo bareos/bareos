@@ -335,8 +335,12 @@ static bool send_fileset(JCR *jcr)
                for (int k = 0; fo->opts[k] != '\0'; k++) {
                  /*
                   * Z compress option is followed by the single-digit compress level or 'o'
+                  * For fastlz its Zf with a single char selecting the actual compression algo.
                   */
-                 if (fo->opts[k]=='Z') {
+                 if (fo->opts[k] == 'Z' && fo->opts[k + 1] == 'f') {
+                    done = true;
+                    k += 2;             /* skip option */
+                 } else if (fo->opts[k] == 'Z') {
                     done = true;
                     k++;                /* skip option and level */
                  } else {
