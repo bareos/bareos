@@ -56,6 +56,12 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
+#ifdef DATA_ENCRYPTION
+const bool have_encryption = true;
+#else
+const bool have_encryption = false;
+#endif
+
 /* Imported functions */
 extern bool accurate_cmd(JCR *jcr);
 extern bool status_cmd(JCR *jcr);
@@ -1523,6 +1529,61 @@ static inline void clear_flag_in_fileset(JCR *jcr, int flag, const char *warning
 }
 
 /**
+ * Clear a compression flag in the find options.
+ *
+ * We walk the list of include blocks and for each option block
+ * check if a certain compression flag is set and clear that.
+ */
+static inline void clear_compression_flag_in_fileset(JCR *jcr)
+{
+   findFILESET *fileset;
+
+   fileset = jcr->ff->fileset;
+   if (fileset) {
+      for (int i = 0; i < fileset->include_list.size(); i++) {
+         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+
+         for (int j = 0; j < incexe->opts_list.size(); j++) {
+            findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
+
+            /*
+             * See if a compression flag is set in this option block.
+             */
+            if (bit_is_set(FO_COMPRESS, fo->flags)) {
+               switch (fo->Compress_algo) {
+#if defined(HAVE_LIBZ)
+               case COMPRESS_GZIP:
+                  break;
+#endif
+#if defined(HAVE_LZO)
+               case COMPRESS_LZO1X:
+                  break;
+#endif
+#if defined(HAVE_FASTLZ)
+               case COMPRESS_FZFZ:
+               case COMPRESS_FZ4L:
+               case COMPRESS_FZ4H:
+                  break;
+#endif
+               default:
+                  /*
+                   * When we get here its because the wanted compression protocol is not
+                   * supported with the current compile options.
+                   */
+                  Jmsg(jcr, M_WARNING, 0,
+                       "%s compression support requested in fileset but not available on this platform. Disabling ...\n",
+                       cmprs_algo_to_text(fo->Compress_algo));
+                  clear_bit(FO_COMPRESS, fo->flags);
+                  fo->Compress_algo = 0;
+                  break;
+               }
+            }
+         }
+      }
+   }
+}
+
+/**
  * Find out what encryption cipher to use.
  */
 static inline bool get_wanted_crypto_cipher(JCR *jcr, crypto_cipher_t *cipher)
@@ -1654,11 +1715,6 @@ static bool backup_cmd(JCR *jcr)
       Dmsg1(100, "JobFiles=%ld\n", jcr->JobFiles);
    }
 
-   if (!get_wanted_crypto_cipher(jcr, &cipher)) {
-      dir->fsend(BADcmd, "backup");
-      goto cleanup;
-   }
-
    /**
     * Validate some options given to the backup make sense for the compiled in options of this filed.
     */
@@ -1666,9 +1722,22 @@ static bool backup_cmd(JCR *jcr)
       clear_flag_in_fileset(jcr, FO_ACL,
                             _("ACL support requested in fileset but not available on this platform. Disabling ...\n"));
    }
+
    if (!have_xattr) {
       clear_flag_in_fileset(jcr, FO_XATTR,
                             _("XATTR support requested in fileset but not available on this platform. Disabling ...\n"));
+   }
+
+   if (!have_encryption) {
+      clear_flag_in_fileset(jcr, FO_ENCRYPT,
+                            _("Encryption support requested in fileset but not available on this platform. Disabling ...\n"));
+   }
+
+   clear_compression_flag_in_fileset(jcr);
+
+   if (!get_wanted_crypto_cipher(jcr, &cipher)) {
+      dir->fsend(BADcmd, "backup");
+      goto cleanup;
    }
 
    jcr->setJobStatus(JS_Blocked);
@@ -1689,6 +1758,7 @@ static bool backup_cmd(JCR *jcr)
     */
    sd->fsend(append_open);
    Dmsg1(110, ">stored: %s", sd->msg);
+
    /**
     * Expect to receive back the Ticket number
     */

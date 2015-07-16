@@ -54,6 +54,24 @@
 #define compressBound(sourceLen) (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
 #endif
 
+const char *cmprs_algo_to_text(uint32_t compression_algorithm)
+{
+   switch (compression_algorithm) {
+   case COMPRESS_GZIP:
+      return "GZIP";
+   case COMPRESS_LZO1X:
+      return "LZO2";
+   case COMPRESS_FZFZ:
+      return "LZFZ";
+   case COMPRESS_FZ4L:
+      return "LZ4";
+   case COMPRESS_FZ4H:
+      return "LZ4HC";
+   default:
+      return "Unknown";
+   }
+}
+
 /*
  * Convert ZLIB error code into an ASCII message
  */
@@ -83,43 +101,14 @@ static const char *zlib_strerror(int stat)
 
 static inline void unknown_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
 {
-   switch (compression_algorithm) {
-   case COMPRESS_GZIP:
-      Jmsg(jcr, M_FATAL, 0, _("GZIP compression not supported on this platform\n"));
-      break;
-   case COMPRESS_LZO1X:
-      Jmsg(jcr, M_FATAL, 0, _("LZO2 compression not supported on this platform\n"));
-      break;
-   case COMPRESS_FZFZ:
-      Jmsg(jcr, M_FATAL, 0, _("LZFZ compression not supported on this platform\n"));
-      break;
-   case COMPRESS_FZ4L:
-      Jmsg(jcr, M_FATAL, 0, _("LZ4 compression not supported on this platform\n"));
-      break;
-   case COMPRESS_FZ4H:
-      Jmsg(jcr, M_FATAL, 0, _("LZ4HC compression not supported on this platform\n"));
-      break;
-   default:
-      Jmsg(jcr, M_FATAL, 0, _("Unknown compression algorithm specified %d\n"), compression_algorithm);
-      break;
-   }
+   Jmsg(jcr, M_FATAL, 0, _("%s compression not supported on this platform\n"),
+        cmprs_algo_to_text(compression_algorithm));
 }
 
 static inline void non_compatible_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
 {
-   switch (compression_algorithm) {
-   case COMPRESS_FZFZ:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZFZ for compatible mode\n"));
-      break;
-   case COMPRESS_FZ4L:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZ4 for compatible mode\n"));
-      break;
-   case COMPRESS_FZ4H:
-      Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm LZ4HC for compatible mode\n"));
-      break;
-   default:
-      break;
-   }
+   Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm %s for compatible mode\n"),
+        cmprs_algo_to_text(compression_algorithm));
 }
 
 bool setup_compression_buffers(JCR *jcr,

@@ -133,6 +133,7 @@ void stack_trace();
 int safer_unlink(const char *pathname, const char *regex);
 
 /* compression.c */
+const char *cmprs_algo_to_text(uint32_t compression_algorithm);
 bool setup_compression_buffers(JCR *jcr, bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size);
