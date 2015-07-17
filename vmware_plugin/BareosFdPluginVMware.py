@@ -526,6 +526,8 @@ class BareosVADPWrapper(object):
         self.restore_objects_by_diskpath = {}
         self.restore_objects_by_objectname = {}
         self.options = None
+        self.skip_disk_modes = ['independent_nonpersistent',
+                                'independent_persistent']
 
     def connect_vmware(self, context):
         # this prevents from repeating on second call
@@ -642,7 +644,7 @@ class BareosVADPWrapper(object):
         bareosfd.DebugMessage(
             context, 100, "Getting Disk Devices on VM %s from snapshot\n" %
             (vmname))
-        self.get_vm_snap_disk_devices()
+        self.get_vm_snap_disk_devices(context)
         if not self.disk_devices:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
@@ -696,7 +698,7 @@ class BareosVADPWrapper(object):
         bareosfd.DebugMessage(
             context, 100, "Getting Disk Devices on VM %s\n" %
             (vmname))
-        self.get_vm_disk_devices()
+        self.get_vm_disk_devices(context)
         if not self.disk_devices:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
@@ -735,8 +737,7 @@ class BareosVADPWrapper(object):
 
         if vm_path not in vmListWithFolder:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_FATAL'],
+                context, bJobMessageType['M_FATAL'],
                 "No VM with Folder/Name %s found in DC %s\n" %
                 (vm_path, self.options['dc']))
             return False
@@ -811,28 +812,34 @@ class BareosVADPWrapper(object):
         self.vmomi_WaitForTasks([rmsnap_task])
         return True
 
-    def get_vm_snap_disk_devices(self):
+    def get_vm_snap_disk_devices(self, context):
         '''
         Get the disk devices from the created snapshot
         Assumption: Snapshot successfully created
         '''
-        self.disk_devices = []
-        for hw_device in self.create_snap_result.config.hardware.device:
-            if hw_device._wsdlName == 'VirtualDisk':
-                self.disk_devices.append(
-                    {'deviceKey': hw_device.key,
-                     'fileName': hw_device.backing.fileName,
-                     'fileNameRoot': self.get_vm_disk_root_filename(
-                         hw_device.backing),
-                     'changeId': hw_device.backing.changeId})
+        self.get_disk_devices(context, self.create_snap_result.config.hardware.device)
 
-    def get_vm_disk_devices(self):
+    def get_vm_disk_devices(self, context):
         '''
         Get the disk devices from vm
         '''
+        self.get_disk_devices(context, self.vm.config.hardware.device)
+
+    def get_disk_devices(self, context, devicespec):
+        '''
+        Get disk devices from a devicespec
+        '''
         self.disk_devices = []
-        for hw_device in self.vm.config.hardware.device:
-            if hw_device._wsdlName == 'VirtualDisk':
+        for hw_device in devicespec:
+            if type(hw_device) == vim.vm.device.VirtualDisk:
+                if hw_device.backing.diskMode in self.skip_disk_modes:
+                    bareosfd.JobMessage(
+                        context, bJobMessageType['M_INFO'],
+                        "Skipping Disk %s because mode is %s\n" %
+                        (self.get_vm_disk_root_filename(hw_device.backing),
+                         hw_device.backing.diskMode))
+                    continue
+
                 self.disk_devices.append(
                     {'deviceKey': hw_device.key,
                      'fileName': hw_device.backing.fileName,
