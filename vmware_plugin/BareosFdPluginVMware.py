@@ -54,15 +54,15 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def __init__(self, context, plugindef):
         bareosfd.DebugMessage(
             context, 100,
-            "Constructor called in module %s with plugindef=%s\n"
-            % (__name__, plugindef))
+            "Constructor called in module %s with plugindef=%s\n" %
+            (__name__, plugindef))
         super(BareosFdPluginVMware, self).__init__(context, plugindef)
         self.events = []
         self.events.append(bEventType['bEventStartBackupJob'])
         self.events.append(bEventType['bEventStartRestoreJob'])
         bareosfd.RegisterEvents(context, self.events)
-        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass',
-                                          'dc', 'folder', 'vmname']
+        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass']
+        self.mandatory_options_vmname = ['dc', 'folder', 'vmname']
 
         self.vadp = BareosVADPWrapper()
 
@@ -87,12 +87,14 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if mandatory_options is None:
             # not passed, use default
             mandatory_options = self.mandatory_options_default
+            if 'uuid' not in self.options:
+                mandatory_options += self.mandatory_options_vmname
 
         for option in mandatory_options:
             if (option not in self.options):
                 bareosfd.DebugMessage(
                     context, 100, "Option \'%s\' not defined.\n" %
-                    option)
+                    (option))
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_FATAL'],
                     "Option \'%s\' not defined.\n" %
@@ -130,12 +132,19 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if not self.vadp.files_to_backup:
             self.vadp.disk_device_to_backup = self.vadp.disk_devices.pop(0)
             self.vadp.files_to_backup = []
-            self.vadp.files_to_backup.append('/VMS/%s%s/%s/%s' % (
-                self.options['dc'],
-                self.options['folder'].rstrip('/'),
-                self.options['vmname'],
-                self.vadp.disk_device_to_backup['fileNameRoot'])
-                )
+            if 'uuid' in self.options:
+                self.vadp.files_to_backup.append('/VMS/%s/%s' % (
+                    self.options['uuid'],
+                    self.vadp.disk_device_to_backup['fileNameRoot'])
+                    )
+            else:
+                self.vadp.files_to_backup.append('/VMS/%s%s/%s/%s' % (
+                    self.options['dc'],
+                    self.options['folder'].rstrip('/'),
+                    self.options['vmname'],
+                    self.vadp.disk_device_to_backup['fileNameRoot'])
+                    )
+
             self.vadp.files_to_backup.insert(
                 0,
                 self.vadp.files_to_backup[0] + '_cbt.json')
@@ -144,8 +153,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         bareosfd.DebugMessage(
             context, 100,
-            "file: %s\n"
-            % (self.vadp.file_to_backup))
+            "file: %s\n" %
+            (self.vadp.file_to_backup))
         if self.vadp.file_to_backup.endswith('_cbt.json'):
             if not self.vadp.get_vm_disk_cbt(context):
                 return bRCs['bRC_Error']
@@ -187,9 +196,9 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             savepkt.type = bFileType['FT_REG']
 
         bareosfd.JobMessage(
-            context,
-            bJobMessageType['M_INFO'],
-            "Starting backup of %s\n" % self.vadp.file_to_backup)
+            context, bJobMessageType['M_INFO'],
+            "Starting backup of %s\n" %
+            self.vadp.file_to_backup)
         return bRCs['bRC_OK']
 
     def start_restore_job(self, context):
@@ -208,8 +217,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def start_restore_file(self, context, cmd):
         bareosfd.DebugMessage(
             context, 100,
-            "BareosFdPluginVMware:start_restore_file() called with %s\n"
-            % (cmd))
+            "BareosFdPluginVMware:start_restore_file() called with %s\n" %
+            (cmd))
         return bRCs['bRC_OK']
 
     def create_file(self, context, restorepkt):
@@ -222,8 +231,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         '''
         bareosfd.DebugMessage(
             context, 100,
-            "BareosFdPluginVMware:create_file() called with %s\n"
-            % (restorepkt))
+            "BareosFdPluginVMware:create_file() called with %s\n" %
+            (restorepkt))
 
         tmp_path = '/var/tmp/bareos-vmware-plugin'
         objectname = '/' + os.path.relpath(restorepkt.ofname, restorepkt.where)
@@ -257,13 +266,14 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.FNAME = IOP.fname
             bareosfd.DebugMessage(
                 context, 100,
-                "self.FNAME was set to %s from IOP.fname\n" % (self.FNAME))
+                "self.FNAME was set to %s from IOP.fname\n" %
+                (self.FNAME))
             try:
                 if IOP.flags & (os.O_CREAT | os.O_WRONLY):
                     bareosfd.DebugMessage(
                         context, 100,
-                        "Open file %s for writing with %s\n"
-                        % (self.FNAME, IOP))
+                        "Open file %s for writing with %s\n" %
+                        (self.FNAME, IOP))
 
                     # this is a restore
                     # create_file() should have started
@@ -272,8 +282,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         bareosfd.DebugMessage(
                             context, 100,
                             ("plugin_io: bareos_vadp_dumper running with"
-                             " PID %s\n")
-                            % (self.vadp.dumper_process.pid))
+                             " PID %s\n") %
+                            (self.vadp.dumper_process.pid))
                     else:
                         bareosfd.JobMessage(
                             context, bJobMessageType['M_FATAL'],
@@ -292,8 +302,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         bareosfd.DebugMessage(
                             context, 100,
                             ("plugin_io: bareos_vadp_dumper running with"
-                             " PID %s\n")
-                            % (self.vadp.dumper_process.pid))
+                             " PID %s\n") %
+                            (self.vadp.dumper_process.pid))
                     else:
                         bareosfd.JobMessage(
                             context, bJobMessageType['M_FATAL'],
@@ -319,42 +329,43 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 bareosfd.DebugMessage(
                     context, 100,
                     ("plugin_io: calling end_dumper() to wait for"
-                     " PID %s to terminate\n")
-                    % (self.vadp.dumper_process.pid))
+                     " PID %s to terminate\n") %
+                    (self.vadp.dumper_process.pid))
                 bareos_vadp_dumper_returncode = self.vadp.end_dumper(context)
                 if bareos_vadp_dumper_returncode != 0:
                     bareosfd.JobMessage(
                         context, bJobMessageType['M_FATAL'],
                         ("plugin_io[IO_CLOSE]: bareos_vadp_dumper returncode:"
-                         " %s\n")
-                        % (bareos_vadp_dumper_returncode))
+                         " %s\n") %
+                        (bareos_vadp_dumper_returncode))
                     return bRCs['bRC_Error']
 
             elif self.jobType == 'R':
                 # Restore Job
                 bareosfd.DebugMessage(
                     context, 100,
-                    "Closing Pipe to bareos_vadp_dumper for %s\n" % self.FNAME)
+                    "Closing Pipe to bareos_vadp_dumper for %s\n" %
+                    (self.FNAME))
                 self.vadp.dumper_process.stdin.close()
                 bareosfd.DebugMessage(
                     context, 100,
                     ("plugin_io: calling end_dumper() to wait for"
-                     " PID %s to terminate\n")
-                    % (self.vadp.dumper_process.pid))
+                     " PID %s to terminate\n") %
+                    (self.vadp.dumper_process.pid))
                 bareos_vadp_dumper_returncode = self.vadp.end_dumper(context)
                 if bareos_vadp_dumper_returncode != 0:
                     bareosfd.JobMessage(
                         context, bJobMessageType['M_FATAL'],
                         ("plugin_io[IO_CLOSE]: bareos_vadp_dumper returncode:"
-                         " %s\n")
-                        % (bareos_vadp_dumper_returncode))
+                         " %s\n") %
+                        (bareos_vadp_dumper_returncode))
                     return bRCs['bRC_Error']
 
             else:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_FATAL'],
-                    "plugin_io[IO_CLOSE]: unknown Job Type %s\n"
-                    % (self.jobType))
+                    "plugin_io[IO_CLOSE]: unknown Job Type %s\n" %
+                    (self.jobType))
                 return bRCs['bRC_Error']
 
             return bRCs['bRC_OK']
@@ -380,13 +391,13 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if event in self.events:
             self.jobType = chr(bareosfd.GetValue(context, bVariable['bVarType']))
             bareosfd.DebugMessage(
-                context, 100, "jobType: %s\n" %
+                context, 100,
+                "jobType: %s\n" %
                 (self.jobType))
 
         if event == bEventType['bEventJobEnd']:
             bareosfd.DebugMessage(
-                context,
-                100,
+                context, 100,
                 "handle_plugin_event() called with bEventJobEnd\n")
             bareosfd.DebugMessage(
                 context, 100,
@@ -397,16 +408,16 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         elif event == bEventType['bEventEndBackupJob']:
             bareosfd.DebugMessage(
-                context,
-                100,
+                context, 100,
                 "handle_plugin_event() called with bEventEndBackupJob\n")
-            bareosfd.DebugMessage(context, 100, "removing Snapshot\n")
+            bareosfd.DebugMessage(
+                context, 100,
+                "removing Snapshot\n")
             self.vadp.remove_vm_snapshot(context)
 
         elif event == bEventType['bEventEndFileSet']:
             bareosfd.DebugMessage(
-                context,
-                100,
+                context, 100,
                 "handle_plugin_event() called with bEventEndFileSet\n")
 
         elif event == bEventType['bEventStartBackupJob']:
@@ -426,8 +437,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             bareosfd.DebugMessage(
                 context, 100,
-                "handle_plugin_event() called with event %s\n"
-                % (event))
+                "handle_plugin_event() called with event %s\n" %
+                (event))
 
         return bRCs['bRC_OK']
 
@@ -458,28 +469,28 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(
             context, 100,
-            "BareosFdPluginVMware:restore_object_data() called with ROP:%s\n"
-            % (ROP))
+            "BareosFdPluginVMware:restore_object_data() called with ROP:%s\n" %
+            (ROP))
         bareosfd.DebugMessage(
             context, 100,
-            "ROP.object_name(%s): %s\n"
-            % (type(ROP.object_name), ROP.object_name))
+            "ROP.object_name(%s): %s\n" %
+            (type(ROP.object_name), ROP.object_name))
         bareosfd.DebugMessage(
             context, 100,
-            "ROP.plugin_name(%s): %s\n"
-            % (type(ROP.plugin_name), ROP.plugin_name))
+            "ROP.plugin_name(%s): %s\n" %
+            (type(ROP.plugin_name), ROP.plugin_name))
         bareosfd.DebugMessage(
             context, 100,
-            "ROP.object_len(%s): %s\n"
-            % (type(ROP.object_len), ROP.object_len))
+            "ROP.object_len(%s): %s\n" %
+            (type(ROP.object_len), ROP.object_len))
         bareosfd.DebugMessage(
             context, 100,
-            "ROP.object_full_len(%s): %s\n"
-            % (type(ROP.object_full_len), ROP.object_full_len))
+            "ROP.object_full_len(%s): %s\n" %
+            (type(ROP.object_full_len), ROP.object_full_len))
         bareosfd.DebugMessage(
             context, 100,
-            "ROP.object(%s): %s\n"
-            % (type(ROP.object), ROP.object))
+            "ROP.object(%s): %s\n" %
+            (type(ROP.object), ROP.object))
         ro_data = self.vadp.json2cbt(str(ROP.object))
         ro_filename = ro_data['DiskParams']['diskPathRoot']
         # self.vadp.restore_objects_by_diskpath is used on backup
@@ -521,14 +532,14 @@ class BareosVADPWrapper(object):
         if self.si:
             bareosfd.DebugMessage(
                 context, 100,
-                "connect_vmware(): connection to server %s already exists\n"
-                % (self.options['vcserver']))
+                "connect_vmware(): connection to server %s already exists\n" %
+                (self.options['vcserver']))
             return True
 
         bareosfd.DebugMessage(
             context, 100,
-            "connect_vmware(): connecting server %s\n"
-            % (self.options['vcserver']))
+            "connect_vmware(): connecting server %s\n" %
+            (self.options['vcserver']))
         try:
             self.si = SmartConnect(host=self.options['vcserver'],
                                    user=self.options['vcuser'],
@@ -540,8 +551,7 @@ class BareosVADPWrapper(object):
             pass
         if not self.si:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_FATAL'],
+                context, bJobMessageType['M_FATAL'],
                 "Cannot connect to host %s with user %s and password\n" %
                 (self.options['vcserver'], self.options['vcuser']))
             return False
@@ -579,56 +589,65 @@ class BareosVADPWrapper(object):
         - take snapshot
         - get disk devices
         '''
-        if not self.get_vm_details(context):
-            bareosfd.DebugMessage(
-                context, 100, "Error getting details for VM %s\n" %
-                (self.options['vmname']))
-            return bRCs['bRC_Error']
+        if 'uuid' in self.options:
+            vmname = self.options['uuid']
+            if not self.get_vm_details_by_uuid(context):
+                bareosfd.DebugMessage(
+                    context, 100, "Error getting details for VM %s\n" %
+                    (vmname))
+                return bRCs['bRC_Error']
+        else:
+            vmname = self.options['vmname']
+            if not self.get_vm_details_dc_folder_vmname(context):
+                bareosfd.DebugMessage(
+                    context, 100, "Error getting details for VM %s\n" %
+                    (vmname))
+                return bRCs['bRC_Error']
 
         bareosfd.DebugMessage(
             context, 100, "Successfully got details for VM %s\n" %
-            (self.options['vmname']))
+            (vmname))
 
         # check if the VM supports CBT and that CBT is enabled
         if not self.vm.capability.changeTrackingSupported:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error VM %s does not support CBT\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         if not self.vm.config.changeTrackingEnabled:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error VM %s is not CBT enabled\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         bareosfd.DebugMessage(
             context, 100, "Creating Snapshot on VM %s\n" %
-            (self.options['vmname']))
+            (vmname))
 
         if not self.create_vm_snapshot(context):
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error creating snapshot on VM %s\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         bareosfd.DebugMessage(
             context, 100,
             "Successfully created snapshot on VM %s\n" %
-            (self.options['vmname']))
+            (vmname))
 
         bareosfd.DebugMessage(
             context, 100, "Getting Disk Devices on VM %s from snapshot\n" %
-            (self.options['vmname']))
+            (vmname))
         self.get_vm_snap_disk_devices()
         if not self.disk_devices:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error getting Disk Devices on VM %s from snapshot\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         return bRCs['bRC_OK']
@@ -640,40 +659,49 @@ class BareosVADPWrapper(object):
         - ensure vm is powered off
         - get disk devices
         '''
-        if not self.get_vm_details(context):
-            bareosfd.DebugMessage(
-                context, 100, "Error getting details for VM %s\n" %
-                (self.options['vmname']))
-            return bRCs['bRC_Error']
+        if 'uuid' in self.options:
+            vmname = self.options['uuid']
+            if not self.get_vm_details_by_uuid(context):
+                bareosfd.DebugMessage(
+                    context, 100, "Error getting details for VM %s\n" %
+                    (vmname))
+                return bRCs['bRC_Error']
+        else:
+            vmname = self.options['vmname']
+            if not self.get_vm_details_dc_folder_vmname(context):
+                bareosfd.DebugMessage(
+                    context, 100, "Error getting details for VM %s\n" %
+                    (vmname))
+                return bRCs['bRC_Error']
 
         bareosfd.DebugMessage(
             context, 100, "Successfully got details for VM %s\n" %
-            (self.options['vmname']))
+            (vmname))
 
         vm_power_state = self.vm.summary.runtime.powerState
         if vm_power_state != 'poweredOff':
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error VM %s must be poweredOff for restore, but is %s\n" %
-                (self.options['vmname'], vm_power_state))
+                (vmname, vm_power_state))
             return bRCs['bRC_Error']
 
         if self.vm.snapshot is not None:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error VM %s must not have any snapshots before restore\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         bareosfd.DebugMessage(
             context, 100, "Getting Disk Devices on VM %s\n" %
-            (self.options['vmname']))
+            (vmname))
         self.get_vm_disk_devices()
         if not self.disk_devices:
             bareosfd.JobMessage(
                 context, bJobMessageType['M_FATAL'],
                 "Error getting Disk Devices on VM %s\n" %
-                (self.options['vmname']))
+                (vmname))
             return bRCs['bRC_Error']
 
         # make sure backed up disks match VM disks
@@ -682,7 +710,7 @@ class BareosVADPWrapper(object):
 
         return bRCs['bRC_OK']
 
-    def get_vm_details(self, context):
+    def get_vm_details_dc_folder_vmname(self, context):
         '''
         Get details of VM given by plugin options dc, folder, vmname
         and save result in self.vm
@@ -716,6 +744,19 @@ class BareosVADPWrapper(object):
         self.vm = vmListWithFolder[vm_path]
         return True
 
+    def get_vm_details_by_uuid(self, context):
+        '''
+        Get details of VM given by plugin options uuid
+        and save result in self.vm
+        Returns True on success, False otherwise
+        '''
+        search_index = self.si.content.searchIndex
+        self.vm = search_index.FindByUuid(None, self.options['uuid'], True, True)
+        if self.vm is None:
+            return False
+        else:
+            return True
+
     def _get_dcftree(self, dcf, folder, vm_folder):
         '''
         Recursive function to get VMs with folder names
@@ -738,8 +779,7 @@ class BareosVADPWrapper(object):
                 quiesce=True)
         except vmodl.MethodFault as e:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_FATAL'],
+                context, bJobMessageType['M_FATAL'],
                 "Failed to create snapshot %s\n" % (e.msg))
             return False
 
@@ -754,8 +794,7 @@ class BareosVADPWrapper(object):
         '''
         if not self.create_snap_result:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_WARNING'],
+                context, bJobMessageType['M_WARNING'],
                 "No snapshot was taken, skipping snapshot removal\n")
             return False
 
@@ -765,8 +804,7 @@ class BareosVADPWrapper(object):
                     removeChildren=True)
         except vmodl.MethodFault as e:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_WARNING'],
+                context, bJobMessageType['M_WARNING'],
                 "Failed to remove snapshot %s\n" % (e.msg))
             return False
 
@@ -823,8 +861,7 @@ class BareosVADPWrapper(object):
             if len(self.restore_objects_by_diskpath[
                     self.disk_device_to_backup['fileNameRoot']]) > 1:
                 bareosfd.JobMessage(
-                    context,
-                    bJobMessageType['M_FATAL'],
+                    context, bJobMessageType['M_FATAL'],
                     "ERROR: more then one CBT info for Diff/Inc exists\n")
                 return False
 
@@ -833,8 +870,8 @@ class BareosVADPWrapper(object):
                     'data']['DiskParams']['changeId']
             bareosfd.DebugMessage(
                 context, 100,
-                "get_vm_disk_cbt(): using changeId %s from restore object\n"
-                % (cbt_changeId))
+                "get_vm_disk_cbt(): using changeId %s from restore object\n" %
+                (cbt_changeId))
         self.changed_disk_areas = self.vm.QueryChangedDiskAreas(
             snapshot=self.create_snap_result,
             deviceKey=self.disk_device_to_backup['deviceKey'],
@@ -857,16 +894,13 @@ class BareosVADPWrapper(object):
             return True
 
         bareosfd.JobMessage(
-            context,
-            bJobMessageType['M_WARNING'],
+            context, bJobMessageType['M_WARNING'],
             "VM Disks: %s\n" % (', '.join(vm_disks)))
         bareosfd.JobMessage(
-            context,
-            bJobMessageType['M_WARNING'],
+            context, bJobMessageType['M_WARNING'],
             "Backed up Disks: %s\n" % (', '.join(backed_up_disks)))
         bareosfd.JobMessage(
-            context,
-            bJobMessageType['M_FATAL'],
+            context, bJobMessageType['M_FATAL'],
             "ERROR: VM disks not matching backed up disks\n")
         return False
 
@@ -948,8 +982,7 @@ class BareosVADPWrapper(object):
 
         except IOError as io_error:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_FATAL'],
+                context, bJobMessageType['M_FATAL'],
                 ("dumpJSONFile(): failed to write JSON data to file %s,"
                  " reason: %s\n")
                 % (filename, io_error.strerror))
@@ -974,8 +1007,7 @@ class BareosVADPWrapper(object):
 
         except IOError as io_error:
             bareosfd.JobMessage(
-                context,
-                bJobMessageType['M_FATAL'],
+                context, bJobMessageType['M_FATAL'],
                 ("writeStingToFile(): failed to write String to file %s,"
                  " reason: %s\n")
                 % (filename, io_error.strerror))
@@ -1093,36 +1125,37 @@ class BareosVADPWrapper(object):
             os.rename(stderr_log_fd.name, bareos_vadp_dumper_logfile)
             bareosfd.DebugMessage(
                 context, 100,
-                "start_bareos_vadp_dumper(): started %s, log stderr to %s\n"
-                % (bareos_vadp_dumper_command, bareos_vadp_dumper_logfile))
+                "start_bareos_vadp_dumper(): started %s, log stderr to %s\n" %
+                (bareos_vadp_dumper_command, bareos_vadp_dumper_logfile))
 
         except:
             # kill children if they arent done
             if bareos_vadp_dumper_process:
-                bareosfd.JobMessage(context, bJobMessageType['M_WARNING'],
-                                    "Failed to start %s\n"
-                                    % (bareos_vadp_dumper_command))
+                bareosfd.JobMessage(
+                    context, bJobMessageType['M_WARNING'],
+                    "Failed to start %s\n" %
+                    (bareos_vadp_dumper_command))
                 if (bareos_vadp_dumper_process is not None
                         and bareos_vadp_dumper_process.returncode is None):
                     bareosfd.JobMessage(
                         context, bJobMessageType['M_WARNING'],
-                        "Killing probably stuck %s PID %s with signal 9\n"
-                        % (bareos_vadp_dumper_command,
-                           bareos_vadp_dumper_process.pid))
+                        "Killing probably stuck %s PID %s with signal 9\n" %
+                        (bareos_vadp_dumper_command,
+                         bareos_vadp_dumper_process.pid))
                     os.kill(bareos_vadp_dumper_process.pid, 9)
                 try:
                     if bareos_vadp_dumper_process is not None:
                         bareosfd.DebugMessage(
                             context, 100,
-                            "Waiting for command %s PID %s to terminate\n"
-                            % (bareos_vadp_dumper_command,
-                               bareos_vadp_dumper_process.pid))
+                            "Waiting for command %s PID %s to terminate\n" %
+                            (bareos_vadp_dumper_command,
+                             bareos_vadp_dumper_process.pid))
                         os.waitpid(bareos_vadp_dumper_process.pid, 0)
                         bareosfd.DebugMessage(
                             context, 100,
-                            "Command %s PID %s terminated\n"
-                            % (bareos_vadp_dumper_command,
-                               bareos_vadp_dumper_process.pid))
+                            "Command %s PID %s terminated\n" %
+                            (bareos_vadp_dumper_command,
+                             bareos_vadp_dumper_process.pid))
 
                 except:
                     pass
@@ -1149,14 +1182,14 @@ class BareosVADPWrapper(object):
             if int(time.time()) - start_time > timeout:
                 bareosfd.DebugMessage(
                     context, 100,
-                    "Timeout wait for bareos_vadp_dumper PID %s to terminate\n"
-                    % (self.dumper_process.pid))
+                    "Timeout wait for bareos_vadp_dumper PID %s to terminate\n" %
+                    (self.dumper_process.pid))
                 break
 
             bareosfd.DebugMessage(
                 context, 100,
-                "Waiting for bareos_vadp_dumper PID %s to terminate\n"
-                % (self.dumper_process.pid))
+                "Waiting for bareos_vadp_dumper PID %s to terminate\n" %
+                (self.dumper_process.pid))
             time.sleep(1)
 
         bareos_vadp_dumper_returncode = self.dumper_process.returncode
