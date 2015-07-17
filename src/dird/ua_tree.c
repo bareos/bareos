@@ -836,14 +836,13 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
    FILE_DBR fdbr;
    struct stat statp;
    char *pcwd;
-   guid_list *guid;
 
    if (!tree_node_has_child(tree->node)) {
       ua->send_msg(_("Node %s has no children.\n"), tree->node->fname);
       return 1;
    }
 
-   guid = new_guid_list();
+   ua->guid = new_guid_list();
    buf = get_pool_memory(PM_FNAME);
 
    foreach_child(node, tree->node) {
@@ -889,7 +888,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
             memset(&statp, 0, sizeof(statp));
          }
 
-         ls_output(guid, &buf, cwd, tag, &statp, dot_cmd);
+         ls_output(ua->guid, &buf, cwd, tag, &statp, dot_cmd);
          ua->send_msg("%s\n", buf);
 
          free_pool_memory(cwd);
@@ -897,7 +896,6 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
    }
 
    free_pool_memory(buf);
-   free_guid_list(guid);
 
    return 1;
 }

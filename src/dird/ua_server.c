@@ -162,6 +162,9 @@ UAContext *new_ua_context(JCR *jcr)
 
 void free_ua_context(UAContext *ua)
 {
+   if (ua->guid) {
+      free_guid_list(ua->guid);
+   }
    if (ua->cmd) {
       free_pool_memory(ua->cmd);
    }

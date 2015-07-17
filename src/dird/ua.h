@@ -44,6 +44,7 @@ public:
    POOLMEM *cmd;                      /* Return command/name buffer */
    POOLMEM *args;                     /* Command line arguments */
    POOLMEM *errmsg;                   /* Store error message */
+   guid_list *guid;                   /* User and Group Name mapping cache */
    char *argk[MAX_CMD_ARGS];          /* Argument keywords */
    char *argv[MAX_CMD_ARGS];          /* Argument values */
    int argc;                          /* Number of arguments */

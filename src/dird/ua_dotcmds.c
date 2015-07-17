@@ -274,6 +274,7 @@ static bool dot_bvfs_clear_cache(UAContext *ua, const char *cmd)
 static int bvfs_stat(UAContext *ua, char *lstat, int32_t *LinkFI)
 {
    struct stat statp;
+   char en1[30], en2[30];
 
    memset(&statp, 0, sizeof(struct stat));
    decode_stat(lstat, &statp, sizeof(statp), LinkFI);
@@ -283,8 +284,8 @@ static int bvfs_stat(UAContext *ua, char *lstat, int32_t *LinkFI)
    ua->send->object_key_value("ino", statp.st_ino);
    ua->send->object_key_value("mode", statp.st_mode);
    ua->send->object_key_value("nlink", statp.st_nlink);
-   ua->send->object_key_value("uid", statp.st_uid);
-   ua->send->object_key_value("gid", statp.st_gid);
+   ua->send->object_key_value("user", ua->guid->uid_to_name(statp.st_uid, en1, sizeof(en1)));
+   ua->send->object_key_value("group", ua->guid->gid_to_name(statp.st_gid, en2, sizeof(en2)));
    ua->send->object_key_value("rdev", statp.st_rdev);
    ua->send->object_key_value("size", statp.st_size);
    ua->send->object_key_value("atime", statp.st_atime);
@@ -306,7 +307,9 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    char zero[] = "0";
    int32_t LinkFI = 0;
 
-   /* We need to deal with non existant path */
+   /*
+    * We need to deal with non existant path
+    */
    if (!fileid || !is_a_number(fileid)) {
       lstat = empty;
       jobid = zero;
@@ -316,6 +319,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    Dmsg1(100, "type=%s\n", row[0]);
    if (bvfs_is_dir(row)) {
       char *path = bvfs_basename_dir(row[BVFS_Name]);
+
       ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
@@ -474,9 +478,9 @@ static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
 {
-   DBId_t pathid=0;
-   int limit=2000, offset=0, i;
-   char *path=NULL, *jobid=NULL, *username=NULL;
+   DBId_t pathid = 0;
+   int limit = 2000, offset = 0, i;
+   char *path = NULL, *jobid = NULL, *username = NULL;
    char *empty = (char *)"";
    char *fileid, *dirid, *hardlink;
    fileid = dirid = hardlink = empty;
@@ -514,10 +518,10 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 {
-   DBId_t pathid=0;
-   int limit=2000, offset=0;
-   char *path=NULL, *jobid=NULL, *username=NULL;
-   char *pattern=NULL;
+   DBId_t pathid = 0;
+   int limit = 2000, offset = 0;
+   char *path = NULL, *jobid = NULL, *username = NULL;
+   char *pattern = NULL;
    int i;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
@@ -527,6 +531,10 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 
    if ((i = find_arg_with_value(ua, "pattern")) >= 0) {
       pattern = ua->argv[i];
+   }
+
+   if (!ua->guid) {
+      ua->guid = new_guid_list();
    }
 
    Bvfs fs(ua->jcr, ua->db);
@@ -559,13 +567,17 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 {
-   DBId_t pathid=0;
-   int limit=2000, offset=0;
-   char *path=NULL, *jobid=NULL, *username=NULL;
+   DBId_t pathid = 0;
+   int limit = 2000, offset = 0;
+   char *path = NULL, *jobid = NULL, *username = NULL;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
       return true;              /* not enough param */
+   }
+
+   if (!ua->guid) {
+      ua->guid = new_guid_list();
    }
 
    Bvfs fs(ua->jcr, ua->db);
@@ -595,10 +607,10 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
 {
-   DBId_t pathid=0, fnid=0;
-   int limit=2000, offset=0;
-   char *path=NULL, *jobid=NULL, *client=NULL, *username=NULL;
-   bool copies=false, versions=false;
+   DBId_t pathid = 0, fnid = 0;
+   int limit = 2000, offset = 0;
+   char *path = NULL, *jobid = NULL, *client = NULL, *username = NULL;
+   bool copies = false, versions = false;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
@@ -608,6 +620,10 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
    if (!bvfs_parse_arg_version(ua, &client, &fnid, &versions, &copies)) {
       ua->error_msg("Can't find client or fnid argument\n");
       return true;              /* not enough param */
+   }
+
+   if (!ua->guid) {
+      ua->guid = new_guid_list();
    }
 
    Bvfs fs(ua->jcr, ua->db);
