@@ -135,7 +135,7 @@ get_database_version_by_release()
     fi
 
     MAP=${SQL_DDL_DIR}/versions.map
-    if ! [ -r "$MAP" ]; then
+    if [ ! -r "$MAP" ]; then
         error "failed to read Bareos database versions map file $MAP"
         return 1
     fi
@@ -312,7 +312,7 @@ get_config_param()
     # default value, if parameter is not found
     DEFAULT="${5-}"
 
-    if ! [ -r "${CFG_FILE}" ]; then
+    if [ ! -r "${CFG_FILE}" ]; then
         warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
         # if default value is given, return it anyway
         [ "$DEFAULT" ] && echo "$DEFAULT"
@@ -358,7 +358,7 @@ set_config_param()
     # value to set
     VALUE="${5}"
 
-    if ! [ -w "${FILE}" ]; then
+    if [ ! -w "${FILE}" ]; then
         warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access ${CFG_FILE}"
         return 1
     fi
@@ -462,7 +462,7 @@ get_database_param()
     fi
 
     # if $temp_log exists, but have only size 0, remove it.
-    if [ -e $temp_log ] && ! [ -s $temp_log ]; then
+    if [ -f $temp_log ] && ! [ -s $temp_log ]; then
         rm $temp_log
     fi
 
@@ -508,9 +508,9 @@ get_database_password()
 get_databases_installed()
 {
     # manually check different backends, to get the correct order
-    [ -e ${SQL_DDL_DIR}/creates/postgresql.sql ] && echo "postgresql"
-    [ -e ${SQL_DDL_DIR}/creates/mysql.sql ] && echo "mysql"
-    [ -e ${SQL_DDL_DIR}/creates/sqlite3.sql ] && echo "sqlite3"
+    [ -f ${SQL_DDL_DIR}/creates/postgresql.sql ] && echo "postgresql"
+    [ -f ${SQL_DDL_DIR}/creates/mysql.sql ] && echo "mysql"
+    [ -f ${SQL_DDL_DIR}/creates/sqlite3.sql ] && echo "sqlite3"
     return 0
 }
 
@@ -544,7 +544,8 @@ is_template_sql_file()
         return 1
     fi
 
-    if ! egrep -q '@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@' ${input_file}; then
+    egrep '@DB_NAME@|@DB_USER@|@DB_PASS@|@DB_VERSION@' ${input_file} > /dev/null 2>&1
+    if [ $? != 0 ]; then
         # no variables found in file, this file is not a template.
         return 0
     else
@@ -714,7 +715,7 @@ apply_dbconfig_settings()
             # Therefore a link is created.
             if [ -r "${dbc_basepath}/${dbc_dbname}" ]; then
                 BAREOS_SQLITE_DB="`get_working_dir`/`get_database_name`.db"
-                if ! [ -e $BAREOS_SQLITE_DB ]; then
+                if [ ! -f $BAREOS_SQLITE_DB ]; then
                     ln -s "${dbc_basepath}/${dbc_dbname}" "$BAREOS_SQLITE_DB"
                     ls -a `get_working_dir`/bareos* || true
                 fi
@@ -748,7 +749,7 @@ get_local_hostname()
 
 replace()
 {
-    if ! [ $# -eq 2 ]; then
+    if [ $# -ne 2 ]; then
         return 1
     fi
 
@@ -778,7 +779,7 @@ initialize_local_hostname()
 
 replace_password()
 {
-    if ! [ $# -eq 2 ]; then
+    if [ $# -ne 2 ]; then
         return 1
     fi
 

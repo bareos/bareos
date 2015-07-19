@@ -74,7 +74,8 @@ fi
 
 echo "Granting ${db_type} tables"
 
-if ! get_database_grant_privileges "${db_type}" "${db_user}" "${db_password}" > ${temp_sql_grants}; then
+get_database_grant_privileges "${db_type}" "${db_user}" "${db_password}" > ${temp_sql_grants}
+if [ $? != 0 ]; then
     echo "Error creating privileges."
     exit 1
 fi
