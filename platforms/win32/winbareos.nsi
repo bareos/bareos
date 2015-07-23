@@ -332,7 +332,7 @@ skipmsgbox:
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # Set file owner to administrator
+    # Set file owner to Users
     AccessControl::SetFileOwner "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)"  # user
     Pop $R0
     ${If} $R0 == error
@@ -340,8 +340,8 @@ skipmsgbox:
        DetailPrint `AccessControl error: $R0`
     ${EndIf}
 
-    # Set fullaccess only for administrators (S-1-5-32-544)
-    AccessControl::ClearOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
+    # Set fullaccess for Users (S-1-5-32-545)
+    AccessControl::SetOnFile "$APPDATA\${PRODUCT_NAME}\${fname}" "(S-1-5-32-545)" "FullAccess"
     Pop $R0
     ${If} $R0 == error
        Pop $R0
