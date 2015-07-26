@@ -98,7 +98,8 @@ if [ ! -z "${sql_definitions}" ]; then
       exit 1
    fi
 
-   if ! get_translated_sql_file ${sql_definitions} > ${temp_sql_schema}; then
+   get_translated_sql_file ${sql_definitions} > ${temp_sql_schema}
+   if [ $? != 0 ]; then
         echo "Failed to translate SQL definitions in ${sql_definitions}"
         exit 1
    fi

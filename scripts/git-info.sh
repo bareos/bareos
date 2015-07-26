@@ -3,12 +3,14 @@
 DESTDIR=${1:-"./"}
 GIT="git"
 
-if ! type git >/dev/null 2>&1; then
+which git >/dev/null 2>&1
+if test $? != 0; then
     echo "skipped: git not available"
     exit 0
 fi
 
-if ! git status >/dev/null 2>&1; then
+git status >/dev/null 2>&1
+if test $? != 0; then
     echo "skipped: this directory isn't a git directory"
     exit 0
 fi

@@ -239,7 +239,7 @@ install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCL
 	#
 	# Make sure the DDL subdir exists.
 	#
-	@if ! test -d $(DESTDIR)$(scriptdir)/ddl; then \
+	@if test ! -d $(DESTDIR)$(scriptdir)/ddl; then \
 	   $(MKDIR) $(DESTDIR)$(scriptdir)/ddl; \
 	fi;
 	$(INSTALL_DATA) ddl/versions.map $(DESTDIR)$(scriptdir)/ddl/
@@ -249,7 +249,7 @@ install: @LIBTOOL_INSTALL_TARGET@ @LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET@ @INCL
 	#
 	@for db_type in @DB_BACKENDS@; do \
            for dir in drops grants creates updates; do \
-	      if ! test -d $(DESTDIR)$(scriptdir)/ddl/$$dir; then \
+	      if test ! -d $(DESTDIR)$(scriptdir)/ddl/$$dir; then \
 	         $(MKDIR) $(DESTDIR)$(scriptdir)/ddl/$$dir; \
 	      fi; \
 	      if test `ls -1 ddl/$$dir/$$db_type*.sql 2>/dev/null | wc -l` -gt 0; then \
