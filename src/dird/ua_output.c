@@ -790,7 +790,7 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
 
    pm_strcpy(selection, "");
    fileset = find_arg_with_value(ua, "fileset");
-   if (bstrcasecmp(ua->argv[fileset], "any") || (listall && fileset < 0)) {
+   if ((fileset >= 0 && bstrcasecmp(ua->argv[fileset], "any") || (listall && fileset < 0))) {
       FILESETRES *fs;
       POOL_MEM temp(PM_MESSAGE);
 
@@ -807,7 +807,7 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
          pm_strcat(selection, temp.c_str());
       }
       UnlockRes();
-   } else {
+   } else if (fileset >= 0) {
       if (!acl_access_ok(ua, FileSet_ACL, ua->argv[fileset], true)) {
          ua->error_msg(_("Access to specified FileSet not allowed.\n"));
          return false;

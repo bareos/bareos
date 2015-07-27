@@ -1678,9 +1678,8 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
                ua->error_msg(_("Invalid value for accurate. "
                                "It must be yes or no.\n"));
             }
-            continue;
-
             accurate_set = true;
+            continue;
          } else {
             ua->error_msg(_("Accurate value missing.\n"));
             return true;
