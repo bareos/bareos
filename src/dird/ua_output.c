@@ -790,7 +790,7 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
 
    pm_strcpy(selection, "");
    fileset = find_arg_with_value(ua, "fileset");
-   if ((fileset >= 0 && bstrcasecmp(ua->argv[fileset], "any") || (listall && fileset < 0))) {
+   if ((fileset >= 0 && bstrcasecmp(ua->argv[fileset], "any")) || (listall && fileset < 0)) {
       FILESETRES *fs;
       POOL_MEM temp(PM_MESSAGE);
 
