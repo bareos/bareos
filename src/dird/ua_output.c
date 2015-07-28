@@ -642,7 +642,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             db_list_copies_records(ua->jcr, ua->db, query_range.c_str(), ua->argv[i], ua->send, llist);
          }
       } else {
-         ua->error_msg(_("missing parameter: jobid\n"));
+         db_list_copies_records(ua->jcr, ua->db, query_range.c_str(), NULL, ua->send, llist);
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("backups"))) {
       if (parse_list_backups_cmd(ua, query_range.c_str())) {
