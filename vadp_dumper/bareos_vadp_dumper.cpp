@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "copy_thread.hpp"
 
@@ -351,14 +352,13 @@ static inline void cleanup_vixdisklib()
 /*
  * Generic cleanup function.
  */
-static void cleanup()
+static void cleanup(int sig)
 {
    if (info) {
       VixDiskLib_FreeInfo(info);
    }
 
    if (connection) {
-
       VixDiskLib_Disconnect(connection);
       if (cleanup_on_disconnect) {
          cleanup_vixdisklib();
@@ -374,6 +374,10 @@ static void cleanup()
 
    if (vixdisklib_config) {
       free(vixdisklib_config);
+   }
+
+   if (sig) {
+      exit(sig);
    }
 }
 
@@ -481,8 +485,7 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
 
 bail_out:
    if (!succeeded) {
-      cleanup();
-      exit(1);
+      cleanup(1);
    } else if (!cleanup_on_disconnect) {
       cleanup_cnxParams();
    }
@@ -545,8 +548,7 @@ static inline int do_vixdisklib_open(const char *key, json_t *disk_params, bool 
 
 bail_out:
    if (!succeeded) {
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 }
 
@@ -1176,8 +1178,7 @@ static inline void process_json_work_file(const char *json_work_file)
    if (!json_config) {
       fprintf(stderr, "Failed to parse JSON config %s [%s at line %d column %d]\n",
               json_work_file, error.text, error.line, error.column);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    if (verbose) {
@@ -1202,8 +1203,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CON_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CON_PARAMS_KEY);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    do_vixdisklib_connect(CON_PARAMS_KEY, value, true, true);
@@ -1215,8 +1215,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, DISK_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", DISK_PARAMS_KEY);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    do_vixdisklib_open(DISK_PARAMS_KEY, value, true);
@@ -1224,8 +1223,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CBT_DISKCHANGEINFO_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CBT_DISKCHANGEINFO_KEY);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    /*
@@ -1234,19 +1232,16 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    if (multi_threaded) {
       if (!setup_copy_thread(read_from_vmdk, write_to_stream)) {
          fprintf(stderr, "Failed to initialize multithreading\n");
-         cleanup();
-         exit(1);
+         cleanup(1);
       }
    }
 
    if (!save_disk_info(CBT_DISKCHANGEINFO_KEY, value)) {
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    if (!save_meta_data()) {
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    return process_cbt(CBT_DISKCHANGEINFO_KEY, value);
@@ -1264,8 +1259,7 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CON_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CON_PARAMS_KEY);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    if (cleanup_on_start) {
@@ -1277,8 +1271,7 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, DISK_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", DISK_PARAMS_KEY);
-      cleanup();
-      exit(1);
+      cleanup(1);
    }
 
    do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
@@ -1347,6 +1340,13 @@ int main(int argc, char **argv)
       }
    }
 
+   /*
+    * Install signal handlers for the most important signals.
+    */
+   signal(SIGHUP, cleanup);
+   signal(SIGINT, cleanup);
+   signal(SIGTERM, cleanup);
+
    argc -= optind;
    argv += optind;
 
@@ -1360,14 +1360,14 @@ int main(int argc, char **argv)
       }
 
       retval = dump_vmdk_stream(argv[1]);
-      cleanup();
+      cleanup(0);
    } else if (strcasecmp(argv[0], "restore") == 0) {
       if (argc <= 1) {
          usage(program_name);
       }
 
       retval = restore_vmdk_stream(argv[1]);
-      cleanup();
+      cleanup(0);
    } else if (strcasecmp(argv[0], "show") == 0) {
       retval = show_backup_stream();
    } else {
