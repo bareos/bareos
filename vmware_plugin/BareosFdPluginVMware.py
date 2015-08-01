@@ -34,6 +34,7 @@ import time
 import tempfile
 import subprocess
 import shlex
+import signal
 
 # if OrderedDict is not available from collection (eg. SLES11),
 # the additional package python-ordereddict must be used
@@ -1181,17 +1182,35 @@ class BareosVADPWrapper(object):
         Wait for bareos_vadp_dumper to terminate
         """
         bareos_vadp_dumper_returncode = None
-        # wait up to 120s for bareos_vadp_dumper to terminate, otherwise this
-        # could become an infinite loop if something goes wrong
+        # Wait up to 120s for bareos_vadp_dumper to terminate,
+        # if still running, send SIGTERM and wait up to 60s.
+        # This handles cancelled jobs properly and prevents
+        # from infinite loop if something unexpected goes wrong.
         timeout = 120
         start_time = int(time.time())
+        sent_sigterm = False
         while self.dumper_process.poll() is None:
             if int(time.time()) - start_time > timeout:
                 bareosfd.DebugMessage(
                     context, 100,
                     "Timeout wait for bareos_vadp_dumper PID %s to terminate\n" %
                     (self.dumper_process.pid))
-                break
+                if not sent_sigterm:
+                    bareosfd.DebugMessage(
+                        context, 100,
+                        "sending SIGTERM to bareos_vadp_dumper PID %s\n" %
+                        (self.dumper_process.pid))
+                    os.kill(self.dumper_process.pid, signal.SIGTERM)
+                    sent_sigterm = True
+                    timeout = 60
+                    start_time = int(time.time())
+                    continue
+                else:
+                    bareosfd.DebugMessage(
+                        context, 100,
+                        "Giving up to wait for bareos_vadp_dumper PID %s to terminate\n" %
+                        (self.dumper_process.pid))
+                    break
 
             bareosfd.DebugMessage(
                 context, 100,
