@@ -113,7 +113,7 @@ check_restore_diff
 # Copy jobs are pruned like normal jobs after the Job Retention period
 # the admin 'c'opy job should also be pruned
 # F F c c C C I0 I -> F I
-$bperl -e "check_prune_list('$tmp/log10.out',1,5,6,7)"
+$bperl -e "check_prune_list('$tmp/log10.out',1,5,7,8)"
 estat=$(($estat + $?))
 
 end_test

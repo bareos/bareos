@@ -100,7 +100,7 @@ check_restore_diff
 # anymore. See scripts/functions.pm for details.
 
 # M M g g F F I0 -> F
-$bperl -e "check_prune_list('$tmp/log10.out',1,2,5,7)"
+$bperl -e "check_prune_list('$tmp/log10.out',1,2,5,8)"
 estat=$(($estat + $?))
 
 end_test
