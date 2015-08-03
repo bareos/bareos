@@ -700,6 +700,14 @@ apply_dbconfig_settings()
     # check if dbconfig is enabled
     [ $dbc_upgrade = 'true' ] || return 0
 
+    if [ -n "$dbc_dbuser" ]; then
+        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbuser" "$dbc_dbuser"
+    fi
+
+    if [ -n "$dbc_dbname" ]; then
+        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbname" "$dbc_dbname"
+    fi
+
     case "$dbc_dbtype" in
         pgsql)
             set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "postgresql"
