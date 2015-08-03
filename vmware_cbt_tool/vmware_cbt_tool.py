@@ -32,7 +32,7 @@ import argparse
 import atexit
 import getpass
 import sys
-import pprint
+
 
 def GetArgs():
     """
@@ -65,7 +65,7 @@ def GetArgs():
     parser.add_argument('-f', '--folder',
                         required=True,
                         action='store',
-                        help='Folder Name')
+                        help='Folder Name (must start with /, use / for root folder')
     parser.add_argument('-v', '--vmname',
                         required=True,
                         action='append',
@@ -95,7 +95,13 @@ def main():
     Python program for enabling/disabling/resetting CBT on a VMware VM
     """
 
-    pp = pprint.PrettyPrinter(indent=4)
+    # workaround needed on Debian 8/Python >= 2.7.9
+    # see https://github.com/vmware/pyvmomi/issues/212
+    py_ver = sys.version_info[0:3]
+    if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 9:
+        import ssl
+        ssl._create_default_https_context = ssl._create_unverified_context
+
     args = GetArgs()
     if args.password:
         password = args.password
@@ -105,7 +111,11 @@ def main():
             (args.host, args.user))
 
     if [args.enablecbt, args.disablecbt, args.resetcbt, args.info].count(True) > 1:
-        print "Only one of --enablecbt, --disablecbt, --resetcbt, --info allowed"
+        print "ERROR: Only one of --enablecbt, --disablecbt, --resetcbt, --info allowed"
+        sys.exit(1)
+
+    if not args.folder.startswith('/'):
+        print "ERROR: Folder name must start with /"
         sys.exit(1)
 
     try:
@@ -129,14 +139,7 @@ def main():
 
         atexit.register(Disconnect, si)
 
-        # Retreive the list of Virtual Machines from the invetory objects
-        # under the rootFolder
         content = si.content
-        # objView = content.viewManager.CreateContainerView(content.rootFolder,
-        #                                                  [vim.VirtualMachine],
-        #                                                  True)
-        # vmList = objView.view
-        # objView.Destroy()
 
         dcftree = {}
         dcView = content.viewManager.CreateContainerView(content.rootFolder,
@@ -150,23 +153,21 @@ def main():
                 folder = ''
                 get_dcftree(dcftree[dc.name], folder, dc.vmFolder)
 
-        # Find the vm and power it on
-        # tasks = [vm.PowerOn() for vm in vmList if vm.name in vmnames]
-
-        # Wait for power on to complete
-        # WaitForTasks(tasks, si)
-
-        # print "Virtual Machine(s) have been powered on successfully"
-
-        #pp.pprint(dcftree)
-
-        # pp.pprint(dcftree['dass5']['/stephand-test02'])
         vm = None
         for vmname in args.vmname:
             vm_path = args.folder + '/' + vmname
             if args.folder.endswith('/'):
                 vm_path = args.folder + vmname
-            # pp.pprint(dcftree[args.datacenter][vm_path])
+
+            if args.datacenter not in dcftree:
+                print "ERROR: Could not find datacenter %s" % (args.datacenter)
+                sys.exit(1)
+
+            if vm_path not in dcftree[args.datacenter]:
+                print "ERROR: Could not find VM %s in folder %s" % (
+                    vmname, args.folder)
+                sys.exit(1)
+
             vm = dcftree[args.datacenter][vm_path]
 
             print "INFO: VM %s CBT supported: %s" % (
@@ -207,6 +208,7 @@ def enable_cbt(si, vm):
     WaitForTasks([task], si)
     return create_and_remove_snapshot(si, vm)
 
+
 def disable_cbt(si, vm):
     if not vm.capability.changeTrackingSupported:
         print "ERROR: VM %s does not support CBT" % (vm.name)
@@ -222,6 +224,7 @@ def disable_cbt(si, vm):
     WaitForTasks([task], si)
     return create_and_remove_snapshot(si, vm)
 
+
 def get_dcftree(dcf, folder, vm_folder):
     for vm_or_folder in vm_folder.childEntity:
         if isinstance(vm_or_folder, vim.VirtualMachine):
@@ -230,6 +233,7 @@ def get_dcftree(dcf, folder, vm_folder):
             get_dcftree(dcf, folder + '/' + vm_or_folder.name, vm_or_folder)
         else:
             print "ERROR: %s is neither Folder nor VirtualMachine" % vm_or_folder
+
 
 def create_vm_snapshot(si, vm):
     """
@@ -251,6 +255,7 @@ def create_vm_snapshot(si, vm):
     create_snap_result = create_snap_task.info.result
     return create_snap_result
 
+
 def remove_vm_snapshot(si, create_snap_result):
     """
     removes a given snapshot
@@ -258,13 +263,14 @@ def remove_vm_snapshot(si, create_snap_result):
     remove_snap_task = None
     try:
         remove_snap_task = create_snap_result.RemoveSnapshot_Task(
-                removeChildren=True)
+            removeChildren=True)
     except vmodl.MethodFault as e:
         print "Failed to remove snapshot %s" % (e.msg)
         return False
 
     WaitForTasks([remove_snap_task], si)
     return True
+
 
 def create_and_remove_snapshot(si, vm):
     """
@@ -279,6 +285,7 @@ def create_and_remove_snapshot(si, vm):
             return True
 
     return False
+
 
 def WaitForTasks(tasks, si):
     """
