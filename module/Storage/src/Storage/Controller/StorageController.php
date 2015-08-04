@@ -68,7 +68,7 @@ class StorageController extends AbstractActionController
 					return $this->redirect()->toRoute('storage');
 				}
 				$result = $this->getStorageTable()->getStorage($id);
-				$cmd = "status storage=" . $result->name;
+				$cmd = 'status storage="'.$result->name.'"';
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
 						'bconsoleOutput' => $this->director->send_command($cmd),
@@ -88,7 +88,7 @@ class StorageController extends AbstractActionController
 					return $this->redirect()->toRoute('storage');
 				}
 				$result = $this->getStorageTable()->getStorage($id);
-				$cmd = "status storage=" . $result->name . " slots";
+				$cmd = 'status storage="' . $result->name . '" slots';
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
 						'bconsoleOutput' => $this->director->send_command($cmd),
