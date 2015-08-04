@@ -16,7 +16,7 @@ scripts/copy-confs
 #
 outf="${tmp}/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-echo "s%File Retention =%File Retention = 2 #%" >>  ${outf}
+echo "s%^Client {%Client {\n  File Retention = 2 #%" >>  ${outf}
 cp ${scripts}/bareos-dir.conf ${tmp}/1
 sed -f ${outf} ${tmp}/1 >${scripts}/bareos-dir.conf
 
