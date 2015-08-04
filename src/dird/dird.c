@@ -42,7 +42,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 /* Forward referenced subroutines */
-void terminate_dird(int sig);
+static void terminate_dird(int sig);
 static bool check_resources();
 static bool initialize_sql_pooling(void);
 static void cleanup_old_files();
@@ -65,6 +65,7 @@ void init_device_resources();
 
 static char *runjob = NULL;
 static bool background = true;
+static bool test_config = false;
 static void init_reload(void);
 
 /* Globals Exported */
@@ -155,7 +156,6 @@ int main (int argc, char *argv[])
    JCR *jcr;
    cat_op mode;
    bool no_signals = false;
-   bool test_config = false;
    bool export_config = false;
    bool export_config_schema = false;
    char *uid = NULL;
@@ -421,8 +421,10 @@ void terminate_dird(int sig)
    db_sql_pool_destroy();
    db_flush_backends();
    unload_dir_plugins();
-   write_state_file(me->working_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
-   delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
+   if (!test_config) {                /* we don't need to do this block in test mode */
+      write_state_file(me->working_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
+      delete_pid_file(me->pid_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));
+   }
    term_scheduler();
    term_job_server();
 
