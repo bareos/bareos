@@ -833,7 +833,7 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
          /*
           * See if this is a failure msg.
           */
-         if (sd->msg[0] == '3' && sd->msg[0] == '9')
+         if (sd->msg[1] == '9')
             retval = false;
 
          ua->send_msg("%s\n", sd->msg);   /* pass them on to user */
