@@ -1245,7 +1245,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    /*
     * See if the file already exists.
     */
-   Dmsg2(400, "Replace=%c %d\n", (char)rp->replace, rp->replace);
+   Dmsg(ctx, 400, "Replace=%c %d\n", (char)rp->replace, rp->replace);
    status = ceph_lstat(p_ctx->cmount, rp->ofname, &st);
    if (status == 0) {
       exists = true;
@@ -1290,7 +1290,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
        * See if file already exists then we need to unlink it.
        */
       if (exists) {
-         Dmsg1(400, "unlink %s\n", rp->ofname);
+         Dmsg(ctx, 400, "unlink %s\n", rp->ofname);
          status = ceph_unlink(p_ctx->cmount, rp->ofname);
          if (status != 0) {
             berrno be;
