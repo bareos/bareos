@@ -39,7 +39,7 @@
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
-void terminate_stored(int sig);
+static void terminate_stored(int sig);
 static int check_resources();
 static void cleanup_old_files();
 
@@ -667,7 +667,7 @@ void *device_initialization(void *arg)
 /*
  * Clean up and then exit
  */
-void terminate_stored(int sig)
+static void terminate_stored(int sig)
 {
    static bool in_here = false;
    DEVRES *device;
