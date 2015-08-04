@@ -8,7 +8,6 @@ INSTALLATION
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv
 * PHP >= 5.3.3
     * PHP PDO Extension
-    * PHP Sockets Extension
     * PHP OpenSSL Extension
 * Zend Framework 2.2.x or later
 
@@ -138,6 +137,9 @@ currently needed by the webui and have to be made available via the CommandACL i
 * .bvfs_lsfiles
 * .bvfs_versions
 * .bvfs_restore
+* .jobs
+* .clients
+* .filesets
 
 The package install provides a default console and profile configuration under /etc/bareos/bareos-dir.d/, which have to be included
 at the bottum of your /etc/bareos/bareos-dir.conf and edited to your needs.
@@ -185,7 +187,7 @@ For more details about console resource configuration in bareos, please have a l
 #
 Profile {
   Name = webui
-  CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore
+  CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore, .jobs, .filesets, .clients
   Job ACL = *all*
   Schedule ACL = *all*
   Catalog ACL = *all*
@@ -223,9 +225,9 @@ DB_USER=bareos_webui
 
 DB_PASS=<DATABASE_PASSWORD>
 
-/usr/lib/bareos/scripts/bareos-config get_database_grant_priviliges postgresql $DB_USER $DB_PASS readonly > /tmp/database_grant_priviliges.sql
+/usr/lib/bareos/scripts/bareos-config get_database_grant_privileges postgresql $DB_USER $DB_PASS readonly > /tmp/database_grant_privileges.sql
 
-psql -d bareos -f /tmp/database_grant_priviliges.sql
+psql -d bareos -f /tmp/database_grant_privileges.sql
 
 rm /tmp/database_grant_priviliges.sql
 
