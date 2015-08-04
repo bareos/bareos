@@ -555,7 +555,11 @@ SectionIn 1 2 3
   SetOverwrite ifnewer
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
+
   File "python-fd.dll"
+  File "BareosFd*.py"
+  File "bareos-fd*.py"
+  File "bareos_fd*.py"
 SectionEnd
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
@@ -607,7 +611,11 @@ SectionIn 2
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   File "autoxflate-sd.dll"
+
   File "python-sd.dll"
+  File "BareosSd*.py"
+  File "bareos-sd*.py"
+  File "bareos_sd*.py"
 SectionEnd
 
 
@@ -756,7 +764,11 @@ SectionIn 2
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
+
   File "python-dir.dll"
+  File "BareosDir*.py"
+  File "bareos-dir*.py"
+  File "bareos_dir*.py"
 SectionEnd
 
 
@@ -1711,9 +1723,22 @@ ConfDeleteSkip:
   Delete "$INSTDIR\Plugins\bpipe-fd.dll"
   Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"
   Delete "$INSTDIR\Plugins\autoxflate-sd.dll"
+
   Delete "$INSTDIR\Plugins\python-dir.dll"
+  Delete "$INSTDIR\Plugins\BareosDir*.py"
+  Delete "$INSTDIR\Plugins\bareos-dir*.py"
+  Delete "$INSTDIR\Plugins\bareos_dir*.py"
+
   Delete "$INSTDIR\Plugins\python-sd.dll"
+  Delete "$INSTDIR\Plugins\BareosSd*.py"
+  Delete "$INSTDIR\Plugins\bareos-sd*.py"
+  Delete "$INSTDIR\Plugins\bareos_sd*.py"
+
   Delete "$INSTDIR\Plugins\python-fd.dll"
+  Delete "$INSTDIR\Plugins\BareosFd*.py"
+  Delete "$INSTDIR\Plugins\bareos-fd*.py"
+  Delete "$INSTDIR\Plugins\bareos_fd*.py"
+
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareossd.dll"
   Delete "$INSTDIR\libbareosfind.dll"

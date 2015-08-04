@@ -131,10 +131,18 @@ do
 
       # copy the sources over if we create debug package
       WIN_DEBUG=$(echo $flavor | grep debug >/dev/null && echo yes || echo no)
-      if [ "$WIN_DEBUG" == "yes" ]; then
       cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
-      fi
 
+   done
+
+   # copy over python plugin .py files
+   for file in \
+      /bareos-%version/src/plugins/dird/*.py \
+      /bareos-%version/src/plugins/stored/*.py \
+      /bareos-%version/src/plugins/filed/*.py
+   do
+      cp $file $RPM_BUILD_ROOT/$flavor/release32
+      cp $file $RPM_BUILD_ROOT/$flavor/release64
    done
 
    for file in \
