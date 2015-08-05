@@ -40,7 +40,10 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
-static void terminate_stored(int sig);
+#if !defined(HAVE_WIN32)
+static
+#endif
+void terminate_stored(int sig);
 static int check_resources();
 static void cleanup_old_files();
 
@@ -697,7 +700,10 @@ void *device_initialization(void *arg)
 /*
  * Clean up and then exit
  */
-static void terminate_stored(int sig)
+#if !defined(HAVE_WIN32)
+static
+#endif
+void terminate_stored(int sig)
 {
    static bool in_here = false;
    DEVRES *device;

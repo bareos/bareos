@@ -42,7 +42,10 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 /* Forward referenced subroutines */
-static void terminate_dird(int sig);
+#if !defined(HAVE_WIN32)
+static
+#endif
+void terminate_dird(int sig);
 static bool check_resources();
 static bool initialize_sql_pooling(void);
 static void cleanup_old_files();
@@ -404,6 +407,9 @@ bail_out:
 }
 
 /* Cleanup and then exit */
+#if !defined(HAVE_WIN32)
+static
+#endif
 void terminate_dird(int sig)
 {
    static bool already_here = false;
