@@ -109,8 +109,6 @@ class RestoreController extends AbstractActionController
 					}
 
 					return new ViewModel(array(
-                                                'restore_params' => $this->restore_params,
-                                                'form' => $form,
 						'result' => $result
                                         ));
 
@@ -196,7 +194,7 @@ class RestoreController extends AbstractActionController
 			else {
 				--$dnum;
 				$items .= '{';
-				$items .= '"id":"' . $dir['pathid'] . '"';
+				$items .= '"id":"-' . $dir['pathid'] . '"';
 				$items .= ',"text":"' . $dir["name"] . '"';
 				$items .= ',"icon":"glyphicon glyphicon-folder-close"';
 				$items .= ',"state":""';
@@ -390,7 +388,7 @@ class RestoreController extends AbstractActionController
 			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid path=/", 2, $jobid);
 		}
 		else {
-			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid pathid=$pathid", 2, $jobid);
+			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid pathid=" . abs($pathid), 2, $jobid);
 		}
 		$directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 		return $directories['result']['directories'];
@@ -409,7 +407,7 @@ class RestoreController extends AbstractActionController
 			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid path=/", 2);
 		}
 		else {
-			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid pathid=$pathid", 2);
+			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid pathid=" . abs($pathid), 2);
 		}
 		$files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 		return $files['result']['files'];

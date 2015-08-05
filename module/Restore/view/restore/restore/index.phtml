@@ -136,7 +136,7 @@ $this->headTitle($title);
                                 checked_files.push(this.id);
                         }
                         else if(this.data.type == 'D') {
-                                checked_directories.push(this.id);
+                                checked_directories.push(Math.abs(this.id));
                         }
                 });
 
