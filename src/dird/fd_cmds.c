@@ -628,7 +628,7 @@ int send_runscripts_commands(JCR *jcr)
          /* TODO : we have to play with other client */
          /*
            else {
-           send command to an other client
+           send command to another client
            }
          */
       }

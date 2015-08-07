@@ -3983,7 +3983,7 @@ msgstr "Impossible d'initialiser le verrou sur la base. ERR=%s\n"
 #: src/stored/vol_mgr.c:380
 #, fuzzy, c-format
 msgid ""
-"Could not reserve volume \"%s\" for append, because it is read by an other "
+"Could not reserve volume \"%s\" for append, because it is read by another "
 "Job.\n"
 msgstr ""
 "Impossible de recycler le volume \"%s\" sur le device %s car il est utilisé "
@@ -4340,7 +4340,7 @@ msgstr "3306 Envoi de la commande \"%s\" à l'autochangeur.\n"
 
 #: src/stored/autochanger.c:720
 #, c-format
-msgid "3308 Successfully transfered volume from slot %d to %d.\n"
+msgid "3308 Successfully transferred volume from slot %d to %d.\n"
 msgstr ""
 
 #: src/stored/ndmp_tape.c:452

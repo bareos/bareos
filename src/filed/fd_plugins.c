@@ -226,7 +226,7 @@ static inline bRC trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *e
 }
 
 /**
- * Create a plugin event When receiving bEventCancelCommand, this function is called by an other thread.
+ * Create a plugin event When receiving bEventCancelCommand, this function is called by another thread.
  */
 void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
 {

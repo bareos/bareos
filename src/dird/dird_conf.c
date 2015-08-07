@@ -2918,7 +2918,7 @@ static inline bool populate_jobdefs()
    bool retval = true;
 
    /*
-    * Propagate the content of a JobDefs to an other.
+    * Propagate the content of a JobDefs to another.
     */
    foreach_res(jobdefs, R_JOBDEFS) {
       /*

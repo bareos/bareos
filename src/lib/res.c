@@ -1494,7 +1494,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       bool print_item = false;
 
       /*
-       * If this is an alias for an other config keyword suppress it.
+       * If this is an alias for another config keyword suppress it.
        */
       if ((items[i].flags & CFG_ITEM_ALIAS)) {
          continue;

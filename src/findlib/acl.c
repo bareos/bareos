@@ -46,12 +46,12 @@
  * for all different platforms. Currently we only allow ACLs to be restored
  * which were saved in the native format of the platform they are extracted
  * on. Later on we might add conversion functions for mapping from one
- * platform to an other or allow restores of systems that use the same
+ * platform to another or allow restores of systems that use the same
  * native format.
  *
  * Its also interesting to see what the exact format of acl text is on
  * certain platforms and if they use they same encoding we might allow
- * different platform streams to be decoded on an other similar platform.
+ * different platform streams to be decoded on another similar platform.
  *
  *   Original written by Preben 'Peppe' Guldberg, December 2004
  *   Major rewrite by Marco van Wieringen, November 2008
@@ -226,7 +226,7 @@ static bacl_exit_code aix_build_acl_streams(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
           * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
          retval = bacl_exit_ok;
@@ -485,7 +485,7 @@ static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
           * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
          retval = bacl_exit_ok;
@@ -862,7 +862,7 @@ static bacl_exit_code generic_get_acl_from_os(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
           * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
          goto bail_out;
@@ -922,7 +922,7 @@ static bacl_exit_code generic_set_acl_on_os(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
           * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
          Mmsg1(jcr->errmsg,
@@ -993,7 +993,7 @@ static bacl_exit_code generic_set_acl_on_os(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
           * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
          Mmsg1(jcr->errmsg,
@@ -1168,7 +1168,7 @@ static bacl_exit_code freebsd_build_acl_streams(JCR *jcr,
     * If the filesystem reports it doesn't support ACLs we clear the
     * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
     * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-    * when we change from one filesystem to an other.
+    * when we change from one filesystem to another.
     */
    if (acl_enabled == 0) {
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
@@ -1276,7 +1276,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JCR *jcr,
        * If the filesystem reports it doesn't support ACLs we clear the
        * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
        * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-       * when we change from one filesystem to an other.
+       * when we change from one filesystem to another.
        */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
       Mmsg2(jcr->errmsg,
@@ -1570,7 +1570,7 @@ static bacl_exit_code hpux_build_acl_streams(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
           * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
          pm_strcpy(acl_data->u.build->content, "");
@@ -1676,7 +1676,7 @@ static bacl_exit_code hpux_parse_acl_streams(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
           * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
          Mmsg1(jcr->errmsg,
@@ -1779,7 +1779,7 @@ static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
        * If the filesystem reports it doesn't support ACLs we clear the
        * BACL_FLAG_SAVE_NATIVE flag so we skip ACL saves on all other files
        * on the same filesystem. The BACL_FLAG_SAVE_NATIVE flag gets set again
-       * when we change from one filesystem to an other.
+       * when we change from one filesystem to another.
        */
       acl_data->flags &= ~BACL_FLAG_SAVE_NATIVE;
       pm_strcpy(acl_data->u.build->content, "");
@@ -1886,7 +1886,7 @@ static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
           * If the filesystem reports it doesn't support ACLs we clear the
           * BACL_FLAG_RESTORE_NATIVE flag so we skip ACL restores on all other files
           * on the same filesystem. The BACL_FLAG_RESTORE_NATIVE flag gets set again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          acl_data->flags &= ~BACL_FLAG_RESTORE_NATIVE;
          Mmsg1(jcr->errmsg,
@@ -2245,7 +2245,7 @@ bacl_exit_code build_acl_streams(JCR *jcr,
                                  FF_PKT *ff_pkt)
 {
    /*
-    * See if we are changing from one device to an other.
+    * See if we are changing from one device to another.
     * We save the current device we are scanning and compare
     * it with the current st_dev in the last stat performed on
     * the file we are currently storing.
@@ -2315,7 +2315,7 @@ bacl_exit_code parse_acl_streams(JCR *jcr,
    unsigned int cnt;
 
    /*
-    * See if we are changing from one device to an other.
+    * See if we are changing from one device to another.
     * We save the current device we are restoring to and compare
     * it with the current st_dev in the last stat performed on
     * the file we are currently restoring.

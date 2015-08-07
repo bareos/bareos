@@ -374,7 +374,7 @@ static bxattr_exit_code aix_build_xattr_streams(JCR *jcr,
           * If the filesystem reports it doesn't support XATTRs we clear the
           * BXATTR_FLAG_SAVE_NATIVE flag so we skip XATTR saves on all other files
           * on the same filesystem. The BXATTR_FLAG_SAVE_NATIVE flags gets sets again
-          * when we change from one filesystem to an other.
+          * when we change from one filesystem to another.
           */
          xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
          retval = bxattr_exit_ok;
@@ -641,7 +641,7 @@ static bxattr_exit_code aix_parse_xattr_streams(JCR *jcr,
              * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
              * on all other files on the same filesystem. The
              * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-             * change from one filesystem to an other.
+             * change from one filesystem to another.
              */
             xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
             goto bail_out;
@@ -1167,7 +1167,7 @@ static bxattr_exit_code generic_build_xattr_streams(JCR *jcr,
           * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
           * on all other files on the same filesystem. The
           * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-          * change from one filesystem to an other.
+          * change from one filesystem to another.
           */
          xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
          retval = bxattr_exit_ok;
@@ -1444,7 +1444,7 @@ static bxattr_exit_code generic_parse_xattr_streams(JCR *jcr,
              * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
              * on all other files on the same filesystem. The
              * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-             * change from one filesystem to an other.
+             * change from one filesystem to another.
              */
             xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
             goto bail_out;
@@ -2061,7 +2061,7 @@ static bxattr_exit_code tru64_build_xattr_streams(JCR *jcr,
           * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
           * on all other files on the same filesystem. The
           * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-          * change from one filesystem to an other.
+          * change from one filesystem to another.
           */
          xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
          retval = bxattr_exit_ok;
@@ -2311,7 +2311,7 @@ static bxattr_exit_code tru64_parse_xattr_streams(JCR *jcr,
           * the BXATTR_FLAG_RESTORE_NATIVE flag so we skip XATTR restores
           * on all other files on the same filesystem. The
           * BXATTR_FLAG_RESTORE_NATIVE flags gets sets again when we
-          * change from one filesystem to an other.
+          * change from one filesystem to another.
           */
          xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
          retval = bxattr_exit_ok;
@@ -3843,7 +3843,7 @@ bxattr_exit_code build_xattr_streams(JCR *jcr,
                                      FF_PKT *ff_pkt)
 {
    /*
-    * See if we are changing from one device to an other.
+    * See if we are changing from one device to another.
     * We save the current device we are scanning and compare
     * it with the current st_dev in the last stat performed on
     * the file we are currently storing.
@@ -3880,7 +3880,7 @@ bxattr_exit_code parse_xattr_streams(JCR *jcr,
    bxattr_exit_code retval = bxattr_exit_error;
 
    /*
-    * See if we are changing from one device to an other.
+    * See if we are changing from one device to another.
     * We save the current device we are restoring to and compare
     * it with the current st_dev in the last stat performed on
     * the file we are currently restoring.
