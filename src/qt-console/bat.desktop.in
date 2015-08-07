@@ -8,5 +8,4 @@ Exec=@bindir@/bat -c @confdir@/bat.conf
 Terminal=false
 Type=Application
 StartupNotify=true
-X-Desktop-File-Install-Version=0.3
 Categories=System;Utility;Archiving;X-SuSE-Backup;
