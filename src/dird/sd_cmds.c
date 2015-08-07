@@ -801,7 +801,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
 }
 
 /*
- * Ask the autochanger to move a volume from one slot to an other.
+ * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
 bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)

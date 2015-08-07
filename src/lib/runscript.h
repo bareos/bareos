@@ -91,7 +91,7 @@ public:
 /* create new RUNSCRIPT (set all value to 0) */
 RUNSCRIPT *new_runscript();
 
-/* create new RUNSCRIPT from an other */
+/* create new RUNSCRIPT from another */
 RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
 
 /* launch each script from runscripts*/

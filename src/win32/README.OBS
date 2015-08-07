@@ -45,4 +45,4 @@ mingw64-libsqlite
 mingw64-libsqlite-devel
 
 The Makefiles in this directory are setup to work with this setup. As the are
-seriously simple adapting to an other mingw install should be rather simple.
+seriously simple adapting to another mingw install should be rather simple.

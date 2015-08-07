@@ -1001,7 +1001,7 @@ static char *move_volumes_in_autochanger(UAContext *ua,
  * Perform the actual move operation which is either a:
  * - import of import slots into normal slots
  * - export of normal slots into export slots
- * - move from one normal slot to an other normal slot
+ * - move from one normal slot to another normal slot
  */
 static bool perform_move_operation(UAContext *ua, enum e_move_op operation)
 {
@@ -1360,7 +1360,7 @@ bool export_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * Move volume from one slot to an other.
+ * Move volume from one slot to another.
  */
 bool move_cmd(UAContext *ua, const char *cmd)
 {

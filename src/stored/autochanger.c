@@ -736,7 +736,7 @@ bool autochanger_transfer_cmd(DCR *dcr, BSOCK *dir, int src_slot, int dst_slot)
       be.set_errno(status);
       dir->fsend(_("3998 Autochanger error: ERR=%s\n"), be.bstrerror());
    } else {
-      dir->fsend(_("3308 Successfully transfered volume from slot %d to %d.\n"),
+      dir->fsend(_("3308 Successfully transferred volume from slot %d to %d.\n"),
                 src_slot, dst_slot);
    }
 
