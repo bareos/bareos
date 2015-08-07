@@ -1241,7 +1241,7 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
          goto bail_out;
       }
 
-      Dmsg(ctx, dbglvl, "Sucessfully loaded module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, dbglvl, "Successfully loaded module with name %s\n", p_ctx->module_name);
 
       /*
        * Get the Python dictionary for lookups in the Python namespace.

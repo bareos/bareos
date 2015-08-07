@@ -4340,7 +4340,7 @@ msgstr "3306 Envoi de la commande \"%s\" à l'autochangeur.\n"
 
 #: src/stored/autochanger.c:720
 #, c-format
-msgid "3308 Successfully transfered volume from slot %d to %d.\n"
+msgid "3308 Successfully transferred volume from slot %d to %d.\n"
 msgstr ""
 
 #: src/stored/ndmp_tape.c:452
