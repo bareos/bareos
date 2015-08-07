@@ -7,7 +7,6 @@ TryExec=@bindir@/bat
 Exec=@bindir@/bat -c @confdir@/bat.conf
 Terminal=false
 Type=Application
-Encoding=UTF-8
 StartupNotify=true
 X-Desktop-File-Install-Version=0.3
 Categories=System;Utility;Archiving;X-SuSE-Backup;
