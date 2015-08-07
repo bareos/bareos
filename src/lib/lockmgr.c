@@ -849,7 +849,7 @@ int bthread_cond_timedwait_p(pthread_cond_t *cond,
  *  returns:
  *     0 - unlocked
  *     1 - locked by the current thread
- *     2 - locked by an other thread
+ *     2 - locked by another thread
  */
 int lmgr_mutex_is_locked(void *m)
 {

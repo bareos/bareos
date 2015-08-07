@@ -104,7 +104,7 @@ struct ini_items {
 
 /*
  * Can be used to set re_value, in_value, default_value, found and val to 0
- * G++ looks to allow partial declaration, let see with an other compiler
+ * G++ looks to allow partial declaration, let see with another compiler
  */
 #define ITEMS_DEFAULT    NULL,NULL,NULL,0,{0}
 

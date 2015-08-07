@@ -1440,7 +1440,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    }
 
    /*
-    * Ask the database server to start a backup or restore via an other thread.
+    * Ask the database server to start a backup or restore via another thread.
     * We create a new thread that handles the connection to the database.
     */
    status = pthread_create(&p_ctx->ADOThread, NULL, adoThread, (void *)ctx);

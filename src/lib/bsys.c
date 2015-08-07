@@ -131,7 +131,7 @@ int bmicrosleep(int32_t sec, int32_t usec)
 
 /*
  * Copy a string inline from one point in the same string
- * to an other.
+ * to another.
  */
 char *bstrinlinecpy(char *dest, const char *src)
 {

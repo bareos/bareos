@@ -418,7 +418,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
     */
    if (me->filedevice_concurrent_read && dcr->is_writing() && find_read_volume(VolumeName)) {
       Mmsg(dcr->jcr->errmsg,
-           _("Could not reserve volume \"%s\" for append, because it is read by an other Job.\n"),
+           _("Could not reserve volume \"%s\" for append, because it is read by another Job.\n"),
            dev->VolHdr.VolumeName);
       return NULL;
    }

@@ -4053,7 +4053,7 @@ msgstr "No se puede inicializar la lista de bloqueo de volumen. ERR=%s\n"
 #: src/stored/vol_mgr.c:380
 #, c-format
 msgid ""
-"Could not reserve volume \"%s\" for append, because it is read by an other "
+"Could not reserve volume \"%s\" for append, because it is read by another "
 "Job.\n"
 msgstr ""
 

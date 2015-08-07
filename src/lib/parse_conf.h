@@ -156,7 +156,7 @@ struct RES_TABLE {
 #define CFG_ITEM_DEFAULT           0x2  /* Default supplied */
 #define CFG_ITEM_NO_EQUALS         0x4  /* Don't scan = after name */
 #define CFG_ITEM_DEPRECATED        0x8  /* Deprecated config option */
-#define CFG_ITEM_ALIAS             0x10 /* Item is an alias for an other */
+#define CFG_ITEM_ALIAS             0x10 /* Item is an alias for another */
 
 /*
  * CFG_ITEM_DEFAULT_PLATFORM_SPECIFIC: the value may differ between different

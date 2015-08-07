@@ -49,7 +49,7 @@ static pthread_t tcp_server_tid;
  *
  * Basic tasks done here:
  *  - If it was a connection from the FD, call handle_filed_connection()
- *  - If it was a connection from an other SD, call handle_stored_connection()
+ *  - If it was a connection from another SD, call handle_stored_connection()
  *  - Otherwise it was a connection from the DIR, call handle_director_connection()
  */
 static void *handle_connection_request(void *arg)
