@@ -78,6 +78,10 @@ endef
 #  --docdir="\$(_docdir)/bareos" \
 #  --htmldir="\$(_docdir)/bareos/html" \
 
+ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
+CONFIGURE_COMMON       += --disable-acl --disable-xattr --disable-scsi-crypto --disable-ndmp
+endif
+
 CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) --enable-client-only
 CONFIGURE_FULL        = $(CONFIGURE_COMMON) --with-python --enable-traymonitor
 
