@@ -323,7 +323,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FilenameId", FileId_t(0), "%lld\t");
+      ua->send->object_key_value("FilenameId", (uint64_t)0, "%lld\t");
       ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
       ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->object_key_value("lstat", lstat, "%s\t");
