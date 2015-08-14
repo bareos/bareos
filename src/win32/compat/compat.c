@@ -1202,7 +1202,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 #if (_WIN32_WINNT >= 0x0600)
          if (p_GetFileInformationByHandleEx) {
             if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo)) < 0) {
+                                                &binfo, sizeof(binfo))) {
                errno = b_errno_win32;
                return -1;
             }
@@ -1241,7 +1241,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 #if (_WIN32_WINNT >= 0x0600)
          if (p_GetFileInformationByHandleEx) {
             if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo)) < 0) {
+                                                &binfo, sizeof(binfo))) {
                errno = b_errno_win32;
                return -1;
             }
@@ -1458,7 +1458,7 @@ int fstat(intptr_t fd, struct stat *sb)
       FILE_BASIC_INFO binfo;
 
       if (!p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd), FileBasicInfo,
-                                          &binfo, sizeof(binfo)) < 0) {
+                                          &binfo, sizeof(binfo))) {
          const char *err = errorString();
 
          Dmsg1(2099, "GetFileInformationByHandleEx: %s\n", err);
@@ -1685,7 +1685,7 @@ int stat(const char *filename, struct stat *sb)
 
          if (h != INVALID_HANDLE_VALUE) {
             if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo)) < 0) {
+                                                &binfo, sizeof(binfo))) {
                const char *err = errorString();
 
                Dmsg1(2099, "GetFileInformationByHandleEx: %s\n", err);
