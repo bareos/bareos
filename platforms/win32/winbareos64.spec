@@ -84,7 +84,7 @@ BuildRequires:  sed
 BuildRequires:  vim, procps, bc
 
 BuildRequires:  osslsigncode
-
+BuildRequires:  obs-name-resolution-settings
 %description
 bareos
 
@@ -237,10 +237,12 @@ for flavor in `echo "%flavors"`; do
    pushd $RPM_BUILD_ROOT%{_mingw64_bindir}/$flavor
    for BINFILE in *; do
       mv $BINFILE $BINFILE.unsigned
-      osslsigncode -pkcs12 ${OLDPWD}/%SIGNCERT \
-                   -pass `cat ${OLDPWD}/%SIGNPWFILE` \
+      osslsigncode sign \
+                   -pkcs12 ${OLDPWD}/%SIGNCERT \
+                   -readpass ${OLDPWD}/%SIGNPWFILE \
                    -n "${DESCRIPTION}" \
                    -i http://www.bareos.com/ \
+                   -t http://timestamp.comodoca.com/authenticode \
                    -in  $BINFILE.unsigned \
                    -out $BINFILE
       rm *.unsigned

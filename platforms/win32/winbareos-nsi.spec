@@ -84,6 +84,7 @@ BuildRequires:  mingw32-libfastlz
 BuildRequires:  mingw64-libfastlz
 
 BuildRequires:  osslsigncode
+BuildRequires:  obs-name-resolution-settings
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
@@ -217,7 +218,12 @@ do
       cp $RPM_BUILD_ROOT/$flavor/release${BITS}/Bareos*.exe \
            $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release-unsigned.exe
 
-      osslsigncode  -pkcs12 %SIGNCERT -pass `cat %SIGNPWFILE` -n "${DESCRIPTION}" -i http://www.bareos.com/ \
+      osslsigncode  sign \
+                    -pkcs12 %SIGNCERT \
+                    -readpass %SIGNPWFILE \
+                    -n "${DESCRIPTION}" \
+                    -i http://www.bareos.com/ \
+                    -t http://timestamp.comodoca.com/authenticode \
                     -in  $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release-unsigned.exe \
                     -out $RPM_BUILD_ROOT/winbareos-%version-$flavor-${BITS}-bit-r%release.exe
 
