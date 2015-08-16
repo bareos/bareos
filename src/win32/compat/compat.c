@@ -1167,11 +1167,14 @@ static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, stru
  */
 static int get_windows_file_info(const char *filename, struct stat *sb, bool is_directory)
 {
+   bool use_fallback_data = true;
    WIN32_FIND_DATAW info_w;       // window's file info
    WIN32_FIND_DATAA info_a;       // window's file info
 #if (_WIN32_WINNT >= 0x0600)
    FILE_BASIC_INFO binfo;         // window's basic file info
+   HANDLE h = INVALID_HANDLE_VALUE;
 #endif
+   HANDLE fh = INVALID_HANDLE_VALUE;
 
    /*
     * Cache some common vars to make code more transparent.
@@ -1183,46 +1186,29 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
    FILETIME *pftLastAccessTime;
    FILETIME *pftLastWriteTime;
    FILETIME *pftCreationTime;
-   HANDLE h = INVALID_HANDLE_VALUE;
 
+   /*
+    * First get a findhandle and a file handle to the file.
+    */
    if (p_FindFirstFileW) { /* use unicode */
       POOLMEM* pwszBuf = get_pool_memory (PM_FNAME);
       make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
       Dmsg1(dbglvl, "FindFirstFileW=%s\n", pwszBuf);
-      h = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
-      free_pool_memory(pwszBuf);
-
-      if (h != INVALID_HANDLE_VALUE) {
-         pdwFileAttributes = &info_w.dwFileAttributes;
-         pdwReserved0 = &info_w.dwReserved0;
-         pnFileSizeHigh = &info_w.nFileSizeHigh;
-         pnFileSizeLow = &info_w.nFileSizeLow;
-
+      fh = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
 #if (_WIN32_WINNT >= 0x0600)
-         if (p_GetFileInformationByHandleEx) {
-            if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo))) {
-               errno = b_errno_win32;
-               return -1;
-            }
-
-            pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
-            pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
-            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-               pftCreationTime = (FILETIME *)&binfo.CreationTime;
-            } else {
-               pftCreationTime = (FILETIME *)&binfo.ChangeTime;
-            }
-         } else {
-#endif
-            pftLastAccessTime = &info_w.ftLastAccessTime;
-            pftLastWriteTime = &info_w.ftLastWriteTime;
-            pftCreationTime = &info_w.ftCreationTime;
-#if (_WIN32_WINNT >= 0x0600)
-         }
-#endif
+      if (fh != INVALID_HANDLE_VALUE) {
+         h = p_CreateFileW((LPCWSTR)pwszBuf,
+                           GENERIC_READ,
+                           FILE_SHARE_READ,
+                           NULL,
+                           OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
+                           NULL);
       }
+#endif
+
+      free_pool_memory(pwszBuf);
    } else if (p_FindFirstFileA) { // use ASCII
       POOLMEM *win32_fname;
 
@@ -1230,45 +1216,79 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
       unix_name_to_win32(&win32_fname, filename);
 
       Dmsg1(dbglvl, "FindFirstFileA=%s\n", win32_fname);
-      h = p_FindFirstFileA(win32_fname, &info_a);
-
+      fh = p_FindFirstFileA(win32_fname, &info_a);
+#if (_WIN32_WINNT >= 0x0600)
       if (h != INVALID_HANDLE_VALUE) {
-         pdwFileAttributes = &info_a.dwFileAttributes;
-         pdwReserved0 = &info_a.dwReserved0;
-         pnFileSizeHigh = &info_a.nFileSizeHigh;
-         pnFileSizeLow = &info_a.nFileSizeLow;
-
-#if (_WIN32_WINNT >= 0x0600)
-         if (p_GetFileInformationByHandleEx) {
-            if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo))) {
-               errno = b_errno_win32;
-               return -1;
-            }
-
-            pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
-            pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
-            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-               pftCreationTime = (FILETIME *)&binfo.CreationTime;
-            } else {
-               pftCreationTime = (FILETIME *)&binfo.ChangeTime;
-            }
-         } else {
-#endif
-            pftLastAccessTime = &info_a.ftLastAccessTime;
-            pftLastWriteTime = &info_a.ftLastWriteTime;
-            pftCreationTime = &info_a.ftCreationTime;
-#if (_WIN32_WINNT >= 0x0600)
-         }
-#endif
+         h = CreateFileA(win32_fname,
+                         GENERIC_READ,
+                         FILE_SHARE_READ,
+                         NULL,
+                         OPEN_EXISTING,
+                         FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
+                         NULL);
       }
+#endif
 
       free_pool_memory(win32_fname);
    } else {
       Dmsg0(dbglvl, "No findFirstFile A or W found\n");
    }
 
-   if (h == INVALID_HANDLE_VALUE) {
+   /*
+    * If we got a valid handle start processing the info.
+    */
+   if (fh != INVALID_HANDLE_VALUE) {
+      if (p_FindFirstFileW) { /* use unicode */
+         pdwFileAttributes = &info_w.dwFileAttributes;
+         pdwReserved0 = &info_w.dwReserved0;
+         pnFileSizeHigh = &info_w.nFileSizeHigh;
+         pnFileSizeLow = &info_w.nFileSizeLow;
+      } else {
+         pdwFileAttributes = &info_a.dwFileAttributes;
+         pdwReserved0 = &info_a.dwReserved0;
+         pnFileSizeHigh = &info_a.nFileSizeHigh;
+         pnFileSizeLow = &info_a.nFileSizeLow;
+      }
+
+#if (_WIN32_WINNT >= 0x0600)
+      /*
+       * As this is retrieved by handle it has no specific A or W call.
+       */
+      if (h != INVALID_HANDLE_VALUE) {
+         if (p_GetFileInformationByHandleEx) {
+            if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo, sizeof(binfo))) {
+               pftLastAccessTime = (FILETIME *)&binfo.LastAccessTime;
+               pftLastWriteTime = (FILETIME *)&binfo.LastWriteTime;
+               if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+                  pftCreationTime = (FILETIME *)&binfo.CreationTime;
+               } else {
+                  pftCreationTime = (FILETIME *)&binfo.ChangeTime;
+               }
+               use_fallback_data = false;
+            }
+         }
+         CloseHandle(h);
+      }
+#endif
+
+      /*
+       * See if we got anything from the GetFileInformationByHandleEx() call if not
+       * fallback to the normal info data returned by FindFirstFileW() or FindFirstFileA()
+       */
+      if (use_fallback_data) {
+         if (p_FindFirstFileW) { /* use unicode */
+            pftLastAccessTime = &info_w.ftLastAccessTime;
+            pftLastWriteTime = &info_w.ftLastWriteTime;
+            pftCreationTime = &info_w.ftCreationTime;
+         } else {
+            pftLastAccessTime = &info_a.ftLastAccessTime;
+            pftLastWriteTime = &info_a.ftLastWriteTime;
+            pftCreationTime = &info_a.ftCreationTime;
+         }
+      }
+
+      FindClose(fh);
+   } else {
       const char *err = errorString();
 
       /*
@@ -1277,9 +1297,8 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
       Dmsg2(2099, "FindFirstFile(%s):%s\n", filename, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
+
       return -1;
-   } else {
-      FindClose(h);
    }
 
    sb->st_mode = 0777;
@@ -1408,6 +1427,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 
 int fstat(intptr_t fd, struct stat *sb)
 {
+   bool use_fallback_data = true;
    BY_HANDLE_FILE_INFORMATION info;
 
    if (!GetFileInformationByHandle((HANDLE)_get_osfhandle(fd), &info)) {
@@ -1457,32 +1477,24 @@ int fstat(intptr_t fd, struct stat *sb)
    if (p_GetFileInformationByHandleEx) {
       FILE_BASIC_INFO binfo;
 
-      if (!p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd), FileBasicInfo,
-                                          &binfo, sizeof(binfo))) {
-         const char *err = errorString();
-
-         Dmsg1(2099, "GetFileInformationByHandleEx: %s\n", err);
-         LocalFree((void *)err);
-         errno = b_errno_win32;
-
-         return -1;
+      if (p_GetFileInformationByHandleEx((HANDLE)_get_osfhandle(fd), FileBasicInfo, &binfo, sizeof(binfo))) {
+         sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
+         sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
+         if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+            sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+         } else {
+            sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+         }
+         use_fallback_data = false;
       }
-
-      sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
-      sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-      if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-         sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
-      } else {
-         sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
-      }
-   } else {
+   }
 #endif
+
+   if (use_fallback_data) {
       sb->st_atime = cvt_ftime_to_utime(info.ftLastAccessTime);
       sb->st_mtime = cvt_ftime_to_utime(info.ftLastWriteTime);
       sb->st_ctime = cvt_ftime_to_utime(info.ftCreationTime);
-#if (_WIN32_WINNT >= 0x0600)
    }
-#endif
 
    return 0;
 }
@@ -1620,6 +1632,8 @@ int stat(const char *filename, struct stat *sb)
         !is_drive_letter_only(filename)) {
       rval = get_windows_file_info(filename, sb, (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY));
    } else {
+      bool use_fallback_data = true;
+
       sb->st_mode = 0777;
 
       /*
@@ -1653,7 +1667,6 @@ int stat(const char *filename, struct stat *sb)
        */
       if (p_GetFileInformationByHandleEx) {
          HANDLE h = INVALID_HANDLE_VALUE;
-         FILE_BASIC_INFO binfo;
 
          /*
           * The GetFileInformationByHandleEx need a file handle so we have to
@@ -1666,12 +1679,13 @@ int stat(const char *filename, struct stat *sb)
             make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
 
             h = p_CreateFileW((LPCWSTR)pwszBuf,
-                               GENERIC_READ,
-                               FILE_SHARE_READ,
-                               NULL,
-                               OPEN_EXISTING,
-                               0,
-                               NULL);
+                              GENERIC_READ,
+                              FILE_SHARE_READ,
+                              NULL,
+                              OPEN_EXISTING,
+                              0,
+                              NULL);
+
             free_pool_memory(pwszBuf);
          } else {
             h = CreateFileA(win32_fname,
@@ -1684,48 +1698,32 @@ int stat(const char *filename, struct stat *sb)
          }
 
          if (h != INVALID_HANDLE_VALUE) {
-            if (!p_GetFileInformationByHandleEx(h, FileBasicInfo,
-                                                &binfo, sizeof(binfo))) {
-               const char *err = errorString();
+            FILE_BASIC_INFO binfo;
 
-               Dmsg1(2099, "GetFileInformationByHandleEx: %s\n", err);
-               LocalFree((void *)err);
-               errno = b_errno_win32;
-               CloseHandle(h);
-
-               return -1;
-            }
-
-            /*  TODO: Hardlinks ?*/
-
-            sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
-            sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
-            if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
-               sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
-            } else {
-               sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+            if (p_GetFileInformationByHandleEx(h, FileBasicInfo, &binfo, sizeof(binfo))) {
+               sb->st_atime = cvt_ftime_to_utime(binfo.LastAccessTime);
+               sb->st_mtime = cvt_ftime_to_utime(binfo.LastWriteTime);
+               if (cvt_ftime_to_utime(binfo.CreationTime) > cvt_ftime_to_utime(binfo.ChangeTime)) {
+                  sb->st_ctime = cvt_ftime_to_utime(binfo.CreationTime);
+               } else {
+                  sb->st_ctime = cvt_ftime_to_utime(binfo.ChangeTime);
+               }
+               use_fallback_data = false;
             }
 
             CloseHandle(h);
-         } else {
-            /*
-             * Fall back to the GetFileAttributesEx data.
-             */
-            sb->st_atime = cvt_ftime_to_utime(data.ftLastAccessTime);
-            sb->st_mtime = cvt_ftime_to_utime(data.ftLastWriteTime);
-            sb->st_ctime = cvt_ftime_to_utime(data.ftCreationTime);
          }
-      } else {
+      }
 #endif
+
+      if (use_fallback_data) {
          /*
           * Fall back to the GetFileAttributesEx data.
           */
          sb->st_atime = cvt_ftime_to_utime(data.ftLastAccessTime);
          sb->st_mtime = cvt_ftime_to_utime(data.ftLastWriteTime);
          sb->st_ctime = cvt_ftime_to_utime(data.ftCreationTime);
-#if (_WIN32_WINNT >= 0x0600)
       }
-#endif
    }
    rval = 0;
 
@@ -3463,7 +3461,7 @@ int utime(const char *filename, struct utimbuf *times)
 
       h = p_CreateFileW((LPCWSTR)pwszBuf,
                         FILE_WRITE_ATTRIBUTES,
-                        FILE_SHARE_WRITE|FILE_SHARE_READ|FILE_SHARE_DELETE,
+                        FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
                         NULL,
                         OPEN_EXISTING,
                         FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
@@ -3478,7 +3476,7 @@ int utime(const char *filename, struct utimbuf *times)
 
       h = p_CreateFileA(win32_fname,
                         FILE_WRITE_ATTRIBUTES,
-                        FILE_SHARE_WRITE|FILE_SHARE_READ|FILE_SHARE_DELETE,
+                        FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE,
                         NULL,
                         OPEN_EXISTING,
                         FILE_FLAG_BACKUP_SEMANTICS, /* Required for directories */
