@@ -68,6 +68,16 @@ public:
    void object_key_value(const char *key, const char *value, const char *value_fmt, int wrap = -1);
    void object_key_value(const char *key, const char *key_fmt, const char *value, const char *value_fmt, int wrap = -1);
 
+   /*
+    * some programs (BAT in api mode 1) parses data message by message,
+    * instead of using a seperator.
+    * An example for this is BAT with the ".defaults job" command in API mode 1.
+    * In this cases, the send_buffer function must be called at between two messages.
+    * In API mode 2 this function has no effect.
+    * This function should only be used, when there is a specific need for it.
+    */
+   void send_buffer();
+
    void message(const char *type, POOL_MEM &message);
 
    void finalize_result(bool result);

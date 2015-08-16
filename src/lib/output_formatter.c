@@ -393,6 +393,21 @@ void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)
    }
 }
 
+void OUTPUT_FORMATTER::send_buffer()
+{
+   switch (api) {
+#if HAVE_JANSSON
+   case API_MODE_JSON:
+      break;
+#endif
+   default:
+      process_text_buffer();
+      break;
+   }
+}
+
+
+
 void OUTPUT_FORMATTER::finalize_result(bool result)
 {
    switch (api) {

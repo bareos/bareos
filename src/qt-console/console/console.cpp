@@ -435,6 +435,8 @@ bool Console::get_job_defaults(int &conn, struct job_defaults &job_defs, bool do
       *def++ = 0;
       strip_trailing_newline(def);
 
+      Pmsg2(000, "job_defaults: key=%s, value=%s\n", dircomm->msg(), def);
+
       if (strcmp(dircomm->msg(), "job") == 0) {
          if (strcmp(def, job_defs.job_name.toUtf8().data()) != 0) {
             goto bail_out;
