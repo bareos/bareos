@@ -44,7 +44,7 @@ static const int dbglvl = 150;
 #define PLUGIN_DATE         "May 2014"
 #define PLUGIN_VERSION      "3"
 #define PLUGIN_DESCRIPTION  "Python File Daemon Plugin"
-#define PLUGIN_USAGE        "python:module_path=<path-to-python-modules>:module_name=<python-module-to-load>"
+#define PLUGIN_USAGE        "python:module_path=<path-to-python-modules>:module_name=<python-module-to-load>:..."
 
 /*
  * Forward referenced functions

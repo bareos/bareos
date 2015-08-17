@@ -1,0 +1,2 @@
+@plugindir@/bareos-fd-ldap.py*
+@plugindir@/BareosFdPluginLDAP.py*

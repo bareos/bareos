@@ -4182,6 +4182,7 @@ debian|ubuntu|univention)
       debian/bareos-director.install \
       debian/bareos-director.postinst \
       debian/bareos-director.preinst \
+      debian/bareos-filedaemon-ldap-python-plugin.install \
       debian/bareos-filedaemon-python-plugin.install \
       debian/bareos-filedaemon.bareos-fd.init \
       debian/bareos-filedaemon.install \

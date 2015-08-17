@@ -465,6 +465,13 @@ Summary:    Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 
+%package    filedaemon-ldap-python-plugin
+Summary:    LDAP Python plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+Requires:   filedaemon-python-plugin = %{version}
+Requires:   python-ldap
+
 %package    storage-python-plugin
 Summary:    Python plugin for Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -479,6 +486,11 @@ This package contains the python plugin for the director daemon
 %{dscr}
 
 This package contains the python plugin for the file daemon
+
+%description filedaemon-ldap-python-plugin
+%{dscr}
+
+This package contains the LDAP python plugin for the file daemon
 
 %description storage-python-plugin
 %{dscr}
@@ -1108,6 +1120,11 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{plugin_dir}/BareosFdPluginLocalFileset.py*
 %{plugin_dir}/BareosFdWrapper.py*
 %{plugin_dir}/bareos_fd_consts.py*
+
+%files filedaemon-ldap-python-plugin
+%defattr(-, root, root)
+%{plugin_dir}/bareos-fd-ldap.py*
+%{plugin_dir}/BareosFdPluginLDAP.py*
 
 %files director-python-plugin
 %defattr(-, root, root)
