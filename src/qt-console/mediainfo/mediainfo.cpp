@@ -152,7 +152,6 @@ void MediaInfo::populateForm()
    time_t ttime;
 
    QString stat, LastWritten;
-   struct tm tm;
    char buf[256];
    QString query =
       "SELECT MediaId, VolumeName, Pool.Name, MediaType, FirstWritten,"
@@ -214,8 +213,7 @@ void MediaInfo::populateForm()
             t = str_to_utime(LastWritten.toAscii().data());
             t = t + stat.toULongLong();
             ttime = t;
-            localtime_r(&ttime, &tm);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+            bstrutime(buf, sizeof(buf), ttime);
             label_Expire->setText(QString(buf));
          }
          label_Online->setPixmap(QPixmap(":/images/inflag"+fld.next()+".png"));

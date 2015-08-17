@@ -736,7 +736,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
          future = now + (day * 60 * 60 * 24);
 
          /* Break down the time into components */
-         (void)localtime_r(&future, &tm);
+         blocaltime(&future, &tm);
          mday = tm.tm_mday - 1;
          wday = tm.tm_wday;
          month = tm.tm_mon;
@@ -770,7 +770,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
             Pmsg1(000, "%s", buf);
 #endif
             /* find time (time_t) job is to be run */
-            (void)localtime_r(&future, &runtm);
+            blocaltime(&future, &runtm);
             for (i= 0; i < 24; i++) {
                if (bit_is_set(i, run->hour)) {
                   runtm.tm_hour = i;

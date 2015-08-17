@@ -1653,11 +1653,9 @@ static int sleepcmd(FILE *input, BSOCK *UA_sock)
 static int timecmd(FILE *input, BSOCK *UA_sock)
 {
    char sdt[50];
-   time_t ttime = time(NULL);
-   struct tm tm;
-   (void)localtime_r(&ttime, &tm);
-   strftime(sdt, sizeof(sdt), "%d-%b-%Y %H:%M:%S", &tm);
-   sendit("\n");
+
+   bstrftimes(sdt, sizeof(sdt), time(NULL));
+   senditf("%s\n", sdt);
    return 1;
 }
 

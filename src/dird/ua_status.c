@@ -438,7 +438,7 @@ static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
          /*
           * Find time (time_t) job is to be run
           */
-         (void)localtime_r(&time_to_check, &tm); /* Reset tm structure */
+         blocaltime(&time_to_check, &tm);        /* Reset tm structure */
          tm.tm_min = run->minute;                /* Set run minute */
          tm.tm_sec = 0;                          /* Zero secs */
 
@@ -709,7 +709,7 @@ static void do_scheduler_status(UAContext *ua)
 start_again:
    time_to_check = start;
    while (time_to_check < stop) {
-      (void)localtime_r(&time_to_check, &tm);
+      blocaltime(&time_to_check, &tm);
 
       if (client || job) {
          /*

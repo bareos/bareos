@@ -205,7 +205,6 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    int hours = 0;
    int since_jobid = 0;
    int until_jobid = 0;
-   struct tm tm;
    JobId_t JobId;
    dbid_list ids;
    POOL_MEM query(PM_MESSAGE);
@@ -270,6 +269,7 @@ int rerun_cmd(UAContext *ua, const char *cmd)
    }
 
    if (timeframe || since_jobid_given) {
+      schedtime = now;
       if (d > 0) {
          days = str_to_int64(ua->argv[d]);
          schedtime = now - secs_in_day * days;   /* Days in the past */
@@ -282,8 +282,7 @@ int rerun_cmd(UAContext *ua, const char *cmd)
       /*
        * Job Query Start
        */
-      (void)localtime_r(&schedtime, &tm);
-      strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+      bstrutime(dt, sizeof(dt), schedtime);
 
       if (since_jobid_given) {
          if (until_jobid_given) {

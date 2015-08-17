@@ -420,7 +420,6 @@ int bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
 #endif /* USE_BSNPRINTF */
 
 #ifndef HAVE_LOCALTIME_R
-
 struct tm *localtime_r(const time_t *timep, struct tm *tm)
 {
     static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

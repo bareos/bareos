@@ -84,3 +84,8 @@ distclean:: clean
 .c.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
+
+btime.o: DEFINES += -D_POSIX_C_SOURCE=200112
+btime.o: btime.c
+	@echo "Compiling $<"
+	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

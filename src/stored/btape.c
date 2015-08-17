@@ -2177,7 +2177,6 @@ static void fillcmd()
    uint64_t rate;
    uint32_t min_block_size;
    int fd;
-   struct tm tm;
 
    ok = true;
    stop = 0;
@@ -2271,8 +2270,9 @@ static void fillcmd()
     */
    jcr->dcr->VolFirstIndex = 0;
    time(&jcr->run_time);              /* start counting time for rates */
-   (void)localtime_r(&jcr->run_time, &tm);
-   strftime(buf1, sizeof(buf1), "%H:%M:%S", &tm);
+
+   bstrftime(buf1, sizeof(buf1), jcr->run_time, "%H:%M:%S");
+
    if (simple) {
       Pmsg1(-1, _("%s Begin writing Bareos records to tape ...\n"), buf1);
    } else {
@@ -2325,8 +2325,7 @@ static void fillcmd()
           */
          if ((block->BlockNumber % write_eof) == 0) {
             now = time(NULL);
-            (void)localtime_r(&now, &tm);
-            strftime(buf1, sizeof(buf1), "%H:%M:%S", &tm);
+            bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
             Pmsg1(-1, _("%s Flush block, write EOF\n"), buf1);
             flush_block(block, 0);
 #ifdef needed_xxx
@@ -2415,8 +2414,8 @@ static void fillcmd()
    }
 
    now = time(NULL);
-   (void)localtime_r(&now, &tm);
-   strftime(buf1, sizeof(buf1), "%H:%M:%S", &tm);
+   bstrftime(buf1, sizeof(buf1), now, "%H:%M:%S");
+
    if (ok) {
       if (simple) {
          Pmsg3(0, _("\n\n%s Done filling tape at %d:%d. Now beginning re-read of tape ...\n"),

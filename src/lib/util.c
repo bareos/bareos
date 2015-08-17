@@ -171,8 +171,8 @@ char *encode_time(utime_t utime, char *buf)
 #if defined(HAVE_WIN32)
    /*
     * Avoid a seg fault in Microsoft's CRT localtime_r(),
-    *  which incorrectly references a NULL returned from gmtime() if
-    *  time is negative before or after the timezone adjustment.
+    * which incorrectly references a NULL returned from gmtime() if
+    * time is negative before or after the timezone adjustment.
     */
    struct tm *gtm;
 
@@ -185,11 +185,11 @@ char *encode_time(utime_t utime, char *buf)
    }
 #endif
 
-   if (localtime_r(&time, &tm)) {
-      n = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d",
-                   tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-                   tm.tm_hour, tm.tm_min, tm.tm_sec);
-   }
+   blocaltime(&time, &tm);
+   n = sprintf(buf, "%04d-%02d-%02d %02d:%02d:%02d",
+                tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+                tm.tm_hour, tm.tm_min, tm.tm_sec);
+
    return buf+n;
 }
 

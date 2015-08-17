@@ -851,7 +851,7 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
          if(last == -1) {
                 field_length = bsnprintf(buf, 20, "0000-00-00 00:00:00");
          } else {
-            (void)localtime_r(&last, &tm);
+            blocaltime(&last, &tm);
             field_length = bsnprintf(buf, 20, "%04d-%02d-%02d %02d:%02d:%02d",
                   (tm.tm_year + 1900), (tm.tm_mon + 1), tm.tm_mday,
                   tm.tm_hour, tm.tm_min, tm.tm_sec);

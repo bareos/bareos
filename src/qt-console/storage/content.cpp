@@ -720,7 +720,6 @@ void Content::populateContent()
 {
    char buf[30];
    time_t tim;
-   struct tm tm;
 
    QStringList results_all;
    QString cmd;
@@ -783,14 +782,12 @@ void Content::populateContent()
          tim = fld.next().toInt();
          if (tim > 0) {
             /* LastW */
-            localtime_r(&tim, &tm);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+            bstrutime(buf, sizeof(buf), tim);
             slotitem.setTextFld(index++, QString(buf));
 
             /* Expire */
             tim = fld.next().toInt();
-            localtime_r(&tim, &tm);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+            bstrutime(buf, sizeof(buf), tim);
             slotitem.setTextFld(index++, QString(buf));
          }
       }

@@ -30,8 +30,9 @@ utime_t btime_to_utime(btime_t bt); /* bareos time to utime_t */
 int tm_wom(int mday, int wday);
 int tm_woy(time_t stime);
 
+void blocaltime(const time_t *time, struct tm *tm);
 char *bstrutime(char *dt, int maxlen, utime_t tim);
-char *bstrftime(char *dt, int maxlen, utime_t tim);
+char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
 char *bstrftimes(char *dt, int maxlen, utime_t tim);
 char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
 char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
