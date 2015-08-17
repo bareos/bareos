@@ -60,7 +60,6 @@ bool db_create_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    POOL_MEM buf;
    char dt[MAX_TIME_LENGTH];
    time_t stime;
-   struct tm tm;
    int len;
    utime_t JobTDate;
    char ed1[30], ed2[30];
@@ -72,8 +71,7 @@ bool db_create_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
    stime = jr->SchedTime;
    ASSERT(stime != 0);
 
-   (void)localtime_r(&stime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), stime);
    JobTDate = (utime_t)stime;
 
    len = strlen(jcr->comment);  /* TODO: use jr instead of jcr to get comment */
@@ -433,7 +431,6 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
    bool retval = false;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
    char ed9[50], ed10[50], ed11[50], ed12[50];
-   struct tm tm;
    int num_rows;
    char esc_name[MAX_ESCAPE_NAME_LENGTH];
    char esc_mtype[MAX_ESCAPE_NAME_LENGTH];
@@ -506,8 +503,8 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
          if (mr->LabelDate == 0) {
             mr->LabelDate = time(NULL);
          }
-         (void)localtime_r(&mr->LabelDate, &tm);
-         strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+
+         bstrutime(dt, sizeof(dt), mr->LabelDate);
          Mmsg(mdb->cmd, "UPDATE Media SET LabelDate='%s' "
               "WHERE MediaId=%d", dt, mr->MediaId);
          retval = UPDATE_DB(jcr, mdb, mdb->cmd);
@@ -734,7 +731,6 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
 {
    bool retval = false;
    SQL_ROW row;
-   struct tm tm;
    int num_rows;
    char esc_fs[MAX_ESCAPE_NAME_LENGTH];
    char esc_md5[MAX_ESCAPE_NAME_LENGTH];
@@ -778,16 +774,16 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
    if (fsr->CreateTime == 0 && fsr->cCreateTime[0] == 0) {
       fsr->CreateTime = time(NULL);
    }
-   (void)localtime_r(&fsr->CreateTime, &tm);
-   strftime(fsr->cCreateTime, sizeof(fsr->cCreateTime), "%Y-%m-%d %H:%M:%S", &tm);
+
+   bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
 
    /*
     * Must create it
     */
-      Mmsg(mdb->cmd,
-           "INSERT INTO FileSet (FileSet,MD5,CreateTime) "
-           "VALUES ('%s','%s','%s')",
-           esc_fs, esc_md5, fsr->cCreateTime);
+   Mmsg(mdb->cmd,
+        "INSERT INTO FileSet (FileSet,MD5,CreateTime) "
+        "VALUES ('%s','%s','%s')",
+        esc_fs, esc_md5, fsr->cCreateTime);
 
    fsr->FileSetId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("FileSet"));
    if (fsr->FileSetId == 0) {
@@ -1419,7 +1415,6 @@ bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *n
 bool db_create_job_statistics(JCR *jcr, B_DB *mdb, JOB_STATS_DBR *jsr)
 {
    time_t stime;
-   struct tm tm;
    bool retval = false;
    char dt[MAX_TIME_LENGTH];
    char ed1[50], ed2[50], ed3[50], ed4[50];
@@ -1429,8 +1424,7 @@ bool db_create_job_statistics(JCR *jcr, B_DB *mdb, JOB_STATS_DBR *jsr)
    stime = jsr->SampleTime;
    ASSERT(stime != 0);
 
-   (void)localtime_r(&stime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), stime);
 
    /*
     * Create job statistics record
@@ -1466,7 +1460,6 @@ bail_out:
 bool db_create_device_statistics(JCR *jcr, B_DB *mdb, DEVICE_STATS_DBR *dsr)
 {
    time_t stime;
-   struct tm tm;
    bool retval = false;
    char dt[MAX_TIME_LENGTH];
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
@@ -1477,8 +1470,7 @@ bool db_create_device_statistics(JCR *jcr, B_DB *mdb, DEVICE_STATS_DBR *dsr)
    stime = dsr->SampleTime;
    ASSERT(stime != 0);
 
-   (void)localtime_r(&stime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), stime);
 
    /*
     * Create device statistics record
@@ -1525,7 +1517,6 @@ bail_out:
 bool db_create_tapealert_statistics(JCR *jcr, B_DB *mdb, TAPEALERT_STATS_DBR *tsr)
 {
    time_t stime;
-   struct tm tm;
    bool retval = false;
    char dt[MAX_TIME_LENGTH];
    char ed1[50], ed2[50];
@@ -1535,8 +1526,7 @@ bool db_create_tapealert_statistics(JCR *jcr, B_DB *mdb, TAPEALERT_STATS_DBR *ts
    stime = tsr->SampleTime;
    ASSERT(stime != 0);
 
-   (void)localtime_r(&stime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), stime);
 
    /*
     * Create device statistics record

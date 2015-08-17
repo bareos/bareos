@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,82 +28,84 @@
 
 /* Concerning times. There are a number of differnt time standards
  * in BAREOS (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
- *  utime_t).  fdate_t and ftime_t are deprecated and should no longer
- *  be used, and in general, Unix time time_t should no longer be used,
- *  it is being phased out.
+ * utime_t).  fdate_t and ftime_t are deprecated and should no longer
+ * be used, and in general, Unix time time_t should no longer be used,
+ * it is being phased out.
  *
- *  Epoch is the base of Unix time in seconds (time_t, ...)
- *     and is 1 Jan 1970 at 0:0 UTC
+ * Epoch is the base of Unix time in seconds (time_t, ...)
+ *    and is 1 Jan 1970 at 0:0 UTC
  *
- *  The major two times that should be left are:
- *     btime_t  (64 bit integer in microseconds base Epoch)
- *     utime_t  (64 bit integer in seconds base Epoch)
+ * The major two times that should be left are:
+ *    btime_t  (64 bit integer in microseconds base Epoch)
+ *    utime_t  (64 bit integer in seconds base Epoch)
  */
 
 #include "bareos.h"
 #include <math.h>
 
-/* Formatted time for user display: dd-Mon-yyyy hh:mm */
-char *bstrftime(char *dt, int maxlen, utime_t utime)
+void blocaltime(const time_t *time, struct tm *tm)
+{
+   /* ***FIXME**** localtime_r() should be user configurable */
+   (void)localtime_r(time, tm);
+}
+
+/*
+ * Formatted time for user display: dd-Mon-yyyy hh:mm
+ */
+char *bstrftime(char *dt, int maxlen, utime_t utime, const char *fmt)
 {
    time_t time = (time_t)utime;
    struct tm tm;
 
-   /* ***FIXME**** the format and localtime_r() should be user configurable */
-   (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%d-%b-%Y %H:%M", &tm);
+   blocaltime(&time, &tm);
+   if (fmt) {
+      strftime(dt, maxlen, fmt, &tm);
+   } else {
+      strftime(dt, maxlen, "%d-%b-%Y %H:%M", &tm);
+   }
+
    return dt;
 }
 
-/* Formatted time for user display: dd-Mon-yyyy hh:mm:ss */
+/*
+ * Formatted time for user display: dd-Mon-yyyy hh:mm:ss
+ */
 char *bstrftimes(char *dt, int maxlen, utime_t utime)
 {
-   time_t time = (time_t)utime;
-   struct tm tm;
-
-   /* ***FIXME**** the format and localtime_r() should be user configurable */
-   (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%d-%b-%Y %H:%M:%S", &tm);
-   return dt;
+   return bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M:%S");
 }
 
-
-/* Formatted time for user display: dd-Mon hh:mm */
+/*
+ * Formatted time for user display: dd-Mon hh:mm
+ */
 char *bstrftime_ny(char *dt, int maxlen, utime_t utime)
 {
-   time_t time = (time_t)utime;
-   struct tm tm;
-
-   /* ***FIXME**** the format and localtime_r() should be user configurable */
-   (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%d-%b %H:%M", &tm);
-   return dt;
+   return bstrftime(dt, maxlen, utime, "%d-%b %H:%M");
 }
 
-/* Formatted time for user display with weekday: weekday dd-Mon hh:mm */
+/*
+ * Formatted time for user display with weekday: weekday dd-Mon hh:mm
+ */
 char *bstrftime_wd(char *dt, int maxlen, utime_t utime)
 {
-   time_t time = (time_t)utime;
-   struct tm tm;
-
-   /* ***FIXME**** the format and localtime_r() should be user configurable */
-   (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%a %d-%b-%Y %H:%M", &tm);
-   return dt;
+   return bstrftime(dt, maxlen, utime, "%a %d-%b-%Y %H:%M");
 }
 
-/* Formatted time for user display: dd-Mon-yy hh:mm  (no century) */
+/*
+ * Formatted time for user display: dd-Mon-yy hh:mm (no century)
+ */
 char *bstrftime_nc(char *dt, int maxlen, utime_t utime)
 {
-   time_t time = (time_t)utime;
-   struct tm tm;
    char *p, *q;
 
-   /* ***FIXME**** the format and localtime_r() should be user configurable */
-   (void)localtime_r(&time, &tm);
-   /* NOTE! since the compiler complains about %y, I use %y and cut the century */
-   strftime(dt, maxlen, "%d-%b-%Y %H:%M", &tm);
-   /* overlay the century */
+   /*
+    * NOTE! since the compiler complains about %y, I use %Y and cut the century
+    */
+   bstrftime(dt, maxlen, utime, "%d-%b-%Y %H:%M");
+
+   /*
+    * Overlay the century
+    */
    p = dt+7;
    q = dt+9;
    while (*q) {
@@ -112,24 +115,25 @@ char *bstrftime_nc(char *dt, int maxlen, utime_t utime)
    return dt;
 }
 
-
-/* Unix time to standard time string yyyy-mm-dd hh:mm:ss */
+/*
+ * Unix time to standard time string yyyy-mm-dd hh:mm:ss
+ */
 char *bstrutime(char *dt, int maxlen, utime_t utime)
 {
-   time_t time = (time_t)utime;
-   struct tm tm;
-   (void)localtime_r(&time, &tm);
-   strftime(dt, maxlen, "%Y-%m-%d %H:%M:%S", &tm);
-   return dt;
+   return bstrftime(dt, maxlen, utime, "%Y-%m-%d %H:%M:%S");
 }
 
-/* Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time */
+/*
+ * Convert standard time string yyyy-mm-dd hh:mm:ss to Unix time
+ */
 utime_t str_to_utime(const char *str)
 {
    struct tm tm;
    time_t time;
 
-   /* Check for bad argument */
+   /*
+    * Check for bad argument
+    */
    if (!str || *str == 0) {
       return 0;
    }
@@ -160,7 +164,7 @@ utime_t str_to_utime(const char *str)
 
 /*
  * BAREOS's time (btime_t) is an unsigned 64 bit integer that contains
- *   the number of microseconds since Epoch Time (1 Jan 1970) UTC.
+ * the number of microseconds since Epoch Time (1 Jan 1970) UTC.
  */
 
 btime_t get_current_btime()
@@ -173,13 +177,17 @@ btime_t get_current_btime()
    return ((btime_t)tv.tv_sec) * 1000000 + (btime_t)tv.tv_usec;
 }
 
-/* Convert btime to Unix time */
+/*
+ * Convert btime to Unix time
+ */
 time_t btime_to_unix(btime_t bt)
 {
    return (time_t)(bt/1000000);
 }
 
-/* Convert btime to utime */
+/*
+ * Convert btime to utime
+ */
 utime_t btime_to_utime(btime_t bt)
 {
    return (utime_t)(bt/1000000);
@@ -187,22 +195,23 @@ utime_t btime_to_utime(btime_t bt)
 
 /*
  * Return the week of the month, base 0 (wom)
- *   given tm_mday and tm_wday. Value returned
- *   can be from 0 to 4 => week1, ... week5
+ * given tm_mday and tm_wday. Value returned
+ * can be from 0 to 4 => week1, ... week5
  */
 int tm_wom(int mday, int wday)
 {
    int fs;                       /* first sunday */
+   int wom;
+
    fs = (mday%7) - wday;
    if (fs <= 0) {
       fs += 7;
    }
    if (mday <= fs) {
-//    Dmsg3(100, "mday=%d wom=0 wday=%d <= fs=%d\n", mday, wday, fs);
       return 0;
    }
-   int wom = 1 + (mday - fs - 1) / 7;
-// Dmsg4(100, "mday=%d wom=%d wday=%d fs=%d\n", mday, wom, wday, fs);
+   wom = 1 + (mday - fs - 1) / 7;
+
    return wom;
 }
 
@@ -222,13 +231,13 @@ int tm_woy(time_t stime)
    struct tm tm;
 
    memset(&tm, 0, sizeof(struct tm));
-   (void)localtime_r(&stime, &tm);
+   blocaltime(&stime, &tm);
    tm_yday = tm.tm_yday;
    tm.tm_mon = 0;
    tm.tm_mday = 4;
    tm.tm_isdst = 0;                   /* 4 Jan is not DST */
    time4 = mktime(&tm);
-   (void)localtime_r(&time4, &tm);
+   blocaltime(&time4, &tm);
    fty = 1 - tm.tm_wday;
    if (fty <= 0) {
       fty += 7;
@@ -240,7 +249,9 @@ int tm_woy(time_t stime)
    return 1 + woy / 7;
 }
 
-/* Deprecated. Do not use. */
+/*
+ * Deprecated. Do not use.
+ */
 void get_current_time(struct date_time *dt)
 {
    struct tm tm;

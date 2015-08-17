@@ -333,7 +333,6 @@ void MediaView::populateTable()
    QStringList fieldlist, results;
    char buf[256];
    float usage;
-   struct tm tm;
 
    m_populated = true;
 
@@ -468,8 +467,7 @@ void MediaView::populateTable()
             t = str_to_utime(LastWritten.toAscii().data());
             t = t + stat.toULongLong();
             ttime = t;
-            localtime_r(&ttime, &tm);
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+            bstrutime(buf, sizeof(buf), ttime);
          }
 
          /* LastWritten */

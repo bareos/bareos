@@ -36,12 +36,12 @@ static int date_item(JCR *jcr,
                      int *val_len,
                      int *val_size)
 {
+   int val = 0;
+   char buf[10];
    struct tm tm;
    time_t now = time(NULL);
 
-   (void)localtime_r(&now, &tm);
-   int val = 0;
-   char buf[10];
+   blocaltime(&now, &tm);
 
    switch (code) {
    case 1:                            /* year */

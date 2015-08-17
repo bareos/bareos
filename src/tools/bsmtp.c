@@ -238,7 +238,7 @@ static void get_date_string(char *buf, int buf_len)
    long my_timezone;
 
    /* Add RFC822 date */
-   (void)localtime_r(&now, &tm);
+   blocaltime(&now, &tm);
 
    my_timezone = tz_offset(now, tm);
    strftime(buf, buf_len, "%a, %d %b %Y %H:%M:%S", &tm);

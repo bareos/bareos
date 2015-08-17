@@ -325,7 +325,7 @@ static void find_runs()
     * Compute values for time now
     */
    now = time(NULL);
-   (void)localtime_r(&now, &tm);
+   blocaltime(&now, &tm);
    hour = tm.tm_hour;
    mday = tm.tm_mday - 1;
    wday = tm.tm_wday;
@@ -345,7 +345,7 @@ static void find_runs()
     * sleeping.
     */
    next_hour = now + 3600;
-   (void)localtime_r(&next_hour, &tm);
+   blocaltime(&next_hour, &tm);
    nh_hour = tm.tm_hour;
    nh_mday = tm.tm_mday - 1;
    nh_wday = tm.tm_wday;
@@ -423,7 +423,7 @@ static void find_runs()
            /*
             * find time (time_t) job is to be run
             */
-           (void)localtime_r(&now, &tm);      /* reset tm structure */
+           blocaltime(&now, &tm);      /* reset tm structure */
            tm.tm_min = run->minute;     /* set run minute */
            tm.tm_sec = 0;               /* zero secs */
            runtime = mktime(&tm);

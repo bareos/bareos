@@ -912,12 +912,10 @@ static inline bool getJobs_to_migrate(JCR *jcr)
    }
    case MT_POOL_TIME: {
       time_t ttime;
-      struct tm tm;
       char dt[MAX_TIME_LENGTH];
 
       ttime = time(NULL) - (time_t)jcr->res.rpool->MigrationTime;
-      (void)localtime_r(&ttime, &tm);
-      strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+      bstrutime(dt, sizeof(dt), ttime);
 
       ids.count = 0;
       Mmsg(query, sql_pool_time, jcr->res.rpool->name(), dt);

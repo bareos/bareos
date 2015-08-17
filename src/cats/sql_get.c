@@ -1384,7 +1384,6 @@ bool db_get_quota_jobbytes(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t JobRetentio
 {
    SQL_ROW row;
    int num_rows;
-   struct tm tm;
    char dt[MAX_TIME_LENGTH];
    char ed1[50], ed2[50];
    bool retval = false;
@@ -1403,8 +1402,7 @@ bool db_get_quota_jobbytes(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t JobRetentio
     */
    schedtime += 5;
 
-   (void)localtime_r(&schedtime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), schedtime);
 
    db_lock(mdb);
 
@@ -1443,7 +1441,6 @@ bool db_get_quota_jobbytes_nofailed(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t Jo
    SQL_ROW row;
    char ed1[50], ed2[50];
    int num_rows;
-   struct tm tm;
    char dt[MAX_TIME_LENGTH];
    bool retval = false;
    time_t now, schedtime;
@@ -1461,8 +1458,7 @@ bool db_get_quota_jobbytes_nofailed(JCR *jcr, B_DB *mdb, JOB_DBR *jr, utime_t Jo
     */
    schedtime += 5;
 
-   (void)localtime_r(&schedtime, &tm);
-   strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
+   bstrutime(dt, sizeof(dt), schedtime);
 
    db_lock(mdb);
 

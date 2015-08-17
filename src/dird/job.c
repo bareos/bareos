@@ -1314,7 +1314,6 @@ void create_unique_job_name(JCR *jcr, const char *base_name)
    static time_t last_start_time = 0;
    static int seq = 0;
    time_t now = time(NULL);
-   struct tm tm;
    char dt[MAX_TIME_LENGTH];
    char name[MAX_NAME_LENGTH];
    char *p;
@@ -1335,10 +1334,13 @@ void create_unique_job_name(JCR *jcr, const char *base_name)
    last_start_time = now;
    V(mutex);                          /* allow creation of jobs */
    jcr->start_time = now;
-   /* Form Unique JobName */
-   (void)localtime_r(&now, &tm);
-   /* Use only characters that are permitted in Windows filenames */
-   strftime(dt, sizeof(dt), "%Y-%m-%d_%H.%M.%S", &tm);
+
+   /*
+    * Form Unique JobName
+    * Use only characters that are permitted in Windows filenames
+    */
+   bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%d_%H.%M.%S");
+
    len = strlen(dt) + 5;   /* dt + .%02d EOS */
    bstrncpy(name, base_name, sizeof(name));
    name[sizeof(name)-len] = 0;          /* truncate if too long */
