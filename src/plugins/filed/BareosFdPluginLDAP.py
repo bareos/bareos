@@ -201,6 +201,7 @@ class BareosLDAPWrapper:
         self.ldif_len = None
         self.unix_create_time = None
         self.unix_modify_time = None
+        self.msg_id = None
 
     def connect_and_bind(self, context, options, bulk=False):
         '''
@@ -224,7 +225,7 @@ class BareosLDAPWrapper:
                 (options['uri']))
 
             return bRCs['bRC_Error']
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             if type(e.message) == dict and 'desc' in e.message:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_FATAL'],
@@ -273,7 +274,7 @@ class BareosLDAPWrapper:
             self.msg_id = self.ld.search(
                 options['basedn'], searchScope,
                 searchFilter, attributeFilter)
-        except ldap.LDAPError, e:
+        except ldap.LDAPError as e:
             if type(e.message) == dict and 'desc' in e.message:
                 bareosfd.JobMessage(
                     context, bJobMessageType['M_FATAL'],
@@ -360,6 +361,8 @@ class BareosLDAPWrapper:
                 try:
                     res_type, res_data, res_msgid, res_controls = self.resultset.next()
                     self.ldap_entries = res_data
+                except ldap.NO_SUCH_OBJECT:
+                    return bRCs['bRC_Error']
                 except StopIteration:
                     return bRCs['bRC_Error']
 
@@ -467,12 +470,12 @@ class BareosLDAPWrapper:
                     add_ldif = ldap.modlist.addModlist(entry)
                     try:
                         self.ld.add_s(self.dn, add_ldif)
-                    except ldap.LDAPError, e:
+                    except ldap.LDAPError as e:
                         # Delete the original DN
                         try:
                             self.ld.delete_s(self.dn)
                             self.ld.add_s(self.dn, add_ldif)
-                        except ldap.LDAPError, e:
+                        except ldap.LDAPError as e:
                             if type(e.message) == dict and 'desc' in e.message:
                                 bareosfd.JobMessage(
                                     context, bJobMessageType['M_ERROR'],

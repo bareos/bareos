@@ -93,13 +93,15 @@ plugtest: Makefile fd_plugins.c fileset.c \
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
 	@for plugin in $(BUILD_PLUGINS); do \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
 	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
 	done
+	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/
+	$(INSTALL_CONFIG) plugin-python-ldap.conf ${DESTDIR}${confdir}/bareos-dir.d/
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
@@ -118,5 +120,6 @@ clean:	libtool-clean
 
 distclean: clean
 	@$(RMF) Makefile
+	@$(RMF) plugin-python-ldap.conf
 
 depend:

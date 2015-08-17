@@ -1125,6 +1125,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
 %{plugin_dir}/BareosFdPluginLDAP.py*
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-python-ldap.conf
 
 %files director-python-plugin
 %defattr(-, root, root)

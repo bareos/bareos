@@ -4607,6 +4607,7 @@ src/ndmp/Makefile \
 src/tests/Makefile \
 src/tools/Makefile \
 src/plugins/filed/Makefile \
+src/plugins/filed/plugin-python-ldap.conf \
 src/plugins/stored/Makefile \
 src/plugins/dird/Makefile \
 po/Makefile.in \
