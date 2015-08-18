@@ -22,7 +22,7 @@ class Module
         $eventManager        = $e->getApplication()->getEventManager();
         $moduleRouteListener = new ModuleRouteListener();
         $moduleRouteListener->attach($eventManager);
-		$this->initSession($e);
+	$this->initSession($e);
     }
 
     public function getConfig()
@@ -55,10 +55,10 @@ class Module
 		if(!isset($container->init)) {
 
 			$serviceManager = $e->getApplication()->getServiceManager();
-			$request		= $serviceManager->get('Request');
+			$request = $serviceManager->get('Request');
 
 			$session->regenerateId(true);
-			$container->init			= 1;
+			$container->init		= 1;
 			$container->remoteAddr		= $request->getServer()->get('REMOTE_ADDR');
 			$container->httpUserAgent	= $request->getServer()->get('HTTP_USER_AGENT');
 			$container->username 		= "";
@@ -72,22 +72,22 @@ class Module
 
 			$sessionConfig = $config['session'];
 
-			if (isset($sessionConfig['validators'])) {
-                $chain   = $session->getValidatorChain();
-                foreach ($sessionConfig['validators'] as $validator) {
-                    switch ($validator) {
-                        case 'Zend\Session\Validator\HttpUserAgent':
-                            $validator = new $validator($container->httpUserAgent);
-                            break;
-                        case 'Zend\Session\Validator\RemoteAddr':
-                            $validator  = new $validator($container->remoteAddr);
-                            break;
-                        default:
-                            $validator = new $validator();
-                    }
-                    $chain->attach('session.validate', array($validator, 'isValid'));
-                }
-            }
+			if(isset($sessionConfig['validators'])) {
+				$chain = $session->getValidatorChain();
+				foreach($sessionConfig['validators'] as $validator) {
+					switch ($validator) {
+						case 'Zend\Session\Validator\HttpUserAgent':
+							$validator = new $validator($container->httpUserAgent);
+							break;
+						case 'Zend\Session\Validator\RemoteAddr':
+							$validator = new $validator($container->remoteAddr);
+							break;
+						default:
+							$validator = new $validator();
+					}
+					$chain->attach('session.validate', array($validator, 'isValid'));
+				}
+			}
 
 		}
 
@@ -109,33 +109,33 @@ class Module
 						if(isset($session['config'])) {
 							$class = isset($session['config']['class'])  ? $session['config']['class'] : 'Zend\Session\Config\SessionConfig';
 							$options = isset($session['config']['options']) ? $session['config']['options'] : array();
-                            $sessionConfig = new $class();
-                            $sessionConfig->setOptions($options);
+							$sessionConfig = new $class();
+							$sessionConfig->setOptions($options);
 						}
 
 						$sessionStorage = null;
 
 						if (isset($session['storage'])) {
-                            $class = $session['storage'];
-                            $sessionStorage = new $class();
-                        }
+							$class = $session['storage'];
+							$sessionStorage = new $class();
+						}
 
 						$sessionSaveHandler = null;
 
 						if (isset($session['save_handler'])) {
-                            // class should be fetched from service manager since it will require constructor arguments
-                            $sessionSaveHandler = $sm->get($session['save_handler']);
-                        }
+							// class should be fetched from service manager since it will require constructor arguments
+							$sessionSaveHandler = $sm->get($session['save_handler']);
+						}
 
 						$sessionManager = new SessionManager($sessionConfig, $sessionStorage, $sessionSaveHandler);
 
-					} else {
-						$sessionManager = new SessionManager();
-					}
+						} else {
+							$sessionManager = new SessionManager();
+						}
 
-					Container::setDefaultManager($sessionManager);
-					return $sessionManager;
-				}
+						Container::setDefaultManager($sessionManager);
+						return $sessionManager;
+					}
 			),
 		);
 	}

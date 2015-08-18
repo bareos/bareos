@@ -27,7 +27,7 @@ namespace Restore\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\ViewModel\JsonModel;
+use Zend\View\Model\JsonModel;
 use Restore\Model\Restore;
 use Restore\Form\RestoreForm;
 
@@ -140,11 +140,11 @@ class RestoreController extends AbstractActionController
 	public function filebrowserAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true) {
-                        $result = new ViewModel(array(
+			$this->getRestoreParams();
+                        $this->layout('layout/json');
+                        return new ViewModel(array(
                                 'items' => $this->buildSubtree()
                         ));
-                        $this->layout('layout/json');
-                        return $result;
                 }
                 else{
                         return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -161,18 +161,34 @@ class RestoreController extends AbstractActionController
 
 		// Get directories
 		if($this->restore_params['type'] == "client") {
-			$directories = $this->getDirectories($this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets'], $this->restore_params['mergejobs']), $this->restore_params['id']);
+			$directories = $this->getDirectories(
+						$this->getJobIds($this->restore_params['jobid'],
+						$this->restore_params['mergefilesets'],
+						$this->restore_params['mergejobs']),
+						$this->restore_params['id']
+					);
 		}
 		else {
-			$directories = $this->getDirectories($this->restore_params['jobid'], $this->restore_params['id']);
+			$directories = $this->getDirectories(
+						$this->restore_params['jobid'],
+						$this->restore_params['id']
+					);
 		}
 
 		// Get files
 		if($this->restore_params['type'] == "client") {
-			$files = $this->getFiles($this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets'], $this->restore_params['mergejobs']), $this->restore_params['id']);
+			$files = $this->getFiles(
+						$this->getJobIds($this->restore_params['jobid'],
+						$this->restore_params['mergefilesets'],
+						$this->restore_params['mergejobs']),
+						$this->restore_params['id']
+					);
 		}
 		else {
-			$files = $this->getFiles($this->restore_params['jobid'], $this->restore_params['id']);
+			$files = $this->getFiles(
+						$this->restore_params['jobid'],
+						$this->restore_params['id']
+					);
 		}
 
 		$dnum = count($directories);
@@ -182,47 +198,55 @@ class RestoreController extends AbstractActionController
 		// Build Json for JStree
 		$items = '[';
 
-		foreach($directories as $dir) {
-			if($dir['name'] == ".") {
-				--$dnum;
-				next($directories);
-			}
-			elseif($dir['name'] == "..") {
-				--$dnum;
-				next($directories);
-			}
-			else {
-				--$dnum;
-				$items .= '{';
-				$items .= '"id":"-' . $dir['pathid'] . '"';
-				$items .= ',"text":"' . $dir["name"] . '"';
-				$items .= ',"icon":"glyphicon glyphicon-folder-close"';
-				$items .= ',"state":""';
-				$items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
-				$items .= ',"children":true';
-				$items .= '}';
-				if($dnum > 0) {
-					$items .= ",";
+		if($dnum > 0) {
+
+			foreach($directories as $dir) {
+				if($dir['name'] == ".") {
+					--$dnum;
+					next($directories);
+				}
+				elseif($dir['name'] == "..") {
+					--$dnum;
+					next($directories);
+				}
+				else {
+					--$dnum;
+					$items .= '{';
+					$items .= '"id":"-' . $dir['pathid'] . '"';
+					$items .= ',"text":"' . $dir["name"] . '"';
+					$items .= ',"icon":"glyphicon glyphicon-folder-close"';
+					$items .= ',"state":""';
+					$items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
+					$items .= ',"children":true';
+					$items .= '}';
+					if($dnum > 0) {
+						$items .= ",";
+					}
 				}
 			}
+
 		}
 
 		if( $tmp > 2 && $fnum > 0 ) {
 			$items .= ",";
 		}
 
-		foreach($files as $file) {
-			$items .= '{';
-			$items .= '"id":"' . $file["fileid"] . '"';
-			$items .= ',"text":"' . $file["name"] . '"';
-			$items .= ',"icon":"glyphicon glyphicon-file"';
-			$items .= ',"state":""';
-			$items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
-			$items .= '}';
-			--$fnum;
-			if($fnum > 0) {
-				$items .= ",";
+		if($fnum > 0) {
+
+			foreach($files as $file) {
+				$items .= '{';
+				$items .= '"id":"' . $file["fileid"] . '"';
+				$items .= ',"text":"' . $file["name"] . '"';
+				$items .= ',"icon":"glyphicon glyphicon-file"';
+				$items .= ',"state":""';
+				$items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
+				$items .= '}';
+				--$fnum;
+				if($fnum > 0) {
+					$items .= ",";
+				}
 			}
+
 		}
 
 		$items .= ']';
@@ -437,11 +461,11 @@ class RestoreController extends AbstractActionController
 		$result = null;
 		$director = $this->getServiceLocator()->get('director');
 
-		if($mergefilesets == 0) {
+		if($mergefilesets == 0 && $mergejobs == 0) {
                         $cmd = ".bvfs_get_jobids jobid=$jobid all";
 			$result = $director->send_command($cmd, 2);
                 }
-                elseif($mergefilesets == 1) {
+                elseif($mergefilesets == 1 && $mergejobs == 0) {
                         $cmd = ".bvfs_get_jobids jobid=$jobid";
 			$result = $director->send_command($cmd, 2);
                 }
@@ -452,7 +476,8 @@ class RestoreController extends AbstractActionController
 
 		$jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                 $result = "";
-                $jnum = count($jobids['result']['jobids']);
+
+		$jnum = count($jobids['result']['jobids']);
 
                 foreach($jobids['result']['jobids'] as $jobid) {
                         $result .= $jobid['id'];
@@ -463,6 +488,7 @@ class RestoreController extends AbstractActionController
                 }
 
 		$this->restore_params['jobids'] = $result;
+
 		return $result;
 	}
 

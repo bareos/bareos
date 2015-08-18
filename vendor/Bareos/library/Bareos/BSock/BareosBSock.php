@@ -125,6 +125,11 @@ class BareosBSock implements BareosBSockInterface
 	{
 		$this->config['console_name'] = $username;
 		$this->config['password'] = $password;
+
+		if($this->config['debug']) {
+                        // extended debug: print config array
+                        var_dump($this->config);
+                }
 	}
 
 	/**
@@ -146,7 +151,7 @@ class BareosBSock implements BareosBSockInterface
 
 		if($this->config['debug']) {
 			// extended debug: print config array
-			//var_dump($this->config);
+			var_dump($this->config);
 		}
 	}
 
@@ -273,17 +278,13 @@ class BareosBSock implements BareosBSockInterface
 			if ($len == 0) {
 				break;
 			}
-			if ($len > 0 && $len < 8192) {
-				$msg .= fread($this->socket, $len);
-			} elseif($len > 8192) {
-				$rlen = 8192;
-				while ($len > 0) {
+			if ($len > 0) {
+				$rlen = 1024;
+				while (floor($len / $rlen) > 0) {
 					$msg .= fread($this->socket, $rlen);
 					$len -= $rlen;
-					if($len < $rlen) {
-						$rlen = $len;
-					}
 				}
+				$msg .= fread($this->socket, $len);
 			} elseif ($len < 0) {
 				// signal received
 				switch ($len) {
@@ -457,7 +458,14 @@ class BareosBSock implements BareosBSockInterface
 		$port = $this->config['port'];
 		$remote = "tcp://" . $this->config['host'] . ":" . $port;
 
-		$context = stream_context_create();
+		// set default stream context options
+		$opts = array(
+			'socket' => array(
+				'bindto' => '0:0',
+			),
+		);
+
+		$context = stream_context_create($opts);
 
 		/*
 		 * It only makes sense to setup the whole TLS context when we as client support or
@@ -498,8 +506,9 @@ class BareosBSock implements BareosBSockInterface
 			}
 		}
 
-		$this->socket = stream_socket_client($remote, $error, $errstr, 60,
-						     STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
+		//$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
+		$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
+
 		if (!$this->socket) {
 			throw new \Exception("Error Connecting Socket: " . $errstr . "\n");
 		}
