@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -39,7 +39,7 @@ class JobController extends AbstractActionController
 
 	public function indexAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -64,7 +64,7 @@ class JobController extends AbstractActionController
 
 	public function detailsAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$id = (int) $this->params()->fromRoute('id', 0);
 				if (!$id) {
 					return $this->redirect()->toRoute('job');
@@ -82,7 +82,7 @@ class JobController extends AbstractActionController
 
 	public function runningAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -107,7 +107,7 @@ class JobController extends AbstractActionController
 
 	public function waitingAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -132,7 +132,7 @@ class JobController extends AbstractActionController
 
 	public function unsuccessfulAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -157,7 +157,7 @@ class JobController extends AbstractActionController
 
 	public function successfulAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'JobId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -182,7 +182,7 @@ class JobController extends AbstractActionController
 
 	public function rerunAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$jobid = (int) $this->params()->fromRoute('id', 0);
 				$cmd = "rerun jobid=" . $jobid . " yes";
 				$this->director = $this->getServiceLocator()->get('director');
@@ -200,7 +200,7 @@ class JobController extends AbstractActionController
 
 	public function cancelAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$jobid = (int) $this->params()->fromRoute('id', 0);
 				$cmd = "cancel jobid=" . $jobid . " yes";
 				$this->director = $this->getServiceLocator()->get('director');

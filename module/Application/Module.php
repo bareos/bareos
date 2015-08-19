@@ -17,33 +17,34 @@ use Bareos\BSock\BareosBsock;
 
 class Module
 {
-    public function onBootstrap(MvcEvent $e)
-    {
-        $eventManager        = $e->getApplication()->getEventManager();
-        $moduleRouteListener = new ModuleRouteListener();
-        $moduleRouteListener->attach($eventManager);
-	$this->initSession($e);
-    }
 
-    public function getConfig()
-    {
-        return include __DIR__ . '/config/module.config.php';
-    }
+	public function onBootstrap(MvcEvent $e)
+	{
+		$eventManager        = $e->getApplication()->getEventManager();
+		$moduleRouteListener = new ModuleRouteListener();
+		$moduleRouteListener->attach($eventManager);
+		$this->initSession($e);
+	}
 
-    public function getAutoloaderConfig()
-    {
-        return array(
-	    'Zend\Loader\ClassMapAutoloader' => array(
-                'application' => __DIR__ . '/autoload_classmap.php',
-            ),
-            'Zend\Loader\StandardAutoloader' => array(
-                'namespaces' => array(
-                    __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
-				'Bareos' => __DIR__ .'/../../vendor/Bareos/library/Bareos',
-                ),
-            ),
-        );
-    }
+	public function getConfig()
+	{
+		return include __DIR__ . '/config/module.config.php';
+	}
+
+	public function getAutoloaderConfig()
+	{
+		return array(
+				'Zend\Loader\ClassMapAutoloader' => array(
+				'application' => __DIR__ . '/autoload_classmap.php',
+			),
+			'Zend\Loader\StandardAutoloader' => array(
+				'namespaces' => array(
+					 __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
+					'Bareos' => __DIR__ .'/../../vendor/Bareos/library/Bareos',
+				),
+			),
+		);
+	}
 
 	public function initSession($e)
 	{
@@ -98,6 +99,7 @@ class Module
 		return array(
 			'factories' => array(
 				'Zend\Session\SessionManager' => function ($sm) {
+
 					$config = $sm->get('config');
 
 					if (isset($config['session'])) {
@@ -134,10 +136,15 @@ class Module
 						}
 
 						Container::setDefaultManager($sessionManager);
+
 						return $sessionManager;
-					}
+
+				},
+
 			),
+
 		);
+
 	}
 
 }

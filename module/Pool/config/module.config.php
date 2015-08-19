@@ -30,7 +30,11 @@ return array(
 			'Pool\Controller\Pool' => 'Pool\Controller\PoolController',
 		),
 	),
-
+	'controller_plugins' => array(
+                'invokables' => array(
+                        'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+                ),
+        ),
 	'router' => array(
 		'routes' => array(
 			'pool' => array(

@@ -35,7 +35,7 @@ class MediaController extends AbstractActionController
 
 	public function indexAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'MediaId';
 				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
@@ -59,7 +59,7 @@ class MediaController extends AbstractActionController
 
 	public function detailsAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 			$id = (int) $this->params()->fromRoute('id', 0);
 			if (!$id) {
 			return $this->redirect()->toRoute('media');

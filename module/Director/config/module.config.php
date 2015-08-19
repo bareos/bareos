@@ -30,7 +30,11 @@ return array(
 			'Director\Controller\Director' => 'Director\Controller\DirectorController',
 		),
 	),
-	
+	'controller_plugins' => array(
+                'invokables' => array(
+                        'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+                ),
+        ),
 	'router' => array(
 		'routes' => array(
 			'director' => array(

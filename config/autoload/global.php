@@ -246,11 +246,17 @@ return array(
 		),
 	),
 	'session' => array(
-        'config' => array(
-            'class' => 'Zend\Session\Config\SessionConfig',
-            'options' => array(
-                'name' => 'Bareos-WebUI',
-            ),
+		'config' => array(
+			'class' => 'Zend\Session\Config\SessionConfig',
+			'options' => array(
+				'name' => 'bareos',
+				'use_cookies' => true,
+				'cookie_lifetime' => '3600',
+				'gc_maxlifetime' => '3600',
+				'cache_expire' => 3600,
+				'remember_me_seconds' => 3600,
+				'use_cookies' => true
+			),
         ),
         'storage' => 'Zend\Session\Storage\SessionArrayStorage',
         'validators' => array(

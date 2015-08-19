@@ -37,7 +37,7 @@ class DirectorController extends AbstractActionController
 
 	public function indexAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$cmd = "status director";
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
@@ -51,7 +51,7 @@ class DirectorController extends AbstractActionController
 
 	public function messagesAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$cmd = "messages";
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
@@ -65,7 +65,7 @@ class DirectorController extends AbstractActionController
 
 	public function scheduleAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$cmd = "show schedule";
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
@@ -79,7 +79,7 @@ class DirectorController extends AbstractActionController
 
 	public function schedulerstatusAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$cmd = "status scheduler";
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(
@@ -93,7 +93,7 @@ class DirectorController extends AbstractActionController
 
 	public function versionAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 				$cmd = "version";
 				$this->director = $this->getServiceLocator()->get('director');
 				return new ViewModel(array(

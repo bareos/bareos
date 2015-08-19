@@ -41,7 +41,7 @@ class RestoreController extends AbstractActionController
 	 */
 	public function indexAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 			$this->getRestoreParams();
 
@@ -139,7 +139,7 @@ class RestoreController extends AbstractActionController
 	 */
 	public function filebrowserAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 			$this->getRestoreParams();
                         $this->layout('layout/json');
                         return new ViewModel(array(

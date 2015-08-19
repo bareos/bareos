@@ -30,7 +30,11 @@ return array(
 			'Fileset\Controller\Fileset' => 'Fileset\Controller\FilesetController',
 		),
 	),
-
+	'controller_plugins' => array(
+                'invokables' => array(
+                        'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+                ),
+        ),
 	'router' => array(
 		'routes' => array(
 			'fileset' => array(

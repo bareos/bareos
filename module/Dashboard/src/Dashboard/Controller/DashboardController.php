@@ -35,7 +35,8 @@ class DashboardController extends AbstractActionController
 
 	public function indexAction()
 	{
-		if($_SESSION['bareos']['authenticated'] == true) {
+		if($_SESSION['bareos']['authenticated'] && $this->SessionTimeoutPlugin()->timeout()) {
+
 			return new ViewModel(
 				array(
 					'runningJobs' => $this->getJobTable()->getJobCountLast24HoursByStatus("running"),
@@ -50,7 +51,7 @@ class DashboardController extends AbstractActionController
 		}
 	}
 
-	public function getJobTable()
+	private function getJobTable()
 	{
 		if(!$this->jobTable)
 		{

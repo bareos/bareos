@@ -75,20 +75,27 @@ class AuthController extends AbstractActionController
 				$this->director->set_user_credentials($username, $password);
 
 				if($this->director->auth($username, $password)) {
+
 					$_SESSION['bareos']['director'] = $director;
 					$_SESSION['bareos']['username'] = $username;
 					$_SESSION['bareos']['password'] = $password;
 					$_SESSION['bareos']['authenticated'] = true;
+					$_SESSION['bareos']['idletime'] = time();
+
 					return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
+
 				} else {
+
 					session_destroy();
 					$err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
+
 					return new ViewModel(
 						array(
 							'form' => $form,
 							'err_msg' => $err_msg,
 						)
 					);
+
 				}
 
 			} else {
@@ -120,6 +127,7 @@ class AuthController extends AbstractActionController
 	public function logoutAction()
 	{
 		// todo - ask user if he's really wants to log out!
+
 		unset($_SESSION['bareos']);
 		session_destroy();
 		return $this->redirect()->toRoute('auth', array('action' => 'login'));
