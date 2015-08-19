@@ -790,6 +790,7 @@ ls -la %{buildroot}/%{library_dir}
 %if ! 0%{?python_plugins}
 rm -f %{buildroot}/%{plugin_dir}/python-*.so
 rm -f %{buildroot}/%{plugin_dir}/*.py*
+rm -f %{buildroot}/%{_sysconfdir}/bareos/bareos-dir.d/plugin-python-ldap.conf
 %endif
 
 %if 0%{?build_bat}
