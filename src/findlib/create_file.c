@@ -116,13 +116,13 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       switch (replace) {
       case REPLACE_IFNEWER:
          if (attr->statp.st_mtime <= mstatp.st_mtime) {
-            Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Not newer: %s\n"), attr->ofname);
+            Qmsg(jcr, M_INFO, 0, _("File skipped. Not newer: %s\n"), attr->ofname);
             return CF_SKIP;
          }
          break;
       case REPLACE_IFOLDER:
          if (attr->statp.st_mtime >= mstatp.st_mtime) {
-            Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Not older: %s\n"), attr->ofname);
+            Qmsg(jcr, M_INFO, 0, _("File skipped. Not older: %s\n"), attr->ofname);
             return CF_SKIP;
          }
          break;
@@ -133,7 +133,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
          if (attr->type == FT_DIREND && path_list_lookup(jcr->path_list, attr->ofname)) {
             break;
          }
-         Qmsg(jcr, M_SKIPPED, 0, _("File skipped. Already exists: %s\n"), attr->ofname);
+         Qmsg(jcr, M_INFO, 0, _("File skipped. Already exists: %s\n"), attr->ofname);
          return CF_SKIP;
       case REPLACE_ALWAYS:
          break;
