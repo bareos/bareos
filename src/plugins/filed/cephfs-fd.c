@@ -1253,14 +1253,14 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       switch (rp->replace) {
       case REPLACE_IFNEWER:
          if (rp->statp.st_mtime <= st.st_mtime) {
-            Jmsg(ctx, M_SKIPPED, 0, _("File skipped. Not newer: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("File skipped. Not newer: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
          break;
       case REPLACE_IFOLDER:
          if (rp->statp.st_mtime >= st.st_mtime) {
-            Jmsg(ctx, M_SKIPPED, 0, _("File skipped. Not older: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("File skipped. Not older: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
@@ -1272,7 +1272,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (rp->type == FT_DIREND && path_list_lookup(p_ctx->path_list, rp->ofname)) {
             break;
          }
-         Jmsg(ctx, M_SKIPPED, 0, _("File skipped. Already exists: %s\n"), rp->ofname);
+         Jmsg(ctx, M_INFO, 0, _("File skipped. Already exists: %s\n"), rp->ofname);
          rp->create_status = CF_SKIP;
          goto bail_out;
       case REPLACE_ALWAYS:

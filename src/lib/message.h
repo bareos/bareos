@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,50 +48,53 @@
  * and here are some of the details of where I am trying to
  * head (in the process of changing the code) as of 15 June 2002.
  *
- *  M_ABORT       BAREOS immediately aborts and tries to produce a traceback
- *                This is for really serious errors like segmentation fault.
- *  M_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
- *                "obvious" serious errors like daemon already running or
- *                cannot open critical file, ... where a dump is not wanted.
- *  M_TERM        BAREOS daemon shutting down because of request (SIGTERM).
+ * M_ABORT       BAREOS immediately aborts and tries to produce a traceback
+ *               This is for really serious errors like segmentation fault.
+ * M_ERROR_TERM  BAREOS immediately terminates but no dump. This is for
+ *               "obvious" serious errors like daemon already running or
+ *               cannot open critical file, ... where a dump is not wanted.
+ * M_TERM        BAREOS daemon shutting down because of request (SIGTERM).
+ * M_DEBUG       Debug Messages
  *
  * The remaining apply to Jobs rather than the daemon.
  *
- *  M_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
- *                but BAREOS continues running.
- *  M_ERROR       BAREOS detected a Job error. The Job will continue running
- *                but the termination status will be error.
- *  M_WARNING     Job warning message.
- *  M_INFO        Job information message.
- *  M_RESTORED    An ls -l of each restored file.
- *  M_SECURITY    For security viloations. This is equivalent to FATAL.
- *                (note, this is currently being implemented in 1.33).
- *  M_ALERT       For Tape Alert messages.
- *  M_VOLMGMT     Volume Management message
- *  M_AUDIT       Auditing message
+ * M_FATAL       BAREOS detected a fatal Job error. The Job will be killed,
+ *               but BAREOS continues running.
+ * M_ERROR       BAREOS detected a Job error. The Job will continue running
+ *               but the termination status will be error.
+ * M_WARNING     Job warning message.
+ * M_INFO        Job information message.
+ * M_SAVED       Info on saved file
+ * M_NOTSAVED    Info on not saved file
+ * M_RESTORED    An ls -l of each restored file.
+ * M_SKIPPED     File skipped during backup by option setting
+ * M_SECURITY    For security viloations. This is equivalent to FATAL.
+ * M_ALERT       For Tape Alert messages.
+ * M_VOLMGMT     Volume Management message
+ * M_AUDIT       Auditing message
+ * M_MOUNT       Mount requests
  */
-
 enum {
    /*
     * Keep M_ABORT=1 for dlist.h
     */
-   M_ABORT = 1,                       /* MUST abort immediately */
-   M_DEBUG,                           /* Debug message */
-   M_FATAL,                           /* Fatal error, stopping job */
-   M_ERROR,                           /* Error, but recoverable */
-   M_WARNING,                         /* warning message */
-   M_INFO,                            /* Informational message */
-   M_SAVED,                           /* Info on saved file */
-   M_NOTSAVED,                        /* Info on notsaved file */
-   M_SKIPPED,                         /* File skipped during backup by option setting */
-   M_MOUNT,                           /* Mount requests */
-   M_ERROR_TERM,                      /* Error termination request (no dump) */
-   M_TERM,                            /* Terminating daemon normally */
-   M_RESTORED,                        /* ls -l of restored files */
-   M_SECURITY,                        /* Security violation */
-   M_ALERT,                           /* Tape alert messages */
-   M_VOLMGMT,                         /* Volume management messages */
-   M_AUDIT                            /* Auditing message */
+   M_ABORT = 1,
+   M_DEBUG,
+   M_FATAL,
+   M_ERROR,
+   M_WARNING,
+   M_INFO,
+   M_SAVED,
+   M_NOTSAVED,
+   M_SKIPPED,
+   M_MOUNT,
+   M_ERROR_TERM,
+   M_TERM,
+   M_RESTORED,
+   M_SECURITY,
+   M_ALERT,
+   M_VOLMGMT,
+   M_AUDIT
 };
 
 #define M_MAX M_AUDIT                 /* keep this updated ! */
@@ -115,20 +118,33 @@ typedef struct s_dest {
 
 /*
  * Message Destination values for dest field of DEST
+ *
+ * MD_SYSLOG          Send msg to syslog
+ * MD_MAIL            Email group of messages
+ * MD_FILE            Write messages to a file
+ * MD_APPEND          Append messages to a file
+ * MD_STDOUT          Print messages
+ * MD_STDERR          Print messages to stderr
+ * MD_DIRECTOR,       Send message to the Director
+ * MD_OPERATOR        Email a single message to the operator
+ * MD_CONSOLE         Send msg to UserAgent or console
+ * MD_MAIL_ON_ERROR   Email messages if job errors
+ * MD_MAIL_ON_SUCCESS Email messages if job succeeds
+ * MD_CATALOG
  */
 enum {
-   MD_SYSLOG = 1,                     /* Send msg to syslog */
-   MD_MAIL,                           /* Email group of messages */
-   MD_FILE,                           /* Write messages to a file */
-   MD_APPEND,                         /* Append messages to a file */
-   MD_STDOUT,                         /* Print messages */
-   MD_STDERR,                         /* Print messages to stderr */
-   MD_DIRECTOR,                       /* Send message to the Director */
-   MD_OPERATOR,                       /* Email a single message to the operator */
-   MD_CONSOLE,                        /* Send msg to UserAgent or console */
-   MD_MAIL_ON_ERROR,                  /* Email messages if job errors */
-   MD_MAIL_ON_SUCCESS,                /* Email messages if job succeeds */
-   MD_CATALOG                         /* Sent to catalog Log table */
+   MD_SYSLOG = 1,
+   MD_MAIL,
+   MD_FILE,
+   MD_APPEND,
+   MD_STDOUT,
+   MD_STDERR,
+   MD_DIRECTOR,
+   MD_OPERATOR,
+   MD_CONSOLE,
+   MD_MAIL_ON_ERROR,
+   MD_MAIL_ON_SUCCESS,
+   MD_CATALOG
 };
 
 /*
