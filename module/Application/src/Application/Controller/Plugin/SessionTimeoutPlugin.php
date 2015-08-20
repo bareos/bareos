@@ -11,7 +11,7 @@ class SessionTimeoutPlugin extends AbstractPlugin
 	{
 		// preparation for setting timeout via config file:
 		$this->getController()->getServiceLocator()->get('config');
-		$timeout = 300;
+		$timeout = 600;
 
 		if($_SESSION['bareos']['idletime'] + $timeout > time()) {
 			$_SESSION['bareos']['idletime'] = time();
