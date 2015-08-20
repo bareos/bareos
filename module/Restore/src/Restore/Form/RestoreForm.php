@@ -52,6 +52,41 @@ class RestoreForm extends Form
 		$this->jobids = $jobids;
 		$this->backups = $backups;
 
+		// Mode
+                if(isset($restore_params['mode'])) {
+                        $this->add(array(
+                                'name' => 'mode',
+                                'type' => 'checkbox',
+                                'options' => array(
+                                        'label' => 'Expert mode',
+					'use_hidden_element' => true,
+                                        'checked_value' => '1',
+					'unchecked_value' => '0',
+                                        ),
+                                'attributes' => array(
+                                                'id' => 'mode',
+                                                'value' => $restore_params['mode']
+                                        )
+                                )
+                        );
+                }
+                else {
+			$this->add(array(
+                                'name' => 'mode',
+                                'type' => 'checkbox',
+                                'options' => array(
+                                        'label' => 'Expert mode',
+                                        'use_hidden_element' => true,
+                                        'checked_value' => '1',
+                                        'unchecked_value' => '0',
+                                        ),
+                                'attributes' => array(
+                                                'id' => 'mode',
+                                        )
+                                )
+                        );
+                }
+
 		// Job
 		if(isset($restore_params['jobid'])) {
 			$this->add(array(
@@ -256,18 +291,35 @@ class RestoreForm extends Form
                         ));
                 }
                 else {
-                        $this->add(array(
-                                'name' => 'restorejob',
-                                'type' => 'select',
-                                'options' => array(
-                                        'label' => 'Restore job',
-                                        'empty_option' => 'Please choose a restore job',
-                                        'value_options' => $this->getRestoreJobList()
-                                ),
-                                'attributes' => array(
-                                        'id' => 'restorejob'
-                                )
-                        ));
+			if(count($this->getRestoreJobList()) == 1) {
+				$this->add(array(
+                                        'name' => 'restorejob',
+                                        'type' => 'select',
+                                        'options' => array(
+                                                'label' => 'Restore job',
+                                                'empty_option' => 'Please choose a restore job',
+                                                'value_options' => $this->getRestoreJobList()
+                                        ),
+                                        'attributes' => array(
+                                                'id' => 'restorejob',
+						'value' => @array_pop($this->getRestoreJobList())
+                                        )
+                                ));
+			}
+			else {
+				$this->add(array(
+					'name' => 'restorejob',
+					'type' => 'select',
+					'options' => array(
+						'label' => 'Restore job',
+						'empty_option' => 'Please choose a restore job',
+						'value_options' => $this->getRestoreJobList()
+					),
+					'attributes' => array(
+						'id' => 'restorejob'
+					)
+				));
+			}
                 }
 
 		// Merge filesets
@@ -361,7 +413,7 @@ class RestoreForm extends Form
                                 ),
                         'attributes' => array(
 					'id' => 'replace',
-					'value' => 'always'
+					'value' => 'never'
                                 )
                         )
                 );
@@ -374,7 +426,7 @@ class RestoreForm extends Form
                                 'label' => 'Restore location on client'
                                 ),
                         'attributes' => array(
-                                'value' => '/',
+                                'value' => '/tmp/bareos-restores/',
 				'placeholder' => 'e.g. / or /tmp/bareos-restores/'
                                 )
                         )
