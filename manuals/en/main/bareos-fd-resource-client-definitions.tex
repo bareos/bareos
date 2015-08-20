@@ -76,7 +76,10 @@ this mode the file daemon will try to be as compatible to a native
 Bacula file daemon as possible. Enabling this option means that
 certain new options available in Bareos cannot be used as they would
 lead to data not being able to be restored by a Native Bareos file daemon.
-When you want to use bareos-only features, you have to set it to false.
+
+The default value for this directive was changed from yes to no since Bareos Version 15.
+
+When you want to use bareos-only features, the value of compatible must be no.
 }
 
 \defDirective{Fd}{Client}{Description}{}{}{%

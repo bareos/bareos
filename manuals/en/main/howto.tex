@@ -98,10 +98,8 @@ FileDaemon {
   # remove comment in next line to load plugins from specified directory
   Plugin Directory = "C:/Program Files/Bareos/Plugins"
 
-  # if compatible is set to yes, we are compatible with bacula
-  # if you want to use new bareos features, please set compatible to no
   Plugin Names = "mssqlvdi"
-  compatible = no
+  compatible = no  # this is the default since bareos 15
 }
 \end{bconfig}
 
@@ -759,9 +757,7 @@ FileDaemon {
   Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
-  # if compatible is set to yes, we are compatible with bacula
-  # if you want to use new bareos features, please set
-  compatible = no
+  compatible = no # default since bareos 15
 }
 \end{bconfig}
 

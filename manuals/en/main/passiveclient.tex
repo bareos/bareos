@@ -32,7 +32,8 @@ Client {
 }
 \end{bconfig}
 
-Also, you need to set \configdirective{compatible=no} in the \file{bareos-fd.conf} configuration file:
+Also, prior to bareos version 15, you need to set \configdirective{compatible=no} in the \file{bareos-fd.conf} configuration file.
+Since Bareos Version 15, the compatible opion is set to no per default and does not need to be specified anymore.
 \begin{bconfig}{Disable compatible mode for the Bareos filedaemon in bareos-fd.conf} 
 Director {
   Name = bareos-dir
@@ -42,6 +43,6 @@ Director {
 FileDaemon {
    Name = client1-fd
    [...]
-   <input>Compatible = no</input>
+   <input>Compatible = no</input> # default since bareos version 15
 }
 \end{bconfig}
