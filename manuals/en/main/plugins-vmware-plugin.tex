@@ -17,7 +17,9 @@ The Plugin can do full, differential and incremental backup and restore of VM di
 
 Current limitations amongst others are:
 \begin{itemize}
-\item it is not yet possible to exclude VM disks from backups
+\item it is not yet possible to exclude normal (dependent) VM disks from backups,
+  but independent disks are excluded implicitly because they are not affected
+  by snapshots which are required for CBT based backup.
 \item the VM configuration is not yet backed up, so that it is not yet
   possible to recreate a completely deleted VM
 \item the above implies that restore is still only possible to the same existing
@@ -32,9 +34,20 @@ VMware® ESXi\trademark.
 
 \subsubsection{Installation}
 
+First add an appropriate package repository from
+\url{http://download.bareos.org/bareos/experimental/vmware-plugin/}.
+Currently, packages exist for CentOS 7, RHEL 7, Debian 8, SLES 11 SP3 and SLES 12.
+The procedure to add the repository is almost the same as described
+in section \nameref{sec:InstallBareosPackages}. Note that the name of the
+\path{.repo} for RPM based Linux distributions is \path{bareos:vmware.repo}
+for this case.
+
 Install the package \package{bareos-vmware-plugin} including its requirments
 by using an appropriate package management tool
 (eg. \command{yum}, \command{zypper}, \command{apt})
+
+The \elink{FAQ}{http://www.bareos.org/en/faq.html} may have additional
+useful information.
 
 \subsubsection{Configuration}
 
@@ -55,7 +68,19 @@ For more details regarding users and permissions in vSphere see
 \url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html} and
 \url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html}
 
-Make sure to add or enable the following settings in
+Make sure to add or enable the following settings in \path|/etc/bareos/bareos-fd.conf|:
+
+\begin{bconfig}{bareos-fd.conf: Plugin Settings}
+...
+FileDaemon {
+...
+  Plugin Directory = /usr/lib/bareos/plugins
+  Plugin Names = python
+...
+}
+\end{bconfig}
+
+Note: Depending on Platform, the Plugin Directory may also be \path|/usr/lib64/bareos/plugins|
 
 To define the backup of a VM in Bareos, a job definition and a fileset
 resource must be added to the Bareos director confguration.
