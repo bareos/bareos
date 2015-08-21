@@ -68,6 +68,7 @@ class ClientController extends AbstractActionController
 				}
 
 				$result = $this->getClientTable()->getClient($id);
+
 				$cmd = 'status client="' . $result->name . '"';
 				$this->director = $this->getServiceLocator()->get('director');
 
@@ -76,6 +77,7 @@ class ClientController extends AbstractActionController
 					  'client' => $this->getClientTable()->getClient($id),
 					  'job' => $this->getJobTable()->getLastSuccessfulClientJob($id),
 					  'bconsoleOutput' => $this->director->send_command($cmd),
+					  'backups' => $this->getClientBackups($result->name, 10, "desc"),
 					)
 				);
 		}
@@ -83,6 +85,20 @@ class ClientController extends AbstractActionController
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
+
+	private function getClientBackups($client=null, $limit=10, $order="desc")
+	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command('list backups client="'.$client.'" limit='.$limit.' order='.$order.'', 2, null);
+		if( preg_match("/Select/", $result) ) {
+			return null;
+		}
+		else {
+			$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+			return $backups['result']['backups'];
+		}
+	}
+
 
 	public function getClientTable()
 	{

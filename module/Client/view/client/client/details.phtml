@@ -10,7 +10,7 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-7">
+<div class="col-md-9">
 <div class="panel panel-default">
 
 <div class="panel-heading">
@@ -48,7 +48,7 @@ $this->headTitle($title);
 </div>
 
 
-<div class="col-md-5">
+<div class="col-md-3">
 
 <div class="panel panel-default">
 <div class="panel-heading">
@@ -69,15 +69,51 @@ $this->headTitle($title);
 </div>
 
 </div>
+</div>
 
-<!-- bconsoleOutput start -->
 <div class="row">
-<div class="col-md-12">
-<pre style="font-size: 8pt;">
-<code>
-<?php echo $this->bconsoleOutput; ?>
-</code>
-</pre>
+<div class="col-md-9">
+
+<div class="panel panel-default">
+<div class="panel-heading">
+<h3 class="panel-title">Last backups</h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-bordered table-condensed">
+
+<tr>
+<th class="bg-primary"><?php echo $this->translate("Job"); ?></th>
+<th class="bg-primary"><?php echo $this->translate("Timestamp"); ?></th>
+<th class="bg-primary"><?php echo $this->translate("Fileset"); ?></th>
+<th class="bg-primary"><?php echo $this->translate("Level"); ?></th>
+<th class="bg-primary"><?php echo $this->translate("Files"); ?></th>
+<th class="bg-primary"><?php echo $this->translate("Bytes"); ?></th>
+</tr>
+
+<?php if($this->backups != null) : ?>
+
+<?php foreach ($this->backups as $backup) : ?>
+
+<tr>
+<td><?php echo $this->escapeHtml($backup['jobid']); ?></td>
+<td><?php echo $this->escapeHtml($backup['starttime']); ?></td>
+<td><?php echo $this->escapeHtml($backup['fileset']); ?></td>
+<td><?php echo $this->escapeHtml($this->printJobLevel($backup['level'])); ?></td>
+<td><?php echo $this->escapeHtml($backup['jobfiles']); ?></td>
+<td><?php echo $this->escapeHtml($this->printBytes($backup['jobbytes'])); ?></td>
+</tr>
+
+<?php endforeach; ?>
+
+<?php endif; ?>
+
+</table>
+
+</div>
+
 </div>
 </div>
-<!-- bconsoleOutput end -->
+
+</div>
