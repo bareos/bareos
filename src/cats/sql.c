@@ -217,7 +217,7 @@ bool check_tables_version(JCR *jcr, B_DB *mdb)
 bool QueryDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
    sql_free_result(mdb);
-   Pmsg1(1000, "query: %s\n", cmd);
+   Dmsg1(1000, "query: %s\n", cmd);
    if (!sql_query(mdb, cmd, QF_STORE_RESULT)) {
       m_msg(file, line, &mdb->errmsg, _("query %s failed:\n%s\n"), cmd, sql_strerror(mdb));
       j_msg(file, line, jcr, M_FATAL, 0, "%s", mdb->errmsg);
