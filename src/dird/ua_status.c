@@ -382,16 +382,27 @@ static void do_all_status(UAContext *ua)
 
 void list_dir_status_header(UAContext *ua)
 {
-   int len;
+   int len, cnt;
+   CATRES *catalog;
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
-   POOL_MEM msg(PM_FNAME);
+   POOL_MEM msg(PM_FNAME),
+            dbdrivers(PM_FNAME);
+
+   cnt = 0;
+   foreach_res(catalog, R_CATALOG) {
+      if (cnt) {
+         dbdrivers.strcat(" ");
+      }
+      dbdrivers.strcat(catalog->db_driver);
+      cnt++;
+   }
 
    ua->send_msg(_("%s Version: %s (%s) %s %s %s\n"), my_name, VERSION, BDATE,
                 HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-   ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d mode=%d\n"),
-                dt, num_jobs_run, job_count(), (int)DEVELOPER_MODE);
+   ua->send_msg(_("Daemon started %s. Jobs: run=%d, running=%d mode=%d db=%s\n"),
+                dt, num_jobs_run, job_count(), (int)DEVELOPER_MODE, dbdrivers.c_str() );
    ua->send_msg(_(" Heap: heap=%s smbytes=%s max_bytes=%s bufs=%s max_bufs=%s\n"),
                 edit_uint64_with_commas((char *)sbrk(0)-(char *)start_heap, b1),
                 edit_uint64_with_commas(sm_bytes, b2),
