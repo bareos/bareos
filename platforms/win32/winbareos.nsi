@@ -509,6 +509,7 @@ Section -DataBaseCheck
 IfSilent 0 DataBaseCheckEnd  # if we are silent, we do the db credentials check, otherwise the db dialog will do it
 
 StrCmp $InstallDirector "no" DataBaseCheckEnd # skip DbConnection if not instaling director
+StrCmp $DbDriver "sqlite3" DataBaseCheckEnd # skip DbConnection if not instaling director
 
 ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
 !insertmacro CheckDbAdminConnection
@@ -1015,32 +1016,31 @@ Section -StartDaemon
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_DIR}
-    #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
-    #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
-    #                 with administrator rights now." /SD IDOK
-    LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Init false $INSTDIR\sql.log
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-    nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
 
+     ${If} $DbDriver == postgresql
+       #  MessageBox MB_OK|MB_ICONINFORMATION "To setup the bareos database, please run the script$\r$\n\
+       #                 $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat$\r$\n \
+       #                 with administrator rights now." /SD IDOK
+       LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+       StrCmp $WriteLogs "yes" 0 +2
+          LogEx::Init false $INSTDIR\sql.log
+       StrCmp $WriteLogs "yes" 0 +2
+          LogEx::Write "Now executing $APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
+       nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat > $PLUGINSDIR\db_setup_output.log"
+       StrCmp $WriteLogs "yes" 0 +2
+          LogEx::AddFile "   >" "$PLUGINSDIR\db_setup_output.log"
 
-# create sqlite3 db
-    nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat > $PLUGINSDIR\db_setup_output.log"
+     ${ElseIf} $DbDriver == sqlite3
+       # create sqlite3 db
+       LogText "### Executing $APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat"
+       nsExec::ExecToLog "$APPDATA\${PRODUCT_NAME}\scripts\sqlite3-createdb.bat > $PLUGINSDIR\db_setup_output.log"
 
+     ${EndIf}
 
-    #nsExec::ExecToStack "$APPDATA\${PRODUCT_NAME}\scripts\postgres_db_setup.bat"
-    #    Pop $0 # return value/error/timeout
-    #    Pop $1 # printed text, up to ${NSIS_MAX_STRLEN}
-    #    DetailPrint $1
-    #    LogText $1
-    LogText "### Executing net start bareos-dir"
-    nsExec::ExecToLog "net start bareos-dir"
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Close
+      LogText "### Executing net start bareos-dir"
+      nsExec::ExecToLog "net start bareos-dir"
+      StrCmp $WriteLogs "yes" 0 +2
+      LogEx::Close
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_TRAYMON}
@@ -1136,13 +1136,14 @@ Function .onInit
                     [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
                     $\r$\n\
                     [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]  $\r$\n\
-                    [/DBADMINUSER=Database Admin User]  $\r$\n\
-                    [/DBADMINPASSWORD=Database Admin Password]  $\r$\n\
+                    [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]  $\r$\n\
+                    [/DBADMINUSER=Database Admin User (not needed for sqlite3)]  $\r$\n\
+                    [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]  $\r$\n\
                     [/INSTALLSTORAGE  Installs Storage Daemon and Components]  $\r$\n\
                     $\r$\n\
                     [/S silent install without user interaction]$\r$\n\
                         (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
-                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use exinsting config files during silent install]$\r$\n\
+                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use existing config files during silent install]$\r$\n\
                     [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
                     [/? (this help dialog)] $\r$\n\
                     [/WRITELOGS lets the installer create log files in INSTDIR"
@@ -1285,6 +1286,9 @@ done:
   ${GetOptions} $cmdLineParams "/DBADMINUSER=" $DbAdminUser
   ClearErrors
 
+  ${GetOptions} $cmdLineParams "/DBDRIVER=" $DbDriver
+  ClearErrors
+
 
   StrCpy $WriteLogs "yes"
   ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
@@ -1367,12 +1371,29 @@ done:
   # also install bconsole if director is selected
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
+IfSilent 0 DbDriverCheckEnd
+${If} $DbDriver == sqlite3
+  LogText "DbDriver is sqlite3"
+  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_UNSELECTED}
+  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
+${ElseIf} $DbDriver == postgresql
+  LogText "DbDriver is postgresql"
+  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
+  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_UNSELECTED}
+${Else}
+  LogText "DbDriver needs to be sqlite3 or postgresql but is $DbDriver"
+  Abort
+${EndIf}
+DbDriverCheckEnd:
+
+IfSilent AutoSelecPostgresIfAvailableEnd
 ${If} $IsPostgresInstalled == yes
     SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_SELECTED}
     SectionSetFlags ${SEC_DIR_SQLITE} ${SF_UNSELECTED}
 ${Else}
     SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
 ${EndIf}
+AutoSelecPostgresIfAvailableEnd:
 
   dontInstDir:
 
@@ -1506,6 +1527,7 @@ ${EndIf}
 
   strcmp $DbDriver "" +1 +2
   StrCpy $DbDriver "postgresql"
+
 
   strcmp $DbPassword "" +1 +2
   StrCpy $DbPassword "bareos"
@@ -1671,6 +1693,7 @@ Function getDatabaseParametersLeave
 dbcheckend:
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
+   StrCmp $DbDriver "sqlite3" SkipDbCheck   # skip DbConnection of using sqlite3
 ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
    !insertmacro CheckDbAdminConnection
    MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
