@@ -215,8 +215,61 @@ class JobController extends AbstractActionController
 		}
 	}
 
+	public function runAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+                                return new ViewModel(
+                                                array(
+							'jobs' => $this->getJobs()
+                                                )
+                                );
+                }
+                else {
+                                return $this->redirect()->toRoute('auth', array('action' => 'login'));
+                }
+	}
+
+	public function queueAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+			if($this->params()->fromQuery('job')) {
+				$jobname = $this->params()->fromQuery('job');
+			}
+			else {
+				$jobname = null;
+			}
+
+                        return new ViewModel(
+				array(
+					'result' => $this->queueJob($jobname)
+                                )
+                        );
+                }
+                else {
+                        return $this->redirect()->toRoute('auth', array('action' => 'login'));
+                }
+	}
+
+	private function getJobs()
+	{
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command(".jobs type=B", 2, null);
+		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $jobs['result']['jobs'];
+	}
+
+	private function queueJob($jobname=null)
+	{
+		$result = "";
+		if($jobname != null) {
+			$director = $this->getServiceLocator()->get('director');
+			$result = $director->send_command('run job="'.$jobname.'" yes');
+		}
+		return $result;
+	}
+
 	public function getJobTable()
-    {
+	{
 		if(!$this->jobTable)
 		{
 			$sm = $this->getServiceLocator();
