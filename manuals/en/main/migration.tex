@@ -21,8 +21,7 @@ restore. If Bareos finds a copy when a job record is purged (deleted) from the
 catalog, it will promote the copy as \textsl{real} backup and will make it
 available for automatic restore.
 
-The Copy and the Migration jobs run without using the File daemon by copying
-the data from the old backup Volume to a different Volume in a different Pool.
+Copy and Migration jobs do not involve the File daemon.
 
 The selection process for which Job or Jobs are migrated
 can be based on quite a number of different criteria such as:
