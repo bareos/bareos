@@ -72,16 +72,12 @@ Normally three jobs are involved during a migration:
       do a restore, the data will be read from this Job.
 \end{itemize}
 
-If the Migration control job finds a number of JobIds to migrate (e.g.
-it is asked to migrate one or more Volumes), it will start one new
-migration backup job for each JobId found on the specified Volumes.
-Please note that Migration doesn't scale too well since Migrations are
-done on a Job by Job basis. This if you select a very large volume or
-a number of volumes for migration, you may have a large number of
-Jobs that start. Because each job must read the same Volume, they will
-run consecutively (not simultaneously).
-
-
+If the Migration control Job finds more than one existing Job to
+migrate, it creates one migration job for each of them. This may result
+in a large number of Jobs. Please note that Migration doesn't scale too
+well if you migrate data off of a large Volume because each job must
+read the same Volume, hence the jobs will have to run consecutively
+rather than simultaneously.
 
 \section{Important Migration Considerations}
 \index[general]{Important Migration Considerations}
