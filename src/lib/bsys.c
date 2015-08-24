@@ -584,7 +584,7 @@ void create_pid_file(char *dir, const char *progname, int port)
    POOLMEM *fname = get_pool_memory(PM_FNAME);
    struct stat statp;
 
-   Mmsg(&fname, "%s/%s.%d.pid", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
    if (stat(fname, &statp) == 0) {
       /* File exists, see what we have */
       *pidbuf = 0;
@@ -653,7 +653,7 @@ int delete_pid_file(char *dir, const char *progname, int port)
       return 0;
    }
    del_pid_file_ok = false;
-   Mmsg(&fname, "%s/%s.%d.pid", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.pid", dir, progname, port);
    unlink(fname);
    free_pool_memory(fname);
 #endif
@@ -685,7 +685,7 @@ void read_state_file(char *dir, const char *progname, int port)
    struct s_state_hdr hdr;
    int hdr_size = sizeof(hdr);
 
-   Mmsg(&fname, "%s/%s.%d.state", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
    /*
     * If file exists, see what we have
     */
@@ -740,7 +740,7 @@ void write_state_file(char *dir, const char *progname, int port)
    POOLMEM *fname = get_pool_memory(PM_FNAME);
 
    P(state_mutex);                    /* Only one job at a time can call here */
-   Mmsg(&fname, "%s/%s.%d.state", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.state", dir, progname, port);
 
    /*
     * Create new state file
@@ -891,7 +891,7 @@ char *bfgets(POOLMEM *&s, FILE *fd)
  *   without saving its name, and re-generate the name
  *   so that it can be deleted.
  */
-void make_unique_filename(POOLMEM **name, int Id, char *what)
+void make_unique_filename(POOLMEM *&name, int Id, char *what)
 {
    Mmsg(name, "%s/%s.%s.%d.tmp", working_directory, my_name, what, Id);
 }

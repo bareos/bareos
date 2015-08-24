@@ -227,7 +227,7 @@ char *next_arg(char **s)
  *  argk[2] = arg3
  *  argv[2] =
  */
-int parse_args(POOLMEM *cmd, POOLMEM **args, int *argc,
+int parse_args(POOLMEM *cmd, POOLMEM *&args, int *argc,
                char **argk, char **argv, int max_args)
 {
    char *p;
@@ -274,14 +274,14 @@ int parse_args(POOLMEM *cmd, POOLMEM **args, int *argc,
  *  argk[2] = arg3
  *  argv[2] =
  */
-int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
+int parse_args_only(POOLMEM *cmd, POOLMEM *&args, int *argc,
                     char **argk, char **argv, int max_args)
 {
    char *p, *n;
 
    pm_strcpy(args, cmd);
-   strip_trailing_junk(*args);
-   p = *args;
+   strip_trailing_junk(args);
+   p = args;
    *argc = 0;
    /*
     * Pick up all arguments
@@ -299,12 +299,12 @@ int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
 }
 
 /*
- * Given a full filename, split it into its path
- *  and filename parts. They are returned in pool memory
- *  in the arguments provided.
+ * Given a full filename, split it into its path and filename parts.
+ * They are returned in pool memory in the arguments provided.
  */
-void split_path_and_filename(const char *fname, POOLMEM **path, int *pnl,
-                             POOLMEM **file, int *fnl)
+void split_path_and_filename(const char *fname,
+                             POOLMEM *&path, int *pnl,
+                             POOLMEM *&file, int *fnl)
 {
    const char *f;
    int slen;
@@ -336,20 +336,20 @@ void split_path_and_filename(const char *fname, POOLMEM **path, int *pnl,
    Dmsg2(200, "after strip len=%d f=%s\n", len, f);
    *fnl = fname - f + len;
    if (*fnl > 0) {
-      *file = check_pool_memory_size(*file, *fnl+1);
-      memcpy(*file, f, *fnl);    /* copy filename */
+      file = check_pool_memory_size(file, *fnl + 1);
+      memcpy(file, f, *fnl);          /* copy filename */
    }
-   (*file)[*fnl] = 0;
+   file[*fnl] = '\0';
 
    *pnl = f - fname;
    if (*pnl > 0) {
-      *path = check_pool_memory_size(*path, *pnl+1);
-      memcpy(*path, fname, *pnl);
+      path = check_pool_memory_size(path, *pnl + 1);
+      memcpy(path, fname, *pnl);
    }
-   (*path)[*pnl] = 0;
+   path[*pnl] = '\0';
 
    Dmsg2(200, "pnl=%d fnl=%d\n", *pnl, *fnl);
-   Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, *path, *file);
+   Dmsg3(200, "split fname=%s path=%s file=%s\n", fname, path, file);
 }
 
 /*

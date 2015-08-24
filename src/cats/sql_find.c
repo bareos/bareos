@@ -55,7 +55,7 @@
  * Returns: 0 on failure
  *          1 on success, jr is unchanged, but stime and job are set
  */
-bool db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, char *job)
+bool db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *&stime, char *job)
 {
    bool retval = false;
    SQL_ROW row;
@@ -89,8 +89,7 @@ bool db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, c
           *  backup
           */
          if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-            Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-               sql_strerror(mdb), mdb->cmd);
+            Mmsg2(mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"), sql_strerror(mdb), mdb->cmd);
             goto bail_out;
          }
          if ((row = sql_fetch_row(mdb)) == NULL) {
@@ -118,14 +117,12 @@ bool db_find_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM **stime, c
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       pm_strcpy(stime, "");                   /* set EOS */
-      Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb),  mdb->cmd);
+      Mmsg2(mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"), sql_strerror(mdb),  mdb->cmd);
       goto bail_out;
    }
 
    if ((row = sql_fetch_row(mdb)) == NULL) {
-      Mmsg2(&mdb->errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb),  mdb->cmd);
+      Mmsg2(mdb->errmsg, _("No Job record found: ERR=%s\nCMD=%s\n"), sql_strerror(mdb),  mdb->cmd);
       sql_free_result(mdb);
       goto bail_out;
    }
@@ -152,7 +149,7 @@ bail_out:
  *          true  on success, jr is unchanged, but stime and job are set
  */
 bool db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
-                                 POOLMEM **stime, char *job, int JobLevel)
+                                 POOLMEM *&stime, char *job, int JobLevel)
 {
    bool retval = false;
    SQL_ROW row;
@@ -171,8 +168,7 @@ bool db_find_last_job_start_time(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
       jr->JobType, JobLevel, esc_name,
       edit_int64(jr->ClientId, ed1), edit_int64(jr->FileSetId, ed2));
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"),
-         sql_strerror(mdb), mdb->cmd);
+      Mmsg2(mdb->errmsg, _("Query error for start time request: ERR=%s\nCMD=%s\n"), sql_strerror(mdb), mdb->cmd);
       goto bail_out;
    }
    if ((row = sql_fetch_row(mdb)) == NULL) {
@@ -279,7 +275,7 @@ bool db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
            edit_int64(jr->ClientId, ed1));
       }
    } else {
-      Mmsg1(&mdb->errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
+      Mmsg1(mdb->errmsg, _("Unknown Job level=%d\n"), jr->JobLevel);
       goto bail_out;
    }
    Dmsg1(100, "Query: %s\n", mdb->cmd);
@@ -287,7 +283,7 @@ bool db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
       goto bail_out;
    }
    if ((row = sql_fetch_row(mdb)) == NULL) {
-      Mmsg1(&mdb->errmsg, _("No Job found for: %s.\n"), mdb->cmd);
+      Mmsg1(mdb->errmsg, _("No Job found for: %s.\n"), mdb->cmd);
       sql_free_result(mdb);
       goto bail_out;
    }
@@ -297,7 +293,7 @@ bool db_find_last_jobid(JCR *jcr, B_DB *mdb, const char *Name, JOB_DBR *jr)
 
    Dmsg1(100, "db_get_last_jobid: got JobId=%d\n", jr->JobId);
    if (jr->JobId <= 0) {
-      Mmsg1(&mdb->errmsg, _("No Job found for: %s\n"), mdb->cmd);
+      Mmsg1(mdb->errmsg, _("No Job found for: %s\n"), mdb->cmd);
       goto bail_out;
    }
    retval = true;
@@ -424,7 +420,7 @@ retry_fetch:
    num_rows = sql_num_rows(mdb);
    if (item > num_rows || item < 1) {
       Dmsg2(050, "item=%d got=%d\n", item, num_rows);
-      Mmsg2(&mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"), item, num_rows);
+      Mmsg2(mdb->errmsg, _("Request for Volume item %d greater than max %d or less than 1\n"), item, num_rows);
       num_rows = 0;
       goto bail_out;
    }
@@ -432,7 +428,7 @@ retry_fetch:
    for (int i = 0 ; i < item; i++) {
       if ((row = sql_fetch_row(mdb)) == NULL) {
          Dmsg1(050, "Fail fetch item=%d\n", i);
-         Mmsg1(&mdb->errmsg, _("No Volume record found for item %d.\n"), i);
+         Mmsg1(mdb->errmsg, _("No Volume record found for item %d.\n"), i);
          sql_free_result(mdb);
          num_rows = 0;
          goto bail_out;

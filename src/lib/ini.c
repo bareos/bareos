@@ -387,7 +387,7 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
 
    if (!out_fname) {
       out_fname = get_pool_memory(PM_FNAME);
-      make_unique_filename(&out_fname, (int)(intptr_t)this, (char*)"configfile");
+      make_unique_filename(out_fname, (int)(intptr_t)this, (char*)"configfile");
    }
 
    fp = fopen(out_fname, "wb");
@@ -423,7 +423,7 @@ bool ConfigFile::serialize(const char *fname)
    }
 
    tmp = get_pool_memory(PM_MESSAGE);
-   len = serialize(&tmp);
+   len = serialize(tmp);
    if (fwrite(tmp, len, 1, fp) == 1) {
       ret = true;
    }
@@ -436,12 +436,12 @@ bool ConfigFile::serialize(const char *fname)
 /*
  * Dump the item table format to a text file (used by plugin)
  */
-int ConfigFile::serialize(POOLMEM **buf)
+int ConfigFile::serialize(POOLMEM *&buf)
 {
    int len;
    POOLMEM *tmp;
    if (!items) {
-      **buf = 0;
+      buf[0] = '\0';
       return 0;
    }
 
@@ -476,12 +476,12 @@ int ConfigFile::serialize(POOLMEM **buf)
 /*
  * Dump the item table content to a text file (used by director)
  */
-int ConfigFile::dump_results(POOLMEM **buf)
+int ConfigFile::dump_results(POOLMEM *&buf)
 {
    int len;
    POOLMEM *tmp;
    if (!items) {
-      **buf = 0;
+      *buf = '\0';
       return 0;
    }
    len = Mmsg(buf, "# Plugin configuration file\n# Version %d\n", version);

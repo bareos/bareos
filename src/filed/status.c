@@ -476,7 +476,7 @@ bool qstatus_cmd(JCR *jcr)
    cmd = get_memory(dir->msglen+1);
 
    if (sscanf(dir->msg, qstatus, cmd) != 1) {
-      pm_strcpy(&jcr->errmsg, dir->msg);
+      pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
       dir->fsend(_("2900 Bad .status command, missing argument.\n"));
       dir->signal(BNET_EOD);
@@ -509,7 +509,7 @@ bool qstatus_cmd(JCR *jcr)
        sp.api = true;
        list_terminated_jobs(&sp);
    } else {
-      pm_strcpy(&jcr->errmsg, dir->msg);
+      pm_strcpy(jcr->errmsg, dir->msg);
       Jmsg1(jcr, M_FATAL, 0, _("Bad .status command: %s\n"), jcr->errmsg);
       dir->fsend(_("2900 Bad .status command, wrong argument.\n"));
       dir->signal(BNET_EOD);

@@ -1163,7 +1163,7 @@ static inline void perform_ado_backup(bpContext *ctx)
    set_ado_connect_string(ctx);
 
    vdsname = get_pool_memory(PM_NAME);
-   wchar_2_UTF8(&vdsname, p_ctx->vdsname);
+   wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
@@ -1222,7 +1222,7 @@ static inline void perform_ado_restore(bpContext *ctx)
    set_ado_connect_string(ctx);
 
    vdsname = get_pool_memory(PM_NAME);
-   wchar_2_UTF8(&vdsname, p_ctx->vdsname);
+   wchar_2_UTF8(vdsname, p_ctx->vdsname);
 
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:

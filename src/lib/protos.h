@@ -120,7 +120,7 @@ void drop(char *uid, char *gid, bool keep_readall_caps);
 int bmicrosleep(int32_t sec, int32_t usec);
 char *bfgets(char *s, int size, FILE *fd);
 char *bfgets(POOLMEM *&s, FILE *fd);
-void make_unique_filename(POOLMEM **name, int Id, char *what);
+void make_unique_filename(POOLMEM *&name, int Id, char *what);
 #ifndef HAVE_STRTOLL
 long long int strtoll(const char *ptr, char **endptr, int base);
 #endif
@@ -222,7 +222,8 @@ char *edit_utime(utime_t val, char *buf, int buf_len);
 bool is_a_number(const char *num);
 bool is_a_number_list(const char *n);
 bool is_an_integer(const char *n);
-bool is_name_valid(const char *name, POOLMEM **msg);
+bool is_name_valid(const char *name, POOLMEM *&msg);
+bool is_name_valid(const char *name);
 
 /* jcr.c (most definitions are in src/jcr.h) */
 void init_last_jobs_list();
@@ -308,12 +309,12 @@ bool skip_spaces(char **msg);
 bool skip_nonspaces(char **msg);
 int fstrsch(const char *a, const char *b);
 char *next_arg(char **s);
-int parse_args(POOLMEM *cmd, POOLMEM **args, int *argc,
+int parse_args(POOLMEM *cmd, POOLMEM *&args, int *argc,
                char **argk, char **argv, int max_args);
-int parse_args_only(POOLMEM *cmd, POOLMEM **args, int *argc,
+int parse_args_only(POOLMEM *cmd, POOLMEM *&args, int *argc,
                     char **argk, char **argv, int max_args);
-void split_path_and_filename(const char *fname, POOLMEM **path,
-                             int *pnl, POOLMEM **file, int *fnl);
+void split_path_and_filename(const char *fname, POOLMEM *&path,
+                             int *pnl, POOLMEM *&file, int *fnl);
 int bsscanf(const char *buf, const char *fmt, ...);
 
 /* scsi_crypto.c */

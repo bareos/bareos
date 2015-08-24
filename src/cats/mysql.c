@@ -156,8 +156,7 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
 
    if ((errstat=rwl_init(&m_lock)) != 0) {
       berrno be;
-      Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
-            be.bstrerror(errstat));
+      Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
@@ -198,7 +197,7 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
         (m_db_password == NULL) ? "(NULL)" : m_db_password);
 
    if (m_db_handle == NULL) {
-      Mmsg2(&errmsg, _("Unable to connect to MySQL server.\n"
+      Mmsg2(errmsg, _("Unable to connect to MySQL server.\n"
                        "Database=%s User=%s\n"
                        "MySQL connect failed either server not running or your authorization is incorrect.\n"),
          m_db_name, m_db_user);
@@ -368,17 +367,17 @@ char *B_DB_MYSQL::db_escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object so that MySQL is happy
  */
 void B_DB_MYSQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                    POOLMEM **dest, int32_t *dest_len)
+                                    POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
-      *dest[0] = 0;
+      dest[0] = '\0';
       *dest_len = 0;
       return;
    }
-   *dest = check_pool_memory_size(*dest, expected_len+1);
+   dest = check_pool_memory_size(dest, expected_len + 1);
    *dest_len = expected_len;
-   memcpy(*dest, from, expected_len);
-   (*dest)[expected_len]=0;
+   memcpy(dest, from, expected_len);
+   dest[expected_len] = '\0';
 }
 
 void B_DB_MYSQL::db_start_transaction(JCR *jcr)

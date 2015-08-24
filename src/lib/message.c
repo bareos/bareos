@@ -1683,34 +1683,6 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 /*
  * Edit a message into a Pool memory buffer, with file:lineno
  */
-int m_msg(const char *file, int line, POOLMEM **pool_buf, const char *fmt, ...)
-{
-   va_list ap;
-   int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
-            more(PM_EMSG);
-
-   Mmsg(buf, "%s:%d ", get_basename(file), line);
-   while (1) {
-      maxlen = more.max_size() - 1;
-      va_start(ap, fmt);
-      len = bvsnprintf(more.c_str(), maxlen, fmt, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-         more.realloc_pm(maxlen + maxlen / 2);
-         continue;
-      }
-
-      break;
-   }
-
-   pm_strcpy(*pool_buf, buf.c_str());
-   len = pm_strcat(*pool_buf, more.c_str());
-
-   return len;
-}
-
 int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 {
    va_list ap;
@@ -1745,27 +1717,6 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
  * Returns: string length of what was edited.
  *          -1 when the buffer isn't enough to hold the edited string.
  */
-int Mmsg(POOLMEM **pool_buf, const char *fmt, ...)
-{
-   int len, maxlen;
-   va_list ap;
-
-   while (1) {
-      maxlen = sizeof_pool_memory(*pool_buf) - 1;
-      va_start(ap, fmt);
-      len = bvsnprintf(*pool_buf, maxlen, fmt, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-         *pool_buf = realloc_pool_memory(*pool_buf, maxlen + maxlen / 2);
-         continue;
-      }
-
-      break;
-   }
-   return len;
-}
-
 int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
 {
    int len, maxlen;

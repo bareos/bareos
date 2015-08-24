@@ -92,8 +92,7 @@ void berrno::format_win32_message()
        (LPTSTR)&msg,
        0,
        NULL);
-   pm_strcpy(&m_buf, (const char *)msg);
+   pm_strcpy(m_buf, (const char *)msg);
    LocalFree(msg);
 #endif
 }
-

@@ -67,7 +67,7 @@ uint32_t write_bsr(UAContext *ua, RESTORE_CTX &rx, POOL_MEM *buffer);
 void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex);
 void add_findex_all(RBSR *bsr, uint32_t JobId);
 RBSR_FINDEX *new_findex();
-void make_unique_restore_filename(UAContext *ua, POOLMEM **fname);
+void make_unique_restore_filename(UAContext *ua, POOLMEM *&fname);
 void print_bsr(UAContext *ua, RESTORE_CTX &rx);
 bool open_bootstrap_file(JCR *jcr, bootstrap_info &info);
 bool send_bootstrap_file(JCR *jcr, BSOCK *sock, bootstrap_info &info);
@@ -90,7 +90,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char*);
 bool populate_defs();
 
 /* expand.c */
-int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp);
+int variable_expansion(JCR *jcr, char *inp, POOLMEM *&exp);
 
 /* fd_cmds.c */
 int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,

@@ -159,7 +159,7 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit
    case PluginOptions_ACL:
       break;
    default:
-      if (!is_name_valid(item, NULL)) {
+      if (!is_name_valid(item)) {
          Dmsg1(1400, "Access denied for item=%s\n", item);
          goto bail_out;
       }

@@ -1592,7 +1592,7 @@ static void close_vss_backup_session(JCR *jcr)
       /*
        * Generate Job global writer metadata
        */
-      WCHAR *metadata = g_pVSSClient->GetMetadata();
+      wchar_t *metadata = g_pVSSClient->GetMetadata();
       if (metadata) {
          FF_PKT *ff_pkt = jcr->ff;
          ff_pkt->fname = (char *)"*all*"; /* for all plugins */
@@ -1600,7 +1600,7 @@ static void close_vss_backup_session(JCR *jcr)
          ff_pkt->LinkFI = 0;
          ff_pkt->object_name = (char *)"job_metadata.xml";
          ff_pkt->object = (char *)metadata;
-         ff_pkt->object_len = (wcslen(metadata) + 1) * sizeof(WCHAR);
+         ff_pkt->object_len = (wcslen(metadata) + 1) * sizeof(wchar_t);
          ff_pkt->object_index = (int)time(NULL);
          save_file(jcr, ff_pkt, true);
      }

@@ -129,7 +129,7 @@ void read_crypto_cache(const char *dir, const char *progname, int port)
 {
    POOLMEM *fname = get_pool_memory(PM_FNAME);
 
-   Mmsg(&fname, "%s/%s.%d.cryptoc", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
    read_crypto_cache(fname);
    free_pool_memory(fname);
 }
@@ -196,7 +196,7 @@ void write_crypto_cache(const char *dir, const char *progname, int port)
 {
    POOLMEM *fname = get_pool_memory(PM_FNAME);
 
-   Mmsg(&fname, "%s/%s.%d.cryptoc", dir, progname, port);
+   Mmsg(fname, "%s/%s.%d.cryptoc", dir, progname, port);
    write_crypto_cache(fname);
    free_pool_memory(fname);
 }

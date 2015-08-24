@@ -42,7 +42,7 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
 static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
-static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
+static char *bareosEditDeviceCodes(DCR *dcr, POOLMEM *&omsg,
                                    const char *imsg, const char *cmd);
 static char *bareosLookupCryptoKey(const char *VolumeName);
 static bool bareosUpdateVolumeInfo(DCR *dcr);
@@ -134,9 +134,8 @@ static inline bool is_plugin_disabled(JCR *jcr)
  *  omsg = edited output message
  *  imsg = input string containing edit codes (%x)
  *  cmd = command string (load, unload, ...)
- *
  */
-char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd)
+char *edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd)
 {
    const char *p;
    const char *str;
@@ -201,10 +200,11 @@ char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd)
          str = ed1;
       }
       Dmsg1(1900, "add_str %s\n", str);
-      pm_strcat(&omsg, (char *)str);
+      pm_strcat(omsg, (char *)str);
       Dmsg1(1800, "omsg=%s\n", omsg);
    }
    Dmsg1(800, "omsg=%s\n", omsg);
+
    return omsg;
 }
 
@@ -805,7 +805,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static char *bareosEditDeviceCodes(DCR *dcr, char *omsg,
+static char *bareosEditDeviceCodes(DCR *dcr, POOLMEM *&omsg,
                                    const char *imsg, const char *cmd)
 {
    return edit_device_codes(dcr, omsg, imsg, cmd);

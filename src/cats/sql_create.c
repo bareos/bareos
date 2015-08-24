@@ -94,8 +94,7 @@ bool db_create_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr)
 
    jr->JobId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Job"));
    if (jr->JobId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create DB Job record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Job record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
    } else {
       retval = true;
    }
@@ -139,8 +138,7 @@ bool db_create_jobmedia_record(JCR *jcr, B_DB *mdb, JOBMEDIA_DBR *jm)
 
    Dmsg0(300, mdb->cmd);
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), mdb->cmd,
-         sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
    } else {
       /*
        * Worked, now update the Media record with the EndFile and EndBlock
@@ -149,8 +147,7 @@ bool db_create_jobmedia_record(JCR *jcr, B_DB *mdb, JOBMEDIA_DBR *jm)
            "UPDATE Media SET EndFile=%u, EndBlock=%u WHERE MediaId=%u",
            jm->EndFile, jm->EndBlock, jm->MediaId);
       if (!UPDATE_DB(jcr, mdb, mdb->cmd)) {
-         Mmsg2(&mdb->errmsg, _("Update Media record %s failed: ERR=%s\n"), mdb->cmd,
-              sql_strerror(mdb));
+         Mmsg2(mdb->errmsg, _("Update Media record %s failed: ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       } else {
          retval = true;
       }
@@ -183,7 +180,7 @@ bool db_create_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
       if (num_rows > 0) {
-         Mmsg1(&mdb->errmsg, _("pool record %s already exists\n"), pr->Name);
+         Mmsg1(mdb->errmsg, _("pool record %s already exists\n"), pr->Name);
          sql_free_result(mdb);
          goto bail_out;
       }
@@ -217,8 +214,7 @@ bool db_create_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
    Dmsg1(200, "Create Pool: %s\n", mdb->cmd);
    pr->PoolId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Pool"));
    if (pr->PoolId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db Pool record %s failed: ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db Pool record %s failed: ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
    } else {
       retval = true;
    }
@@ -257,12 +253,12 @@ bool db_create_device_record(JCR *jcr, B_DB *mdb, DEVICE_DBR *dr)
        * If more than one, report error, but return first row
        */
       if (num_rows > 1) {
-         Mmsg1(&mdb->errmsg, _("More than one Device!: %d\n"), num_rows);
+         Mmsg1(mdb->errmsg, _("More than one Device!: %d\n"), num_rows);
          Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       }
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(&mdb->errmsg, _("error fetching Device row: %s\n"), sql_strerror(mdb));
+            Mmsg1(mdb->errmsg, _("error fetching Device row: %s\n"), sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             sql_free_result(mdb);
             goto bail_out;
@@ -291,8 +287,7 @@ bool db_create_device_record(JCR *jcr, B_DB *mdb, DEVICE_DBR *dr)
    Dmsg1(200, "Create Device: %s\n", mdb->cmd);
    dr->DeviceId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Device"));
    if (dr->DeviceId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db Device record %s failed: ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db Device record %s failed: ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
    } else {
       retval = true;
    }
@@ -329,12 +324,12 @@ bool db_create_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sr)
        * If more than one, report error, but return first row
        */
       if (num_rows > 1) {
-         Mmsg1(&mdb->errmsg, _("More than one Storage record!: %d\n"), num_rows);
+         Mmsg1(mdb->errmsg, _("More than one Storage record!: %d\n"), num_rows);
          Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       }
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(&mdb->errmsg, _("error fetching Storage row: %s\n"), sql_strerror(mdb));
+            Mmsg1(mdb->errmsg, _("error fetching Storage row: %s\n"), sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             sql_free_result(mdb);
             goto bail_out;
@@ -358,8 +353,7 @@ bool db_create_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sr)
 
    sr->StorageId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Storage"));
    if (sr->StorageId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create DB Storage record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Storage record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       sr->created = true;
@@ -391,7 +385,7 @@ bool db_create_mediatype_record(JCR *jcr, B_DB *mdb, MEDIATYPE_DBR *mr)
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
       if (num_rows > 0) {
-         Mmsg1(&mdb->errmsg, _("mediatype record %s already exists\n"), mr->MediaType);
+         Mmsg1(mdb->errmsg, _("mediatype record %s already exists\n"), mr->MediaType);
          sql_free_result(mdb);
          goto bail_out;
       }
@@ -409,8 +403,7 @@ bool db_create_mediatype_record(JCR *jcr, B_DB *mdb, MEDIATYPE_DBR *mr)
    Dmsg1(200, "Create mediatype: %s\n", mdb->cmd);
    mr->MediaTypeId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("MediaType"));
    if (mr->MediaTypeId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db mediatype record %s failed: ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db mediatype record %s failed: ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       goto bail_out;
    } else {
       retval = true;
@@ -447,7 +440,7 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
       if (num_rows > 0) {
-         Mmsg1(&mdb->errmsg, _("Volume \"%s\" already exists.\n"), mr->VolumeName);
+         Mmsg1(mdb->errmsg, _("Volume \"%s\" already exists.\n"), mr->VolumeName);
          sql_free_result(mdb);
          goto bail_out;
       }
@@ -494,8 +487,7 @@ bool db_create_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
    Dmsg1(500, "Create Volume: %s\n", mdb->cmd);
    mr->MediaId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Media"));
    if (mr->MediaId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create DB Media record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Media record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
    } else {
       retval = true;
       if (mr->set_label_date) {
@@ -547,12 +539,12 @@ bool db_create_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
        * If more than one, report error, but return first row
        */
       if (num_rows > 1) {
-         Mmsg1(&mdb->errmsg, _("More than one Client!: %d\n"), num_rows);
+         Mmsg1(mdb->errmsg, _("More than one Client!: %d\n"), num_rows);
          Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       }
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(&mdb->errmsg, _("error fetching Client row: %s\n"), sql_strerror(mdb));
+            Mmsg1(mdb->errmsg, _("error fetching Client row: %s\n"), sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             sql_free_result(mdb);
             goto bail_out;
@@ -583,8 +575,7 @@ bool db_create_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
 
    cr->ClientId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Client"));
    if (cr->ClientId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create DB Client record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Client record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -610,7 +601,8 @@ bool db_create_path_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->pnl+2);
    db_escape_string(jcr, mdb, mdb->esc_name, mdb->path, mdb->pnl);
 
-   if (mdb->cached_path_id != 0 && mdb->cached_path_len == mdb->pnl &&
+   if (mdb->cached_path_id != 0 &&
+       mdb->cached_path_len == mdb->pnl &&
        bstrcmp(mdb->cached_path, mdb->path)) {
       ar->PathId = mdb->cached_path_id;
       return true;
@@ -622,8 +614,7 @@ bool db_create_path_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
       num_rows = sql_num_rows(mdb);
       if (num_rows > 1) {
          char ed1[30];
-         Mmsg2(&mdb->errmsg, _("More than one Path!: %s for path: %s\n"),
-            edit_uint64(num_rows, ed1), mdb->path);
+         Mmsg2(mdb->errmsg, _("More than one Path!: %s for path: %s\n"), edit_uint64(num_rows, ed1), mdb->path);
          Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
       }
       /*
@@ -631,7 +622,7 @@ bool db_create_path_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
        */
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(&mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
+            Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             sql_free_result(mdb);
             ar->PathId = 0;
@@ -659,8 +650,7 @@ bool db_create_path_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    ar->PathId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Path"));
    if (ar->PathId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db Path record %s failed. ERR=%s\n"),
-         mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db Path record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
       ar->PathId = 0;
       goto bail_out;
@@ -709,8 +699,7 @@ bool db_create_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr)
         cr->WrapCounter);
 
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB Counters record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -749,12 +738,12 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
       if (num_rows > 1) {
-         Mmsg1(&mdb->errmsg, _("More than one FileSet!: %d\n"), num_rows);
+         Mmsg1(mdb->errmsg, _("More than one FileSet!: %d\n"), num_rows);
          Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       }
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(&mdb->errmsg, _("error fetching FileSet row: ERR=%s\n"), sql_strerror(mdb));
+            Mmsg1(mdb->errmsg, _("error fetching FileSet row: ERR=%s\n"), sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             sql_free_result(mdb);
             goto bail_out;
@@ -792,8 +781,7 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
 
    fsr->FileSetId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("FileSet"));
    if (fsr->FileSetId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create DB FileSet record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB FileSet record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       goto bail_out;
    } else {
@@ -939,9 +927,7 @@ bool db_create_batch_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
          return false;     /* error already printed */
       }
       if (!sql_batch_start(jcr, jcr->db_batch)) {
-         Mmsg1(&mdb->errmsg,
-               "Can't start batch mode: ERR=%s",
-               db_strerror(jcr->db_batch));
+         Mmsg1(mdb->errmsg, "Can't start batch mode: ERR=%s", db_strerror(jcr->db_batch));
          Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
          return false;
       }
@@ -1030,8 +1016,7 @@ static bool db_create_file_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    ar->FileId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("File"));
    if (ar->FileId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db File record %s failed. ERR=%s"),
-         mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db File record %s failed. ERR=%s"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -1059,14 +1044,12 @@ static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
       num_rows = sql_num_rows(mdb);
       if (num_rows > 1) {
          char ed1[30];
-         Mmsg2(&mdb->errmsg, _("More than one Filename! %s for file: %s\n"),
-            edit_uint64(num_rows, ed1), mdb->fname);
+         Mmsg2(mdb->errmsg, _("More than one Filename! %s for file: %s\n"), edit_uint64(num_rows, ed1), mdb->fname);
          Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
       }
       if (num_rows >= 1) {
          if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg2(&mdb->errmsg, _("Error fetching row for file=%s: ERR=%s\n"),
-                mdb->fname, sql_strerror(mdb));
+            Mmsg2(mdb->errmsg, _("Error fetching row for file=%s: ERR=%s\n"), mdb->fname, sql_strerror(mdb));
             Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
             ar->FilenameId = 0;
          } else {
@@ -1082,8 +1065,7 @@ static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    ar->FilenameId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Filename"));
    if (ar->FilenameId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db Filename record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db Filename record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
    }
    return ar->FilenameId > 0;
@@ -1104,8 +1086,7 @@ bool db_create_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
     */
    if (!(ar->Stream == STREAM_UNIX_ATTRIBUTES ||
          ar->Stream == STREAM_UNIX_ATTRIBUTES_EX)) {
-      Mmsg1(&mdb->errmsg, _("Attempt to put non-attributes into catalog. Stream=%d\n"),
-         ar->Stream);
+      Mmsg1(mdb->errmsg, _("Attempt to put non-attributes into catalog. Stream=%d\n"), ar->Stream);
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
       return false;
    }
@@ -1120,7 +1101,7 @@ bool db_create_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    } else if (jcr->HasBase) {
       retval = db_create_base_file_attributes_record(jcr, mdb, ar);
    } else {
-      Mmsg0(&mdb->errmsg, _("Cannot Copy/Migrate job using BaseJob.\n"));
+      Mmsg0(mdb->errmsg, _("Cannot Copy/Migrate job using BaseJob.\n"));
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
       retval = true;               /* in copy/migration what do we do ? */
    }
@@ -1272,8 +1253,7 @@ bool db_create_restore_object_record(JCR *jcr, B_DB *mdb, ROBJECT_DBR *ro)
 
    ro->RestoreObjectId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("RestoreObject"));
    if (ro->RestoreObjectId == 0) {
-      Mmsg2(&mdb->errmsg, _("Create db Object record %s failed. ERR=%s"),
-         mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create db Object record %s failed. ERR=%s"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -1318,8 +1298,7 @@ bool db_create_quota_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cr)
         edit_uint64(cr->ClientId, ed1), "0", "0");
 
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB Quota record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB Quota record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -1369,8 +1348,7 @@ bool db_create_ndmp_level_mapping(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *filesy
         " VALUES ('%s', '%s', '%s', %s)",
         edit_uint64(jr->ClientId, ed1), edit_uint64(jr->FileSetId, ed2), mdb->esc_name, "0");
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB NDMP Level Map record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB NDMP Level Map record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -1401,8 +1379,7 @@ bool db_create_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr, char *n
                   " VALUES ('%s', '%s', '%s', '%s')",
         edit_int64(jr->JobId, ed1), edit_uint64(jr->FileIndex, ed2), esc_name, esc_value);
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB NDMP Job Environment record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB NDMP Job Environment record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
    } else {
       retval = true;
@@ -1444,8 +1421,7 @@ bool db_create_job_statistics(JCR *jcr, B_DB *mdb, JOB_STATS_DBR *jsr)
    Dmsg1(200, "Create job stats: %s\n", mdb->cmd);
 
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB JobStats record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB JobStats record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       goto bail_out;
    } else {
@@ -1501,8 +1477,7 @@ bool db_create_device_statistics(JCR *jcr, B_DB *mdb, DEVICE_STATS_DBR *dsr)
    Dmsg1(200, "Create device stats: %s\n", mdb->cmd);
 
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB DeviceStats record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB DeviceStats record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       goto bail_out;
    } else {
@@ -1545,8 +1520,7 @@ bool db_create_tapealert_statistics(JCR *jcr, B_DB *mdb, TAPEALERT_STATS_DBR *ts
    Dmsg1(200, "Create tapealert: %s\n", mdb->cmd);
 
    if (!INSERT_DB(jcr, mdb, mdb->cmd)) {
-      Mmsg2(&mdb->errmsg, _("Create DB TapeAlerts record %s failed. ERR=%s\n"),
-            mdb->cmd, sql_strerror(mdb));
+      Mmsg2(mdb->errmsg, _("Create DB TapeAlerts record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       goto bail_out;
    } else {

@@ -716,7 +716,7 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
                       jcr->db,
                       row[8],                /* Object  */
                       str_to_uint64(row[1]), /* Object length */
-                      &fd->msg,
+                      fd->msg,
                       &fd->msglen);
    fd->send();                           /* send object */
    octx->count++;

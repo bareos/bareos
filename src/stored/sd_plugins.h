@@ -145,7 +145,7 @@ typedef struct s_sdbareosFuncs {
                      int type, utime_t mtime, const char *fmt, ...);
    bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
                        int level, const char *fmt, ...);
-   char *(*EditDeviceCodes)(DCR *dcr, char *omsg,
+   char *(*EditDeviceCodes)(DCR *dcr, POOLMEM *&omsg,
                             const char *imsg, const char *cmd);
    char *(*LookupCryptoKey)(const char *VolumeName);
    bool (*UpdateVolumeInfo)(DCR *dcr);

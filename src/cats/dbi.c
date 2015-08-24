@@ -471,17 +471,17 @@ char *B_DB_DBI::db_escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object so that DBI is happy
  */
 void B_DB_DBI::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                  POOLMEM **dest, int32_t *dest_len)
+                                  POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
-      *dest[0] = 0;
+      dest[0] = '\0';
       *dest_len = 0;
       return;
    }
-   *dest = check_pool_memory_size(*dest, expected_len+1);
+   dest = check_pool_memory_size(dest, expected_len + 1);
    *dest_len = expected_len;
-   memcpy(*dest, from, expected_len);
-   (*dest)[expected_len]=0;
+   memcpy(dest, from, expected_len);
+   dest[expected_len] = '\0';
 }
 
 /*

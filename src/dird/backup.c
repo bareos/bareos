@@ -913,7 +913,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
       kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    }
 
-   if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, &jcr->VolumeName)) {
+   if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
        * tape, so suppress this "error" message since in that case

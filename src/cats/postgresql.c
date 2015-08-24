@@ -200,7 +200,7 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
 
    if ((errstat = rwl_init(&m_lock)) != 0) {
       berrno be;
-      Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
+      Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
@@ -241,7 +241,7 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
         (m_db_password == NULL) ? "(NULL)" : m_db_password);
 
    if (PQstatus(m_db_handle) != CONNECTION_OK) {
-      Mmsg2(&errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
+      Mmsg2(errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
                        "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
             m_db_name, m_db_user);
       goto bail_out;
@@ -413,13 +413,13 @@ char *B_DB_POSTGRESQL::db_escape_object(JCR *jcr, char *old, int len)
  *
  */
 void B_DB_POSTGRESQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                         POOLMEM **dest, int32_t *dest_len)
+                                         POOLMEM *&dest, int32_t *dest_len)
 {
    size_t new_len;
    unsigned char *obj;
 
    if (!from) {
-      *dest[0] = 0;
+      dest[0] = '\0';
       *dest_len = 0;
       return;
    }
@@ -431,9 +431,9 @@ void B_DB_POSTGRESQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_
    }
 
    *dest_len = new_len;
-   *dest = check_pool_memory_size(*dest, new_len+1);
-   memcpy(*dest, obj, new_len);
-   (*dest)[new_len]=0;
+   dest = check_pool_memory_size(dest, new_len + 1);
+   memcpy(dest, obj, new_len);
+   dest[new_len] = '\0';
 
    PQfreemem(obj);
 
@@ -881,7 +881,7 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
       Dmsg2(500, "got value '%s' which became %d\n", PQgetvalue(pg_result, 0, 0), id);
    } else {
       Dmsg1(50, "Result status failed: %s\n", getkeyval_query);
-      Mmsg1(&errmsg, _("error fetching currval: %s\n"), PQerrorMessage(m_db_handle));
+      Mmsg1(errmsg, _("error fetching currval: %s\n"), PQerrorMessage(m_db_handle));
    }
 
 bail_out:
@@ -1072,7 +1072,7 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
    return true;
 
 bail_out:
-   Mmsg1(&errmsg, _("error starting batch mode: %s"), PQerrorMessage(m_db_handle));
+   Mmsg1(errmsg, _("error starting batch mode: %s"), PQerrorMessage(m_db_handle));
    m_status = 0;
    PQclear(m_result);
    m_result = NULL;
@@ -1102,7 +1102,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
       m_status = 0;
-      Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
+      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
       Dmsg1(500, "failure %s\n", errmsg);
    }
 
@@ -1111,7 +1111,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
     */
    pg_result = PQgetResult(m_db_handle);
    if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
-      Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
+      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
       m_status = 0;
    }
 
@@ -1159,7 +1159,7 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
       m_status = 0;
-      Mmsg1(&errmsg, _("error copying in batch mode: %s"), PQerrorMessage(m_db_handle));
+      Mmsg1(errmsg, _("error copying in batch mode: %s"), PQerrorMessage(m_db_handle));
       Dmsg1(500, "failure %s\n", errmsg);
    }
 

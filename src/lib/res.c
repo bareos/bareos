@@ -336,7 +336,7 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_NAME);
-   if (!is_name_valid(lc->str, &msg)) {
+   if (!is_name_valid(lc->str, msg)) {
       scan_err1(lc, "%s\n", msg);
       return;
    }

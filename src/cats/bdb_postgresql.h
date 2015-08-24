@@ -50,7 +50,7 @@ public:
    void db_escape_string(JCR *jcr, char *snew, char *old, int len);
    char *db_escape_object(JCR *jcr, char *old, int len);
    void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                           POOLMEM **dest, int32_t *len);
+                           POOLMEM *&dest, int32_t *len);
    void db_start_transaction(JCR *jcr);
    void db_end_transaction(JCR *jcr);
    bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);

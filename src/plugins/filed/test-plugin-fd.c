@@ -586,7 +586,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       ini.register_items(test_items, sizeof(struct ini_items));
 
       sp->object_name = (char*)INI_RESTORE_OBJECT_NAME;
-      sp->object_len = ini.serialize(&p_ctx->buf);
+      sp->object_len = ini.serialize(p_ctx->buf);
       sp->object = p_ctx->buf;
       sp->type = FT_PLUGIN_CONFIG;
 

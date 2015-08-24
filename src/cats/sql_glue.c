@@ -102,7 +102,7 @@ char *db_escape_object(JCR *jcr, B_DB *mdb, char *old, int len)
 
 void db_unescape_object(JCR *jcr, B_DB *mdb,
                         char *from, int32_t expected_len,
-                        POOLMEM **dest, int32_t *len)
+                        POOLMEM *&dest, int32_t *len)
 {
    mdb->db_unescape_object(jcr, from, expected_len, dest, len);
 }
