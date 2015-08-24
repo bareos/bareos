@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -29,29 +29,109 @@ $this->headTitle($title);
 
 ?>
 
-<div class="centered text-centered">
 <div class="row">
-<div class="col-md-4 col-centered text-centered">
-<div class="form-group">
 
-<?php
+<!-- Left space -->
+<div class="col-md-4">
+</div>
 
-$form->prepare();
+<!-- Login form -->
+<div class="col-md-4">
 
-echo $this->form()->openTag($form);
-echo $this->formRow($form->get('director')->setAttribute('class','form-control'));
-echo $this->formRow($form->get('consolename')->setAttribute('class','form-control'));
-echo $this->formRow($form->get('password')->setAttribute('class','form-control'));
-echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
-echo $this->form()->closeTag();
+	<div class="panel panel-default">
+	<div class="panel-body">
+	<div class="container-fluid">
 
-if(isset($this->err_msg)) {
-	echo "<br /><p class='text-danger bg-danger'>" . $this->err_msg ."</p>";
-}
+	<?php
+		$form->prepare();
+		echo $this->form()->openTag($form);
+	?>
 
-?>
+	<div class="row centered text-centered">
+	<div class="col">
+	<div class="form-group">
+
+	<?php
+		if($this->formElementErrors($form->get('director'))) {
+			echo '<div class="input-group has-error">';
+		}
+		else {
+			echo '<div class="input-group">';
+		}
+		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span></div>';
+		echo $this->formSelect($form->get('director')->setAttribute('class','form-control'));
+		echo '</div>';
+	?>
+
+	</div>
+	</div>
+	</div>
+
+	<div class="row centered text-centered">
+	<div class="col">
+	<div class="form-group">
+
+	<?php
+		if($this->formElementErrors($form->get('consolename'))) {
+			echo '<div class="input-group has-error">';
+		}
+		else {
+			echo '<div class="input-group">';
+		}
+		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>';
+		echo $this->formInput($form->get('consolename')->setAttribute('class','form-control'));
+		echo '</div>';
+	?>
+
+	</div>
+	</div>
+	</div>
+
+	<div class="row centered text-centered">
+	<div class="col">
+	<div class="form-group">
+
+	<?php
+		if($this->formElementErrors($form->get('password'))) {
+			echo '<div class="input-group has-error">';
+		}
+		else {
+			echo '<div class="input-group">';
+		}
+		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>';
+		echo $this->formInput($form->get('password')->setAttribute('class','form-control'));
+		echo '</div>';
+	?>
+
+	</div>
+	</div>
+	</div>
+
+	<div class="row centered text-centered">
+	<div class="col">
+	<div class="form-group">
+
+	<?php
+		echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+	?>
+
+	</div>
+	</div>
+	</div>
+
+	<?php
+		echo $this->form()->closeTag();
+	?>
+
+	</div>
+	</div>
+	</div>
 
 </div>
+
+<!-- Right space -->
+<div class="col-md-4">
 </div>
-</div>
-</div>
+
+</diV>
+

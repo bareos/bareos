@@ -53,7 +53,6 @@ class AuthController extends AbstractActionController
 		$config = $this->getServiceLocator()->get('Config');
 
 		$form = new LoginForm($config['directors']);
-		$form->get('submit')->setValue('Login');
 
 		$request = $this->getRequest();
 

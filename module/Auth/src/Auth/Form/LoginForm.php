@@ -31,24 +31,47 @@ class LoginForm extends Form
 {
 
 	protected $config;
+	protected $directors;
 
 	public function __construct($config=null, $name=null)
 	{
 
 		$this->config = $config;
+		$this->directors = $this->getDirectors();
 
 		parent::__construct('login');
 
-		$this->add(array(
-					'name' => 'director',
-					'type' => 'select',
-					'options' => array(
-						'label' => 'Director',
-						'empty_option' => 'Please choose a director',
-						'value_options' => $this->getDirectors(),
-					),
-				)
-		);
+		if(count($this->directors) == 1) {
+			$this->add(array(
+						'name' => 'director',
+						'type' => 'select',
+						'options' => array(
+							'label' => 'Director',
+							'empty_option' => 'Please choose a director',
+							'value_options' => $this->directors,
+						),
+						'attributes' => array(
+                                                        'id' => 'director',
+                                                        'value' => key($this->directors)
+                                                )
+					)
+			);
+		}
+		else {
+			$this->add(array(
+                                                'name' => 'director',
+                                                'type' => 'select',
+                                                'options' => array(
+                                                        'label' => 'Director',
+                                                        'empty_option' => 'Please choose a director',
+                                                        'value_options' => $this->directors,
+                                                ),
+						'attributes' => array(
+                                                        'id' => 'director',
+                                                )
+                                        )
+                        );
+		}
 
 		$this->add(array(
 					'name' => 'consolename',
@@ -76,13 +99,13 @@ class LoginForm extends Form
 
 		$this->add(array(
 			'name' => 'submit',
-		'type' => 'submit',
-		'attributes' => array(
-			'value' => 'submit',
-			'id' => 'submit',
-		),
+			'type' => 'submit',
+			'attributes' => array(
+				'value' => 'Login',
+				'id' => 'submit',
+			),
 		)
-	);
+		);
 
 	}
 

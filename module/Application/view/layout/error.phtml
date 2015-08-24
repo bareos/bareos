@@ -32,7 +32,7 @@ echo $this->doctype();
 
     <head>
         <meta charset="utf-8">
-        <?php echo $this->headTitle('Bareos')->setSeparator(' - ')->setAutoEscape(false) ?>
+        <?php echo $this->headTitle('Bareos','PREPEND')->setSeparator(' - ')->setAutoEscape(false) ?>
 
         <?php echo $this->headMeta()
             ->appendName('viewport', 'width=device-width, initial-scale=1.0')
@@ -42,9 +42,7 @@ echo $this->doctype();
         <!-- Styles -->
         <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
                         ->prependStylesheet($this->basePath() . '/css/style.css')
-                        ->prependStylesheet($this->basePath() . '/css/bootstrap-theme.min.css')
                         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
-                        ->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css')
         ?>
 
         <!-- Scripts -->
