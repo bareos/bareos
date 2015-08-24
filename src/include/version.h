@@ -1,5 +1,5 @@
 #undef  VERSION
-#define VERSION "15.2.1"
+#define VERSION "15.3.0"
 #define BDATE   "24 August 2015"
 #define LSMDATE "24aug15"
 
@@ -31,13 +31,13 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSCFG_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSSQL_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSCATS_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSLMDB_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSSD_LT_RELEASE "15.2.1" */
+/* #define LIBBAREOS_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSCFG_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSSQL_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSCATS_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSLMDB_LT_RELEASE "15.3.0" */
+/* #define LIBBAREOSSD_LT_RELEASE "15.3.0" */
 
 /* Debug flags */
 #undef  DEBUG
