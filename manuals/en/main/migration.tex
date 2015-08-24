@@ -64,9 +64,9 @@ Normally three jobs are involved during a migration:
 \begin{itemize}
 \item The Migration control Job which starts the migration child Jobs.
 \item The previous Backup Job (already run). The File records
-      for this Job are purged if the Migration job successfully
-      terminates.  The original data remains on the Volume until
-      it is recycled and rewritten.
+      of this Job are purged when the Migration job terminates
+      successfully. The data remain on the Volume until it is recycled.
+
 \item A new Migration Backup Job that moves the data from the
       previous Backup job to the new Volume.  If you subsequently
       do a restore, the data will be read from this Job.
