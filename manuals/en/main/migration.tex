@@ -62,8 +62,7 @@ which copies the Job data to a new Volume in the Migration Pool.
 Normally three jobs are involved during a migration:
 
 \begin{itemize}
-\item The currently running Migration control Job. This is only
-      a control job for starting the migration child jobs.
+\item The Migration control Job which starts the migration child Jobs.
 \item The previous Backup Job (already run). The File records
       for this Job are purged if the Migration job successfully
       terminates.  The original data remains on the Volume until
