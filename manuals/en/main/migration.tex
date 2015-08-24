@@ -51,18 +51,15 @@ However, when doing migration, this is a very undesirable condition.  For
 migration to work properly, you should use Pools containing only Volumes of
 the same Media Type for all migration jobs.
 
-The migration job normally is either manually started or starts
-from a Schedule much like a backup job. It searches
-for a previous backup Job or Jobs that match the parameters you have
-specified in the migration Job resource, primarily a 
-\linkResourceDirective{Dir}{Job}{Selection Type}.  
-Then for
-each previous backup JobId found, the Migration Job will run a new Job which
-copies the old Job data from the previous Volume to a new Volume in
-the Migration Pool.  It is possible that no prior Jobs are found for
-migration, in which case, the Migration job will simply terminate having
-done nothing, but normally at a minimum, three jobs are involved during a
-migration:
+A migration job can be started manually or from a Schedule, like
+a backup job. It searches for existing backup Jobs that match the
+parameters specified in the migration Job resource, primarily a
+\linkResourceDirective{Dir}{Job}{Selection Type}. If no match was
+found, the Migration job terminates without further action. Otherwise,
+for each Job found this way, the Migration Job will run a new Job
+which copies the Job data to a new Volume in the Migration Pool.
+
+Normally three jobs are involved during a migration:
 
 \begin{itemize}
 \item The currently running Migration control Job. This is only
