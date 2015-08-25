@@ -883,10 +883,14 @@ dnl - Check for cmocka unit test framework http://cmocka.cryptomilk.org/
 dnl ---------------------------------------------------------------------------
 AC_MSG_CHECKING(for cmocka support)
 
-AC_CHECK_HEADERS( \
-    setjmp.h \
-    cmocka.h \
-)
+AC_CHECK_HEADERS(
+    [ setjmp.h cmocka.h ],,,
+    [#include <stdarg.h>
+     #include <stddef.h>
+     #ifdef HAVE_SETJMP_H
+     #include <setjmp.h>
+     #endif
+    ])
 
 UNITTEST_DIRS=
 

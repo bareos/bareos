@@ -22979,13 +22979,16 @@ done
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cmocka support" >&5
 $as_echo_n "checking for cmocka support... " >&6; }
 
-for ac_header in \
-    setjmp.h \
-    cmocka.h \
-
+for ac_header in  setjmp.h cmocka.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "#include <stdarg.h>
+     #include <stddef.h>
+     #ifdef HAVE_SETJMP_H
+     #include <setjmp.h>
+     #endif
+
+"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
