@@ -119,10 +119,6 @@ rather than simultaneously.
       still defined in the current director configuration. Otherwise
       you'll get a fatal error.
 
-\item If you keep Volumes of different Media Types in the same Pool,
-      it is not clear how well migration will work.  We recommend only
-      one \linkResourceDirective{Dir}{Storage}{Media Type} per pool.
-
 \item It is possible to get into a resource deadlock where Bareos does
       not find enough drives to simultaneously read and write all the
       Volumes needed to do Migrations. For the moment, you must take
