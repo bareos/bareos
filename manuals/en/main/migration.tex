@@ -98,13 +98,12 @@ rather than simultaneously.
       records, and its Type field is changed from "B" to "M" to
       indicate that the job was migrated.
 
-\item Jobs on Volumes will be Migration only if the Volume is
-      marked, Full, Used, or Error.  Volumes that are still
-      marked Append will not be considered for migration. This
-      prevents Bareos from attempting to read the Volume at
-      the same time it is writing it. It also reduces other deadlock
-      situations, as well as avoids the problem that you migrate a
-      Volume and later find new files appended to that Volume.
+\item A Job will be migrated only if all Volumes on which the job
+      is stored are marked Full, Used, or Error. In particular, Volumes
+      marked Append will not be considered for migration which rules out
+      the possibility that new files are appended to a migrated Volume.
+      This policy also prevents deadlock situations, like attempting to
+      read and write the same Volume from two jobs at the same time.
 
 \item As noted above, for the Migration High Bytes, the calculation
       of the bytes to migrate is somewhat approximate.
