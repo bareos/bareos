@@ -121,13 +121,13 @@ dstat=$?
 perl -ne '
  chomp();
  if (/Creating RestoreObject/) {
-   @elt = split(/\s/, $_, 7);
-   $ro{$elt[5]}{clen} = $elt[4];
-   $ro{$elt[5]}{cdata} = $elt[6];
+   @elt = split(/\s/, $_, 8);
+   $ro{$elt[6]}{clen} = $elt[4];
+   $ro{$elt[6]}{cdata} = $elt[7];
  } elsif (/Get RestoreObject/) {
-   @elt = split(/\s/, $_, 9);
-   $ro{$elt[6]}{glen} = $elt[4];
-   $ro{$elt[6]}{gdata} = $elt[8];
+   @elt = split(/\s/, $_, 10);
+   $ro{$elt[7]}{glen} = $elt[4];
+   $ro{$elt[7]}{gdata} = $elt[9];
  }
  END {
    $err=0;
