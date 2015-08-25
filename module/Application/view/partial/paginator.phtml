@@ -1,18 +1,17 @@
-
 <?php if($this->pageCount): ?>
 
 <div>
-	
-	<ul class="pagination pagination-centered">
+
+	<ul class="pagination">
 
 		<!-- previous page link -->
 		<?php if(isset($this->previous)): ?>
 		<li>
-			<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->previous; ?>">previous</a>
+			<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->previous; ?>"><span aria-hidden="true">&laquo;</span></a>
 		</li>
 		<?php else: ?>
 		<li class="disabled">
-			<a href="#">previous</a>
+			<a href="#"><span aria-hidden="true">&laquo;</span></a>
 		</li>
 		<?php endif; ?>
 
@@ -46,11 +45,11 @@
 		<!-- next page link -->
 		<?php if(isset($this->next)): ?>
 			<li>
-				<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->next; ?>">next</a>
+				<a href="<?php echo $this->url($this->route, array(), null, true); ?>?page=<?php echo $this->next; ?>"><span aria-hidden="true">&raquo;</span></a>
 			</li>
 		<?php else: ?>
 			<li class="disabled">
-				<a href="#">next</a>
+				<a href="#"><span aria-hidden="true">&raquo;</span></a>
 			</li>
 		<?php endif; ?>
 

@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -24,53 +24,44 @@
  *
  */
 
-$title = 'Pool details';
+$title = $pool['name'] . ' Pool';
 $this->headTitle($title);
 
 ?>
-
-<h3 class="text-muted"><?php echo $title; ?></h3>
-<hr />
 
 <div class="row">
 
 <div class="col-md-12">
 <div class="panel panel-default">
-	  
+
 <div class="panel-heading">
-<h3 class="panel-title">General Information</h3>
+<h3 class="panel-title">Pool</h3>
 </div>
-    
+
 <div class="panel-body">
 
-<table class="table table-striped table-hover" style="font-size: 9pt;">
+<table class="table table-bordered table-condensed">
 
 <tr>
-	<th>Pool</th>
-	<th>Name</th>
-	<th>Type</th>
-	<th><div align="right">Volumes</div></th>
-	<th><div align="right">Maximum volumes</div></th>
-	<th><div align="right">Volume retention</div></th>
-	<th><div align="right">Maximum volume jobs</div></th>
-	<th><div align="right">Maximum volume files</div></th>
-	<th><div align="right">Maximum volume bytes</div></th>
-	
-	
+	<th class="bg-primary">Pool</th>
+	<th class="bg-primary">Name</th>
+	<th class="bg-primary">Type</th>
+	<th class="bg-primary"><div align="right">Volumes</div></th>
+	<th class="bg-primary"><div align="right">Maximum volumes</div></th>
+	<th class="bg-primary"><div align="right">Volume retention</div></th>
+	<th class="bg-primary"><div align="right">Maximum volume jobs</div></th>
+	<th class="bg-primary"><div align="right">Maximum volume bytes</div></th>
 </tr>
 
 <tr>
-
-	<td><?php echo $this->escapeHtml($pool->poolid); ?></td>
-	<td><?php echo $this->escapeHtml($pool->name); ?></td>
-	<td><?php echo $this->escapeHtml($pool->pooltype); ?></td>
-	<td><div align="right"><?php echo $this->escapeHtml($pool->numvols); ?></div></td>
-	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvols); ?></div></td>
-	<td><div align="right"><?php echo $this->printRetention($pool->volretention) . " days"; ?></div></td>
-	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvoljobs); ?></div></td>
-	<td><div align="right"><?php echo $this->escapeHtml($pool->maxvolfiles); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($pool->maxvolbytes); ?></div></td>
-
+	<td><?php echo $this->escapeHtml($this->pool['poolid']); ?></td>
+	<td><?php echo $this->escapeHtml($pool['name']); ?></td>
+	<td><?php echo $this->escapeHtml($pool['pooltype']); ?></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool['numvols']); ?></div></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool['maxvols']); ?></div></td>
+	<td><div align="right"><?php echo $this->printRetention($pool['volretention']) . " days"; ?></div></td>
+	<td><div align="right"><?php echo $this->escapeHtml($pool['maxvoljobs']); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($pool['maxvolbytes']); ?></div></td>
 </tr>
 
 </table>
@@ -86,52 +77,72 @@ $this->headTitle($title);
 
 <div class="col-md-12">
 <div class="panel panel-default">
-    
+
 <div class="panel-heading">
 <h3 class="panel-title">Volumes</h3>
 </div>
-    
+
 <div class="panel-body">
 
-<table class="table table-striped table-hover" style="font-size: 9pt;">
+<p>
+Volumes per page: 
+<a href="<?php echo $this->url('pool', array('action' => 'details', 'id' => $this->poolname, 'limit' => '10', null, null, true)); ?>">10</a> | 
+<a href="<?php echo $this->url('pool', array('action' => 'details', 'id' => $this->poolname, 'limit' => '25', null, null, true)); ?>">25</a> | 
+<a href="<?php echo $this->url('pool', array('action' => 'details', 'id' => $this->poolname, 'limit' => '50', null, null, true)); ?>">50</a> | 
+<a href="<?php echo $this->url('pool', array('action' => 'details', 'id' => $this->poolname, 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
+
+<table class="table table-bordered table-condensed">
 
 <tr>
-	<th>Volume</th>
-	<th>Name</th>
-	<th>Storage</th>
-	<th>Type</th>
-	<th>Last written</th>
-	<th>Status</th>
-	<th><div align="right">Retention</div></th>
-	<th><div align="right">Maximum bytes</div></th>
-	<th><div align="right">Current bytes</div></th>
-	<th><div align="right">Free bytes</div></th>
-	
+	<th class="bg-primary">Volume</th>
+	<th class="bg-primary">Name</th>
+	<th class="bg-primary">Storage</th>
+	<th class="bg-primary">Type</th>
+	<th class="bg-primary">Last written</th>
+	<th class="bg-primary">Status</th>
+	<th class="bg-primary"><div align="right">Retention</div></th>
+	<th class="bg-primary"><div align="right">Maximum bytes</div></th>
+	<th class="bg-primary"><div align="right">Current bytes</div></th>
+	<th class="bg-primary"><div align="right">Free bytes</div></th>
 </tr>
 
-<?php foreach($this->media as $volume) : ?>
+<?php foreach($this->paginator as $volume) : ?>
 
 <tr>
-
-	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume->mediaid)); ?>"><?php echo $this->escapeHtml($volume->mediaid); ?></a></td>
-	<td><?php echo $this->escapeHtml($volume->volumename); ?></td>
-	<td><a href="<?php echo $this->url('storage', array('action'=>'details')); ?>"><?php echo $this->escapeHtml($volume->storageid); ?></a></td>
-	<td><?php echo $this->escapeHtml($volume->mediatype); ?></td>
-	<td><div title="<?php echo $volume->lastwritten; ?>"><?php echo $this->printHumanReadableTimeperiod($volume->lastwritten, "fuzzy"); ?></div></td>
-	<td><?php echo $this->escapeHtml($volume->volstatus); ?></td>
-	<td><div align="right"><?php echo $this->printExpiration($volume->volretention, $volume->lastwritten, $volume->volstatus); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume->volbytes); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume->maxvolbytes - $volume->volbytes); ?></div></td>
-	
+	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['mediaid'])); ?>"><?php echo $this->escapeHtml($volume['mediaid']); ?></a></td>
+	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['mediaid'])); ?>"><?php echo $this->escapeHtml($volume['volumename']); ?></a></td>
+	<td><a href="<?php echo $this->url('storage', array('action'=>'details', 'id' => $volume['storageid'])); ?>"><?php echo $this->escapeHtml($volume['storageid']); ?></a></td>
+	<td><?php echo $this->escapeHtml($volume['mediatype']); ?></td>
+	<td><div title="<?php echo $volume['lastwritten']; ?>"><?php echo $this->printHumanReadableTimeperiod($volume['lastwritten'], "fuzzy"); ?></div></td>
+	<td><?php echo $this->escapeHtml($volume['volstatus']); ?></td>
+	<td><div align="right"><?php echo $this->printExpiration($volume['volretention'], $volume['lastwritten'], $volume['volstatus']); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($volume['maxvolbytes']); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($volume['volbytes']); ?></div></td>
+	<td><div align="right"><?php echo $this->printBytes($volume['maxvolbytes'] - $volume['volbytes']); ?></div></td>
 </tr>
 
 <?php endforeach; ?>
 
 </table>
 
+<?php
+	echo $this->paginationControl(
+                        $this->paginator,
+                        'Elastic',
+                        array(
+				'partial/paginator.phtml',
+				'Pool'
+			),
+                        array(
+				'route' => 'pool',
+			)
+        );
+?>
+
 </div>
 </div>
 </div>
 
 </div>
+

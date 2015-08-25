@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,32 +27,32 @@ namespace Pool\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Paginator\Adapter\ArrayAdapter;
+use Zend\Paginator\Paginator;
 
 class PoolController extends AbstractActionController
 {
 
-	protected $poolTable;
-	protected $mediaTable;
-
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'PoolId';
-				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+
+				$pools = $this->getPools();
+				$page = (int) $this->params()->fromQuery('page');
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$paginator = $this->getPoolTable()->fetchAll(true, $order_by, $order);
-				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+
+				$paginator = new Paginator(new ArrayAdapter($pools));
+				$paginator->setCurrentPageNumber($page);
 				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
+						'limit' => $limit,
+						//'pools' => $pools,
 						'paginator' => $paginator,
-										'order_by' => $order_by,
-										'order' => $order,
-										'limit' => $limit,
-						'pools' => $this->getPoolTable()->fetchAll(),
 					)
 				);
+
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -62,16 +62,26 @@ class PoolController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
 
-				if (!$id) {
-					return $this->redirect()->toRoute('pool');
-				}
+
+				$poolname = $this->params()->fromRoute('id');
+				$page = $this->params()->fromQuery('page');
+				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+
+				$pool = $this->getPool($poolname);
+				$media = $this->getPoolMedia($poolname);
+
+                                $paginator = new Paginator(new ArrayAdapter($media));
+                                $paginator->setCurrentPageNumber($page);
+                                $paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
-						'pool' => $this->getPoolTable()->getPool($id),
-						'media' => $this->getMediaTable()->getPoolVolumes($id),
+						'poolname' => $poolname,
+						'limit' => $limit,
+						'pool' => $pool,
+						//'media' => $media,
+						'paginator' => $paginator,
 					)
 				);
 		}
@@ -80,22 +90,28 @@ class PoolController extends AbstractActionController
 		}
 	}
 
-	public function getPoolTable()
+	private function getPool($pool)
 	{
-		if(!$this->poolTable) {
-			$sm = $this->getServiceLocator();
-			$this->poolTable = $sm->get('Pool\Model\PoolTable');
-		}
-		return $this->poolTable;
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command("llist pool=".$pool, 2, null);
+                $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $pools['result']['pools'][0];
 	}
 
-	public function getMediaTable()
+	private function getPools()
 	{
-		if(!$this->mediaTable) {
-			$sm = $this->getServiceLocator();
-			$this->mediaTable = $sm->get('Media\Model\MediaTable');
-		}
-		return $this->mediaTable;
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("llist pools", 2, null);
+		$pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $pools['result']['pools'];
+	}
+
+	private function getPoolMedia($pool)
+	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command("llist media pool=".$pool, 2, null);
+                $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $media['result']['media'];
 	}
 
 }

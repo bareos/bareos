@@ -53,7 +53,6 @@ return array(
 						'action' => 'index',
 					),
 				),
-				
 			),
 		),
 	),
