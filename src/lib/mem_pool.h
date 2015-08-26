@@ -100,6 +100,7 @@ public:
    void realloc_pm(int32_t size);
    int strcpy(const char *str);
    int strcat(const char *str);
+   int bvsprintf(const char *fmt, va_list arg_ptr);
 };
 
 int pm_strcat(POOLMEM **pm, const char *str);

@@ -707,3 +707,39 @@ int POOL_MEM::strcpy(const char *str)
    memcpy(mem, str, len);
    return len - 1;
 }
+
+#ifdef HAVE_VA_COPY
+int POOL_MEM::bvsprintf(const char *fmt, va_list arg_ptr)
+{
+   int maxlen, len;
+   va_list ap;
+
+again:
+   maxlen = max_size() - 1;
+   va_copy(ap, arg_ptr);
+   len = ::bvsnprintf(mem, maxlen, fmt, ap);
+   va_end(ap);
+   if (len < 0 || len >= maxlen) {
+      realloc_pm(maxlen + maxlen / 2);
+      goto again;
+   }
+   return len;
+}
+
+#else /* no va_copy() -- brain damaged version of variable arguments */
+
+int POOL_MEM::bvsprintf(const char *fmt, va_list arg_ptr)
+{
+   int maxlen, len;
+
+   realloc_pm(5000);
+   maxlen = max_size() - 1;
+   len = ::bvsnprintf(mem, maxlen, fmt, arg_ptr);
+   if (len < 0 || len >= maxlen) {
+      if (len >= maxlen) {
+         len = -len;
+      }
+   }
+   return len;
+}
+#endif
