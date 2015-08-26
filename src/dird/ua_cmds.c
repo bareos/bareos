@@ -1162,7 +1162,7 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int 
    Dmsg0(120, "Connected to file daemon\n");
    fd = ua->jcr->file_bsock;
    if (ua->jcr->FDVersion >= FD_VERSION_53) {
-      fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d\n", level, trace_flag, hangup_flag);
+      fd->fsend("setdebug=%d trace=%d hangup=%d timestamp=%d\n", level, trace_flag, hangup_flag, timestamp_flag);
    } else {
       fd->fsend("setdebug=%d trace=%d hangup=%d\n", level, trace_flag, hangup_flag);
    }
