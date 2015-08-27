@@ -141,13 +141,6 @@ rather than simultaneously.
      referenced in the Migration Job to define the Pool into which the
      data will be migrated.
 
-\item Pay particular attention to the fact that data is migrated on a Job
-     by Job basis, and for any particular Volume, only one Job can read
-     that Volume at a time (no simultaneous read), so migration jobs that
-     all reference the same Volume will run sequentially.  This can be a
-     potential bottle neck and does not scale very well to large numbers
-     of jobs.
-
 \item Only migration of Selection Types of Job and Volume have
      been carefully tested. All the other migration methods (time,
      occupancy, smallest, oldest, ...) need additional testing.
