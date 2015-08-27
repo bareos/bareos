@@ -1,19 +1,43 @@
 <?php
 
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 $title = 'Clients';
 $this->headTitle($title);
 
-if($order_by == 'ClientId')
-        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
-elseif($order_by == 'Name')
-        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
-elseif($order_by == 'Uname')
-        $url_order = $order == 'ASC' ? 'DESC' : 'ASC';
-
 ?>
 
-<h3 class="text-muted"><?php echo $title; ?></h3>
-<hr />
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Clients</h3>
+</div>
+
+<div class="panel-body">
 
 <p>
 Clients per page:
@@ -23,58 +47,36 @@ Clients per page:
 <a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
 </p>
 
-<div class="row">
-
-<div class="col-md-12">
-<div class="panel panel-default">
-    
-<div class="panel-body">
-
-<table class="table table-striped table-hover" style="font-size: 9pt;">
+<table class="table table-bordered table-condensed">
 
 <tr>
-	<th><a href="<?php echo $this->url('client', array('order_by' => 'ClientId', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Client"); ?></a></th>
-	<th><a href="<?php echo $this->url('client', array('order_by' => 'Name', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Name"); ?></a></th>
-	<th><a href="<?php echo $this->url('client', array('order_by' => 'Uname', 'order' => $url_order, 'limit' => $this->limit)); ?>"><?php echo $this->translate("Version"); ?></a></th>
-	<th>Autoprune</th>
-	<th>Fileretention</th>
-	<th>Jobretention</th>
-	<th>Action</th>
+	<th class="bg-primary">Client</th>
+	<th class="bg-primary">Name</th>
+	<th class="bg-primary">Version</th>
+	<th class="bg-primary">Autoprune</th>
+	<th class="bg-primary">Fileretention</th>
+	<th class="bg-primary">Jobretention</th>
+	<th class="bg-primary"></th>
 </tr>
 
 <?php foreach($this->paginator as $client) : ?>
 
 <tr>
-
-	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client->clientid)); ?>"><?php echo $this->escapeHtml($client->clientid); ?></a></td>
-	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client->clientid)); ?>"><?php echo $this->escapeHtml($client->name); ?></a></td>
-	<td><?php echo $this->escapeHtml($client->uname); ?></td>
-	<td><?php echo $this->escapeHtml($client->autoprune); ?></td>
-	<td><?php echo $this->printRetention($client->fileretention) . " days"; ?></td>
-	<td><?php echo $this->printRetention($client->jobretention) . " days"; ?></td>
-	<td>
-		<div class="btn-group">
-			<div type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-cog"></span></div>
-			<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-			<span class="caret"></span>
-			<span class="sr-only">Toggle Dropdown</span>
-			</button>
-			<ul class="dropdown-menu" role="menu">
-			<li><a href="
-			<?php
-				echo $this->url(
-					'restore',
-					array('action' => 'index'),
-					array('query' => array(
-						'type' => 'client',
-						'client' => $client->name,
-						'restoreclient' => $client->name
-					)
-				));
-			?>
-			"><span class="glyphicon glyphicon-import"></span> Restore</a></li>
-			</ul>
-		</div>
+	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client['clientid'])); ?>"><?php echo $this->escapeHtml($client['clientid']); ?></a></td>
+	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client['clientid'])); ?>"><?php echo $this->escapeHtml($client['name']); ?></a></td>
+	<td><?php echo $this->escapeHtml($client['uname']); ?></td>
+	<td><?php echo $this->escapeHtml($client['autoprune']); ?></td>
+	<td><?php echo $this->printRetention($client['fileretention']) . " days"; ?></td>
+	<td><?php echo $this->printRetention($client['jobretention']) . " days"; ?></td>
+	<td><a href="<?php echo $this->url(
+                                        'restore',
+                                        array('action' => 'index'),
+                                        array('query' => array(
+                                                'type' => 'client',
+                                                'client' => $client['name'],
+                                                'restoreclient' => $client['name']
+                                        )
+                                )); ?>" class="btn btn-primary" role="button"><span class="glyphicon glyphicon-import"></span> Restore</a>
 	</td>
 
 </tr>
@@ -83,13 +85,10 @@ Clients per page:
 
 </table>
 
-</div>
-</div>
-
 <?php
 
 echo $this->paginationControl(
-			$this->paginator, 
+			$this->paginator,
 			'Elastic',
 			array('partial/paginator.phtml', 'Client'),
 			array('route' => 'client')
@@ -98,5 +97,6 @@ echo $this->paginationControl(
 ?>
 
 </div>
-
+</div>
+</div>
 </div>

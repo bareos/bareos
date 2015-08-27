@@ -27,6 +27,8 @@ namespace Client\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Paginator\Adapter\ArrayAdapter;
+use Zend\Paginator\Paginator;
 
 class ClientController extends AbstractActionController
 {
@@ -38,19 +40,20 @@ class ClientController extends AbstractActionController
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'ClientId';
-				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$paginator = $this->getClientTable()->fetchAll(true, $order_by, $order);
+				$clients = $this->getClients();
+
+				$paginator = new Paginator(new ArrayAdapter($clients));
 				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
 				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
 						'paginator' => $paginator,
-						'order_by' => $order_by,
-										'order' => $order,
-										'limit' => $limit,
+						//'order_by' => $order_by,
+						//'order' => $order,
+						'limit' => $limit,
 					)
 				);
 		}
@@ -84,6 +87,18 @@ class ClientController extends AbstractActionController
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
+	}
+
+	private function getClients()
+	{
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("llist clients", 2, null);
+		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $clients['result']['clients'];
+	}
+
+	private function getClient($client=null)
+	{
 	}
 
 	private function getClientBackups($client=null, $limit=10, $order="desc")
