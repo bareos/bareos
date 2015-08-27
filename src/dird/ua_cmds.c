@@ -216,7 +216,7 @@ static struct cmdstruct commands[] = {
          "\tmigrationjob=<complete_name> yes"), false, true },
    { NT_("status"), status_cmd, _("Report status"),
      NT_("all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> | client=<client-name> |\n"
-         "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> | schedule=<schedule-name> |\n"
+         "\tstorage=<storage-name> slots | days=<nr_days> | job=<job-name> |\n"
          "\tsubscriptions"), true, true },
    { NT_("setbandwidth"), setbwlimit_cmd,  _("Sets bandwidth"),
      NT_("client=<client-name> | storage=<storage-name> | jobid=<jobid> |\n"
