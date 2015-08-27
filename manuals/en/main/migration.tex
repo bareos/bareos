@@ -117,10 +117,10 @@ rather than simultaneously.
       Volumes needed to do Migrations. For the moment, you must take
       care as all the resource deadlock algorithms are not yet implemented.
 
-\item Migration is done only when you run a Migration job. If you set a
-      Migration High Bytes and that number of bytes is exceeded in the Pool
-      no migration job will automatically start.  You must schedule the
-      migration jobs, and they must run for any migration to take place.
+\item Setting the Migration High Bytes watermark is not sufficient
+      for migration to take place. In addition, you must define
+      and schedule a migration job which looks for jobs that can
+      be migrated.
 
 \item If you migrate a number of Volumes, a very large number of Migration
       jobs may start.
