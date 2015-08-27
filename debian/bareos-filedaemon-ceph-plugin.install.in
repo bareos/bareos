@@ -1,0 +1,2 @@
+@plugindir@/cephfs-fd.so
+@plugindir@/rados-fd.so

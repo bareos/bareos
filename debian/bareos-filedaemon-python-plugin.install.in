@@ -6,4 +6,3 @@
 @plugindir@/BareosFdPluginLocalFileset.py*
 @plugindir@/BareosFdWrapper.py*
 @plugindir@/bareos_fd_consts.py*
-/etc/bareos/bareos-dir.d/plugin-python-ldap.conf
