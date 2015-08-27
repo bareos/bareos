@@ -125,11 +125,9 @@ rather than simultaneously.
 \item If you migrate a number of Volumes, a very large number of Migration
       jobs may start.
 
-\item Figuring out what jobs will actually be migrated can be a bit complicated
-      due to the flexibility provided by the regex patterns and the number of
-      different options.  Turning on a debug level of 100 or more will provide
-      a limited amount of debug information about the migration selection
-      process.
+\item To figure out which jobs are going to be migrated by a given
+      configuration, choose a debug level of 100 or more. This
+      activates information about the migration selection process.
 
 \item Bareos currently does only minimal Storage conflict resolution, so you
       must take care to ensure that you don't try to read and write to the
