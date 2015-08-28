@@ -111,7 +111,7 @@ class PoolController extends AbstractActionController
 		$director = $this->getServiceLocator()->get('director');
                 $result = $director->send_command("llist media pool=".$pool, 2, null);
                 $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $media['result']['media'];
+                return $media['result']['volumes'];
 	}
 
 }
