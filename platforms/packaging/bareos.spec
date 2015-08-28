@@ -821,9 +821,9 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.1.gz
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+install -m 644 platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}/bareos-director.service
+install -m 644 platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}/bareos-filedaemon.service
+install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}/bareos-storage.service
 %endif
 
 # Create the Readme files for the meta packages
@@ -877,7 +877,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-dir.service
+%{_unitdir}/bareos-director.service
 %endif
 
 # query.sql is not a config file,
@@ -908,7 +908,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-sd.service
+%{_unitdir}/bareos-storage.service
 %endif
 %attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/bareos/storage
 
@@ -965,7 +965,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/bareos-fd.8.gz
 # tray monitor
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-fd.service
+%{_unitdir}/bareos-filedaemon.service
 %endif
 
 %files common
