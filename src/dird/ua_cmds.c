@@ -149,10 +149,13 @@ static struct cmdstruct commands[] = {
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
          "media [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "media=<media-name> |\n"
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
+         "pool=<pool-name> |\n"
          "storages |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "volume=<volume-name> |\n"
          "[ limit=<number> [ offset=<number> ] ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
@@ -165,9 +168,12 @@ static struct cmdstruct commands[] = {
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
          "media [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "media=<media-name> |\n"
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
+         "pool=<pool-name> |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
+         "volume=<volume-name> |\n"
          "[ limit=<num> [ offset=<number> ] ]"), true, true },
    { NT_("messages"), messages_cmd, _("Display pending messages"),
      NT_(""), false, false },
