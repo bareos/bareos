@@ -559,7 +559,6 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        * List MEDIA or VOLUMES
        */
       jobid = get_jobid_from_cmdline(ua);
-
       if (jobid > 0) {
          int count;
          POOLMEM *VolumeName;
@@ -574,7 +573,9 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
           */
          if (ua->argv[1]) {
             bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
+            ua->send->object_start("volume");
             db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+            ua->send->object_end("volume");
          } else {
             /*
              * If no job or jobid keyword found, then we list all media
@@ -589,39 +590,53 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                }
 
                mr.PoolId = pr.PoolId;
+               ua->send->array_start("volumes");
                db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
-
+               ua->send->array_end("volumes");
                return true;
             } else {
                int num_pools;
                uint32_t *ids;
 
                /*
-                * List Volumes in all pools
+                * List all volumes, flat
                 */
-               if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
-                  ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"),
-                                db_strerror(ua->db));
-                  return true;
-               }
-
-               if (num_pools <= 0) {
-                  return true;
-               }
-               ua->send->array_start("media");
-               for (i = 0; i < num_pools; i++) {
-                  pr.PoolId = ids[i];
-                  if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
-                     mr.PoolId = ids[i];
-                     db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+               if (find_arg(ua, NT_("all")) > 0) {
+                  ua->send->array_start("volumes");
+                  db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+                  ua->send->array_end("volumes");
+               } else {
+                  /*
+                   * List Volumes in all pools
+                   */
+                  if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
+                     ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"),
+                           db_strerror(ua->db));
+                     return true;
                   }
+
+                  if (num_pools <= 0) {
+                     return true;
+                  }
+
+                  ua->send->object_start("volumes");
+                  for (i = 0; i < num_pools; i++) {
+                     pr.PoolId = ids[i];
+                     if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
+                        ua->send->decoration( "Pool: %s\n", pr.Name );
+                        ua->send->array_start(pr.Name);
+                        mr.PoolId = ids[i];
+                        db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+                        ua->send->array_end(pr.Name);
+                     }
+                  }
+                  ua->send->object_end("volumes");
+                  free(ids);
                }
-               ua->send->array_end("media");
-               free(ids);
-               return true;
             }
          }
       }
+      return true;
    } else if (bstrcasecmp(ua->argk[1], NT_("nextvol")) ||
               bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
       int days;
