@@ -123,16 +123,21 @@ bail_out:
    db_unlock(mdb);
 }
 
-void db_list_client_records(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *sendit, e_list_type type)
+void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    db_lock(mdb);
+   POOL_MEM clientfilter(PM_MESSAGE);
+
+   if (clientname) {
+      clientfilter.bsprintf("WHERE Name = '%s'", clientname);
+   }
    if (type == VERT_LIST) {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
          "JobRetention "
-         "FROM Client ORDER BY ClientId");
+         "FROM Client %s ORDER BY ClientId ", clientfilter.c_str());
    } else {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,FileRetention,JobRetention "
-         "FROM Client ORDER BY ClientId");
+         "FROM Client %s ORDER BY ClientId", clientfilter.c_str());
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {

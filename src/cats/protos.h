@@ -141,7 +141,7 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose=false);
-void db_list_client_records(JCR *jcr, B_DB *mdb,
+void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *jobids,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
