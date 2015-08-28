@@ -151,6 +151,7 @@ static struct cmdstruct commands[] = {
          "media [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"
          "pools |\n"
+         "storages |\n"
          "volumes [ jobid=<jobid> ujobid=<complete_name> pool=<pool-name> ] |\n"
          "[ limit=<number> [ offset=<number> ] ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),

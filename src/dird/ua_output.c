@@ -547,6 +547,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        * List CLIENT=xxx
        */
       db_list_client_records(ua->jcr, ua->db, ua->argv[1], ua->send, llist);
+   } else if (bstrcasecmp(ua->argk[1], NT_("storages"))) {
+      /*
+       * List STORAGES
+       */
+       db_list_sql_query(ua->jcr, ua->db, "SELECT * FROM Storage", ua->send, llist, "storages");
    } else if (bstrcasecmp(ua->argk[1], NT_("media")) ||
               bstrcasecmp(ua->argk[1], NT_("volume")) ||
               bstrcasecmp(ua->argk[1], NT_("volumes"))) {
