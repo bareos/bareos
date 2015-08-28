@@ -51,8 +51,6 @@ class ClientController extends AbstractActionController
 				return new ViewModel(
 					array(
 						'paginator' => $paginator,
-						//'order_by' => $order_by,
-						//'order' => $order,
 						'limit' => $limit,
 					)
 				);
@@ -65,24 +63,16 @@ class ClientController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
-				if(!$id) {
-					return $this->redirect()->toRoute('client');
-				}
 
-				$result = $this->getClientTable()->getClient($id);
-
-				$cmd = 'status client="' . $result->name . '"';
-				$this->director = $this->getServiceLocator()->get('director');
+				$name = $this->params()->fromRoute('id');
 
 				return new ViewModel(
 					array(
-					  'client' => $this->getClientTable()->getClient($id),
-					  'job' => $this->getJobTable()->getLastSuccessfulClientJob($id),
-					  'bconsoleOutput' => $this->director->send_command($cmd),
-					  'backups' => $this->getClientBackups($result->name, 10, "desc"),
+					  'client' => $this->getClient($name),
+					  'backups' => $this->getClientBackups($name, 10, "desc"),
 					)
 				);
+
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -99,6 +89,10 @@ class ClientController extends AbstractActionController
 
 	private function getClient($client=null)
 	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command('llist client="'.$client.'"', 2, null);
+                $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $clients['result']['clients'][0];
 	}
 
 	private function getClientBackups($client=null, $limit=10, $order="desc")
@@ -112,25 +106,6 @@ class ClientController extends AbstractActionController
 			$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 			return $backups['result']['backups'];
 		}
-	}
-
-
-	public function getClientTable()
-	{
-		if(!$this->clientTable) {
-			$sm = $this->getServiceLocator();
-			$this->clientTable = $sm->get('Client\Model\ClientTable');
-		}
-		return $this->clientTable;
-	}
-
-	public function getJobTable()
-	{
-		if(!$this->jobTable) {
-			$sm = $this->getServiceLocator();
-			$this->jobTable = $sm->get('Job\Model\JobTable');
-		}
-		return $this->jobTable;
 	}
 
 }
