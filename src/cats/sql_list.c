@@ -202,9 +202,7 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
       goto bail_out;
    }
 
-   sendit->array_start("media");
    list_result(jcr, mdb, sendit, type);
-   sendit->array_end("media");
 
    sql_free_result(mdb);
 

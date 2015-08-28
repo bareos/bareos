@@ -598,17 +598,15 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                if (num_pools <= 0) {
                   return true;
                }
-
+               ua->send->array_start("media");
                for (i = 0; i < num_pools; i++) {
-                  ua->send->object_start();
                   pr.PoolId = ids[i];
                   if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
-                     ua->send->object_key_value("pool", pr.Name, "Pool: %s\n");
+                     mr.PoolId = ids[i];
+                     db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
                   }
-                  mr.PoolId = ids[i];
-                  db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
-                  ua->send->object_end();
                }
+               ua->send->array_end("media");
                free(ids);
                return true;
             }
