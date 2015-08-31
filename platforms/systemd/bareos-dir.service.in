@@ -41,5 +41,4 @@ SuccessExitStatus=0 1 15
 
 [Install]
 Alias=bareos-dir.service
-Alias=bareos-director.service
 WantedBy=multi-user.target
