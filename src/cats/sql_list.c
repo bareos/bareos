@@ -325,10 +325,10 @@ void db_list_joblog_records(JCR *jcr, B_DB *mdb, uint32_t JobId,
    }
    db_lock(mdb);
    if (type == VERT_LIST) {
-      Mmsg(mdb->cmd, "SELECT LogText FROM Log "
+      Mmsg(mdb->cmd, "SELECT Time, LogText FROM Log "
                      "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
    } else {
-      Mmsg(mdb->cmd, "SELECT LogText FROM Log "
+      Mmsg(mdb->cmd, "SELECT Time, LogText FROM Log "
                      "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
       /*
        * When something else then a vertical list is requested set the list type
