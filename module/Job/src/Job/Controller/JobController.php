@@ -65,19 +65,19 @@ class JobController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
-				if (!$id) {
-					return $this->redirect()->toRoute('job');
-				}
 
-				return new ViewModel(array(
-						'job' => $this->getJobTable()->getJob($id),
-						'log' => $this->getLogTable()->getLogsByJob($id),
-					));
+			$jobid = (int) $this->params()->fromRoute('id', 0);
+			$job = $this->getJob($jobid);
+			$joblog = $this->getJobLog($jobid);
+
+			return new ViewModel(array(
+				'job' => $job,
+				'joblog' => $joblog,
+			));
 		}
 		else {
-		return $this->redirect()->toRoute('auth', array('action' => 'login'));
-        }
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function runningAction()
@@ -250,12 +250,29 @@ class JobController extends AbstractActionController
                 }
 	}
 
+	/** TODO: RENAME TO => getBackups() **/
 	private function getJobs()
 	{
 		$director = $this->getServiceLocator()->get('director');
 		$result = $director->send_command(".jobs type=B", 2, null);
 		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 		return $jobs['result']['jobs'];
+	}
+
+	private function getJob($jobid)
+	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command('llist jobid="'.$jobid.'"', 2, null);
+                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $jobs['result']['jobs'][0];
+	}
+
+	private function getJobLog($jobid)
+	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command('list joblog jobid="'.$jobid.'"', 2, null);
+                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $jobs['result']['joblog'];
 	}
 
 	private function queueJob($jobname=null)
