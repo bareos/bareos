@@ -27,30 +27,31 @@ namespace Media\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Paginator\Adapter\ArrayAdapter;
+use Zend\Paginator\Paginator;
 
 class MediaController extends AbstractActionController
 {
 
-	protected $mediaTable;
-
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'MediaId';
-				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+
+				$volumes = $this->getVolumes();
+				$page = (int) $this->params()->fromQuery('page');
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$paginator = $this->getMediaTable()->fetchAll(true, $order_by, $order);
-				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+
+				$paginator = new Paginator(new ArrayAdapter($volumes));
+				$paginator->setCurrentPageNumber($page);
 				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
 						'paginator' => $paginator,
-						'order_by' => $order_by,
-										'order' => $order,
-										'limit' => $limit,
+						'limit' => $limit,
 					)
 				);
+
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -60,27 +61,34 @@ class MediaController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			$id = (int) $this->params()->fromRoute('id', 0);
-			if (!$id) {
-			return $this->redirect()->toRoute('media');
-			}
+
+			$volumename = $this->params()->fromRoute('id');
+			$volume = $this->getVolume($volumename);
 
 			return new ViewModel(array(
-				'media' => $this->getMediaTable()->getMedia($id),
+				'media' => $volume,
 			));
+
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
-	public function getMediaTable()
+	private function getVolumes()
 	{
-		if(!$this->mediaTable) {
-			$sm = $this->getServiceLocator();
-			$this->mediaTable = $sm->get('Media\Model\MediaTable');
-		}
-		return $this->mediaTable;
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("llist volumes all", 2, null);
+		$pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $pools['result']['volumes'];
+	}
+
+	private function getVolume($volume)
+	{
+		$director = $this->getServiceLocator()->get('director');
+                $result = $director->send_command('llist volume="'.$volume.'"', 2, null);
+                $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                return $pools['result']['volume'];
 	}
 
 }
