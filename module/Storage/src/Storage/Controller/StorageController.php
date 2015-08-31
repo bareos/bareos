@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,31 +27,28 @@ namespace Storage\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Paginator\Adapter\ArrayAdapter;
+use Zend\Paginator\Paginator;
 
 class StorageController extends AbstractActionController
 {
 
-	protected $storageTable;
-	protected $bconsoleOutput = array();
-	protected $director;
-
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'StorageId';
-						$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
-						$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-						$paginator = $this->getStorageTable()->fetchAll(true, $order_by, $order);
-						$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-						$paginator->setItemCountPerPage($limit);
+
+				$storages = $this->getStorages();
+				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+				$page = (int) $this->params()->fromQuery('page');
+
+				$paginator = new Paginator(new ArrayAdapter($storages));
+				$paginator->setCurrentPageNumber($page);
+				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
 						'paginator' => $paginator,
-										'order_by' => $order_by,
-										'order' => $order,
-										'limit' => $limit,
-						'storages' => $this->getStorageTable()->fetchAll(),
+						'limit' => $limit,
 					)
 				);
 		}
@@ -63,17 +60,7 @@ class StorageController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
-				if(!$id) {
-					return $this->redirect()->toRoute('storage');
-				}
-				$result = $this->getStorageTable()->getStorage($id);
-				$cmd = 'status storage="'.$result->name.'"';
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'bconsoleOutput' => $this->director->send_command($cmd),
-					)
-				);
+				return new ViewModel(array());
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -83,30 +70,19 @@ class StorageController extends AbstractActionController
 	public function autochangerAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
-				if(!$id) {
-					return $this->redirect()->toRoute('storage');
-				}
-				$result = $this->getStorageTable()->getStorage($id);
-				$cmd = 'status storage="' . $result->name . '" slots';
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'bconsoleOutput' => $this->director->send_command($cmd),
-					)
-				);
+				return new ViewModel(array());
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
-	public function getStorageTable()
+	private function getStorages()
 	{
-		if(!$this->storageTable) {
-			$sm = $this->getServiceLocator();
-			$this->storageTable = $sm->get('Storage\Model\StorageTable');
-		}
-		return $this->storageTable;
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("list storages", 2, null);
+		$storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $storages['result']['storages'];
 	}
 
 }

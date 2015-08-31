@@ -3,9 +3,9 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,21 +25,7 @@
 
 namespace Storage\Model;
 
-class Storage 
+class Storage
 {
-
-	public $storageid;
-	public $name;
-	public $autochanger;
-
-	public function exchangeArray($data)
-	{
-		$data = array_change_key_case($data, CASE_LOWER);
-
-		$this->storageid = (!empty($data['storageid'])) ? $data['storageid'] : null;
-		$this->name = (!empty($data['name'])) ? $data['name'] : null;
-		$this->autochanger = (!empty($data['autochanger'])) ? $data['autochanger'] : null;
-	}
-
 }
 
