@@ -33,7 +33,6 @@ class JobController extends AbstractActionController
 {
 
 	protected $jobTable;
-	protected $logTable;
 	protected $bconsoleOutput = array();
 	protected $director = null;
 
@@ -294,7 +293,7 @@ class JobController extends AbstractActionController
 		}
 		return $this->jobTable;
 	}
-
+/*
 	public function getLogTable()
 	{
 		if(!$this->logTable)
@@ -304,6 +303,6 @@ class JobController extends AbstractActionController
 		}
 		return $this->logTable;
 	}
-
+*/
 }
 

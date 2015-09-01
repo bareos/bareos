@@ -172,12 +172,10 @@ return array(
 				'label' => 'Files',
 				'route' => 'file',
 			),
-			*/
 			array(
 				'label' => 'Logs',
 				'route' => 'log',
 			),
-			/*
 			array(
 				'label' => 'Restore',
 				'route' => 'restore',
