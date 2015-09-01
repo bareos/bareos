@@ -400,7 +400,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    POOL_DBR pr;
    MEDIA_DBR mr;
    POOL_MEM query_range(PM_MESSAGE);
-   int i, jobid;
+   int i, d, h, jobid;
+   int days = 0,
+       hours = 0,
+       jobstatus = 0;
+   time_t schedtime = 0;
+   const int secs_in_day = 86400;
+   const int secs_in_hour = 3600;
+   utime_t now;
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -411,6 +418,24 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    memset(&mr, 0, sizeof(mr));
 
    Dmsg1(20, "list: %s\n", cmd);
+
+   /*
+    * days or hours given?
+    */
+
+   d = find_arg_with_value(ua, NT_("days"));
+   h = find_arg_with_value(ua, NT_("hours"));
+
+   now = (utime_t)time(NULL);
+   if (d > 0) {
+      days = str_to_int64(ua->argv[d]);
+      schedtime = now - secs_in_day * days;   /* Days in the past */
+   }
+
+   if (h > 0) {
+      hours = str_to_int64(ua->argv[h]);
+      schedtime = now - secs_in_hour * hours; /* Hours in the past */
+   }
 
    /*
     * Apply any limit
@@ -435,13 +460,18 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    }
 
    /*
+    * jobstatus=X
+    */
+   get_user_job_status_selection(ua, &jobstatus);
+
+   /*
     * Select what to do based on the first argument.
     */
    if (bstrcasecmp(ua->argk[1], NT_("jobs"))) {
       /*
        * List JOBS
        */
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -455,7 +485,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          jobid = str_to_int64(ua->argv[1]);
          if (jobid > 0) {
             jr.JobId = jobid;
-            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
          }
       }
    } else if ((bstrcasecmp(ua->argk[1], NT_("job")) ||
@@ -465,14 +495,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       bstrncpy(jr.Name, ua->argv[1], MAX_NAME_LENGTH);
       jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
       /*
        * List UJOBID=xxx
        */
       bstrncpy(jr.Job, ua->argv[1], MAX_NAME_LENGTH);
       jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
       /*
        * List BASEFILES
@@ -677,8 +707,6 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
    return true;
 }
-
-
 
 static inline bool parse_jobstatus_selection_param(POOL_MEM &selection,
                                                    UAContext *ua,

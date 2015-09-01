@@ -122,6 +122,7 @@ bool db_get_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
 void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr,
                           OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_job_records(JCR *jcr, B_DB *db, JOB_DBR *jr, const char *range,
+                         int jobstatus, utime_t since_time,
                          OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_job_totals(JCR *jcr, B_DB *db, JOB_DBR *jr,
                         OUTPUT_FORMATTER *sendit);
