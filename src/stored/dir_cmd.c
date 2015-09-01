@@ -1203,7 +1203,7 @@ static inline bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    bool ok = false;
 
    if (jcr->RestoreBootstrap) {
-      unlink(jcr->RestoreBootstrap);
+      secure_erase(jcr, jcr->RestoreBootstrap);
       free_pool_memory(jcr->RestoreBootstrap);
    }
    P(bsr_mutex);
@@ -1240,7 +1240,7 @@ static inline bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    ok = true;
 
 bail_out:
-   unlink(jcr->RestoreBootstrap);
+   secure_erase(jcr, jcr->RestoreBootstrap);
    free_pool_memory(jcr->RestoreBootstrap);
    jcr->RestoreBootstrap = NULL;
    if (!ok) {

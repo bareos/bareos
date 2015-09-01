@@ -115,7 +115,7 @@ bail_out:
    }
 
    if (!ok) {
-      unlink(cache_file);
+      secure_erase(NULL, cache_file);
       if (cached_crypto_keys) {
          cached_crypto_keys->destroy();
          delete cached_crypto_keys;
@@ -152,7 +152,7 @@ void write_crypto_cache(const char *cache_file)
     */
    P(crypto_cache_lock);
 
-   unlink(cache_file);
+   secure_erase(NULL, cache_file);
    if ((fd = open(cache_file, O_CREAT | O_WRONLY | O_BINARY, 0640)) < 0) {
       berrno be;
 
@@ -186,7 +186,7 @@ bail_out:
    }
 
    if (!ok) {
-      unlink(cache_file);
+      secure_erase(NULL, cache_file);
    }
 
    V(crypto_cache_lock);
