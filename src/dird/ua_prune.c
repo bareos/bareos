@@ -32,7 +32,6 @@
 #include "dird.h"
 
 /* Imported variables */
-extern struct s_jt jobtypes[];
 
 /* Imported functions */
 
@@ -160,8 +159,7 @@ bool prune_cmd(UAContext *ua, const char *cmd)
 
       return true;
    case 1: { /* prune jobs */
-      int i;
-      char jobtype[MAX_NAME_LENGTH];
+      int jobtype = -1;
 
       if (!(client = get_client_resource(ua))) {
          return false;
@@ -176,28 +174,8 @@ bool prune_cmd(UAContext *ua, const char *cmd)
       /*
        * Ask what jobtype to prune.
        */
-      if ((i = find_arg_with_value(ua, NT_("jobtype"))) >= 0) {
-         bstrncpy(jobtype, ua->argv[i], sizeof(jobtype));
-      } else {
-         start_prompt(ua, _("Jobtype to prune:\n"));
-         for (i = 0; jobtypes[i].type_name; i++) {
-            add_prompt(ua, jobtypes[i].type_name);
-         }
-
-         if (do_prompt(ua, _("JobType"),  _("Select Job Type"), jobtype, sizeof(jobtype)) < 0) {
-            return true;
-         }
-      }
-
-      for (i = 0; jobtypes[i].type_name; i++) {
-         if (bstrcasecmp(jobtypes[i].type_name, jobtype)) {
-            break;
-         }
-      }
-
-      if (!jobtypes[i].type_name) {
-         ua->warning_msg(_("Illegal jobtype %s.\n"), jobtype);
-         return false;
+      if (!get_user_job_type_selection(ua, &jobtype) || jobtype == -1) {
+         return (jobtype == -1) ? true : false;
       }
 
       /*
@@ -211,11 +189,7 @@ bool prune_cmd(UAContext *ua, const char *cmd)
          return false;
       }
 
-      if (jobtypes[i].type_name) {
-         return prune_jobs(ua, client, pool, jobtypes[i].job_type);
-      }
-
-      return false;
+      return prune_jobs(ua, client, pool, jobtype);
    }
    case 2: /* prune volume */
       if (!select_pool_and_media_dbr(ua, &pr, &mr)) {
