@@ -179,6 +179,7 @@ CREATE TABLE Fileset
    FilesetId		INTEGER 	NOT NULL DEFAULT Fileset_Seq.nextval,
    Fileset		VARBYTE(128)	NOT NULL,
    Md5			VARBYTE(128)	NOT NULL,
+   FileSetText		VARBYTE(4096),
    Createtime		TIMESTAMP WITHOUT TIME ZONE NOT NULL,
    PRIMARY KEY (filesetid)
 );
@@ -544,7 +545,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-INSERT INTO Version (VersionId) VALUES (2003);
+INSERT INTO Version (VersionId) VALUES (2004);
 
 -- Make sure we have appropriate permissions
 \g

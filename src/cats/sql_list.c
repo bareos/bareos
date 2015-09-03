@@ -605,23 +605,23 @@ void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    db_lock(mdb);
    if (jr->Name[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
            "AND Job.Name='%s'%s", esc, range);
    } else if (jr->Job[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
            "AND Job.Name='%s'%s", esc, range);
    } else if (jr->JobId != 0) {
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
            "AND Job.JobId='%s'%s", edit_int64(jr->JobId, esc), range);
    } else {                           /* all records */
-      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime "
+      Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM FileSet ORDER BY FileSetId ASC%s", range);
    }
 

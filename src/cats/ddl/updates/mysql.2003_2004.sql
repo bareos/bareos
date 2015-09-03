@@ -1,0 +1,4 @@
+
+ALTER TABLE FileSet ADD COLUMN FileSetText BLOB NOT NULL;
+
+UPDATE Version SET VersionId = 2004;

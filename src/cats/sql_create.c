@@ -731,9 +731,10 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
 {
    bool retval = false;
    SQL_ROW row;
-   int num_rows;
+   int num_rows, len;
    char esc_fs[MAX_ESCAPE_NAME_LENGTH];
    char esc_md5[MAX_ESCAPE_NAME_LENGTH];
+   POOL_MEM esc_filesettext(PM_MESSAGE);
 
    db_lock(mdb);
    fsr->created = false;
@@ -777,13 +778,17 @@ bool db_create_fileset_record(JCR *jcr, B_DB *mdb, FILESET_DBR *fsr)
 
    bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
 
+   len = strlen(fsr->FileSetText);
+   esc_filesettext.check_size(len * 2 + 1);
+   mdb->db_escape_string(jcr, esc_filesettext.c_str(), fsr->FileSetText, len);
+
    /*
     * Must create it
     */
    Mmsg(mdb->cmd,
-        "INSERT INTO FileSet (FileSet,MD5,CreateTime) "
-        "VALUES ('%s','%s','%s')",
-        esc_fs, esc_md5, fsr->cCreateTime);
+        "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
+        "VALUES ('%s','%s','%s','%s')",
+        esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str());
 
    fsr->FileSetId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("FileSet"));
    if (fsr->FileSetId == 0) {
