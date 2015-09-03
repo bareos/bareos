@@ -523,10 +523,9 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
-   } else if (bstrcasecmp(ua->argk[1], NT_("fileset")) ||
-              bstrcasecmp(ua->argk[1], NT_("filesets"))) {
+   } else if (bstrcasecmp(ua->argk[1], NT_("fileset"))) {
       /*
-       * List FILESETs
+       * List FILESET
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
@@ -535,6 +534,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
+   } else if (bstrcasecmp(ua->argk[1], NT_("filesets"))) {
+      /*
+       * List FILESETs
+       */
+      db_list_filesets(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
       /*
        * List JOBMEDIA
