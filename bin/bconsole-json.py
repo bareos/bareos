@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import argparse
-#import bareos
 import bareos.bsock
 import logging
 import sys
@@ -26,7 +25,7 @@ if __name__ == '__main__':
 
     try:
         password = bareos.bsock.Password(args.password)
-        director = bareos.bsock.BSock(address=args.address, dirname=args.dirname, port=args.port, password=password)
+        director = bareos.bsock.BSockJson(address=args.address, dirname=args.dirname, port=args.port, password=password)
     except RuntimeError as e:
         print str(e)
         sys.exit(1)
