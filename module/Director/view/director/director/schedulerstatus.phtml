@@ -28,9 +28,6 @@ $this->headTitle($title);
 
 ?>
 
-<h3 class="text-muted"><?php echo $title; ?></h3>
-<hr />
-
 <ul class="nav nav-tabs">
 	<li><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
 	<li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
