@@ -372,12 +372,11 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    if (type == VERT_LIST) {
 
       if (jobstatus > 0) {
-         jobstatusfilter.bsprintf(" JobStatus = '%c' AND ", jobstatus);
-      }
-
-      if (since_time) {
-         bstrutime(dt, sizeof(dt), since_time);
-         schedtimefilter.bsprintf(" SchedTime > '%s' AND ", dt);
+         jobstatusfilter.bsprintf(" WHERE JobStatus = '%c'", jobstatus);
+      } else if (jobstatus && since_time) {
+         schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
+      } else if (since_time) {
+         schedtimefilter.bsprintf(" WHERE SchedTime > '%s' ", dt);
       }
 
       if (jr->JobId == 0 && jr->Job[0] == 0) {
@@ -388,11 +387,13 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
               "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
               "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
               "Job.FileSetId,FileSet.FileSet "
-              "FROM Job,Client,Pool,FileSet WHERE "
+              "FROM Job "
+              "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+              "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+              "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
               " %s "
               " %s "
-              "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
-              "AND FileSet.FileSetId=Job.FileSetId  ORDER BY StartTime%s",
+              "ORDER BY StartTime%s",
               jobstatusfilter.c_str(),
               schedtimefilter.c_str(),
               range);
