@@ -27,29 +27,30 @@ namespace Fileset\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Paginator\Adapter\ArrayAdapter;
+use Zend\Paginator\Paginator;
 
 class FilesetController extends AbstractActionController
 {
 
-	protected $filesetTable;
 	protected $director;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$order_by = $this->params()->fromRoute('order_by') ? $this->params()->fromRoute('order_by') : 'FileSetId';
-				$order = $this->params()->fromRoute('order') ? $this->params()->fromRoute('order') : 'DESC';
+
+				$filesets = $this->getFilesets();
+				$page = (int) $this->params()->fromQuery('page', 1);
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$paginator = $this->getFilesetTable()->fetchAll(true, $order_by, $order);
-				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+
+				$paginator = new Paginator(new ArrayAdapter($filesets));
+				$paginator->setCurrentPageNumber($page);
 				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
-						array(
-							'paginator' => $paginator,
-							'order_by' => $order_by,
-											'order' => $order,
-											'limit' => $limit,
+					array(
+						'paginator' => $paginator,
+						'limit' => $limit,
 						)
 				);
 		}
@@ -61,19 +62,14 @@ class FilesetController extends AbstractActionController
 	public function detailsAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$id = (int) $this->params()->fromRoute('id', 0);
-				$fset = $this->getFilesetTable()->getFileSet($id);
-				$cmd = 'show fileset="' . $fset->fileset . '"';
-				$this->director = $this->getServiceLocator()->get('director');
 
-				if (!$id) {
-					return $this->redirect()->toRoute('fileset');
-				}
+				$id = $this->params()->fromRoute('id', 0);
+
+				$cmd = 'show fileset="' . $id . '"';
+				$this->director = $this->getServiceLocator()->get('director');
 
 				return new ViewModel(
 					array(
-						'fileset' => $this->getFilesetTable()->getFileset($id),
-						'history' => $this->getFilesetTable()->getFilesetHistory($id),
 						'configuration' => $this->director->send_command($cmd),
 					)
 				);
@@ -83,13 +79,12 @@ class FilesetController extends AbstractActionController
 		}
 	}
 
-	private function getFilesetTable()
+	private function getFilesets()
 	{
-		if(!$this->filesetTable) {
-			$sm = $this->getServiceLocator();
-			$this->filesetTable = $sm->get('Fileset\Model\FilesetTable');
-		}
-		return $this->filesetTable;
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("list filesets", 2, null);
+		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $filesets['result']['filesets'];
 	}
 
 }
