@@ -29,8 +29,8 @@ BuildArch:      noarch
 Provides:       %name = %version
 Provides:       %name-postvista = %version
 Provides:       %name-postvista-debug = %version
-Provides:       %name-prevista = %version
-Provides:       %name-prevista-debug = %version
+#Provides:       %name-prevista = %version
+#Provides:       %name-prevista-debug = %version
 
 %description
 

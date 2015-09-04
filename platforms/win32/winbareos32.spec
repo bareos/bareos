@@ -19,7 +19,7 @@
 #                          #{_mingw32_install_post}
 
 
-%define flavors "prevista postvista prevista-debug postvista-debug"
+%define flavors "postvista postvista-debug"
 %define dirs_with_unittests "lib findlib"
 
 Name:           mingw32-winbareos
@@ -97,17 +97,6 @@ Group:          Development/Libraries
 
 
 %description devel
-bareos
-
-
-%package prevista
-Summary:        bareos
-%description prevista
-bareos
-
-%package prevista-debug
-Summary:        bareos
-%description prevista-debug
 bareos
 
 
@@ -271,15 +260,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 
 
-%files prevista
-%defattr(-,root,root)
-/etc/prevista/%name/*.conf
-/etc/prevista/%name/ddl/
-%dir %{_mingw32_bindir}/prevista
-%{_mingw32_bindir}/prevista/*.dll
-%{_mingw32_bindir}/prevista/*.exe
-
-
 %files postvista
 %defattr(-,root,root)
 /etc/postvista/%name/*.conf
@@ -287,15 +267,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_mingw32_bindir}/postvista
 %{_mingw32_bindir}/postvista/*.dll
 %{_mingw32_bindir}/postvista/*.exe
-
-
-%files prevista-debug
-%defattr(-,root,root)
-/etc/prevista-debug/%name/*.conf
-/etc/prevista-debug/%name/ddl/
-%dir %{_mingw32_bindir}/prevista-debug
-%{_mingw32_bindir}/prevista-debug/*.dll
-%{_mingw32_bindir}/prevista-debug/*.exe
 
 
 %files postvista-debug

@@ -45,14 +45,8 @@ BuildRequires:  sed
 BuildRequires:  vim, procps, bc
 
 
-BuildRequires:  mingw32-winbareos-prevista = %{version}
-BuildRequires:  mingw64-winbareos-prevista = %{version}
-
 BuildRequires:  mingw32-winbareos-postvista = %{version}
 BuildRequires:  mingw64-winbareos-postvista = %{version}
-
-BuildRequires:  mingw32-winbareos-prevista-debug = %{version}
-BuildRequires:  mingw64-winbareos-prevista-debug = %{version}
 
 BuildRequires:  mingw32-winbareos-postvista-debug = %{version}
 BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
@@ -121,7 +115,7 @@ done
 
 
 %build
-for flavor in postvista postvista-debug prevista prevista-debug;
+for flavor in postvista postvista-debug;
 do
    mkdir -p $RPM_BUILD_ROOT/$flavor/nsisplugins
    for dll in %NSISDLLS; do
@@ -228,7 +222,7 @@ done
 
 %install
 
-for flavor in postvista postvista-debug prevista prevista-debug;
+for flavor in postvista postvista-debug;
 do
    mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
    mkdir -p $RPM_BUILD_ROOT%{_mingw64_bindir}

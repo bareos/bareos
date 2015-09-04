@@ -123,16 +123,21 @@ bail_out:
    db_unlock(mdb);
 }
 
-void db_list_client_records(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *sendit, e_list_type type)
+void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    db_lock(mdb);
+   POOL_MEM clientfilter(PM_MESSAGE);
+
+   if (clientname) {
+      clientfilter.bsprintf("WHERE Name = '%s'", clientname);
+   }
    if (type == VERT_LIST) {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
          "JobRetention "
-         "FROM Client ORDER BY ClientId");
+         "FROM Client %s ORDER BY ClientId ", clientfilter.c_str());
    } else {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,FileRetention,JobRetention "
-         "FROM Client ORDER BY ClientId");
+         "FROM Client %s ORDER BY ClientId", clientfilter.c_str());
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -173,7 +178,7 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
             "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
             "Comment"
             " FROM Media WHERE Media.VolumeName='%s'", esc);
-      } else {
+      } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
             "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
             "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
@@ -184,17 +189,31 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
             "Comment"
             " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
             edit_int64(mdbr->PoolId, ed1));
+      } else {
+          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
+            "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+            "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+            "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+            "Comment"
+            " FROM Media ORDER BY MediaId");
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
             "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
             "FROM Media WHERE Media.VolumeName='%s'", esc);
-      } else {
+      } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
             "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
             "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
             edit_int64(mdbr->PoolId, ed1));
+      } else {
+         Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
+            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
+            "FROM Media ORDER BY MediaId");
       }
    }
 
@@ -202,9 +221,7 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
       goto bail_out;
    }
 
-   sendit->array_start("media");
    list_result(jcr, mdb, sendit, type);
-   sendit->array_end("media");
 
    sql_free_result(mdb);
 
@@ -308,10 +325,10 @@ void db_list_joblog_records(JCR *jcr, B_DB *mdb, uint32_t JobId,
    }
    db_lock(mdb);
    if (type == VERT_LIST) {
-      Mmsg(mdb->cmd, "SELECT LogText FROM Log "
+      Mmsg(mdb->cmd, "SELECT Time, LogText FROM Log "
                      "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
    } else {
-      Mmsg(mdb->cmd, "SELECT LogText FROM Log "
+      Mmsg(mdb->cmd, "SELECT Time, LogText FROM Log "
                      "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
       /*
        * When something else then a vertical list is requested set the list type
@@ -342,61 +359,102 @@ bail_out:
  *  only the job with the specified id.
  */
 void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
+                         int jobstatus, utime_t since_time,
                          OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
+   POOL_MEM jobstatusfilter(PM_MESSAGE),
+            schedtimefilter(PM_MESSAGE);
+   char dt[MAX_TIME_LENGTH];
 
    db_lock(mdb);
    if (type == VERT_LIST) {
+
+      if (jobstatus > 0) {
+         jobstatusfilter.bsprintf(" JobStatus = '%c' AND ", jobstatus);
+      }
+
+      if (since_time) {
+         bstrutime(dt, sizeof(dt), since_time);
+         schedtimefilter.bsprintf(" SchedTime > '%s' AND ", dt);
+      }
+
       if (jr->JobId == 0 && jr->Job[0] == 0) {
          Mmsg(mdb->cmd,
-            "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-            "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
-            "StartTime,EndTime,RealEndTime,JobTDate,"
-            "VolSessionId,VolSessionTime,JobFiles,JobErrors,"
-            "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet "
-            "FROM Job,Client,Pool,FileSet WHERE "
-            "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
-            "AND FileSet.FileSetId=Job.FileSetId  ORDER BY StartTime%s", range);
+              "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
+              "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
+              "StartTime,EndTime,RealEndTime,JobTDate,"
+              "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
+              "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
+              "Job.FileSetId,FileSet.FileSet "
+              "FROM Job,Client,Pool,FileSet WHERE "
+              " %s "
+              " %s "
+              "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
+              "AND FileSet.FileSetId=Job.FileSetId  ORDER BY StartTime%s",
+              jobstatusfilter.c_str(),
+              schedtimefilter.c_str(),
+              range);
       } else {                           /* single record */
          Mmsg(mdb->cmd,
-            "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-            "Job.ClientId,Client.Name,JobStatus,SchedTime,"
-            "StartTime,EndTime,RealEndTime,JobTDate,"
-            "VolSessionId,VolSessionTime,JobFiles,JobErrors,"
-            "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
-            "Job.FileSetId,FileSet.FileSet "
-            "FROM Job,Client,Pool,FileSet WHERE Job.JobId=%s AND "
-            "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
-            "AND FileSet.FileSetId=Job.FileSetId",
-            edit_int64(jr->JobId, ed1));
+              "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
+              "Job.ClientId,Client.Name,JobStatus,SchedTime,"
+              "StartTime,EndTime,RealEndTime,JobTDate,"
+              "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
+              "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
+              "Job.FileSetId,FileSet.FileSet "
+              "FROM Job,Client,Pool,FileSet WHERE Job.JobId=%s AND "
+              "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
+              "AND FileSet.FileSetId=Job.FileSetId",
+              edit_int64(jr->JobId, ed1));
       }
    } else {
+      if (jobstatus > 0) {
+         jobstatusfilter.bsprintf(" AND JobStatus = '%c' ", jobstatus);
+      }
+
+      if (since_time) {
+         bstrutime(dt, sizeof(dt), since_time);
+         schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
+      }
+
       if (jr->Name[0] != 0) {
          mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
          Mmsg(mdb->cmd,
-           "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-             "FROM Job WHERE Name='%s' ORDER BY JobId ASC", esc);
+              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
+              "FROM Job WHERE Name='%s' %s %s ORDER BY JobId ASC",
+              esc, jobstatusfilter.c_str(), schedtimefilter.c_str());
       } else if (jr->Job[0] != 0) {
          mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
          Mmsg(mdb->cmd,
-            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-            "FROM Job WHERE Job='%s' ORDER BY JobId ASC", esc);
+              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
+              "FROM Job WHERE Job='%s' %s %s ORDER BY JobId ASC",
+              esc, jobstatusfilter.c_str(), schedtimefilter.c_str());
       } else if (jr->JobId != 0) {
          Mmsg(mdb->cmd,
-            "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-            "FROM Job WHERE JobId=%s", edit_int64(jr->JobId, ed1));
+              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
+              "FROM Job WHERE JobId=%s %s %s ",
+              edit_int64(jr->JobId, ed1), jobstatusfilter.c_str(), schedtimefilter.c_str());
       } else {                           /* all records */
+         if (jobstatus) {
+            jobstatusfilter.bsprintf(" WHERE JobStatus = '%c'", jobstatus);
+         } else if (jobstatus && since_time) {
+            schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
+         } else if (since_time) {
+            schedtimefilter.bsprintf(" WHERE SchedTime > '%s' ", dt);
+         }
          Mmsg(mdb->cmd,
-           "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-           "FROM Job ORDER BY JobId ASC%s", range);
+              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
+              "FROM Job %s %s ORDER BY JobId ASC%s",
+              jobstatusfilter.c_str(), schedtimefilter.c_str(), range);
       }
    }
+
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
    }
+
    sendit->array_start("jobs");
    list_result(jcr, mdb, sendit, type);
    sendit->array_end("jobs");

@@ -30,6 +30,7 @@
 #include "dird.h"
 
 /* Imported variables */
+extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
 
 /*
@@ -819,7 +820,7 @@ POOLRES *get_pool_resource(UAContext *ua)
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
-   db_list_job_records(ua->jcr, ua->db, jr, "", ua->send, HORZ_LIST);
+   db_list_job_records(ua->jcr, ua->db, jr, "", 0, 0, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }
@@ -1717,4 +1718,66 @@ bail_out:
    Dmsg1(100, "Problem with user selection ERR=%s\n", msg);
 
    return false;
+}
+
+bool get_user_job_type_selection(UAContext *ua, int *jobtype)
+{
+   int i;
+   char job_type[MAX_NAME_LENGTH];
+
+   if ((i = find_arg_with_value(ua, NT_("jobtype"))) >= 0) {
+      bstrncpy(job_type, ua->argv[i], sizeof(job_type));
+   } else {
+      start_prompt(ua, _("Jobtype to prune:\n"));
+      for (i = 0; jobtypes[i].type_name; i++) {
+         add_prompt(ua, jobtypes[i].type_name);
+      }
+
+      if (do_prompt(ua, _("JobType"),  _("Select Job Type"), job_type, sizeof(job_type)) < 0) {
+         *jobtype = -1;
+         return true;
+      }
+   }
+
+   for (i = 0; jobtypes[i].type_name; i++) {
+      if (bstrcasecmp(jobtypes[i].type_name, job_type)) {
+         break;
+      }
+   }
+
+   if (!jobtypes[i].type_name) {
+      ua->warning_msg(_("Illegal jobtype %s.\n"), job_type);
+      return false;
+   }
+
+   *jobtype = jobtypes[i].job_type;
+
+   return true;
+}
+
+bool get_user_job_status_selection(UAContext *ua, int *jobstatus)
+{
+   int i;
+
+   if ((i = find_arg_with_value(ua, NT_("jobstatus"))) >= 0) {
+      if (strlen(ua->argv[i]) == 1 && ua->argv[i][0] >= 'A' && ua->argv[i][0] <= 'z') {
+         *jobstatus = ua->argv[i][0];
+      } else if (bstrcasecmp(ua->argv[i], "terminated")) {
+         *jobstatus = JS_Terminated;
+      } else if (bstrcasecmp(ua->argv[i], "warnings")) {
+         *jobstatus = JS_Warnings;
+      } else if (bstrcasecmp(ua->argv[i], "canceled")) {
+         *jobstatus = JS_Canceled;
+      } else if (bstrcasecmp(ua->argv[i], "running")) {
+         *jobstatus = JS_Running;
+      } else if (bstrcasecmp(ua->argv[i], "error")) {
+         *jobstatus = JS_Error;
+      } else if (bstrcasecmp(ua->argv[i], "fatal")) {
+         *jobstatus = JS_FatalError;
+      }
+
+      return true;
+   } else {
+      return false;
+   }
 }
