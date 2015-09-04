@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -25,15 +25,7 @@
 
 namespace Dashboard\Model;
 
-class Dashboard 
+class Dashboard
 {
-
-	public $dashboardid;
-	
-	public function exchangeArray($data)
-	{
-		//$this->dashboardid = (!empty($data['dashboardid'])) ? $data['dashboardid'] : null;
-	}
-
 }
 

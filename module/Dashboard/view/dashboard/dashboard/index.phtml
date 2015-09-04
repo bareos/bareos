@@ -29,9 +29,6 @@ $this->headTitle($title);
 
 ?>
 
-<h3 class="text-muted"><?php echo $this->translate($title); ?></h3>
-<hr />
-
 <div class="row">
 
 <div class="col-md-8">
@@ -49,7 +46,7 @@ $this->headTitle($title);
 
                 <div class="col-md-4">
 
-                <table class="table" style="font-size: 9pt;">
+                <table class="table">
                         <tr>
                                 <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->translate("Running"); ?></a></td>
                                 <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->runningJobs; ?></a></td>

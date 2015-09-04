@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -25,34 +25,7 @@
 
 namespace Dashboard\Model;
 
-use Zend\Db\TableGateway\TableGateway;
-
 class DashboardTable
 {
-
-	protected $tableGateway;
-
-	public function __construct(TableGateway $tableGateway)
-	{
-		$this->tableGateway = $tableGateway;
-	}
-
-	public function fetchAll() 
-	{
-		$resultSet = $this->tableGateway->select();
-		return $resultSet;
-	}
-
-	public function getDashboard($id)
-	{
-		$id = (int) $id;
-		$rowset = $this->tableGateway->select(array('id' => $id));
-		$row = $rowset->current();
-		if(!$row) {
-			throw new \Exception("Could not find row $id");
-		}
-		return $row;
-	}
-
 }
 
