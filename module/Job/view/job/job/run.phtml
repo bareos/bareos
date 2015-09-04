@@ -29,9 +29,6 @@ $this->headTitle($title);
 
 ?>
 
-<h3 class="text-muted"><?php echo $title; ?></h3>
-<hr />
-
 <ul class="nav nav-tabs">
 	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('History'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
@@ -45,7 +42,24 @@ $this->headTitle($title);
 <br />
 
 <div class="row">
+
 <div class="col-md-8">
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Run jobs</h3>
+</div>
+
+<div class="panel-body">
+
+<p>
+Jobs per page:
+<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '10', null, null, true)); ?>">10</a> |
+<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '25', null, null, true)); ?>">25</a> |
+<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '50', null, null, true)); ?>">50</a> |
+<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '100', null, null, true)); ?>">100</a>
+</p>
 
 <table class="table table-bordered table-condensed">
 
@@ -54,16 +68,39 @@ $this->headTitle($title);
 <th class="bg-primary"></th>
 </tr>
 
-<?php foreach ($this->jobs as $job) : ?>
+<?php foreach ($this->paginator as $job) : ?>
 <tr>
 <td><?php echo $this->escapeHtml($job['name']); ?></td>
 <td class="text-center">
-<a href="<?php echo $this->url('job',array('action'=>'queue'),array('query' => array('job' => $job['name']))); ?>" class="btn btn-primary btn-sm" role="button"><?php echo $this->translate('Run now'); ?></a></td>
+<a href="<?php echo $this->url(
+		'job',
+		array('action'=>'queue'),
+		array('query' => array('job' => $job['name']))
+	); ?>" class="btn btn-default btn-xs" title="run now" role="button" data-toggle="tooltip" data-placement="top">
+	<span class="glyphicon glyphicon-play-circle" aria-hidden="true"></span>
+</a>
+</td>
 </tr>
 <?php endforeach; ?>
 
 </table>
 
+<?php echo $this->paginationControl(
+                        $this->paginator,
+                        'Elastic',
+                        array('partial/paginator.phtml', 'Job'),
+                        array('route' => 'job')
+                );
+
+?>
 
 </div>
 </div>
+</div>
+</div>
+
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>

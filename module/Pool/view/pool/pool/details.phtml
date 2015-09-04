@@ -33,17 +33,17 @@ $this->headTitle($title);
 
 <div class="col-md-12">
 <div class="panel panel-default">
-
+<!--
 <div class="panel-heading">
 <h3 class="panel-title">Pool</h3>
-</div>
+</div>-->
 
 <div class="panel-body">
 
-<table class="table table-bordered table-condensed">
+<table class="table table-striped table-condensed">
 
 <tr>
-	<th class="bg-primary">Pool</th>
+	<!--<th class="bg-primary">Pool</th>-->
 	<th class="bg-primary">Name</th>
 	<th class="bg-primary">Type</th>
 	<th class="bg-primary"><div align="right">Volumes</div></th>
@@ -54,7 +54,7 @@ $this->headTitle($title);
 </tr>
 
 <tr>
-	<td><?php echo $this->escapeHtml($this->pool['poolid']); ?></td>
+	<!--<td><?php echo $this->escapeHtml($this->pool['poolid']); ?></td>-->
 	<td><?php echo $this->escapeHtml($pool['name']); ?></td>
 	<td><?php echo $this->escapeHtml($pool['pooltype']); ?></td>
 	<td><div align="right"><?php echo $this->escapeHtml($pool['numvols']); ?></div></td>
@@ -77,10 +77,10 @@ $this->headTitle($title);
 
 <div class="col-md-12">
 <div class="panel panel-default">
-
+<!--
 <div class="panel-heading">
 <h3 class="panel-title">Volumes</h3>
-</div>
+</div> -->
 
 <div class="panel-body">
 
@@ -95,7 +95,7 @@ Volumes per page:
 <table class="table table-bordered table-condensed">
 
 <tr>
-	<th class="bg-primary">Volume</th>
+	<!--<th class="bg-primary">Volume</th>-->
 	<th class="bg-primary">Name</th>
 	<th class="bg-primary">Storage</th>
 	<th class="bg-primary">Type</th>
@@ -110,7 +110,7 @@ Volumes per page:
 <?php foreach($this->paginator as $volume) : ?>
 
 <tr>
-	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['volumename'])); ?>"><?php echo $this->escapeHtml($volume['mediaid']); ?></a></td>
+	<!--<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['volumename'])); ?>"><?php echo $this->escapeHtml($volume['mediaid']); ?></a></td>-->
 	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['volumename'])); ?>"><?php echo $this->escapeHtml($volume['volumename']); ?></a></td>
 	<td><?php echo $this->escapeHtml($volume['storageid']); ?></td>
 	<td><?php echo $this->escapeHtml($volume['mediatype']); ?></td>

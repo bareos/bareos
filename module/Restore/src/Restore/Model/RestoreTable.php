@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -27,23 +27,23 @@ namespace Restore\Model;
 
 use Zend\Db\TableGateway\TableGateway;
 
-class RestoreTable 
+class RestoreTable
 {
 	protected $tableGateway;
 
-	public function __construct(TableGateway $tableGateway) 
+	public function __construct(TableGateway $tableGateway)
 	{
 		$this->tableGateway = $tableGateway;
 	}
 /*
-	public function fetchAll() 
+	public function fetchAll()
 	{
 		$resultSet = $this->tableGateway->select();
 		return $resultSet;
 	}
 */
-	
-	public function __construct() 
+
+	public function __construct()
 	{
 	}
 

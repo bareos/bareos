@@ -1,4 +1,20 @@
+/* Custom page styles */
 body {
-    padding-top: 60px;
-    padding-bottom: 40px;
+	padding-top: 60px;
+	padding-bottom: 30px;
+	/* Margin bottom by footer height */
+	margin-bottom: 25px;
 }
+
+/* Sticky footer styles */
+.footer {
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+	z-index: 1000;
+	border-top: 1px solid #eee;
+	/* Fixed height for the footer */
+	height: 25px;
+	background-color: #f5f5f5;
+}
+
