@@ -27,8 +27,13 @@ class BSockJson(BSock):
 
     def call(self, command):
         json = self.call_fullresult(command)
-        #self.logger.debug( pformat(json) )
-        return json['result']
+        if json.has_key('result'):
+            result = json['result']
+        else:
+            # TODO: or raise an exception?
+            result = json
+        return result
+
 
 
     def call_fullresult(self, command):
@@ -40,13 +45,14 @@ class BSockJson(BSock):
             except ValueError as e:
                 # in case result is not valid json,
                 # create a JSON-RPC wrapper
-                data = json.dumps( {
+                data = {
                     'error': {
                         'code': 2,
                         'message': str(e),
                         'data': resultstring
                     },
-                } )
+                }
+
         return data
 
 
