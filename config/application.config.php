@@ -37,7 +37,6 @@ $modules = array(
 	'Client',
 	'Job',
 	'Restore',
-	'Install',
 	'Auth',
 );
 
