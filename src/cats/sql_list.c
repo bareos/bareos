@@ -400,14 +400,16 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
       } else {                           /* single record */
          Mmsg(mdb->cmd,
               "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-              "Job.ClientId,Client.Name,JobStatus,SchedTime,"
+              "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
               "StartTime,EndTime,RealEndTime,JobTDate,"
               "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
               "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
               "Job.FileSetId,FileSet.FileSet "
-              "FROM Job,Client,Pool,FileSet WHERE Job.JobId=%s AND "
-              "Client.ClientId=Job.ClientId AND Pool.PoolId=Job.PoolId "
-              "AND FileSet.FileSetId=Job.FileSetId",
+              "FROM Job "
+              "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+              "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+              "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+              "WHERE Job.JobId=%s",
               edit_int64(jr->JobId, ed1));
       }
    } else {
