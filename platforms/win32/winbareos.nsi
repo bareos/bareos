@@ -1289,6 +1289,8 @@ done:
   ${GetOptions} $cmdLineParams "/DBDRIVER=" $DbDriver
   ClearErrors
 
+  strcmp $DbDriver "" +1 +2
+  StrCpy $DbDriver "postgresql"
 
   StrCpy $WriteLogs "yes"
   ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
@@ -1524,10 +1526,6 @@ ${EndIf}
 
   strcmp $StorageAddress "" +1 +2
   StrCpy $StorageAddress "$HostName"
-
-  strcmp $DbDriver "" +1 +2
-  StrCpy $DbDriver "postgresql"
-
 
   strcmp $DbPassword "" +1 +2
   StrCpy $DbPassword "bareos"
