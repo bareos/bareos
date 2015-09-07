@@ -31,7 +31,7 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-12">
+<div class="col-md-8">
 <div class="panel panel-default">
 
 <div class="panel-heading">
@@ -40,67 +40,47 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-	<table class="table table-bordered table-condensed">
-	<tr>
-	<td><b>Volume ID</b></td><td><?php echo $this->escapeHtml($media['mediaid']); ?></td>
-	<td><b>Volumename</b></td><td><?php echo $this->escapeHtml($media['volumename']); ?></td>
-	<td><b>Mediatype</b></td><td><?php echo $this->escapeHtml($media['mediatype']); ?></td>
-	<td><b>Mediatype ID</b></td><td></td>
-	</tr>
-	<tr>
-	<td><b>Labeltype</b></td><td><?php echo $this->escapeHtml($media['labeltype']); ?></td>
-	<td><b>First written</b></td><td><?php echo $this->printDate($media['firstwritten']); ?></td>
-	<td><b>Last written</b></td><td><?php echo $this->printDate($media['lastwritten']); ?></td>
-	<td><b>Label date</b></td><td><?php echo $this->printDate($media['labeldate']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Volume jobs</b></td><td><?php echo $this->escapeHtml($media['voljobs']); ?></td>
-	<td><b>Volume files</b></td><td><?php echo $this->escapeHtml($media['volfiles']); ?></td>
-	<td><b>Volume blocks</b></td><td><?php echo $this->escapeHtml($media['volblocks']); ?></td>
-	<td><b>Volume mounts</b></td><td><?php echo $this->escapeHtml($media['volmounts']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Volume used bytes</b></td><td><?php echo $this->printBytes($media['volbytes']); ?></td>
-	<td><b>Volume errors</b></td><td><?php echo $this->escapeHtml($media['volerrors']); ?></td>
-	<td><b>Volume writes</b></td><td><?php echo $this->escapeHtml($media['volwrites']); ?></td>
-	<td><b>Volume capacity bytes</b></td><td><?php echo $this->escapeHtml($media['volcapacitybytes']); ?></td>
-	<tr>
-	<tr>
-	<td><b>Volume Status</b></td><td><?php echo $this->escapeHtml($media['volstatus']); ?></td>
-	<td><b>Enabled</b></td><td><?php echo $this->escapeHtml($media['enabled']); ?></td>
-	<td><b>Recycle</b></td><td><?php echo $this->escapeHtml($media['recycle']); ?></td>
-	<td><b>Action on purge</b></td><td></td>
-	</tr>
-	<tr>
-	<td><b>Volume retention/expiration</b></td><td><?php echo $this->printExpiration($media['volretention'], $media['lastwritten'], $media['volstatus']); ?></td>
-	<td><b>Volume use duration</b></td><td><?php echo $this->escapeHtml($media['voluseduration']); ?></td>
-	<td><b>Volume maximum jobs</b></td><td><?php echo $this->escapeHtml($media['maxvoljobs']); ?></td>
-	<td><b>Volume maximum files</b></td><td><?php echo $this->escapeHtml($media['maxvolfiles']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Volume maximum bytes</b></td><td><?php echo $this->printBytes($media['maxvolbytes']); ?></td>
-	<td><b>In changer</b></td><td><?php echo $this->escapeHtml($media['inchanger']); ?></td>
-	<td><b>Storage ID</b></td><td><?php echo $this->escapeHtml($media['storageid']); ?></td>
-	<td><b>Device ID</b></td><td><?php echo $this->escapeHtml($media['deviceid']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Media addressing</b></td><td></td>
-	<td><b>Volume readtime</b></td><td></td>
-	<td><b>Volume writetime</b></td><td></td>
-	<td><b>Endfile</b></td><td><?php echo $this->escapeHtml($media['endfile']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Endblock</b></td><td><?php echo $this->escapeHtml($media['endblock']); ?></td>
-	<td><b>Location ID</b></td><td><?php echo $this->escapeHtml($media['locationid']); ?></td>
-	<td><b>Recycle count</b></td><td><?php echo $this->escapeHtml($media['recyclecount']); ?></td>
-	<td><b>Initial write</b></td><td><?php echo $this->escapeHtml($media['initialwrite']); ?></td>
-	</tr>
-	<tr>
-	<td><b>Scratchpool ID</b></td><td><?php echo $this->escapeHtml($media['scratchpoolid']); ?></td>
-	<td><b>Recyclepool ID</b></td><td><?php echo $this->escapeHtml($media['recyclepoolid']); ?></td>
-	<td><b>Encryptionkey</b></td><td></td>
-	<td><b>Comment</b></td><td><?php echo $this->escapeHtml($media['comment']); ?></td>
-	</tr>
+	<table class="table table-condensed">
+	<tr><th>Volume ID</th><td><?php echo $this->escapeHtml($media['mediaid']); ?></td></tr>
+	<tr><th>Volumename</th><td><?php echo $this->escapeHtml($media['volumename']); ?></td></tr>
+	<tr><th>Mediatype</th><td><?php echo $this->escapeHtml($media['mediatype']); ?></td></tr>
+	<tr><th>Mediatype ID</th><td></td></tr>
+	<tr><th>Labeltype</th><td><?php echo $this->escapeHtml($media['labeltype']); ?></td></tr>
+	<tr><th>First written</th><td><?php echo $this->printDate($media['firstwritten']); ?></td></tr>
+	<tr><th>Last written</th><td><?php echo $this->printDate($media['lastwritten']); ?></td></tr>
+	<tr><th>Label date</th><td><?php echo $this->printDate($media['labeldate']); ?></td></tr>
+	<tr><th>Volume jobs</th><td><?php echo $this->escapeHtml($media['voljobs']); ?></td></tr>
+	<tr><th>Volume files</th><td><?php echo $this->escapeHtml($media['volfiles']); ?></td></tr>
+	<tr><th>Volume blocks</th><td><?php echo $this->escapeHtml($media['volblocks']); ?></td></tr>
+	<tr><th>Volume mounts</th><td><?php echo $this->escapeHtml($media['volmounts']); ?></td></tr>
+	<tr><th>Volume used bytes</th><td><?php echo $this->printBytes($media['volbytes']); ?></td></tr>
+	<tr><th>Volume errors</th><td><?php echo $this->escapeHtml($media['volerrors']); ?></td></tr>
+	<tr><th>Volume writes</th><td><?php echo $this->escapeHtml($media['volwrites']); ?></td></tr>
+	<tr><th>Volume capacity bytes</th><td><?php echo $this->escapeHtml($media['volcapacitybytes']); ?></td></tr>
+	<tr><th>Volume Status</th><td><?php echo $this->escapeHtml($media['volstatus']); ?></td></tr>
+	<tr><th>Enabled</th><td><?php echo $this->escapeHtml($media['enabled']); ?></td></tr>
+	<tr><th>Recycle</th><td><?php echo $this->escapeHtml($media['recycle']); ?></td></tr>
+	<tr><th>Action on purge</th><td></td></tr>
+	<tr><th>Volume retention/expiration</th><td><?php echo $this->printExpiration($media['volretention'], $media['lastwritten'], $media['volstatus']); ?></td></tr>
+	<tr><th>Volume use duration</th><td><?php echo $this->escapeHtml($media['voluseduration']); ?></td></tr>
+	<tr><th>Volume maximum jobs</th><td><?php echo $this->escapeHtml($media['maxvoljobs']); ?></td></tr>
+	<tr><th>Volume maximum files</th><td><?php echo $this->escapeHtml($media['maxvolfiles']); ?></td></tr>
+	<tr><th>Volume maximum bytes</th><td><?php echo $this->printBytes($media['maxvolbytes']); ?></td></tr>
+	<tr><th>In changer</th><td><?php echo $this->escapeHtml($media['inchanger']); ?></td></tr>
+	<tr><th>Storage ID</th><td><?php echo $this->escapeHtml($media['storageid']); ?></td></tr>
+	<tr><th>Device ID</th><td><?php echo $this->escapeHtml($media['deviceid']); ?></td></tr>
+	<tr><th>Media addressing</th><td></td></tr>
+	<tr><th>Volume readtime</th><td></td></tr>
+	<tr><th>Volume writetime</th><td></td></tr>
+	<tr><th>Endfile</th><td><?php echo $this->escapeHtml($media['endfile']); ?></td></tr>
+	<tr><th>Endblock</th><td><?php echo $this->escapeHtml($media['endblock']); ?></td></tr>
+	<tr><th>Location ID</th><td><?php echo $this->escapeHtml($media['locationid']); ?></td></tr>
+	<tr><th>Recycle count</th><td><?php echo $this->escapeHtml($media['recyclecount']); ?></td></tr>
+	<tr><th>Initial write</th><td><?php echo $this->escapeHtml($media['initialwrite']); ?></td></tr>
+	<tr><th>Scratchpool ID</th><td><?php echo $this->escapeHtml($media['scratchpoolid']); ?></td></tr>
+	<tr><th>Recyclepool ID</th><td><?php echo $this->escapeHtml($media['recyclepoolid']); ?></td></tr>
+	<tr><th>Encryptionkey</th><td></td></tr>
+	<tr><th>Comment</th><td><?php echo $this->escapeHtml($media['comment']); ?></td></tr>
 	</table>
 
 </div>

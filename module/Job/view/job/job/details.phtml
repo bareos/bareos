@@ -57,14 +57,14 @@ $this->headTitle($title);
 </tr>
 
 <tr>
-	<td><b>Client</b></td><td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job['name'])); ?>"><?php echo $this->escapeHtml($job['name']); ?></a></td>
+	<td><b>Client</b></td><td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job['clientname'])); ?>"><?php echo $this->escapeHtml($job['clientname']); ?></a></td>
 	<td><b>End</b></td><td><?php echo $this->printDate($job['endtime'], 'iso'); ?></td>
 	<td><b>Files</b></td><td><?php echo $this->escapeHtml($job['jobfiles']); ?></td>
 </tr>
 
 <tr>
 	<td><b>Type</b></td><td><?php echo $this->printJobType($job['type']); ?></td>
-	<td><b>Fileset</b></td><td><a href="<?php echo $this->url('fileset', array('action' => 'details', 'id' => $job['filesetid'])); ?>"><?php echo $this->escapeHtml($job['filesetid']); ?></a></td>
+	<td><b>Fileset</b></td><td><?php echo $this->escapeHtml($job['filesetid']); ?></td>
 	<td><b>Bytes</b></td><td><?php echo $this->printBytes($job['jobbytes']); ?></td>
 </tr>
 

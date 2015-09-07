@@ -129,12 +129,6 @@ return array(
     ),
     'navigation' => array(
 		'default' => array(
-			/*
-			array(
-				'label' => 'Home',
-				'route' => 'home',
-			),
-			*/
 			array(
 				'label' => 'Dashboard',
 				'route' => 'dashboard',
@@ -169,30 +163,8 @@ return array(
 			),
 			/*
 			array(
-				'label' => 'Files',
-				'route' => 'file',
-			),
-			array(
-				'label' => 'Logs',
-				'route' => 'log',
-			),
-			array(
 				'label' => 'Restore',
 				'route' => 'restore',
-			),
-			array(
-				'label' => 'Statistics',
-				'route' => 'statistics',
-			),
-			/*
-			array(
-				'label' => 'Administration',
-				'route' => 'admin',
-			),
-			array(
-				'label' => 'Logout',
-				'route' => 'auth',
-				'action' => 'logout',
 			),
 			*/
 		),

@@ -8,7 +8,7 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-9">
+<div class="col-md-12">
 <div class="panel panel-default">
 
 <div class="panel-heading">
@@ -17,56 +17,56 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-bordered table-condensed">
+<table class="table table-condensed">
 
-<tr><td><strong>Client</strong></td><td><?php echo $this->escapeHtml($this->client['clientid']); ?></td></tr>
-<tr><td><strong>Name</strong></td><td><?php echo $this->escapeHtml($this->client['name']); ?></td></tr>
-<tr><td><strong>Version</strong></td><td><?php echo $this->escapeHtml($this->client['uname']); ?></td></tr>
-<tr><td><strong>Autoprune</strong></td><td><?php echo $this->escapeHtml($this->client['autoprune']); ?></td></tr>
-<tr><td><strong>Fileretention</strong></td><td><?php echo $this->printRetention($this->client['fileretention']) . " days"; ?></td></tr>
-<tr><td><strong>Jobretention</strong></td><td><?php echo $this->printRetention($this->client['jobretention']) . " days"; ?></td></tr>
+<tr>
+<th class="bg-primary">Client</th>
+<th class="bg-primary">Name</th>
+<th class="bg-primary">Version</th>
+<th class="bg-primary">Autoprune</th>
+<th class="bg-primary">Fileretention</th>
+<th class="bg-primary">Jobretention</th>
+<th class="bg-primary"></th>
+</tr>
+
+<tr>
+<td><?php echo $this->escapeHtml($this->client['clientid']); ?></td>
+<td><?php echo $this->escapeHtml($this->client['name']); ?></td>
+<td><?php echo $this->escapeHtml($this->client['uname']); ?></td>
+<td><?php echo $this->escapeHtml($this->client['autoprune']); ?></td>
+<td><?php echo $this->printRetention($this->client['fileretention']) . " days"; ?></td>
+<td><?php echo $this->printRetention($this->client['jobretention']) . " days"; ?></td>
+<td>
+<a class="btn btn-default btn-xs" href="<?php echo $this->url(
+                                                'restore',
+                                                array('action' => 'index'),
+                                                array('query' => array(
+                                                        'type' => 'client',
+                                                        'client' => $this->client['name'],
+                                                        'restoreclient' => $this->client['name']
+                                                        )
+                                                )); ?>" role="button" data-toggle="tooltip" data-placement="top" title="restore"><span class="glyphicon glyphicon-import"></span></a>
+</td>
+</tr>
 
 </table>
 
 </div>
-
 </div>
-</div>
-
-<div class="col-md-3">
-
-<div class="panel panel-default">
-<div class="panel-heading">
-<h3 class="panel-title">Actions</h3>
-</div>
-
-<div class="panel-body">
-<a class="btn btn-primary btn-block" href="<?php echo $this->url(
-						'restore',
-						array('action' => 'index'),
-						array('query' => array(
-							'type' => 'client',
-							'client' => $this->client['name'],
-							'restoreclient' => $this->client['name']
-							)
-						)); ?>" role="button"><span class="glyphicon glyphicon-import"></span> Restore</a>
-</div>
-</div>
-
 </div>
 </div>
 
 <div class="row">
-<div class="col-md-9">
+<div class="col-md-12">
 
 <div class="panel panel-default">
 <div class="panel-heading">
-<h3 class="panel-title">Last backups</h3>
+<h3 class="panel-title">Last 10 successful backups</h3>
 </div>
 
 <div class="panel-body">
 
-<table class="table table-bordered table-condensed">
+<table class="table table-condensed">
 
 <tr>
 <th class="bg-primary"><?php echo $this->translate("Job"); ?></th>
@@ -102,3 +102,9 @@ $this->headTitle($title);
 </div>
 
 </div>
+
+<script>
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+</script>

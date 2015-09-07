@@ -295,8 +295,9 @@ class JobController extends AbstractActionController
 	private function getJobs()
 	{
 		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command('llist jobs', 2, null);
+		$result = $director->send_command('llist jobs', 2, null);
                 $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		array_multisort($jobs['result']['jobs'], SORT_DESC);
                 return $jobs['result']['jobs'];
 	}
 
@@ -304,16 +305,17 @@ class JobController extends AbstractActionController
 	{
 		if($status != null) {
 			$director = $this->getServiceLocator()->get('director');
-			if($days != null) {
-				$result = $director->send_command('llist jobs jobstatus="'.$status.'" days="'.$days.'"', 2, null);
+			if($days != null && $hours == null) {
+				$result = $director->send_command('llist jobs jobstatus='.$status.' days='.$days, 2, null);
 			}
-			elseif($hours != null) {
-				$result = $director->send_command('llist jobs jobstatus="'.$status.'" hours="'.$hours.'"', 2, null);
+			elseif($hours != null && $days == null) {
+				$result = $director->send_command('llist jobs jobstatus='.$status.' hours='.$hours, 2, null);
 			}
 			else {
-				$result = $director->send_command('llist jobs jobstatus="'.$status.'"', 2, null);
+				$result = $director->send_command('llist jobs jobstatus='.$status, 2, null);
 			}
 			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+			array_multisort($jobs['result']['jobs'], SORT_DESC);
 			return $jobs['result']['jobs'];
 		}
 		else {
@@ -353,16 +355,6 @@ class JobController extends AbstractActionController
 			$result = $director->send_command('run job="'.$jobname.'" yes');
 		}
 		return $result;
-	}
-
-	public function getJobTable()
-	{
-		if(!$this->jobTable)
-		{
-			$sm = $this->getServiceLocator();
-			$this->jobTable = $sm->get('Job\Model\JobTable');
-		}
-		return $this->jobTable;
 	}
 
 }

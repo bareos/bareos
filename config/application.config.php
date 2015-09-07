@@ -36,9 +36,7 @@ $modules = array(
 	'Storage',
 	'Client',
 	'Job',
-	'Log',
 	'Restore',
-	'Statistics',
 	'Install',
 	'Auth',
 );

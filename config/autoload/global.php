@@ -47,95 +47,6 @@ else {
 	$config = parse_ini_file($file, true, INI_SCANNER_NORMAL);
 }
 
-function read_db_config($config, $file)
-{
-
-	$arr = array();
-
-	foreach($config as $instance) {
-
-		if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
-
-			if(array_key_exists('dbaddress', $instance) && isset($instance['dbaddress'])) {
-				$arr['adapters'][key($config)] = array();
-                        }
-                        else {
-                                if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
-					$arr['adapters'][key($config)] = array();
-                                        $instance['dbaddress'] = $instance['diraddress'];
-                                }
-                                else {
-                                        echo "Error: Missing parameters 'dbaddress' and 'diraddress' in ".$file.", section ".key($config).".";
-                                        exit();
-                                }
-                        }
-
-			if(array_key_exists('dbdriver', $instance) && isset($instance['dbdriver'])) {
-                                if(strtolower($instance['dbdriver']) == "postgresql") {
-					$arr['adapters'][key($config)]['driver'] = "Pdo_Pgsql";
-                                }
-                                elseif(strtolower($instance['dbdriver']) == "mysql") {
-                                        $arr['adapters'][key($config)]['driver'] = "Pdo_Mysql";
-                                }
-                                else {
-                                        echo "Error: Mispelled value for parameter 'dbdriver' in ".$file.", section ".key($config).".";
-                                        exit();
-                                }
-                        }
-                        else {
-                                $arr['adapters'][key($config)]['driver'] = "Pdo_Pgsql";
-                        }
-
-			if(array_key_exists('dbname', $instance) && isset($instance['dbname'])) {
-                                $arr['adapters'][key($config)]['dbname'] = $instance['dbname'];
-                        }
-                        else {
-                                $arr['adapters'][key($config)]['dbname'] = "bareos";
-                        }
-
-                        if(array_key_exists('dbaddress', $instance) && isset($instance['dbaddress'])) {
-                                $arr['adapters'][key($config)]['host'] = $instance['dbaddress'];
-                        }
-                        else {
-                                $arr['adapters'][key($config)]['host'] = "127.0.0.1";
-                        }
-
-                        if(array_key_exists('dbport', $instance) && isset($instance['dbport'])) {
-                                $arr['adapters'][key($config)]['port'] = $instance['dbport'];
-                        }
-                        else {
-                                if($arr['adapters'][$instance['dbaddress']]['driver'] == "Pdo_Pgsql") {
-                                        $arr['adapters'][key($config)]['port'] = 5432;
-                                }
-                                else {
-                                        $arr['adapters'][key($config)]['port'] = 3306;
-                                }
-                        }
-
-			if(array_key_exists('dbuser', $instance) && isset($instance['dbuser'])) {
-                                $arr['adapters'][key($config)]['username'] = $instance['dbuser'];
-                        }
-                        else {
-                                $arr['adapters'][key($config)]['username'] = "bareos";
-                        }
-
-                        if(array_key_exists('dbpassword', $instance) && isset($instance['dbpassword'])) {
-                                $arr['adapters'][key($config)]['password'] = $instance['dbpassword'];
-                        }
-                        else {
-                                $arr['adapters'][key($config)]['password'] = "";
-                        }
-
-		}
-
-		next($config);
-
-	}
-
-	return $arr;
-
-}
-
 function read_dir_config($config, $file)
 {
 
@@ -234,7 +145,6 @@ function read_dir_config($config, $file)
 }
 
 return array(
-	'db' => read_db_config($config, $file),
 	'directors' => read_dir_config($config, $file),
 	'service_manager' => array(
 		'factories' => array(

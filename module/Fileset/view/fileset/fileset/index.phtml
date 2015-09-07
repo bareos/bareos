@@ -28,6 +28,17 @@ $this->headTitle($title);
 
 ?>
 
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Filesets</h3>
+</div>
+
+<div class="panel-body">
+
 <p>
 Filesets per page:
 <a href="<?php echo $this->url('fileset', array('limit' => '10', null, null, true)); ?>">10</a> |
@@ -36,11 +47,11 @@ Filesets per page:
 <a href="<?php echo $this->url('fileset', array('limit' => '100', null, null, true)); ?>">100</a>
 </p>
 
-<table class="table">
+<table class="table table-condensed">
 
 <tr>
-	<th><?php echo $this->translate("Fileset"); ?></th>
-	<th><?php echo $this->translate("Modified"); ?></th>
+	<th class="bg-primary"><?php echo $this->translate("Fileset"); ?></th>
+	<th class="bg-primary"><?php echo $this->translate("Modified"); ?></th>
 </tr>
 
 <?php foreach($this->paginator as $fileset) : ?>
@@ -67,3 +78,7 @@ echo $this->paginationControl(
 
 ?>
 
+</div>
+</div>
+</div>
+</div>

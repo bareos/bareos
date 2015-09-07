@@ -31,6 +31,13 @@ $this->headTitle($title);
 <div class="row">
 
 <div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Clients</h3>
+</div>
+
+<div class="panel-body">
 
 <p>
 Clients per page:
@@ -43,13 +50,13 @@ Clients per page:
 <table class="table table-condensed">
 
 <tr class="panel panel-default">
-	<th>Client</th>
-	<th>Name</th>
-	<th>Version</th>
-	<th>Autoprune</th>
-	<th>Fileretention</th>
-	<th>Jobretention</th>
-	<th></th>
+	<th class="bg-primary">Client</th>
+	<th class="bg-primary">Name</th>
+	<th class="bg-primary">Version</th>
+	<th class="bg-primary">Autoprune</th>
+	<th class="bg-primary">Fileretention</th>
+	<th class="bg-primary">Jobretention</th>
+	<th class="bg-primary"></th>
 </tr>
 
 <?php foreach($this->paginator as $client) : ?>
@@ -89,6 +96,8 @@ echo $this->paginationControl(
 
 ?>
 
+</div>
+</div>
 </div>
 </div>
 

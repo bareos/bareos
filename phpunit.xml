@@ -10,12 +10,7 @@
 			<directory>./tests/PoolTest</directory>
 			<directory>./tests/MediaTest</directory>
 			<directory>./tests/StorageTest</directory>
-			<directory>./tests/FileTest</directory>
-			<directory>./tests/LogTest</directory>
 			<directory>./tests/RestoreTest</directory>
-			<directory>./tests/StatisticsTest</directory>
-			<directory>./tests/AdminTest</directory>
-			<directory>./tests/UserTest</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>
