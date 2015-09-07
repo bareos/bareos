@@ -297,8 +297,7 @@ class JobController extends AbstractActionController
 		$director = $this->getServiceLocator()->get('director');
 		$result = $director->send_command('llist jobs', 2, null);
                 $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		array_multisort($jobs['result']['jobs'], SORT_DESC);
-                return $jobs['result']['jobs'];
+                return array_reverse($jobs['result']['jobs']);
 	}
 
 	private function getJobsByStatus($status=null, $days=null, $hours=null)
@@ -315,8 +314,7 @@ class JobController extends AbstractActionController
 				$result = $director->send_command('llist jobs jobstatus='.$status, 2, null);
 			}
 			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			array_multisort($jobs['result']['jobs'], SORT_DESC);
-			return $jobs['result']['jobs'];
+			return array_reverse($jobs['result']['jobs']);
 		}
 		else {
 			return null;

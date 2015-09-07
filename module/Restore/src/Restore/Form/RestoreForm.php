@@ -52,41 +52,6 @@ class RestoreForm extends Form
 		$this->jobids = $jobids;
 		$this->backups = $backups;
 
-		// Mode
-                if(isset($restore_params['mode'])) {
-                        $this->add(array(
-                                'name' => 'mode',
-                                'type' => 'checkbox',
-                                'options' => array(
-                                        'label' => 'Expert mode',
-					'use_hidden_element' => true,
-                                        'checked_value' => '1',
-					'unchecked_value' => '0',
-                                        ),
-                                'attributes' => array(
-                                                'id' => 'mode',
-                                                'value' => $restore_params['mode']
-                                        )
-                                )
-                        );
-                }
-                else {
-			$this->add(array(
-                                'name' => 'mode',
-                                'type' => 'checkbox',
-                                'options' => array(
-                                        'label' => 'Expert mode',
-                                        'use_hidden_element' => true,
-                                        'checked_value' => '1',
-                                        'unchecked_value' => '0',
-                                        ),
-                                'attributes' => array(
-                                                'id' => 'mode',
-                                        )
-                                )
-                        );
-                }
-
 		// Job
 		if(isset($restore_params['jobid'])) {
 			$this->add(array(
@@ -427,6 +392,8 @@ class RestoreForm extends Form
                                 ),
                         'attributes' => array(
                                 'value' => '/tmp/bareos-restores/',
+				'id' => 'where',
+				'size' => '30',
 				'placeholder' => 'e.g. / or /tmp/bareos-restores/'
                                 )
                         )
