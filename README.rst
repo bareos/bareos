@@ -3,43 +3,47 @@ python-bareos
 
 Python libraries to access Bareos
 
-## Example
+
+preperation
+---------------
+
+.. code:: python
+
+  export PYTHONPATH=.
+  python
+
+calling bareos-director user agent commands
+-----------------------------------------------
+
+.. code:: python
+
+  import bareos.bsock
+
+  password=bareos.bsock.Password("secret")
+  bsock=bareos.bsock.BSock(address="localhost", port=9001, password=password)
+  print bsock.call("help")
+  ...
 
 
-### preperation
+simple version of the bconsole in Python
+--------------------------------------------
 
-```
-export PYTHONPATH=.
-python
-```
+.. code:: python
 
-### calling bareos-director user agent commands
+  import bareos.bsock
+  password=bareos.bsock.Password("secret")
+  bconsole=bareos.BSock(address="localhost", port=9001, password=password)
+  bconsole.interactive()
+  ...
 
-```
-import bareos.bsock
+use JSON objects of API mode 2
+----------------------------------
 
-password=bareos.bsock.Password("secret")
-bsock=bareos.bsock.BSock(address="localhost", port=9001, password=password)
-print bsock.call("help")
-...
-```
+.. code:: python
 
-### simple version of the bconsole in Python
+  import bareos.bsock
+  password=bareos.bsock.Password("secret")
+  bconsole=bareos.bsock.BSockJson(address="localhost", port=9001, password=password)
+  bconsole.call("list pools")
+  ...
 
-```
-import bareos.bsock
-password=bareos.bsock.Password("secret")
-bconsole=bareos.BSock(address="localhost", port=9001, password=password)
-bconsole.interactive()
-...
-```
-
-### use JSON objects of API mode 2
-
-```
-import bareos.bsock
-password=bareos.bsock.Password("secret")
-bconsole=bareos.bsock.BSockJson(address="localhost", port=9001, password=password)
-bconsole.call("list pools")
-...
-```
