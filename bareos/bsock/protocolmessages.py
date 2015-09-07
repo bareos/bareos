@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+"""
+Protocol messages between bareos-director and user-agent.
+"""
 
 class ProtocolMessages():
     """

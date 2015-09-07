@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """
 Bacula and therefore Bareos specific implementation of a base64 decoder.
 This class offers functions to handle this.

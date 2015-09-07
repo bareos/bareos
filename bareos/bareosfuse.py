@@ -1,7 +1,7 @@
 """
+FUSE filesystem on bareos data.
 """
 
-#import bareos.bsock
 from   bareos.bsock import BSockJson
 import errno
 import fuse

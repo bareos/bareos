@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Reimplementation of the bconsole program in python.
 """

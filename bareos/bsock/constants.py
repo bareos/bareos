@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Constants used by Bareos.
 """

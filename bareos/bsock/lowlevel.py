@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Low Level socket methods to communication with the bareos-director.
 """
