@@ -140,10 +140,13 @@ static bool cleanup_on_disconnect = false;
 static bool save_metadata = false;
 static bool verbose = false;
 static bool check_size = true;
+static bool create_disk = false;
+static bool local_vmdk = false;
 static bool multi_threaded = false;
 static bool restore_meta_data = false;
 static int sectors_per_call = SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
+static char *vmdk_disk_name = NULL;
 static char *vixdisklib_config = NULL;
 static VixDiskLibConnectParams cnxParams;
 static VixDiskLibConnection connection = NULL;
@@ -372,6 +375,10 @@ static void cleanup(int sig)
       json_decref(json_config);
    }
 
+   if (vmdk_disk_name) {
+      free(vmdk_disk_name);
+   }
+
    if (vixdisklib_config) {
       free(vixdisklib_config);
    }
@@ -389,8 +396,7 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
 {
    int succeeded = 0;
    VixError err;
-   json_t *object;
-   const char *snapshot_moref;
+   const char *snapshot_moref = NULL;
 
    memset(&cnxParams, 0, sizeof(cnxParams));
 
@@ -414,64 +420,66 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
    /*
     * Start extracting the wanted information from the JSON passed in.
     */
-   object = json_object_get(connect_params, CON_PARAMS_VM_MOREF_KEY);
-   if (!object) {
-      fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_VM_MOREF_KEY, key);
-      goto bail_out;
-   }
-   cnxParams.vmxSpec = strdup(json_string_value(object));
-   if (!cnxParams.vmxSpec) {
-      fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_VM_MOREF_KEY);
-      goto bail_out;
-   }
+   if (!local_vmdk) {
+      json_t *object;
 
-   object = json_object_get(connect_params, CON_PARAMS_HOST_KEY);
-   if (!object) {
-      fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_HOST_KEY, key);
-      goto bail_out;
-   }
-   cnxParams.serverName = strdup(json_string_value(object));
-   if (!cnxParams.serverName) {
-      fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_HOST_KEY);
-      goto bail_out;
-   }
-
-   object = json_object_get(connect_params, CON_PARAMS_USERNAME_KEY);
-   if (!object) {
-      fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_USERNAME_KEY, key);
-      goto bail_out;
-   }
-   cnxParams.credType = VIXDISKLIB_CRED_UID;
-   cnxParams.creds.uid.userName = strdup(json_string_value(object));
-   if (!cnxParams.creds.uid.userName) {
-      fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_USERNAME_KEY);
-      goto bail_out;
-   }
-
-   object = json_object_get(connect_params, CON_PARAMS_PASSWORD_KEY);
-   if (!object) {
-      fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_PASSWORD_KEY, key);
-      goto bail_out;
-   }
-   cnxParams.creds.uid.password = strdup(json_string_value(object));
-   if (!cnxParams.creds.uid.password) {
-      fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_PASSWORD_KEY);
-      goto bail_out;
-   }
-   cnxParams.port = VSPHERE_DEFAULT_ADMIN_PORT;
-
-   if (need_snapshot_moref) {
-      object = json_object_get(connect_params, CON_PARAMS_SNAPSHOT_MOREF_KEY);
+      object = json_object_get(connect_params, CON_PARAMS_VM_MOREF_KEY);
       if (!object) {
-         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_SNAPSHOT_MOREF_KEY, key);
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_VM_MOREF_KEY, key);
          goto bail_out;
       }
-      snapshot_moref = json_string_value(object);
-   } else {
-      snapshot_moref = NULL;
-   }
+      cnxParams.vmxSpec = strdup(json_string_value(object));
+      if (!cnxParams.vmxSpec) {
+         fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_VM_MOREF_KEY);
+         goto bail_out;
+      }
 
+      object = json_object_get(connect_params, CON_PARAMS_HOST_KEY);
+      if (!object) {
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_HOST_KEY, key);
+         goto bail_out;
+      }
+      cnxParams.serverName = strdup(json_string_value(object));
+      if (!cnxParams.serverName) {
+         fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_HOST_KEY);
+         goto bail_out;
+      }
+
+      object = json_object_get(connect_params, CON_PARAMS_USERNAME_KEY);
+      if (!object) {
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_USERNAME_KEY, key);
+         goto bail_out;
+      }
+      cnxParams.credType = VIXDISKLIB_CRED_UID;
+      cnxParams.creds.uid.userName = strdup(json_string_value(object));
+      if (!cnxParams.creds.uid.userName) {
+         fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_USERNAME_KEY);
+         goto bail_out;
+      }
+
+      object = json_object_get(connect_params, CON_PARAMS_PASSWORD_KEY);
+      if (!object) {
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_PASSWORD_KEY, key);
+         goto bail_out;
+      }
+      cnxParams.creds.uid.password = strdup(json_string_value(object));
+      if (!cnxParams.creds.uid.password) {
+         fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_PASSWORD_KEY);
+         goto bail_out;
+      }
+      cnxParams.port = VSPHERE_DEFAULT_ADMIN_PORT;
+
+      if (need_snapshot_moref) {
+         object = json_object_get(connect_params, CON_PARAMS_SNAPSHOT_MOREF_KEY);
+         if (!object) {
+            fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_SNAPSHOT_MOREF_KEY, key);
+            goto bail_out;
+         }
+         snapshot_moref = json_string_value(object);
+      }
+   }
    err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE, snapshot_moref, vixdisklib_config, &connection);
+
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -487,31 +495,39 @@ bail_out:
    if (!succeeded) {
       cleanup(1);
    } else if (!cleanup_on_disconnect) {
-      cleanup_cnxParams();
+      if (!local_vmdk) {
+         cleanup_cnxParams();
+      }
    }
 }
 
 /*
  * Open a VMDK using VDDK.
  */
-static inline int do_vixdisklib_open(const char *key, json_t *disk_params, bool readonly)
+static inline void do_vixdisklib_open(const char *key, json_t *disk_params, bool readonly)
 {
    int succeeded = 0;
    VixError err;
-   json_t *object;
    const char *disk_path;
    uint32_t flags;
 
-   /*
-    * Start extracting the wanted information from the JSON passed in.
-    */
-   object = json_object_get(disk_params, DISK_PARAMS_DISK_PATH_KEY);
-   if (!object) {
-      fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", DISK_PARAMS_DISK_PATH_KEY, key);
-      goto bail_out;
+   if (!vmdk_disk_name) {
+      json_t *object;
+
+      /*
+       * Start extracting the wanted information from the JSON passed in.
+       */
+      object = json_object_get(disk_params, DISK_PARAMS_DISK_PATH_KEY);
+      if (!object) {
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", DISK_PARAMS_DISK_PATH_KEY, key);
+         goto bail_out;
+      }
+
+      disk_path = json_string_value(object);
+   } else {
+      disk_path = vmdk_disk_name;
    }
 
-   disk_path = json_string_value(object);
    flags = 0;
    if (readonly) {
       flags |= VIXDISKLIB_FLAG_OPEN_READ_ONLY;
@@ -542,6 +558,55 @@ static inline int do_vixdisklib_open(const char *key, json_t *disk_params, bool 
 
    if (verbose) {
       fprintf(stderr, "Selected transport method: %s\n", VixDiskLib_GetTransportMode(diskHandle));
+   }
+
+   succeeded = 1;
+
+bail_out:
+   if (!succeeded) {
+      cleanup(1);
+   }
+}
+
+/*
+ * Create a VMDK using VDDK.
+ */
+static inline void do_vixdisklib_create(const char *key, json_t *disk_params, uint64_t absolute_disk_length)
+{
+   int succeeded = 0;
+   VixError err;
+   const char *disk_path;
+   VixDiskLibCreateParams createParams;
+
+   if (!vmdk_disk_name) {
+      json_t *object;
+
+      /*
+       * Start extracting the wanted information from the JSON passed in.
+       */
+      object = json_object_get(disk_params, DISK_PARAMS_DISK_PATH_KEY);
+      if (!object) {
+         fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", DISK_PARAMS_DISK_PATH_KEY, key);
+         goto bail_out;
+      }
+
+      disk_path = json_string_value(object);
+   } else {
+      disk_path = vmdk_disk_name;
+   }
+
+   createParams.adapterType = VIXDISKLIB_ADAPTER_SCSI_BUSLOGIC;
+   createParams.capacity = (absolute_disk_length / VIXDISKLIB_SECTOR_SIZE);
+   createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
+   createParams.hwVersion = 7; /* for ESX(i)4 */
+   err = VixDiskLib_Create(connection, disk_path, &createParams, NULL, NULL);
+   if (VIX_FAILED(err)) {
+      char *error_txt;
+
+      error_txt = VixDiskLib_GetErrorText(err, NULL);
+      fprintf(stderr, "Failed to create Logical Disk for %s, %s [%d]\n", disk_path, error_txt, err);
+      VixDiskLib_FreeErrorText(error_txt);
+      goto bail_out;
    }
 
    succeeded = 1;
@@ -652,7 +717,7 @@ bail_out:
 /*
  * Decode the disk info of the disk restored from the backup input stream.
  */
-static inline bool process_disk_info(bool validate_only)
+static inline bool process_disk_info(bool validate_only, json_t *value)
 {
    struct runtime_disk_info_encoding rdie;
 
@@ -674,6 +739,16 @@ static inline bool process_disk_info(bool validate_only)
 
    if (verbose) {
       dump_runtime_disk_info_encoding(&rdie);
+   }
+
+   if (create_disk && !validate_only) {
+      do_vixdisklib_create(DISK_PARAMS_KEY, value, rdie.absolute_disk_length);
+      do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
+
+      if (!diskHandle) {
+         fprintf(stderr, "Cannot process restore data as no VixDiskLib disk handle opened\n");
+         goto bail_out;
+      }
    }
 
    /*
@@ -1048,7 +1123,7 @@ bail_out:
  * to true we only try to process the data but do not actually write it back
  * to the VMDK.
  */
-static inline bool process_restore_stream(bool validate_only)
+static inline bool process_restore_stream(bool validate_only, json_t *value)
 {
    bool retval = false;
    size_t cnt;
@@ -1057,9 +1132,13 @@ static inline bool process_restore_stream(bool validate_only)
    uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
    struct runtime_cbt_encoding rce;
 
-   if (!validate_only && !diskHandle) {
-      fprintf(stderr, "Cannot process CBT data as no VixDiskLib disk handle opened\n");
-      goto bail_out;
+   if (!create_disk && !validate_only) {
+      do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
+
+      if (!diskHandle) {
+         fprintf(stderr, "Cannot process restore data as no VixDiskLib disk handle opened\n");
+         goto bail_out;
+      }
    }
 
    /*
@@ -1075,7 +1154,7 @@ static inline bool process_restore_stream(bool validate_only)
    /*
     * Process the disk info data.
     */
-   if (!process_disk_info(validate_only)) {
+   if (!process_disk_info(validate_only, value)) {
       goto bail_out;
    }
 
@@ -1274,9 +1353,7 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
       cleanup(1);
    }
 
-   do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
-
-   return process_restore_stream(false);
+   return process_restore_stream(false, value);
 }
 
 /*
@@ -1284,12 +1361,12 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
  */
 static inline int show_backup_stream()
 {
-   return process_restore_stream(true);
+   return process_restore_stream(true, NULL);
 }
 
 void usage(const char *program_name)
 {
-   fprintf(stderr, "Usage: %s [-f <vixdisklib_config] [-DMRScmv] dump <workfile> | restore <workfile> | show\n", program_name);
+   fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f <vixdisklib_config] [-s sectors_per_call] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
    exit(1);
 }
 
@@ -1300,22 +1377,19 @@ int main(int argc, char **argv)
    int ch;
 
    program_name = argv[0];
-   while ((ch = getopt(argc, argv, "DMRScf:ms:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "CcDd:f:lMmRSs:v?")) != -1) {
       switch (ch) {
-      case 'D':
-         cleanup_on_disconnect = true;
-         break;
-      case 'M':
-         save_metadata = true;
-         break;
-      case 'R':
-         restore_meta_data = true;
-         break;
-      case 'S':
-         cleanup_on_start = true;
+      case 'C':
+         create_disk = true;
          break;
       case 'c':
          check_size = false;
+         break;
+      case 'D':
+         cleanup_on_disconnect = true;
+         break;
+      case 'd':
+         vmdk_disk_name = strdup(optarg);
          break;
       case 'f':
          vixdisklib_config = strdup(optarg);
@@ -1324,8 +1398,20 @@ int main(int argc, char **argv)
             exit(1);
          }
          break;
+      case 'l':
+         local_vmdk = true;
+         break;
+      case 'M':
+         save_metadata = true;
+         break;
       case 'm':
          multi_threaded = true;
+         break;
+      case 'R':
+         restore_meta_data = true;
+         break;
+      case 'S':
+         cleanup_on_start = true;
          break;
       case 's':
          sectors_per_call = atoi(optarg);
