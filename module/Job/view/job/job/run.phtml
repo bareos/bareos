@@ -43,7 +43,7 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-8">
+<div class="col-md-6">
 
 <div class="panel panel-default">
 
@@ -76,9 +76,8 @@ Jobs per page:
 		'job',
 		array('action'=>'queue'),
 		array('query' => array('job' => $job['name']))
-	); ?>" class="btn btn-default btn-xs" title="run now" role="button" data-toggle="tooltip" data-placement="top">
-	<span class="glyphicon glyphicon-play-circle" aria-hidden="true"></span>
-</a>
+	); ?>" class="btn btn-default btn-xs" title="Run" role="button" data-toggle="tooltip" data-placement="left">
+	<span class="glyphicon glyphicon-play-circle" aria-hidden="true"> Run</span></a>
 </td>
 </tr>
 <?php endforeach; ?>

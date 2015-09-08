@@ -115,8 +115,8 @@ Jobs per page:
                 <?php if($job['jobstatus'] == "T" || $job['jobstatus'] == "E" || $job['jobstatus'] == "e" || $job['jobstatus'] == "f" || $job['jobstatus'] == "A") : ?>
                 <a class="btn btn-default btn-xs" 
                         href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job['jobid'])); ?>" 
-                        title="<?php echo $this->translate("Rerun"); ?>" data-toggle="tooltip" data-placement="top">
-                <span class="glyphicon glyphicon-repeat"></span></a>
+                        title="<?php echo $this->translate("Rerun"); ?>" data-toggle="tooltip" data-placement="left">
+                <span class="glyphicon glyphicon-repeat"></span> Rerun</a>
                 <?php endif; ?>
         <?php endif; ?>
 	</td>

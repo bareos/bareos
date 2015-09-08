@@ -157,7 +157,8 @@ class RestoreForm extends Form
                                         'value_options' => $this->getClientList()
                                 ),
                                 'attributes' => array(
-                                        'id' => 'client'
+                                        'id' => 'client',
+					'value' => @array_pop($this->getClientList())
                                 )
                         ));
 		}

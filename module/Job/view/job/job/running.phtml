@@ -107,7 +107,7 @@ Jobs per page:
 	<td><?php echo $this->printDate($job['starttime']); ?></td>
 	<td><?php echo $this->printJobStatus($job['jobstatus']); ?></td>
 	<td>
-        <a class="btn btn-default btn-xs" href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $job['jobid'])); ?>" title="<?php echo $this->translate("Cancel"); ?>" data-toggle="tooltip" data-placement="top"><span class="glyphicon glyphicon-trash"></span></a>
+        <a class="btn btn-default btn-xs" href="<?php echo $this->url('job', array('action' => 'cancel', 'id' => $job['jobid'])); ?>" title="<?php echo $this->translate("Cancel"); ?>" data-toggle="tooltip" data-placement="left"><span class="glyphicon glyphicon-trash"></span> Cancel</a>
 	</td>
 
 </tr>

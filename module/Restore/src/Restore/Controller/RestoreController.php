@@ -45,6 +45,10 @@ class RestoreController extends AbstractActionController
 
 			$this->getRestoreParams();
 
+			if($this->restore_params['client'] == null) {
+				$this->restore_params['client'] = @array_pop($this->getClients(2))['name'];
+			}
+
 			if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
 				$latestbackup = $this->getClientBackups($this->restore_params['client'], "any", "desc", 1);
 				$this->restore_params['jobid'] = $latestbackup[0]['jobid'];
@@ -62,7 +66,7 @@ class RestoreController extends AbstractActionController
 			}
 
 			$jobs = $this->getJobs(2);
-                        $clients = $this->getClients(0);
+                        $clients = $this->getClients(2);
                         $filesets = $this->getFilesets(0);
                         $restorejobs = $this->getRestoreJobs(0);
 
@@ -263,7 +267,7 @@ class RestoreController extends AbstractActionController
                         $this->restore_params['type'] = $this->params()->fromQuery('type');
                 }
                 else {
-                        $this->restore_params['type'] = null;
+                        $this->restore_params['type'] = 'client';
                 }
 
 		if($this->params()->fromQuery('jobid')) {
@@ -477,15 +481,17 @@ class RestoreController extends AbstractActionController
 		$jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                 $result = "";
 
-		$jnum = count($jobids['result']['jobids']);
+		if(!empty($jobids['result'])) {
+			$jnum = count($jobids['result']['jobids']);
 
-                foreach($jobids['result']['jobids'] as $jobid) {
-                        $result .= $jobid['id'];
-                        --$jnum;
-                        if($jnum > 0) {
-                                $result .= ",";
-                        }
-                }
+			foreach($jobids['result']['jobids'] as $jobid) {
+				$result .= $jobid['id'];
+				--$jnum;
+				if($jnum > 0) {
+					$result .= ",";
+				}
+			}
+		}
 
 		$this->restore_params['jobids'] = $result;
 
@@ -530,6 +536,7 @@ class RestoreController extends AbstractActionController
 		}
 		elseif($format == 0) {
 			$result = $director->send_command(".clients", 2);
+			return $result;
 		}
 		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
                 return $clients['result']['clients'];
@@ -583,7 +590,12 @@ class RestoreController extends AbstractActionController
 			$result = $director->send_command("list backups client=$client fileset=$fileset order=$order", 2);
 		}
 		$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $backups['result']['backups'];
+		if(empty($backups['result'])) {
+			return null;
+		}
+		else {
+			return $backups['result']['backups'];
+		}
 	}
 
 }

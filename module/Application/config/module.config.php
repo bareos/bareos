@@ -161,12 +161,10 @@ return array(
 				'label' => 'Jobs',
 				'route' => 'job',
 			),
-			/*
 			array(
 				'label' => 'Restore',
 				'route' => 'restore',
 			),
-			*/
 		),
     ),
 );
