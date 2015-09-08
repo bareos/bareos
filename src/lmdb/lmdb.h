@@ -1303,7 +1303,8 @@ int  mdb_get(MDB_txn *txn, MDB_dbi dbi, MDB_val *key, MDB_val *data);
 	 *		the next update operation or the transaction ends. This saves
 	 *		an extra memcpy if the data is being generated later.
 	 *		LMDB does nothing else with this memory, the caller is expected
-	 *		to modify all of the space requested.
+	 *		to modify all of the space requested. This flag must not be
+	 *		specified if the database was opened with #MDB_DUPSORT.
 	 *	<li>#MDB_APPEND - append the given key/data pair to the end of the
 	 *		database. This option allows fast bulk loading when keys are
 	 *		already known to be in the correct order. Loading unsorted keys
@@ -1460,12 +1461,13 @@ int  mdb_cursor_get(MDB_cursor *cursor, MDB_val *key, MDB_val *data,
 	 *	<li>#MDB_RESERVE - reserve space for data of the given size, but
 	 *		don't copy the given data. Instead, return a pointer to the
 	 *		reserved space, which the caller can fill in later. This saves
-	 *		an extra memcpy if the data is being generated later.
+	 *		an extra memcpy if the data is being generated later. This flag
+	 *		must not be specified if the database was opened with #MDB_DUPSORT.
 	 *	<li>#MDB_APPEND - append the given key/data pair to the end of the
 	 *		database. No key comparisons are performed. This option allows
 	 *		fast bulk loading when keys are already known to be in the
 	 *		correct order. Loading unsorted keys with this flag will cause
-	 *		data corruption.
+	 *		a #MDB_KEYEXIST error.
 	 *	<li>#MDB_APPENDDUP - as above, but for sorted dup data.
 	 *	<li>#MDB_MULTIPLE - store multiple contiguous data elements in a
 	 *		single request. This flag may only be specified if the database
