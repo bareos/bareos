@@ -269,7 +269,7 @@ if they are present in the {\bf Autochanger} resource.
 
 \xdirective{dir}{}{Autochanger}{yes {\textbar} no}{}{no}{}{%
 The \configdirective{Autochanger} record specifies if the current device belongs to an
-autochanger ressource.
+autochanger resource.
 }
 
 \item [Changer Device = {\textless}device-name{\textgreater}]
@@ -917,7 +917,7 @@ To solve this problem, the block size handling was changed in Bareos \sinceVersi
 \item  The following blocks are then written in the block size configured in the {\bf maximum block size} directive.
 \item  To be able to change the block size in an existing environment, it is now
 possible to set the \configdirective{maximum block size} and \configdirective{minimum block size} in the
-pool ressource. This setting is automatically promoted to each medium in
+pool resource. This setting is automatically promoted to each medium in
 that pool as usual (i.e. when a medium is labeled for that pool or if a volume is transferred to that pool from the scratch pool).
 When a volume is mounted, the volume's block size is
 used to write and read the data blocks that follow the header block.

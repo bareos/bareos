@@ -88,7 +88,7 @@ Make sure, that you install the file daemon {\bf without the "compatible" option
 
 After downloading the plugin you need to copy it into \path|C:\Program Files\Bareos\Plugins|.
 Then you need to define the plugin directory and which plugin the {\bf bareos-filedaemon} should use.
-You have to edit the {\bf bareos-filedaemon} ressource in  \path|C:\Program Data\bareos-fd.conf| as follows:
+You have to edit the {\bf bareos-filedaemon} resource in  \path|C:\Program Data\bareos-fd.conf| as follows:
 
 \begin{bconfig}{MSSQL plugin configuration}
 FileDaemon {
@@ -142,7 +142,7 @@ Plugin Info:
 \end{bconsole}
 
 \subsubsection{Configure the FileSet}
-To use the plugin you need to configure it in the fileset as a plugin ressource. For each database instance you need to define a exclusive backup job and fileset.
+To use the plugin you need to configure it in the fileset as a plugin resource. For each database instance you need to define a exclusive backup job and fileset.
 
 \begin{bconfig}{MSSQL FileSet}
 Fileset {

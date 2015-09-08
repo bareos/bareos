@@ -790,7 +790,7 @@ Specify the Bareos Director in the File Daemon configuration file \path|/etc/bar
 #
 Director {
   Name = bareos-dir
-  Password = "PASSWORD" # this is the passwort which you need to use within the client ressource.
+  Password = "PASSWORD" # this is the passwort which you need to use within the client resource.
 }
 ...
 \end{verbatim}
@@ -829,7 +829,7 @@ Client {
   Address = client2             # the name has to be resolvable through DNS. If this is not possible,
                                 # you can work with IP addresses
   Password = "PASSWORD"         # password for FileDaemon which has to be the same like the password
-                                # in the director ressource of the bareos-fd.conf on the backup client.
+                                # in the director resource of the bareos-fd.conf on the backup client.
                                 # Copy it the the client to this line.
 }
 \end{verbatim}
