@@ -68,9 +68,9 @@ class LowLevel(object):
 
         (ssl, result_compatible, result) = self._cram_md5_respond(password=password.md5(), tls_remote_need=0)
         if not result:
-            raise AuthenticationError("failed respond")
+            raise AuthenticationError("failed (in response)")
         if not self._cram_md5_challenge(clientname=clientname, password=password.md5(), tls_local_need=0, compatible=True):
-            raise AuthenticationError("failed challenge")
+            raise AuthenticationError("failed (in challenge)")
         return True
 
 

@@ -24,7 +24,7 @@ class BSock(LowLevel):
         '''
         call a bareos-director user agent command
         '''
-        self.send(command)
+        self.send(str(command))
         return self.recv_msg()
 
 
