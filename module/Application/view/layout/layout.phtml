@@ -32,7 +32,7 @@ echo $this->doctype();
 
     <head>
         <meta charset="utf-8">
-        <?php echo $this->headTitle('Bareos','PREPEND')->setSeparator(' - ')->setAutoEscape(false) ?>
+        <?php echo $this->headTitle($_SESSION['bareos']['director'],'APPEND')->setSeparator(' | ')->setAutoEscape(false) ?>
 
         <?php echo $this->headMeta()
             ->appendName('viewport', 'width=device-width, initial-scale=1.0')
@@ -78,7 +78,6 @@ echo $this->doctype();
                 <div class="collapse navbar-collapse">
 			<?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
 			<ul class="nav navbar-nav navbar-right">
-				<li class="navbar-text">Signed in as:</li>
 				<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 						<span class="glyphicon glyphicon-user" aria-hidden="true"></span>
@@ -99,7 +98,14 @@ echo $this->doctype();
 
         <footer class="footer">
 	  <div class="container">
-            <p class="text-muted">Bareos WebUI Version 15.2.0 &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
+		<div class="row">
+			<div class="col-md-8">
+				<p class="text-muted">Bareos WebUI Version 15.2.0 &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
+			</div>
+			<div class="col-md-4 text-right">
+				<p class="text-muted"><?php echo "Director: " . $_SESSION['bareos']['director']; ?></p>
+			</div>
+		</div>
 	  </div>
         </footer>
 
