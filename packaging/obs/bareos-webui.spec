@@ -1,6 +1,6 @@
 
 Name:          bareos-webui
-Provides:      bareos-webui
+#Provides:
 Version:       15.2.1
 Release:       0%{?dist}
 Summary:       Bareos Web User Interface
