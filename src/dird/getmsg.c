@@ -66,9 +66,13 @@ static char OK_msg[] =
 
 static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
 {
-   bool set_waittime=false;
+   bool set_waittime = false;
+
    Dmsg2(800, "set_jcr_sd_job_status(%s, %c)\n", jcr->Job, SDJobStatus);
-   /* if wait state is new, we keep current time for watchdog MaxWaitTime */
+
+   /*
+    * If wait state is new, we keep current time for watchdog MaxWaitTime
+    */
    switch (SDJobStatus) {
       case JS_WaitMedia:
       case JS_WaitMount:
@@ -83,15 +87,27 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
    }
 
    if (set_waittime) {
-      /* set it before JobStatus */
+      /*
+       * Set it before JobStatus
+       */
       Dmsg0(800, "Setting wait_time\n");
       jcr->wait_time = time(NULL);
    }
    jcr->SDJobStatus = SDJobStatus;
-   if (jcr->SDJobStatus == JS_Incomplete) {
-      jcr->setJobStatus(JS_Incomplete);
-   }
 
+   /*
+    * Some SD Job status setting are propagated to the controlling Job.
+    */
+   switch (jcr->SDJobStatus) {
+   case JS_Incomplete:
+      jcr->setJobStatus(JS_Incomplete);
+      break;
+   case JS_FatalError:
+      jcr->setJobStatus(JS_FatalError);
+      break;
+   default:
+      break;
+   }
 }
 
 /*
