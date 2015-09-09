@@ -7,7 +7,6 @@ INSTALLATION
 * A working Bareos environment, Bareos >= 12.4
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv
 * PHP >= 5.3.3
-    * PHP PDO Extension
     * PHP OpenSSL Extension
 * Zend Framework 2.2.x or later
 
@@ -149,11 +148,6 @@ echo "@/etc/bareos/bareos-dir.d/webui-consoles.conf" >> /etc/bareos/bareos-dir.c
 echo "@/etc/bareos/bareos-dir.d/webui-profiles.conf" >> /etc/bareos/bareos-dir.conf
 ```
 
-**Note:** Most parts of the webui still use a direct connection to the catalog database to retrieve data, so the configured ACL
-of your restricted consoles do not work here! For the moment it is more or less just used for authentication and you should
-or may be fine with the defaults provided in the example below. However, in future direct connection to the catalog database
-will be droped and fully replaced by the native connection to the director itself.
-
 ```
 #
 # Preparations:
@@ -203,67 +197,7 @@ For more details about profile resource configuration in bareos, please have a l
 
 **Note:** Do not forget to reload your new director configuration.
 
-#### Step 3 - Configure the catalog database connection
-
-Bareos-WebUI needs just a read-only connection to the Bareos catalog database, so there are multiple possibilities to configure bareos-webui.
-You may reuse the exsiting Bareos database user or create a new (read-only) database user for bareos-webui. The first approach is simpler to
-configure, the second approach is more secure.
-
-##### PostgreSQL - Create a read-only catalog database user
-
-In this example we use *bareos_webui* as database username. As database password *<DATABASE_PASSWORD>*,
-please choose a random password.
-
-**Note:** PostgreSQL user names are not allowed to contain -.
-
-Since Bareos >= 14.1 you are able to do it the following way:
-
-```
-su - postgres
-
-DB_USER=bareos_webui
-
-DB_PASS=<DATABASE_PASSWORD>
-
-/usr/lib/bareos/scripts/bareos-config get_database_grant_privileges postgresql $DB_USER $DB_PASS readonly > /tmp/database_grant_privileges.sql
-
-psql -d bareos -f /tmp/database_grant_privileges.sql
-
-rm /tmp/database_grant_priviliges.sql
-
-```
-
-Add the following lines before the "all" rules into your *pg_hba.conf*.
-Usually found under /etc/postgres/*/main/pg_hba.conf or /var/lib/pgsql/data/pg_hba.conf.
-
-```
-# TYPE	DATABASE	USER		ADDRESS                 METHOD
-host	bareos		bareos_webui    127.0.0.1/32		md5
-host    bareos		bareos_webui    ::1/128			md5
-```
-
-Finally, reload your PostgreSQL configuration or restart your PostgreSQL Server (```pg_ctl reload``` or ```service postgresql restart```).
-
-##### MySQL - Create a read-only catalog database user
-
-In this example we use *bareos_webui* as database username. As database password *<DATABASE_PASSWORD>*,
-please choose a secure random password.
-
-```
-DB_USER=bareos_webui
-
-DB_PASS=<DATABASE_PASSWORD>
-
-/usr/lib/bareos/scripts/bareos-config get_database_grant_priviliges mysql $DB_USER $DB_PASS readonly > /tmp/database_grant_privileges.sql
-
-mysql < /tmp/database_grant_privileges.sql
-
-mysqladmin flush-privileges
-
-rm /tmp/database_grant_privileges.sql
-```
-
-#### Step 4 - Configure your Apache Webserver
+#### Step 3 - Configure your Apache Webserver
 
 If you have installed from package, a default configuration is provided, please see /etc/apache2/conf.d/bareos-webui.conf,
 /etc/httpd/conf.d/bareos-webui.conf or /etc/apache2/available-conf/bareos-webui.conf.
@@ -271,9 +205,9 @@ If you have installed from package, a default configuration is provided, please 
 Required apache modules, setenv, rewrite and php are enabled via package postinstall script.
 You simply need to restart your apache webserver manually.
 
-#### Step 5 - Configure your /etc/bareos-webui/directors.ini
+#### Step 4 - Configure your /etc/bareos-webui/directors.ini
 
-Configure your database and director connections in */etc/bareos-webui/directors.ini* to match your database and director settings,
+Configure your directors in */etc/bareos-webui/directors.ini* to match your settings,
 which you have choosen in the previous steps.
 
 The configuration file /etc/bareos-webui/directors.ini should look similar to this:
@@ -291,24 +225,6 @@ The configuration file /etc/bareos-webui/directors.ini should look similar to th
 
 ; Enable or disable section. Possible values are "yes" or "no", the default is "yes".
 enabled = "yes"
-
-; Possible values are "postgresql" or "mysql", the default is "postgresql"
-dbdriver = "postgresql"
-
-; Fill in the IP-Address or FQDN of your catalog DB
-dbaddress = "localhost"
-
-; Default values are corresponding to your dbriver, e.g 5432 or 3306
-dbport = 5432
-
-; Default is "bareos"
-dbuser = "bareos_webui"
-
-; No default value
-dbpassword = ""
-
-; Default is set to "bareos"
-dbname = "bareos"
 
 ; Fill in the IP-Address or FQDN of you director.
 diraddress = "localhost"
@@ -332,12 +248,6 @@ dirport = 9101
 ;
 [remote-dir]
 enabled = "no"
-dbdriver = "mysql"
-dbaddress = "hostname"
-dbport = 5432
-dbuser = "bareos_webui"
-dbpassword = ""
-dbname = "bareos"
 diraddress = "hostname"
 dirport = 9101
 ; Note: TLS has not been tested and documented, yet.
@@ -353,7 +263,7 @@ dirport = 9101
 
 ```
 
-**Note:** You can add as many sections (director and catalog combinations) as you want.
+**Note:** You can add as many directors as you want.
 
 #### Step 6 - SELinux
 
@@ -365,25 +275,5 @@ To install bareos-webui on a system with SELinux enabled, the following addition
 
 ```
 setsebool -P httpd_can_network_connect on
-```
-
- * Allow HTTPD to connect to a remote database
-
-```
-setsebool -P httpd_can_network_connect_db on
-```
-
-#### Step 7 - Test your configuration
-
-Finally, you can test if bareos-webui is configured properly by using the url below.
-
-```
-http://<replace-with-your-hostname>/bareos-webui/install/test
-```
-
-If everything is fine you are able to login, now.
-
-```
-http://<replace-with-your-hostname>/bareos-webui/
 ```
 
