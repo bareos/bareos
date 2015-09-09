@@ -220,6 +220,8 @@ void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen)
       jobstat = _("Error: incomplete job");
       break;
    case JS_FatalError:
+      jobstat = _("Fatal Error");
+      break;
    case JS_ErrorTerminated:
       jobstat = _("Error");
       break;
@@ -277,7 +279,6 @@ void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen)
    case JS_AttrInserting:
       jobstat = _("Dir inserting Attributes");
       break;
-
    default:
       if (JobStatus == 0) {
          buf[0] = 0;
