@@ -1,7 +1,7 @@
 
 Name:          bareos-webui
-Provides:      bareos-console-web
-Version:       15.2.0
+Provides:      bareos-webui
+Version:       15.2.1
 Release:       0%{?dist}
 Summary:       Bareos Web User Interface
 
@@ -39,8 +39,8 @@ BuildRequires: mod_php_any
 Requires:   apache
 Requires:   cron
 Requires:   mod_php_any
-Recommends: php-pgsql php-mysql php-sqlite
-Suggests:   postgresql-server mysql sqlite3
+#Recommends: php-pgsql php-mysql php-sqlite
+#Suggests:   postgresql-server mysql sqlite3
 %else
 #if 0#{?fedora} || 0#{?rhel_version} || 0#{?centos_version}
 BuildRequires: httpd
@@ -52,7 +52,7 @@ BuildRequires: httpd-devel
 Requires:   cronie
 Requires:   httpd
 Requires:   mod_php
-Requires:   php-pgsql php-mysql
+#Requires:   php-pgsql php-mysql
 # not available?
 #php-sqlite
 %endif
