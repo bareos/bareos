@@ -644,7 +644,7 @@ form the current backup, in this case, there is only one, and the Storage
 daemon was also automatically chosen. Bareos then took all the files that were
 in Job number 1 and entered them into a {\bf directory tree} (a sort of in
 memory representation of your filesystem). At this point, you can use the {\bf
-cd} and {\bf ls} ro {\bf dir} commands to walk up and down the directory tree
+cd} and {\bf ls} or {\bf dir} commands to walk up and down the directory tree
 and view what files will be restored. For example, if I enter {\bf cd
 /usr/sbin} and then enter {\bf dir} I will get a listing
 of all the files in the Bareos source directory. On your system, the path might
@@ -1146,7 +1146,7 @@ address in place of a name.
 
 If your address is correct, then make sure that no other program is using the
 port 9103 on the Storage daemon's machine. The Bacula project has reserved 
-these port numbers are by IANA, therefore they should only be used by Bacula and its replacements like Bareos.
+these port numbers by IANA, therefore they should only be used by Bacula and its replacements like Bareos.
 However, apparently
 some HP printers do use these port numbers. A {\bf netstat -a} on the Storage
 daemon's machine can determine who is using the 9103 port (used for FD to SD
