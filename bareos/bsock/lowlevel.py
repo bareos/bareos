@@ -98,19 +98,13 @@ class LowLevel(object):
         '''will receive data from director '''
         if self.socket == None:
             raise RuntimeError("should connect to director first before recv data")
-        # first get the message length
-        msg_header = self.socket.recv(4)
-        if len(msg_header) <= 0:
-            # perhaps some signal command
-            raise RuntimeError("get the msglen error")
+        # get the message header
+        header = self.__get_header()
+        if header <= 0:
+            self.logger.debug("header: " + str(header))
         # get the message
-        msg_length = struct.unpack("!i", msg_header)[0]
-        msg = ""
-        if msg_length <= 0:
-            self.logger.debug("msg len: " + str(msg_length))
-        while msg_length > 0:
-            msg += self.socket.recv(msg_length)
-            msg_length -= len(msg)
+        length = header
+        msg = self.recv_submsg(length)
         return msg
 
 
@@ -119,42 +113,63 @@ class LowLevel(object):
         if self.socket == None:
             raise RuntimeError("should connect to director first before recv data")
         msg = ""
-        submsg_length = 0
         try:
             while True:
-                # first get the message length
+                # get the message header
                 self.socket.settimeout(0.1)
                 try:
-                    header = self.socket.recv(4)
+                    header = self.__get_header()
                 except socket.timeout:
                     self.logger.debug("timeout on receiving header")
                 else:
-                    if len(header) == 0:
-                        self.logger.debug("received empty header, assuming connection is closed")
-                        break
-                    elif len(header) < 0:
-                        # perhaps some signal command
-                        self.logger.error("failed to get header (len: " + str(len(header)) + ")")
-                        raise RuntimeError("get the msglen error (" + str(len(header)) + ")")
+                    if header <= 0:
+                        # header is a signal
+                        self.__set_status(header)
+                        if self.is_end_of_message(header):
+                            return msg
                     else:
-                        # get the message
-                        submsg_length = struct.unpack("!i", header)[0]
-                        if submsg_length <= 0:
-                            self.__set_status(submsg_length)
-                            if (submsg_length == Constants.BNET_EOD or
-                                submsg_length == Constants.BNET_MAIN_PROMPT or
-                                submsg_length == Constants.BNET_SUB_PROMPT):
-                                    return msg
-                        submsg = ""
-                        while submsg_length > 0:
-                            self.logger.debug("  submsg len: " + str(submsg_length))
-                            self.socket.settimeout(None)
-                            submsg += self.socket.recv(submsg_length)
-                            submsg_length -= len(submsg)
-                            msg += submsg
+                        # header is the length of the next message
+                        length = header
+                        msg += self.recv_submsg(length)
         except socket.error as e:
             self._handleSocketError(e)
         return msg
+
+    def recv_submsg(self, length):
+        # get the message
+        msg = ""
+        while length > 0:
+            self.logger.debug("  submsg len: " + str(length))
+            # TODO
+            self.socket.settimeout(10)
+            submsg = self.socket.recv(length)
+            length -= len(submsg)
+            #self.logger.debug(submsg)
+            msg += submsg
+        return msg
+
+
+    def __get_header(self):
+        header = self.socket.recv(4)
+        if len(header) == 0:
+            self.logger.debug("received empty header, assuming connection is closed")
+            raise SocketEmptyHeader()
+        else:
+            return self.__get_header_data(header)
+
+
+    def __get_header_data(self, header):
+        # struct.unpack:
+        #   !: network (big/little endian conversion)
+        #   i: integer (4 bytes)
+        data = struct.unpack("!i", header)[0]
+        return data
+
+
+    def is_end_of_message(self, data):
+        return (data == Constants.BNET_EOD or
+                data == Constants.BNET_MAIN_PROMPT or
+                data == Constants.BNET_SUB_PROMPT)
 
 
     def _cram_md5_challenge(self, clientname, password, tls_local_need=0, compatible=True):

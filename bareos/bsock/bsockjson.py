@@ -25,6 +25,8 @@ class BSockJson(BSock):
 
     def call(self, command):
         json = self.call_fullresult(command)
+        if json == None:
+            return
         if json.has_key('result'):
             result = json['result']
         else:
