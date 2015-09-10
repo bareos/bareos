@@ -445,11 +445,13 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
       } else {                           /* all records */
          if (jobstatus) {
             jobstatusfilter.bsprintf(" WHERE JobStatus = '%c'", jobstatus);
-         } else if (jobstatus && since_time) {
-            schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
+            if (since_time) {
+               schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
+            }
          } else if (since_time) {
             schedtimefilter.bsprintf(" WHERE SchedTime > '%s' ", dt);
          }
+
          Mmsg(mdb->cmd,
               "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
               "FROM Job %s %s ORDER BY JobId ASC%s",
