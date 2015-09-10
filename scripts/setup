@@ -94,6 +94,7 @@ cp tmp/o$$ build/src/include/version.h
 # Remove unneeded directories
 #
 rm -rf build/txt build/src/testprogs
+rm -rf build/.git
 sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
 chmod 755 scripts/regress-config
 cp scripts/regress-config build

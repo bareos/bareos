@@ -43,6 +43,7 @@ echo "s%@tape_drive@%${TAPE_DRIVE}%g" >>${out}
 echo "s%@autochanger@%${AUTOCHANGER}%g" >>${out}
 echo "s%@changer_script@%${AUTOCHANGER_SCRIPT}%g" >>${out}
 echo "s%@tmpdir@%${tmp}%g" >>${out}
+echo "s%@logdir@%${tmp}%g" >>${out}
 echo "s%@hostname@%${HOST}%g" >>${out}
 echo "s%@changer_path@%${AUTOCHANGER_PATH}%g" >>${out}
 echo "s%@tape_drive1@%${TAPE_DRIVE1}%g" >>${out}
@@ -81,3 +82,5 @@ echo "s%@db_name@%${db_name}%g" >>${out}
 echo "s%@db_user@%${db_user}%g" >>${out}
 echo "s%@db_password@%${db_password}%g" >>${out}
 echo "s%@builddir@%${builddir}%g" >>${out}
+echo "s%@BUILD_DIR@%${builddir}%g" >>${out}
+echo "s%@confdir@%${scripts}%g" >>${out}
