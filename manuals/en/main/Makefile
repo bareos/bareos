@@ -40,17 +40,20 @@ all: pdf html
 depend:
 	@for I in ${subdirs}; \
 		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) || exit 1); done
+	ln -s ../../images/conv images || true
 
 pdf: bareos-manual-main-reference.pdf
 
 html: html/bareos-manual-main-reference.html
 
 html/bareos-manual-main-reference.html: depend *.sty *.tex bareos-manual-main-reference.htlatex.cfg $(GENERATED) $(HTINDEXES) bareos-manual-main-reference.toc
-	mkdir -p html
+	mkdir -p html/
 	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "" -d./html/
+	mkdir -p html/images/
+	mv html/*.png html/images/
 
 %.idx:
-	$(LATEX) bareos-manual-main-reference.tex
+	$(PDFLATEX) bareos-manual-main-reference.tex
 
 %.ind: %.idx
 	$(MAKEINDEX) $<
@@ -65,7 +68,7 @@ html/bareos-manual-main-reference.html: depend *.sty *.tex bareos-manual-main-re
 	name=`basename $< .4dx`; $(MAKEINDEX) -o $${name}.htind $<
 
 bareos-manual-main-reference.toc: *.tex
-	$(LATEX) bareos-manual-main-reference.tex
+	$(PDFLATEX) bareos-manual-main-reference.tex
 
 bareos-manual-main-reference.dvi: depend *.sty *.tex $(GENERATED) $(INDEXES) bareos-manual-main-reference.toc
 	$(LATEX) bareos-manual-main-reference.tex

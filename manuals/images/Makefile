@@ -5,6 +5,8 @@ MKDIRCONV=mkdir -p conv/
 ORIG_EPS = $(wildcard *.eps)
 CONV_EPS = $(patsubst %.eps,conv/%.eps,$(ORIG_EPS))
 CONV_PNG = $(patsubst %.eps,conv/%.png,$(ORIG_EPS))
+ORIG_PNG = $(wildcard *.png)
+COPY_PNG = $(patsubst %.png,conv/%.png,$(ORIG_PNG))
 
 # conversion from fig to png does not work as expected,
 # so we use the png as base.
@@ -13,7 +15,7 @@ CONV_PNG = $(patsubst %.eps,conv/%.png,$(ORIG_EPS))
 #CONV_FIG_EPS = $(patsubst %.fig,conv/%.eps,$(ORIG_FIG))
 
 
-all: $(CONV_EPS) $(CONV_PNG) conv/bareos-full-logo.png conv/bareos-full-logo.eps conv/autoxflate-functionblocks.png conv/autoxflate-functionblocks.eps conv/dbconfig-1-enable.png conv/dbconfig-1-enable.eps conv/dbconfig-2-select-database-type.png conv/dbconfig-2-select-database-type.eps conv/dbconfig-3-postgresql-password.png conv/dbconfig-3-postgresql-password.eps
+all: $(CONV_PNG) $(COPY_PNG) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png
 
 
 # bareos-full-logo: png is of better quality than eps, therefore take that as source
@@ -58,10 +60,13 @@ conv/dbconfig-3-postgresql-password.eps: dbconfig-3-postgresql-password.png
 	@$(MKDIRCONV)
 	$(CONVERT) dbconfig-3-postgresql-password.png conv/dbconfig-3-postgresql-password.eps
 
+conv/duplicate-real.png: duplicate-real.svg
+	$(CONVERT) duplicate-real.svg conv/duplicate-real.png
 
-conv/%.png: %.eps
+conv/%.png: %.png
 	@$(MKDIRCONV)
-	$(CONVERT) $< conv/`basename $< .eps`.png
+	#$(CONVERT) $< conv/`basename $< .eps`.png
+	$(COPY) $< conv/$<
 
 conv/%.eps: %.eps
 	@$(MKDIRCONV)
