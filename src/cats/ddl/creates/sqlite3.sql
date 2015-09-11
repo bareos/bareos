@@ -152,6 +152,7 @@ CREATE TABLE FileSet (
    FileSet VARCHAR(128) NOT NULL,
    MD5 VARCHAR(25) NOT NULL,
    CreateTime DATETIME DEFAULT 0,
+   FileSetText TEXT DEFAULT '',
    PRIMARY KEY(FileSetId)
 );
 
@@ -475,8 +476,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2003;
-INSERT INTO Version (VersionId) VALUES (2003);
+DELETE FROM Version WHERE VersionId<=2004;
+INSERT INTO Version (VersionId) VALUES (2004);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;

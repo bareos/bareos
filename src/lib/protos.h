@@ -131,6 +131,8 @@ int Zdeflate(char *in, int in_len, char *out, int &out_len);
 int Zinflate(char *in, int in_len, char *out, int &out_len);
 void stack_trace();
 int safer_unlink(const char *pathname, const char *regex);
+int secure_erase(JCR *jcr, const char *pathname);
+void set_secure_erase_cmdline(const char *cmdline);
 
 /* compression.c */
 const char *cmprs_algo_to_text(uint32_t compression_algorithm);

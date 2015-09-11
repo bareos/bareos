@@ -259,7 +259,7 @@ bool win32_file_device::d_truncate(DCR *dcr)
        * Close file and blow it away
        */
       ::close(m_fd);
-      ::unlink(archive_name.c_str());
+      secure_erase(dcr->jcr, archive_name.c_str());
 
       /*
        * Recreate the file -- of course, empty

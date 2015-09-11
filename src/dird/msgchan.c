@@ -129,7 +129,7 @@ static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
    sd->signal(BNET_EOD);
    fclose(bs);
    if (jcr->unlink_bsr) {
-      unlink(jcr->RestoreBootstrap);
+      secure_erase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
    return true;

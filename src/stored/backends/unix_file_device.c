@@ -219,68 +219,77 @@ boffset_t unix_file_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 bool unix_file_device::d_truncate(DCR *dcr)
 {
    struct stat st;
+   POOL_MEM archive_name(PM_FNAME);
 
-   if (ftruncate(m_fd, 0) != 0) {
-      berrno be;
+   /*
+    * When secure erase is configured never truncate the file.
+    */
+   if (!me->secure_erase_cmdline) {
+      if (ftruncate(m_fd, 0) != 0) {
+         berrno be;
 
-      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
-      return false;
+         Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
+         return false;
+      }
+
+      if (fstat(m_fd, &st) != 0) {
+         berrno be;
+
+         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
+         return false;
+      }
+
+      if (st.st_size == 0) {
+         goto bail_out;
+      }
+
+      Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
+            prt_name, archive_name.c_str());
    }
 
    /*
-    * Check for a successful ftruncate() and issue a work-around for devices
-    * (mostly cheap NAS) that don't support truncation.
     * Workaround supplied by Martin Schmid as a solution to bug #1011.
+    * Used when secure erase is configured or when ftruncate() doesn't have the
+    * wanted result. As work around we perform the following steps:
+    *
     * 1. close file
     * 2. delete file
     * 3. open new file with same mode
     * 4. change ownership to original
     */
-   if (fstat(m_fd, &st) != 0) {
+   pm_strcpy(archive_name, dev_name);
+   if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
+      pm_strcat(archive_name, "/");
+   }
+   pm_strcat(archive_name, dcr->VolumeName);
+
+   /*
+    * Close file and blow it away
+    */
+   ::close(m_fd);
+   secure_erase(dcr->jcr, archive_name.c_str());
+
+   /*
+    * Recreate the file -- of course, empty
+    */
+   oflags = O_CREAT | O_RDWR | O_BINARY;
+   if ((m_fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
       berrno be;
 
-      Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
+      dev_errno = errno;
+      Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(), be.bstrerror());
+      Dmsg1(100, "reopen failed: %s", errmsg);
+      Emsg0(M_FATAL, 0, errmsg);
+
       return false;
    }
 
-   if (st.st_size != 0) {             /* ftruncate() didn't work */
-      POOL_MEM archive_name(PM_FNAME);
+   /*
+    * Reset proper owner
+    */
+   chown(archive_name.c_str(), st.st_uid, st.st_gid);
 
-      pm_strcpy(archive_name, dev_name);
-      if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
-         pm_strcat(archive_name, "/");
-      }
-      pm_strcat(archive_name, dcr->VolumeName);
-
-      Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
-            prt_name, archive_name.c_str());
-
-      /*
-       * Close file and blow it away
-       */
-      ::close(m_fd);
-      ::unlink(archive_name.c_str());
-
-      /*
-       * Recreate the file -- of course, empty
-       */
-      oflags = O_CREAT | O_RDWR | O_BINARY;
-      if ((m_fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
-         berrno be;
-
-         dev_errno = errno;
-         Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(), be.bstrerror());
-         Dmsg1(100, "reopen failed: %s", errmsg);
-         Emsg0(M_FATAL, 0, errmsg);
-         return false;
-      }
-
-      /*
-       * Reset proper owner
-       */
-      chown(archive_name.c_str(), st.st_uid, st.st_gid);
-   }
-
+bail_out:
    return true;
 }
 

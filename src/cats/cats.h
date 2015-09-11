@@ -377,8 +377,9 @@ struct COUNTER_DBR {
 struct FILESET_DBR {
    DBId_t FileSetId;                  /* Unique FileSet id */
    char FileSet[MAX_NAME_LENGTH];     /* FileSet name */
+   char *FileSetText;                 /* FileSet as Text */
    char MD5[50];                      /* MD5 signature of include/exclude */
-   time_t CreateTime;                 /* date created */
+   time_t CreateTime;                 /* Date created */
    /*
     * This is where we return CreateTime
     */
@@ -500,7 +501,7 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 /*
  * Current database version number for all drivers
  */
-#define BDB_VERSION 2003
+#define BDB_VERSION 2004
 
 class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:

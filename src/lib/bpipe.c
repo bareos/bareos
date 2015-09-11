@@ -253,11 +253,7 @@ int close_bpipe(BPIPE *bpipe)
          }
          Dmsg1(800, "child status=%d\n", status & ~b_errno_exit);
       } else if (WIFSIGNALED(chldstatus)) {  /* process died */
-#ifndef HAVE_WIN32
          status = WTERMSIG(chldstatus);
-#else
-         status = 1;                  /* fake child status */
-#endif
          Dmsg1(800, "Child died from signal %d\n", status);
          status |= b_errno_signal;    /* exit signal returned */
       }

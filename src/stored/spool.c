@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +31,7 @@
 /* Forward referenced subroutines */
 static void make_unique_data_spool_filename(DCR *dcr, POOLMEM **name);
 static bool open_data_spool_file(DCR *dcr);
-static bool close_data_spool_file(DCR *dcr);
+static bool close_data_spool_file(DCR *dcr, bool end_of_spool);
 static bool despool_data(DCR *dcr, bool commit);
 static int  read_block_from_spool_file(DCR *dcr);
 static bool open_attr_spool_file(JCR *jcr, BSOCK *bs);
@@ -108,6 +109,7 @@ bool begin_data_spool(DCR *dcr)
          V(mutex);
       }
    }
+
    return status;
 }
 
@@ -115,8 +117,9 @@ bool discard_data_spool(DCR *dcr)
 {
    if (dcr->spooling) {
       Dmsg0(100, "Data spooling discarded\n");
-      return close_data_spool_file(dcr);
+      return close_data_spool_file(dcr, true);
    }
+
    return true;
 }
 
@@ -129,31 +132,33 @@ bool commit_data_spool(DCR *dcr)
       status = despool_data(dcr, true /*commit*/);
       if (!status) {
          Dmsg1(100, _("Bad return from despool WroteVol=%d\n"), dcr->WroteVol);
-         close_data_spool_file(dcr);
+         close_data_spool_file(dcr, true);
          return false;
       }
-      return close_data_spool_file(dcr);
+      return close_data_spool_file(dcr, true);
    }
+
    return true;
 }
 
 static void make_unique_data_spool_filename(DCR *dcr, POOLMEM **name)
 {
    const char *dir;
+
    if (dcr->dev->device->spool_directory) {
       dir = dcr->dev->device->spool_directory;
    } else {
       dir = working_directory;
    }
-   Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name, dcr->jcr->JobId,
-        dcr->jcr->Job, dcr->device->name());
-}
 
+   Mmsg(name, "%s/%s.data.%u.%s.%s.spool", dir, my_name,
+        dcr->jcr->JobId, dcr->jcr->Job, dcr->device->name());
+}
 
 static bool open_data_spool_file(DCR *dcr)
 {
-   POOLMEM *name  = get_pool_memory(PM_MESSAGE);
    int spool_fd;
+   POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
    make_unique_data_spool_filename(dcr, &name);
    if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640)) >= 0) {
@@ -168,16 +173,19 @@ static bool open_data_spool_file(DCR *dcr)
    }
    Dmsg1(100, "Created spool file: %s\n", name);
    free_pool_memory(name);
+
    return true;
 }
 
-static bool close_data_spool_file(DCR *dcr)
+static bool close_data_spool_file(DCR *dcr, bool end_of_spool)
 {
-   POOLMEM *name  = get_pool_memory(PM_MESSAGE);
+   POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
    P(mutex);
    spool_stats.data_jobs--;
-   spool_stats.total_data_jobs++;
+   if (end_of_spool) {
+      spool_stats.total_data_jobs++;
+   }
    if (spool_stats.data_size < dcr->job_spool_size) {
       spool_stats.data_size = 0;
    } else {
@@ -193,9 +201,10 @@ static bool close_data_spool_file(DCR *dcr)
    close(dcr->spool_fd);
    dcr->spool_fd = -1;
    dcr->spooling = false;
-   unlink(name);
+   secure_erase(dcr->jcr, name);
    Dmsg1(100, "Deleted spool file: %s\n", name);
    free_pool_memory(name);
+
    return true;
 }
 
@@ -333,47 +342,62 @@ static bool despool_data(DCR *dcr, bool commit)
    }
 
    Jmsg(jcr, M_INFO, 0, _("Despooling elapsed time = %02d:%02d:%02d, Transfer rate = %s Bytes/second\n"),
-         despool_elapsed / 3600, despool_elapsed % 3600 / 60, despool_elapsed % 60,
-         edit_uint64_with_suffix(jcr->dcr->job_spool_size / despool_elapsed, ec1));
+        despool_elapsed / 3600, despool_elapsed % 3600 / 60, despool_elapsed % 60,
+        edit_uint64_with_suffix(jcr->dcr->job_spool_size / despool_elapsed, ec1));
 
    dcr->block = block;                /* reset block */
 
-   lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
-   if (ftruncate(rdcr->spool_fd, 0) != 0) {
-      berrno be;
-
-      Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
-      /* Note, try continuing despite ftruncate problem */
-   }
-
-   P(mutex);
-   if (spool_stats.data_size < dcr->job_spool_size) {
-      spool_stats.data_size = 0;
+   /*
+    * See if we are using secure erase.
+    */
+   if (me->secure_erase_cmdline) {
+      close_data_spool_file(dcr, false);
+      begin_data_spool(dcr);
    } else {
-      spool_stats.data_size -= dcr->job_spool_size;
+      lseek(rdcr->spool_fd, 0, SEEK_SET); /* rewind */
+      if (ftruncate(rdcr->spool_fd, 0) != 0) {
+         berrno be;
+
+         Jmsg(jcr, M_ERROR, 0, _("Ftruncate spool file failed: ERR=%s\n"), be.bstrerror());
+         /*
+          * Note, try continuing despite ftruncate problem
+          */
+      }
+
+      P(mutex);
+      if (spool_stats.data_size < dcr->job_spool_size) {
+         spool_stats.data_size = 0;
+      } else {
+         spool_stats.data_size -= dcr->job_spool_size;
+      }
+      V(mutex);
+      P(dcr->dev->spool_mutex);
+      dcr->dev->spool_size -= dcr->job_spool_size;
+      dcr->job_spool_size = 0;            /* zap size in input dcr */
+      V(dcr->dev->spool_mutex);
    }
-   V(mutex);
-   P(dcr->dev->spool_mutex);
-   dcr->dev->spool_size -= dcr->job_spool_size;
-   dcr->job_spool_size = 0;            /* zap size in input dcr */
-   V(dcr->dev->spool_mutex);
+
    free_memory(rdev->dev_name);
    free_pool_memory(rdev->errmsg);
-   /* Be careful to NULL the jcr and free rdev after free_dcr() */
+
+   /*
+    * Be careful to NULL the jcr and free rdev after free_dcr()
+    */
    rdcr->jcr = NULL;
    rdcr->set_dev(NULL);
    free_dcr(rdcr);
    free(rdev);
    dcr->spooling = true;           /* turn on spooling again */
    dcr->despooling = false;
+
    /*
-    * Note, if committing we leave the device blocked. It will be removed in
-    *  release_device();
+    * Note, if committing we leave the device blocked. It will be removed in release_device();
     */
    if (!commit) {
       dcr->dev->dunblock();
    }
    jcr->sendJobStatus(JS_Running);
+
    return ok;
 }
 
@@ -567,7 +591,9 @@ static bool write_spool_data(DCR *dcr)
    DEV_BLOCK *block = dcr->block;
    JCR *jcr = dcr->jcr;
 
-   /* Write data */
+   /*
+    * Write data
+    */
    for (int retry = 0; retry <= 1; retry++) {
       status = write(dcr->spool_fd, block->buf, (size_t)block->binbuf);
       if (status == -1) {
@@ -593,24 +619,28 @@ static bool write_spool_data(DCR *dcr)
                /* Note, try continuing despite ftruncate problem */
             }
          }
+
          if (!despool_data(dcr, false)) {
             Jmsg(jcr, M_FATAL, 0, _("Fatal despooling error."));
             jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
             return false;
          }
+
          if (!write_spool_header(dcr)) {
             return false;
          }
+
          continue;                    /* try again */
       }
+
       return true;
    }
+
    Jmsg(jcr, M_FATAL, 0, _("Retrying after data spooling error failed.\n"));
    jcr->forceJobStatus(JS_FatalError);  /* override any Incomplete */
+
    return false;
 }
-
-
 
 bool are_attributes_spooled(JCR *jcr)
 {
@@ -666,8 +696,11 @@ static void make_unique_spool_filename(JCR *jcr, POOLMEM **name, int fd)
  */
 static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
 {
-   /* send full spool file name */
-   POOLMEM *name  = get_pool_memory(PM_MESSAGE);
+   POOLMEM *name = get_pool_memory(PM_MESSAGE);
+
+   /*
+    * Send full spool file name
+    */
    make_unique_spool_filename(jcr, &name, jcr->dir_bsock->m_fd);
    bash_spaces(name);
    jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
@@ -682,6 +715,7 @@ static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
    if (!bstrcmp(jcr->dir_bsock->msg, "1000 OK BlastAttr\n")) {
       return false;
    }
+
    return true;
 }
 
@@ -759,7 +793,7 @@ bail_out:
 
 static bool open_attr_spool_file(JCR *jcr, BSOCK *bs)
 {
-   POOLMEM *name  = get_pool_memory(PM_MESSAGE);
+   POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
    make_unique_spool_filename(jcr, &name, bs->m_fd);
    bs->m_spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
@@ -800,7 +834,7 @@ static bool close_attr_spool_file(JCR *jcr, BSOCK *bs)
 
    make_unique_spool_filename(jcr, &name, bs->m_fd);
    close(bs->m_spool_fd);
-   unlink(name);
+   secure_erase(jcr, name);
    free_pool_memory(name);
    bs->m_spool_fd = -1;
    bs->clear_spooling();

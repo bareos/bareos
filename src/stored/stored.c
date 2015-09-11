@@ -517,6 +517,9 @@ static int check_resources()
       close_msg(NULL);                   /* close temp message handler */
       init_msg(NULL, me->messages);      /* open daemon message handler */
       set_working_directory(me->working_directory);
+      if (me->secure_erase_cmdline) {
+         set_secure_erase_cmdline(me->secure_erase_cmdline);
+      }
    }
 
    return OK;
@@ -587,7 +590,7 @@ static void cleanup_old_files()
          pm_strcpy(cleanup, basename);
          pm_strcat(cleanup, result->d_name);
          Dmsg1(500, "Unlink: %s\n", cleanup);
-         unlink(cleanup);
+         secure_erase(NULL, cleanup);
       }
    }
    free(entry);

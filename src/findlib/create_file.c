@@ -157,13 +157,15 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       if (exists && attr->type != FT_RAW && attr->type != FT_FIFO) {
          /* Get rid of old copy */
          Dmsg1(400, "unlink %s\n", attr->ofname);
-         if (unlink(attr->ofname) == -1) {
+         if (secure_erase(jcr, attr->ofname) == -1) {
             berrno be;
+
             Qmsg(jcr, M_ERROR, 0, _("File %s already exists and could not be replaced. ERR=%s.\n"),
-               attr->ofname, be.bstrerror());
+                 attr->ofname, be.bstrerror());
             /* Continue despite error */
          }
       }
+
       /*
        * Here we do some preliminary work for all the above
        *   types to create the path to the file if it does

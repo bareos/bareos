@@ -570,7 +570,7 @@ void B_ACCURATE_LMDB::destroy(JCR *jcr)
    }
 
    if (m_lmdb_name) {
-      unlink(m_lmdb_name);
+      secure_erase(jcr, m_lmdb_name);
       free_pool_memory(m_lmdb_name);
       m_lmdb_name = NULL;
    }

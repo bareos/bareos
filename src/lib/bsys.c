@@ -37,12 +37,13 @@
 
 static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t timer = PTHREAD_COND_INITIALIZER;
+static const char *secure_erase_cmdline = NULL;
 
 /*
  * This routine is a somewhat safer unlink in that it
- *   allows you to run a regex on the filename before
- *   excepting it. It also requires the file to be in
- *   the working directory.
+ * allows you to run a regex on the filename before
+ * excepting it. It also requires the file to be in
+ * the working directory.
  */
 int safer_unlink(const char *pathname, const char *regx)
 {
@@ -53,13 +54,17 @@ int safer_unlink(const char *pathname, const char *regx)
    regmatch_t pmatch[nmatch];
    int rtn;
 
-   /* Name must start with working directory */
+   /*
+    * Name must start with working directory
+    */
    if (strncmp(pathname, working_directory, strlen(working_directory)) != 0) {
       Pmsg1(000, "Safe_unlink excluded: %s\n", pathname);
       return EROFS;
    }
 
-   /* Compile regex expression */
+   /*
+    * Compile regex expression
+    */
    rc = regcomp(&preg1, regx, REG_EXTENDED);
    if (rc != 0) {
       regerror(rc, &preg1, prbuf, sizeof(prbuf));
@@ -68,16 +73,84 @@ int safer_unlink(const char *pathname, const char *regx)
       return ENOENT;
    }
 
-   /* Unlink files that match regexes */
+   /*
+    * Unlink files that match regexes
+    */
    if (regexec(&preg1, pathname, nmatch, pmatch,  0) == 0) {
       Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
-      rtn = unlink(pathname);
+      rtn = secure_erase(NULL, pathname);
    } else {
       Pmsg2(000, "safe_unlink regex failed: regex=%s file=%s\n", regx, pathname);
       rtn = EROFS;
    }
    regfree(&preg1);
+
    return rtn;
+}
+
+/*
+ * This routine will use an external secure erase program to delete a file.
+ */
+int secure_erase(JCR *jcr, const char *pathname)
+{
+   int retval = -1;
+
+   if (secure_erase_cmdline) {
+      int status;
+      BPIPE *bpipe;
+      POOL_MEM line(PM_NAME),
+               cmdline(PM_MESSAGE);
+
+      Mmsg(cmdline,"%s \"%s\"", secure_erase_cmdline, pathname);
+      if (jcr) {
+         Jmsg(jcr, M_INFO, 0, _("secure_erase: executing %s\n"), cmdline.c_str());
+      }
+
+      bpipe = open_bpipe(cmdline.c_str(), 0, "r");
+      if (bpipe == NULL) {
+         berrno be;
+
+         if (jcr) {
+            Jmsg(jcr, M_FATAL, 0, _("secure_erase: %s could not execute. ERR=%s\n"),
+                 secure_erase_cmdline, be.bstrerror());
+         }
+         goto bail_out;
+      }
+
+      while (fgets(line.c_str(), line.size(), bpipe->rfd)) {
+         strip_trailing_junk(line.c_str());
+         if (jcr) {
+            Jmsg(jcr, M_INFO, 0, _("secure_erase: %s\n"), line.c_str());
+         }
+      }
+
+      status = close_bpipe(bpipe);
+      if (status != 0) {
+         berrno be;
+
+         if (jcr) {
+            Jmsg(jcr, M_FATAL, 0, _("secure_erase: %s returned non-zero status=%d. ERR=%s\n"),
+                 secure_erase_cmdline, be.code(status), be.bstrerror(status));
+         }
+         goto bail_out;
+      }
+
+      Dmsg0(100, "wpipe_command OK\n");
+      retval = 0;
+   } else {
+      retval = unlink(pathname);
+   }
+
+   return retval;
+
+bail_out:
+   errno = EROFS;
+   return retval;
+}
+
+void set_secure_erase_cmdline(const char *cmdline)
+{
+   secure_erase_cmdline = cmdline;
 }
 
 /*
@@ -495,7 +568,7 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num)
 #endif
 
 #if !defined(HAVE_WIN32)
-static int del_pid_file_ok = FALSE;
+static bool del_pid_file_ok = false;
 #endif
 
 /*
@@ -557,7 +630,7 @@ void create_pid_file(char *dir, const char *progname, int port)
       len = sprintf(pidbuf, "%d\n", (int)getpid());
       write(pidfd, pidbuf, len);
       close(pidfd);
-      del_pid_file_ok = TRUE;         /* we created it so we can delete it */
+      del_pid_file_ok = true;         /* we created it so we can delete it */
    } else {
       berrno be;
       Emsg2(M_ERROR_TERM, 0, _("Could not open pid file. %s ERR=%s\n"), fname,
@@ -579,7 +652,7 @@ int delete_pid_file(char *dir, const char *progname, int port)
       free_pool_memory(fname);
       return 0;
    }
-   del_pid_file_ok = FALSE;
+   del_pid_file_ok = false;
    Mmsg(&fname, "%s/%s.%d.pid", dir, progname, port);
    unlink(fname);
    free_pool_memory(fname);
@@ -613,23 +686,24 @@ void read_state_file(char *dir, const char *progname, int port)
    int hdr_size = sizeof(hdr);
 
    Mmsg(&fname, "%s/%s.%d.state", dir, progname, port);
-   /* If file exists, see what we have */
-// Dmsg1(10, "O_BINARY=%d\n", O_BINARY);
+   /*
+    * If file exists, see what we have
+    */
    if ((sfd = open(fname, O_RDONLY|O_BINARY)) < 0) {
       berrno be;
       Dmsg3(010, "Could not open state file. sfd=%d size=%d: ERR=%s\n",
-                    sfd, sizeof(hdr), be.bstrerror());
+            sfd, sizeof(hdr), be.bstrerror());
       goto bail_out;
    }
    if ((status = read(sfd, &hdr, hdr_size)) != hdr_size) {
       berrno be;
       Dmsg4(010, "Could not read state file. sfd=%d status=%d size=%d: ERR=%s\n",
-                    sfd, (int)status, hdr_size, be.bstrerror());
+            sfd, (int)status, hdr_size, be.bstrerror());
       goto bail_out;
    }
    if (hdr.version != state_hdr.version) {
       Dmsg2(010, "Bad hdr version. Wanted %d got %d\n",
-         state_hdr.version, hdr.version);
+            state_hdr.version, hdr.version);
       goto bail_out;
    }
    hdr.id[13] = 0;
@@ -637,7 +711,7 @@ void read_state_file(char *dir, const char *progname, int port)
       Dmsg0(000, "State file header id invalid.\n");
       goto bail_out;
    }
-// Dmsg1(010, "Read header of %d bytes.\n", sizeof(hdr));
+
    if (!read_last_jobs_list(sfd, hdr.last_jobs_addr)) {
       goto bail_out;
    }
@@ -646,9 +720,11 @@ bail_out:
    if (sfd >= 0) {
       close(sfd);
    }
+
    if (!ok) {
-      unlink(fname);
-    }
+      secure_erase(NULL, fname);
+   }
+
    free_pool_memory(fname);
 }
 
@@ -665,41 +741,45 @@ void write_state_file(char *dir, const char *progname, int port)
 
    P(state_mutex);                    /* Only one job at a time can call here */
    Mmsg(&fname, "%s/%s.%d.state", dir, progname, port);
-   /* Create new state file */
-   unlink(fname);
+
+   /*
+    * Create new state file
+    */
+   secure_erase(NULL, fname);
    if ((sfd = open(fname, O_CREAT|O_WRONLY|O_BINARY, 0640)) < 0) {
       berrno be;
       Dmsg2(000, "Could not create state file. %s ERR=%s\n", fname, be.bstrerror());
       Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname, be.bstrerror());
       goto bail_out;
    }
+
    if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
       berrno be;
       Dmsg1(000, "Write hdr error: ERR=%s\n", be.bstrerror());
       goto bail_out;
    }
-// Dmsg1(010, "Wrote header of %d bytes\n", sizeof(state_hdr));
+
    state_hdr.last_jobs_addr = sizeof(state_hdr);
    state_hdr.reserved[0] = write_last_jobs_list(sfd, state_hdr.last_jobs_addr);
-// Dmsg1(010, "write last job end = %d\n", (int)state_hdr.reserved[0]);
    if (lseek(sfd, 0, SEEK_SET) < 0) {
       berrno be;
       Dmsg1(000, "lseek error: ERR=%s\n", be.bstrerror());
       goto bail_out;
    }
+
    if (write(sfd, &state_hdr, sizeof(state_hdr)) != sizeof(state_hdr)) {
       berrno be;
       Pmsg1(000, _("Write final hdr error: ERR=%s\n"), be.bstrerror());
       goto bail_out;
    }
    ok = true;
-// Dmsg1(010, "rewrote header = %d\n", sizeof(state_hdr));
 bail_out:
    if (sfd >= 0) {
       close(sfd);
    }
+
    if (!ok) {
-      unlink(fname);
+      secure_erase(NULL, fname);
    }
    V(state_mutex);
    free_pool_memory(fname);

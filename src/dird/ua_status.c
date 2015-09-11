@@ -397,7 +397,6 @@ void list_dir_status_header(UAContext *ua)
       dbdrivers.strcat(catalog->db_driver);
       cnt++;
    }
-
    ua->send_msg(_("%s Version: %s (%s) %s %s %s\n"), my_name, VERSION, BDATE,
                 HOST_OS, DISTNAME, DISTVER);
    bstrftime_nc(dt, sizeof(dt), daemon_start_time);
@@ -409,6 +408,11 @@ void list_dir_status_header(UAContext *ua)
                 edit_uint64_with_commas(sm_max_bytes, b3),
                 edit_uint64_with_commas(sm_buffers, b4),
                 edit_uint64_with_commas(sm_max_buffers, b5));
+
+   if (me->secure_erase_cmdline) {
+      ua->send_msg(_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+   }
+
    len = list_dir_plugins(msg);
    if (len > 0) {
       ua->send_msg("%s\n", msg.c_str());

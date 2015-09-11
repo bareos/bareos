@@ -128,6 +128,7 @@ CREATE TABLE Fileset
 (
     FileSetId         SERIAL      NOT NULL,
     Fileset           TEXT        NOT NULL,
+    FileSetText       TEXT        DEFAULT '',
     Md5               TEXT        NOT NULL,
     CreateTime        TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     PRIMARY KEY (filesetid)
@@ -486,7 +487,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2003;
-INSERT INTO Version (VersionId) VALUES (2003);
+DELETE FROM Version WHERE VersionId<=2004;
+INSERT INTO Version (VersionId) VALUES (2004);
 
 -- Make sure we have appropriate permissions

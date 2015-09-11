@@ -1226,6 +1226,7 @@ bool get_or_create_client_record(JCR *jcr)
 bool get_or_create_fileset_record(JCR *jcr)
 {
    FILESET_DBR fsr;
+
    /*
     * Get or Create FileSet record
     */
@@ -1247,16 +1248,23 @@ bool get_or_create_fileset_record(JCR *jcr)
    }
    if (!jcr->res.fileset->ignore_fs_changes ||
        !db_get_fileset_record(jcr, jcr->db, &fsr)) {
+      POOL_MEM FileSetText(PM_MESSAGE);
+
+      jcr->res.fileset->print_config(FileSetText, false);
+      fsr.FileSetText = FileSetText.c_str();
+
       if (!db_create_fileset_record(jcr, jcr->db, &fsr)) {
          Jmsg(jcr, M_ERROR, 0, _("Could not create FileSet \"%s\" record. ERR=%s\n"),
-            fsr.FileSet, db_strerror(jcr->db));
+              fsr.FileSet, db_strerror(jcr->db));
          return false;
       }
    }
+
    jcr->jr.FileSetId = fsr.FileSetId;
    bstrncpy(jcr->FSCreateTime, fsr.cCreateTime, sizeof(jcr->FSCreateTime));
-   Dmsg2(119, "Created FileSet %s record %u\n", jcr->res.fileset->hdr.name,
-      jcr->jr.FileSetId);
+
+   Dmsg2(119, "Created FileSet %s record %u\n", jcr->res.fileset->hdr.name, jcr->jr.FileSetId);
+
    return true;
 }
 

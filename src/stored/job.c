@@ -515,7 +515,7 @@ void stored_free_jcr(JCR *jcr)
     */
    free_restore_volume_list(jcr);
    if (jcr->RestoreBootstrap) {
-      unlink(jcr->RestoreBootstrap);
+      secure_erase(jcr, jcr->RestoreBootstrap);
       free_pool_memory(jcr->RestoreBootstrap);
       jcr->RestoreBootstrap = NULL;
    }

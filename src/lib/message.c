@@ -481,7 +481,6 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
    } else {
       Mmsg(cmd, "/usr/lib/sendmail -F BAREOS %s", d->where);
    }
-   fflush(stdout);
 
    if ((bpipe = open_bpipe(cmd, 120, "rw"))) {
       /*
@@ -493,8 +492,9 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
    } else {
       berrno be;
       delivery_error(_("open mail pipe %s failed: ERR=%s\n"),
-         cmd, be.bstrerror());
+                     cmd, be.bstrerror());
    }
+
    return bpipe;
 }
 
@@ -1096,13 +1096,14 @@ send_to_file:
                   fputs(msg, d->fd);
                }
             }
+            fflush(d->fd);
             msgs->clear_in_use();
             break;
          case MD_DIRECTOR:
             Dmsg1(850, "DIRECTOR for following msg: %s", msg);
             if (jcr && jcr->dir_bsock && !jcr->dir_bsock->errors) {
                jcr->dir_bsock->fsend("Jmsg Job=%s type=%d level=%lld %s",
-                  jcr->Job, type, mtime, msg);
+                                     jcr->Job, type, mtime, msg);
             } else {
                Dmsg1(800, "no jcr for following msg: %s", msg);
             }

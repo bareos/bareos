@@ -434,6 +434,12 @@ static void list_status_header(STATUS_PKT *sp)
               edit_uint64_with_commas(me->max_bandwidth_per_job / 1024, b1));
    sendit(msg, len, sp);
 
+
+   if (me->secure_erase_cmdline) {
+      len = Mmsg(msg, _(" secure erase command='%s'\n"), me->secure_erase_cmdline);
+      sendit(msg, len, sp);
+   }
+
    len = list_sd_plugins(msg);
    if (len > 0) {
       sendit(msg.c_str(), len, sp);

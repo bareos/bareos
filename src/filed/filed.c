@@ -600,6 +600,9 @@ static bool check_resources()
    if (OK) {
       close_msg(NULL);                /* close temp message handler */
       init_msg(NULL, me->messages);   /* open user specified message handler */
+      if (me->secure_erase_cmdline) {
+         set_secure_erase_cmdline(me->secure_erase_cmdline);
+      }
    }
 
    return OK;

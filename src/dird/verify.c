@@ -501,7 +501,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
    }
 
    if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
-      unlink(jcr->RestoreBootstrap);
+      secure_erase(jcr, jcr->RestoreBootstrap);
       jcr->unlink_bsr = false;
    }
 

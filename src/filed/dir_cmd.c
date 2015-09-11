@@ -1173,7 +1173,7 @@ static bool fileset_cmd(JCR *jcr)
 static void free_bootstrap(JCR *jcr)
 {
    if (jcr->RestoreBootstrap) {
-      unlink(jcr->RestoreBootstrap);
+      secure_erase(jcr, jcr->RestoreBootstrap);
       free_pool_memory(jcr->RestoreBootstrap);
       jcr->RestoreBootstrap = NULL;
    }

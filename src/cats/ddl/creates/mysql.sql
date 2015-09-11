@@ -195,6 +195,7 @@ CREATE TABLE FileSet (
    FileSet TINYBLOB NOT NULL,
    MD5 TINYBLOB,
    CreateTime DATETIME DEFAULT 0,
+   FileSetText BLOB NOT NULL,
    PRIMARY KEY(FileSetId)
 );
 
@@ -461,5 +462,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2003;
-INSERT INTO Version (VersionId) VALUES (2003);
+DELETE FROM Version WHERE VersionId<=2004;
+INSERT INTO Version (VersionId) VALUES (2004);

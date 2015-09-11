@@ -193,7 +193,7 @@ extern "C" void signal_handler(int sig)
          Pmsg2(000, "chdir to %s failed. ERR=%s\n", working_directory,  be.bstrerror());
          strcpy((char *)working_directory, "/tmp/");
       }
-      unlink("./core");               /* get rid of any old core file */
+      secure_erase(NULL, "./core");        /* get rid of any old core file */
 
 #ifdef DEVELOPER /* When DEVELOPER not set, this is done below */
       /*

@@ -3699,6 +3699,8 @@ mdb_env_init_meta(MDB_env *env, MDB_meta *meta)
 	psize = env->me_psize;
 
 	p = calloc(NUM_METAS, psize);
+	if (!p)
+		return ENOMEM;
 	p->mp_pgno = 0;
 	p->mp_flags = P_META;
 	*(MDB_meta *)METADATA(p) = *meta;
@@ -8376,7 +8378,7 @@ mdb_page_split(MDB_cursor *mc, MDB_val *newkey, MDB_val *newdata, pgno_t newpgno
 				psize = 0;
 				if (newindx <= split_indx || newindx >= nkeys) {
 					i = 0; j = 1;
-					k = newindx >= nkeys ? nkeys : split_indx+2;
+					k = newindx >= nkeys ? nkeys : split_indx+1+IS_LEAF(mp);
 				} else {
 					i = nkeys; j = -1;
 					k = split_indx-1;
