@@ -245,6 +245,13 @@ bool unix_file_device::d_truncate(DCR *dcr)
 
       Mmsg2(errmsg, _("Device %s doesn't support ftruncate(). Recreating file %s.\n"),
             prt_name, archive_name.c_str());
+   } else {
+      if (fstat(m_fd, &st) != 0) {
+         berrno be;
+
+         Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
+         return false;
+      }
    }
 
    /*
