@@ -217,7 +217,7 @@ void free_vol_list(dlist *vol_list);
 int get_num_slots_from_SD(UAContext *ua);
 int get_num_drives_from_SD(UAContext *ua);
 bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId);
-bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent = false);
+bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive = true);
 void cancel_storage_daemon_job(JCR *jcr);
 void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd);
 bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot);
