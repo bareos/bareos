@@ -50,7 +50,6 @@ else
   $1_FALSE=
 fi])
 
-
 AC_DEFUN([BA_CHECK_OPSYS],
 [
 AC_CYGWIN
@@ -332,6 +331,23 @@ else
          DISTNAME=unknown
          DISTVER=unknown
       fi
+   fi
+fi
+AC_MSG_RESULT(done)
+])
+
+AC_DEFUN([BA_CHECK_OBS_DISTNAME], [
+AC_MSG_CHECKING(for OBS OS Distribution)
+if test "x$OBS_DISTRIBUTION" != "x"
+then
+   echo "obsdistname set to $OBS_DISTRIBUTION"
+else
+   if test -e /.build.log; then
+      OBS_PROJECT=`grep 'Building bareos for project' /.build.log | cut -d' ' -f10 | sed "s#'##g"`
+      OBS_DISTRIBUTION=`grep 'Building bareos for project' /.build.log | cut -d' ' -f12 | sed "s#'##g"`
+      OBS_ARCH=`grep 'Building bareos for project' /.build.log | cut -d' ' -f14 | sed "s#'##g"`
+      OBS_SRCMD5=`grep 'Building bareos for project' /.build.log | cut -d' ' -f16 | sed "s#'##g"`
+      AC_DEFINE(IS_BUILD_ON_OBS, 1, [Define to 1 if things are build using the Open Build Service (OBS)])
    fi
 fi
 AC_MSG_RESULT(done)
