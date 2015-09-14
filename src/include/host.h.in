@@ -33,3 +33,8 @@
 #define SD_DEFAULT_PORT "@sd_port@"
 #define DIR_DEFAULT_PORT "@dir_port@"
 #define NDMP_DEFAULT_PORT "10000"
+
+#define OBS_PROJECT "@OBS_PROJECT@"
+#define OBS_DISTRIBUTION "@OBS_DISTRIBUTION@"
+#define OBS_ARCH "@OBS_ARCH@"
+#define OBS_SRCMD5 "@OBS_SRCMD5@"

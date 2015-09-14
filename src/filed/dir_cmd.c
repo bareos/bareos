@@ -221,7 +221,11 @@ static char OKstore[] =
 static char OKstoreend[] =
    "2000 OK storage end\n";
 static char OKjob[] =
+#if !defined(IS_BUILD_ON_OBS)
    "2000 OK Job %s (%s) %s,%s,%s";
+#else
+   "2000 OK Job %s (%s) %s,%s,%s,%s,%s";
+#endif
 static char OKsetdebugv0[] =
    "2000 OK setdebug=%d trace=%d hangup=%d tracefile=%s\n";
 static char OKsetdebugv1[] =
@@ -818,6 +822,7 @@ static bool job_cmd(JCR *jcr)
    BSOCK *dir = jcr->dir_bsock;
    POOL_MEM sd_auth_key(PM_MESSAGE);
    sd_auth_key.check_size(dir->msglen);
+   const char *os_version;
 
    if (sscanf(dir->msg, jobcmd,  &jcr->JobId, jcr->Job,
               &jcr->VolSessionId, &jcr->VolSessionTime,
@@ -832,10 +837,17 @@ static bool job_cmd(JCR *jcr)
    Mmsg(jcr->errmsg, "JobId=%d Job=%s", jcr->JobId, jcr->Job);
    new_plugins(jcr);                  /* instantiate plugins for this jcr */
    generate_plugin_event(jcr, bEventJobStart, (void *)jcr->errmsg);
+
 #ifdef HAVE_WIN32
-   return dir->fsend(OKjob, VERSION, LSMDATE, win_os, DISTNAME, DISTVER);
+   os_version = win_os;
 #else
-   return dir->fsend(OKjob, VERSION, LSMDATE, HOST_OS, DISTNAME, DISTVER);
+   os_version = HOST_OS;
+#endif
+
+#if !defined(IS_BUILD_ON_OBS)
+   return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER);
+#else
+   return dir->fsend(OKjob, VERSION, LSMDATE, os_version, DISTNAME, DISTVER, OBS_DISTRIBUTION, OBS_ARCH);
 #endif
 }
 
