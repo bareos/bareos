@@ -48,7 +48,7 @@ html: html/bareos-manual-main-reference.html
 
 html/bareos-manual-main-reference.html: depend *.sty *.tex bareos-manual-main-reference.htlatex.cfg $(GENERATED) $(HTINDEXES) bareos-manual-main-reference.toc
 	mkdir -p html/
-	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "" -d./html/
+	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "  -cunihtf -utf8" -d./html/
 	mkdir -p html/images/
 	mv html/*.png html/images/
 
@@ -59,7 +59,7 @@ html/bareos-manual-main-reference.html: depend *.sty *.tex bareos-manual-main-re
 	$(MAKEINDEX) $<
 
 %.htidx:
-	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "" -d./html/
+	htlatex bareos-manual-main-reference "bareos-manual-main-reference.htlatex.cfg" "  -cunihtf -utf8" -d./html/
 
 %.4dx: %.htidx
 	name=`basename $< .htidx`; tex "\def\filename{{$$name}{htidx}{4dx}{htind}} \input idxmake.4ht"

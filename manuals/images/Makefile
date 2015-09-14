@@ -61,6 +61,7 @@ conv/dbconfig-3-postgresql-password.eps: dbconfig-3-postgresql-password.png
 	$(CONVERT) dbconfig-3-postgresql-password.png conv/dbconfig-3-postgresql-password.eps
 
 conv/duplicate-real.png: duplicate-real.svg
+	@$(MKDIRCONV)
 	$(CONVERT) duplicate-real.svg conv/duplicate-real.png
 
 conv/%.png: %.png
