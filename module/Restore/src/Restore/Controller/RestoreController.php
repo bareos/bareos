@@ -413,7 +413,7 @@ class RestoreController extends AbstractActionController
 	{
 		$director = $this->getServiceLocator()->get('director');
 		if($pathid == null || $pathid == "#") {
-			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid path=/", 2, $jobid);
+			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid path=", 2, $jobid);
 		}
 		else {
 			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid pathid=" . abs($pathid), 2, $jobid);
@@ -432,7 +432,7 @@ class RestoreController extends AbstractActionController
 	{
 		$director = $this->getServiceLocator()->get('director');
 		if($pathid == null || $pathid == "#") {
-			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid path=/", 2);
+			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid path=", 2);
 		}
 		else {
 			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid pathid=" . abs($pathid), 2);
