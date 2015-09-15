@@ -448,4 +448,6 @@
 /* Define to 1 if LMDB support should be enabled */
 #define HAVE_LMDB 1
 
+#define HAVE_JANSSON 1
+
 #endif /* __MINGWNCONFIG_H */

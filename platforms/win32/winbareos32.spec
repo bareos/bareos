@@ -81,6 +81,8 @@ BuildRequires:  mingw32-libsqlite3-0
 BuildRequires:  mingw32-libsqlite-devel
 BuildRequires:  mingw32-cmocka
 BuildRequires:  mingw32-cmocka-devel
+BuildRequires:  mingw32-libjansson
+BuildRequires:  mingw32-libjansson-devel
 
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc

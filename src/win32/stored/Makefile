@@ -32,12 +32,14 @@ INCLUDES = -I. \
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 LDLIBS_FIND = ../lib/libbareos.a \
 	      ../lib/libbareos.dll \
 	      ../findlib/libbareosfind.dll \
 	      $(MINGW_LIB)/libpthreadGCE2.a \
+	      $(MINGW_LIB)/libjansson.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 DEVICE_API_SRCS = generic_tape_device.c win32_tape_device.c \

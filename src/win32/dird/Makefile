@@ -32,6 +32,7 @@ LDLIBS = ../lib/libbareos.a \
          ../findlib/libbareosfind.dll \
 	 ../cats/libbareoscats.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 SVRSRCS = admin.c authenticate.c autoprune.c backup.c bsr.c catreq.c \

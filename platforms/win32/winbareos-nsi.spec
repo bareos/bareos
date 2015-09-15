@@ -84,6 +84,9 @@ BuildRequires:  obs-name-resolution-settings
 BuildRequires:  mingw32-cmocka
 BuildRequires:  mingw64-cmocka
 
+BuildRequires:  mingw32-libjansson
+BuildRequires:  mingw64-libjansson
+
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
 Source3:         directordialog.ini
@@ -195,6 +198,7 @@ do
       QtGui4.dll \
       liblzo2-2.dll \
       libfastlz.dll \
+      libjansson-4.dll \
       libpng*.dll \
       openssl.exe \
       libcmocka.dll \
