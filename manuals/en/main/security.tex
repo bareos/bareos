@@ -276,3 +276,71 @@ bareos 63422 0.0 0.4 2360 1440 ?? Ss 4:09PM 0:00.00
 \end{verbatim}
 \normalsize
 }
+
+\section{Secure Erase Command}
+\label{sec:SecureEraseCommand}
+
+From \url{https://en.wikipedia.org/w/index.php?title=Data_erasure&oldid=675388437}:
+\begin{quote}
+    Strict industry standards and government regulations are in place that
+    force organizations to mitigate the risk of unauthorized exposure of
+    confidential corporate and government data. Regulations in the United
+    States include HIPAA (Health Insurance Portability and Accountability
+    Act); FACTA (The Fair and Accurate Credit Transactions Act of 2003);
+    GLB (Gramm-Leach Bliley); Sarbanes-Oxley Act (SOx); and Payment Card
+    Industry Data Security Standards (PCI DSS) and the Data Protection Act
+    in the United Kingdom. Failure to comply can result in fines and damage
+    to company reputation, as well as civil and criminal liability.
+\end{quote}
+    
+Bareos supports the secure erase of files that usually are simply deleted.
+Bareos uses an external command to do the secure erase itself.
+
+This makes it easy to choose a tool that meets the secure erase requirements.
+
+
+To configure this functionality, a new configuration directive with the name 
+\configdirective{Secure Erase Command} has been introduced.
+
+This directive is optional and can be configured in:
+
+\begin{itemize}
+  \item \linkResourceDirective{Dir}{Director}{Secure Erase Command}
+  \item \linkResourceDirective{Sd}{Storage}{Secure Erase Command}
+  \item \linkResourceDirective{Fd}{Client}{Secure Erase Command}
+\end{itemize}
+
+This directive configures the secure erase command globally for the daemon it was configured in.
+
+If set, the secure erase command is used to delete files instead of the normal delete routine.
+
+If files are securely erased during a job, the secure delete command output will be shown in the job log.
+
+\begin{logging}{bareos.log}
+08-Sep 12:58 win-fd JobId 10: secure_erase: executing C:/cygwin64/bin/shred.exe "C:/temp/bareos-restores/C/Program Files/Bareos/Plugins/bareos_fd_consts.py"
+08-Sep 12:58 win-fd JobId 10: secure_erase: executing C:/cygwin64/bin/shred.exe "C:/temp/bareos-restores/C/Program Files/Bareos/Plugins/bareos_sd_consts.py"
+08-Sep 12:58 win-fd JobId 10: secure_erase: executing C:/cygwin64/bin/shred.exe "C:/temp/bareos-restores/C/Program Files/Bareos/Plugins/bpipe-fd.dll"
+\end{logging}
+
+The current status of the secure erase command is also shown in the output of status director, status client and status storage.
+
+If the secure erase command is configured, the current value is printed.
+
+Example:
+\begin{bconsole}{}
+* <input>status dir</input>
+backup1.example.com-dir Version: 15.3.0 (24 August 2015) x86_64-suse-linux-gnu suse openSUSE 13.2 (Harlequin) (x86_64)
+Daemon started 08-Sep-15 12:50. Jobs: run=0, running=0 mode=0 db=sqlite3
+ Heap: heap=290,816 smbytes=89,166 max_bytes=89,166 bufs=334 max_bufs=335
+ secure erase command='/usr/bin/wipe -V'
+\end{bconsole}
+
+Example for Secure Erase Command Settings:
+
+\begin{description}
+  \item[Linux:] \configdirective{Secure Erase Command = "/usr/bin/wipe -V"}
+  \item[Windows:] \configdirective{Secure Erase Command = "C:/cygwin64/bin/shred.exe"}
+\end{description}
+
+
+Our tests with the \command{sdelete} command was not successful, as \command{sdelete} seems to stay active in the background.

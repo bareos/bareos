@@ -176,6 +176,11 @@ connections.
 \defDirective{Sd}{Storage}{SD Source Address}{}{}{%
 }
 
+\defDirective{Sd}{Storage}{Secure Erase Command}{}{}{%
+When files are no longer needed, Bareos will delete (unlink) them.
+With this directive, it will call the specified command to delete these files. See \nameref{sec:SecureEraseCommand} for details.
+}
+
 \defDirective{Sd}{Storage}{Statistics Collect Interval}{}{}{%
 }
 

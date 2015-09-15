@@ -551,5 +551,29 @@ Version $>=$ #3%
     }
 }
 
+\definecolor{colorLog}{gray}{0.9}
+
+\lstnewenvironment{logging}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Logging} 
+    \footnotesize
+    \lstset{
+        backgroundcolor=\color{colorLog},
+        breaklines=true,
+        %breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        keepspaces=true,
+        columns=fullflexible,
+        %label=config:#1,
+        caption=#1,
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
 
 \endinput
