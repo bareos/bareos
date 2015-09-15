@@ -213,45 +213,44 @@ At this point, enter the \bcommand{show filesets}{} and you should get something
 
 \begin{bconsole}{show filesets}
 * <input>show filesets</input>
-FileSet: name=Full Set
-      O M
-      N
-      I /usr/sbin
-      N
-      E /var/lib/bareos
-      E /var/lib/bareos/storage
-      E /proc
-      E /tmp
-      E /.journal
-      E /.fsck
-      N
+...
+FileSet {
+  Name = "SelfTest"
+  Include {
+    Options {
+      Signature = MD5
+    }
+    File = "/usr/sbin"
+  }
+}
+
+FileSet {
+  Name = "Catalog"
+  Include {
+    Options {
+      Signature = MD5
+    }
+    File = "/var/lib/bareos/bareos.sql"
+    File = "/etc/bareos"
+  }
+}
+...
 \end{bconsole}
 
-This is a pre-defined {\bf FileSet} that will backup the Bareos source
-directory. The actual directory names printed should correspond to your system
-configuration. For testing purposes, we have chosen a directory of moderate
-size (about 40 Megabytes) and complexity without being too big. The FileSet
+One of the FileSets is the pre-defined SelfTest FileSet
+that will backup the \path|/usr/sbin| directory.
+For testing purposes, we have chosen a directory of moderate
+size (about 30 Megabytes) and complexity without being too big. The FileSet
 {\bf Catalog} is used for backing up Bareos's catalog and is not of interest
-to us for the moment. The {\bf I} entries are the files or directories that
-will be included in the backup and the {\bf E} are those that will be
-excluded, and the {\bf O} entries are the options specified for
-the FileSet. You can change what is backed up by editing {\bf bareos-dir.conf}
+to us for the moment. You can change what is backed up by editing \file{bareos-dir.conf}
 and changing the {\bf File =} line in the {\bf FileSet} resource.
 
 Now is the time to run your first backup job. We are going to backup your
 Bareos source directory to a File Volume in your \path|/var/lib/bareos/storage/|
  directory just to show you how easy it is. Now enter:
 
-\footnotesize
-\begin{verbatim}
-status dir
-\end{verbatim}
-\normalsize
-
-and you should get the following output:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{status dir}
+* <input>status dir</input>
 bareos-dir Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
 Daemon started 23-May-13 13:17. Jobs: run=0, running=0 mode=0
  Heap: heap=270,336 smbytes=59,285 max_bytes=59,285 bufs=239 max_bufs=239
@@ -267,8 +266,7 @@ Running Jobs:
 Console connected at 23-May-13 13:34
 No Jobs running.
 ====
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 where the times and the Director's name will be different according to your
 setup. This shows that an Incremental job is scheduled to run for the Job {\bf
@@ -279,16 +277,8 @@ confusing.
 
 Now enter:
 
-\footnotesize
-\begin{verbatim}
-status client
-\end{verbatim}
-\normalsize
-
-and you should get something like:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{status client}
+* <input>status client</input>
 Automatically selected Client: bareos-fd
 Connecting to Client bareos-fd at bareos:9102
 
@@ -301,8 +291,7 @@ Running Jobs:
 Director connected at: 23-May-13 13:58
 No Jobs running.
 ====
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 In this case, the client is named {\bf bareos-fd} your name will be different,
 but the line beginning with {\bf bareos-fd Version ...} is printed by your File
@@ -310,16 +299,8 @@ daemon, so we are now sure it is up and running.
 
 Finally do the same for your Storage daemon with:
 
-\footnotesize
-\begin{verbatim}
-status storage
-\end{verbatim}
-\normalsize
-
-and you should get:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{status storage}
+* <input>status storage</input>
 Automatically selected Storage: File
 Connecting to Storage daemon File at bareos:9103
 
@@ -342,9 +323,7 @@ Used Volume status:
 ====
 
 ====
-
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
 You will notice that the default Storage daemon device is named {\bf File} and
 that it will use device {\bf /var/lib/bareos/storage}, which is not currently open.
