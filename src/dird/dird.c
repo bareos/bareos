@@ -117,7 +117,7 @@ static bool dir_db_log_insert(JCR *jcr, utime_t mtime, char *msg)
    cmd = get_pool_memory(PM_MESSAGE);
    esc_msg = get_pool_memory(PM_MESSAGE);
 
-   length = strlen(msg) + 1;
+   length = strlen(msg);
 
    esc_msg = check_pool_memory_size(esc_msg, length * 2 + 1);
    db_escape_string(jcr, jcr->db, esc_msg, msg, length);
