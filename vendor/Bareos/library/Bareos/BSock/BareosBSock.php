@@ -506,11 +506,16 @@ class BareosBSock implements BareosBSockInterface
 			}
 		}
 
-		//$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
-		$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
-
-		if (!$this->socket) {
-			throw new \Exception("Error Connecting Socket: " . $errstr . "\n");
+		try {
+			//$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT | STREAM_CLIENT_PERSISTENT, $context);
+			$this->socket = stream_socket_client($remote, $error, $errstr, 60, STREAM_CLIENT_CONNECT, $context);
+			if (!$this->socket) {
+				throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
+			}
+		}
+		catch(\Exception $e) {
+			echo $e->getMessage();
+			exit;
 		}
 
 		if($this->config['debug']) {
@@ -846,7 +851,17 @@ class BareosBSock implements BareosBSockInterface
 		switch($api) {
 			case 2:
 				self::send(".api 2");
-				$debug = self::receive_message();
+				try {
+					$debug = self::receive_message();
+					if(!preg_match('/result/', $debug)) {
+						throw new \Exception("Error: API 2 not available on director. 
+						Please upgrade to version 15.2.1 or greater and/or compile with jansson support.");
+					}
+				}
+				catch(\Exception $e) {
+					echo $e->getMessage();
+					exit;
+				}
 				break;
 			case 1:
 				self::send(".api 1");
