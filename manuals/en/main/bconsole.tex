@@ -1645,31 +1645,7 @@ wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
 There is a list of commands that are prefixed with a period (.). These
 commands are intended to be used either by batch programs or graphical user
 interface front-ends. They are not normally used by interactive users.
-The following
-is the list of dot commands:
-
-\footnotesize
-\begin{verbatim}
-.backups job=xxx      list backups for specified job
-.clients              list all client names
-.defaults client=xxx fileset=yyy  list defaults for specified client
-.die                  cause the Director to segment fault (for debugging)
-.dir                  when in tree mode prints the equivalent to the dir command,
-                        but with fields separated by commas rather than spaces.
-.exit                 quit
-.filesets             list all fileset names
-.help                 help command output
-.jobs                 list all job names
-.levels               list all levels
-.messages             get quick messages
-.msgs                 return any queued messages
-.pools                list all pool names
-.quit                 quit
-.status               get status output
-.storage              return storage resource names
-.types                list job types
-\end{verbatim}
-\normalsize
+For details, see \bareosDeveloperGuideDotCommands.
 
 
 \subsection{Special At (@) Commands}

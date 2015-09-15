@@ -55,11 +55,11 @@ drive autochanger operations will fail.  We strongly recommend to keep
 
 \defDirective{Sd}{Device}{Archive Device}{}{}{%
 Specifies where to read and write the backup data.
-The type of the Archive Device can be specified by the {\bf Device Type} directive.
+The type of the Archive Device can be specified by the \linkResourceDirective{Sd}{Device}{Device Type} directive.
 If Device Type is not specified, Bareos tries to guess the Device Type
 accordingly to the type of the specified Archive Device file type.
 
-There are three different types that are supported:
+There are different types that are supported:
 \begin{description}
     \item[device] Usually the device file
 name of a removable storage device (tape drive),  for example \path|/dev/nst0|
@@ -82,13 +82,15 @@ resources, each containing an Archive Device with a different directory.
 A FIFO is a special kind of file that connects two programs
 via kernel memory. If a FIFO device is specified  for a backup operation, you
 must have a program that reads what Bareos  writes into the FIFO. When the
-Storage daemon starts the job, it  will wait for {\bf MaximumOpenWait} seconds
+Storage daemon starts the job,
+it  will wait for \linkResourceDirective{Sd}{Device}{Maximum Open Wait} seconds
 for the read program to start reading, and then time it out and  terminate
 the job. As a consequence, it is best to start the read  program at the
-beginning of the job perhaps with the {\bf RunBeforeJob}  directive. For this
-kind of device, you never want to specify  {\bf AlwaysOpen}, because you want
-the Storage daemon to open it only  when a job starts, so you must explicitly
-set it to {\bf No}.  Since a FIFO is a one way device, Bareos will not attempt
+beginning of the job perhaps with the  \linkResourceDirective{Dir}{Job}{Run Before Job} directive.
+For this kind of device,
+you always want to specify \linkResourceDirective{Sd}{Device}{Always Open} = no,
+because you want the Storage daemon to open it only  when a job starts.
+Since a FIFO is a one way device, Bareos will not attempt
 to read  a label of a FIFO device, but will simply write on it. To create a
 FIFO Volume in the catalog, use the {\bf add} command rather than the {\bf
 label} command to avoid attempting to write a label.
@@ -97,32 +99,23 @@ label} command to avoid attempting to write a label.
 
 During a restore operation, if the Archive Device is a FIFO, Bareos  will
 attempt to read from the FIFO, so you must have an external program  that
-writes into the FIFO. Bareos will wait {\bf MaximumOpenWait} seconds  for the
+writes into the FIFO. 
+Bareos will wait \linkResourceDirective{Sd}{Device}{Maximum Open Wait} seconds  for the
 program to begin writing and will then time it out and  terminate the job. As
-noted above, you may use the {\bf RunBeforeJob}  to start the writer program
+noted above, you may use the \linkResourceDirective{Dir}{Job}{Run Before Job} to start the writer program
 at the beginning of the job.
 
 A FIFO device can also be used to test your configuration, see the \ilink{Howto section}{TestUsingFifoDevice}.
 
     \item[GlusterFS Storage] \label{GlusterArchiveType}
-    A GlusterFS Storage can be used as Storage backend of Bareos.
-    Prerequistes are a working GlusterFS storage system and the package \package{bareos-storage-glusterfs}.
-    See \url{//http://www.gluster.org/} for more information regarding GlusterFS installation and configuration.
-    You can use following snippet to configure it as storage device:
-    \bconfigInput{config/SdDeviceArchiveDevice2.conf}
-    Adapt server and volume name to your environment.
-
-    \sinceVersion{sd}{GlusterFS Storage}{14.2.2}
-
+	don't use this directive,
+	but only \linkResourceDirective{Sd}{Device}{Device Type} and \linkResourceDirective{Sd}{Device}{Device Options}
+	(this behavior have changed with \sinceVersion{Sd}{Device Options}{15.2.0}).
+    
    \item[Ceph Object Store] \label{CephArchiveType}
-   Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
-   working Ceph object store and the package \package{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration.
-   Assuming that you have an object store with name \file{your_bareos_store}
-   and your Ceph access is configured in \file{/etc/ceph/ceph.conf}, you can use following snippet to configure it as storage device:
-   \bconfigInput{config/SdDeviceArchiveDevice3.conf}
-
-   \sinceVersion{sd}{Ceph Storage}{14.2.2}
-
+	don't use this directive,
+	but only \linkResourceDirective{Sd}{Device}{Device Type} and \linkResourceDirective{Sd}{Device}{Device Options}.
+	(this behavior have changed with \sinceVersion{Sd}{Device Options}{15.2.0}).
 \end{description}
 }
 
@@ -337,32 +330,61 @@ Please see above for more details.
 \defDirective{Sd}{Device}{Description}{}{}{%
 }
 
-\defDirective{Sd}{Device}{Device Type}{}{}{%
-The Device Type specification allows you to explicitly tell Bareos
-what kind of device you are defining. It the {\bf type-specification}
-may be one of the following:
+\defDirective{Sd}{Device}{Device Options}{}{}{%
+Some \linkResourceDirective{Sd}{Device}{Device Type} require additional configuration.
+This can be specified in this directive, e.g. for
 \begin{description}
-\item [Tape]
-  The device is a tape device and thus is sequential access. Tape devices
+    \item[GlusterFS Storage]
+	A GlusterFS Storage can be used as Storage backend of Bareos.
+	Prerequistes are a working GlusterFS storage system and the package \package{bareos-storage-glusterfs}.
+	See \url{http://www.gluster.org/} for more information regarding GlusterFS installation and configuration.
+	You can use following snippet to configure it as storage device:
+	\bconfigInput{config/SdDeviceDeviceOptionsGfapi1.conf}
+	Adapt server and volume name to your environment.
+
+	\sinceVersion{sd}{GlusterFS Storage}{15.2.0}
+
+   \item[Ceph Object Store]
+	Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
+	working Ceph object store and the package \package{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration.
+	Assuming that you have an object store with name \file{poolname}
+	and your Ceph access is configured in \file{/etc/ceph/ceph.conf},
+	you can use following snippet to configure it as storage device:
+	\bconfigInput{config/SdDeviceDeviceOptionsRados1.conf}
+
+	\sinceVersion{sd}{Ceph Storage}{15.2.0}
+\end{description}
+
+Before the Device Options directive have been introduced,
+these options have to be configured in the \linkResourceDirective{Sd}{Device}{Archive Device} directive.
+This behavior have changed with \sinceVersion{sd}{Device Options}{15.2.0}.
+}
+
+
+\defDirective{Sd}{Device}{Device Type}{}{}{%
+The Device Type specification allows you to explicitly define the kind of device you want to use.
+It may be one of the following:
+\begin{description}
+\item [Tape] is used to access tape device and thus has sequential access. Tape devices
   are controlled using ioctl() calls.
 \item [File]
-  Tells Bareos that the device is a file. It may either be a
+  tells Bareos that the device is a file. It may either be a
   file defined on fixed medium or a removable filesystem such as
   USB.  All files must be random access devices.
-\item [Fifo]
-  The device is a first-in-first-out sequential access read-only
+\item [Fifo] is a first-in-first-out sequential access read-only
   or write-only device.
-\item [GFAPI]
-  The gfapi device is used to access a GlusterFS storage.
+\item [GFAPI] is used to access a GlusterFS storage.
+  It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
   \sinceVersion{sd}{GlusterFS (gfapi)}{14.2.2}
-\item [Rados]
-  The Rados device is used to access a Ceph object store.
+\item [Rados] is used to access a Ceph object store.
+  It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
   \sinceVersion{sd}{Ceph (Rados)}{14.2.2}
 \end{description}
 
-The Device Type directive is not required, and if not specified, Bareos
-will attempt to guess what kind of device has been specified using the
-Archive Device specification supplied. There are several advantages to
+The Device Type directive is not required in all cases.
+If it is not specified, Bareos will attempt to guess what kind of device has been specified using the
+\linkResourceDirective{Sd}{Device}{Archive Device} specification supplied.
+There are several advantages to
 explicitly specifying the Device Type. First, on some systems, block and
 character devices have the same type.
 Secondly, if you explicitly specify the Device Type, the mount point
@@ -371,6 +393,7 @@ most removable devices such as USB.
 If the Device Type is not explicitly specified, then the mount point
 must exist when the Storage daemon starts.
 }
+
 
 \defDirective{Sd}{Device}{Diagnostic Device}{}{}{%
 }

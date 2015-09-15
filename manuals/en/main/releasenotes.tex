@@ -30,6 +30,14 @@ Beta release.
 
 \begin{itemize}
     \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \parameter{yes} to \parameter{no}.
+    \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
+	Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
+% # Old syntax:
+% #    Archive Device = /etc/ceph/ceph.conf:poolname
+% #
+% # New syntax:
+% #    Archive Device = <text>
+% #    Device Options = "conffile=/etc/ceph/ceph.conf,poolname=poolname"
 \end{itemize}
 
 }
