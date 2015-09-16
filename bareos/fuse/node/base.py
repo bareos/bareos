@@ -4,7 +4,9 @@
 from    datetime import datetime, timedelta
 import  errno
 import  fuse
+import  grp
 import  logging
+import  pwd
 import  stat
 
 class Base(object):
@@ -53,6 +55,16 @@ class Base(object):
             self.stat.st_mtime = stat['mtime']
         except KeyError as e:
             self.logger.warning(str(e))
+            pass
+        try:
+            uid = pwd.getpwnam(stat['user']).pw_uid
+            self.stat.st_uid = uid
+        except KeyError as e:
+            pass
+        try:
+            gid = grp.getgrnam(stat['group']).gr_gid
+            self.stat.st_gid = gid
+        except KeyError as e:
             pass
         #"stat": {
           #"atime": 1441134679,
