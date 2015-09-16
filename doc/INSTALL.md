@@ -4,7 +4,7 @@ INSTALLATION
 
 ### SYSTEM REQUIREMENTS
 
-* A working Bareos environment, Bareos >= 12.4
+* A working Bareos environment, Bareos >= 15.2
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv
 * PHP >= 5.3.3
     * PHP OpenSSL Extension
@@ -21,90 +21,45 @@ INSTALLATION
     * https://apps.fedoraproject.org/packages/php-ZendFramework2
 
   * SUSE, Debian, Ubuntu
-    * http://download.bareos.org/bareos/contrib
+    * http://download.bareos.org/bareos
 
 ### PACKAGE BASED INSTALLATION
 
 Packages are available for a number of Linux distributions, please see:
 
 * [Version 14.2 (stable)](http://download.bareos.org/bareos/contrib/)
-* [Version 15.2 (experimental/nightly)](http://download.bareos.org/bareos/experimental/nightly/)
+* [Version 15.2 (stable)](http://download.bareos.org/bareos/release/15.2/)
+* [Version 15.3 (experimental/nightly)](http://download.bareos.org/bareos/experimental/nightly/)
 
-**Note:** The experimental nightly webui build only works with and from Bareos 15.2 (experimental/nightly) onwards,
-as it makes use of the new JSON API.
+#### Step 1 - Adding the Repository and install the package
 
-#### Step 1 - Adding the Repository
+If not already done, add the [Bareos](http://download.bareos.org/bareos/) repository that is matching your Linux distribution.
+Please have a look at the [Bareos documentation](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#InstallTheBareosSoftwarePackages) for more information on how to achieve this.
 
-Add the [Bareos contrib](http://download.bareos.org/bareos/contrib/) repository that is matching your Linux distribution and install the bareos-webui package via your package manager.
+After adding the repository simply install the bareos-webui package via your package manager.
 
 * RHEL, CentOS and Fedora
 
 ```
-#
-# define parameter
-#
-
-DIST=CentOS_7
-# or
-# DIST=RHEL_6
-# DIST=RHEL_7
-# DIST=Fedora_20
-# DIST=Fedora_21
-# DIST=CentOS_6
-
-# add the Bareos contrib repository
-URL=http://download.bareos.org/bareos/contrib/$DIST
-wget -O /etc/yum.repos.d/bareos:contrib.repo $URL/bareos:contrib.repo
-
-# install bareos-webui package
 yum install bareos-webui
+```
+
+or
+
+```
+dnf install bareos-webui
 ```
 
 * SUSE Linux Enterprise Server (SLES), openSUSE
 
 ```
-#
-# define parameter
-#
-
-DIST=SLE_12
-# or
-# DIST=SLE_11_SP3
-# DIST=openSUSE_13.1
-# DIST=openSUSE_13.2
-
-# add the Bareos contrib repository
-URL=http://download.bareos.org/bareos/contrib/$DIST
-zypper addrepo --refresh $URL/bareos:contrib.repo
-
-# install bareos-webui package
 zypper install bareos-webui
 ```
 
 * Debian, Ubuntu
 
 ```
-#
-# define parameter
-#
-
-DIST=Debian_7.0
-# or
-# DIST=Debian_6.0
-# DIST=xUbuntu_12.04
-# DIST=xUbuntu_14.04
-
-# add the Bareos contrib repository
-URL=http://download.bareos.org/bareos/contrib/$DIST
-printf "deb $URL /\n" >> /etc/apt/sources.list.d/bareos_contrib.list
-
-# add package key
-wget -q $URL/Release.key -O- | apt-key add -
-
-# install bareos-webui package
-apt-get update
 apt-get install bareos-webui
-
 ```
 
 #### Step 2 - Configuration of restricted consoles and profile resources
@@ -191,7 +146,6 @@ Profile {
   FileSet ACL = *all*
   Where ACL = *all*
 }
-
 ```
 For more details about profile resource configuration in bareos, please have a look at the online [Bareos documentation](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#ProfileResource).
 
@@ -260,16 +214,15 @@ dirport = 9101
 ;cert_file = ""
 ;cert_file_passphrase = ""
 ;allowed_cns = ""
-
 ```
 
 **Note:** You can add as many directors as you want.
 
 #### Step 6 - SELinux
 
-If you do not use SELinux on your system, you can skip this step and go over to the next one.
+If you do not use SELinux on your system, you can skip this step.
 
-To install bareos-webui on a system with SELinux enabled, the following additional steps must be performed.
+To install bareos-webui on a system with SELinux enabled, the following additional step must be performed.
 
  * Allow HTTPD scripts and modules to connect to the network
 
