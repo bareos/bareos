@@ -1,6 +1,7 @@
 """
 """
 
+from   bareos.fuse.node.directory import Directory
 from   bareos.fuse.node import *
 
 class Root(Directory):
@@ -12,4 +13,3 @@ class Root(Directory):
         self.add_subnode(Jobs(bsock, "jobs"))
         self.add_subnode(Volumes(bsock, "volumes"))
         self.add_subnode(Clients(bsock, "clients"))
-

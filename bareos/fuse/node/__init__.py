@@ -1,5 +1,9 @@
-#__all__ = [ "bconsole" ]
-from   bareos.fuse.node.base import Base
-from   bareos.fuse.node.file import File
-from   bareos.fuse.node.directory import Directory
-from   bareos.fuse.node.bareosnodes import *
+files = ['backups', 'base', 'bvfs', 'client', 'clients', 'directory', 'file', 'job', 'joblog', 'jobs', 'volume', 'volumes']
+
+for i in files:
+    module = __import__( "bareos.fuse.node." + i, globals(), locals(), ['*'])
+    for k in dir(module):
+        locals()[k] = getattr(module, k)
+    del k
+del i
+del files

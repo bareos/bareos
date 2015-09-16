@@ -1,7 +1,7 @@
 """
 """
 
-from   bareos.fuse.node import Base
+from   bareos.fuse.node.base import Base
 import errno
 import fuse
 import logging
