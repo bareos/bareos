@@ -39,7 +39,8 @@ class Base(object):
             result = self.get_stat()
         else:
             if path.get(0) in self.subnodes:
-                result = self.subnodes[path.get(0)].getattr(path.lstrip([path.get(0)]))
+                topdir = path.shift()
+                result = self.subnodes[topdir].getattr(path)
         return result
 
     def get_stat(self):
@@ -60,11 +61,13 @@ class Base(object):
             uid = pwd.getpwnam(stat['user']).pw_uid
             self.stat.st_uid = uid
         except KeyError as e:
+            self.logger.info("user %s not known on this system, fall back to uid 0" % (stat['user']))
             pass
         try:
             gid = grp.getgrnam(stat['group']).gr_gid
             self.stat.st_gid = gid
         except KeyError as e:
+            self.logger.info("group %s not known on this system, fall back to gid 0" % (stat['group']))
             pass
         #"stat": {
           #"atime": 1441134679,
@@ -90,7 +93,8 @@ class Base(object):
                 result = self.content[offset:offset+size]
         else:
             if path.get(0) in self.subnodes:
-                result = self.subnodes[path.get(0)].read(path.lstrip([path.get(0)]), size, offset)
+                topdir = path.shift()
+                result = self.subnodes[topdir].read(path, size, offset)
         return result
 
     def add_subnode(self, obj):

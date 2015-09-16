@@ -55,20 +55,27 @@ class Path(object):
             return self.path[index]
 
 
-    def lstrip(self, path=[]):
+    #def lstrip(self, path=[]):
+        #"""
+        #Creates a new Path instance with lstrip components removed from left.
+        #"""
+        #result = copy(self)
+        #result.root = False
+        #for i in path:
+            #if result.get(0) == i:
+                #result.remove(0)
+            #else:
+                ## TODO: exception?
+                #pass
+        #return result
+
+    def shift(self):
         """
         Creates a new Path instance with lstrip components removed from left.
         """
-        result = copy(self)
-        result.root = False
-        for i in path:
-            if result.get(0) == i:
-                result.remove(0)
-            else:
-                # TODO: exception?
-                pass
+        result = self.get(0)
+        self.remove(0)
         return result
-
 
     def is_directory(self):
         return self.directory

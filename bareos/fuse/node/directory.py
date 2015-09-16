@@ -28,7 +28,8 @@ class Directory(Base):
             result = list(self.defaultdirs) + [ str(i) for i in self.subnodes.keys() ]
         else:
             if path.get(0) in self.subnodes:
-                result = self.subnodes[path.get(0)].readdir(path.lstrip([path.get(0)]), offset)
+                topdir = path.shift()
+                result = self.subnodes[topdir].readdir(path, offset)
         return result
 
     def get_stat(self):
