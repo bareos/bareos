@@ -37,7 +37,7 @@ static const int dbglvl = 150;
 #define PLUGIN_DATE         "February 2015"
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Bareos CEPHFS File Daemon Plugin"
-#define PLUGIN_USAGE        "cephfs:configfile=<path_to_config>:basedir=<basedir>:"
+#define PLUGIN_USAGE        "cephfs:conffile=<ceph_conf_file>:basedir=<basedir>:"
 
 #define CEPHFS_PATH_MAX 4096
 
@@ -156,7 +156,9 @@ struct plugin_argument {
 };
 
 static plugin_argument plugin_arguments[] = {
+   /* configfile: deprecated, use conffile instead (same as the other plugins and backends) */
    { "configfile", argument_conffile },
+   { "conffile", argument_conffile },
    { "basedir", argument_basedir },
    { NULL, argument_none }
 };
@@ -819,7 +821,7 @@ static inline void set_string(char **destination, char *value)
  *
  * The definition is in this form:
  *
- * cephfs:configfile=<path_to_config>:basedir=<basedir>:
+ * cephfs:conffile=<path_to_config>:basedir=<basedir>:
  */
 static bRC parse_plugin_definition(bpContext *ctx, void *value)
 {

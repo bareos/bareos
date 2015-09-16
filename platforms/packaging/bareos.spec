@@ -1151,12 +1151,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?glusterfs}
 %files filedaemon-glusterfs-plugin
 %{plugin_dir}/gfapi-fd.so
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-gfapi.conf
 %endif
 
 %if 0%{?ceph}
 %files filedaemon-ceph-plugin
 %{plugin_dir}/cephfs-fd.so
 %{plugin_dir}/rados-fd.so
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-cephfs.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-rados.conf
 %endif
 
 #
