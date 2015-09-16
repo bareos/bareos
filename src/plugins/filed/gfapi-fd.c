@@ -950,41 +950,37 @@ bail_out:
  */
 static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
 {
+   int len;
    char *bp;
    struct stat st;
    bool retval = false;
    POOL_MEM new_directory(PM_FNAME);
 
    pm_strcpy(new_directory, directory);
+   len = strlen(new_directory.c_str());
 
    /*
-    * See if the parent exists.
+    * Strip any trailing slashes.
     */
-   bp = strrchr(new_directory.c_str(), '/');
-   if (bp) {
-      /*
-       * See if we reached the root.
-       */
-      if (bp == new_directory.c_str()) {
-         /*
-          * Create the directory.
-          */
-         if (glfs_mkdir(p_ctx->glfs, directory, 0750) == 0) {
-            if (!p_ctx->path_list) {
-               p_ctx->path_list = path_list_init();
-            }
-            path_list_add(p_ctx->path_list, strlen(directory), directory);
-            retval = true;
-         }
-      } else {
-         *bp = '\0';
+   for (char *p = new_directory.c_str() + (len - 1);
+        (p >= new_directory.c_str()) && *p == '/';
+        p--) {
+      *p = '\0';
+   }
 
-         if (glfs_stat(p_ctx->glfs, new_directory.c_str(), &st) != 0) {
-            switch (errno) {
-            case ENOENT:
+   if (strlen(new_directory.c_str()) &&
+       glfs_stat(p_ctx->glfs, new_directory.c_str(), &st) != 0) {
+      /*
+       * See if the parent exists.
+       */
+      switch (errno) {
+         case ENOENT:
+            bp = strrchr(new_directory.c_str(), '/');
+            if (bp) {
                /*
                 * Make sure our parent exists.
                 */
+               *bp = '\0';
                retval = gfapi_makedirs(p_ctx, new_directory.c_str());
                if (!retval) {
                   return false;
@@ -1000,14 +996,13 @@ static inline bool gfapi_makedirs(plugin_ctx *p_ctx, const char *directory)
                   path_list_add(p_ctx->path_list, strlen(directory), directory);
                   retval = true;
                }
-               break;
-            default:
-               break;
             }
-         } else {
-            retval = true;
-         }
+            break;
+         default:
+            break;
       }
+   } else {
+      retval = true;
    }
 
    return retval;
