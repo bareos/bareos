@@ -10,23 +10,22 @@ import errno
 import logging
 
 class BvfsDir(Directory):
-    def __init__(self, bsock, directory, jobid, pathid):
-        super(BvfsDir, self).__init__(bsock, directory)
+    def __init__(self, bsock, name, jobid, pathid, directory = None):
+        super(BvfsDir, self).__init__(bsock, name)
         self.jobid = jobid
         self.pathid = pathid
         self.static = True
+        if directory:
+            self.set_stat(directory['stat'])
 
     def do_update(self):
         directories = self.get_directories(self.pathid)
         files = self.get_files(self.pathid)
         for i in directories:
             if i['name'] != "." and i['name'] != "..":
-                if i['name'] != "/":
-                    directory = i['name'].rstrip('/')
-                else:
-                    directory = "data"
+                name = i['name'].rstrip('/')
                 pathid = i['pathid']
-                self.add_subnode(BvfsDir(self.bsock, directory, self.jobid, pathid))
+                self.add_subnode(BvfsDir(self.bsock, name, self.jobid, pathid, i))
         for i in files:
             self.add_subnode(BvfsFile(self.bsock, i))
 

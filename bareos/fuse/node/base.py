@@ -43,6 +43,31 @@ class Base(object):
     def get_stat(self):
         return self.stat
 
+    def set_stat(self, stat):
+        try:
+            if stat['mode'] > 0:
+                self.stat.st_mode = stat['mode']
+            self.stat.st_size = stat['size']
+            self.stat.st_atime = stat['atime']
+            self.stat.st_ctime = stat['ctime']
+            self.stat.st_mtime = stat['mtime']
+        except KeyError as e:
+            self.logger.warning(str(e))
+            pass
+        #"stat": {
+          #"atime": 1441134679,
+          #"ino": 3689524,
+          #"dev": 2051,
+          #"mode": 33256,
+          #"nlink": 1,
+          #"user": "joergs",
+          #"group": "joergs",
+          #"ctime": 1441134679,
+          #"rdev": 0,
+          #"size": 1613,
+          #"mtime": 1441134679
+        #},
+
     def read(self, path, size, offset):
         self.logger.debug("%s(\"%s\", %d, %d)" % (str(self), str(path), size, offset))
         result = -errno.ENOENT
