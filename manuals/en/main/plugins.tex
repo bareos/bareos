@@ -85,6 +85,30 @@ See chapter \nameref{backup-postgresql-plugin}.
 
 See chapter \nameref{MSSQL}.
 
+\subsection{LDAP Plugin}
+\index[general]{Plugin!ldap}
+
+This plugin is intended to backup (and restore) the contents of a LDAP server.
+It uses normal LDAP operation for this.
+The package \package{bareos-filedaemon-ldap-python-plugin} (\sinceVersion{Fd}{LDAP Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
+
+\subsection{CEPH Plugin}
+\index[general]{Plugin!ceph}
+\index[general]{Ceph!Plugin}
+
+Opposite to the \ilink{Rados Backend}{SdBackendRados} that is used to store data on a CEPH Object Store,
+this plugin is intended to backup a CEPH Object Store to other media.
+The package \package{bareos-filedaemon-ceph-plugin} (\sinceVersion{Fd}{CEPH Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
+
+
+\subsection{GlusterFS Plugin}
+\index[general]{Plugin!glusterfs}
+\index[general]{GlusterFS!Plugin}
+
+Opposite to the \ilink{GFAPI Backend}{SdBackendGfapi} that is used to store data on a Gluster system,
+this plugin is intended to backup data from a Gluster system to other media.
+The package \package{bareos-filedaemon-glusterfs-plugin} (\sinceVersion{Fd}{GlusterFS Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
+
 
 \subsection{python-fd Plugin}
 \index[general]{Plugin!Python!File Daemon}

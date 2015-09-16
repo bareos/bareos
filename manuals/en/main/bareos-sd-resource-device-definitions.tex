@@ -334,7 +334,7 @@ Please see above for more details.
 Some \linkResourceDirective{Sd}{Device}{Device Type} require additional configuration.
 This can be specified in this directive, e.g. for
 \begin{description}
-    \item[GlusterFS Storage]
+    \item [\sdBackend{GFAPI}{GlusterFS}]
 	A GlusterFS Storage can be used as Storage backend of Bareos.
 	Prerequistes are a working GlusterFS storage system and the package \package{bareos-storage-glusterfs}.
 	See \url{http://www.gluster.org/} for more information regarding GlusterFS installation and configuration.
@@ -344,7 +344,7 @@ This can be specified in this directive, e.g. for
 
 	\sinceVersion{sd}{GlusterFS Storage}{15.2.0}
 
-   \item[Ceph Object Store]
+   \item [\sdBackend{Rados}{Ceph Object Store}]
 	Here you configure the Ceph object store, which is accessed by the SD using the Rados library. Prerequistes are a
 	working Ceph object store and the package \package{bareos-storage-ceph}. See \url{http://ceph.com} for more information regarding Ceph installation and configuration.
 	Assuming that you have an object store with name \file{poolname}
@@ -365,18 +365,18 @@ This behavior have changed with \sinceVersion{sd}{Device Options}{15.2.0}.
 The Device Type specification allows you to explicitly define the kind of device you want to use.
 It may be one of the following:
 \begin{description}
-\item [Tape] is used to access tape device and thus has sequential access. Tape devices
+\item [\sdBackend{Tape}{}] is used to access tape device and thus has sequential access. Tape devices
   are controlled using ioctl() calls.
-\item [File]
+\item [\sdBackend{File}{}]
   tells Bareos that the device is a file. It may either be a
   file defined on fixed medium or a removable filesystem such as
   USB.  All files must be random access devices.
-\item [Fifo] is a first-in-first-out sequential access read-only
+\item [\sdBackend{Fifo}{}] is a first-in-first-out sequential access read-only
   or write-only device.
-\item [GFAPI] is used to access a GlusterFS storage.
+\item [\sdBackend{GFAPI}{GlusterFS}] \label{SdBackendGfapi} is used to access a GlusterFS storage.
   It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
   \sinceVersion{sd}{GlusterFS (gfapi)}{14.2.2}
-\item [Rados] is used to access a Ceph object store.
+\item [\sdBackend{Rados}{Ceph Object Store}] \label{SdBackendRados} is used to access a Ceph object store.
   It must be configured using \linkResourceDirective{Sd}{Device}{Device Options}.
   \sinceVersion{sd}{Ceph (Rados)}{14.2.2}
 \end{description}

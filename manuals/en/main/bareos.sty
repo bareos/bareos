@@ -110,8 +110,12 @@
 
 % handle links to the Bareos Developer Guide via own commands
 % to keep track of cross links
+\newcommand{\developerGuide}[1]{%
+\elink{Bareos Developer Guide (#1)}{http://doc.bareos.org/master/html/bareos-developer-guide.html\##1}%
+}
+
 \newcommand{\bareosDeveloperGuideDotCommands}{%
-\url{http://doc.bareos.org/master/html/bareos-developer-guide.html\#dot-commands}%
+\developerGuide{dot-commands}
 }
 
 %
@@ -186,6 +190,21 @@ Version $>=$ #3%
 \edef\temp{\noexpand\index[general]{bareos-#3!#2}}%
 \temp%
 }
+}
+
+% #1 backend name (Rados)
+% [ #2: backend category (CEPH Object Store) ]
+\newcommand{\sdBackend}[2]{%
+  \ifthenelse{\isempty{#2}}{%
+    \path|#1|%
+    \index[general]{#1}%
+    \index[sd]{Backend!#1}%
+  }{%
+    \path|#1| (#2)%
+    \index[general]{#1 (#2)}%
+    \index[general]{#2!#1}%
+    \index[sd]{Backend!#1 (#2)}%
+  }%
 }
 
 \newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
