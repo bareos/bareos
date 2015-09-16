@@ -627,6 +627,10 @@ void db_list_filesets(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
            "FROM Job, FileSet "
            "WHERE Job.FileSetId = FileSet.FileSetId "
            "AND Job.JobId='%s'%s", edit_int64(jr->JobId, esc), range);
+   } else if (jr->FileSetId != 0) {
+      Mmsg(mdb->cmd, "SELECT FileSetId, FileSet, MD5, CreateTime, FileSetText "
+           "FROM FileSet "
+           "WHERE  FileSetId=%s", edit_int64(jr->FileSetId, esc));
    } else {                           /* all records */
       Mmsg(mdb->cmd, "SELECT DISTINCT FileSet.FileSetId AS FileSetId, FileSet, MD5, CreateTime, FileSetText "
            "FROM FileSet ORDER BY FileSetId ASC%s", range);
