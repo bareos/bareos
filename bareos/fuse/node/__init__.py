@@ -1,4 +1,5 @@
-files = ['backups', 'base', 'bvfs', 'client', 'clients', 'directory', 'file', 'job', 'joblog', 'jobs', 'volume', 'volumes']
+# ls *.py | sed -r "s/(.*)\.py/'\1', /" | tr '\n' ' '
+files = ['backups',  'base',  'bvfsdir',  'bvfsfile',  'client',  'clients',  'directory',  'file',  'job',  'joblog',  'jobs',  'jobslist',  'jobsname',  'volume',  'volumes',  'volumestatus']
 
 for i in files:
     module = __import__( "bareos.fuse.node." + i, globals(), locals(), ['*'])
