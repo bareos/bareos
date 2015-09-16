@@ -39,13 +39,29 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<div class="panel-body">
+<table class="table table-condensed">
+
+<tr>
+   <th class="bg-primary">Id</th>
+   <th class="bg-primary">Name</th>
+   <th class="bg-primary">MD5</th>
+   <th class="bg-primary">Createtime</th>
+</tr>
+
+<tr>
+   <td><?php echo $this->escapeHtml($fileset['filesetid']); ?></td>
+   <td><?php echo $this->escapeHtml($fileset['fileset']); ?></td>
+   <td><?php echo $this->escapeHtml($fileset['md5']); ?></td>
+   <td><?php echo $this->escapeHtml($fileset['createtime']); ?></td>
+</tr>
+
+</table>
+
 <pre>
 <code>
-<?php echo $this->configuration; ?>
+<?php echo $fileset['filesettext']; ?>
 </code>
 </pre>
-</div>
 
 </div>
 </div>

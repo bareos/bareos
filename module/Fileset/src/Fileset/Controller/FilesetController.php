@@ -64,13 +64,11 @@ class FilesetController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 				$id = $this->params()->fromRoute('id', 0);
-
-				$cmd = 'show fileset="' . $id . '"';
-				$this->director = $this->getServiceLocator()->get('director');
+				$fileset = $this->getFileset($id);
 
 				return new ViewModel(
 					array(
-						'configuration' => $this->director->send_command($cmd),
+						'fileset' => $fileset
 					)
 				);
 		}
@@ -85,6 +83,13 @@ class FilesetController extends AbstractActionController
 		$result = $director->send_command("list filesets", 2, null);
 		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 		return $filesets['result']['filesets'];
+	}
+
+	private function getFileset($id) {
+		$director = $this->getServiceLocator()->get('director');
+		$result = $director->send_command("llist fileset filesetid=".$id, 2, null);
+		$fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $fileset['result']['filesets'][0];
 	}
 
 }
