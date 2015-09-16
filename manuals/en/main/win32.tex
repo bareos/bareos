@@ -114,6 +114,36 @@ DBADMINUSER and DBADMINPASSWORD are used to create the bareos
 databases. If login is not possible silent installer will abort
 
 
+\subsection{Installing multiple windows filedaemon services}
+
+It is possible to run multiple filedaemon instances on windows.
+To achieve this, you  need to create a service for each instance, and a configuration file that at least
+has a individual fd port for each instance.
+
+To create two bareos-fd services, you can call the following service create calls on the commandline on windows as administrator:
+
+\begin{commands}{}
+sc create bareosfd binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd.conf\""  depend= "tcpip/afd"
+sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
+\end{commands}
+
+This will crate two fd services, one with the name bareosfd and the second with the name bareosfd2.
+
+The Configuration files for the two services are bareos-fd.conf and bareos-fd2.conf, and need to have different network settings.
+
+The services can be started by calling
+
+\begin{commands}{}
+net start bareosfd
+\end{commands}
+
+and
+
+\begin{commands}{}
+net start bareosfd2
+\end{commands}
+
+
 \section{Dealing with Windows Problems}
 \label{problems}
 \index[general]{Problem!Windows}
@@ -507,11 +537,10 @@ However, if you are using another Firewall, you might need to manually open the 
 If you want to see if the File daemon has properly opened the port and is
 listening, you can enter the following command in a shell window:
 
-\footnotesize
-\begin{verbatim}
-   netstat -an | findstr 910[123]
-\end{verbatim}
-\normalsize
+\begin{commands}{}
+netstat -an | findstr 910[123]
+\end{commands}
+
 
 
 \section{Windows Restore Problems}
