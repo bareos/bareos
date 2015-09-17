@@ -74,20 +74,50 @@ const char *fill_jobhisto =
 /* For ua_update.c */
 const char *list_pool = "SELECT * FROM Pool WHERE PoolId=%s";
 
-/* For ua_output.c */
-const char *client_backups =
-   "SELECT DISTINCT Job.JobId,Client.Name as Client,Level,StartTime,"
-   "JobStatus,JobFiles,JobBytes,VolumeName,MediaType,FileSet,Media.Enabled as Enabled"
-   " FROM Client,Job,JobMedia,Media,FileSet"
-   " WHERE Client.Name='%s'"
-   " AND (%s)"
-   " AND Type='B'"
-   " AND Client.ClientId=Job.ClientId"
-   " AND JobMedia.JobId=Job.JobId AND JobMedia.MediaId=Media.MediaId"
-   " AND Job.FileSetId=FileSet.FileSetId"
-   "%s"
-   " ORDER BY Job.StartTime"
-   "%s";
+/*
+ * For sql_list.c and ua_output.c
+ *
+ * "WHERE JobId > 0" is a dummy where clause,
+ *                   to make it easier to extend the filter
+ *                   (all filters starts with "AND ...")
+ * JOIN with Media is required for filter to Media.Volumename.
+ */
+const char *list_jobs =
+   "SELECT "
+   "Job.JobId,Job.Name, "
+   "Client.Name as Client, "
+   "Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "ORDER BY StartTime%s";
+
+const char *list_jobs_long =
+   "SELECT "
+   "Job.JobId, Job.Job, Job.Name, "
+   "Job.PurgedFiles, Job.Type, Job.Level, "
+   "Job.ClientId, Client.Name as Client, "
+   "Job.JobStatus,"
+   "Job.SchedTime, Job.StartTime, Job.EndTime, Job.RealEndTime, Job.JobTDate, "
+   "Job.VolSessionId, Job.VolSessionTime, "
+   "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, "
+   "Job.PoolId, Pool.Name as PoolName,"
+   "Media.VolumeName, "
+   "Job.PriorJobId, "
+   "Job.FileSetId, FileSet.FileSet "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "ORDER BY StartTime%s";
 
 /* ====== ua_prune.c */
 
