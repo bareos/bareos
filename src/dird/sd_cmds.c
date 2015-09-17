@@ -648,11 +648,11 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
 }
 
 /*
- * Cancel a running job on a storage daemon. The silent flag sets
- * if we need to be silent or not e.g. when doing an interactive cancel
+ * Cancel a running job on a storage daemon. The interactive flag sets
+ * if we are interactive or not e.g. when doing an interactive cancel
  * or a system invoked one.
  */
-bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
+bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
 {
    BSOCK *sd;
    USTORERES store;
@@ -673,7 +673,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
    }
 
    if (!connect_to_storage_daemon(ua->jcr, 10, me->SDConnectTimeout, true)) {
-      if (!silent) {
+      if (interactive) {
          ua->error_msg(_("Failed to connect to Storage daemon.\n"));
       }
       return false;
@@ -682,7 +682,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
    sd = ua->jcr->store_bsock;
    sd->fsend(canceljobcmd, jcr->Job);
    while (sd->recv() >= 0) {
-      if (!silent) {
+      if (interactive) {
          ua->send_msg("%s", sd->msg);
       }
    }
@@ -690,13 +690,20 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
    sd->close();
    delete ua->jcr->store_bsock;
    ua->jcr->store_bsock = NULL;
-   if (silent) {
+   if (!interactive) {
       jcr->sd_canceled = true;
    }
    jcr->store_bsock->set_timed_out();
    jcr->store_bsock->set_terminated();
    sd_msg_thread_send_signal(jcr, TIMEOUT_SIGNAL);
-   jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+
+   /*
+    * An interactive cancel means we need to send a signal to the actual
+    * controlling JCR of the Job to let it know it got canceled.
+    */
+   if (interactive) {
+      jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
+   }
 
    return true;
 }
@@ -704,7 +711,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool silent)
 /*
  * Cancel a running job on a storage daemon. System invoked
  * non interactive version this builds a ua context and calls
- * the interactive one with the silent flag set.
+ * the interactive one with the interactive flag set to false.
  */
 void cancel_storage_daemon_job(JCR *jcr)
 {
@@ -720,7 +727,7 @@ void cancel_storage_daemon_job(JCR *jcr)
 
    ua->jcr = control_jcr;
    if (jcr->store_bsock) {
-      if (!cancel_storage_daemon_job(ua, jcr, true)) {
+      if (!cancel_storage_daemon_job(ua, jcr, false)) {
          goto bail_out;
       }
    }

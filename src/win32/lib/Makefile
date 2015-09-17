@@ -32,6 +32,7 @@ LDLIBS = $(MINGW_LIB)/libssl.dll.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/liblzo2.dll.a \
          $(MINGW_LIB)/libfastlz.dll.a \
+         $(MINGW_LIB)/libjansson.dll.a \
          $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \

@@ -1,2 +1,4 @@
 @plugindir@/cephfs-fd.so
 @plugindir@/rados-fd.so
+/etc/bareos/bareos-dir.d/plugin-cephfs.conf
+/etc/bareos/bareos-dir.d/plugin-rados.conf

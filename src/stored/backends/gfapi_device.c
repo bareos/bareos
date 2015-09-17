@@ -259,40 +259,40 @@ bail_out:
 /*
  * Create a parent directory using the gfapi.
  */
-static inline bool gfapi_makedir(glfs_t *glfs, const char *directory)
+static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
 {
+   int len;
    char *bp;
    struct stat st;
    bool retval = false;
    POOL_MEM new_directory(PM_FNAME);
 
    pm_strcpy(new_directory, directory);
+   len = strlen(new_directory.c_str());
 
    /*
-    * See if the parent exists.
+    * Strip any trailing slashes.
     */
-   bp = strrchr(new_directory.c_str(), '/');
-   if (bp) {
-      /*
-       * See if we reached the root.
-       */
-      if (bp == new_directory.c_str()) {
-         /*
-          * Create the directory.
-          */
-         if (glfs_mkdir(glfs, directory, 0750) == 0) {
-            retval = true;
-         }
-      } else {
-         *bp = '\0';
+   for (char *p = new_directory.c_str() + (len - 1);
+        (p >= new_directory.c_str()) && *p == '/';
+        p--) {
+      *p = '\0';
+   }
 
-         if (glfs_stat(glfs, new_directory.c_str(), &st) != 0) {
-            switch (errno) {
-            case ENOENT:
+   if (strlen(new_directory.c_str()) &&
+       glfs_stat(glfs, new_directory.c_str(), &st) != 0) {
+      /*
+       * See if the parent exists.
+       */
+      switch (errno) {
+         case ENOENT:
+            bp = strrchr(new_directory.c_str(), '/');
+            if (bp) {
                /*
                 * Make sure our parent exists.
                 */
-               retval = gfapi_makedir(glfs, new_directory.c_str());
+               *bp = '\0';
+               retval = gfapi_makedirs(glfs, new_directory.c_str());
                if (!retval) {
                   return false;
                }
@@ -303,14 +303,13 @@ static inline bool gfapi_makedir(glfs_t *glfs, const char *directory)
                if (glfs_mkdir(glfs, directory, 0750) == 0) {
                   retval = true;
                }
-               break;
-            default:
-               break;
             }
-         } else {
-            retval = true;
-         }
+            break;
+         default:
+            break;
       }
+   } else {
+      retval = true;
    }
 
    return retval;
@@ -437,7 +436,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
       if (glfs_stat(m_glfs, m_virtual_filename, &st) != 0) {
          switch (errno) {
          case ENOENT:
-            if (!gfapi_makedir(m_glfs, m_virtual_filename)) {
+            if (!gfapi_makedirs(m_glfs, m_virtual_filename)) {
                Mmsg1(errmsg, _("Specified glusterfs direcory %s cannot be created.\n"), m_virtual_filename);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;

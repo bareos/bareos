@@ -32,6 +32,7 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libpthreadGCE2.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/libreadline.dll.a \
+         $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 CONSSRCS = console.c console_conf.c

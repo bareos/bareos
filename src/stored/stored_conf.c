@@ -101,7 +101,7 @@ static RES_ITEM store_items[] = {
    { "NdmpAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
    { "NdmpAddresses", CFG_TYPE_ADDRESSES, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
    { "NdmpPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_store.NDMPaddrs), 0, CFG_ITEM_DEFAULT, "10000", NULL, NULL },
-   { "AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store.autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "AutoXFlateOnReplication", CFG_TYPE_BOOL, ITEM(res_store.autoxflateonreplication), 0, CFG_ITEM_DEFAULT, "false", "13.4.0-", NULL },
    { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_store.jcr_watchdog_time), 0, 0, NULL, NULL, NULL },
    { "CollectDeviceStatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_dev_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "CollectJobStatistics", CFG_TYPE_BOOL, ITEM(res_store.collect_job_stats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -154,12 +154,14 @@ static RES_ITEM ndmp_items[] = {
  * Device definition
  */
 static RES_ITEM dev_items[] = {
-   { "Name", CFG_TYPE_NAME, ITEM(res_dev.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Description", CFG_TYPE_STR, ITEM(res_dev.hdr.desc), 0, 0, NULL, NULL, NULL },
+   { "Name", CFG_TYPE_NAME, ITEM(res_dev.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
+      "Unique identifier of the resource." },
+   { "Description", CFG_TYPE_STR, ITEM(res_dev.hdr.desc), 0, 0, NULL, NULL,
+      "The Description directive provides easier human recognition, but is not used by Bareos directly." },
    { "MediaType", CFG_TYPE_STRNAME, ITEM(res_dev.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "DeviceType", CFG_TYPE_DEVTYPE, ITEM(res_dev.dev_type), 0, 0, NULL, NULL, NULL },
    { "ArchiveDevice", CFG_TYPE_STRNAME, ITEM(res_dev.device_name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "DeviceOptions", CFG_TYPE_STR, ITEM(res_dev.device_options), 0, 0, NULL, NULL, NULL },
+   { "DeviceOptions", CFG_TYPE_STR, ITEM(res_dev.device_options), 0, 0, NULL, "15.2.0-", NULL },
    { "DiagnosticDevice", CFG_TYPE_STRNAME, ITEM(res_dev.diag_device_name), 0, 0, NULL, NULL, NULL },
    { "HardwareEndOfFile", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOF, CFG_ITEM_DEFAULT, "on", NULL, NULL },
    { "HardwareEndOfMedium", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_EOM, CFG_ITEM_DEFAULT, "on", NULL, NULL },
@@ -215,10 +217,10 @@ static RES_ITEM dev_items[] = {
    { "DriveTapeAlertEnabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_tapealert_enabled), 0, 0, NULL, NULL, NULL },
    { "DriveCryptoEnabled", CFG_TYPE_BOOL, ITEM(res_dev.drive_crypto_enabled), 0, 0, NULL, NULL, NULL },
    { "QueryCryptoStatus", CFG_TYPE_BOOL, ITEM(res_dev.query_crypto_status), 0, 0, NULL, NULL, NULL },
-   { "AutoDeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL, NULL, NULL },
-   { "AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL, NULL, NULL },
-   { "AutoDeflateLevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", NULL, NULL },
-   { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, NULL, NULL },
+   { "AutoDeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL, "13.4.0-", NULL },
+   { "AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL, "13.4.0-", NULL },
+   { "AutoDeflateLevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", "13.4.0-", NULL },
+   { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, "13.4.0-", NULL },
    { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };

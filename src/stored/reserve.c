@@ -883,7 +883,7 @@ bail_out:
  * Note, in reserving a device, if the device is for the
  *  same pool and the same pool type, then it is acceptable.
  *  The Media Type has already been checked. If we are
- *  the first tor reserve the device, we put the pool
+ *  the first to reserve the device, we put the pool
  *  name and pool type in the device record.
  */
 static bool reserve_device_for_append(DCR *dcr, RCTX &rctx)

@@ -244,6 +244,15 @@ dnl Bareos OPSys Distribution determination (see aclocal.m4)
 dnl ----------------------------------------------------------
 BA_CHECK_OPSYS_DISTNAME
 
+dnl -----------------------------------------------------------
+dnl Bareos OPSys Distribution determination (see aclocal.m4)
+dnl ----------------------------------------------------------
+BA_CHECK_OBS_DISTNAME
+AC_SUBST(OBS_PROJECT)
+AC_SUBST(OBS_DISTRIBUTION)
+AC_SUBST(OBS_ARCH)
+AC_SUBST(OBS_SRCMD5)
+
 dnl --------------------------------------------------
 dnl Suppport for gettext (translations)
 dnl By default, $datarootdir is ${prefix}/share
