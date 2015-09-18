@@ -28,7 +28,7 @@ class Job(Directory):
     def get_name(self):
         # TODO: adapt list backups to include name
         try:
-            name = "jobid={jobid}_client={clientname}_name={name}_level={level}_status={jobstatus}".format(**self.job)
+            name = "jobid={jobid}_client={client}_name={name}_level={level}_status={jobstatus}".format(**self.job)
         except KeyError:
             name = "jobid={jobid}_level={level}_status={jobstatus}".format(**self.job)
         return name
