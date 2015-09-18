@@ -4,11 +4,11 @@ from setuptools import find_packages, setup
 
 setup(
     name='python-bareos',
-    version='0.2',
+    version='0.3',
     author='Joerg Steffens',
     author_email='joerg.steffens@bareos.com',
     packages=find_packages(),
-    scripts=['bin/bconsole.py', 'bin/bconsole-json.py'],
+    scripts=['bin/bconsole.py', 'bin/bconsole-json.py', 'bin/bareos-fuse.py'],
     url='https://github.com/joergsteffens/python-bareos/',
     # What does your project relate to?
     keywords='bareos',

@@ -1,5 +1,6 @@
--------------------------------------------------------------------
-Mon Sep  7 14:26:48 UTC 2015 - joerg.steffens@dass-it.de
+python-bareos (0.3.0-1) unstable; urgency=low
 
-- initial
+  * initial
+
+ -- Joerg Steffens <joerg.steffens@bareos.com>  Mon, 24 Aug 2015 11:45:40 +0200
 

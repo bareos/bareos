@@ -18,14 +18,14 @@
 %global pyXcmd python%{PYVER}
 
 Name:           python-%{srcname}
-Version:        0.2
+Version:        0.3
 Release:        1%{?dist}
 Summary:        Python module to interact with a Bareos backup system
-
+Group:          Productivity/Archiving/Backup
 License:        AGPL-3.0
 URL:            https://github.com/joergsteffens/python-bareos/
 #Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
-Source:         %{name}_%{version}.orig.tar.gz
+Source:         %{name}-%{version}.tar.gz
 
 BuildRequires:  python-devel python-setuptools
 %if %noarch
@@ -34,7 +34,7 @@ BuildArch:      noarch
 %{?python_provide:%python_provide python-%{srcname}}
 
 %description
-A python module to interact with a Bareos backup system.
+A python module to interact with a Bareos backup system. Also some tools based on this module.
 
 %define pyX_sitelib %(%{pyXcmd} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 
@@ -60,7 +60,6 @@ A python module to interact with a Bareos backup system.
 %defattr(-,root,root,-)
 %doc README.rst
 %{pyX_sitelib}/*
-%{_bindir}/bconsole.py
-%{_bindir}/bconsole-json.py
+%{_bindir}/*
 
 %changelog
