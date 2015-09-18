@@ -1,10 +1,10 @@
 %global srcname bareos
 
-%if 0%{?rhel} || 0%{?suse_version} == 1110 || 0%{?suse_version} == 1315
-%bcond_without python2
-%else
+#%%if 0%%{?rhel} || 0%%{?suse_version} == 1110 || 0%%{?suse_version} == 1315
+#%%bcond_without python2
+#%%else
 %bcond_with python2
-%endif
+#%%endif
 
 %if 0%{?with_python2}
 %global PYVER 2
