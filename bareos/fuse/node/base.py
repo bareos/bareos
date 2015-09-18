@@ -2,6 +2,7 @@
 """
 
 from    datetime import datetime, timedelta
+from    dateutil import parser as DateParser
 import  errno
 import  fuse
 import  grp
@@ -120,3 +121,9 @@ class Base(object):
     def do_update(self):
         # dummy, to be filled by inherented classes
         pass
+
+    def _convert_date_bareos_unix(self, bareosdate):
+        unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
+        self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
+        return unixtimestamp
+
