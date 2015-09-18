@@ -39,6 +39,8 @@ simple version of the bconsole in Python
 use JSON objects of API mode 2
 ----------------------------------
 
+Requires: bareos >= 15.2
+
 .. code:: python
 
   import bareos.bsock

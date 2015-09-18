@@ -26,8 +26,14 @@ License:        AGPL-3.0
 URL:            https://github.com/joergsteffens/python-bareos/
 #Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
 Source:         %{name}-%{version}.tar.gz
-
-BuildRequires:  python-devel python-setuptools
+%if %{with python2}
+BuildRequires:  python-devel
+BuildRequires:  python-setuptools
+%endif
+%if %{with python3}
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+%endif
 %if %noarch
 BuildArch:      noarch
 %endif
