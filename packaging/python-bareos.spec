@@ -24,8 +24,10 @@ Summary:        Python module to interact with a Bareos backup system
 Group:          Productivity/Archiving/Backup
 License:        AGPL-3.0
 URL:            https://github.com/joergsteffens/python-bareos/
+Vendor:         The Bareos Team
 #Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
 Source:         %{name}-%{version}.tar.gz
+BuildRoot:      %{_tmppath}/%{name}-root
 %if %{with python2}
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
