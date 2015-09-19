@@ -21,11 +21,15 @@ class VolumeStatus(File):
         "Error": 0000,
     }
 
-    def __init__(self, bsock, name, volume):
-        super(VolumeStatus, self).__init__(bsock, None, None)
+    def __init__(self, root, name, volume):
+        super(VolumeStatus, self).__init__(root, None, None)
         self.volume = volume
         self.update_stat()
         self.set_name( "status=%s" % (self.volume['volstatus']) )
+
+    @classmethod
+    def get_id(cls, name, volume):
+        return volume['mediaid']
 
     def do_update(self):
         volumename = self.volume['volumename']

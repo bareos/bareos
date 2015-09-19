@@ -14,23 +14,40 @@ class Base(object):
     """
     Base class for filesystem nodes.
     """
-    def __init__(self, bsock, name):
+    def __init__(self, root, name):
         self.logger = logging.getLogger()
-        self.bsock = bsock
+        self.root = root
+        self.bsock = root.bsock
         self.set_name(name)
         self.stat = fuse.Stat()
         self.content = None
         self.subnodes = {}
+        self.subnodes_old = self.subnodes.copy()
         self.static = False
         self.lastupdate = None
         # timeout for caching
         self.cache_timeout = timedelta(seconds=60)
+
+    @classmethod
+    def get_id(cls, *args, **kwargs):
+        """
+        To enable reusing instances at different places in the filesystem,
+        this method must be overwritten
+        and return a unique id (string) for this class.
+        The parameter of this must be identical to the parameter
+        of the __init__ method must be identical to the parameter of get_id,
+        except that the "root" parameter is excluded.
+        """
+        return None
 
     def get_name(self):
         return self.name
 
     def set_name(self, name):
         self.name = name
+
+    def set_static(self, value=True):
+        self.static = value
 
     def getattr(self, path):
         self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
@@ -98,10 +115,14 @@ class Base(object):
                 result = self.subnodes[topdir].read(path, size, offset)
         return result
 
-    def add_subnode(self, obj):
-        name = obj.get_name()
+    def add_subnode(self, classtype, *args, **kwargs):
+        instance = self.root.factory.get_instance(classtype, *args, **kwargs)
+        name = instance.get_name()
         if not self.subnodes.has_key(name):
-            self.subnodes[name] = obj
+            self.subnodes[name] = instance
+        else:
+            if self.subnodes_old.has_key(name):
+                del(self.subnodes_old[name])
 
     def update(self):
         # update status, content, ...
@@ -113,7 +134,12 @@ class Base(object):
         elif not self.static and (self.lastupdate + self.cache_timeout) < now:
             diff = now - self.lastupdate
             self.logger.debug("reason: non-static and timeout (%d seconds)" % (diff.seconds))
+            # store current subnodes
+            #  and delete all not updated subnodes after do_update()
+            self.subnodes_old = self.subnodes.copy()
             self.do_update()
+            for i in self.subnodes_old.keys():
+                del(self.subnodes[name])
             self.lastupdate = datetime.now()
         else:
             self.logger.debug("skipped")
@@ -126,4 +152,3 @@ class Base(object):
         unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
         self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
         return unixtimestamp
-

@@ -12,9 +12,9 @@ from   pprint import pformat
 import stat
 
 class Job(Directory):
-    def __init__(self, bsock, job):
+    def __init__(self, root, job):
         self.job = job
-        super(Job, self).__init__(bsock, self.get_name())
+        super(Job, self).__init__(root, self.get_name())
         try:
             self.stat.st_ctime = self._convert_date_bareos_unix(self.job['starttime'])
         except KeyError:
@@ -23,9 +23,14 @@ class Job(Directory):
             self.stat.st_mtime = self._convert_date_bareos_unix(self.job['realendtime'])
         except KeyError:
             pass
+        if job['jobstatus'] == 'T' or job['jobstatus'] == 'E' or job['jobstatus'] == 'W':           
+            self.set_static()
+
+    @classmethod
+    def get_id(cls, job):
+        return job['jobid']
 
     def get_name(self):
-        # TODO: adapt list backups to include name
         try:
             name = "jobid={jobid}_client={client}_name={name}_level={level}_status={jobstatus}".format(**self.job)
         except KeyError:
@@ -33,6 +38,6 @@ class Job(Directory):
         return name
 
     def do_update(self):
-        self.add_subnode(File(self.bsock, name="info.txt", content = pformat(self.job) + "\n"))
-        self.add_subnode(JobLog(self.bsock, self.job))
-        self.add_subnode(BvfsDir(self.bsock, "data", self.job['jobid'], None))
+        self.add_subnode(File, name="info.txt", content = pformat(self.job) + "\n")
+        self.add_subnode(JobLog, self.job)
+        self.add_subnode(BvfsDir, "data", self.job['jobid'], None)

@@ -10,13 +10,17 @@ import errno
 import logging
 
 class BvfsDir(Directory):
-    def __init__(self, bsock, name, jobid, pathid, directory = None):
-        super(BvfsDir, self).__init__(bsock, name)
+    def __init__(self, root, name, jobid, pathid, directory = None):
+        super(BvfsDir, self).__init__(root, name)
         self.jobid = jobid
         self.pathid = pathid
         self.static = True
         if directory:
             self.set_stat(directory['stat'])
+
+    @classmethod
+    def get_id(cls, name, jobid, pathid, directory = None):
+        return str(pathid)
 
     def do_update(self):
         directories = self.get_directories(self.pathid)
@@ -25,9 +29,9 @@ class BvfsDir(Directory):
             if i['name'] != "." and i['name'] != "..":
                 name = i['name'].rstrip('/')
                 pathid = i['pathid']
-                self.add_subnode(BvfsDir(self.bsock, name, self.jobid, pathid, i))
+                self.add_subnode(BvfsDir, name, self.jobid, pathid, i)
         for i in files:
-            self.add_subnode(BvfsFile(self.bsock, i))
+            self.add_subnode(BvfsFile, i)
 
     def get_directories(self, pathid):
         if pathid == None:

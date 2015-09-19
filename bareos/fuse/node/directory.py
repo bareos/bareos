@@ -11,8 +11,8 @@ class Directory(Base):
     """
     Directory node.
     """
-    def __init__(self, bsock, name):
-        super(Directory, self).__init__(bsock, name)
+    def __init__(self, root, name):
+        super(Directory, self).__init__(root, name)
         self.defaultdirs = [ ".", ".." ]
         self.stat.st_mode = stat.S_IFDIR | 0755
         self.stat.st_nlink = len(self.defaultdirs)
