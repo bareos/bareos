@@ -25,8 +25,18 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
 
     try:
+        options = [ 'address', 'port', 'dirname', 'clientname' ]
+        parameter = {}
+        for i in options:
+            if hasattr(args, i) and getattr(args,i) != None:
+                logger.debug( "%s: %s" %(i, getattr(args,i)))
+                parameter[i] = getattr(args,i)
+            else:
+                logger.debug( '%s: ""' %(i))
+        logger.debug('options: %s' % (parameter))
         password = bareos.bsock.Password(args.password)
-        director = bareos.bsock.BSockJson(address=args.address, dirname=args.dirname, port=args.port, password=password)
+        parameter['password']=password
+        director = bareos.bsock.BSockJson(**parameter)
     except RuntimeError as e:
         print str(e)
         sys.exit(1)
