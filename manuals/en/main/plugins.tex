@@ -92,13 +92,21 @@ This plugin is intended to backup (and restore) the contents of a LDAP server.
 It uses normal LDAP operation for this.
 The package \package{bareos-filedaemon-ldap-python-plugin} (\sinceVersion{Fd}{LDAP Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
 
-\subsection{CEPH Plugin}
-\index[general]{Plugin!ceph}
-\index[general]{Ceph!Plugin}
+\subsection{Cephfs Plugin}
+\index[general]{Plugin!ceph!cephfs}
+\index[general]{Ceph!Cephfs!Plugin}
 
 Opposite to the \ilink{Rados Backend}{SdBackendRados} that is used to store data on a CEPH Object Store,
-this plugin is intended to backup a CEPH Object Store to other media.
-The package \package{bareos-filedaemon-ceph-plugin} (\sinceVersion{Fd}{CEPH Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
+this plugin is intended to backup a CEPH Object Store via the Cephfs interface to other media.
+The package \package{bareos-filedaemon-ceph-plugin} (\sinceVersion{Fd}{Cephfs Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
+
+\subsection{Rados Plugin}
+\index[general]{Plugin!ceph!rados}
+\index[general]{Ceph!Rados!Plugin}
+
+Opposite to the \ilink{Rados Backend}{SdBackendRados} that is used to store data on a CEPH Object Store,
+this plugin is intended to backup a CEPH Object Store via the Rados interface to other media.
+The package \package{bareos-filedaemon-ceph-plugin} (\sinceVersion{Fd}{CEPH Rados Plugin}{15.2.0}) contains an example configuration file, that must be adapted to your envirnoment.
 
 
 \subsection{GlusterFS Plugin}
