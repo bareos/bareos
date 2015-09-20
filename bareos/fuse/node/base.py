@@ -145,8 +145,12 @@ class Base(object):
             self.logger.debug("skipped")
 
     def do_update(self):
-        # dummy, to be filled by inherented classes
-        pass
+        """
+        dummy, to be overwritten (not inherited!) by inherented classes
+        """
+        # if no node specific do_update exists,
+        # remove marker for nodes to be deleted after update
+        self.subnodes_old = {}
 
     def _convert_date_bareos_unix(self, bareosdate):
         unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
