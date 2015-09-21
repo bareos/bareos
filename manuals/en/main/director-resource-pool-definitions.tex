@@ -95,33 +95,35 @@ pool.  The format directive is used as a sort of template to create new
 Volume names during automatic Volume labeling.
 
 The {\bf format} should be specified in double quotes, and consists of
-letters, numbers and the special characters hyphen ({\bf -}), underscore
-({\bf \_}), colon ({\bf :}), and period ({\bf .}), which are the legal
-characters for a Volume name.  The {\bf format} should be enclosed in
-double quotes (").
+letters, numbers and the special characters hyphen (\path|-|), underscore
+(\path|_|), colon (\path|:|), and period (\path|.|), which are the legal
+characters for a Volume name.  The format should be enclosed in
+double quotes (\path|"|).
 
 In addition, the format may contain a number of variable expansion
 characters which will be expanded by a complex algorithm allowing you to
 create Volume names of many different formats.  In all cases, the
 expansion process must resolve to the set of characters noted above that
 are legal Volume names.  Generally, these variable expansion characters
-begin with a dollar sign ({\bf \$}) or a left bracket ({\bf [}).  If you
+begin with a dollar sign (\path|$|)
+or a left bracket (\path|[|).  If you
 specify variable expansion characters, you should always enclose the
-format with double quote characters ({\bf "}).  For more details on
-variable expansion, please see the \ilink{Variable
-Expansion}{VarsChapter} Chapter of this manual.
+format with double quote characters (\path|"|).  For more details on
+variable expansion, please see the 
+\ilink{Variable Expansion}{VarsChapter} Chapter of this manual.
 
 If no variable expansion characters are found in the string, the Volume
 name will be formed from the {\bf format} string appended with the
 a unique number that increases.  If you do not remove volumes from the
 pool, this number should be the number of volumes plus one, but this
 is not guaranteed. The unique number will be edited as four
-digits with leading zeros.  For example, with a {\bf Label Format =
-"File-"}, the first volumes will be named {\bf File-0001}, {\bf
-File-0002}, ...
+digits with leading zeros.  For example, with a 
+\configdirective{Label Format = "File-"},
+the first volumes will be named \volume{File-0001}, \volume{File-0002}, ...
 
-With the exception of Job specific variables, you can test your {\bf
-LabelFormat} by using the \ilink{var command}{var} the Console Chapter
+With the exception of Job specific variables, you can test your 
+\configdirective{Label Format} 
+by using the \ilink{var command}{var} the Console Chapter
 of this manual.
 
 In almost all cases, you should enclose the format specification (part

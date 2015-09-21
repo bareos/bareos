@@ -767,7 +767,7 @@ List of supported options:
 \begin{itemize}
  \item \textit{db}, comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
  \item \textit{dumpbinary}, command (with or without full path) to create the dumps. Default: mysqldump
- \item \textit{dumpoptions}, options for dumpbinary, default: " --events --single-transaction"
+ \item \textit{dumpoptions}, options for dumpbinary, default: \bquote{ --events --single-transaction}
  \item \textit{mysqlhost}, MySQL host to connect to, default: localhost
  \item \textit{mysqluser}, MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
  \item \textit{mysqlpassword}, MySQL password. Default: unset (better use my.cnf to store passwords)

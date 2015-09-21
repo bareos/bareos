@@ -135,6 +135,7 @@
 %
 % bcommand{command}{parameter}
 \newcommand{\bcommand}[2]{\path|#1| \path|#2|}
+\newcommand{\bconsoleOutput}[1]{\path|#1|}
 \newcommand{\bnfvar}[1]{\lt#1\gt}
 \newcommand{\commandPrompt}{root{\at}linux:\~{}\# }
 \newcommand{\command}[1]{\path|#1|}
@@ -152,6 +153,7 @@
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\registrykey}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
+\newcommand{\volume}[1]{\path|#1|}
 \newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
     \path|#1|\index[general]{Platform!#1}%
 }{%
@@ -161,6 +163,8 @@
 \newcommand{\vmware}{VMware\registered}
 \newcommand{\vSphere}{VMware vSphere\registered}
 
+% Bareos quote
+\newcommand{\bquote}[1]{``#1''}
 %%
 \newcommand{\debug}[1]{\marginpar{#1}}
 %%
