@@ -4,9 +4,6 @@ namespace Pool;
 
 use Pool\Model\Pool;
 use Pool\Model\PoolTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
-use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module
 {
@@ -28,28 +25,6 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
-	}
-
-	public function getServiceConfig()
-	{
-		return array(
-			'factories' => array(
-				'Pool\Model\PoolTable' => function($sm) {
-					$tableGateway = $sm->get('PoolTableGateway');
-					$table = new PoolTable($tableGateway);
-					return $table;
-				},
-				'PoolTableGateway' => function($sm) {
-					//$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$dbAdapter = $sm->get($_SESSION['bareos']['director']);
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Pool());
-					$config = $sm->get('Config');
-					$bsqlch = new BareosSqlCompatHelper($config['db']['adapters'][$_SESSION['bareos']['director']]['driver']);
-					return new TableGateway($bsqlch->strdbcompat("Pool"), $dbAdapter, null, $resultSetPrototype);
-				},
-			),
-		);
 	}
 
 }

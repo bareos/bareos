@@ -4,9 +4,6 @@ namespace Client;
 
 use Client\Model\Client;
 use Client\Model\ClientTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
-use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module
 {
@@ -28,28 +25,6 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
-	}
-
-	public function getServiceConfig()
-	{
-		return array(
-			'factories' => array(
-				'Client\Model\ClientTable' => function($sm) {
-					$tableGateway = $sm->get('ClientTableGateway');
-					$table = new ClientTable($tableGateway);
-					return $table;
-				},
-				'ClientTableGateway' => function($sm) {
-					//$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$dbAdapter = $sm->get($_SESSION['bareos']['director']);
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Client());
-					$config = $sm->get('Config');
-					$bsqlch = new BareosSqlCompatHelper($config['db']['adapters'][$_SESSION['bareos']['director']]['driver']);
-					return new TableGateway($bsqlch->strdbcompat("Client"), $dbAdapter, null, $resultSetPrototype);
-				},
-			),
-		);
 	}
 
 }

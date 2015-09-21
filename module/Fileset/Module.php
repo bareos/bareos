@@ -4,9 +4,6 @@ namespace Fileset;
 
 use Fileset\Model\Fileset;
 use Fileset\Model\FilesetTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
-use Bareos\Db\Sql\BareosSqlCompatHelper;
 
 class Module
 {
@@ -28,28 +25,6 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
-	}
-
-	public function getServiceConfig()
-	{
-		return array(
-			'factories' => array(
-				'Fileset\Model\FilesetTable' => function($sm) {
-					$tableGateway = $sm->get('FilesetTableGateway');
-					$table = new FilesetTable($tableGateway);
-					return $table;
-				},
-				'FilesetTableGateway' => function($sm) {
-					//$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$dbAdapter = $sm->get($_SESSION['bareos']['director']);
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Fileset());
-					$config = $sm->get('Config');
-					$bsqlch = new BareosSqlCompatHelper($config['db']['adapters'][$_SESSION['bareos']['director']]['driver']);
-					return new TableGateway($bsqlch->strdbcompat("FileSet"), $dbAdapter, null, $resultSetPrototype);
-				},
-			),
-		);
 	}
 
 }
