@@ -488,7 +488,7 @@ void init_items()
 static void match_kw(regex_t *preg, const char *what, int len, POOLMEM **buf)
 {
    int rc, size;
-   int nmatch=20;
+   int nmatch = 20;
    regmatch_t pmatch[20];
 
    if (len <= 0) {

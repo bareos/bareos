@@ -50,8 +50,6 @@ int safer_unlink(const char *pathname, const char *regx)
    int rc;
    regex_t preg1;
    char prbuf[500];
-   const int nmatch = 30;
-   regmatch_t pmatch[nmatch];
    int rtn;
 
    /*
@@ -76,7 +74,7 @@ int safer_unlink(const char *pathname, const char *regx)
    /*
     * Unlink files that match regexes
     */
-   if (regexec(&preg1, pathname, nmatch, pmatch,  0) == 0) {
+   if (regexec(&preg1, pathname, 0, NULL, 0) == 0) {
       Dmsg1(100, "safe_unlink unlinking: %s\n", pathname);
       rtn = secure_erase(NULL, pathname);
    } else {

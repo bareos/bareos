@@ -662,16 +662,13 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids,
        * Now apply the regex to the names and remove any item not matched
        */
       foreach_dlist(item, item_chain) {
-         const int nmatch = 30;
-
-         regmatch_t pmatch[nmatch];
          if (last_item) {
             Dmsg1(dbglevel, "Remove item %s\n", last_item->item);
             free(last_item->item);
             item_chain->remove(last_item);
          }
          Dmsg1(dbglevel, "get name Item=%s\n", item->item);
-         rc = regexec(&preg, item->item, nmatch, pmatch,  0);
+         rc = regexec(&preg, item->item, 0, NULL, 0);
          if (rc == 0) {
             last_item = NULL;   /* keep this one */
          } else {

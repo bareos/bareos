@@ -1490,7 +1490,7 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
    }
 }
 
-int regexec(regex_t * preg, const char *string, size_t nmatch,
+int regexec(regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags)
 {
    int status;
