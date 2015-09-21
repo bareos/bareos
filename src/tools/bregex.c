@@ -147,11 +147,9 @@ int main(int argc, char *const *argv)
       }
       lineno = 0;
       while (fgets(data, sizeof(data)-1, fd)) {
-         const int nmatch = 30;
-         regmatch_t pmatch[nmatch];
          strip_trailing_newline(data);
          lineno++;
-         rc = regexec(&preg, data, nmatch, pmatch,  0);
+         rc = regexec(&preg, data, 0, NULL,  0);
          if ((match_only && rc == 0) || (!match_only && rc != 0)) {
             if (no_linenos) {
                printf("%s\n", data);
