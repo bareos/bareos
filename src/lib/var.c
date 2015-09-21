@@ -1054,10 +1054,9 @@ op_search_and_replace(
                 /* no (more) matching */
                 tokenbuf_append(&tmp, p, mydata.end - p);
                 break;
-            }
-            else if (   multiline
-                     && (p + pmatch[0].rm_so) == mydata.end
-                     && (pmatch[0].rm_eo - pmatch[0].rm_so) == 0) {
+            } else if (multiline &&
+                       (p + pmatch[0].rm_so) == mydata.end &&
+                       (pmatch[0].rm_eo - pmatch[0].rm_so) == 0) {
                 /* special case: found empty pattern (usually /^/ or /$/ only)
                    in multi-line at end of data (after the last newline) */
                 tokenbuf_append(&tmp, p, mydata.end - p);
