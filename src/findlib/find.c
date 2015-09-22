@@ -310,9 +310,7 @@ bool accept_file(FF_PKT *ff)
 
       if (S_ISDIR(ff->statp.st_mode)) {
          for (k = 0; k < fo->regexdir.size(); k++) {
-            const int nmatch = 30;
-            regmatch_t pmatch[nmatch];
-            if (regexec((regex_t *)fo->regexdir.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
+            if (regexec((regex_t *)fo->regexdir.get(k), ff->fname, 0, NULL,  0) == 0) {
                if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
@@ -321,9 +319,7 @@ bool accept_file(FF_PKT *ff)
          }
       } else {
          for (k = 0; k < fo->regexfile.size(); k++) {
-            const int nmatch = 30;
-            regmatch_t pmatch[nmatch];
-            if (regexec((regex_t *)fo->regexfile.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
+            if (regexec((regex_t *)fo->regexfile.get(k), ff->fname, 0, NULL,  0) == 0) {
                if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                   return false;       /* reject file */
                }
@@ -333,9 +329,7 @@ bool accept_file(FF_PKT *ff)
       }
 
       for (k = 0; k < fo->regex.size(); k++) {
-         const int nmatch = 30;
-         regmatch_t pmatch[nmatch];
-         if (regexec((regex_t *)fo->regex.get(k), ff->fname, nmatch, pmatch,  0) == 0) {
+         if (regexec((regex_t *)fo->regex.get(k), ff->fname, 0, NULL,  0) == 0) {
             if (bit_is_set(FO_EXCLUDE, ff->flags)) {
                return false;          /* reject file */
             }

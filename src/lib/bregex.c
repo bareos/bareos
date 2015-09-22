@@ -1450,7 +1450,6 @@ var = (unsigned char)*text++; \
 if (translate) \
         var = translate[var]
 
-
 int regcomp(regex_t * bufp, const char *regex, int cflags)
 {
    memset(bufp, 0, sizeof(regex_t));
@@ -1475,30 +1474,37 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
                               regmatch_t pmatch[],
                               size_t nmatch)
 {
-   size_t i=0;
+   if (!(nmatch == 0 && pmatch == NULL)) {
+      size_t i = 0;
 
-   /* We have to set the last entry to -1 */
-   nmatch = nmatch - 1;
-   for (i=0; (i < nmatch) && (old_regs->start[i] > -1) ; i++) {
-      pmatch[i].rm_so = old_regs->start[i];
-      pmatch[i].rm_eo = old_regs->end[i];
+      /*
+       * We have to set the last entry to -1
+       */
+      nmatch = nmatch - 1;
+      for (size_t i = 0; (i < nmatch) && (old_regs->start[i] > -1) ; i++) {
+         pmatch[i].rm_so = old_regs->start[i];
+         pmatch[i].rm_eo = old_regs->end[i];
+      }
+
+      pmatch[i].rm_eo = pmatch[i].rm_so = -1;
    }
-
-   pmatch[i].rm_eo = pmatch[i].rm_so = -1;
 }
 
-int regexec(regex_t * preg, const char *string, size_t nmatch,
+int regexec(regex_t *preg, const char *string, size_t nmatch,
             regmatch_t pmatch[], int eflags)
 {
    int status;
    int len = strlen(string);
    struct re_registers regs;
+
    status = re_search(preg, (unsigned char *)string, len, 0, len, &regs);
    if (status >= 0) {
       re_registers_to_regmatch(&regs, pmatch, nmatch);
    }
-   /* status is the start position in the string base 0 where
-    *  the pattern was found or negative if not found.
+
+   /*
+    * status is the start position in the string base 0 where
+    * the pattern was found or negative if not found.
     */
    return status < 0 ? -1 : 0;
 }

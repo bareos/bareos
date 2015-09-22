@@ -1194,7 +1194,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
    alist *list;
 
    list = *item->alistvalue;
-   if (bstrcmp(item->name, "runscript")) {
+   if (bstrcasecmp(item->name, "runscript")) {
       if (list != NULL) {
          foreach_alist(runscript, list) {
             int len;
@@ -1273,7 +1273,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                      break;
                }
 
-               if (!bstrcmp(when, "never")) { /* suppress default value */
+               if (!bstrcasecmp(when, "never")) { /* suppress default value */
                   Mmsg(temp, "runswhen = %s\n", when);
                   indent_config_item(cfg_str, 2, temp.c_str());
                }

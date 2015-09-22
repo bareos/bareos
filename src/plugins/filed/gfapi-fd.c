@@ -1388,6 +1388,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
             io->io_errno = errno;
             goto bail_out;
          }
+         p_ctx->gfd = NULL;
       } else {
          io->status = -1;
          io->io_errno = EBADF;

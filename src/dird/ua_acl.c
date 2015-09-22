@@ -44,8 +44,6 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
 {
    int rc;
    regex_t preg;
-   const int nmatch = 30;
-   regmatch_t pmatch[nmatch];
    bool retval = false;
    const char *list_value;
 
@@ -94,7 +92,7 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
             continue;
          }
 
-         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
+         if (regexec(&preg, item, 0, NULL, 0) == 0) {
             Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
             regfree(&preg);
             goto bail_out;
@@ -129,7 +127,7 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
             continue;
          }
 
-         if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
+         if (regexec(&preg, item, 0, NULL, 0) == 0) {
             Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
             retval = true;
             regfree(&preg);

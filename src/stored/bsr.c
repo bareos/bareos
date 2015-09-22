@@ -142,9 +142,7 @@ static int match_fileregex(BSR *bsr, DEV_RECORD *rec, JCR *jcr)
        rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
       bsr->skip_file = false;
       if (unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, bsr->attr)) {
-         const int nmatch = 30;
-         regmatch_t pmatch[nmatch];
-         if (regexec(bsr->fileregex_re, bsr->attr->fname, nmatch, pmatch, 0) == 0) {
+         if (regexec(bsr->fileregex_re, bsr->attr->fname, 0, NULL, 0) == 0) {
             Dmsg2(dbglevel, "Matched pattern, fname=%s FI=%d\n",
                   bsr->attr->fname, rec->FileIndex);
          } else {
