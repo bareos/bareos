@@ -14,8 +14,8 @@ setup(
     keywords='bareos',
     description='Network socket connection to the Bareos backup system.',
     long_description=open('README.rst').read(),
-    install_requires=[
-        'hmac',
-        'socket',
-    ]
+    #install_requires=[
+        #'hmac',
+        #'socket',
+    #]
 )
