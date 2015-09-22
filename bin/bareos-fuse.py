@@ -55,7 +55,7 @@ if __name__ == '__main__':
             default='',
             help="name of the Bareos Director to connect [default: \"%default\"]")
         fs.parser.add_option(
-            mountopt="clientname",
+            mountopt="name",
             metavar="NAME",
             help="name of the Bareos Named Console")
         fs.parser.add_option(

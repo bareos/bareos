@@ -53,23 +53,23 @@ class LowLevel(object):
             self.logger.debug("connected to " + str(self.address) + ":" + str(self.port))
 
 
-    def auth(self, password, clientname="*UserAgent*"):
+    def auth(self, password, name="*UserAgent*"):
         '''
         login to the bareos-director
         if the authenticate success return True else False
         dir: the director location
-        clientname: own name. Default is *UserAgent*
+        name: own name. Default is *UserAgent*
         '''
         if not isinstance(password, Password):
             raise AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
-        bashed_name = ProtocolMessages.hello(clientname)
+        bashed_name = ProtocolMessages.hello(name)
         # send the bash to the director
         self.send(bashed_name)
 
         (ssl, result_compatible, result) = self._cram_md5_respond(password=password.md5(), tls_remote_need=0)
         if not result:
             raise AuthenticationError("failed (in response)")
-        if not self._cram_md5_challenge(clientname=clientname, password=password.md5(), tls_local_need=0, compatible=True):
+        if not self._cram_md5_challenge(clientname=name, password=password.md5(), tls_local_need=0, compatible=True):
             raise AuthenticationError("failed (in challenge)")
         return True
 

@@ -15,10 +15,10 @@ class BSockJson(BSock):
                  address="localhost",
                  port=9101,
                  dirname=None,
-                 clientname="*UserAgent*",
+                 name="*UserAgent*",
                  password=None):
         super(BSockJson, self).__init__(
-            address, port, dirname, clientname,
+            address, port, dirname, name,
             password)
         self.call(".api 2")
 

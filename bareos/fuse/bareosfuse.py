@@ -31,7 +31,7 @@ class BareosFuse(fuse.Fuse):
         # as this prevents FUSE from being started in case of errors.
         self.logger.debug('start')
         if self.fuse_args.mount_expected():
-            options = [ 'address', 'port', 'dirname', 'clientname', 'password' ]
+            options = [ 'address', 'port', 'dirname', 'name', 'password' ]
             parameter = {}
             for i in options:
                 if hasattr(self, i):

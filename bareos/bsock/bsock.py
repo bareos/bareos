@@ -12,11 +12,11 @@ class BSock(LowLevel):
                  address="localhost",
                  port=9101,
                  dirname=None,
-                 clientname="*UserAgent*",
+                 name="*UserAgent*",
                  password=None):
         super(BSock, self).__init__()
         self.connect(address, port, dirname)
-        self.auth(clientname=clientname, password=password)
+        self.auth(name=name, password=password)
         self._set_state_director_prompt()
 
 

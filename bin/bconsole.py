@@ -9,7 +9,7 @@ import sys
 def getArguments():
     parser = argparse.ArgumentParser(description='Console to Bareos Director.' )
     parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
-    parser.add_argument('--name', default="*UserAgent*", help="use this to access a specific Bareos director named console. Otherwise it connects to the default console (\"*UserAgent*\")", dest="clientname")
+    parser.add_argument('--name', default="*UserAgent*", help="use this to access a specific Bareos director named console. Otherwise it connects to the default console (\"*UserAgent*\")")
     parser.add_argument('-p', '--password', help="password to authenticate to a Bareos Director console", required=True)
     parser.add_argument('--port', default=9101, help="Bareos Director network port")
     parser.add_argument('--dirname', help="Bareos Director name")
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
 
     try:
-        options = [ 'address', 'port', 'dirname', 'clientname' ]
+        options = [ 'address', 'port', 'dirname', 'name' ]
         parameter = {}
         for i in options:
             if hasattr(args, i) and getattr(args,i) != None:
