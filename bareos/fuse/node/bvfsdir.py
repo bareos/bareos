@@ -20,7 +20,12 @@ class BvfsDir(Directory):
 
     @classmethod
     def get_id(cls, name, jobid, pathid, directory = None):
-        return str(pathid)
+        id = None
+        if pathid == None:
+            id = "jobid=%s" % (str(jobid))
+        else:
+            id = "pathid=%s" % (str(pathid))
+        return id
 
     def do_update(self):
         directories = self.get_directories(self.pathid)

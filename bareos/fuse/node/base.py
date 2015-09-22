@@ -142,7 +142,7 @@ class Base(object):
                 del(self.subnodes[name])
             self.lastupdate = datetime.now()
         else:
-            self.logger.debug("skipped")
+            self.logger.debug("skipped (lastupdate: %s, static: %s)" % ( str(self.lastupdate), str(self.static)))
 
     def do_update(self):
         """
