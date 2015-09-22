@@ -531,16 +531,17 @@ There are three different kinds of consoles, which the administrator or
 user can use to interact with the Director. These three kinds of consoles
 comprise three different security levels.
 
-\begin{itemize}
-\item The first console type is an {\bf anonymous} or {\bf default}  console,
+\begin{description}
+\item[Default Console] \index[dir]{Console!Default Console}
+the first console type is an \bquote{anonymous} or \bquote{default}  console,
 which has full privileges.  There is no console resource necessary for
 this type since the password is specified in the Director's resource and
-consequently such consoles do not have a name as defined on a {\bf Name
-=} directive.  Typically you
-would use it only for  administrators.
+consequently such consoles do not have a name as defined on a \configdirective{Name} directive.
+Typically you would use it only for  administrators.
 
-\item The second type of console, is a
-"named" console defined within a Console resource in both the Director's
+\item[Named Console] \index[dir]{Named Console} \index[dir]{Console!Named Console}
+the second type of console, is a
+\bquote{named} console defined within a Console resource in both the Director's
 configuration file and in the Console's configuration file.  Both the
 names and the passwords in these two entries must match much as is the
 case for Client programs.
@@ -555,15 +556,18 @@ specifying access control lists in the Director's Console resource.  The
 ACLs are specified by a directive followed by a list of access names.
 Examples of this are shown below.
 
+\begin{itemize}
 \item The third type of console is similar to the above mentioned  one in that
 it requires a Console resource definition in both the Director and the
-Console.  In addition, if the console name, provided on the {\bf Name =}
-directive, is the same as a Client name, that console is permitted to
-use the {\bf SetIP} command to change the Address directive in the
+Console.  In addition, if the console name, provided on the 
+\linkResourceDirective{Dir}{Console}{Name} directive, 
+is the same as a Client name, that console is permitted to
+use the \bcommand{SetIP}{} command to change the Address directive in the
 Director's client resource to the IP address of the Console.  This
 permits portables or other machines using DHCP (non-fixed IP addresses)
 to "notify" the Director of their current IP address.
 \end{itemize}
+\end{description}
 
 The Console resource is optional and need not be specified. The following
 directives are permitted within the Director's configuration resource:
@@ -574,7 +578,7 @@ directives are permitted within the Director's configuration resource:
 
 
 Aside from Director resource names and console command names, the special
-keyword {\bf all} can be specified in any of the above access control lists.
+keyword \parameter{*all*} can be specified in any of the above access control lists.
 When this keyword is present, any resource or command name (which ever is
 appropriate) will be accepted. For an example configuration file, please see
 the \nameref{ConsoleConfChapter} chapter of this manual.
