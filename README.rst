@@ -1,16 +1,10 @@
 python-bareos
 =============
 
-Python libraries to access Bareos
+Python module to access a http://www.bareos.org backup system.
 
+  * prebuild packages available at http://download.bareos.org/bareos/contrib/
 
-preperation
----------------
-
-.. code:: python
-
-  export PYTHONPATH=.
-  python
 
 calling bareos-director user agent commands
 -----------------------------------------------
