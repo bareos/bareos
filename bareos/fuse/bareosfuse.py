@@ -18,17 +18,25 @@ fuse.fuse_python_api = (0, 2)
 class BareosFuse(fuse.Fuse):
 
     def __init__(self, *args, **kw):
-        self.logger = logging.getLogger()
-        self.logger.debug('init')
         self.bsock = None
         self.bareos = None
         super(BareosFuse, self).__init__(*args, **kw)
         self.multithreaded = False
 
+    def initLogging(self):
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        if hasattr(self, "logfile"):
+            hdlr = logging.FileHandler(self.logfile)
+            formatter = logging.Formatter('%(asctime)s  %(levelname)-7s %(module)s %(funcName)s( %(message)s )')
+            hdlr.setFormatter(formatter)
+            self.logger.addHandler(hdlr)
 
     def main(self, *args, **kw):
         # use main() instead of fsinit,
         # as this prevents FUSE from being started in case of errors.
+
+        self.initLogging()
         self.logger.debug('start')
         if self.fuse_args.mount_expected():
             options = [ 'address', 'port', 'dirname', 'name', 'password' ]
@@ -69,8 +77,5 @@ class BareosFuse(fuse.Fuse):
 
     def read(self, path, size, offset):
         result = self.bareos.read(Path(path), size, offset)
-        #if result == None:
-        #    return -errno.ENOENT
         self.logger.debug("fuse %s: %s" % (path, result))
         return result
-        #return -errno.ENOENT
