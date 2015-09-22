@@ -1771,13 +1771,13 @@ bool get_user_job_status_selection(UAContext *ua, int *jobstatus)
       } else if (bstrcasecmp(ua->argv[i], "running")) {
          *jobstatus = JS_Running;
       } else if (bstrcasecmp(ua->argv[i], "error")) {
-         *jobstatus = JS_Error;
+         *jobstatus = JS_ErrorTerminated;
       } else if (bstrcasecmp(ua->argv[i], "fatal")) {
          *jobstatus = JS_FatalError;
+      } else {
+         /* invalid jobstatus */
+         return false;
       }
-
-      return true;
-   } else {
-      return false;
    }
+   return true;
 }

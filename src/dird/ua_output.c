@@ -464,7 +464,10 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    /*
     * jobstatus=X
     */
-   get_user_job_status_selection(ua, &jobstatus);
+   if (!get_user_job_status_selection(ua, &jobstatus)) {
+      ua->error_msg(_("invalid jobstatus parameter\n"));
+      return false;
+   }
 
    /*
     * Select what to do based on the first argument.
