@@ -3,7 +3,7 @@ python-bareos
 
 Python module to access a http://www.bareos.org backup system.
 
-  * prebuild packages available at http://download.bareos.org/bareos/contrib/
+* prebuild packages available at http://download.bareos.org/bareos/contrib/
 
 
 calling bareos-director user agent commands
