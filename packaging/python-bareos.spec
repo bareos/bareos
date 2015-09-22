@@ -20,7 +20,7 @@
 Name:           python-%{srcname}
 Version:        0.3
 Release:        1%{?dist}
-Summary:        Python module to interact with a Bareos backup system
+Summary:        Backup Archiving REcovery Open Sourced - Python module
 Group:          Productivity/Archiving/Backup
 License:        AGPL-3.0
 URL:            https://github.com/bareos/python-bareos/
@@ -42,7 +42,10 @@ BuildArch:      noarch
 %{?python_provide:%python_provide python-%{srcname}}
 
 %description
-A python module to interact with a Bareos backup system. Also some tools based on this module.
+Bareos - Backup Archiving Recovery Open Sourced - Python module
+
+This packages contains a python module to interact with a Bareos backup system.
+It also includes some tools based on this module.
 
 %define pyX_sitelib %(%{pyXcmd} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
 

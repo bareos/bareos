@@ -8,7 +8,7 @@ setup(
     author='Joerg Steffens',
     author_email='joerg.steffens@bareos.com',
     packages=find_packages(),
-    scripts=['bin/bconsole.py', 'bin/bconsole-json.py', 'bin/bareos-fuse.py'],
+    scripts=['bin/bconsole.py', 'bin/bconsole-json.py'],
     url='https://github.com/joergsteffens/python-bareos/',
     # What does your project relate to?
     keywords='bareos',

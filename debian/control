@@ -8,24 +8,6 @@ Standards-Version: 3.9.1
 Package: python-bareos
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}
-Description: Network socket connection to the Bareos backup system.
- python-bareos
- =============
- .
- Python libraries to access Bareos
- .
- ## Example
- .
- .
- ### preperation
- .
- ```
- export PYTHONPATH=.
- python
- ```
- .
- ### calling bareos-director user agent commands
- .
- ```
- import bareos.bsock
- .
+Description: Backup Archiving REcovery Open Sourced - Python module
+ This packages contains a python module to interact with a Bareos backup system.
+ It also includes some tools based on this module.
