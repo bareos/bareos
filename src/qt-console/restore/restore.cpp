@@ -149,7 +149,7 @@ void restorePage::fillDirectory()
       } else {
          bstrncpy(marked, " ", sizeof(marked));
       }
-      split_path_and_filename(p, &path, &pnl, &file, &fnl);
+      split_path_and_filename(p, path, &pnl, file, &fnl);
       item.clear();
       item << "" << file << modes << user << group << size << date;
       if (item[1].endsWith("/")) {

@@ -47,7 +47,7 @@ char* MonitorItem::get_name() const
 void MonitorItem::writecmd(const char* command)
 {
    if (d->DSock) {
-      d->DSock->msglen = pm_strcpy(&d->DSock->msg, command);
+      d->DSock->msglen = pm_strcpy(d->DSock->msg, command);
       bnet_send(d->DSock);
    }
 }
