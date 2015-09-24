@@ -10,8 +10,10 @@ class Root(Directory):
     """
     Define filesystem structure of root (/) directory.
     """
-    def __init__(self, bsock):
+    def __init__(self, bsock, restoreclient, restorepath):
         self.bsock = bsock
+        self.restoreclient = restoreclient
+        self.restorepath = restorepath
         super(Root, self).__init__(self, None)
         self.factory = NodeFactory(self)
         self.add_subnode(Jobs, "jobs")

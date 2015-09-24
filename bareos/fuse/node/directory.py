@@ -20,7 +20,7 @@ class Directory(Base):
         self.stat.st_size = 4096
 
     def readdir(self, path, offset):
-        self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
+        self.logger.debug("%s(\"%s\")" % (str(self.get_name()), str(path)))
         # copy default dirs
         if path.len() == 0:
             self.update()

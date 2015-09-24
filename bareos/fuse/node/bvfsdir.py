@@ -3,20 +3,23 @@ Bareos specific Fuse node.
 """
 
 from   bareos.exceptions import *
+from   bareos.fuse.node.bvfscommon import BvfsCommon
 from   bareos.fuse.node.bvfsfile import BvfsFile
 from   bareos.fuse.node.directory import Directory
 from   dateutil import parser as DateParser
 import errno
 import logging
 
-class BvfsDir(Directory):
+class BvfsDir(Directory, BvfsCommon):
     def __init__(self, root, name, jobid, pathid, directory = None):
         super(BvfsDir, self).__init__(root, name)
         self.jobid = jobid
         self.pathid = pathid
         self.static = True
+        self.directory = directory
         if directory:
             self.set_stat(directory['stat'])
+            BvfsCommon.init(self, self.root, self.jobid, self.directory['fullpath'],  None, self.directory['stat'])
 
     @classmethod
     def get_id(cls, name, jobid, pathid, directory = None):
@@ -27,6 +30,19 @@ class BvfsDir(Directory):
             id = "pathid=%s" % (str(pathid))
         return id
 
+    def setxattr(self, path, key, value, flags):
+        if path.len() == 0:
+            if key == self.XattrKeyRestoreTrigger and value == "restore":
+                if not self.root.restoreclient:
+                    self.logger.warning("no restoreclient given, files can not be restored")
+                    return -errno.ENOENT
+                if not self.root.restorepath:
+                    self.logger.warning("no restorepath given, files can not be restored")
+                    return -errno.ENOENT
+                else:
+                    self.restore(path, [ self.pathid ], None)
+        return super(BvfsDir, self).setxattr(path, key, value, flags)
+
     def do_update(self):
         directories = self.get_directories(self.pathid)
         files = self.get_files(self.pathid)
@@ -36,7 +52,7 @@ class BvfsDir(Directory):
                 pathid = i['pathid']
                 self.add_subnode(BvfsDir, name, self.jobid, pathid, i)
         for i in files:
-            self.add_subnode(BvfsFile, i)
+            self.add_subnode(BvfsFile, i, self.directory['fullpath'])
 
     def get_directories(self, pathid):
         if pathid == None:
@@ -52,6 +68,7 @@ class BvfsDir(Directory):
                 if i['name'] != "." and i['name'] != "..":
                     if i['name'] == "/":
                         self.pathid = i['pathid']
+                        BvfsCommon.init(self, self.root, self.jobid, i['fullpath'],  None, i['stat'])
                     else:
                         found = True
             if not found:

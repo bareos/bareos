@@ -46,36 +46,97 @@ class BareosFuse(fuse.Fuse):
                     self.logger.debug( "%s: %s" %(i, getattr(self,i)))
                     parameter[i] = getattr(self,i)
                 else:
-                    self.logger.debug( "%s: missing" %(i))
+                    self.logger.debug( "%s: missing, default: %s" %(i, str(getattr(self,i,None))))
             self.logger.debug('options: %s' % (parameter))
-            password = bareos.bsock.Password(self.password)
-            parameter['password']=password
+            if not hasattr(self, 'password'):
+                raise RuntimeError("missing parameter password")
+            else:
+                password = bareos.bsock.Password(self.password)
+                parameter['password']=password
             self.bsock = bareos.bsock.BSockJson(**parameter)
-            self.bareos = Root(self.bsock)
+            if not hasattr(self, 'restoreclient'):
+                self.restoreclient = None
+                #raise RuntimeError("missing parameter restoreclient")
+                # TODO: check if restoreclient is valid
+            if not hasattr(self, 'restorepath'):
+                self.restorepath = '/var/cache/bareosfs/'
+            self.bareos = Root(self.bsock, self.restoreclient, self.restorepath)
         super(BareosFuse, self).main(*args, **kw)
         self.logger.debug('done')
-
 
     def getattr(self, path):
         if self.bareos:
             stat = self.bareos.getattr(Path(path))
             if isinstance(stat, fuse.Stat):
-                self.logger.debug("fuse %s: nlink=%i" % (path, stat.st_nlink))
+                self.logger.debug("%s: nlink=%i" % (path, stat.st_nlink))
             else:
-                self.logger.debug("fuse %s: (int) %i" % (path, stat))
+                self.logger.debug("%s: (int) %i" % (path, stat))
             return stat
 
+    def read(self, path, size, offset):
+        result = self.bareos.read(Path(path), size, offset)
+        #self.logger.debug("%s: %s" % (path, result))
+        self.logger.debug("%s" % (path))
+        return result
 
     def readdir(self, path, offset):
         entries = self.bareos.readdir(Path(path), offset)
-        self.logger.debug("fuse %s: %s" % (path, entries))
+        self.logger.debug("%s: %s" % (path, entries))
         if not entries:
             return -errno.ENOENT
         else:
             return [fuse.Direntry(f) for f in entries]
 
+    def readlink(self, path):
+        result = self.bareos.readlink(Path(path))
+        self.logger.debug("%s: %s" % (path, result))
+        return result
 
-    def read(self, path, size, offset):
-        result = self.bareos.read(Path(path), size, offset)
-        self.logger.debug("fuse %s: %s" % (path, result))
+    def listxattr(self, path, size):
+        '''
+        list extended attributes
+        '''
+        keys = self.bareos.listxattr(Path(path))
+        if size == 0:
+            # We are asked for size of the attr list, ie. joint size of attrs
+            # plus null separators.
+            result = len("".join(keys)) + len(keys)
+            self.logger.debug("%s: len=%s" % (path, result))
+        else:
+            result = keys
+            self.logger.debug("%s: keys=%s" % (path, ", ".join(keys)))
+        return result
+
+    def getxattr(self, path, key, size):
+        '''
+        get value of extended attribute
+        burpfs exposes some filesystem attributes for the root directory
+        (e.g. backup number, cache prefix - see FileSystem.xattr_fields_root)
+        and may also expose several other attributes for each file/directory
+        in the future (see FileSystem.xattr_fields)
+        '''
+        value = self.bareos.getxattr(Path(path), key)
+        self.logger.debug("%s: %s=%s" % (path, key, str(value)))
+        if value == None:
+            result = -errno.ENODATA
+        elif size == 0:
+            # we are asked for size of the value
+            result = len(value)
+            self.logger.debug("%s: len=%s" % (path, result))
+        else:
+            result = value
+            self.logger.debug("%s: %s=%s" % (path, key, result))
+        return result
+
+    def setxattr(self, path, key, value, flags):
+        '''
+        set value of extended attribute
+        '''
+        result = self.bareos.setxattr(Path(path), key, value, flags)
+        self.logger.debug("%s: %s=%s: %s" % (path, key, value, str(result)))
+        return result
+
+    def rename(self, oldpath, newpath):
+        result = self.bareos.rename(Path(oldpath), Path(newpath))
+        self.logger.debug("%s => %s: %s" % (oldpath, newpath, result))
         return result

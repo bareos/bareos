@@ -18,8 +18,10 @@ class Base(object):
         self.logger = logging.getLogger()
         self.root = root
         self.bsock = root.bsock
+        self.id = None
         self.set_name(name)
         self.stat = fuse.Stat()
+        self.xattr = {}
         self.content = None
         self.subnodes = {}
         self.subnodes_old = self.subnodes.copy()
@@ -40,6 +42,9 @@ class Base(object):
         """
         return None
 
+    # Interface
+    # =========
+
     def get_name(self):
         return self.name
 
@@ -48,18 +53,6 @@ class Base(object):
 
     def set_static(self, value=True):
         self.static = value
-
-    def getattr(self, path):
-        self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
-        result = -errno.ENOENT
-        if path.len() == 0:
-            self.update()
-            result = self.get_stat()
-        else:
-            if path.get(0) in self.subnodes:
-                topdir = path.shift()
-                result = self.subnodes[topdir].getattr(path)
-        return result
 
     def get_stat(self):
         return self.stat
@@ -101,20 +94,6 @@ class Base(object):
           #"mtime": 1441134679
         #},
 
-    def read(self, path, size, offset):
-        self.logger.debug("%s(\"%s\", %d, %d)" % (str(self), str(path), size, offset))
-        result = -errno.ENOENT
-        if path.len() == 0:
-            self.logger.debug( "content: " + str(self.content) )
-            self.update()
-            if self.content != None:
-                result = self.content[offset:offset+size]
-        else:
-            if path.get(0) in self.subnodes:
-                topdir = path.shift()
-                result = self.subnodes[topdir].read(path, size, offset)
-        return result
-
     def add_subnode(self, classtype, *args, **kwargs):
         instance = self.root.factory.get_instance(classtype, *args, **kwargs)
         name = instance.get_name()
@@ -153,7 +132,114 @@ class Base(object):
         # remove marker for nodes to be deleted after update
         self.subnodes_old = {}
 
+    # Filesystem methods
+    # ==================
+
+    def getattr(self, path):
+        #self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
+        result = -errno.ENOENT
+        if path.len() == 0:
+            self.update()
+            result = self.get_stat()
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].getattr(path)
+        return result
+
+
+    def read(self, path, size, offset):
+        #self.logger.debug("%s(\"%s\", %d, %d)" % (str(self), str(path), size, offset))
+        result = -errno.ENOENT
+        if path.len() == 0:
+            self.logger.debug( "content: " + str(self.content) )
+            self.update()
+            if self.content != None:
+                result = self.content[offset:offset+size]
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].read(path, size, offset)
+        return result
+
+    def readlink(self, path):
+        #self.logger.debug("%s(\"%s\", %d, %d)" % (str(self), str(path), size, offset))
+        result = -errno.ENOENT
+        if path.len() == 0:
+            pass
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].readlink(path)
+        return result
+
+    def listxattr(self, path):
+        '''
+        list extended attributes
+        '''
+        #self.logger.debug("%s(\"%s\", %s)" % (str(self.get_name()), str(path), str(size)))
+        result = []
+        if path.len() == 0:
+            result = self.xattr.keys()
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].listxattr(path)
+        return result
+
+    def getxattr(self, path, key):
+        '''
+        get value of extended attribute
+        '''
+        #self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
+        result = None
+        if path.len() == 0:
+            try:
+                result = self.xattr[key]
+            except KeyError:
+                pass
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].getxattr(path, key)
+        return result
+
+    def setxattr(self, path, key, value, flags):
+        '''
+        set value of extended attribute
+        '''
+        #self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
+        #result = -errno.EOPNOTSUPP
+        result = 0
+        if path.len() == 0:
+            self.xattr[key] = value
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].setxattr(path, key, value, flags)
+        return result
+
+    def rename(self, oldpath, newpath):
+        self.logger.debug("%s(\"%s %s\")" % (str(self), str(oldpath), str(newpath)))
+        result = -errno.ENOENT
+        if path.len() == 0:
+            #self.update()
+            #result = self.get_stat()
+            pass
+        else:
+            if path.get(0) in self.subnodes:
+                topdir = path.shift()
+                result = self.subnodes[topdir].rename(oldpath, newpath)
+        return result
+
+    # Helpers
+    # =======
+
     def _convert_date_bareos_unix(self, bareosdate):
-        unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
-        self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
+        unixtimestamp = 0
+        try:
+            unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
+            self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
+        except ValueError:
+            pass
         return unixtimestamp
