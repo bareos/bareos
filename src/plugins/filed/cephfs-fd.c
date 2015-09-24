@@ -1678,6 +1678,11 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
                Jmsg(ctx, M_ERROR, "ceph_llistxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-status));
                return bRC_Error;
             }
+         } else if (status == 0) {
+            /*
+             * Nothing to do.
+             */
+            return bRC_OK;
          }
 
          /*
@@ -1686,6 +1691,16 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
          break;
       }
 
+      /*
+       * Data from llistxattr is in the following form:
+       *
+       * user.name1\0system.name1\0user.name2\0
+       *
+       * We add an extra \0 at the end so we have an unique terminator
+       * to know when we hit the end of the list.
+       */
+      p_ctx->xattr_list = check_pool_memory_size(p_ctx->xattr_list, status + 1);
+      p_ctx->xattr_list[status] = '\0';
       p_ctx->next_xattr_name = p_ctx->xattr_list;
       p_ctx->processing_xattr = true;
    }
@@ -1769,16 +1784,19 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
     * See if there are more xattr to process.
     */
    bp = strchr(p_ctx->next_xattr_name, '\0');
-   if (++bp != '\0') {
-      p_ctx->next_xattr_name = bp;
-      return bRC_More;
-   } else {
-      /*
-       * No more reset processing_xattr flag.
-       */
-      p_ctx->processing_xattr = false;
-      return bRC_OK;
+   if (bp) {
+      bp++;
+      if (*bp != '\0') {
+         p_ctx->next_xattr_name = bp;
+         return bRC_More;
+      }
    }
+
+   /*
+    * No more reset processing_xattr flag.
+    */
+   p_ctx->processing_xattr = false;
+   return bRC_OK;
 }
 
 static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
