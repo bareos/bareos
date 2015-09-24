@@ -115,6 +115,10 @@ Vendor: 	The Bareos Team
 
 %if 0%{?systemd_support}
 BuildRequires: systemd
+# see https://en.opensuse.org/openSUSE:Systemd_packaging_guidelines
+%if 0%{?suse_version} >= 1210
+BuildRequires: systemd-rpm-macros
+%endif
 %{?systemd_requires}
 %endif
 
@@ -768,6 +772,14 @@ for F in  \
     %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-sd \
     %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-fd \
 %endif
+%if 0%{?systemd_support}
+    %{_sysconfdir}/rc.d/init.d/bareos-dir \
+    %{_sysconfdir}/rc.d/init.d/bareos-sd \
+    %{_sysconfdir}/rc.d/init.d/bareos-fd \
+    %{_sysconfdir}/init.d/bareos-dir \
+    %{_sysconfdir}/init.d/bareos-sd \
+    %{_sysconfdir}/init.d/bareos-fd \
+%endif
     %{script_dir}/bareos \
     %{script_dir}/bareos_config \
     %{script_dir}/btraceback.dbx \
@@ -821,9 +833,14 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.1.gz
 # install systemd service files
 %if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
-install -m 644 platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}/bareos-director.service
-install -m 644 platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}/bareos-filedaemon.service
-install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}/bareos-storage.service
+install -m 644 platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
+install -m 644 platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
+install -m 644 platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+%if 0%{?suse_version}
+ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
+ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
+ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
+%endif
 %endif
 
 # Create the Readme files for the meta packages
@@ -856,14 +873,18 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # dir package (bareos-dir)
 %defattr(-, root, root)
 %if 0%{?suse_version}
+%if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-dir
+%endif
 %{_sbindir}/rcbareos-dir
 %if 0%{?install_suse_fw}
 # use noreplace if user has adjusted its list of IP
 %attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-dir
 %endif
 %else
+%if !0%{?systemd_support}
 %{_sysconfdir}/rc.d/init.d/bareos-dir
+%endif
 %endif
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
@@ -877,7 +898,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-director.service
+%{_unitdir}/bareos-dir.service
 %endif
 
 # query.sql is not a config file,
@@ -891,14 +912,18 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.conf
 %attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d
 %if 0%{?suse_version}
+%if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-sd
+%endif
 %{_sbindir}/rcbareos-sd
 %if 0%{?install_suse_fw}
 # use noreplace if user has adjusted its list of IP
 %attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-sd
 %endif
 %else
+%if !0%{?systemd_support}
 %{_sysconfdir}/rc.d/init.d/bareos-sd
+%endif
 %endif
 %{_sbindir}/bareos-sd
 %{_sbindir}/bscrypto
@@ -908,7 +933,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-storage.service
+%{_unitdir}/bareos-sd.service
 %endif
 %attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/bareos/storage
 
@@ -951,21 +976,25 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.conf
 %if 0%{?suse_version}
+%if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-fd
+%endif
 %{_sbindir}/rcbareos-fd
 %if 0%{?install_suse_fw}
 # use noreplace if user has adjusted its list of IP
 %attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-fd
 %endif
 %else
+%if !0%{?systemd_support}
 %{_sysconfdir}/rc.d/init.d/bareos-fd
+%endif
 %endif
 %{_sbindir}/bareos-fd
 %{plugin_dir}/bpipe-fd.so
 %{_mandir}/man8/bareos-fd.8.gz
 # tray monitor
 %if 0%{?systemd_support}
-%{_unitdir}/bareos-filedaemon.service
+%{_unitdir}/bareos-fd.service
 %endif
 
 %files common
@@ -1176,12 +1205,16 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # non RHEL4
 %if 0%{?suse_version}
 
+%if 0%{?systemd_support}
+%define insserv_cleanup() (/bin/true; %nil)
+%else
 %if 0%{!?add_service_start:1}
 %define add_service_start() \
 SERVICE=%1 \
 #service_add $1 \
 %fillup_and_insserv $SERVICE \
 %nil
+%endif
 %endif
 
 %else
@@ -1254,7 +1287,12 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %{script_dir}/bareos-config initialize_database_driver
+%if 0%{?suse_version} >= 1210
+%service_add_post bareos-dir.service
+/bin/systemctl enable bareos-dir.service >/dev/null 2>&1 || true
+%else
 %add_service_start bareos-dir
+%endif
 
 %post storage
 # pre script has already generated the storage daemon user,
@@ -1262,12 +1300,22 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %{script_dir}/bareos-config setup_sd_user
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
+%if 0%{?suse_version} >= 1210
+%service_add_post bareos-sd.service
+/bin/systemctl enable bareos-sd.service >/dev/null 2>&1 || true
+%else
 %add_service_start bareos-sd
+%endif
 
 %post filedaemon
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
+%if 0%{?suse_version} >= 1210
+%service_add_post bareos-fd.service
+/bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
+%else
 %add_service_start bareos-fd
+%endif
 
 %post bconsole
 %{script_dir}/bareos-config initialize_local_hostname
@@ -1338,13 +1386,25 @@ exit 0
 exit 0
 
 %preun director
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-dir.service
+%else
 %stop_on_removal bareos-dir
+%endif
 
 %preun storage
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-sd.service
+%else
 %stop_on_removal bareos-sd
+%endif
 
 %preun filedaemon
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-fd.service
+%else
 %stop_on_removal bareos-fd
+%endif
 
 %postun director
 # to prevent aborting jobs, no restart on update
@@ -1355,7 +1415,11 @@ exit 0
 %insserv_cleanup
 
 %postun filedaemon
+%if 0%{?suse_version} >= 1210
+%service_del_postun bareos-fd.service
+%else
 %restart_on_update bareos-fd
+%endif
 %insserv_cleanup
 
 %changelog

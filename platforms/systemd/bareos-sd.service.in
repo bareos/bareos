@@ -33,5 +33,5 @@ SuccessExitStatus=0 15
 Restart=on-failure
 
 [Install]
-Alias=bareos-sd.service
+Alias=bareos-storage.service
 WantedBy=multi-user.target
