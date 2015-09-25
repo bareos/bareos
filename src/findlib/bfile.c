@@ -1173,6 +1173,10 @@ int bclose(BFILE *bfd)
 {
    int status;
 
+   if (bfd->fid == -1) {
+      return 0;
+   }
+
    Dmsg1(400, "Close file %d\n", bfd->fid);
 
    if (bfd->cmd_plugin && plugin_bclose) {
@@ -1180,9 +1184,6 @@ int bclose(BFILE *bfd)
       bfd->fid = -1;
       bfd->cmd_plugin = false;
    } else {
-      if (bfd->fid == -1) {
-         return 0;
-      }
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_DONTNEED)
       if (bfd->m_flags & O_RDONLY) {
          fdatasync(bfd->fid);            /* sync the file */
