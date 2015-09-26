@@ -30,7 +30,7 @@ if __name__ == '__main__':
         for i in options:
             if hasattr(args, i) and getattr(args,i) != None:
                 logger.debug( "%s: %s" %(i, getattr(args,i)))
-                parameter[i] = getattr(args,i)
+                parameter[i] = getattr(args, i)
             else:
                 logger.debug( '%s: ""' %(i))
         logger.debug('options: %s' % (parameter))

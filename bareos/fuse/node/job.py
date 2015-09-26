@@ -32,9 +32,12 @@ class Job(Directory):
 
     def get_name(self):
         try:
-            name = "jobid={jobid}_client={client}_name={name}_level={level}_status={jobstatus}".format(**self.job)
+            name = "jobid={jobid}_name={name}_client={client}_level={level}_status={jobstatus}".format(**self.job)
         except KeyError:
-            name = "jobid={jobid}_level={level}_status={jobstatus}".format(**self.job)
+            try:
+                name = "jobid={jobid}_name={name}_client={clientname}_level={level}_status={jobstatus}".format(**self.job)
+            except KeyError:
+                name = "jobid={jobid}_level={level}_status={jobstatus}".format(**self.job)
         return name
 
     def do_update(self):

@@ -139,7 +139,8 @@ class Base(object):
             self.subnodes_old = self.subnodes.copy()
             self.do_update()
             for i in self.subnodes_old.keys():
-                del(self.subnodes[name])
+                self.logger.debug("%s: removing outdated node %s" % (self.get_name(), i))
+                del(self.subnodes[i])
             self.lastupdate = datetime.now()
         else:
             self.logger.debug("skipped (lastupdate: %s, static: %s)" % ( str(self.lastupdate), str(self.static)))
