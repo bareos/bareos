@@ -31,10 +31,12 @@ BuildRoot:      %{_tmppath}/%{name}-root
 %if %{with python2}
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
+Requires:       python-dateutil
 %endif
 %if %{with python3}
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
+Requires:       python3-dateutil
 %endif
 %if %noarch
 BuildArch:      noarch
