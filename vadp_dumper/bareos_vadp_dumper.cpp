@@ -87,6 +87,8 @@
 #define BAREOSMAGIC 0x12122012
 #define PROTOCOL_VERSION 1
 
+#define BAREOS_VADPDUMPER_IDENTITY "BareosVADPDumper"
+
 /*
  * Generic identification structure, 128 bytes with padding.
  * This includes a protocol version.
@@ -357,8 +359,15 @@ static inline void cleanup_vixdisklib()
  */
 static void cleanup(int sig)
 {
+   VixError err;
+
    if (info) {
       VixDiskLib_FreeInfo(info);
+   }
+
+   if (diskHandle) {
+      VixDiskLib_Close(diskHandle);
+      diskHandle = NULL;
    }
 
    if (connection) {
@@ -367,6 +376,18 @@ static void cleanup(int sig)
          cleanup_vixdisklib();
       }
    }
+
+   if (!local_vmdk) {
+      err = VixDiskLib_EndAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+      if (VIX_FAILED(err)) {
+         char *error_txt;
+
+         error_txt = VixDiskLib_GetErrorText(err, NULL);
+         fprintf(stderr, "Failed to End Access: %s [%d]\n", error_txt, err);
+         VixDiskLib_FreeErrorText(error_txt);
+      }
+   }
+
    cleanup_cnxParams();
 
    VixDiskLib_Exit();
@@ -477,9 +498,20 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
          }
          snapshot_moref = json_string_value(object);
       }
-   }
-   err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE, snapshot_moref, vixdisklib_config, &connection);
 
+      if (!local_vmdk) {
+         err = VixDiskLib_PrepareForAccess(&cnxParams, BAREOS_VADPDUMPER_IDENTITY);
+         if (VIX_FAILED(err)) {
+            char *error_txt;
+
+            error_txt = VixDiskLib_GetErrorText(err, NULL);
+            fprintf(stderr, "Failed to Prepare For Access: %s [%d]\n", error_txt, err);
+            VixDiskLib_FreeErrorText(error_txt);
+         }
+      }
+   }
+
+   err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE, snapshot_moref, vixdisklib_config, &connection);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -494,10 +526,6 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
 bail_out:
    if (!succeeded) {
       cleanup(1);
-   } else if (!cleanup_on_disconnect) {
-      if (!local_vmdk) {
-         cleanup_cnxParams();
-      }
    }
 }
 
@@ -1113,6 +1141,7 @@ static inline bool process_cbt(const char *key, json_t *cbt)
 bail_out:
    if (diskHandle) {
       VixDiskLib_Close(diskHandle);
+      diskHandle = NULL;
    }
 
    return retval;
@@ -1236,6 +1265,7 @@ static inline bool process_restore_stream(bool validate_only, json_t *value)
 bail_out:
    if (diskHandle) {
       VixDiskLib_Close(diskHandle);
+      diskHandle = NULL;
    }
 
    return retval;
