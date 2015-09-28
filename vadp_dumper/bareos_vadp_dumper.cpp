@@ -89,6 +89,23 @@
 
 #define BAREOS_VADPDUMPER_IDENTITY "BareosVADPDumper"
 
+struct disk_type {
+   const char *type;
+   VixDiskLibDiskType vadp_type;
+};
+
+static struct disk_type disk_types[] = {
+   { "monolithic_sparse", VIXDISKLIB_DISK_MONOLITHIC_SPARSE },
+   { "monolithic_flat", VIXDISKLIB_DISK_MONOLITHIC_FLAT },
+   { "split_sparse", VIXDISKLIB_DISK_SPLIT_SPARSE },
+   { "split_flat", VIXDISKLIB_DISK_SPLIT_FLAT },
+   { "vmfs_flat", VIXDISKLIB_DISK_VMFS_FLAT },
+   { "optimized", VIXDISKLIB_DISK_STREAM_OPTIMIZED },
+   { "vmfs_thin", VIXDISKLIB_DISK_VMFS_THIN },
+   { "vmfs_sparse", VIXDISKLIB_DISK_VMFS_SPARSE },
+   { NULL, VIXDISKLIB_DISK_UNKNOWN }
+};
+
 /*
  * Generic identification structure, 128 bytes with padding.
  * This includes a protocol version.
@@ -150,6 +167,7 @@ static int sectors_per_call = SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
 static char *vmdk_disk_name = NULL;
 static char *vixdisklib_config = NULL;
+static char *disktype = NULL;
 static VixDiskLibConnectParams cnxParams;
 static VixDiskLibConnection connection = NULL;
 static VixDiskLibHandle diskHandle = NULL;
@@ -404,9 +422,34 @@ static void cleanup(int sig)
       free(vixdisklib_config);
    }
 
+   if (disktype) {
+      free(disktype);
+   }
+
    if (sig) {
       exit(sig);
    }
+}
+
+/*
+ * Convert the configured disktype to the right VADP type.
+ */
+static inline VixDiskLibDiskType lookup_disktype()
+{
+   int cnt;
+
+   for (cnt = 0; disk_types[cnt].type; cnt++) {
+      if (!strcasecmp(disk_types[cnt].type, disktype)) {
+         break;
+      }
+   }
+
+   if (!disk_types[cnt].type) {
+      fprintf(stderr, "Unknown disktype %s\n", disktype);
+      cleanup(1);
+   }
+
+   return disk_types[cnt].vadp_type;
 }
 
 /*
@@ -630,7 +673,11 @@ static inline void do_vixdisklib_create(const char *key, json_t *disk_params, ui
 
    createParams.adapterType = VIXDISKLIB_ADAPTER_SCSI_BUSLOGIC;
    createParams.capacity = (absolute_disk_length / VIXDISKLIB_SECTOR_SIZE);
-   createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
+   if (disktype) {
+      createParams.diskType = lookup_disktype();
+   } else {
+      createParams.diskType = VIXDISKLIB_DISK_MONOLITHIC_SPARSE;
+   }
    createParams.hwVersion = 7; /* for ESX(i)4 */
    err = VixDiskLib_Create(connection, disk_path, &createParams, NULL, NULL);
    if (VIX_FAILED(err)) {
@@ -1401,7 +1448,23 @@ static inline int show_backup_stream()
 
 void usage(const char *program_name)
 {
-   fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f <vixdisklib_config] [-s sectors_per_call] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
+   fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f <vixdisklib_config] [-s sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
+   fprintf(stderr, "Where:\n");
+   fprintf(stderr, "   -C - Create local VMDK\n");
+   fprintf(stderr, "   -c - Check size of VMDK\n");
+   fprintf(stderr, "   -D - Cleanup on Disconnect\n");
+   fprintf(stderr, "   -d - Specify local VMDK name\n");
+   fprintf(stderr, "   -f - Specify VDDK config file\n");
+   fprintf(stderr, "   -h - This help text\n");
+   fprintf(stderr, "   -l - Write to a local VMDK\n");
+   fprintf(stderr, "   -M - Save metadata of VMDK on dump action\n");
+   fprintf(stderr, "   -m - Use multithreading\n");
+   fprintf(stderr, "   -R - Restore metadata of VMDK on restore action\n");
+   fprintf(stderr, "   -S - Cleanup on Start\n");
+   fprintf(stderr, "   -s - Sectors to read per call to VDDK\n");
+   fprintf(stderr, "   -t - Disktype to create for local VMDK\n");
+   fprintf(stderr, "   -v - Verbose output\n");
+   fprintf(stderr, "   -? - This help text\n");
    exit(1);
 }
 
@@ -1412,7 +1475,7 @@ int main(int argc, char **argv)
    int ch;
 
    program_name = argv[0];
-   while ((ch = getopt(argc, argv, "CcDd:f:lMmRSs:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "CcDd:f:hlMmRSs:t:v?")) != -1) {
       switch (ch) {
       case 'C':
          create_disk = true;
@@ -1425,6 +1488,10 @@ int main(int argc, char **argv)
          break;
       case 'd':
          vmdk_disk_name = strdup(optarg);
+         if (!vmdk_disk_name) {
+            fprintf(stderr, "Failed to allocate memory to hold diskname, exiting ...\n");
+            exit(1);
+         }
          break;
       case 'f':
          vixdisklib_config = strdup(optarg);
@@ -1451,9 +1518,17 @@ int main(int argc, char **argv)
       case 's':
          sectors_per_call = atoi(optarg);
          break;
+      case 't':
+         disktype = strdup(optarg);
+         if (!disktype) {
+            fprintf(stderr, "Failed to allocate memory to hold disktype, exiting ...\n");
+            exit(1);
+         }
+         break;
       case 'v':
          verbose = true;
          break;
+      case 'h':
       case '?':
       default:
          usage(program_name);
