@@ -42,5 +42,5 @@ class Job(Directory):
 
     def do_update(self):
         self.add_subnode(File, name="info.txt", content = pformat(self.job) + "\n")
-        self.add_subnode(JobLog, self.job)
+        self.add_subnode(JobLog, name="job.log", job=self.job)
         self.add_subnode(BvfsDir, "data", self.job['jobid'], None)
