@@ -606,6 +606,11 @@ static inline void do_vixdisklib_create(const char *key, json_t *disk_params, ui
    const char *disk_path;
    VixDiskLibCreateParams createParams;
 
+   if (!local_vmdk) {
+      fprintf(stderr, "Cannot create a remote disk via VADP\n");
+      goto bail_out;
+   }
+
    if (!vmdk_disk_name) {
       json_t *object;
 
