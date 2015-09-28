@@ -11,9 +11,10 @@ import errno
 import logging
 
 class BvfsDir(Directory, BvfsCommon):
-    def __init__(self, root, name, jobid, pathid, directory = None):
+    def __init__(self, root, name, job, pathid, directory = None):
         super(BvfsDir, self).__init__(root, name)
-        self.jobid = jobid
+        self.job = job
+        self.jobid = job.job['jobid']
         self.pathid = pathid
         self.static = True
         self.directory = directory
@@ -22,10 +23,10 @@ class BvfsDir(Directory, BvfsCommon):
             BvfsCommon.init(self, self.root, self.jobid, self.directory['fullpath'],  None, self.directory['stat'])
 
     @classmethod
-    def get_id(cls, name, jobid, pathid, directory = None):
+    def get_id(cls, name, job, pathid, directory = None):
         id = None
         if pathid == None:
-            id = "jobid=%s" % (str(jobid))
+            id = "jobid=%s" % (str(job.job['jobid']))
         else:
             id = "pathid=%s" % (str(pathid))
         return id
@@ -50,9 +51,9 @@ class BvfsDir(Directory, BvfsCommon):
             if i['name'] != "." and i['name'] != "..":
                 name = i['name'].rstrip('/')
                 pathid = i['pathid']
-                self.add_subnode(BvfsDir, name, self.jobid, pathid, i)
+                self.add_subnode(BvfsDir, name, self.job, pathid, i)
         for i in files:
-            self.add_subnode(BvfsFile, i, self.directory['fullpath'])
+            self.add_subnode(BvfsFile, i, self.job, self.directory['fullpath'])
 
     def get_directories(self, pathid):
         if pathid == None:

@@ -8,15 +8,16 @@ import errno
 import os
 
 class BvfsFile(File, BvfsCommon):
-    def __init__(self, root, file, bvfspath):
+    def __init__(self, root, file, job, bvfspath):
         super(BvfsFile, self).__init__(root, file['name'], content = None)
         self.file = file
+        self.job = job
         self.bvfspath = bvfspath
-        self.id = self.get_id(file, bvfspath)
+        self.id = self.get_id(file, job, bvfspath)
         BvfsCommon.init(self, self.root, self.file['jobid'], self.bvfspath,  self.file['name'], self.file['stat'])
 
     @classmethod
-    def get_id(cls, file, bvfspath):
+    def get_id(cls, file, job, bvfspath):
         return str(file['fileid'])
 
     # Filesystem methods

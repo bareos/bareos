@@ -16,6 +16,11 @@ class Job(Directory):
         self.job = job
         super(Job, self).__init__(root, self.get_name())
         try:
+            if not job.has_key('client'):
+                job['client'] = job['clientname']
+        except KeyError:
+            pass
+        try:
             self.stat.st_ctime = self._convert_date_bareos_unix(self.job['starttime'])
         except KeyError:
             pass
@@ -43,4 +48,4 @@ class Job(Directory):
     def do_update(self):
         self.add_subnode(File, name="info.txt", content = pformat(self.job) + "\n")
         self.add_subnode(JobLog, name="job.log", job=self.job)
-        self.add_subnode(BvfsDir, "data", self.job['jobid'], None)
+        self.add_subnode(BvfsDir, "data", self, None)

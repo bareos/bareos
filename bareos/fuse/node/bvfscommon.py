@@ -46,7 +46,7 @@ class BvfsCommon(Base):
             dirId='dirid=' + ",".join(map(str, pathIds))
         fileId=''
         if fileIds:
-            fileId='fileid=' + ",".join(map(str, fileIds))            
+            fileId='fileid=' + ",".join(map(str, fileIds))
         select = self.bsock.call(
             '.bvfs_restore jobid={jobid} {dirid} {fileid} path={bvfs_restore_id}'.format(
                 jobid = self.jobid,
@@ -54,7 +54,8 @@ class BvfsCommon(Base):
                 fileid = fileId,
                 bvfs_restore_id = bvfs_restore_id))
         restore = self.bsock.call(
-            'restore file=?{bvfs_restore_id} restoreclient={restoreclient} where="{where}" yes'.format(
+            'restore file=?{bvfs_restore_id} client={client} restoreclient={restoreclient} where="{where}" yes'.format(
+                client = self.job.job['client'],
                 restoreclient = self.root.restoreclient,
                 where = self.restorepath,
                 bvfs_restore_id = bvfs_restore_id))
