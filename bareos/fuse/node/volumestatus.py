@@ -23,14 +23,14 @@ class VolumeStatus(File):
 
     def __init__(self, root, basename, volume):
         super(VolumeStatus, self).__init__(root, None, None)
-        self.volume = volume
         self.basename = basename
+        self.volume = volume
         self.update_stat()
         self.set_name( "%s%s" % (self.basename, self.volume['volstatus']) )
 
     @classmethod
     def get_id(cls, basename, volume):
-        return volume['mediaid']
+        return "%s%s" % (basename, volume['mediaid'])
 
     def do_update(self):
         volumename = self.volume['volumename']
