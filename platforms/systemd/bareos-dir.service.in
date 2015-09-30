@@ -40,5 +40,5 @@ SuccessExitStatus=0 1 15
 #Restart=on-failure
 
 [Install]
-Alias=bareos-dir.service
+Alias=bareos-director.service
 WantedBy=multi-user.target

@@ -78,7 +78,8 @@ class BareosFdPluginBaseclass(object):
             "plugin def parser called with \"%s\"\n" %
             (plugindef))
         # Parse plugin options into a dict
-        self.options = dict()
+        if not hasattr (self, 'options'):
+            self.options = dict()
         plugin_options = plugindef.split(":")
         while plugin_options:
             current_option = plugin_options.pop(0)
@@ -95,7 +96,8 @@ class BareosFdPluginBaseclass(object):
             if val == '':
                 continue
             else:
-                self.options[key] = val
+                if key not in self.options:
+                    self.options[key] = val
         # after we've parsed all arguments, we check the options for mandatory settings
         return self.check_options(context, self.mandatory_options)
 
