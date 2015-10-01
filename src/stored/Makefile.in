@@ -190,6 +190,8 @@ install: all
 	fi
 
 libtool-clean:
+	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
+	@$(RMF) *.la
 	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
