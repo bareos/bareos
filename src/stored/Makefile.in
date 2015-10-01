@@ -245,6 +245,7 @@ install: all @LIBTOOL_INSTALL_TARGET@
 libtool-clean:
 	@find . -name '*.lo' -print | xargs $(LIBTOOL_CLEAN) $(RMF)
 	@$(RMF) *.la
+	@$(RMF) -r .libs _libs
 
 clean:	libtool-clean
 	@$(RMF) bareos-sd stored bls bextract bpool btape shmfree core core.* a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
