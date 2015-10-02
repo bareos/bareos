@@ -45,7 +45,7 @@ extern struct s_jl joblevels[];
 /* Forward referenced functions */
 static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
 static bool list_nextvol(UAContext *ua, int ndays);
-static bool parse_list_backups_cmd(UAContext *ua, const char *range);
+static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist);
 
 /*
  * Turn auto display of console messages on/off
@@ -407,6 +407,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    time_t schedtime = 0;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
+   char *clientname = NULL;
+   char *volumename = NULL;
    utime_t now;
 
    if (!open_client_db(ua, true)) {
@@ -462,16 +464,38 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    /*
     * jobstatus=X
     */
-   get_user_job_status_selection(ua, &jobstatus);
+   if (!get_user_job_status_selection(ua, &jobstatus)) {
+      ua->error_msg(_("invalid jobstatus parameter\n"));
+      return false;
+   }
 
    /*
     * Select what to do based on the first argument.
     */
-   if (bstrcasecmp(ua->argk[1], NT_("jobs"))) {
+   if (
+         (bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL)) ||
+         ((bstrcasecmp(ua->argk[1], NT_("job")) || bstrcasecmp(ua->argk[1], NT_("jobname")) && ua->argv[1]))
+      ) {
       /*
-       * List JOBS
+       * List jobs or List job=xxx
        */
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
+      i = find_arg_with_value(ua, NT_("jobname"));
+      if (i < 0) {
+         i = find_arg_with_value(ua, NT_("job"));
+      }
+      if (i >= 0) {
+         jr.JobId = 0;
+         bstrncpy(jr.Name, ua->argv[i], MAX_NAME_LENGTH);
+      }
+      i = find_arg_with_value(ua, NT_("client"));
+      if (i >= 0) {
+         clientname = ua->argv[i];
+      }
+      i = find_arg_with_value(ua, NT_("volume"));
+      if (i >= 0) {
+         volumename = ua->argv[i];
+      }
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -485,24 +509,16 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          jobid = str_to_int64(ua->argv[1]);
          if (jobid > 0) {
             jr.JobId = jobid;
-            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
+            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
          }
       }
-   } else if ((bstrcasecmp(ua->argk[1], NT_("job")) ||
-               bstrcasecmp(ua->argk[1], NT_("jobname"))) && ua->argv[1]) {
-      /*
-       * List JOB=xxx
-       */
-      bstrncpy(jr.Name, ua->argv[1], MAX_NAME_LENGTH);
-      jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
-   } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
+  } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
       /*
        * List UJOBID=xxx
        */
       bstrncpy(jr.Job, ua->argv[1], MAX_NAME_LENGTH);
       jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), jobstatus, schedtime, ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
       /*
        * List BASEFILES
@@ -710,7 +726,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          db_list_copies_records(ua->jcr, ua->db, query_range.c_str(), NULL, ua->send, llist);
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("backups"))) {
-      if (parse_list_backups_cmd(ua, query_range.c_str())) {
+      if (parse_list_backups_cmd(ua, query_range.c_str(), llist)) {
          db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, llist, "backups");
       }
    } else {
@@ -863,30 +879,30 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
             continue;
          }
          if (selection.strlen() == 0) {
-            temp.bsprintf("FileSet='%s'", fs->name());
+            temp.bsprintf("AND (FileSet='%s'", fs->name());
          } else {
             temp.bsprintf(" OR FileSet='%s'", fs->name());
          }
          pm_strcat(selection, temp.c_str());
       }
+      pm_strcat(selection, ") ");
       UnlockRes();
    } else if (fileset >= 0) {
       if (!acl_access_ok(ua, FileSet_ACL, ua->argv[fileset], true)) {
          ua->error_msg(_("Access to specified FileSet not allowed.\n"));
          return false;
       } else {
-         selection.bsprintf("FileSet='%s'", ua->argv[fileset]);
+         selection.bsprintf("AND FileSet='%s' ", ua->argv[fileset]);
       }
    }
 
    return true;
 }
 
-static bool parse_list_backups_cmd(UAContext *ua, const char *range)
+static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist)
 {
    int pos, client;
    POOL_MEM temp(PM_MESSAGE),
-            fileset(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
 
@@ -901,20 +917,21 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range)
       return false;
    }
 
-   pm_strcpy(selection, "");
+   selection.bsprintf("AND Job.Type='B' AND Client.Name='%s' ", ua->argv[client]);
 
    /*
     * Build a selection pattern based on the jobstatus and level arguments.
     */
-   parse_jobstatus_selection_param(temp, ua, " AND JobStatus IN ('T','W')");
+   parse_jobstatus_selection_param(temp, ua, "AND JobStatus IN ('T','W') ");
    pm_strcat(selection, temp.c_str());
 
    parse_level_selection_param(temp, ua, "");
    pm_strcat(selection, temp.c_str());
 
-   if (!parse_fileset_selection_param(fileset, ua, true)) {
+   if (!parse_fileset_selection_param(temp, ua, true)) {
       return false;
    }
+   pm_strcat(selection, temp.c_str());
 
    /*
     * Build a criteria pattern if the order and/or limit argument are given.
@@ -935,8 +952,11 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range)
     */
    pm_strcat(criteria, range);
 
-   Mmsg(ua->cmd, client_backups, ua->argv[client], fileset.c_str(),
-        selection.c_str(), criteria.c_str());
+   if (llist == VERT_LIST) {
+      Mmsg(ua->cmd, list_jobs_long, selection.c_str(), criteria.c_str());
+   } else {
+      Mmsg(ua->cmd, list_jobs, selection.c_str(), criteria.c_str());
+   }
 
    return true;
 }

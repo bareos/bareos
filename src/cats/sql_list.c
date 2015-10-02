@@ -354,109 +354,56 @@ bail_out:
 
 /*
  * List Job record(s) that match JOB_DBR
- *
- *  Currently, we return all jobs or if jr->JobId is set,
- *  only the job with the specified id.
  */
 void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
-                         int jobstatus, utime_t since_time,
-                         OUTPUT_FORMATTER *sendit, e_list_type type)
+                         const char *clientname, int jobstatus, const char *volumename,
+                         utime_t since_time, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM jobstatusfilter(PM_MESSAGE),
-            schedtimefilter(PM_MESSAGE);
+   POOL_MEM temp(PM_MESSAGE),
+            selection(PM_MESSAGE),
+            criteria(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
 
 
    bstrutime(dt, sizeof(dt), since_time);
 
+   if (jr->JobId > 0) {
+      temp.bsprintf(" AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
+      pm_strcat(selection, temp.c_str());
+   }
+   if (jr->Name[0] != 0) {
+      mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
+      temp.bsprintf( " AND Job.Name = '%s' ", esc);
+      pm_strcat(selection, temp.c_str());
+   }
+   if (clientname) {
+      temp.bsprintf(" AND Client.Name = '%s' ", clientname);
+      pm_strcat(selection, temp.c_str());
+   }
+   if (jobstatus) {
+      temp.bsprintf(" AND Job.JobStatus = '%c' ", jobstatus);
+      pm_strcat(selection, temp.c_str());
+   }
+   if (volumename) {
+      temp.bsprintf(" AND Media.Volumename = '%s' ", volumename);
+      pm_strcat(selection, temp.c_str());
+   }
+   if (since_time) {
+      temp.bsprintf(" AND Job.SchedTime > '%s' ", dt);
+      pm_strcat(selection, temp.c_str());
+   }
+
    db_lock(mdb);
    if (type == VERT_LIST) {
-
-      if (jobstatus) {
-         jobstatusfilter.bsprintf(" WHERE JobStatus = '%c'", jobstatus);
-         if (since_time) {
-            schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
-         }
-      } else if (since_time) {
-         schedtimefilter.bsprintf(" WHERE SchedTime > '%s' ", dt);
-      }
-
-      if (jr->JobId == 0 && jr->Job[0] == 0) {
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-              "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
-              "StartTime,EndTime,RealEndTime,JobTDate,"
-              "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
-              "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
-              "Job.FileSetId,FileSet.FileSet "
-              "FROM Job "
-              "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-              "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-              "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-              " %s "
-              " %s "
-              "ORDER BY StartTime%s",
-              jobstatusfilter.c_str(),
-              schedtimefilter.c_str(),
+         Mmsg(mdb->cmd, list_jobs_long,
+              selection.c_str(),
               range);
-      } else {                           /* single record */
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Job,Job.Name,PurgedFiles,Type,Level,"
-              "Job.ClientId,Client.Name as ClientName,JobStatus,SchedTime,"
-              "StartTime,EndTime,RealEndTime,JobTDate,"
-              "VolSessionId,VolSessionTime,JobFiles,JobBytes,JobErrors,"
-              "JobMissingFiles,Job.PoolId,Pool.Name as PoolName,PriorJobId,"
-              "Job.FileSetId,FileSet.FileSet "
-              "FROM Job "
-              "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-              "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-              "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-              "WHERE Job.JobId=%s",
-              edit_int64(jr->JobId, ed1));
-      }
    } else {
-      if (jobstatus > 0) {
-         jobstatusfilter.bsprintf(" AND JobStatus = '%c' ", jobstatus);
-      }
-
-      if (since_time) {
-         schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
-      }
-
-      if (jr->Name[0] != 0) {
-         mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-              "FROM Job WHERE Name='%s' %s %s ORDER BY JobId ASC",
-              esc, jobstatusfilter.c_str(), schedtimefilter.c_str());
-      } else if (jr->Job[0] != 0) {
-         mdb->db_escape_string(jcr, esc, jr->Job, strlen(jr->Job));
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-              "FROM Job WHERE Job='%s' %s %s ORDER BY JobId ASC",
-              esc, jobstatusfilter.c_str(), schedtimefilter.c_str());
-      } else if (jr->JobId != 0) {
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-              "FROM Job WHERE JobId=%s %s %s ",
-              edit_int64(jr->JobId, ed1), jobstatusfilter.c_str(), schedtimefilter.c_str());
-      } else {                           /* all records */
-         if (jobstatus) {
-            jobstatusfilter.bsprintf(" WHERE JobStatus = '%c'", jobstatus);
-            if (since_time) {
-               schedtimefilter.bsprintf(" AND SchedTime > '%s' ", dt);
-            }
-         } else if (since_time) {
-            schedtimefilter.bsprintf(" WHERE SchedTime > '%s' ", dt);
-         }
-
-         Mmsg(mdb->cmd,
-              "SELECT JobId,Name,StartTime,Type,Level,JobFiles,JobBytes,JobStatus "
-              "FROM Job %s %s ORDER BY JobId ASC%s",
-              jobstatusfilter.c_str(), schedtimefilter.c_str(), range);
-      }
+         Mmsg(mdb->cmd, list_jobs,
+              selection.c_str(),
+              range);
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {

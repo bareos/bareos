@@ -525,7 +525,9 @@ start_job:
          ua->error_msg(_("Job failed.\n"));
       } else {
          char ed1[50];
-         ua->send_msg(_("Job queued. JobId=%s\n"), edit_int64(JobId, ed1));
+         ua->send->object_start("run");
+         ua->send->object_key_value("jobid", edit_int64(JobId, ed1), _("Job queued. JobId=%s\n"));
+         ua->send->object_end("run");
       }
 
       return JobId;

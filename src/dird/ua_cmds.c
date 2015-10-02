@@ -146,7 +146,9 @@ static struct cmdstruct commands[] = {
          "filesets |\n"
          "fileset [ jobid=<jobid> ] | fileset [ ujobid=<complete_name> ] |\n"
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
-         "jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> |\n"
+         "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] [volume=<volumename>] [days=<number>] [hours=<number>] |\n"
+         "job=<job-name> [client=<client-name>] [jobstatus=<status>] [volume=<volumename>] [days=<number>] [hours=<number>] |\n"
+         "jobid=<jobid> | ujobid=<complete_name> |\n"
          "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
@@ -167,7 +169,9 @@ static struct cmdstruct commands[] = {
          "filesets |\n"
          "fileset jobid=<jobid> | fileset ujobid=<complete_name> |\n"
          "fileset [ filesetid=<filesetid> ] | fileset [ jobid=<jobid> ] |\n"
-         "jobs | jobid=<jobid> | ujobid=<complete_name> | job=<job-name> [jobstatus=<status>] [days=<number>] [hours=<number>] |\n"
+         "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] [volume=<volumename>] [days=<number>] [hours=<number>] |\n"
+         "job=<job-name> [client=<client-name>] [jobstatus=<status>] [volume=<volumename>] [days=<number>] [hours=<number>] |\n"
+         "jobid=<jobid> | ujobid=<complete_name> |\n"
          "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
@@ -2498,8 +2502,16 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
 #if 1
 static bool version_cmd(UAContext *ua, const char *cmd)
 {
-   ua->send_msg(_("%s Version: %s (%s) %s %s %s %s\n"), my_name, VERSION, BDATE,
-                HOST_OS, DISTNAME, DISTVER, NPRTB(me->verid));
+   ua->send->object_start("version");
+   ua->send->object_key_value("name", my_name, "%s ");
+   ua->send->object_key_value("type", "bareos-director");
+   ua->send->object_key_value("Version", "%s: ", VERSION, "%s ");
+   ua->send->object_key_value("bdate", BDATE, "(%s) ");
+   ua->send->object_key_value("operatingsystem", HOST_OS, "%s ");
+   ua->send->object_key_value("distname", DISTNAME, "%s ");
+   ua->send->object_key_value("distversion", DISTVER, "%s ");
+   ua->send->object_key_value("CustomVersionId", NPRTB(me->verid), "%s\n");
+   ua->send->object_end("version");
 
    return true;
 }

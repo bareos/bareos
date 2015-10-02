@@ -1218,7 +1218,7 @@ bail_out:
 /*
  * Open a volume using GFAPI.
  */
-static bRC connect_to_gluster(bpContext *ctx, bool cache_acls)
+static bRC connect_to_gluster(bpContext *ctx, bool is_backup)
 {
    int status;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
@@ -1247,14 +1247,14 @@ static bRC connect_to_gluster(bpContext *ctx, bool cache_acls)
       goto bail_out;
    }
 
-   if (cache_acls) {
+   if (is_backup) {
       status = glfs_set_xlator_option(p_ctx->glfs, "*-md-cache", "cache-posix-acl", "true");
       if (status < 0) {
          goto bail_out;
       }
    }
 
-   if (p_ctx->snapdir) {
+   if (is_backup && p_ctx->snapdir) {
       status = glfs_set_xlator_option(p_ctx->glfs, "*-snapview-client", "snapdir-entry-path", p_ctx->snapdir);
       if (status < 0) {
          goto bail_out;

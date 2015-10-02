@@ -820,7 +820,7 @@ POOLRES *get_pool_resource(UAContext *ua)
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
-   db_list_job_records(ua->jcr, ua->db, jr, "", 0, 0, ua->send, HORZ_LIST);
+   db_list_job_records(ua->jcr, ua->db, jr, "", NULL, 0, NULL, 0, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }
@@ -1771,13 +1771,13 @@ bool get_user_job_status_selection(UAContext *ua, int *jobstatus)
       } else if (bstrcasecmp(ua->argv[i], "running")) {
          *jobstatus = JS_Running;
       } else if (bstrcasecmp(ua->argv[i], "error")) {
-         *jobstatus = JS_Error;
+         *jobstatus = JS_ErrorTerminated;
       } else if (bstrcasecmp(ua->argv[i], "fatal")) {
          *jobstatus = JS_FatalError;
+      } else {
+         /* invalid jobstatus */
+         return false;
       }
-
-      return true;
-   } else {
-      return false;
    }
+   return true;
 }
