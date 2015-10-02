@@ -1,0 +1,2 @@
+@backenddir@/libbareossd-gfapi*.so
+@confdir@/bareos-sd.d/device-gluster.conf
