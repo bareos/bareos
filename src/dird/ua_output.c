@@ -472,10 +472,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    /*
     * Select what to do based on the first argument.
     */
-   if (
-         (bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL)) ||
-         ((bstrcasecmp(ua->argk[1], NT_("job")) || bstrcasecmp(ua->argk[1], NT_("jobname")) && ua->argv[1]))
-      ) {
+   if ((bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL)) ||
+       ((bstrcasecmp(ua->argk[1], NT_("job")) || bstrcasecmp(ua->argk[1], NT_("jobname"))) && ua->argv[1])) {
       /*
        * List jobs or List job=xxx
        */
@@ -495,7 +493,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (i >= 0) {
          volumename = ua->argv[i];
       }
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
+                          jobstatus, volumename, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -509,7 +508,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          jobid = str_to_int64(ua->argv[1]);
          if (jobid > 0) {
             jr.JobId = jobid;
-            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
+            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
+                                jobstatus, volumename, schedtime, ua->send, llist);
          }
       }
   } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
@@ -518,7 +518,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       bstrncpy(jr.Job, ua->argv[1], MAX_NAME_LENGTH);
       jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname, jobstatus, volumename, schedtime, ua->send, llist);
+      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
+                          jobstatus, volumename, schedtime, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
       /*
        * List BASEFILES
