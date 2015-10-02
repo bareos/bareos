@@ -3709,6 +3709,12 @@ LIBS="${saved_LIBS} ${GLUSTER_LIBS}"
 CFLAGS="${saved_CFLAGS} ${GLUSTER_INC}"
 CPPFLAGS="${saved_CPPFLAGS} ${GLUSTER_INC}"
 
+
+
+
+
+
+
 AC_CHECK_HEADER(api/glfs.h)
 
 AC_MSG_CHECKING(for glfs_init in gfapi library)
@@ -3732,8 +3738,13 @@ LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
 
+DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN=/dev/null
+DEBIAN_CONTROL_STORAGE_GLUSTERFS=/dev/null
+
 if test "x${have_glusterfs}" = "xyes"; then
    AC_DEFINE(HAVE_GFAPI, 1, [Define to 1 if you have gfapi lib])
+   DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN=./debian/control.bareos-filedaemon-glusterfs-plugin
+   DEBIAN_CONTROL_STORAGE_GLUSTERFS=./debian/control.bareos-storage-glusterfs
 else
    GLUSTER_LIBS=""
    GLUSTER_INC=""
@@ -3741,6 +3752,8 @@ fi
 
 AC_SUBST(GLUSTER_INC)
 AC_SUBST(GLUSTER_LIBS)
+AC_SUBST_FILE(DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN)
+AC_SUBST_FILE(DEBIAN_CONTROL_STORAGE_GLUSTERFS)
 
 dnl
 dnl Check for Object storage via libdroplet.
@@ -4203,6 +4216,7 @@ debian|ubuntu|univention)
       debian/bareos-director.postinst \
       debian/bareos-director.preinst \
       debian/bareos-filedaemon-ceph-plugin.install \
+      debian/bareos-filedaemon-gluster-plugin.install \
       debian/bareos-filedaemon-ldap-python-plugin.install \
       debian/bareos-filedaemon-python-plugin.install \
       debian/bareos-filedaemon.bareos-fd.init \
@@ -4211,6 +4225,8 @@ debian|ubuntu|univention)
       debian/bareos-filedaemon.preinst \
       debian/bareos-storage-ceph.install \
       debian/bareos-storage-ceph.postinst \
+      debian/bareos-storage-glusterfs.install \
+      debian/bareos-storage-glusterfs.postinst \
       debian/bareos-storage-fifo.postinst \
       debian/bareos-storage-fifo.install \
       debian/bareos-storage-python-plugin.install \

@@ -34,7 +34,8 @@ Build-Depends: acl-dev,
  pkg-config,
  po-debconf (>= 0.8.2),
  python-dev,
- zlib1g-dev
+ zlib1g-dev,
+ glusterfs-common
 # dh-systemd:
 #   not available on all platforms
 # libfastlz-dev:
@@ -300,9 +301,13 @@ Description: Backup Archiving Recovery Open Sourced - common tools
 
 @DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN@
 
+@DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN@
+
 @DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN@
 
 @DEBIAN_CONTROL_STORAGE_CEPH@
+
+@DEBIAN_CONTROL_STORAGE_GLUSTERFS@
 
 @DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN@
 

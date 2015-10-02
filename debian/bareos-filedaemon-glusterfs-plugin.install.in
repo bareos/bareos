@@ -1,0 +1,2 @@
+@plugindir@/gfapi-fd.so
+/etc/bareos/bareos-dir.d/plugin-gfapi.conf
