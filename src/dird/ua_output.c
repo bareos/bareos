@@ -623,7 +623,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          POOLMEM *VolumeName;
 
          VolumeName = get_pool_memory(PM_FNAME);
-         count = db_get_job_volume_names(ua->jcr, ua->db, jobid, VolumeName);
+         count = db_get_job_volume_names(ua->jcr, ua->db, jobid, &VolumeName);
          ua->send_msg(_("Jobid %d used %d Volume(s): %s\n"), jobid, count, VolumeName);
          free_pool_memory(VolumeName);
       } else if (jobid == 0) {
