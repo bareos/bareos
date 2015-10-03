@@ -34,8 +34,7 @@ Build-Depends: acl-dev,
  pkg-config,
  po-debconf (>= 0.8.2),
  python-dev,
- zlib1g-dev,
- glusterfs-common
+ zlib1g-dev
 # dh-systemd:
 #   not available on all platforms
 # libfastlz-dev:

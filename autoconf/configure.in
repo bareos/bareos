@@ -3709,12 +3709,6 @@ LIBS="${saved_LIBS} ${GLUSTER_LIBS}"
 CFLAGS="${saved_CFLAGS} ${GLUSTER_INC}"
 CPPFLAGS="${saved_CPPFLAGS} ${GLUSTER_INC}"
 
-
-
-
-
-
-
 AC_CHECK_HEADER(api/glfs.h)
 
 AC_MSG_CHECKING(for glfs_init in gfapi library)

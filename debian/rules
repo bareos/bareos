@@ -57,7 +57,6 @@ define CONFIGURE_COMMON
   --with-sqlite3 \
   --with-tcp-wrappers \
   --with-openssl \
-  --with-glusterfs \
   --with-dir-user=$(DIRECTOR_DAEMON_USER) \
   --with-dir-group=$(DAEMON_GROUP) \
   --with-sd-user=$(STORAGE_DAEMON_USER) \
