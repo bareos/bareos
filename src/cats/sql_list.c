@@ -88,24 +88,24 @@ void db_list_pool_records(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr,
    if (type == VERT_LIST) {
       if (pdbr->Name[0] != 0) {
          Mmsg(mdb->cmd, "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-            "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
-            "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-            "RecyclePoolId,LabelType "
-            " FROM Pool WHERE Name='%s'", esc);
+              "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
+              "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
+              "RecyclePoolId,LabelType "
+              " FROM Pool WHERE Name='%s'", esc);
       } else {
          Mmsg(mdb->cmd, "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
-            "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
-            "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
-            "RecyclePoolId,LabelType "
-            " FROM Pool ORDER BY PoolId");
+              "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
+              "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
+              "RecyclePoolId,LabelType "
+              " FROM Pool ORDER BY PoolId");
       }
    } else {
       if (pdbr->Name[0] != 0) {
          Mmsg(mdb->cmd, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
-           "FROM Pool WHERE Name='%s'", esc);
+              "FROM Pool WHERE Name='%s'", esc);
       } else {
          Mmsg(mdb->cmd, "SELECT PoolId,Name,NumVols,MaxVols,PoolType,LabelFormat "
-           "FROM Pool ORDER BY PoolId");
+              "FROM Pool ORDER BY PoolId");
       }
    }
 
@@ -133,11 +133,11 @@ void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname, OUTPUT_FORMAT
    }
    if (type == VERT_LIST) {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,"
-         "JobRetention "
-         "FROM Client %s ORDER BY ClientId ", clientfilter.c_str());
+           "JobRetention "
+           "FROM Client %s ORDER BY ClientId ", clientfilter.c_str());
    } else {
       Mmsg(mdb->cmd, "SELECT ClientId,Name,FileRetention,JobRetention "
-         "FROM Client %s ORDER BY ClientId", clientfilter.c_str());
+           "FROM Client %s ORDER BY ClientId", clientfilter.c_str());
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -170,50 +170,50 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
    if (type == VERT_LIST) {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-            "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-            "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-            "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "Comment"
-            " FROM Media WHERE Media.VolumeName='%s'", esc);
+              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+              "Comment"
+              " FROM Media WHERE Media.VolumeName='%s'", esc);
       } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-            "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-            "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-            "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "Comment"
-            " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-            edit_int64(mdbr->PoolId, ed1));
+              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+              "Comment"
+              " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
+              edit_int64(mdbr->PoolId, ed1));
       } else {
           Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-            "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-            "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-            "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-            "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-            "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-            "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-            "Comment"
-            " FROM Media ORDER BY MediaId");
+              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+              "Comment"
+              " FROM Media ORDER BY MediaId");
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
-            "FROM Media WHERE Media.VolumeName='%s'", esc);
+              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
+              "FROM Media WHERE Media.VolumeName='%s'", esc);
       } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
-            "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
-            edit_int64(mdbr->PoolId, ed1));
+              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
+              "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
+              edit_int64(mdbr->PoolId, ed1));
       } else {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-            "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
-            "FROM Media ORDER BY MediaId");
+              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten "
+              "FROM Media ORDER BY MediaId");
       }
    }
 
@@ -238,25 +238,25 @@ void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, uint32_t JobId,
    if (type == VERT_LIST) {
       if (JobId > 0) {                   /* do by JobId */
          Mmsg(mdb->cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
-            "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-            "JobMedia.EndBlock "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-            "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+              "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
+              "JobMedia.EndBlock "
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
+              "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
       } else {
          Mmsg(mdb->cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName,"
-            "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
-            "JobMedia.EndBlock "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+              "FirstIndex,LastIndex,StartFile,JobMedia.EndFile,StartBlock,"
+              "JobMedia.EndBlock "
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
       }
 
    } else {
       if (JobId > 0) {                   /* do by JobId */
          Mmsg(mdb->cmd, "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
-            "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
+              "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
       } else {
          Mmsg(mdb->cmd, "SELECT JobId,Media.VolumeName,FirstIndex,LastIndex "
-            "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId");
       }
    }
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -285,12 +285,12 @@ void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *JobIds
 
    db_lock(mdb);
    Mmsg(mdb->cmd,
-   "SELECT DISTINCT Job.PriorJobId AS JobId, Job.Job, "
-                   "Job.JobId AS CopyJobId, Media.MediaType "
-     "FROM Job "
-     "JOIN JobMedia USING (JobId) "
-     "JOIN Media    USING (MediaId) "
-    "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
+        "SELECT DISTINCT Job.PriorJobId AS JobId, Job.Job, "
+                        "Job.JobId AS CopyJobId, Media.MediaType "
+        "FROM Job "
+        "JOIN JobMedia USING (JobId) "
+        "JOIN Media    USING (MediaId) "
+        "WHERE Job.Type = '%c' %s ORDER BY Job.PriorJobId DESC %s",
         (char) JT_JOB_COPY, str_jobids.c_str(), range);
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -397,13 +397,9 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
 
    db_lock(mdb);
    if (type == VERT_LIST) {
-         Mmsg(mdb->cmd, list_jobs_long,
-              selection.c_str(),
-              range);
+      Mmsg(mdb->cmd, list_jobs_long, selection.c_str(), range);
    } else {
-         Mmsg(mdb->cmd, list_jobs,
-              selection.c_str(),
-              range);
+      Mmsg(mdb->cmd, list_jobs, selection.c_str(), range);
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -422,15 +418,16 @@ bail_out:
 
 /*
  * List Job totals
- *
  */
 void db_list_job_totals(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *sendit)
 {
    db_lock(mdb);
 
-   /* List by Job */
+   /*
+    * List by Job
+    */
    Mmsg(mdb->cmd, "SELECT  count(*) AS Jobs,sum(JobFiles) "
-      "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
+        "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
       goto bail_out;
@@ -442,7 +439,9 @@ void db_list_job_totals(JCR *jcr, B_DB *mdb, JOB_DBR *jr, OUTPUT_FORMATTER *send
 
    sql_free_result(mdb);
 
-   /* Do Grand Total */
+   /*
+    * Do Grand Total
+    */
    Mmsg(mdb->cmd, "SELECT count(*) AS Jobs,sum(JobFiles) "
         "AS Files,sum(JobBytes) As Bytes FROM Job");
 
