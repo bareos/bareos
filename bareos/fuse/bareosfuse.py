@@ -9,7 +9,9 @@ from   bareos.fuse.root  import Root
 import errno
 import fuse
 import logging
+import socket
 import stat
+import os.path
 from   pprint import pformat
 
 fuse.fuse_python_api = (0, 2)
@@ -20,6 +22,8 @@ class BareosFuse(fuse.Fuse):
     def __init__(self, *args, **kw):
         self.bsock = None
         self.bareos = None
+        self.restoreclient = None
+        self.restorepath = '/var/cache/bareosfs/'
         super(BareosFuse, self).__init__(*args, **kw)
         self.multithreaded = False
 
@@ -32,6 +36,27 @@ class BareosFuse(fuse.Fuse):
             hdlr.setFormatter(formatter)
             self.logger.addHandler(hdlr)
 
+    def parse(self, *args, **kw):
+        super(BareosFuse, self).parse(*args, **kw)
+        if self.fuse_args.mount_expected():
+            options = [ 'address', 'port', 'dirname', 'name', 'password' ]
+            self.bsockParameter = {}
+            for i in options:
+                if hasattr(self, i):
+                    self.bsockParameter[i] = getattr(self,i)
+                else:
+                    #self.logger.debug( "%s: missing, default: %s" %(i, str(getattr(self,i,None))))
+                    pass
+            if not hasattr(self, 'password'):
+                raise bareos.fuse.ParameterMissing("missing parameter password")
+            else:
+                password = bareos.bsock.Password(self.password)
+                self.bsockParameter['password']=password
+            self.restorepath = os.path.normpath(self.restorepath)
+            if not os.path.isabs(self.restorepath):
+                raise bareos.fuse.RestorePathInvalid("restorepath must be an absolute path")
+
+
     def main(self, *args, **kw):
         # use main() instead of fsinit,
         # as this prevents FUSE from being started in case of errors.
@@ -39,27 +64,11 @@ class BareosFuse(fuse.Fuse):
         self.initLogging()
         self.logger.debug('start')
         if self.fuse_args.mount_expected():
-            options = [ 'address', 'port', 'dirname', 'name', 'password' ]
-            parameter = {}
-            for i in options:
-                if hasattr(self, i):
-                    self.logger.debug( "%s: %s" %(i, getattr(self,i)))
-                    parameter[i] = getattr(self,i)
-                else:
-                    self.logger.debug( "%s: missing, default: %s" %(i, str(getattr(self,i,None))))
-            self.logger.debug('options: %s' % (parameter))
-            if not hasattr(self, 'password'):
-                raise RuntimeError("missing parameter password")
-            else:
-                password = bareos.bsock.Password(self.password)
-                parameter['password']=password
-            self.bsock = bareos.bsock.BSockJson(**parameter)
-            if not hasattr(self, 'restoreclient'):
-                self.restoreclient = None
-                #raise RuntimeError("missing parameter restoreclient")
-                # TODO: check if restoreclient is valid
-            if not hasattr(self, 'restorepath'):
-                self.restorepath = '/var/cache/bareosfs/'
+            try:
+                self.bsock = bareos.bsock.BSockJson(**self.bsockParameter)
+            except socket.error as e:
+                self.logger.exception(e)
+                raise bareos.fuse.SocketConnectionRefused(e)
             self.bareos = Root(self.bsock, self.restoreclient, self.restorepath)
         super(BareosFuse, self).main(*args, **kw)
         self.logger.debug('done')

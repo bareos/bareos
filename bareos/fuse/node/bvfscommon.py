@@ -22,9 +22,12 @@ class BvfsCommon(Base):
         self.xattr = {
                 'user.bareos.restorepath': str(self.restorepathfull),
                 'user.bareos.restored': 'no',
-                'user.bareos.do_options': "mark | restore",
-                'user.bareos.do': '',
             }
+        if self.root.restoreclient:
+            # restore is only possible, if a restoreclient is given
+            self.xattr['user.bareos.do_options'] = 'restore'
+            self.xattr['user.bareos.do'] = ''
+
         if stat:
             self.set_stat(stat)            
 
