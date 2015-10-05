@@ -16,11 +16,11 @@ class BvfsCommon(Base):
         self.static = True
         self.restorepath = os.path.normpath("/%s/jobid=%s/" % (self.root.restorepath, self.jobid))
         if filename:
-            self.restorepathfull = os.path.normpath("%s%s%s" % (self.restorepath, path, filename))
+            self.restorepathfull = os.path.normpath(u"%s%s%s" % (self.restorepath, path, filename))
         else:
-            self.restorepathfull = os.path.normpath("%s%s" % (self.restorepath, path)) 
+            self.restorepathfull = os.path.normpath(u"%s%s" % (self.restorepath, path))
         self.xattr = {
-                'user.bareos.restorepath': str(self.restorepathfull),
+                'user.bareos.restorepath': self.restorepathfull,
                 'user.bareos.restored': 'no',
             }
         if self.root.restoreclient:

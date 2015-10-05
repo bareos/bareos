@@ -46,10 +46,17 @@ class Base(object):
     # =========
 
     def get_name(self):
-        return self.name
+        result = self.name
+        if isinstance(self.name, unicode):
+            result = name.encode('utf-8', 'replace')
+        return result
 
     def set_name(self, name):
-        self.name = name
+        if isinstance(name, unicode):
+            self.name = name.encode('utf-8', 'replace')
+        else:
+            # should be str or NoneType
+            self.name = name
 
     def set_static(self, value=True):
         self.static = value
@@ -196,6 +203,8 @@ class Base(object):
         if path.len() == 0:
             try:
                 result = self.xattr[key]
+                if isinstance(self.xattr[key], unicode):
+                    result = self.xattr[key].encode('utf-8','replace')
             except KeyError:
                 pass
         else:
