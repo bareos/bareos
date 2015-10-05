@@ -477,21 +477,28 @@ bool is_an_integer(const char *n)
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
-bool is_name_valid(const char *name, POOLMEM **msg)
+bool is_name_valid(const char *name, POOLMEM *&msg)
 {
    int len;
    const char *p;
-   /* Special characters to accept */
+   /*
+    * Special characters to accept
+    */
    const char *accept = ":.-_/ ";
 
-   /* No name is invalid */
+   /*
+    * No name is invalid
+    */
    if (!name) {
       if (msg) {
          Mmsg(msg, _("Empty name not allowed.\n"));
       }
       return false;
    }
-   /* Restrict the characters permitted in the Volume name */
+
+   /*
+    * Restrict the characters permitted in the Volume name
+    */
    for (p=name; *p; p++) {
       if (B_ISALPHA(*p) || B_ISDIGIT(*p) || strchr(accept, (int)(*p))) {
          continue;
@@ -514,10 +521,21 @@ bool is_name_valid(const char *name, POOLMEM **msg)
       }
       return false;
    }
+
    return true;
 }
 
+bool is_name_valid(const char *name)
+{
+   bool retval;
+   POOLMEM *msg = get_pool_memory(PM_NAME);
 
+   retval = is_name_valid(name, msg);
+
+   free_pool_memory(msg);
+
+   return retval;
+}
 
 /*
  * Add commas to a string, which is presumably

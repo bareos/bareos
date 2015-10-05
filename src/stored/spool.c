@@ -29,7 +29,7 @@
 #include "stored.h"
 
 /* Forward referenced subroutines */
-static void make_unique_data_spool_filename(DCR *dcr, POOLMEM **name);
+static void make_unique_data_spool_filename(DCR *dcr, POOLMEM *&name);
 static bool open_data_spool_file(DCR *dcr);
 static bool close_data_spool_file(DCR *dcr, bool end_of_spool);
 static bool despool_data(DCR *dcr, bool commit);
@@ -141,7 +141,7 @@ bool commit_data_spool(DCR *dcr)
    return true;
 }
 
-static void make_unique_data_spool_filename(DCR *dcr, POOLMEM **name)
+static void make_unique_data_spool_filename(DCR *dcr, POOLMEM *&name)
 {
    const char *dir;
 
@@ -160,7 +160,7 @@ static bool open_data_spool_file(DCR *dcr)
    int spool_fd;
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
-   make_unique_data_spool_filename(dcr, &name);
+   make_unique_data_spool_filename(dcr, name);
    if ((spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640)) >= 0) {
       dcr->spool_fd = spool_fd;
       dcr->jcr->spool_attributes = true;
@@ -197,7 +197,7 @@ static bool close_data_spool_file(DCR *dcr, bool end_of_spool)
    dcr->job_spool_size = 0;
    V(dcr->dev->spool_mutex);
 
-   make_unique_data_spool_filename(dcr, &name);
+   make_unique_data_spool_filename(dcr, name);
    close(dcr->spool_fd);
    dcr->spool_fd = -1;
    dcr->spooling = false;
@@ -683,7 +683,7 @@ static void update_attr_spool_size(ssize_t size)
    V(mutex);
 }
 
-static void make_unique_spool_filename(JCR *jcr, POOLMEM **name, int fd)
+static void make_unique_spool_filename(JCR *jcr, POOLMEM *&name, int fd)
 {
    Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name, jcr->Job, fd);
 }
@@ -701,7 +701,7 @@ static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
    /*
     * Send full spool file name
     */
-   make_unique_spool_filename(jcr, &name, jcr->dir_bsock->m_fd);
+   make_unique_spool_filename(jcr, name, jcr->dir_bsock->m_fd);
    bash_spaces(name);
    jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
    free_pool_memory(name);
@@ -795,7 +795,7 @@ static bool open_attr_spool_file(JCR *jcr, BSOCK *bs)
 {
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
-   make_unique_spool_filename(jcr, &name, bs->m_fd);
+   make_unique_spool_filename(jcr, name, bs->m_fd);
    bs->m_spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
    if (bs->m_spool_fd == -1) {
       berrno be;
@@ -832,7 +832,8 @@ static bool close_attr_spool_file(JCR *jcr, BSOCK *bs)
    spool_stats.total_attr_jobs++;
    V(mutex);
 
-   make_unique_spool_filename(jcr, &name, bs->m_fd);
+   make_unique_spool_filename(jcr, name, bs->m_fd);
+
    close(bs->m_spool_fd);
    secure_erase(jcr, name);
    free_pool_memory(name);

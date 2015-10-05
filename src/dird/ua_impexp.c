@@ -466,7 +466,7 @@ static inline bool get_slot_list_using_volname(UAContext *ua,
    vol_list_t *vl1, *vl2;
    bool found = false;
 
-   if (is_name_valid(volumename, NULL)) {
+   if (is_name_valid(volumename)) {
       foreach_dlist(vl1, vol_list) {
          /*
           * We only select normal and import/export slots.

@@ -453,7 +453,7 @@ static var_rc_t operate_var(var_t *var,
  * Returns: 0 on failure
  *          1 on success and exp has expanded input
  */
-int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
+int variable_expansion(JCR *jcr, char *inp, POOLMEM *&exp)
 {
    var_t *var_ctx;
    var_rc_t status;
@@ -469,32 +469,32 @@ int variable_expansion(JCR *jcr, char *inp, POOLMEM **exp)
     * Create context
     */
    if ((status = var_create(&var_ctx)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"), var_strerror(var_ctx, status));
-       goto bail_out;
+      Jmsg(jcr, M_ERROR, 0, _("Cannot create var context: ERR=%s\n"), var_strerror(var_ctx, status));
+      goto bail_out;
    }
 
    /*
     * Define callback
     */
    if ((status = var_config(var_ctx, VAR_CONFIG_CB_VALUE, lookup_var, (void *)jcr)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"), var_strerror(var_ctx, status));
-       goto bail_out;
+      Jmsg(jcr, M_ERROR, 0, _("Cannot set var callback: ERR=%s\n"), var_strerror(var_ctx, status));
+      goto bail_out;
    }
 
    /*
     * Define special operations
     */
    if ((status = var_config(var_ctx, VAR_CONFIG_CB_OPERATION, operate_var, (void *)jcr)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"), var_strerror(var_ctx, status));
-       goto bail_out;
+      Jmsg(jcr, M_ERROR, 0, _("Cannot set var operate: ERR=%s\n"), var_strerror(var_ctx, status));
+      goto bail_out;
    }
 
    /*
     * Unescape in place
     */
    if ((status = var_unescape(var_ctx, inp, in_len, inp, in_len+1, 0)) != VAR_OK) {
-       Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
-       goto bail_out;
+      Jmsg(jcr, M_ERROR, 0, _("Cannot unescape string: ERR=%s\n"), var_strerror(var_ctx, status));
+      goto bail_out;
    }
 
    in_len = strlen(inp);

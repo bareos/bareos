@@ -722,7 +722,7 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    memset(mr, 0, sizeof(MEDIA_DBR));
    i = find_arg_with_value(ua, NT_("volume"));
    if (i >= 0) {
-      if (is_name_valid(ua->argv[i], &err)) {
+      if (is_name_valid(ua->argv[i], err)) {
          bstrncpy(mr->VolumeName, ua->argv[i], sizeof(mr->VolumeName));
       } else {
          goto bail_out;
@@ -749,7 +749,7 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
 
       if (ua->cmd[0] == '*' && is_a_number(ua->cmd+1)) {
          mr->MediaId = str_to_int64(ua->cmd+1);
-      } else if (is_name_valid(ua->cmd, &err)) {
+      } else if (is_name_valid(ua->cmd, err)) {
          bstrncpy(mr->VolumeName, ua->cmd, sizeof(mr->VolumeName));
       } else {
          goto bail_out;

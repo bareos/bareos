@@ -959,12 +959,12 @@ bool get_level_since_time(JCR *jcr)
        * This is probably redundant, but some of the code below
        * uses jcr->stime, so don't remove unless you are sure.
        */
-      if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, &jcr->stime, jcr->PrevJob)) {
+      if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, jcr->stime, jcr->PrevJob)) {
          do_full = true;
       }
 
       have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
-                                              &stime, prev_job, L_FULL);
+                                              stime, prev_job, L_FULL);
       if (have_full) {
          last_full_time = str_to_utime(stime);
       } else {
@@ -982,7 +982,7 @@ bool get_level_since_time(JCR *jcr)
           * Lookup last diff job
           */
          if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
-                                         &stime, prev_job, L_DIFFERENTIAL)) {
+                                         stime, prev_job, L_DIFFERENTIAL)) {
             last_diff_time = str_to_utime(stime);
             /*
              * If no Diff since Full, use Full time

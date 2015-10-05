@@ -531,7 +531,7 @@ static int get_name_handler(void *ctx, int num_fields, char **row)
    POOLMEM *name = (POOLMEM *)ctx;
 
    if (row[0]) {
-      pm_strcpy(&name, row[0]);
+      pm_strcpy(name, row[0]);
    }
    return 0;
 }
@@ -1334,7 +1334,7 @@ static void repair_bad_paths()
          /*
           * Add trailing slash
           */
-         len = pm_strcat(&name, "/");
+         len = pm_strcat(name, "/");
          db_escape_string(NULL, db, esc_name, name, len);
          bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));

@@ -2982,7 +2982,7 @@ do_tape_cmds()
    while (!quit && get_cmd("*")) {
       Dsm_check(200);
       found = false;
-      parse_args(cmd, &args, &argc, argk, argv, MAX_CMD_ARGS);
+      parse_args(cmd, args, &argc, argk, argv, MAX_CMD_ARGS);
       for (i=0; i<comsize; i++)       /* search for command */
          if (argc > 0 && fstrsch(argk[0],  commands[i].key)) {
             (*commands[i].func)();    /* go execute command */

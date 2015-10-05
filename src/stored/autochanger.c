@@ -33,7 +33,7 @@
 static void lock_changer(DCR *dcr);
 static void unlock_changer(DCR *dcr);
 static bool unload_other_drive(DCR *dcr, int slot);
-static char *transfer_edit_device_codes(DCR *dcr, char *omsg, const char *imsg,
+static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg,
                                         const char *cmd, int src_slot, int dst_slot);
 
 /* Init all the autochanger resources found */
@@ -765,7 +765,7 @@ bail_out:
  *  cmd = command string (transfer)
  *
  */
-static char *transfer_edit_device_codes(DCR *dcr, char *omsg, const char *imsg,
+static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg,
                                         const char *cmd, int src_slot, int dst_slot)
 {
    const char *p;
@@ -802,9 +802,10 @@ static char *transfer_edit_device_codes(DCR *dcr, char *omsg, const char *imsg,
          str = ed1;
       }
       Dmsg1(1900, "add_str %s\n", str);
-      pm_strcat(&omsg, (char *)str);
+      pm_strcat(omsg, (char *)str);
       Dmsg1(1800, "omsg=%s\n", omsg);
    }
    Dmsg1(800, "omsg=%s\n", omsg);
+
    return omsg;
 }

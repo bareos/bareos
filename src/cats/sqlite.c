@@ -157,8 +157,7 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
 
    if ((errstat=rwl_init(&m_lock)) != 0) {
       berrno be;
-      Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
-            be.bstrerror(errstat));
+      Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
@@ -172,8 +171,7 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
    strcat(db_path, m_db_name);
    strcat(db_path, ".db");
    if (stat(db_path, &statbuf) != 0) {
-      Mmsg1(&errmsg, _("Database %s does not exist, please create it.\n"),
-         db_path);
+      Mmsg1(errmsg, _("Database %s does not exist, please create it.\n"), db_path);
       free(db_path);
       goto bail_out;
    }
@@ -194,8 +192,8 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
       }
    }
    if (m_db_handle == NULL) {
-      Mmsg2(&errmsg, _("Unable to open Database=%s. ERR=%s\n"),
-         db_path, m_lowlevel_errmsg ? m_lowlevel_errmsg : _("unknown"));
+      Mmsg2(errmsg, _("Unable to open Database=%s. ERR=%s\n"),
+            db_path, m_lowlevel_errmsg ? m_lowlevel_errmsg : _("unknown"));
       free(db_path);
       goto bail_out;
    }

@@ -1835,7 +1835,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
       update_bootstrap_file(mig_jcr);
 
-      if (!db_get_job_volume_names(mig_jcr, mig_jcr->db, mig_jcr->jr.JobId, &mig_jcr->VolumeName)) {
+      if (!db_get_job_volume_names(mig_jcr, mig_jcr->db, mig_jcr->jr.JobId, mig_jcr->VolumeName)) {
          /*
           * Note, if the job has failed, most likely it did not write any
           * tape, so suppress this "error" message since in that case

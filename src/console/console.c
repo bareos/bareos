@@ -216,7 +216,7 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
       }
    }
    if (!found) {
-      pm_strcat(&UA_sock->msg, _(": is an invalid command\n"));
+      pm_strcat(UA_sock->msg, _(": is an invalid command\n"));
       UA_sock->msglen = strlen(UA_sock->msg);
       sendit(UA_sock->msg);
    }
@@ -279,7 +279,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
           * @ => internal command for us
           */
          if (UA_sock->msg[0] == '@') {
-            parse_args(UA_sock->msg, &args, &argc, argk, argv, MAX_CMD_ARGS);
+            parse_args(UA_sock->msg, args, &argc, argk, argv, MAX_CMD_ARGS);
             if (!do_a_command(input, UA_sock)) {
                break;
             }
@@ -482,10 +482,11 @@ void init_items()
    items->list.init();
 }
 
-/* Match a regexp and add the result to the items list
+/*
+ * Match a regexp and add the result to the items list
  * This function is recursive
  */
-static void match_kw(regex_t *preg, const char *what, int len, POOLMEM **buf)
+static void match_kw(regex_t *preg, const char *what, int len, POOLMEM *&buf)
 {
    int rc, size;
    int nmatch = 20;
@@ -504,12 +505,15 @@ static void match_kw(regex_t *preg, const char *what, int len, POOLMEM **buf)
       Pmsg2(0, "%i-%i\n", pmatch[3].rm_so, pmatch[3].rm_eo);
 #endif
       size = pmatch[1].rm_eo - pmatch[1].rm_so;
-      *buf = check_pool_memory_size(*buf, size + 1);
-      memcpy(*buf, what+pmatch[1].rm_so, size);
-      (*buf)[size] = 0;
+      buf = check_pool_memory_size(buf, size + 1);
+      memcpy(buf, what + pmatch[1].rm_so, size);
+      buf[size] = '\0';
 
-      items->list.append(bstrdup(*buf));
-      /* We search for the next keyword in the line */
+      items->list.append(bstrdup(buf));
+
+      /*
+       * We search for the next keyword in the line
+       */
       match_kw(preg, what + pmatch[1].rm_eo, len - pmatch[1].rm_eo, buf);
    }
 }
@@ -531,7 +535,7 @@ void get_arguments(const char *what)
    UA_sock->fsend(".help item=%s", what);
    while (UA_sock->recv() > 0) {
       strip_trailing_junk(UA_sock->msg);
-      match_kw(&preg, UA_sock->msg, UA_sock->msglen, &buf);
+      match_kw(&preg, UA_sock->msg, UA_sock->msglen, buf);
    }
    free_pool_memory(buf);
    regfree(&preg);
@@ -769,7 +773,7 @@ int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
       senditf("%s%s\n", prompt, command);
    }
 
-   sock->msglen = pm_strcpy(&sock->msg, command);
+   sock->msglen = pm_strcpy(sock->msg, command);
    if (sock->msglen) {
       do_history++;
    }
@@ -1389,8 +1393,8 @@ int main(int argc, char *argv[])
    if (env) {
       FILE *fp;
 
-      pm_strcpy(&UA_sock->msg, env);
-      pm_strcat(&UA_sock->msg, "/.bconsolerc");
+      pm_strcpy(UA_sock->msg, env);
+      pm_strcat(UA_sock->msg, "/.bconsolerc");
       fp = fopen(UA_sock->msg, "rb");
       if (fp) {
          read_and_process_input(fp, UA_sock);

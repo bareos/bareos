@@ -585,10 +585,10 @@ int do_shell_expansion(char *name, int name_len)
       if ((shellcmd = getenv("SHELL")) == NULL) {
          shellcmd = "/bin/sh";
       }
-      pm_strcpy(&cmd, shellcmd);
-      pm_strcat(&cmd, " -c \"echo ");
-      pm_strcat(&cmd, name);
-      pm_strcat(&cmd, "\"");
+      pm_strcpy(cmd, shellcmd);
+      pm_strcat(cmd, " -c \"echo ");
+      pm_strcat(cmd, name);
+      pm_strcat(cmd, "\"");
       Dmsg1(400, "Send: %s\n", cmd);
       if ((bpipe = open_bpipe(cmd, 0, "r"))) {
          bfgets(line, bpipe->rfd);
@@ -886,7 +886,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          str = add;
       }
       Dmsg1(1200, "add_str %s\n", str);
-      pm_strcat(&omsg, str);
+      pm_strcat(omsg, str);
       Dmsg1(1200, "omsg=%s\n", omsg);
    }
    return omsg;

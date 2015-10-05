@@ -568,7 +568,7 @@ public:
    virtual void db_escape_string(JCR *jcr, char *snew, char *old, int len);
    virtual char *db_escape_object(JCR *jcr, char *old, int len);
    virtual void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                   POOLMEM **dest, int32_t *len);
+                                   POOLMEM *&dest, int32_t *len);
 
    /* Pure virtual low level methods */
    virtual bool db_open_database(JCR *jcr) = 0;

@@ -269,7 +269,7 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
    int64_t dwDataLen;
 
    /* Win32 Stream Header size without name of stream.
-    * = sizeof (WIN32_STREAM_ID)- sizeof(WCHAR*);
+    * = sizeof (WIN32_STREAM_ID)- sizeof(wchar_t *);
     */
    int32_t dwSizeHeader = 20;
 
@@ -360,7 +360,7 @@ bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize)
 #if defined(HAVE_WIN32)
 
 /* Imported Functions */
-extern void unix_name_to_win32(POOLMEM **win32_name, const char *name);
+extern void unix_name_to_win32(POOLMEM *&win32_name, const char *name);
 extern "C" HANDLE get_osfhandle(int fd);
 
 void binit(BFILE *bfd)
@@ -515,10 +515,9 @@ static inline int bopen_encrypted(BFILE *bfd, const char *fname, int flags, mode
    win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
 
-   unix_name_to_win32(&win32_fname, (char *)fname);
-
+   unix_name_to_win32(win32_fname, (char *)fname);
    if (p_OpenEncryptedFileRawW && p_MultiByteToWideChar) {
-      make_win32_path_UTF8_2_wchar(&win32_fname_wchar, fname);
+      make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
    }
 
    /*
@@ -578,8 +577,7 @@ static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, m
    win32_fname = get_pool_memory(PM_FNAME);
    win32_fname_wchar = get_pool_memory(PM_FNAME);
 
-   unix_name_to_win32(&win32_fname, (char *)fname);
-
+   unix_name_to_win32(win32_fname, (char *)fname);
    if (bfd->cmd_plugin && plugin_bopen) {
       int rtnstat;
       Dmsg1(50, "call plugin_bopen fname=%s\n", fname);
@@ -609,7 +607,7 @@ static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, m
    }
 
    if (p_CreateFileW && p_MultiByteToWideChar) {
-      make_win32_path_UTF8_2_wchar(&win32_fname_wchar, fname);
+      make_win32_path_UTF8_2_wchar(win32_fname_wchar, fname);
    }
 
    if (flags & O_CREAT) {             /* Create */

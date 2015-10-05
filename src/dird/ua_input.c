@@ -194,7 +194,7 @@ int get_enabled(UAContext *ua, const char *val)
 
 void parse_ua_args(UAContext *ua)
 {
-   parse_args(ua->cmd, &ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+   parse_args(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 }
 
 /*

@@ -172,7 +172,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
        * Restore ua args based on cmd_holder
        */
       pm_strcpy(ua->cmd, cmd_holder);
-      parse_args(ua->cmd, &ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+      parse_args(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 
       /*
        * Perform ActionOnPurge (action=truncate)
@@ -741,7 +741,7 @@ static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
       if (bstrcasecmp(ua->argk[i], NT_("allpools"))) {
          allpools = true;
       } else if (bstrcasecmp(ua->argk[i], NT_("volume")) &&
-                 is_name_valid(ua->argv[i], NULL)) {
+                 is_name_valid(ua->argv[i])) {
          db_escape_string(ua->jcr, ua->db, esc, ua->argv[i], strlen(ua->argv[i]));
          if (!*volumes.c_str()) {
             Mmsg(buf, "'%s'", esc);
@@ -757,7 +757,7 @@ static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
          drive = atoi(ua->argv[i]);
 
       } else if (bstrcasecmp(ua->argk[i], NT_("action")) &&
-                 is_name_valid(ua->argv[i], NULL)) {
+                 is_name_valid(ua->argv[i])) {
          action=ua->argv[i];
       }
    }

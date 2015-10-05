@@ -246,7 +246,7 @@ TREE_NODE *insert_tree_node(char *path, char *fname, int type,
             parent = root->cached_parent;
          } else {
             root->cached_path_len = path_len;
-            pm_strcpy(&root->cached_path, path);
+            pm_strcpy(root->cached_path, path);
             parent = make_tree_path(path, root);
             root->cached_parent = parent;
          }
@@ -365,7 +365,7 @@ static TREE_NODE *search_and_insert_tree_node(char *fname, int type,
    return node;
 }
 
-static void tree_getpath_item(TREE_NODE *node, POOLMEM **path)
+static void tree_getpath_item(TREE_NODE *node, POOLMEM *&path)
 {
    if (!node) {
       return;
@@ -378,7 +378,7 @@ static void tree_getpath_item(TREE_NODE *node, POOLMEM **path)
     * there is only a / in the buffer, remove it since
     * win32 names don't generally start with /
     */
-   if (node->type == TN_DIR_NLS && IsPathSeparator((*path[0])) && (*path)[1] == '\0') {
+   if (node->type == TN_DIR_NLS && IsPathSeparator(path[0]) && path[1] == '\0') {
       pm_strcpy(path, "");
    }
    pm_strcat(path, node->fname);
@@ -388,7 +388,7 @@ static void tree_getpath_item(TREE_NODE *node, POOLMEM **path)
     * also add a slash to a soft linked file if it has children
     * i.e. it is linked to a directory.
     */
-   if ((node->type != TN_FILE && !(IsPathSeparator((*path)[0]) && (*path)[1] == '\0')) ||
+   if ((node->type != TN_FILE && !(IsPathSeparator(path[0]) && path[1] == '\0')) ||
        (node->soft_link && tree_node_has_child(node))) {
       pm_strcat(path, "/");
    }
@@ -411,7 +411,7 @@ POOLMEM *tree_getpath(TREE_NODE *node)
    /*
     * Fill the path with the full path.
     */
-   tree_getpath_item(node, &path);
+   tree_getpath_item(node, path);
 
    return path;
 }

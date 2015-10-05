@@ -1596,7 +1596,7 @@ static bool var_cmd(UAContext *ua, const char *cmd)
       var++;
    }
    Dmsg1(100, "Var=%s:\n", var);
-   variable_expansion(ua->jcr, var, &val);
+   variable_expansion(ua->jcr, var, val);
    ua->send_msg("%s\n", val);
    free_pool_memory(val);
    return true;

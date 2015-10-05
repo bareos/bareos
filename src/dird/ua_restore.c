@@ -406,7 +406,7 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
          i = find_arg_with_value(ua, NT_("backupclient"));
       }
       if (i >= 0) {
-         if (!is_name_valid(ua->argv[i], &ua->errmsg)) {
+         if (!is_name_valid(ua->argv[i], ua->errmsg)) {
             ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
             return 0;
          }
@@ -436,7 +436,7 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
     */
    i = find_arg_with_value(ua, NT_("restoreclient"));
    if (i >= 0) {
-      if (!is_name_valid(ua->argv[i], &ua->errmsg)) {
+      if (!is_name_valid(ua->argv[i], ua->errmsg)) {
          ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
          return 0;
       }
@@ -1323,7 +1323,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    memset(&fsr, 0, sizeof(fsr));
    i = find_arg_with_value(ua, "FileSet");
 
-   if (i >= 0 && is_name_valid(ua->argv[i], &ua->errmsg)) {
+   if (i >= 0 && is_name_valid(ua->argv[i], ua->errmsg)) {
       bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
       if (!db_get_fileset_record(ua->jcr, ua->db, &fsr)) {
          ua->error_msg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,

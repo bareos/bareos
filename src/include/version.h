@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "15.2.1"
-#define BDATE   "24 August 2015"
-#define LSMDATE "24aug15"
+#define VERSION "15.4.0"
+#define BDATE   "03 October 2015"
+#define LSMDATE "03oct15"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
                        "Copyright (C) 2013-2015 Bareos GmbH & Co. KG\n"
@@ -31,13 +31,13 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSCFG_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSSQL_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSCATS_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSLMDB_LT_RELEASE "15.2.1" */
-/* #define LIBBAREOSSD_LT_RELEASE "15.2.1" */
+/* #define LIBBAREOS_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSCFG_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSSQL_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSCATS_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSLMDB_LT_RELEASE "15.4.0" */
+/* #define LIBBAREOSSD_LT_RELEASE "15.4.0" */
 
 /* Debug flags */
 #undef  DEBUG

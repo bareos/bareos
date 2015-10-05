@@ -62,12 +62,12 @@ typedef char POOLMEM;
 // "\\?\" to the path. For more information, see Naming a File.
 #define MAX_PATH_W 32767
 
-int wchar_2_UTF8(POOLMEM **pszUTF, const wchar_t *pszUCS);
-int wchar_2_UTF8(char *pszUTF, const WCHAR *pszUCS, int cchChar = MAX_PATH_UTF8);
-int UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF);
+int wchar_2_UTF8(POOLMEM *&pszUTF, const wchar_t *pszUCS);
+int UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF);
+int wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar);
 BSTR str_2_BSTR(const char *pSrc);
-char *BSTR_2_str(BSTR pSrc);
-int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
+char *BSTR_2_str(const BSTR pSrc);
+int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
 
 // init with win9x, but maybe set to NT in InitWinAPI
 extern DWORD DLL_IMP_EXP g_platform_id;

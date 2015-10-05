@@ -166,11 +166,13 @@ static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr
 {
    bool ok = false;
    POOLMEM *label = get_pool_memory(PM_FNAME);
+
    jcr->NumVols = pr->NumVols;
-   if (variable_expansion(jcr, pr->LabelFormat, &label)) {
+   if (variable_expansion(jcr, pr->LabelFormat, label)) {
       bstrncpy(mr->VolumeName, label, sizeof(mr->VolumeName));
       ok = true;
    }
    free_pool_memory(label);
+
    return ok;
 }

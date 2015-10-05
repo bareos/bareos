@@ -190,7 +190,7 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
                continue;
             }
 
-            if (win32_get_vmp_devicename(fname, &devicename)) {
+            if (win32_get_vmp_devicename(fname, devicename)) {
                /*
                 * See if we need to allocate a new dlist.
                 */

@@ -222,18 +222,18 @@ char *B_DB::db_escape_object(JCR *jcr, char *old, int len)
  * We base64 encode the data so its normal ASCII
  */
 void B_DB::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                              POOLMEM **dest, int32_t *dest_len)
+                              POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
-      *dest[0] = '\0';
+      dest[0] = '\0';
       *dest_len = 0;
       return;
    }
 
-   *dest = check_pool_memory_size(*dest, expected_len + 1);
-   base64_to_bin(*dest, expected_len + 1, from, strlen(from));
+   dest = check_pool_memory_size(dest, expected_len + 1);
+   base64_to_bin(dest, expected_len + 1, from, strlen(from));
    *dest_len = expected_len;
-   (*dest)[expected_len] = '\0';
+   dest[expected_len] = '\0';
 }
 
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

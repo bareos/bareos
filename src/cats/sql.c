@@ -219,7 +219,7 @@ bool QueryDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
    sql_free_result(mdb);
    Dmsg1(1000, "query: %s\n", cmd);
    if (!sql_query(mdb, cmd, QF_STORE_RESULT)) {
-      m_msg(file, line, &mdb->errmsg, _("query %s failed:\n%s\n"), cmd, sql_strerror(mdb));
+      m_msg(file, line, mdb->errmsg, _("query %s failed:\n%s\n"), cmd, sql_strerror(mdb));
       j_msg(file, line, jcr, M_FATAL, 0, "%s", mdb->errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -240,7 +240,7 @@ bool InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
    int num_rows;
 
    if (!sql_query(mdb, cmd)) {
-      m_msg(file, line, &mdb->errmsg,  _("insert %s failed:\n%s\n"), cmd, sql_strerror(mdb));
+      m_msg(file, line, mdb->errmsg,  _("insert %s failed:\n%s\n"), cmd, sql_strerror(mdb));
       j_msg(file, line, jcr, M_FATAL, 0, "%s", mdb->errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -250,7 +250,7 @@ bool InsertDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
    num_rows = sql_affected_rows(mdb);
    if (num_rows != 1) {
       char ed1[30];
-      m_msg(file, line, &mdb->errmsg, _("Insertion problem: affected_rows=%s\n"),
+      m_msg(file, line, mdb->errmsg, _("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -271,7 +271,7 @@ bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd, int nr
    int num_rows;
 
    if (!sql_query(mdb, cmd)) {
-      m_msg(file, line, &mdb->errmsg, _("update %s failed:\n%s\n"), cmd, sql_strerror(mdb));
+      m_msg(file, line, mdb->errmsg, _("update %s failed:\n%s\n"), cmd, sql_strerror(mdb));
       j_msg(file, line, jcr, M_ERROR, 0, "%s", mdb->errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -283,7 +283,7 @@ bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd, int nr
       num_rows = sql_affected_rows(mdb);
       if (num_rows < nr_afr) {
          char ed1[30];
-         m_msg(file, line, &mdb->errmsg, _("Update failed: affected_rows=%s for %s\n"),
+         m_msg(file, line, mdb->errmsg, _("Update failed: affected_rows=%s for %s\n"),
                edit_uint64(num_rows, ed1), cmd);
          if (verbose) {
 //          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -306,7 +306,7 @@ int DeleteDB(const char *file, int line, JCR *jcr, B_DB *mdb, char *cmd)
 {
 
    if (!sql_query(mdb, cmd)) {
-      m_msg(file, line, &mdb->errmsg, _("delete %s failed:\n%s\n"), cmd, sql_strerror(mdb));
+      m_msg(file, line, mdb->errmsg, _("delete %s failed:\n%s\n"), cmd, sql_strerror(mdb));
       j_msg(file, line, jcr, M_ERROR, 0, "%s", mdb->errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", cmd);
@@ -332,14 +332,14 @@ int get_sql_record_max(JCR *jcr, B_DB *mdb)
 
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       if ((row = sql_fetch_row(mdb)) == NULL) {
-         Mmsg1(&mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
+         Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
          retval = -1;
       } else {
          retval = str_to_int64(row[0]);
       }
       sql_free_result(mdb);
    } else {
-      Mmsg1(&mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
+      Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
       retval = -1;
    }
    return retval;
@@ -400,7 +400,7 @@ void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname)
       memcpy(mdb->path, fname, mdb->pnl);
       mdb->path[mdb->pnl] = 0;
    } else {
-      Mmsg1(&mdb->errmsg, _("Path length is zero. File=%s\n"), fname);
+      Mmsg1(mdb->errmsg, _("Path length is zero. File=%s\n"), fname);
       Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
       mdb->path[0] = 0;
       mdb->pnl = 0;
@@ -813,7 +813,7 @@ bool db_open_batch_connection(JCR *jcr, B_DB *mdb)
    if (!jcr->db_batch) {
       jcr->db_batch = db_clone_database_connection(mdb, jcr, multi_db, multi_db);
       if (!jcr->db_batch) {
-         Mmsg0(&mdb->errmsg, _("Could not init database batch connection\n"));
+         Mmsg0(mdb->errmsg, _("Could not init database batch connection\n"));
          Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
          return false;
       }

@@ -63,7 +63,7 @@ void db_escape_string(JCR *jcr, B_DB *mdb, char *snew, char *old, int len);
 char *db_escape_object(JCR *jcr, B_DB *mdb, char *old, int len);
 void db_unescape_object(JCR *jcr, B_DB *mdb,
                         char *from, int32_t expected_len,
-                        POOLMEM **dest, int32_t *len);
+                        POOLMEM *&dest, int32_t *len);
 void db_start_transaction(JCR *jcr, B_DB *mdb);
 void db_end_transaction(JCR *jcr, B_DB *mdb);
 bool db_sql_query(B_DB *mdb, const char *query, int flags=0);

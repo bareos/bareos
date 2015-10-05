@@ -328,7 +328,7 @@ static inline POOLMEM *GetMountedVolumeForMountPointPath(POOLMEM *volumepath, PO
    Dmsg3(200, "%s%s mounts volume %s\n", volumepath, mountpoint, buf);
 
    vol = get_pool_memory(PM_FNAME);
-   UTF8_2_wchar(&vol, buf);
+   UTF8_2_wchar(vol, buf);
 
    free_pool_memory(fullPath);
    free_pool_memory(buf);
@@ -338,8 +338,8 @@ static inline POOLMEM *GetMountedVolumeForMountPointPath(POOLMEM *volumepath, PO
 
 static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
                                           IVssBackupComponents *pVssObj,
-                                          POOLMEM *volumepath,
-                                          POOLMEM *mountpoint)
+                                          POOLMEM *&volumepath,
+                                          POOLMEM *&mountpoint)
 {
    bool retval = false;
    HRESULT hr;
@@ -351,7 +351,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
    hr = pVssObj->AddToSnapshotSet((LPWSTR)vol, GUID_NULL, &pid);
 
    pvol = get_pool_memory(PM_FNAME);
-   wchar_2_UTF8(&pvol, (wchar_t *)vol);
+   wchar_2_UTF8(pvol, (wchar_t *)vol);
 
    if (SUCCEEDED(hr)) {
       pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t *)vol);
@@ -673,7 +673,7 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *sz
 
             POOLMEM *szBuf = get_pool_memory(PM_FNAME);
 
-            wchar_2_UTF8(&szBuf, volume.c_str());
+            wchar_2_UTF8(szBuf, volume.c_str());
             Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
             free_pool_memory(szBuf);
          }
@@ -705,7 +705,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssOb
    mp = get_pool_memory(PM_FNAME);
    path = get_pool_memory(PM_FNAME);
 
-   wchar_2_UTF8(&path, volume);
+   wchar_2_UTF8(path, volume);
 
    len = wcslen(volume) + 1;
 
@@ -928,7 +928,7 @@ bool VSSClientGeneric::CloseBackup()
    return bRet;
 }
 
-WCHAR *VSSClientGeneric::GetMetadata()
+wchar_t *VSSClientGeneric::GetMetadata()
 {
    return m_metadata;
 }
@@ -1116,7 +1116,7 @@ bool VSSClientGeneric::CheckWriterStatus()
                /*
                 * Writer status problem
                 */
-               wchar_2_UTF8(&szBuf, bstrWriterName.p);
+               wchar_2_UTF8(szBuf, bstrWriterName.p);
                JmsgVssWriterStatus(m_jcr, M_WARNING, eWriterStatus, szBuf);
                nState = -1;       /* bad writer state */
                break;
@@ -1130,13 +1130,13 @@ bool VSSClientGeneric::CheckWriterStatus()
          */
         char str[1000];
         bstrncpy(str, "\"", sizeof(str));
-        wchar_2_UTF8(&szBuf, bstrWriterName.p);
+        wchar_2_UTF8(szBuf, bstrWriterName.p);
         bstrncat(str, szBuf, sizeof(str));
         bstrncat(str, "\", State: 0x", sizeof(str));
         itoa(eWriterStatus, szBuf, sizeof_pool_memory(szBuf));
         bstrncat(str, szBuf, sizeof(str));
         bstrncat(str, " (", sizeof(str));
-        wchar_2_UTF8(&szBuf, GetStringFromWriterStatus(eWriterStatus));
+        wchar_2_UTF8(szBuf, GetStringFromWriterStatus(eWriterStatus));
         bstrncat(str, szBuf, sizeof(str));
         bstrncat(str, ")", sizeof(str));
         AppendWriterInfo(nState, (const char *)str);

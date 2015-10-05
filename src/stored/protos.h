@@ -259,7 +259,7 @@ void *handle_stored_connection(BSOCK *sd, char *job_name);
 bool do_listen_run(JCR *jcr);
 
 /* sd_plugins.c */
-char *edit_device_codes(DCR *dcr, char *omsg, const char *imsg, const char *cmd);
+char *edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd);
 
 /* sd_stats.c */
 int start_statistics_thread(void);

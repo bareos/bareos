@@ -141,7 +141,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
          user->signal(BNET_CMD_BEGIN);
       }
 
-      parse_args_only(ua->cmd, &ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
+      parse_args_only(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
       if (ua->argc == 0) {
          ua->warning_msg(_("Invalid command \"%s\". Enter \"done\" to exit.\n"), ua->cmd);
          if (ua->api) {
@@ -486,7 +486,7 @@ static int markcmd(UAContext *ua, TREE_CTX *tree)
          /*
           * Split the argument into a path and file part.
           */
-         split_path_and_filename(ua->argk[i], &path, &pnl, &file, &fnl);
+         split_path_and_filename(ua->argk[i], path, &pnl, file, &fnl);
 
          /*
           * First change the CWD to the correct PATH.
@@ -775,7 +775,7 @@ static int lsmarkcmd(UAContext *ua, TREE_CTX *tree)
 /*
  * This is actually the long form used for "dir"
  */
-static inline void ls_output(guid_list *guid, POOLMEM **buf,
+static inline void ls_output(guid_list *guid, POOLMEM *&buf,
                              const char *fname, const char *tag,
                              struct stat *statp, bool dot_cmd)
 {
@@ -888,7 +888,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
             memset(&statp, 0, sizeof(statp));
          }
 
-         ls_output(ua->guid, &buf, cwd, tag, &statp, dot_cmd);
+         ls_output(ua->guid, buf, cwd, tag, &statp, dot_cmd);
          ua->send_msg("%s\n", buf);
 
          free_pool_memory(cwd);
@@ -1076,7 +1076,7 @@ static int unmarkcmd(UAContext *ua, TREE_CTX *tree)
          /*
           * Split the argument into a path and file part.
           */
-         split_path_and_filename(ua->argk[i], &path, &pnl, &file, &fnl);
+         split_path_and_filename(ua->argk[i], path, &pnl, file, &fnl);
 
          /*
           * First change the CWD to the correct PATH.

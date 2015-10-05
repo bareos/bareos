@@ -359,7 +359,7 @@ bail_out:
  *
  *  Returns: number of volumes on success
  */
-int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM **VolumeNames)
+int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM *&VolumeNames)
 {
    SQL_ROW row;
    char ed1[50];
@@ -368,7 +368,10 @@ int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM **Volume
    int num_rows;
 
    db_lock(mdb);
-   /* Get one entry per VolumeName, but "sort" by VolIndex */
+
+   /*
+    * Get one entry per VolumeName, but "sort" by VolIndex
+    */
    Mmsg(mdb->cmd,
         "SELECT VolumeName,MAX(VolIndex) FROM JobMedia,Media WHERE "
         "JobMedia.JobId=%s AND JobMedia.MediaId=Media.MediaId "
@@ -376,7 +379,7 @@ int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM **Volume
         "ORDER BY 2 ASC", edit_int64(JobId,ed1));
 
    Dmsg1(130, "VolNam=%s\n", mdb->cmd);
-   *VolumeNames[0] = 0;
+   VolumeNames[0] = '\0';
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
       Dmsg1(130, "Num rows=%d\n", num_rows);
@@ -385,14 +388,14 @@ int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM **Volume
          retval = 0;
       } else {
          retval = num_rows;
-         for (i=0; i < retval; i++) {
+         for (i = 0; i < retval; i++) {
             if ((row = sql_fetch_row(mdb)) == NULL) {
                Mmsg2(mdb->errmsg, _("Error fetching row %d: ERR=%s\n"), i, sql_strerror(mdb));
                Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
                retval = 0;
                break;
             } else {
-               if (*VolumeNames[0] != 0) {
+               if (VolumeNames[0] != '\0') {
                   pm_strcat(VolumeNames, "|");
                }
                pm_strcat(VolumeNames, row[0]);
@@ -404,6 +407,7 @@ int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM **Volume
       Mmsg(mdb->errmsg, _("No Volume for JobId %d found in Catalog.\n"), JobId);
    }
    db_unlock(mdb);
+
    return retval;
 }
 

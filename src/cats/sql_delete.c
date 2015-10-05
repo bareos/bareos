@@ -77,7 +77,7 @@ bool db_delete_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
          goto bail_out;
       }
       if ((row = sql_fetch_row(mdb)) == NULL) {
-         Mmsg1(&mdb->errmsg, _("Error fetching row %s\n"), sql_strerror(mdb));
+         Mmsg1(mdb->errmsg, _("Error fetching row %s\n"), sql_strerror(mdb));
          goto bail_out;
       }
       pr->PoolId = str_to_int64(row[0]);

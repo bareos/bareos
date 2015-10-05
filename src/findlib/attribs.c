@@ -36,7 +36,7 @@ static bool uid_set = false;
 #if defined(HAVE_WIN32)
 
 /* Imported Functions */
-extern void unix_name_to_win32(POOLMEM **win32_name, const char *name);
+extern void unix_name_to_win32(POOLMEM *&win32_name, const char *name);
 
 /* Forward referenced subroutines */
 static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
@@ -552,14 +552,13 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
       return STREAM_UNIX_ATTRIBUTES;
    }
 
-   unix_name_to_win32(&ff_pkt->sys_fname, ff_pkt->fname);
-
+   unix_name_to_win32(ff_pkt->sys_fname, ff_pkt->fname);
    if (p_GetFileAttributesExW)  {
       /**
        * Try unicode version
        */
       POOLMEM* pwszBuf = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf, ff_pkt->fname);
+      make_win32_path_UTF8_2_wchar(pwszBuf, ff_pkt->fname);
 
       BOOL b=p_GetFileAttributesExW((LPCWSTR)pwszBuf, GetFileExInfoStandard,
                                     (LPVOID)&atts);
