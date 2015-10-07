@@ -103,7 +103,7 @@ Jobs per page:
 
 	<td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $job['jobid'])); ?>"><?php echo $this->escapeHtml($job['jobid']); ?></a></td>
 	<td><?php echo $this->escapeHtml($job['name']); ?></td>
-	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job['clientname'])); ?>"><?php echo $this->escapeHtml($job['clientname']); ?></a></td>
+	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job['client'])); ?>"><?php echo $this->escapeHtml($job['client']); ?></a></td>
 	<td><?php echo $this->printJobType($job['type']); ?></td>
 	<td><?php echo $this->printJobLevel($job['level']); ?></td>
 	<td><?php echo $this->printDate($job['starttime']); ?></td>
