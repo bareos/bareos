@@ -49,9 +49,10 @@ void terminate_dird(int sig);
 static bool check_resources();
 static bool initialize_sql_pooling(void);
 static void cleanup_old_files();
+static bool init_sighandler_sighup();
 
 /* Exported subroutines */
-extern "C" void reload_config(int sig);
+extern bool do_reload_config();
 extern void invalidate_schedules();
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
@@ -365,9 +366,7 @@ int main (int argc, char *argv[])
 
    p_db_log_insert = (db_log_insert_func)dir_db_log_insert;
 
-#if !defined(HAVE_WIN32)
-   signal(SIGHUP, reload_config);
-#endif
+   init_sighandler_sighup();
 
    init_console_msg(working_directory);
 
@@ -524,10 +523,57 @@ static int find_free_reload_table_entry()
    return table;
 }
 
+
+
 /*
  * If we get here, we have received a SIGHUP, which means to
  *    reread our configuration file.
  *
+ */
+#if !defined(HAVE_WIN32)
+extern "C"
+void sighandler_reload_config(int sig, siginfo_t *siginfo, void *ptr)
+{
+   static bool already_here = false;
+
+   if (already_here) {
+      /* this should not happen, as this signal should be blocked */
+      Jmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+      return;
+   }
+   already_here = true;
+   do_reload_config();
+   already_here = false;
+}
+#endif
+
+static bool init_sighandler_sighup()
+{
+   bool retval = false;
+#if !defined(HAVE_WIN32)
+   sigset_t block_mask;
+   struct sigaction action;
+
+   /*
+    *  while handling SIGHUP signal,
+    *  ignore further SIGHUP signals.
+    */
+   sigemptyset(&block_mask);
+   sigaddset(&block_mask, SIGHUP);
+
+   memset(&action, 0, sizeof(action));
+   action.sa_sigaction = sighandler_reload_config;
+   action.sa_mask = block_mask;
+   action.sa_flags = SA_SIGINFO;
+   sigaction(SIGHUP, &action, NULL);
+
+   retval = true;
+#endif
+   return retval;
+}
+
+
+/*
  * The algorithm used is as follows: we count how many jobs are
  *   running and mark the running jobs to make a callback on
  *   exiting. The old config is saved with the reload table
@@ -543,28 +589,20 @@ static int find_free_reload_table_entry()
  *   resources, but a SYSTEM job is not since it *should* not have any
  *   permanent pointers to jobs.
  */
-extern "C"
-void reload_config(int sig)
+bool do_reload_config()
 {
    static bool already_here = false;
-#if !defined(HAVE_WIN32)
-   sigset_t set;
-#endif
    JCR *jcr;
    int njobs = 0;                     /* number of running jobs */
    int table, rtable;
    bool ok;
+   bool reloaded = false;
 
    if (already_here) {
-      abort();                        /* Oops, recursion -> die */
+      Jmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+      return false;
    }
    already_here = true;
-
-#if !defined(HAVE_WIN32)
-   sigemptyset(&set);
-   sigaddset(&set, SIGHUP);
-   sigprocmask(SIG_BLOCK, &set, NULL);
-#endif
 
    lock_jobs();
    LockRes();
@@ -618,6 +656,7 @@ void reload_config(int sig)
          }
       }
       endeach_jcr(jcr);
+      reloaded = true;
    }
 
    /* Reset globals */
@@ -632,12 +671,11 @@ void reload_config(int sig)
 bail_out:
    UnlockRes();
    unlock_jobs();
-#if !defined(HAVE_WIN32)
-   sigprocmask(SIG_UNBLOCK, &set, NULL);
-   signal(SIGHUP, reload_config);
-#endif
    already_here = false;
+   return reloaded;
 }
+
+
 
 /*
  * See if two storage definitions point to the same Storage Daemon.

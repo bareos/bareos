@@ -274,7 +274,7 @@ void free_resource(RES *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -328,7 +328,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.dir_res.hdr.desc);
          res_all.dir_res.hdr.desc = NULL;
       }
-      return;
+      return (error == 0);
    }
 
    /*
@@ -356,6 +356,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->dir_res.name());
       }
    }
+   return (error == 0);
 }
 
 bool parse_bat_config(CONFIG *config, const char *configfile, int exit_code)

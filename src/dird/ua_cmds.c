@@ -51,6 +51,8 @@ extern bool show_cmd(UAContext *ua, const char *cmd);
 extern bool sqlquery_cmd(UAContext *ua, const char *cmd);
 extern bool status_cmd(UAContext *ua, const char *cmd);
 extern bool update_cmd(UAContext *ua, const char *cmd);
+/* dird.c */
+extern bool do_reload_config();
 
 /* Forward referenced functions */
 static bool add_cmd(UAContext *ua, const char *cmd);
@@ -1863,12 +1865,13 @@ static bool time_cmd(UAContext *ua, const char *cmd)
 /*
  * reload the conf file
  */
-extern "C" void reload_config(int sig);
-
 static bool reload_cmd(UAContext *ua, const char *cmd)
 {
-   reload_config(1);
-   return true;
+   bool result;
+
+   result = do_reload_config();
+
+   return result;
 }
 
 /*

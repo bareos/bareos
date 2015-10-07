@@ -707,7 +707,7 @@ void free_resource(RES *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -809,7 +809,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res_all.res_dir.hdr.desc = NULL;
       }
 
-      return;
+      return (error == 0);
    }
 
    /*
@@ -837,6 +837,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type), res->res_dir.name());
       }
    }
+   return (error == 0);
 }
 
 /*

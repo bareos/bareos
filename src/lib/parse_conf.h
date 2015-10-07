@@ -383,7 +383,7 @@ void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt,
                    void *sock, bool hide_sensitive_data = false);
 void free_resource(RES *res, int type);
 void init_resource(int type, RES_ITEM *item);
-void save_resource(int type, RES_ITEM *item, int pass);
+bool save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
 

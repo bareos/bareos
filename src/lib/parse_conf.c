@@ -290,7 +290,11 @@ bool CONFIG::parse_config()
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
                }
-               save_resource(res_type, items, pass);  /* save resource */
+               /* save resource */
+               if (!save_resource(res_type, items, pass)) {
+                  scan_err0(lc, _("save_resource failed"));
+                  goto bail_out;
+               };
                break;
 
             case T_EOL:

@@ -269,7 +269,7 @@ void free_resource(RES *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -326,7 +326,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
          free(res_all.res_monitor.hdr.desc);
          res_all.res_monitor.hdr.desc = NULL;
       }
-      return;
+      return (error == 0);
    }
 
    /*
@@ -357,6 +357,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
                res_to_str(type), res->res_monitor.name(), rindex, pass);
       }
    }
+   return (error == 0);
 }
 
 void init_tmon_config(CONFIG *config, const char *configfile, int exit_code)

@@ -1146,11 +1146,10 @@ static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type
    for (int i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res->hdr.item_present)) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
+            Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
                  items[i].name, res_type, res->name());
-            retval = false;
-            goto bail_out;
+            return false;
          }
       }
 
@@ -1158,8 +1157,8 @@ static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), res_type);
-         goto bail_out;
+         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_type);
+         return false;
       }
    }
 
@@ -2647,11 +2646,11 @@ void free_resource(RES *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-void save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
-   bool error = false;
+   bool result = true;
 
    switch (type) {
    case R_JOBDEFS:
@@ -2663,9 +2662,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
        */
       if (items[0].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
-             Emsg2(M_ERROR_TERM, 0,
-                   _("%s item is required in %s resource, but not found.\n"),
-                   items[0].name, resources[rindex]);
+            Emsg2(M_ERROR, 0,
+                  _("%s item is required in %s resource, but not found.\n"),
+                  items[0].name, resources[rindex]);
+            return false;
          }
       }
       break;
@@ -2674,7 +2674,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
        * Ensure that all required items are present
        */
       if (!validate_resource(items, &res_all.res_dir, resources[rindex].name)) {
-         return;
+         return false;
       }
    }
 
@@ -2706,7 +2706,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
           * Find resource saved in pass 1
           */
          if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
+            return false;
          } else {
             /*
              * Explicitly copy resource pointers from this pass (res_all)
@@ -2722,7 +2723,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_CONSOLE:
          if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
+            return false;
          } else {
             res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
             res->res_con.profiles = res_all.res_con.profiles;
@@ -2730,7 +2732,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_DIRECTOR:
          if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+            return false;
          } else {
             res->res_dir.plugin_names = res_all.res_dir.plugin_names;
             res->res_dir.messages = res_all.res_dir.messages;
@@ -2740,7 +2743,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_STORAGE:
          if (!(res = (URES *)GetResWithName(type, res_all.res_store.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
+            return false;
          } else {
             res->res_store.paired_storage = res_all.res_store.paired_storage;
 
@@ -2753,7 +2757,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
       case R_JOBDEFS:
       case R_JOB:
          if (!(res = (URES *)GetResWithName(type, res_all.res_job.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
+            return false;
          } else {
             res->res_job.messages = res_all.res_job.messages;
             res->res_job.schedule = res_all.res_job.schedule;
@@ -2807,7 +2812,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_COUNTER:
          if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
+            return false;
          } else {
             res->res_counter.Catalog = res_all.res_counter.Catalog;
             res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
@@ -2815,7 +2821,8 @@ void save_resource(int type, RES_ITEM *items, int pass)
          break;
       case R_CLIENT:
          if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
+            return false;
          } else {
             if (res_all.res_client.catalog) {
                res->res_client.catalog = res_all.res_client.catalog;
@@ -2836,14 +2843,15 @@ void save_resource(int type, RES_ITEM *items, int pass)
           * into the Schedule resource.
           */
          if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
-            Emsg1(M_ERROR_TERM, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
+            Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
+            return false;
          } else {
             res->res_sch.run = res_all.res_sch.run;
          }
          break;
       default:
          Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
-         error = true;
+         result = false;
          break;
       }
 
@@ -2861,13 +2869,13 @@ void save_resource(int type, RES_ITEM *items, int pass)
          res_all.res_dir.hdr.desc = NULL;
       }
 
-      return;
+      return result;
    }
 
    /*
     * Common
     */
-   if (!error) {
+   if (result == true) {
       res = (URES *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
@@ -2877,8 +2885,9 @@ void save_resource(int type, RES_ITEM *items, int pass)
       } else {
          RES *next, *last;
          if (!res->res_dir.name()) {
-            Emsg1(M_ERROR_TERM, 0, _("Name item is required in %s resource, but not found.\n"),
+            Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
                   resources[rindex]);
+            return false;
          }
          /*
           * Add new res to end of chain
@@ -2886,9 +2895,10 @@ void save_resource(int type, RES_ITEM *items, int pass)
          for (last = next = res_head[rindex]; next; next = next->next) {
             last = next;
             if (bstrcmp(next->name, res->res_dir.name())) {
-               Emsg2(M_ERROR_TERM, 0,
+               Emsg2(M_ERROR, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.name());
+               return false;
             }
          }
          last->next = (RES *)res;
@@ -2896,6 +2906,7 @@ void save_resource(int type, RES_ITEM *items, int pass)
                res->res_dir.name(), rindex, pass);
       }
    }
+   return result;
 }
 
 /*
