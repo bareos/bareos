@@ -1837,8 +1837,25 @@ static bool time_cmd(UAContext *ua, const char *cmd)
    char sdt[50];
    time_t ttime = time(NULL);
 
+   ua->send->object_start("time");
+
    bstrftime(sdt, sizeof(sdt), ttime, "%a %d-%b-%Y %H:%M:%S");
-   ua->send_msg("%s\n", sdt);
+   ua->send->object_key_value("full", sdt, "%s\n");
+
+   bstrftime(sdt, sizeof(sdt), ttime, "%Y");
+   ua->send->object_key_value("year", sdt);
+   bstrftime(sdt, sizeof(sdt), ttime, "%m");
+   ua->send->object_key_value("month", sdt);
+   bstrftime(sdt, sizeof(sdt), ttime, "%d");
+   ua->send->object_key_value("day", sdt);
+   bstrftime(sdt, sizeof(sdt), ttime, "%H");
+   ua->send->object_key_value("hour", sdt);
+   bstrftime(sdt, sizeof(sdt), ttime, "%M");
+   ua->send->object_key_value("minute", sdt);
+   bstrftime(sdt, sizeof(sdt), ttime, "%S");
+   ua->send->object_key_value("second", sdt);
+
+   ua->send->object_end("time");
 
    return true;
 }
