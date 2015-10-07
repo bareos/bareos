@@ -486,16 +486,17 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    }
 
    now = time(NULL);
+   bstrftime(dt, sizeof(dt), now, "%Y%m%d-%H%M%S");
+
    switch (p_ctx->backup_level) {
    case L_FULL:
-      Mmsg(fname, "/@MSSQL/%s/%s/db-full", p_ctx->instance, p_ctx->database);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-full.bak", p_ctx->instance, p_ctx->database, dt);
       break;
    case L_DIFFERENTIAL:
-      Mmsg(fname, "/@MSSQL/%s/%s/db-diff", p_ctx->instance, p_ctx->database);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-diff.bak", p_ctx->instance, p_ctx->database, dt);
       break;
    case L_INCREMENTAL:
-      bstrutime(dt, sizeof(dt), now);
-      Mmsg(fname, "/@MSSQL/%s/%s/log-%s", p_ctx->instance, p_ctx->database, dt);
+      Mmsg(fname, "/@MSSQL/%s/%s/db-%s-log.trn", p_ctx->instance, p_ctx->database, dt);
       break;
    default:
       Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n", p_ctx->backup_level);
