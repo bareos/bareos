@@ -98,7 +98,7 @@ class ClientController extends AbstractActionController
 	private function getClientBackups($client=null, $limit=10, $order="desc")
 	{
 		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command('list backups client="'.$client.'" limit='.$limit.' order='.$order.'', 2, null);
+                $result = $director->send_command('llist backups client="'.$client.'" limit='.$limit.' order='.$order.'', 2, null);
 		if( preg_match("/Select/", $result) ) {
 			return null;
 		}
