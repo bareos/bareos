@@ -46,7 +46,8 @@ class RestoreController extends AbstractActionController
 			$this->getRestoreParams();
 
 			if($this->restore_params['client'] == null) {
-				$this->restore_params['client'] = @array_pop($this->getClients(2))['name'];
+				$client = array_pop($this->getClients(2));
+				$this->restore_params['client'] = $client['name'];
 			}
 
 			if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
