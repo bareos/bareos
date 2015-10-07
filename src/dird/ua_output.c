@@ -404,6 +404,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    int days = 0,
        hours = 0,
        jobstatus = 0;
+   int count = -1;
+   int last_run = -1;
    time_t schedtime = 0;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
@@ -493,8 +495,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (i >= 0) {
          volumename = ua->argv[i];
       }
+      last_run = find_arg(ua, NT_("last"));
+      count = find_arg(ua, NT_("count"));
       db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, ua->send, llist);
+                          jobstatus, volumename, schedtime, last_run, count,
+                          ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -509,7 +514,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (jobid > 0) {
             jr.JobId = jobid;
             db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                                jobstatus, volumename, schedtime, ua->send, llist);
+                                jobstatus, volumename, schedtime, last_run, count,
+                                ua->send, llist);
          }
       }
   } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
@@ -519,7 +525,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       bstrncpy(jr.Job, ua->argv[1], MAX_NAME_LENGTH);
       jr.JobId = 0;
       db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, ua->send, llist);
+                          jobstatus, volumename, schedtime, last_run, count,
+                          ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
       /*
        * List BASEFILES
