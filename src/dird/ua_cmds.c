@@ -2447,6 +2447,7 @@ static bool help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key, "  %-13s");
             ua->send->object_key_value("description", commands[i].help, " %s\n\n");
             ua->send->object_key_value("arguments", "Arguments:\n\t", commands[i].usage, "%s\n", 40);
+            ua->send->object_key_value_bool("permission", acl_access_ok(ua, Command_ACL, commands[i].key));
             ua->send->object_end(commands[i].key);
             break;
          }
@@ -2456,6 +2457,7 @@ static bool help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key, "  %-13s");
             ua->send->object_key_value("description", commands[i].help, " %s\n");
             ua->send->object_key_value("arguments", commands[i].usage, 0);
+            ua->send->object_key_value_bool("permission", true);
             ua->send->object_end(commands[i].key);
          }
       }
@@ -2483,6 +2485,7 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key, "%s\n");
             ua->send->object_key_value("description", commands[i].help);
             ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
+            ua->send->object_key_value_bool("permission", true);
             ua->send->object_end(commands[i].key);
          }
       }
@@ -2500,6 +2503,7 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key);
             ua->send->object_key_value("description", commands[i].help);
             ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+            ua->send->object_key_value_bool("permission", acl_access_ok(ua, Command_ACL, commands[i].key));
             ua->send->object_end(commands[i].key);
             break;
          }
@@ -2516,6 +2520,7 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
          ua->send->object_key_value("command", commands[i].key, "%s ");
          ua->send->object_key_value("description", commands[i].help, "%s -- ");
          ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+         ua->send->object_key_value_bool("permission", true);
          ua->send->object_end(commands[i].key);
       }
    }

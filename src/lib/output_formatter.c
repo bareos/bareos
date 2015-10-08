@@ -209,6 +209,45 @@ void OUTPUT_FORMATTER::decoration(const char *fmt, ...)
    }
 }
 
+void OUTPUT_FORMATTER::object_key_value_bool(const char *key, bool value)
+{
+   object_key_value_bool(key, NULL, value, NULL);
+}
+
+void OUTPUT_FORMATTER::object_key_value_bool(const char *key, bool value,
+                                             const char *value_fmt)
+{
+   object_key_value_bool(key, NULL, value, value_fmt);
+}
+
+void OUTPUT_FORMATTER::object_key_value_bool(const char *key, const char *key_fmt,
+                                             bool value, const char *value_fmt)
+{
+   POOL_MEM string;
+
+   switch (api) {
+#if HAVE_JANSSON
+   case API_MODE_JSON:
+      json_key_value_add_bool(key, value);
+      break;
+#endif
+   default:
+      if (key_fmt) {
+         string.bsprintf(key_fmt, key);
+         result_message_plain->strcat(string);
+      }
+      if (value_fmt) {
+         if (value) {
+            string.bsprintf(value_fmt, "true");
+         } else {
+            string.bsprintf(value_fmt, "false");
+         }
+         result_message_plain->strcat(string);
+      }
+      break;
+   }
+}
+
 void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value)
 {
    object_key_value(key, NULL, value, NULL);
@@ -423,6 +462,38 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
 }
 
 #if HAVE_JANSSON
+bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
+{
+   json_t *json_obj = NULL;
+#if JANSSON_VERSION_HEX < 0x020400
+   json_t *json_bool = NULL;
+#endif
+   POOL_MEM lkey(key);
+
+   lkey.toLower();
+   json_obj = (json_t *)result_stack_json->last();
+   if (json_obj == NULL) {
+      Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
+   }
+
+#if JANSSON_VERSION_HEX >= 0x020400
+   json_object_set(json_obj, lkey.c_str(), json_boolean(value));
+#else
+   /*
+    * The function json_boolean(bool) requires jansson >= 2.4,
+    * which is not available on all platform, so assign the value manually.
+    */
+   if (value) {
+      json_bool = json_true();
+   } else {
+      json_bool = json_false();
+   }
+   json_object_set(json_obj, lkey.c_str(), json_bool);
+#endif
+
+   return true;
+}
+
 bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 {
    json_t *json_obj = NULL;
