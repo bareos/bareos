@@ -396,6 +396,63 @@ dpl_uks_gen_key(BIGNUM *id,
 }
 
 /**
+ * Get the hash field from a UKS key.
+ *
+ * Get the hash field from a UKS key. The binary key @a id is stored in a
+ * `BIGNUM` structure, which you should create with `BN_new()` and free with
+ * `BN_free()`.
+ *
+ * @param k the binary UKS key
+ * @retval the value of the hash
+ */
+uint32_t
+dpl_uks_hash_get(BIGNUM *k)
+{
+  int i;
+  int hash = 0;
+
+  for (i = 0; i < DPL_UKS_HASH_NBITS; i++)
+    {
+      if (BN_is_bit_set(k, DPL_UKS_PAYLOAD_NBITS + i))
+          hash |= 1<<i;
+    }
+
+  return hash;
+}
+
+
+/**
+ * Set the hash field in a UKS key.
+ *
+ * Set the hash field in a UKS key. The binary key @a id is stored in a
+ * `BIGNUM` structure, which you should create with `BN_new()` and free with
+ * `BN_free()`.
+ *
+ * @param k the binary UKS key
+ * @param hash will be used as the class field
+ * @retval DPL_SUCCESS on success, or
+ * @retval DPL_* a Droplet error code on failure
+ */
+dpl_status_t
+dpl_uks_hash_set(BIGNUM *k, uint32_t hash)
+{
+  int i;
+
+  if (hash < 0 || hash >= (1<<DPL_UKS_HASH_NBITS))
+    return DPL_FAILURE;
+
+  for (i = 0; i < DPL_UKS_HASH_NBITS; i++)
+    {
+      if (hash & 1<<i)
+        BN_set_bit(k, DPL_UKS_PAYLOAD_NBITS + i);
+      else
+        BN_clear_bit(k, DPL_UKS_PAYLOAD_NBITS + i);
+    }
+
+  return DPL_SUCCESS;
+}
+
+/**
  * Set the class field in a UKS key.
  *
  * Set the class field in a UKS key.  The binary key @a id is stored in a

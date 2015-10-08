@@ -60,6 +60,8 @@ typedef enum
 dpl_status_t dpl_uks_gen_key_raw(BIGNUM *id, uint32_t hash, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
 dpl_status_t dpl_uks_gen_key_ext(BIGNUM *id, dpl_uks_mask_t mask, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
 dpl_status_t dpl_uks_gen_key(BIGNUM *id, uint64_t oid, uint32_t volid, uint8_t serviceid, uint32_t specific);
+uint32_t     dpl_uks_hash_get(BIGNUM *k);
+dpl_status_t dpl_uks_hash_set(BIGNUM *k, uint32_t hash);
 dpl_status_t dpl_uks_set_class(BIGNUM *k, int cl);
 dpl_status_t dpl_uks_set_replica(BIGNUM *k, int replica);
 dpl_status_t dpl_uks_bn2hex(const BIGNUM *id, char *id_str);

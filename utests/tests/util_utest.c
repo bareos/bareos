@@ -2,6 +2,7 @@
 #include <check.h>
 #include <droplet.h>
 #include <droplet/utils.h>
+#include <droplet/uks/uks.h>
 #include "utest_main.h"
 
 START_TEST(strrstr_test)
@@ -82,6 +83,27 @@ START_TEST(xattrs_test)
 }
 END_TEST
 
+START_TEST(uks_hash_setget_test)
+{
+    int hash_set = 0xcabefe;
+    int hash_rd = 0;
+    int ret;
+    BIGNUM *bn = BN_new();
+    dpl_assert_ptr_not_null(bn);
+
+    BN_set_bit(bn, DPL_UKS_NBITS - 1);
+    BN_clear_bit(bn, DPL_UKS_NBITS - 1);
+
+    ret = dpl_uks_hash_set(bn, hash_set);
+    dpl_assert_int_eq(ret, DPL_SUCCESS);
+
+    hash_rd = dpl_uks_hash_get(bn);
+    dpl_assert_int_eq(hash_set, hash_rd);
+
+    BN_free(bn);
+}
+END_TEST
+
 Suite *
 util_suite(void)
 {
@@ -89,6 +111,7 @@ util_suite(void)
   TCase *t = tcase_create("base");
   tcase_add_test(t, strrstr_test);
   tcase_add_test(t, xattrs_test);
+  tcase_add_test(t, uks_hash_setget_test);
   suite_add_tcase(s, t);
   return s;
 }
