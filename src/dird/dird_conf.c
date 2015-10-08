@@ -1952,21 +1952,17 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                         } else if (*p == 'o') {
                            Mmsg(temp, "LZO\n");
                            pm_strcat(cfg_str, temp.c_str());
-                           break;
                         } else if (*p == 'f') {
                            p++;
                            if (*p == 'f') {
                               Mmsg(temp, "LZFAST\n");
                               pm_strcat(cfg_str, temp.c_str());
-                              break;
                            } else if (*p == '4') {
                               Mmsg(temp, "LZ4\n");
                               pm_strcat(cfg_str, temp.c_str());
-                              break;
                            } else if (*p == 'h') {
                               Mmsg(temp, "LZ4HC\n");
                               pm_strcat(cfg_str, temp.c_str());
-                              break;
                            }
                         }
                         break;
