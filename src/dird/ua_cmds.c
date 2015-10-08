@@ -2451,11 +2451,13 @@ static bool help_cmd(UAContext *ua, const char *cmd)
             break;
          }
       } else {
-         ua->send->object_start(commands[i].key);
-         ua->send->object_key_value("command", commands[i].key, "  %-13s");
-         ua->send->object_key_value("description", commands[i].help, " %s\n");
-         ua->send->object_key_value("arguments", commands[i].usage, 0);
-         ua->send->object_end(commands[i].key);
+         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key, "  %-13s");
+            ua->send->object_key_value("description", commands[i].help, " %s\n");
+            ua->send->object_key_value("arguments", commands[i].usage, 0);
+            ua->send->object_end(commands[i].key);
+         }
       }
    }
    if (i == comsize && ua->argc == 2) {
@@ -2476,11 +2478,13 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
    j = find_arg(ua, NT_("all"));
    if (j >= 0) {
       for (i = 0; i < comsize; i++) {
-         ua->send->object_start(commands[i].key);
-         ua->send->object_key_value("command", commands[i].key, "%s\n");
-         ua->send->object_key_value("description", commands[i].help);
-         ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
-         ua->send->object_end(commands[i].key);
+         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key, "%s\n");
+            ua->send->object_key_value("description", commands[i].help);
+            ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
+            ua->send->object_end(commands[i].key);
+         }
       }
       return true;
    }
@@ -2507,11 +2511,13 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
     * Want to display everything
     */
    for (i = 0; i < comsize; i++) {
-      ua->send->object_start(commands[i].key);
-      ua->send->object_key_value("command", commands[i].key, "%s ");
-      ua->send->object_key_value("description", commands[i].help, "%s -- ");
-      ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
-      ua->send->object_end(commands[i].key);
+      if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+         ua->send->object_start(commands[i].key);
+         ua->send->object_key_value("command", commands[i].key, "%s ");
+         ua->send->object_key_value("description", commands[i].help, "%s -- ");
+         ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+         ua->send->object_end(commands[i].key);
+      }
    }
    return true;
 }
