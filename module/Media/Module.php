@@ -3,7 +3,7 @@
 namespace Media;
 
 use Media\Model\Media;
-use Media\Model\MediaTable;
+use Media\Model\MediaModel;
 
 class Module
 {
@@ -25,6 +25,18 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
+	}
+
+	public function getServiceConfig()
+	{
+		return array(
+			'factories' => array(
+				'Media\Model\MediaModel' => function() {
+					$model = new MediaModel();
+					return $model;
+				}
+			)
+		);
 	}
 
 }

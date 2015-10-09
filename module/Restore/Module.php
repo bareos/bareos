@@ -3,14 +3,12 @@
 namespace Restore;
 
 use Restore\Model\Restore;
-use Restore\Model\RestoreTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
+use Restore\Model\RestoreModel;
 
 class Module
 {
 
-	public function getAutoloaderConfig() 
+	public function getAutoloaderConfig()
 	{
 		return array(
 			'Zend\Loader\ClassMapAutoloader' => array(
@@ -24,27 +22,19 @@ class Module
 		);
 	}
 
-	public function getConfig() 
+	public function getConfig()
 	{
 		return include __DIR__ . '/config/module.config.php';
 	}
 
-	public function getServiceConfig() 
+	public function getServiceConfig()
 	{
 		return array(
 			'factories' => array(
-				'Restore\Model\RestoreTable' => function($sm) 
+				'Restore\Model\RestoreModel' => function()
 				{
-					$tableGateway = $sm->get('RestoreTableGateway');
-					$table = new RestoreTable($tableGateway);
-					return $table;
-				},
-				'RestoreTableGateway' => function($sm)
-				{
-					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Restore());
-					return new TableGateway('restore', $dbAdapter, null, $resultSetPrototype);
+					$model = new RestoreModel();
+					return $model;
 				},
 			),
 		);

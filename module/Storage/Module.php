@@ -3,7 +3,7 @@
 namespace Storage;
 
 use Storage\Model\Storage;
-use Storage\Model\StorageTable;
+use Storage\Model\StorageModel;
 
 class Module
 {
@@ -25,6 +25,18 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
+	}
+
+	public function getServiceConfig()
+	{
+		return array(
+			'factories' => array(
+				'Storage\Model\StorageModel' => function() {
+					$model = new StorageModel();
+					return $model;
+				}
+			)
+		);
 	}
 
 }

@@ -3,7 +3,7 @@
 namespace Pool;
 
 use Pool\Model\Pool;
-use Pool\Model\PoolTable;
+use Pool\Model\PoolModel;
 
 class Module
 {
@@ -25,6 +25,18 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
+	}
+
+	public function getServiceConfig()
+	{
+		return array(
+			'factories' => array(
+				'Pool\Model\PoolModel' => function() {
+					$model = new PoolModel();
+					return $model;
+				}
+			)
+		);
 	}
 
 }

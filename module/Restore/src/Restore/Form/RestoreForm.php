@@ -493,7 +493,7 @@ class RestoreForm extends Form
 						$level = "Full";
 						break;
 				}
-                                $selectData[$backup['jobid']] = "(" . $backup['jobid']  . ") " . $backup['starttime'] . " - " . $backup['fileset'] . " - " . $level;
+                                $selectData[$backup['jobid']] = "(" . $backup['jobid']  . ") " . $backup['starttime'] . " - " . $backup['name'] . " - " . $level;
                         }
                 }
                 return $selectData;

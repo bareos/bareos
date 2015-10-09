@@ -3,7 +3,7 @@
 namespace Fileset;
 
 use Fileset\Model\Fileset;
-use Fileset\Model\FilesetTable;
+use Fileset\Model\FilesetModel;
 
 class Module
 {
@@ -27,5 +27,16 @@ class Module
 		return include  __DIR__ . '/config/module.config.php';
 	}
 
-}
+	public function getServiceConfig()
+	{
+		return array(
+			'factories' => array(
+				'Fileset\Model\FilesetModel' => function() {
+					$model = new FilesetModel();
+					return $model;
+				}
+			)
+		);
+	}
 
+}

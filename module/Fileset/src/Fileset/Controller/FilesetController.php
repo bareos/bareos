@@ -33,13 +33,13 @@ use Zend\Paginator\Paginator;
 class FilesetController extends AbstractActionController
 {
 
-	protected $director;
+	protected $filesetModel;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$filesets = $this->getFilesets();
+				$filesets = $this->getFilesetModel()->getFilesets();
 				$page = (int) $this->params()->fromQuery('page', 1);
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 
@@ -64,7 +64,7 @@ class FilesetController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 				$id = $this->params()->fromRoute('id', 0);
-				$fileset = $this->getFileset($id);
+				$fileset = $this->getFilesetModel()->getFileset($id);
 
 				return new ViewModel(
 					array(
@@ -77,19 +77,13 @@ class FilesetController extends AbstractActionController
 		}
 	}
 
-	private function getFilesets()
+	public function getFilesetModel()
 	{
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("list filesets", 2, null);
-		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $filesets['result']['filesets'];
-	}
-
-	private function getFileset($id) {
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("llist fileset filesetid=".$id, 2, null);
-		$fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $fileset['result']['filesets'][0];
+		if(!$this->filesetModel) {
+			$sm = $this->getServiceLocator();
+			$this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
+		}
+		return $this->filesetModel;
 	}
 
 }

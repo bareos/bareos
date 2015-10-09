@@ -3,9 +3,7 @@
 namespace Director;
 
 use Director\Model\Director;
-use Director\Model\DirectorTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
+use Director\Model\DirectorModel;
 
 class Module
 {
@@ -33,20 +31,11 @@ class Module
 	{
 		return array(
 			'factories' => array(
-				'Director\Model\DirectorTable' => function($sm)
-				{
-					$tableGateway = $sm->get('DirectorTableGateway');
-					$table = new DirectorTable($tableGateway);
-					return $table;
-				},
-				'DirectorTableGateway' => function($sm)
-				{
-					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Director());
-					return new TableGateway('director', $dbAdapter, null, $resultSetPrototype);
-				},
-			),
+				'Director\Model\DirectorModel' => function() {
+					$model = new DirectorModel();
+					return $model;
+				}
+			)
 		);
 	}
 

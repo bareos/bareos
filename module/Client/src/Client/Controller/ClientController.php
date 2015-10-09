@@ -33,30 +33,28 @@ use Zend\Paginator\Paginator;
 class ClientController extends AbstractActionController
 {
 
-	protected $clientTable;
-	protected $jobTable;
-	protected $director;
+	protected $clientModel;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$clients = $this->getClients();
+			$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
+			$clients = $this->getClientModel()->getClients();
 
-				$paginator = new Paginator(new ArrayAdapter($clients));
-				$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-				$paginator->setItemCountPerPage($limit);
+			$paginator = new Paginator(new ArrayAdapter($clients));
+			$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
+			$paginator->setItemCountPerPage($limit);
 
-				return new ViewModel(
-					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
-					)
-				);
+			return new ViewModel(
+				array(
+					'paginator' => $paginator,
+					'limit' => $limit,
+				)
+			);
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
@@ -64,48 +62,28 @@ class ClientController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$name = $this->params()->fromRoute('id');
+			$name = $this->params()->fromRoute('id');
 
-				return new ViewModel(
-					array(
-					  'client' => $this->getClient($name),
-					  'backups' => $this->getClientBackups($name, 10, "desc"),
-					)
-				);
+			return new ViewModel(
+				array(
+					'client' => $this->getClientModel()->getClient($name),
+					'backups' => $this->getClientModel()->getClientBackups($name, 10, "desc"),
+				)
+			);
 
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
-	private function getClients()
+	public function getClientModel()
 	{
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("llist clients", 2, null);
-		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $clients['result']['clients'];
-	}
-
-	private function getClient($client=null)
-	{
-		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command('llist client="'.$client.'"', 2, null);
-                $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $clients['result']['clients'][0];
-	}
-
-	private function getClientBackups($client=null, $limit=10, $order="desc")
-	{
-		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command('llist backups client="'.$client.'" limit='.$limit.' order='.$order.'', 2, null);
-		if( preg_match("/Select/", $result) ) {
-			return null;
+		if(!$this->clientModel) {
+			$sm = $this->getServiceLocator();
+			$this->clientModel = $sm->get('Client\Model\ClientModel');
 		}
-		else {
-			$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $backups['result']['backups'];
-		}
+		return $this->clientModel;
 	}
 
 }

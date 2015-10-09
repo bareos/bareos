@@ -32,12 +32,13 @@ use Zend\Paginator\Paginator;
 
 class MediaController extends AbstractActionController
 {
+	protected $mediaModel;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$volumes = $this->getVolumes();
+				$volumes = $this->getMediaModel()->getVolumes();
 				$page = (int) $this->params()->fromQuery('page');
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 
@@ -63,7 +64,7 @@ class MediaController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 			$volumename = $this->params()->fromRoute('id');
-			$volume = $this->getVolume($volumename);
+			$volume = $this->getMediaModel()->getVolume($volumename);
 
 			return new ViewModel(array(
 				'media' => $volume,
@@ -75,21 +76,13 @@ class MediaController extends AbstractActionController
 		}
 	}
 
-	private function getVolumes()
+	public function getMediaModel()
 	{
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("llist volumes all", 2, null);
-		$pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $pools['result']['volumes'];
-	}
-
-	private function getVolume($volume)
-	{
-		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command('llist volume="'.$volume.'"', 2, null);
-                $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $pools['result']['volume'];
+		if(!$this->mediaModel) {
+			$sm = $this->getServiceLocator();
+			$this->mediaModel = $sm->get('Media\Model\MediaModel');
+		}
+		return $this->mediaModel;
 	}
 
 }
-

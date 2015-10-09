@@ -31,79 +31,79 @@ use Zend\View\Model\ViewModel;
 
 class DirectorController extends AbstractActionController
 {
-
-	protected $director = null;
-	protected $directorOutput = array();
+	protected $directorModel;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$cmd = "status director";
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'directorOutput' => $this->director->send_command($cmd),
-				));
+			return new ViewModel(array(
+					'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
+				)
+			);
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
 	public function messagesAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$cmd = "messages";
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'directorOutput' => $this->director->send_command($cmd),
-					));
-				}
+			return new ViewModel(array(
+					'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
+				)
+			);
+		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
 	public function scheduleAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$cmd = "show schedule";
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'directorOutput' => $this->director->send_command($cmd),
-					));
+			return new ViewModel(array(
+					'directorOutput' => $this->getDirectorModel()->getDirectorSchedules()
+				)
+			);
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
 	public function schedulerstatusAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$cmd = "status scheduler";
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'directorOutput' => $this->director->send_command($cmd),
-					));
+			return new ViewModel(array(
+					'directorOutput' => $this->getDirectorModel()->getDirectorSchedulerStatus()
+				)
+			);
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
 	public function versionAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				$cmd = "version";
-				$this->director = $this->getServiceLocator()->get('director');
-				return new ViewModel(array(
-						'directorOutput' => $this->director->send_command($cmd),
-					));
+			return new ViewModel(array(
+					'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
+				)
+			);
 		}
 		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 
+	public function getDirectorModel()
+	{
+		if(!$this->directorModel) {
+			$sm = $this->getServiceLocator();
+			$this->directorModel = $sm->get('Director\Model\DirectorModel');
+		}
+		return $this->directorModel;
+	}
 }
-

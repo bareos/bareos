@@ -34,7 +34,8 @@ use Restore\Form\RestoreForm;
 class RestoreController extends AbstractActionController
 {
 
-	protected $restore_params = array();
+	protected $restoreModel;
+	protected $restore_params;
 
 	/**
 	 *
@@ -46,30 +47,37 @@ class RestoreController extends AbstractActionController
 			$this->getRestoreParams();
 
 			if($this->restore_params['client'] == null) {
-				$client = array_pop($this->getClients(2));
+				$clients = $this->getRestoreModel()->getClients();
+				$client = array_pop($clients);
 				$this->restore_params['client'] = $client['name'];
 			}
 
 			if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
-				$latestbackup = $this->getClientBackups($this->restore_params['client'], "any", "desc", 1);
-				$this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+				$latestbackup = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc", 1);
+				if(empty($latestbackup)) {
+					$this->restore_params['jobid'] = null;
+				}
+				else {
+					$this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+				}
 			}
 
 			if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
 				$jobids = $this->restore_params['jobid'];
 			}
 			else {
-				$jobids = $this->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+				$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+				$this->restore_params['jobids'] = $jobids;
 			}
 
 			if($this->restore_params['type'] == "client") {
-				$backups = $this->getClientBackups($this->restore_params['client'], "any", "desc");
+				$backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
 			}
 
-			$jobs = $this->getJobs(2);
-                        $clients = $this->getClients(2);
-                        $filesets = $this->getFilesets(0);
-                        $restorejobs = $this->getRestoreJobs(0);
+			$jobs = $this->getRestoreModel()->getJobs();
+                        $clients = $this->getRestoreModel()->getClients();
+                        $filesets = $this->getRestoreModel()->getFilesets();
+                        $restorejobs = $this->getRestoreModel()->getRestoreJobs();
 
 			// Create the form
 			$form = new RestoreForm(
@@ -109,7 +117,7 @@ class RestoreController extends AbstractActionController
 						$jobids = $form->getInputFilter()->getValue('jobids_hidden');
 						$replace = $form->getInputFilter()->getValue('replace');
 
-						$result = $this->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+						$result = $this->getRestoreModel()->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
 
 					}
 
@@ -166,34 +174,22 @@ class RestoreController extends AbstractActionController
 
 		// Get directories
 		if($this->restore_params['type'] == "client") {
-			$directories = $this->getDirectories(
-						$this->getJobIds($this->restore_params['jobid'],
-						$this->restore_params['mergefilesets'],
-						$this->restore_params['mergejobs']),
-						$this->restore_params['id']
-					);
+			$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+			$this->restore_params['jobids'] = $jobids;
+			$directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobids'],$this->restore_params['id']);
 		}
 		else {
-			$directories = $this->getDirectories(
-						$this->restore_params['jobid'],
-						$this->restore_params['id']
-					);
+			$directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobid'],$this->restore_params['id']);
 		}
 
 		// Get files
 		if($this->restore_params['type'] == "client") {
-			$files = $this->getFiles(
-						$this->getJobIds($this->restore_params['jobid'],
-						$this->restore_params['mergefilesets'],
-						$this->restore_params['mergejobs']),
-						$this->restore_params['id']
-					);
+			$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+			$this->restore_params['jobids'] = $jobids;
+			$files = $this->getRestoreModel()->getFiles($this->restore_params['jobids'],$this->restore_params['id']);
 		}
 		else {
-			$files = $this->getFiles(
-						$this->restore_params['jobid'],
-						$this->restore_params['id']
-					);
+			$files = $this->getRestoreModel()->getFiles($this->restore_params['jobid'],$this->restore_params['id']);
 		}
 
 		$dnum = count($directories);
@@ -385,218 +381,12 @@ class RestoreController extends AbstractActionController
 
 	}
 
-	/**
-	 *
-	 */
-	private function restore($type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
+	public function getRestoreModel()
 	{
-		$result = null;
-		$director = $this->getServiceLocator()->get('director');
-
-		if($type == "client") {
-                        $result = $director->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+		if(!$this->restoreModel) {
+			$sm = $this->getServiceLocator();
+			$this->restoreModel = $sm->get('Restore\Model\RestoreModel');
 		}
-		elseif($type == "job") {
-			// TODO
-                        //$result = $director->restore();
-		}
-
-		return $result;
+		return $this->restoreModel;
 	}
-
-	/**
-	 *
-	 * @param $jobid
-	 * @param $pathid
-	 * @return array
-	 */
-	private function getDirectories($jobid=null, $pathid=null)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($pathid == null || $pathid == "#") {
-			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid path=", 2, $jobid);
-		}
-		else {
-			$result = $director->send_command(".bvfs_lsdirs jobid=$jobid pathid=" . abs($pathid), 2, $jobid);
-		}
-		$directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $directories['result']['directories'];
-	}
-
-	/**
-	 *
-	 * @param $jobid
-	 * @param $pathid
-	 * @return array
-	 */
-	private function getFiles($jobid=null, $pathid=null)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($pathid == null || $pathid == "#") {
-			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid path=", 2);
-		}
-		else {
-			$result = $director->send_command(".bvfs_lsfiles jobid=$jobid pathid=" . abs($pathid), 2);
-		}
-		$files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $files['result']['files'];
-	}
-
-	/**
-	 * TODO
-	 */
-	private function getRevisions($jobid=null, $filenameid=null)
-	{
-		$director = $this->getServiceLocator()->get('director');
-
-		// TODO
-
-	}
-
-	/**
-	 * Get all JobIds needed to restore a particular job.
-	 * With the all option set to true the director will
-	 * use all definded filesets for a client.
-	 *
-	 * @param $jobid
-	 * @return mixed
-	 */
-	private function getJobIds($jobid=null, $mergefilesets=0, $mergejobs=0)
-	{
-		$result = null;
-		$director = $this->getServiceLocator()->get('director');
-
-		if($mergefilesets == 0 && $mergejobs == 0) {
-                        $cmd = ".bvfs_get_jobids jobid=$jobid all";
-			$result = $director->send_command($cmd, 2);
-                }
-                elseif($mergefilesets == 1 && $mergejobs == 0) {
-                        $cmd = ".bvfs_get_jobids jobid=$jobid";
-			$result = $director->send_command($cmd, 2);
-                }
-
-		if($mergejobs == 1) {
-			return $jobid;
-		}
-
-		$jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                $result = "";
-
-		if(!empty($jobids['result'])) {
-			$jnum = count($jobids['result']['jobids']);
-
-			foreach($jobids['result']['jobids'] as $jobid) {
-				$result .= $jobid['id'];
-				--$jnum;
-				if($jnum > 0) {
-					$result .= ",";
-				}
-			}
-		}
-
-		$this->restore_params['jobids'] = $result;
-
-		return $result;
-	}
-
-	/**
-	 * Get job list from director in long or short format
-	 *
-	 * @param $format
-	 * @return array
-	 */
-	private function getJobs($format=2)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($format == 2) {
-			$result = $director->send_command("llist jobs", 2);
-		}
-		elseif($format == 1) {
-			$result = $director->send_command("list jobs", 2);
-		}
-		elseif($format == 0) {
-		}
-		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $jobs['result']['jobs'];
-	}
-
-	/**
-	 * Get client list from director in long or short format
-	 *
-	 * @param $format
-	 * @return array
-	 */
-	private function getClients($format=2)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($format == 2) {
-			$result = $director->send_command("llist clients", 2);
-		}
-		elseif($format == 1) {
-			$result = $director->send_command("list clients", 2);
-		}
-		elseif($format == 0) {
-			$result = $director->send_command(".clients", 2);
-			return $result;
-		}
-		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $clients['result']['clients'];
-	}
-
-	/**
-	 * Get fileset list from director in long or short format
-	 *
-	 * @param $format
-	 * @return array
-	 */
-	private function getFilesets($format=2)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($format == 2) {
-			$result = $director->send_command("llist filesets", 2);
-		}
-		elseif($format == 1) {
-			$result = $director->send_command("list filesets", 2);
-		}
-		elseif($format == 0) {
-			$result = $director->send_command(".filesets", 2);
-		}
-		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $filesets['result']['filesets'];
-	}
-
-	/**
-	 * Get restore job list from director
-	 */
-	private function getRestoreJobs($format=0)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($format == 0) {
-			$result = $director->send_command(".jobs type=R", 2);
-		}
-		$restorejobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $restorejobs['result']['jobs'];
-	}
-
-	/**
-	 * Get client backup list from director
-	 */
-	private function getClientBackups($client=null, $fileset=null, $order=null, $limit=null)
-	{
-		$director = $this->getServiceLocator()->get('director');
-		if($limit != null) {
-			$result = $director->send_command("list backups client=$client fileset=$fileset order=$order limit=$limit", 2);
-		}
-		else {
-			$result = $director->send_command("list backups client=$client fileset=$fileset order=$order", 2);
-		}
-		$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		if(empty($backups['result'])) {
-			return null;
-		}
-		else {
-			return $backups['result']['backups'];
-		}
-	}
-
 }

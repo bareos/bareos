@@ -3,9 +3,7 @@
 namespace Dashboard;
 
 use Dashboard\Model\Dashboard;
-use Dashboard\Model\DashboardTable;
-use Zend\Db\ResultSet\ResultSet;
-use Zend\Db\TableGateway\TableGateway;
+use Dashboard\Model\DashboardModel;
 
 class Module
 {
@@ -33,16 +31,9 @@ class Module
 	{
 		return array(
 			'factories' => array(
-				'Dashboard\Model\DashboardTable' => function($sm) {
-					$tableGateway = $sm->get('DashboardTableGateway');
-					$table = new DashboardTable($tableGateway);
-					return $table;
-				},
-				'DashboardTableGateway' => function($sm) {
-					$dbAdapter = $sm->get('Zend\Db\Adapter\Adapter');
-					$resultSetPrototype = new ResultSet();
-					$resultSetPrototype->setArrayObjectPrototype(new Dashboard());
-					return new TableGateway('dashboard', $dbAdapter, null, $resultSetPrototype);
+				'Dashboard\Model\DashboardModel' => function() {
+					$model = new DashboardModel();
+					return $model;
 				},
 			),
 		);

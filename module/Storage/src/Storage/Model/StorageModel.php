@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,38 @@
  *
  */
 
-namespace Dashboard\Model;
+namespace Storage\Model;
 
-class DashboardTable
+use Zend\ServiceManager\ServiceLocatorAwareInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
+
+class StorageModel implements ServiceLocatorAwareInterface
 {
+	protected $serviceLocator;
+	protected $director;
+
+	public function __construct()
+	{
+	}
+
+	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+	{
+		$this->serviceLocator = $serviceLocator;
+	}
+
+	public function getServiceLocator()
+	{
+		return $this->serviceLocator;
+	}
+
+	public function getStorages()
+	{
+		$cmd = 'list storages';
+		$this->director = $this->getServiceLocator()->get('director');
+		$result = $this->director->send_command($cmd, 2, null);
+		$storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+		return $storages['result']['storages'];
+	}
+
 }
 

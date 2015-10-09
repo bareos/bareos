@@ -32,12 +32,13 @@ use Zend\Paginator\Paginator;
 
 class PoolController extends AbstractActionController
 {
+	protected $poolModel;
 
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$pools = $this->getPools();
+				$pools = $this->getPoolModel()->getPools();
 				$page = (int) $this->params()->fromQuery('page');
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 
@@ -48,7 +49,6 @@ class PoolController extends AbstractActionController
 				return new ViewModel(
 					array(
 						'limit' => $limit,
-						//'pools' => $pools,
 						'paginator' => $paginator,
 					)
 				);
@@ -68,8 +68,8 @@ class PoolController extends AbstractActionController
 				$page = $this->params()->fromQuery('page');
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 
-				$pool = $this->getPool($poolname);
-				$media = $this->getPoolMedia($poolname);
+				$pool = $this->getPoolModel()->getPool($poolname);
+				$media = $this->getPoolModel()->getPoolMedia($poolname);
 
                                 $paginator = new Paginator(new ArrayAdapter($media));
                                 $paginator->setCurrentPageNumber($page);
@@ -80,7 +80,6 @@ class PoolController extends AbstractActionController
 						'poolname' => $poolname,
 						'limit' => $limit,
 						'pool' => $pool,
-						//'media' => $media,
 						'paginator' => $paginator,
 					)
 				);
@@ -90,29 +89,12 @@ class PoolController extends AbstractActionController
 		}
 	}
 
-	private function getPool($pool)
+	public function getPoolModel()
 	{
-		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command("llist pool=".$pool, 2, null);
-                $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $pools['result']['pools'][0];
+		if(!$this->poolModel) {
+			$sm = $this->getServiceLocator();
+			$this->poolModel = $sm->get('Pool\Model\PoolModel');
+		}
+		return $this->poolModel;
 	}
-
-	private function getPools()
-	{
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("llist pools", 2, null);
-		$pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $pools['result']['pools'];
-	}
-
-	private function getPoolMedia($pool)
-	{
-		$director = $this->getServiceLocator()->get('director');
-                $result = $director->send_command("llist media pool=".$pool, 2, null);
-                $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                return $media['result']['volumes'];
-	}
-
 }
-

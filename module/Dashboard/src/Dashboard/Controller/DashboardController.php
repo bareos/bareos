@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,7 @@ use Zend\View\Model\ViewModel;
 
 class DashboardController extends AbstractActionController
 {
+	protected $dashboardModel;
 
 	public function indexAction()
 	{
@@ -37,10 +38,10 @@ class DashboardController extends AbstractActionController
 
 			return new ViewModel(
 				array(
-					'runningJobs' => $this->getJobCount("running", 1, null),
-                                        'waitingJobs' => $this->getJobCount("waiting", 1, null),
-                                        'successfulJobs' => $this->getJobCount("successful", 1, null),
-                                        'unsuccessfulJobs' => $this->getJobCount("unsuccessful", 1, null),
+					'runningJobs' => $this->getJobs("running", 1, null),
+                                        'waitingJobs' => $this->getJobs("waiting", 1, null),
+                                        'successfulJobs' => $this->getJobs("successful", 1, null),
+                                        'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
 				)
 			);
 		}
@@ -49,29 +50,28 @@ class DashboardController extends AbstractActionController
 		}
 	}
 
-	private function getJobCount($status=null, $days=null, $hours=null)
+	private function getJobs($status=null, $days=1, $hours=null)
 	{
 		if($status != null) {
-			$director = $this->getServiceLocator()->get('director');
 			if($status == "running") {
-				$jobs_R = $this->getJobsByStatus('R', 1, null);
-				$jobs_l = $this->getJobsByStatus('l', 1, null);
+				$jobs_R = $this->getDashboardModel()->getJobs('R', $days, $hours);
+				$jobs_l = $this->getDashboardModel()->getJobs('l', $days, $hours);
 				$num = count($jobs_R) + count($jobs_l);
 				return $num;
 			}
 			elseif($status == "waiting") {
-				$jobs_F = $this->getJobsByStatus('F', 1, null);
-				$jobs_S = $this->getJobsByStatus('S', 1, null);
-				$jobs_s = $this->getJobsByStatus('s', 1, null);
-				$jobs_m = $this->getJobsByStatus('m', 1, null);
-				$jobs_M = $this->getJobsByStatus('M', 1, null);
-				$jobs_j = $this->getJobsByStatus('j', 1, null);
-				$jobs_c = $this->getJobsByStatus('c', 1, null);
-				$jobs_C = $this->getJobsByStatus('C', 1, null);
-				$jobs_d = $this->getJobsByStatus('d', 1, null);
-				$jobs_t = $this->getJobsByStatus('t', 1, null);
-				$jobs_p = $this->getJobsByStatus('p', 1, null);
-				$jobs_q = $this->getJobsByStatus('q', 1, null);
+				$jobs_F = $this->getDashboardModel()->getJobs('F', $days, $hours);
+				$jobs_S = $this->getDashboardModel()->getJobs('S', $days, $hours);
+				$jobs_s = $this->getDashboardModel()->getJobs('s', $days, $hours);
+				$jobs_m = $this->getDashboardModel()->getJobs('m', $days, $hours);
+				$jobs_M = $this->getDashboardModel()->getJobs('M', $days, $hours);
+				$jobs_j = $this->getDashboardModel()->getJobs('j', $days, $hours);
+				$jobs_c = $this->getDashboardModel()->getJobs('c', $days, $hours);
+				$jobs_C = $this->getDashboardModel()->getJobs('C', $days, $hours);
+				$jobs_d = $this->getDashboardModel()->getJobs('d', $days, $hours);
+				$jobs_t = $this->getDashboardModel()->getJobs('t', $days, $hours);
+				$jobs_p = $this->getDashboardModel()->getJobs('p', $days, $hours);
+				$jobs_q = $this->getDashboardModel()->getJobs('q', $days, $hours);
 				$num = count($jobs_F) + count($jobs_S) +
 					count($jobs_s) + count($jobs_m) +
 					count($jobs_M) + count($jobs_j) +
@@ -81,16 +81,16 @@ class DashboardController extends AbstractActionController
 				return $num;
 			}
 			elseif($status == "successful") {
-				$jobs_T = $this->getJobsByStatus('T', 1, null);
-				$jobs_W = $this->getJobsByStatus('W', 1, null);
+				$jobs_T = $this->getDashboardModel()->getJobs('T', $days, $hours);
+				$jobs_W = $this->getDashboardModel()->getJobs('W', $days, $hours);
 				$num = count($jobs_T) + count($jobs_W);
 				return $num;
 			}
 			elseif($status == "unsuccessful") {
-				$jobs_A = $this->getJobsByStatus('A', 1, null);
-                                $jobs_E = $this->getJobsByStatus('E', 1, null);
-				$jobs_e = $this->getJobsByStatus('e', 1, null);
-				$jobs_f = $this->getJobsByStatus('f', 1, null);
+				$jobs_A = $this->getDashboardModel()->getJobs('A', $days, $hours);
+                                $jobs_E = $this->getDashboardModel()->getJobs('E', $days, $hours);
+				$jobs_e = $this->getDashboardModel()->getJobs('e', $days, $hours);
+				$jobs_f = $this->getDashboardModel()->getJobs('f', $days, $hours);
                                 $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
                                 return $num;
 			}
@@ -103,26 +103,13 @@ class DashboardController extends AbstractActionController
 		}
 	}
 
-	private function getJobsByStatus($status=null, $days=null, $hours=null)
-        {
-                if($status != null) {
-                        $director = $this->getServiceLocator()->get('director');
-                        if($days != null) {
-                                $result = $director->send_command('llist jobs jobstatus="'.$status.'" days="'.$days.'"', 2, null);
-                        }
-                        elseif($hours != null) {
-                                $result = $director->send_command('llist jobs jobstatus="'.$status.'" hours="'.$hours.'"', 2, null);
-                        }
-                        else {
-                                $result = $director->send_command('llist jobs jobstatus="'.$status.'"', 2, null);
-                        }
-                        $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-                        return $jobs['result']['jobs'];
-                }
-                else {
-                        return null;
-                }
-        }
+	public function getDashboardModel()
+	{
+		if(!$this->dashboardModel) {
+			$sm = $this->getServiceLocator();
+			$this->dashboardModel = $sm->get('Dashboard\Model\DashboardModel');
+		}
+		return $this->dashboardModel;	
+	}
 
 }
-

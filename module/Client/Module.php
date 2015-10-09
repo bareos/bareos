@@ -3,7 +3,7 @@
 namespace Client;
 
 use Client\Model\Client;
-use Client\Model\ClientTable;
+use Client\Model\ClientModel;
 
 class Module
 {
@@ -25,6 +25,18 @@ class Module
 	public function getConfig()
 	{
 		return include  __DIR__ . '/config/module.config.php';
+	}
+
+	public function getServiceConfig()
+	{
+		return array(
+			'factories' => array(
+				'Client\Model\ClientModel' => function() {
+					$model = new ClientModel();
+					return $model;
+				}
+			)
+		);
 	}
 
 }

@@ -33,11 +33,13 @@ use Zend\Paginator\Paginator;
 class StorageController extends AbstractActionController
 {
 
+	protected $storageModel;
+
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$storages = $this->getStorages();
+				$storages = $this->getStorageModel()->getStorages();
 				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 				$page = (int) $this->params()->fromQuery('page');
 
@@ -77,12 +79,13 @@ class StorageController extends AbstractActionController
 		}
 	}
 
-	private function getStorages()
+	public function getStorageModel()
 	{
-		$director = $this->getServiceLocator()->get('director');
-		$result = $director->send_command("list storages", 2, null);
-		$storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $storages['result']['storages'];
+		if(!$this->storageModel) {
+			$sm = $this->getServiceLocator();
+			$this->storageModel = $sm->get('Storage\Model\StorageModel');
+		}
+		return $this->storageModel;
 	}
 
 }
