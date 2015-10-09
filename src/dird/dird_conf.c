@@ -1877,13 +1877,6 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                         break;
                      case 'S':
                         switch(*(p + 1)) {
-                        case ' ':
-                           /* Old director did not specify SHA variant */
-                           break;
-                        case '1':
-                           indent_config_item(cfg_str, 3, "Signature = SHA1\n");
-                           p++;
-                           break;
 #ifdef HAVE_SHA2
                         case '2':
                            indent_config_item(cfg_str, 3, "Signature = SHA256\n");
@@ -1895,10 +1888,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                            break;
 #endif
                         default:
-                           /* Automatically downgrade to SHA-1 if an unsupported
-                            * SHA variant is specified */
                            indent_config_item(cfg_str, 3, "Signature = SHA1\n");
-                           p++;
                            break;
                         }
                         break;
