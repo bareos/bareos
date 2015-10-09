@@ -985,6 +985,8 @@ ac_subst_files='DEBIAN_CONTROL_BAT
 DEBIAN_CONTROL_TRAYMONITOR
 DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
 DEBIAN_CONTROL_STORAGE_CEPH
+DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
+DEBIAN_CONTROL_STORAGE_GLUSTERFS
 DEBIAN_CONTROL_UNIVENTION_BAREOS
 DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA
 MCOMMON
@@ -31702,7 +31704,6 @@ have_glusterfs=no
 # Check whether --with-glusterfs was given.
 if test "${with_glusterfs+set}" = set; then :
   withval=$with_glusterfs; with_glusterfs_directory=$withval
-
 fi
 
 
@@ -31782,10 +31783,13 @@ LIBS="${saved_LIBS}"
 CFLAGS="${saved_CFLAGS}"
 CPPFLAGS="${saved_CPPFLAGS}"
 
+DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN=/dev/null
+DEBIAN_CONTROL_STORAGE_GLUSTERFS=/dev/null
 if test "x${have_glusterfs}" = "xyes"; then
 
 $as_echo "#define HAVE_GFAPI 1" >>confdefs.h
-
+   DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN=./debian/control.bareos-filedaemon-glusterfs-plugin
+   DEBIAN_CONTROL_STORAGE_GLUSTERFS=./debian/control.bareos-storage-glusterfs
 else
    GLUSTER_LIBS=""
    GLUSTER_INC=""
@@ -32678,6 +32682,7 @@ debian|ubuntu|univention)
       debian/bareos-director.postinst \
       debian/bareos-director.preinst \
       debian/bareos-filedaemon-ceph-plugin.install \
+      debian/bareos-filedaemon-glusterfs-plugin.install \
       debian/bareos-filedaemon-ldap-python-plugin.install \
       debian/bareos-filedaemon-python-plugin.install \
       debian/bareos-filedaemon.bareos-fd.init \
@@ -32686,6 +32691,8 @@ debian|ubuntu|univention)
       debian/bareos-filedaemon.preinst \
       debian/bareos-storage-ceph.install \
       debian/bareos-storage-ceph.postinst \
+      debian/bareos-storage-glusterfs.install \
+      debian/bareos-storage-glusterfs.postinst \
       debian/bareos-storage-fifo.postinst \
       debian/bareos-storage-fifo.install \
       debian/bareos-storage-python-plugin.install \

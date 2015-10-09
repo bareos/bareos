@@ -12,6 +12,7 @@ Build-Depends: acl-dev, autotools-dev, bc, chrpath, debhelper (>= 7.0.50~), dpkg
 #     libcephfs-dev
 #     librados-dev
 #   0%{?debian_version} >= 800 || 0%{?ubuntu_version} >= 1504
+#     glusterfs-common
 #     dh-systemd
 Build-Conflicts: python2.2-dev, python2.3, python2.4, qt3-dev-tools
 DEBTRANSFORM-RELEASE: 1
