@@ -565,11 +565,11 @@ int list_result(void *vctx, int nb_col, char **row)
             break;
          }
          if (row[i] == NULL) {
-            value.bsprintf(" %s", "NULL");
+            value.bsprintf("%s", "NULL");
          } else {
-            value.bsprintf(" %s", row[i]);
+            value.bsprintf("%s", row[i]);
          }
-         send->object_key_value(field->name, value.c_str(), "%s");
+         send->object_key_value(field->name, value.c_str(), " %s");
       }
       if (type != RAW_LIST) {
          send->decoration("\n");
@@ -713,11 +713,11 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
                break;
             }
             if (row[i] == NULL) {
-               value.bsprintf(" %s", "NULL");
+               value.bsprintf("%s", "NULL");
             } else {
-               value.bsprintf(" %s", row[i]);
+               value.bsprintf("%s", row[i]);
             }
-            send->object_key_value(field->name, value.c_str(), "%s");
+            send->object_key_value(field->name, value.c_str(), " %s");
          }
          if (type != RAW_LIST) {
             send->decoration("\n");
