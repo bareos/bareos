@@ -489,12 +489,19 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       }
       i = find_arg_with_value(ua, NT_("client"));
       if (i >= 0) {
-         clientname = ua->argv[i];
+         if (GetClientResWithName(ua->argv[i])) {
+            clientname = ua->argv[i];
+         } else {
+            ua->error_msg(_("invalid client parameter\n"));
+            return false;
+         }
       }
+
       i = find_arg_with_value(ua, NT_("volume"));
       if (i >= 0) {
          volumename = ua->argv[i];
       }
+
       last_run = find_arg(ua, NT_("last"));
       count = find_arg(ua, NT_("count"));
       db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
