@@ -1934,26 +1934,46 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                      case 'Z':                 /* compression */
                         indent_config_item(cfg_str, 3, "Compression = ");
                         p++;                   /* skip Z */
-                        if (*p >= '0' && *p <= '9') {
-                           Mmsg(temp, "GZIP");
+                        switch (*p) {
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                           Mmsg(temp, "GZIP%c\n", *p);
                            pm_strcat(cfg_str, temp.c_str());
-                           Mmsg(temp, "%c\n", *p);
-                           pm_strcat(cfg_str, temp.c_str());
-                        } else if (*p == 'o') {
+                           break;
+                        case 'o':
                            Mmsg(temp, "LZO\n");
                            pm_strcat(cfg_str, temp.c_str());
-                        } else if (*p == 'f') {
-                           p++;
-                           if (*p == 'f') {
+                           break;
+                        case 'f':
+                           p++;                /* skip f */
+                           switch (*p) {
+                           case 'f':
                               Mmsg(temp, "LZFAST\n");
                               pm_strcat(cfg_str, temp.c_str());
-                           } else if (*p == '4') {
+                              break;
+                           case '4':
                               Mmsg(temp, "LZ4\n");
                               pm_strcat(cfg_str, temp.c_str());
-                           } else if (*p == 'h') {
+                              break;
+                           case 'h':
                               Mmsg(temp, "LZ4HC\n");
                               pm_strcat(cfg_str, temp.c_str());
+                              break;
+                           default:
+                              Emsg1(M_ERROR, 0, _("Unknown compression include/exclude option: %c\n"), *p);
+                              break;
                            }
+                        default:
+                           Emsg1(M_ERROR, 0, _("Unknown compression include/exclude option: %c\n"), *p);
+                           break;
                         }
                         break;
                      case 'X':
