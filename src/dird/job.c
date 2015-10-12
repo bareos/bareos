@@ -2049,11 +2049,7 @@ bool run_console_command(JCR *jcr, const char *cmd)
    Mmsg(ua->cmd, "%s", cmd);
    Dmsg1(100, "Console command: %s\n", ua->cmd);
    parse_ua_args(ua);
-   if (ua->argc > 0 && ua->argk[0][0] == '.') {
-      ok = do_a_dot_command(ua);
-   } else {
-     ok = do_a_command(ua);
-   }
+   ok = do_a_command(ua);
    free_ua_context(ua);
    free_jcr(ljcr);
    return ok;

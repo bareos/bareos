@@ -59,10 +59,11 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
    JCR* njcr = NULL;
    s_last_job* job;
    char ed1[50];
+   char *statuscmd = NULL;
 
    Dmsg2(20, "status=\"%s\" argc=%d\n", cmd, ua->argc);
 
-   if (ua->argc < 3) {
+   if (ua->argc < 2) {
       ua->send_msg("1900 Bad .status command, missing arguments.\n");
       return false;
    }
@@ -99,29 +100,35 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
    } else if (bstrcasecmp(ua->argk[1], "client")) {
       client = get_client_resource(ua);
       if (client) {
-         Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(ua->argk[2]));
+         if (ua->argc == 3) {
+            statuscmd = ua->argk[2];
+         }
+         Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(statuscmd));
          switch (client->Protocol) {
          case APT_NDMPV2:
          case APT_NDMPV3:
          case APT_NDMPV4:
-            do_ndmp_client_status(ua, client, ua->argk[2]);
+            do_ndmp_client_status(ua, client, statuscmd);
             break;
          default:
-            do_native_client_status(ua, client, ua->argk[2]);
+            do_native_client_status(ua, client, statuscmd);
             break;
          }
       }
    } else if (bstrcasecmp(ua->argk[1], "storage")) {
       store = get_storage_resource(ua);
       if (store) {
+         if (ua->argc == 3) {
+            statuscmd = ua->argk[2];
+         }
          switch (store->Protocol) {
          case APT_NDMPV2:
          case APT_NDMPV3:
          case APT_NDMPV4:
-            do_ndmp_storage_status(ua, store, ua->argk[2]);
+            do_ndmp_storage_status(ua, store, statuscmd);
             break;
          default:
-            do_native_storage_status(ua, store, ua->argk[2]);
+            do_native_storage_status(ua, store, statuscmd);
             break;
          }
       }

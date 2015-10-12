@@ -90,12 +90,7 @@ void *handle_UA_client_request(BSOCK *user)
       if (status >= 0) {
          pm_strcpy(ua->cmd, ua->UA_sock->msg);
          parse_ua_args(ua);
-
-         if (ua->argc > 0 && ua->argk[0][0] == '.') {
-            do_a_dot_command(ua);
-         } else {
-            do_a_command(ua);
-         }
+         do_a_command(ua);
 
          dequeue_messages(ua->jcr);
 

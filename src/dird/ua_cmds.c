@@ -34,7 +34,13 @@
 /* Imported variables */
 extern jobq_t job_queue;              /* job queue */
 
-/* Imported functions */
+/*
+ * Imported functions
+ */
+/* dird.c */
+extern bool do_reload_config();
+
+/* ua_cmds.c */
 extern bool autodisplay_cmd(UAContext *ua, const char *cmd);
 extern bool configure_cmd(UAContext *ua, const char *cmd);
 extern bool gui_cmd(UAContext *ua, const char *cmd);
@@ -51,8 +57,41 @@ extern bool show_cmd(UAContext *ua, const char *cmd);
 extern bool sqlquery_cmd(UAContext *ua, const char *cmd);
 extern bool status_cmd(UAContext *ua, const char *cmd);
 extern bool update_cmd(UAContext *ua, const char *cmd);
-/* dird.c */
-extern bool do_reload_config();
+
+/* ua_dotcmds.c */
+extern bool dot_catalogs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_admin_cmds(UAContext *ua, const char *cmd);
+extern bool dot_jobdefs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_jobs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_filesets_cmd(UAContext *ua, const char *cmd);
+extern bool dot_clients_cmd(UAContext *ua, const char *cmd);
+extern bool dot_msgs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_pools_cmd(UAContext *ua, const char *cmd);
+extern bool dot_schedule_cmd(UAContext *ua, const char *cmd);
+extern bool dot_storage_cmd(UAContext *ua, const char *cmd);
+extern bool dot_defaults_cmd(UAContext *ua, const char *cmd);
+extern bool dot_types_cmd(UAContext *ua, const char *cmd);
+extern bool dot_levels_cmd(UAContext *ua, const char *cmd);
+extern bool dot_getmsgs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_volstatus_cmd(UAContext *ua, const char *cmd);
+extern bool dot_mediatypes_cmd(UAContext *ua, const char *cmd);
+extern bool dot_locations_cmd(UAContext *ua, const char *cmd);
+extern bool dot_media_cmd(UAContext *ua, const char *cmd);
+extern bool dot_profiles_cmd(UAContext *ua, const char *cmd);
+extern bool dot_aop_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_update_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd);
+extern bool dot_bvfs_clear_cache_cmd(UAContext *ua, const char *cmd);
+extern bool dot_api_cmd(UAContext *ua, const char *cmd);
+extern bool dot_sql_cmd(UAContext *ua, const char *cmd);
+
+/* ua_status.c */
+extern bool dot_status_cmd(UAContext *ua, const char *cmd);
 
 /* Forward referenced functions */
 static bool add_cmd(UAContext *ua, const char *cmd);
@@ -64,8 +103,10 @@ static bool disable_cmd(UAContext *ua, const char *cmd);
 static bool enable_cmd(UAContext *ua, const char *cmd);
 static bool estimate_cmd(UAContext *ua, const char *cmd);
 static bool help_cmd(UAContext *ua, const char *cmd);
+static bool dot_help_cmd(UAContext *ua, const char *cmd);
 static bool memory_cmd(UAContext *ua, const char *cmd);
 static bool mount_cmd(UAContext *ua, const char *cmd);
+static bool noop_cmd(UAContext *ua, const char *cmd);
 static bool release_cmd(UAContext *ua, const char *cmd);
 static bool reload_cmd(UAContext *ua, const char *cmd);
 static bool setdebug_cmd(UAContext *ua, const char *cmd);
@@ -86,7 +127,6 @@ static bool delete_volume(UAContext *ua);
 static bool delete_pool(UAContext *ua);
 static void delete_job(UAContext *ua);
 
-bool dot_help_cmd(UAContext *ua, const char *cmd);
 bool quit_cmd(UAContext *ua, const char *cmd);
 
 /*
@@ -103,6 +143,82 @@ struct cmdstruct {
    const bool audit_event; /* Log an audit event when this Command is executed */
 };
 static struct cmdstruct commands[] = {
+   { NT_("."), noop_cmd, _("no op"),
+     NULL, true, false },
+#ifdef DEVELOPER
+   { NT_(".die"), dot_admin_cmds, _("Generate Segmentation Fault"),
+     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, true },
+   { NT_(".dump"), dot_admin_cmds, _("Dump memory statistics"),
+     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, true },
+   { NT_(".exit"), dot_admin_cmds, _("Close connection"),
+     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, false },
+#endif
+   { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
+     NULL, true, false },
+   { NT_(".api"), dot_api_cmd, _("Switch between different api modes"),
+     NT_("[ 0 | 1 | 2 | off | on | json ]"), false, false },
+   { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
+     NULL, false, false },
+   { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
+     NULL, true, false },
+   { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
+   { NT_(".filesets"), dot_filesets_cmd, _("List all filesets"),
+     NULL, false, false },
+   { NT_(".help"), dot_help_cmd, _("Print parsable information about a command"),
+     NT_("[ all | item=cmd ]"), false, false },
+   { NT_(".jobdefs"), dot_jobdefs_cmd, _("List add JobDef resources"),
+     NULL, true, false },
+   { NT_(".jobs"), dot_jobs_cmd, _("List job resources"),
+     NT_("type=<jobtype>"), true, false },
+   { NT_(".levels"), dot_levels_cmd, _("List all backup levels"),
+     NULL, false, false },
+   { NT_(".locations"), dot_locations_cmd, NULL, NULL, true, false },
+   { NT_(".messages"), dot_getmsgs_cmd, _("Display pending messages"),
+     NULL, false, false },
+   { NT_(".media"), dot_media_cmd, _("List all medias"),
+     NULL, true, false },
+   { NT_(".mediatypes"), dot_mediatypes_cmd, _("List all media types"),
+     NULL, true, false },
+   { NT_(".msgs"), dot_msgs_cmd, _("List all message resources"),
+     NULL, false, false },
+   { NT_(".pools"), dot_pools_cmd, _("List all pool resources"),
+     NULL, true, false },
+   { NT_(".profiles"), dot_profiles_cmd, _("List all profile resources"),
+     NULL, true, false },
+   { NT_(".quit"), quit_cmd, _("Close connection"),
+     NULL, false, false },
+   { NT_(".sql"), dot_sql_cmd, _("Send an arbitary SQL command"),
+     NT_("query=<sqlquery>"), false, true },
+   { NT_(".schedule"), dot_schedule_cmd, _("List all schedule resources"),
+     NULL, false, false },
+   { NT_(".status"), dot_status_cmd, _("Report status"),
+     NT_("dir ( current | last | header | scheduled | running | terminated ) |\n"
+         "storage=<storage> [ header | waitreservation | devices | volumes | spooling | running | terminated ] |\n"
+         "client=<client> [ header | terminated | running ]"),
+     false, true },
+   { NT_(".storages"), dot_storage_cmd, _("List all storage resources"),
+     NULL, true, false },
+   { NT_(".types"), dot_types_cmd, _("List all job types"),
+     NULL, false, false },
+   { NT_(".volstatus"), dot_volstatus_cmd, _("List all volume status"),
+     NULL, true, false },
+   { NT_(".bvfs_lsdirs"), dot_bvfs_lsdirs_cmd, _("List directories using BVFS"),
+     NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] [offset=<offset>]"), true, true },
+   { NT_(".bvfs_lsfiles"),dot_bvfs_lsfiles_cmd, _("List files using BVFS"),
+     NT_("jobid=<jobid> path=<path> | pathid=<pathid> [limit=<limit>] [offset=<offset>]"), true, true },
+   { NT_(".bvfs_update"), dot_bvfs_update_cmd, _("Update BVFS cache"),
+     NT_("[jobid=<jobid>]"), true, true },
+   { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids_cmd, _("Get jobids required for a restore"),
+     NT_("jobid=<jobid> | ujobid=<unique-jobid> [all]"), true, true },
+   { NT_(".bvfs_versions"), dot_bvfs_versions_cmd, _("List versions of a file"),
+     NT_("jobid=0 client=<client-name> pathid=<path-id> fnid=<filename-id> [copies] [versions]"), true, true },
+   { NT_(".bvfs_restore"), dot_bvfs_restore_cmd, _("Mark BVFS files/directories for restore. Stored in handle."),
+     NT_("path=<handle> jobid=<jobid> [fileid=<file-id>] [dirid=<dirid>] [hardlink=<hardlink>]"), true, true },
+   { NT_(".bvfs_cleanup"), dot_bvfs_cleanup_cmd, _("Cleanup BVFS cache for a certain handle"),
+     NT_("path=<handle>"), true, true },
+   { NT_(".bvfs_clear_cache"), dot_bvfs_clear_cache_cmd, _("Clear BVFS cache"),
+     NT_("yes"), false, true },
    { NT_("add"), add_cmd, _("Add media to a pool"),
      NT_("pool=<pool-name> storage=<storage-name> jobid=<jobid>"), false, true },
    { NT_("autodisplay"), autodisplay_cmd,_("Autodisplay console messages"),
@@ -127,7 +243,7 @@ static struct cmdstruct commands[] = {
      NT_(""), false, false },
    { NT_("export"), export_cmd,_("Export volumes from normal slots to import/export slots"),
      NT_("storage=<storage-name> srcslots=<slot-selection> [ dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
-   { NT_("gui"), gui_cmd, _("Non-interactive gui mode"),
+   { NT_("gui"), gui_cmd, _("Switch between interactive (gui off) and non-interactive (gui on) mode"),
      NT_("on | off"), false, false },
    { NT_("help"), help_cmd, _("Print help on specific command"),
      NT_("add autodisplay automount cancel create delete disable\n"
@@ -349,32 +465,16 @@ bool do_a_command(UAContext *ua)
    return ok;
 }
 
-/*
- * This is a common routine used to stuff the Pool DB record defaults
- *   into the Media DB record just before creating a media (Volume)
- *   record.
- */
-void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
+static bool is_dot_command(const char *cmd)
 {
-   mr->PoolId = pr->PoolId;
-   bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
-   mr->Recycle = pr->Recycle;
-   mr->VolRetention = pr->VolRetention;
-   mr->VolUseDuration = pr->VolUseDuration;
-   mr->ActionOnPurge = pr->ActionOnPurge;
-   mr->RecyclePoolId = pr->RecyclePoolId;
-   mr->MaxVolJobs = pr->MaxVolJobs;
-   mr->MaxVolFiles = pr->MaxVolFiles;
-   mr->MaxVolBytes = pr->MaxVolBytes;
-   mr->LabelType = pr->LabelType;
-   mr->MinBlocksize = pr->MinBlocksize;
-   mr->MaxBlocksize = pr->MaxBlocksize;
-   mr->Enabled = VOL_ENABLED;
+   if (cmd && (strlen(cmd) > 0) && (cmd[0] == '.')) {
+      return true;
+   }
+   return false;
 }
 
-
 /*
- *  Add Volumes to an existing Pool
+ * Add Volumes to an existing Pool
  */
 static bool add_cmd(UAContext *ua, const char *cmd)
 {
@@ -411,7 +511,9 @@ static bool add_cmd(UAContext *ua, const char *cmd)
       pr.MaxVols = ua->pint32_val;
    }
 
-   /* Get media type */
+   /*
+    * Get media type
+    */
    if ((store = get_storage_resource(ua)) != NULL) {
       bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
    } else if (!get_media_type(ua, mr.MediaType, sizeof(mr.MediaType))) {
@@ -425,6 +527,7 @@ static bool add_cmd(UAContext *ua, const char *cmd)
    }
    for (;;) {
       char buf[100];
+
       bsnprintf(buf, sizeof(buf), _("Enter number of Volumes to create. 0=>fixed name. Max=%d: "), max);
       if (!get_pint(ua, buf)) {
          return true;
@@ -447,7 +550,10 @@ static bool add_cmd(UAContext *ua, const char *cmd)
             return true;
          }
       }
-      /* Don't allow | in Volume name because it is the volume separator character */
+
+      /*
+       * Don't allow | in Volume name because it is the volume separator character
+       */
       if (!is_volume_name_legal(ua, ua->cmd)) {
          continue;
       }
@@ -520,10 +626,10 @@ static bool add_cmd(UAContext *ua, const char *cmd)
 /*
  * Turn auto mount on/off
  *
- *  automount on
- *  automount off
+ * automount on
+ * automount off
  */
-bool automount_cmd(UAContext *ua, const char *cmd)
+static bool automount_cmd(UAContext *ua, const char *cmd)
 {
    char *onoff;
 
@@ -612,163 +718,8 @@ static bool cancel_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * This is a common routine to create or update a
- *   Pool DB base record from a Pool Resource. We handle
- *   the setting of MaxVols and NumVols slightly differently
- *   depending on if we are creating the Pool or we are
- *   simply bringing it into agreement with the resource (update).
- *
- * Caution : RecyclePoolId isn't setup in this function.
- *           You can use set_pooldbr_recyclepoolid();
- */
-void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
-{
-   bstrncpy(pr->PoolType, pool->pool_type, sizeof(pr->PoolType));
-   if (op == POOL_OP_CREATE) {
-      pr->MaxVols = pool->max_volumes;
-      pr->NumVols = 0;
-   } else {          /* update pool */
-      if (pr->MaxVols != pool->max_volumes) {
-         pr->MaxVols = pool->max_volumes;
-      }
-      if (pr->MaxVols != 0 && pr->MaxVols < pr->NumVols) {
-         pr->MaxVols = pr->NumVols;
-      }
-   }
-   pr->LabelType = pool->LabelType;
-   pr->UseOnce = pool->use_volume_once;
-   pr->UseCatalog = pool->use_catalog;
-   pr->Recycle = pool->Recycle;
-   pr->VolRetention = pool->VolRetention;
-   pr->VolUseDuration = pool->VolUseDuration;
-   pr->MaxVolJobs = pool->MaxVolJobs;
-   pr->MaxVolFiles = pool->MaxVolFiles;
-   pr->MaxVolBytes = pool->MaxVolBytes;
-   pr->AutoPrune = pool->AutoPrune;
-   pr->ActionOnPurge = pool->action_on_purge;
-   pr->ActionOnPurge = pool->action_on_purge;
-   pr->MinBlocksize = pool->MinBlocksize;
-   pr->MaxBlocksize = pool->MaxBlocksize;
-   pr->Recycle = pool->Recycle;
-   if (pool->label_format) {
-      bstrncpy(pr->LabelFormat, pool->label_format, sizeof(pr->LabelFormat));
-   } else {
-      bstrncpy(pr->LabelFormat, "*", sizeof(pr->LabelFormat));    /* none */
-   }
-}
-
-/* set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog */
-int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)
-{
-   POOL_DBR pr;
-
-   if (!pool->RecyclePool && !pool->ScratchPool) {
-      return true;
-   }
-
-   memset(&pr, 0, sizeof(pr));
-   bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
-
-   if (!db_get_pool_record(jcr, db, &pr)) {
-      return -1;                       /* not exists in database */
-   }
-
-   set_pooldbr_from_poolres(&pr, pool, POOL_OP_UPDATE);
-
-   if (!set_pooldbr_references(jcr, db, &pr, pool)) {
-      return -1;                      /* error */
-   }
-
-   if (!db_update_pool_record(jcr, db, &pr)) {
-      return -1;                      /* error */
-   }
-   return true;
-}
-
-/* set POOL_DBR.RecyclePoolId and POOL_DBR.ScratchPoolId from Pool resource
- * works with set_pooldbr_from_poolres
- */
-bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
-{
-   POOL_DBR rpool;
-   bool ret = true;
-
-   if (pool->RecyclePool) {
-      memset(&rpool, 0, sizeof(rpool));
-
-      bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
-      if (db_get_pool_record(jcr, db, &rpool)) {
-        pr->RecyclePoolId = rpool.PoolId;
-      } else {
-        Jmsg(jcr, M_WARNING, 0,
-        _("Can't set %s RecyclePool to %s, %s is not in database.\n" \
-          "Try to update it with 'update pool=%s'\n"),
-        pool->name(), rpool.Name, rpool.Name,pool->name());
-
-        ret = false;
-      }
-   } else {                    /* no RecyclePool used, set it to 0 */
-      pr->RecyclePoolId = 0;
-   }
-
-   if (pool->ScratchPool) {
-      memset(&rpool, 0, sizeof(rpool));
-
-      bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
-      if (db_get_pool_record(jcr, db, &rpool)) {
-        pr->ScratchPoolId = rpool.PoolId;
-      } else {
-        Jmsg(jcr, M_WARNING, 0,
-        _("Can't set %s ScratchPool to %s, %s is not in database.\n" \
-          "Try to update it with 'update pool=%s'\n"),
-        pool->name(), rpool.Name, rpool.Name,pool->name());
-        ret = false;
-      }
-   } else {                    /* no ScratchPool used, set it to 0 */
-      pr->ScratchPoolId = 0;
-   }
-
-   return ret;
-}
-
-/*
- * Create a pool record from a given Pool resource
- *   Also called from backup.c
- * Returns: -1  on error
- *           0  record already exists
- *           1  record created
- */
-
-int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
-{
-   POOL_DBR  pr;
-
-   memset(&pr, 0, sizeof(pr));
-
-   bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
-
-   if (db_get_pool_record(jcr, db, &pr)) {
-      /* Pool Exists */
-      if (op == POOL_OP_UPDATE) {  /* update request */
-         set_pooldbr_from_poolres(&pr, pool, op);
-         set_pooldbr_references(jcr, db, &pr, pool);
-         db_update_pool_record(jcr, db, &pr);
-      }
-      return 0;                       /* exists */
-   }
-
-   set_pooldbr_from_poolres(&pr, pool, op);
-   set_pooldbr_references(jcr, db, &pr, pool);
-
-   if (!db_create_pool_record(jcr, db, &pr)) {
-      return -1;                      /* error */
-   }
-   return 1;
-}
-
-/*
  * Create a Pool Record in the database.
- *  It is always created from the Resource record.
+ * It is always created from the Resource record.
  */
 static bool create_cmd(UAContext *ua, const char *cmd)
 {
@@ -800,8 +751,7 @@ static bool create_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-static inline bool setbwlimit_filed(UAContext *ua, CLIENTRES *client,
-                                    int64_t limit, char *Job)
+static inline bool setbwlimit_filed(UAContext *ua, CLIENTRES *client, int64_t limit, char *Job)
 {
    /*
     * Connect to File daemon
@@ -1229,10 +1179,14 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag,
    CLIENTRES *client, **unique_client;
    int i, j, found;
 
-   /* Director */
+   /*
+    * Director
+    */
    do_director_setdebug(ua, level, trace_flag, timestamp_flag);
 
-   /* Count Storage items */
+   /*
+    * Count Storage items
+    */
    LockRes();
    store = NULL;
    i = 0;
@@ -1445,7 +1399,10 @@ static bool setdebug_cmd(UAContext *ua, const char *cmd)
    add_prompt(ua, _("All"));
 
    switch(do_prompt(ua, "", _("Select daemon type to set debug level"), NULL, 0)) {
-   case 0:                         /* Director */
+   case 0:
+      /*
+       * Director
+       */
       do_director_setdebug(ua, level, trace_flag, timestamp_flag);
       break;
    case 1:
@@ -1832,7 +1789,7 @@ bail_out:
 }
 
 /*
- * print time
+ * Print time
  */
 static bool time_cmd(UAContext *ua, const char *cmd)
 {
@@ -1863,7 +1820,7 @@ static bool time_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * reload the conf file
+ * Reload the conf file
  */
 static bool reload_cmd(UAContext *ua, const char *cmd)
 {
@@ -2099,7 +2056,9 @@ static bool delete_volume(UAContext *ua)
       return true;
    }
 
-   /* If not purged, do it */
+   /*
+    * If not purged, do it
+    */
    if (!bstrcmp(mr.VolStatus, "Purged")) {
       if (!db_get_volume_jobids(ua->jcr, ua->db, &mr, &lst)) {
          ua->error_msg(_("Can't list jobs on this volume\n"));
@@ -2138,7 +2097,7 @@ static bool delete_pool(UAContext *ua)
    return true;
 }
 
-bool memory_cmd(UAContext *ua, const char *cmd)
+static bool memory_cmd(UAContext *ua, const char *cmd)
 {
    garbage_collect_memory();
    list_dir_status_header(ua);
@@ -2223,6 +2182,22 @@ static bool unmount_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
+ * Perform a NO-OP.
+ */
+static bool noop_cmd(UAContext *ua, const char *cmd)
+{
+   if (ua->api) {
+      ua->signal(BNET_CMD_BEGIN);
+   }
+
+   if (ua->api) {
+      ua->signal(BNET_CMD_OK);
+   }
+
+   return true;                    /* no op */
+}
+
+/*
  * release [storage=<name>] [drive=nn]
  */
 static bool release_cmd(UAContext *ua, const char *cmd)
@@ -2233,7 +2208,7 @@ static bool release_cmd(UAContext *ua, const char *cmd)
 
 /*
  * Switch databases
- *   use catalog=<name>
+ * use catalog=<name>
  */
 static bool use_cmd(UAContext *ua, const char *cmd)
 {
@@ -2261,7 +2236,9 @@ bool quit_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/* Handler to get job status */
+/*
+ * Handler to get job status
+ */
 static int status_handler(void *ctx, int num_fields, char **row)
 {
    char *val = (char *)ctx;
@@ -2278,7 +2255,7 @@ static int status_handler(void *ctx, int num_fields, char **row)
 /*
  * Wait until no job is running
  */
-bool wait_cmd(UAContext *ua, const char *cmd)
+static bool wait_cmd(UAContext *ua, const char *cmd)
 {
    JCR *jcr;
    int i;
@@ -2381,9 +2358,8 @@ bool wait_cmd(UAContext *ua, const char *cmd)
    /*
     * We wait the end of a specific job
     */
-
    bmicrosleep(0, 200000);            /* let job actually start */
-   for (bool running=true; running; ) {
+   for (bool running = true; running; ) {
       running = false;
 
       jcr=get_jcr_by_id(jobid) ;
@@ -2401,14 +2377,12 @@ bool wait_cmd(UAContext *ua, const char *cmd)
    /*
     * We have to get JobStatus
     */
-
    int status ;
    char jobstatus = '?';        /* Unknown by default */
    char buf[256] ;
 
    bsnprintf(buf, sizeof(buf),
              "SELECT JobStatus FROM Job WHERE JobId='%i'", jobid);
-
 
    db_sql_query(ua->db, buf,
                 status_handler, (void *)&jobstatus);
@@ -2450,12 +2424,12 @@ static bool help_cmd(UAContext *ua, const char *cmd)
 {
    int i;
 
-   ua->send->decoration("%s", _("  Command       Description\n  =======       ===========\n"));
+   ua->send->decoration("%s", _("  Command            Description\n  =======            ===========\n"));
    for (i = 0; i < comsize; i++) {
       if (ua->argc == 2) {
          if (bstrcasecmp(ua->argk[1], commands[i].key)) {
             ua->send->object_start(commands[i].key);
-            ua->send->object_key_value("command", commands[i].key, "  %-13s");
+            ua->send->object_key_value("command", commands[i].key, "  %-18s");
             ua->send->object_key_value("description", commands[i].help, " %s\n\n");
             ua->send->object_key_value("arguments", "Arguments:\n\t", commands[i].usage, "%s\n", 40);
             ua->send->object_key_value_bool("permission", acl_access_ok(ua, Command_ACL, commands[i].key));
@@ -2463,9 +2437,9 @@ static bool help_cmd(UAContext *ua, const char *cmd)
             break;
          }
       } else {
-         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+         if (acl_access_ok(ua, Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
             ua->send->object_start(commands[i].key);
-            ua->send->object_key_value("command", commands[i].key, "  %-13s");
+            ua->send->object_key_value("command", commands[i].key, "  %-18s");
             ua->send->object_key_value("description", commands[i].help, " %s\n");
             ua->send->object_key_value("arguments", commands[i].usage, 0);
             ua->send->object_key_value_bool("permission", true);
@@ -2481,27 +2455,14 @@ static bool help_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_help_cmd(UAContext *ua, const char *cmd)
+static bool dot_help_cmd(UAContext *ua, const char *cmd)
 {
    int i, j;
 
    /*
-    * Want to display only commands
+    * Implement dot_help_cmd here instead of ua_dotcmds.c,
+    * because comsize and commands are defined here.
     */
-   j = find_arg(ua, NT_("all"));
-   if (j >= 0) {
-      for (i = 0; i < comsize; i++) {
-         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
-            ua->send->object_start(commands[i].key);
-            ua->send->object_key_value("command", commands[i].key, "%s\n");
-            ua->send->object_key_value("description", commands[i].help);
-            ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
-            ua->send->object_key_value_bool("permission", true);
-            ua->send->object_end(commands[i].key);
-         }
-      }
-      return true;
-   }
 
    /*
     * Want to display a specific help section
@@ -2522,19 +2483,37 @@ bool dot_help_cmd(UAContext *ua, const char *cmd)
       return true;
    }
 
-   /*
-    * Want to display everything
-    */
-   for (i = 0; i < comsize; i++) {
-      if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
-         ua->send->object_start(commands[i].key);
-         ua->send->object_key_value("command", commands[i].key, "%s ");
-         ua->send->object_key_value("description", commands[i].help, "%s -- ");
-         ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
-         ua->send->object_key_value_bool("permission", true);
-         ua->send->object_end(commands[i].key);
+   j = find_arg(ua, NT_("all"));
+   if (j >= 0) {
+      /*
+       * Want to display only user commands (except dot commands)
+       */
+      for (i = 0; i < comsize; i++) {
+         if (acl_access_ok(ua, Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key, "%s\n");
+            ua->send->object_key_value("description", commands[i].help);
+            ua->send->object_key_value("arguments", commands[i].usage, NULL, 0);
+            ua->send->object_key_value_bool("permission", true);
+            ua->send->object_end(commands[i].key);
+         }
+      }
+   } else {
+      /*
+       * Want to display everything
+       */
+      for (i = 0; i < comsize; i++) {
+         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+            ua->send->object_start(commands[i].key);
+            ua->send->object_key_value("command", commands[i].key, "%s ");
+            ua->send->object_key_value("description", commands[i].help, "%s -- ");
+            ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
+            ua->send->object_key_value_bool("permission", true);
+            ua->send->object_end(commands[i].key);
+         }
       }
    }
+
    return true;
 }
 
@@ -2574,175 +2553,3 @@ static bool version_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 #endif
-
-/*
- * This call explicitly checks for a catalog=catalog-name and
- *  if given, opens that catalog.  It also checks for
- *  client=client-name and if found, opens the catalog
- *  corresponding to that client. If we still don't
- *  have a catalog, look for a Job keyword and get the
- *  catalog from its client record.
- */
-bool open_client_db(UAContext *ua, bool use_private)
-{
-   int i;
-   CATRES *catalog;
-   CLIENTRES *client;
-   JOBRES *job;
-
-   /* Try for catalog keyword */
-   i = find_arg_with_value(ua, NT_("catalog"));
-   if (i >= 0) {
-      if (!acl_access_ok(ua, Catalog_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Catalog \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      catalog = GetCatalogResWithName(ua->argv[i]);
-      if (catalog) {
-         if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
-         }
-         ua->catalog = catalog;
-         return open_db(ua, use_private);
-      }
-   }
-
-   /* Try for client keyword */
-   i = find_arg_with_value(ua, NT_("client"));
-   if (i >= 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Client \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      client = GetClientResWithName(ua->argv[i]);
-      if (client) {
-         catalog = client->catalog;
-         if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
-         }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
-            ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
-            return false;
-         }
-         ua->catalog = catalog;
-         return open_db(ua, use_private);
-      }
-   }
-
-   /* Try for Job keyword */
-   i = find_arg_with_value(ua, NT_("job"));
-   if (i >= 0) {
-      if (!acl_access_ok(ua, Job_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Job \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      job = GetJobResWithName(ua->argv[i]);
-      if (job && job->client) {
-         catalog = job->client->catalog;
-         if (ua->catalog && ua->catalog != catalog) {
-            close_db(ua);
-         }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
-            ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
-            return false;
-         }
-         ua->catalog = catalog;
-         return open_db(ua, use_private);
-      }
-   }
-
-   return open_db(ua, use_private);
-}
-
-/*
- * Open the catalog database.
- */
-bool open_db(UAContext *ua, bool use_private)
-{
-   bool mult_db_conn;
-
-   /*
-    * See if we need to do any work at all.
-    * Point the current used db e.g. ua->db to the correct database connection.
-    */
-   if (use_private) {
-      if (ua->private_db) {
-         ua->db = ua->private_db;
-         return true;
-      }
-   } else if (ua->shared_db) {
-      ua->db = ua->shared_db;
-      return true;
-   }
-
-   /*
-    * Select the right catalog to use.
-    */
-   if (!ua->catalog) {
-      ua->catalog = get_catalog_resource(ua);
-      if (!ua->catalog) {
-         ua->error_msg(_("Could not find a Catalog resource\n"));
-         return false;
-      }
-   }
-
-   /*
-    * Some modules like bvfs need their own private catalog connection
-    */
-   mult_db_conn = ua->catalog->mult_db_connections;
-   if (use_private) {
-      mult_db_conn = true;
-   }
-
-   ua->jcr->res.catalog = ua->catalog;
-   Dmsg0(100, "UA Open database\n");
-   ua->db = db_sql_get_pooled_connection(ua->jcr,
-                                         ua->catalog->db_driver,
-                                         ua->catalog->db_name,
-                                         ua->catalog->db_user,
-                                         ua->catalog->db_password.value,
-                                         ua->catalog->db_address,
-                                         ua->catalog->db_port,
-                                         ua->catalog->db_socket,
-                                         mult_db_conn,
-                                         ua->catalog->disable_batch_insert,
-                                         use_private);
-   if (ua->db == NULL) {
-      ua->error_msg(_("Could not open catalog database \"%s\".\n"), ua->catalog->db_name);
-      return false;
-   }
-   ua->jcr->db = ua->db;
-
-   /*
-    * Save the new database connection under the right label e.g. shared or private.
-    */
-   if (use_private) {
-      ua->private_db = ua->db;
-   } else {
-      ua->shared_db = ua->db;
-   }
-
-   if (!ua->api) {
-      ua->send_msg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
-   }
-
-   Dmsg1(150, "DB %s opened\n", ua->catalog->db_name);
-   return true;
-}
-
-void close_db(UAContext *ua)
-{
-   if (ua->jcr) {
-      ua->jcr->db = NULL;
-   }
-
-   if (ua->shared_db) {
-      db_sql_close_pooled_connection(ua->jcr, ua->shared_db);
-      ua->shared_db = NULL;
-   }
-
-   if (ua->private_db) {
-      db_sql_close_pooled_connection(ua->jcr, ua->private_db);
-      ua->private_db = NULL;
-   }
-}

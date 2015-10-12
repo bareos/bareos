@@ -1246,7 +1246,7 @@ bool messages_cmd(UAContext *ua, const char *cmd)
    if (console_msg_pending) {
       do_messages(ua, cmd);
    } else {
-      ua->UA_sock->fsend(_("You have no messages.\n"));
+      ua->send->decoration(_("You have no messages.\n"));
    }
    return true;
 }

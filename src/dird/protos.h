@@ -264,8 +264,9 @@ void log_audit_event_cmdline(UAContext *ua);
 
 /* ua_cmds.c */
 bool do_a_command(UAContext *ua);
-bool do_a_dot_command(UAContext *ua);
 bool dot_messages_cmd(UAContext *ua, const char *cmd);
+
+/* ua_db.c */
 bool open_client_db(UAContext *ua, bool use_private = false);
 bool open_db(UAContext *ua, bool use_private = false);
 void close_db(UAContext *ua);
