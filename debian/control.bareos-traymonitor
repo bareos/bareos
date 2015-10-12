@@ -12,4 +12,4 @@ Description: Backup Archiving Recovery Open Sourced - tray monitor
  FreeDesktop-compatible, which means it will work under both KDE and
  GNOME.
  .
- The monitor constantly displays Bareos's status.
+ The monitor constantly displays the status of Bareos.
