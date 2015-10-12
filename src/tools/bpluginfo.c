@@ -41,6 +41,9 @@
 #ifndef __WIN32__
 #include <dlfcn.h>
 #endif
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 extern "C" {
    typedef int (*loadPlugin) (void *binfo, void *bfuncs, void **pinfo,
