@@ -96,6 +96,18 @@ const char *list_jobs =
    "%s "
    "ORDER BY StartTime%s";
 
+const char *list_jobs_count =
+   "SELECT "
+   "COUNT(*) as count "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "ORDER BY StartTime%s";
+
 const char *list_jobs_long =
    "SELECT "
    "Job.JobId, Job.Job, Job.Name, "

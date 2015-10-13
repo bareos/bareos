@@ -356,8 +356,9 @@ bail_out:
  * List Job record(s) that match JOB_DBR
  */
 void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
-                         const char *clientname, int jobstatus, const char *volumename,
-                         utime_t since_time, OUTPUT_FORMATTER *sendit, e_list_type type)
+                         const char* clientname, int jobstatus, const char* volumename,
+                         utime_t since_time, int last, int count,
+                         OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -370,36 +371,46 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    bstrutime(dt, sizeof(dt), since_time);
 
    if (jr->JobId > 0) {
-      temp.bsprintf(" AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
+      temp.bsprintf("AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
       pm_strcat(selection, temp.c_str());
    }
    if (jr->Name[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
-      temp.bsprintf( " AND Job.Name = '%s' ", esc);
+      temp.bsprintf( "AND Job.Name = '%s' ", esc);
       pm_strcat(selection, temp.c_str());
    }
    if (clientname) {
-      temp.bsprintf(" AND Client.Name = '%s' ", clientname);
+      temp.bsprintf("AND Client.Name = '%s' ", clientname);
       pm_strcat(selection, temp.c_str());
    }
    if (jobstatus) {
-      temp.bsprintf(" AND Job.JobStatus = '%c' ", jobstatus);
+      temp.bsprintf("AND Job.JobStatus = '%c' ", jobstatus);
       pm_strcat(selection, temp.c_str());
    }
    if (volumename) {
-      temp.bsprintf(" AND Media.Volumename = '%s' ", volumename);
+      temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
       pm_strcat(selection, temp.c_str());
    }
    if (since_time) {
-      temp.bsprintf(" AND Job.SchedTime > '%s' ", dt);
+      temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
       pm_strcat(selection, temp.c_str());
+   }
+   if (last > 0) {
+      /*
+       * show only the last run of a jobs
+       */
+      pm_strcat(selection, "AND Job.JobId=(SELECT MAX(JobId) FROM Job JobTemp WHERE Job.Name = JobTemp.Name) ");
    }
 
    db_lock(mdb);
-   if (type == VERT_LIST) {
-      Mmsg(mdb->cmd, list_jobs_long, selection.c_str(), range);
+   if (count > 0) {
+      Mmsg(mdb->cmd, list_jobs_count, selection.c_str(), range);
    } else {
-      Mmsg(mdb->cmd, list_jobs, selection.c_str(), range);
+      if (type == VERT_LIST) {
+         Mmsg(mdb->cmd, list_jobs_long, selection.c_str(), range);
+      } else {
+         Mmsg(mdb->cmd, list_jobs, selection.c_str(), range);
+      }
    }
 
    if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
