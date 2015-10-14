@@ -83,7 +83,7 @@ const char *list_pool = "SELECT * FROM Pool WHERE PoolId=%s";
  * JOIN with Media is required for filter to Media.Volumename.
  */
 const char *list_jobs =
-   "SELECT "
+   "SELECT DISTINCT "
    "Job.JobId,Job.Name, "
    "Client.Name as Client, "
    "Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
@@ -97,7 +97,7 @@ const char *list_jobs =
    "ORDER BY StartTime%s";
 
 const char *list_jobs_count =
-   "SELECT "
+   "SELECT DISTINCT "
    "COUNT(*) as count "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
@@ -109,7 +109,7 @@ const char *list_jobs_count =
    "ORDER BY StartTime%s";
 
 const char *list_jobs_long =
-   "SELECT "
+   "SELECT DISTINCT "
    "Job.JobId, Job.Job, Job.Name, "
    "Job.PurgedFiles, Job.Type, Job.Level, "
    "Job.ClientId, Client.Name as Client, "
@@ -118,7 +118,6 @@ const char *list_jobs_long =
    "Job.VolSessionId, Job.VolSessionTime, "
    "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, "
    "Job.PoolId, Pool.Name as PoolName,"
-   "Media.VolumeName, "
    "Job.PriorJobId, "
    "Job.FileSetId, FileSet.FileSet "
    "FROM Job "
