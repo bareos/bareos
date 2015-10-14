@@ -1141,8 +1141,6 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
  */
 static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type)
 {
-   bool retval = true;
-
    for (int i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res->hdr.item_present)) {
@@ -1162,8 +1160,7 @@ static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type
       }
    }
 
-bail_out:
-   return retval;
+   return true;
 }
 
 char *CATRES::display(POOLMEM *dst)
