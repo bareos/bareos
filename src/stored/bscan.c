@@ -856,10 +856,6 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       /* Ignore plugin data */
       break;
 
-   case STREAM_NDMP_SEPERATOR:
-      /* Ignore NDMP data */
-      break;
-
    case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
    case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
    case STREAM_ACL_AIX_TEXT:
