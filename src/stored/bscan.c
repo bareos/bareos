@@ -934,6 +934,15 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       /* Ignore OSX attributes */
       break;
 
+   case STREAM_PLUGIN_NAME:
+   case STREAM_PLUGIN_DATA:
+      /* Ignore plugin data */
+      break;
+
+   case STREAM_NDMP_SEPERATOR:
+      /* Ignore NDMP data */
+      break;
+
    case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
    case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
    case STREAM_ACL_AIX_TEXT:
@@ -956,9 +965,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_ACL_FREEBSD_NFS4_ACL:
    case STREAM_ACL_HURD_DEFAULT_ACL:
    case STREAM_ACL_HURD_ACCESS_ACL:
+   case STREAM_ACL_PLUGIN:
       /* Ignore Unix ACL attributes */
       break;
 
+   case STREAM_XATTR_PLUGIN:
    case STREAM_XATTR_HURD:
    case STREAM_XATTR_IRIX:
    case STREAM_XATTR_TRU64:

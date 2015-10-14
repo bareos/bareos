@@ -61,6 +61,15 @@ public:
    void array_start(const char *name);
    void array_end(const char *name);
    void decoration(const char *fmt, ...);
+   /*
+    * boolean and integer can not be used to distinguish overloading functions,
+   *  therefore the bool function have the postfix _bool.
+    * The boolean value is given a string ("true" or "false") to the value_fmt string.
+    * The format string must therefore match "%s".
+    */
+   void object_key_value_bool(const char *key, bool value);
+   void object_key_value_bool(const char *key, bool value, const char *value_fmt);
+   void object_key_value_bool(const char *key, const char *key_fmt, bool value, const char *value_fmt);
    void object_key_value(const char *key, uint64_t value);
    void object_key_value(const char *key, uint64_t value, const char *value_fmt);
    void object_key_value(const char *key, const char *key_fmt, uint64_t value, const char *value_fmt);
@@ -84,6 +93,7 @@ public:
 
 #if HAVE_JANSSON
    void json_add_result(json_t *json);
+   bool json_key_value_add_bool(const char *key, bool value);
    bool json_key_value_add(const char *key, uint64_t value);
    bool json_key_value_add(const char *key, const char *value);
    void json_add_message(const char *type, POOL_MEM &message);
