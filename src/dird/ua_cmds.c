@@ -1871,6 +1871,14 @@ static bool reload_cmd(UAContext *ua, const char *cmd)
 
    result = do_reload_config();
 
+   ua->send->object_start("reload");
+   if (result) {
+      ua->send->object_key_value_bool("success", result, "reloaded\n");
+   } else {
+      ua->send->object_key_value_bool("success", result, "failed to reload\n");
+   }
+   ua->send->object_end("reload");
+
    return result;
 }
 
