@@ -1366,6 +1366,10 @@ void UAContext::send_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
    POOL_MEM message;
+
+   /* send current buffer */
+   send->send_buffer();
+
    va_start(arg_ptr, fmt);
    message.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
@@ -1381,6 +1385,9 @@ void UAContext::error_msg(const char *fmt, ...)
    va_list arg_ptr;
    BSOCK *bs = UA_sock;
    POOL_MEM message;
+
+   /* send current buffer */
+   send->send_buffer();
 
    if (bs && api) bs->signal(BNET_ERROR_MSG);
    va_start(arg_ptr, fmt);
@@ -1400,6 +1407,9 @@ void UAContext::warning_msg(const char *fmt, ...)
    BSOCK *bs = UA_sock;
    POOL_MEM message;
 
+   /* send current buffer */
+   send->send_buffer();
+
    if (bs && api) bs->signal(BNET_WARNING_MSG);
    va_start(arg_ptr, fmt);
    message.bvsprintf(fmt, arg_ptr);
@@ -1416,6 +1426,9 @@ void UAContext::info_msg(const char *fmt, ...)
    va_list arg_ptr;
    BSOCK *bs = UA_sock;
    POOL_MEM message;
+
+   /* send current buffer */
+   send->send_buffer();
 
    if (bs && api) bs->signal(BNET_INFO_MSG);
    va_start(arg_ptr, fmt);
