@@ -847,6 +847,11 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       /* Ignore OSX attributes */
       break;
 
+   case STREAM_PLUGIN_NAME:
+   case STREAM_PLUGIN_DATA:
+      /* Ignore plugin data */
+      break;
+
    case STREAM_UNIX_ACCESS_ACL:          /* Deprecated Standard ACL attributes on UNIX */
    case STREAM_UNIX_DEFAULT_ACL:         /* Deprecated Default ACL attributes on UNIX */
    case STREAM_ACL_AIX_TEXT:
