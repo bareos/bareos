@@ -98,7 +98,7 @@ const char *list_jobs =
 
 const char *list_jobs_count =
    "SELECT DISTINCT "
-   "COUNT(*) as count "
+   "COUNT(DISTINCT Job.JobId) as count "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
    "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
@@ -106,7 +106,7 @@ const char *list_jobs_count =
    "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
    "WHERE Job.JobId > 0 "
    "%s "
-   "ORDER BY StartTime%s";
+   "%s";
 
 const char *list_jobs_long =
    "SELECT DISTINCT "
