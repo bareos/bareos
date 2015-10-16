@@ -117,13 +117,6 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if check_option_bRC != bRCs['bRC_OK']:
             return check_option_bRC
 
-        accurate_enabled = bareosfd.GetValue(context, bVariable['bVarAccurate'])
-        if accurate_enabled != 0:
-            bareosfd.JobMessage(
-                context, bJobMessageType['M_FATAL'],
-                "start_backup_job: Accurate backup not allowed please disable in Job\n")
-            return bRCs['bRC_Error']
-
         if not self.vadp.connect_vmware(context):
             return bRCs['bRC_Error']
 
@@ -259,6 +252,13 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if restorepkt.type == bFileType['FT_REG']:
             restorepkt.create_status = bCFs['CF_EXTRACT']
         return bRCs['bRC_OK']
+
+    def check_file(self, context, fname):
+        bareosfd.DebugMessage(
+            context, 100,
+            "BareosFdPluginVMware:check_file() called with fname %s\n" %
+            (fname))
+        return bRCs['bRC_Seen']
 
     def plugin_io(self, context, IOP):
         bareosfd.DebugMessage(
