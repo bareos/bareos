@@ -1919,6 +1919,22 @@ AC_ARG_WITH(sbin-perm,
 AC_SUBST(SBINPERM)
 
 dnl -------------------------------------------
+dnl logrotate: has "su" option?
+dnl -------------------------------------------
+AC_PATH_PROG(LOGROTATE, logrotate, [], [$PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin])
+logrotate_su=""
+if test "x$LOGROTATE" != "x" -a "x$dir_user" != "x" -a "x$dir_group" != "x"; then
+    echo -e "/tmp/dummy.log {\n su root root\n}" > logrotate-test-su.conf
+    if $LOGROTATE -d logrotate-test-su.conf 2>&1 | grep "unknown option 'su'" >/dev/null; then
+      logrotate_su=""
+    else
+      logrotate_su="su ${dir_user} ${dir_group}"
+    fi
+    rm logrotate-test-su.conf
+fi
+AC_SUBST(logrotate_su)
+
+dnl -------------------------------------------
 dnl NDMP (default off)
 dnl -------------------------------------------
 AC_ARG_ENABLE(ndmp,
