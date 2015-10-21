@@ -40,13 +40,10 @@ return array(
 			'fileset' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/fileset[/][:action][/][:id][order_by/:order_by][/:order][/][limit/:limit]',
+					'route' => '/fileset[/][:action][/][:id]',
 					'constraints' => array(
-						'action' => '(?!\blimit\b)(?!\border_by\b)[a-zA-Z][a-zA-Z0-9_-]*',
+						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[0-9]+',
-						'order_by' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                                                'order' => 'ASC|DESC',
-                                                'limit' => '[0-9]+',
 					),
 					'defaults' => array(
 						'controller' => 'Fileset\Controller\Fileset',

@@ -39,27 +39,20 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-condensed">
+<table class="table table-hover" id="fileset">
 
-<tr>
-   <th class="bg-primary">Id</th>
-   <th class="bg-primary">Name</th>
-   <th class="bg-primary">MD5</th>
-   <th class="bg-primary">Createtime</th>
-</tr>
-
-<tr>
-   <td><?php echo $this->escapeHtml($fileset['filesetid']); ?></td>
-   <td><?php echo $this->escapeHtml($fileset['fileset']); ?></td>
-   <td><?php echo $this->escapeHtml($fileset['md5']); ?></td>
-   <td><?php echo $this->escapeHtml($fileset['createtime']); ?></td>
-</tr>
+<thead class="bg-primary">
+	<th>Id</th>
+	<th>Name</th>
+	<th>MD5 checksum</th>
+	<th>Creation time</th>
+</thead>
 
 </table>
 
 <pre>
 <code>
-<?php echo $this->escapeHtml($fileset['filesettext']); ?>
+<?php echo $this->escapeHtml($this->fileset[0]['filesettext']); ?>
 </code>
 </pre>
 
@@ -67,3 +60,62 @@ $this->headTitle($title);
 </div>
 </div>
 </div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
+?>
+
+<script>
+
+	var tab_fileset = $('#fileset').DataTable( {
+                "ajax": {
+                        "url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=details&fileset='.$this->fileset[0]['filesetid']; ?>",
+                        "dataSrc": ""
+                },
+                "columns": [
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null }
+                ],
+                "paging":   false,
+                "ordering": false,
+                "info":     false,
+                "pagingType": "full_numbers",
+                "stateSave": true,
+		"bFilter": false,
+                "columnDefs": [
+                        {
+                                "targets": 0,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.filesetid;
+                                }
+                        },
+                        {
+                                "targets": 1,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.fileset;
+                                }
+                        },
+			{
+                                "targets": 2,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.md5;
+                                }
+                        },
+                        {
+                                "targets": 3,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.createtime;
+                                }
+                        }
+                ]
+        } );
+
+</Script>

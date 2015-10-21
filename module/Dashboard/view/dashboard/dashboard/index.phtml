@@ -48,20 +48,20 @@ $this->headTitle($title);
 
                 <table class="table">
                         <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->translate("Running"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'running')); ?>"><?php echo $this->runningJobs; ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->runningJobs; ?></a></td>
                         </tr>
                         <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'waiting')); ?>"><?php echo $this->waitingJobs; ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->waitingJobs; ?></a></td>
                         </tr>
                         <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->translate("Successful"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'successful')); ?>"><?php echo $this->successfulJobs; ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->successfulJobs; ?></a></td>
                         </tr>
                         <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'unsuccessful')); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
                         </tr>
                 </table>
 

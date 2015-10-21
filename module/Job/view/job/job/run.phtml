@@ -30,12 +30,7 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('History'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'waiting')); ?>"><?php echo $this->translate('Waiting'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'unsuccessful')); ?>"><?php echo $this->translate('Unsuccessful (past 24 hours)'); ?></a></li>
-	<li><a href="<?php echo $this->url('job', array('action'=>'successful')); ?>"><?php echo $this->translate('Successful (past 24 hours)'); ?></a></li>
-	<!-- <li><a href="<?php echo $this->url('job', array('action'=>'timeline')); ?>"><?php echo $this->translate('Timeline'); ?></a></li> -->
+	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
 	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
 </ul>
 
@@ -43,7 +38,7 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-6">
+<div class="col-md-10">
 
 <div class="panel panel-default">
 
@@ -53,53 +48,65 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<p>
-Jobs per page:
-<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '10', null, null, true)); ?>">10</a> |
-<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '25', null, null, true)); ?>">25</a> |
-<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '50', null, null, true)); ?>">50</a> |
-<a href="<?php echo $this->url('job', array('action' => 'run', 'limit' => '100', null, null, true)); ?>">100</a>
-</p>
-
-<table class="table table-condensed">
-
-<tr>
-<th class="bg-primary"><?php echo $this->translate("Name"); ?></th>
-<th class="bg-primary"></th>
-</tr>
-
-<?php foreach ($this->paginator as $job) : ?>
-<tr>
-<td><?php echo $this->escapeHtml($job['name']); ?></td>
-<td class="text-center">
-<a href="<?php echo $this->url(
-		'job',
-		array('action'=>'queue'),
-		array('query' => array('job' => $job['name']))
-	); ?>" class="btn btn-default btn-xs" title="Run" role="button" data-toggle="tooltip" data-placement="left">
-	<span class="glyphicon glyphicon-play-circle" aria-hidden="true"> Run</span></a>
-</td>
-</tr>
-<?php endforeach; ?>
-
+<table class="table table-hover" id="backupjobs">
+	<thead class="bg-primary">
+		<th><?php echo $this->translate("Name"); ?></th>
+		<th><?php echo $this->translate("Actions"); ?></th>
+	</thead>
 </table>
 
-<?php echo $this->paginationControl(
-                        $this->paginator,
-                        'Elastic',
-                        array('partial/paginator.phtml', 'Job'),
-                        array('route' => 'job')
-                );
+</div>
+</div>
+</div>
+</div>
 
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
-</div>
-</div>
-</div>
-</div>
-
 <script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
+
+	$('#backupjobs').DataTable( {
+		"ajax": {
+			"url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
+			"dataSrc": ""
+		},
+		"columns" : [
+			{
+				"data": null
+			},
+			{
+				"orderable": false,
+				"data": null
+			}
+		],
+		"paging":   true,
+		"ordering": true,
+		"info":     true,
+		"pagingType": "full_numbers",
+		"stateSave": true,
+		"columnDefs": [
+			{
+				"targets": 0,
+				"data": null,
+				"render": function(data, type, full, meta) {
+					return data.name;
+				}
+			},
+			{
+                                "targets": 1,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return '<a href="<?php echo $this->basePath() . '/job/queue?job='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Run"><span class="glyphicon glyphicon-play-circle"></span></button></a>';
+                                }
+                        }
+		]
+	} );
+
+	$('#backupjobs tbody').on('mouseover', '#btn-1', function () {
+		$('[data-toggle="tooltip"]').tooltip();
+	} );
+
 </script>

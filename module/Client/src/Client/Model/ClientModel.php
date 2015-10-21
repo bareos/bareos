@@ -63,7 +63,7 @@ class ClientModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, null);
 			$client = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $client['result']['clients'][0];
+			return $client['result']['clients'];
 		}
 		else {
 			return false;
@@ -72,8 +72,13 @@ class ClientModel implements ServiceLocatorAwareInterface
 
 	public function getClientBackups($client=null, $limit=null, $order=null)
 	{
-		if(isset($client, $limit, $order)) {
-			$cmd = 'llist backups client="'.$client.'" limit='.$limit.' order='.$order.'';
+		if(isset($client)) {
+			if(isset($limit, $order)) {
+				$cmd = 'llist backups client="'.$client.'" limit='.$limit.' order='.$order.'';
+			}
+			else {
+				$cmd = 'llist backups client="'.$client.'"';
+			}
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, null);
 			if(preg_match("/Select/", $result)) {

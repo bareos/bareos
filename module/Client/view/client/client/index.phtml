@@ -39,70 +39,82 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<p>
-Clients per page:
-<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '10', null, null, true)); ?>">10</a> |
-<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '25', null, null, true)); ?>">25</a> |
-<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '50', null, null, true)); ?>">50</a> |
-<a href="<?php echo $this->url('client', array('order_by' => $this->order_by, 'order' => $this->order, 'limit' => '100', null, null, true)); ?>">100</a>
-</p>
+<table class="table table-hover" id="clients">
 
-<table class="table table-condensed">
-
-<tr class="panel panel-default">
-	<th class="bg-primary">Client</th>
-	<th class="bg-primary">Name</th>
-	<th class="bg-primary">Version</th>
-	<th class="bg-primary">Autoprune</th>
-	<th class="bg-primary">Fileretention</th>
-	<th class="bg-primary">Jobretention</th>
-	<th class="bg-primary"></th>
-</tr>
-
-<?php foreach($this->paginator as $client) : ?>
-
-<tr>
-	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client['name'])); ?>"><?php echo $this->escapeHtml($client['clientid']); ?></a></td>
-	<td><a href="<?php echo $this->url('client', array('action'=>'details', 'id' => $client['name'])); ?>"><?php echo $this->escapeHtml($client['name']); ?></a></td>
-	<td><?php echo $this->escapeHtml($client['uname']); ?></td>
-	<td><?php echo $this->escapeHtml($client['autoprune']); ?></td>
-	<td><?php echo $this->printRetention($client['fileretention']) . " days"; ?></td>
-	<td><?php echo $this->printRetention($client['jobretention']) . " days"; ?></td>
-	<td><a href="<?php echo $this->url(
-                                        'restore',
-                                        array('action' => 'index'),
-                                        array('query' => array(
-                                                'type' => 'client',
-                                                'client' => $client['name'],
-                                                'restoreclient' => $client['name']
-                                        )
-                                )); ?>" class="btn btn-default btn-xs" role="button" data-toggle="tooltip" data-placement="left" title="Restore"><span class="glyphicon glyphicon-import"></span> Restore</a>
-	</td>
-
-</tr>
-
-<?php endforeach; ?>
+<thead class="bg-primary">
+	<th><?php echo $this->translate("Name"); ?></th>
+	<th><?php echo $this->translate("Version"); ?></th>
+	<th><?php echo $this->translate("Actions"); ?></th>
+</thead>
 
 </table>
 
+</div>
+</div>
+</div>
+</div>
+
 <?php
-
-echo $this->paginationControl(
-			$this->paginator,
-			'Elastic',
-			array('partial/paginator.phtml', 'Client'),
-			array('route' => 'client')
-		);
-
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
-</div>
-</div>
-</div>
-</div>
-
 <script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
+
+$(document).ready(function() {
+
+	var table= $('#clients').DataTable( {
+		"ajax": {
+			"url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>",
+			"dataSrc": ""
+		},
+		"columns" : [
+			{
+				"className": "client-name",
+				"orderable": true,
+				"data": "name"
+			},
+			{
+				"className": "client-uname",
+				"orderable": true,
+				"data": "uname"
+			},
+			{
+				"className": "actions",
+				"orderable": false,
+				"data": null
+			}
+		],
+		"paging":   true,
+		"ordering": true,
+		"info":     true,
+		"pagingType": "full_numbers",
+		"stateSave": true,
+		"columnDefs": [
+			{
+				"targets": 0,
+				"data": "name",
+				"render": function(data, type, full, meta) {
+					return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+				}
+			},
+			{
+				"targets": -1,
+				"data": "name",
+				"render": function(data, type, full, meta) {
+					return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+				}
+			}
+		]
+	} );
+
+	$('#clients tbody').on('mouseover', '#btn-1', function () {
+		$('[data-toggle="tooltip"]').tooltip();
+	})
+
+
+} );
+
 </script>
+

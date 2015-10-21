@@ -27,8 +27,7 @@ namespace Pool\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
 
 class PoolController extends AbstractActionController
 {
@@ -39,17 +38,10 @@ class PoolController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 				$pools = $this->getPoolModel()->getPools();
-				$page = (int) $this->params()->fromQuery('page');
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-				$paginator = new Paginator(new ArrayAdapter($pools));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
-						'limit' => $limit,
-						'paginator' => $paginator,
+						'pools' => $pools,
 					)
 				);
 
@@ -65,27 +57,50 @@ class PoolController extends AbstractActionController
 
 
 				$poolname = $this->params()->fromRoute('id');
-				$page = $this->params()->fromQuery('page');
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
 				$pool = $this->getPoolModel()->getPool($poolname);
-				$media = $this->getPoolModel()->getPoolMedia($poolname);
-
-                                $paginator = new Paginator(new ArrayAdapter($media));
-                                $paginator->setCurrentPageNumber($page);
-                                $paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
-						'poolname' => $poolname,
-						'limit' => $limit,
-						'pool' => $pool,
-						'paginator' => $paginator,
+						'pool' => $poolname,
 					)
 				);
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+
+			$data = $this->params()->fromQuery('data');
+			$pool = $this->params()->fromQuery('pool');
+
+			if($data == "all") {
+				$result = $this->getPoolModel()->getPools();
+			}
+			elseif($data == "details" && isset($pool)) {
+				$result = $this->getPoolModel()->getPool($pool);
+			}
+			elseif($data == "volumes" && isset($pool)) {
+				$result = $this->getPoolModel()->getPoolMedia($pool);
+			}
+			else {
+				$result = null;
+			}
+
+			$response = $this->getResponse();
+			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+			if(isset($result)) {
+				$response->setContent(JSON::encode($result));
+			}
+
+			return $response;
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 

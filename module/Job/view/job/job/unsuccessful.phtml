@@ -29,25 +29,6 @@ $this->headTitle($title);
 
 ?>
 
-<?php
-
-$flash = $this->flashMessenger();
-$flash->setMessageOpenFormat('
-                <div%s>
-                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
-                &times;
-                </button>
-                <ul><li>')
-        ->setMessageSeparatorString('</li><li>')
-        ->setMessageCloseString('</li></ul></div>');
-
-        echo $flash->render('error',   array('alert', 'alert-dismissable', 'alert-danger'));
-        echo $flash->render('info',    array('alert', 'alert-dismissable', 'alert-info'));
-        echo $flash->render('default', array('alert', 'alert-dismissable', 'alert-warning'));
-        echo $flash->render('success', array('alert', 'alert-dismissable', 'alert-success'));
-
-?>
-
 <ul class="nav nav-tabs">
 	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('History'); ?></a></li>
 	<li><a href="<?php echo $this->url('job', array('action'=>'running')); ?>"><?php echo $this->translate('Running'); ?></a></li>
@@ -59,8 +40,6 @@ $flash->setMessageOpenFormat('
 </ul>
 
 <br />
-
-<?php if(count($this->jobs) > 0) : ?>
 
 <div class="row">
 
@@ -74,85 +53,306 @@ $flash->setMessageOpenFormat('
 
 <div class="panel-body">
 
-<p>
-Jobs per page:
-<a href="<?php echo $this->url('job', array('action' => 'unsuccessful', 'limit' => '10', null, null, true)); ?>">10</a> |
-<a href="<?php echo $this->url('job', array('action' => 'unsuccessful', 'limit' => '25', null, null, true)); ?>">25</a> |
-<a href="<?php echo $this->url('job', array('action' => 'unsuccessful', 'limit' => '50', null, null, true)); ?>">50</a> |
-<a href="<?php echo $this->url('job', array('action' => 'unsuccessful', 'limit' => '100', null, null, true)); ?>">100</a>
-</p>
+<table class="table table-hover" id="jobtable">
 
-<table class="table table-condensed">
-
-<tr>
-	<th class="bg-primary"><?php echo $this->translate("Job"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Name"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Client"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Type"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Level"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Start"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("End"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Status"); ?></th>
-	<th class="bg-primary"></th>
-</tr>
-
-<?php foreach ($this->paginator as $job) : ?>
-
-<tr>
-	<td><a href="<?php echo $this->url('job', array('action' => 'details', 'id' => $job['jobid'])); ?>"><?php echo $this->escapeHtml($job['jobid']); ?></a></td>
-	<td><?php echo $this->escapeHtml($job['name']); ?></td>
-	<td><a href="<?php echo $this->url('client', array('action' => 'details', 'id' => $job['client'])); ?>"><?php echo $this->escapeHtml($job['client']); ?></a></td>
-	<td><?php echo $this->printJobType($job['type']); ?></td>
-	<td><?php echo $this->printJobLevel($job['level']); ?></td>
-	<td><?php echo $this->printDate($job['starttime']); ?></td>
-	<td><?php echo $this->printDate($job['endtime']); ?></td>
-	<td><?php echo $this->printJobStatus($job['jobstatus']); ?></td>
-	<td>
-	<?php if($job['type'] == "B") : ?>
-                <?php if($job['jobstatus'] == "T" || $job['jobstatus'] == "E" || $job['jobstatus'] == "e" || $job['jobstatus'] == "f" || $job['jobstatus'] == "A") : ?>
-                <a class="btn btn-default btn-xs" 
-                        href="<?php echo $this->url('job', array('action' => 'rerun', 'id' => $job['jobid'])); ?>" 
-                        title="<?php echo $this->translate("Rerun"); ?>" data-toggle="tooltip" data-placement="left">
-                <span class="glyphicon glyphicon-repeat"></span> Rerun</a>
-                <?php endif; ?>
-        <?php endif; ?>
-	</td>
-
-</tr>
-
-<?php endforeach; ?>
+<thead class="bg-primary">
+	<th><?php echo $this->translate("Job"); ?></th>
+	<th><?php echo $this->translate("Name"); ?></th>
+	<th><?php echo $this->translate("Client"); ?></th>
+	<th><?php echo $this->translate("Type"); ?></th>
+	<th><?php echo $this->translate("Level"); ?></th>
+	<th><?php echo $this->translate("Start"); ?></th>
+	<th><?php echo $this->translate("End"); ?></th>
+	<th><?php echo $this->translate("Status"); ?></th>
+	<th><?php echo $this->translate("Actions"); ?></th>
+</thead>
 
 </table>
 
+</div>
+</div>
+</div>
+</div>
+
 <?php
-
-echo $this->paginationControl(
-			$this->paginator,
-			'Elastic',
-			array('partial/paginator.phtml', 'Job'),
-			array('route' => 'job')
-		);
-
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
-</div>
-</div>
-</div>
-</div>
-
-<?php elseif(count($this->jobs) == 0) : ?>
-
-<div class="alert alert-dismissable alert-info">
-<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-<ul>
-<li><?php echo $this->translate("No unsuccessful jobs found."); ?></li>
-</ul>
-</div>
-
-<?php endif; ?>
-
 <script>
-$(function () {
-  $('[data-toggle="tooltip"]').tooltip()
-})
+
+$(document).ready(function() {
+
+        var table = $('#jobtable').DataTable( {
+                "ajax": {
+                        "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=unsuccessful'; ?>",
+                        "dataSrc": ""
+                },
+                "columns": [
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        { "data": null },
+                        {
+				"orderable": false,
+				"data": null
+			}
+                ],
+                "paging":   true,
+                "ordering": true,
+                "info":     true,
+                "pagingType": "full_numbers",
+                "stateSave": true,
+		"columnDefs": [
+			{
+                                "targets": 0,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data.jobid+'">'+data.jobid+'</a>';
+                                }
+                        },
+                        {
+                                "targets": 1,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.name;
+                                }
+                        },
+                        {
+                                "targets": 2,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data.client+'">'+data.client+'</a>';
+                                }
+                        },
+			{
+                                "targets": 3,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        var output;
+                                        switch(data.type) {
+                                                case 'B':
+                                                        output = 'Backup';
+                                                        break;
+                                                case 'M':
+                                                        output = 'Migrated';
+                                                        break;
+                                                case 'V':
+                                                        output = 'Verify';
+                                                        break;
+                                                case 'R':
+                                                        output = 'Restore';
+                                                        break;
+                                                case 'U':
+                                                        output = 'Console program';
+                                                        break;
+                                                case 'I':
+                                                        output = 'Internal system job';
+                                                        break;
+                                                case 'D':
+                                                        output = 'Admin';
+                                                        break;
+                                                case 'A':
+                                                        output = 'Archive';
+                                                        break;
+                                                case 'C':
+                                                        output = 'Copy of a job';
+                                                        break;
+                                                case 'c':
+                                                        output = 'Copy job';
+                                                        break;
+                                                case 'g':
+                                                        output = 'Migration job';
+                                                        break;
+                                                case 'S':
+                                                        output = 'Scan';
+                                                        break;
+                                                default:
+                                                        output = data.type;
+                                                        break;
+                                        }
+                                        return output;
+                                }
+                        },
+			{
+                                "targets": 4,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        if(data.level == "F") {
+                                                return 'Full';
+                                        }
+                                        else if(data.level == "D") {
+                                                return 'Differential';
+                                        }
+                                        else if(data.level == "I") {
+                                                return 'Incremental';
+                                        }
+                                        else {
+                                                return data.level;
+                                        }
+                                }
+                        },
+                        {
+                                "targets": 5,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.starttime;
+                                }
+                        },
+                        {
+                                "targets": 6,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.endtime;
+                                }
+                        },
+			{
+                                "targets": 7,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+
+                                        var output;
+
+                                        switch(data.jobstatus) {
+
+                                                // Non-fatal error
+                                                case 'e':
+                                                        output = '<span class="label label-danger">Failure</span>';
+                                                        break;
+                                                // Terminated with errors
+                                                case 'E':
+                                                        output = '<span class="label label-danger">Failure</span>';
+                                                        break;
+                                                // Fatal error
+                                                case 'f':
+                                                        output = '<span class="label label-danger">Failure</span>';
+                                                        break;
+                                                // Terminated successful
+                                                case 'T':
+                                                        output = '<span class="label label-success">Success</span>';
+                                                        break;
+                                                // Running
+                                                case 'R':
+                                                        output = '<span class="label label-info">Running</span>';
+                                                        break;
+                                                // Created no yet running
+                                                case 'C':
+                                                        output = '<span class="label label-default">Queued</span>';
+                                                        break;
+                                                // Blocked
+                                                case 'B':
+                                                        output = '<span class="label label-warning">Blocked</span>';
+                                                        break;
+                                                // Verify found differences
+                                                case 'D':
+                                                        output = '<span class="label label-warning">Verify found differences</span>';
+                                                        break;
+                                                // Canceled by user
+                                                case 'A':
+                                                        output = '<span class="label label-warning">Canceled</span>';
+                                                        break;
+                                                // Waiting for client
+                                                case 'F':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+						// Waiting for storage daemon
+                                                case 'S':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting for new media
+                                                case 'm':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting for media mount
+                                                case 'M':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting for storage resource
+                                                case 's':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting for job resource
+                                                case 'j':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting for client resource
+                                                case 'c':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting on maximum jobs
+                                                case 'd':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting on starttime
+                                                case 't':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // Waiting on higher priority jobs
+                                                case 'p':
+                                                        output = '<span class="label label-default">Waiting</span>';
+                                                        break;
+                                                // SD despooling attributes
+                                                case 'a':
+                                                        output = '<span class="label label-info">SD despooling attributes</span>';
+                                                        break;
+                                                // Doing batch insert file records
+                                                case 'i':
+                                                        output = '<span class="label label-info">Doing batch insert file records</span>';
+                                                        break;
+                                                // Incomplete
+                                                case 'I':
+                                                        output = '<span class="label label-primary">Incomplete</span>';
+                                                        break;
+                                                // Committing data
+                                                case 'L':
+                                                        output = '<span class="label label-info">Committing data</span>';
+                                                        break;
+                                                // Terminated with warnings
+                                                case 'W':
+                                                        output = '<span class="label label-warning">Warning</span>';
+                                                        break;
+						// Doing data despooling
+                                                case 'l':
+                                                        output = '<span class="label label-info">Doing data despooling</span>';
+                                                        break;
+                                                // Queued waiting for device
+                                                case 'q':
+                                                        output = '<span class="label label-default">Queued waiting for device</span>';
+                                                        break;
+                                                // Default
+                                                default:
+                                                        output = '<span class="label label-primary">' + data.jobStatus + '</span>';
+                                                        break;
+                                        }
+
+                                        return output;
+                                }
+
+                        },
+			{
+                                "targets": 8,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        if(data.type == 'B') {
+                                                if(data.jobstatus == 'T' || data.jobstatus == 'E' || data.jobstatus == 'e' || data.jobstatus == 'f' || data.jobstatus == 'A') {
+                                                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="Rerun" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                                                }
+                                        }
+                                        return '';
+                                }
+                        }
+		]
+	} );
+
+	$('#jobtable tbody').on('mouseover', '#btn-1', function () {
+                $('[data-toggle="tooltip"]').tooltip();
+        });
+
+} );
+
 </script>

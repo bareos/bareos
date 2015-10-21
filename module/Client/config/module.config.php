@@ -40,13 +40,10 @@ return array(
 			'client' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/client[/][:action][/][:id][order_by/:order_by][/:order][/][limit/:limit]',
+					'route' => '/client[/][:action][/][:id]',
 					'constraints' => array(
-						'action' => '(?!\blimit\b)(?!\border_by\b)[a-zA-Z][a-zA-Z0-9_-]*',
+						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[a-zA-Z][a-zA-Z0-9_-]*',
-						'order_by' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                                                'order' => 'ASC|DESC',
-                                                'limit' => '[0-9]+',
 					),
 					'defaults' => array(
 						'controller' => 'Client\Controller\Client',

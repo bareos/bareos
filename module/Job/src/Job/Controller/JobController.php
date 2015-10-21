@@ -28,8 +28,8 @@ namespace Job\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
+use Job\Form\JobForm;
 
 class JobController extends AbstractActionController
 {
@@ -40,20 +40,22 @@ class JobController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$jobs = $this->getJobModel()->getJobs();
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$page = (int) $this->params()->fromQuery('page');
+			$error = null;
+			$status = "all";
+			$period = 7;
 
-				$paginator = new Paginator(new ArrayAdapter($jobs));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
+			$period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : '7';
+			$status = $this->params()->fromQuery('status') ? $this->params()->fromQUery('status') : 'all';
 
-				return new ViewModel(
-					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
-						)
-					);
+			$form = new JobForm($period, $status);
+
+			return new ViewModel(
+				array(
+					'form' => $form,
+					'status' => $status,
+					'period' => $period
+				)
+			);
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -71,6 +73,7 @@ class JobController extends AbstractActionController
 			return new ViewModel(array(
 				'job' => $job,
 				'joblog' => $joblog,
+				'jobid' => $jobid
 			));
 		}
 		else {
@@ -87,17 +90,8 @@ class JobController extends AbstractActionController
 
 				$jobs = array_merge($jobs_R, $jobs_l);
 
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$page = (int) $this->params()->fromQuery('page', 1);
-
-				$paginator = new Paginator(new ArrayAdapter($jobs));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
-
 				return new ViewModel(
 					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
 						'jobs' => $jobs
 					)
 				);
@@ -110,41 +104,7 @@ class JobController extends AbstractActionController
 	public function waitingAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-				$jobs_F = $this->getJobModel()->getJobsByStatus('F', null, null);
-				$jobs_S = $this->getJobModel()->getJobsByStatus('S', null, null);
-				$jobs_m = $this->getJobModel()->getJobsByStatus('m', null, null);
-				$jobs_M = $this->getJobModel()->getJobsByStatus('M', null, null);
-				$jobs_s = $this->getJobModel()->getJobsByStatus('s', null, null);
-				$jobs_j = $this->getJobModel()->getJobsByStatus('j', null, null);
-				$jobs_c = $this->getJobModel()->getJobsByStatus('c', null, null);
-				$jobs_d = $this->getJobModel()->getJobsByStatus('d', null, null);
-				$jobs_t = $this->getJobModel()->getJobsByStatus('t', null, null);
-				$jobs_p = $this->getJobModel()->getJobsByStatus('p', null, null);
-				$jobs_q = $this->getJobModel()->getJobsByStatus('q', null, null);
-				$jobs_C = $this->getJobModel()->getJobsByStatus('C', null, null);
-
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$page = (int) $this->params()->fromQuery('page', 1);
-
-				$jobs = array_merge(
-					$jobs_F,$jobs_S,$jobs_m,$jobs_M,
-					$jobs_s,$jobs_j,$jobs_c,$jobs_d,
-					$jobs_t,$jobs_p,$jobs_q,$jobs_C
-				);
-
-				$paginator = new Paginator(new ArrayAdapter($jobs));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
-
-				return new ViewModel(
-					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
-						'jobs' => $jobs
-					)
-				);
-
+				return new ViewModel();
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -154,27 +114,7 @@ class JobController extends AbstractActionController
 	public function unsuccessfulAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-				$jobs_A = $this->getJobModel()->getJobsByStatus('A', 1, null); // Canceled jobs last 24h
-				$jobs_E = $this->getJobModel()->getJobsByStatus('E', 1, null); //
-				$jobs_e = $this->getJobModel()->getJobsByStatus('e', 1, null); //
-				$jobs_f = $this->getJobModel()->getJobsByStatus('f', 1, null); //
-
-				$jobs = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
-				$page =  (int) $this->params()->fromQuery('page', 1);
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-				$paginator = new Paginator(new ArrayAdapter($jobs));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
-
-				return new ViewModel(
-					array(
-						'jobs' => $jobs,
-						'paginator' => $paginator,
-						'limit' => $limit,
-					)
-				);
+				return new ViewModel();
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -184,25 +124,7 @@ class JobController extends AbstractActionController
 	public function successfulAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-				$jobs_T = $this->getJobModel()->getJobsByStatus('T', 1, null); // Terminated
-				$jobs_W = $this->getJobModel()->getJobsByStatus('W', 1, null); // Terminated with warnings
-
-				$jobs = array_merge($jobs_T, $jobs_W);
-				$page = (int) $this->params()->fromQuery('page', 1);
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-				$paginator = new Paginator(new ArrayAdapter($jobs));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
-
-				return new ViewModel(
-					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
-						'jobs' => $jobs,
-					)
-				);
+				return new ViewModel();
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -245,22 +167,7 @@ class JobController extends AbstractActionController
 	public function runAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-                                $jobs = $this->getJobModel()->getBackupJobs();
-                                $page = (int) $this->params()->fromQuery('page', 1);
-                                $limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-                                $paginator = new Paginator(new ArrayAdapter($jobs));
-                                $paginator->setCurrentPageNumber($page);
-                                $paginator->setItemCountPerPage($limit);
-
-                                return new ViewModel(
-                                                array(
-							'paginator' => $paginator,
-							'jobs' => $jobs,
-							'limit' => $limit
-                                                )
-                                );
+                                return new ViewModel();
                 }
                 else {
                                 return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -281,6 +188,81 @@ class JobController extends AbstractActionController
                 else {
                         return $this->redirect()->toRoute('auth', array('action' => 'login'));
                 }
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+
+			$data = $this->params()->fromQuery('data');
+			$jobid = $this->params()->fromQuery('jobid');
+			$status = $this->params()->fromQuery('status');
+			$period = $this->params()->fromQuery('period');
+
+			if($data == "jobs" && $status == "all") {
+				$result = $this->getJobModel()->getJobs($status, $period);
+			}
+			elseif($data == "jobs" && $status == "successful") {
+				$jobs_T = $this->getJobModel()->getJobsByStatus('T', $period, null); // Terminated
+                                $jobs_W = $this->getJobModel()->getJobsByStatus('W', $period, null); // Terminated with warnings
+                                $result = array_merge($jobs_T, $jobs_W);
+			}
+			elseif($data == "jobs" && $status == "unsuccessful") {
+				$jobs_A = $this->getJobModel()->getJobsByStatus('A', $period, null); // Canceled jobs
+                                $jobs_E = $this->getJobModel()->getJobsByStatus('E', $period, null); //
+                                $jobs_e = $this->getJobModel()->getJobsByStatus('e', $period, null); //
+                                $jobs_f = $this->getJobModel()->getJobsByStatus('f', $period, null); //
+                                $result = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
+			}
+			elseif($data == "jobs" && $status == "running") {
+				$jobs_R = $this->getJobModel()->getJobsByStatus('R', $period, null);
+                                $jobs_l = $this->getJobModel()->getJobsByStatus('l', $period, null);
+                                $result = array_merge($jobs_R, $jobs_l);
+			}
+			elseif($data == "jobs" && $status == "waiting") {
+				$jobs_F = $this->getJobModel()->getJobsByStatus('F', $period, null);
+                                $jobs_S = $this->getJobModel()->getJobsByStatus('S', $period, null);
+                                $jobs_m = $this->getJobModel()->getJobsByStatus('m', $period, null);
+                                $jobs_M = $this->getJobModel()->getJobsByStatus('M', $period, null);
+                                $jobs_s = $this->getJobModel()->getJobsByStatus('s', $period, null);
+                                $jobs_j = $this->getJobModel()->getJobsByStatus('j', $period, null);
+                                $jobs_c = $this->getJobModel()->getJobsByStatus('c', $period, null);
+                                $jobs_d = $this->getJobModel()->getJobsByStatus('d', $period, null);
+                                $jobs_t = $this->getJobModel()->getJobsByStatus('t', $period, null);
+                                $jobs_p = $this->getJobModel()->getJobsByStatus('p', $period, null);
+                                $jobs_q = $this->getJobModel()->getJobsByStatus('q', $period, null);
+                                $jobs_C = $this->getJobModel()->getJobsByStatus('C', $period, null);
+                                $result = array_merge(
+                                        $jobs_F,$jobs_S,$jobs_m,$jobs_M,
+                                        $jobs_s,$jobs_j,$jobs_c,$jobs_d,
+                                        $jobs_t,$jobs_p,$jobs_q,$jobs_C
+                                );
+			}
+			elseif($data == "backupjobs") {
+				$result = $this->getJobModel()->getBackupJobs();
+			}
+			elseif($data == "details") {
+				$result = $this->getJobModel()->getJob($jobid);
+			}
+			elseif($data == "logs" && isset($jobid)) {
+				$result = $this->getJobModel()->getJobLog($jobid);
+			}
+			else {
+				$result = null;
+			}
+
+			$response = $this->getResponse();
+			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+			if(isset($result)) {
+				$response->setContent(JSON::encode($result));
+			}
+
+			return $response;
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
 	}
 
 	public function getJobModel()

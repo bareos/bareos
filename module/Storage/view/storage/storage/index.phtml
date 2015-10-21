@@ -40,46 +40,74 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<p>
-Storages per page:
-<a href="<?php echo $this->url('storage', array('limit' => '10', null, null, true)); ?>">10</a> |
-<a href="<?php echo $this->url('storage', array('limit' => '25', null, null, true)); ?>">25</a> |
-<a href="<?php echo $this->url('storage', array('limit' => '50', null, null, true)); ?>">50</a> |
-<a href="<?php echo $this->url('storage', array('limit' => '100', null, null, true)); ?>">100</a>
-</p>
+<table class="table table-hover" id="storages">
 
-<table class="table table-condensed">
-
-<tr>
-	<th class="bg-primary"><?php echo $this->translate("Storage"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Name"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Autochanger"); ?></th>
-</tr>
-
-<?php foreach($paginator as $storage) : ?>
-
-<tr>
-	<td><?php echo $this->escapeHtml($storage['storageid']); ?></td>
-	<td><?php echo $this->escapeHtml($storage['name']); ?></td>
-	<td><?php echo $this->escapeHtml($storage['autochanger']); ?></td>
-</tr>
-
-<?php endforeach; ?>
+<thead class="bg-primary">
+	<th><?php echo $this->translate("Name"); ?></th>
+	<th><?php echo $this->translate("Autochanger"); ?></th>
+</thead>
 
 </table>
 
+</div>
+</div>
+</div>
+</div>
+
 <?php
-
-echo $this->paginationControl(
-                        $this->paginator,
-                        'Elastic',
-                        array('partial/paginator.phtml', 'Storage'),
-                        array('route' => 'storage')
-                );
-
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
-</div>
-</div>
-</div>
-</div>
+<script>
+
+$(document).ready(function() {
+
+	var table= $('#storages').DataTable( {
+		"ajax": {
+			"url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",
+			"dataSrc": ""
+		},
+		"columns" : [
+			{
+				"className": "storage-name",
+				"orderable": true,
+				"data": "name"
+			},
+			{
+				"className": "storage-autochanger",
+				"orderable": true,
+				"data": "autochanger"
+			},
+		],
+		"paging":   true,
+		"ordering": true,
+		"info":     true,
+		"pagingType": "full_numbers",
+		"stateSave": true,
+		"columnDefs": [
+			{
+				"targets": 0,
+				"data": "name",
+				"render": function(data, type, full, meta) {
+					return data;
+				}
+			},
+			{
+                                "targets": 1,
+                                "data": "autochanger",
+                                "render": function(data, type, full, meta) {
+					var a = '<span class="label label-default">No</span>';
+					if(data == "1") {
+						a = '<span class="label label-success">Yes</span>';
+					}
+                                        return a;
+                                }
+                        },
+		]
+	});
+
+});
+
+</script>

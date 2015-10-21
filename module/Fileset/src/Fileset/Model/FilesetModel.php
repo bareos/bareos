@@ -63,7 +63,7 @@ class FilesetModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, null);
 			$fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $fileset['result']['filesets'][0];
+			return $fileset['result']['filesets'];
 		}
 		else {
 			return false;

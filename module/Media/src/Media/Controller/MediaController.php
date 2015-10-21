@@ -27,8 +27,7 @@ namespace Media\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
 
 class MediaController extends AbstractActionController
 {
@@ -39,17 +38,10 @@ class MediaController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 				$volumes = $this->getMediaModel()->getVolumes();
-				$page = (int) $this->params()->fromQuery('page');
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-				$paginator = new Paginator(new ArrayAdapter($volumes));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
+						'volumes' => $volumes,
 					)
 				);
 
@@ -69,6 +61,34 @@ class MediaController extends AbstractActionController
 			return new ViewModel(array(
 				'media' => $volume,
 			));
+
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()){
+
+			$data = $this->params()->fromQuery('data');
+
+			if($data == "all") {
+				$result = $this->getMediaModel()->getVolumes();
+			}
+			else {
+				$result = null;
+			}
+
+			$response = $this->getResponse();
+			$response->getHeaders()->addHeaderLine('Content-Type','application/json');
+
+			if(isset($result)) {
+				$response->setContent(JSON::encode($result));
+			}
+
+			return $response;
 
 		}
 		else {

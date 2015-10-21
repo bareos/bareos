@@ -27,8 +27,7 @@ namespace Storage\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
 
 class StorageController extends AbstractActionController
 {
@@ -38,21 +37,7 @@ class StorageController extends AbstractActionController
 	public function indexAction()
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-				$storages = $this->getStorageModel()->getStorages();
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-				$page = (int) $this->params()->fromQuery('page');
-
-				$paginator = new Paginator(new ArrayAdapter($storages));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
-
-				return new ViewModel(
-					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
-					)
-				);
+				return new ViewModel(array());
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -77,6 +62,34 @@ class StorageController extends AbstractActionController
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+
+				$data = $this->params()->fromQuery('data');
+				$storage = $this->params()->fromQuery('storage');
+
+				if($data == "all") {
+					$result = $this->getStorageModel()->getStorages();
+				}
+				else {
+					$result = null;
+				}
+
+				$response = $this->getResponse();
+				$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+				if(isset($result)) {
+					$response->setContent(JSON::encode($result));
+				}
+
+				return $response;
+                }
+                else {
+                                return $this->redirect()->toRoute('auth', array('action' => 'login'));
+                }
 	}
 
 	public function getStorageModel()

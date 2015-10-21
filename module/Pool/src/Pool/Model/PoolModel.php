@@ -63,7 +63,7 @@ class PoolModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, null);
 			$pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $pool['result']['pools'][0];
+			return $pool['result']['pools'];
 		}
 		else {
 			return false;

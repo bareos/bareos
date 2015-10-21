@@ -40,61 +40,264 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<p>
-Volumes per page:
-<a href="<?php echo $this->url('media', array('limit' => '10', null, null, true)); ?>">10</a> |
-<a href="<?php echo $this->url('media', array('limit' => '25', null, null, true)); ?>">25</a> |
-<a href="<?php echo $this->url('media', array('limit' => '50', null, null, true)); ?>">50</a> |
-<a href="<?php echo $this->url('media', array('limit' => '100', null, null, true)); ?>">100</a>
-</p>
+<table class="table" id="volumes">
 
-<table class="table table-condensed">
-
-<tr>
-	<th class="bg-primary"><?php echo $this->translate("Volume"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Name"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Storage"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Type"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Last written"); ?></th>
-	<th class="bg-primary"><?php echo $this->translate("Status"); ?></th>
-	<th class="bg-primary"><div align="right">Retention/Expiration</div></th>
-	<th class="bg-primary"><div align="right"><?php echo $this->translate("Maximum bytes"); ?></div></th>
-	<th class="bg-primary"><div align="right"><?php echo $this->translate("Current bytes"); ?></div></th>
-	<th class="bg-primary"><div align="right">Free bytes</div></th>
-</tr>
-
-<?php foreach($this->paginator as $volume) : ?>
-
-<tr>
-	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['volumename'])); ?>"><?php echo $this->escapeHtml($volume['mediaid']); ?></a></td>
-	<td><a href="<?php echo $this->url('media', array('action'=>'details', 'id' => $volume['volumename'])); ?>"><?php echo $this->escapeHtml($volume['volumename']); ?></a></td>
-	<td><?php echo $this->escapeHtml($volume['storageid']); ?></td>
-	<td><?php echo $this->escapeHtml($volume['mediatype']); ?></td>
-	<td><div title="<?php echo $volume['lastwritten']; ?>"><?php echo $this->printHumanReadableTimeperiod($volume['lastwritten'], "fuzzy"); ?></div></td>
-	<td><?php echo $this->escapeHtml($volume['volstatus']); ?></td>
-	<td><div align="right"><?php echo $this->printExpiration($volume['volretention'], $volume['lastwritten'], $volume['volstatus']); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume['maxvolbytes']); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume['volbytes']); ?></div></td>
-	<td><div align="right"><?php echo $this->printBytes($volume['maxvolbytes'] - $volume['volbytes']); ?></div></td>
-</tr>
-
-<?php endforeach; ?>
+<thead class="bg-primary">
+	<th></th>
+	<th><?php echo $this->translate("Name"); ?></th>
+	<th><?php echo $this->translate("Storage"); ?></th>
+	<th><?php echo $this->translate("Type"); ?></th>
+	<th><?php echo $this->translate("Last written"); ?></th>
+	<th><?php echo $this->translate("Status"); ?></th>
+	<th><?php echo $this->translate("Retention/Expiration"); ?></th>
+	<th><?php echo $this->translate("Maximum bytes"); ?></div></th>
+	<th><?php echo $this->translate("Current bytes"); ?></div></th>
+	<th><?php echo $this->translate("Free bytes"); ?></div></th>
+</thead>
 
 </table>
 
+</div>
+</div>
+</div>
+</div>
+
 <?php
-
-echo $this->paginationControl(
-			$this->paginator,
-			'Elastic',
-			array('partial/paginator.phtml', 'Volume'),
-			array('route' => 'media')
-		);
-
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
-</div>
-</div>
-</div>
-</div>
+<style>
 
+td.details-control:after {
+	font-family: "Glyphicons Halflings";
+	content: "\e081";
+	cursor: pointer;
+}
+
+tr.shown td.details-control:after {
+	font-family: "Glyphicons Halflings";
+	content: "\e082";
+	cursor: pointer;
+}
+
+</style>
+
+<script>
+
+function format( d ) {
+
+	var r;
+
+	if(d.recycle == 1) {
+		r = '<span class="label label-success">Yes</span>';
+	}
+	else {
+		r = '<span class="label label-danger">No</span>';
+	}
+
+	return '<table class="table table-bordered">'+
+		'<tr>'+
+                '<th>Label date</th>'+
+                '<td>'+ d.labeldate +'</td>'+
+                '</tr>'+
+                '<tr>'+
+                '<th>First written</th>'+
+                '<td>'+ d.firstwritten +'</td>'+
+                '</tr>'+
+		'<tr>'+
+                '<th>Last written</th>'+
+                '<td>'+ d.lastwritten +'</td>'+
+                '</tr>'+
+		'<tr>'+
+                '<th>Volume jobs</th>'+
+                '<td>'+ d.voljobs +'</td>'+
+                '</tr>'+
+		'<tr>'+
+                '<th>Recycle</th>'+
+                '<td>'+ r +'</td>'+
+                '</tr>'+
+                '</table>';
+}
+
+$(document).ready(function() {
+
+	var table = $('#volumes').DataTable( {
+		"ajax": {
+			"url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=all'; ?>",
+			"dataSrc": ""
+		},
+		"columns": [
+			{
+				"className": 'details-control',
+				"data": null,
+				"orderable": false,
+				"defaultContent": ''
+			},
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null },
+			{ "data": null }
+		],
+		"paging":   true,
+		"ordering": true,
+		"info":     true,
+		"pagingType": "full_numbers",
+		"stateSave": true,
+		"columnDefs": [
+			{
+				"targets": 1,
+				"data": null,
+				"render": function(data, type, full, meta) {
+					return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data.volumename+'">'+data.volumename+'</a>';
+				}
+			},
+			{
+				"targets": 2,
+				"data": null,
+				"render": function(data, type, full, meta) {
+					return data.storageid;
+				}
+			},
+			{
+				"targets": 3,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.mediatype;
+                                }
+			},
+			{
+                                "targets": 4,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+
+					if(data.lastwritten == null || data.lastwritten == "") {
+						return 'never';
+					}
+					else {
+						var d = Date.now() / 1000;
+                                                var a = data.lastwritten.split(" ");
+                                                var b = new Date(a[0]).getTime() / 1000;
+                                                var interval = Math.floor( (d - b) / (3600 * 24) );
+
+						if(interval < 1) {
+							return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">today</span>';
+						}
+						else if(interval <= 31 && interval >= 1) {
+							return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + interval + ' day(s) ago</span>';
+						}
+						else if(interval >= 31 && interval <= 365) {
+							return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 31) + ' month(s) ago</span>';
+						}
+						else if(interval > 365) {
+							return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 365) + ' year(s) ago</span>';
+						}
+						else {
+							return data.lastwritten;
+						}
+					}
+                                }
+                        },
+			{
+                                "targets": 5,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        return data.volstatus;
+                                }
+                        },
+			{
+				"targets": 6,
+				"data": null,
+				"render": function(data, type, full, meta) {
+					if(data.volstatus == "Used" || data.volstatus == "Full") {
+						if(data.lastwritten == null || data.lastwritten == "") {
+							return '-';
+						}
+						else {
+							var d = Date.now() / 1000;
+							var a = data.lastwritten.split(" ");
+							var b = new Date(a[0]).getTime() / 1000;
+							var interval = (d - b) / (3600 * 24);
+							var retention = Math.round(data.volretention / 60 / 60 / 24);
+							var expiration = Math.round(retention - interval);
+							if(expiration <= 0) {
+								return '<span class="label label-danger">expired</span>';
+							}
+
+							if(expiration > 0) {
+								return '<span class="label label-warning">expires in ' + expiration  + ' days</span>';
+							}
+						}
+					}
+					else {
+						return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
+					}
+				}
+			},
+			{
+				"targets": 7,
+				"data": null,
+				"render": function(data, type, full, meta) {
+					if(data.maxvolbytes == 0) return "-";
+					var k = 1000;
+					var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+					var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
+					return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+				}
+			},
+			{
+				"targets": 8,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+                                        if(data.volbytes == 0) return "0.00 B";
+                                        var k = 1000;
+                                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+                                        var i = Math.floor(Math.log(data.volbytes) / Math.log(k));
+                                        return parseFloat((data.volbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+                                }
+			},
+			{
+				"targets": 9,
+                                "data": null,
+                                "render": function(data, type, full, meta) {
+					if(data.maxvolbytes == null || data.maxvolbytes == 0) return "-";
+                                        if(data.volbytes == null || data.volbytes == 0) return "0.00 B";
+					var d = data.maxvolbytes - data.volbytes;
+                                        var k = 1000;
+                                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+                                        var i = Math.floor(Math.log(d) / Math.log(k));
+                                        return parseFloat((d / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+                                }
+			}
+		]
+
+	} );
+
+	$('#volumes tbody').on('mouseover', '#lastwritten', function () {
+		$('[data-toggle="tooltip"]').tooltip();
+	} );
+
+	$('#volumes tbody').on('click', 'td.details-control', function () {
+		var tr = $(this).closest('tr');
+		var row = table.row( tr );
+		if ( row.child.isShown() ) {
+			// This row is already open - close it
+			row.child.hide();
+			tr.removeClass('shown');
+		}
+		else {
+			// Open this row
+			row.child( format(row.data()) ).show();
+			tr.addClass('shown');
+		}
+	} );
+
+} );
+
+</script>

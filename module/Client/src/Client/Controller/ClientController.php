@@ -27,8 +27,7 @@ namespace Client\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
 
 class ClientController extends AbstractActionController
 {
@@ -39,17 +38,11 @@ class ClientController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
 			$clients = $this->getClientModel()->getClients();
-
-			$paginator = new Paginator(new ArrayAdapter($clients));
-			$paginator->setCurrentPageNumber( (int) $this->params()->fromQuery('page', 1) );
-			$paginator->setItemCountPerPage($limit);
 
 			return new ViewModel(
 				array(
-					'paginator' => $paginator,
-					'limit' => $limit,
+					'clients' => $clients,
 				)
 			);
 		}
@@ -62,15 +55,46 @@ class ClientController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$name = $this->params()->fromRoute('id');
-
 			return new ViewModel(
 				array(
-					'client' => $this->getClientModel()->getClient($name),
-					'backups' => $this->getClientModel()->getClientBackups($name, 10, "desc"),
+					'client' => $this->params()->fromRoute('id')
 				)
 			);
 
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+
+			$data = $this->params()->fromQuery('data');
+			$client = $this->params()->fromQuery('client');
+
+			if($data == "all") {
+				$result = $this->getClientModel()->getClients();
+			}
+			elseif($data == "details" && isset($client)) {
+				$result = $this->getClientModel()->getClient($client);
+			}
+			elseif($data == "backups" && isset($client)) {
+				$result = $this->getClientModel()->getClientBackups($client, null, 'desc');
+			}
+			else {
+				$result = null;
+			}
+
+			$response = $this->getResponse();
+			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+			if(isset($result)) {
+				$response->setContent(JSON::encode($result));
+			}
+
+			return $response;
 		}
 		else {
 			return $this->redirect()->toRoute('auth', array('action' => 'login'));
@@ -87,4 +111,3 @@ class ClientController extends AbstractActionController
 	}
 
 }
-

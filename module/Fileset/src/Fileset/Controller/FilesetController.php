@@ -27,8 +27,7 @@ namespace Fileset\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
-use Zend\Paginator\Adapter\ArrayAdapter;
-use Zend\Paginator\Paginator;
+use Zend\Json\Json;
 
 class FilesetController extends AbstractActionController
 {
@@ -40,17 +39,10 @@ class FilesetController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 				$filesets = $this->getFilesetModel()->getFilesets();
-				$page = (int) $this->params()->fromQuery('page', 1);
-				$limit = $this->params()->fromRoute('limit') ? $this->params()->fromRoute('limit') : '25';
-
-				$paginator = new Paginator(new ArrayAdapter($filesets));
-				$paginator->setCurrentPageNumber($page);
-				$paginator->setItemCountPerPage($limit);
 
 				return new ViewModel(
 					array(
-						'paginator' => $paginator,
-						'limit' => $limit,
+						'filesets' => $filesets,
 						)
 				);
 		}
@@ -63,8 +55,8 @@ class FilesetController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$id = $this->params()->fromRoute('id', 0);
-				$fileset = $this->getFilesetModel()->getFileset($id);
+				$filesetid = $this->params()->fromRoute('id', 0);
+				$fileset = $this->getFilesetModel()->getFileset($filesetid);
 
 				return new ViewModel(
 					array(
@@ -74,6 +66,37 @@ class FilesetController extends AbstractActionController
 		}
 		else {
 				return $this->redirect()->toRoute('auth', array('action' => 'login'));
+		}
+	}
+
+	public function getDataAction()
+	{
+		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+
+			$data = $this->params()->fromQuery('data');
+			$fileset = $this->params()->fromQuery('fileset');
+
+			if($data == "all") {
+				$result = $this->getFilesetModel()->getFilesets();
+			}
+			elseif($data == "details" && isset($fileset)) {
+				$result = $this->getFilesetModel()->getFileset($fileset);
+			}
+			else {
+				$result = null;
+			}
+
+			$response = $this->getResponse();
+			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+			if(isset($result)) {
+				$response->setContent(JSON::encode($result));
+			}
+
+			return $response;
+		}
+		else {
+			return $this->redirect()->toRoute('auth', array('action' => 'login'));
 		}
 	}
 

@@ -40,18 +40,14 @@ return array(
 			'pool' => array(
 				'type' => 'segment',
 				'options' => array(
-					'route' => '/pool[/][:action/][:id][/][limit/:limit]',
+					'route' => '/pool[/][:action][/][:id]',
 					'constraints' => array(
-						'action' => '(?!\blimit\b)[a-zA-Z][a-zA-Z0-9_-]*',
+						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
 						'id' => '[a-zA-Z][a-zA-Z0-9_-]*',
-						'order_by' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                                                'order' => 'ASC|DESC',
-                                                'limit' => '[0-9]+',
 					),
 					'defaults' => array(
 						'controller' => 'Pool\Controller\Pool',
 						'action' => 'index',
-						'limit' => '[0-9]+'
 					),
 				),
 

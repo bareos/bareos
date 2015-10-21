@@ -47,23 +47,46 @@ class JobModel implements ServiceLocatorAwareInterface
 		return $this->serviceLocator;
 	}
 
-	public function getJobs()
+	public function getJobs($status=null, $period=null)
 	{
-		$cmd = 'llist jobs';
+		if($period == "all") {
+			$cmd = 'llist jobs';
+		}
+		else {
+			$cmd = 'llist jobs days='.$period;
+		}
+
 		$this->director = $this->getServiceLocator()->get('director');
 		$result = $this->director->send_command($cmd, 2, null);
-		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return array_reverse($jobs['result']['jobs']);
+		if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+			//return false;
+			$error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+			return $error['result']['error'];
+		}
+		else {
+			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+			return $jobs['result']['jobs'];
+		}
 	}
 
 	public function getJobsByStatus($status=null, $days=null, $hours=null)
 	{
 		if(isset($status)) {
 			if(isset($days)) {
-				$cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
+				if($days == "all") {
+					$cmd = 'llist jobs jobstatus='.$status.'';
+				}
+				else {
+					$cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
+				}
 			}
 			elseif(isset($hours)) {
-				$cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
+				if($hours == "all") {
+					$cmd = 'llist jobs jobstatus='.$status.'';
+				}
+				else {
+					$cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
+				}
 			}
 			else {
 				$cmd = 'llist jobs jobstatus='.$status.'';
@@ -85,7 +108,7 @@ class JobModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, null);
 			$job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $job['result']['jobs'][0];
+			return $job['result']['jobs'];
 		}
 		else {
 			return false;
