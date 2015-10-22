@@ -1,7 +1,6 @@
 /usr/sbin/bscrypto
-@plugindir@/scsicrypto-sd.so
+@plugindir@/autoxflate-sd.so
 @scriptdir@/disk-changer
 @sysconfdir@/bareos-sd.conf     @configtemplatedir@
 /usr/sbin/bareos-sd
-/usr/share/man/man8/bscrypto.8.gz
 /usr/share/man/man8/bareos-sd.8.gz
