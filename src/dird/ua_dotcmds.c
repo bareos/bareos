@@ -1248,8 +1248,6 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
       }
    } else if ((pos = find_arg_with_value(ua, "storage")) >= 0) {
       STORERES *storage;
-      DEVICERES *device;
-      POOL_MEM devices;
 
       /*
        * Storage defaults
@@ -1260,20 +1258,26 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
 
       storage = (STORERES *)GetResWithName(R_STORAGE, ua->argv[pos]);
       if (storage) {
+         DEVICERES *device;
+         POOL_MEM devices;
+
          ua->send->object_key_value("storage", "%s=", storage->name(), "%s\n");
          ua->send->object_key_value("address", "%s=", storage->address, "%s\n");
          ua->send->object_key_value("port", "%s=", storage->SDport, "%d\n");
          ua->send->object_key_value("enabled", "%s=", storage->enabled, "%d\n");
          ua->send->object_key_value("media_type", "%s=", storage->media_type, "%s\n");
+
          device = (DEVICERES *)storage->device->first();
-         devices.strcpy(device->name());
-         if (storage->device->size() > 1) {
-            while ((device = (DEVICERES *)storage->device->next())) {
-               devices.strcat(",");
-               devices.strcat(device->name());
+         if (device) {
+            devices.strcpy(device->name());
+            if (storage->device->size() > 1) {
+               while ((device = (DEVICERES *)storage->device->next())) {
+                  devices.strcat(",");
+                  devices.strcat(device->name());
+               }
             }
+            ua->send->object_key_value("device", "%s=", devices.c_str(), "%s\n");
          }
-         ua->send->object_key_value("device", "%s=", devices.c_str(), "%s\n");
       }
    } else if ((pos = find_arg_with_value(ua, "pool")) >= 0) {
       POOLRES *pool;
