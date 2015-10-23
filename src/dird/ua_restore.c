@@ -444,7 +444,7 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
     */
    i = find_arg_with_value(ua, NT_("restoreclient"));
    if (i >= 0) {
-      if (!is_name_valid(ua->argv[i], &ua->errmsg)) {
+      if (!is_name_valid(ua->argv[i], ua->errmsg)) {
          ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
          return false;
       }
