@@ -152,6 +152,7 @@ BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
 BuildRequires: libfastlz-devel
+BuildRequires: logrotate
 %if 0%{?build_sqlite3}
 %if 0%{?suse_version}
 BuildRequires: sqlite3-devel
@@ -926,11 +927,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 %endif
 %{_sbindir}/bareos-sd
-%{_sbindir}/bscrypto
 %{script_dir}/disk-changer
 %{plugin_dir}/autoxflate-sd.so
-%{plugin_dir}/scsicrypto-sd.so
-%{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
@@ -944,9 +942,12 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{backend_dir}/libbareossd-tape*.so
 %{script_dir}/mtx-changer
 %config(noreplace) %{_sysconfdir}/bareos/mtx-changer.conf
+%{_mandir}/man8/bscrypto.8.gz
 %{_mandir}/man8/btape.8.gz
+%{_sbindir}/bscrypto
 %{_sbindir}/btape
 %attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-tape-with-autoloader.conf
+%{plugin_dir}/scsicrypto-sd.so
 %{plugin_dir}/scsitapealert-sd.so
 
 %files storage-fifo
