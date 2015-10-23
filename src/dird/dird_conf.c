@@ -1967,6 +1967,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                               Emsg1(M_ERROR, 0, _("Unknown compression include/exclude option: %c\n"), *p);
                               break;
                            }
+                           break;
                         default:
                            Emsg1(M_ERROR, 0, _("Unknown compression include/exclude option: %c\n"), *p);
                            break;
