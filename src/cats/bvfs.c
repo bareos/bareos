@@ -64,57 +64,24 @@ Bvfs::Bvfs(JCR *j, B_DB *mdb) {
    attr = new_attr(jcr);
    list_entries = result_handler;
    user_data = this;
-   username = NULL;
 }
 
 Bvfs::~Bvfs() {
    free_pool_memory(jobids);
    free_pool_memory(pattern);
    free_pool_memory(prev_dir);
-   if (username) {
-      free(username);
-   }
    free_attr(attr);
    jcr->dec_use_count();
-}
-
-void Bvfs::filter_jobid()
-{
-   if (!username) {
-      return;
-   }
-
-   /* Query used by Bweb to filter clients, activated when using
-    * set_username()
-    */
-   POOL_MEM query;
-   Mmsg(query,
-      "SELECT DISTINCT JobId FROM Job JOIN Client USING (ClientId) "
-        "JOIN (SELECT ClientId FROM client_group_member "
-        "JOIN client_group USING (client_group_id) "
-        "JOIN bweb_client_group_acl USING (client_group_id) "
-        "JOIN bweb_user USING (userid) "
-       "WHERE bweb_user.username = '%s' "
-      ") AS filter USING (ClientId) "
-        " WHERE JobId IN (%s)",
-        username, jobids);
-
-   db_list_ctx ctx;
-   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
-   db_sql_query(db, query.c_str(), db_list_handler, &ctx);
-   pm_strcpy(jobids, ctx.list);
 }
 
 void Bvfs::set_jobid(JobId_t id)
 {
    Mmsg(jobids, "%lld", (uint64_t)id);
-   filter_jobid();
 }
 
 void Bvfs::set_jobids(char *ids)
 {
    pm_strcpy(jobids, ids);
-   filter_jobid();
 }
 
 /*

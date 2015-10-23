@@ -111,14 +111,6 @@ public:
       see_copies = val;
    }
 
-   void filter_jobid();         /* Call after set_username */
-
-   void set_username(char *user) {
-      if (user) {
-         username = bstrdup(user);
-      }
-   }
-
    void set_handler(DB_RESULT_HANDLER *h, void *ctx) {
       list_entries = h;
       user_data = ctx;
@@ -164,7 +156,6 @@ private:
    JCR *jcr;
    B_DB *db;
    POOLMEM *jobids;
-   char *username;              /* Used with Bweb */
    uint32_t limit;
    uint32_t offset;
    uint32_t nb_record;          /* number of records of the last query */
