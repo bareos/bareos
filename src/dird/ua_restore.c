@@ -232,12 +232,16 @@ bool restore_cmd(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
-   get_client_name(ua, &rx);
+   if (!get_client_name(ua, &rx)) {
+      goto bail_out;
+   }
    if (!rx.ClientName) {
       ua->error_msg(_("No Client resource found!\n"));
       goto bail_out;
    }
-   get_restore_client_name(ua, rx);
+   if (!get_restore_client_name(ua, rx)) {
+      goto bail_out;
+   }
 
    escaped_bsr_name = escape_filename(jcr->RestoreBootstrap);
 
@@ -393,6 +397,7 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
 {
    int i;
    CLIENT_DBR cr;
+   memset(&cr, 0, sizeof(cr));
 
    /*
     * If no client name specified yet, get it now
@@ -408,15 +413,18 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
       if (i >= 0) {
          if (!is_name_valid(ua->argv[i], &ua->errmsg)) {
             ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
-            return 0;
+            return false;
          }
-
+         bstrncpy(cr.Name, ua->argv[i], sizeof(cr.Name));
+         if (!db_get_client_record(ua->jcr, ua->db, &cr)) {
+            ua->error_msg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
+            return false;
+         }
          rx->ClientName = bstrdup(ua->argv[i]);
          return true;
       }
-      memset(&cr, 0, sizeof(cr));
       if (!get_client_dbr(ua, &cr)) {
-         return 0;
+         return false;
       }
       rx->ClientName = bstrdup(cr.Name);
    }
@@ -436,9 +444,9 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
     */
    i = find_arg_with_value(ua, NT_("restoreclient"));
    if (i >= 0) {
-      if (!is_name_valid(ua->argv[i], &ua->errmsg)) {
-         ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
-         return 0;
+      if (!GetClientResWithName(ua->argv[i])) {
+         ua->error_msg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
+         return false;
       }
       rx.RestoreClientName = bstrdup(ua->argv[i]);
       return true;
