@@ -2107,11 +2107,14 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.client = rc.job->client;           /* use default */
    }
 
-   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
-      ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
-      return false;
+   if (rc.client) {
+      if (!acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
+         ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+         return false;
+      } else {
+         Dmsg1(800, "Using client=%s\n", rc.client->name());
+      }
    }
-   Dmsg1(800, "Using client=%s\n", rc.client->name());
 
    if (rc.restore_client_name) {
       rc.client = GetClientResWithName(rc.restore_client_name);
@@ -2125,12 +2128,14 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       rc.client = rc.job->client;           /* use default */
    }
 
-   if (rc.client && !acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
-      ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
-      return false;
+   if (rc.client) {
+      if (!acl_access_ok(ua, Client_ACL, rc.client->name(), true)) {
+         ua->error_msg(_("No authorization. Client \"%s\".\n"), rc.client->name());
+         return false;
+      } else {
+         Dmsg1(800, "Using restore client=%s\n", rc.client->name());
+      }
    }
-
-   Dmsg1(800, "Using restore client=%s\n", rc.client->name());
 
    if (rc.fileset_name) {
       rc.fileset = GetFileSetResWithName(rc.fileset_name);
