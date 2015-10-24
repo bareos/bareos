@@ -236,7 +236,11 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             (restorepkt))
 
         tmp_path = '/var/tmp/bareos-vmware-plugin'
-        objectname = '/' + os.path.relpath(restorepkt.ofname, restorepkt.where)
+        if restorepkt.where != "":
+            objectname = '/' + os.path.relpath(restorepkt.ofname, restorepkt.where)
+        else:
+            objectname = restorepkt.ofname
+
         json_filename = tmp_path + objectname + '_cbt.json'
         # for now, restore requires no snapshot to exist so disk to
         # be written must be the the root-disk, even if a manual snapshot
