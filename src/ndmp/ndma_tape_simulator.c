@@ -42,26 +42,25 @@
 
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
 
-static struct ndm_tape_simulator_callbacks *ntsc = NULL;
-
 void
-ndmos_tape_register_callbacks (struct ndm_tape_simulator_callbacks *callbacks)
+ndmos_tape_register_callbacks (struct ndm_session *sess,
+  struct ndm_tape_simulator_callbacks *callbacks)
 {
 	/*
 	 * Only allow one register.
 	 */
-	if (!ntsc) {
-		ntsc = NDMOS_API_MALLOC (sizeof(struct ndm_tape_simulator_callbacks));
-		memcpy(ntsc, callbacks, sizeof(struct ndm_tape_simulator_callbacks));
+	if (!sess->ntsc) {
+		sess->ntsc = NDMOS_API_MALLOC (sizeof(struct ndm_tape_simulator_callbacks));
+		memcpy(sess->ntsc, callbacks, sizeof(struct ndm_tape_simulator_callbacks));
 	}
 }
 
 void
-ndmos_tape_unregister_callbacks (void)
+ndmos_tape_unregister_callbacks (struct ndm_session *sess)
 {
-	if (!ntsc) {
-		NDMOS_API_FREE (ntsc);
-		ntsc = NULL;
+	if (!sess->ntsc) {
+		NDMOS_API_FREE (sess->ntsc);
+		sess->ntsc = NULL;
 	}
 }
 
@@ -90,8 +89,8 @@ ndmos_tape_open (struct ndm_session *sess, char *drive_name, int will_write)
 		return NDMP9_DEVICE_OPENED_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_open(sess, drive_name, will_write);
+	if (sess->ntsc && sess->ntsc->tape_open) {
+		err = sess->ntsc->tape_open(sess, drive_name, will_write);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -109,8 +108,8 @@ ndmos_tape_close (struct ndm_session *sess)
 		return NDMP9_DEV_NOT_OPEN_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_close(sess);
+	if (sess->ntsc && sess->ntsc->tape_close) {
+		err = sess->ntsc->tape_close(sess);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -180,8 +179,8 @@ ndmos_tape_mtio (struct ndm_session *sess,
 		return NDMP9_ILLEGAL_ARGS_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_mtio(sess, op, count, resid);
+	if (sess->ntsc && sess->ntsc->tape_mtio) {
+		err = sess->ntsc->tape_mtio(sess, op, count, resid);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -215,8 +214,8 @@ ndmos_tape_write (struct ndm_session *sess,
 		return NDMP9_NO_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_write(sess, buf, count, done_count);
+	if (sess->ntsc && sess->ntsc->tape_write) {
+		err = sess->ntsc->tape_write(sess, buf, count, done_count);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -240,8 +239,8 @@ ndmos_tape_wfm (struct ndm_session *sess)
 		return NDMP9_PERMISSION_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_wfm(sess);
+	if (sess->ntsc && sess->ntsc->tape_wfm) {
+		err = sess->ntsc->tape_wfm(sess);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -272,8 +271,8 @@ ndmos_tape_read (struct ndm_session *sess,
 		return NDMP9_NO_ERR;
 	}
 
-	if (ntsc) {
-		err = ntsc->tape_read(sess, buf, count, done_count);
+	if (sess->ntsc && sess->ntsc->tape_read) {
+		err = sess->ntsc->tape_read(sess, buf, count, done_count);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}

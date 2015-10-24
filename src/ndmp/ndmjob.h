@@ -139,8 +139,10 @@ extern void			ndmjob_ixlog_deliver(struct ndmlog *log, char *tag,
 
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */
 
-extern void			ndmjob_register_callbacks (void);
-extern void			ndmjob_unregister_callbacks (void);
+extern void			ndmjob_register_callbacks (struct ndm_session *sess,
+					struct ndmlog *ixlog);
+extern void			ndmjob_unregister_callbacks (struct ndm_session *sess,
+					struct ndmlog *ixlog);
 
 extern int			ndmjobfhdb_add_file (struct ndmlog *ixlog, int tagc,
 					char *raw_name, ndmp9_file_stat *fstat);

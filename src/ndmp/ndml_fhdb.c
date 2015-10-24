@@ -37,28 +37,27 @@
 
 #include "ndmlib.h"
 
-static struct ndm_fhdb_callbacks *nfc = NULL;
-
 void
-ndmfhdb_register_callbacks (struct ndm_fhdb_callbacks *callbacks)
+ndmfhdb_register_callbacks (struct ndmlog *ixlog,
+  struct ndm_fhdb_callbacks *callbacks)
 {
 	/*
 	 * Only allow one register.
 	 */
-	if (!nfc) {
-		nfc = NDMOS_API_MALLOC (sizeof(struct ndm_fhdb_callbacks));
-		if (nfc) {
-			memcpy (nfc, callbacks, sizeof(struct ndm_fhdb_callbacks));
+	if (!ixlog->nfc) {
+		ixlog->nfc = NDMOS_API_MALLOC (sizeof(struct ndm_fhdb_callbacks));
+		if (ixlog->nfc) {
+			memcpy (ixlog->nfc, callbacks, sizeof(struct ndm_fhdb_callbacks));
 		}
 	}
 }
 
 void
-ndmfhdb_unregister_callbacks (void)
+ndmfhdb_unregister_callbacks (struct ndmlog *ixlog)
 {
-	if (nfc) {
-		NDMOS_API_FREE (nfc);
-		nfc = NULL;
+	if (ixlog->nfc) {
+		NDMOS_API_FREE (ixlog->nfc);
+		ixlog->nfc = NULL;
 	}
 }
 
@@ -66,8 +65,8 @@ int
 ndmfhdb_add_file (struct ndmlog *ixlog, int tagc,
   char *raw_name, ndmp9_file_stat *fstat)
 {
-	if (nfc) {
-		return nfc->add_file (ixlog, tagc, raw_name, fstat);
+	if (ixlog->nfc && ixlog->nfc->add_file) {
+		return ixlog->nfc->add_file (ixlog, tagc, raw_name, fstat);
 	} else {
 		return 0;
 	}
@@ -77,8 +76,8 @@ int
 ndmfhdb_add_dir (struct ndmlog *ixlog, int tagc,
   char *raw_name, ndmp9_u_quad dir_node, ndmp9_u_quad node)
 {
-	if (nfc) {
-		return nfc->add_dir (ixlog, tagc, raw_name, dir_node, node);
+	if (ixlog->nfc && ixlog->nfc->add_dir) {
+		return ixlog->nfc->add_dir (ixlog, tagc, raw_name, dir_node, node);
 	} else {
 		return 0;
 	}
@@ -88,8 +87,8 @@ int
 ndmfhdb_add_node (struct ndmlog *ixlog, int tagc,
   ndmp9_u_quad node, ndmp9_file_stat *fstat)
 {
-	if (nfc) {
-		return nfc->add_node (ixlog, tagc, node, fstat);
+	if (ixlog->nfc && ixlog->nfc->add_node) {
+		return ixlog->nfc->add_node (ixlog, tagc, node, fstat);
 	} else {
 		return 0;
 	}
@@ -99,8 +98,8 @@ int
 ndmfhdb_add_dirnode_root (struct ndmlog *ixlog, int tagc,
   ndmp9_u_quad root_node)
 {
-	if (nfc) {
-		return nfc->add_dirnode_root (ixlog, tagc, root_node);
+	if (ixlog->nfc && ixlog->nfc->add_dirnode_root) {
+		return ixlog->nfc->add_dirnode_root (ixlog, tagc, root_node);
 	} else {
 		return 0;
 	}

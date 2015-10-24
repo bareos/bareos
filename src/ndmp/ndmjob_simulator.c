@@ -1639,7 +1639,7 @@ ndmjob_validate_md5 (struct ndm_session *sess, char *name, char digest[16])
 }
 
 void
-ndmjob_register_callbacks (void)
+ndmjob_register_callbacks (struct ndm_session *sess, struct ndmlog *ixlog)
 {
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
 	struct ndm_tape_simulator_callbacks tape_callbacks;
@@ -1658,7 +1658,7 @@ ndmjob_register_callbacks (void)
 	tape_callbacks.tape_wfm = ndmjob_tape_wfm;
 	tape_callbacks.tape_read = ndmjob_tape_read;
 
-	ndmos_tape_register_callbacks (&tape_callbacks);
+	ndmos_tape_register_callbacks (sess, &tape_callbacks);
 #endif /* NDMOS_OPTION_TAPE_SIMULATOR */
 
 #ifdef NDMOS_OPTION_ROBOT_SIMULATOR
@@ -1667,31 +1667,31 @@ ndmjob_register_callbacks (void)
 	robot_callbacks.scsi_reset = ndmjob_scsi_reset;
 	robot_callbacks.scsi_execute_cdb = ndmjob_scsi_execute_cdb;
 
-	ndmos_scsi_register_callbacks (&robot_callbacks);
+	ndmos_scsi_register_callbacks (sess, &robot_callbacks);
 #endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
 
 	auth_callbacks.validate_password = ndmjob_validate_password;
 	auth_callbacks.validate_md5 = ndmjob_validate_md5;
 
-	ndmos_auth_register_callbacks (&auth_callbacks);
+	ndmos_auth_register_callbacks (sess, &auth_callbacks);
 
 	fhdb_callbacks.add_file = ndmjobfhdb_add_file;
 	fhdb_callbacks.add_dir = ndmjobfhdb_add_dir;
 	fhdb_callbacks.add_node = ndmjobfhdb_add_node;
 	fhdb_callbacks.add_dirnode_root = ndmjobfhdb_add_dirnode_root;
 
-	ndmfhdb_register_callbacks (&fhdb_callbacks);
+	ndmfhdb_register_callbacks (ixlog, &fhdb_callbacks);
 }
 
 void
-ndmjob_unregister_callbacks (void)
+ndmjob_unregister_callbacks (struct ndm_session *sess, struct ndmlog *ixlog)
 {
-	ndmfhdb_unregister_callbacks ();
-	ndmos_auth_unregister_callbacks ();
+	ndmfhdb_unregister_callbacks (ixlog);
+	ndmos_auth_unregister_callbacks (sess);
 #ifdef NDMOS_OPTION_ROBOT_SIMULATOR
-	ndmos_scsi_unregister_callbacks ();
+	ndmos_scsi_unregister_callbacks (sess);
 #endif /* NDMOS_OPTION_ROBOT_SIMULATOR */
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
-	ndmos_auth_unregister_callbacks ();
+	ndmos_auth_unregister_callbacks (sess);
 #endif /* NDMOS_OPTION_TAPE_SIMULATOR */
 }

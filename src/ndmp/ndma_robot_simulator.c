@@ -50,28 +50,27 @@
  * interface
  */
 
-static struct ndm_robot_simulator_callbacks *nrsc = NULL;
-
 void
-ndmos_scsi_register_callbacks (struct ndm_robot_simulator_callbacks *callbacks)
+ndmos_scsi_register_callbacks (struct ndm_session *sess,
+  struct ndm_robot_simulator_callbacks *callbacks)
 {
 	/*
 	 * Only allow one register.
 	 */
-        if (!nrsc) {
-		nrsc = NDMOS_API_MALLOC (sizeof(struct ndm_robot_simulator_callbacks));
-		if (nrsc) {
-			memcpy (nrsc, callbacks, sizeof(struct ndm_robot_simulator_callbacks));
+        if (!sess->nrsc) {
+		sess->nrsc = NDMOS_API_MALLOC (sizeof(struct ndm_robot_simulator_callbacks));
+		if (sess->nrsc) {
+			memcpy (sess->nrsc, callbacks, sizeof(struct ndm_robot_simulator_callbacks));
 		}
         }
 }
 
 void
-ndmos_scsi_unregister_callbacks (void)
+ndmos_scsi_unregister_callbacks (struct ndm_session *sess)
 {
-        if (nrsc) {
-		NDMOS_API_FREE (nrsc);
-		nrsc = NULL;
+        if (sess->nrsc) {
+		NDMOS_API_FREE (sess->nrsc);
+		sess->nrsc = NULL;
 	}
 }
 
@@ -102,8 +101,8 @@ ndmos_scsi_open (struct ndm_session *sess, char *name)
 	if (!name || strlen(name) > NDMOS_CONST_PATH_MAX - 1)
 		return NDMP9_NO_DEVICE_ERR;
 
-	if (nrsc) {
-		err = nrsc->scsi_open(sess, name);
+	if (sess->nrsc && sess->nrsc->scsi_open) {
+		err = sess->nrsc->scsi_open(sess, name);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -116,8 +115,8 @@ ndmos_scsi_close (struct ndm_session *sess)
 {
 	ndmp9_error		err;
 
-	if (nrsc) {
-		err = nrsc->scsi_close(sess);
+	if (sess->nrsc && sess->nrsc->scsi_close) {
+		err = sess->nrsc->scsi_close(sess);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -140,8 +139,8 @@ ndmos_scsi_reset_device (struct ndm_session *sess)
 	ndmp9_error		err;
 	struct ndm_robot_agent *	ra = sess->robot_acb;
 
-	if (nrsc) {
-		err = nrsc->scsi_reset(sess);
+	if (sess->nrsc && sess->nrsc->scsi_reset) {
+		err = sess->nrsc->scsi_reset(sess);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
@@ -170,8 +169,8 @@ ndmos_scsi_execute_cdb (struct ndm_session *sess,
 	if (request->cdb.cdb_len < 1)
 		return NDMP9_ILLEGAL_ARGS_ERR;
 
-	if (nrsc) {
-		err = nrsc->scsi_execute_cdb(sess, request, reply);
+	if (sess->nrsc && sess->nrsc->scsi_execute_cdb) {
+		err = sess->nrsc->scsi_execute_cdb(sess, request, reply);
 		if (err != NDMP9_NO_ERR)
 			return err;
 	}
