@@ -103,6 +103,8 @@ static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"tar", false },
    { (char *)"smtape", true },
    { (char *)"zfs", true },
+   { (char *)"vbb", true },
+   { (char *)"image", true },
    { NULL, false }
 };
 
