@@ -1640,7 +1640,7 @@ extern "C" int bndmp_add_dirnode_root(struct ndmlog *ixlog, int tagc,
 /*
  * This glues the NDMP File Handle DB with internal code.
  */
-static inline void register_callback_hooks(void)
+static inline void register_callback_hooks(struct ndmlog *ixlog)
 {
    struct ndm_fhdb_callbacks fhdb_callbacks;
 
@@ -1651,12 +1651,12 @@ static inline void register_callback_hooks(void)
    fhdb_callbacks.add_dir = bndmp_add_dir;
    fhdb_callbacks.add_node = bndmp_add_node;
    fhdb_callbacks.add_dirnode_root = bndmp_add_dirnode_root;
-   ndmfhdb_register_callbacks(&fhdb_callbacks);
+   ndmfhdb_register_callbacks(ixlog, &fhdb_callbacks);
 }
 
-static inline void unregister_callback_hooks(void)
+static inline void unregister_callback_hooks(struct ndmlog *ixlog)
 {
-   ndmfhdb_unregister_callbacks();
+   ndmfhdb_unregister_callbacks(ixlog);
 }
 
 /*
@@ -2080,8 +2080,6 @@ bool do_ndmp_backup(JCR *jcr)
       goto bail_out;
    }
 
-   register_callback_hooks();
-
    /*
     * Loop over each include set of the fileset and fire off a NDMP backup of the included fileset.
     */
@@ -2197,6 +2195,7 @@ bool do_ndmp_backup(JCR *jcr)
           * function as we catch the index information via callbacks.
           */
          ndmp_sess.control_acb->job.index_log.ctx = ndmp_sess.param->log.ctx;
+         register_callback_hooks(&ndmp_sess.control_acb->job.index_log);
 
          /*
           * Let the DMA perform its magic.
@@ -2204,6 +2203,8 @@ bool do_ndmp_backup(JCR *jcr)
          if (ndmca_control_agent(&ndmp_sess) != 0) {
             goto cleanup;
          }
+
+         unregister_callback_hooks(&ndmp_sess.control_acb->job.index_log);
 
          /*
           * See if there were any errors during the backup.
@@ -2294,6 +2295,8 @@ cleanup:
          free(ndmp_sess.control_acb->job.tape_device);
       }
 
+      unregister_callback_hooks(&ndmp_sess.control_acb->job.index_log);
+
       /*
        * Destroy the session.
        */
@@ -2329,7 +2332,6 @@ bail_out:
    }
 
 ok_out:
-   unregister_callback_hooks();
    free_paired_storage(jcr);
 
    if (status == JS_Terminated) {

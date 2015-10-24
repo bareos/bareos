@@ -1098,10 +1098,14 @@ struct ndm_session {
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT
 	struct ndm_tape_agent	*tape_acb;
+	struct ndm_tape_simulator_callbacks *ntsc;
 #endif /* !NDMOS_OPTION_NO_TAPE_AGENT */
 #ifndef NDMOS_OPTION_NO_ROBOT_AGENT
 	struct ndm_robot_agent	*robot_acb;
+	struct ndm_robot_simulator_callbacks *nrsc;
 #endif /* !NDMOS_OPTION_NO_ROBOT_AGENT */
+
+	struct ndm_auth_callbacks *nac;
 
 	struct ndm_plumbing	plumb;
 
@@ -1241,9 +1245,9 @@ struct ndm_auth_callbacks {
 	int (*validate_md5)(struct ndm_session *sess, char *name, char digest[16]);
 };
 
-extern void		ndmos_auth_register_callbacks (
+extern void		ndmos_auth_register_callbacks (struct ndm_session *sess,
 				struct ndm_auth_callbacks *callbacks);
-extern void		ndmos_auth_unregister_callbacks (void);
+extern void		ndmos_auth_unregister_callbacks (struct ndm_session *sess);
 extern int		ndmos_ok_name_password (struct ndm_session *sess,
 				char *name, char *pass);
 extern int		ndmos_get_md5_challenge (struct ndm_session *sess);
@@ -1278,9 +1282,9 @@ struct ndm_tape_simulator_callbacks {
 		char *buf, u_long count, u_long *done_count);
 };
 
-extern void		ndmos_tape_register_callbacks (
+extern void		ndmos_tape_register_callbacks (struct ndm_session *sess,
 				struct ndm_tape_simulator_callbacks *callbacks);
-extern void		ndmos_tape_unregister_callbacks (void);
+extern void		ndmos_tape_unregister_callbacks (struct ndm_session *sess);
 extern int		ndmos_tape_initialize (struct ndm_session *sess);
 extern ndmp9_error	ndmos_tape_open (struct ndm_session *sess,
 				char *drive_name, int will_write);
@@ -1312,9 +1316,9 @@ struct ndm_robot_simulator_callbacks {
 		ndmp9_execute_cdb_reply *reply);
 };
 
-extern void		ndmos_scsi_register_callbacks (
+extern void		ndmos_scsi_register_callbacks (struct ndm_session *sess,
 				struct ndm_robot_simulator_callbacks *callbacks);
-extern void		ndmos_scsi_unregister_callbacks (void);
+extern void		ndmos_scsi_unregister_callbacks (struct ndm_session *sess);
 extern int		ndmos_scsi_initialize (struct ndm_session *sess);
 extern void		ndmos_scsi_sync_state (struct ndm_session *sess);
 extern void		ndmos_scsi_sync_config_info (struct ndm_session *sess);

@@ -127,28 +127,27 @@ ndmos_sync_config_info (struct ndm_session *sess)
  ****************************************************************
  */
 
-static struct ndm_auth_callbacks *nac = NULL;
-
 void
-ndmos_auth_register_callbacks (struct ndm_auth_callbacks *callbacks)
+ndmos_auth_register_callbacks (struct ndm_session *sess,
+  struct ndm_auth_callbacks *callbacks)
 {
 	/*
 	 * Only allow one register.
 	 */
-	if (!nac) {
-		nac = (struct ndm_auth_callbacks *) NDMOS_API_MALLOC (sizeof(struct ndm_auth_callbacks));
-		if (nac) {
-			memcpy (nac, callbacks, sizeof(struct ndm_auth_callbacks));
+	if (!sess->nac) {
+		sess->nac = (struct ndm_auth_callbacks *) NDMOS_API_MALLOC (sizeof(struct ndm_auth_callbacks));
+		if (sess->nac) {
+			memcpy (sess->nac, callbacks, sizeof(struct ndm_auth_callbacks));
 		}
 	}
 }
 
 void
-ndmos_auth_unregister_callbacks (void)
+ndmos_auth_unregister_callbacks (struct ndm_session *sess)
 {
-	if (nac) {
-		NDMOS_API_FREE (nac);
-		nac = NULL;
+	if (sess->nac) {
+		NDMOS_API_FREE (sess->nac);
+		sess->nac = NULL;
 	}
 }
 
@@ -160,8 +159,8 @@ ndmos_auth_unregister_callbacks (void)
 int
 ndmos_ok_name_password (struct ndm_session *sess, char *name, char *pass)
 {
-	if (nac) {
-		return nac->validate_password(sess, name, pass);
+	if (sess->nac && sess->nac->validate_password) {
+		return sess->nac->validate_password(sess, name, pass);
 	}
 	return 0;	/* NOT OK */
 }
@@ -189,8 +188,8 @@ int
 ndmos_ok_name_md5_digest (struct ndm_session *sess,
   char *name, char digest[16])
 {
-	if (nac) {
-		return nac->validate_md5(sess, name, digest);
+	if (sess->nac && sess->nac->validate_md5) {
+		return sess->nac->validate_md5(sess, name, digest);
 	}
 	return 0;	/* NOT OK */
 }
