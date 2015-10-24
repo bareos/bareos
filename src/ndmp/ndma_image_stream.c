@@ -66,13 +66,22 @@ int
 ndmis_reinit_remote (struct ndm_session *sess)
 {
 	struct ndm_image_stream *is = sess->plumb.image_stream;
+	struct ndm_tape_agent * ta = sess->tape_acb;
 
 	NDMOS_MACRO_ZEROFILL (&is->remote);
 
 	ndmchan_initialize (&is->remote.listen_chan, "image-stream-listen");
 	ndmchan_initialize (&is->remote.sanity_chan, "image-stream-sanity");
 	ndmchan_initialize (&is->chan, "image-stream");
-	ndmchan_setbuf (&is->chan, is->buf, sizeof is->buf);
+	if (!is->buf) {
+		is->buflen = ta->mover_state.record_size;
+		is->buf = NDMOS_API_MALLOC (is->buflen);
+		if (!is->buf) {
+			return -1;
+		}
+		NDMOS_MACRO_ZEROFILL_SIZE (is->buf, is->buflen);
+	}
+	ndmchan_setbuf (&is->chan, is->buf, is->buflen);
 
 	return 0;
 }
@@ -123,11 +132,15 @@ ndmis_destroy (struct ndm_session *sess)
 		return 0;
 	}
 
+	if (sess->plumb.image_stream->buf) {
+		NDMOS_API_FREE (sess->plumb.image_stream->buf);
+	}
 	NDMOS_API_FREE (sess->plumb.image_stream);
 	sess->plumb.image_stream = NULL;
 
 	return 0;
 }
+
 /* Belay -- Cancel partially issued activation/start */
 int
 ndmis_belay (struct ndm_session *sess)

@@ -203,6 +203,8 @@
  * NDMOS_MACRO_NEWN		-- allocate a vector of data structs
  * NDMOS_MACRO_ZEROFILL		-- zero-fill data structure, wrapper
  *				   around NDMOS_API_BZERO()
+ * NDMOS_MACRO_ZEROFILL_SIZE	-- zero-fill data structure, wrapper
+ *				   around NDMOS_API_BZERO()
  * NDMOS_MACRO_SRAND		-- wrapper around srand(3), for MD5
  * NDMOS_MACRO_RAND		-- wrapper around rand(3), for MD5
  * NDMOS_MACRO_OK_TAPE_REC_LEN	-- Uses NDMOS_CONST_TAPE_REC_MIN/MAX
@@ -318,7 +320,7 @@
 #endif /* !NDMOS_CONST_TAPE_REC_MIN */
 
 #ifndef NDMOS_CONST_TAPE_REC_MAX
-#define NDMOS_CONST_TAPE_REC_MAX	(256*1024)
+#define NDMOS_CONST_TAPE_REC_MAX	(1024*1024)
 #endif /* !NDMOS_CONST_TAPE_REC_MAX */
 
 #ifndef NDMOS_CONST_PATH_MAX
@@ -419,6 +421,10 @@ extern char *ndml_strend(char *s);	/* ndml_util.c */
 #ifndef NDMOS_MACRO_ZEROFILL
 #define NDMOS_MACRO_ZEROFILL(P)	NDMOS_API_BZERO(P,sizeof *(P))
 #endif /* !NDMOS_MACRO_ZEROFILL */
+
+#ifndef NDMOS_MACRO_ZEROFILL_SIZE
+#define NDMOS_MACRO_ZEROFILL_SIZE(P, N)	NDMOS_API_BZERO(P, N)
+#endif /* !NDMOS_MACRO_ZEROFILL_SIZE */
 
 #ifndef NDMOS_MACRO_SRAND
 #define NDMOS_MACRO_SRAND() srand(time(0))
