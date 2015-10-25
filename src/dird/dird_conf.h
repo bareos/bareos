@@ -591,27 +591,6 @@ public:
 };
 
 /*
- * Define the Union of all the above
- * resource structure definitions.
- */
-union URES {
-   DIRRES res_dir;
-   CONRES res_con;
-   PROFILERES res_profile;
-   CLIENTRES res_client;
-   STORERES res_store;
-   CATRES res_cat;
-   JOBRES res_job;
-   FILESETRES res_fs;
-   SCHEDRES res_sch;
-   POOLRES res_pool;
-   MSGSRES res_msgs;
-   COUNTERRES res_counter;
-   DEVICERES res_dev;
-   RES hdr;
-};
-
-/*
  * Run structure contained in Schedule Resource
  */
 class RUNRES: public BRSRES {
@@ -647,6 +626,27 @@ public:
    char wom[nbytes_for_bits(5 + 1)];    /* week of month */
    char woy[nbytes_for_bits(54 + 1)];   /* week of year */
    bool last_set;                       /* last week of month */
+};
+
+/*
+ * Define the Union of all the above
+ * resource structure definitions.
+ */
+union URES {
+   DIRRES res_dir;
+   CONRES res_con;
+   PROFILERES res_profile;
+   CLIENTRES res_client;
+   STORERES res_store;
+   CATRES res_cat;
+   JOBRES res_job;
+   FILESETRES res_fs;
+   SCHEDRES res_sch;
+   POOLRES res_pool;
+   MSGSRES res_msgs;
+   COUNTERRES res_counter;
+   DEVICERES res_dev;
+   RES hdr;
 };
 
 void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
