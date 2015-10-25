@@ -388,7 +388,6 @@ bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
  */
 bool BSOCK_TCP::send()
 {
-   int32_t rc;
    int32_t pktsiz;
    int32_t *hdr;
    int32_t written = 0;
