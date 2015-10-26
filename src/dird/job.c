@@ -304,6 +304,15 @@ bool setup_job(JCR *jcr, bool suppress_output)
          migration_cleanup(jcr, JS_ErrorTerminated);
          goto bail_out;
       }
+
+      /*
+       * If there is nothing to do the do_migration_init() function will set
+       * the termination status to JS_Terminated.
+       */
+      if (job_terminated_successfully(jcr)) {
+         migration_cleanup(jcr, jcr->getJobStatus());
+         goto bail_out;
+      }
       break;
    default:
       Pmsg1(0, _("Unimplemented job type: %d\n"), jcr->getJobType());
