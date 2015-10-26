@@ -44,6 +44,11 @@ extern struct s_kw VolumeStatus[];
 
 /* Imported functions */
 
+#ifdef DEVELOPER
+/* ua_cmds.c */
+extern bool quit_cmd(UAContext *ua, const char *cmd);
+#endif
+
 /* ua_output.c */
 extern void do_messages(UAContext *ua, const char *cmd);
 
