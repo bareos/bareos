@@ -141,7 +141,7 @@ Above we have used the .cert extension to refer to X509
 certificate encoding that contains only a single public key.
 
 
-\section{Example Data Encryption Configuration}
+\section{Example Data Encryption Configurations}
 \index[general]{Example!File Daemon Configuration File}
 \index[general]{Example!Data Encryption Configuration File}
 \index[general]{Example Data Encryption Configuration}
@@ -150,17 +150,19 @@ certificate encoding that contains only a single public key.
 \footnotesize
 \begin{verbatim}
 FileDaemon {
-   Name = example-fd
-   FDport = 9102                  # where we listen for the director
-
+   Name = client1-fd
+   # encryption configuration
    PKI Signatures = Yes            # Enable Data Signing
    PKI Encryption = Yes            # Enable Data Encryption
-   PKI Keypair = "/etc/bareos/fd-example.pem"    # Public and Private Keys
+   PKI Keypair = "/etc/bareos/client-fd.pem"    # Public and Private Keys
    PKI Master Key = "/etc/bareos/master.cert"    # ONLY the Public Key
+
+   # choose encryption cipher
+   compatible = no             # PKI Cipher is not bacula compatible
+   PKI Cipher = aes128         # specify desired PKI Cipher here
 }
 \end{verbatim}
 \normalsize
-
 
 \section{Decrypting with a Master Key}
 \index[general]{Decrypting with a Master Key}

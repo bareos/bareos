@@ -204,10 +204,6 @@ an equal sign. For example:
 jobid=536
 \end{verbatim}
 
-Please note, this list is incomplete.
-
-\TODO{create bconsole keywords automatically}
-
 \begin{description}
 \item [all]
   Permitted on the status and show commands to specify all components or
@@ -235,10 +231,10 @@ Please note, this list is incomplete.
 \item [current]
   Used in the restore command. Takes no argument.
 \item [days]
-  Used to define the number of days the "list nextvol" command
+  Used to define the number of days the \bcommand{list nextvol}{} command
   should consider when looking for jobs to be run.  The days keyword
-  can also be used on the "status dir" command so that it will display
-  jobs scheduled for the number of days you want.
+  can also be used on the \bcommand{status dir}{} command so that it will display
+  jobs scheduled for the number of days you want. It can also be used on the  \bcommand{rerun}{} command, where it will automatically select all failed jobids in the last number of days for rerunning.
 \item [devices]
   Used in the show command. Takes no arguments.
 \item [director \textbar\ dir]
@@ -248,8 +244,8 @@ Please note, this list is incomplete.
   Used in the restore command. Its argument specifies the directory
   to be restored.
 \item [enabled]
-  This keyword can appear on the {\bf update volume} as well
-  as the {\bf update slots} commands, and can
+  This keyword can appear on the \command{update volume} as well
+  as the \command{update slots} commands, and can
   allows one of the following arguments: yes, true, no, false, archived,
   0, 1, 2.  Where 0 corresponds to no or false, 1 corresponds to yes or true, and
   2 corresponds to archived.  Archived volumes will not be used, nor will
@@ -266,6 +262,8 @@ Please note, this list is incomplete.
   Used in the show command. Takes no arguments.
 \item [help]
   Used in the show command. Takes no arguments.
+\item [hours]
+  Used on the  \bcommand{rerun}{} command to select all failed jobids in the last number of hours for rerunning.
 \item [jobs]
   Used in the show, list and llist commands. Takes no arguments.
 \item [jobmedia]
@@ -279,6 +277,8 @@ Please note, this list is incomplete.
   in the catalog database, the same JobId can be reused once a
   Job is removed from the catalog. Probably you will refer
   specific Jobs that ran using their numeric JobId.
+
+  JobId can be used on the \bcommand{rerun} command to select all jobs failed after and including the given jobid for rerunning.
 \item [job \textbar\  jobname]
   The Job or Jobname keyword refers to the name you specified
   in the Job resource, and hence it refers to any number of
@@ -305,11 +305,11 @@ Please note, this list is incomplete.
   Used in the restore command. Takes no argument.
 \item[limit]
   Used in the setbandwidth command. Takes integer in KB/s unit.
-\item [storages]
-  Used in the show command. Takes no arguments.
 \item [schedules]
   Used in the show command. Takes no arguments.
 \item [storage \textbar\ store \textbar\ sd]
+\item [storages]
+  Used in the show command. Takes no arguments.
 \item [ujobid]
   The ujobid is a unique job identification that is printed
   in the Job Report output. At the current time, it consists
@@ -395,13 +395,38 @@ add [pool=<pool-name> storage=<storage> jobid=<JobId>
 cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
 \end{bconsole}
 
-   Once a Job is marked to be canceled, it may take a bit of time
+   Once a Job is marked to be cancelled, it may take a bit of time
    (generally within a minute but up to two hours) before the Job actually
    terminates, depending on what operations it is doing.
    Don't be surprised that you receive a Job not found message. That just
    means that one of the three daemons had already canceled the job.
    Messages numbered in the 1000's are from the Director, 2000's are from
    the File daemon and 3000's from the Storage daemon.
+
+   It is possible to cancel multiple jobs at once. Therefore, the following extra options are available for the job-selection:
+
+   \begin{itemize}
+    \item all jobs
+    \item all jobs with a created state
+    \item all jobs with a blocked state
+    \item all jobs with a waiting state
+    \item all jobs with a running state
+   \end{itemize}
+
+   Usage:
+   \begin{bconsole}{cancel all}
+    cancel all
+    cancel all state=<created|blocked|waiting|running>
+   \end{bconsole}
+
+   Sometimes the Director already removed the job from its running queue, but the storage daemon still thinks it is doing a backup (or another job) - so you cannot cancel the job from within a console anymore. Therefore it is possible to cancel a job by JobId on the storage daemon. It might be helpful to execute a \bcommand{status storage}{} on the Storage Daemon to make sure what job you want to cancel.
+
+   Usage:
+   \begin{bconsole}{cancel all}
+    cancel storage=<Storage Daemon> Jobid=<JobId>
+   \end{bconsole}
+
+   This way you can also remove a job that blocks any other jobs from running without the need to restart the whole storage daemon.
 
 \item [create]
    \index[general]{Console!Command!create pool}
@@ -564,7 +589,7 @@ export storage=<storage-name> srcslots=<slot-selection> [dstslots=<slot-selectio
 
    The export command does exactly the opposite of the import command. You
    can specify which slots should be transferred to import/export slots. The
-   most usefull application of the export command is the possibility to
+   most useful application of the export command is the possibility to
    automatically transfer the volumes of a certain backup into the import/export
    slots for external storage.
 
@@ -587,6 +612,24 @@ export volume=A00020L4|A00007L4|A00005L4
 \begin{bconsole}{export slots}
 export srcslots=1-2 dstslots=37-38
 \end{bconsole}
+
+   To automatically export the Volumes used by a certain backup job, you can use the following RunScript in that job:
+
+\begin{bconsole}{automatic export}
+RunScript {
+    Console = "export storage=TandbergT40 volume=%V"
+    RunsWhen = After
+    RunsOnClient = no
+  }
+\end{bconsole}
+
+  To send an e-mail notification via the Messages resource regarding export tapes you can use the Variable \%V substitution in the Messages resource, which is implemented in Bareos 13.2. However, it does also work in earlier releases inside the job resources. So in versions prior to Bareos 13.2 the following workaround can be used:
+
+  \begin{bconsole}{e-mail notification via messages resource regarding export tapes}
+RunAfterJob = "/bin/bash -c \"/bin/echo Remove Tape %V | \
+/usr/sbin/bsmtp -h localhost -f root@localhost -s 'Remove Tape %V' root@localhost \""
+\end{bconsole}
+
 
 \item [gui]
    \index[general]{Console!Command!gui}
@@ -1094,14 +1137,14 @@ release storage=<storage-name>
    configuration is automatically set to the defaults and it is hard to
    configure everything like it was.
 
-   By using the rerun command, it is much easier to rerun a jobs exactly
+   By using the rerun command, it is much easier to rerun a job exactly
    as it was configured. You only have to specify the JobId of the failed job.
 
 \begin{bconsole}{rerun}
 rerun jobid=<jobid> since_jobid=<jobid> days=<nr_days> hours=<nr_hours> yes
 \end{bconsole}
 
-   You can select the jobid(s) to rerun by using one of the selection criteria.
+   You can select the jobid(s) to rerun by using one of the selection criteria. Using jobid= will automatically select all jobs failed after and including the given jobid for rerunning. By using days= or hours=, you can select all failed jobids in the last number of days or number of hours respectively for rerunning.
 
 \item [restore]
    \index[general]{Restore}
@@ -1393,7 +1436,7 @@ The command \bcommand{status scheduler}{} (\sinceVersion{console}{status schedul
 This gives more information than \bcommand{status director}{}.
 
 Called without parameters, \bcommand{status scheduler}{} shows a preview for all schedules for the next 14 days.
-It first shows a list of the known schedules and the jobs that will be triggered by these jobs:
+It first shows a list of the known schedules and the jobs that will be triggered by these jobs, and next, a table with date (including weekday), schedule name and applied overrides is displayed:
 
 \begin{bconsole}{status scheduler}
 *<input>status scheduler</input>
@@ -1443,7 +1486,7 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
     \item[client=clientname] shows only the schedules that affect the given client.
     \item[job=jobname] shows only the schedules that affect the given job.
     \item[schedule=schedulename] shows only the given schedule.
-    \item[days=number] of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria.
+    \item[days=number] of days shows only the number of days in the scheduler preview. Positive numbers show the future, negative numbers show the past. days can be combined with the other selection criteria. days= can be combined with the other selection criteria.
 \end{description}
 
 In case you are running a maintained version of Bareos,
@@ -1487,10 +1530,11 @@ Director {
 }
 \end{bconfig}
 
+Not configuring the directive at all also disables it, as the default value for the Subscriptions directive is zero.
 
 \item [time]
    \index[general]{Console!Command!time}
-   Prints the current time.
+   The time command shows the current date, time and weekday.
 
 \item [trace]
    \index[general]{Console!Command!trace}

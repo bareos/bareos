@@ -211,7 +211,7 @@ please note that there are some differences, see \nameref{sec:DebianOrgLimitatio
     \label{sec:CreateDatabase}
 
 We assume that you have already your database installed and basically running.
-Currently the database backend PostgreSQL and MySQL are recommended. The Sqlite database backend is only intended for testing purposes.
+Currently the database backends PostgreSQL and MySQL are recommended. The Sqlite database backend is only intended for testing purposes.
 
 The easiest way to set up a database is using an system account that have passwordless local access to the database. 
 Often this is the user \user{root} for MySQL and the user \user{postgres} for PostgreSQL.
@@ -297,15 +297,15 @@ In most cases, a Bareos update is simply done by a package update of the distrib
 Please remind, that Bareos Director and Bareos Storage Daemon must always have the same version.
 The version of the File Daemon may differ, see chapter about \ilink{backward compatibility}{backward-compability}.
 
-\section{Updating the database schema}
+\section{Updating the database scheme}
 
 Sometimes improvements in Bareos make it neccessary to update the database scheme.
 
-\warning{If the Bareos catalog database has not the current schema, the Bareos Director refuses to start.}
+\warning{If the Bareos catalog database does not have the current schema, the Bareos Director refuses to start.}
 
-Detailed information can than be found in the log file \logfileUnix.
+Detailed information can then be found in the log file \logfileUnix.
 
-Take a look in the \ilink{Release Notes}{releasenotes} to see, what Bareos updates to require a database schema update.
+Take a look into the \ilink{Release Notes}{releasenotes} to see which Bareos updates do require a database scheme update.
 
 
 \subsection{Debian based Linux Distributions}
@@ -313,7 +313,7 @@ Take a look in the \ilink{Release Notes}{releasenotes} to see, what Bareos updat
 Since Bareos \sinceVersion{dir}{dbconfig-common (Debian)}{14.2.0} the Debian (and Ubuntu) based packages support the \package{dbconfig-common} mechanism to create and update the Bareos database.
 If this is properly configured, the database schema will be automatically adapted by the Bareos packages.
 
-\warning{When using the PostgreSQL backend and updating to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions, normally by}
+\warning{When using the PostgreSQL backend and updating to Bareos $<$ 14.2.3, it is necessary to manually grant database permissions, normally by using}
 \begin{commands}{}
 <command> </command><parameter>su - postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges</parameter>
 \end{commands}
@@ -334,9 +334,9 @@ The task of updating the database schema is done by the script
 
 However, this script requires administration access to the database.
 Depending on your distribution and your database, this requires different preparations.
-More details can be found in chapter \ilink{Catalog Maitenance}{CatMaintenanceChapter}.
+More details can be found in chapter \ilink{Catalog Maintenance}{CatMaintenanceChapter}.
 
-\warning{If you're updating to Bareos $<=$ 13.2.3 and had configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \nameref{CatMaintenanceChapter}), make sure to have these variables definied in the same way when calling the update and grant scripts. Newer versions of Bareos read this variables from the Director configuration file \configFileDirUnix. However, make sure, the user running the database scripts has read access to this file (or set the environment variables). The \user{postgres} user normally does not have the required permissions.}
+\warning{If you're updating to Bareos $<=$ 13.2.3 and have configured the Bareos database during install using Bareos environment variables (\variable{db_name}, \variable{db_user} or \variable{db_password}, see \nameref{CatMaintenanceChapter}), make sure to have these variables defined in the same way when calling the update and grant scripts. Newer versions of Bareos read these variables from the Director configuration file \configFileDirUnix. However, make sure that the user running the database scripts has read access to this file (or set the environment variables). The \user{postgres} user normally does not have the required permissions.}
 
 \subsubsection{PostgreSQL}
 If your are using PostgreSQL and your PostgreSQL administrator is \user{postgres} (default), use following commands:

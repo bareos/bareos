@@ -58,7 +58,8 @@ format as the Bacula storage daemon.
 
 The Bareos File Daemon is compatible with all version of the Bacula director (of version 5.2.13 and lower)
 and not with Bacula 7.x. when you enable the compatible mode in the config of the file daemon.
-The compatible option was set by default in Bareos < 15, and is disabled by default since Version 15.
+The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since Version
+\sinceVersion{fd}{Compatible = no}{15.2.0}.
 To be sure this is enabled you can explicitly set the compatible option
 by putting the following in the bareos-fd.conf:
 

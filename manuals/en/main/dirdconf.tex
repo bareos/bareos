@@ -242,6 +242,15 @@ Schedule {
 }
 \end{bconfig}
 
+The last friday of the month (i.e. the last friday in the last week of the month)
+
+\begin{bconfig}{}
+Schedule {
+  Name = "Last Friday"
+  Run = Level=Full last fri at 21:00
+}
+\end{bconfig}
+
 Every 10 minutes:
 
 \begin{bconfig}{}
@@ -256,6 +265,34 @@ Schedule {
 }
 \end{bconfig}
 
+The {\bf modulo scheduler} makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks. It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not. The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run. The first part determines on which day/week the job should be run first. E.g. if you want to run a backup in a 5-week-cycle, starting on week 3, you set it up as w03/w05.
+
+\begin{bconfig}{Schedule Examples: modulo}
+Schedule {
+  Name = "Odd Days"
+  Run = 1/2 at 23:10
+}
+
+Schedule {
+  Name = "Even Days"
+  Run = 2/2 at 23:10
+}
+
+Schedule {
+  Name = "On the 3rd week in a 5-week-cycle"
+  Run = w03/w05 at 23:10
+}
+
+Schedule {
+  Name = "Odd Weeks"
+  Run = w01/w02 at 23:10
+}
+
+Schedule {
+  Name = "Even Weeks"
+  Run = w02/w02 at 23:10
+}
+\end{bconfig}
 
 \subsection{Technical Notes on Schedules}
 \index[general]{Schedules!Technical Notes}
@@ -327,6 +364,18 @@ Client {
   Password = "secret"
 }
 \end{bconfig}
+
+The following is an example of a Quota Configuration in Client resource:
+
+\begin{bconfig}{Quota Configuration in Client resource}
+# Quota
+Soft Quota = 50 mb
+Soft Quota Grace Period = 15 second
+Strict Quotas = Yes
+Hard Quota = 150 mb
+Quota Include Failed Jobs = yes
+\end{bconfig}
+
 
 \section{Storage Resource}
 \label{DirectorResourceStorage}

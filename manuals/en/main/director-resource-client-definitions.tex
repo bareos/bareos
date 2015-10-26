@@ -64,8 +64,12 @@ The  default is 60 days.
 }
 
 \defDirective{Dir}{Client}{Hard Quota}{}{}{%
-This is the maximal amount this client can backup before any backup Job
-will be aborted.
+The amount of data determined by the Hard Quota directive sets the hard limit of backup space that cannot be exceeded. This is the maximum amount this client can back up before any backup job will be aborted.
+
+If the Hard Quota is exceeded, the running job is terminated:
+
+\bconfigInput{config/DirClientHardQuota1.conf}
+
 }
 
 \defDirective{Dir}{Client}{Heartbeat Interval}{}{}{%
@@ -158,7 +162,7 @@ random.
 \defDirective{Dir}{Client}{Protocol}{Native{\textbar}NDMP}{13.2.0}{%
 The backup protocol to use to run the Job.
 
-Currently the director understand the following protocols:
+Currently the director understands the following protocols:
 \begin{enumerate}
 \item Native - The native Bareos protocol
 \item NDMP - The NDMP protocol
@@ -167,23 +171,49 @@ Currently the director understand the following protocols:
 
 \defDirective{Dir}{Client}{Quota Include Failed Jobs}{}{}{%
 When calculating the amount a client used take into consideration any failed Jobs.
-Default {\bf Yes}.
 }
 
 \defDirective{Dir}{Client}{Soft Quota}{}{}{%
 This is the amount after which there will be a warning issued that a client
 is over his softquota. A client can keep doing backups until it hits the
-hardquota or when the Soft Quota Graceperiod is expired.
+hard quota or when the \linkResourceDirective{Dir}{Client}{Soft Quota Grace Period} is expired.
 }
 
 \defDirective{Dir}{Client}{Soft Quota Grace Period}{}{}{%
-Time allowed for a client to be over its softquota before it will be enforced.
+Time allowed for a client to be over its \linkResourceDirective{Dir}{Client}{Soft Quota} before it will be enforced.
+
+When the amount of data backed up by the client outruns the value specified by the Soft Quota directive, the next start of a backup job will start the soft quota grace time period. This is written to the job log:
+
+\bconfigInput{config/DirClientSoftQuotaGracePeriod1.conf}
+
+In the Job Overview, the value of Grace Expiry Date: will then change from \parameter{Soft Quota was never exceeded} to the date when the grace time expires, e.g. \parameter{11-Dec-2012 04:09:05}.
+
+During that period, it is possible to do backups even if the total amount of stored data exceeds the limit specified by soft quota.
+
+If in this state, the job log will write:
+
+\bconfigInput{config/DirClientSoftQuotaGracePeriod2.conf}
+
+After the grace time expires, in the next backup job of the client, the value for Burst Quota will be set to the value that the client has stored at this point in time. Also, the job will be terminated. The following information in the job log shows what happened:
+
+\bconfigInput{config/DirClientSoftQuotaGracePeriod3.conf}
+
+At this point, it is not possible to do any backup of the client. To be able to do more backups, the amount of stored data for this client has to fall under the burst quota value.
 }
 
 \defDirective{Dir}{Client}{Strict Quotas}{}{}{%
-The directive Strict Quotas determines, if after the Grace Time Period is over,
-the Burst Limit is enforced (Strict Quotas = {\bf No}) or
-the Soft Limit is enforced (Strict Quotas = {\bf Yes}).
+The directive Strict Quotas determines whether, after the Grace Time Period is over,
+to enforce the Burst Limit (Strict Quotas = {\bf No}) or
+the Soft Limit (Strict Quotas = {\bf Yes}).
+
+The Job Log shows either
+
+\bconfigInput{config/DirClientStrictQuotas1.conf}
+
+or
+
+\bconfigInput{config/DirClientStrictQuotas2.conf}
+
 }
 
 \defDirective{Dir}{Client}{TLS Allowed CN}{}{}{%

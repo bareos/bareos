@@ -42,11 +42,11 @@ Only the important commands the filedaemon can perform are filtered, as
 some commands are part of the above protocols and by disallowing
 the action the other commands are not invoked at all.
 
-If runscripts are not needed it would we recommend as security measure to disable
+If runscripts are not needed it would be recommended as a security measure to disable
 running those or only allow the commands that you really want to be used.
 
 Runscripts are particularly a problem as they allow the filedaemon to run
-arbitrary commands. You may also look into the Allowed Script Dir keyword to
+arbitrary commands. You may also look into the \linkResourceDirective{Fd}{Client}{Allowed Script Dir} keyword to
 limit the impact of the runscript command.
 }
 
@@ -205,6 +205,27 @@ Typically on Linux systems, it is set to \path|/var/lib/bareos/| or \path|/var/r
 
 \defDirective{Fd}{Client}{Pki Cipher}{}{}{%
 See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+
+Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration. Note that you have to set \parameter{compatible = no}:
+
+\bconfigInput{config/FdClientPidDirectory1.conf}
+
+The available options (and ciphers) are:
+\begin{itemize}
+    \item aes128
+    \item aes192
+    \item aes256
+    \item camellia128
+    \item camellia192
+    \item camellia256
+    \item aes128hmacsha1
+    \item aes256hmacsha1
+    \item blowfish
+\end{itemize}
+They depend on the version of the openssl library installed.
+
+For decryption of encrypted data, the right decompression algorithm should be automatically chosen.
+
 }
 
 \defDirective{Fd}{Client}{Pki Encryption}{}{}{%
@@ -269,6 +290,7 @@ With this directive, it will call the specified command to delete these files. S
 }
 
 \defDirective{Fd}{Client}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic. See chapter \nameref{TlsDirectives} to see how the Bareos Director (and the other components) have to be configured to use TLS.
 }
 
 \defDirective{Fd}{Client}{TLS Key}{}{}{%

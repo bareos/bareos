@@ -122,7 +122,7 @@ pseudo-BNF:
 
 \begin{longtable}{ l @{ ::= } p{0.5\textwidth} }
 \bnfvar{week-keyword}    & 1st \pipe 2nd \pipe 3rd \pipe 4th \pipe 5th \pipe first \pipe
-                     second \pipe third \pipe fourth \pipe fifth \\
+                     second \pipe third \pipe fourth \pipe fifth \pipe last \\
 \bnfvar{wday-keyword}    & sun \pipe mon \pipe tue \pipe wed \pipe thu \pipe fri \pipe sat \pipe
                     sunday \pipe monday \pipe tuesday \pipe wednesday \pipe
                     thursday \pipe friday \pipe saturday \\
@@ -146,6 +146,7 @@ pseudo-BNF:
 \bnfvar{wday-range}      & \bnfvar{wday-keyword}-\bnfvar{wday-keyword} \\
 \bnfvar{range}           & \bnfvar{day-range} \pipe \bnfvar{month-range} \pipe
                           \bnfvar{wday-range} \\
+\bnfvar{modulo}          & \bnfvar{day}/\bnfvar{day} \pipe \bnfvar{week-of-year-keyword}/\bnfvar{week-of-year-keyword} \\
 \bnfvar{date}            & \bnfvar{date-keyword} \pipe \bnfvar{day} \pipe \bnfvar{range} \\
 \bnfvar{date-spec}       & \bnfvar{date} \pipe \bnfvar{date-spec} \\
 \bnfvar{day-spec}        & \bnfvar{day} \pipe \bnfvar{wday-keyword} \pipe

@@ -448,8 +448,7 @@ The directives within an Options resource may be one of the following:
         compression levels greater than six generally give very little extra
         compression and are rather CPU intensive.
 
-        You can overwrite this option per Storage resource with
-        \ilink{AllowCompression}{AllowCompression} option.
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
 
         \item [compression=LZO] \hfill \\
         \index[dir]{compression}
@@ -464,8 +463,7 @@ The directives within an Options resource may be one of the following:
 
         Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
-        You can overwrite this option per Storage resource with
-        \ilink{AllowCompression}{AllowCompression} option.
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
 
         \item [compression=LZFAST] \hfill \\
         \index[dir]{compression}
@@ -478,8 +476,7 @@ The directives within an Options resource may be one of the following:
         compression ratio than GZIP. If your CPU is fast enough you should be able
         to compress your data without making the backup duration longer.
 
-        You can overwrite this option per Storage resource with
-        \ilink{AllowCompression}{AllowCompression} option.
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
 
         \item [compression=LZ4] \hfill \\
         \index[dir]{compression}
@@ -496,8 +493,9 @@ The directives within an Options resource may be one of the following:
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
         good candidates.
 
-        You can overwrite this option per Storage resource with
-        \ilink{AllowCompression}{AllowCompression} option.
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
+
+        \warning{As LZ4 compression is not supported by Bacula, you need to set \linkResourceDirective{Fd}{Client}{Compatible} = no.}
 
         \item [compression=LZ4HC] \hfill \\
         \index[dir]{compression}
@@ -514,8 +512,7 @@ The directives within an Options resource may be one of the following:
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
         good candidates.
 
-        You can overwrite this option per Storage resource with
-        \ilink{AllowCompression}{AllowCompression} option.
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
     \end{description}
 
  \item [signature={\textless}SHA1{\textbar}MD5{\textgreater}] \hfill \\
@@ -1227,9 +1224,9 @@ Include {
 \index[dir]{Directive!shadowing}
    The default is {\bf none}. This option performs a check within the
    fileset for any file-list entries which are shadowing each other.
-   Lets say you specify / and /usr but /usr is not a seperate filesystem
-   then in the normal situation both / and /usr would lead to data being
-   backuped twice.
+   Lets say you specify / and /usr but /usr is not a separate filesystem.
+   Then in the normal situation both / and /usr would lead to data being
+   backed up twice.
 
    The following settings can be used:
 
@@ -1246,6 +1243,23 @@ Include {
    include blocks of the same fileset (global). The warn and remove part of the
    keyword sets the action e.g. warn the user about shadowing or remove
    the entry shadowing the other.
+
+   Example for a fileset resource with fileset shadow warning enabled:
+
+\begin{bconfig}{FileSet resource with fileset shadow warning enabled}
+FileSet {
+   Name = "Test Set"
+   Include {
+   Options {
+    signature = MD5
+    shadowing = localwarn
+   }
+   File = /
+   File = /usr
+  }
+}
+\end{bconfig}
+
 
 \item [meta=tag] \hfill \\
 \index[dir]{meta}

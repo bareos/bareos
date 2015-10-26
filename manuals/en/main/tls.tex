@@ -74,6 +74,24 @@ in which case the client certificate must correspond to the Allowed
 Common Name specified. This directive is valid only for a server
 and not in a client context.
 
+You can set \parameter{TLS Verify Peer = No} in the
+
+\begin{itemize}
+\item bconsole.conf
+\item bat.conf and
+\item bareos-fd.conf
+\end{itemize}
+
+configuration files when using TLS.
+
+\begin{bconfig}{Relaxed TLS Configuration}
+# relaxed tls configuration
+# has security implications, attention
+TLS Verify Peer = No
+\end{bconfig}
+
+
+
 \directive{dir}{TLS Allowed CN}{stringlist}{}{}{}
 Common name attribute of allowed peer certificates.  If this directive is
 specified, all server certificates will be verified against this list. This

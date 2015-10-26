@@ -15,8 +15,7 @@ COPY_PNG = $(patsubst %.png,conv/%.png,$(ORIG_PNG))
 #CONV_FIG_EPS = $(patsubst %.fig,conv/%.eps,$(ORIG_FIG))
 
 
-all: $(CONV_PNG) $(COPY_PNG) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png
-
+all: $(CONV_PNG) $(COPY_PNG) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png conv/passive-client-communication.png
 
 # bareos-full-logo: png is of better quality than eps, therefore take that as source
 conv/bareos-full-logo.eps: bareos-full-logo.png
@@ -27,6 +26,14 @@ conv/bareos-full-logo.png: bareos-full-logo.png
 	@$(MKDIRCONV)
 	$(COPY) bareos-full-logo.png conv/
 
+conv/passive-client-communication.eps: passive-client-communication.png
+	@$(MKDIRCONV)
+	$(CONVERT) passive-client-communication.png conv/passive-client-communication.eps
+
+conv/passive-client-communication.png: passive-client-communication.png
+	@$(MKDIRCONV)
+	$(COPY) passive-client-communication.png conv/
+
 conv/autoxflate-functionblocks.png: autoxflate-functionblocks.png
 	@$(MKDIRCONV)
 	$(COPY) autoxflate-functionblocks.png conv/
@@ -34,7 +41,6 @@ conv/autoxflate-functionblocks.png: autoxflate-functionblocks.png
 conv/autoxflate-functionblocks.eps: autoxflate-functionblocks.png
 	@$(MKDIRCONV)
 	$(CONVERT) autoxflate-functionblocks.png conv/autoxflate-functionblocks.eps
-
 
 conv/dbconfig-1-enable.png: dbconfig-1-enable.png
 	@$(MKDIRCONV)
