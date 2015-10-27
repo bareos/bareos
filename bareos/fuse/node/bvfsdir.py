@@ -52,8 +52,9 @@ class BvfsDir(Directory, BvfsCommon):
                 name = i['name'].rstrip('/')
                 pathid = i['pathid']
                 self.add_subnode(BvfsDir, name, self.job, pathid, i)
-        for i in files:
-            self.add_subnode(BvfsFile, i, self.job, self.directory['fullpath'])
+        if self.directory:
+            for i in files:
+                self.add_subnode(BvfsFile, i, self.job, self.directory['fullpath'])
 
     def get_directories(self, pathid):
         if pathid == None:
@@ -68,6 +69,7 @@ class BvfsDir(Directory, BvfsCommon):
             for i in directories:
                 if i['name'] != "." and i['name'] != "..":
                     if i['name'] == "/":
+                        self.directory = i
                         self.pathid = i['pathid']
                         BvfsCommon.init(self, self.root, self.jobid, i['fullpath'],  None, i['stat'])
                     else:
