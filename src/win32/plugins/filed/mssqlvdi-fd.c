@@ -1177,7 +1177,7 @@ static inline void perform_ado_backup(bpContext *ctx)
         break;
    case L_DIFFERENTIAL:
       Mmsg(ado_query,
-           "BACKUP DATABASE %s TO VIRTUAL_DEVICE='%s' WITH DIFFERENTIAL, BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
+           "BACKUP DATABASE [%s] TO VIRTUAL_DEVICE='%s' WITH DIFFERENTIAL, BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
            p_ctx->database,
            vdsname,
            DEFAULT_BLOCKSIZE,
@@ -1186,7 +1186,7 @@ static inline void perform_ado_backup(bpContext *ctx)
         break;
    default:
       Mmsg(ado_query,
-           "BACKUP DATABASE %s TO VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
+           "BACKUP DATABASE [%s] TO VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
            p_ctx->database,
            vdsname,
            DEFAULT_BLOCKSIZE,
@@ -1237,7 +1237,7 @@ static inline void perform_ado_restore(bpContext *ctx)
       break;
    default:
       Mmsg(ado_query,
-           "RESTORE DATABASE %s FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
+           "RESTORE DATABASE [%s] FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
            p_ctx->database,
            vdsname,
            DEFAULT_BLOCKSIZE,
@@ -1376,7 +1376,7 @@ static inline bool perform_ado_recover(bpContext *ctx)
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    set_ado_connect_string(ctx);
-   Mmsg(recovery_query, "RESTORE DATABASE %s WITH RECOVERY", p_ctx->database);
+   Mmsg(recovery_query, "RESTORE DATABASE [%s] WITH RECOVERY", p_ctx->database);
 
    return run_ado_query(ctx, recovery_query.c_str());
 }
