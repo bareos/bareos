@@ -9,7 +9,11 @@ JobName=backup
 
 scripts/cleanup
 cp configs/secure-erase-test/*.conf bin
-cp -p scripts/wipe.sh bin
+cp -p scripts/wipe.sh bin/wipe.sh
+
+ln bin/wipe.sh bin/wipe-dir.sh
+ln bin/wipe.sh bin/wipe-sd.sh
+ln bin/wipe.sh bin/wipe-fd.sh
 
 #
 # Zap out any schedule in default conf file so that
@@ -242,6 +246,30 @@ if test $? -eq 0; then
    print_debug "OK, failing secure_erase command makes full backup fail"
 else
    estat=10
+fi
+
+#
+# check if secure erase cmds are reported correctly in the job report
+#
+grep 'Dir Secure Erase Cmd.*wipe-dir.sh' tmp/log4.out ${tmp}/log3.out 2>&1 >/dev/null
+if test $? -eq 0; then
+   print_debug "OK, Dir Secure Erase Command is correctly reported"
+else
+   estat=11
+fi
+
+grep 'SD  Secure Erase Cmd.*wipe-sd.sh' tmp/log4.out ${tmp}/log3.out 2>&1 >/dev/null
+if test $? -eq 0; then
+   print_debug "OK, Sd Secure Erase Command is correctly reported"
+else
+   estat=12
+fi
+
+grep 'FD  Secure Erase Cmd.*wipe-fd.sh' tmp/log4.out ${tmp}/log3.out 2>&1 >/dev/null
+if test $? -eq 0; then
+   print_debug "OK, Fd Secure Erase Command is correctly reported"
+else
+   estat=13
 fi
 
 

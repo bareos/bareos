@@ -55,7 +55,7 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
-  Secure Erase Command = "@scriptdir@/wipe.sh"
+  Secure Erase Command = "@scriptdir@/wipe-dir.sh"
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).
   # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
