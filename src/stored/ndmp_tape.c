@@ -107,6 +107,8 @@ static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { (char *)"tar", false },
    { (char *)"smtape", true },
    { (char *)"zfs", true },
+   { (char *)"vbb", true },
+   { (char *)"image", true },
    { NULL, false }
 };
 
@@ -1046,7 +1048,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session *sess,
    return err;
 }
 
-static inline void register_callback_hooks(void)
+static inline void register_callback_hooks(struct ndm_session *sess)
 {
    struct ndm_auth_callbacks auth_callbacks;
    struct ndm_tape_simulator_callbacks tape_callbacks;
@@ -1056,7 +1058,7 @@ static inline void register_callback_hooks(void)
     */
    auth_callbacks.validate_password = bndmp_auth_clear;
    auth_callbacks.validate_md5 = bndmp_auth_md5;
-   ndmos_auth_register_callbacks(&auth_callbacks);
+   ndmos_auth_register_callbacks(sess, &auth_callbacks);
 
    /*
     * Register the tape simulator callbacks.
@@ -1067,13 +1069,13 @@ static inline void register_callback_hooks(void)
    tape_callbacks.tape_write = bndmp_tape_write;
    tape_callbacks.tape_wfm = bndmp_tape_wfm;
    tape_callbacks.tape_read = bndmp_tape_read;
-   ndmos_tape_register_callbacks(&tape_callbacks);
+   ndmos_tape_register_callbacks(sess, &tape_callbacks);
 }
 
-static inline void unregister_callback_hooks(void)
+static inline void unregister_callback_hooks(struct ndm_session *sess)
 {
-   ndmos_tape_unregister_callbacks();
-   ndmos_auth_unregister_callbacks();
+   ndmos_tape_unregister_callbacks(sess);
+   ndmos_auth_unregister_callbacks(sess);
 }
 
 void end_of_ndmp_backup(JCR *jcr)
@@ -1200,6 +1202,8 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    sess->param->log_level = native_to_ndmp_loglevel(debug_level, nis);
    sess->param->log_tag = bstrdup("SD-NDMP");
 
+   register_callback_hooks(sess);
+
    /*
     * We duplicate some of the code from the ndma server session handling available
     * in the NDMJOB NDMP library e.g. we do not enter via ndma_daemon_session()
@@ -1269,6 +1273,8 @@ extern "C" void *handle_ndmp_client_request(void *arg)
    ndma_session_decommission(sess);
 
 bail_out:
+   unregister_callback_hooks(sess);
+
    free(sess->param->log.ctx);
    free(sess->param->log_tag);
    free(sess->param);
@@ -1428,8 +1434,6 @@ extern "C" void *ndmp_thread_server(void *arg)
    }
 #endif
 
-   register_callback_hooks();
-
    /*
     * Wait for a connection from the client process.
     */
@@ -1557,8 +1561,6 @@ extern "C" void *ndmp_thread_server(void *arg)
             _("Could not destroy ndmp client queue: ERR=%s\n"),
             be.bstrerror());
    }
-
-   unregister_callback_hooks();
 
    return NULL;
 }

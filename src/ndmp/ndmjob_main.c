@@ -44,7 +44,7 @@ exit_program (void)
 	ndma_destroy_env_list (&E_environment);
 	ndma_destroy_env_list (&ji_environment);
 
-	ndmjob_unregister_callbacks ();
+	ndmjob_unregister_callbacks (&the_session, &the_param.log);
 
 	exit (0);
 }
@@ -98,7 +98,7 @@ main (int ac, char *av[])
 		exit_program ();
 	}
 
-	ndmjob_register_callbacks ();
+	ndmjob_register_callbacks (&the_session, &the_param.log);
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 	build_job();		/* might not return */

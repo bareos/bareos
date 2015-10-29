@@ -79,6 +79,7 @@ struct ndmagent;
 struct ndmlog {
 	void	(*deliver)(struct ndmlog *log, char *tag, int lev, char *msg);
 	void *	ctx;
+	struct ndm_fhdb_callbacks *nfc;
 };
 extern char *	ndmlog_time_stamp (void);
 extern void	ndmlogf (struct ndmlog *log, char *tag,
@@ -573,7 +574,7 @@ struct ndmmedia {
 	NDM_FLAG_DECL(media_io_error)	/* media error */
 
 	NDM_FLAG_DECL(label_read)	/* ->label[] read fm media */
-	NDM_FLAG_DECL(label_written)	/* ->label[] writn to media */
+	NDM_FLAG_DECL(label_written)	/* ->label[] written to media */
 	NDM_FLAG_DECL(label_io_error)	/* error label read/write */
 	NDM_FLAG_DECL(label_mismatch)	/* label wasn't as expected */
 
@@ -788,8 +789,9 @@ struct ndm_fhdb_callbacks {
 		ndmp9_u_quad root_node);
 };
 
-extern void	ndmfhdb_register_callbacks (struct ndm_fhdb_callbacks *callbacks);
-extern void	ndmfhdb_unregister_callbacks (void);
+extern void	ndmfhdb_register_callbacks (struct ndmlog *ixlog,
+			struct ndm_fhdb_callbacks *callbacks);
+extern void	ndmfhdb_unregister_callbacks (struct ndmlog *ixlog);
 extern int	ndmfhdb_add_file (struct ndmlog *ixlog, int tagc,
 			char *raw_name, ndmp9_file_stat *fstat);
 extern int	ndmfhdb_add_dir (struct ndmlog *ixlog, int tagc,
