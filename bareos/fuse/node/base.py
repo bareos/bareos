@@ -186,6 +186,8 @@ class Base(object):
             self.update_stat()
             result = self.get_stat()
         else:
+            if not (path.get(0) in self.subnodes):
+                self.update()
             if path.get(0) in self.subnodes:
                 topdir = path.shift()
                 result = self.subnodes[topdir].getattr(path)
@@ -201,6 +203,8 @@ class Base(object):
             if self.content != None:
                 result = self.content[offset:offset+size]
         else:
+            if not (path.get(0) in self.subnodes):
+                self.update()
             if path.get(0) in self.subnodes:
                 topdir = path.shift()
                 result = self.subnodes[topdir].read(path, size, offset)

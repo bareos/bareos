@@ -45,6 +45,9 @@ class Job(Directory):
                 name = "jobid={jobid}_level={level}_status={jobstatus}".format(**job)
         return name
 
+    def do_update_stat(self):
+        self.subnode_count = 3
+
     def do_update(self):
         self.add_subnode(File, name="info.txt", content = pformat(self.job) + "\n")
         self.add_subnode(JobLog, name="job.log", job=self.job)

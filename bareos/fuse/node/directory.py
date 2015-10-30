@@ -26,6 +26,8 @@ class Directory(Base):
             self.update()
             result = list(self.defaultdirs) + list(self.subnodes.keys())
         else:
+            if not (path.get(0) in self.subnodes):
+                self.update()
             if path.get(0) in self.subnodes:
                 topdir = path.shift()
                 result = self.subnodes[topdir].readdir(path, offset)

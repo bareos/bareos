@@ -14,6 +14,10 @@ class JobsName(Directory):
     def get_id(cls, name):
         return name
 
+    def do_update_stat(self):
+        data = self.bsock.call("llist job=%s count" % (self.jobname))
+        self.subnode_count = int(data['jobs'][0]['count'])
+
     def do_update(self):
         data = self.bsock.call("llist job=%s" % (self.jobname))
         jobs = data['jobs']

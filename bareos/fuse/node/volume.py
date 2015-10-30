@@ -17,6 +17,9 @@ class Volume(Directory):
     def get_id(cls, name, volume):
         return volume['volumename']
 
+    def do_update_stat(self):
+        self.subnode_count = 3
+
     def do_update(self):
         self.add_subnode(File, name="info.txt", content=pformat(self.volume) + "\n")
         self.add_subnode(JobsList, name="jobs", selector="volume=%s" % (self.name))
