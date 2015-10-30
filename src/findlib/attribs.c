@@ -385,7 +385,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
        if (is_bopen(ofd)) {
            bclose(ofd);
        }
-       pm_strcpy(attr->ofname, "*none*");
+       pm_strcpy(attr->ofname, "*None*");
        return true;
    }
 
@@ -395,7 +395,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
       if (is_bopen(ofd)) {
          bclose(ofd);
       }
-      pm_strcpy(attr->ofname, "*none*");
+      pm_strcpy(attr->ofname, "*None*");
       return true;
    }
 
@@ -489,7 +489,7 @@ bail_out:
       bclose(ofd);
    }
 
-   pm_strcpy(attr->ofname, "*none*");
+   pm_strcpy(attr->ofname, "*None*");
    umask(old_mask);
 
    return ok;

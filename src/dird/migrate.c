@@ -1262,6 +1262,8 @@ static inline bool do_actual_migration(JCR *jcr)
    bool retval = false;
    JCR *mig_jcr = jcr->mig_jcr;
 
+   ASSERT(mig_jcr);
+
    /*
     * Make sure this job was not already migrated
     */
@@ -1654,7 +1656,7 @@ static inline void generate_migrate_summary(JCR *jcr, MEDIA_DBR *mr, int msg_typ
            HOST_OS, DISTNAME, DISTVER,
            edit_uint64(jcr->previous_jr.JobId, ec6),
            jcr->previous_jr.Job,
-           mig_jcr ? edit_uint64(mig_jcr->jr.JobId, ec7) : 0,
+           mig_jcr ? edit_uint64(mig_jcr->jr.JobId, ec7) : _("*None*"),
            edit_uint64(jcr->jr.JobId, ec8),
            jcr->jr.Job,
            level_to_str(jcr->getJobLevel()),

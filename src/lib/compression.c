@@ -94,7 +94,7 @@ static const char *zlib_strerror(int stat)
    case Z_VERSION_ERROR:
       return _("Zlib version error");
    default:
-      return _("*none*");
+      return _("*None*");
    }
 }
 #endif
