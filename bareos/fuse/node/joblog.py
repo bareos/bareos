@@ -23,6 +23,9 @@ class JobLog(File):
             self.content += str(i['time']) + " "
             try:
                 self.content += str(i['logtext'])
+            except KeyError:
+                # some entries don't have logtext
+                pass
             except UnicodeEncodeError as e:
                 self.logger.error("failed to convert logtext to string: %s" % (str(e)))
                 self.content += "BAREOFSFS SKIPPED: converting error\n"
