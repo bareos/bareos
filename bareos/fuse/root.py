@@ -24,3 +24,4 @@ class Root(Directory):
         self.add_subnode(Jobs, "jobs")
         self.add_subnode(Volumes, "volumes")
         self.add_subnode(Clients, "clients")
+        self.add_subnode(Status, ".bareosfs-status.txt")
