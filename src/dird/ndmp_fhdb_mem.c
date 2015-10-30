@@ -34,6 +34,7 @@
 #include "ndmp_dma_priv.h"
 
 #define B_PAGE_SIZE 4096
+#define MIN_PAGES 128
 #define MAX_PAGES 2400
 #define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE)  /* approx 10MB */
 
@@ -95,8 +96,16 @@ struct ndmp_fhdb_root {
 };
 typedef struct ndmp_fhdb_root N_TREE_ROOT;
 
+struct ooo_metadata {
+   hlink link;
+   uint64_t dir_node;
+   N_TREE_NODE *nt_node;
+};
+typedef struct ooo_metadata OOO_MD;
+
 struct fhdb_state {
    N_TREE_ROOT *fhdb_root;
+   htable *out_of_order_metadata;
 };
 
 /*
@@ -247,8 +256,8 @@ static int node_compare_by_id(void *item1, void *item2)
    }
 }
 
-static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, uint64_t inode,
-                                                       N_TREE_ROOT *root, N_TREE_NODE *parent)
+static N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t FileIndex, uint64_t inode,
+                                                N_TREE_ROOT *root, N_TREE_NODE *parent)
 {
    N_TREE_NODE *node, *found_node;
 
@@ -274,14 +283,46 @@ static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t File
 
    /*
     * Its was not found, but now inserted.
-    *
+    */
+   node->parent = parent;
+   node->FileIndex = FileIndex;
+   node->fname_len = strlen(fname);
+   /*
     * Allocate a new entry with 2 bytes extra e.g. the extra slash
     * needed for directories and the \0.
     */
-   node->FileIndex = FileIndex;
-   node->fname_len = strlen(fname);
    node->fname = ndmp_fhdb_tree_alloc(root, node->fname_len + 2);
    bstrncpy(node->fname, fname, node->fname_len + 1);
+
+   /*
+    * Maintain a linear chain of nodes.
+    */
+   if (!root->first) {
+      root->first = node;
+      root->last = node;
+   } else {
+      root->last->next = node;
+      root->last = node;
+   }
+
+   return node;
+}
+
+static N_TREE_NODE *search_and_insert_tree_node(N_TREE_NODE *node, N_TREE_ROOT *root, N_TREE_NODE *parent)
+{
+   N_TREE_NODE *found_node;
+
+   /*
+    * Insert the node into the right parent. We should always insert
+    * this node and never get back a found_node that is not the same
+    * as the original node but if we do we better return as then there
+    * is nothing todo.
+    */
+   found_node = (N_TREE_NODE *)parent->child.insert(node, node_compare_by_id);
+   if (found_node != node) {
+      return found_node;
+   }
+
    node->parent = parent;
 
    /*
@@ -298,48 +339,10 @@ static inline N_TREE_NODE *search_and_insert_tree_node(char *fname, int32_t File
    return node;
 }
 
-static inline void search_and_insert_tree_node(char *fname, int32_t FileIndex, N_TREE_NODE *node,
-                                               N_TREE_ROOT *root, N_TREE_NODE *parent)
-{
-   N_TREE_NODE *found_node;
-
-   /*
-    * Insert the node into the right parent. We should always insert
-    * this node and never get back a found_node that is not the same
-    * as the original node but if we do we better return as then there
-    * is nothing todo.
-    */
-   found_node = (N_TREE_NODE *)parent->child.insert(node, node_compare_by_id);
-   if (found_node != node) {
-      return;
-   }
-
-   /*
-    * Allocate a new entry with 2 bytes extra e.g. the extra slash
-    * needed for directories and the \0.
-    */
-   node->FileIndex = FileIndex;
-   node->fname_len = strlen(fname);
-   node->fname = ndmp_fhdb_tree_alloc(root, node->fname_len + 2);
-   bstrncpy(node->fname, fname, node->fname_len + 1);
-   node->parent = parent;
-
-   /*
-    * Maintain a linear chain of nodes.
-    */
-   if (!root->first) {
-      root->first = node;
-      root->last = node;
-   } else {
-      root->last->next = node;
-      root->last = node;
-   }
-}
-
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint64_t inode)
+static N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint64_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -377,7 +380,7 @@ static inline N_TREE_NODE *find_tree_node(N_TREE_NODE *node, uint64_t inode)
 /*
  * Recursively search the tree for a certain inode number.
  */
-static inline N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint64_t inode)
+static N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint64_t inode)
 {
    N_TREE_NODE match_node;
    N_TREE_NODE *found_node, *walker;
@@ -484,6 +487,59 @@ extern "C" int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw
    return 0;
 }
 
+/*
+ * This inserts a piece of meta data we receive out or order in a hash table
+ * for later processing. Most NDMP DMAs send things kind of in order some do not
+ * and for those we have this workaround.
+ */
+static inline void add_out_of_order_metadata(NIS *nis, N_TREE_ROOT *fhdb_root,
+                                             const char *namebuf, ndmp9_u_quad dir_node, ndmp9_u_quad node)
+{
+   N_TREE_NODE *nt_node;
+   OOO_MD *md_entry = NULL;
+   htable *meta_data = ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata;
+
+   nt_node = ndmp_fhdb_new_tree_node(fhdb_root);
+   nt_node->inode = node;
+   nt_node->FileIndex = fhdb_root->FileIndex;
+   nt_node->fname_len = strlen(namebuf);
+   /*
+    * Allocate a new entry with 2 bytes extra e.g. the extra slash
+    * needed for directories and the \0.
+    */
+   nt_node->fname = ndmp_fhdb_tree_alloc(fhdb_root, nt_node->fname_len + 2);
+   bstrncpy(nt_node->fname, namebuf, nt_node->fname_len + 1);
+
+   /*
+    * See if we already allocated the htable.
+    */
+   if (!meta_data) {
+      uint32_t nr_pages,
+               nr_items,
+               item_size;
+
+      nr_pages = MIN_PAGES;
+      item_size = sizeof(OOO_MD);
+      nr_items = (nr_pages * B_PAGE_SIZE) / item_size;
+
+      meta_data = (htable *)malloc(sizeof(htable));
+      meta_data->init(md_entry, &md_entry->link, nr_items, nr_pages);
+      ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata = meta_data;
+   }
+
+   /*
+    * Create a new entry and insert it into the hash with the node number as key.
+    */
+   md_entry = (OOO_MD *)meta_data->hash_malloc(sizeof(OOO_MD));
+   md_entry->dir_node = dir_node;
+   md_entry->nt_node = nt_node;
+
+   meta_data->insert((uint64_t)node, (void *)md_entry);
+
+   Dmsg2(100, "bndmp_fhdb_mem_add_dir: Added out of order metadata entry for node %llu with parent %llu\n",
+         node, dir_node);
+}
+
 extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_name,
                                       ndmp9_u_quad dir_node, ndmp9_u_quad node)
 {
@@ -530,13 +586,114 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_
             search_and_insert_tree_node(namebuf, fhdb_root->FileIndex, node,
                                         fhdb_root, fhdb_root->cached_parent);
          } else {
-            Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_dir request for unknow parent inode %llu.\n"), dir_node);
-            return 1;
+            add_out_of_order_metadata(nis, fhdb_root, namebuf, dir_node, node);
          }
       }
    }
 
    return 0;
+}
+
+/*
+ * This tries recursivly to add the missing parents to the tree.
+ */
+static N_TREE_NODE *insert_metadata_parent_node(htable *meta_data, N_TREE_ROOT *fhdb_root, uint64_t dir_node)
+{
+   N_TREE_NODE *parent;
+   OOO_MD *md_entry;
+
+   Dmsg1(100, "bndmp_fhdb_mem_add_dir: Inserting node for parent %llu into tree\n", dir_node);
+
+   /*
+    * lookup the dir_node
+    */
+   md_entry = (OOO_MD *)meta_data->lookup(dir_node);
+   if (!md_entry || !md_entry->nt_node) {
+      /*
+       * If we got called the parent node is not in the current tree if we
+       * also cannot find it in the metadata things are inconsistent so give up.
+       */
+      return (N_TREE_NODE *)NULL;
+   }
+
+   /*
+    * Lookup the parent of this new node we are about to insert.
+    */
+   parent = find_tree_node(fhdb_root, md_entry->dir_node);
+   if (!parent) {
+      /*
+       * If our parent doesn't exist try finding it and inserting it.
+       */
+      parent = insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
+      if (!parent) {
+         /*
+          * If by recursive calling insert_metadata_parent_node we cannot create linked
+          * set of parent nodes our metadata is really inconsistent so give up.
+          */
+         return (N_TREE_NODE *)NULL;
+      }
+   }
+
+   /*
+    * Now we have a working parent in the current tree so we can add the this parent node.
+    */
+   parent = search_and_insert_tree_node(md_entry->nt_node, fhdb_root, parent);
+
+   /*
+    * Keep track we used this entry.
+    */
+   md_entry->nt_node = (N_TREE_NODE *)NULL;
+
+   return parent;
+}
+
+/*
+ * This processes all saved out of order metadata and adds these entries to the tree.
+ * Only used for NDMP DMAs which are sending their metadata fully at random.
+ */
+static inline bool process_out_of_order_metadata(htable *meta_data, N_TREE_ROOT *fhdb_root)
+{
+   OOO_MD *md_entry;
+
+   foreach_htable(md_entry, meta_data) {
+      /*
+       * Alread visited ?
+       */
+      if (!md_entry->nt_node) {
+         continue;
+      }
+
+      Dmsg1(100, "bndmp_fhdb_mem_add_dir: Inserting node for %llu into tree\n", md_entry->nt_node->inode);
+
+      /*
+       * See if this entry is in the cached parent.
+       */
+      if (fhdb_root->cached_parent &&
+          fhdb_root->cached_parent->inode == md_entry->dir_node) {
+         search_and_insert_tree_node(md_entry->nt_node, fhdb_root, fhdb_root->cached_parent);
+      } else {
+         /*
+          * See if parent exists in tree.
+          */
+         fhdb_root->cached_parent = find_tree_node(fhdb_root, md_entry->dir_node);
+         if (fhdb_root->cached_parent) {
+            search_and_insert_tree_node(md_entry->nt_node, fhdb_root, fhdb_root->cached_parent);
+         } else {
+            fhdb_root->cached_parent = insert_metadata_parent_node(meta_data, fhdb_root, md_entry->dir_node);
+            if (!fhdb_root->cached_parent) {
+               /*
+                * The metadata seems to be fully inconsistent.
+                */
+               Dmsg0(100, "bndmp_fhdb_mem_add_dir: Inconsistent metadata, giving up\n");
+               return false;
+            }
+
+            search_and_insert_tree_node(md_entry->nt_node, fhdb_root, fhdb_root->cached_parent);
+         }
+      }
+   }
+
+   return true;
 }
 
 extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
@@ -550,6 +707,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
       N_TREE_ROOT *fhdb_root;
       N_TREE_NODE *wanted_node;
       POOL_MEM attribs(PM_FNAME);
+      htable *meta_data = ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata;
 
       Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%llu]\n", node);
 
@@ -557,6 +715,20 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
       if (!fhdb_root) {
          Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB add_node call before add_dir.\n"));
          return 1;
+      }
+
+      if (meta_data) {
+         if (!process_out_of_order_metadata(meta_data, fhdb_root)) {
+            Jmsg(nis->jcr, M_FATAL, 0, _("NDMP protocol error, FHDB unable to process out of order metadata.\n"));
+            meta_data->destroy();
+            free(meta_data);
+            ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata = NULL;
+            return 1;
+         }
+
+         meta_data->destroy();
+         free(meta_data);
+         ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata = NULL;
       }
 
       wanted_node = find_tree_node(fhdb_root, node);
@@ -606,16 +778,17 @@ extern "C" int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog *ixlog, int tagc,
 
       fhdb_state->fhdb_root = ndmp_fhdb_new_tree();
 
+      fhdb_root = fhdb_state->fhdb_root;
+      fhdb_root->inode = root_node;
+      fhdb_root->FileIndex = nis->FileIndex;
+      fhdb_root->fname_len = strlen(nis->filesystem);
       /*
        * Allocate a new entry with 2 bytes extra e.g. the extra slash
        * needed for directories and the \0.
        */
-      fhdb_root = fhdb_state->fhdb_root;
-      fhdb_root->fname_len = strlen(nis->filesystem);
       fhdb_root->fname = ndmp_fhdb_tree_alloc(fhdb_root, fhdb_root->fname_len + 2);
       bstrncpy(fhdb_root->fname, nis->filesystem, fhdb_root->fname_len + 1);
-      fhdb_root->inode = root_node;
-      fhdb_root->FileIndex = nis->FileIndex;
+
       fhdb_root->cached_parent = (N_TREE_NODE *)fhdb_root;
    }
 
