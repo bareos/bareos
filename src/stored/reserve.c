@@ -1066,7 +1066,7 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
                rctx.autochanger_only, rctx.any_drive);
          Dmsg4(dbglvl, "have_vol=%d have=%s resvol=%s want=%s\n",
                   rctx.have_volume, dev->VolHdr.VolumeName,
-                  dev->vol?dev->vol->vol_name:"*none*", rctx.VolumeName);
+                  dev->vol?dev->vol->vol_name:"*None*", rctx.VolumeName);
          ok = bstrcmp(dev->VolHdr.VolumeName, rctx.VolumeName) ||
                  (dev->vol && bstrcmp(dev->vol->vol_name, rctx.VolumeName));
          if (!ok) {
@@ -1075,7 +1075,7 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
                dev->print_name());
             queue_reserve_message(jcr);
             Dmsg3(dbglvl, "not OK: dev have=%s resvol=%s want=%s\n",
-                  dev->VolHdr.VolumeName, dev->vol?dev->vol->vol_name:"*none*", rctx.VolumeName);
+                  dev->VolHdr.VolumeName, dev->vol?dev->vol->vol_name:"*None*", rctx.VolumeName);
             return 0;
          }
          if (!dcr->can_i_use_volume()) {

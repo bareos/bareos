@@ -3733,10 +3733,10 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
          if (jcr->VolumeName) {
             return jcr->VolumeName;
          } else {
-            return (char *)_("*none*");
+            return (char *)_("*None*");
          }
       } else {
-         return (char *)_("*none*");
+         return (char *)_("*None*");
       }
       break;
    }
