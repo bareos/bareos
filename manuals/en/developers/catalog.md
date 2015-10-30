@@ -142,20 +142,24 @@ new one be created, otherwise the existing RecordId should be used.
 Database Tables
 ---------------
 
-Data Type | Remark
-----------|------------
-integer   | Primary Key
-Blob      | Filename
+### Filename
+
+Column Name | Data Type | Remark
+------------|-----------|------------
+FilenameId  | integer   | Primary Key
+Name        | Blob      | Filename
 
 The <span>**Filename**</span> table shown above contains the name of
 each file backed up with the path removed. If different directories or
 machines contain the same filename, only one copy will be saved in this
 table.
 
-Data Type | Remark
-----------|------------
-integer   | Primary Key
-Blob      | Full Path
+### Path
+
+Column Name | Data Type | Remark
+------------|-----------|------------
+PathId      | integer   | Primary Key
+Path        | Blob      | Full Path
 
 The <span>**Path**</span> table contains shown above the path or
 directory names of all directories on the system or systems. The
@@ -194,16 +198,19 @@ Finally, saving only the full path name rather than splitting the path
 and the file, and indexing it on the first 50 characters takes 6 mins 43
 seconds and creates a 7.35 MB database.
 
-Data Type | Remark
-----------|---------------------------------------------
-integer   | Primary Key
-integer   | The sequential file number in the Job
-integer   | Link to Job Record
-integer   | Link to Path Record
-integer   | Link to Filename Record
-integer   | Used to mark files during Verify Jobs
-tinyblob  | File attributes in base64 encoding
-tinyblob  | MD5/SHA1 signature in base64 encoding
+### File
+
+Column Name | Data Type | Remark
+------------|-----------|---------------------------------------------
+FileId | integer   | Primary Key
+FileIndex | integer   | The sequential file number in the Job
+JobId | integer   | Link to Job Record
+PathId | integer   | Link to Path Record
+FilenameId | integer   | Link to Filename Record
+DeltaSeq | smallint   | 
+MarkId      | integer   | Used to mark files during Verify Jobs
+LStat | tinyblob  | File attributes in base64 encoding
+MD5 | tinyblob  | MD5/SHA1 signature in base64 encoding
 
 The <span>**File**</span> table shown above contains one entry for each
 file backed up by Bareos. Thus a file that is backed up multiple times
@@ -221,32 +228,33 @@ the stand point of total database size. As a consequence, the user must
 take care to periodically reduce the number of File records using the
 <span>**retention**</span> command in the Console program.
 
-Data Type         | Remark
-------------------|------------------------------------------------------------------
-integer           |       Primary Key        
-tinyblob          |       Unique Job Name        
-tinyblob          |       Job Name        
-tinyint           | Used by Bareos for purging/retention periods
-binary(1)         | Job Type: Backup, Copy, Clone, Archive, Migration
-binary(1)         |       Job Level        
-integer           |       Client index        
-binary(1)         |       Job Termination Status        
-datetime          |       Time/date when Job scheduled        
-datetime          |       Time/date when Job started        
-datetime          |       Time/date when Job ended        
-datetime          | Time/date when original Job ended
-bigint            | Start day in Unix format but 64 bits; used for Retention period.
-integer           |       Unique Volume Session ID        
-integer           |       Unique Volume Session Time        
-integer           |       Number of files saved in Job        
-bigint            |       Number of bytes saved in Job        
-integer           |       Number of errors during Job        
-integer           | Number of files not saved (not yet used)
-integer           |       Link to Pool Record        
-integer           |       Link to FileSet Record        
-integer           | Link to prior Job Record when migrated
-tiny integer      | Set when all File records purged
-tiny integer      |       Set when Base Job run        
+### Job / JobHisto
+
+Column Name | Data Type         | Remark
+------------|-------------------|----------------------------------------------
+JobId       | integer           |       Primary Key        
+Job         | tinyblob          |       Unique Job Name        
+Name        | tinyblob          |       Job Name        
+Type        | binary(1)         | Job Type: Backup, Copy, Clone, Archive, Migration
+Level       | binary(1)         |       Job Level        
+ClientId    | integer           |       Client index        
+JobStatus   | binary(1)         |       Job Termination Status        
+SchedTime   | datetime          |       Time/date when Job scheduled        
+StartTime   | datetime          |       Time/date when Job started        
+EndTime     | datetime          |       Time/date when Job ended        
+ReadEndTime | datetime          | Time/date when original Job ended
+JobTDate    | bigint            | Start day in Unix format but 64 bits; used for Retention period.
+VolSessionId | integer           |       Unique Volume Session ID        
+VolSessionTime | integer           |       Unique Volume Session Time        
+JobFiles    | integer           |       Number of files saved in Job        
+JobBytes    | bigint            |       Number of bytes saved in Job        
+JobErrors   | integer           |       Number of errors during Job        
+JobMissingFiles | integer           | Number of files not saved (not yet used)
+PoolId      | integer           |       Link to Pool Record        
+FileSetId   | integer           |       Link to FileSet Record        
+PrioJobId   | integer           | Link to prior Job Record when migrated
+PurgedFiles | tiny integer      | Set when all File records purged
+HasBase     | tiny integer      |       Set when Base Job run        
 
 The <span>**Job**</span> table contains one record for each Job run by
 Bareos. Thus normally, there will be one per day per machine added to
@@ -273,41 +281,19 @@ For a given Storage daemon, the VolSessionId and VolSessionTime form a
 unique identification of the Job. This will be the case even if multiple
 Directors are using the same Storage daemon.
 
-The JobStatus field specifies how the job terminated, and can be one of
-the following:
+The JobStatus field specifies how the job terminated.
 
-  * Created but not yet running
-  * Running
-  * Blocked 
-  * Terminated normally 
-  * Terminated normally with warnings 
-  * Terminated in Error 
-  * Non-fatal error 
-  * Fatal error 
-  * Verify Differences 
-  * Canceled by the user 
-  * Incomplete Job 
-  * Waiting on the File daemon 
-  * Waiting on the Storage daemon 
-  * Waiting for a new Volume to be mounted 
-  * Waiting for a Mount 
-  * Waiting for Storage resource 
-  * Waiting for Job resource 
-  * Waiting for Client resource 
-  * Wating for Maximum jobs 
-  * Waiting for Start Time 
-  * Waiting for higher priority job to finish 
-  * Doing batch insert file records 
-  * SD despooling attributes 
-  * Doing data despooling 
-  * Committing data (last despool) 
+The <span>JobHisto</span> table is the same as the Job table, but it
+keeps long term statistics (i.e. it is not pruned with the Job).
 
-Data Type | Remark
-----------|------------------------------
-integer   | Primary Key
-tinyblob  | FileSet name
-tinyblob  | MD5 checksum of FileSet
-datetime  | Time and date Fileset created
+### FileSet
+
+Column Name | Data Type | Remark
+------------|-----------|------------------------------
+FileSetId   | integer   | Primary Key
+FileSet | tinyblob  | FileSet name
+MD5 | tinyblob  | MD5 checksum of FileSet
+CreateTime | datetime  | Time and date Fileset created
 
 The <span>**FileSet**</span> table contains one entry for each FileSet
 that is used. The MD5 signature is kept to ensure that if the user
@@ -316,18 +302,21 @@ FileSet will be used. This is particularly important when doing an
 incremental update. If the user deletes a file or adds a file, we need
 to ensure that a Full backup is done prior to the next incremental.
 
-Data Type | Remark
-----------|---------------------------------------------------------------------------------
-integer   | Primary Key
-integer   | Link to Job Record
-integer   | Link to Media Record
-integer   | The index (sequence number) of the first file written for this Job to the Media
-integer   | The index of the last file written for this Job to the Media
-integer   | The physical media (tape) file number of the first block written for this Job
-integer   | The physical media (tape) file number of the last block written for this Job
-integer   | The number of the first block written for this Job
-integer   | The number of the last block written for this Job
-integer   | The Volume use sequence number within the Job
+
+### JobMedia
+
+Column Name | Data Type | Remark
+------------|-----------|---------------------------------------------------------------------------------
+JobMediaId  | integer   | Primary Key
+JobId       | integer   | Link to Job Record
+MediaId     | integer   | Link to Media Record
+FirstIndex  | integer   | The index (sequence number) of the first file written for this Job to the Media
+LastIndex   | integer   | The index of the last file written for this Job to the Media
+StartFile   | integer   | The physical media (tape) file number of the first block written for this Job
+EndFile     | integer   | The physical media (tape) file number of the last block written for this Job
+StartBlock  | integer   | The number of the first block written for this Job
+Endblock    | integer   | The number of the last block written for this Job
+VolIndex    | integer   | The Volume use sequence number within the Job
 
 The <span>**JobMedia**</span> table contains one entry at the following:
 start of the job, start of each new tape file, start of each new tape,
@@ -342,50 +331,52 @@ JobMedia records can speed it up by orders of magnitude by permitting
 forward spacing files and blocks rather than reading the whole 100GB
 backup.
 
-Data Type | Remark
-----------|----------------------------------------
-integer   | Primary Key 
-tinyblob  | Volume name 
-integer   | Autochanger Slot number or zero
-integer   | Link to Pool Record 
-tinyblob  | The MediaType supplied by the user
-integer   | The MediaTypeId 
-tinyint   | The type of label on the Volume
-datetime  | Time/date when first written 
-datetime  | Time/date when last written 
-datetime  | Time/date when tape labeled 
-integer   | Number of jobs written to this media
-integer   | Number of files written to this media
-integer   | Number of blocks written to this media
-integer   | Number of time media mounted 
-bigint    | Number of bytes saved in Job 
-integer   | The number of parts for a Volume (DVD)
-integer   | Number of errors during Job 
-integer   | Number of writes to media 
-bigint    | Maximum bytes to put on this media
-bigint    | Capacity estimate for this volume
-enum      | Status of media: Full, Archive, Append, Recycle, Read-Only, Disabled, Error, Busy 
-tinyint   | Whether or not Volume can be written
-tinyint   | Whether or not Bareos can recycle the Volumes: Yes, No 
-tinyint   | What happens to a Volume after purging
-bigint    | 64 bit seconds until expiration 
-bigint    | 64 bit seconds volume can be used
-integer   | maximum jobs to put on Volume 
-integer   | maximume EOF marks to put on Volume
-tinyint   | Whether or not Volume in autochanger
-integer   | Storage record ID 
-integer   | Device record ID 
-integer   | Method of addressing media 
-bigint    | Time Reading Volume 
-bigint    | Time Writing Volume 
-integer   | End File number of Volume 
-integer   | End block number of Volume 
-integer   | Location record ID 
-integer   | Number of times recycled 
-datetime  | When Volume first written 
-integer   | Id of Scratch Pool 
-integer   | Pool ID where to recycle Volume
-blob      | User text field 
+### Volume (Media)
+
+Column Name | Data Type | Remark
+------------|-----------|----------------------------------------
+MediaId     | integer   | Primary Key 
+VolumeName  | tinyblob  | Volume name 
+Slot        | integer   | Autochanger Slot number or zero
+PoolId      | integer   | Link to Pool Record 
+MediaType   | tinyblob  | The MediaType supplied by the user
+MediaTypeId | integer   | The MediaTypeId 
+LabelType   | tinyint   | The type of label on the Volume
+FirstWritten | datetime  | Time/date when first written 
+LastWritten  | datetime  | Time/date when last written 
+LabelDate    | datetime  | Time/date when tape labeled 
+VolJobs      | integer   | Number of jobs written to this media
+VolFiles     | integer   | Number of files written to this media
+VolBlocks    | integer   | Number of blocks written to this media
+VolMounts    | integer   | Number of time media mounted 
+VolBytes     | bigint    | Number of bytes saved in Job 
+VolParts     | integer   | The number of parts for a Volume (DVD)
+VolErrors    | integer   | Number of errors during Job 
+VolWrites    | integer   | Number of writes to media 
+MaxVolBytes  | bigint    | Maximum bytes to put on this media
+VolCapacityBytes | bigint    | Capacity estimate for this volume
+VolStatus    | enum      | Status of media: Full, Archive, Append, Recycle, Read-Only, Disabled, Error, Busy 
+Enabled      | tinyint   | Whether or not Volume can be written
+Recycle      | tinyint   | Whether or not Bareos can recycle the Volumes: Yes, No 
+ActionOnPurge | tinyint   | What happens to a Volume after purging
+VolRetention  | bigint    | 64 bit seconds until expiration 
+VolUseDureation | bigint    | 64 bit seconds volume can be used
+MaxVolJobs      | integer   | maximum jobs to put on Volume 
+MaxVolFiles     | integer   | maximume EOF marks to put on Volume
+InChanger     | tinyint   | Whether or not Volume in autochanger
+StorageId | integer   | Storage record ID 
+DeviceId  | integer   | Device record ID 
+MediaAddressing | integer   | Method of addressing media 
+VolReadTime | bigint    | Time Reading Volume 
+VolWriteTime | bigint    | Time Writing Volume 
+EndFile | integer   | End File number of Volume 
+EndBlock | integer   | End block number of Volume 
+LocationId | integer   | Location record ID 
+RecycleCount | integer   | Number of times recycled 
+InitialWrite | datetime  | When Volume first written 
+ScratchPoolId | integer   | Id of Scratch Pool 
+RecyclePoolId | integer   | Pool ID where to recycle Volume
+Comment | blob      | User text field 
 
 The <span>**Volume**</span> table (internally referred to as the Media
 table) contains one entry for each volume, that is each tape, cassette
@@ -393,33 +384,35 @@ table) contains one entry for each volume, that is each tape, cassette
 There is one Volume record created for each of the NumVols specified in
 the Pool resource record.
 
-Data Type | Remark
-----------|----------------------------------------------
-integer   | Primary Key
-Tinyblob  | Pool Name
-Integer   | Number of Volumes in the Pool
-Integer   | Maximum Volumes in the Pool
-tinyint   | Use volume once
-tinyint   | Set to use catalog
-tinyint   | Accept any volume from Pool
-bigint    | 64 bit seconds to retain volume
-bigint    | 64 bit seconds volume can be used
-integer   | max jobs on volume
-integer   | max EOF marks to put on Volume
-bigint    | max bytes to write on Volume
-tinyint   | yes|no for autopruning
-tinyint   | yes|no for allowing auto recycling of Volume
-tinyint   | Default Volume ActionOnPurge
-enum      | Backup, Copy, Cloned, Archive, Migration
-tinyint   | Type of label ANSI/Bareos
-Tinyblob  | Label format
-tinyint   | Whether or not Volume can be written
-integer   | Id of Scratch Pool
-integer   | Pool ID where to recycle Volume
-integer   | Pool ID of next Pool
-bigint    | High water mark for migration
-bigint    | Low water mark for migration
-bigint    | Time before migration
+### Pool
+
+Column Name | Data Type | Remark
+------------|-----------|----------------------------------------------
+PoolId | integer   | Primary Key
+Name | Tinyblob  | Pool Name
+NumVols | Integer   | Number of Volumes in the Pool
+MaxVols | Integer   | Maximum Volumes in the Pool
+UseOnce | tinyint   | Use volume once
+UseCatalog | tinyint   | Set to use catalog
+AcceptAnyVolume | tinyint   | Accept any volume from Pool
+VolRetention | bigint    | 64 bit seconds to retain volume
+VolUseDuration | bigint    | 64 bit seconds volume can be used
+MaxVolJobs | integer   | max jobs on volume
+MaxVolFiles | integer   | max EOF marks to put on Volume
+MaxVolBytes | bigint    | max bytes to write on Volume
+AutoPrune | tinyint   | yes or no for autopruning
+Recycle | tinyint   | yes or no for allowing auto recycling of Volume
+ActionOnPurge | tinyint   | Default Volume ActionOnPurge
+PoolType | enum      | Backup, Copy, Cloned, Archive, Migration
+LabelType | tinyint   | Type of label ANSI/Bareos
+LabelFormat | Tinyblob  | Label format
+Enabled | tinyint   | Whether or not Volume can be written
+ScratchPoolId | integer   | Id of Scratch Pool
+RecyclePoolId | integer   | Pool ID where to recycle Volume
+NextPoolId | integer   | Pool ID of next Pool
+MigrationHighBytes | bigint    | High water mark for migration
+MigrationLowBytes | bigint    | Low water mark for migration
+MigrationTime | bigint    | Time before migration
 
 The <span>**Pool**</span> table contains one entry for each media pool
 controlled by Bareos in this database. One media record exists for each
@@ -429,113 +422,103 @@ to the MediaType specified in the Director’s Storage definition record.
 The CurrentVol is the sequence number of the Media record for the
 current volume.
 
-Data Type | Remark
-----------|---------------------------------------
-integer   | Primary Key
-TinyBlob  | File Services Name
-TinyBlob  | uname -a from Client (not yet used)
-tinyint   | yes|no for autopruning
-bigint    | 64 bit seconds to retain Files
-bigint    | 64 bit seconds to retain Job
+### Client
+
+Column Name | Data Type | Remark
+------------|-----------|---------------------------------------
+ClientId    | integer   | Primary Key
+Name        | TinyBlob  | File Services Name
+UName       | TinyBlob  | uname -a from Client (not yet used)
+AutoPrune   | tinyint   | yes or no for autopruning
+FileRetention | bigint    | 64 bit seconds to retain Files
+JobRentention | bigint    | 64 bit seconds to retain Job
 
 The <span>**Client**</span> table contains one entry for each machine
 backed up by Bareos in this database. Normally the Name is a fully
 qualified domain name.
 
-Data Type | Remark
-----------|----------------------------------
-integer   | Unique Id
-tinyblob  | Resource name of Storage device
-tinyint   | Set if it is an autochanger
+
+### Storage
+
+Column Name | Data Type | Remark
+------------|-----------|----------------------------------
+StorageId   | integer   | Unique Id
+Name        | tinyblob  | Resource name of Storage device
+AutoChanger | tinyint   | Set if it is an autochanger
 
 The <span>**Storage**</span> table contains one entry for each Storage
 used.
 
-Data Type | Remark
-----------|-----------------------------
-tinyblob  | Counter name
-integer   | Start/Min value for counter
-integer   | Max value for counter
-integer   | Current counter value
-tinyblob  | Name of another counter
+### Counter
+
+Column Name | Data Type | Remark
+------------|-----------|-----------------------------
+Counter     | tinyblob  | Counter name
+MinValue    | integer   | Start/Min value for counter
+MaxValue    | integer   | Max value for counter
+CurrentValue | integer   | Current counter value
+WrapCounter | tinyblob  | Name of another counter
 
 The <span>**Counter**</span> table contains one entry for each permanent
 counter defined by the user.
 
-Data Type    | Remark
--------------|---------------------------------------------------
-integer      | Primary Key
-tinyblob     | Unique Job Name
-tinyblob     | Job Name
-binary(1)    | Job Type: Backup, Copy, Clone, Archive, Migration
-binary(1)    | Job Level
-integer      | Client index
-binary(1)    | Job Termination Status
-datetime     | Time/date when Job scheduled
-datetime     | Time/date when Job started
-datetime     | Time/date when Job ended
-datetime     | Time/date when original Job ended
-bigint       | Start day in Unix format but 64 bits; used for Retention period.
-integer      | Unique Volume Session ID
-integer      | Unique Volume Session Time
-integer      | Number of files saved in Job
-bigint       | Number of bytes saved in Job
-integer      | Number of errors during Job
-integer      | Number of files not saved (not yet used)
-integer      | Link to Pool Record
-integer      | Link to FileSet Record
-integer      | Link to prior Job Record when migrated
-tiny integer | Set when all File records purged
-tiny integer | Set when Base Job run
 
-The <span>bf JobHisto</span> table is the same as the Job table, but it
-keeps long term statistics (i.e. it is not pruned with the Job).
+### Log
 
-Data Type | Remark
-----------|---------------------------------------
-integer   | Primary Key
-integer   | Points to Job record
-datetime  |  Time/date log record created
-blob      | Log text
+Column Name | Data Type | Remark
+------------|-----------|---------------------------------------
+LogIdId     | integer   | Primary Key
+JobId       | integer   | Points to Job record
+Time        | datetime  |  Time/date log record created
+LogText     | blob      | Log text
 
 The <span>**Log**</span> table contains a log of all Job output.
 
-Data Type | Remark
-----------|-----------------------------------------
-integer   | Primary Key
-tinyblob  | Text defining location
-integer   | Relative cost of obtaining Volume
-tinyint   | Whether or not Volume is enabled
+### Location
+
+Column Name | Data Type | Remark
+------------|-----------|-----------------------------------------
+LocationId  | integer   | Primary Key
+Location    | tinyblob  | Text defining location
+Cost        | integer   | Relative cost of obtaining Volume
+Enabled     | tinyint   | Whether or not Volume is enabled
 
 The <span>**Location**</span> table defines where a Volume is
 physically.
 
-Data Type | Remark
-----------|-----------------------------------------------
-integer   | Primary Key
-datetime  | Time/date log record created
-integer   |Points to Media record
-integer   | Points to Location record
-integer   | enum: Full, Archive, Append, Recycle, Purged Read-only, Disabled, Error, Busy, Used, Cleaning
-tinyint   | Whether or not Volume is enabled
+### LocationLog
 
-The <span>**Log**</span> table contains a log of all Job output.
+Column Name | Data Type | Remark
+------------|-----------|-----------------------------------------------
+LocLogId    | integer   | Primary Key
+Date        | datetime  | Time/date log record created
+MediaId     | integer   | Points to Media record
+LocationId  | integer   | Points to Location record
+NewVolStatus | integer   | enum: Full, Archive, Append, Recycle, Purged Read-only, Disabled, Error, Busy, Used, Cleaning
+Enabled     | tinyint   | Whether or not Volume is enabled
 
-Data Type | Remark
-----------|-------------
-integer   | Primary Key
+The <span>**LocationLog**</span> table contains a log of all Job output.
+
+
+### Version
+
+Column Name | Data Type | Remark
+------------|-----------|-------------
+VersionId   | integer   | Primary Key
 
 The <span>**Version**</span> table defines the Bareos database version
 number. Bareos checks this number before reading the database to ensure
 that it is compatible with the Bareos binary file.
 
-Data Type | Remark
-----------|-----------------------
-integer   | Primary Key
-integer   | JobId of Base Job
-integer   | Reference to Job
-integer   | Reference to File
-integer   | File Index number
+### BaseFiles
+
+Column Name | Data Type | Remark
+------------|-----------|-----------------------
+BaseId      | integer   | Primary Key
+BaseJobId   | integer   | JobId of Base Job
+JobId       | integer   | Reference to Job
+FileId      | integer   | Reference to File
+FileIndex   | integer   | File Index number
 
 The <span>**BaseFiles**</span> table contains all the File references
 for a particular JobId that point to a Base file – i.e. they were
