@@ -22,6 +22,7 @@ class Root(Directory):
         super(Root, self).__init__(self, None)
         self.factory = NodeFactory(self)
         self.add_subnode(Jobs, "jobs")
-        self.add_subnode(Volumes, "volumes")
+        self.add_subnode(VolumeList, "volumes")
+        self.add_subnode(Pools, "pools")
         self.add_subnode(Clients, "clients")
         self.add_subnode(Status, ".bareosfs-status.txt")
