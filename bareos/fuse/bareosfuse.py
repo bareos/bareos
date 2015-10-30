@@ -32,7 +32,8 @@ class BareosFuse(fuse.Fuse):
         self.logger.setLevel(logging.DEBUG)
         if hasattr(self, "logfile"):
             hdlr = logging.FileHandler(self.logfile)
-            formatter = logging.Formatter('%(asctime)s  %(levelname)-7s %(module)s %(funcName)s( %(message)s )')
+            # limit message size
+            formatter = logging.Formatter('%(asctime)s  %(levelname)-7s %(module)s %(funcName)s( %(message).800s )')
             hdlr.setFormatter(formatter)
             self.logger.addHandler(hdlr)
 
@@ -77,15 +78,14 @@ class BareosFuse(fuse.Fuse):
         if self.bareos:
             stat = self.bareos.getattr(Path(path))
             if isinstance(stat, fuse.Stat):
-                self.logger.debug("%s: nlink=%i" % (path, stat.st_nlink))
+                self.logger.debug("{path}: dev={stat.st_dev}, ino={stat.st_ino}, mode={stat.st_mode}, nlink={stat.st_nlink}, uid={stat.st_uid}, gid={stat.st_gid}, size={stat.st_size}, atime={stat.st_atime}, ctime={stat.st_ctime}, mtime={stat.st_mtime}".format(path=path, stat=stat))
             else:
                 self.logger.debug("%s: (int) %i" % (path, stat))
             return stat
 
     def read(self, path, size, offset):
         result = self.bareos.read(Path(path), size, offset)
-        #self.logger.debug("%s: %s" % (path, result))
-        self.logger.debug("%s" % (path))
+        self.logger.debug("%s: %s" % (path, result))
         return result
 
     def readdir(self, path, offset):

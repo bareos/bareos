@@ -14,7 +14,7 @@ import stat
 class Job(Directory):
     def __init__(self, root, job):
         self.job = job
-        super(Job, self).__init__(root, self.get_name())
+        super(Job, self).__init__(root, self.get_name(job))
         try:
             if not job.has_key('client'):
                 job['client'] = job['clientname']
@@ -28,24 +28,25 @@ class Job(Directory):
             self.stat.st_mtime = self._convert_date_bareos_unix(self.job['realendtime'])
         except KeyError:
             pass
-        if job['jobstatus'] == 'T' or job['jobstatus'] == 'E' or job['jobstatus'] == 'W':           
+        if job['jobstatus'] == 'T' or job['jobstatus'] == 'E' or job['jobstatus'] == 'W' or job['jobstatus'] == 'f':           
             self.set_static()
 
     @classmethod
     def get_id(cls, job):
         return job['jobid']
 
-    def get_name(self):
+    def do_get_name(self, job):
         try:
-            name = "jobid={jobid}_name={name}_client={client}_level={level}_status={jobstatus}".format(**self.job)
+            name = "jobid={jobid}_name={name}_client={client}_level={level}_status={jobstatus}".format(**job)
         except KeyError:
             try:
-                name = "jobid={jobid}_name={name}_client={clientname}_level={level}_status={jobstatus}".format(**self.job)
+                name = "jobid={jobid}_name={name}_client={clientname}_level={level}_status={jobstatus}".format(**job)
             except KeyError:
-                name = "jobid={jobid}_level={level}_status={jobstatus}".format(**self.job)
+                name = "jobid={jobid}_level={level}_status={jobstatus}".format(**job)
         return name
 
     def do_update(self):
         self.add_subnode(File, name="info.txt", content = pformat(self.job) + "\n")
         self.add_subnode(JobLog, name="job.log", job=self.job)
-        self.add_subnode(BvfsDir, "data", self, None)
+        if self.job['jobstatus'] != 'f':
+            self.add_subnode(BvfsDir, "data", self, None)

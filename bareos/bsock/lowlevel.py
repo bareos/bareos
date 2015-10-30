@@ -114,13 +114,17 @@ class LowLevel(object):
             raise RuntimeError("should connect to director first before recv data")
         msg = ""
         try:
+            timeouts = 0
             while True:
                 # get the message header
                 self.socket.settimeout(0.1)
                 try:
                     header = self.__get_header()
                 except socket.timeout:
-                    self.logger.debug("timeout on receiving header")
+                    # only log every 100 timeouts
+                    if timeouts % 100 == 0:
+                        self.logger.debug("timeout (%i) on receiving header" % (timeouts))
+                    timeouts+=1
                 else:
                     if header <= 0:
                         # header is a signal

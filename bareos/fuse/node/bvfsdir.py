@@ -52,6 +52,7 @@ class BvfsDir(Directory, BvfsCommon):
                 name = i['name'].rstrip('/')
                 pathid = i['pathid']
                 self.add_subnode(BvfsDir, name, self.job, pathid, i)
+        self.subnode_count = len(self.subnodes)
         if self.directory:
             for i in files:
                 self.add_subnode(BvfsFile, i, self.job, self.directory['fullpath'])

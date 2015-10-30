@@ -25,10 +25,13 @@ class Base(object):
         self.content = None
         self.subnodes = {}
         self.subnodes_old = self.subnodes.copy()
+        self.subnode_count = len(self.subnodes)
         self.static = False
         self.lastupdate = None
+        self.lastupdate_stat = None
         # timeout for caching
         self.cache_timeout = timedelta(seconds=60)
+        self.cache_stat_timeout = timedelta(seconds=60)
 
     @classmethod
     def get_id(cls, *args, **kwargs):
@@ -42,13 +45,23 @@ class Base(object):
         """
         return None
 
+    def do_get_name(self, *args, **kwargs):
+        """
+        Get name from init parameter.
+        Normally name is statically set,
+        but for some objects is it based on status data
+        and dependend on where the instance is locationed 
+        in the directory tree (e.g. volumestatus).
+        """
+        return self.name
+
     # Interface
     # =========
 
-    def get_name(self):
-        result = self.name
-        if isinstance(self.name, unicode):
-            result = name.encode('utf-8', 'replace')
+    def get_name(self, *args, **kwargs):
+        result = self.do_get_name(*args, **kwargs)
+        if isinstance(result, unicode):
+            result = result.encode('utf-8', 'replace')
         return result
 
     def set_name(self, name):
@@ -103,12 +116,34 @@ class Base(object):
 
     def add_subnode(self, classtype, *args, **kwargs):
         instance = self.root.factory.get_instance(classtype, *args, **kwargs)
-        name = instance.get_name()
+        name = instance.get_name(*args, **kwargs)
         if not self.subnodes.has_key(name):
             self.subnodes[name] = instance
         else:
             if self.subnodes_old.has_key(name):
                 del(self.subnodes_old[name])
+
+    def update_stat(self):
+        # update status, content, ...
+        now = datetime.now()
+        if self.lastupdate_stat == None:
+            self.logger.debug("reason: first time")
+            self.do_update_stat()
+            self.lastupdate_stat = now
+        elif not self.static and (self.lastupdate_stat + self.cache_stat_timeout) < now:
+            diff = now - self.lastupdate_stat
+            self.logger.debug("reason: non-static and timeout (%d seconds)" % (diff.seconds))
+            self.do_update_stat()
+            self.lastupdate_stat = datetime.now()
+        else:
+            self.logger.debug("skipped (lastupdate: %s, static: %s)" % ( str(self.lastupdate_stat), str(self.static)))
+
+    def do_update_stat(self):
+        """
+        if not overwritten, a full update is performed.
+        Only updating the stat can be more efficient.
+        """
+        self.update()
 
     def update(self):
         # update status, content, ...
@@ -125,8 +160,9 @@ class Base(object):
             self.subnodes_old = self.subnodes.copy()
             self.do_update()
             for i in self.subnodes_old.keys():
-                self.logger.debug("%s: removing outdated node %s" % (self.get_name(), i))
+                self.logger.debug("removing outdated node %s" % (i))
                 del(self.subnodes[i])
+            self.subnode_count = len(self.subnodes)
             self.lastupdate = datetime.now()
         else:
             self.logger.debug("skipped (lastupdate: %s, static: %s)" % ( str(self.lastupdate), str(self.static)))
@@ -139,6 +175,7 @@ class Base(object):
         # remove marker for nodes to be deleted after update
         self.subnodes_old = {}
 
+
     # Filesystem methods
     # ==================
 
@@ -146,7 +183,7 @@ class Base(object):
         #self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
         result = -errno.ENOENT
         if path.len() == 0:
-            self.update()
+            self.update_stat()
             result = self.get_stat()
         else:
             if path.get(0) in self.subnodes:
@@ -248,7 +285,10 @@ class Base(object):
         unixtimestamp = 0
         try:
             unixtimestamp = int(DateParser.parse(bareosdate).strftime("%s"))
-            self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
+            #self.logger.debug( "unix timestamp: %d" % (unixtimestamp))
         except ValueError:
             pass
+        # could happen because of timezones
+        if unixtimestamp < 0:
+            unixtimestamp = 0
         return unixtimestamp

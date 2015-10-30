@@ -15,5 +15,5 @@ class Client(Directory):
         return name
 
     def do_update(self):
-        self.add_subnode(Backups, "backups", client=self.get_name())
-        self.add_subnode(JobsList, "jobs", "client=%s" % (self.get_name()))
+        self.add_subnode(Backups, "backups", client=self.name)
+        self.add_subnode(JobsList, "jobs", "client=%s" % (self.name))

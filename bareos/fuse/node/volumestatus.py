@@ -8,6 +8,7 @@ import stat
 class VolumeStatus(File):
 
     __volstatus2filemode = {
+        "Archive": 0440,
         # rw
         "Append": 0660,
         # ro
@@ -25,20 +26,23 @@ class VolumeStatus(File):
         super(VolumeStatus, self).__init__(root, None, None)
         self.basename = basename
         self.volume = volume
-        self.update_stat()
+        self.do_update_stat()
         self.set_name( "%s%s" % (self.basename, self.volume['volstatus']) )
 
     @classmethod
     def get_id(cls, basename, volume):
         return "%s%s" % (basename, volume['mediaid'])
 
+    def do_get_name(self, basename, volume):
+        return "%s%s" % (basename, volume['volstatus'])
+
     def do_update(self):
         volumename = self.volume['volumename']
         data = self.bsock.call( "llist volume=%s" % (volumename) )
         self.volume = data['volume']
-        self.update_stat()
+        self.do_update_stat()
 
-    def update_stat(self):
+    def do_update_stat(self):
         try:
             self.set_name( "status=%s" % (self.volume['volstatus']) )
             self.stat.st_size = int(self.volume['volbytes'])            
@@ -54,5 +58,5 @@ class VolumeStatus(File):
         if self.__volstatus2filemode.has_key(volstatus):
             self.stat.st_mode = stat.S_IFREG | self.__volstatus2filemode[volstatus]
         else:
-            self.logger.warning( "volume status %s unknown" )
+            self.logger.warning( "volume status %s unknown" % (self.volume['volstatus']) )
             self.stat.st_mode = stat.S_IFREG | 0000

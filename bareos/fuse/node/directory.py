@@ -20,7 +20,7 @@ class Directory(Base):
         self.stat.st_size = 4096
 
     def readdir(self, path, offset):
-        self.logger.debug("%s(\"%s\")" % (str(self.get_name()), str(path)))
+        self.logger.debug("%s(\"%s\")" % (str(self.name), str(path)))
         # copy default dirs
         if path.len() == 0:
             self.update()
@@ -32,5 +32,5 @@ class Directory(Base):
         return result
 
     def get_stat(self):
-        self.stat.st_nlink = len(self.defaultdirs) + len(self.subnodes)
+        self.stat.st_nlink = len(self.defaultdirs) + self.subnode_count
         return super(Directory, self).get_stat()

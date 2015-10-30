@@ -42,7 +42,7 @@ class BvfsCommon(Base):
     # =======
 
     def restore(self, path, pathIds, fileIds):
-        self.logger.debug( "%s: start", self.get_name() )
+        self.logger.debug( "start" )
         bvfs_restore_id = "b20042"
         dirId=''
         if pathIds:
@@ -68,4 +68,4 @@ class BvfsCommon(Base):
         except KeyError:
             self.logger.debug("failed to get resulting jobid of run command (maybe old version of Bareos Director)")
         cleanup = self.bsock.call('.bvfs_cleanup path={bvfs_restore_id}'.format(bvfs_restore_id = bvfs_restore_id))
-        self.logger.debug( "%s: end", self.get_name() )
+        self.logger.debug( "end" )
