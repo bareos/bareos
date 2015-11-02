@@ -36,6 +36,15 @@
  */
 #define WRAP_EXTRA_BYTES 50
 
+const char *json_error_message_template = "{ "
+  "\"jsonrpc\": \"2.0\", "
+  "\"id\": null, "
+  "\"error\": { "
+    "\"message\": \"%s\", "
+    "\"code\": 1 "
+  "} "
+"}\n";
+
 OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
                                    void *send_ctx_arg, int api_mode)
 {
@@ -402,12 +411,23 @@ void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
    string.strcpy(rewrap_string);
 }
 
-void OUTPUT_FORMATTER::process_text_buffer()
+bool OUTPUT_FORMATTER::process_text_buffer()
 {
-   if (result_message_plain->strlen() > 0) {
-      send_func(send_ctx, result_message_plain->c_str());
+   bool retval = false;
+   POOL_MEM error_msg;
+   size_t string_length = 0;
+
+   string_length = result_message_plain->strlen();
+   if (string_length > 0) {
+      retval = send_func(send_ctx, result_message_plain->c_str());
+      if (!retval) {
+         error_msg.bsprintf("Failed to send message. Maybe result message to long?\n"
+                            "Message length = %lld\n", string_length);
+         Emsg0(M_ERROR, 0, error_msg.c_str());
+      }
       result_message_plain->strcpy("");
    }
+   return retval;
 }
 
 void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)
@@ -553,12 +573,22 @@ bool OUTPUT_FORMATTER::json_has_error_message()
    return retval;
 }
 
+bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
+{
+   POOL_MEM json_error_message;
+
+   json_error_message.bsprintf(json_error_message_template, message);
+   return send_func(send_ctx, json_error_message.c_str());
+}
+
 void OUTPUT_FORMATTER::json_finalize_result(bool result)
 {
    json_t *msg_obj = json_object();
    json_t *error_obj;
    json_t *data_obj;
+   POOL_MEM error_msg;
    char *string;
+   size_t string_length = 0;
 
    /*
     * We mimic json-rpc result and error messages,
@@ -581,15 +611,24 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
    }
 
    string = json_dumps(msg_obj, UA_JSON_FLAGS);
-   send_func(send_ctx, string);
-   if (string != NULL) {
-      Dmsg1(800, "message length (json): %lld\n", strlen(string));
-      free(string);
-   } else {
+   string_length = strlen(string);
+   Dmsg1(800, "message length (json): %lld\n", string_length);
+   if (string == NULL) {
       /*
        * json_dumps return NULL on failure (this should not happen).
        */
       Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
+   } else {
+      /*
+       * send json string, on failure, send json error message
+       */
+      if (!send_func(send_ctx, string)) {
+         error_msg.bsprintf("Failed to send result as json. Maybe result message to long?\n"
+                            "Message length = %lld\n", string_length);
+         Emsg0(M_ERROR, 0, error_msg.c_str());
+         json_send_error_message(error_msg.c_str());
+     }
+      free(string);
    }
 
    /*

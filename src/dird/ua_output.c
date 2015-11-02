@@ -1254,15 +1254,17 @@ bool messages_cmd(UAContext *ua, const char *cmd)
 /*
  * Callback routine for "printing" database file listing
  */
-void printit(void *ctx, const char *msg)
+bool printit(void *ctx, const char *msg)
 {
+   bool retval = false;
    UAContext *ua = (UAContext *)ctx;
 
    if (ua->UA_sock) {
-      ua->UA_sock->fsend("%s", msg);
+      retval = ua->UA_sock->fsend("%s", msg);
    } else {                           /* No UA, send to Job */
       Jmsg(ua->jcr, M_INFO, 0, "%s", msg);
    }
+   return retval;
 }
 
 /*

@@ -48,7 +48,7 @@ typedef struct json_t json_t;
 
 class OUTPUT_FORMATTER : public SMARTALLOC {
 public:
-   typedef void (SEND_HANDLER)(void *, const char *);
+   typedef bool (SEND_HANDLER)(void *, const char *);
 
    OUTPUT_FORMATTER(SEND_HANDLER *send_func, void *send_ctx, int api_mode = API_MODE_OFF);
    ~OUTPUT_FORMATTER();
@@ -116,12 +116,14 @@ private:
     */
    void rewrap(POOL_MEM &string, int wrap);
 
-   void process_text_buffer();
+   bool process_text_buffer();
 
 #if HAVE_JANSSON
    json_t *result_json;
    alist *result_stack_json;
    json_t *message_object_json;
+
+   bool json_send_error_message(const char *message);
 #endif
 };
 
