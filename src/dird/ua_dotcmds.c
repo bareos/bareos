@@ -1175,9 +1175,7 @@ static bool api_cmd(UAContext *ua, const char *cmd)
    }
 
    ua->send->set_mode(ua->api);
-   ua->send->object_start();
    ua->send->object_key_value("api", "%s: ", ua->api, "%d\n");
-   ua->send->object_end();
 
    return true;
 }
