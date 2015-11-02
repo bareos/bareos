@@ -337,7 +337,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
 static inline bool bndmp_write_data_to_block(JCR *jcr,
                                              int stream,
                                              char *data,
-                                             u_long data_length)
+                                             uint32_t data_length)
 {
    bool retval = false;
    DCR *dcr = jcr->dcr;
@@ -378,8 +378,8 @@ bail_out:
  */
 static inline bool bndmp_read_data_from_block(JCR *jcr,
                                               char *data,
-                                              u_long wanted_data_length,
-                                              u_long *data_length)
+                                              uint32_t wanted_data_length,
+                                              uint32_t *data_length)
 {
    DCR *dcr = jcr->read_dcr;
    READ_CTX *rctx = jcr->rctx;
@@ -891,8 +891,8 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
 
 extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session *sess,
                                        ndmp9_tape_mtio_op op,
-                                       u_long count,
-                                       u_long *resid)
+                                       uint32_t count,
+                                       uint32_t *resid)
 {
    struct ndm_tape_agent *ta = sess->tape_acb;
 
@@ -940,8 +940,8 @@ extern "C" ndmp9_error bndmp_tape_mtio(struct ndm_session *sess,
 
 extern "C" ndmp9_error bndmp_tape_write(struct ndm_session *sess,
                                         char *buf,
-                                        u_long count,
-                                        u_long *done_count)
+                                        uint32_t count,
+                                        uint32_t *done_count)
 {
    JCR *jcr;
    ndmp9_error err;
@@ -1006,8 +1006,8 @@ extern "C" ndmp9_error bndmp_tape_wfm(struct ndm_session *sess)
 
 extern "C" ndmp9_error bndmp_tape_read(struct ndm_session *sess,
                                        char *buf,
-                                       u_long count,
-                                       u_long *done_count)
+                                       uint32_t count,
+                                       uint32_t *done_count)
 {
    JCR *jcr;
    ndmp9_error err;

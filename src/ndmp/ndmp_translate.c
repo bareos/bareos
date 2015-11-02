@@ -79,7 +79,7 @@ convert_enum_from_9 (struct enum_conversion *ectab, int enum_9)
 }
 
 int
-convert_valid_u_long_to_9 (u_long *valx, ndmp9_valid_u_long *val9)
+convert_valid_u_long_to_9 (uint32_t *valx, ndmp9_valid_u_long *val9)
 {
 	val9->value = *valx;
 
@@ -92,7 +92,7 @@ convert_valid_u_long_to_9 (u_long *valx, ndmp9_valid_u_long *val9)
 }
 
 int
-convert_valid_u_long_from_9 (u_long *valx, ndmp9_valid_u_long *val9)
+convert_valid_u_long_from_9 (uint32_t *valx, ndmp9_valid_u_long *val9)
 {
 	if (!val9->valid)
 		*valx = NDMP_INVALID_U_LONG;

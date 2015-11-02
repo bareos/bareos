@@ -52,7 +52,7 @@ extern "C" {
  */
 
 struct ndmp3_unfortunate_error {
-	u_long			invalid_probably;
+	uint32_t		invalid_probably;
 	ndmp9_error		error;
 };
 

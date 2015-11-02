@@ -59,6 +59,9 @@
  * documentation and/or software.
  *
  */
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+%#pragma GCC diagnostic ignored "-Wunused-variable"
+%#endif
 
 const NDMPPORT = 10000;
 
@@ -107,11 +110,11 @@ enum ndmp0_message
 
 struct ndmp0_header
 {
-	u_long			sequence;	/* monotonically increasing */
-	u_long			time_stamp;	/* time stamp of message */
+	uint32_t		sequence;	/* monotonically increasing */
+	uint32_t		time_stamp;	/* time stamp of message */
 	ndmp0_header_message_type message_type;	/* what type of message */
 	ndmp0_message		message;	/* message number */
-	u_long			reply_sequence;	/* reply is in response to */
+	uint32_t		reply_sequence;	/* reply is in response to */
 	ndmp0_error		error;		/* communications errors */
 };
 
@@ -121,7 +124,7 @@ struct ndmp0_header
 /* NDMP0_CONNECT_OPEN */
 struct ndmp0_connect_open_request
 {
-	u_short	protocol_version;	/* the version of protocol supported */
+	uint16_t	protocol_version;	/* the version of protocol supported */
 };
 
 struct ndmp0_connect_open_reply
@@ -148,6 +151,6 @@ enum ndmp0_connect_reason
 struct ndmp0_notify_connected_request
 {
 	ndmp0_connect_reason	reason;
-	u_short			protocol_version;
+	uint16_t		protocol_version;
 	string			text_reason<>;
 };

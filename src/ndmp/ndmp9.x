@@ -89,6 +89,10 @@
  * documentation and/or software.
  */
 
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+%#pragma GCC diagnostic ignored "-Wunused-variable"
+%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
+%#endif
 
 const NDMP9VER = 9;
 
@@ -224,7 +228,7 @@ struct ndmp9_just_error_reply {
  * 64-bit integers
  */
 %extern bool_t xdr_ndmp9_u_quad();
-%#define ndmp9_u_quad unsigned long long
+%#define ndmp9_u_quad uint64_t
 
 /*
  * Valid values. Sometimes we have values, and sometimes we don't.
@@ -239,7 +243,7 @@ enum ndmp9_validity {
 %#define NDMP9_INVALID_U_LONG	0xFFFFFFFFul
 struct ndmp9_valid_u_long {
 	ndmp9_validity	valid;
-	u_long		value;
+	uint32_t	value;
 };
 
 %#define NDMP9_INVALID_U_QUAD	0xFFFFFFFFFFFFFFFFull
@@ -317,8 +321,8 @@ enum ndmp9_addr_type {
 };
 
 struct ndmp9_tcp_addr {
-	u_long		ip_addr;
-	u_short		port;
+	uint32_t	ip_addr;
+	uint16_t	port;
 };
 
 union ndmp9_addr switch (ndmp9_addr_type addr_type) {
@@ -349,7 +353,7 @@ union ndmp9_addr switch (ndmp9_addr_type addr_type) {
 
 /* NDMP9_CONNECT_OPEN -- must never change, negotiate protocol version */
 struct ndmp9_connect_open_request {
-	u_short	protocol_version;	/* the version of protocol supported */
+	uint16_t	protocol_version;	/* the version of protocol supported */
 };
 typedef ndmp9_just_error_reply	ndmp9_connect_open_reply;
 
@@ -445,11 +449,11 @@ struct ndmp9_config_info {
 
 	/* ndmp2_config_get_host_info */
 	/* ndmp[34]_config_get_server_info */
-	u_long			authtypes;
+	uint32_t		authtypes;
 
 	/* ndmp2_config_get_mover_type */
 	/* ndmp[34]_config_get_connection_type */
-	u_long			conntypes;
+	uint32_t		conntypes;
 
 	/* ndmp2_config_get_butype_attr */
 	/* ndmp[34]_config_get_butype_info */
@@ -544,9 +548,9 @@ struct ndmp9_scsi_get_state_reply {
 /* NDMP9_SCSI_SET_TARGET -- deleted for NDMPv4 */
 struct ndmp9_scsi_set_target_request {
 	string		device<>;
-	u_short		target_controller;
-	u_short		target_id;
-	u_short		target_lun;
+	uint16_t	target_controller;
+	uint16_t	target_id;
+	uint16_t	target_lun;
 };
 typedef ndmp9_just_error_reply	ndmp9_scsi_set_target_reply;
 
@@ -569,8 +573,8 @@ enum ndmp9_scsi_data_dir {
 
 struct ndmp9_execute_cdb_request {
 	ndmp9_scsi_data_dir	data_dir;
-	u_long			timeout;
-	u_long			datain_len;	/* Set for expected datain */
+	uint32_t		timeout;
+	uint32_t		datain_len;	/* Set for expected datain */
 	opaque			cdb<>;
 	opaque			dataout<>;
 };
@@ -578,7 +582,7 @@ struct ndmp9_execute_cdb_request {
 struct ndmp9_execute_cdb_reply {
 	ndmp9_error	error;
 	u_char		status;		/* SCSI status bytes */
-	u_long		dataout_len;
+	uint32_t	dataout_len;
 	opaque		datain<>;	/* SCSI datain */
 	opaque		ext_sense<>;	/* Extended sense data */
 };
@@ -626,7 +630,7 @@ const NDMP9_TAPE_STATE_UNLOAD	= 0x0040;	/* tape will be unloaded when
 typedef ndmp9_no_arguments	ndmp9_tape_get_state_request;
 struct ndmp9_tape_get_state_reply {
 	ndmp9_error		error;
-	u_long			flags;		/* compatible NDMP[2349] */
+	uint32_t		flags;		/* compatible NDMP[2349] */
 	ndmp9_tape_state	state;
 	ndmp9_tape_open_mode 	open_mode;
 	ndmp9_valid_u_long	file_num;
@@ -651,12 +655,12 @@ enum ndmp9_tape_mtio_op {
 
 struct ndmp9_tape_mtio_request {
 	ndmp9_tape_mtio_op	tape_op;
-	u_long			count;
+	uint32_t		count;
 };
 
 struct ndmp9_tape_mtio_reply {
 	ndmp9_error	error;
-	u_long		resid_count;
+	uint32_t	resid_count;
 };
 
 
@@ -667,13 +671,13 @@ struct ndmp9_tape_write_request {
 
 struct ndmp9_tape_write_reply {
 	ndmp9_error	error;
-	u_long		count;
+	uint32_t	count;
 };
 
 
 /* NDMP9_TAPE_READ */
 struct ndmp9_tape_read_request {
-	u_long		count;
+	uint32_t	count;
 };
 
 struct ndmp9_tape_read_reply {
@@ -731,8 +735,8 @@ struct ndmp9_mover_get_state_reply {
 	ndmp9_mover_mode	mode;
 	ndmp9_mover_pause_reason pause_reason;
 	ndmp9_mover_halt_reason	halt_reason;
-	u_long			record_size;
-	u_long			record_num;
+	uint32_t		record_size;
+	uint32_t		record_num;
 	ndmp9_u_quad		bytes_moved;
 	ndmp9_u_quad		seek_position;
 	ndmp9_u_quad		bytes_left_to_read;
@@ -761,7 +765,7 @@ typedef ndmp9_just_error_reply	ndmp9_mover_connect_reply;
 
 /* NDMP9_MOVER_SET_RECORD_SIZE */
 struct ndmp9_mover_set_record_size_request {
-	u_long			record_size;
+	uint32_t		record_size;
 };
 typedef ndmp9_just_error_reply	ndmp9_mover_set_record_size_reply;
 
@@ -927,7 +931,7 @@ enum ndmp9_connect_reason {
 /* NDMP9_NOTIFY_CONNECTED */
 struct ndmp9_notify_connected_request {
 	ndmp9_connect_reason	reason;
-	u_short			protocol_version;
+	uint16_t		protocol_version;
 	string			text_reason<>;
 };
 
@@ -962,7 +966,7 @@ enum ndmp9_log_type {
 
 struct ndmp9_log_message_request {
 	ndmp9_log_type		log_type;
-	u_long			message_id;
+	uint32_t		message_id;
 	string			entry<>;
 	ndmp9_valid_u_long	associated_message_sequence;
 };

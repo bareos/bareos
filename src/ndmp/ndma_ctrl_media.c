@@ -90,7 +90,7 @@ ndmca_media_change (struct ndm_session *sess)
 }
 
 int
-ndmca_media_load_seek (struct ndm_session *sess, unsigned long long pos)
+ndmca_media_load_seek (struct ndm_session *sess, uint64_t pos)
 {
 	struct ndm_control_agent *ca = sess->control_acb;
 	struct ndm_job_param *	job = &ca->job;
@@ -356,7 +356,7 @@ ndmca_media_close_tape (struct ndm_session *sess)
 
 int
 ndmca_media_mtio_tape (struct ndm_session *sess,
-  ndmp9_tape_mtio_op op, u_long count, u_long *resid)
+  ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid)
 {
 	int			rc;
 
@@ -548,13 +548,13 @@ ndmca_media_tattle (struct ndm_session *sess)
  * tape file.
  */
 
-unsigned long long
+uint64_t
 ndmca_media_capture_tape_offset (struct ndm_session *sess)
 {
 	struct ndm_control_agent *ca = sess->control_acb;
 	struct ndm_job_param *	job = &ca->job;
 	int			rc;
-	unsigned long long	off;
+	uint64_t		off;
 
 	rc = ndmca_tape_get_state(sess);
 	if (rc) return NDMP_LENGTH_INFINITY;	/* invalid? */
@@ -578,7 +578,7 @@ ndmca_media_capture_mover_window (struct ndm_session *sess)
 	ndmp9_mover_state	ms = ca->mover_state.state;
 	ndmp9_mover_pause_reason pr = ca->mover_state.pause_reason;
 	char			buf[100];
-	unsigned long long	wlen;
+	uint64_t		wlen;
 
 	for (me = job->media_tab.head; me; me = me->next) {
 		if (me->index == ca->cur_media_ix)
@@ -640,7 +640,7 @@ ndmca_media_calculate_offsets (struct ndm_session *sess)
 	struct ndm_control_agent *ca = sess->control_acb;
 	struct ndm_job_param *	job = &ca->job;
 	struct ndmmedia *	me;
-	unsigned long long	offset = 0;
+	uint64_t		offset = 0;
 
 	for (me = job->media_tab.head; me; me = me->next) {
 		me->begin_offset = offset;

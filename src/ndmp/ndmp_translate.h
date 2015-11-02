@@ -130,9 +130,9 @@ convert_enum_to_9 (struct enum_conversion *ectab, int enum_x);
 extern int	/* ndmpx_.... */
 convert_enum_from_9 (struct enum_conversion *ectab, int enum_9);
 extern int
-convert_valid_u_long_to_9 (u_long *valx, ndmp9_valid_u_long *val9);
+convert_valid_u_long_to_9 (uint32_t *valx, ndmp9_valid_u_long *val9);
 extern int
-convert_valid_u_long_from_9 (u_long *valx, ndmp9_valid_u_long *val9);
+convert_valid_u_long_from_9 (uint32_t *valx, ndmp9_valid_u_long *val9);
 extern int
 convert_invalid_u_long_9 (struct ndmp9_valid_u_long *val9);
 extern int

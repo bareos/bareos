@@ -201,7 +201,7 @@ extern int	ndmchan_pre_poll (struct ndmchan *chtab[], unsigned n_chtab);
 extern int	ndmchan_post_poll (struct ndmchan *chtab[], unsigned n_chtab);
 extern void	ndmchan_compress (struct ndmchan *ch);
 extern int	ndmchan_n_avail (struct ndmchan *ch);
-extern int	ndmchan_n_avail_record (struct ndmchan *ch, unsigned long size);
+extern int	ndmchan_n_avail_record (struct ndmchan *ch, uint32_t size);
 extern int	ndmchan_n_avail_total (struct ndmchan *ch);
 extern int	ndmchan_n_ready (struct ndmchan *ch);
 extern enum ndmchan_read_interpretation
@@ -250,9 +250,9 @@ struct ndmconn {
 	XDR		xdrs;
 	unsigned char	frag_hdr_buf[4];	/* see ndmconn_readit() */
 	unsigned	fhb_off;
-	unsigned long	frag_resid;
+	uint32_t	frag_resid;
 
-	unsigned long	next_sequence;
+	uint32_t	next_sequence;
 
 	void		(*unexpected)(struct ndmconn *conn,
 					struct ndmp_msg_buf *nmb);
@@ -520,7 +520,7 @@ struct ndmscsi_request {
 	unsigned char *	data;
 	unsigned	n_data_avail;
 	unsigned	n_data_done;
-	unsigned long	_pad;
+	uint32_t	_pad;
 
 	unsigned char	n_sense_data;
 	unsigned char	sense_data[NDMSCSI_MAX_SENSE_DATA];
@@ -590,11 +590,11 @@ struct ndmmedia {
 	/* all fields are specified/actual depending on context */
 	char		label[NDMMEDIA_LABEL_MAX+1];
 	unsigned	file_mark_offset;
-	unsigned long long n_bytes;
+	uint64_t	n_bytes;
 	unsigned	slot_addr;
 
 	/* scratch pad */
-	unsigned long long begin_offset, end_offset;
+	uint64_t	begin_offset, end_offset;
 
 	int		index;
 	struct ndmmedia *next;
@@ -603,7 +603,7 @@ struct ndmmedia {
 extern int	ndmmedia_from_str (struct ndmmedia *me, char *str);
 extern int	ndmmedia_to_str (struct ndmmedia *me, char *str);
 extern int	ndmmedia_pp (struct ndmmedia *me, int lineno, char *buf);
-extern long long ndmmedia_strtoll (char *str, char **tailp, int defbase);
+extern int64_t	ndmmedia_strtoll (char *str, char **tailp, int defbase);
 
 
 
@@ -775,7 +775,7 @@ extern int	ndmcfg_loadfp (FILE *fp, ndmp9_config_info *config_info);
 struct ndmfhdb {
 	FILE *			fp;
 	int			use_dir_node;
-	unsigned long long	root_node;
+	uint64_t		root_node;
 };
 
 struct ndm_fhdb_callbacks {
@@ -811,11 +811,9 @@ extern int	ndmfhdb_dirnode_root (struct ndmfhdb *fhcb);
 extern int	ndmfhdb_dirnode_lookup (struct ndmfhdb *fhcb, char *path,
 			ndmp9_file_stat *fstat);
 extern int	ndmfhdb_dir_lookup (struct ndmfhdb *fhcb,
-			unsigned long long dir_node,
-			char *name, unsigned long long *node_p);
+			uint64_t dir_node, char *name, uint64_t *node_p);
 extern int	ndmfhdb_node_lookup (struct ndmfhdb *fhcb,
-			unsigned long long node,
-			ndmp9_file_stat *fstat);
+			uint64_t node, ndmp9_file_stat *fstat);
 extern int	ndmfhdb_file_root (struct ndmfhdb *fhcb);
 extern int	ndmfhdb_file_lookup (struct ndmfhdb *fhcb, char *path,
 			ndmp9_file_stat *fstat);

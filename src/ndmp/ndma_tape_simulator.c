@@ -148,7 +148,7 @@ ndmos_tape_sync_state (struct ndm_session *sess)
 
 ndmp9_error
 ndmos_tape_mtio (struct ndm_session *sess,
-  ndmp9_tape_mtio_op op, u_long count, u_long *resid)
+  ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid)
 {
 	ndmp9_error		err;
 	struct ndm_tape_agent *	ta = sess->tape_acb;
@@ -190,7 +190,7 @@ ndmos_tape_mtio (struct ndm_session *sess,
 
 ndmp9_error
 ndmos_tape_write (struct ndm_session *sess,
-  char *buf, u_long count, u_long *done_count)
+  char *buf, uint32_t count, uint32_t *done_count)
 {
 	ndmp9_error		err;
 	struct ndm_tape_agent *	ta = sess->tape_acb;
@@ -250,7 +250,7 @@ ndmos_tape_wfm (struct ndm_session *sess)
 
 ndmp9_error
 ndmos_tape_read (struct ndm_session *sess,
-  char *buf, u_long count, u_long *done_count)
+  char *buf, uint32_t count, uint32_t *done_count)
 {
 	ndmp9_error		err;
 	struct ndm_tape_agent *	ta = sess->tape_acb;

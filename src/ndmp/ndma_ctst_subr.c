@@ -540,11 +540,11 @@ ndmca_test_fill_data (char *buf, int bufsize, int recno, int fileno)
 	char *		srcend;
 	char *		dst = buf;
 	char *		dstend = buf+bufsize;
-	unsigned short	sequence = 0;
+	uint16_t	sequence = 0;
 	struct {
-		unsigned short	fileno;
-		unsigned short	sequence;
-		unsigned long	recno;
+		uint16_t	fileno;
+		uint16_t	sequence;
+		uint32_t	recno;
 	}		x;
 
 	x.fileno = fileno;

@@ -46,7 +46,7 @@ ndmlog_time_stamp (void)
 {
 	static char		buf[40];
 	struct timeval		now;
-	unsigned long		elapsed;
+	uint32_t		elapsed;
 	int			ms, sec, min, hour;
 
 	if (!start_time.tv_sec) {

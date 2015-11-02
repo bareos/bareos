@@ -318,22 +318,32 @@ xdr_ndmp3_u_quad(xdrs, objp)
 	register XDR *xdrs;
 	ndmp3_u_quad *objp;
 {
-	u_long		hi, lo;
+	uint32_t	hi, lo;
 
 	switch (xdrs->x_op) {
 	case XDR_DECODE:
-		if (XDR_GETLONG(xdrs, (long*)&hi)
-		 && XDR_GETLONG(xdrs, (long*)&lo)) {
-			*objp = ((unsigned long long)hi << 32) | (lo & 0xffffffff);
+#if defined(_LP64)
+		if (XDR_GETINT32(xdrs, (int32_t *)&hi)
+		 && XDR_GETINT32(xdrs, (int32_t *)&lo)) {
+#else
+		if (XDR_GETLONG(xdrs, (long *)&hi)
+		 && XDR_GETLONG(xdrs, (long *)&lo)) {
+#endif
+			*objp = ((uint64_t)hi << 32) | (lo & 0xffffffff);
 			return TRUE;
 		}
 		break;
 
 	case XDR_ENCODE:
 		hi = *objp >> 32;
-		lo = *objp;
-		return XDR_PUTLONG(xdrs, (long*)&hi)
-		    && XDR_PUTLONG(xdrs, (long*)&lo);
+		lo = *objp & 0xffffffff;
+#if defined(_LP64)
+		return XDR_PUTINT32(xdrs, (int32_t *)&hi)
+		    && XDR_PUTINT32(xdrs, (int32_t *)&lo);
+#else
+		return XDR_PUTLONG(xdrs, (long *)&hi)
+		    && XDR_PUTLONG(xdrs, (long *)&lo);
+#endif
 
 	case XDR_FREE:
 		return (TRUE);
