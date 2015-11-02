@@ -53,6 +53,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
    send_func = send_func_arg;
    send_ctx = send_ctx_arg;
    api = api_mode;
+   compact = false;
 
    result_message_plain = new POOL_MEM(PM_MESSAGE);
 #if HAVE_JANSSON
@@ -610,7 +611,11 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
       json_object_set(msg_obj, "result", result_json);
    }
 
-   string = json_dumps(msg_obj, UA_JSON_FLAGS);
+   if (compact) {
+      string = json_dumps(msg_obj, UA_JSON_FLAGS_COMPACT);
+   } else {
+      string = json_dumps(msg_obj, UA_JSON_FLAGS_NORMAL);
+   }
    string_length = strlen(string);
    Dmsg1(800, "message length (json): %lld\n", string_length);
    if (string == NULL) {

@@ -95,7 +95,7 @@ struct cmdstruct {
 static struct cmdstruct commands[] = {
    { NT_(".actiononpurge"), aopcmd, NULL, NULL, true, false },
    { NT_(".api"), api_cmd, _("Switch between different api modes"),
-     NT_("[ 0 | 1 | 2 | off | on | json ]"), false, false },
+     NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false },
    { NT_(".catalogs"), catalogscmd, _("List all catalog resources"),
       NULL, false, false },
    { NT_(".clients"), clientscmd, _("List all client resources"),
@@ -1152,11 +1152,9 @@ static bool typescmd(UAContext *ua, const char *cmd)
  */
 static bool api_cmd(UAContext *ua, const char *cmd)
 {
-   switch (ua->argc) {
-   case 1:
+   if (ua->argc == 1) {
       ua->api = 1;
-      break;
-   case 2:
+   } else if ((ua->argc >= 2) && (ua->argc <= 3)) {
       if (bstrcasecmp(ua->argk[1], "off") || bstrcasecmp(ua->argk[1], "0")) {
          ua->api = API_MODE_OFF;
          ua->batch = false;
@@ -1166,11 +1164,17 @@ static bool api_cmd(UAContext *ua, const char *cmd)
       } else if (bstrcasecmp(ua->argk[1], "json") || bstrcasecmp(ua->argk[1], "2")) {
          ua->api = API_MODE_JSON;
          ua->batch = true;
+         if ((ua->argc == 3) && (find_arg_with_value(ua, "compact") == 2)) {
+            if (bstrcasecmp(ua->argv[2], "yes")) {
+               ua->send->set_compact(true);
+            } else {
+               ua->send->set_compact(false);
+            }
+         }
       } else {
          return false;
       }
-      break;
-   default:
+   } else {
       return false;
    }
 

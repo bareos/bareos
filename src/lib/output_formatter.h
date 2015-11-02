@@ -33,7 +33,8 @@
 #define MSG_TYPE_ERROR   "error"
 
 #if HAVE_JANSSON
-#define UA_JSON_FLAGS JSON_INDENT(2)
+#define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
+#define UA_JSON_FLAGS_COMPACT JSON_COMPACT
 
 /*
  * See if the source file needs the full JANSSON namespace or that we can
@@ -56,6 +57,13 @@ public:
    void set_mode(int mode) { api = mode; };
    int  get_mode() { return api; };
 
+   /*
+    * Allow to set compact output mode. Only used for json api mode.
+    * There it can reduce the size of message by 1/3.
+    */
+   void set_compact(bool value) { compact = value; };
+   bool get_compact() { return compact; };
+
    void object_start(const char *name = NULL);
    void object_end(const char *name = NULL);
    void array_start(const char *name);
@@ -63,7 +71,7 @@ public:
    void decoration(const char *fmt, ...);
    /*
     * boolean and integer can not be used to distinguish overloading functions,
-   *  therefore the bool function have the postfix _bool.
+    * therefore the bool function have the postfix _bool.
     * The boolean value is given a string ("true" or "false") to the value_fmt string.
     * The format string must therefore match "%s".
     */
@@ -103,6 +111,7 @@ public:
 
 private:
    int api;
+   bool compact;
    SEND_HANDLER *send_func;
    void *send_ctx;
    POOL_MEM *result_message_plain;

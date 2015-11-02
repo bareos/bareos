@@ -31,10 +31,6 @@
 #include "bareos.h"
 #include "dird.h"
 
-#if HAVE_JANSSON
-#define UA_JSON_FLAGS JSON_INDENT(2)
-#endif
-
 /* Imported subroutines */
 
 /* Imported variables */
