@@ -86,6 +86,15 @@ Heads up! You are now able to <a href="<?php echo $this->url('restore', array())
 
 </div>
 
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pointLabels.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.categoryAxisRenderer.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.barRenderer.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pieRenderer.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.jqplot.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css');
+?>
+
 <script type="text/javascript">
 
         function chart1() {
