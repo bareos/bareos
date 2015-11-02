@@ -106,7 +106,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
          } else {
             Dmsg2(800, "create new json object %s (stack size: %d)\n",
                   name, result_stack_json->size());
-            json_object_set(json_object_current, name, json_object_new);
+            json_object_set_new(json_object_current, name, json_object_new);
          }
          result_stack_json->push(json_object_new);
       }
@@ -165,7 +165,7 @@ void OUTPUT_FORMATTER::array_start(const char *name)
                            "This should not happen. Ignoring.\n", name, result_stack_json->size());
          return;
       }
-      json_object_set(json_object_current, name, json_new);
+      json_object_set_new(json_object_current, name, json_new);
       result_stack_json->push(json_new);
       Dmsg1(800, "result stack: %d\n", result_stack_json->size());
       break;
@@ -477,7 +477,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
    }
 
 #if JANSSON_VERSION_HEX >= 0x020400
-   json_object_set(json_obj, lkey.c_str(), json_boolean(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_boolean(value));
 #else
    /*
     * The function json_boolean(bool) requires jansson >= 2.4,
@@ -488,7 +488,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
    } else {
       json_bool = json_false();
    }
-   json_object_set(json_obj, lkey.c_str(), json_bool);
+   json_object_set_new(json_obj, lkey.c_str(), json_bool);
 #endif
 
    return true;
@@ -504,7 +504,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
    if (json_obj == NULL) {
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
    }
-   json_object_set(json_obj, lkey.c_str(), json_integer(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_integer(value));
 
    return true;
 }
@@ -520,7 +520,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
       return false;
    }
-   json_object_set(json_obj, lkey.c_str(), json_string(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_string(value));
 
    return true;
 }
@@ -537,9 +537,9 @@ void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
    }
    if (message_type_array==NULL) {
       message_type_array=json_array();
-      json_object_set(message_object_json, type, message_type_array);
+      json_object_set_new(message_object_json, type, message_type_array);
    }
-   json_array_append_new(message_type_array,message_json);
+   json_array_append_new(message_type_array, message_json);
 }
 
 bool OUTPUT_FORMATTER::json_has_error_message()
@@ -555,17 +555,17 @@ bool OUTPUT_FORMATTER::json_has_error_message()
 
 void OUTPUT_FORMATTER::json_finalize_result(bool result)
 {
-   POOL_MEM string;
    json_t *msg_obj = json_object();
    json_t *error_obj;
    json_t *data_obj;
+   char *string;
 
    /*
     * We mimic json-rpc result and error messages,
     * To make it easier to implement real json-rpc later on.
     */
-   json_object_set(msg_obj, "jsonrpc", json_string("2.0"));
-   json_object_set(msg_obj, "id", json_null());
+   json_object_set_new(msg_obj, "jsonrpc", json_string("2.0"));
+   json_object_set_new(msg_obj, "id", json_null());
 
    if (!result || json_has_error_message()) {
       error_obj = json_object();
@@ -574,19 +574,31 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
       data_obj = json_object();
       json_object_set(data_obj, "result", result_json);
       json_object_set(data_obj, "messages", message_object_json);
-      json_object_set(error_obj, "data", data_obj);
+      json_object_set_new(error_obj, "data", data_obj);
       json_object_set_new(msg_obj, "error", error_obj);
    } else {
       json_object_set(msg_obj, "result", result_json);
    }
 
-   string.bsprintf("%s\n", json_dumps(msg_obj, UA_JSON_FLAGS));
-   send_func(send_ctx, string.c_str());
+   string = json_dumps(msg_obj, UA_JSON_FLAGS);
+   send_func(send_ctx, string);
+   if (string != NULL) {
+      Dmsg1(800, "message length (json): %lld\n", strlen(string));
+      free(string);
+   } else {
+      /*
+       * json_dumps return NULL on failure (this should not happen).
+       */
+      Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
+   }
 
+   /*
+    * empty result stack
+    */
    while (result_stack_json->pop()) {};
+   result_stack_json->push(result_json);
 
    json_object_clear(result_json);
-   result_stack_json->push(result_json);
    json_object_clear(message_object_json);
    json_object_clear(msg_obj);
 }
