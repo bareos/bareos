@@ -410,7 +410,7 @@ ndmca_tape_get_state_no_tattle (struct ndm_session *sess)
 
 int
 ndmca_tape_mtio (struct ndm_session *sess,
-  ndmp9_tape_mtio_op op, u_long count, u_long *resid)
+  ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;
@@ -611,7 +611,7 @@ ndmca_mover_stop (struct ndm_session *sess)
 
 int
 ndmca_mover_set_window (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;
@@ -627,7 +627,7 @@ ndmca_mover_set_window (struct ndm_session *sess,
 
 int
 ndmca_mover_read (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;

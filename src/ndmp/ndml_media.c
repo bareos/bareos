@@ -218,10 +218,10 @@ ndmmedia_pp (struct ndmmedia *me, int lineno, char *buf)
     return 6;
 }
 
-long long
+int64_t
 ndmmedia_strtoll (char *str, char **tailp, int defbase)
 {
-	long long		val = 0;
+	int64_t			val = 0;
 	int			c;
 
 	for (;;) {

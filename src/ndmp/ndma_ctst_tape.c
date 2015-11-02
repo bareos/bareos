@@ -78,7 +78,7 @@ extern int	ndmca_tt_read (struct ndm_session *sess);
 extern int	ndmca_tt_mtio (struct ndm_session *sess);
 
 extern int	ndmca_tt_check_fileno_recno (struct ndm_session *sess,
-			char *what, u_long file_num, u_long blockno,
+			char *what, uint32_t file_num, uint32_t blockno,
 			char *note);
 
 extern int	ndmca_test_tape_open (struct ndm_session *sess,
@@ -90,10 +90,10 @@ extern int	ndmca_test_tape_get_state (struct ndm_session *sess,
 			ndmp9_error expect_err);
 extern int	ndmca_test_tape_mtio (struct ndm_session *sess,
 			ndmp9_error expect_err,
-			ndmp9_tape_mtio_op op, u_long count, u_long *resid);
+			ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid);
 extern int	ndmca_check_tape_mtio (struct ndm_session *sess,
 			ndmp9_error expect_err,
-			ndmp9_tape_mtio_op op, u_long count, u_long resid);
+			ndmp9_tape_mtio_op op, uint32_t count, uint32_t resid);
 extern int	ndmca_test_tape_write (struct ndm_session *sess,
 			ndmp9_error expect_err,
 			char *buf, unsigned count);
@@ -784,7 +784,7 @@ ndmca_tt_mtio (struct ndm_session *sess)
 	unsigned	n_rec;
 	unsigned	recsize;
 	unsigned	fileno, recno;
-	u_long		count, resid;
+	uint32_t	count, resid;
 	char *		what;
 	char		note[128];
 	char		pbuf[64*1024];
@@ -964,7 +964,7 @@ ndmca_tt_mtio (struct ndm_session *sess)
 
 int
 ndmca_tt_check_fileno_recno (struct ndm_session *sess,
-  char *what, u_long file_num, u_long blockno, char *note)
+  char *what, uint32_t file_num, uint32_t blockno, char *note)
 {
 	struct ndm_control_agent *ca = sess->control_acb;
 	struct ndmp9_tape_get_state_reply *ts = 0;
@@ -1110,7 +1110,7 @@ ndmca_test_tape_get_state (struct ndm_session *sess, ndmp9_error expect_err)
 
 int
 ndmca_test_tape_mtio (struct ndm_session *sess, ndmp9_error expect_err,
-  ndmp9_tape_mtio_op op, u_long count, u_long *resid)
+  ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;
@@ -1127,10 +1127,10 @@ ndmca_test_tape_mtio (struct ndm_session *sess, ndmp9_error expect_err,
 
 int
 ndmca_check_tape_mtio (struct ndm_session *sess, ndmp9_error expect_err,
-		       ndmp9_tape_mtio_op op, u_long count, u_long resid)
+		       ndmp9_tape_mtio_op op, uint32_t count, uint32_t resid)
 {
     struct ndmconn *	conn = sess->plumb.tape;
-    u_long got_resid;
+    uint32_t got_resid;
     int rc;
 
     /* close previous test if there is one */

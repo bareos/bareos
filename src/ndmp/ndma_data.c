@@ -790,7 +790,7 @@ ndmda_send_notice (struct ndm_session *sess)
 
 void
 ndmda_send_data_read (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndm_data_agent *	da = sess->data_acb;
 	ndmp9_addr_type		addr_type;

@@ -697,7 +697,7 @@ wrap_parse_add_file_msg (char *buf, struct wrap_msg_buf *wmsg)
 }
 
 int
-wrap_send_add_file (FILE *fp, char *path, unsigned long long fhinfo,
+wrap_send_add_file (FILE *fp, char *path, uint64_t fhinfo,
   struct wrap_fstat *fstat)
 {
 	struct wrap_msg_buf	wmsg;
@@ -779,8 +779,8 @@ wrap_parse_add_dirent_msg (char *buf, struct wrap_msg_buf *wmsg)
 }
 
 int
-wrap_send_add_dirent (FILE *fp, char *name, unsigned long long fhinfo,
-  unsigned long long dir_fileno, unsigned long long fileno)
+wrap_send_add_dirent (FILE *fp, char *name, uint64_t fhinfo,
+  uint64_t dir_fileno, uint64_t fileno)
 {
 	struct wrap_msg_buf	wmsg;
 	struct wrap_add_dirent *res = &wmsg.body.add_dirent;
@@ -854,10 +854,10 @@ wrap_parse_add_node_msg (char *buf, struct wrap_msg_buf *wmsg)
 }
 
 int
-wrap_send_add_node (FILE *fp, unsigned long long fhinfo,
+wrap_send_add_node (FILE *fp, uint64_t fhinfo,
   struct wrap_fstat *fstat)
 {
-	unsigned long		save_valid;
+	uint32_t	save_valid;
 
 	if (!fp) return -1;
 
@@ -887,7 +887,7 @@ wrap_parse_fstat_subr (char **scanp, struct wrap_fstat *fstat)
 {
 	char *		scan = *scanp;
 	char *		p = scan+1;
-	unsigned long	valid = 0;
+	uint32_t	valid = 0;
 
 	valid = 0;
 	switch (*scan) {
@@ -1146,12 +1146,12 @@ wrap_parse_data_read_msg (char *buf, struct wrap_msg_buf *wmsg)
 
 int
 wrap_send_data_read (FILE *fp,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 
 	if (!fp) return -1;
 
-	fprintf (fp, "DR %lld %lld\n", (long long) offset, (long long)length);
+	fprintf (fp, "DR %lld %lld\n", (int64_t) offset, (int64_t)length);
 	fflush (fp);
 
 	return 0;
@@ -1191,8 +1191,8 @@ wrap_send_data_stats (FILE *fp)
 int
 wrap_reco_align_to_wanted (struct wrap_ccb *wccb)
 {
-	unsigned long long	distance;
-	unsigned long		unwanted_length;
+	uint64_t		distance;
+	uint64_t		unwanted_length;
 
    top:
 	/*
@@ -1305,7 +1305,7 @@ wrap_reco_receive (struct wrap_ccb *wccb)
 }
 
 int
-wrap_reco_consume (struct wrap_ccb *wccb, unsigned long length)
+wrap_reco_consume (struct wrap_ccb *wccb, uint32_t length)
 {
 	assert (wccb->have_length >= length);
 
@@ -1324,7 +1324,7 @@ wrap_reco_consume (struct wrap_ccb *wccb, unsigned long length)
 }
 
 int
-wrap_reco_must_have (struct wrap_ccb *wccb, unsigned long length)
+wrap_reco_must_have (struct wrap_ccb *wccb, uint32_t length)
 {
 	if (wccb->want_length < length)
 		wccb->want_length = length;
@@ -1344,9 +1344,9 @@ wrap_reco_must_have (struct wrap_ccb *wccb, unsigned long length)
 
 int
 wrap_reco_seek (struct wrap_ccb *wccb,
- unsigned long long want_offset,
- unsigned long long want_length,
- unsigned long must_have_length)
+ uint64_t want_offset,
+ uint64_t want_length,
+ uint32_t must_have_length)
 {
 	if (wccb->error)
 		return wccb->error;
@@ -1359,7 +1359,7 @@ wrap_reco_seek (struct wrap_ccb *wccb,
 
 int
 wrap_reco_pass (struct wrap_ccb *wccb, int write_fd,
-  unsigned long long length, unsigned write_bsize)
+  uint64_t length, unsigned write_bsize)
 {
 	unsigned		cnt;
 	int			rc;
@@ -1388,8 +1388,8 @@ wrap_reco_pass (struct wrap_ccb *wccb, int write_fd,
 int
 wrap_reco_issue_read (struct wrap_ccb *wccb)
 {
-	unsigned long long		off;
-	unsigned long long		len;
+	uint64_t		off;
+	uint64_t		len;
 
 	assert (wccb->reading_length == 0);
 

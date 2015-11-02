@@ -298,21 +298,21 @@ ndmos_tape_close (struct ndm_session *sess)
 
 ndmp9_error
 ndmos_tape_write (struct ndm_session *sess, char *data,
-  unsigned long count, unsigned long * done_count)
+  uint32_t count, uint32_t * done_count)
 {
 	return NDMP9_NOT_SUPPORTED_ERR;
 }
 
 ndmp9_error
 ndmos_tape_read (struct ndm_session *sess, char *data,
-  unsigned long count, unsigned long * done_count)
+  uint32_t count, uint32_t * done_count)
 {
 	return NDMP9_NOT_SUPPORTED_ERR;
 }
 
 ndmp9_error
 ndmos_tape_mtio (struct ndm_session *sess, ndmp9_tape_mtio_op op,
-  unsigned long count, unsigned long * done_count)
+  uint32_t count, uint32_t * done_count)
 {
 	return NDMP9_NOT_SUPPORTED_ERR;
 }

@@ -375,7 +375,7 @@ ndmchan_n_avail (struct ndmchan *ch) {
 }
 
 int
-ndmchan_n_avail_record (struct ndmchan *ch, unsigned long size) {
+ndmchan_n_avail_record (struct ndmchan *ch, uint32_t size) {
 	if (ch->end_ix == ch->beg_ix)
 		ch->end_ix = ch->beg_ix = 0;
 

@@ -986,7 +986,7 @@ struct smc_raw_element_address_assignment_page {
 
 
 #define SMC_GET2(VEC) \
-	(unsigned short) \
+	(uint16_t) \
 		(  (((unsigned char)(VEC)[0] << 8)) \
 		 + (((unsigned char)(VEC)[1])))
 
@@ -995,7 +995,7 @@ struct smc_raw_element_address_assignment_page {
 	 (VEC)[1] = (unsigned char)((VAL)))
 
 #define SMC_GET3(VEC) \
-	(unsigned long) \
+	(uint32_t) \
 		(  (((unsigned char)(VEC)[0] << 16)) \
 		 + (((unsigned char)(VEC)[1] << 8)) \
 		 + ((unsigned char)(VEC)[2]))
@@ -1006,7 +1006,7 @@ struct smc_raw_element_address_assignment_page {
 	 (VEC)[2] = (unsigned char)((VAL)))
 
 #define SMC_GET4(VEC) \
-	(unsigned long) \
+	(uint32_t) \
 		(  (((unsigned char)(VEC)[0] << 24)) \
 		 + (((unsigned char)(VEC)[1] << 16)) \
 		 + (((unsigned char)(VEC)[2] << 8)) \

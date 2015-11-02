@@ -47,18 +47,23 @@
  * $Id: ndmp.x,v 1.11 1998/05/26 03:52:12 tim Exp $
  */
 
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+%#pragma GCC diagnostic ignored "-Wunused-variable"
+%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
+%#endif
+
 %#ifndef NDMOS_OPTION_NO_NDMP3
 
 const NDMP3VER = 3;
 const NDMP3PORT = 10000;
 
-%#define ndmp3_u_quad unsigned long long
+%#define ndmp3_u_quad uint64_t
 %extern bool_t xdr_ndmp3_u_quad();
 
 struct _ndmp3_u_quad
 {
-	u_long		high;
-	u_long		low;
+	uint32_t	high;
+	uint32_t	low;
 };
 
 struct ndmp3_pval
@@ -181,11 +186,11 @@ enum ndmp3_message
 
 struct ndmp3_header
 {
-	u_long			sequence;	/* monotonically increasing */
-	u_long			time_stamp;	/* time stamp of message */
+	uint32_t		sequence;	/* monotonically increasing */
+	uint32_t		time_stamp;	/* time stamp of message */
 	ndmp3_header_message_type message_type;	/* what type of message */
 	ndmp3_message		message;	/* message number */
-	u_long			reply_sequence;	/* reply is in response to */
+	uint32_t		reply_sequence;	/* reply is in response to */
 	ndmp3_error		error;		/* communications errors */
 };
 
@@ -196,7 +201,7 @@ struct ndmp3_header
 /* NDMP3_CONNECT_OPEN */
 struct ndmp3_connect_open_request
 {
-	u_short	protocol_version;	/* the version of protocol supported */
+	uint16_t	protocol_version;	/* the version of protocol supported */
 };
 
 struct ndmp3_connect_open_reply
@@ -343,7 +348,7 @@ struct ndmp3_butype_info
 {
 	string		butype_name<>;
 	ndmp3_pval	default_env<>;
-	u_long		attrs;
+	uint32_t	attrs;
 };
 
 /* NDMP3_CONFIG_GET_BUTYPE_INFO */
@@ -363,7 +368,7 @@ const	NDMP3_FS_INFO_USED_INODES_INVALID	= 0x00000010;
 
 struct ndmp3_fs_info
 {
-	u_long		invalid;
+	uint32_t	invalid;
 	string		fs_type<>;
 	string		fs_logical_device<>;
 	string		fs_physical_device<>;
@@ -393,7 +398,7 @@ const NDMP3_TAPE_ATTR_UNLOAD 	= 0x00000002;
 struct ndmp3_device_capability
 {
 	string		device<>;
-	u_long		attr;
+	uint32_t	attr;
 	ndmp3_pval	capability<>;
 };
 
@@ -454,9 +459,9 @@ struct ndmp3_scsi_get_state_reply
 struct ndmp3_scsi_set_target_request
 {
 	string		device<>;
-	u_short		target_controller;
-	u_short		target_id;
-	u_short		target_lun;
+	uint16_t	target_controller;
+	uint16_t	target_id;
+	uint16_t	target_lun;
 };
 
 struct ndmp3_scsi_set_target_reply
@@ -484,9 +489,9 @@ const NDMP3_SCSI_DATA_OUT = 0x00000002;	/* Transfer data to SCSI device */
 
 struct ndmp3_execute_cdb_request
 {
-	u_long		flags;
-	u_long		timeout;
-	u_long		datain_len;	/* Set for expected datain */
+	uint32_t	flags;
+	uint32_t	timeout;
+	uint32_t	datain_len;	/* Set for expected datain */
 	opaque		cdb<>;
 	opaque		dataout<>;
 };
@@ -495,7 +500,7 @@ struct ndmp3_execute_cdb_reply
 {
 	ndmp3_error	error;
 	u_char		status;		/* SCSI status bytes */
-	u_long		dataout_len;
+	uint32_t	dataout_len;
 	opaque		datain<>;	/* SCSI datain */
 	opaque		ext_sense<>;	/* Extended sense data */
 };
@@ -549,16 +554,16 @@ const NDMP3_TAPE_STATE_PARTITION_INVALID	= 0x00000040;
 
 struct ndmp3_tape_get_state_reply
 {
-	u_long		invalid;
+	uint32_t	invalid;
 	ndmp3_error	error;
-	u_long		flags;
-	u_long		file_num;
-	u_long		soft_errors;
-	u_long		block_size;
-	u_long		blockno;
+	uint32_t	flags;
+	uint32_t	file_num;
+	uint32_t	soft_errors;
+	uint32_t	block_size;
+	uint32_t	blockno;
 	ndmp3_u_quad	total_space;
 	ndmp3_u_quad	space_remain;
-	u_long		partition;
+	uint32_t	partition;
 };
 
 /* NDMP3_TAPE_MTIO */
@@ -576,13 +581,13 @@ enum ndmp3_tape_mtio_op
 struct ndmp3_tape_mtio_request
 {
 	ndmp3_tape_mtio_op	tape_op;
-	u_long			count;
+	uint32_t		count;
 };
 
 struct ndmp3_tape_mtio_reply
 {
 	ndmp3_error	error;
-	u_long		resid_count;
+	uint32_t	resid_count;
 };
 
 /* NDMP3_TAPE_WRITE */
@@ -594,13 +599,13 @@ struct ndmp3_tape_write_request
 struct ndmp3_tape_write_reply
 {
 	ndmp3_error	error;
-	u_long		count;
+	uint32_t	count;
 };
 
 /* NDMP3_TAPE_READ */
 struct ndmp3_tape_read_request
 {
-	u_long		count;
+	uint32_t	count;
 };
 
 struct ndmp3_tape_read_reply
@@ -656,13 +661,13 @@ enum ndmp3_mover_mode
 
 struct ndmp3_tcp_addr
 {
-	u_long	ip_addr;
-	u_short	port;
+	uint32_t	ip_addr;
+	uint16_t	port;
 };
 
 struct ndmp3_fc_addr
 {
-	u_long	loop_id;
+	uint32_t	loop_id;
 };
 
 struct ndmp3_ipc_addr
@@ -689,8 +694,8 @@ struct ndmp3_mover_get_state_reply
 	ndmp3_mover_state	state;
 	ndmp3_mover_pause_reason pause_reason;
 	ndmp3_mover_halt_reason	halt_reason;
-	u_long			record_size;
-	u_long			record_num;
+	uint32_t		record_size;
+	uint32_t		record_num;
 	ndmp3_u_quad		data_written;
 	ndmp3_u_quad		seek_position;
 	ndmp3_u_quad		bytes_left_to_read;
@@ -726,7 +731,7 @@ struct ndmp3_mover_connect_reply
 /* NDMP3_MOVER_SET_RECORD_SIZE */
 struct ndmp3_mover_set_record_size_request
 {
-	u_long		len;
+	uint32_t	len;
 };
 
 struct ndmp3_mover_set_record_size_reply
@@ -824,14 +829,14 @@ const NDMP3_DATA_STATE_EST_TIME_REMAIN_INVALID	= 0x00000002;
 
 struct ndmp3_data_get_state_reply
 {
-	u_long			invalid;
+	uint32_t		invalid;
 	ndmp3_error		error;
 	ndmp3_data_operation	operation;
 	ndmp3_data_state	state;
 	ndmp3_data_halt_reason	halt_reason;
 	ndmp3_u_quad		bytes_processed;
 	ndmp3_u_quad		est_bytes_remain;
-	u_long			est_time_remain;
+	uint32_t		est_time_remain;
 	ndmp3_addr		data_connection_addr;
 	ndmp3_u_quad		read_offset;
 	ndmp3_u_quad		read_length;
@@ -942,7 +947,7 @@ enum ndmp3_connect_reason
 struct ndmp3_notify_connected_request
 {
 	ndmp3_connect_reason	reason;
-	u_short			protocol_version;
+	uint16_t		protocol_version;
 	string			text_reason<>;
 };
 
@@ -986,7 +991,7 @@ enum ndmp3_log_type
 struct ndmp3_log_message_request
 {
 	ndmp3_log_type	log_type;
-	u_long		message_id;
+	uint32_t	message_id;
 	string		entry<>;
 };
 /* No reply */
@@ -1048,17 +1053,17 @@ const NDMP3_FILE_STAT_GROUP_INVALID	= 0x00000004;
 
 struct ndmp3_file_stat
 {
-	u_long			invalid;
+	uint32_t		invalid;
 	ndmp3_fs_type		fs_type;
 	ndmp3_file_type		ftype;
-	u_long			mtime;
-	u_long			atime;
-	u_long			ctime;
-	u_long			owner; /* uid for UNIX, owner for NT */
-	u_long			group; /* gid for UNIX, NA for NT */
-	u_long			fattr; /* mode for UNIX, fattr for NT */
+	uint32_t		mtime;
+	uint32_t		atime;
+	uint32_t		ctime;
+	uint32_t		owner; /* uid for UNIX, owner for NT */
+	uint32_t		group; /* gid for UNIX, NA for NT */
+	uint32_t		fattr; /* mode for UNIX, fattr for NT */
 	ndmp3_u_quad		size;
-	u_long			links;
+	uint32_t		links;
 };
 
 

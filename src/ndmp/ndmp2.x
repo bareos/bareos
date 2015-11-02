@@ -48,18 +48,23 @@
  *
  */
 
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+%#pragma GCC diagnostic ignored "-Wunused-variable"
+%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
+%#endif
+
 %#ifndef NDMOS_OPTION_NO_NDMP2
 
 const NDMP2VER = 2;
 const NDMP2PORT = 10000;
 
-%#define ndmp2_u_quad unsigned long long
+%#define ndmp2_u_quad uint64_t
 %extern bool_t xdr_ndmp2_u_quad();
 
 struct _ndmp2_u_quad
 {
-	u_long		high;
-	u_long		low;
+	uint32_t	high;
+	uint32_t	low;
 };
 
 struct ndmp2_pval
@@ -182,11 +187,11 @@ enum ndmp2_message
 
 struct ndmp2_header
 {
-	u_long			sequence;	/* monotonically increasing */
-	u_long			time_stamp;	/* time stamp of message */
+	uint32_t		sequence;	/* monotonically increasing */
+	uint32_t		time_stamp;	/* time stamp of message */
 	ndmp2_header_message_type message_type;	/* what type of message */
 	ndmp2_message		message;	/* message number */
-	u_long			reply_sequence;	/* reply is in response to */
+	uint32_t		reply_sequence;	/* reply is in response to */
 	ndmp2_error		error;		/* communications errors */
 };
 
@@ -196,7 +201,7 @@ struct ndmp2_header
 /* NDMP2_CONNECT_OPEN */
 struct ndmp2_connect_open_request
 {
-	u_short	protocol_version;	/* the version of protocol supported */
+	uint16_t	protocol_version;	/* the version of protocol supported */
 };
 
 struct ndmp2_connect_open_reply
@@ -301,7 +306,7 @@ struct ndmp2_config_get_butype_attr_request
 struct ndmp2_config_get_butype_attr_reply
 {
 	ndmp2_error	error;
-	u_long		attrs;
+	uint32_t	attrs;
 };
 
 /* NDMP2_CONFIG_GET_MOVER_TYPE */
@@ -365,9 +370,9 @@ struct ndmp2_scsi_get_state_reply
 struct ndmp2_scsi_set_target_request
 {
 	ndmp2_scsi_device device;
-	u_short		target_controller;
-	u_short		target_id;
-	u_short		target_lun;
+	uint16_t	target_controller;
+	uint16_t	target_id;
+	uint16_t	target_lun;
 };
 
 struct ndmp2_scsi_set_target_reply
@@ -395,9 +400,9 @@ const NDMP2_SCSI_DATA_OUT = 0x00000002;	/* Transfer data to SCSI device */
 
 struct ndmp2_execute_cdb_request
 {
-	u_long		flags;
-	u_long		timeout;
-	u_long		datain_len;	/* Set for expected datain */
+	uint32_t	flags;
+	uint32_t	timeout;
+	uint32_t	datain_len;	/* Set for expected datain */
 	opaque		cdb<>;
 	opaque		dataout<>;
 };
@@ -406,7 +411,7 @@ struct ndmp2_execute_cdb_reply
 {
 	ndmp2_error	error;
 	u_char		status;		/* SCSI status bytes */
-	u_long		dataout_len;
+	uint32_t	dataout_len;
 	opaque		datain<>;	/* SCSI datain */
 	opaque		ext_sense<>;	/* Extended sense data */
 };
@@ -452,11 +457,11 @@ const NDMP2_TAPE_UNLOAD   = 0x0040;	/* tape will be unloaded when
 struct ndmp2_tape_get_state_reply
 {
 	ndmp2_error	error;
-	u_long		flags;
-	u_long		file_num;
-	u_long		soft_errors;
-	u_long		block_size;
-	u_long		blockno;
+	uint32_t	flags;
+	uint32_t	file_num;
+	uint32_t	soft_errors;
+	uint32_t	block_size;
+	uint32_t	blockno;
 	ndmp2_u_quad	total_space;
 	ndmp2_u_quad	space_remain;
 };
@@ -476,13 +481,13 @@ enum ndmp2_tape_mtio_op
 struct ndmp2_tape_mtio_request
 {
 	ndmp2_tape_mtio_op	tape_op;
-	u_long			count;
+	uint32_t		count;
 };
 
 struct ndmp2_tape_mtio_reply
 {
 	ndmp2_error	error;
-	u_long		resid_count;
+	uint32_t	resid_count;
 };
 
 /* NDMP2_TAPE_WRITE */
@@ -494,13 +499,13 @@ struct ndmp2_tape_write_request
 struct ndmp2_tape_write_reply
 {
 	ndmp2_error	error;
-	u_long		count;
+	uint32_t	count;
 };
 
 /* NDMP2_TAPE_READ */
 struct ndmp2_tape_read_request
 {
-	u_long		count;
+	uint32_t	count;
 };
 
 struct ndmp2_tape_read_reply
@@ -551,8 +556,8 @@ struct ndmp2_mover_get_state_reply
 	ndmp2_mover_state	state;
 	ndmp2_mover_pause_reason pause_reason;
 	ndmp2_mover_halt_reason	halt_reason;
-	u_long			record_size;
-	u_long			record_num;
+	uint32_t		record_size;
+	uint32_t		record_num;
 	ndmp2_u_quad		data_written;
 	ndmp2_u_quad		seek_position;
 	ndmp2_u_quad		bytes_left_to_read;
@@ -570,8 +575,8 @@ enum ndmp2_mover_mode
 
 struct ndmp2_mover_tcp_addr
 {
-	u_long		ip_addr;
-	u_short		port;
+	uint32_t	ip_addr;
+	uint16_t	port;
 };
 
 union ndmp2_mover_addr switch (ndmp2_mover_addr_type addr_type)
@@ -597,7 +602,7 @@ struct ndmp2_mover_listen_reply
 /* NDMP2_MOVER_SET_RECORD_SIZE */
 struct ndmp2_mover_set_record_size_request
 {
-	u_long		len;
+	uint32_t	len;
 };
 
 struct ndmp2_mover_set_record_size_reply
@@ -694,7 +699,7 @@ struct ndmp2_data_get_state_reply
 	ndmp2_data_halt_reason	halt_reason;
 	ndmp2_u_quad		bytes_processed;
 	ndmp2_u_quad		est_bytes_remain;
-	u_long			est_time_remain;
+	uint32_t		est_time_remain;
 	ndmp2_mover_addr	mover;
 	ndmp2_u_quad		read_offset;
 	ndmp2_u_quad		read_length;
@@ -718,7 +723,7 @@ struct ndmp2_name
 {
 	string		name<>;
 	string		dest<>;
-	u_short		ssid;
+	uint16_t	ssid;
 	ndmp2_u_quad	fh_info;
 };
 
@@ -784,7 +789,7 @@ enum ndmp2_connect_reason
 struct ndmp2_notify_connected_request
 {
 	ndmp2_connect_reason	reason;
-	u_short			protocol_version;
+	uint16_t		protocol_version;
 	string			text_reason<>;
 };
 
@@ -847,7 +852,7 @@ struct ndmp2_log_debug_request
 struct ndmp2_log_file_request
 {
 	string		name<>;
-	u_short		ssid;
+	uint16_t	ssid;
 	ndmp2_error	error;
 };
 /* No reply */
@@ -871,12 +876,12 @@ enum ndmp2_unix_file_type
 struct ndmp2_unix_file_stat
 {
 	ndmp2_unix_file_type	ftype;
-	u_long			mtime;
-	u_long			atime;
-	u_long			ctime;
-	u_long			uid;
-	u_long			gid;
-	u_long			mode;
+	uint32_t		mtime;
+	uint32_t		atime;
+	uint32_t		ctime;
+	uint32_t		uid;
+	uint32_t		gid;
+	uint32_t		mode;
 	ndmp2_u_quad		size;
 	ndmp2_u_quad		fh_info;
 };
@@ -897,8 +902,8 @@ struct ndmp2_fh_add_unix_path_request
 struct ndmp2_fh_unix_dir
 {
 	ndmp2_unix_path		name;
-	u_long			node;
-	u_long			parent;
+	uint32_t		node;
+	uint32_t		parent;
 };
 
 struct ndmp2_fh_add_unix_dir_request
@@ -910,7 +915,7 @@ struct ndmp2_fh_add_unix_dir_request
 struct ndmp2_fh_unix_node
 {
 	ndmp2_unix_file_stat	fstat;
-	u_long			node;
+	uint32_t		node;
 };
 
 struct ndmp2_fh_add_unix_node_request

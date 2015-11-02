@@ -324,7 +324,7 @@ ndma_destroy_nlist (struct ndm_nlist_table *nlist)
  * Return entry if caller want to modify it.
  */
 struct ndmmedia *
-ndma_store_media (struct ndm_media_table *mtab, unsigned short element_address)
+ndma_store_media (struct ndm_media_table *mtab, uint16_t element_address)
 {
 	struct ndmmedia *	me;
 

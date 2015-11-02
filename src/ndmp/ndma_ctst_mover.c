@@ -93,12 +93,12 @@ extern int	ndmca_test_mover_stop (struct ndm_session *sess,
 			ndmp9_error expect_err);
 extern int	ndmca_test_mover_set_window (struct ndm_session *sess,
 			ndmp9_error expect_err,
-			unsigned long long offset,
-			unsigned long long length);
+			uint64_t offset,
+			uint64_t length);
 extern int	ndmca_test_mover_read (struct ndm_session *sess,
 			ndmp9_error expect_err,
-			unsigned long long offset,
-			unsigned long long length);
+			uint64_t offset,
+			uint64_t length);
 extern int	ndmca_test_mover_close (struct ndm_session *sess,
 			ndmp9_error expect_err);
 extern int	ndmca_test_mover_set_record_size (struct ndm_session *sess,
@@ -753,7 +753,7 @@ ndmca_test_mover_stop (struct ndm_session *sess, ndmp9_error expect_err)
 
 int
 ndmca_test_mover_set_window (struct ndm_session *sess, ndmp9_error expect_err,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;
@@ -770,7 +770,7 @@ ndmca_test_mover_set_window (struct ndm_session *sess, ndmp9_error expect_err,
 
 int
 ndmca_test_mover_read (struct ndm_session *sess, ndmp9_error expect_err,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndmconn *	conn = sess->plumb.tape;
 	int			rc;

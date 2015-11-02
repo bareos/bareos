@@ -1010,7 +1010,7 @@ ndmca_monitor_seek_tape (struct ndm_session *sess)
 {
 	struct ndm_control_agent *ca = sess->control_acb;
 	int			rc;
-	unsigned long long	pos;
+	uint64_t		pos;
 
 	pos = ca->last_notify_mover_paused.seek_position;
 

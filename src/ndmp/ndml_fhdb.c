@@ -204,8 +204,8 @@ ndmfhdb_dirnode_lookup (struct ndmfhdb *fhcb, char *path,
 	char *			p;
 	char *			q;
 	char			component[256+128];
-	unsigned long long	dir_node;
-	unsigned long long	node;
+	uint64_t		dir_node;
+	uint64_t		node;
 
 	/* classic path name reduction */
 	node = dir_node = fhcb->root_node;
@@ -236,8 +236,8 @@ ndmfhdb_dirnode_lookup (struct ndmfhdb *fhcb, char *path,
 }
 
 int
-ndmfhdb_dir_lookup (struct ndmfhdb *fhcb, unsigned long long dir_node,
-  char *name, unsigned long long *node_p)
+ndmfhdb_dir_lookup (struct ndmfhdb *fhcb, uint64_t dir_node,
+  char *name, uint64_t *node_p)
 {
 	int		rc, off;
 	char *		p;
@@ -270,7 +270,7 @@ ndmfhdb_dir_lookup (struct ndmfhdb *fhcb, unsigned long long dir_node,
 }
 
 int
-ndmfhdb_node_lookup (struct ndmfhdb *fhcb, unsigned long long node,
+ndmfhdb_node_lookup (struct ndmfhdb *fhcb, uint64_t node,
   ndmp9_file_stat *fstat)
 {
 	int		rc, off;

@@ -1251,7 +1251,7 @@ ndmp_sxa_tape_mtio (struct ndm_session *sess,
 	ndmp9_error		error;
 	ndmp9_tape_mtio_op	tape_op;
 	int			will_write = 0;
-	unsigned long		resid = 0;
+	uint32_t		resid = 0;
 
       NDMS_WITH(ndmp9_tape_mtio)
 
@@ -1299,7 +1299,7 @@ ndmp_sxa_tape_write (struct ndm_session *sess,
   struct ndmp_xa_buf *xa, struct ndmconn *ref_conn)
 {
 	ndmp9_error		error;
-	unsigned long		done_count = 0;
+	uint32_t		done_count = 0;
 
       NDMS_WITH(ndmp9_tape_write)
 	if (request->data_out.data_out_len == 0) {
@@ -1349,7 +1349,7 @@ ndmp_sxa_tape_read (struct ndm_session *sess,
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 	ndmp9_error		error;
-	unsigned long		done_count = 0;
+	uint32_t		done_count = 0;
 
 	/*
 	 * We are about to read data into a tape buffer so make sure
@@ -2468,8 +2468,8 @@ ndmp_sxa_mover_set_window (struct ndm_session *sess,
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 	struct ndmp9_mover_get_state_reply *ms = &ta->mover_state;
-	unsigned long long	max_len;
-	unsigned long long	end_win;
+	uint64_t	max_len;
+	uint64_t	end_win;
 
       NDMS_WITH(ndmp9_mover_set_window)
 	ndmta_mover_sync_state (sess);
@@ -3237,7 +3237,7 @@ ndmp_sxa_fh_add_node (struct ndm_session *sess,
 
 int
 ndmta_local_mover_read (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 	struct ndmp9_mover_get_state_reply *ms = &ta->mover_state;
