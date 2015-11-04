@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,6 +63,7 @@ extern bool dot_catalogs_cmd(UAContext *ua, const char *cmd);
 extern bool dot_admin_cmds(UAContext *ua, const char *cmd);
 extern bool dot_jobdefs_cmd(UAContext *ua, const char *cmd);
 extern bool dot_jobs_cmd(UAContext *ua, const char *cmd);
+extern bool dot_jobstatus_cmd(UAContext *ua, const char *cmd);
 extern bool dot_filesets_cmd(UAContext *ua, const char *cmd);
 extern bool dot_clients_cmd(UAContext *ua, const char *cmd);
 extern bool dot_msgs_cmd(UAContext *ua, const char *cmd);
@@ -171,6 +172,8 @@ static struct cmdstruct commands[] = {
      NULL, true, false },
    { NT_(".jobs"), dot_jobs_cmd, _("List job resources"),
      NT_("type=<jobtype>"), true, false },
+   { NT_(".jobstatus"), dot_jobstatus_cmd, _("List jobstatus information"),
+     NT_("[ =<jobstatus> ]"), true, false },
    { NT_(".levels"), dot_levels_cmd, _("List all backup levels"),
      NULL, false, false },
    { NT_(".locations"), dot_locations_cmd, NULL, NULL, true, false },

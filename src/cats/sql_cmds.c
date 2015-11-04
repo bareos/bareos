@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -145,6 +145,35 @@ const char *list_jobs_last =
    "%s "
    "GROUP BY Job.Name "
    "%s";
+
+const char *get_jobstatus_details =
+   "SELECT DISTINCT "
+     "JobStatus,JobStatusLong,Severity,"
+      /*
+       * JS_Error 'e'  Non-fatal error
+       * JS_FatalError 'f' Fatal error
+       * JS_Canceled 'A'
+       * JS_ErrorTerminated 'E'
+       * JS_Terminated 'T'
+       * JS_Warnings 'W'
+       */
+      "CASE "
+         /* Ok */
+         "WHEN JobStatus in ('T') THEN '0' "
+         /* Warning */
+         "WHEN JobStatus in ('W') THEN '1' "
+         /* Critical */
+         "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2' "
+      "END as ExitLevel, "
+      "CASE "
+         "WHEN JobStatus in ('T') THEN 'Ok' "
+         "WHEN JobStatus in ('W') THEN 'Warning' "
+         "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error' "
+      "END as ExitStatus "
+   "FROM Status "
+   /* optional WHERE */
+   "%s "
+   "ORDER BY JobStatus";
 
 /* ====== ua_prune.c */
 

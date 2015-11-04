@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -782,6 +782,33 @@ bool dot_jobs_cmd(UAContext *ua, const char *cmd)
    UnlockRes();
 
    return true;
+}
+
+bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
+{
+   bool retval = false;
+   POOL_MEM select;
+   POOL_MEM where;
+
+   if (ua->argv[0]) {
+      if (strlen(ua->argv[0]) == 1) {
+         Mmsg(where, "WHERE JobStatus = '%c' ", ua->argv[0][0]);
+      } else {
+         ua->error_msg(_("Unknown JobStatus '%s'. JobStatus must be a single character.\n"), ua->argv[0]);
+         return false;
+      }
+   }
+   Mmsg(select, get_jobstatus_details, where.c_str());
+
+   if (!open_client_db(ua)) {
+      return false;
+   }
+
+   ua->send->array_start("jobstatus");
+   retval = db_list_sql_query(ua->jcr, ua->db, select.c_str(), ua->send, HORZ_LIST, false);
+   ua->send->array_end("jobstatus");
+
+   return retval;
 }
 
 bool dot_filesets_cmd(UAContext *ua, const char *cmd)
