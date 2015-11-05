@@ -474,7 +474,7 @@ Requires:   bareos-filedaemon = %{version}
 Summary:    LDAP Python plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
-Requires:   filedaemon-python-plugin = %{version}
+Requires:   bareos-filedaemon-python-plugin = %{version}
 Requires:   python-ldap
 
 %package    storage-python-plugin
