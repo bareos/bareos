@@ -36,6 +36,15 @@
  */
 #define WRAP_EXTRA_BYTES 50
 
+const char *json_error_message_template = "{ "
+  "\"jsonrpc\": \"2.0\", "
+  "\"id\": null, "
+  "\"error\": { "
+    "\"message\": \"%s\", "
+    "\"code\": 1 "
+  "} "
+"}\n";
+
 OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
                                    void *send_ctx_arg, int api_mode)
 {
@@ -44,6 +53,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
    send_func = send_func_arg;
    send_ctx = send_ctx_arg;
    api = api_mode;
+   compact = false;
 
    result_message_plain = new POOL_MEM(PM_MESSAGE);
 #if HAVE_JANSSON
@@ -106,7 +116,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
          } else {
             Dmsg2(800, "create new json object %s (stack size: %d)\n",
                   name, result_stack_json->size());
-            json_object_set(json_object_current, name, json_object_new);
+            json_object_set_new(json_object_current, name, json_object_new);
          }
          result_stack_json->push(json_object_new);
       }
@@ -165,7 +175,7 @@ void OUTPUT_FORMATTER::array_start(const char *name)
                            "This should not happen. Ignoring.\n", name, result_stack_json->size());
          return;
       }
-      json_object_set(json_object_current, name, json_new);
+      json_object_set_new(json_object_current, name, json_new);
       result_stack_json->push(json_new);
       Dmsg1(800, "result stack: %d\n", result_stack_json->size());
       break;
@@ -402,12 +412,23 @@ void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
    string.strcpy(rewrap_string);
 }
 
-void OUTPUT_FORMATTER::process_text_buffer()
+bool OUTPUT_FORMATTER::process_text_buffer()
 {
-   if (result_message_plain->strlen() > 0) {
-      send_func(send_ctx, result_message_plain->c_str());
+   bool retval = false;
+   POOL_MEM error_msg;
+   size_t string_length = 0;
+
+   string_length = result_message_plain->strlen();
+   if (string_length > 0) {
+      retval = send_func(send_ctx, result_message_plain->c_str());
+      if (!retval) {
+         error_msg.bsprintf("Failed to send message. Maybe result message to long?\n"
+                            "Message length = %lld\n", string_length);
+         Emsg0(M_ERROR, 0, error_msg.c_str());
+      }
       result_message_plain->strcpy("");
    }
+   return retval;
 }
 
 void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)
@@ -477,7 +498,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
    }
 
 #if JANSSON_VERSION_HEX >= 0x020400
-   json_object_set(json_obj, lkey.c_str(), json_boolean(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_boolean(value));
 #else
    /*
     * The function json_boolean(bool) requires jansson >= 2.4,
@@ -488,7 +509,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
    } else {
       json_bool = json_false();
    }
-   json_object_set(json_obj, lkey.c_str(), json_bool);
+   json_object_set_new(json_obj, lkey.c_str(), json_bool);
 #endif
 
    return true;
@@ -504,7 +525,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
    if (json_obj == NULL) {
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %llu", key, value);
    }
-   json_object_set(json_obj, lkey.c_str(), json_integer(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_integer(value));
 
    return true;
 }
@@ -520,7 +541,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
       Emsg2(M_ERROR, 0, "No json object defined to add %s: %s", key, value);
       return false;
    }
-   json_object_set(json_obj, lkey.c_str(), json_string(value));
+   json_object_set_new(json_obj, lkey.c_str(), json_string(value));
 
    return true;
 }
@@ -537,9 +558,9 @@ void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
    }
    if (message_type_array==NULL) {
       message_type_array=json_array();
-      json_object_set(message_object_json, type, message_type_array);
+      json_object_set_new(message_object_json, type, message_type_array);
    }
-   json_array_append_new(message_type_array,message_json);
+   json_array_append_new(message_type_array, message_json);
 }
 
 bool OUTPUT_FORMATTER::json_has_error_message()
@@ -553,19 +574,29 @@ bool OUTPUT_FORMATTER::json_has_error_message()
    return retval;
 }
 
+bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
+{
+   POOL_MEM json_error_message;
+
+   json_error_message.bsprintf(json_error_message_template, message);
+   return send_func(send_ctx, json_error_message.c_str());
+}
+
 void OUTPUT_FORMATTER::json_finalize_result(bool result)
 {
-   POOL_MEM string;
    json_t *msg_obj = json_object();
    json_t *error_obj;
    json_t *data_obj;
+   POOL_MEM error_msg;
+   char *string;
+   size_t string_length = 0;
 
    /*
     * We mimic json-rpc result and error messages,
     * To make it easier to implement real json-rpc later on.
     */
-   json_object_set(msg_obj, "jsonrpc", json_string("2.0"));
-   json_object_set(msg_obj, "id", json_null());
+   json_object_set_new(msg_obj, "jsonrpc", json_string("2.0"));
+   json_object_set_new(msg_obj, "id", json_null());
 
    if (!result || json_has_error_message()) {
       error_obj = json_object();
@@ -574,19 +605,44 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
       data_obj = json_object();
       json_object_set(data_obj, "result", result_json);
       json_object_set(data_obj, "messages", message_object_json);
-      json_object_set(error_obj, "data", data_obj);
+      json_object_set_new(error_obj, "data", data_obj);
       json_object_set_new(msg_obj, "error", error_obj);
    } else {
       json_object_set(msg_obj, "result", result_json);
    }
 
-   string.bsprintf("%s\n", json_dumps(msg_obj, UA_JSON_FLAGS));
-   send_func(send_ctx, string.c_str());
+   if (compact) {
+      string = json_dumps(msg_obj, UA_JSON_FLAGS_COMPACT);
+   } else {
+      string = json_dumps(msg_obj, UA_JSON_FLAGS_NORMAL);
+   }
+   string_length = strlen(string);
+   Dmsg1(800, "message length (json): %lld\n", string_length);
+   if (string == NULL) {
+      /*
+       * json_dumps return NULL on failure (this should not happen).
+       */
+      Emsg0(M_ERROR, 0, "Failed to generate json string.\n");
+   } else {
+      /*
+       * send json string, on failure, send json error message
+       */
+      if (!send_func(send_ctx, string)) {
+         error_msg.bsprintf("Failed to send result as json. Maybe result message to long?\n"
+                            "Message length = %lld\n", string_length);
+         Emsg0(M_ERROR, 0, error_msg.c_str());
+         json_send_error_message(error_msg.c_str());
+     }
+      free(string);
+   }
 
+   /*
+    * empty result stack
+    */
    while (result_stack_json->pop()) {};
+   result_stack_json->push(result_json);
 
    json_object_clear(result_json);
-   result_stack_json->push(result_json);
    json_object_clear(message_object_json);
    json_object_clear(msg_obj);
 }

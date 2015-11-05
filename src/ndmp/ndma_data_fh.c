@@ -128,7 +128,7 @@ ndmda_fh_add_file (struct ndm_session *sess,
 
 void
 ndmda_fh_add_dir (struct ndm_session *sess,
-  unsigned long long dir_fileno, char *name, unsigned long long fileno)
+  uint64_t dir_fileno, char *name, uint64_t fileno)
 {
 	struct ndm_data_agent *	da = sess->data_acb;
 	int			nlen = strlen (name) + 1;

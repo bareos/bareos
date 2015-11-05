@@ -114,7 +114,7 @@ struct wrap_env {
 };
 
 struct wrap_file {
-	unsigned long long	fhinfo;
+	uint64_t		fhinfo;
 	char *			original_name;	/* relative to backup root */
 	char *			save_to_name;	/* relative to file system */
 };
@@ -165,19 +165,19 @@ struct wrap_ccb {
 	 * expect	Composite of have and reading.
 	 */
 	char *			iobuf;
-	unsigned long		n_iobuf;
+	uint32_t		n_iobuf;
 
 	char *			have;
-	unsigned long long	have_offset;
-	unsigned long		have_length;	/* never bigger than iobuf */
-	unsigned long long	want_offset;
-	unsigned long long	want_length;
-	unsigned long long	reading_offset;
-	unsigned long long	reading_length;
-	unsigned long long	last_read_offset;
-	unsigned long long	last_read_length;
-	unsigned long long	expect_offset;
-	unsigned long long	expect_length;
+	uint64_t		have_offset;
+	uint32_t		have_length;	/* never bigger than iobuf */
+	uint64_t		want_offset;
+	uint64_t		want_length;
+	uint64_t		reading_offset;
+	uint64_t		reading_length;
+	uint64_t		last_read_offset;
+	uint64_t		last_read_length;
+	uint64_t		expect_offset;
+	uint64_t		expect_length;
 	int			data_conn_mode;
 };
 
@@ -187,17 +187,17 @@ extern char *	wrap_find_env (struct wrap_ccb *wccb, char *name);
 
 
 extern int	wrap_reco_seek (struct wrap_ccb *wccb,
-			unsigned long long want_offset,
-			unsigned long long want_length,
-			unsigned long must_have_length);
+			uint64_t want_offset,
+			uint64_t want_length,
+			uint32_t must_have_length);
 extern int	wrap_reco_must_have (struct wrap_ccb *wccb,
-			unsigned long length);
+			uint32_t length);
 extern int	wrap_reco_pass (struct wrap_ccb *wccb, int write_fd,
-			unsigned long long length, unsigned write_bsize);
+			uint64_t length, unsigned write_bsize);
 extern int	wrap_reco_align_to_wanted (struct wrap_ccb *wccb);
 extern int	wrap_reco_receive (struct wrap_ccb *wccb);
 extern int	wrap_reco_consume (struct wrap_ccb *wccb,
-			unsigned long length);
+			uint32_t length);
 extern int	wrap_reco_issue_read (struct wrap_ccb *wccb);
 
 
@@ -230,7 +230,7 @@ enum wrap_ftype {
 };
 
 struct wrap_fstat {
-	unsigned long		valid;
+	uint32_t		valid;
 #define WRAP_FSTAT_VALID_FTYPE		(1ul<<0u)
 #define WRAP_FSTAT_VALID_MODE		(1ul<<1u)
 #define WRAP_FSTAT_VALID_LINKS		(1ul<<2u)
@@ -243,15 +243,15 @@ struct wrap_fstat {
 #define WRAP_FSTAT_VALID_FILENO		(1ul<<9u)
 
 	enum wrap_ftype		ftype;		/* f%s */
-	unsigned short		mode;		/* m%04o */
-	unsigned long		links;		/* l%lu */
-	unsigned long long	size;		/* s%llu */
-	unsigned long		uid;		/* u%lu */
-	unsigned long		gid;		/* g%lu */
-	unsigned long		atime;		/* ta%lu */
-	unsigned long		mtime;		/* tm%lu */
-	unsigned long		ctime;		/* tc%lu */
-	unsigned long long	fileno;		/* i%llu */
+	uint16_t		mode;		/* m%04o */
+	uint32_t		links;		/* l%lu */
+	uint64_t		size;		/* s%llu */
+	uint32_t		uid;		/* u%lu */
+	uint32_t		gid;		/* g%lu */
+	uint32_t		atime;		/* ta%lu */
+	uint32_t		mtime;		/* tm%lu */
+	uint32_t		ctime;		/* tc%lu */
+	uint64_t		fileno;		/* i%llu */
 };
 
 /*
@@ -260,7 +260,7 @@ struct wrap_fstat {
  * History File -- Corresponds to NDMPv?_FH_ADD_FILE
  */
 struct wrap_add_file {
-	unsigned long long	fhinfo;		/* @%llu */
+	uint64_t		fhinfo;		/* @%llu */
 	struct wrap_fstat	fstat;
 	char			path[WRAP_MAX_PATH];
 };
@@ -271,9 +271,9 @@ struct wrap_add_file {
  * History Directory entry -- Corresponds to NDMPv?_FH_ADD_DIR
  */
 struct wrap_add_dirent {
-	unsigned long long	fhinfo;		/* @%llu */
-	unsigned long long	dir_fileno;	/* %llu */
-	unsigned long long	fileno;		/* %llu */
+	uint64_t		fhinfo;		/* @%llu */
+	uint64_t		dir_fileno;	/* %llu */
+	uint64_t		fileno;		/* %llu */
 	char			name[WRAP_MAX_NAME];
 };
 
@@ -283,7 +283,7 @@ struct wrap_add_dirent {
  * History Node -- Corresponds to NDMPv?_FH_ADD_NODE
  */
 struct wrap_add_node {					/* HN */
-	unsigned long long	fhinfo;		/* @%llu */
+	uint64_t		fhinfo;		/* @%llu */
 	struct wrap_fstat	fstat;
 };
 
@@ -306,8 +306,8 @@ struct wrap_add_env {
  * portions of the backup image.
  */
 struct wrap_data_read {					/* DR */
-	unsigned long long	offset;		/* %llu */
-	unsigned long long	length;		/* %llu */
+	uint64_t		offset;		/* %llu */
+	uint64_t		length;		/* %llu */
 };
 
 /*
@@ -326,15 +326,15 @@ enum wrap_data_status {
 };
 
 struct wrap_data_stats {				/* DS */
-	unsigned long		valid;
+	uint32_t		valid;
 #define WRAP_DATASTATS_VALID_BYTES_WRITTEN	(1ul<<0u)
 #define WRAP_DATASTATS_VALID_EST_TIME_REMAINING	(1ul<<1u)
 #define WRAP_DATASTATS_VALID_EST_BYTES_REMAINING (1ul<<2u)
 
 	enum wrap_data_status	status;			/* s{r|d|f} */
-	unsigned long long	bytes_written;		/* w%llu */
-	unsigned long long	est_time_remaining;	/* et%llu */
-	unsigned long long	est_bytes_remaining;	/* eb%llu */
+	uint64_t		bytes_written;		/* w%llu */
+	uint64_t 		est_time_remaining;	/* et%llu */
+	uint64_t		est_bytes_remaining;	/* eb%llu */
 };
 
 /*
@@ -378,23 +378,21 @@ extern int wrap_parse_msg (char *buf, struct wrap_msg_buf *wmsg);
 extern int wrap_parse_log_message_msg (char *buf, struct wrap_msg_buf *wmsg);
 extern int wrap_send_log_message (FILE *fp, char *message);
 extern int wrap_parse_add_file_msg (char *buf, struct wrap_msg_buf *wmsg);
-extern int wrap_send_add_file (FILE *fp, char *path, unsigned long long fhinfo,
+extern int wrap_send_add_file (FILE *fp, char *path, uint64_t fhinfo,
 				struct wrap_fstat *fstat);
 extern int wrap_parse_add_dirent_msg (char *buf, struct wrap_msg_buf *wmsg);
 extern int wrap_send_add_dirent (FILE *fp, char *name,
-				unsigned long long fhinfo,
-				unsigned long long dir_fileno,
-				unsigned long long fileno);
+				uint64_t fhinfo, uint64_t dir_fileno,
+				uint64_t fileno);
 extern int wrap_parse_add_node_msg (char *buf, struct wrap_msg_buf *wmsg);
-extern int wrap_send_add_node (FILE *fp, unsigned long long fhinfo,
+extern int wrap_send_add_node (FILE *fp, uint64_t fhinfo,
 				struct wrap_fstat *fstat);
 extern int wrap_parse_fstat_subr (char **scanp, struct wrap_fstat *fstat);
 extern int wrap_send_fstat_subr (FILE *fp, struct wrap_fstat *fstat);
 extern int wrap_parse_add_env_msg (char *buf, struct wrap_msg_buf *wmsg);
 extern int wrap_send_add_env (FILE *fp, char *name, char *value);
 extern int wrap_parse_data_read_msg (char *buf, struct wrap_msg_buf *wmsg);
-extern int wrap_send_data_read (FILE *fp, unsigned long long offset,
-				unsigned long long length);
+extern int wrap_send_data_read (FILE *fp, uint64_t offset, uint64_t length);
 
 
 

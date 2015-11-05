@@ -949,11 +949,9 @@ bool dot_types_cmd(UAContext *ua, const char *cmd)
  */
 bool dot_api_cmd(UAContext *ua, const char *cmd)
 {
-   switch (ua->argc) {
-   case 1:
+   if (ua->argc == 1) {
       ua->api = 1;
-      break;
-   case 2:
+   } else if ((ua->argc >= 2) && (ua->argc <= 3)) {
       if (bstrcasecmp(ua->argk[1], "off") || bstrcasecmp(ua->argk[1], "0")) {
          ua->api = API_MODE_OFF;
          ua->batch = false;
@@ -963,18 +961,22 @@ bool dot_api_cmd(UAContext *ua, const char *cmd)
       } else if (bstrcasecmp(ua->argk[1], "json") || bstrcasecmp(ua->argk[1], "2")) {
          ua->api = API_MODE_JSON;
          ua->batch = true;
+         if ((ua->argc == 3) && (find_arg_with_value(ua, "compact") == 2)) {
+            if (bstrcasecmp(ua->argv[2], "yes")) {
+               ua->send->set_compact(true);
+            } else {
+               ua->send->set_compact(false);
+            }
+         }
       } else {
          return false;
       }
-      break;
-   default:
+   } else {
       return false;
    }
 
    ua->send->set_mode(ua->api);
-   ua->send->object_start();
    ua->send->object_key_value("api", "%s: ", ua->api, "%d\n");
-   ua->send->object_end();
 
    return true;
 }

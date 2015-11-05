@@ -52,7 +52,7 @@ struct smc_scsi_req {
 	unsigned char *	data;
 	unsigned	n_data_avail;
 	unsigned	n_data_done;
-	unsigned long	_pad;
+	uint32_t	_pad;
 
 	unsigned char	n_sense_data;
 	unsigned char	sense_data[SMC_MAX_SENSE_DATA];
@@ -70,7 +70,7 @@ struct smc_scsi_req {
 
 struct smc_volume_tag {
 	unsigned char	volume_id[32];
-	unsigned short	volume_seq;
+	uint16_t	volume_seq;
 };
 
 
@@ -98,7 +98,7 @@ struct smc_element_address_assignment {
 
 struct smc_element_descriptor {
 	unsigned char	element_type_code;
-	unsigned short	element_address;
+	uint16_t	element_address;
 
 	/* Flags, use SCSI spec names for convenience */
 	unsigned	PVolTag : 1;	/* MSID primary vol tag info present */
@@ -117,7 +117,7 @@ struct smc_element_descriptor {
 
 	unsigned char	asc;		/* Additional sense code */
 	unsigned char	ascq;		/* Additional sense code qualifier */
-	unsigned short	src_se_addr;	/* if Svalid, last *STORAGE* element */
+	uint16_t	src_se_addr;	/* if Svalid, last *STORAGE* element */
 
 	unsigned char	scsi_sid;	/* if ID_valid, SID of drive */
 	unsigned char	scsi_lun;	/* if LU_valid, LUN of drive */

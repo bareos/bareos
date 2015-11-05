@@ -1311,7 +1311,7 @@ ndmp_3to9_execute_cdb_request (
   ndmp9_execute_cdb_request *request9)
 {
 	int		n_error = 0;
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	switch (request3->flags) {
@@ -1378,7 +1378,7 @@ ndmp_9to3_execute_cdb_request (
   ndmp3_execute_cdb_request *request3)
 {
 	int		n_error = 0;
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	switch (request9->data_dir) {
@@ -1444,7 +1444,7 @@ ndmp_3to9_execute_cdb_reply (
   ndmp3_execute_cdb_reply *reply3,
   ndmp9_execute_cdb_reply *reply9)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	CNVT_E_TO_9 (reply3, reply9, error, ndmp_39_error);
@@ -1492,7 +1492,7 @@ ndmp_9to3_execute_cdb_reply (
   ndmp9_execute_cdb_reply *reply9,
   ndmp3_execute_cdb_reply *reply3)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	CNVT_E_FROM_9 (reply3, reply9, error, ndmp_39_error);
@@ -1796,7 +1796,7 @@ ndmp_3to9_tape_write_request (
   ndmp3_tape_write_request *request3,
   ndmp9_tape_write_request *request9)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	len = request3->data_out.data_out_len;
@@ -1819,7 +1819,7 @@ ndmp_9to3_tape_write_request (
   ndmp9_tape_write_request *request9,
   ndmp3_tape_write_request *request3)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	len = request9->data_out.data_out_len;
@@ -1885,7 +1885,7 @@ ndmp_3to9_tape_read_reply (
   ndmp3_tape_read_reply *reply3,
   ndmp9_tape_read_reply *reply9)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	CNVT_E_TO_9 (reply3, reply9, error, ndmp_39_error);
@@ -1913,7 +1913,7 @@ ndmp_9to3_tape_read_reply (
   ndmp9_tape_read_reply *reply9,
   ndmp3_tape_read_reply *reply3)
 {
-	u_long		len;
+	uint32_t	len;
 	char *		p;
 
 	CNVT_E_FROM_9 (reply3, reply9, error, ndmp_39_error);

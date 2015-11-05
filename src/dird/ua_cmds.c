@@ -156,7 +156,7 @@ static struct cmdstruct commands[] = {
    { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
      NULL, true, false },
    { NT_(".api"), dot_api_cmd, _("Switch between different api modes"),
-     NT_("[ 0 | 1 | 2 | off | on | json ]"), false, false },
+     NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false },
    { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
      NULL, false, false },
    { NT_(".clients"), dot_clients_cmd, _("List all client resources"),

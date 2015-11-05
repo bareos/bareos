@@ -47,18 +47,23 @@
  * $Id: ndmp.x,v 1.11 1998/05/26 03:52:12 tim Exp $
  */
 
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+%#pragma GCC diagnostic ignored "-Wunused-variable"
+%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
+%#endif
+
 %#ifndef NDMOS_OPTION_NO_NDMP4
 
 const NDMP4VER = 4;
 const NDMP4PORT = 10000;
 
-%#define ndmp4_u_quad unsigned long long
+%#define ndmp4_u_quad uint64_t
 %extern bool_t xdr_ndmp4_u_quad();
 
 struct _ndmp4_u_quad
 {
-	u_long		high;
-	u_long		low;
+	uint32_t	high;
+	uint32_t	low;
 };
 
 
@@ -201,11 +206,11 @@ enum ndmp4_message {
 
 struct ndmp4_header
 {
-	u_long			sequence;
-	u_long			time_stamp;
+	uint32_t		sequence;
+	uint32_t		time_stamp;
 	ndmp4_header_message_type message_type;
 	ndmp4_message		message_code;
-	u_long			reply_sequence;
+	uint32_t		reply_sequence;
 	ndmp4_error		error_code;
 };
 
@@ -219,7 +224,7 @@ struct ndmp4_pval
 /* Connect messages */
 struct ndmp4_connect_open_request
 {
-	u_short		protocol_version;
+	uint16_t	protocol_version;
 };
 
 struct ndmp4_connect_open_reply
@@ -359,7 +364,7 @@ struct ndmp4_butype_info
 {
 	string		butype_name<>;
 	ndmp4_pval	default_env<>;
-	u_long		attrs;
+	uint32_t	attrs;
 };
 
 struct ndmp4_config_get_butype_info_reply
@@ -377,7 +382,7 @@ const NDMP4_FS_INFO_USED_INODES_UNS	= 0x00000010;
 
 struct ndmp4_fs_info
 {
-	u_long		unsupported;
+	uint32_t	unsupported;
 	string		fs_type<>;
 	string		fs_logical_device<>;
 	string		fs_physical_device<>;
@@ -404,7 +409,7 @@ const NDMP4_TAPE_ATTR_RAW	= 0x00000004;
 struct ndmp4_device_capability
 {
 	string			device<>;
-	u_long			attr;
+	uint32_t		attr;
 	ndmp4_pval		capability<>;
 };
 
@@ -428,14 +433,14 @@ struct ndmp4_config_get_scsi_info_reply
 
 struct ndmp4_class_list
 {
-	u_short		class_id;
-	u_short		class_version<>;
+	uint16_t	class_id;
+	uint16_t	class_version<>;
 };
 
 struct ndmp4_class_version
 {
-	u_short		class_id;
-	u_short		class_version;
+	uint16_t	class_id;
+	uint16_t	class_version;
 };
 
 struct ndmp4_config_get_ext_list_reply
@@ -494,9 +499,9 @@ const NDMP4_SCSI_DATA_OUT	= 0x00000002;
 
 struct ndmp4_execute_cdb_request
 {
-	u_long		flags;
-	u_long		timeout;
-	u_long		datain_len;
+	uint32_t	flags;
+	uint32_t	timeout;
+	uint32_t	datain_len;
 	opaque		cdb<>;
 	opaque		dataout<>;
 };
@@ -505,7 +510,7 @@ struct ndmp4_execute_cdb_reply
 {
 	ndmp4_error	error;
 	u_char		status;
-	u_long		dataout_len;
+	uint32_t	dataout_len;
 	opaque		datain<>;
 	opaque		ext_sense<>;
 };
@@ -554,13 +559,13 @@ const NDMP4_TAPE_STATE_SPACE_REMAIN_UNS	= 0x00000020;
 
 struct ndmp4_tape_get_state_reply
 {
-	u_long		unsupported;
+	uint32_t	unsupported;
 	ndmp4_error	error;
-	u_long		flags;
-	u_long		file_num;
-	u_long		soft_errors;
-	u_long		block_size;
-	u_long		blockno;
+	uint32_t	flags;
+	uint32_t	file_num;
+	uint32_t	soft_errors;
+	uint32_t	block_size;
+	uint32_t	blockno;
 
 	ndmp4_u_quad	total_space;
 	ndmp4_u_quad	space_remain;
@@ -582,13 +587,13 @@ enum ndmp4_tape_mtio_op
 struct ndmp4_tape_mtio_request
 {
 	ndmp4_tape_mtio_op	tape_op;
-	u_long			count;
+	uint32_t		count;
 };
 
 struct ndmp4_tape_mtio_reply
 {
 	ndmp4_error	error;
-	u_long		resid_count;
+	uint32_t	resid_count;
 };
 
 
@@ -600,13 +605,13 @@ struct ndmp4_tape_write_request
 struct ndmp4_tape_write_reply
 {
 	ndmp4_error	error;
-	u_long		count;
+	uint32_t	count;
 };
 
 
 struct ndmp4_tape_read_request
 {
-	u_long		count;
+	uint32_t	count;
 };
 
 struct ndmp4_tape_read_reply
@@ -650,8 +655,8 @@ enum ndmp4_data_halt_reason
 /* ndmp4_addr */
 struct ndmp4_tcp_addr
 {
-	u_long		ip_addr;
-	u_short		port;
+	uint32_t	ip_addr;
+	uint16_t	port;
 	ndmp4_pval	addr_env<>;
 };
 
@@ -676,14 +681,14 @@ const NDMP4_DATA_STATE_EST_TIME_REMAIN_UNS	= 0x00000002;
 
 struct ndmp4_data_get_state_reply
 {
-	u_long			unsupported;
+	uint32_t		unsupported;
 	ndmp4_error		error;
 	ndmp4_data_operation	operation;
 	ndmp4_data_state	state;
 	ndmp4_data_halt_reason	halt_reason;
 	ndmp4_u_quad		bytes_processed;
 	ndmp4_u_quad		est_bytes_remain;
-	u_long			est_time_remain;
+	uint32_t		est_time_remain;
 	ndmp4_addr		data_connection_addr;
 	ndmp4_u_quad		read_offset;
 	ndmp4_u_quad		read_length;
@@ -822,7 +827,7 @@ enum ndmp4_mover_halt_reason
 
 struct ndmp4_mover_set_record_size_request
 {
-	u_long		len;
+	uint32_t	len;
 };
 
 struct ndmp4_mover_set_record_size_reply
@@ -889,8 +894,8 @@ struct ndmp4_mover_get_state_reply
 	ndmp4_mover_state	state;
 	ndmp4_mover_pause_reason pause_reason;
 	ndmp4_mover_halt_reason	halt_reason;
-	u_long			record_size;
-	u_long			record_num;
+	uint32_t		record_size;
+	uint32_t		record_num;
 	ndmp4_u_quad		bytes_moved;
 	ndmp4_u_quad		seek_position;
 	ndmp4_u_quad		bytes_left_to_read;
@@ -940,7 +945,7 @@ enum ndmp4_connection_status_reason
 struct ndmp4_notify_connection_status_post
 {
 	ndmp4_connection_status_reason	reason;
-	u_short				protocol_version;
+	uint16_t			protocol_version;
 	string				text_reason<>;
 };
 
@@ -982,10 +987,10 @@ enum ndmp4_log_type
 struct ndmp4_log_message_post
 {
 	ndmp4_log_type		log_type;
-	u_long			message_id;
+	uint32_t		message_id;
 	string			entry<>;
 	ndmp4_has_associated_message associated_message_valid;
-	u_long			associated_message_sequence;
+	uint32_t		associated_message_sequence;
 };
 
 
@@ -1054,17 +1059,17 @@ const NDMP4_FILE_STAT_GROUP_UNS	= 0x00000004;
 
 struct ndmp4_file_stat
 {
-	u_long		unsupported;
+	uint32_t	unsupported;
 	ndmp4_fs_type	fs_type;
 	ndmp4_file_type	ftype;
-	u_long		mtime;
-	u_long		atime;
-	u_long		ctime;
-	u_long		owner;
-	u_long		group;
-	u_long		fattr;
+	uint32_t	mtime;
+	uint32_t	atime;
+	uint32_t	ctime;
+	uint32_t	owner;
+	uint32_t	group;
+	uint32_t	fattr;
 	ndmp4_u_quad	size;
-	u_long		links;
+	uint32_t	links;
 };
 
 struct ndmp4_file

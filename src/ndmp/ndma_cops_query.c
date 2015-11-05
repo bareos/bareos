@@ -761,7 +761,7 @@ ndmca_opq_show_device_info (struct ndm_session *sess,
 		ndmalogqr (sess, "  %s %s", what, info[i].model);
 		for (j = 0; j < info[i].caplist.caplist_len; j++) {
 			ndmp9_device_capability *dc;
-			u_long attr;
+			uint32_t attr;
 
 			dc = &info[i].caplist.caplist_val[j];
 

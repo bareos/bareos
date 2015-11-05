@@ -65,7 +65,7 @@ ndma_notify_data_halted (struct ndm_session *sess)
 
 int
 ndma_notify_data_read (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndmconn *	conn = sess->plumb.control;
 

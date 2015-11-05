@@ -96,6 +96,20 @@
 #define _NDMOS_H
 
 /*
+ * Silence compiler for known warnings.
+ */
+#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wenum-compare"
+#endif
+
+#if defined(__SUNPRO_C)
+#pragma error_messages (off, E_ENUM_TYPE_MISMATCH_OP, E_ENUM_TYPE_MISMATCH_ARG, E_STATEMENT_NOT_REACHED )
+#endif
+
+/*
  * Operating system idents
  */
 #define NDMOS_IDENT(A,B,C,D)	(((A)<<24)+((B)<<16)+((C)<<8)+(D))
@@ -312,7 +326,7 @@
  * Constants
  */
 #ifndef NDMOS_CONST_ALIGN
-#define NDMOS_CONST_ALIGN		sizeof(unsigned long long)
+#define NDMOS_CONST_ALIGN		sizeof(uint64_t)
 #endif /* !NDMOS_CONST_ALIGN */
 
 #ifndef NDMOS_CONST_TAPE_REC_MIN
@@ -494,10 +508,10 @@ extern char *ndml_strend(char *s);	/* ndml_util.c */
 
 #ifdef NDMOS_OPTION_TAPE_SIMULATOR
 #define NDMOS_MACRO_TAPE_AGENT_ADDITIONS \
-	int			tape_fd; \
+	int32_t			tape_fd; \
 	char *			drive_name; \
-	int			weof_on_close; \
-	int			sent_leom;
+	int32_t			weof_on_close; \
+	int32_t			sent_leom;
 #endif /* NDMOS_OPTION_TAPE_SIMULATOR */
 
 #ifdef NDMOS_OPTION_ROBOT_SIMULATOR

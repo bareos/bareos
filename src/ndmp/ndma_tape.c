@@ -311,7 +311,7 @@ ndmta_mover_close (struct ndm_session *sess)
 
 void
 ndmta_mover_read (struct ndm_session *sess,
-  unsigned long long offset, unsigned long long length)
+  uint64_t offset, uint64_t length)
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 
@@ -388,11 +388,11 @@ ndmta_read_quantum (struct ndm_session *sess)
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 	struct ndmchan *	ch = &sess->plumb.image_stream->chan;
-	unsigned long		count = ta->mover_state.record_size;
+	uint32_t		count = ta->mover_state.record_size;
 	int			did_something = 0;
 	unsigned		n_ready;
 	char *			data;
-	unsigned long		done_count;
+	uint32_t		done_count;
 	ndmp9_error		error;
 
   again:
@@ -482,16 +482,16 @@ ndmta_write_quantum (struct ndm_session *sess)
 {
 	struct ndm_tape_agent *	ta = sess->tape_acb;
 	struct ndmchan *	ch = &sess->plumb.image_stream->chan;
-	unsigned long		count = ta->mover_state.record_size;
+	uint32_t		count = ta->mover_state.record_size;
 	int			did_something = 0;
-	unsigned long long	max_read;
-	unsigned long long	want_window_off;
-	unsigned long		block_size;
-	unsigned long		want_blockno;
-	unsigned long		cur_blockno;
+	uint64_t		max_read;
+	uint64_t		want_window_off;
+	uint32_t		block_size;
+	uint32_t		want_blockno;
+	uint32_t		cur_blockno;
 	unsigned		n_avail, n_read, record_off;
 	char *			data;
-	unsigned long		done_count = 0;
+	uint32_t		done_count = 0;
 	ndmp9_error		error;
 
   again:
@@ -543,7 +543,7 @@ ndmta_write_quantum (struct ndm_session *sess)
 	want_blockno = ta->mover_window_first_blockno + want_window_off / block_size;
 
 	if (ta->tb_blockno != want_blockno) {
-		unsigned long	xsr_count, xsr_resid;
+		uint32_t	xsr_count, xsr_resid;
 
 		ndmos_tape_sync_state(sess);
 		cur_blockno = ta->tape_state.blockno.value;

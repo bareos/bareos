@@ -147,9 +147,9 @@ struct ndm_env_entry {
 };
 
 struct ndm_env_table {
-	int			n_env;
+	int32_t			n_env;
 	ndmp9_pval *		enumerate;
-	int			enumerate_length;
+	int32_t			enumerate_length;
 	struct ndm_env_entry *	head;
 	struct ndm_env_entry *	tail;
 };
@@ -173,9 +173,9 @@ struct ndm_nlist_entry {
 
 
 struct ndm_nlist_table {
-	int				n_nlist;
+	int32_t				n_nlist;
 	ndmp9_name *			enumerate;
-	int				enumerate_length;
+	int32_t				enumerate_length;
 	struct ndm_nlist_entry *	head;
 	struct ndm_nlist_entry *	tail;
 };
@@ -200,13 +200,13 @@ extern void			ndma_destroy_nlist (struct ndm_nlist_table *nlist);
 #endif
 
 struct ndm_media_table {
-	int			n_media;
+	int32_t			n_media;
 	struct ndmmedia		*head;
 	struct ndmmedia		*tail;
 };
 
 /* ndma_listmgt.c */
-extern struct ndmmedia *	ndma_store_media (struct ndm_media_table *mtab, unsigned short element_address);
+extern struct ndmmedia *	ndma_store_media (struct ndm_media_table *mtab, uint16_t element_address);
 extern struct ndmmedia *	ndma_clone_media_entry (struct ndm_media_table *mtab, struct ndmmedia *to_clone);
 extern void			ndmca_destroy_media_table (struct ndm_media_table *mtab);
 
@@ -237,12 +237,12 @@ extern void			ndmca_destroy_media_table (struct ndm_media_table *mtab);
 #define NDM_JOB_OP_DAEMON 'd'
 
 struct ndm_job_param {
-	int			operation;	/* NDM_JOB_OP_... */
-        int                     time_limit;	/* command timeout, 0 is off */
+	int32_t			operation;	/* NDM_JOB_OP_... */
+	int32_t			time_limit;	/* command timeout, 0 is off */
 
 	struct ndmagent		data_agent;	/* DATA AGENT host/pw */
 	char *			bu_type;	/* e.g. "tar" */
-	int 			bu_level;	/* e.g. 0..9 for dump */
+	int32_t			bu_level;	/* e.g. 0..9 for dump */
 	struct ndm_env_table	env_tab;	/* for BACKUP+RECOVER ops */
 	struct ndm_nlist_table	nlist_tab;	/* for RECOVER ops */
 	struct ndm_env_table	result_env_tab;	/* after BACKUP */
@@ -252,7 +252,7 @@ struct ndm_job_param {
 	char *			tape_device;	/* eg "/dev/rmt0" */
 	unsigned		tape_timeout;	/* secs total to retry open */
 	unsigned		record_size;	/* in bytes, 10k typical */
-        unsigned long long	last_w_offset;	/* last window offset sent */
+        uint64_t		last_w_offset;	/* last window offset sent */
 	struct ndmscsi_target *	tape_target;	/* unused for now */
 	char *			tape_tcp;	/* tcp direct */
 	NDM_FLAG_DECL(use_eject)		/* eject upon close (unload) */
@@ -274,13 +274,13 @@ struct ndm_job_param {
 	struct ndm_media_table	media_tab;	/* media to use, params */
 	struct ndm_media_table	result_media_tab; /* results after job */
 
-	unsigned long		n_file_entry;
-	unsigned long		n_dir_entry;
-	unsigned long		n_node_entry;
-	unsigned long long	root_node;
+	uint32_t		n_file_entry;
+	uint32_t		n_dir_entry;
+	uint32_t		n_node_entry;
+	uint64_t		root_node;
 
-	unsigned long long	bytes_written;
-	unsigned long long	bytes_read;
+	uint64_t		bytes_written;
+	uint64_t		bytes_read;
 };
 
 /* ndma_job.c */
@@ -305,9 +305,9 @@ struct ndm_control_agent {
 	NDM_FLAG_DECL(pending_notify_data_halted)
 	ndmp9_notify_data_read_request last_notify_data_read;
 	ndmp9_addr		data_addr;
-	int			recover_log_file_count;
-	int			recover_log_file_ok;
-	int			recover_log_file_error;
+	int32_t			recover_log_file_count;
+	int32_t			recover_log_file_ok;
+	int32_t			recover_log_file_error;
 
 	/* Image stream */
 	ndmp9_addr		mover_addr;
@@ -323,7 +323,7 @@ struct ndm_control_agent {
 	ndmp9_tape_get_state_reply tape_state;
 
 	/* Media management, media_table inside of job */
-	int			cur_media_ix;		/* references struct ndmmedia index field */
+	int32_t			cur_media_ix;		/* references struct ndmmedia index field */
 	NDM_FLAG_DECL(media_is_loaded)
 	NDM_FLAG_DECL(is_label_op)
 
@@ -338,17 +338,17 @@ struct ndm_control_agent {
 	char *			active_test_warned;	/* active test warned */
 
 	char *			test_phase;		/* name of sub-series test phase */
-	int			test_step;		/* test sequence number */
+	int32_t			test_step;		/* test sequence number */
 
-	int			n_step_pass;		/* per phase test stats */
-	int			n_step_fail;
-	int			n_step_warn;
-	int			n_step_tests;
+	int32_t			n_step_pass;		/* per phase test stats */
+	int32_t			n_step_fail;
+	int32_t			n_step_warn;
+	int32_t			n_step_tests;
 
-	int			total_n_step_pass;	/* total test stats */
-	int			total_n_step_fail;
-	int			total_n_step_warn;
-	int			total_n_step_tests;
+	int32_t			total_n_step_pass;	/* total test stats */
+	int32_t			total_n_step_fail;
+	int32_t			total_n_step_warn;
+	int32_t			total_n_step_tests;
 #endif
 
 #ifdef NDMOS_MACRO_CONTROL_AGENT_ADDITIONS
@@ -379,7 +379,7 @@ extern int	ndmca_monitor_load_next (struct ndm_session *sess);
 extern int	ndmca_monitor_seek_tape (struct ndm_session *sess);
 extern int	ndmca_monitor_unload_last_tape (struct ndm_session *sess);
 extern int	ndmca_mon_wait_for_something (struct ndm_session *sess,
-			int max_delay_secs);
+			int32_t max_delay_secs);
 
 /* ndma_cops_labels.c */
 extern int	ndmca_op_init_labels (struct ndm_session *sess);
@@ -409,7 +409,7 @@ extern void	ndmalogqr (struct ndm_session *sess, char *fmt, ...);
 /* ndma_cops_robot.c */
 extern int	ndmca_op_robot_remedy (struct ndm_session *sess);
 extern int	ndmca_op_robot_startup (struct ndm_session *sess,
-			int verify_media_flag);
+			int32_t verify_media_flag);
 extern int	ndmca_op_init_elem_status (struct ndm_session *sess);
 extern int	ndmca_op_rewind_tape (struct ndm_session *sess);
 extern int	ndmca_op_eject_tape (struct ndm_session *sess);
@@ -438,7 +438,7 @@ extern int	ndmca_tape_close (struct ndm_session *sess);
 extern int	ndmca_tape_get_state (struct ndm_session *sess);
 extern int	ndmca_tape_get_state_no_tattle (struct ndm_session *sess);
 extern int	ndmca_tape_mtio (struct ndm_session *sess,
-			ndmp9_tape_mtio_op op, u_long count, u_long *resid);
+			ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid);
 extern int	ndmca_tape_write (struct ndm_session *sess,
 			char *buf, unsigned count);
 extern int	ndmca_tape_read (struct ndm_session *sess,
@@ -450,9 +450,9 @@ extern int	ndmca_mover_continue (struct ndm_session *sess);
 extern int	ndmca_mover_abort (struct ndm_session *sess);
 extern int	ndmca_mover_stop (struct ndm_session *sess);
 extern int	ndmca_mover_set_window (struct ndm_session *sess,
-			unsigned long long offset, unsigned long long length);
+			uint64_t offset, uint64_t length);
 extern int	ndmca_mover_read (struct ndm_session *sess,
-			unsigned long long offset, unsigned long long length);
+			uint64_t offset, uint64_t length);
 extern int	ndmca_mover_close (struct ndm_session *sess);
 extern int	ndmca_mover_set_record_size (struct ndm_session *sess);
 
@@ -463,24 +463,24 @@ extern int	ndmca_media_load_next (struct ndm_session *sess);
 extern int	ndmca_media_unload_last (struct ndm_session *sess);
 extern int	ndmca_media_change (struct ndm_session *sess);
 extern int	ndmca_media_load_seek (struct ndm_session *sess,
-			unsigned long long pos);
+			uint64_t pos);
 extern int	ndmca_media_load_current (struct ndm_session *sess);
 extern int	ndmca_media_unload_current (struct ndm_session *sess);
 extern int	ndmca_media_unload_best_effort (struct ndm_session *sess);
 extern int	ndmca_media_open_tape (struct ndm_session *sess);
 extern int	ndmca_media_close_tape (struct ndm_session *sess);
 extern int	ndmca_media_mtio_tape (struct ndm_session *sess,
-			ndmp9_tape_mtio_op op, u_long count, u_long *resid);
+			ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid);
 extern int	ndmca_media_write_filemarks (struct ndm_session *sess);
 extern int	ndmca_media_read_label (struct ndm_session *sess,
 			char labbuf[]);
 extern int	ndmca_media_write_label (struct ndm_session *sess,
-			int type, char labbuf[]);
+			int32_t type, char labbuf[]);
 extern int	ndmca_media_check_label (struct ndm_session *sess,
-			int type, char labbuf[]);
+			int32_t type, char labbuf[]);
 extern int	ndmca_media_verify (struct ndm_session *sess);
 extern int	ndmca_media_tattle (struct ndm_session *sess);
-extern unsigned long long
+extern uint64_t
 		ndmca_media_capture_tape_offset (struct ndm_session *sess);
 extern int	ndmca_media_capture_mover_window (struct ndm_session *sess);
 extern int	ndmca_media_calculate_windows (struct ndm_session *sess);
@@ -495,12 +495,12 @@ extern int	ndmca_robot_obtain_info (struct ndm_session *sess);
 extern int	ndmca_robot_init_elem_status (struct ndm_session *sess);
 extern int	ndmca_robot_startup (struct ndm_session *sess);
 extern int	ndmca_robot_move (struct ndm_session *sess,
-			int src_addr, int dst_addr);
-extern int	ndmca_robot_load (struct ndm_session *sess, int slot_addr);
-extern int	ndmca_robot_unload (struct ndm_session *sess, int slot_addr);
+			int32_t src_addr, int32_t dst_addr);
+extern int	ndmca_robot_load (struct ndm_session *sess, int32_t slot_addr);
+extern int	ndmca_robot_unload (struct ndm_session *sess, int32_t slot_addr);
 extern struct smc_element_descriptor *
 			ndmca_robot_find_element (struct ndm_session *sess,
-							int element_address);
+							int32_t element_address);
 extern int	ndmca_robot_check_ready (struct ndm_session *sess);
 extern int	ndmca_robot_remedy_ready (struct ndm_session *sess);
 extern int	ndmca_robot_query (struct ndm_session *sess);
@@ -536,21 +536,21 @@ extern int	ndmca_test_unload_tape (struct ndm_session *sess);
 extern int	ndmca_test_call (struct ndmconn *conn,
 			struct ndmp_xa_buf *xa, ndmp9_error expect_err);
 extern int	ndmca_test_check_expect_errs (struct ndmconn *conn,
-			int rc, ndmp9_error expect_errs[]);
+			int32_t rc, ndmp9_error expect_errs[]);
 extern int	ndmca_test_check_expect (struct ndmconn *conn,
-			int rc, ndmp9_error expect_err);
+			int32_t rc, ndmp9_error expect_err);
 extern int	ndmca_test_check_expect_no_err (struct ndmconn *conn,
-			int rc);
+			int32_t rc);
 extern int	ndmca_test_check_expect_illegal_state (struct ndmconn *conn,
-			int rc);
+			int32_t rc);
 extern int	ndmca_test_check_expect_illegal_args (struct ndmconn *conn,
-			int rc);
+			int32_t rc);
 extern void	ndmca_test_phase (struct ndm_session *sess,
 			char *test_phase, char *desc);
 extern void	ndmca_test_log_step (struct ndm_session *sess,
-			int level, char *msg);
+			int32_t level, char *msg);
 extern void	ndmca_test_log_note (struct ndm_session *sess,
-			int level, char *msg);
+			int32_t level, char *msg);
 extern void	ndmca_test_done_phase (struct ndm_session *sess);
 extern void	ndmca_test_done_series (struct ndm_session *sess,
 			char *series_name);
@@ -562,8 +562,8 @@ extern void	ndmca_test_fail (struct ndm_session *sess, char *fail_msg);
 extern void	ndmca_test_close (struct ndm_session *sess);
 
 
-extern void	ndmca_test_fill_data (char *buf, int bufsize,
-			int recno, int fileno);
+extern void	ndmca_test_fill_data (char *buf, int32_t bufsize,
+			int32_t recno, int32_t fileno);
 
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */
 
@@ -633,22 +633,22 @@ extern void	ndmca_test_fill_data (char *buf, int bufsize,
 
 #ifndef NDMOS_OPTION_NO_GTAR_BUTYPE
 extern int	ndmda_butype_gtar_config_get_attrs (struct ndm_session *sess,
-					u_long *attrs_p, int protocol_version);
+					uint32_t *attrs_p, int32_t protocol_version);
 
 extern int	ndmda_butype_gtar_config_get_default_env (
 					struct ndm_session *sess,
-					ndmp9_pval **env_p, int *n_env_p,
-					int protocol_version);
+					ndmp9_pval **env_p, int32_t *n_env_p,
+					int32_t protocol_version);
 extern int	ndmda_butype_gtar_attach (struct ndm_session *sess);
 #endif
 #ifndef NDMOS_OPTION_NO_DUMP_BUTYPE
 extern int	ndmda_butype_dump_config_get_attrs (struct ndm_session *sess,
-					u_long *attrs_p, int protocol_version);
+					uint32_t *attrs_p, int32_t protocol_version);
 
 extern int	ndmda_butype_dump_config_get_default_env (
 					struct ndm_session *sess,
-					ndmp9_pval **env_p, int *n_env_p,
-					int protocol_version);
+					ndmp9_pval **env_p, int32_t *n_env_p,
+					int32_t protocol_version);
 extern int	ndmda_butype_dump_attach (struct ndm_session *sess);
 #endif
 
@@ -690,29 +690,29 @@ enum ndm_data_recovery_disposition {
 
 
 struct ndm_data_agent {
-	int			protocol_version;
+	int32_t			protocol_version;
 
 	char			bu_type[32];
 	struct ndm_env_table	env_tab;
 	struct ndm_nlist_table	nlist_tab;
 
 	NDM_FLAG_DECL(enable_hist)
-	unsigned long long	pass_resid;
+	uint64_t		pass_resid;
 
 	ndmp9_data_get_state_reply data_state;
-	int			data_notify_pending;
+	int32_t			data_notify_pending;
 
 	struct ndmchan		formatter_image;	/* stdin/out */
 	struct ndmchan		formatter_error;	/* stderr */
 	struct ndmchan		formatter_wrap;		/* fd=3 */
-	int			formatter_pid;
+	int32_t			formatter_pid;
 
 	char *			fmt_image_buf;
 	char *			fmt_error_buf;
 	char *			fmt_wrap_buf;
 
 	struct ndmfhheap	fhh;
-	unsigned long *		fhh_buf;
+	uint32_t *		fhh_buf;
 
 #ifdef NDMOS_MACRO_DATA_AGENT_ADDITIONS
 	NDMOS_MACRO_DATA_AGENT_ADDITIONS
@@ -754,8 +754,7 @@ extern void		ndmda_send_logmsg (struct ndm_session *sess,
 
 extern void		ndmda_send_notice (struct ndm_session *sess);
 extern void		ndmda_send_data_read (struct ndm_session *sess,
-				unsigned long long offset,
-				unsigned long long length);
+				uint64_t offset, uint64_t length);
 
 extern int		ndmda_copy_environment (struct ndm_session *sess,
 				ndmp9_pval *env, unsigned n_env);
@@ -763,7 +762,7 @@ extern struct ndmp9_pval *ndmda_find_env (struct ndm_session *sess,
 				char *name);
 
 extern int		ndmda_interpret_boolean_value (char *value_str,
-				int default_value);
+				int32_t default_value);
 
 extern void		ndmda_purge_environment (struct ndm_session *sess);
 
@@ -789,8 +788,7 @@ extern int	ndmda_reco_assess_intervals (struct ndm_session *sess);
 extern int	ndmda_reco_align_to_wanted (struct ndm_session *sess);
 extern int	ndmda_reco_obtain_wanted (struct ndm_session *sess);
 extern int	ndmda_reco_send_data_read (struct ndm_session *sess,
-						unsigned long long offset,
-						unsigned long long length);
+						uint64_t offset, uint64_t length);
 extern int	ndmda_reco_internal_error (struct ndm_session *sess,
 						char *why);
 
@@ -803,9 +801,9 @@ extern int		ndmda_fh_belay (struct ndm_session *sess);
 extern void		ndmda_fh_add_file (struct ndm_session *sess,
 				ndmp9_file_stat *filestat, char *name);
 extern void		ndmda_fh_add_dir (struct ndm_session *sess,
-				unsigned long long dir_fileno,
+				uint64_t dir_fileno,
 				char *name,
-				unsigned long long fileno);
+				uint64_t fileno);
 extern void		ndmda_fh_add_node (struct ndm_session *sess,
 				ndmp9_file_stat *filestat);
 
@@ -843,9 +841,9 @@ struct ndm_tape_agent {
 
 	/* MOVER */
 	ndmp9_mover_get_state_reply mover_state;
-	u_long			mover_window_first_blockno;
-	unsigned long long	mover_window_end;
-	unsigned long long	mover_want_pos;
+	uint32_t		mover_window_first_blockno;
+	uint64_t		mover_window_end;
+	uint64_t		mover_want_pos;
 	int			mover_notify_pending;
 
 	int			pending_change_after_drain;
@@ -854,7 +852,7 @@ struct ndm_tape_agent {
 	ndmp9_mover_pause_reason pending_mover_pause_reason;
 
 	char			*tape_buffer;
-	unsigned long		tb_blockno;
+	uint32_t		tb_blockno;
 
 #ifdef NDMOS_MACRO_TAPE_AGENT_ADDITIONS
 	NDMOS_MACRO_TAPE_AGENT_ADDITIONS
@@ -887,8 +885,7 @@ extern void		ndmta_mover_abort (struct ndm_session *sess);
 extern void		ndmta_mover_continue (struct ndm_session *sess);
 extern void		ndmta_mover_close (struct ndm_session *sess);
 extern void		ndmta_mover_read (struct ndm_session *sess,
-				unsigned long long offset,
-				unsigned long long length);
+				uint64_t offset, uint64_t length);
 
 extern int		ndmta_quantum (struct ndm_session *sess);
 extern int		ndmta_read_quantum (struct ndm_session *sess);
@@ -1168,8 +1165,8 @@ extern void	ndmalogfv (struct ndm_session *sess, char *tag,
  */
 
 struct ndm_dispatch_request_table {
-	unsigned short	message;
-	unsigned short	flags;
+	uint16_t	message;
+	uint16_t	flags;
 	int		(*dispatch_request) (	/* "dr" for short */
 				struct ndm_session *sess,
 				struct ndmp_xa_buf *xa,
@@ -1196,8 +1193,7 @@ extern int	ndma_dispatch_conn (struct ndm_session *sess,
 extern void	ndma_dispatch_ctrl_unexpected (struct ndmconn *conn,
 			struct ndmp_msg_buf *nmb);
 extern int	ndmta_local_mover_read (struct ndm_session *sess,
-			unsigned long long offset,
-			unsigned long long length);
+			uint64_t offset, uint64_t length);
 extern int	ndma_call_no_tattle (struct ndmconn *conn,
 			struct ndmp_xa_buf *xa);
 extern int	ndma_call (struct ndmconn *conn, struct ndmp_xa_buf *xa);
@@ -1274,12 +1270,12 @@ struct ndm_tape_simulator_callbacks {
 		char *drive_name, int will_write);
 	ndmp9_error (*tape_close)(struct ndm_session *sess);
 	ndmp9_error (*tape_mtio)(struct ndm_session *sess,
-		ndmp9_tape_mtio_op op, u_long count, u_long *resid);
+		ndmp9_tape_mtio_op op, uint32_t count, uint32_t *resid);
 	ndmp9_error (*tape_write)(struct ndm_session *sess,
-		char *buf, u_long count, u_long *done_count);
+		char *buf, uint32_t count, uint32_t *done_count);
 	ndmp9_error (*tape_wfm)(struct ndm_session *sess);
 	ndmp9_error (*tape_read)(struct ndm_session *sess,
-		char *buf, u_long count, u_long *done_count);
+		char *buf, uint32_t count, uint32_t *done_count);
 };
 
 extern void		ndmos_tape_register_callbacks (struct ndm_session *sess,
@@ -1292,14 +1288,14 @@ extern ndmp9_error	ndmos_tape_close (struct ndm_session *sess);
 extern void		ndmos_tape_sync_state (struct ndm_session *sess);
 extern ndmp9_error	ndmos_tape_mtio (struct ndm_session *sess,
 				ndmp9_tape_mtio_op op,
-				u_long count, u_long *resid);
+				uint32_t count, uint32_t *resid);
 extern ndmp9_error	ndmos_tape_write (struct ndm_session *sess,
 				char *buf,
-				u_long count, u_long *done_count);
+				uint32_t count, uint32_t *done_count);
 extern ndmp9_error	ndmos_tape_wfm (struct ndm_session *sess);
 extern ndmp9_error	ndmos_tape_read (struct ndm_session *sess,
 				char *buf,
-				u_long count, u_long *done_count);
+				uint32_t count, uint32_t *done_count);
 extern ndmp9_error	ndmos_tape_execute_cdb (struct ndm_session *sess,
 				ndmp9_execute_cdb_request *request,
 				ndmp9_execute_cdb_reply *reply);
@@ -1337,8 +1333,7 @@ extern ndmp9_error	ndmos_scsi_execute_cdb (struct ndm_session *sess,
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 extern int	ndma_notify_data_halted (struct ndm_session *sess);
 extern int	ndma_notify_data_read (struct ndm_session *sess,
-			unsigned long long offset,
-			unsigned long long length);
+			uint64_t offset, uint64_t length);
 #endif /* !NDMOS_OPTION_NO_DATA_AGENT */
 #ifndef NDMOS_OPTION_NO_TAPE_AGENT
 extern int	ndma_notify_mover_halted (struct ndm_session *sess);
