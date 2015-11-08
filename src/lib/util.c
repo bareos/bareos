@@ -738,6 +738,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
 /*
  * Edit job codes into main command line
  *  %% = %
+ *  %B = Job Bytes in human readable format
  *  %F = Job Files
  *  %P = Pid of daemon
  *  %b = Job Bytes
@@ -772,6 +773,9 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          switch (*++p) {
          case '%':
             str = "%";
+            break;
+         case 'B':                    /* Job Bytes in human readable format */
+            str = edit_uint64_with_suffix(jcr->JobBytes, add);
             break;
          case 'F':                    /* Job Files */
             str = edit_uint64(jcr->JobFiles, add);
