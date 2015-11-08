@@ -22,3 +22,4 @@ class Jobs(Directory):
             self.add_subnode(JobsName, i['name'])
         self.add_subnode(JobsList, "all")
         self.add_subnode(JobsList, "running", "jobstatus=running")
+        self.add_subnode(JobsList, "each_jobname_last_run", "last")
