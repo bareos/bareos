@@ -1479,7 +1479,7 @@ void re_registers_to_regmatch(regexp_registers_t old_regs,
        * We have to set the last entry to -1
        */
       nmatch = nmatch - 1;
-      for (size_t i = 0; (i < nmatch) && (old_regs->start[i] > -1) ; i++) {
+      for (i = 0; (i < nmatch) && (old_regs->start[i] > -1) ; i++) {
          pmatch[i].rm_so = old_regs->start[i];
          pmatch[i].rm_eo = old_regs->end[i];
       }
