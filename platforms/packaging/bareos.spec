@@ -78,7 +78,10 @@ Vendor: 	The Bareos Team
 %define systemd_support 1
 %endif
 
-
+# SLES 12
+%if 0%{?suse_version} == 1315 && 0%{?is_opensuse} == 0
+%define ceph 1
+%endif
 
 #
 # RedHat (CentOS, Fedora, RHEL) specific settings
