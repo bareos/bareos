@@ -137,7 +137,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             fd->bstrerror());
       return false;
    } else {
-      Dmsg1(400, ">filed: Hdr=%s", fd->msg);
+      Dmsg1(400, ">filed: Hdr=%s\n", fd->msg);
    }
 
    /*

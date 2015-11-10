@@ -732,7 +732,7 @@ void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
  * Create session label
  *  The pool memory must be released by the calling program
  */
-void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
+static void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
 {
    JCR *jcr = dcr->jcr;
    ser_declare;
@@ -785,6 +785,7 @@ void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
    }
    ser_end(rec->data, SER_LENGTH_Session_Label);
    rec->data_len = ser_length(rec->data);
+   rec->remainder = rec->data_len;
 }
 
 /* Write session label

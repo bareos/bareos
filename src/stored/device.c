@@ -54,7 +54,7 @@
 
 /*
  * This is the dreaded moment. We either have an end of
- * medium condition or worse, and error condition.
+ * medium condition or worse, an error condition.
  * Attempt to "recover" by obtaining a new Volume.
  *
  * Here are a few things to know:

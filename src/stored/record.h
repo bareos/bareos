@@ -115,7 +115,6 @@ struct DEV_RECORD {
    int32_t maskedStream;              /* Masked Stream without high bits */
    uint32_t data_len;                 /* Current record length */
    uint32_t remainder;                /* Remaining bytes to read/write */
-   uint32_t remlen;                   /* Temp remainder bytes */
    char state_bits[REC_STATE_BYTES];  /* State bits */
    rec_state state;                   /* State of write_record_to_block */
    BSR *bsr;                          /* Pointer to bsr that matched */

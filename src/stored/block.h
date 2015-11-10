@@ -108,6 +108,7 @@ struct DEV_BLOCK {
    POOLMEM *buf;                      /* actual data buffer */
 };
 
+#define block_write_navail(block) ((block)->buf_len - (block)->binbuf)
 #define block_is_empty(block) ((block)->read_len == 0)
 
 #endif
