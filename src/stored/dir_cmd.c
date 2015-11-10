@@ -109,6 +109,8 @@ static char OKpassive[] =
    "2000 OK passive client\n";
 static char OKpluginoptions[] =
    "2000 OK plugin options\n";
+static char OKsecureerase[] =
+   "2000 OK SDSecureEraseCmd %s \n";
 
 /* Imported functions */
 extern bool finish_cmd(JCR *jcr);
@@ -141,6 +143,7 @@ static bool relabel_cmd(JCR *jcr);
 static bool release_cmd(JCR *jcr);
 static bool replicate_cmd(JCR *jcr);
 static bool run_cmd(JCR *jcr);
+static bool secureerasereq_cmd(JCR *jcr);
 static bool setbandwidth_cmd(JCR *jcr);
 static bool setdebug_cmd(JCR *jcr);
 static bool unmount_cmd(JCR *jcr);
@@ -185,6 +188,7 @@ static struct s_cmds cmds[] = {
    { "resolve", resolve_cmd, false },
    { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
    { "run", run_cmd, false },               /* Start of Job */
+   { "getSecureEraseCmd", secureerasereq_cmd, false },
    { "setbandwidth=", setbandwidth_cmd, false },
    { "setdebug=", setdebug_cmd, false },    /* Set debug level */
    { "stats", stats_cmd, false },
@@ -331,6 +335,20 @@ static bool die_cmd(JCR *jcr)
    djcr->JobId = a;
 #endif
    return false;
+}
+
+
+/*
+ * Handles the secureerase request
+ * replies the configured secure erase command
+ * or "*None*"
+ */
+static bool secureerasereq_cmd(JCR *jcr) {
+   BSOCK *dir = jcr->dir_bsock;
+
+   Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
+
+   return dir->fsend(OKsecureerase, (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
 }
 
 /**

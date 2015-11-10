@@ -99,6 +99,7 @@ bool send_include_list(JCR *jcr);
 bool send_exclude_list(JCR *jcr);
 bool send_level_command(JCR *jcr);
 bool send_bwlimit_to_fd(JCR *jcr, const char *Job);
+bool send_secure_erase_req_to_fd(JCR *jcr);
 bool send_previous_restore_objects(JCR *jcr);
 int get_attributes_and_put_in_catalog(JCR *jcr);
 void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId);
@@ -243,6 +244,7 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation, int drive, int slot);
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
+bool send_secure_erase_req_to_sd(JCR *jcr);
 bool do_storage_resolve(UAContext *ua, STORERES *store);
 bool do_storage_plugin_options(JCR *jcr);
 

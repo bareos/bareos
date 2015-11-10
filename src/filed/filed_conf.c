@@ -121,7 +121,8 @@ static RES_ITEM cli_items[] = {
    { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_client.jcr_watchdog_time), 0, 0, NULL, NULL, NULL },
    { "AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL, NULL, NULL },
-   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, NULL, NULL },
+   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
+     "Specify command that will be called when bareos unlinks files." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 

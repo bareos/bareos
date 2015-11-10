@@ -245,6 +245,14 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    }
 
    /*
+    * request sd to reply the secure erase cmd
+    * or "*None*" if not set
+    */
+   if(!send_secure_erase_req_to_sd(jcr)) {
+      Dmsg1(400,"Unexpected %s Secure Erase Reply\n","SD");
+   }
+
+   /*
     * We have two loops here. The first comes from the
     *  Storage = associated with the Job, and we need
     *  to attach to each one.

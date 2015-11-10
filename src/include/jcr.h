@@ -434,6 +434,8 @@ public:
    uint32_t SDJobFiles;                   /* Number of files written, this job */
    uint64_t SDJobBytes;                   /* Number of bytes processed this job */
    uint32_t SDErrors;                     /* Number of non-fatal errors */
+   POOLMEM *FDSecureEraseCmd;             /* Report: Secure Erase Command  */
+   POOLMEM *SDSecureEraseCmd;             /* Report: Secure Erase Command  */
    volatile int32_t SDJobStatus;          /* Storage Job Status */
    volatile int32_t FDJobStatus;          /* File daemon Job Status */
    uint32_t ExpectedFiles;                /* Expected restore files */

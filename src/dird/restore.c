@@ -182,6 +182,10 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          }
          fd = jcr->file_bsock;
 
+         if (!send_secure_erase_req_to_fd(jcr)) {
+            Dmsg1(500,"Unexpected %s secure erase\n","client");
+         }
+
          /*
           * Check if the file daemon supports passive client mode.
           */
@@ -520,6 +524,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
    char fd_term_msg[100], sd_term_msg[100];
    utime_t RunTime;
    double kbps;
+   POOL_MEM temp, secure_erase_status;
 
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
@@ -568,6 +573,19 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
            term_msg);
       break;
    default:
+      if (me->secure_erase_cmdline) {
+         Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
+         pm_strcat(secure_erase_status, temp.c_str());
+      }
+      if (!bstrcmp(jcr->FDSecureEraseCmd, "*None*")) {
+         Mmsg(temp,"  FD  Secure Erase Cmd:   %s\n", jcr->FDSecureEraseCmd);
+         pm_strcat(secure_erase_status, temp.c_str());
+      }
+      if (!bstrcmp(jcr->SDSecureEraseCmd, "*None*")) {
+         Mmsg(temp,"  SD  Secure Erase Cmd:   %s\n", jcr->SDSecureEraseCmd);
+         pm_strcat(secure_erase_status, temp.c_str());
+      }
+
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
            "  Build OS:               %s %s %s\n"
            "  JobId:                  %d\n"
@@ -583,6 +601,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
            "  FD Errors:              %d\n"
            "  FD termination status:  %s\n"
            "  SD termination status:  %s\n"
+           "%s"
            "  Termination:            %s\n\n"),
            BAREOS, my_name, VERSION, LSMDATE,
            HOST_OS, DISTNAME, DISTVER,
@@ -599,6 +618,7 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
            jcr->JobErrors,
            fd_term_msg,
            sd_term_msg,
+           secure_erase_status.c_str(),
            term_msg);
       break;
    }

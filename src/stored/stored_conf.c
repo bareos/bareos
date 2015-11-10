@@ -108,7 +108,8 @@ static RES_ITEM store_items[] = {
    { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_store.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
    { "DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store.device_reserve_by_mediatype), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store.filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store.secure_erase_cmdline), 0, 0, NULL, NULL, NULL },
+   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
+     "Specify command that will be called when bareos unlinks files." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 

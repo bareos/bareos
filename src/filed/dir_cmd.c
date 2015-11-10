@@ -89,6 +89,7 @@ static bool resolve_cmd(JCR *jcr);
 static bool restore_object_cmd(JCR *jcr);
 static bool restore_cmd(JCR *jcr);
 static bool session_cmd(JCR *jcr);
+static bool secureerasereq_cmd(JCR *jcr);
 static bool setauthorization_cmd(JCR *jcr);
 static bool setbandwidth_cmd(JCR *jcr);
 static bool setdebug_cmd(JCR *jcr);
@@ -135,6 +136,7 @@ static struct s_cmds cmds[] = {
    { "restoreobject", restore_object_cmd, false },
    { "restore ", restore_cmd, false },
    { "resolve ", resolve_cmd, false },
+   { "getSecureEraseCmd", secureerasereq_cmd, false},
    { "session", session_cmd, false },
    { "setauthorization", setauthorization_cmd, false },
    { "setbandwidth=", setbandwidth_cmd, false },
@@ -220,6 +222,8 @@ static char OKverify[] =
    "2000 OK verify\n";
 static char OKrestore[] =
    "2000 OK restore\n";
+static char OKsecureerase[] =
+   "2000 OK FDSecureEraseCmd %s\n";
 static char OKsession[] =
    "2000 OK session\n";
 static char OKstore[] =
@@ -600,8 +604,17 @@ bail_out:
    return true;
 }
 
+static bool secureerasereq_cmd(JCR *jcr) {
+   const char *setting;
+   BSOCK *dir = jcr->dir_bsock;
+
+   setting = me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*";
+   Dmsg1(200,"Secure Erase Cmd Request: %s\n", setting);
+   return dir->fsend(OKsecureerase, setting);
+}
+
 #ifdef DEVELOPER
-   static bool exit_cmd(JCR *jcr)
+static bool exit_cmd(JCR *jcr)
 {
    jcr->dir_bsock->fsend("2000 exit OK\n");
    terminate_filed(0);

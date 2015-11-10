@@ -146,7 +146,8 @@ static RES_ITEM dir_items[] = {
    { "AbsoluteJobTimeout", CFG_TYPE_PINT32, ITEM(res_dir.jcr_watchdog_time), 0, 0, NULL, "14.2.0-", NULL },
    { "Auditing", CFG_TYPE_BOOL, ITEM(res_dir.auditing), 0, CFG_ITEM_DEFAULT, "false", "14.2.0-", NULL },
    { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL, "14.2.0-", NULL },
-   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-", NULL },
+   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
+     "Specify command that will be called when bareos unlinks files." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 

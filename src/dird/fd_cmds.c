@@ -56,6 +56,8 @@ static char bandwidthcmd[] =
    "setbandwidth=%lld Job=%s\n";
 static char pluginoptionscmd[] =
    "pluginoptions %s\n";
+static char getSecureEraseCmd[] =
+   "getSecureEraseCmd\n";
 
 /* Responses received from File daemon */
 static char OKinc[] =
@@ -74,6 +76,8 @@ static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
 static char OKPluginOptions[] =
    "2000 OK PluginOptions\n";
+static char OKgetSecureEraseCmd[] =
+   "2000 OK FDSecureEraseCmd %s\n";
 
 /* Forward referenced functions */
 static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
@@ -211,6 +215,35 @@ bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
          jcr->max_bandwidth = 0;      /* can't set bandwidth limit */
          return false;
       }
+   }
+
+   return true;
+}
+
+bool send_secure_erase_req_to_fd(JCR *jcr)
+{
+   int32_t n;
+   BSOCK *fd = jcr->file_bsock;
+
+   if (!jcr->FDSecureEraseCmd) {
+      jcr->FDSecureEraseCmd = get_pool_memory(PM_NAME);
+   }
+
+   if (jcr->FDVersion > FD_VERSION_53) {
+      fd->fsend(getSecureEraseCmd);
+      while ((n = bget_dirmsg(fd)) >= 0) {
+         jcr->FDSecureEraseCmd = check_pool_memory_size(jcr->FDSecureEraseCmd, fd->msglen);
+         if (sscanf(fd->msg, OKgetSecureEraseCmd, jcr->FDSecureEraseCmd) == 1) {
+            Dmsg1(400, "Got FD Secure Erase Cmd: %s\n", jcr->FDSecureEraseCmd);
+            break;
+         } else {
+            Jmsg(jcr, M_WARNING, 0, _("Unexpected Client Secure Erase Cmd: %s\n"), fd->msg);
+            pm_strcpy(jcr->FDSecureEraseCmd, "*None*");
+            return false;
+         }
+      }
+   } else {
+      pm_strcpy(jcr->FDSecureEraseCmd, "*None*");
    }
 
    return true;

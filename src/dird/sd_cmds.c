@@ -58,12 +58,16 @@ static char bandwidthcmd[] =
    "setbandwidth=%lld Job=%s\n";
 static char pluginoptionscmd[] =
    "pluginoptions %s\n";
+static char getSecureEraseCmd[] =
+   "getSecureEraseCmd\n";
 
 /* Responses received from Storage daemon */
 static char OKBandwidth[] =
    "2000 OK Bandwidth\n";
 static char OKpluginoptions[] =
    "2000 OK plugin options\n";
+static char OKSecureEraseCmd[] =
+   "2000 OK SDSecureEraseCmd %s\n";
 
 /* Commands received from storage daemon that need scanning */
 static char readlabelresponse[] =
@@ -895,6 +899,34 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
    return retval;
 }
 
+/*
+ * sends request to report secure erase command
+ * and receives the command or "*None*" of not set
+ */
+bool send_secure_erase_req_to_sd(JCR *jcr) {
+   int32_t n;
+   BSOCK *sd = jcr->store_bsock;
+
+   if (!jcr->SDSecureEraseCmd) {
+      jcr->SDSecureEraseCmd = get_pool_memory(PM_NAME);
+   }
+
+   sd->fsend(getSecureEraseCmd);
+   while ((n = bget_dirmsg(sd)) >= 0) {
+      jcr->SDSecureEraseCmd = check_pool_memory_size(jcr->SDSecureEraseCmd, sd->msglen);
+      if (sscanf(sd->msg, OKSecureEraseCmd, jcr->SDSecureEraseCmd) == 1) {
+         Dmsg1(421, "Got SD Secure Erase Cmd: %s\n", jcr->SDSecureEraseCmd);
+         break;
+      } else {
+         Jmsg(jcr, M_WARNING, 0, _("Unexpected SD Secure Erase Cmd: %s\n"), sd->msg);
+         pm_strcpy(jcr->SDSecureEraseCmd, "*None*");
+         return false;
+      }
+   }
+
+   return true;
+}
+
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
 {
    BSOCK *sd = jcr->store_bsock;
@@ -925,7 +957,7 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
    }
 
    for (int i = 1; i < ua->argc; i++) {
-       if (!*ua->argk[i]) {
+      if (!*ua->argk[i]) {
           continue;
        }
 

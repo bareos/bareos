@@ -1453,6 +1453,8 @@ void dird_free_jcr(JCR *jcr)
    free_and_null_pool_memory(jcr->res.wstore_source);
    free_and_null_pool_memory(jcr->res.rstore_source);
    free_and_null_pool_memory(jcr->res.catalog_source);
+   free_and_null_pool_memory(jcr->FDSecureEraseCmd);
+   free_and_null_pool_memory(jcr->SDSecureEraseCmd);
 
    /*
     * Delete lists setup to hold storage pointers

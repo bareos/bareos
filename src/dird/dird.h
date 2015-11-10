@@ -129,5 +129,6 @@ typedef struct s_vol_list {
 #define FD_VERSION_51 51
 #define FD_VERSION_52 52
 #define FD_VERSION_53 53
+#define FD_VERSION_54 54
 
 #include "protos.h"

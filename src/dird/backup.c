@@ -459,6 +459,10 @@ bool do_native_backup(JCR *jcr)
       goto bail_out;
    }
 
+   if (!send_secure_erase_req_to_fd(jcr)) {
+      Dmsg1(500,"Unexpected %s secure erase\n","client");
+   }
+
    if (jcr->res.job->max_bandwidth > 0) {
       jcr->max_bandwidth = jcr->res.job->max_bandwidth;
    } else if (jcr->res.client->max_bandwidth > 0) {
@@ -891,11 +895,13 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
    double kbps, compression;
    utime_t RunTime;
    MEDIA_DBR mr;
-   POOL_MEM level_info,
+   POOL_MEM temp,
+            level_info,
             statistics,
             quota_info,
             client_options,
             daemon_status,
+            secure_erase_status,
             compress_algo_list;
 
    memset(&mr, 0, sizeof(mr));
@@ -1076,6 +1082,19 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
            jcr->SDErrors,
            fd_term_msg,
            sd_term_msg);
+
+         if (me->secure_erase_cmdline) {
+            Mmsg(temp,"  Dir Secure Erase Cmd:   %s\n", me->secure_erase_cmdline);
+            pm_strcat(secure_erase_status, temp.c_str());
+         }
+         if (!bstrcmp(jcr->FDSecureEraseCmd, "*None*")) {
+            Mmsg(temp, "  FD  Secure Erase Cmd:   %s\n", jcr->FDSecureEraseCmd);
+            pm_strcat(secure_erase_status, temp.c_str());
+         }
+         if (!bstrcmp(jcr->SDSecureEraseCmd, "*None*")) {
+            Mmsg(temp, "  SD  Secure Erase Cmd:   %s\n", jcr->SDSecureEraseCmd);
+            pm_strcat(secure_erase_status, temp.c_str());
+         }
       }
       break;
    }
@@ -1106,6 +1125,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
         "  Volume Session Time:    %d\n"
         "  Last Volume Bytes:      %s (%sB)\n"
         "%s"                                        /* Daemon status info */
+        "%s"                                        /* SecureErase status */
         "  Termination:            %s\n\n"),
         BAREOS, my_name, VERSION, LSMDATE,
         HOST_OS, DISTNAME, DISTVER,
@@ -1132,5 +1152,6 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
         edit_uint64_with_commas(mr.VolBytes, ec7),
         edit_uint64_with_suffix(mr.VolBytes, ec8),
         daemon_status.c_str(),
+        secure_erase_status.c_str(),
         term_msg);
 }
