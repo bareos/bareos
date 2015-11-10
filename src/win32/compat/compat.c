@@ -3317,6 +3317,7 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
        * Close our write side so when process terminates we can detect eof.
        */
       CloseHandle(hChildStdoutWr);
+      hChildStdoutWr = INVALID_HANDLE_VALUE;
 
       int rfd = _open_osfhandle((intptr_t)hChildStdoutRdDup, O_RDONLY | O_BINARY);
       if (rfd >= 0) {
@@ -3329,6 +3330,7 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
        * Close our read side so to not interfere with child's copy.
        */
       CloseHandle(hChildStdinRd);
+      hChildStdinRd = INVALID_HANDLE_VALUE;
 
       int wfd = _open_osfhandle((intptr_t)hChildStdinWrDup, O_WRONLY | O_BINARY);
       if (wfd >= 0) {
@@ -3345,7 +3347,9 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
 cleanup:
 
    CloseHandleIfValid(hChildStdoutRd);
+   CloseHandleIfValid(hChildStdoutWr);
    CloseHandleIfValid(hChildStdoutRdDup);
+   CloseHandleIfValid(hChildStdinRd);
    CloseHandleIfValid(hChildStdinWr);
    CloseHandleIfValid(hChildStdinWrDup);
 
