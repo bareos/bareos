@@ -32,26 +32,27 @@ class RestoreForm extends Form
 {
 
 	protected $restore_params;
-	protected $jobs;
+	//protected $jobs;
 	protected $clients;
 	protected $filesets;
 	protected $restorejobs;
 	protected $jobids;
 	protected $backups;
 
-	public function __construct($restore_params=null, $jobs=null, $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
+	public function __construct($restore_params=null, /*$jobs=null,*/ $clients=null, $filesets=null, $restorejobs=null, $jobids=null, $backups=null)
 	{
 
 		parent::__construct('restore');
 
 		$this->restore_params = $restore_params;
-		$this->jobs = $jobs;
+		//$this->jobs = $jobs;
 		$this->clients = $clients;
 		$this->filesets = $filesets;
 		$this->restorejobs = $restorejobs;
 		$this->jobids = $jobids;
 		$this->backups = $backups;
 
+/*
 		// Job
 		if(isset($restore_params['jobid'])) {
 			$this->add(array(
@@ -82,18 +83,21 @@ class RestoreForm extends Form
 				)
 			));
 		}
+*/
 
-		// Backup
+		// Backup jobs
                 if(isset($restore_params['jobid'])) {
                         $this->add(array(
                                 'name' => 'backups',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' => 'Backups',
-                                        'empty_option' => 'Please choose a backup',
+                                        'label' => 'Backup jobs',
+                                        //'empty_option' => 'Please choose a backup',
                                         'value_options' => $this->getBackupList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'jobid',
                                         'value' => $restore_params['jobid']
                                 )
@@ -105,10 +109,12 @@ class RestoreForm extends Form
                                 'type' => 'select',
                                 'options' => array(
                                         'label' => 'Backups',
-                                        'empty_option' => 'Please choose a backup',
+                                        //'empty_option' => 'Please choose a backup',
                                         'value_options' => $this->getBackupList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'jobid'
                                 )
                         ));
@@ -122,10 +128,12 @@ class RestoreForm extends Form
                                         'type' => 'select',
                                         'options' => array(
                                                 'label' => 'Client',
-						'empty_option' => 'Please choose a client',
+						//'empty_option' => 'Please choose a client',
 						'value_options' => $this->getClientList()
                                         ),
                                         'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
+                                                'data-live-search' => 'true',
                                                 'id' => 'client',
                                                 'value' => $restore_params['client']
                                         )
@@ -137,10 +145,12 @@ class RestoreForm extends Form
 					'type' => 'select',
 					'options' => array(
 						'label' => 'Client',
-						'empty_option' => 'Please choose a client',
+						//'empty_option' => 'Please choose a client',
 						'value_options' => $this->getClientList()
 					),
 					'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
+						'data-live-search' => 'true',
 						'id' => 'client',
 						'value' => $restore_params['client']
 					)
@@ -153,10 +163,12 @@ class RestoreForm extends Form
                                 'type' => 'select',
                                 'options' => array(
                                         'label' => 'Client',
-                                        'empty_option' => 'Please choose a client',
+                                        //'empty_option' => 'Please choose a client',
                                         'value_options' => $this->getClientList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+					'data-live-search' => 'true',
                                         'id' => 'client',
 					'value' => @array_pop($this->getClientList())
                                 )
@@ -169,11 +181,13 @@ class RestoreForm extends Form
                                 'name' => 'restoreclient',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' => 'Restore to client',
-                                        'empty_option' => 'Please choose a client',
+                                        'label' => 'Restore to (another) client',
+                                        //'empty_option' => 'Please choose a client',
                                         'value_options' => $this->getClientList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'restoreclient',
                                         'value' => $restore_params['restoreclient']
                                 )
@@ -184,11 +198,13 @@ class RestoreForm extends Form
                                 'name' => 'restoreclient',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' => 'Restore to client',
-                                        'empty_option' => 'Please choose a client',
+                                        'label' => 'Restore to (another) client',
+                                        //'empty_option' => 'Please choose a client',
                                         'value_options' => $this->getClientList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'restoreclient',
                                         'value' => $restore_params['client']
                                 )
@@ -199,11 +215,13 @@ class RestoreForm extends Form
                                 'name' => 'restoreclient',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' => 'Restore to another client',
-                                        'empty_option' => 'Please choose a client',
+                                        'label' => 'Restore to (another) client',
+                                        //'empty_option' => 'Please choose a client',
                                         'value_options' => $this->getClientList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'restoreclient'
                                 )
                         ));
@@ -247,10 +265,12 @@ class RestoreForm extends Form
                                 'type' => 'select',
                                 'options' => array(
                                         'label' => 'Restore job',
-                                        'empty_option' => 'Please choose a restore job',
+                                        //'empty_option' => 'Please choose a restore job',
                                         'value_options' => $this->getRestoreJobList()
                                 ),
                                 'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
+                                        'data-live-search' => 'true',
                                         'id' => 'restorejob',
                                         'value' => $restore_params['restorejob']
                                 )
@@ -263,10 +283,12 @@ class RestoreForm extends Form
                                         'type' => 'select',
                                         'options' => array(
                                                 'label' => 'Restore job',
-                                                'empty_option' => 'Please choose a restore job',
+                                                //'empty_option' => 'Please choose a restore job',
                                                 'value_options' => $this->getRestoreJobList()
                                         ),
                                         'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
+						'data-live-search' => 'true',
                                                 'id' => 'restorejob',
 						'value' => @array_pop($this->getRestoreJobList())
                                         )
@@ -278,10 +300,12 @@ class RestoreForm extends Form
 					'type' => 'select',
 					'options' => array(
 						'label' => 'Restore job',
-						'empty_option' => 'Please choose a restore job',
+						//'empty_option' => 'Please choose a restore job',
 						'value_options' => $this->getRestoreJobList()
 					),
 					'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
+						'data-live-search' => 'true',
 						'id' => 'restorejob'
 					)
 				));
@@ -301,6 +325,7 @@ class RestoreForm extends Form
 						)
 					),
 				'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
 						'id' => 'mergefilesets',
 						'value' => $restore_params['mergefilesets']
 					)
@@ -319,6 +344,7 @@ class RestoreForm extends Form
                                                 )
                                         ),
                                 'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
                                                 'id' => 'mergefilesets',
                                                 'value' => '0'
                                         )
@@ -332,13 +358,14 @@ class RestoreForm extends Form
                                 'name' => 'mergejobs',
                                 'type' => 'select',
                                 'options' => array(
-                                        'label' => 'Merge jobs?',
+                                        'label' => 'Merge all related jobs to last full backup of selected backup job?',
                                         'value_options' => array(
                                                         '0' => 'Yes',
                                                         '1' => 'No'
                                                 )
                                         ),
                                 'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
                                                 'id' => 'mergejobs',
                                                 'value' => $restore_params['mergejobs']
                                         )
@@ -357,6 +384,7 @@ class RestoreForm extends Form
 						)
 					),
 				'attributes' => array(
+						'class' => 'form-control selectpicker show-tick',
 						'id' => 'mergejobs',
 						'value' => '0'
 					)
@@ -378,6 +406,7 @@ class RestoreForm extends Form
                                         )
                                 ),
                         'attributes' => array(
+					'class' => 'form-control selectpicker show-tick',
 					'id' => 'replace',
 					'value' => 'never'
                                 )
@@ -392,6 +421,7 @@ class RestoreForm extends Form
                                 'label' => 'Restore location on client'
                                 ),
                         'attributes' => array(
+				'class' => 'form-control selectpicker show-tick',
                                 'value' => '/tmp/bareos-restores/',
 				'id' => 'where',
 				'size' => '30',
@@ -481,6 +511,7 @@ class RestoreForm extends Form
 	{
 		$selectData = array();
                 if(!empty($this->backups)) {
+
                         foreach($this->backups as $backup) {
 				switch($backup['level']) {
 					case 'I':
@@ -518,6 +549,7 @@ class RestoreForm extends Form
 				$selectData[$client['name']] = $client['name'];
 			}
 		}
+		ksort($selectData);
 		return $selectData;
 	}
 

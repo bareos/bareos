@@ -46,7 +46,7 @@ class JobForm extends Form
 				'name' => 'period',
 				'type' => 'select',
 				'options' => array(
-					'label' => 'Period',
+					'label' => 'Time period',
 					'value_options' => array(
 						'1' => 'past 24 hours',
 						'7' => 'last week',
@@ -56,7 +56,7 @@ class JobForm extends Form
 					)
 				),
 				'attributes' => array(
-					'class' => 'selectpicker',
+					'class' => 'form-control selectpicker show-tick',
 					'data-size' => '5',
 					'id' => 'period',
 					'value' => $period
@@ -79,7 +79,7 @@ class JobForm extends Form
 					)
 				),
 				'attributes' => array(
-					'class' => 'selectpicker',
+					'class' => 'form-control selectpicker show-tick',
                                         'data-size' => '5',
 					'id' => 'status',
 					'value' => $status

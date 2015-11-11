@@ -28,6 +28,13 @@ $this->headTitle($title);
 
 ?>
 
+<?php
+	if(isset($this->errors)) {
+		echo '<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <strong>Error: </strong>'.$this->errors.'</div>';
+	}
+?>
+
 <?php if(isset($this->result)) : ?>
 
 	<div class="row">
@@ -54,17 +61,18 @@ $this->headTitle($title);
 
 	<?php
 		if($this->restore_params['type'] == "client") {
-			echo $this->formRow($form->get('client')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('backups')->setAttribute('class', 'form-control'));
-			echo $this->formRow($form->get('mergefilesets')->setAttribute('class', 'form-control'));
-			echo $this->formRow($form->get('mergejobs')->setAttribute('class', 'form-control'));
-			echo $this->formRow($form->get('restoreclient')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('restorejob')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('replace')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('where')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('checked_files')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('checked_directories')->setAttribute('class','form-control'));
-			echo $this->formRow($form->get('jobids_hidden')->setAttribute('class','form-control'));
+			echo '<p>'.$this->formRow($form->get('client')).'</p>';
+			echo '<p>'.$this->formRow($form->get('backups')).'</p>';
+			echo '<p>'.$this->formRow($form->get('mergefilesets')).'</p>';
+			echo '<p>'.$this->formRow($form->get('mergejobs')).'</p>';
+			echo '<p>'.$this->formRow($form->get('restoreclient')).'</p>';
+			echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
+			echo '<p>'.$this->formRow($form->get('replace')).'</p>';
+			echo '<p>'.$this->formRow($form->get('where')).'</p>';
+			// Hidden fields
+			echo $this->formRow($form->get('checked_files'));
+			echo $this->formRow($form->get('checked_directories'));
+			echo $this->formRow($form->get('jobids_hidden'));
 		}
 		elseif($this->restore_params['type'] == "job") {
 			echo $this->formRow($form->get('jobid')->setAttribute('class', 'form-control'));
@@ -81,7 +89,7 @@ $this->headTitle($title);
 			if($this->restore_params['type'] == "client") {
 					//echo $this->formRow($form->get('jobids_display')->setAttribute('class','form-control')); // for debugging
 					echo '<strong>Select files to be restored</strong>';
-					echo '<div class="panel panel-default" style="height: 500px; overflow: scroll;"><div id="filebrowser"></div></div>';
+					echo '<div class="panel panel-default" style="height: 650px; overflow: scroll;"><div id="filebrowser"></div></div>';
 					/*
 					echo '<div class="input-group">';
 					echo '<div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>';
@@ -120,6 +128,18 @@ $this->headTitle($title);
 
 		return formatted;
 
+	}
+
+	function format_bytes(v) {
+		if(v == 0) {
+			return "0.00 B";
+		}
+		else {
+			var k = 1000;
+                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+                        var i = Math.floor(Math.log(v) / Math.log(k));
+                        return parseFloat((v / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+		}
 	}
 
 	function getFiles() {
@@ -216,14 +236,15 @@ $this->headTitle($title);
 				'dataType' : 'json',
 				'data' : function (node) {
 					return { 'id' : node.id };
-				}
+				},
+				//'error' : alert('Error') // debug
                         }
                 },
                 'plugins' : [ "grid", "checkbox", "state", "sort", "search" ],
 		'grid' : {
 			columns: [
 				{ width: 500, header: "Name", title: "_DATA_" },
-				{ width: 125, header: "Size", value: function(node) { return(node.data.stat.size); } },
+				{ width: 125, header: "Size", value: function(node) { return(format_bytes(node.data.stat.size)); } },
 				{ header: "Date", value: function(node) { return(unix_to_human(node.data.stat.mtime)); } }
 			],
 			resizable: true,

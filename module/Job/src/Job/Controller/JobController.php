@@ -40,7 +40,6 @@ class JobController extends AbstractActionController
 	{
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$error = null;
 			$status = "all";
 			$period = 7;
 

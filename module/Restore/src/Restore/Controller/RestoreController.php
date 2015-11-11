@@ -45,6 +45,7 @@ class RestoreController extends AbstractActionController
 		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 			$this->getRestoreParams();
+			$errors = null;
 
 			if($this->restore_params['client'] == null) {
 				$clients = $this->getRestoreModel()->getClients();
@@ -74,15 +75,19 @@ class RestoreController extends AbstractActionController
 				$backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
 			}
 
-			$jobs = $this->getRestoreModel()->getJobs();
+			//$jobs = $this->getRestoreModel()->getJobs();
                         $clients = $this->getRestoreModel()->getClients();
                         $filesets = $this->getRestoreModel()->getFilesets();
                         $restorejobs = $this->getRestoreModel()->getRestoreJobs();
 
+			if($backups == null) {
+				$errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
+			}
+
 			// Create the form
 			$form = new RestoreForm(
 				$this->restore_params,
-				$jobs,
+				//$jobs,
 				$clients,
 				$filesets,
 				$restorejobs,
@@ -129,7 +134,7 @@ class RestoreController extends AbstractActionController
 				else {
 					return new ViewModel(array(
 						'restore_params' => $this->restore_params,
-						'form' => $form
+						'form' => $form,
 					));
 				}
 
@@ -137,7 +142,8 @@ class RestoreController extends AbstractActionController
 			else {
 				return new ViewModel(array(
 					'restore_params' => $this->restore_params,
-					'form' => $form
+					'form' => $form,
+					'errors' => $errors
 				));
 			}
 

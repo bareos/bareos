@@ -58,7 +58,12 @@ class RestoreModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, $jobid);
 			$directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $directories['result']['directories'];
+			if(empty($directories['result']['directories'])) {
+				return null;
+			}
+			else {
+				return $directories['result']['directories'];
+			}
 		}
 		else {
 			return false;
@@ -76,7 +81,12 @@ class RestoreModel implements ServiceLocatorAwareInterface
 			$this->director = $this->getServiceLocator()->get('director');
 			$result = $this->director->send_command($cmd, 2, $jobid);
 			$files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $files['result']['files'];
+			if(empty($files['result']['files'])) {
+				return null;
+			}
+			else {
+				return $files['result']['files'];
+			}
 		}
 		else {
 			return false;
@@ -89,7 +99,12 @@ class RestoreModel implements ServiceLocatorAwareInterface
 		$this->director = $this->getServiceLocator()->get('director');
 		$result = $this->director->send_command($cmd, 2, null);
 		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $jobs['result']['jobs'];
+		if(empty($jobs['result']['jobs'])) {
+			return null;
+		}
+		else {
+			return $jobs['result']['jobs'];
+		}
 	}
 
 	public function getClients()
