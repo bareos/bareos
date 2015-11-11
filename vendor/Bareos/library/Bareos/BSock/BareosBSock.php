@@ -850,7 +850,8 @@ class BareosBSock implements BareosBSockInterface
 
 		switch($api) {
 			case 2:
-				self::send(".api 2");
+				// Enable api 2 with compact mode enabled
+				self::send(".api 2 compact=yes");
 				try {
 					$debug = self::receive_message();
 					if(!preg_match('/result/', $debug)) {
