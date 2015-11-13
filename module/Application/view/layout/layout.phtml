@@ -42,6 +42,7 @@ echo $this->doctype();
         <!-- Styles -->
         <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
                         ->prependStylesheet($this->basePath() . '/css/style.css')
+                        ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
                         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
                         ->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css')
         ?>
@@ -49,6 +50,7 @@ echo $this->doctype();
         <!-- Scripts -->
         <?php echo $this->headScript()
             ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+            ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
             ->prependFile($this->basePath() . '/js/excanvas.min.js')
             ->prependFile($this->basePath() . '/js/jqplot.pieRenderer.min.js')
             ->prependFile($this->basePath() . '/js/jqplot.barRenderer.min.js')
