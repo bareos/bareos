@@ -368,12 +368,18 @@ Client {
 The following is an example of a Quota Configuration in Client resource:
 
 \begin{bconfig}{Quota Configuration in Client resource}
-# Quota
-Soft Quota = 50 mb
-Soft Quota Grace Period = 15 second
-Strict Quotas = Yes
-Hard Quota = 150 mb
-Quota Include Failed Jobs = yes
+Client {
+  Name = client1-fd
+  Address = client1.example.com
+  Password = "secret"
+
+  # Quota
+  Soft Quota = 50 mb
+  Soft Quota Grace Period = 2 days
+  Strict Quotas = Yes
+  Hard Quota = 150 mb
+  Quota Include Failed Jobs = yes
+}
 \end{bconfig}
 
 

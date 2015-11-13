@@ -231,9 +231,9 @@ jobid=536
 \item [current]
   Used in the restore command. Takes no argument.
 \item [days]
-  Used to define the number of days the \bcommand{list nextvol}{} command
+  Used to define the number of days the \bcommand{list}{nextvol} command
   should consider when looking for jobs to be run.  The days keyword
-  can also be used on the \bcommand{status dir}{} command so that it will display
+  can also be used on the \bcommand{status}{dir} command so that it will display
   jobs scheduled for the number of days you want. It can also be used on the  \bcommand{rerun}{} command, where it will automatically select all failed jobids in the last number of days for rerunning.
 \item [devices]
   Used in the show command. Takes no arguments.
@@ -244,8 +244,8 @@ jobid=536
   Used in the restore command. Its argument specifies the directory
   to be restored.
 \item [enabled]
-  This keyword can appear on the \command{update volume} as well
-  as the \command{update slots} commands, and can
+  This keyword can appear on the \bcommand{update}{volume} as well
+  as the \bcommand{update}{slots} commands, and can
   allows one of the following arguments: yes, true, no, false, archived,
   0, 1, 2.  Where 0 corresponds to no or false, 1 corresponds to yes or true, and
   2 corresponds to archived.  Archived volumes will not be used, nor will
@@ -414,17 +414,17 @@ cancel [jobid=<number> job=<job-name> ujobid=<unique-jobid>]
    \end{itemize}
 
    Usage:
-   \begin{bconsole}{cancel all}
-    cancel all
-    cancel all state=<created|blocked|waiting|running>
-   \end{bconsole}
+\begin{bconsole}{cancel all}
+cancel all
+cancel all state=<created|blocked|waiting|running>
+\end{bconsole}
 
    Sometimes the Director already removed the job from its running queue, but the storage daemon still thinks it is doing a backup (or another job) - so you cannot cancel the job from within a console anymore. Therefore it is possible to cancel a job by JobId on the storage daemon. It might be helpful to execute a \bcommand{status storage}{} on the Storage Daemon to make sure what job you want to cancel.
 
    Usage:
-   \begin{bconsole}{cancel all}
-    cancel storage=<Storage Daemon> Jobid=<JobId>
-   \end{bconsole}
+\begin{bconsole}{cancel on Storage Daemon}
+cancel storage=<Storage Daemon> Jobid=<JobId>
+\end{bconsole}
 
    This way you can also remove a job that blocks any other jobs from running without the need to restart the whole storage daemon.
 
@@ -620,12 +620,12 @@ RunScript {
     Console = "export storage=TandbergT40 volume=%V"
     RunsWhen = After
     RunsOnClient = no
-  }
+}
 \end{bconsole}
 
   To send an e-mail notification via the Messages resource regarding export tapes you can use the Variable \%V substitution in the Messages resource, which is implemented in Bareos 13.2. However, it does also work in earlier releases inside the job resources. So in versions prior to Bareos 13.2 the following workaround can be used:
 
-  \begin{bconsole}{e-mail notification via messages resource regarding export tapes}
+\begin{bconsole}{e-mail notification via messages resource regarding export tapes}
 RunAfterJob = "/bin/bash -c \"/bin/echo Remove Tape %V | \
 /usr/sbin/bsmtp -h localhost -f root@localhost -s 'Remove Tape %V' root@localhost \""
 \end{bconsole}

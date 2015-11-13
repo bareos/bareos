@@ -204,11 +204,11 @@ Typically on Linux systems, it is set to \path|/var/lib/bareos/| or \path|/var/r
 }
 
 \defDirective{Fd}{Client}{Pki Cipher}{}{}{%
-See the \ilink{Data Encryption}{DataEncryption} chapter of this manual.
+See the \nameref{Data Encryption}{DataEncryption} chapter of this manual.
 
-Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration. Note that you have to set \parameter{compatible = no}:
+Depending on the openssl library version different ciphers are available. To choose the desired cipher, you can use the PKI Cipher option in the filedaemon configuration. Note that you have to set \linkResourceDirective{Fd}{Client}{Compatible} = no:
 
-\bconfigInput{config/FdClientPidDirectory1.conf}
+\bconfigInput{config/FdClientPki.conf}
 
 The available options (and ciphers) are:
 \begin{itemize}
