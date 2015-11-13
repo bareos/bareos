@@ -202,6 +202,7 @@ int bareosServiceMain()
                     _("Registry service not found: Bareos service not started"),
                     APP_DESC, MB_OK);
          log_error_message(_("Registry service entry point not found"));
+         FreeLibrary(kerneldll);         /* free up kernel dll */
          return 1;
       }
 

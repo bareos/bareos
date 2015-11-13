@@ -35,13 +35,13 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
 /*
  * Read the volume label
  *
- *  If dcr->VolumeName == NULL, we accept any Bareos Volume
- *  If dcr->VolumeName[0] == 0, we accept any Bareos Volume
- *  otherwise dcr->VolumeName must match the Volume.
+ * If dcr->VolumeName == NULL, we accept any Bareos Volume
+ * If dcr->VolumeName[0] == 0, we accept any Bareos Volume
+ * otherwise dcr->VolumeName must match the Volume.
  *
- *  If VolName given, ensure that it matches
+ * If VolName given, ensure that it matches
  *
- *  Returns VOL_  code as defined in record.h
+ * Returns VOL_  code as defined in record.h
  *    VOL_NOT_READ
  *    VOL_OK                          good label found
  *    VOL_NO_LABEL                    volume not labeled
@@ -52,8 +52,7 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
  *    VOL_LABEL_ERROR                 bad label type
  *    VOL_NO_MEDIA                    no media in drive
  *
- *  The dcr block is emptied on return, and the Volume is
- *    rewound.
+ * The dcr block is emptied on return, and the Volume is rewound.
  */
 int read_dev_volume_label(DCR *dcr)
 {
@@ -62,24 +61,19 @@ int read_dev_volume_label(DCR *dcr)
    char *VolName = dcr->VolumeName;
    DEV_RECORD *record;
    bool ok = false;
-   DEV_BLOCK *block = dcr->block;
    int status;
    bool want_ansi_label;
    bool have_ansi_label = false;
 
   /*
-   *  We always write the label in an 64512 byte / 63k  block.
-   *  so we never have problems reading the volume label.
-   */
-
-  /*
-   * Set the default blocksize to read the label
+   * We always write the label in an 64512 byte / 63k block.
+   * so we never have problems reading the volume label.
    */
    dev->set_label_blocksize(dcr);
 
    Dmsg5(100, "Enter read_volume_label res=%d device=%s vol=%s dev_Vol=%s max_blocksize=%u\n",
-      dev->num_reserved(), dev->print_name(), VolName,
-      dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*", dev->max_block_size);
+         dev->num_reserved(), dev->print_name(), VolName,
+         dev->VolHdr.VolumeName[0]?dev->VolHdr.VolumeName:"*NULL*", dev->max_block_size);
 
    if (!dev->is_open()) {
       if (!dev->open(dcr, OPEN_READ_ONLY)) {
@@ -141,7 +135,7 @@ int read_dev_volume_label(DCR *dcr)
     * Read the Bareos Volume label block
     */
    record = new_record();
-   empty_block(block);
+   empty_block(dcr->block);
 
    Dmsg0(130, "Big if statement in read_volume_label\n");
    if (!dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK)) {
@@ -277,10 +271,10 @@ ok_out:
       status = VOL_NAME_ERROR;
       goto bail_out;
    }
-   empty_block(block);
+   empty_block(dcr->block);
 
    /*
-    * reset blocksizes from volinfo to device as we set blocksize to
+    * Reset blocksizes from volinfo to device as we set blocksize to
     * DEFAULT_BLOCK_SIZE to read the label
     */
    dev->set_blocksizes(dcr);
@@ -288,7 +282,7 @@ ok_out:
    return VOL_OK;
 
 bail_out:
-   empty_block(block);
+   empty_block(dcr->block);
    dev->rewind(dcr);
    Dmsg1(150, "return %d\n", status);
    return status;
@@ -297,8 +291,8 @@ bail_out:
 /*
  * Put a volume label into the block
  *
- *  Returns: false on failure
- *           true  on success
+ * Returns: false on failure
+ *          true  on success
  */
 static bool write_volume_label_to_block(DCR *dcr)
 {
