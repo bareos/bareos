@@ -365,41 +365,61 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    POOL_MEM temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
+   POOL_MEM selection_last(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
-
-
-   bstrutime(dt, sizeof(dt), since_time);
 
    if (jr->JobId > 0) {
       temp.bsprintf("AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
       pm_strcat(selection, temp.c_str());
    }
+
    if (jr->Name[0] != 0) {
       mdb->db_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
       temp.bsprintf( "AND Job.Name = '%s' ", esc);
       pm_strcat(selection, temp.c_str());
    }
+
    if (clientname) {
       temp.bsprintf("AND Client.Name = '%s' ", clientname);
       pm_strcat(selection, temp.c_str());
    }
+
    if (jobstatus) {
       temp.bsprintf("AND Job.JobStatus = '%c' ", jobstatus);
       pm_strcat(selection, temp.c_str());
    }
+
    if (volumename) {
       temp.bsprintf("AND Media.Volumename = '%s' ", volumename);
       pm_strcat(selection, temp.c_str());
    }
+
    if (since_time) {
+      bstrutime(dt, sizeof(dt), since_time);
       temp.bsprintf("AND Job.SchedTime > '%s' ", dt);
       pm_strcat(selection, temp.c_str());
    }
+
    if (last > 0) {
       /*
-       * show only the last run of a jobs
+       * Show only the last run of a job (Job.Name).
+       * Do a subquery to get a list of matching JobIds
+       * to be used in the main query later.
+       *
+       * range: while it might be more efficient,
+       *        to apply the range to the subquery,
+       *        at least mariadb 10 does not support this.
+       *        Therefore range is handled in the main query.
        */
-      pm_strcat(selection, "AND Job.JobId=(SELECT MAX(JobId) FROM Job JobTemp WHERE Job.Name = JobTemp.Name) ");
+      temp.bsprintf("AND Job.JobId IN (%s) ", list_jobs_last);
+      selection_last.bsprintf(temp.c_str(), selection.c_str(), "");
+
+      /*
+       * As the existing selection is handled in the subquery,
+       * overwrite the main query selection
+       * by the newly created selection_last.
+       */
+      pm_strcpy(selection, selection_last.c_str());
    }
 
    db_lock(mdb);

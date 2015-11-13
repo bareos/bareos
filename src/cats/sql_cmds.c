@@ -130,6 +130,22 @@ const char *list_jobs_long =
    "%s "
    "ORDER BY StartTime%s";
 
+/*
+ * Get the last JobId of each Job.Name matching the given criteria.
+ */
+const char *list_jobs_last =
+   "SELECT DISTINCT "
+   "MAX(DISTINCT Job.JobId) as MaxJobId "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "GROUP BY Job.Name "
+   "%s";
+
 /* ====== ua_prune.c */
 
 const char *sel_JobMedia =
