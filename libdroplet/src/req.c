@@ -180,10 +180,19 @@ dpl_req_set_resource(dpl_req_t *req,
   char npath[DPL_MAXPATHLEN];
 
   if (resource == NULL || *resource == '\0' || !strcmp(resource, "/")) {
-    if (!strcmp(req->ctx->base_path, "/"))
-      npath[0] = '\0';
-    else
-      strncpy(npath, req->ctx->base_path, sizeof (npath));
+    if (!strcmp(req->ctx->base_path, "/")) {
+      if (!req->ctx->preserve_root_path)
+        npath[0] = '\0';
+      else
+        strncpy(npath, resource, sizeof (npath));
+    }
+    else {
+      if (!req->ctx->preserve_root_path)
+        strncpy(npath, req->ctx->base_path, sizeof (npath));
+      else {
+        snprintf(npath, sizeof (npath), "%s%s", req->ctx->base_path, resource);
+      }
+    }
   } else {
     if (!strcmp(req->ctx->base_path, "/"))
       snprintf(npath, sizeof (npath), "%s", resource);

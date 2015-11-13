@@ -492,8 +492,7 @@ conf_cb_func(void *cb_arg,
     }
   else if (!strcmp(var, "backend"))
     {
-      ctx->backend = dpl_backend_find(value);
-      if (NULL == ctx->backend)
+      if (dpl_backend_set(ctx, value) != 0)
         {
           DPL_LOG(ctx, DPL_ERROR, "no such backend '%s'", value);
           return -1;
@@ -669,11 +668,11 @@ dpl_profile_default(dpl_ctx_t *ctx)
   ctx->pricing = NULL;
   ctx->pricing_dir = NULL;
   ctx->read_buf_size = DPL_DEFAULT_READ_BUF_SIZE;
-  ctx->backend = dpl_backend_find("s3");
   assert(NULL != ctx->backend);
   ctx->encode_slashes = 0;
   ctx->keep_alive = 1;
   ctx->url_encoding = 1;
+  ctx->preserve_root_path = 0;
   ctx->max_redirects = DPL_DEFAULT_MAX_REDIRECTS;
   ctx->enterprise_number = DPL_DEFAULT_ENTERPRISE_NUMBER;
   ctx->base_path = strdup(DPL_DEFAULT_BASE_PATH);
@@ -687,6 +686,15 @@ dpl_profile_default(dpl_ctx_t *ctx)
     return DPL_ENOMEM;
   ctx->ssl_comp = DPL_DEFAULT_SSL_COMP_NONE;
   ctx->cert_verif = DPL_DEFAULT_SSL_CERT_VERIF;
+
+  /*
+   * Set the backend last, since setting the backend might automatically set
+   * internal configuration values.
+   *
+   * We don't check the return value since s3 is supposed to be present _and_
+   * be the default backend.
+   */
+  dpl_backend_set(ctx, "s3");
 
   return DPL_SUCCESS;
 }

@@ -548,6 +548,7 @@ typedef struct dpl_ctx
   int keep_alive;            /*!< client supports keep-alive */
   int url_encoding;          /*!< some servers does not handle url encoding */
   int max_redirects;         /*!< maximum number of redirects */
+  int preserve_root_path;    /*!< Preserve "/" for root path access in HTTP requests */
   uint32_t enterprise_number; /*!< for generating native IDs */
   struct dpl_backend_s *backend;
 
@@ -720,7 +721,7 @@ void dpl_ctx_free(dpl_ctx_t *ctx);
 double dpl_price_storage(dpl_ctx_t *ctx, size_t size);
 char *dpl_price_storage_str(dpl_ctx_t *ctx, size_t size);
 char *dpl_size_str(uint64_t size);
-struct dpl_backend_s *dpl_backend_find(const char *name);
+int dpl_backend_set(dpl_ctx_t *ctx, const char *name);
 dpl_status_t dpl_print_capabilities(dpl_ctx_t *ctx);
 void dpl_bucket_free(dpl_bucket_t *bucket);
 void dpl_vec_buckets_free(dpl_vec_t *vec);

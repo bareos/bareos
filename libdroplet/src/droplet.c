@@ -471,23 +471,30 @@ extern dpl_backend_t dpl_backend_srws;
 extern dpl_backend_t dpl_backend_sproxyd;
 extern dpl_backend_t dpl_backend_posix;
 
-dpl_backend_t *
-dpl_backend_find(const char *name)
+int
+dpl_backend_set(dpl_ctx_t *ctx, const char *name)
 {
-  if (!strcmp(name, "s3"))
-    return &dpl_backend_s3;
-  else if (!strcmp(name, "cdmi"))
-    return &dpl_backend_cdmi;
-  else if (!strcmp(name, "swift"))
-    return &dpl_backend_swift;
-  else if (!strcmp(name, "srws"))
-    return &dpl_backend_srws;
-  else if (!strcmp(name, "sproxyd"))
-    return &dpl_backend_sproxyd;
-  else if (!strcmp(name, "posix"))
-    return &dpl_backend_posix;
+  int ret = 0;
 
-  return NULL;
+  if (!strcmp(name, "s3"))
+    ctx->backend = dpl_backend_s3;
+  else if (!strcmp(name, "cdmi"))
+  {
+    ctx->preserve_root_path = 1;
+    ctx->backend = dpl_backend_cmi;
+  }
+  else if (!strcmp(name, "swift"))
+    ctx->backend = dpl_backend_swift;
+  else if (!strcmp(name, "srws"))
+    ctx->backend = dpl_backend_srws;
+  else if (!strcmp(name, "sproxyd"))
+    ctx->backend = dpl_backend_sproxyd;
+  else if (!strcmp(name, "posix"))
+    ctx->backend = dpl_backend_posix;
+  else
+      ret = -1;
+
+  return ret;
 }
 
 dpl_status_t
