@@ -1679,7 +1679,7 @@ static inline void generate_migrate_summary(JCR *jcr, MEDIA_DBR *mr, int msg_typ
            edit_uint64_with_commas(jcr->SDJobBytes, ec2),
            edit_uint64_with_suffix(jcr->SDJobBytes, ec3),
            (float)kbps,
-           mig_jcr ? mig_jcr->VolumeName : "",
+           mig_jcr ? mig_jcr->VolumeName : _("*None*"),
            jcr->VolSessionId,
            jcr->VolSessionTime,
            edit_uint64_with_commas(mr->VolBytes, ec4),
