@@ -100,9 +100,11 @@
  */
 #if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 #pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wenum-compare"
+#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 460
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
 #endif
 
 #if defined(__SUNPRO_C)

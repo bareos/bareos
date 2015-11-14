@@ -50,7 +50,9 @@
 
 %#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 %#pragma GCC diagnostic ignored "-Wunused-variable"
+%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 470
 %#pragma GCC diagnostic ignored "-Wunprototyped-calls"
+%#endif
 %#endif
 
 %#ifndef NDMOS_OPTION_NO_NDMP2
