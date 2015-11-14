@@ -405,36 +405,40 @@ static inline ssize_t write_header_to_block(DEV_BLOCK *block, const DEV_RECORD *
 
 static inline ssize_t write_data_to_block(DEV_BLOCK *block, const DEV_RECORD *rec)
 {
-   ssize_t n;
+   ssize_t len;
 
-   n = block_write_navail(block);
-   if (n > rec->remainder)
-      n = rec->remainder;
+   len = block_write_navail(block);
+   if (len > rec->remainder) {
+      len = rec->remainder;
+   }
 
-   memcpy(block->bufp, rec->data + (rec->data_len - rec->remainder), n);
-   block->bufp += n;
-   block->binbuf += n;
+   memcpy(block->bufp,
+          ((unsigned char *)rec->data) + (rec->data_len - rec->remainder),
+          len);
+   block->bufp += len;
+   block->binbuf += len;
 
 #ifdef xxxxxSMCHECK
    if (!sm_check_rtn(__FILE__, __LINE__, False)) {
       /*
        * We damaged a buffer
        */
-      Dmsg7(0, "Damaged block FI=%s SessId=%d Strm=%s len=%d\n"
-         "n=%d rem=%d remainder=%d\n",
-         FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
-         n, block_write_navail(block), rec->remainder);
+      Dmsg7(0, "Damaged block FI=%s SessId=%d Strm=%s datalen=%d\n"
+            "len=%d rem=%d remainder=%d\n",
+            FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
+            stream_to_ascii(buf2, rec->Stream, rec->FileIndex),
+            rec->data_len, len, block_write_navail(block),
+            rec->remainder);
       Dmsg5(0, "Damaged block: bufp=%x binbuf=%d buf_len=%d rem=%d moved=%d\n",
-         block->bufp, block->binbuf, block->buf_len, block_write_navail(block),
-         n);
+            block->bufp, block->binbuf, block->buf_len,
+            block_write_navail(block), len);
       Dmsg2(0, "Damaged block: buf=%x binbuffrombuf=%d \n",
-         block->buf, block->bufp-block->buf);
+            block->buf, block->bufp-block->buf);
       Emsg0(M_ABORT, 0, _("Damaged buffer\n"));
    }
 #endif
 
-   return n;
+   return len;
 }
 
 /*
