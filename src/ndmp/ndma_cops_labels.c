@@ -94,7 +94,7 @@ ndmca_op_init_labels (struct ndm_session *sess)
 			ndmalogf (sess, 0, 0, "failed label write");
 		}
 
-		ndmca_media_write_filemarks(sess);
+		ndmca_media_write_filemarks (sess);
 		ndmca_media_unload_current (sess);
 	}
 

@@ -574,7 +574,7 @@ struct ndmmedia {
 	NDM_FLAG_DECL(media_io_error)	/* media error */
 
 	NDM_FLAG_DECL(label_read)	/* ->label[] read fm media */
-	NDM_FLAG_DECL(label_written)	/* ->label[] writn to media */
+	NDM_FLAG_DECL(label_written)	/* ->label[] written to media */
 	NDM_FLAG_DECL(label_io_error)	/* error label read/write */
 	NDM_FLAG_DECL(label_mismatch)	/* label wasn't as expected */
 
