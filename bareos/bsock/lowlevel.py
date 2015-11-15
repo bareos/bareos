@@ -31,6 +31,7 @@ class LowLevel(object):
         self.port = None
         self.dirname = None
         self.socket = None
+        self.auth_credentials_valid = False
 
 
     def connect(self, address="localhost", port=9101, dirname=None):
@@ -43,6 +44,10 @@ class LowLevel(object):
             self.dirname = dirname
         else:
             self.dirname = address
+        return self.__connect()
+
+
+    def __connect(self):
         try:
             self.socket = socket.create_connection((self.address, self.port))
         except socket.gaierror as e:
@@ -51,6 +56,7 @@ class LowLevel(object):
                 "failed to connect to host " + str(self.address) + ", port " + str(self.port) + ": " + str(e))
         else:
             self.logger.debug("connected to " + str(self.address) + ":" + str(self.port))
+        return True
 
 
     def auth(self, password, name="*UserAgent*"):
@@ -62,15 +68,22 @@ class LowLevel(object):
         '''
         if not isinstance(password, Password):
             raise AuthenticationError("password must by of type bareos.Password() not %s" % (type(password)))
-        bashed_name = ProtocolMessages.hello(name)
+        self.password = password
+        self.name = name
+        return self.__auth()
+
+
+    def __auth(self):
+        bashed_name = ProtocolMessages.hello(self.name)
         # send the bash to the director
         self.send(bashed_name)
 
-        (ssl, result_compatible, result) = self._cram_md5_respond(password=password.md5(), tls_remote_need=0)
+        (ssl, result_compatible, result) = self._cram_md5_respond(password=self.password.md5(), tls_remote_need=0)
         if not result:
             raise AuthenticationError("failed (in response)")
-        if not self._cram_md5_challenge(clientname=name, password=password.md5(), tls_local_need=0, compatible=True):
+        if not self._cram_md5_challenge(clientname=self.name, password=self.password.md5(), tls_local_need=0, compatible=True):
             raise AuthenticationError("failed (in challenge)")
+        self.auth_credentials_valid = True
         return True
 
 
@@ -80,10 +93,20 @@ class LowLevel(object):
         pass
 
 
+    def reconnect(self):
+        result = False
+        if self.auth_credentials_valid:
+            try:
+                if self.__connect() and self.__auth() and self._set_state_director_prompt():
+                    result = True
+            except socket.error:
+                self.logger.warning("failed to reconnect")
+        return result
+
+
     def send(self, msg=None):
         '''use socket to send request to director'''
-        if self.socket == None:
-            raise RuntimeError("should connect to director first before send data")
+        self.__check_socket_connection()
         msg_len = len(msg) # plus the msglen info
 
         try:
@@ -96,8 +119,7 @@ class LowLevel(object):
 
     def recv(self):
         '''will receive data from director '''
-        if self.socket == None:
-            raise RuntimeError("should connect to director first before recv data")
+        self.__check_socket_connection()
         # get the message header
         header = self.__get_header()
         if header <= 0:
@@ -110,8 +132,7 @@ class LowLevel(object):
 
     def recv_msg(self):
         '''will receive data from director '''
-        if self.socket == None:
-            raise RuntimeError("should connect to director first before recv data")
+        self.__check_socket_connection()
         msg = ""
         try:
             timeouts = 0
@@ -139,6 +160,7 @@ class LowLevel(object):
             self._handleSocketError(e)
         return msg
 
+
     def recv_submsg(self, length):
         # get the message
         msg = ""
@@ -154,6 +176,7 @@ class LowLevel(object):
 
 
     def __get_header(self):
+        self.__check_socket_connection()
         header = self.socket.recv(4)
         if len(header) == 0:
             self.logger.debug("received empty header, assuming connection is closed")
@@ -265,6 +288,18 @@ class LowLevel(object):
         self.logger.debug("received message: " + msg)
         # TODO: check prompt
         return True
+
+
+    def __check_socket_connection(self):
+        result = True
+        if self.socket == None:
+            result = False
+            if self.auth_credentials_valid:
+                # connection have worked before, but now it is gone
+                raise ConnectionLostError("currently no network connection")
+            else:
+                raise RuntimeError("should connect to director first before send data")
+        return result
 
 
     def _handleSocketError(self, exception):

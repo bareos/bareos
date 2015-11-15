@@ -14,6 +14,12 @@ class ConnectionError(Error):
     """
     pass
 
+class ConnectionLostError(Error):
+    """
+    error with the Connection
+    """
+    pass
+
 class SocketEmptyHeader(Error):
     """
     socket connection received an empty header. Connection lost?

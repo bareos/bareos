@@ -2,8 +2,9 @@
 Communicates with the bareos-director
 """
 
-from    bareos.bsock.lowlevel import LowLevel
-import  sys
+from   bareos.bsock.lowlevel import LowLevel
+from   bareos.exceptions import *
+import sys
 
 class BSock(LowLevel):
     '''use to send and receive the response from director'''
@@ -24,9 +25,23 @@ class BSock(LowLevel):
         '''
         call a bareos-director user agent command
         '''
-        self.send(str(command))
-        return self.recv_msg()
+        return self.__call(command, 0)
 
+    def __call(self, command, count):
+        '''
+        Call a bareos-director user agent command.
+        If connection is lost, try to reconnect.
+        '''
+        result = ''
+        try:
+            self.send(str(command))
+            result = self.recv_msg()
+        except (SocketEmptyHeader, ConnectionLostError) as e:
+            self.logger.error("connection problem (%s): %s" % (type(e).__name__, str(e)))
+            if count == 0:
+                if self.reconnect():
+                    return self.__call(command, count+1)
+        return result
 
     def send_command(self, commamd):
         return self.call(command)

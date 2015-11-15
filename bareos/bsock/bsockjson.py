@@ -20,11 +20,6 @@ class BSockJson(BSock):
         super(BSockJson, self).__init__(
             address, port, dirname, name,
             password)
-        # older version did not support compact mode,
-        # therfore first set api mode to json (which should always work in bareos >= 15.2.0)
-        # and then set api mode json compact (which should work with bareos >= 15.2.2)
-        self.call(".api json")
-        self.call(".api json compact=yes")
 
 
     def call(self, command):
@@ -37,7 +32,6 @@ class BSockJson(BSock):
             # TODO: or raise an exception?
             result = json
         return result
-
 
 
     def call_fullresult(self, command):
@@ -56,7 +50,6 @@ class BSockJson(BSock):
                         'data': resultstring
                     },
                 }
-
         return data
 
 
@@ -71,3 +64,15 @@ class BSockJson(BSock):
             if command:
                 pprint(self.call(command))
         return True
+
+
+    def _set_state_director_prompt(self):
+        result = False
+        if super(BSockJson, self)._set_state_director_prompt():
+            # older version did not support compact mode,
+            # therfore first set api mode to json (which should always work in bareos >= 15.2.0)
+            # and then set api mode json compact (which should work with bareos >= 15.2.2)
+            self.call(".api json")
+            self.call(".api json compact=yes")
+            result = True
+        return result
