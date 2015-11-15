@@ -20,7 +20,11 @@ class BSockJson(BSock):
         super(BSockJson, self).__init__(
             address, port, dirname, name,
             password)
-        self.call(".api 2")
+        # older version did not support compact mode,
+        # therfore first set api mode to json (which should always work in bareos >= 15.2.0)
+        # and then set api mode json compact (which should work with bareos >= 15.2.2)
+        self.call(".api json")
+        self.call(".api json compact=yes")
 
 
     def call(self, command):
