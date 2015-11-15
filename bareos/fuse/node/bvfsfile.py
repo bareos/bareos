@@ -18,7 +18,8 @@ class BvfsFile(File, BvfsCommon):
 
     @classmethod
     def get_id(cls, file, job, bvfspath):
-        return str(file['fileid'])
+        return "jobid=%s_fileid=%s" % (str(job.job['jobid']),str(file['fileid']))
+
 
     # Filesystem methods
     # ==================

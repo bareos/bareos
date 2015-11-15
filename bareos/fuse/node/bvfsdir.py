@@ -28,7 +28,7 @@ class BvfsDir(Directory, BvfsCommon):
         if pathid == None:
             id = "jobid=%s" % (str(job.job['jobid']))
         else:
-            id = "pathid=%s" % (str(pathid))
+            id = "jobid=%s_pathid=%s" % (str(job.job['jobid']),str(pathid))
         return id
 
     def setxattr(self, path, key, value, flags):
