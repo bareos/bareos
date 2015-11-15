@@ -17,7 +17,7 @@
 #!BuildIgnore: post-build-checks
 
 Name:           mingw-debugsrc-devel
-Version:        15.2.1
+Version:        15.2.2
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
