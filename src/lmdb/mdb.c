@@ -252,7 +252,7 @@ union semun {
 #define MDB_OWNERDEAD	((int) WAIT_ABANDONED)
 #elif defined MDB_USE_SYSV_SEM
 #define MDB_OWNERDEAD	(MDB_LAST_ERRCODE + 11)
-#elif defined(MDB_USE_POSIX_MUTEX) && defined(EOWNERDEAD)
+#elif defined(MDB_USE_POSIX_MUTEX) && defined(EOWNERDEAD) && defined(PTHREAD_MUTEX_ROBUST)
 #define MDB_OWNERDEAD	EOWNERDEAD	/**< #LOCK_MUTEX0() result if dead owner */
 #endif
 
