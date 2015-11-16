@@ -477,20 +477,20 @@ dpl_backend_set(dpl_ctx_t *ctx, const char *name)
   int ret = 0;
 
   if (!strcmp(name, "s3"))
-    ctx->backend = dpl_backend_s3;
+    ctx->backend = &dpl_backend_s3;
   else if (!strcmp(name, "cdmi"))
   {
     ctx->preserve_root_path = 1;
-    ctx->backend = dpl_backend_cmi;
+    ctx->backend = &dpl_backend_cdmi;
   }
   else if (!strcmp(name, "swift"))
-    ctx->backend = dpl_backend_swift;
+    ctx->backend = &dpl_backend_swift;
   else if (!strcmp(name, "srws"))
-    ctx->backend = dpl_backend_srws;
+    ctx->backend = &dpl_backend_srws;
   else if (!strcmp(name, "sproxyd"))
-    ctx->backend = dpl_backend_sproxyd;
+    ctx->backend = &dpl_backend_sproxyd;
   else if (!strcmp(name, "posix"))
-    ctx->backend = dpl_backend_posix;
+    ctx->backend = &dpl_backend_posix;
   else
       ret = -1;
 
