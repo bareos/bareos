@@ -22,7 +22,7 @@
 %define flavors "prevista postvista prevista-debug postvista-debug"
 
 Name:           mingw32-winbareos
-Version:        14.2.5
+Version:        14.2.6
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
