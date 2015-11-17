@@ -128,6 +128,7 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?suse_version}
+BuildRequires: distribution-release
 # link identical files
 BuildRequires: fdupes
 BuildRequires: termcap
