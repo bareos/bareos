@@ -1171,6 +1171,12 @@ bool do_migration_init(JCR *jcr)
        */
       mig_jcr->IgnoreDuplicateJobChecking = true;
 
+      /*
+       * Copy some overwrites back from the Control Job to the migration and copy job.
+       */
+      mig_jcr->spool_data = jcr->spool_data;
+      mig_jcr->spool_size = jcr->spool_size;
+
       if (!setup_job(mig_jcr, true)) {
          Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
          return false;
