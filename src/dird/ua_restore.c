@@ -1466,8 +1466,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
          /*
           * Display a list of all copies
           */
-         db_list_copies_records(ua->jcr, ua->db, 0, rx->JobIds,
-                                ua->send, HORZ_LIST);
+         db_list_copies_records(ua->jcr, ua->db, "", rx->JobIds, ua->send, HORZ_LIST);
       }
 
       /*
