@@ -30,21 +30,21 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class BareosBSockServiceFactory implements FactoryInterface
 {
-	protected $bsock;
+   protected $bsock;
 
-	/**
-	 */
-	public function createService(ServiceLocatorInterface $serviceLocator)
-	{
-		$config = $serviceLocator->get('Config');
-		$this->bsock = new BareosBSock($config['directors']);
+   /**
+    */
+   public function createService(ServiceLocatorInterface $serviceLocator)
+   {
+      $config = $serviceLocator->get('Config');
+      $this->bsock = new BareosBSock($config['directors']);
 
-		if (isset($_SESSION['bareos']['director'])) {
-			$this->bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
-			$this->bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
-			$this->bsock->init();
-		}
+      if (isset($_SESSION['bareos']['director'])) {
+         $this->bsock->set_config($config['directors'][$_SESSION['bareos']['director']]);
+         $this->bsock->set_user_credentials($_SESSION['bareos']['username'], $_SESSION['bareos']['password']);
+         $this->bsock->init();
+      }
 
-		return $this->bsock;
-	}
+      return $this->bsock;
+   }
 }

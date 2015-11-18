@@ -38,94 +38,94 @@ $this->headTitle($title);
 <!-- Login form -->
 <div class="col-md-4">
 
-	<div class="panel panel-default">
-	<div class="panel-body">
-	<div class="container-fluid">
+   <div class="panel panel-default">
+   <div class="panel-body">
+   <div class="container-fluid">
 
-	<?php
-		$form->prepare();
-		echo $this->form()->openTag($form);
-	?>
+   <?php
+      $form->prepare();
+      echo $this->form()->openTag($form);
+   ?>
 
-	<div class="row centered text-centered">
-	<div class="col">
-	<div class="form-group">
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
 
-	<?php
-		if($this->formElementErrors($form->get('director'))) {
-			echo '<div class="input-group has-error">';
-		}
-		else {
-			echo '<div class="input-group">';
-		}
-		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span></div>';
-		echo $this->formSelect($form->get('director')->setAttribute('class','form-control selectpicker'));
-		echo '</div>';
-	?>
+   <?php
+      if($this->formElementErrors($form->get('director'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span></div>';
+      echo $this->formSelect($form->get('director')->setAttribute('class','form-control selectpicker'));
+      echo '</div>';
+   ?>
 
-	</div>
-	</div>
-	</div>
+   </div>
+   </div>
+   </div>
 
-	<div class="row centered text-centered">
-	<div class="col">
-	<div class="form-group">
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
 
-	<?php
-		if($this->formElementErrors($form->get('consolename'))) {
-			echo '<div class="input-group has-error">';
-		}
-		else {
-			echo '<div class="input-group">';
-		}
-		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>';
-		echo $this->formInput($form->get('consolename')->setAttribute('class','form-control'));
-		echo '</div>';
-	?>
+   <?php
+      if($this->formElementErrors($form->get('consolename'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>';
+      echo $this->formInput($form->get('consolename')->setAttribute('class','form-control'));
+      echo '</div>';
+   ?>
 
-	</div>
-	</div>
-	</div>
+   </div>
+   </div>
+   </div>
 
-	<div class="row centered text-centered">
-	<div class="col">
-	<div class="form-group">
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
 
-	<?php
-		if($this->formElementErrors($form->get('password'))) {
-			echo '<div class="input-group has-error">';
-		}
-		else {
-			echo '<div class="input-group">';
-		}
-		echo '<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>';
-		echo $this->formInput($form->get('password')->setAttribute('class','form-control'));
-		echo '</div>';
-	?>
+   <?php
+      if($this->formElementErrors($form->get('password'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>';
+      echo $this->formInput($form->get('password')->setAttribute('class','form-control'));
+      echo '</div>';
+   ?>
 
-	</div>
-	</div>
-	</div>
+   </div>
+   </div>
+   </div>
 
-	<div class="row centered text-centered">
-	<div class="col">
-	<div class="form-group">
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
 
-	<?php
-		echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
-	?>
+   <?php
+      echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+   ?>
 
-	</div>
-	</div>
-	</div>
+   </div>
+   </div>
+   </div>
 
-	<?php
-		echo $this->form()->closeTag();
-	?>
+   <?php
+      echo $this->form()->closeTag();
+   ?>
 
-	</div>
-	</div>
-	</div>
+   </div>
+   </div>
+   </div>
 
 </div>
 

@@ -31,63 +31,63 @@ use Zend\Form\Element;
 class JobForm extends Form
 {
 
-	protected $period;
-	protected $status;
+   protected $period;
+   protected $status;
 
-	public function __construct($period=null, $status=null)
-	{
-		parent::__construct('job');
+   public function __construct($period=null, $status=null)
+   {
+      parent::__construct('job');
 
-		$this->period = $period;
-		$this->status = $status;
+      $this->period = $period;
+      $this->status = $status;
 
-		if(isset($period)) {
-			$this->add(array(
-				'name' => 'period',
-				'type' => 'select',
-				'options' => array(
-					'label' => 'Time period',
-					'value_options' => array(
-						'1' => 'past 24 hours',
-						'7' => 'last week',
-						'31' => 'last month',
-						'365' => 'last year',
-						'all' => 'all'
-					)
-				),
-				'attributes' => array(
-					'class' => 'form-control selectpicker show-tick',
-					'data-size' => '5',
-					'id' => 'period',
-					'value' => $period
-				)
-			));
-		}
+      if(isset($period)) {
+         $this->add(array(
+            'name' => 'period',
+            'type' => 'select',
+            'options' => array(
+               'label' => 'Time period',
+               'value_options' => array(
+                  '1' => 'past 24 hours',
+                  '7' => 'last week',
+                  '31' => 'last month',
+                  '365' => 'last year',
+                  'all' => 'all'
+               )
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-size' => '5',
+               'id' => 'period',
+               'value' => $period
+            )
+         ));
+      }
 
-		if(isset($status)) {
-			$this->add(array(
-				'name' => 'status',
-				'type' => 'select',
-				'options' => array(
-					'label' => 'Status',
-					'value_options' => array(
-						'all' => 'all',
-						'running' => 'running',
-						'waiting' => 'waiting',
-						'unsuccessful' => 'unsuccessful',
-						'successful' => 'successful'
-					)
-				),
-				'attributes' => array(
-					'class' => 'form-control selectpicker show-tick',
-                                        'data-size' => '5',
-					'id' => 'status',
-					'value' => $status
-				)
-			));
-		}
+      if(isset($status)) {
+         $this->add(array(
+            'name' => 'status',
+            'type' => 'select',
+            'options' => array(
+               'label' => 'Status',
+               'value_options' => array(
+                  'all' => 'all',
+                  'running' => 'running',
+                  'waiting' => 'waiting',
+                  'unsuccessful' => 'unsuccessful',
+                  'successful' => 'successful'
+               )
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-size' => '5',
+               'id' => 'status',
+               'value' => $status
+            )
+         ));
+      }
 
-	}
+   }
 
 }
 

@@ -31,85 +31,85 @@ use Zend\Json\Json;
 
 class PoolController extends AbstractActionController
 {
-	protected $poolModel;
+   protected $poolModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$pools = $this->getPoolModel()->getPools();
+            $pools = $this->getPoolModel()->getPools();
 
-				return new ViewModel(
-					array(
-						'pools' => $pools,
-					)
-				);
+            return new ViewModel(
+               array(
+                  'pools' => $pools,
+               )
+            );
 
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function detailsAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function detailsAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
 
-				$poolname = $this->params()->fromRoute('id');
-				$pool = $this->getPoolModel()->getPool($poolname);
+            $poolname = $this->params()->fromRoute('id');
+            $pool = $this->getPoolModel()->getPool($poolname);
 
-				return new ViewModel(
-					array(
-						'pool' => $poolname,
-					)
-				);
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+            return new ViewModel(
+               array(
+                  'pool' => $poolname,
+               )
+            );
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDataAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function getDataAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$data = $this->params()->fromQuery('data');
-			$pool = $this->params()->fromQuery('pool');
+         $data = $this->params()->fromQuery('data');
+         $pool = $this->params()->fromQuery('pool');
 
-			if($data == "all") {
-				$result = $this->getPoolModel()->getPools();
-			}
-			elseif($data == "details" && isset($pool)) {
-				$result = $this->getPoolModel()->getPool($pool);
-			}
-			elseif($data == "volumes" && isset($pool)) {
-				$result = $this->getPoolModel()->getPoolMedia($pool);
-			}
-			else {
-				$result = null;
-			}
+         if($data == "all") {
+            $result = $this->getPoolModel()->getPools();
+         }
+         elseif($data == "details" && isset($pool)) {
+            $result = $this->getPoolModel()->getPool($pool);
+         }
+         elseif($data == "volumes" && isset($pool)) {
+            $result = $this->getPoolModel()->getPoolMedia($pool);
+         }
+         else {
+            $result = null;
+         }
 
-			$response = $this->getResponse();
-			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+         $response = $this->getResponse();
+         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-			if(isset($result)) {
-				$response->setContent(JSON::encode($result));
-			}
+         if(isset($result)) {
+            $response->setContent(JSON::encode($result));
+         }
 
-			return $response;
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+         return $response;
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getPoolModel()
-	{
-		if(!$this->poolModel) {
-			$sm = $this->getServiceLocator();
-			$this->poolModel = $sm->get('Pool\Model\PoolModel');
-		}
-		return $this->poolModel;
-	}
+   public function getPoolModel()
+   {
+      if(!$this->poolModel) {
+         $sm = $this->getServiceLocator();
+         $this->poolModel = $sm->get('Pool\Model\PoolModel');
+      }
+      return $this->poolModel;
+   }
 }

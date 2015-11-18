@@ -32,74 +32,74 @@ use Zend\Json\Json;
 class StorageController extends AbstractActionController
 {
 
-	protected $storageModel;
+   protected $storageModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				return new ViewModel(array());
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+            return new ViewModel(array());
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function detailsAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				return new ViewModel(array());
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function detailsAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+            return new ViewModel(array());
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function autochangerAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-				return new ViewModel(array());
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function autochangerAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+            return new ViewModel(array());
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDataAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function getDataAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$data = $this->params()->fromQuery('data');
-				$storage = $this->params()->fromQuery('storage');
+            $data = $this->params()->fromQuery('data');
+            $storage = $this->params()->fromQuery('storage');
 
-				if($data == "all") {
-					$result = $this->getStorageModel()->getStorages();
-				}
-				else {
-					$result = null;
-				}
+            if($data == "all") {
+               $result = $this->getStorageModel()->getStorages();
+            }
+            else {
+               $result = null;
+            }
 
-				$response = $this->getResponse();
-				$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+            $response = $this->getResponse();
+            $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-				if(isset($result)) {
-					$response->setContent(JSON::encode($result));
-				}
+            if(isset($result)) {
+               $response->setContent(JSON::encode($result));
+            }
 
-				return $response;
-                }
-                else {
-                                return $this->redirect()->toRoute('auth', array('action' => 'login'));
-                }
-	}
+            return $response;
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getStorageModel()
-	{
-		if(!$this->storageModel) {
-			$sm = $this->getServiceLocator();
-			$this->storageModel = $sm->get('Storage\Model\StorageModel');
-		}
-		return $this->storageModel;
-	}
+   public function getStorageModel()
+   {
+      if(!$this->storageModel) {
+         $sm = $this->getServiceLocator();
+         $this->storageModel = $sm->get('Storage\Model\StorageModel');
+      }
+      return $this->storageModel;
+   }
 
 }
 

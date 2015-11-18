@@ -32,234 +32,234 @@ use Zend\InputFilter\InputFilterInterface;
 class Restore implements InputFilterAwareInterface
 {
 
-	protected $job;
-	protected $client;
-	protected $restoreclient;
-	protected $fileset;
-	protected $beforedate;
+   protected $job;
+   protected $client;
+   protected $restoreclient;
+   protected $fileset;
+   protected $beforedate;
 
-	protected $inputFilter;
+   protected $inputFilter;
 
-	public function setInputFilter(InputFilterInterface $inputFilter)
-	{
-		throw new \Exception("setInputFiler() not used");
-	}
+   public function setInputFilter(InputFilterInterface $inputFilter)
+   {
+      throw new \Exception("setInputFiler() not used");
+   }
 
-	public function getInputFilter()
-	{
-		if(!$this->inputFilter) {
+   public function getInputFilter()
+   {
+      if(!$this->inputFilter) {
 
-			$inputFilter = new InputFilter();
+         $inputFilter = new InputFilter();
 
-			$inputFilter->add(array(
-				'name' => 'jobid',
-				'required' => false,
-				'filters' => array(
-					array('name' => 'StripTags'),
-					array('name' => 'StringTrim'),
-				),
-				'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 64
-                                                )
-                                        )
-				)
-			));
+         $inputFilter->add(array(
+            'name' => 'jobid',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 64
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'backups',
-                                'required' => false,
-                                'filters' => array(
-                                        array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-                                ),
-                                'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-                                )
-                        ));
+         $inputFilter->add(array(
+            'name' => 'backups',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'client',
-                                'required' => false,
-                                'filters' => array(
-					array('name' => 'StripTags'),
-					array('name' => 'StringTrim'),
-				),
-                                'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-				)
-                        ));
+         $inputFilter->add(array(
+            'name' => 'client',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'restoreclient',
-                                'required' => false,
-                                'filters' => array(
-					array('name' => 'StripTags'),
-					array('name' => 'StringTrim'),
-				),
-                                'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-				)
-                        ));
+         $inputFilter->add(array(
+            'name' => 'restoreclient',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'fileset',
-                                'required' => false,
-                                'filters' => array(
-					array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-				),
-                                'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-				)
-                        ));
+         $inputFilter->add(array(
+            'name' => 'fileset',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'before',
-                                'required' => false,
-                                'filters' => array(
-					array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-				),
-                                'validators' => array(
-					array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-				)
-                        ));
+         $inputFilter->add(array(
+            'name' => 'before',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'where',
-                                'required' => true,
-                                'filters' => array(
-					array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-				),
-                                'validators' => array(
-					array(
-						'name' => 'StringLength',
-						'options' => array(
-							'encoding' => 'UTF-8',
-							'min' => 1,
-							'max' => 128
-						)
-					)
-				)
-                        ));
+         $inputFilter->add(array(
+            'name' => 'where',
+            'required' => true,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'restorejob',
-                                'required' => true,
-                                'filters' => array(
-                                        array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-                                ),
-                                'validators' => array(
-                                        array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8',
-                                                        'min' => 1,
-                                                        'max' => 128
-                                                )
-                                        )
-                                )
-                        ));
+         $inputFilter->add(array(
+            'name' => 'restorejob',
+            'required' => true,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8',
+                     'min' => 1,
+                     'max' => 128
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'checked_files',
-                                'required' => false,
-                                'filters' => array(
-                                        array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-                                ),
-                                'validators' => array(
-                                        array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8'
-                                                )
-                                        )
-                                )
-                        ));
+         $inputFilter->add(array(
+            'name' => 'checked_files',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8'
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'checked_directories',
-                                'required' => false,
-                                'filters' => array(
-                                        array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-                                ),
-                                'validators' => array(
-                                        array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8'
-                                                )
-                                        )
-                                )
-                        ));
+         $inputFilter->add(array(
+            'name' => 'checked_directories',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8'
+                  )
+               )
+            )
+         ));
 
-			$inputFilter->add(array(
-                                'name' => 'jobids_hidden',
-                                'required' => false,
-                                'filters' => array(
-                                        array('name' => 'StripTags'),
-                                        array('name' => 'StringTrim'),
-                                ),
-                                'validators' => array(
-                                        array(
-                                                'name' => 'StringLength',
-                                                'options' => array(
-                                                        'encoding' => 'UTF-8'
-                                                )
-                                        )
-                                )
-                        ));
+         $inputFilter->add(array(
+            'name' => 'jobids_hidden',
+            'required' => false,
+            'filters' => array(
+               array('name' => 'StripTags'),
+               array('name' => 'StringTrim'),
+            ),
+            'validators' => array(
+               array(
+                  'name' => 'StringLength',
+                  'options' => array(
+                     'encoding' => 'UTF-8'
+                  )
+               )
+            )
+         ));
 
-			$this->inputFilter = $inputFilter;
+         $this->inputFilter = $inputFilter;
 
-		}
+      }
 
-		return $inputFilter;
+      return $inputFilter;
 
-	}
+   }
 
 }

@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -25,39 +25,39 @@
 
 return array(
 
-	'controllers' => array(
-		'invokables' => array(
-			'Director\Controller\Director' => 'Director\Controller\DirectorController',
-		),
-	),
-	'controller_plugins' => array(
-                'invokables' => array(
-                        'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
-                ),
-        ),
-	'router' => array(
-		'routes' => array(
-			'director' => array(
-				'type' => 'segment',
-				'options' => array(
-					'route' => '/director[/][:action][/:id]',
-					'constraints' => array(
-						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-						'id' => '[0-9]+',
-					),
-					'defaults' => array(
-						'controller' => 'Director\Controller\Director',
-						'action' => 'index',
-					),
-				),
-			),
-		),
-	),
-	
-	'view_manager' => array(
-		'template_path_stack' => array(
-			'director' => __DIR__ . '/../view',
-		),
-	),
+   'controllers' => array(
+      'invokables' => array(
+         'Director\Controller\Director' => 'Director\Controller\DirectorController',
+      ),
+   ),
+   'controller_plugins' => array(
+      'invokables' => array(
+         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+      ),
+   ),
+   'router' => array(
+      'routes' => array(
+         'director' => array(
+            'type' => 'segment',
+            'options' => array(
+               'route' => '/director[/][:action][/:id]',
+               'constraints' => array(
+                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                  'id' => '[0-9]+',
+               ),
+               'defaults' => array(
+                  'controller' => 'Director\Controller\Director',
+                  'action' => 'index',
+               ),
+            ),
+         ),
+      ),
+   ),
+
+   'view_manager' => array(
+      'template_path_stack' => array(
+         'director' => __DIR__ . '/../view',
+      ),
+   ),
 
 );

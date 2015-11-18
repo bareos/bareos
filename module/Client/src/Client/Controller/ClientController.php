@@ -32,82 +32,82 @@ use Zend\Json\Json;
 class ClientController extends AbstractActionController
 {
 
-	protected $clientModel;
+   protected $clientModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$clients = $this->getClientModel()->getClients();
+         $clients = $this->getClientModel()->getClients();
 
-			return new ViewModel(
-				array(
-					'clients' => $clients,
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+         return new ViewModel(
+            array(
+               'clients' => $clients,
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function detailsAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function detailsAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			return new ViewModel(
-				array(
-					'client' => $this->params()->fromRoute('id')
-				)
-			);
+         return new ViewModel(
+            array(
+               'client' => $this->params()->fromRoute('id')
+            )
+         );
 
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDataAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function getDataAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$data = $this->params()->fromQuery('data');
-			$client = $this->params()->fromQuery('client');
+         $data = $this->params()->fromQuery('data');
+         $client = $this->params()->fromQuery('client');
 
-			if($data == "all") {
-				$result = $this->getClientModel()->getClients();
-			}
-			elseif($data == "details" && isset($client)) {
-				$result = $this->getClientModel()->getClient($client);
-			}
-			elseif($data == "backups" && isset($client)) {
-				$result = $this->getClientModel()->getClientBackups($client, null, 'desc');
-			}
-			else {
-				$result = null;
-			}
+         if($data == "all") {
+            $result = $this->getClientModel()->getClients();
+         }
+         elseif($data == "details" && isset($client)) {
+            $result = $this->getClientModel()->getClient($client);
+         }
+         elseif($data == "backups" && isset($client)) {
+            $result = $this->getClientModel()->getClientBackups($client, null, 'desc');
+         }
+         else {
+            $result = null;
+         }
 
-			$response = $this->getResponse();
-			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+         $response = $this->getResponse();
+         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-			if(isset($result)) {
-				$response->setContent(JSON::encode($result));
-			}
+         if(isset($result)) {
+            $response->setContent(JSON::encode($result));
+         }
 
-			return $response;
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+         return $response;
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getClientModel()
-	{
-		if(!$this->clientModel) {
-			$sm = $this->getServiceLocator();
-			$this->clientModel = $sm->get('Client\Model\ClientModel');
-		}
-		return $this->clientModel;
-	}
+   public function getClientModel()
+   {
+      if(!$this->clientModel) {
+         $sm = $this->getServiceLocator();
+         $this->clientModel = $sm->get('Client\Model\ClientModel');
+      }
+      return $this->clientModel;
+   }
 
 }

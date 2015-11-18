@@ -40,139 +40,139 @@ $file = "/etc/bareos-webui/directors.ini";
 $config = null;
 
 if(!file_exists($file)) {
-	echo "Error: Missing configuration file ".$file.".";
-        exit();
+   echo "Error: Missing configuration file ".$file.".";
+   exit();
 }
 else {
-	$config = parse_ini_file($file, true, INI_SCANNER_NORMAL);
+   $config = parse_ini_file($file, true, INI_SCANNER_NORMAL);
 }
 
 function read_dir_config($config, $file)
 {
 
-	$arr = array();
+   $arr = array();
 
-	foreach($config as $instance) {
+   foreach($config as $instance) {
 
-                if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
+      if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
 
-			if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
-				$arr[key($config)] = array();
-				$arr[key($config)]['host'] = $instance['diraddress'];
-                        }
-                        else {
-                                echo "Error: Missing parameter 'diraddress' in ".$file.", section ".key($config).".";
-                                exit();
-                        }
+         if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
+            $arr[key($config)] = array();
+            $arr[key($config)]['host'] = $instance['diraddress'];
+         }
+         else {
+            echo "Error: Missing parameter 'diraddress' in ".$file.", section ".key($config).".";
+            exit();
+         }
 
-                        if(array_key_exists('dirport', $instance) && isset($instance['dirport'])) {
-                                $arr[key($config)]['port'] = $instance['dirport'];
-                        }
-                        else {
-                                $arr[key($config)]['port'] = 9101;
-                        }
+         if(array_key_exists('dirport', $instance) && isset($instance['dirport'])) {
+            $arr[key($config)]['port'] = $instance['dirport'];
+         }
+         else {
+            $arr[key($config)]['port'] = 9101;
+         }
 
-			if(array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
-                                $arr[key($config)]['tls_verify_peer'] = $instance['tls_verify_peer'];
-                        }
-                        else {
-                                $arr[key($config)]['tls_verify_peer'] = false;
-                        }
+         if(array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
+            $arr[key($config)]['tls_verify_peer'] = $instance['tls_verify_peer'];
+         }
+         else {
+            $arr[key($config)]['tls_verify_peer'] = false;
+         }
 
-                        if(array_key_exists('server_can_do_tls', $instance) && isset($instance['server_can_do_tls'])) {
-                                $arr[key($config)]['server_can_do_tls'] = $instance['server_can_do_tls'];
-                        }
-                        else {
-                        }
+         if(array_key_exists('server_can_do_tls', $instance) && isset($instance['server_can_do_tls'])) {
+            $arr[key($config)]['server_can_do_tls'] = $instance['server_can_do_tls'];
+         }
+         else {
+         }
 
-                        if(array_key_exists('server_requires_tls', $instance) && isset($instance['server_requires_tls'])) {
-                                $arr[key($config)]['server_requires_tls'] = $instance['server_requires_tls'];
-                        }
-                        else {
-                                $arr[key($config)]['server_requires_tls'] = false;
-                        }
+         if(array_key_exists('server_requires_tls', $instance) && isset($instance['server_requires_tls'])) {
+            $arr[key($config)]['server_requires_tls'] = $instance['server_requires_tls'];
+         }
+         else {
+            $arr[key($config)]['server_requires_tls'] = false;
+         }
 
-                        if(array_key_exists('client_can_do_tls', $instance) && isset($instance['client_can_do_tls'])) {
-                                $arr[key($config)]['client_can_do_tls'] = $instance['client_can_do_tls'];
-                        }
-                        else {
-                                $arr[key($config)]['client_can_do_tls'] = false;
-                        }
+         if(array_key_exists('client_can_do_tls', $instance) && isset($instance['client_can_do_tls'])) {
+            $arr[key($config)]['client_can_do_tls'] = $instance['client_can_do_tls'];
+         }
+         else {
+            $arr[key($config)]['client_can_do_tls'] = false;
+         }
 
-                        if(array_key_exists('client_requires_tls', $instance) && isset($instance['client_requires_tls'])) {
-                                $arr[key($config)]['client_requires_tls'] = $instance['client_requires_tls'];
-                        }
-                        else {
-                                $arr[key($config)]['client_requires_tls'] = false;
-                        }
+         if(array_key_exists('client_requires_tls', $instance) && isset($instance['client_requires_tls'])) {
+            $arr[key($config)]['client_requires_tls'] = $instance['client_requires_tls'];
+         }
+         else {
+            $arr[key($config)]['client_requires_tls'] = false;
+         }
 
-			if(array_key_exists('ca_file', $instance) && isset($instance['ca_file'])) {
-                                $arr[key($config)]['ca_file'] = $instance['ca_file'];
-                        }
-                        else {
-                                $arr[key($config)]['ca_file'] = "";
-                        }
+         if(array_key_exists('ca_file', $instance) && isset($instance['ca_file'])) {
+            $arr[key($config)]['ca_file'] = $instance['ca_file'];
+         }
+         else {
+            $arr[key($config)]['ca_file'] = "";
+         }
 
-                        if(array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
-                                $arr[key($config)]['cert_file'] = $instance['cert_file'];
-                        }
-                        else {
-                                $arr[key($config)]['cert_file'] = "";
-                        }
+         if(array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
+            $arr[key($config)]['cert_file'] = $instance['cert_file'];
+         }
+         else {
+            $arr[key($config)]['cert_file'] = "";
+         }
 
-                        if(array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
-                                $arr[key($config)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
-                        }
-                        else {
-                                $arr[key($config)]['cert_file_passphrase'] = "";
-                        }
+         if(array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
+            $arr[key($config)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
+         }
+         else {
+            $arr[key($config)]['cert_file_passphrase'] = "";
+         }
 
-                        if(array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
-                                $arr[key($config)]['allowed_cns'] = $instance['allowed_cns'];
-                        }
-                        else {
-                                $arr[key($config)]['allowed_cns'] = "";
-                        }
+         if(array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
+            $arr[key($config)]['allowed_cns'] = $instance['allowed_cns'];
+         }
+         else {
+            $arr[key($config)]['allowed_cns'] = "";
+         }
 
-		}
+      }
 
-		next($config);
+      next($config);
 
-	}
+   }
 
-	return $arr;
+   return $arr;
 
 }
 
 return array(
-	'directors' => read_dir_config($config, $file),
-	'service_manager' => array(
-		'factories' => array(
-			'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
-		),
-		'abstract_factories' => array(
-			// to allow other adapters to be called by $sm->get('adaptername')
-			'Zend\Db\Adapter\AdapterAbstractServiceFactory',
-		),
-	),
-	'session' => array(
-		'config' => array(
-			'class' => 'Zend\Session\Config\SessionConfig',
-			'options' => array(
-				'name' => 'bareos',
-				'use_cookies' => true,
-				'cookie_lifetime' => '3600',
-				'gc_maxlifetime' => '3600',
-				'cache_expire' => 3600,
-				'remember_me_seconds' => 3600,
-				'use_cookies' => true
-			),
-        ),
-        'storage' => 'Zend\Session\Storage\SessionArrayStorage',
-        'validators' => array(
-            'Zend\Session\Validator\RemoteAddr',
-            'Zend\Session\Validator\HttpUserAgent',
-        ),
+   'directors' => read_dir_config($config, $file),
+   'service_manager' => array(
+      'factories' => array(
+         'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
+      ),
+      'abstract_factories' => array(
+         // to allow other adapters to be called by $sm->get('adaptername')
+         'Zend\Db\Adapter\AdapterAbstractServiceFactory',
+      ),
+   ),
+   'session' => array(
+      'config' => array(
+         'class' => 'Zend\Session\Config\SessionConfig',
+         'options' => array(
+            'name' => 'bareos',
+            'use_cookies' => true,
+            'cookie_lifetime' => '3600',
+            'gc_maxlifetime' => '3600',
+            'cache_expire' => 3600,
+            'remember_me_seconds' => 3600,
+            'use_cookies' => true
+         ),
+   ),
+   'storage' => 'Zend\Session\Storage\SessionArrayStorage',
+   'validators' => array(
+       'Zend\Session\Validator\RemoteAddr',
+       'Zend\Session\Validator\HttpUserAgent',
+   ),
     ),
 );
 

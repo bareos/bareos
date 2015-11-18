@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -30,30 +30,30 @@ use Fileset\Model\Fileset;
 use Zend\Db\ResultSet\ResultSet;
 use PHPUnit_Framework_TestCase;
 
-class FilesetTableTest extends PHPUnit_Framework_TestCase 
+class FilesetTableTest extends PHPUnit_Framework_TestCase
 {
-	
-	public function testFetchAllReturnsAllFilesets() 
-	{
-		$resultSet = new ResultSet();
 
-		$mockTableGateway = $this->getMock(
-			'Zend\Db\TableGateway\TableGateway',
-			array('select'),
-			array(),
-			'',
-			false
-		);
+   public function testFetchAllReturnsAllFilesets()
+   {
+      $resultSet = new ResultSet();
 
-		$mockTableGateway->expects($this->once())
-			->method('select')
-			->with()
-			->will($this->returnValue($resultSet));
+      $mockTableGateway = $this->getMock(
+         'Zend\Db\TableGateway\TableGateway',
+         array('select'),
+         array(),
+         '',
+         false
+      );
 
-		$filesetTable = new FilesetTable($mockTableGateway);
+      $mockTableGateway->expects($this->once())
+         ->method('select')
+         ->with()
+         ->will($this->returnValue($resultSet));
 
-		$this->assertSame($resultSet, $filesetTable->fetchAll());
+      $filesetTable = new FilesetTable($mockTableGateway);
 
-	}
+      $this->assertSame($resultSet, $filesetTable->fetchAll());
+
+   }
 
 }

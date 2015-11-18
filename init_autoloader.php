@@ -33,38 +33,38 @@ if (is_dir('vendor/ZF2/library')) {
 
 if ($zf2Path) {
     if (isset($loader)) {
-        $loader->add('Zend', $zf2Path);
+   $loader->add('Zend', $zf2Path);
     } else {
-        include $zf2Path . '/Zend/Loader/AutoloaderFactory.php';
-        Zend\Loader\AutoloaderFactory::factory(array(
-            'Zend\Loader\StandardAutoloader' => array(
-                'autoregister_zf' => true
-            )
-        ));
+   include $zf2Path . '/Zend/Loader/AutoloaderFactory.php';
+   Zend\Loader\AutoloaderFactory::factory(array(
+       'Zend\Loader\StandardAutoloader' => array(
+      'autoregister_zf' => true
+       )
+   ));
     }
 } else {
     // Zend Framework available in normal include path? Use it.
     if( stream_resolve_include_path("Zend/Loader/AutoloaderFactory.php") ) {
-        include 'Zend/Loader/AutoloaderFactory.php';
-        Zend\Loader\AutoloaderFactory::factory(array(
-                'Zend\Loader\StandardAutoloader' => array(
-                    'autoregister_zf' => true
-                )
-            ));
+   include 'Zend/Loader/AutoloaderFactory.php';
+   Zend\Loader\AutoloaderFactory::factory(array(
+      'Zend\Loader\StandardAutoloader' => array(
+          'autoregister_zf' => true
+      )
+       ));
     }
 }
 
 try {
-        if (!class_exists('Zend\Loader\AutoloaderFactory')) {
-                throw new RuntimeException('
-			Unable to load Zend Framework 2.<br /><br />
-			Please install Zend Framework 2 package from your distribution repository.<br />
-			If Zend Framework 2 is already installed, please set the include_path in your php.ini or<br />
-			define a ZF2_PATH environment variable in your apache configuration file and do not forget<br />
-			to restart your apache webserver.<br />');
-        }
+   if (!class_exists('Zend\Loader\AutoloaderFactory')) {
+      throw new RuntimeException('
+         Unable to load Zend Framework 2.<br /><br />
+         Please install Zend Framework 2 package from your distribution repository.<br />
+         If Zend Framework 2 is already installed, please set the include_path in your php.ini or<br />
+         define a ZF2_PATH environment variable in your apache configuration file and do not forget<br />
+         to restart your apache webserver.<br />');
+   }
 }
 catch(Exception $e) {
-        print $e->getMessage();
+   print $e->getMessage();
 }
 

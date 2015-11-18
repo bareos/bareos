@@ -32,82 +32,82 @@ use Zend\Json\Json;
 class FilesetController extends AbstractActionController
 {
 
-	protected $filesetModel;
+   protected $filesetModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$filesets = $this->getFilesetModel()->getFilesets();
+            $filesets = $this->getFilesetModel()->getFilesets();
 
-				return new ViewModel(
-					array(
-						'filesets' => $filesets,
-						)
-				);
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+            return new ViewModel(
+               array(
+                  'filesets' => $filesets,
+                  )
+            );
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function detailsAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function detailsAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$filesetid = $this->params()->fromRoute('id', 0);
-				$fileset = $this->getFilesetModel()->getFileset($filesetid);
+            $filesetid = $this->params()->fromRoute('id', 0);
+            $fileset = $this->getFilesetModel()->getFileset($filesetid);
 
-				return new ViewModel(
-					array(
-						'fileset' => $fileset
-					)
-				);
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+            return new ViewModel(
+               array(
+                  'fileset' => $fileset
+               )
+            );
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDataAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function getDataAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$data = $this->params()->fromQuery('data');
-			$fileset = $this->params()->fromQuery('fileset');
+         $data = $this->params()->fromQuery('data');
+         $fileset = $this->params()->fromQuery('fileset');
 
-			if($data == "all") {
-				$result = $this->getFilesetModel()->getFilesets();
-			}
-			elseif($data == "details" && isset($fileset)) {
-				$result = $this->getFilesetModel()->getFileset($fileset);
-			}
-			else {
-				$result = null;
-			}
+         if($data == "all") {
+            $result = $this->getFilesetModel()->getFilesets();
+         }
+         elseif($data == "details" && isset($fileset)) {
+            $result = $this->getFilesetModel()->getFileset($fileset);
+         }
+         else {
+            $result = null;
+         }
 
-			$response = $this->getResponse();
-			$response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+         $response = $this->getResponse();
+         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
 
-			if(isset($result)) {
-				$response->setContent(JSON::encode($result));
-			}
+         if(isset($result)) {
+            $response->setContent(JSON::encode($result));
+         }
 
-			return $response;
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+         return $response;
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getFilesetModel()
-	{
-		if(!$this->filesetModel) {
-			$sm = $this->getServiceLocator();
-			$this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
-		}
-		return $this->filesetModel;
-	}
+   public function getFilesetModel()
+   {
+      if(!$this->filesetModel) {
+         $sm = $this->getServiceLocator();
+         $this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
+      }
+      return $this->filesetModel;
+   }
 
 }
 

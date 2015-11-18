@@ -27,50 +27,50 @@ namespace Bareos\BSock;
 
 interface BareosBSockInterface
 {
-	/**
-	 * Initialize connection
-	 *
-	 * @return boolean
-	 */
-	public function init();
+   /**
+    * Initialize connection
+    *
+    * @return boolean
+    */
+   public function init();
 
-	/**
-	 * Authenticate
-	 *
-	 * @param $console
-	 * @param $password
-	 * @return boolean
-	 */
-	public function auth($console, $password);
+   /**
+    * Authenticate
+    *
+    * @param $console
+    * @param $password
+    * @return boolean
+    */
+   public function auth($console, $password);
 
-	/**
-	 * Set user credentials
-	 *
-	 * @param $username
-	 * @param password
-	 */
-	public function set_user_credentials($username=null, $password=null);
+   /**
+    * Set user credentials
+    *
+    * @param $username
+    * @param password
+    */
+   public function set_user_credentials($username=null, $password=null);
 
-	/**
-	 * Set configuration
-	 *
-	 * @param $config
-	 */
-	public function set_config($config);
+   /**
+    * Set configuration
+    *
+    * @param $config
+    */
+   public function set_config($config);
 
-	/**
-	 * Disconnect
-	 *
-	 * @return boolean
-	 */
-	public function disconnect();
+   /**
+    * Disconnect
+    *
+    * @return boolean
+    */
+   public function disconnect();
 
-	/**
-	 * Send command
-	 *
-	 * @param $cmd
-	 * @return string
-	 */
-	public function send_command($cmd);
+   /**
+    * Send command
+    *
+    * @param $cmd
+    * @return string
+    */
+   public function send_command($cmd);
 
 }

@@ -43,13 +43,13 @@ $this->headTitle($title);
 <table class="table table-hover" id="pools">
 
 <thead class="bg-primary">
-	<th>Name</th>
-	<th>Type</th>
-	<th>Volumes</th>
-	<th>Maximum volumes</th>
-	<th>Volume retention</th>
-	<th>Maximum volume jobs</th>
-	<th>Maximum volume bytes</th>
+   <th>Name</th>
+   <th>Type</th>
+   <th>Volumes</th>
+   <th>Maximum volumes</th>
+   <th>Volume retention</th>
+   <th>Maximum volume jobs</th>
+   <th>Maximum volume bytes</th>
 </thead>
 
 </table>
@@ -68,79 +68,79 @@ $this->headTitle($title);
 <script>
 
 var table= $('#pools').DataTable( {
-	"ajax": {
-		"url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",
-		"dataSrc": ""
-	},
-	"columns" : [
-		{ "data": null },
-		{ "data": null },
-		{ "data": null },
-		{ "data": null },
-		{ "data": null },
-		{ "data": null },
-		{ "data": null }
-	],
-	"paging":   true,
-	"ordering": true,
-	"info":     true,
-	"pagingType": "full_numbers",
-	"stateSave": true,
-	"columnDefs": [
-		{
-			"targets": 0,
-			"data": null,
-			"render": function(data, type, full, meta) {
-				return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data.name+'">'+data.name+'</a>';
-			}
-		},
-		{
-			"targets": 1,
-			"data": null,
-			"render": function(data, type, full, meta) {
-				return data.pooltype;
-			}
-		},
-		{
-			"targets": 2,
-			"data": null,
-			"render": function(data, type, full, meta) {
-				return data.numvols;
-			}
-		},
-		{
-                        "targets": 3,
-                        "data": null,
-                        "render": function(data, type, full, meta) {
-                                return data.maxvols;
-                        }
-                },
-		{
-			"targets": 4,
-			"data": null,
-			"render": function(data, type, full, meta) {
-				return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
-			}
-		},
-		{
-                        "targets": 5,
-                        "data": null,
-                        "render": function(data, type, full, meta) {
-                                return data.maxvoljobs;
-                        }
-                },
-		{
-                        "targets": 6,
-                        "data": null,
-			"render": function(data, type, full, meta) {
-				if(data.maxvolbytes == 0) return "-";
-					var k = 1000;
-					var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-					var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
-					return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-				}
-                }
-	]
+   "ajax": {
+      "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",
+      "dataSrc": ""
+   },
+   "columns" : [
+      { "data": null },
+      { "data": null },
+      { "data": null },
+      { "data": null },
+      { "data": null },
+      { "data": null },
+      { "data": null }
+   ],
+   "paging":   true,
+   "ordering": true,
+   "info":     true,
+   "pagingType": "full_numbers",
+   "stateSave": true,
+   "columnDefs": [
+      {
+         "targets": 0,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data.name+'">'+data.name+'</a>';
+         }
+      },
+      {
+         "targets": 1,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return data.pooltype;
+         }
+      },
+      {
+         "targets": 2,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return data.numvols;
+         }
+      },
+      {
+         "targets": 3,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return data.maxvols;
+         }
+      },
+      {
+         "targets": 4,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
+         }
+      },
+      {
+         "targets": 5,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            return data.maxvoljobs;
+         }
+      },
+      {
+         "targets": 6,
+         "data": null,
+         "render": function(data, type, full, meta) {
+            if(data.maxvolbytes == 0) return "-";
+               var k = 1000;
+               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+               var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
+               return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+      }
+   ]
 } );
 
 </script>

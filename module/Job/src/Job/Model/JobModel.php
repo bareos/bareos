@@ -30,150 +30,150 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class JobModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __constructor()
-	{
-	}
+   public function __constructor()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getJobs($status=null, $period=null)
-	{
-		if($period == "all") {
-			$cmd = 'llist jobs';
-		}
-		else {
-			$cmd = 'llist jobs days='.$period;
-		}
+   public function getJobs($status=null, $period=null)
+   {
+      if($period == "all") {
+         $cmd = 'llist jobs';
+      }
+      else {
+         $cmd = 'llist jobs days='.$period;
+      }
 
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-			//return false;
-			$error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $error['result']['error'];
-		}
-		else {
-			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $jobs['result']['jobs'];
-		}
-	}
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+         //return false;
+         $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $error['result']['error'];
+      }
+      else {
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobs['result']['jobs'];
+      }
+   }
 
-	public function getJobsByStatus($status=null, $days=null, $hours=null)
-	{
-		if(isset($status)) {
-			if(isset($days)) {
-				if($days == "all") {
-					$cmd = 'llist jobs jobstatus='.$status.'';
-				}
-				else {
-					$cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
-				}
-			}
-			elseif(isset($hours)) {
-				if($hours == "all") {
-					$cmd = 'llist jobs jobstatus='.$status.'';
-				}
-				else {
-					$cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
-				}
-			}
-			else {
-				$cmd = 'llist jobs jobstatus='.$status.'';
-			}
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return array_reverse($jobs['result']['jobs']);
-		}
-		else {
-			return false;
-		}
-	}
+   public function getJobsByStatus($status=null, $days=null, $hours=null)
+   {
+      if(isset($status)) {
+         if(isset($days)) {
+            if($days == "all") {
+               $cmd = 'llist jobs jobstatus='.$status.'';
+            }
+            else {
+               $cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
+            }
+         }
+         elseif(isset($hours)) {
+            if($hours == "all") {
+               $cmd = 'llist jobs jobstatus='.$status.'';
+            }
+            else {
+               $cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
+            }
+         }
+         else {
+            $cmd = 'llist jobs jobstatus='.$status.'';
+         }
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return array_reverse($jobs['result']['jobs']);
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function getJob($id=null)
-	{
-		if(isset($id)) {
-			$cmd = 'llist jobid='.$id.'';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $job['result']['jobs'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getJob($id=null)
+   {
+      if(isset($id)) {
+         $cmd = 'llist jobid='.$id.'';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $job['result']['jobs'];
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function getJobLog($id=null)
-	{
-		if(isset($id)) {
-			$cmd = 'list joblog jobid='.$id.'';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $log['result']['joblog'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getJobLog($id=null)
+   {
+      if(isset($id)) {
+         $cmd = 'list joblog jobid='.$id.'';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $log['result']['joblog'];
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function getBackupJobs()
-	{
-		$cmd = '.jobs type=B';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $jobs['result']['jobs'];
-	}
+   public function getBackupJobs()
+   {
+      $cmd = '.jobs type=B';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $jobs['result']['jobs'];
+   }
 
-	public function runJob($name=null)
-	{
-		if(isset($name)) {
-			$cmd = 'run job="'.$name.'" yes';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 0, null);
-			return $result;
-		}
-		else {
-			return false;
-		}
-	}
+   public function runJob($name=null)
+   {
+      if(isset($name)) {
+         $cmd = 'run job="'.$name.'" yes';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function rerunJob($id=null)
-	{
-		if(isset($id)) {
-			$cmd = 'rerun jobid='.$id.' yes';
-			$this->director = $this->getServiceLocator()->get('director');
-                        $result = $this->director->send_command($cmd, 0, null);
-                        return $result;
-		}
-		else {
-			return false;
-		}
-	}
+   public function rerunJob($id=null)
+   {
+      if(isset($id)) {
+         $cmd = 'rerun jobid='.$id.' yes';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function cancelJob($id=null)
-	{
-		if(isset($id)) {
-                        $cmd = 'cancel jobid='.$id.' yes';
-			$this->director = $this->getServiceLocator()->get('director');
-                        $result = $this->director->send_command($cmd, 0, null);
-                        return $result;
-                }
-                else {
-                        return false;
-                }
-	}
+   public function cancelJob($id=null)
+   {
+      if(isset($id)) {
+         $cmd = 'cancel jobid='.$id.' yes';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
 }

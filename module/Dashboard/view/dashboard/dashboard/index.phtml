@@ -35,43 +35,43 @@ $this->headTitle($title);
 
 <div class="panel panel-default">
 
-        <div class="panel-heading">
-                <h3 class="panel-title">
-                <span class="glyphicon glyphicon-stats"></span>
-                <?php echo $this->translate('Jobs during the past 24 hours') ?>
-                </h3>
-        </div>
+   <div class="panel-heading">
+      <h3 class="panel-title">
+      <span class="glyphicon glyphicon-stats"></span>
+      <?php echo $this->translate('Jobs during the past 24 hours') ?>
+      </h3>
+   </div>
 
-        <div class="panel-body">
+   <div class="panel-body">
 
-                <div class="col-md-4">
+      <div class="col-md-4">
 
-                <table class="table">
-                        <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->runningJobs; ?></a></td>
-                        </tr>
-                        <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->waitingJobs; ?></a></td>
-                        </tr>
-                        <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->successfulJobs; ?></a></td>
-                        </tr>
-                        <tr>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
-                                <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
-                        </tr>
-                </table>
+      <table class="table">
+         <tr>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->runningJobs; ?></a></td>
+         </tr>
+         <tr>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->waitingJobs; ?></a></td>
+         </tr>
+         <tr>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->successfulJobs; ?></a></td>
+         </tr>
+         <tr>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
+         </tr>
+      </table>
 
-                </div>
+      </div>
 
-                <div class="col-md-4">
-                        <div id="chart1" style="width:450px; height:300px;"></div>
-                </div>
+      <div class="col-md-4">
+         <div id="chart1" style="width:450px; height:300px;"></div>
+      </div>
 
-        </div>
+   </div>
 
 </div>
 
@@ -97,51 +97,51 @@ Heads up! You are now able to <a href="<?php echo $this->url('restore', array())
 
 <script type="text/javascript">
 
-        function chart1() {
+   function chart1() {
 
-                var data = [
-                        ['Running', <?php echo $this->runningJobs; ?>],
-                        ['Waiting', <?php echo $this->waitingJobs; ?>],
-                        ['Successful', <?php echo $this->successfulJobs; ?>],
-                        ['Unsuccessful', <?php echo $this->unsuccessfulJobs; ?>]
-                ];
+      var data = [
+         ['Running', <?php echo $this->runningJobs; ?>],
+         ['Waiting', <?php echo $this->waitingJobs; ?>],
+         ['Successful', <?php echo $this->successfulJobs; ?>],
+         ['Unsuccessful', <?php echo $this->unsuccessfulJobs; ?>]
+      ];
 
-                var plot1 = jQuery.jqplot(
-                        'chart1',
-                        [data],
-                        {
-                                seriesColors: [ "#5bc0de", "#cccccc", "#5cb85c", "#d9534f" ],
-                                seriesDefaults: {
-                                        renderer: jQuery.jqplot.PieRenderer,
-                                        rendererOptions: {
-                                                fill: true,
-                                                sliceMargin: 5,
-                                                lineWidth: 3,
-                                                showDataLabels: true
-                                        },
-                                        shadow: true,
-                                },
-                                legend:{
-                                        show: true,
-                                        location: 'se',
-                                        xoffset: 1,
-                                        yoffset: 1,
-                                },
-                                grid: {
-                                        drawGridLines: true,
-                                        borderColor: 'transparent',
-                                        shadowColor: 'transparent',
-                                }
-                        }
-                );
+      var plot1 = jQuery.jqplot(
+         'chart1',
+         [data],
+         {
+            seriesColors: [ "#5bc0de", "#cccccc", "#5cb85c", "#d9534f" ],
+            seriesDefaults: {
+               renderer: jQuery.jqplot.PieRenderer,
+               rendererOptions: {
+                  fill: true,
+                  sliceMargin: 5,
+                  lineWidth: 3,
+                  showDataLabels: true
+               },
+               shadow: true,
+            },
+            legend:{
+               show: true,
+               location: 'se',
+               xoffset: 1,
+               yoffset: 1,
+            },
+            grid: {
+               drawGridLines: true,
+               borderColor: 'transparent',
+               shadowColor: 'transparent',
+            }
+         }
+      );
 
-        }
+   }
 
-        $(document).ready(
-                function(){
-                        chart1();
-                }
-        );
+   $(document).ready(
+      function(){
+         chart1();
+      }
+   );
 
 </script>
 

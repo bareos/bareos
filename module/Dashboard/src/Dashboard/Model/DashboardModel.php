@@ -30,43 +30,43 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class DashboardModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getJobs($status=null, $days=null, $hours=null)
-	{
-		if(isset($status)) {
-			$this->director = $this->getServiceLocator()->get('director');
-			if(isset($days)) {
-				$cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
-			}
-			elseif(isset($hours)) {
-				$cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
-			}
-			else {
-				$cmd = 'llist jobs jobstatus='.$status.'';
-			}
-			$result = $this->director->send_command($cmd, 2, null);
-			$jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $jobs['result']['jobs'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getJobs($status=null, $days=null, $hours=null)
+   {
+      if(isset($status)) {
+         $this->director = $this->getServiceLocator()->get('director');
+         if(isset($days)) {
+            $cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
+         }
+         elseif(isset($hours)) {
+            $cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
+         }
+         else {
+            $cmd = 'llist jobs jobstatus='.$status.'';
+         }
+         $result = $this->director->send_command($cmd, 2, null);
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobs['result']['jobs'];
+      }
+      else {
+         return false;
+      }
+   }
 
 }

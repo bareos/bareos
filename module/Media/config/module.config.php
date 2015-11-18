@@ -25,39 +25,39 @@
 
 return array(
 
-	'controllers' => array(
-		'invokables' => array(
-			'Media\Controller\Media' => 'Media\Controller\MediaController',
-		),
-	),
-	'controller_plugins' => array(
-                'invokables' => array(
-                        'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
-                ),
-        ),
-	'router' => array(
-		'routes' => array(
-			'media' => array(
-				'type' => 'segment',
-				'options' => array(
-					'route' => '/media[/][:action][/][:id]',
-					'constraints' => array(
-						'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-						'id' => '[a-zA-Z0-9_-]*',
-					),
-					'defaults' => array(
-						'controller' => 'Media\Controller\Media',
-						'action' => 'index',
-					),
-				),
-			),
-		),
-	),
+   'controllers' => array(
+      'invokables' => array(
+         'Media\Controller\Media' => 'Media\Controller\MediaController',
+      ),
+   ),
+   'controller_plugins' => array(
+      'invokables' => array(
+         'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+      ),
+   ),
+   'router' => array(
+      'routes' => array(
+         'media' => array(
+            'type' => 'segment',
+            'options' => array(
+               'route' => '/media[/][:action][/][:id]',
+               'constraints' => array(
+                  'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
+                  'id' => '[a-zA-Z0-9_-]*',
+               ),
+               'defaults' => array(
+                  'controller' => 'Media\Controller\Media',
+                  'action' => 'index',
+               ),
+            ),
+         ),
+      ),
+   ),
 
-	'view_manager' => array(
-		'template_path_stack' => array(
-			'media' => __DIR__ . '/../view',
-		),
-	),
+   'view_manager' => array(
+      'template_path_stack' => array(
+         'media' => __DIR__ . '/../view',
+      ),
+   ),
 
 );

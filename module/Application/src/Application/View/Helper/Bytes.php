@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -28,32 +28,32 @@ namespace Application\View\Helper;
 use Zend\View\Helper\AbstractHelper;
 
 /**
- * 
+ *
  */
 class Bytes extends AbstractHelper
 {
 
-	protected $bsize;
+   protected $bsize;
 
-	/**
-     	 * @method 
-     	 * @return string 
-     	 */
-    	public function __invoke($bytes)
-    	{
+   /**
+         * @method
+         * @return string
+         */
+       public function __invoke($bytes)
+       {
 
-		$units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB');
-		$this->bsize = "0.00 B";
+      $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB');
+      $this->bsize = "0.00 B";
 
-		if($bytes > 0)
-		{
-			$result = log($bytes) / log(1000);
-			$this->bsize = round(pow(1000, $result - ($tmp = floor($result))), 2)." ".$units[$tmp];
-		}
+      if($bytes > 0)
+      {
+         $result = log($bytes) / log(1000);
+         $this->bsize = round(pow(1000, $result - ($tmp = floor($result))), 2)." ".$units[$tmp];
+      }
 
-		return $this->bsize;
+      return $this->bsize;
 
-    	}
+       }
 
 }
 

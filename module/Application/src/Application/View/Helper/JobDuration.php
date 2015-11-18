@@ -29,8 +29,8 @@ use Zend\View\Helper\AbstractHelper;
 
 class JobDuration extends AbstractHelper
 {
-    	public function __invoke($duration)
-    	{
-		return $duration;
-    	}
+       public function __invoke($duration)
+       {
+      return $duration;
+       }
 }

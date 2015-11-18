@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -27,26 +27,26 @@ namespace StorageTest\Controller;
 
 use Zend\Test\PHPUnit\Controller\AbstractHttpControllerTestCase;
 
-class StorageControllerTest extends AbstractHttpControllerTestCase 
+class StorageControllerTest extends AbstractHttpControllerTestCase
 {
-	
-	protected $traceError = true;
 
-	public function setUp() 
-	{
-		$this->setApplicationConfig(
-			include './config/application.config.php'
-		);
-	}
+   protected $traceError = true;
 
-	public function testIndexActionCanBeAccessed() 
-	{
-		$this->dispatch('/storage');	
-		$this->assertResponseStatusCode(200);
-		$this->assertModuleName('Storage');
-		$this->assertControllerName('Storage\Controller\Storage');
-		$this->assertControllerClass('StorageController');
-		$this->assertMatchedRouteName('storage');
-	}
+   public function setUp()
+   {
+      $this->setApplicationConfig(
+         include './config/application.config.php'
+      );
+   }
+
+   public function testIndexActionCanBeAccessed()
+   {
+      $this->dispatch('/storage');
+      $this->assertResponseStatusCode(200);
+      $this->assertModuleName('Storage');
+      $this->assertControllerName('Storage\Controller\Storage');
+      $this->assertControllerClass('StorageController');
+      $this->assertMatchedRouteName('storage');
+   }
 
 }

@@ -30,68 +30,68 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class ClientModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getClients()
-	{
-		$cmd = 'llist clients';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $clients['result']['clients'];
-	}
+   public function getClients()
+   {
+      $cmd = 'llist clients';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $clients['result']['clients'];
+   }
 
-	public function getClient($client=null)
-	{
-		if(isset($client)) {
-			$cmd = 'llist client="'.$client.'"';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$client = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $client['result']['clients'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getClient($client=null)
+   {
+      if(isset($client)) {
+         $cmd = 'llist client="'.$client.'"';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $client = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $client['result']['clients'];
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function getClientBackups($client=null, $limit=null, $order=null)
-	{
-		if(isset($client)) {
-			if(isset($limit, $order)) {
-				$cmd = 'llist backups client="'.$client.'" limit='.$limit.' order='.$order.'';
-			}
-			else {
-				$cmd = 'llist backups client="'.$client.'"';
-			}
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			if(preg_match("/Select/", $result)) {
-				return null;
-			}
-			else {
-				$backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-				return $backups['result']['backups'];
-			}
-		}
-		else {
-			return false;
-		}
-	}
+   public function getClientBackups($client=null, $limit=null, $order=null)
+   {
+      if(isset($client)) {
+         if(isset($limit, $order)) {
+            $cmd = 'llist backups client="'.$client.'" limit='.$limit.' order='.$order.'';
+         }
+         else {
+            $cmd = 'llist backups client="'.$client.'"';
+         }
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         if(preg_match("/Select/", $result)) {
+            return null;
+         }
+         else {
+            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $backups['result']['backups'];
+         }
+      }
+      else {
+         return false;
+      }
+   }
 
 }

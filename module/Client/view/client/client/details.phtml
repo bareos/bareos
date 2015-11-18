@@ -41,12 +41,12 @@ $this->headTitle($title);
 
 <table class="table table-hover" id="tab-client">
 <thead class="bg-primary">
-	<th><?php echo $this->translate("Name"); ?></th>
-	<th><?php echo $this->translate("Version"); ?></th>
-	<th><?php echo $this->translate("Autoprune"); ?></th>
-	<th><?php echo $this->translate("Fileretention"); ?></th>
-	<th><?php echo $this->translate("Jobretention"); ?></th>
-	<th><?php echo $this->translate("Actions"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Version"); ?></th>
+   <th><?php echo $this->translate("Autoprune"); ?></th>
+   <th><?php echo $this->translate("Fileretention"); ?></th>
+   <th><?php echo $this->translate("Jobretention"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 </table>
 
@@ -67,12 +67,12 @@ $this->headTitle($title);
 
 <table class="table table-hover" id="tab-backups">
 <thead class="bg-primary">
-	<th><?php echo $this->translate("Job"); ?></th>
-	<th><?php echo $this->translate("Timestamp"); ?></th>
-	<th><?php echo $this->translate("Fileset"); ?></th>
-	<th><?php echo $this->translate("Level"); ?></th>
-	<th><?php echo $this->translate("Files"); ?></th>
-	<th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Job"); ?></th>
+   <th><?php echo $this->translate("Timestamp"); ?></th>
+   <th><?php echo $this->translate("Fileset"); ?></th>
+   <th><?php echo $this->translate("Level"); ?></th>
+   <th><?php echo $this->translate("Files"); ?></th>
+   <th><?php echo $this->translate("Bytes"); ?></th>
 </thead>
 </table>
 
@@ -91,169 +91,169 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
-	$('#tab-client').DataTable( {
-                "ajax": {
-                        "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=details&client='.$this->client; ?>",
-                        "dataSrc": ""
-                },
-                "columns" : [
-			{
-				"className": "client-name",
-				"data": "name"
-			},
-			{
-				"className": "client-uname",
-				"data": "uname"
-			},
-			{
-				"className": "client-autoprune",
-				"data": "autoprune"
-			},
-			{
-				"className": "client-fileretention",
-				"data": "fileretention"
-			},
-			{
-				"className": "client-jobretention",
-				"data": "jobretention"
-			},
-			{
-				"className": "client-actions",
-				"data": null
-			}
-                ],
-                "paging":   false,
-                "ordering": false,
-                "info":     false,
-                "pagingType": "full_numbers",
-                "stateSave": true,
-		"bFilter": false,
-		"columnDefs": [
-			{
-				"targets": 2,
-				"data": "autoprune",
-				"render": function(data, type, full, meta) {
-					if(data == 1) {
-						var a = '<span class="label label-success">enabled</span>';
-					}
-					else {
-						var a = '<span class="label label-danger">disabled</span>';
-					}
-					return a;
-				}
-			},
-			{
-				"targets": 3,
-				"data": "fileretention",
-				"render": function(data, type, full, meta) {
-                                        return Math.floor((data % 31536000) / 86400) + " days";
-                                }
-			},
-			{
-                                "targets": 4,
-                                "data": "fileretention",
-                                "render": function(data, type, full, meta) {
-                                        return Math.floor((data % 31536000) / 86400) + " days";
-                                }
-                        },
-			{
-                                "targets": -1,
-				"data": "name",
-                                "render": function(data, type, full, meta) {
-					return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
-				}
-			}
-		]
-        } );
+   $('#tab-client').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=details&client='.$this->client; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         {
+            "className": "client-name",
+            "data": "name"
+         },
+         {
+            "className": "client-uname",
+            "data": "uname"
+         },
+         {
+            "className": "client-autoprune",
+            "data": "autoprune"
+         },
+         {
+            "className": "client-fileretention",
+            "data": "fileretention"
+         },
+         {
+            "className": "client-jobretention",
+            "data": "jobretention"
+         },
+         {
+            "className": "client-actions",
+            "data": null
+         }
+      ],
+      "paging":   false,
+      "ordering": false,
+      "info":     false,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "bFilter": false,
+      "columnDefs": [
+         {
+            "targets": 2,
+            "data": "autoprune",
+            "render": function(data, type, full, meta) {
+               if(data == 1) {
+                  var a = '<span class="label label-success">enabled</span>';
+               }
+               else {
+                  var a = '<span class="label label-danger">disabled</span>';
+               }
+               return a;
+            }
+         },
+         {
+            "targets": 3,
+            "data": "fileretention",
+            "render": function(data, type, full, meta) {
+               return Math.floor((data % 31536000) / 86400) + " days";
+            }
+         },
+         {
+            "targets": 4,
+            "data": "fileretention",
+            "render": function(data, type, full, meta) {
+               return Math.floor((data % 31536000) / 86400) + " days";
+            }
+         },
+         {
+            "targets": -1,
+            "data": "name",
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+            }
+         }
+      ]
+   } );
 
-	$('#tab-backups').DataTable( {
-                "ajax": {
-                        "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=backups&client='.$this->client; ?>",
-                        "dataSrc": ""
-                },
-                "columns" : [
-                        {
-                                "className": "backup-jobid",
-                                "orderable": true,
-                                "data": "jobid"
-                        },
-                        {
-                                "className": "backup-starttime",
-                                "orderable": true,
-                                "data": "starttime"
-                        },
-			{
-				"className": "backup-fileset",
-				"orderable": true,
-				"data": "fileset",
-			},
-			{
-                                "className": "backup-level",
-                                "orderable": true,
-                                "data": "level",
-                        },
-			{
-                                "className": "backup-jobfiles",
-                                "orderable": true,
-                                "data": "jobfiles",
-                        },
-                        {
-                                "className": "backup-jobbytes",
-                                "orderable": true,
-                                "data": "jobbytes"
-                        }
-                ],
-                "paging":   true,
-                "ordering": true,
-                "info":     true,
-                "pagingType": "full_numbers",
-                "stateSave": true,
-                "columnDefs": [
-                        {
-                                "targets": 0,
-                                "data": "jobid",
-                                "render": function(data, type, full, meta) {
-                                        return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
-                                }
-                        },
-			{
-				"targets": 3,
-				"data": "level",
-				"render": function(data, type, full, meta) {
-					switch(data) {
-						case "I":
-							var level = 'Incremental';
-							break;
-						case "D":
-							var level = 'Differential';
-							break;
-						case "F":
-							var level = 'Full';
-							break;
-						default:
-							var level = "";
-							break;
-					}
-					return level;
-				}
-			},
-			{
-				"targets": 5,
-				"data": "jobbytes",
-				"render": function(data, type, full, meta) {
-					if(data == 0) return "0.00 B";
-					var k = 1000;
-					var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-					var i = Math.floor(Math.log(data) / Math.log(k));
-					return parseFloat((data / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-				}
-			}
-                ]
-        } );
+   $('#tab-backups').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=backups&client='.$this->client; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         {
+            "className": "backup-jobid",
+            "orderable": true,
+            "data": "jobid"
+         },
+         {
+            "className": "backup-starttime",
+            "orderable": true,
+            "data": "starttime"
+         },
+         {
+            "className": "backup-fileset",
+            "orderable": true,
+            "data": "fileset",
+         },
+         {
+            "className": "backup-level",
+            "orderable": true,
+            "data": "level",
+         },
+         {
+            "className": "backup-jobfiles",
+            "orderable": true,
+            "data": "jobfiles",
+         },
+         {
+            "className": "backup-jobbytes",
+            "orderable": true,
+            "data": "jobbytes"
+         }
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": "jobid",
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 3,
+            "data": "level",
+            "render": function(data, type, full, meta) {
+               switch(data) {
+                  case "I":
+                     var level = 'Incremental';
+                     break;
+                  case "D":
+                     var level = 'Differential';
+                     break;
+                  case "F":
+                     var level = 'Full';
+                     break;
+                  default:
+                     var level = "";
+                     break;
+               }
+               return level;
+            }
+         },
+         {
+            "targets": 5,
+            "data": "jobbytes",
+            "render": function(data, type, full, meta) {
+               if(data == 0) return "0.00 B";
+               var k = 1000;
+               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+               var i = Math.floor(Math.log(data) / Math.log(k));
+               return parseFloat((data / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+         }
+      ]
+   } );
 
-	$('#tab-client tbody').on('mouseover', '#btn-1', function () {
-		$('[data-toggle="tooltip"]').tooltip();
-	} );
+   $('#tab-client tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   } );
 
 } );
 

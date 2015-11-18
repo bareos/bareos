@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -34,8 +34,8 @@ class Retention extends AbstractHelper
 
     public function __invoke($retention)
     {
-	$this->retention = (int) $retention;
-	$this->retention = round(($this->retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN);
-	return $this->retention;
+   $this->retention = (int) $retention;
+   $this->retention = round(($this->retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN);
+   return $this->retention;
     }
 }

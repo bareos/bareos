@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -30,23 +30,23 @@ use Zend\Test\PHPUnit\Controller\AbstractHttpControllerTestCase;
 class LogControllerTest extends AbstractHttpControllerTestCase
 {
 
-	protected $traceError = true;
+   protected $traceError = true;
 
-	public function setUp() 
-	{
-		$this->setApplicationConfig(
-			include './config/application.config.php'
-		);
-	}
+   public function setUp()
+   {
+      $this->setApplicationConfig(
+         include './config/application.config.php'
+      );
+   }
 
-	public function testIndexActionCanBeAccessed() 
-	{
-		$this->dispatch('/log');
-		$this->assertResponseStatusCode(200);
-		$this->assertModuleName('Log');
-		$this->assertControllerName('Log\Controller\Log');
-		$this->assertControllerClass('LogController');
-		$this->assertMatchedRouteName('log');
-	}
+   public function testIndexActionCanBeAccessed()
+   {
+      $this->dispatch('/log');
+      $this->assertResponseStatusCode(200);
+      $this->assertModuleName('Log');
+      $this->assertControllerName('Log\Controller\Log');
+      $this->assertControllerClass('LogController');
+      $this->assertMatchedRouteName('log');
+   }
 
 }

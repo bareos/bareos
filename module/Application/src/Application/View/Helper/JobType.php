@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -29,52 +29,52 @@ use Zend\View\Helper\AbstractHelper;
 
 class JobType extends AbstractHelper
 {
-	public function __invoke($jobType)
-    	{
-		switch($jobType)
-		{
-	    		case 'B':
-	      			$output = "Backup";
-	      		break;
-			case 'M':
-                                $output = "Migrated";
-                        break;
-			case 'V':
-                                $output = "Verify";
-                        break;
-	    		case 'R':
-	      			$output = "Restore";
-	      		break;
-	    		case 'U':
-	      			$output = "Console program";
-	      		break;
-			case 'I':
-                                $output = "Internal system job";
-                        break;
-			case 'D':
-                                $output = "Admin";
-                        break;
-			case 'A':
-                                $output = "Archive";
-                        break;
-			case 'C':
-                                $output = "Copy of a Job";
-                        break;
-			case 'c':
-                                $output = "Copy Job";
-                        break;
-			case 'g':
-                                $output = "Migration Job";
-                        break;
-			case 'S':
-                                $output = "Scan";
-                        break;
-	    		default:
-	      			$output = $jobType;
-	      		break;
-	}
-	
-	return $output;
-	
+   public function __invoke($jobType)
+       {
+      switch($jobType)
+      {
+             case 'B':
+                  $output = "Backup";
+               break;
+         case 'M':
+            $output = "Migrated";
+         break;
+         case 'V':
+            $output = "Verify";
+         break;
+             case 'R':
+                  $output = "Restore";
+               break;
+             case 'U':
+                  $output = "Console program";
+               break;
+         case 'I':
+            $output = "Internal system job";
+         break;
+         case 'D':
+            $output = "Admin";
+         break;
+         case 'A':
+            $output = "Archive";
+         break;
+         case 'C':
+            $output = "Copy of a Job";
+         break;
+         case 'c':
+            $output = "Copy Job";
+         break;
+         case 'g':
+            $output = "Migration Job";
+         break;
+         case 'S':
+            $output = "Scan";
+         break;
+             default:
+                  $output = $jobType;
+               break;
+   }
+
+   return $output;
+
     }
 }

@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -22,7 +22,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
@@ -31,23 +31,23 @@ class JobLevel extends AbstractHelper
 {
     public function __invoke($jobLevel)
     {
-	switch($jobLevel)
-	{
-	    case 'I':
-	      $output = "Incremental";
-	      break;
-	    case 'D':
-	      $output = "Differential";
-	      break;
-	    case 'F':
-	      $output = "Full";
-	      break;
-	    default:
-	      $output = $jobLevel;
-	      break;
-	}
-	
-	return $output;
-	
+   switch($jobLevel)
+   {
+       case 'I':
+         $output = "Incremental";
+         break;
+       case 'D':
+         $output = "Differential";
+         break;
+       case 'F':
+         $output = "Full";
+         break;
+       default:
+         $output = $jobLevel;
+         break;
+   }
+
+   return $output;
+
     }
 }

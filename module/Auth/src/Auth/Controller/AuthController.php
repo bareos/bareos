@@ -34,102 +34,102 @@ use Zend\Session\Container;
 class AuthController extends AbstractActionController
 {
 
-	protected $director;
+   protected $director;
 
-	public function indexAction()
-	{
-		return new ViewModel();
-	}
+   public function indexAction()
+   {
+      return new ViewModel();
+   }
 
-	public function loginAction()
-	{
+   public function loginAction()
+   {
 
-		if(isset($_SESSION['bareos']['authenticated']) && $_SESSION['bareos']['authenticated']) {
-			return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
-		}
+      if(isset($_SESSION['bareos']['authenticated']) && $_SESSION['bareos']['authenticated']) {
+         return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
+      }
 
-		$this->layout('layout/login');
+      $this->layout('layout/login');
 
-		$config = $this->getServiceLocator()->get('Config');
+      $config = $this->getServiceLocator()->get('Config');
 
-		$form = new LoginForm($config['directors']);
+      $form = new LoginForm($config['directors']);
 
-		$request = $this->getRequest();
+      $request = $this->getRequest();
 
-		if($request->isPost()) {
+      if($request->isPost()) {
 
-			$auth = new Auth();
-			$form->setInputFilter($auth->getInputFilter());
-			$form->setData($request->getPost());
+         $auth = new Auth();
+         $form->setInputFilter($auth->getInputFilter());
+         $form->setData($request->getPost());
 
-			if($form->isValid()) {
+         if($form->isValid()) {
 
-				$director = $form->getInputFilter()->getValue('director');
-				$username = $form->getInputFilter()->getValue('consolename');
-				$password = $form->getInputFilter()->getValue('password');
+            $director = $form->getInputFilter()->getValue('director');
+            $username = $form->getInputFilter()->getValue('consolename');
+            $password = $form->getInputFilter()->getValue('password');
 
-				$config = $this->getServiceLocator()->get('Config');
-				$this->director = $this->getServiceLocator()->get('director');
-				$this->director->set_config($config['directors'][$director]);
-				$this->director->set_user_credentials($username, $password);
+            $config = $this->getServiceLocator()->get('Config');
+            $this->director = $this->getServiceLocator()->get('director');
+            $this->director->set_config($config['directors'][$director]);
+            $this->director->set_user_credentials($username, $password);
 
-				if($this->director->auth($username, $password)) {
+            if($this->director->auth($username, $password)) {
 
-					$_SESSION['bareos']['director'] = $director;
-					$_SESSION['bareos']['username'] = $username;
-					$_SESSION['bareos']['password'] = $password;
-					$_SESSION['bareos']['authenticated'] = true;
-					$_SESSION['bareos']['idletime'] = time();
+               $_SESSION['bareos']['director'] = $director;
+               $_SESSION['bareos']['username'] = $username;
+               $_SESSION['bareos']['password'] = $password;
+               $_SESSION['bareos']['authenticated'] = true;
+               $_SESSION['bareos']['idletime'] = time();
 
-					return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
+               return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
 
-				} else {
+            } else {
 
-					session_destroy();
-					$err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
+               session_destroy();
+               $err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
 
-					return new ViewModel(
-						array(
-							'form' => $form,
-							'err_msg' => $err_msg,
-						)
-					);
+               return new ViewModel(
+                  array(
+                     'form' => $form,
+                     'err_msg' => $err_msg,
+                  )
+               );
 
-				}
+            }
 
-			} else {
+         } else {
 
-				// given credentials in login form could not be validated in this case
-				$err_msg = "Please provide a director, username and password.";
+            // given credentials in login form could not be validated in this case
+            $err_msg = "Please provide a director, username and password.";
 
-				session_destroy();
+            session_destroy();
 
-				return new ViewModel(
-                                                array(
-                                                        'form' => $form,
-                                                        'err_msg' => $err_msg,
-                                                )
-				);
+            return new ViewModel(
+                  array(
+                     'form' => $form,
+                     'err_msg' => $err_msg,
+                  )
+            );
 
-			}
+         }
 
-		}
+      }
 
-		return new ViewModel(
-			array(
-				'form' => $form,
-			)
-		);
+      return new ViewModel(
+         array(
+            'form' => $form,
+         )
+      );
 
-	}
+   }
 
-	public function logoutAction()
-	{
-		// todo - ask user if he's really wants to log out!
+   public function logoutAction()
+   {
+      // todo - ask user if he's really wants to log out!
 
-		unset($_SESSION['bareos']);
-		session_destroy();
-		return $this->redirect()->toRoute('auth', array('action' => 'login'));
-	}
+      unset($_SESSION['bareos']);
+      session_destroy();
+      return $this->redirect()->toRoute('auth', array('action' => 'login'));
+   }
 
 }

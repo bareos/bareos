@@ -30,60 +30,60 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class DirectorModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getDirectorStatus()
-	{
-		$cmd = 'status director';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 0, null);
-		return $result;
-	}
+   public function getDirectorStatus()
+   {
+      $cmd = 'status director';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
 
-	public function getDirectorMessages()
-	{
-		$cmd = 'messages';
-		$this->director = $this->getServiceLocator()->get('director');
-                $result = $this->director->send_command($cmd, 0, null);
-                return $result;
-	}
+   public function getDirectorMessages()
+   {
+      $cmd = 'messages';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
 
-	public function getDirectorSchedules()
-	{
-		$cmd = 'show schedule';
-		$this->director = $this->getServiceLocator()->get('director');
-                $result = $this->director->send_command($cmd, 0, null);
-                return $result;
-	}
+   public function getDirectorSchedules()
+   {
+      $cmd = 'show schedule';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
 
-	public function getDirectorSchedulerStatus()
-	{
-		$cmd = 'status scheduler';
-		$this->director = $this->getServiceLocator()->get('director');
-                $result = $this->director->send_command($cmd, 0, null);
-                return $result;
-	}
+   public function getDirectorSchedulerStatus()
+   {
+      $cmd = 'status scheduler';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
 
-	public function getDirectorVersion()
-	{
-		$cmd = 'version';
-		$this->director = $this->getServiceLocator()->get('director');
-                $result = $this->director->send_command($cmd, 0, null);
-                return $result;
-	}
+   public function getDirectorVersion()
+   {
+      $cmd = 'version';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
 }

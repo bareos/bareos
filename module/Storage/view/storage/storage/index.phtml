@@ -7,7 +7,7 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author	  Frank Bergkemper
+ * @author     Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -43,8 +43,8 @@ $this->headTitle($title);
 <table class="table table-hover" id="storages">
 
 <thead class="bg-primary">
-	<th><?php echo $this->translate("Name"); ?></th>
-	<th><?php echo $this->translate("Autochanger"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Autochanger"); ?></th>
 </thead>
 
 </table>
@@ -64,49 +64,49 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
-	var table= $('#storages').DataTable( {
-		"ajax": {
-			"url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",
-			"dataSrc": ""
-		},
-		"columns" : [
-			{
-				"className": "storage-name",
-				"orderable": true,
-				"data": "name"
-			},
-			{
-				"className": "storage-autochanger",
-				"orderable": true,
-				"data": "autochanger"
-			},
-		],
-		"paging":   true,
-		"ordering": true,
-		"info":     true,
-		"pagingType": "full_numbers",
-		"stateSave": true,
-		"columnDefs": [
-			{
-				"targets": 0,
-				"data": "name",
-				"render": function(data, type, full, meta) {
-					return data;
-				}
-			},
-			{
-                                "targets": 1,
-                                "data": "autochanger",
-                                "render": function(data, type, full, meta) {
-					var a = '<span class="label label-default">No</span>';
-					if(data == "1") {
-						a = '<span class="label label-success">Yes</span>';
-					}
-                                        return a;
-                                }
-                        },
-		]
-	});
+   var table= $('#storages').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         {
+            "className": "storage-name",
+            "orderable": true,
+            "data": "name"
+         },
+         {
+            "className": "storage-autochanger",
+            "orderable": true,
+            "data": "autochanger"
+         },
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": "name",
+            "render": function(data, type, full, meta) {
+               return data;
+            }
+         },
+         {
+            "targets": 1,
+            "data": "autochanger",
+            "render": function(data, type, full, meta) {
+               var a = '<span class="label label-default">No</span>';
+               if(data == "1") {
+                  a = '<span class="label label-success">Yes</span>';
+               }
+               return a;
+            }
+         },
+      ]
+   });
 
 });
 

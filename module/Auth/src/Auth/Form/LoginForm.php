@@ -30,96 +30,96 @@ use Zend\Form\Form;
 class LoginForm extends Form
 {
 
-	protected $config;
-	protected $directors;
+   protected $config;
+   protected $directors;
 
-	public function __construct($config=null, $name=null)
-	{
+   public function __construct($config=null, $name=null)
+   {
 
-		$this->config = $config;
-		$this->directors = $this->getDirectors();
+      $this->config = $config;
+      $this->directors = $this->getDirectors();
 
-		parent::__construct('login');
+      parent::__construct('login');
 
-		if(count($this->directors) == 1) {
-			$this->add(array(
-						'name' => 'director',
-						'type' => 'select',
-						'options' => array(
-							'label' => 'Director',
-							'empty_option' => 'Please choose a director',
-							'value_options' => $this->directors,
-						),
-						'attributes' => array(
-                                                        'id' => 'director',
-                                                        'value' => key($this->directors)
-                                                )
-					)
-			);
-		}
-		else {
-			$this->add(array(
-                                                'name' => 'director',
-                                                'type' => 'select',
-                                                'options' => array(
-                                                        'label' => 'Director',
-                                                        'empty_option' => 'Please choose a director',
-                                                        'value_options' => $this->directors,
-                                                ),
-						'attributes' => array(
-                                                        'id' => 'director',
-                                                )
-                                        )
-                        );
-		}
+      if(count($this->directors) == 1) {
+         $this->add(array(
+                  'name' => 'director',
+                  'type' => 'select',
+                  'options' => array(
+                     'label' => 'Director',
+                     'empty_option' => 'Please choose a director',
+                     'value_options' => $this->directors,
+                  ),
+                  'attributes' => array(
+                     'id' => 'director',
+                     'value' => key($this->directors)
+                  )
+               )
+         );
+      }
+      else {
+         $this->add(array(
+                  'name' => 'director',
+                  'type' => 'select',
+                  'options' => array(
+                     'label' => 'Director',
+                     'empty_option' => 'Please choose a director',
+                     'value_options' => $this->directors,
+                  ),
+                  'attributes' => array(
+                     'id' => 'director',
+                  )
+               )
+         );
+      }
 
-		$this->add(array(
-					'name' => 'consolename',
-					'type' => 'text',
-					'options' => array(
-						'label' => 'Username',
-					),
-					'attributes' => array(
-						'placeholder' => 'Username',
-					),
-				)
-		);
+      $this->add(array(
+               'name' => 'consolename',
+               'type' => 'text',
+               'options' => array(
+                  'label' => 'Username',
+               ),
+               'attributes' => array(
+                  'placeholder' => 'Username',
+               ),
+            )
+      );
 
-		$this->add(array(
-					'name' => 'password',
-					'type' => 'password',
-					'options' => array(
-						'label' => 'Password',
-					),
-					'attributes' => array(
-						'placeholder' => 'Password',
-					),
-				)
-		);
+      $this->add(array(
+               'name' => 'password',
+               'type' => 'password',
+               'options' => array(
+                  'label' => 'Password',
+               ),
+               'attributes' => array(
+                  'placeholder' => 'Password',
+               ),
+            )
+      );
 
-		$this->add(array(
-			'name' => 'submit',
-			'type' => 'submit',
-			'attributes' => array(
-				'value' => 'Login',
-				'id' => 'submit',
-			),
-		)
-		);
+      $this->add(array(
+         'name' => 'submit',
+         'type' => 'submit',
+         'attributes' => array(
+            'value' => 'Login',
+            'id' => 'submit',
+         ),
+      )
+      );
 
-	}
+   }
 
 
-	public function getDirectors()
-	{
-		$selectData = array();
+   public function getDirectors()
+   {
+      $selectData = array();
 
-		foreach($this->config as $dird) {
-			$selectData[key($this->config)] = key($this->config);
-			next($this->config);
-		}
+      foreach($this->config as $dird) {
+         $selectData[key($this->config)] = key($this->config);
+         next($this->config);
+      }
 
-		return $selectData;
-	}
+      return $selectData;
+   }
 
 }

@@ -30,57 +30,57 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class PoolModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getPools()
-	{
-		$cmd = 'llist pools';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $pools['result']['pools'];
-	}
+   public function getPools()
+   {
+      $cmd = 'llist pools';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $pools['result']['pools'];
+   }
 
-	public function getPool($pool=null)
-	{
-		if(isset($pool)) {
-			$cmd = 'llist pool="'.$pool.'"';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $pool['result']['pools'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getPool($pool=null)
+   {
+      if(isset($pool)) {
+         $cmd = 'llist pool="'.$pool.'"';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $pool['result']['pools'];
+      }
+      else {
+         return false;
+      }
+   }
 
-	public function getPoolMedia($pool=null)
-	{
-		if(isset($pool)) {
-			$cmd = 'llist media pool="'.$pool.'"';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $media['result']['volumes'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getPoolMedia($pool=null)
+   {
+      if(isset($pool)) {
+         $cmd = 'llist media pool="'.$pool.'"';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $media['result']['volumes'];
+      }
+      else {
+         return false;
+      }
+   }
 }

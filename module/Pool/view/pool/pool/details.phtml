@@ -44,13 +44,13 @@ $this->headTitle($title);
 <table class="table table-hover" id="pool">
 
 <thead class="bg-primary">
-	<th>Name</th>
-	<th>Type</th>
-	<th>Volumes</th>
-	<th>Maximum volumes</th>
-	<th>Volume retention</th>
-	<th>Maximum volume jobs</th>
-	<th>Maximum volume bytes</th>
+   <th>Name</th>
+   <th>Type</th>
+   <th>Volumes</th>
+   <th>Maximum volumes</th>
+   <th>Volume retention</th>
+   <th>Maximum volume jobs</th>
+   <th>Maximum volume bytes</th>
 </thead>
 
 </table>
@@ -75,16 +75,16 @@ $this->headTitle($title);
 <table class="table table-hover" id="volumes">
 
 <thead class="bg-primary">
-	<th></th>
-	<th>Name</th>
-	<th>Storage</th>
-	<th>Type</th>
-	<th>Last written</th>
-	<th>Status</th>
-	<th>Retention/Expiration</th>
-	<th>Maximum bytes</th>
-	<th>Current bytes</th>
-	<th>Free bytes</th>
+   <th></th>
+   <th>Name</th>
+   <th>Storage</th>
+   <th>Type</th>
+   <th>Last written</th>
+   <th>Status</th>
+   <th>Retention/Expiration</th>
+   <th>Maximum bytes</th>
+   <th>Current bytes</th>
+   <th>Free bytes</th>
 </thead>
 
 </table>
@@ -103,15 +103,15 @@ $this->headTitle($title);
 <style>
 
 td.details-control:after {
-        font-family: "Glyphicons Halflings";
-        content: "\e081";
-        cursor: pointer;
+   font-family: "Glyphicons Halflings";
+   content: "\e081";
+   cursor: pointer;
 }
 
 tr.shown td.details-control:after {
-        font-family: "Glyphicons Halflings";
-        content: "\e082";
-        cursor: pointer;
+   font-family: "Glyphicons Halflings";
+   content: "\e082";
+   cursor: pointer;
 }
 
 </style>
@@ -120,294 +120,294 @@ tr.shown td.details-control:after {
 
 function format( d ) {
 
-        var r;
+   var r;
 
-        if(d.recycle == 1) {
-                r = '<span class="label label-success">Yes</span>';
-        }
-        else {
-                r = '<span class="label label-danger">No</span>';
-        }
+   if(d.recycle == 1) {
+      r = '<span class="label label-success">Yes</span>';
+   }
+   else {
+      r = '<span class="label label-danger">No</span>';
+   }
 
-        return '<table class="table table-bordered">'+
-                '<tr>'+
-                '<th>Label date</th>'+
-                '<td>'+ d.labeldate +'</td>'+
-                '</tr>'+
-                '<tr>'+
-                '<th>First written</th>'+
-                '<td>'+ d.firstwritten +'</td>'+
-                '</tr>'+
-                '<tr>'+
-                '<th>Last written</th>'+
-                '<td>'+ d.lastwritten +'</td>'+
-                '</tr>'+
-                '<tr>'+
-                '<th>Volume jobs</th>'+
-                '<td>'+ d.voljobs +'</td>'+
-                '</tr>'+
-                '<tr>'+
-                '<th>Recycle</th>'+
-                '<td>'+ r +'</td>'+
-                '</tr>'+
-                '</table>';
+   return '<table class="table table-bordered">'+
+      '<tr>'+
+      '<th>Label date</th>'+
+      '<td>'+ d.labeldate +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>First written</th>'+
+      '<td>'+ d.firstwritten +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Last written</th>'+
+      '<td>'+ d.lastwritten +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume jobs</th>'+
+      '<td>'+ d.voljobs +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Recycle</th>'+
+      '<td>'+ r +'</td>'+
+      '</tr>'+
+      '</table>';
 }
 
 $(document).ready(function() {
 
-	var tab_pool = $('#pool').DataTable( {
-		"ajax": {
-			"url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=details&pool='.$this->pool; ?>",
-			"dataSrc": ""
-		},
-		"columns" : [
-			{ "data": null },
-			{ "data": null },
-			{ "data": null },
-			{ "data": null },
-			{ "data": null },
-			{ "data": null },
-			{ "data": null }
-		],
-		"paging":   false,
-		"ordering": false,
-		"info":     false,
-		"pagingType": "full_numbers",
-		"stateSave": true,
-		"bFilter": false,
-		"columnDefs": [
-			{
-				"targets": 0,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.name;
-				}
-			},
-			{
-				"targets": 1,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.pooltype;
-				}
-			},
-			{
-				"targets": 2,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.numvols;
-				}
-			},
-			{
-				"targets": 3,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.maxvols;
-				}
-			},
-			{
-				"targets": 4,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
-				}
-			},
-			{
-				"targets": 5,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.maxvoljobs;
-				}
-			},
-			{
-				"targets": 6,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					if(data.maxvolbytes == 0) return "-";
-						var k = 1000;
-						var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-						var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
-						return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-                                }
-			}
-		]
+   var tab_pool = $('#pool').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=details&pool='.$this->pool; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null }
+      ],
+      "paging":   false,
+      "ordering": false,
+      "info":     false,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "bFilter": false,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.name;
+            }
+         },
+         {
+            "targets": 1,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.pooltype;
+            }
+         },
+         {
+            "targets": 2,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.numvols;
+            }
+         },
+         {
+            "targets": 3,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.maxvols;
+            }
+         },
+         {
+            "targets": 4,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
+            }
+         },
+         {
+            "targets": 5,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.maxvoljobs;
+            }
+         },
+         {
+            "targets": 6,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               if(data.maxvolbytes == 0) return "-";
+                  var k = 1000;
+                  var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+                  var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
+                  return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+         }
+      ]
 
-	} );
+   } );
 
-	var tab_volumes = $('#volumes').DataTable( {
-                "ajax": {
-                        "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=volumes&pool='.$this->pool; ?>",
-                        "dataSrc": ""
-                },
-                "columns": [
-                        {
-                                "className": 'details-control',
-                                "data": null,
-                                "orderable": false,
-                                "defaultContent": ''
-                        },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null },
-                        { "data": null }
-                ],
-                "paging":   true,
-                "ordering": true,
-                "info":     true,
-                "pagingType": "full_numbers",
-                "stateSave": true,
-		"columnDefs": [
-                        {
-                                "targets": 1,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data.volumename+'">'+data.volumename+'</a>';
-                                }
-                        },
-                        {
-                                "targets": 2,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return data.storageid;
-                                }
-                        },
-                        {
-                                "targets": 3,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return data.mediatype;
-                                }
-                        },
-			{
-                                "targets": 4,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
+   var tab_volumes = $('#volumes').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=volumes&pool='.$this->pool; ?>",
+         "dataSrc": ""
+      },
+      "columns": [
+         {
+            "className": 'details-control',
+            "data": null,
+            "orderable": false,
+            "defaultContent": ''
+         },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null },
+         { "data": null }
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 1,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data.volumename+'">'+data.volumename+'</a>';
+            }
+         },
+         {
+            "targets": 2,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.storageid;
+            }
+         },
+         {
+            "targets": 3,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.mediatype;
+            }
+         },
+         {
+            "targets": 4,
+            "data": null,
+            "render": function(data, type, full, meta) {
 
-                                        if(data.lastwritten == null || data.lastwritten == "") {
-                                                return 'never';
-                                        }
-                                        else {
-                                                var d = Date.now() / 1000;
-                                                var a = data.lastwritten.split(" ");
-                                                var b = new Date(a[0]).getTime() / 1000;
-                                                var interval = Math.floor( (d - b) / (3600 * 24) );
+               if(data.lastwritten == null || data.lastwritten == "") {
+                  return 'never';
+               }
+               else {
+                  var d = Date.now() / 1000;
+                  var a = data.lastwritten.split(" ");
+                  var b = new Date(a[0]).getTime() / 1000;
+                  var interval = Math.floor( (d - b) / (3600 * 24) );
 
-                                                if(interval < 1) {
-                                                        return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">today</span>';
-                                                }
-                                                else if(interval <= 31 && interval >= 1) {
-                                                        return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + interval + ' day(s) ago</span>';
-                                                }
-                                                else if(interval >= 31 && interval <= 365) {
-                                                        return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 31) + ' month(s) ago</span>';
-                                                }
-                                                else if(interval > 365) {
-                                                        return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 365) + ' year(s) ago</span>';
-                                                }
-                                                else {
-                                                        return data.lastwritten;
-                                                }
-                                        }
-                                }
-                        },
-			{
-                                "targets": 5,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return data.volstatus;
-                                }
-                        },
-			{
-                                "targets": 6,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        if(data.volstatus == "Used" || data.volstatus == "Full") {
-                                                if(data.lastwritten == null || data.lastwritten == "") {
-                                                        return '-';
-                                                }
-                                                else {
-                                                        var d = Date.now() / 1000;
-                                                        var a = data.lastwritten.split(" ");
-                                                        var b = new Date(a[0]).getTime() / 1000;
-                                                        var interval = (d - b) / (3600 * 24);
-                                                        var retention = Math.round(data.volretention / 60 / 60 / 24);
-                                                        var expiration = Math.round(retention - interval);
-                                                        if(expiration <= 0) {
-                                                                return '<span class="label label-danger">expired</span>';
-                                                        }
+                  if(interval < 1) {
+                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">today</span>';
+                  }
+                  else if(interval <= 31 && interval >= 1) {
+                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + interval + ' day(s) ago</span>';
+                  }
+                  else if(interval >= 31 && interval <= 365) {
+                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 31) + ' month(s) ago</span>';
+                  }
+                  else if(interval > 365) {
+                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 365) + ' year(s) ago</span>';
+                  }
+                  else {
+                     return data.lastwritten;
+                  }
+               }
+            }
+         },
+         {
+            "targets": 5,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.volstatus;
+            }
+         },
+         {
+            "targets": 6,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               if(data.volstatus == "Used" || data.volstatus == "Full") {
+                  if(data.lastwritten == null || data.lastwritten == "") {
+                     return '-';
+                  }
+                  else {
+                     var d = Date.now() / 1000;
+                     var a = data.lastwritten.split(" ");
+                     var b = new Date(a[0]).getTime() / 1000;
+                     var interval = (d - b) / (3600 * 24);
+                     var retention = Math.round(data.volretention / 60 / 60 / 24);
+                     var expiration = Math.round(retention - interval);
+                     if(expiration <= 0) {
+                        return '<span class="label label-danger">expired</span>';
+                     }
 
-                                                        if(expiration > 0) {
-                                                                return '<span class="label label-warning">expires in ' + expiration  + ' days</span>';
-                                                        }
-                                                }
-                                        }
-                                        else {
-                                                return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
-                                        }
-                                }
-                        },
-			{
-                                "targets": 7,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        if(data.maxvolbytes == 0) return "-";
-                                        var k = 1000;
-                                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-                                        var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
-                                        return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-                                }
-                        },
-                        {
-                                "targets": 8,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        if(data.volbytes == 0) return "0.00 B";
-                                        var k = 1000;
-                                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-                                        var i = Math.floor(Math.log(data.volbytes) / Math.log(k));
-                                        return parseFloat((data.volbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-                                }
-                        },
-                        {
-                                "targets": 9,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        if(data.maxvolbytes == null || data.maxvolbytes == 0) return "-";
-                                        if(data.volbytes == null || data.volbytes == 0) return "0.00 B";
-                                        var d = data.maxvolbytes - data.volbytes;
-                                        var k = 1000;
-                                        var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-                                        var i = Math.floor(Math.log(d) / Math.log(k));
-                                        return parseFloat((d / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-                                }
-                        }
-                ]
+                     if(expiration > 0) {
+                        return '<span class="label label-warning">expires in ' + expiration  + ' days</span>';
+                     }
+                  }
+               }
+               else {
+                  return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
+               }
+            }
+         },
+         {
+            "targets": 7,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               if(data.maxvolbytes == 0) return "-";
+               var k = 1000;
+               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+               var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
+               return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+         },
+         {
+            "targets": 8,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               if(data.volbytes == 0) return "0.00 B";
+               var k = 1000;
+               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+               var i = Math.floor(Math.log(data.volbytes) / Math.log(k));
+               return parseFloat((data.volbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+         },
+         {
+            "targets": 9,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               if(data.maxvolbytes == null || data.maxvolbytes == 0) return "-";
+               if(data.volbytes == null || data.volbytes == 0) return "0.00 B";
+               var d = data.maxvolbytes - data.volbytes;
+               var k = 1000;
+               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+               var i = Math.floor(Math.log(d) / Math.log(k));
+               return parseFloat((d / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+            }
+         }
+      ]
 
-        } );
+   } );
 
 
-	$('#volumes tbody').on('mouseover', '#lastwritten', function () {
-                $('[data-toggle="tooltip"]').tooltip();
-        } );
+   $('#volumes tbody').on('mouseover', '#lastwritten', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   } );
 
-        $('#volumes tbody').on('click', 'td.details-control', function () {
-                var tr = $(this).closest('tr');
-                var row = tab_volumes.row( tr );
-                if ( row.child.isShown() ) {
-                        // This row is already open - close it
-                        row.child.hide();
-                        tr.removeClass('shown');
-                }
-                else {
-                        // Open this row
-                        row.child( format(row.data()) ).show();
-                        tr.addClass('shown');
-                }
-        } );
+   $('#volumes tbody').on('click', 'td.details-control', function () {
+      var tr = $(this).closest('tr');
+      var row = tab_volumes.row( tr );
+      if ( row.child.isShown() ) {
+         // This row is already open - close it
+         row.child.hide();
+         tr.removeClass('shown');
+      }
+      else {
+         // Open this row
+         row.child( format(row.data()) ).show();
+         tr.addClass('shown');
+      }
+   } );
 
 } );
 

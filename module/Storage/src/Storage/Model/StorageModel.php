@@ -30,31 +30,31 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class StorageModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getStorages()
-	{
-		$cmd = 'list storages';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $storages['result']['storages'];
-	}
+   public function getStorages()
+   {
+      $cmd = 'list storages';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $storages['result']['storages'];
+   }
 
 }
 

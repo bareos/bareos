@@ -31,59 +31,59 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 class BSockAbstractServiceFactory implements AbstractFactoryInterface
 {
 
-	protected $config;
+   protected $config;
 
-	/**
-	 */
-	public function canCreateServiceWithName(ServiceLocatorInterface $service, $name $requestedName)
-	{
-		$config = $this->getConfig($service);
+   /**
+    */
+   public function canCreateServiceWithName(ServiceLocatorInterface $service, $name $requestedName)
+   {
+      $config = $this->getConfig($service);
 
-		if (empty($config)) {
-			return false;
-		}
+      if (empty($config)) {
+         return false;
+      }
 
-		return (
-			isset($config[$requestedName])
-			&& is_array($config[$requestedName])
-			&& !empty($config[$requestedName])
-		);
+      return (
+         isset($config[$requestedName])
+         && is_array($config[$requestedName])
+         && !empty($config[$requestedName])
+      );
 
-	}
+   }
 
-	/**
-	 */
-	public function createServiceWithName(ServiceLocatorInterface $service, $name, $requestedName)
-	{
-		$config = $this->getConfig($service);
-		return new BSock($config[$requestedName]);
-	}
+   /**
+    */
+   public function createServiceWithName(ServiceLocatorInterface $service, $name, $requestedName)
+   {
+      $config = $this->getConfig($service);
+      return new BSock($config[$requestedName]);
+   }
 
-	/**
-	 */
-	protected function getConfig()
-	{
-		if ($this->config !== null) {
-			return $this->config;
-		}
+   /**
+    */
+   protected function getConfig()
+   {
+      if ($this->config !== null) {
+         return $this->config;
+      }
 
-		if (!$service->has('Config')) {
-			$this->config = array();
-			return $this->config;
-		}
+      if (!$service->has('Config')) {
+         $this->config = array();
+         return $this->config;
+      }
 
-		$config = $service->get('Config');
-		if (!isset($config['directors']) || !is_array($config['directors'])) {
-			$this->config = array();
-			return $this->config;
-		}
+      $config = $service->get('Config');
+      if (!isset($config['directors']) || !is_array($config['directors'])) {
+         $this->config = array();
+         return $this->config;
+      }
 
-		// todo
+      // todo
 
-		$this->config = $config['directors'][$_SESSION['bareos']['director']];
+      $this->config = $config['directors'][$_SESSION['bareos']['director']];
 
-		return $this->config;
+      return $this->config;
 
-	}
+   }
 
 }

@@ -30,43 +30,43 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class MediaModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getVolumes()
-	{
-		$cmd = 'llist volumes all';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $volumes['result']['volumes'];
-	}
+   public function getVolumes()
+   {
+      $cmd = 'llist volumes all';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $volumes['result']['volumes'];
+   }
 
-	public function getVolume($volume=null)
-	{
-		if(isset($volume)) {
-			$cmd = 'llist volume="'.$volume.'"';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $volume['result']['volume'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getVolume($volume=null)
+   {
+      if(isset($volume)) {
+         $cmd = 'llist volume="'.$volume.'"';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $volume['result']['volume'];
+      }
+      else {
+         return false;
+      }
+   }
 }

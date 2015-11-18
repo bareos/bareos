@@ -31,79 +31,79 @@ use Zend\View\Model\ViewModel;
 
 class DirectorController extends AbstractActionController
 {
-	protected $directorModel;
+   protected $directorModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			return new ViewModel(array(
-					'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         return new ViewModel(array(
+               'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function messagesAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			return new ViewModel(array(
-					'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function messagesAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         return new ViewModel(array(
+               'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function scheduleAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			return new ViewModel(array(
-					'directorOutput' => $this->getDirectorModel()->getDirectorSchedules()
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function scheduleAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         return new ViewModel(array(
+               'directorOutput' => $this->getDirectorModel()->getDirectorSchedules()
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function schedulerstatusAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			return new ViewModel(array(
-					'directorOutput' => $this->getDirectorModel()->getDirectorSchedulerStatus()
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function schedulerstatusAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         return new ViewModel(array(
+               'directorOutput' => $this->getDirectorModel()->getDirectorSchedulerStatus()
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function versionAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			return new ViewModel(array(
-					'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+   public function versionAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         return new ViewModel(array(
+               'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDirectorModel()
-	{
-		if(!$this->directorModel) {
-			$sm = $this->getServiceLocator();
-			$this->directorModel = $sm->get('Director\Model\DirectorModel');
-		}
-		return $this->directorModel;
-	}
+   public function getDirectorModel()
+   {
+      if(!$this->directorModel) {
+         $sm = $this->getServiceLocator();
+         $this->directorModel = $sm->get('Director\Model\DirectorModel');
+      }
+      return $this->directorModel;
+   }
 }

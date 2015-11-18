@@ -9,20 +9,20 @@
 $reasonMessage= '';
 switch ($this->reason) {
     case 'error-controller-cannot-dispatch':
-        $reasonMessage = $this->translate('The requested controller was unable to dispatch the request.');
-        break;
+   $reasonMessage = $this->translate('The requested controller was unable to dispatch the request.');
+   break;
     case 'error-controller-not-found':
-        $reasonMessage = $this->translate('The requested controller could not be mapped to an existing controller class.');
-        break;
+   $reasonMessage = $this->translate('The requested controller could not be mapped to an existing controller class.');
+   break;
     case 'error-controller-invalid':
-        $reasonMessage = $this->translate('The requested controller was not dispatchable.');
-        break;
+   $reasonMessage = $this->translate('The requested controller was not dispatchable.');
+   break;
     case 'error-router-no-match':
-        $reasonMessage = $this->translate('The requested URL could not be matched by routing.');
-        break;
+   $reasonMessage = $this->translate('The requested URL could not be matched by routing.');
+   break;
     default:
-        $reasonMessage = $this->translate('We cannot determine at this time why a 404 was generated.');
-        break;
+   $reasonMessage = $this->translate('We cannot determine at this time why a 404 was generated.');
+   break;
 }
 ?>
 
@@ -57,15 +57,15 @@ if (isset($this->controller_class)
 <dl>
     <dt><?php echo $this->translate('File') ?>:</dt>
     <dd>
-        <pre class="prettyprint linenums"><?php echo $this->exception->getFile() ?>:<?php echo $this->exception->getLine() ?></pre>
+   <pre class="prettyprint linenums"><?php echo $this->exception->getFile() ?>:<?php echo $this->exception->getLine() ?></pre>
     </dd>
     <dt><?php echo $this->translate('Message') ?>:</dt>
     <dd>
-        <pre class="prettyprint linenums"><?php echo $this->exception->getMessage() ?></pre>
+   <pre class="prettyprint linenums"><?php echo $this->exception->getMessage() ?></pre>
     </dd>
     <dt><?php echo $this->translate('Stack trace') ?>:</dt>
     <dd>
-        <pre class="prettyprint linenums"><?php echo $this->exception->getTraceAsString() ?></pre>
+   <pre class="prettyprint linenums"><?php echo $this->exception->getTraceAsString() ?></pre>
     </dd>
 </dl>
 <?php
@@ -77,25 +77,25 @@ if (isset($this->controller_class)
 <ul class="unstyled">
     <?php while($e) : ?>
     <li>
-        <h3><?php echo get_class($e); ?></h3>
-        <dl>
-            <dt><?php echo $this->translate('File') ?>:</dt>
-            <dd>
-                <pre class="prettyprint linenums"><?php echo $e->getFile() ?>:<?php echo $e->getLine() ?></pre>
-            </dd>
-            <dt><?php echo $this->translate('Message') ?>:</dt>
-            <dd>
-                <pre class="prettyprint linenums"><?php echo $e->getMessage() ?></pre>
-            </dd>
-            <dt><?php echo $this->translate('Stack trace') ?>:</dt>
-            <dd>
-                <pre class="prettyprint linenums"><?php echo $e->getTraceAsString() ?></pre>
-            </dd>
-        </dl>
+   <h3><?php echo get_class($e); ?></h3>
+   <dl>
+       <dt><?php echo $this->translate('File') ?>:</dt>
+       <dd>
+      <pre class="prettyprint linenums"><?php echo $e->getFile() ?>:<?php echo $e->getLine() ?></pre>
+       </dd>
+       <dt><?php echo $this->translate('Message') ?>:</dt>
+       <dd>
+      <pre class="prettyprint linenums"><?php echo $e->getMessage() ?></pre>
+       </dd>
+       <dt><?php echo $this->translate('Stack trace') ?>:</dt>
+       <dd>
+      <pre class="prettyprint linenums"><?php echo $e->getTraceAsString() ?></pre>
+       </dd>
+   </dl>
     </li>
     <?php
-        $e = $e->getPrevious();
-        endwhile;
+   $e = $e->getPrevious();
+   endwhile;
     ?>
 </ul>
 <?php endif; ?>

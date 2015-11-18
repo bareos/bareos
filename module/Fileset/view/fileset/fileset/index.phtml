@@ -42,9 +42,9 @@ $this->headTitle($title);
 <table class="table table-hover" id="filesets">
 
 <thead class="bg-primary">
-	<th><?php echo $this->translate("Id"); ?></th>
-	<th><?php echo $this->translate("Name"); ?></th>
-	<th><?php echo $this->translate("Creation time"); ?></th>
+   <th><?php echo $this->translate("Id"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Creation time"); ?></th>
 </thead>
 
 </table>
@@ -62,44 +62,44 @@ $this->headTitle($title);
 
 <script>
 
-	var tab_filesets = $('#filesets').DataTable( {
-		"ajax": {
-			"url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=all'; ?>",
-			"dataSrc": ""
-		},
-		"columns": [
-			{ "data": null },
-			{ "data": null },
-			{ "data": null },
-		],
-		"paging":   true,
-		"ordering": true,
-		"info":     true,
-		"pagingType": "full_numbers",
-		"stateSave": true,
-		"columnDefs": [
-			{
-				"targets": 0,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.filesetid+'</a>';
-				}
-			},
-			{
-                                "targets": 1,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-					return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.fileset+'</a>';
-                                }
-                        },
-			{
-                                "targets": 2,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return data.createtime;
-                                }
-                        }
-		]
-	} );
+   var tab_filesets = $('#filesets').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=all'; ?>",
+         "dataSrc": ""
+      },
+      "columns": [
+         { "data": null },
+         { "data": null },
+         { "data": null },
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.filesetid+'</a>';
+            }
+         },
+         {
+            "targets": 1,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.fileset+'</a>';
+            }
+         },
+         {
+            "targets": 2,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.createtime;
+            }
+         }
+      ]
+   } );
 
 </script>

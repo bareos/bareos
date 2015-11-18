@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -22,7 +22,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
- 
+
 namespace Application\View\Helper;
 
 use Zend\View\Helper\AbstractHelper;
@@ -32,20 +32,20 @@ class StatusGlyphicons extends AbstractHelper
     public function __invoke($status)
     {
 
-	switch($status)
-	{
-	    case '0':
-	      $output = '<div class="text-success"><span class="glyphicon glyphicon-ok"></span></div>';
-	      break;
-	    case '-1':
-	      $output = '<div class="text-danger"><span class="glyphicon glyphicon-remove"></span></div>';
-	      break;
-	    default:
-	      $output = $status;
-	      break;
-	}
-	
-	return $output;
-	
+   switch($status)
+   {
+       case '0':
+         $output = '<div class="text-success"><span class="glyphicon glyphicon-ok"></span></div>';
+         break;
+       case '-1':
+         $output = '<div class="text-danger"><span class="glyphicon glyphicon-remove"></span></div>';
+         break;
+       default:
+         $output = $status;
+         break;
+   }
+
+   return $output;
+
     }
 }

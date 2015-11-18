@@ -34,365 +34,365 @@ use Restore\Form\RestoreForm;
 class RestoreController extends AbstractActionController
 {
 
-	protected $restoreModel;
-	protected $restore_params;
+   protected $restoreModel;
+   protected $restore_params;
 
-	/**
-	 *
-	 */
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   /**
+    *
+    */
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$this->getRestoreParams();
-			$errors = null;
+         $this->getRestoreParams();
+         $errors = null;
 
-			if($this->restore_params['client'] == null) {
-				$clients = $this->getRestoreModel()->getClients();
-				$client = array_pop($clients);
-				$this->restore_params['client'] = $client['name'];
-			}
+         if($this->restore_params['client'] == null) {
+            $clients = $this->getRestoreModel()->getClients();
+            $client = array_pop($clients);
+            $this->restore_params['client'] = $client['name'];
+         }
 
-			if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
-				$latestbackup = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc", 1);
-				if(empty($latestbackup)) {
-					$this->restore_params['jobid'] = null;
-				}
-				else {
-					$this->restore_params['jobid'] = $latestbackup[0]['jobid'];
-				}
-			}
+         if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+            $latestbackup = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc", 1);
+            if(empty($latestbackup)) {
+               $this->restore_params['jobid'] = null;
+            }
+            else {
+               $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
+            }
+         }
 
-			if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
-				$jobids = $this->restore_params['jobid'];
-			}
-			else {
-				$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
-				$this->restore_params['jobids'] = $jobids;
-			}
+         if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
+            $jobids = $this->restore_params['jobid'];
+         }
+         else {
+            $jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+            $this->restore_params['jobids'] = $jobids;
+         }
 
-			if($this->restore_params['type'] == "client") {
-				$backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
-			}
+         if($this->restore_params['type'] == "client") {
+            $backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
+         }
 
-			//$jobs = $this->getRestoreModel()->getJobs();
-                        $clients = $this->getRestoreModel()->getClients();
-                        $filesets = $this->getRestoreModel()->getFilesets();
-                        $restorejobs = $this->getRestoreModel()->getRestoreJobs();
+         //$jobs = $this->getRestoreModel()->getJobs();
+         $clients = $this->getRestoreModel()->getClients();
+         $filesets = $this->getRestoreModel()->getFilesets();
+         $restorejobs = $this->getRestoreModel()->getRestoreJobs();
 
-			if($backups == null) {
-				$errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
-			}
+         if($backups == null) {
+            $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
+         }
 
-			// Create the form
-			$form = new RestoreForm(
-				$this->restore_params,
-				//$jobs,
-				$clients,
-				$filesets,
-				$restorejobs,
-				$jobids,
-				$backups
-			);
+         // Create the form
+         $form = new RestoreForm(
+            $this->restore_params,
+            //$jobs,
+            $clients,
+            $filesets,
+            $restorejobs,
+            $jobids,
+            $backups
+         );
 
-			// Set the method attribute for the form
-			$form->setAttribute('method', 'post');
-			$form->setAttribute('onsubmit','return getFiles()');
+         // Set the method attribute for the form
+         $form->setAttribute('method', 'post');
+         $form->setAttribute('onsubmit','return getFiles()');
 
-			$request = $this->getRequest();
+         $request = $this->getRequest();
 
-			if($request->isPost()) {
+         if($request->isPost()) {
 
-				$restore = new Restore();
-				$form->setInputFilter($restore->getInputFilter());
-				$form->setData( $request->getPost() );
+            $restore = new Restore();
+            $form->setInputFilter($restore->getInputFilter());
+            $form->setData( $request->getPost() );
 
-				if($form->isValid()) {
+            if($form->isValid()) {
 
-					if($this->restore_params['type'] == "client") {
+               if($this->restore_params['type'] == "client") {
 
-						$type = $this->restore_params['type'];
-						$jobid = $form->getInputFilter()->getValue('jobid');
-						$client = $form->getInputFilter()->getValue('client');
-						$restoreclient = $form->getInputFilter()->getValue('restoreclient');
-						$restorejob = $form->getInputFilter()->getValue('restorejob');
-						$where = $form->getInputFilter()->getValue('where');
-						$fileid = $form->getInputFilter()->getValue('checked_files');
-						$dirid = $form->getInputFilter()->getValue('checked_directories');
-						$jobids = $form->getInputFilter()->getValue('jobids_hidden');
-						$replace = $form->getInputFilter()->getValue('replace');
+                  $type = $this->restore_params['type'];
+                  $jobid = $form->getInputFilter()->getValue('jobid');
+                  $client = $form->getInputFilter()->getValue('client');
+                  $restoreclient = $form->getInputFilter()->getValue('restoreclient');
+                  $restorejob = $form->getInputFilter()->getValue('restorejob');
+                  $where = $form->getInputFilter()->getValue('where');
+                  $fileid = $form->getInputFilter()->getValue('checked_files');
+                  $dirid = $form->getInputFilter()->getValue('checked_directories');
+                  $jobids = $form->getInputFilter()->getValue('jobids_hidden');
+                  $replace = $form->getInputFilter()->getValue('replace');
 
-						$result = $this->getRestoreModel()->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+                  $result = $this->getRestoreModel()->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
 
-					}
+               }
 
-					return new ViewModel(array(
-						'result' => $result
-                                        ));
+               return new ViewModel(array(
+                  'result' => $result
+               ));
 
-				}
-				else {
-					return new ViewModel(array(
-						'restore_params' => $this->restore_params,
-						'form' => $form,
-					));
-				}
+            }
+            else {
+               return new ViewModel(array(
+                  'restore_params' => $this->restore_params,
+                  'form' => $form,
+               ));
+            }
 
-			}
-			else {
-				return new ViewModel(array(
-					'restore_params' => $this->restore_params,
-					'form' => $form,
-					'errors' => $errors
-				));
-			}
+         }
+         else {
+            return new ViewModel(array(
+               'restore_params' => $this->restore_params,
+               'form' => $form,
+               'errors' => $errors
+            ));
+         }
 
-                }
-                else {
-                        return $this->redirect()->toRoute('auth', array('action' => 'login'));
-                }
-	}
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	/**
-	 * Delivers a subtree as Json for JStree
-	 */
-	public function filebrowserAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-			$this->getRestoreParams();
-                        $this->layout('layout/json');
-                        return new ViewModel(array(
-                                'items' => $this->buildSubtree()
-                        ));
-                }
-                else{
-                        return $this->redirect()->toRoute('auth', array('action' => 'login'));
-                }
-	}
+   /**
+    * Delivers a subtree as Json for JStree
+    */
+   public function filebrowserAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+         $this->getRestoreParams();
+         $this->layout('layout/json');
+         return new ViewModel(array(
+            'items' => $this->buildSubtree()
+         ));
+      }
+      else{
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	/**
-	 * Builds a subtree as Json for JStree
-	 */
-	private function buildSubtree()
-	{
+   /**
+    * Builds a subtree as Json for JStree
+    */
+   private function buildSubtree()
+   {
 
-		$this->getRestoreParams();
+      $this->getRestoreParams();
 
-		// Get directories
-		if($this->restore_params['type'] == "client") {
-			$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-			$this->restore_params['jobids'] = $jobids;
-			$directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobids'],$this->restore_params['id']);
-		}
-		else {
-			$directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobid'],$this->restore_params['id']);
-		}
+      // Get directories
+      if($this->restore_params['type'] == "client") {
+         $jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+         $this->restore_params['jobids'] = $jobids;
+         $directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobids'],$this->restore_params['id']);
+      }
+      else {
+         $directories = $this->getRestoreModel()->getDirectories($this->restore_params['jobid'],$this->restore_params['id']);
+      }
 
-		// Get files
-		if($this->restore_params['type'] == "client") {
-			$jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-			$this->restore_params['jobids'] = $jobids;
-			$files = $this->getRestoreModel()->getFiles($this->restore_params['jobids'],$this->restore_params['id']);
-		}
-		else {
-			$files = $this->getRestoreModel()->getFiles($this->restore_params['jobid'],$this->restore_params['id']);
-		}
+      // Get files
+      if($this->restore_params['type'] == "client") {
+         $jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+         $this->restore_params['jobids'] = $jobids;
+         $files = $this->getRestoreModel()->getFiles($this->restore_params['jobids'],$this->restore_params['id']);
+      }
+      else {
+         $files = $this->getRestoreModel()->getFiles($this->restore_params['jobid'],$this->restore_params['id']);
+      }
 
-		$dnum = count($directories);
-		$fnum = count($files);
-		$tmp = $dnum;
+      $dnum = count($directories);
+      $fnum = count($files);
+      $tmp = $dnum;
 
-		// Build Json for JStree
-		$items = '[';
+      // Build Json for JStree
+      $items = '[';
 
-		if($dnum > 0) {
+      if($dnum > 0) {
 
-			foreach($directories as $dir) {
-				if($dir['name'] == ".") {
-					--$dnum;
-					next($directories);
-				}
-				elseif($dir['name'] == "..") {
-					--$dnum;
-					next($directories);
-				}
-				else {
-					--$dnum;
-					$items .= '{';
-					$items .= '"id":"-' . $dir['pathid'] . '"';
-					$items .= ',"text":"' . $dir["name"] . '"';
-					$items .= ',"icon":"glyphicon glyphicon-folder-close"';
-					$items .= ',"state":""';
-					$items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
-					$items .= ',"children":true';
-					$items .= '}';
-					if($dnum > 0) {
-						$items .= ",";
-					}
-				}
-			}
+         foreach($directories as $dir) {
+            if($dir['name'] == ".") {
+               --$dnum;
+               next($directories);
+            }
+            elseif($dir['name'] == "..") {
+               --$dnum;
+               next($directories);
+            }
+            else {
+               --$dnum;
+               $items .= '{';
+               $items .= '"id":"-' . $dir['pathid'] . '"';
+               $items .= ',"text":"' . $dir["name"] . '"';
+               $items .= ',"icon":"glyphicon glyphicon-folder-close"';
+               $items .= ',"state":""';
+               $items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
+               $items .= ',"children":true';
+               $items .= '}';
+               if($dnum > 0) {
+                  $items .= ",";
+               }
+            }
+         }
 
-		}
+      }
 
-		if( $tmp > 2 && $fnum > 0 ) {
-			$items .= ",";
-		}
+      if( $tmp > 2 && $fnum > 0 ) {
+         $items .= ",";
+      }
 
-		if($fnum > 0) {
+      if($fnum > 0) {
 
-			foreach($files as $file) {
-				$items .= '{';
-				$items .= '"id":"' . $file["fileid"] . '"';
-				$items .= ',"text":"' . $file["name"] . '"';
-				$items .= ',"icon":"glyphicon glyphicon-file"';
-				$items .= ',"state":""';
-				$items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
-				$items .= '}';
-				--$fnum;
-				if($fnum > 0) {
-					$items .= ",";
-				}
-			}
+         foreach($files as $file) {
+            $items .= '{';
+            $items .= '"id":"' . $file["fileid"] . '"';
+            $items .= ',"text":"' . $file["name"] . '"';
+            $items .= ',"icon":"glyphicon glyphicon-file"';
+            $items .= ',"state":""';
+            $items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
+            $items .= '}';
+            --$fnum;
+            if($fnum > 0) {
+               $items .= ",";
+            }
+         }
 
-		}
+      }
 
-		$items .= ']';
+      $items .= ']';
 
-		return $items;
-	}
+      return $items;
+   }
 
-	/**
-	 * Retrieve restore parameters
-	 */
-	private function getRestoreParams()
-	{
-		if($this->params()->fromQuery('type')) {
-                        $this->restore_params['type'] = $this->params()->fromQuery('type');
-                }
-                else {
-                        $this->restore_params['type'] = 'client';
-                }
+   /**
+    * Retrieve restore parameters
+    */
+   private function getRestoreParams()
+   {
+      if($this->params()->fromQuery('type')) {
+         $this->restore_params['type'] = $this->params()->fromQuery('type');
+      }
+      else {
+         $this->restore_params['type'] = 'client';
+      }
 
-		if($this->params()->fromQuery('jobid')) {
-			$this->restore_params['jobid'] = $this->params()->fromQuery('jobid');
-		}
-		else {
-			$this->restore_params['jobid'] = null;
-		}
+      if($this->params()->fromQuery('jobid')) {
+         $this->restore_params['jobid'] = $this->params()->fromQuery('jobid');
+      }
+      else {
+         $this->restore_params['jobid'] = null;
+      }
 
-		if($this->params()->fromQuery('client')) {
-                        $this->restore_params['client'] = $this->params()->fromQuery('client');
-                }
-                else {
-                        $this->restore_params['client'] = null;
-                }
+      if($this->params()->fromQuery('client')) {
+         $this->restore_params['client'] = $this->params()->fromQuery('client');
+      }
+      else {
+         $this->restore_params['client'] = null;
+      }
 
-		if($this->params()->fromQuery('restoreclient')) {
-                        $this->restore_params['restoreclient'] = $this->params()->fromQuery('restoreclient');
-                }
-                else {
-                        $this->restore_params['restoreclient'] = null;
-                }
+      if($this->params()->fromQuery('restoreclient')) {
+         $this->restore_params['restoreclient'] = $this->params()->fromQuery('restoreclient');
+      }
+      else {
+         $this->restore_params['restoreclient'] = null;
+      }
 
-		if($this->params()->fromQuery('restorejob')) {
-                        $this->restore_params['restorejob'] = $this->params()->fromQuery('restorejob');
-                }
-                else {
-                        $this->restore_params['restorejob'] = null;
-                }
+      if($this->params()->fromQuery('restorejob')) {
+         $this->restore_params['restorejob'] = $this->params()->fromQuery('restorejob');
+      }
+      else {
+         $this->restore_params['restorejob'] = null;
+      }
 
-		if($this->params()->fromQuery('fileset')) {
-                        $this->restore_params['fileset'] = $this->params()->fromQuery('fileset');
-                }
-                else {
-                        $this->restore_params['fileset'] = null;
-                }
+      if($this->params()->fromQuery('fileset')) {
+         $this->restore_params['fileset'] = $this->params()->fromQuery('fileset');
+      }
+      else {
+         $this->restore_params['fileset'] = null;
+      }
 
-		if($this->params()->fromQuery('before')) {
-                        $this->restore_params['before'] = $this->params()->fromQuery('before');
-                }
-                else {
-                        $this->restore_params['before'] = null;
-                }
+      if($this->params()->fromQuery('before')) {
+         $this->restore_params['before'] = $this->params()->fromQuery('before');
+      }
+      else {
+         $this->restore_params['before'] = null;
+      }
 
-		if($this->params()->fromQuery('where')) {
-                        $this->restore_params['where'] = $this->params()->fromQuery('where');
-                }
-                else {
-                        $this->restore_params['where'] = null;
-                }
+      if($this->params()->fromQuery('where')) {
+         $this->restore_params['where'] = $this->params()->fromQuery('where');
+      }
+      else {
+         $this->restore_params['where'] = null;
+      }
 
-		if($this->params()->fromQuery('fileid')) {
-                        $this->restore_params['fileid'] = $this->params()->fromQuery('fileid');
-                }
-                else {
-                        $this->restore_params['fileid'] = null;
-                }
+      if($this->params()->fromQuery('fileid')) {
+         $this->restore_params['fileid'] = $this->params()->fromQuery('fileid');
+      }
+      else {
+         $this->restore_params['fileid'] = null;
+      }
 
-		if($this->params()->fromQuery('dirid')) {
-                        $this->restore_params['dirid'] = $this->params()->fromQuery('dirid');
-                }
-                else {
-                        $this->restore_params['dirid'] = null;
-                }
+      if($this->params()->fromQuery('dirid')) {
+         $this->restore_params['dirid'] = $this->params()->fromQuery('dirid');
+      }
+      else {
+         $this->restore_params['dirid'] = null;
+      }
 
-		if($this->params()->fromQuery('id')) {
-                        $this->restore_params['id'] = $this->params()->fromQuery('id');
-                }
-                else {
-                        $this->restore_params['id'] = null;
-                }
+      if($this->params()->fromQuery('id')) {
+         $this->restore_params['id'] = $this->params()->fromQuery('id');
+      }
+      else {
+         $this->restore_params['id'] = null;
+      }
 
-		if($this->params()->fromQuery('jobids')) {
-                        $this->restore_params['jobids'] = $this->params()->fromQuery('jobids');
-                }
-                else {
-                        $this->restore_params['jobids'] = null;
-                }
+      if($this->params()->fromQuery('jobids')) {
+         $this->restore_params['jobids'] = $this->params()->fromQuery('jobids');
+      }
+      else {
+         $this->restore_params['jobids'] = null;
+      }
 
-		if($this->params()->fromQuery('mergefilesets')) {
-                        $this->restore_params['mergefilesets'] = $this->params()->fromQuery('mergefilesets');
-                }
-                else {
-                        $this->restore_params['mergefilesets'] = 0;
-                }
+      if($this->params()->fromQuery('mergefilesets')) {
+         $this->restore_params['mergefilesets'] = $this->params()->fromQuery('mergefilesets');
+      }
+      else {
+         $this->restore_params['mergefilesets'] = 0;
+      }
 
-		if($this->params()->fromQuery('mergejobs')) {
-                        $this->restore_params['mergejobs'] = $this->params()->fromQuery('mergejobs');
-                }
-                else {
-                        $this->restore_params['mergejobs'] = 0;
-                }
+      if($this->params()->fromQuery('mergejobs')) {
+         $this->restore_params['mergejobs'] = $this->params()->fromQuery('mergejobs');
+      }
+      else {
+         $this->restore_params['mergejobs'] = 0;
+      }
 
-		if($this->params()->fromQuery('replace')) {
-                        $this->restore_params['replace'] = $this->params()->fromQuery('replace');
-                }
-                else {
-                        $this->restore_params['replace'] = null;
-                }
+      if($this->params()->fromQuery('replace')) {
+         $this->restore_params['replace'] = $this->params()->fromQuery('replace');
+      }
+      else {
+         $this->restore_params['replace'] = null;
+      }
 
-		if($this->params()->fromQuery('replaceoptions')) {
-                        $this->restore_params['replaceoptions'] = $this->params()->fromQuery('replaceoptions');
-                }
-                else {
-                        $this->restore_params['replaceoptions'] = null;
-                }
+      if($this->params()->fromQuery('replaceoptions')) {
+         $this->restore_params['replaceoptions'] = $this->params()->fromQuery('replaceoptions');
+      }
+      else {
+         $this->restore_params['replaceoptions'] = null;
+      }
 
-		if($this->params()->fromQuery('versions')) {
-                        $this->restore_params['versions'] = $this->params()->fromQuery('versions');
-                }
-                else {
-                        $this->restore_params['versions'] = null;
-                }
+      if($this->params()->fromQuery('versions')) {
+         $this->restore_params['versions'] = $this->params()->fromQuery('versions');
+      }
+      else {
+         $this->restore_params['versions'] = null;
+      }
 
-	}
+   }
 
-	public function getRestoreModel()
-	{
-		if(!$this->restoreModel) {
-			$sm = $this->getServiceLocator();
-			$this->restoreModel = $sm->get('Restore\Model\RestoreModel');
-		}
-		return $this->restoreModel;
-	}
+   public function getRestoreModel()
+   {
+      if(!$this->restoreModel) {
+         $sm = $this->getServiceLocator();
+         $this->restoreModel = $sm->get('Restore\Model\RestoreModel');
+      }
+      return $this->restoreModel;
+   }
 }

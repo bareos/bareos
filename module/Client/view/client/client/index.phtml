@@ -42,9 +42,9 @@ $this->headTitle($title);
 <table class="table table-hover" id="clients">
 
 <thead class="bg-primary">
-	<th><?php echo $this->translate("Name"); ?></th>
-	<th><?php echo $this->translate("Version"); ?></th>
-	<th><?php echo $this->translate("Actions"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Version"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 
 </table>
@@ -64,54 +64,54 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
-	var table= $('#clients').DataTable( {
-		"ajax": {
-			"url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>",
-			"dataSrc": ""
-		},
-		"columns" : [
-			{
-				"className": "client-name",
-				"orderable": true,
-				"data": "name"
-			},
-			{
-				"className": "client-uname",
-				"orderable": true,
-				"data": "uname"
-			},
-			{
-				"className": "actions",
-				"orderable": false,
-				"data": null
-			}
-		],
-		"paging":   true,
-		"ordering": true,
-		"info":     true,
-		"pagingType": "full_numbers",
-		"stateSave": true,
-		"columnDefs": [
-			{
-				"targets": 0,
-				"data": "name",
-				"render": function(data, type, full, meta) {
-					return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
-				}
-			},
-			{
-				"targets": -1,
-				"data": "name",
-				"render": function(data, type, full, meta) {
-					return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
-				}
-			}
-		]
-	} );
+   var table= $('#clients').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         {
+            "className": "client-name",
+            "orderable": true,
+            "data": "name"
+         },
+         {
+            "className": "client-uname",
+            "orderable": true,
+            "data": "uname"
+         },
+         {
+            "className": "actions",
+            "orderable": false,
+            "data": null
+         }
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": "name",
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": -1,
+            "data": "name",
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+            }
+         }
+      ]
+   } );
 
-	$('#clients tbody').on('mouseover', '#btn-1', function () {
-		$('[data-toggle="tooltip"]').tooltip();
-	})
+   $('#clients tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   })
 
 
 } );

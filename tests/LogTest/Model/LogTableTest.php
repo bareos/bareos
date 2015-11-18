@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -32,26 +32,26 @@ use PHPUnit_Framework_TestCase;
 
 class LogTableTest extends PHPUnit_Framework_TestCase
 {
-	public function testFetchAllReturnsAllLogs() 
-	{
-		$resultSet = new ResultSet();
+   public function testFetchAllReturnsAllLogs()
+   {
+      $resultSet = new ResultSet();
 
-		$mockTableGateway = $this->getMock(
-			'Zend\Db\TableGateway\TableGateway',
-			array('select'),
-			array(),
-			'',
-			false
-		);
+      $mockTableGateway = $this->getMock(
+         'Zend\Db\TableGateway\TableGateway',
+         array('select'),
+         array(),
+         '',
+         false
+      );
 
-		$mockTableGateway->expects($this->once())
-			->method('select')
-			->with()
-			->will($this->returnValue($resultSet));
+      $mockTableGateway->expects($this->once())
+         ->method('select')
+         ->with()
+         ->will($this->returnValue($resultSet));
 
-		$logTable = new LogTable($mockTableGateway);
+      $logTable = new LogTable($mockTableGateway);
 
-		$this->assertSame($resultSet, $logTable->fetchAll());
+      $this->assertSame($resultSet, $logTable->fetchAll());
 
-	}
+   }
 }

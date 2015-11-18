@@ -3,7 +3,7 @@
 /**
  *
  * bareos-webui - Bareos Web-Frontend
- * 
+ *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
@@ -44,35 +44,35 @@ class Expiration extends AbstractHelper
     public function __invoke($retention, $lastwritten, $volstatus)
     {
 
-	if($volstatus == "Used" || $volstatus == "Full") {
+   if($volstatus == "Used" || $volstatus == "Full") {
 
-		if(empty($lastwritten)) {
-			return $this->result = "-";
-		}
-		else {
+      if(empty($lastwritten)) {
+         return $this->result = "-";
+      }
+      else {
 
-			$this->result = "-";
-			$lw = explode(" ", $lastwritten);
-			$t1 = explode("-", $lw[0]);
-			$t2 = explode("-", date("Y-m-d", time("NOW")));
-			$d1 = mktime(0, 0, 0, (int)$t1[1],(int)$t1[2],(int)$t1[0]);
-			$d2 = mktime(0, 0, 0, (int)$t2[1],(int)$t2[2],(int)$t2[0]);
-			$interval = ($d2 - $d1) / (3600 * 24);
-			$retention = round(($retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN);
-			$this->result = round(($retention - $interval), 2, PHP_ROUND_HALF_EVEN);
+         $this->result = "-";
+         $lw = explode(" ", $lastwritten);
+         $t1 = explode("-", $lw[0]);
+         $t2 = explode("-", date("Y-m-d", time("NOW")));
+         $d1 = mktime(0, 0, 0, (int)$t1[1],(int)$t1[2],(int)$t1[0]);
+         $d2 = mktime(0, 0, 0, (int)$t2[1],(int)$t2[2],(int)$t2[0]);
+         $interval = ($d2 - $d1) / (3600 * 24);
+         $retention = round(($retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN);
+         $this->result = round(($retention - $interval), 2, PHP_ROUND_HALF_EVEN);
 
-			if($this->result <= 0) {
-				return $this->result = "<span class='label label-danger'>expired</span>";
-			}
-			elseif($this->result > 0) {
-				return "<span class='label label-warning'>expires in " . $this->result . " days</span>";
-			}
+         if($this->result <= 0) {
+            return $this->result = "<span class='label label-danger'>expired</span>";
+         }
+         elseif($this->result > 0) {
+            return "<span class='label label-warning'>expires in " . $this->result . " days</span>";
+         }
 
-		}
-	}
-	else {
-		return $this->result = round(($retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN) . " days";
-	}
+      }
+   }
+   else {
+      return $this->result = round(($retention / 60 / 60 / 24 ), 2, PHP_ROUND_HALF_EVEN) . " days";
+   }
 
     }
 

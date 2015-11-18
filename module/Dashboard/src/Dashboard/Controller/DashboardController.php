@@ -30,86 +30,86 @@ use Zend\View\Model\ViewModel;
 
 class DashboardController extends AbstractActionController
 {
-	protected $dashboardModel;
+   protected $dashboardModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] && $this->SessionTimeoutPlugin()->timeout()) {
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] && $this->SessionTimeoutPlugin()->timeout()) {
 
-			return new ViewModel(
-				array(
-					'runningJobs' => $this->getJobs("running", 1, null),
-                                        'waitingJobs' => $this->getJobs("waiting", 1, null),
-                                        'successfulJobs' => $this->getJobs("successful", 1, null),
-                                        'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
-				)
-			);
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+         return new ViewModel(
+            array(
+               'runningJobs' => $this->getJobs("running", 1, null),
+               'waitingJobs' => $this->getJobs("waiting", 1, null),
+               'successfulJobs' => $this->getJobs("successful", 1, null),
+               'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
+            )
+         );
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	private function getJobs($status=null, $days=1, $hours=null)
-	{
-		if($status != null) {
-			if($status == "running") {
-				$jobs_R = $this->getDashboardModel()->getJobs('R', $days, $hours);
-				$jobs_l = $this->getDashboardModel()->getJobs('l', $days, $hours);
-				$num = count($jobs_R) + count($jobs_l);
-				return $num;
-			}
-			elseif($status == "waiting") {
-				$jobs_F = $this->getDashboardModel()->getJobs('F', $days, $hours);
-				$jobs_S = $this->getDashboardModel()->getJobs('S', $days, $hours);
-				$jobs_s = $this->getDashboardModel()->getJobs('s', $days, $hours);
-				$jobs_m = $this->getDashboardModel()->getJobs('m', $days, $hours);
-				$jobs_M = $this->getDashboardModel()->getJobs('M', $days, $hours);
-				$jobs_j = $this->getDashboardModel()->getJobs('j', $days, $hours);
-				$jobs_c = $this->getDashboardModel()->getJobs('c', $days, $hours);
-				$jobs_C = $this->getDashboardModel()->getJobs('C', $days, $hours);
-				$jobs_d = $this->getDashboardModel()->getJobs('d', $days, $hours);
-				$jobs_t = $this->getDashboardModel()->getJobs('t', $days, $hours);
-				$jobs_p = $this->getDashboardModel()->getJobs('p', $days, $hours);
-				$jobs_q = $this->getDashboardModel()->getJobs('q', $days, $hours);
-				$num = count($jobs_F) + count($jobs_S) +
-					count($jobs_s) + count($jobs_m) +
-					count($jobs_M) + count($jobs_j) +
-					count($jobs_c) + count($jobs_C) +
-					count($jobs_d) + count($jobs_t) +
-					count($jobs_p) + count($jobs_q);
-				return $num;
-			}
-			elseif($status == "successful") {
-				$jobs_T = $this->getDashboardModel()->getJobs('T', $days, $hours);
-				$jobs_W = $this->getDashboardModel()->getJobs('W', $days, $hours);
-				$num = count($jobs_T) + count($jobs_W);
-				return $num;
-			}
-			elseif($status == "unsuccessful") {
-				$jobs_A = $this->getDashboardModel()->getJobs('A', $days, $hours);
-                                $jobs_E = $this->getDashboardModel()->getJobs('E', $days, $hours);
-				$jobs_e = $this->getDashboardModel()->getJobs('e', $days, $hours);
-				$jobs_f = $this->getDashboardModel()->getJobs('f', $days, $hours);
-                                $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
-                                return $num;
-			}
-			else {
-				return null;
-			}
-		}
-		else {
-			return null;
-		}
-	}
+   private function getJobs($status=null, $days=1, $hours=null)
+   {
+      if($status != null) {
+         if($status == "running") {
+            $jobs_R = $this->getDashboardModel()->getJobs('R', $days, $hours);
+            $jobs_l = $this->getDashboardModel()->getJobs('l', $days, $hours);
+            $num = count($jobs_R) + count($jobs_l);
+            return $num;
+         }
+         elseif($status == "waiting") {
+            $jobs_F = $this->getDashboardModel()->getJobs('F', $days, $hours);
+            $jobs_S = $this->getDashboardModel()->getJobs('S', $days, $hours);
+            $jobs_s = $this->getDashboardModel()->getJobs('s', $days, $hours);
+            $jobs_m = $this->getDashboardModel()->getJobs('m', $days, $hours);
+            $jobs_M = $this->getDashboardModel()->getJobs('M', $days, $hours);
+            $jobs_j = $this->getDashboardModel()->getJobs('j', $days, $hours);
+            $jobs_c = $this->getDashboardModel()->getJobs('c', $days, $hours);
+            $jobs_C = $this->getDashboardModel()->getJobs('C', $days, $hours);
+            $jobs_d = $this->getDashboardModel()->getJobs('d', $days, $hours);
+            $jobs_t = $this->getDashboardModel()->getJobs('t', $days, $hours);
+            $jobs_p = $this->getDashboardModel()->getJobs('p', $days, $hours);
+            $jobs_q = $this->getDashboardModel()->getJobs('q', $days, $hours);
+            $num = count($jobs_F) + count($jobs_S) +
+               count($jobs_s) + count($jobs_m) +
+               count($jobs_M) + count($jobs_j) +
+               count($jobs_c) + count($jobs_C) +
+               count($jobs_d) + count($jobs_t) +
+               count($jobs_p) + count($jobs_q);
+            return $num;
+         }
+         elseif($status == "successful") {
+            $jobs_T = $this->getDashboardModel()->getJobs('T', $days, $hours);
+            $jobs_W = $this->getDashboardModel()->getJobs('W', $days, $hours);
+            $num = count($jobs_T) + count($jobs_W);
+            return $num;
+         }
+         elseif($status == "unsuccessful") {
+            $jobs_A = $this->getDashboardModel()->getJobs('A', $days, $hours);
+            $jobs_E = $this->getDashboardModel()->getJobs('E', $days, $hours);
+            $jobs_e = $this->getDashboardModel()->getJobs('e', $days, $hours);
+            $jobs_f = $this->getDashboardModel()->getJobs('f', $days, $hours);
+            $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
+            return $num;
+         }
+         else {
+            return null;
+         }
+      }
+      else {
+         return null;
+      }
+   }
 
-	public function getDashboardModel()
-	{
-		if(!$this->dashboardModel) {
-			$sm = $this->getServiceLocator();
-			$this->dashboardModel = $sm->get('Dashboard\Model\DashboardModel');
-		}
-		return $this->dashboardModel;	
-	}
+   public function getDashboardModel()
+   {
+      if(!$this->dashboardModel) {
+         $sm = $this->getServiceLocator();
+         $this->dashboardModel = $sm->get('Dashboard\Model\DashboardModel');
+      }
+      return $this->dashboardModel;
+   }
 
 }

@@ -30,43 +30,43 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 
 class FilesetModel implements ServiceLocatorAwareInterface
 {
-	protected $serviceLocator;
-	protected $director;
+   protected $serviceLocator;
+   protected $director;
 
-	public function __construct()
-	{
-	}
+   public function __construct()
+   {
+   }
 
-	public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-	{
-		$this->serviceLocator = $serviceLocator;
-	}
+   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   {
+      $this->serviceLocator = $serviceLocator;
+   }
 
-	public function getServiceLocator()
-	{
-		return $this->serviceLocator;
-	}
+   public function getServiceLocator()
+   {
+      return $this->serviceLocator;
+   }
 
-	public function getFilesets()
-	{
-		$cmd = 'list filesets';
-		$this->director = $this->getServiceLocator()->get('director');
-		$result = $this->director->send_command($cmd, 2, null);
-		$filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-		return $filesets['result']['filesets'];
-	}
+   public function getFilesets()
+   {
+      $cmd = 'list filesets';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $filesets['result']['filesets'];
+   }
 
-	public function getFileset($id)
-	{
-		if(isset($id)) {
-			$cmd = 'llist fileset filesetid='.$id.'';
-			$this->director = $this->getServiceLocator()->get('director');
-			$result = $this->director->send_command($cmd, 2, null);
-			$fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-			return $fileset['result']['filesets'];
-		}
-		else {
-			return false;
-		}
-	}
+   public function getFileset($id)
+   {
+      if(isset($id)) {
+         $cmd = 'llist fileset filesetid='.$id.'';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $fileset['result']['filesets'];
+      }
+      else {
+         return false;
+      }
+   }
 }

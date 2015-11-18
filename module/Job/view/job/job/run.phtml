@@ -30,8 +30,8 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-	<li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
-	<li class="active"><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
 </ul>
 
 <br />
@@ -49,10 +49,10 @@ $this->headTitle($title);
 <div class="panel-body">
 
 <table class="table table-hover" id="backupjobs">
-	<thead class="bg-primary">
-		<th><?php echo $this->translate("Name"); ?></th>
-		<th><?php echo $this->translate("Actions"); ?></th>
-	</thead>
+   <thead class="bg-primary">
+      <th><?php echo $this->translate("Name"); ?></th>
+      <th><?php echo $this->translate("Actions"); ?></th>
+   </thead>
 </table>
 
 </div>
@@ -68,45 +68,45 @@ $this->headTitle($title);
 
 <script>
 
-	$('#backupjobs').DataTable( {
-		"ajax": {
-			"url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
-			"dataSrc": ""
-		},
-		"columns" : [
-			{
-				"data": null
-			},
-			{
-				"orderable": false,
-				"data": null
-			}
-		],
-		"paging":   true,
-		"ordering": true,
-		"info":     true,
-		"pagingType": "full_numbers",
-		"stateSave": true,
-		"columnDefs": [
-			{
-				"targets": 0,
-				"data": null,
-				"render": function(data, type, full, meta) {
-					return data.name;
-				}
-			},
-			{
-                                "targets": 1,
-                                "data": null,
-                                "render": function(data, type, full, meta) {
-                                        return '<a href="<?php echo $this->basePath() . '/job/queue?job='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Run"><span class="glyphicon glyphicon-play-circle"></span></button></a>';
-                                }
-                        }
-		]
-	} );
+   $('#backupjobs').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
+         "dataSrc": ""
+      },
+      "columns" : [
+         {
+            "data": null
+         },
+         {
+            "orderable": false,
+            "data": null
+         }
+      ],
+      "paging":   true,
+      "ordering": true,
+      "info":     true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return data.name;
+            }
+         },
+         {
+            "targets": 1,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/job/queue?job='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Run"><span class="glyphicon glyphicon-play-circle"></span></button></a>';
+            }
+         }
+      ]
+   } );
 
-	$('#backupjobs tbody').on('mouseover', '#btn-1', function () {
-		$('[data-toggle="tooltip"]').tooltip();
-	} );
+   $('#backupjobs tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   } );
 
 </script>

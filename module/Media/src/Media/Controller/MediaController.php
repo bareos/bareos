@@ -31,78 +31,78 @@ use Zend\Json\Json;
 
 class MediaController extends AbstractActionController
 {
-	protected $mediaModel;
+   protected $mediaModel;
 
-	public function indexAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function indexAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-				$volumes = $this->getMediaModel()->getVolumes();
+            $volumes = $this->getMediaModel()->getVolumes();
 
-				return new ViewModel(
-					array(
-						'volumes' => $volumes,
-					)
-				);
+            return new ViewModel(
+               array(
+                  'volumes' => $volumes,
+               )
+            );
 
-		}
-		else {
-				return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+      }
+      else {
+            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function detailsAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+   public function detailsAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-			$volumename = $this->params()->fromRoute('id');
-			$volume = $this->getMediaModel()->getVolume($volumename);
+         $volumename = $this->params()->fromRoute('id');
+         $volume = $this->getMediaModel()->getVolume($volumename);
 
-			return new ViewModel(array(
-				'media' => $volume,
-			));
+         return new ViewModel(array(
+            'media' => $volume,
+         ));
 
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getDataAction()
-	{
-		if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()){
+   public function getDataAction()
+   {
+      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()){
 
-			$data = $this->params()->fromQuery('data');
+         $data = $this->params()->fromQuery('data');
 
-			if($data == "all") {
-				$result = $this->getMediaModel()->getVolumes();
-			}
-			else {
-				$result = null;
-			}
+         if($data == "all") {
+            $result = $this->getMediaModel()->getVolumes();
+         }
+         else {
+            $result = null;
+         }
 
-			$response = $this->getResponse();
-			$response->getHeaders()->addHeaderLine('Content-Type','application/json');
+         $response = $this->getResponse();
+         $response->getHeaders()->addHeaderLine('Content-Type','application/json');
 
-			if(isset($result)) {
-				$response->setContent(JSON::encode($result));
-			}
+         if(isset($result)) {
+            $response->setContent(JSON::encode($result));
+         }
 
-			return $response;
+         return $response;
 
-		}
-		else {
-			return $this->redirect()->toRoute('auth', array('action' => 'login'));
-		}
-	}
+      }
+      else {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+      }
+   }
 
-	public function getMediaModel()
-	{
-		if(!$this->mediaModel) {
-			$sm = $this->getServiceLocator();
-			$this->mediaModel = $sm->get('Media\Model\MediaModel');
-		}
-		return $this->mediaModel;
-	}
+   public function getMediaModel()
+   {
+      if(!$this->mediaModel) {
+         $sm = $this->getServiceLocator();
+         $this->mediaModel = $sm->get('Media\Model\MediaModel');
+      }
+      return $this->mediaModel;
+   }
 
 }
