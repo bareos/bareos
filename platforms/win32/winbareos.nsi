@@ -402,7 +402,7 @@ SectionIn 1 2
   CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
 
   File "bareos-tray-monitor.exe"
-  File "libpng15-15.dll"
+  File "libpng16-16.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
 
@@ -418,7 +418,7 @@ SectionIn 2
   CreateShortCut "$DESKTOP\BAT.lnk" "$INSTDIR\bat.exe" '-c "$APPDATA\${PRODUCT_NAME}\bat.conf"'
 
   File "bat.exe"
-  File "libpng15-15.dll"
+  File "libpng16-16.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
 
@@ -963,7 +963,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\QtCore4.dll"
   Delete "$INSTDIR\QtGui4.dll"
   Delete "$INSTDIR\liblzo2-2.dll"
-  Delete "$INSTDIR\libpng15-15.dll"
+  Delete "$INSTDIR\libpng16-16.dll"
   Delete "$INSTDIR\openssl.exe"
   Delete "$INSTDIR\sed.exe"
 

@@ -83,7 +83,6 @@ for file in \
    bareos-tray-monitor.exe \
    bat.exe \
    bpipe-fd.dll \
-   mssqlvdi-fd.dll \
    libbareos.dll \
    libbareosfind.dll \
    libcrypto-*.dll \
@@ -98,8 +97,7 @@ for file in \
    QtCore4.dll \
    QtGui4.dll \
    liblzo2-2.dll \
-   libfastlz.dll \
-   libpng15-15.dll \
+   libpng16-16.dll \
    openssl.exe \
    sed.exe;\
    do
