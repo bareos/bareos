@@ -733,14 +733,15 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             compatible = false;
             break;
          }
+      }
 
+      if (!plugin_arguments[i].name && !compatible) {
          /*
           * Parsing something fishy ? e.g. partly with known keywords.
           */
-         if (!plugin_arguments[i].name && !compatible) {
-            Jmsg(ctx, M_FATAL, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
-            Dmsg(ctx, dbglvl, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
-         }
+         Jmsg(ctx, M_FATAL, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         Dmsg(ctx, dbglvl, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         goto bail_out;
       }
 
       argument = strchr(argument, ':');
@@ -759,18 +760,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          break;
       }
 
-      /*
-       * Each argument is in the form:
-       *    <argument> = <argument_value>
-       *
-       * So we setup the right pointers here, argument to the beginning
-       * of the argument, argument_value to the beginning of the argument_value.
-       */
       argument = bp;
-      if (!compatible) {
-         argument_value = strchr(bp, '=');
-      }
-
       if (compatible) {
          char **str_destination = NULL;
 
@@ -820,6 +810,14 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             }
          }
       } else {
+         /*
+          * Each argument is in the form:
+          *    <argument> = <argument_value>
+          *
+          * So we setup the right pointers here, argument to the beginning
+          * of the argument, argument_value to the beginning of the argument_value.
+          */
+         argument_value = strchr(bp, '=');
          *argument_value++ = '\0';
 
          /*
