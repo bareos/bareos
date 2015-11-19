@@ -63,6 +63,8 @@ class BareosBSock implements BareosBSockInterface
    const DIR_OK_AUTH = "1000 OK auth\n";
    const DIR_AUTH_FAILED = "1999 Authorization failed.\n";
 
+   const CHUNK_SIZE = 64;
+
    protected $config = array(
       'debug' => false,
       'host' => null,
@@ -275,16 +277,24 @@ class BareosBSock implements BareosBSockInterface
 
          $len = self::ntohl($buffer);
 
-         if ($len == 0) {
+         if ($len === 0) {
             break;
          }
          if ($len > 0) {
-            $rlen = 1024;
-            while (floor($len / $rlen) > 0) {
+            // Read data in chunks of CHUNK_SIZE
+            while (floor($len / self::CHUNK_SIZE) > 0) {
+               $rlen = self::CHUNK_SIZE;
                $msg .= fread($this->socket, $rlen);
+               if ($rlen < 0) {
+                  $len = $rlen;
+                  break;
+               }
                $len -= $rlen;
             }
-            $msg .= fread($this->socket, $len);
+            // Read any remaining bytes
+            if ($len > 0) {
+               $msg .= fread($this->socket, $len);
+            }
          } elseif ($len < 0) {
             // signal received
             switch ($len) {
@@ -512,6 +522,7 @@ class BareosBSock implements BareosBSockInterface
          if (!$this->socket) {
             throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
          }
+         // socket_set_nonblock($this->socket);
       }
       catch(\Exception $e) {
          echo $e->getMessage();
