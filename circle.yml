@@ -1,0 +1,10 @@
+dependencies:
+  pre:
+    - sudo apt-get install libattr1-dev libjson-c-dev
+  override:
+    - ./autogen.sh; make; cd utests; make alltests toyserver
+test:
+  pre:
+    - sudo apt-get install attr
+  override:
+    - cd utests; ./alltests
