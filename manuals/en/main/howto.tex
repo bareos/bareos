@@ -619,7 +619,7 @@ into a file and then backup it as a normal file. After the backup, the file can 
 removed. It may also be an option not to remove it, so that the latest version is
 always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using \configdirective{RunScript} directives inside a
+This can be done by using \linkResourceDirective{Dir}{Job}{Run Script} directives inside a
 Job Resource, for example:
 
 \begin{bconfig}{RunScript job resource for a PostgreSQL backup}
@@ -646,17 +646,7 @@ Job {
     Command = "rm /var/lib/bareos/postgresql_dump.sql"
   }
 }
-\end{bconfig}
 
-Note that redirecting the \command{pg_dumpall} output to a file requires
-to run the whole command line through a shell, otherwise the \command{pg_dumpall}
-would not know what do with the \command{>} character and the job would fail.
-As no shell features like redirection or piping are used for the \command{rm},
-the \command{sh -c} is not needed there.
-See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
-
-The corresponding FileSet configuration should look something like this, e.g.:
-\begin{bconfig}{FileSet for a PostgreSQL dump file}
 FileSet {
   Name = "Database"
   Include {
@@ -670,13 +660,20 @@ FileSet {
 }
 \end{bconfig}
 
+Note that redirecting the \command{pg_dumpall} output to a file requires
+to run the whole command line through a shell, otherwise the \command{pg_dumpall}
+would not know what do with the \command{>} character and the job would fail.
+As no shell features like redirection or piping are used for the \command{rm},
+the \command{sh -c} is not needed there.
+See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
+
 \subsubsection{Backup of a PostgreSQL Databases by using the bpipe plugin}
 \index[general]{bpipe!PostgreSQL backup}
 
 Instead of creating a temporary database dump file,
 the bpipe plugin can be used. 
-For general information about bpipe, see the \ilink{bpipe plugin}{bpipe} section. 
-The bpipe plugin is configured inside the Include section of a File Set, e.g.:
+For general information about bpipe, see the \nameref{bpipe} section. 
+The bpipe plugin is configured inside the \linkResourceDirective{Dir}{FileSet}{Include} section of a File Set, e.g.:
 \begin{bconfig}{bpipe directive for PostgreSQL backup}
 FileSet {
   Name = "postgresql-all"
@@ -718,7 +715,7 @@ The PGSQL-Plugin supports an online (Hot) backup of database files and database 
 
 Database recovery is performed fully automatic with dedicated pgsql-restore utility.
 
-For a full description, see \elink{https://github.com/bareos/contrib-pgsql-plugin/wiki}{https://github.com/bareos/contrib-pgsql-plugin/wiki}.
+For a full description, see \url{https://github.com/bareos/contrib-pgsql-plugin/wiki}.
 
 
 
@@ -747,8 +744,9 @@ FileSet {
     }
 \end{bconfig}
 
-In the above example the plugin creates and saves a dump from the databases called \textit{test} and \textit{wikidb}, running on the file-daemon. The commented example below
-specifies an explicit MySQL server called \textit{dbhost}, and connects with user \textit{bareos}, password \textit{bareos}, to create and save a backup of all databases.
+In the above example the plugin creates and saves a dump from the databases called \argument{test} and \argument{wikidb},
+running on the file-daemon. The commented example below
+specifies an explicit MySQL server called \parameter{dbhost}, and connects with user \argument{bareos}, password \argument{bareos}, to create and save a backup of all databases.
 
 You need to enable the plugin directory and disable bacula compatibility in the file-dameon config, too:
 
@@ -757,34 +755,33 @@ FileDaemon {
   Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
-  compatible = no # default since bareos 15
+  compatible = no # default since bareos 15.2.0
 }
 \end{bconfig}
 
-The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory /\_mysqlbackups\_.
+The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory \path|/_mysqlbackups_|.
 
 List of supported options:
-\begin{itemize}
- \item \textit{db}, comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
- \item \textit{dumpbinary}, command (with or without full path) to create the dumps. Default: mysqldump
- \item \textit{dumpoptions}, options for dumpbinary, default: \bquote{ --events --single-transaction}
- \item \textit{mysqlhost}, MySQL host to connect to, default: localhost
- \item \textit{mysqluser}, MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
- \item \textit{mysqlpassword}, MySQL password. Default: unset (better use my.cnf to store passwords)
-\end{itemize}
+\begin{description}
+ \item[db] comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
+ \item[dumpbinary] command (with or without full path) to create the dumps. Default: \argument{mysqldump}
+ \item[dumpoptions] options for dumpbinary, default: \bquote{\argument{--events --single-transaction}}
+ \item[mysqlhost] MySQL host to connect to, default: \argument{localhost}
+ \item[mysqluser] MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
+ \item[mysqlpassword] MySQL password. Default: unset (better use \file{my.cnf} to store passwords)
+\end{description}
 
 
 
 \subsubsection{Backup of a MySQL Database by using the RunScript directive}
 \index[general]{RunScript!Example}
 
-One method to backup a MySQL database is to use the mysqldump tool to dump the database
+One method to backup a MySQL database is to use the \command{mysqldump} tool to dump the database
 into a file and then backup it as a normal file. After the backup, the file can be
 removed. It may also be an option not to remove it, so that the latest version is
 always available immediately. On the next job run it will be overwritten anyway.
 
-This can be done by using \configdirective{RunScript} directives inside a
-Job Resource, for example:
+This can be done by using \linkResourceDirective{Dir}{Job}{Run Script} directives, for example:
 \begin{bconfig}{RunScript job resource for a MySQL backup}
 Job {
   Name = "BackupDatabase"
@@ -809,17 +806,7 @@ Job {
     Command = "rm /var/lib/bareos/mysql_dump.sql"
   }
 }
-\end{bconfig}
 
-Note that redirecting the \command{mysqldump} output to a file requires
-to run the whole command line through a shell, otherwise the \command{mysqldump}
-would not know what do with the \command{>} character and the job would fail.
-As no shell features like redirection or piping are used for the \command{rm},
-the \command{sh -c} is not needed there.
-See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
-
-The correspondig FileSet configuration should look something like this, e.g.:
-\begin{bconfig}{RunBeforeJob fileset MySQL dump}
 FileSet {
   Name = "Database"
   Include {
@@ -833,6 +820,13 @@ FileSet {
 }
 \end{bconfig}
 
+Note that redirecting the \command{mysqldump} output to a file requires
+to run the whole command line through a shell, otherwise the \command{mysqldump}
+would not know what do with the \command{>} character and the job would fail.
+As no shell features like redirection or piping are used for the \command{rm},
+the \command{sh -c} is not needed there.
+See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
+
 
 \subsubsection{Backup of a MySQL Databases by using the bpipe plugin}
 \index[general]{bpipe!MySQL backup}
@@ -844,8 +838,8 @@ The bpipe plugin is configured inside the Include section of a File Set, e.g.:
 \begin{bconfig}{bpipe fileset for MySQL backup}
 FileSet {
   Name = "mysql-all"
-  Include = {
-    Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --user=<user> --password=<password> --opt --all-databases:mysql --user=<user> --password=<password>"
+  Include {
+    Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --user=<user> --password=<password> --opt --all-databases:writer=mysql --user=<user> --password=<password>"
     Options {
       signature = MD5
       compression = gzip
@@ -859,7 +853,7 @@ This can also be used, to backup a database that is running on a remote host:
 FileSet{
   Name = "mysql-all"
   Include {
-    Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:mysql --host=<hostname> --user=<user> --password=<password>"
+    Plugin = "bpipe:file=/MYSQL/dump.sql:reader=mysqldump --host=<hostname> --user=<user> --password=<password> --opt --all-databases:writer=mysql --host=<hostname> --user=<user> --password=<password>"
     Options {
       signature = MD5
       compression = gzip
@@ -883,10 +877,9 @@ FileSet{
 }
 \end{bconfig}
 
-A very simple corresponding shell script (bpipe-restore.sh) to the method above might look like the following one:
+A very simple corresponding shell script (\command{bpipe-restore.sh}) to the method above might look like the following one:
 \begin{bconfig}{bpipe shell script for a restore to filesystem}
 #!/bin/bash
 cat - > /tmp/dump.sql
 exit 0
 \end{bconfig}
-
