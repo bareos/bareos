@@ -1,14 +1,14 @@
 \label{releasenotes}
 
-The technical changelog is automatically generated from the Bareos bug tracking system, see \url{http://bugs.bareos.org/changelog\_page.php}.
+The technical changelog is automatically generated from the Bareos bug tracking system, see \url{http://bugs.bareos.org/changelog_page.php}.
 
 Please note, that some of the subreleases are only internal development releases.
 
 Open issues for a specific version are shown at
-\url{http://bugs.bareos.org/roadmap\_page.php}.
+\url{http://bugs.bareos.org/roadmap_page.php}.
 
 The overview about new feature of a release are shown at
-\url{https://github.com/bareos/bareos} and in the \ilink{index}{index} of this document.
+\url{https://github.com/bareos/bareos} and in the \nameref{index} of this document.
 
 This chapter concentrates on things to do when updating an existing Baroes installation.
 
@@ -16,10 +16,35 @@ This chapter concentrates on things to do when updating an existing Baroes insta
 
 \section*{Bareos-15.2}
 
+
+\releasenote{15.2.2}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2015-11-19\\
+Database Version  & 2004\\
+                  & Database update required (if coming from bareos-14.2). See the \nameref{bareos-update} section.\\
+Release Ticket    & \ticket{554} \\
+Url               & \releaseUrlDownloadBareosOrg{15.2} \\
+                  & \releaseUrlDownloadBareosCom{15.2} \\
+\end{tabular}
+
+First stable release of the Bareos 15.2 branch.
+
+When coming from bareos-14.2.x, the following things have changed (same as in bareos-15.2.1):
+\begin{itemize}
+    \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
+    \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
+	Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
+\end{itemize}
+
+}
+
+
+
 \releasenote{15.2.1}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-Code Release      & TODO \\
+Code Release      & 2015-09-16\\
 Database Version  & 2004\\
                   & Database update required, see the \nameref{bareos-update} section.\\
 Release Ticket    & \ticket{501} \\
@@ -29,7 +54,7 @@ Url               & \releaseUrlDownloadBareosOrg{15.2} \\
 Beta release.
 
 \begin{itemize}
-    \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \parameter{yes} to \parameter{no}.
+    \item The default setting for the Bacula Compatbile mode in  \linkResourceDirective{Fd}{Client}{Compatible} and \linkResourceDirective{Sd}{Storage}{Compatible} have been changed from \argument{yes} to \argument{no}.
     \item The configuration syntax for Storage Daemon Cloud Backends Ceph and GlusterFS have changed.
 	Before bareos-15.2, options have been configured as part of the \linkResourceDirective{Sd}{Device}{Archive Device} directive, while now the Archive Device contains only information text and options are defined via the \linkResourceDirective{Sd}{Device}{Device Options} directive. See examples in \linkResourceDirective{Sd}{Device}{Device Options}.
 % # Old syntax:
