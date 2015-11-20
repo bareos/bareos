@@ -56,8 +56,10 @@ Plugin = "<plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>"
 \item[plugin] is the name of the plugin with the trailing -fd.so stripped off, so in this case, we would put bpipe in the field.
 
 \item[filepath] specifies the namespace, which for bpipe is the pseudo path and filename under which the backup will be saved. This
-pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is /MySQL/mydump.sql, the data
-backed up by the plugin will be put under that "pseudo" path and filename. You must be careful to choose a naming convention that is unique
+pseudo path and filename will be seen by the user in the restore file tree. For example, if the value is \argument{/MySQL/mydump.sql},
+the data
+backed up by the plugin will be put under that \bquote{pseudo} path and filename.
+You must be careful to choose a naming convention that is unique
 to avoid a conflict with a path and filename that actually exists on your system.
 
 \item[readprogram] for the bpipe plugin specifies the "reader" program that is called by the plugin during backup to read the data. bpipe
@@ -143,7 +145,8 @@ FileSet {
 } 
 \end{bconfig}
 
-This example uses the MySQL\index[general]{MySQL!Backup} plugin from \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} to backup MySQL dumps in addition to \file{/etc}.
+\index[general]{MySQL!Backup}
+This example uses the \ilink{MySQL plugin}{backup-mysql-python} to backup MySQL dumps in addition to \file{/etc}.
 
 \subsubsection{Option Plugins}
 Option plugins are activated in the Options resource of a FileSet definition.

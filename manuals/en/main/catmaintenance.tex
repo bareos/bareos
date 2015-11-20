@@ -12,11 +12,15 @@ Bareos stores its catalog in a database.
 Different database backends are supported:
 \begin{itemize}
     \item PostgreSQL
-    \item MySQL
+    \item MySQL/MariaDB
     \item Sqlite (only for testing)
 \end{itemize}
 
 What database will be used, can be configured in \file{/etc/bareos/bareos-dir.conf}, see the \nameref{DirectorResourceCatalog}.
+
+As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB.
+We test our packages against the prefered MySQL fork that a distribution provides.
+\index[general]{MariaDB|see{MySQL}}
 
 The database often runs on the same server as the Bareos Director.
 However, it is also possible to run it on a different system.
@@ -728,9 +732,11 @@ Job {
 
 \section{PostgreSQL}
 
+\index[general]{Database!PostgreSQL}
+\index[general]{PostgreSQL}
+
 \subsection{Compacting Your PostgreSQL Database}
-\index[general]{Database!Compacting Your PostgreSQL}
-\index[general]{Compacting Your PostgreSQL Database}
+\index[general]{Database!PostgreSQL!Compacting}
 \label{CompactingPostgres}
 
 Over time, as noted above, your database will tend to grow until Bareos starts
@@ -758,8 +764,8 @@ format and then reloading it. Doing so will re-create the database from
 scratch producing a compacted result, so below, we show you how you can do
 this for PostgreSQL.
 
-For a {\bf PostgreSQL} database, you could write the Bareos database as an
-ASCII file (\texttt{bareos.sql}) then reload it by doing the following:
+For a PostgreSQL database, you could write the Bareos database as an
+ASCII file (\file{bareos.sql}) then reload it by doing the following:
 
 \begin{commands}{}
 pg_dump -c bareos > bareos.sql
@@ -768,9 +774,9 @@ rm -f bareos.sql
 \end{commands}
 
 Depending on the size of your database, this will take more or less time and a
-fair amount of disk space. For example, you can {\bf cd} to the location of
-the Bareos database (typically \texttt{/var/lib/pgsql/data} or possible
-\texttt{/usr/local/pgsql/data}) and check the size.
+fair amount of disk space. For example, you can \command{cd} to the location of
+the Bareos database (typically \directory{/var/lib/pgsql/data} or possible
+\directory{/usr/local/pgsql/data}) and check the size.
 
 Except from special cases PostgreSQL does not
 need to be dumped/restored to keep the database efficient.  A normal
@@ -940,12 +946,13 @@ consider using \nameref{bareos-dbcheck} program .
 
 
 
-\section{MySQL}
+\section{MySQL/MariaDB}
 
+\index[general]{Database!MySQL}
+\index[general]{MySQL}
 
 \subsection{Compacting Your MySQL Database}
-\index[general]{Database!Compacting Your MySQL}
-\index[general]{Compacting Your MySQL Database}
+\index[general]{Database!MySQL!Compacting}
 \label{CompactingMySQL}
 
 Over time, as noted above, your database will tend to grow.

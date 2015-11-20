@@ -227,7 +227,7 @@ Further information is in the
 \index[general]{Testing!Configuration Files}
 
 You can test if your configuration file is syntactically correct by running
-the appropriate daemon with the {\bf -t} option. The daemon will process the
+the appropriate daemon with the \parameter{-t} option. The daemon will process the
 configuration file and print any error messages then terminate.
 
 \begin{commands}{Testing Configuration Files}
@@ -235,7 +235,6 @@ bareos-dir -t -c /etc/bareos/bareos-dir.conf
 bareos-fd -t -c /etc/bareos/bareos-fd.conf
 bareos-sd -t -c /etc/bareos/bareos-sd.conf
 bconsole -t -c /etc/bareos/bconsole.conf
-bat -t -c /etc/bareos/bat.conf
 bareos-tray-monitor -t -c /etc/bareos/tray-monitor.conf
 \end{commands}
 

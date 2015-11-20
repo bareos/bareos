@@ -1420,16 +1420,17 @@ The inconsistencies examined are the following:
 \end{itemize}
 
 
-If you are using Mysql, bareos-dbcheck will ask you if you want to create temporary
+If you are using MySQL, \command{bareos-dbcheck} will ask you if you want to create temporary
 indexes to speed up orphaned Path and Filename elimination.
 
-If you are using bvfs (e.g. used by \ilink{BAT}{bat}), don't eliminate orphaned path, else you will
+%\index[general]{bvfs}
+If you are using bvfs (e.g. used by \ilink{bareos-webui}{sec:webui}),
+don't eliminate orphaned path, else you will
 have to rebuild \variable{brestore_pathvisibility} and
 \variable{brestore_pathhierarchy} indexes.
-\TODO{verify if orphaned paths are still in use by Bareos}
 
 Normally
-you should never need to run bareos-dbcheck in spite of the
+you should never need to run \command{bareos-dbcheck} in spite of the
 recommendations given above, which are given so that users don't
 waste their time running bareos-dbcheck too often.
 
