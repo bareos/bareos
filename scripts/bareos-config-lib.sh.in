@@ -421,7 +421,8 @@ set_config_param()
     chown --reference="${FILE}" "$TEMP"
     chmod --reference="${FILE}" "$TEMP"
 
-    if ! mv "$TEMP" "$FILE"; then
+    mv "$TEMP" "$FILE"
+    if [ $? != 0 ]; then
         warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: replacing $FILE failed"
         rm -f "$TEMP"
         return 1
@@ -462,7 +463,7 @@ get_database_param()
     fi
 
     # if $temp_log exists, but have only size 0, remove it.
-    if [ -f $temp_log ] && ! [ -s $temp_log ]; then
+    if [ -f $temp_log -a ! -s $temp_log ]; then
         rm $temp_log
     fi
 
@@ -576,7 +577,8 @@ get_translated_sql_file()
     db_password="${db_password-`get_database_password @db_password@`}"
     db_version=`get_database_version`
 
-    if echo "$db_password" | grep -q '#'; then
+    echo "$db_password" | grep '#' > /dev/null 2>&1
+    if [ $? != 0 ]; then
         error "database passwords containing # are not supported."
         return 3
     fi
