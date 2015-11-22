@@ -78,21 +78,50 @@ you have to choose the corresponding Bareos packages to install on each hosts in
 
 \subsection{Install on RedHat based Linux Distributions}
 
-\subsubsection{RHEL$\ge$6, CentOS$\ge$6, Fedora}
+\subsubsection{RHEL$\ge$7, CentOS$\ge$7, Fedora}
 \index[general]{Platform!RHEL}
 \index[general]{Platform!CentOS}
 \index[general]{Platform!Fedora}
 
-\begin{commands}{Bareos installation on RHEL $\ge$ 6 / CentOS $\ge$ 6 / Fedora}
+Bareos \sinceVersion{dir}{requires!jansson}{15.2.0} requires the \ilink{Jansson library}{jansson} package.
+On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 and Fedora is it included on the main repository.
+
+\begin{commands}{Bareos installation on RHEL $\ge$ 7 / CentOS $\ge$ 7 / Fedora}
 #
 # define parameter
 #
 
 DIST=RHEL_7
 # or
-# DIST=RHEL_6
-# DIST=Fedora_20
+# DIST=Fedora_22
 # DIST=CentOS_7
+
+DATABASE=postgresql
+# or
+# DATABASE=mysql
+
+# add the Bareos repository
+URL=http://download.bareos.org/bareos/release/latest/$DIST
+wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
+
+# install Bareos packages
+yum install bareos bareos-database-$DATABASE
+\end{commands}
+\hide{$}
+
+\subsubsection{RHEL 6, CentOS 6}
+\index[general]{Platform!RHEL!6}
+\index[general]{Platform!CentOS!6}
+
+Bareos \sinceVersion{dir}{requires!jansson}{15.2.0} requires the \ilink{Jansson library}{jansson} package.
+This package is available on \elink{EPEL}{https://fedoraproject.org/wiki/EPEL} 6. Make sure, it is available on your system.
+
+\begin{commands}{Bareos installation on RHEL $\ge$ 6 / CentOS $\ge$ 6}
+#
+# define parameter
+#
+
+DIST=RHEL_6
 # DIST=CentOS_6
 
 DATABASE=postgresql
@@ -151,7 +180,10 @@ yum install bareos
 
 DIST=SLE_12
 # or
+# DIST=SLE_11_SP4
 # DIST=SLE_11_SP3
+# DIST=openSUSE_Leap_42.1
+# DIST=openSUSE_13.2
 # DIST=openSUSE_13.1
 
 DATABASE=postgresql
@@ -175,6 +207,9 @@ zypper install bareos bareos-database-$DATABASE
 \index[general]{Platform!Debian}
 \index[general]{Platform!Ubuntu}
 
+Bareos \sinceVersion{dir}{requires!jansson}{15.2.0} requires the \ilink{Jansson library}{jansson} package.
+On Ubuntu is it available in Ubuntu Universe. In Debian, is it included in the main repository.
+
 \begin{commands}{Bareos installation on Debian / Ubuntu}
 #
 # define parameter
@@ -183,7 +218,6 @@ zypper install bareos bareos-database-$DATABASE
 DIST=Debian_8.0
 # or
 # DIST=Debian_7.0
-# DIST=Debian_6.0
 # DIST=xUbuntu_14.04
 # DIST=xUbuntu_12.04
 
