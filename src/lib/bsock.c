@@ -215,7 +215,7 @@ bool BSOCK::fsend(const char *fmt, ...)
       va_start(arg_ptr, fmt);
       msglen = bvsnprintf(msg, maxlen, fmt, arg_ptr);
       va_end(arg_ptr);
-      if (msglen > 0 && msglen < (maxlen - 5)) {
+      if (msglen >= 0 && msglen < (maxlen - 5)) {
          break;
       }
       msg = realloc_pool_memory(msg, maxlen + maxlen / 2);
