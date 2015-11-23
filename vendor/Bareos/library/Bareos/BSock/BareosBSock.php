@@ -63,8 +63,6 @@ class BareosBSock implements BareosBSockInterface
    const DIR_OK_AUTH = "1000 OK auth\n";
    const DIR_AUTH_FAILED = "1999 Authorization failed.\n";
 
-   const CHUNK_SIZE = 64;
-
    protected $config = array(
       'debug' => false,
       'host' => null,
@@ -241,7 +239,7 @@ class BareosBSock implements BareosBSockInterface
       $msg_len = 0;
 
       if ($len === 0) {
-         $buffer = fread($this->socket, 4);
+         $buffer = stream_get_contents($this->socket, 4);
          if($buffer == false){
             return false;
          }
@@ -251,7 +249,7 @@ class BareosBSock implements BareosBSockInterface
       }
 
       if ($msg_len > 0) {
-         $buffer = fread($this->socket, $msg_len);
+         $buffer = stream_get_contents($this->socket, $msg_len);
       }
 
       return $buffer;
@@ -269,7 +267,7 @@ class BareosBSock implements BareosBSockInterface
       $buffer = "";
 
       while (true) {
-         $buffer = fread($this->socket, 4);
+         $buffer = stream_get_contents($this->socket, 4);
 
          if ($buffer === false) {
             throw new \Exception("Error reading socket. " . socket_strerror(socket_last_error()) . "\n");
@@ -281,20 +279,7 @@ class BareosBSock implements BareosBSockInterface
             break;
          }
          if ($len > 0) {
-            // Read data in chunks of CHUNK_SIZE
-            while (floor($len / self::CHUNK_SIZE) > 0) {
-               $rlen = self::CHUNK_SIZE;
-               $msg .= fread($this->socket, $rlen);
-               if ($rlen < 0) {
-                  $len = $rlen;
-                  break;
-               }
-               $len -= $rlen;
-            }
-            // Read any remaining bytes
-            if ($len > 0) {
-               $msg .= fread($this->socket, $len);
-            }
+            $msg .= stream_get_contents($this->socket, $len);
          } elseif ($len < 0) {
             // signal received
             switch ($len) {
