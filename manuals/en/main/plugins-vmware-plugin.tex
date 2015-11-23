@@ -1,6 +1,7 @@
 \subsection{VMware Plugin}
 \label{VMwarePlugin}
 \index[general]{Plugin!VMware}
+\index[general]{VMware!Plugin}
 
 The \vmware\ Plugin can be
 used for agentless backups of virtual machines running on
@@ -8,10 +9,9 @@ used for agentless backups of virtual machines running on
 It makes use of CBT (Changed Block Tracking) to do space efficient
 full and incremental backups, see below for mandatory requirements.
 
-\subsubsection{Status}
+It is included in Bareos since \sinceVersion{fd}{VMware Plugin}{15.2.0}.
 
-The current development status of the \vmware\
-plugin is experimental.
+\subsubsection{Status}
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
@@ -33,14 +33,6 @@ It does not work with standalone unlicensed
 VMware® ESXi\trademark.
 
 \subsubsection{Installation}
-
-First add an appropriate package repository from
-\url{http://download.bareos.org/bareos/experimental/vmware-plugin/}.
-Currently, packages exist for CentOS 7, RHEL 7, Debian 8, SLES 11 SP3 and SLES 12.
-The procedure to add the repository is almost the same as described
-in section \nameref{sec:InstallBareosPackages}. Note that the name of the
-\path{.repo} for RPM based Linux distributions is \path{bareos:vmware.repo}
-for this case.
 
 Install the package \package{bareos-vmware-plugin} including its requirments
 by using an appropriate package management tool
@@ -65,10 +57,12 @@ Active Directory as SSO in vCenter. For the examples here, we will use
 \command{bakadm@vsphere.local} with the password \command{Bak.Adm-1234}.
 
 For more details regarding users and permissions in vSphere see
-\url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html} and
-\url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html}
+\begin{itemize}
+    \item \url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-72BFF98C-C530-4C50-BF31-B5779D2A4BBB.html} and
+    \item \url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html}
+\end{itemize}
 
-Make sure to add or enable the following settings in \path|/etc/bareos/bareos-fd.conf|:
+Make sure to add or enable the following settings in \file{/etc/bareos/bareos-fd.conf}:
 
 \begin{bconfig}{bareos-fd.conf: Plugin Settings}
 ...
@@ -167,5 +161,5 @@ for example in \command{bconsole}:
 
 For restore, the VM must be powered off and no snapshot must exist.
 In \command{bconsole} use the restore menu 5, select the correct FileSet
-and enter \bcommand{mark *}{}, then \bcommand{done}{}. After restore has finished,
+and enter \bcommand{mark}{*}, then \bcommand{}{done}. After restore has finished,
 the VM can be powered on.
