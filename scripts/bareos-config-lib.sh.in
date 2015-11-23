@@ -578,7 +578,7 @@ get_translated_sql_file()
     db_version=`get_database_version`
 
     echo "$db_password" | grep '#' > /dev/null 2>&1
-    if [ $? != 0 ]; then
+    if [ $? = 0 ]; then
         error "database passwords containing # are not supported."
         return 3
     fi
