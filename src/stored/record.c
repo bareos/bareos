@@ -405,13 +405,9 @@ static inline ssize_t write_header_to_block(DEV_BLOCK *block, const DEV_RECORD *
 
 static inline ssize_t write_data_to_block(DEV_BLOCK *block, const DEV_RECORD *rec)
 {
-   ssize_t len;
+   uint32_t len;
 
-   len = block_write_navail(block);
-   if (len > rec->remainder) {
-      len = rec->remainder;
-   }
-
+   len = MIN(rec->remainder, block_write_navail(block));
    memcpy(block->bufp,
           ((unsigned char *)rec->data) + (rec->data_len - rec->remainder),
           len);
