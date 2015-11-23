@@ -201,13 +201,19 @@ See \nameref{sec:webui}.
 \index[general]{Command!bat}
 \label{bat}
 
+The Bacula/Bareos Administration Tool (\command{bat}) is a native GUI for Bareos. Please note that, although \command{bat} is still a part of Bareos and still receives maintenance bugfixes, the main development effort will be spent on bareos-webui. For \sinceVersion{dir}{bat vs. bareos-webui}{15.2.0} we therefore encourage the use of Bareos Webui, which will, in the long term, replace \command{bat}. By now Bareos Webui does not have all the features \command{bat} offers.
 
+\subsection{bareos-webui}
+\index[general]{Command!bareos-webui}
+\label{bareos-webui}
+
+For further information regarding the Bareos Webui, please refer to the chapter \nameref{}.
 
 \section{Volume Utility Commands}
     \index[general]{Volume Utility Tools}
     \index[general]{Tools!Volume Utility}
 
-\warning{If you using Bareos with non-default block sizes defined in the pools, it might be neccessary to specifiy the \configdirective{maximum block level} also in the storage device resource, see \ilink{Direct access to Volumes with non-default blocksizes}{direct-access-to-volumes-with-non-default-blocksizes}.}
+\warning{If you use Bareos with non-default block sizes defined in the pools, it might be neccessary to specifiy the \configdirective{maximum block level} also in the storage device resource, see \ilink{Direct access to Volumes with non-default blocksizes}{direct-access-to-volumes-with-non-default-blocksizes}.}
 
 \subsection{bls}
 \label{bls}
@@ -1159,8 +1165,35 @@ of your hardware chain. (cpu, memory, scsi card, cable, drive, tape).
 
 You can change the block size in the Storage Daemon configuration file.
 
+\subsection{bscrypto}
+\label{bscrypto}
+\index[general]{bscrypto}
+\index[general]{Command!bscrypto}
 
+\command{bscrypto} is used in the process of encrypting tapes (see also \nameref{LTOHardwareEncryptionGeneral}). The storage daemon and the btools (\command{bls}, \command{bextract}, \command{bscan}, \command{btape}, \command{bextract}) will use a so called storage daemon plugin to perform the setting and clearing of the encryption keys. To bootstrap the encryption support and for populating things like the crypto cache with encryption keys of volumes that you want to scan, you need to use the bscrypto tool.
+The bscrypto tool has the following capabilities:
 
+\begin{itemize}
+ \item Generate a new passphrase
+ \begin{itemize}
+  \item to be used as a so called Key Encryption Key (KEK) for wrapping a passphrase using RFC3394 key wrapping with aes-wrap\\- or -
+  \item for usage as a clear text encryption key loaded into the tape drive.
+ \end{itemize}
+ \item Base64-encode a key if requested
+ \item Generate a wrapped passphrase which performs the following steps:
+ \begin{itemize}
+  \item generate a semi random clear text passphrase
+  \item wrap the passphrase using the Key Encryption Key using RFC3394
+  \item base64-encode the wrapped key (as the wrapped key is binary, we always need to base64-encode it in order to be able to pass the data as part of the director to storage daemon protocol
+ \end{itemize}
+ \item show the content of a wrapped or unwrapped keyfile.\\This can be used to reveal the content of the passphrase when a passphrase is stored in the database and you have the urge to change the Key Encryption Key. Normally it is unwise to change the Key Encryption Key, as this means that you have to redo all your stored encryption keys, as they are stored in the database wrapped using the Key Encryption Key available in the config during the label phase of the volume.
+ \item Clear the crypto cache on the machine running the bareos-sd, which keeps a cache of used encryption keys, which can be used when the bareos-sd is restarted without the need to connect to the bareos-dir to retrieve the encryption keys.
+ \item Set the encryption key of the drive
+ \item Clear the encryption key of the drive
+ \item Show the encryption status of the drive
+ \item Show the encryption status of the next block (e.g. volume)
+ \item Populate the crypto cache with data
+\end{itemize}
 
 \section{Other Programs}
 
