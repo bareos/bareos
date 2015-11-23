@@ -56,12 +56,12 @@ If you want to be able to switch back from Bareos to Bacula after using a Bareos
 you have to enable the compatible mode in the Bareos storage daemon to have it write the data in the same
 format as the Bacula storage daemon.
 
-The Bareos File Daemon is compatible with all version of the Bacula director (of version 5.2.13 and lower)
-and not with Bacula 7.x. when you enable the compatible mode in the config of the file daemon.
-The compatible option was set by default in Bareos < 15.2.0, and is disabled by default since Version
+The Bareos File Daemon is compatible with all version of the Bacula director (tested with version 5.2.13 and lower)
+when you enable the compatible mode in the config of the file daemon.
+The compatible option was set by default in Bareos $<$ 15.2.0, and is disabled by default since Version
 \sinceVersion{fd}{Compatible = no}{15.2.0}.
 To be sure this is enabled you can explicitly set the compatible option
-by putting the following in the bareos-fd.conf:
+by putting the following in the \file{bareos-fd.conf}:
 
 \begin{bconfig}{Compatibility directive}
 compatible=true
@@ -102,7 +102,7 @@ Upgrade is supported from Bacula version 5.2.x. If you are running any older ver
 
 \subsubsection{Rename user and group before upgrading}
 
-To have bareos running without any permission hazzle, it is recommended to rename the user and group "bacula" to the user and group "bareos" before upgrading. That way, we minimize the effort for the user to recheck all config files and the rights on every script/directory etc. involved in the existing setup.
+To have bareos running without any permission hazzle, it is recommended to rename the user and group \user{bacula} to the user and group \user{bareos} before upgrading. That way, we minimize the effort for the user to recheck all config files and the rights on every script/directory etc. involved in the existing setup.
 
 The required commands should look something like this:
 
@@ -111,36 +111,39 @@ usermod  -l bareos bacula
 groupmod -n bareos bacula
 \end{commands}
 
+\subsubsection{MySQL}
+
 Proceed with the following steps:
 \begin{itemize}
  \item Stop bacula services
  \item Backup your catalog database:
- \begin{commands}{}
- mysqldump bacula > /tmp/bacula_5.2.sql
- \end{commands}
+\begin{commands}{}
+mysqldump bacula > /tmp/bacula_5.2.sql
+\end{commands}
  \item Make the user bareos have the same userid and the group bareos the same groupid as the user/group bacula had before. This will solve a lot of rights problems.
  \item Install Bareos packages
  \item Run the update script on the old bacula database:
- \begin{commands}{}
- /usr/lib64/bareos/update_bareos_tables
- \end{commands}
- \textbf{Note:} You need to change db\_name=bacula in the script before.
+\begin{commands}{}
+export db_name=bacula
+/usr/lib/bareos/update_bareos_tables
+unset db_name
+\end{commands}
  \item Backup upgraded DB:
- \begin{commands}{}
- mysqldump bacula > /tmp/bacula.2001.sql
- \end{commands}
+\begin{commands}{}
+mysqldump bacula > /tmp/bacula.sql
+\end{commands}
  \item Create bareos database:
- \begin{commands}{}
- /usr/lib64/bareos/create_bareos_database}
- \end{commands}
+\begin{commands}{}
+/usr/lib/bareos/create_bareos_database
+\end{commands}
  \item Insert backuped db into new database:
- \begin{commands}{}
- cat /tmp/bacula.2001.sql | mysql bareos
- \end{commands}
+\begin{commands}{}
+cat /tmp/bacula.sql | mysql bareos
+\end{commands}
  \item Grant permissions:
- \begin{commands}{}
- cat usr/lib64/bareos/grant_mysql_privileges
- \end{commands}
+\begin{commands}{}
+/usr/lib/bareos/grant_mysql_privileges
+\end{commands}
  \item Adapt file permissions to bareos, if you have any file storage
  \item Adapt configs (not complete)
   \begin{itemize}
@@ -148,14 +151,18 @@ Proceed with the following steps:
   \end{itemize}
 \end{itemize}
 
+
+
+\subsubsection{PostgreSQL}
+
 Renaming a postgresql database:
 
 \begin{itemize}
  \item Become postgresql user
  \item psql template1
- \begin{commands}{}
- ALTER DATABASE bacula RENAME TO bareos;
- ALTER USER bacula RENAME TO bareos;
- ALTER USER bareos UNENCRYPTED PASSWORD 'password';
- \end{commands}
+\begin{commands}{}
+ALTER DATABASE bacula RENAME TO bareos;
+ALTER USER bacula RENAME TO bareos;
+ALTER USER bareos UNENCRYPTED PASSWORD 'password';
+\end{commands}
 \end{itemize}
