@@ -140,6 +140,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate information about packages in distributions.')
 
     parser.add_argument('--debug', '-d', action='store_true', help="enable debugging output")
+    parser.add_argument('--out', '-o', help="output directory", default=".")    
     parser.add_argument('filename', help="JSON file containing package information")
 
     args = parser.parse_args()
@@ -151,15 +152,17 @@ if __name__ == '__main__':
         json_data = json.load(json_file)
     #print(json_data)
 
-    filename = args.filename.replace('.json','-table-redhat.tex')
+    basename = os.path.basename(args.filename)
+    dest = args.out + '/' + basename
+    filename = dest.replace('.json','-table-redhat.tex')
     with open(filename, "w") as file:
         file.write(generate_overview_table(json_data, re.compile('CentOS.*|RHEL.*|Fedora.*')))
         file.close()
-    filename = args.filename.replace('.json','-table-suse.tex')
+    filename = dest.replace('.json','-table-suse.tex')
     with open(filename, "w") as file:
         file.write(generate_overview_table(json_data, re.compile('openSUSE.*|SLE.*')))
         file.close()
-    filename = args.filename.replace('.json','-table-debian.tex')
+    filename = dest.replace('.json','-table-debian.tex')
     with open(filename, "w") as file:
         file.write(generate_overview_table(json_data, re.compile('Debian.*|xUbuntu.*|Univention.*')))
         file.close()
