@@ -36,7 +36,7 @@ BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
 BAREOS_SOURCE:=${WORKING_DIR}/bareos-${BAREOS_VERSION}
 BAREOS_DESTDIR:=${WORKING_DIR}/destdir
 BAREOS_PREFIX:=/usr/local
-BAREOS_FD_CONF:=${BAREOS_PREFIX}/etc/bareos-fd.conf
+BAREOS_FD_CONF:=${BAREOS_PREFIX}/etc/bareos/bareos-fd.conf
 BAREOS_WORKING_DIR:=/var/run/bareos/working
 #BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
 
@@ -125,7 +125,7 @@ ${BAREOS_DESTDIR}: ${BAREOS_SOURCE}
 
 	rm -rf "${BAREOS_DESTDIR}/tmp"
 
-	for conffile in ${BAREOS_DESTDIR}${BAREOS_PREFIX}/etc/*.conf; do \
+	for conffile in ${BAREOS_DESTDIR}${BAREOS_PREFIX}/etc/bareos/*.conf; do \
 		mv $$conffile $$conffile.example; \
 	done
 
