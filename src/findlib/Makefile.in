@@ -77,7 +77,7 @@ libbareosfind.a: $(LIBBAREOSFIND_OBJS)
 
 libbareosfind.la: Makefile $(LIBBAREOSFIND_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(LIBBAREOSFIND_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSFIND_LT_RELEASE) $(ACL_LIBS) $(XATTR_LIBS) $(AFS_LIBS) -lbareos
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(LIBBAREOSFIND_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSFIND_LT_RELEASE) $(ACL_LIBS) $(XATTR_LIBS) $(AFS_LIBS) -lbareos
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \

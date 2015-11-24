@@ -47,7 +47,7 @@ python-dir.la: Makefile \
 plugtest: Makefile dir_plugins.c \
 	  ../../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	$(CXX) -DTEST_PROGRAM $(DEFS) $(DEBUG) -c $(CXXFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) ../../dird/dir_plugins.c
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../../lib -L../../findlib -o $@ dir_plugins.o -lbareos $(DLIB) -lm $(LIBS)
+	$(LIBTOOL_LINK) $(CXX) -L../../lib -L../../findlib $(LDFLAGS) -o $@ dir_plugins.o -lbareos $(DLIB) -lm $(LIBS)
 
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

@@ -147,35 +147,35 @@ libbareoscats.a: $(LIBBAREOSCATS_OBJS)
 
 libbareoscats.la: Makefile $(LIBBAREOSCATS_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(LIBBAREOSCATS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSCATS_LT_RELEASE) -lbareos
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(LIBBAREOSCATS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSCATS_LT_RELEASE) -lbareos
 
 libbareossql.la: Makefile $(LIBBAREOSSQL_LOBJS) libbareoscats.la
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(LIBBAREOSSQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSQL_LT_RELEASE) $(DB_LIBS) -lbareos -lbareoscats
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(LIBBAREOSSQL_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOSSQL_LT_RELEASE) $(DB_LIBS) -lbareos -lbareoscats
 
 libbareoscats-mysql.la: Makefile $(MYSQL_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(MYSQL_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(MYSQL_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
 							   -soname libbareoscats-$(LIBBAREOSCATS_LT_RELEASE).so $(MYSQL_LIBS)
 
 libbareoscats-postgresql.la: Makefile $(POSTGRESQL_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(POSTGRESQL_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(POSTGRESQL_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
 							   -soname libbareoscats-$(LIBBAREOSCATS_LT_RELEASE).so $(POSTGRESQL_LIBS)
 
 libbareoscats-sqlite3.la: Makefile $(SQLITE_LOBJS)
 	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(SQLITE_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(SQLITE_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
 							   -soname libbareoscats-$(LIBBAREOSCATS_LT_RELEASE).so $(SQLITE_LIBS)
 
 #libbareoscats-ingres.la: Makefile $(INGRES_LOBJS)
 #	 @echo "Making $@ ..."
-#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(INGRES_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
+#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(INGRES_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
 #							    -soname libbareoscats-$(LIBBAREOSCATS_LT_RELEASE).so $(INGRES_LIBS)
 
 #libbareoscats-dbi.la: Makefile $(DBI_LOBJS)
 #	 @echo "Making $@ ..."
-#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../lib -o $@ $(DBI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
+#	 $(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) -L../lib $(LDFLAGS) -o $@ $(DBI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSCATS_LT_RELEASE) \
 #							    -soname libbareoscats-$(LIBBAREOSCATS_LT_RELEASE).so $(DBI_LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
