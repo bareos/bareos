@@ -1349,7 +1349,8 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
          strcpy(pr.Name, "?");
       }
 
-      ua->send->object_start(type);
+      ua->send->object_start();
+      ua->send->object_key_value("type", type, "%s\n");
       ua->send->object_key_value("slotnr", Slot, "%d\n");
       ua->send->object_key_value("content", "full", "%s\n");
       ua->send->object_key_value("mr_slotnr", mr.Slot, "%lld\n");
@@ -1360,9 +1361,10 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
       ua->send->object_key_value("pr_name", pr.Name, "%s\n");
       ua->send->object_key_value("mr_lastwritten", mr.LastWritten, "%lld\n");
       ua->send->object_key_value("mr_expire", mr.LastWritten + mr.VolRetention, "%lld\n");
-      ua->send->object_end(type);
+      ua->send->object_end();
    } else {                  /* Media unknown */
-      ua->send->object_start(type);
+      ua->send->object_start();
+      ua->send->object_key_value("type", type, "%s\n");
       ua->send->object_key_value("slotnr", Slot, "%d\n");
       ua->send->object_key_value("content", "full", "%s\n");
       ua->send->object_key_value("mr_slotnr", (uint64_t)0, "%lld\n");
@@ -1373,7 +1375,7 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
       ua->send->object_key_value("pr_name", "?", "%s\n");
       ua->send->object_key_value("mr_lastwritten", (uint64_t)0, "%lld\n");
       ua->send->object_key_value("mr_expire", (uint64_t)0, "%lld\n");
-      ua->send->object_end(type);
+      ua->send->object_end();
    }
 }
 
@@ -1545,10 +1547,12 @@ static void status_content_json(UAContext *ua, STORERES *store)
       goto bail_out;
    }
 
+   ua->send->array_start("contents");
    foreach_dlist(vl1, vol_list) {
       switch (vl1->Type) {
       case slot_type_drive:
-         ua->send->object_start("drive");
+         ua->send->object_start();
+         ua->send->object_key_value("type", "drive", "%s\n");
          ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
          switch (vl1->Content) {
          case slot_content_full:
@@ -1562,7 +1566,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
          default:
             break;
          }
-         ua->send->object_end("drive");
+         ua->send->object_end();
          break;
       case slot_type_normal:
       case slot_type_import:
@@ -1622,16 +1626,18 @@ static void status_content_json(UAContext *ua, STORERES *store)
             if (!found) {
                switch (vl1->Type) {
                case slot_type_normal:
-                  ua->send->object_start("slot");
+                  ua->send->object_start();
+                  ua->send->object_key_value("type", "slot", "%s\n");
                   ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
                   ua->send->object_key_value("content", "empty", "%s\n");
-                  ua->send->object_end("slot");
+                  ua->send->object_end();
                   break;
                case slot_type_import:
-                  ua->send->object_start("import_slot");
-                  ua->send->object_key_value("number", vl1->Slot, "%d\n");
+                  ua->send->object_start();
+                  ua->send->object_key_value("type", "import_slot", "%s\n");
+                  ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
                   ua->send->object_key_value("content", "empty", "%s\n");
-                  ua->send->object_end("import_slot");
+                  ua->send->object_end();
                   break;
                default:
                   break;
@@ -1646,6 +1652,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
          break;
       }
    }
+   ua->send->array_end("contents");
 
 bail_out:
    if (vol_list) {

@@ -950,7 +950,7 @@ static bool jobdefscmd(UAContext *ua, const char *cmd)
          ua->send->object_end();
       }
    }
-   ua->send->object_end("jobdefs");
+   ua->send->array_end("jobdefs");
    UnlockRes();
 
    return true;
