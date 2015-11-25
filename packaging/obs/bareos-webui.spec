@@ -7,7 +7,8 @@ Summary:       Bareos Web User Interface
 
 Group:         Productivity/Archiving/Backup
 License:       AGPL-3.0+
-URL:           https://github.com/bareos/bareos-webui
+URL:           http://www.bareos-webui.org/
+Vendor:        The Bareos Team
 Source:        %{name}-%{version}.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-build
 BuildArch:     noarch
@@ -60,8 +61,16 @@ Requires:   mod_php
 #define serverroot #(/usr/sbin/apxs2 -q datadir 2>/dev/null || /usr/sbin/apxs2 -q PREFIX)/htdocs/
 
 %description
-Bareos Web User Interface.
-Supports status overview about Jobs.
+Bareos - Backup Archiving Recovery Open Sourced. \
+Bareos is a set of computer programs that permit you (or the system \
+administrator) to manage backup, recovery, and verification of computer \
+data across a network of computers of different kinds. In technical terms, \
+it is a network client/server based backup program. Bareos is relatively \
+easy to use and efficient, while offering many advanced storage management \
+features that make it easy to find and recover lost or damaged files. \
+Bareos source code has been released under the AGPL version 3 license.
+
+This package contains the webui (Bareos Web User Interface).
 
 %prep
 %setup -q
