@@ -122,7 +122,7 @@ static inline char *lookup_fileindex(JCR *jcr, int32_t FileIndex)
  */
 static inline void add_to_namelist(struct ndm_job_param *job,
                                    char *filename,
-                                   char *restore_prefix,
+                                   const char *restore_prefix,
                                    char *name,
                                    char *other_name,
                                    int64_t node)
@@ -155,8 +155,8 @@ static inline void add_to_namelist(struct ndm_job_param *job,
 /*
  * See in the tree with selected files what files were selected to be restored.
  */
-static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job,
-                                       int32_t FileIndex, char *restore_prefix)
+static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int32_t FileIndex,
+                                       const char *restore_prefix, const char *ndmp_filesystem)
 {
    int len;
    int cnt = 0;
@@ -186,8 +186,8 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job,
             /*
              * See if we need to strip the prefix from the filename.
              */
-            len = strlen(restore_prefix);
-            if (bstrncmp(restore_pathname.c_str(), restore_prefix, len)) {
+            len = strlen(ndmp_filesystem);
+            if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
                add_to_namelist(job,  restore_pathname.c_str() + len, restore_prefix,
                                (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
             } else {
@@ -235,7 +235,7 @@ static inline bool fill_restore_environment(JCR *jcr,
    ndmp9_pval pv;
    FILESETRES *fileset;
    char *restore_pathname,
-        *original_pathname,
+        *ndmp_filesystem,
         *restore_prefix,
         *level;
    POOL_MEM tape_device;
@@ -257,13 +257,13 @@ static inline bool fill_restore_environment(JCR *jcr,
       /*
        * Skip over the /@NDMP prefix.
        */
-      original_pathname = restore_pathname + 6;
+      ndmp_filesystem = restore_pathname + 6;
    }
 
    /*
     * See if there is a level embedded in the pathname.
     */
-   bp = strrchr(original_pathname, '%');
+   bp = strrchr(ndmp_filesystem, '%');
    if (bp) {
       *bp++ = '\0';
       level = bp;
@@ -312,7 +312,7 @@ static inline bool fill_restore_environment(JCR *jcr,
        * Tell the data engine what was backuped.
        */
       pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
-      pv.value = original_pathname;
+      pv.value = ndmp_filesystem;
       ndma_store_env_list(&job->env_tab, &pv);
    }
 
@@ -334,7 +334,7 @@ static inline bool fill_restore_environment(JCR *jcr,
          /*
           * See if the original path matches.
           */
-         if (bstrcasecmp(item, original_pathname)) {
+         if (bstrcasecmp(item, ndmp_filesystem)) {
             int k, l;
             FOPTS *fo;
 
@@ -383,10 +383,10 @@ static inline bool fill_restore_environment(JCR *jcr,
           * Use the restore_prefix as an relative restore prefix.
           */
          if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-            pm_strcpy(destination_path, original_pathname);
+            pm_strcpy(destination_path, ndmp_filesystem);
          } else {
-            pm_strcpy(destination_path, restore_prefix);
-            pm_strcat(destination_path, original_pathname);
+            pm_strcpy(destination_path, ndmp_filesystem);
+            pm_strcat(destination_path, restore_prefix);
          }
       }
    } else {
@@ -394,7 +394,7 @@ static inline bool fill_restore_environment(JCR *jcr,
          /*
           * Use the original pathname as restore prefix.
           */
-         pm_strcpy(destination_path, original_pathname);
+         pm_strcpy(destination_path, ndmp_filesystem);
       } else {
          /*
           * Use the restore_prefix as an absolute restore prefix.
@@ -404,12 +404,12 @@ static inline bool fill_restore_environment(JCR *jcr,
    }
 
    pv.name = ndmp_env_keywords[NDMP_ENV_KW_PREFIX];
-   pv.value = destination_path.c_str();
+   pv.value = ndmp_filesystem;
    ndma_store_env_list(&job->env_tab, &pv);
 
    if (!nbf_options || nbf_options->needs_namelist) {
       if (set_files_to_restore(jcr, job, current_fi,
-                               destination_path.c_str()) == 0) {
+                               destination_path.c_str(), ndmp_filesystem) == 0) {
          /*
           * There is no specific filename selected so restore everything.
           */
