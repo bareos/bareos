@@ -1687,7 +1687,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
          break;
       }
    } else {
-      if (jcr->is_JobType(JT_MIGRATE) && jcr->previous_jr.JobId != 0) {
+      if (jcr->is_JobType(JT_MIGRATE) &&
+          jcr->previous_jr.JobId != 0 &&
+          jcr->is_terminated_ok()) {
          /*
           * Mark previous job as migrated
           */
