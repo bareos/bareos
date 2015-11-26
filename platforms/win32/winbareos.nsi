@@ -1986,10 +1986,10 @@ Push $R1
 #    !insertmacro RadioButton ${SEC_DIR_SQLITE}
 #  !insertmacro EndRadioButtons
 
-# if Postgres was not detected always disable postgresql backend and enable sqlite backend
+# if Postgres was not detected always disable postgresql backend
+
 ${If} $IsPostgresInstalled == no
   SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-  SectionSetFlags ${SEC_DIR_SQLITE} ${SF_SELECTED}
 ${EndIf}
 
   # Check if BAT was just selected then select SEC_BCONSOLE
