@@ -94,9 +94,17 @@ rather than simultaneously.
       The column RealEndTime in the catalog Job table will contain the
       time and date that the Migration terminated, and by comparing
       it with the EndTime column you can tell whether or not the
-      job was migrated.  The original job is purged of its File
-      records, and its Type field is changed from "B" to "M" to
-      indicate that the job was migrated.
+      job was migrated.
+
+\item After a Job has been migrated, the File records are purged from
+      the original Job. Moreover, the Type of the original Job is
+      changed from "B" (backup) to "M" (migrated), and another Type
+      "B" job record is added which refers to the new location of the
+      data. Since the original Job record stays in the bareos catalog,
+      it is still possible to restore from the old media by specifying
+      the original JobId for the restore. However, no file selection is
+      possible in this case, so one can only restore {\bf all} files
+      this way.
 
 \item A Job will be migrated only if all Volumes on which the job
       is stored are marked Full, Used, or Error. In particular, Volumes
