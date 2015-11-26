@@ -45,3 +45,15 @@ Description[de]=Maximale Anzahl der Volumes im Pool für Full-Backups
 Description[en]=Maximum number of volumes for the full backup pool
 Type=int
 Categories=backup
+
+[bareos/webui/console/user1/username]
+Description[de]=Benutzername
+Description[en]=Username
+Type=str
+Categories=backup
+
+[bareos/webui/console/user1/password]
+Description[de]=Passwort
+Description[en]=Password
+Type=str
+Categories=backup

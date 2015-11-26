@@ -2,6 +2,7 @@ Package: univention-bareos
 Architecture: all
 Depends: bareos (= ${binary:Version}),
  bareos-database-postgresql,
+ bareos-webui,
  univention-bareos-schema (= ${binary:Version}),
  univention-config,
  univention-join (>> 5.0.20-1.436),
