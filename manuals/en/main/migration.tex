@@ -94,7 +94,9 @@ rather than simultaneously.
       The column RealEndTime in the catalog Job table will contain the
       time and date that the Migration terminated, and by comparing
       it with the EndTime column you can tell whether or not the
-      job was migrated.
+      job was migrated. Also, the Job table contains a PriorJobId
+      column which is set to the original JobId for migration jobs. For
+      non-migration jobs this column is zero.
 
 \item After a Job has been migrated, the File records are purged from
       the original Job. Moreover, the Type of the original Job is
