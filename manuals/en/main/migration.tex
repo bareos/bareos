@@ -182,17 +182,8 @@ The following directives can be used to define a Copy or Migration job:
 \subsection{Example Migration Jobs}
 \index[general]{Example!Migration Jobs}
 
-The standard Job directives must also be specified for Migration
-jobs. Certain directives including Level, Client, and FileSet are
-ignored by the Migration job because the values from the original
-job are used instead. Nevertheless, these directives must be defined.
-
-As an example, suppose you have the following Job that
-you run every night. To note: there is no Storage directive in the
-Job resource; there is a Storage directive in each of the Pool
-resources; the Pool to be migrated (File) contains a Next Pool
-directive that defines the output Pool (where the data is written
-by the migration job).
+Assume a simple configuration with a single backup job as described
+below.
 
 \begin{bconfig}{Backup Job}
 # Define the backup Job
@@ -246,52 +237,50 @@ Storage {
 }
 \end{bconfig}
 
-Where we have included only the essential information -- i.e. the
-Director, FileSet, Catalog, Client, Schedule, and Messages resources are
-omitted.
+Note that the backup job writes to the {\tt Default} pool, which
+corresponds to {\tt File} storage. There is no {\tt Storage} directive
+in the Job resource while the two {\tt Pool} resources contain
+different {\tt Storage} directives. Moreover, the {\tt Default}
+pool contains a {\tt Next Pool} directive that refers to the {\tt
+Tape} pool.
 
-As you can see, by running the NightlySave Job, the data will be backed up
-to File storage using the Default pool to specify the Storage as File.
+In order to migrate jobs from the Default pool to the Tape pool we
+add the following Job resource:
 
-Now, if we add the following Job resource to this conf file.
-
-\begin{bconfig}{Migrate Job: migrate all Volumes named File}
+\begin{bconfig}{migrate all volumes of a pool}
 Job {
   Name = "migrate-volume"
   Type = Migrate
-  Level = Full
   Messages = Standard
   Pool = Default
-  Maximum Concurrent Jobs = 4
   Selection Type = Volume
-  Selection Pattern = "File"
+  Selection Pattern = "."
 }
 \end{bconfig}
 
-and then run the job named {\bf migrate-volume}, all volumes in the Pool
-named Default (as specified in the migrate-volume Job that match the
-regular expression pattern {\bf File} will be migrated to tape storage
-DLTDrive because the \linkResourceDirective{Dir}{Pool}{Next Pool} in the Default Pool specifies that
-Migrations should go to the pool named {\bf Tape}, which uses
-Storage {\bf DLTDrive}.
+The {\bf Selection Type} and {\bf Selection pattern} directives
+instruct Bareos to select all volumes of the given pool ({\bf Default})
+whose volume names match the given regular expression ({\bf "."}),
+i.e., all volumes. Hence those jobs which were backed up to any volume
+in the {\bf Default} pool will be migrated. Because of the {\bf Next
+Pool} directive of the {\bf Default} pool resource, the jobs will be
+migrated to tape storage.
 
-If instead, we use a Job resource as follows:
+Another way to accomplish the same is the following Job resource:
 
-\begin{bconfig}{Migrate Job: migrate all jobs named *Save}
+\begin{bconfig}{migrate all jobs named *Save}
 Job {
   Name = "migrate"
   Type = Migrate
-  Level = Full
   Messages = Standard
   Pool = Default
-  Maximum Concurrent Jobs = 4
   Selection Type = Job
   Selection Pattern = ".*Save"
 }
 \end{bconfig}
 
-All jobs ending with the name Save will be migrated from the File Default to
-the Tape Pool, or from File storage to Tape storage.
+This migrates all jobs ending with {\bf Save} from the {\bf Default}
+pool to the {\bf Tape} pool, i.e., from File storage to Tape storage.
 
 \subsubsection{Multiple Storage Daemons}
     \label{sec:CopyMigrationJobsMultipleStorageDaemons}
