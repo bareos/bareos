@@ -46,7 +46,7 @@ static char jobcmd[] =
    "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
    "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
    "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
-   "Protocol=%d BackupFormat=%s DumpLevel=%d\n";
+   "Protocol=%d BackupFormat=%s\n";
 static char use_storage[] =
    "use storage=%s media_type=%s pool_name=%s "
    "pool_type=%s append=%d copy=%d stripe=%d\n";
@@ -218,7 +218,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
              jcr->res.job->SpoolAttributes, fileset_md5, jcr->spool_data,
              jcr->res.job->PreferMountedVolumes, edit_int64(jcr->spool_size, ed2),
              jcr->rerunning, jcr->VolSessionId, jcr->VolSessionTime, remainingquota,
-             jcr->getJobProtocol(), backup_format.c_str(), jcr->DumpLevel);
+             jcr->getJobProtocol(), backup_format.c_str());
 
    Dmsg1(100, ">stored: %s", sd->msg);
    if (bget_dirmsg(sd) > 0) {

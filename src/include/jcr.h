@@ -340,7 +340,6 @@ public:
    uint32_t JobErrors;                    /* Number of non-fatal errors this job */
    uint32_t JobWarnings;                  /* Number of warning messages */
    uint32_t LastRate;                     /* Last sample bytes/sec */
-   uint32_t DumpLevel;                    /* Dump level when doing a NDMP backup */
    uint64_t JobBytes;                     /* Number of bytes processed this job */
    uint64_t LastJobBytes;                 /* Last sample number bytes */
    uint64_t ReadBytes;                    /* Bytes read -- before compression */
@@ -436,6 +435,7 @@ public:
    uint32_t SDErrors;                     /* Number of non-fatal errors */
    volatile int32_t SDJobStatus;          /* Storage Job Status */
    volatile int32_t FDJobStatus;          /* File daemon Job Status */
+   uint32_t DumpLevel;                    /* Dump level when doing a NDMP backup */
    uint32_t ExpectedFiles;                /* Expected restore files */
    uint32_t MediaId;                      /* DB record IDs associated with this job */
    uint32_t FileIndex;                    /* Last FileIndex processed */
