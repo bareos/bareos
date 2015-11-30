@@ -7,4 +7,5 @@
 @scriptdir@/mtx-changer
 /usr/share/man/man8/bscrypto.8.gz
 /usr/share/man/man8/btape.8.gz
+/usr/sbin/bscrypto
 /usr/sbin/btape
