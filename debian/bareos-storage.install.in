@@ -1,4 +1,3 @@
-/usr/sbin/bscrypto
 @plugindir@/autoxflate-sd.so
 @scriptdir@/disk-changer
 @confdir@/bareos-sd.conf     @configtemplatedir@
