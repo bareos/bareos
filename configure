@@ -30684,7 +30684,7 @@ if test "x${with_jansson_directory}" != "xyes" && test x"${with_jansson_director
 else
    if test x$with_jansson_directory = xyes || test x"${with_jansson_directory}" = "x" && $PKGCONFIG jansson; then
       have_jansson=yes
-      JANSSON_INC=`$PKGCONFIG --cflags janson`
+      JANSSON_INC=`$PKGCONFIG --cflags jansson`
       JANSSON_LIBS=`$PKGCONFIG --libs jansson`
    fi
 fi
