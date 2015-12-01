@@ -115,6 +115,10 @@ rather than simultaneously.
       This policy also prevents deadlock situations, like attempting to
       read and write the same Volume from two jobs at the same time.
 
+\item Migration works only if the Job resource of the original Job is
+      still defined in the current director configuration. Otherwise
+      you'll get a fatal error.
+
 \item As noted above, for the Migration High Bytes, the calculation
       of the bytes to migrate is somewhat approximate.
 
