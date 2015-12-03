@@ -844,7 +844,6 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
 
    pthread_cond_signal(&jcr->job_end_wait); /* wake any waiting thread */
 
-   ta->tape_fd = -1;
    ndmos_tape_initialize(sess);
 
    return err;
