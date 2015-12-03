@@ -734,7 +734,7 @@ initialize_passwords()
     if [ ! -f ${DIR_CFG}/.rndpwd ]; then
         for string in ${PASSWORD_SUBST}
         do
-           pass=`RANDFILE=/dev/urandom openssl rand -base64 33`
+           pass=`openssl rand -base64 33`
            echo "${string}=${pass}" >> ${DIR_CFG}/.rndpwd
         done
         chmod 400 ${DIR_CFG}/.rndpwd
