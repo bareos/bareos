@@ -170,7 +170,7 @@ do
 
    if [ ${retval} != 0 ]; then
       echo "Failed to upgrade database schema from version ${start_version} to ${end_version}"
-      break;
+      exit ${retval}
    fi
 done
 
