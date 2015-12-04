@@ -237,15 +237,17 @@ Storage {
 }
 \end{bconfig}
 
-Note that the backup job writes to the {\tt Default} pool, which
-corresponds to {\tt File} storage. There is no {\tt Storage} directive
-in the Job resource while the two {\tt Pool} resources contain
-different {\tt Storage} directives. Moreover, the {\tt Default}
-pool contains a {\tt Next Pool} directive that refers to the {\tt
-Tape} pool.
+Note that the backup job writes to the \pool{Default} pool, which
+corresponds to \resourcename{File} storage. There is no
+\linkResourceDirective{Dir}{Pool}{Storage} directive
+in the Job resource while the two \configresource{Pool} resources contain
+different \linkResourceDirective{Dir}{Pool}{Storage} directives.
+Moreover, the \pool{Default}
+pool contains a \linkResourceDirective{Dir}{Pool}{Next Pool} directive
+that refers to the \pool{Tape} pool.
 
-In order to migrate jobs from the Default pool to the Tape pool we
-add the following Job resource:
+In order to migrate jobs from the \pool{Default} pool to the \pool{Tape} pool
+we add the following Job resource:
 
 \begin{bconfig}{migrate all volumes of a pool}
 Job {
@@ -258,12 +260,14 @@ Job {
 }
 \end{bconfig}
 
-The {\bf Selection Type} and {\bf Selection pattern} directives
-instruct Bareos to select all volumes of the given pool ({\bf Default})
-whose volume names match the given regular expression ({\bf "."}),
+The \linkResourceDirective{Dir}{Job}{Selection Type} and
+\linkResourceDirective{Dir}{Job}{Selection Pattern} directives
+instruct Bareos to select all volumes of the given pool (\pool{Default})
+whose volume names match the given regular expression (\argument{"."}),
 i.e., all volumes. Hence those jobs which were backed up to any volume
-in the {\bf Default} pool will be migrated. Because of the {\bf Next
-Pool} directive of the {\bf Default} pool resource, the jobs will be
+in the \pool{Default} pool will be migrated. Because of the
+\linkResourceDirective{Dir}{Pool}{Next Pool} directive
+of the \pool{Default} pool resource, the jobs will be
 migrated to tape storage.
 
 Another way to accomplish the same is the following Job resource:
@@ -279,8 +283,8 @@ Job {
 }
 \end{bconfig}
 
-This migrates all jobs ending with {\bf Save} from the {\bf Default}
-pool to the {\bf Tape} pool, i.e., from File storage to Tape storage.
+This migrates all jobs ending with \argument{Save} from the \pool{Default}
+pool to the \pool{Tape} pool, i.e., from File storage to Tape storage.
 
 \subsubsection{Multiple Storage Daemons}
     \label{sec:CopyMigrationJobsMultipleStorageDaemons}
