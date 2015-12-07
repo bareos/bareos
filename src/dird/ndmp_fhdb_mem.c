@@ -819,8 +819,7 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
 void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
-
-   if (nis->fhdb_state) {
+   if (nis && nis->fhdb_state) {
       N_TREE_ROOT *fhdb_root;
 
       fhdb_root = ((struct fhdb_state *)nis->fhdb_state)->fhdb_root;
