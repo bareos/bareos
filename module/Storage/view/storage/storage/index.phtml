@@ -86,17 +86,16 @@ $(document).ready(function() {
       "info":     true,
       "pagingType": "full_numbers",
       "stateSave": true,
+      "order": [[0, 'asc']],
       "columnDefs": [
          {
             "targets": 0,
-            "data": "name",
             "render": function(data, type, full, meta) {
                return data;
             }
          },
          {
             "targets": 1,
-            "data": "autochanger",
             "render": function(data, type, full, meta) {
                var a = '<span class="label label-default">No</span>';
                if(data == "1") {

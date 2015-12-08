@@ -127,13 +127,13 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns": [
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null }
+         { "data": "jobid" },
+         { "data": "name" },
+         { "data": "client" },
+         { "data": "fileset" },
+         { "data": "type" },
+         { "data": "level" },
+         { "data": "poolname" }
       ],
       "paging":   false,
       "ordering": false,
@@ -143,39 +143,10 @@ $(document).ready(function() {
       "bFilter": false,
       "columnDefs": [
          {
-            "targets": 0,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.jobid;
-            }
-         },
-         {
-            "targets": 1,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.name;
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.client;
-            }
-         },
-         {
-            "targets": 3,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.fileset;
-            }
-         },
-         {
             "targets": 4,
-            "data": null,
             "render": function(data, type, full, meta) {
                var output;
-               switch(data.type) {
+               switch(data) {
                   case 'B':
                       output = 'Backup';
                       break;
@@ -213,7 +184,7 @@ $(document).ready(function() {
                       output = 'Scan';
                       break;
                   default:
-                      output = data.type;
+                      output = data;
                       break;
                }
                return output;
@@ -221,9 +192,8 @@ $(document).ready(function() {
          },
          {
             "targets": 5,
-            "data": null,
             "render": function(data, type, full, meta) {
-               switch(data.level) {
+               switch(data) {
                   case 'F':
                      return 'Full';
                   case 'D':
@@ -231,17 +201,10 @@ $(document).ready(function() {
                   case 'I':
                      return 'Incremental';
                   default:
-                     return data.level;
+                     return data;
                }
             }
-         },
-         {
-            "targets": 6,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.poolname;
-            }
-         },
+         }
       ]
    } );
 
@@ -251,10 +214,10 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns": [
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null }
+         { "data": "schedtime" },
+         { "data": "starttime" },
+         { "data": "endtime" },
+         { "data": "realendtime" }
       ],
       "paging":   false,
       "ordering": false,
@@ -263,34 +226,6 @@ $(document).ready(function() {
       "stateSave": true,
       "bFilter": false,
       "columnDefs": [
-         {
-            "targets": 0,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.schedtime;
-            }
-         },
-         {
-            "targets": 1,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.starttime;
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.endtime;
-            }
-         },
-         {
-            "targets": 3,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.realendtime;
-            }
-         }
       ]
    } );
 
@@ -300,9 +235,9 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns": [
+         { "data": "jobfiles" },
          { "data": null },
-         { "data": null },
-         { "data": null },
+         { "data": "joberrors" },
          { "data": null }
       ],
       "paging":   false,
@@ -313,13 +248,6 @@ $(document).ready(function() {
       "bFilter": false,
       "columnDefs": [
          {
-            "targets": 0,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.jobfiles;
-            }
-         },
-         {
             "targets": 1,
             "data": null,
             "render": function(data, type, full, meta) {
@@ -328,13 +256,6 @@ $(document).ready(function() {
                var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
                var i = Math.floor(Math.log(data.jobbytes) / Math.log(k));
                return parseFloat((data.jobbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.joberrors;
             }
          },
          {
@@ -467,7 +388,7 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns": [
-         { "data": null },
+         { "data": "time" },
          { "data": null }
       ],
       "paging":   true,
@@ -475,14 +396,8 @@ $(document).ready(function() {
       "info":     true,
       "pagingType": "full_numbers",
       "stateSave": true,
+      "order": [[0, 'desc']],
       "columnDefs": [
-         {
-            "targets": 0,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.time;
-            }
-         },
          {
             "targets": 1,
             "data": null,

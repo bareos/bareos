@@ -83,6 +83,8 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
@@ -97,30 +99,12 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns" : [
-         {
-            "className": "client-name",
-            "data": "name"
-         },
-         {
-            "className": "client-uname",
-            "data": "uname"
-         },
-         {
-            "className": "client-autoprune",
-            "data": "autoprune"
-         },
-         {
-            "className": "client-fileretention",
-            "data": "fileretention"
-         },
-         {
-            "className": "client-jobretention",
-            "data": "jobretention"
-         },
-         {
-            "className": "client-actions",
-            "data": null
-         }
+         { "data": "name" },
+         { "data": "uname"},
+         { "data": "autoprune" },
+         { "data": "fileretention" },
+         { "data": "jobretention" },
+         { "data": "name" }
       ],
       "paging":   false,
       "ordering": false,
@@ -131,36 +115,26 @@ $(document).ready(function() {
       "columnDefs": [
          {
             "targets": 2,
-            "data": "autoprune",
             "render": function(data, type, full, meta) {
-               if(data == 1) {
-                  var a = '<span class="label label-success">enabled</span>';
-               }
-               else {
-                  var a = '<span class="label label-danger">disabled</span>';
-               }
-               return a;
+               return formatAutoprune(data);
             }
          },
          {
             "targets": 3,
-            "data": "fileretention",
             "render": function(data, type, full, meta) {
-               return Math.floor((data % 31536000) / 86400) + " days";
+               return formatRetention(data);
             }
          },
          {
             "targets": 4,
-            "data": "fileretention",
             "render": function(data, type, full, meta) {
-               return Math.floor((data % 31536000) / 86400) + " days";
+               return formatRetention(data);
             }
          },
          {
             "targets": -1,
-            "data": "name",
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
             }
          }
       ]
@@ -172,80 +146,36 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns" : [
-         {
-            "className": "backup-jobid",
-            "orderable": true,
-            "data": "jobid"
-         },
-         {
-            "className": "backup-starttime",
-            "orderable": true,
-            "data": "starttime"
-         },
-         {
-            "className": "backup-fileset",
-            "orderable": true,
-            "data": "fileset",
-         },
-         {
-            "className": "backup-level",
-            "orderable": true,
-            "data": "level",
-         },
-         {
-            "className": "backup-jobfiles",
-            "orderable": true,
-            "data": "jobfiles",
-         },
-         {
-            "className": "backup-jobbytes",
-            "orderable": true,
-            "data": "jobbytes"
-         }
+         { "data": "jobid" },
+         { "data": "starttime" },
+         { "data": "fileset" },
+         { "data": "level" },
+         { "data": "jobfiles" },
+         { "data": "jobbytes", "type": "file-size" }
       ],
       "paging":   true,
       "ordering": true,
       "info":     true,
       "pagingType": "full_numbers",
       "stateSave": true,
+      "order": [[0, 'desc']],
       "columnDefs": [
          {
             "targets": 0,
-            "data": "jobid",
             "render": function(data, type, full, meta) {
                return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
             }
          },
          {
             "targets": 3,
-            "data": "level",
             "render": function(data, type, full, meta) {
-               switch(data) {
-                  case "I":
-                     var level = 'Incremental';
-                     break;
-                  case "D":
-                     var level = 'Differential';
-                     break;
-                  case "F":
-                     var level = 'Full';
-                     break;
-                  default:
-                     var level = "";
-                     break;
-               }
-               return level;
+               return formatJobLevel(data);
             }
          },
          {
             "targets": 5,
-            "data": "jobbytes",
             "render": function(data, type, full, meta) {
-               if(data == 0) return "0.00 B";
-               var k = 1000;
-               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-               var i = Math.floor(Math.log(data) / Math.log(k));
-               return parseFloat((data / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+               return formatBytes(data);
             }
          }
       ]

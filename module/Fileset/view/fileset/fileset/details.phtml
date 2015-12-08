@@ -75,47 +75,16 @@ $this->headTitle($title);
          "dataSrc": ""
       },
       "columns": [
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null }
+         { "data": "filesetid" },
+         { "data": "fileset" },
+         { "data": "md5" },
+         { "data": "createtime" }
       ],
       "paging":   false,
       "ordering": false,
       "info":     false,
-      "pagingType": "full_numbers",
       "stateSave": true,
       "bFilter": false,
-      "columnDefs": [
-         {
-            "targets": 0,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.filesetid;
-            }
-         },
-         {
-            "targets": 1,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.fileset;
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.md5;
-            }
-         },
-         {
-            "targets": 3,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.createtime;
-            }
-         }
-      ]
    } );
 
 </Script>
