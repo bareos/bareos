@@ -64,6 +64,8 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
@@ -129,151 +131,66 @@ $(document).ready(function() {
          "dataSrc": ""
       },
       "columns": [
-         {
-            "className": 'details-control',
-            "data": null,
-            "orderable": false,
-            "defaultContent": ''
-         },
+         { "data": null, "orderable": false, "defaultContent": '', "className": 'details-control' },
+         { "data": "volumename" },
+         { "data": "storageid" },
+         { "data": "mediatype" },
+         { "data": "lastwritten" },
+         { "data": "volstatus" },
          { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null },
-         { "data": null }
+         { "type": "file-size", "data": "maxvolbytes" },
+         { "type": "file-size", "data": "volbytes" },
+         { "type": "file-size", "data": null },
+         { "data": "lastwritten" }
       ],
       "paging":   true,
       "ordering": true,
       "info":     true,
       "pagingType": "full_numbers",
       "stateSave": true,
+      "order": [[4, "desc"]],
       "columnDefs": [
          {
             "targets": 1,
-            "data": null,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data.volumename+'">'+data.volumename+'</a>';
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.storageid;
-            }
-         },
-         {
-            "targets": 3,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.mediatype;
+               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
             }
          },
          {
             "targets": 4,
-            "data": null,
+            "orderData": 10,
             "render": function(data, type, full, meta) {
-
-               if(data.lastwritten == null || data.lastwritten == "") {
-                  return 'never';
-               }
-               else {
-                  var d = Date.now() / 1000;
-                  var a = data.lastwritten.split(" ");
-                  var b = new Date(a[0]).getTime() / 1000;
-                  var interval = Math.floor( (d - b) / (3600 * 24) );
-
-                  if(interval < 1) {
-                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">today</span>';
-                  }
-                  else if(interval <= 31 && interval >= 1) {
-                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + interval + ' day(s) ago</span>';
-                  }
-                  else if(interval >= 31 && interval <= 365) {
-                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 31) + ' month(s) ago</span>';
-                  }
-                  else if(interval > 365) {
-                     return '<span id="lastwritten" data-toggle="tooltip" title="' + data.lastwritten + '">' + Math.round(interval / 365) + ' year(s) ago</span>';
-                  }
-                  else {
-                     return data.lastwritten;
-                  }
-               }
-            }
-         },
-         {
-            "targets": 5,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.volstatus;
+               return formatLastWritten(data);
             }
          },
          {
             "targets": 6,
-            "data": null,
             "render": function(data, type, full, meta) {
-               if(data.volstatus == "Used" || data.volstatus == "Full") {
-                  if(data.lastwritten == null || data.lastwritten == "") {
-                     return '-';
-                  }
-                  else {
-                     var d = Date.now() / 1000;
-                     var a = data.lastwritten.split(" ");
-                     var b = new Date(a[0]).getTime() / 1000;
-                     var interval = (d - b) / (3600 * 24);
-                     var retention = Math.round(data.volretention / 60 / 60 / 24);
-                     var expiration = Math.round(retention - interval);
-                     if(expiration <= 0) {
-                        return '<span class="label label-danger">expired</span>';
-                     }
-
-                     if(expiration > 0) {
-                        return '<span class="label label-warning">expires in ' + expiration  + ' days</span>';
-                     }
-                  }
-               }
-               else {
-                  return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
-               }
+               return formatExpiration(data.volstatus, data.lastwritten, data.volretention);
             }
          },
          {
             "targets": 7,
-            "data": null,
             "render": function(data, type, full, meta) {
-               if(data.maxvolbytes == 0) return "-";
-               var k = 1000;
-               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-               var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
-               return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+               return formatBytes(data);
             }
          },
          {
             "targets": 8,
-            "data": null,
             "render": function(data, type, full, meta) {
-               if(data.volbytes == 0) return "0.00 B";
-               var k = 1000;
-               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-               var i = Math.floor(Math.log(data.volbytes) / Math.log(k));
-               return parseFloat((data.volbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+               return formatBytes(data);
             }
          },
          {
             "targets": 9,
-            "data": null,
             "render": function(data, type, full, meta) {
-               if(data.maxvolbytes == null || data.maxvolbytes == 0) return "-";
-               if(data.volbytes == null || data.volbytes == 0) return "0.00 B";
-               var d = data.maxvolbytes - data.volbytes;
-               var k = 1000;
-               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-               var i = Math.floor(Math.log(d) / Math.log(k));
-               return parseFloat((d / Math.pow(k, i)).toFixed(2)) + " " + units[i];
+               return formatFreeBytes(data.maxvolbytes, data.volbytes);
             }
+         },
+         {
+            "targets": 10,
+            "visible": false,
+            "searchable": false
          }
       ]
 

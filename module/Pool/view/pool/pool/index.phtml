@@ -62,6 +62,8 @@ $this->headTitle($title);
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
@@ -73,72 +75,45 @@ var table= $('#pools').DataTable( {
       "dataSrc": ""
    },
    "columns" : [
-      { "data": null },
-      { "data": null },
-      { "data": null },
-      { "data": null },
-      { "data": null },
-      { "data": null },
-      { "data": null }
+      { "data": "name" },
+      { "data": "pooltype" },
+      { "data": "numvols" },
+      { "data": "maxvols" },
+      { "data": "volretention" },
+      { "data": "maxvoljobs" },
+      { "data": "maxvolbytes", "type": "file-size" },
+      { "data": "volretention" }
    ],
    "paging":   true,
    "ordering": true,
    "info":     true,
    "pagingType": "full_numbers",
    "stateSave": true,
+   "order": [[0, 'asc']],
    "columnDefs": [
       {
          "targets": 0,
-         "data": null,
          "render": function(data, type, full, meta) {
-            return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data.name+'">'+data.name+'</a>';
-         }
-      },
-      {
-         "targets": 1,
-         "data": null,
-         "render": function(data, type, full, meta) {
-            return data.pooltype;
-         }
-      },
-      {
-         "targets": 2,
-         "data": null,
-         "render": function(data, type, full, meta) {
-            return data.numvols;
-         }
-      },
-      {
-         "targets": 3,
-         "data": null,
-         "render": function(data, type, full, meta) {
-            return data.maxvols;
+            return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
          }
       },
       {
          "targets": 4,
-         "data": null,
+         "orderData": 7,
          "render": function(data, type, full, meta) {
-            return Math.round((data.volretention / 60 / 60 / 24)) + ' days';
-         }
-      },
-      {
-         "targets": 5,
-         "data": null,
-         "render": function(data, type, full, meta) {
-            return data.maxvoljobs;
+            return formatRetention(data);
          }
       },
       {
          "targets": 6,
-         "data": null,
          "render": function(data, type, full, meta) {
-            if(data.maxvolbytes == 0) return "-";
-               var k = 1000;
-               var units = ["B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB"];
-               var i = Math.floor(Math.log(data.maxvolbytes) / Math.log(k));
-               return parseFloat((data.maxvolbytes / Math.pow(k, i)).toFixed(2)) + " " + units[i];
-            }
+            return formatBytes(data);
+         }
+      },
+      {
+         "targets": 7,
+         "visible": false,
+         "searchable": false
       }
    ]
 } );

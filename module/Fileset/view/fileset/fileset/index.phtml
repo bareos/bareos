@@ -68,35 +68,27 @@ $this->headTitle($title);
          "dataSrc": ""
       },
       "columns": [
+         { "data": "filesetid" },
          { "data": null },
-         { "data": null },
-         { "data": null },
+         { "data": "createtime" },
       ],
       "paging":   true,
       "ordering": true,
       "info":     true,
       "pagingType": "full_numbers",
       "stateSave": true,
+      "order": [[0, 'desc']],
       "columnDefs": [
          {
             "targets": 0,
-            "data": null,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.filesetid+'</a>';
+               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data+'">'+data+'</a>';
             }
          },
          {
             "targets": 1,
-            "data": null,
             "render": function(data, type, full, meta) {
                return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.fileset+'</a>';
-            }
-         },
-         {
-            "targets": 2,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return data.createtime;
             }
          }
       ]
