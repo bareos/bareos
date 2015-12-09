@@ -119,11 +119,6 @@ rather than simultaneously.
       still defined in the current director configuration. Otherwise
       you'll get a fatal error.
 
-\item It is possible to get into a resource deadlock where Bareos does
-      not find enough drives to simultaneously read and write all the
-      Volumes needed to do Migrations. For the moment, you must take
-      care as all the resource deadlock algorithms are not yet implemented.
-
 \item Setting the Migration High Bytes watermark is not sufficient
       for migration to take place. In addition, you must define
       and schedule a migration job which looks for jobs that can
