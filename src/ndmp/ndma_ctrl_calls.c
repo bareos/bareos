@@ -610,6 +610,19 @@ ndmca_mover_stop (struct ndm_session *sess)
 }
 
 int
+ndmca_connect_close (struct ndm_session *sess)
+{
+	struct ndmconn *	conn = sess->plumb.tape;
+	int			rc;
+
+	NDMC_WITH_NO_REPLY(ndmp9_connect_close, NDMP9VER)
+		rc = NDMC_CALL(conn);
+	NDMC_ENDWITH
+
+	return rc;
+}
+
+int
 ndmca_mover_set_window (struct ndm_session *sess,
   uint64_t offset, uint64_t length)
 {

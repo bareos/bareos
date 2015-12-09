@@ -424,6 +424,7 @@ extern int	ndmca_op_unload_tape (struct ndm_session *sess);
 
 
 /* ndma_ctrl_calls.c */
+extern int	ndmca_connect_close (struct ndm_session *sess);
 extern int	ndmca_data_get_state (struct ndm_session *sess);
 extern int	ndmca_data_connect (struct ndm_session *sess);
 extern int	ndmca_data_listen (struct ndm_session *sess);

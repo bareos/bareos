@@ -112,7 +112,12 @@ ndmca_op_recover_files (struct ndm_session *sess)
 			  ca->recover_log_file_error,
 			  ca->recover_log_file_count,
 			  n_nlist);
-		if (ca->recover_log_file_ok < n_nlist) {
+	   if (ca->recover_log_file_ok < n_nlist) {
+		ndmalogf (sess, 0, 0,
+			  "LOG_FILE messages: WARNING OK(%d) < (%d)Expected in namelist",
+			  ca->recover_log_file_ok, n_nlist);
+		}
+		if (ca->recover_log_file_ok < ca->recover_log_file_count) {
 		    rc = 1;
 		}
 	    } else {
@@ -861,6 +866,8 @@ ndmca_monitor_shutdown (struct ndm_session *sess)
 			"Operation did not stop, something wrong");
 		return -1;
 	}
+
+	ndmca_connect_close (sess);
 
 	return finish;
 }
