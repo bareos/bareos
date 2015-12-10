@@ -715,7 +715,6 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
            jcr->Job, dt, (int)jcr->res.job->RescheduleInterval, dt2);
       dird_free_jcr_pointers(jcr);     /* partial cleanup old stuff */
       jcr->JobStatus = -1;
-      jcr->setJobStatus(JS_WaitStartTime);
       jcr->SDJobStatus = 0;
       jcr->JobErrors = 0;
       if (!allow_duplicate_job(jcr)) {
@@ -726,6 +725,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
        * Only jobs with no output or Incomplete jobs can run on same JCR
        */
       if (jcr->JobBytes == 0) {
+         update_job_end(jcr, JS_WaitStartTime);
          Dmsg2(2300, "Requeue job=%d use=%d\n", jcr->JobId, jcr->use_count());
          V(jq->mutex);
          jcr->jr.RealEndTime = 0;
@@ -743,6 +743,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
           * conflicts.  We now create a new job, copying the
           * appropriate fields.
           */
+         jcr->setJobStatus(JS_WaitStartTime);
          njcr = new_jcr(sizeof(JCR), dird_free_jcr);
          set_jcr_defaults(njcr, jcr->res.job);
          njcr->reschedule_count = jcr->reschedule_count;
