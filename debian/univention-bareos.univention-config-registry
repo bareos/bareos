@@ -9,6 +9,8 @@ Variables: bareos/max_full_volume_bytes
 Variables: bareos/max_full_volumes
 Variables: hostname
 Variables: domainname
+Variables: bareos/webui/console/user1/username
+Variables: bareos/webui/console/user1/password
 
 Type: file
 File: etc/bareos/bareos-sd.conf

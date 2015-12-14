@@ -9,22 +9,24 @@ NotifyVendor=True
 Description=scalable open source network backup solution
 LongDescription=Bareos (Backup Archiving Recovery Open Sourced) is a reliable,
   network-based open source software for backup, archiving and recovery
-  of data for all well-established operating systems. In the year 2010
-  emerged from the Bacula Project, Bareos was and is actively developed as
-  a fork and enriched with lots of new features.  Thus Bareos today offers
-  among other features LTO hardware encryption, bandwitdth limitation and
-  new practical console commands. The source code of Bareos is available
-  on Github under the AGPL v3 license. Additionally
+  of data for all well-established operating systems. The source code of
+  Bareos is available on Github under the AGPL v3 license. Additionally
   Bareos offers binary package repositories for the most important Linux
-  distributions as well as for Windows.
+  distributions as well as for Windows. ATTENTION: After installation,
+  you need to review at least the UCR variables
+  bareos/filestorage, bareos/backup_myself and bareos/max_*_volumes
+  for proper operation.
+  Set the login credentials for the webui with the UCR variables
+  bareos/webui/console/user1/username and bareos/webui/console/user1/password.
 
-Screenshot=
+Screenshot=bareos-webui_screenshot.png
 Categories=Administration
 
 Vendor=Bareos GmbH und Co. KG
 Website=http://www.bareos.org/en/HOWTO/articles/bareos-univention-documentation.html
 WebsiteVendor=http://www.bareos.com
-Contact=info@bareos.com
+SupportURL=http://www.bareos.com/en/support.html
+Contact=sales@bareos.com
 NotificationEmail=info@bareos.com
 LicenseFile=LICENSE_AGREEMENT
 
@@ -37,20 +39,21 @@ DefaultPackagesMaster=univention-bareos-schema
 ServerRole=domaincontroller_master,domaincontroller_backup,domaincontroller_slave
 
 # whether a "Shop" button is displayed in the App details, leading to the ShopURL
-#UseShop=True
+UseShop=True
 
 # URL that the user is directed to. Only makes sense in combination with UseShop=True.
-#ShopURL=https://shop.maintain.com/application
+#ShopURL=https://www.bareos.com/en/Buy.html
 
 [de]
 Description=Leistungsfähige Open-Source-Backup-Lösung
 LongDescription=Bareos (Backup Archiving Recovery Open Sourced) ist eine zuverlässige,
   netzwerkübergreifende Open Source Software zur Sicherung, Archivierung
-  und Wiederherstellung von Daten aller gängigen Betriebssysteme. Im Jahr
-  2010 hervorgegangen aus dem Projekt Bacula wurde und wird Bareos als
-  Fork aktiv weiterentwickelt und mit vielen neuen Features angereichert.
-  So bietet Bareos heute unter anderem eine LTO Hardware-Verschlüsselung,
-  eine Bandbreitenbegrenzung und neue praktische Konsolen-Kommandos. Der
+  und Wiederherstellung von Daten aller gängigen Betriebssysteme. Der
   Quellcode von Bareos ist auf Github verfügbar und steht unter der Lizenz
   AGPL v3. Zudem stellt Bareos fertige Pakete über Repositories für die
   wichtigsten Linux Distributionen sowie für Windows bereit.
+  ACHTUNG: Nach der Installation sollten die UCR-Variablen
+  bareos/filestorage, bareos/backup_myself und bareos/max_*_volumes geprüft werden,
+  um einen korrekten Betrieb zu gewährleisten. Die anzupassenden Anmeldedaten für
+  die webui sind in den UCR-Variablen bareos/webui/console/user1/username und
+  bareos/webui/console/user1/password hinterlegt.

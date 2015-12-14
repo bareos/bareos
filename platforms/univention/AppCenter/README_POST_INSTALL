@@ -4,4 +4,7 @@ After installation, the Bareos Director is ready for backup jobs.
 Before you continue, you should review the UCR variables
 bareos/filestorage, bareos/backup_myself and bareos/max_*_volume*,
 to limit the local disk space it uses.
+In addition to that, you should also review the Bareos Webui related
+UCR variables bareos/webui/console/user1/* and set them to your
+needs.
 </p>
