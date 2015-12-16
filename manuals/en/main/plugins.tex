@@ -316,7 +316,7 @@ The following additional security is needed for the following operating systems:
  \end{itemize}
 \end{itemize}
 
-You can also set up the extra capability on bscrypto and bareos-sd by running the following commands:
+You can also set up the extra capability on \command{bscrypto} and \command{bareos-sd} by running the following commands:
 
 \begin{commands}{}
 setcap cap_sys_rawio=ep bscrypto
@@ -330,7 +330,13 @@ getcap -v bscrypto
 getcap -v bareos-sd
 \end{commands}
 
-\command{getcap} and \command{setcap} are part of libcap-progs.\\
+\command{getcap} and \command{setcap} are part of libcap-progs.
+
+If \command{bareos-sd} does not have the appropriate capabilities, all
+other tape operations may still work correctly, but you will
+get \bquote{Unable to perform SG\_IO ioctl} errors.
+
+
 
 \subparagraph{Solaris (USCSI ioctl interface):} The user running the storage daemon needs the following additional privileges:
 \index[sd]{Platform!Solaris!Privileges}
