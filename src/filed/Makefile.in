@@ -74,7 +74,7 @@ bareos-fd: Makefile $(SVROBJS) \
 	   ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../findlib -o $@ $(SVROBJS) \
+	$(LIBTOOL_LINK) $(CXX) -L../lib -L../findlib $(WLDFLAGS) $(LDFLAGS) -o $@ $(SVROBJS) \
 	  $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
 	  $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
@@ -83,7 +83,7 @@ static-bareos-fd: Makefile $(SVROBJS) \
 		  ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE) \
 		  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE)
 	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -static -L../lib -L../findlib -o $@ $(SVROBJS) \
+	$(LIBTOOL_LINK) $(CXX) -static -L../lib -L../findlib $(WLDFLAGS) $(LDFLAGS) -o $@ $(SVROBJS) \
 	   $(FDLIBS) -lbareosfind -lbareoscfg -lbareos -lm $(LIBS) \
 	   $(DLIB) $(WRAPLIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS)
 	strip $@
