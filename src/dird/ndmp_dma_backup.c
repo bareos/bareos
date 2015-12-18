@@ -237,13 +237,19 @@ static inline bool fill_backup_environment(JCR *jcr,
    }
 
    /*
-    * If we have a paired storage definition we put the storage daemon
-    * auth key and the filesystem into the tape device name of the
-    * NDMP session. This way the storage daemon can link the NDMP
-    * data and the normal save session together.
+    * If we have a paired storage definition we put the
+    * - Storage Daemon Auth Key
+    * - Filesystem
+    * - Dumplevel
+    * into the tape device name of the  NDMP session. This way the storage
+    * daemon can link the NDMP data and the normal save session together.
     */
    if (jcr->store_bsock) {
-      Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
+      if (nbf_options && nbf_options->uses_level) {
+         Mmsg(tape_device, "%s@%s%%%d", jcr->sd_auth_key, filesystem, jcr->DumpLevel);
+      } else {
+         Mmsg(tape_device, "%s@%s", jcr->sd_auth_key, filesystem);
+      }
       job->tape_device = bstrdup(tape_device.c_str());
    }
 
@@ -528,22 +534,6 @@ bool do_ndmp_backup(JCR *jcr)
          nis->jcr = jcr;
          nis->save_filehist = jcr->res.job->SaveFileHist;
 
-         /*
-          * The full ndmp archive has a virtual filename, we need it to hardlink the individual
-          * file records to it. So we allocate it here once so its available during the whole
-          * NDMP session.
-          */
-         if (bstrcasecmp(jcr->backup_format, "dump")) {
-            Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
-         } else {
-            Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
-         }
-
-         if (nis->virtual_filename) {
-            free(nis->virtual_filename);
-         }
-         nis->virtual_filename = bstrdup(virtual_filename.c_str());
-
          ndmp_sess.param->log.ctx = nis;
          ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
 
@@ -565,6 +555,22 @@ bool do_ndmp_backup(JCR *jcr)
                                       &ndmp_sess.control_acb->job)) {
             goto cleanup;
          }
+
+         /*
+          * The full ndmp archive has a virtual filename, we need it to hardlink the individual
+          * file records to it. So we allocate it here once so its available during the whole
+          * NDMP session.
+          */
+         if (bstrcasecmp(jcr->backup_format, "dump")) {
+            Mmsg(virtual_filename, "/@NDMP%s%%%d", nis->filesystem, jcr->DumpLevel);
+         } else {
+            Mmsg(virtual_filename, "/@NDMP%s", nis->filesystem);
+         }
+
+         if (nis->virtual_filename) {
+            free(nis->virtual_filename);
+         }
+         nis->virtual_filename = bstrdup(virtual_filename.c_str());
 
          ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
          if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {

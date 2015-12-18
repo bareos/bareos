@@ -707,7 +707,15 @@ ndmconn_call (struct ndmconn *conn, struct ndmp_xa_buf *xa)
 
 	conn->last_reply_error = ndmnmb_get_reply_error (&xa->reply);
 
-	if (conn->last_reply_error != NDMP9_NO_ERR) {
+	switch (conn->last_reply_error) {
+        case NDMP9_NO_ERR:
+        case NDMP9_DEV_NOT_OPEN_ERR:
+		/*
+		 * We allow NDMP9_DEV_NOT_OPEN_ERR as answer to NDMP4_TAPE_GET_STATE
+		 * This always happens during ndmca_monitor_shutdown()
+		 */
+		break;
+        default:
 		conn->last_call_status = NDMCONN_CALL_STATUS_REPLY_ERROR;
 		ndmconn_set_err_msg (conn, "reply-error");
 		return NDMCONN_CALL_STATUS_REPLY_ERROR;

@@ -122,7 +122,7 @@ static inline char *lookup_fileindex(JCR *jcr, int32_t FileIndex)
  */
 static inline void add_to_namelist(struct ndm_job_param *job,
                                    char *filename,
-                                   char *restore_prefix,
+                                   const char *restore_prefix,
                                    char *name,
                                    char *other_name,
                                    int64_t node)
@@ -155,8 +155,8 @@ static inline void add_to_namelist(struct ndm_job_param *job,
 /*
  * See in the tree with selected files what files were selected to be restored.
  */
-static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job,
-                                       int32_t FileIndex, char *restore_prefix)
+static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int32_t FileIndex,
+                                       const char *restore_prefix, const char *ndmp_filesystem)
 {
    int len;
    int cnt = 0;
@@ -186,8 +186,8 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job,
             /*
              * See if we need to strip the prefix from the filename.
              */
-            len = strlen(restore_prefix);
-            if (bstrncmp(restore_pathname.c_str(), restore_prefix, len)) {
+            len = strlen(ndmp_filesystem);
+            if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
                add_to_namelist(job,  restore_pathname.c_str() + len, restore_prefix,
                                (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
             } else {
@@ -235,7 +235,7 @@ static inline bool fill_restore_environment(JCR *jcr,
    ndmp9_pval pv;
    FILESETRES *fileset;
    char *restore_pathname,
-        *original_pathname,
+        *ndmp_filesystem,
         *restore_prefix,
         *level;
    POOL_MEM tape_device;
@@ -257,13 +257,13 @@ static inline bool fill_restore_environment(JCR *jcr,
       /*
        * Skip over the /@NDMP prefix.
        */
-      original_pathname = restore_pathname + 6;
+      ndmp_filesystem = restore_pathname + 6;
    }
 
    /*
     * See if there is a level embedded in the pathname.
     */
-   bp = strrchr(original_pathname, '%');
+   bp = strrchr(ndmp_filesystem, '%');
    if (bp) {
       *bp++ = '\0';
       level = bp;
@@ -312,7 +312,7 @@ static inline bool fill_restore_environment(JCR *jcr,
        * Tell the data engine what was backuped.
        */
       pv.name = ndmp_env_keywords[NDMP_ENV_KW_FILESYSTEM];
-      pv.value = original_pathname;
+      pv.value = ndmp_filesystem;
       ndma_store_env_list(&job->env_tab, &pv);
    }
 
@@ -334,7 +334,7 @@ static inline bool fill_restore_environment(JCR *jcr,
          /*
           * See if the original path matches.
           */
-         if (bstrcasecmp(item, original_pathname)) {
+         if (bstrcasecmp(item, ndmp_filesystem)) {
             int k, l;
             FOPTS *fo;
 
@@ -383,10 +383,10 @@ static inline bool fill_restore_environment(JCR *jcr,
           * Use the restore_prefix as an relative restore prefix.
           */
          if (strlen(restore_prefix) == 1 && *restore_prefix == '/') {
-            pm_strcpy(destination_path, original_pathname);
+            pm_strcpy(destination_path, ndmp_filesystem);
          } else {
-            pm_strcpy(destination_path, restore_prefix);
-            pm_strcat(destination_path, original_pathname);
+            pm_strcpy(destination_path, ndmp_filesystem);
+            pm_strcat(destination_path, restore_prefix);
          }
       }
    } else {
@@ -394,7 +394,7 @@ static inline bool fill_restore_environment(JCR *jcr,
          /*
           * Use the original pathname as restore prefix.
           */
-         pm_strcpy(destination_path, original_pathname);
+         pm_strcpy(destination_path, ndmp_filesystem);
       } else {
          /*
           * Use the restore_prefix as an absolute restore prefix.
@@ -404,12 +404,12 @@ static inline bool fill_restore_environment(JCR *jcr,
    }
 
    pv.name = ndmp_env_keywords[NDMP_ENV_KW_PREFIX];
-   pv.value = destination_path.c_str();
+   pv.value = ndmp_filesystem;
    ndma_store_env_list(&job->env_tab, &pv);
 
    if (!nbf_options || nbf_options->needs_namelist) {
       if (set_files_to_restore(jcr, job, current_fi,
-                               destination_path.c_str()) == 0) {
+                               destination_path.c_str(), ndmp_filesystem) == 0) {
          /*
           * There is no specific filename selected so restore everything.
           */
@@ -644,145 +644,156 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
       Dmsg0(50, "Storage daemon connection OK\n");
 
       /*
-       * Walk each fileindex of the current BSR record. Each different fileindex is
-       * a seperate NDMP stream.
+       * Walk over each bsr record
        */
       cnt = 0;
-      for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
-         for (current_fi = fileindex->findex; current_fi <= fileindex->findex2; current_fi++) {
-            /*
-             * See if this is the first Restore NDMP stream or not. For NDMP we can have multiple Backup
-             * runs as part of the same Job. When we are restoring data from a Native Storage Daemon
-             * we let it know to expect a next restore session. It will generate a new authorization
-             * key so we wait for the nextrun_ready conditional variable to be raised by the msg_thread.
-             */
-            if (jcr->store_bsock && cnt > 0) {
-               jcr->store_bsock->fsend("nextrun");
-               P(mutex);
-               pthread_cond_wait(&jcr->nextrun_ready, &mutex);
-               V(mutex);
+      for (bsr = jcr->bsr; bsr; bsr = bsr->next) {
+         /*
+          * Walk each fileindex of the current BSR record. Each different fileindex is
+          * a separate NDMP stream.
+          */
+         for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
+            for (current_fi = fileindex->findex; current_fi <= fileindex->findex2; current_fi++) {
+               /*
+                * See if this is the first Restore NDMP stream or not. For NDMP we can have multiple Backup
+                * runs as part of the same Job. When we are restoring data from a Native Storage Daemon
+                * we let it know to expect a next restore session. It will generate a new authorization
+                * key so we wait for the nextrun_ready conditional variable to be raised by the msg_thread.
+                */
+               if (jcr->store_bsock && cnt > 0) {
+                  jcr->store_bsock->fsend("nextrun");
+                  P(mutex);
+                  pthread_cond_wait(&jcr->nextrun_ready, &mutex);
+                  V(mutex);
+               }
+
+               /*
+                * Perform the actual NDMP job.
+                * Initialize a new NDMP session
+                */
+               memset(&ndmp_sess, 0, sizeof(ndmp_sess));
+               ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
+               ndmp_sess.control_agent_enabled = 1;
+
+               ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
+               memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
+               ndmp_sess.param->log.deliver = ndmp_loghandler;
+               ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
+               nis->jcr = jcr;
+               ndmp_sess.param->log.ctx = nis;
+               ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
+
+               /*
+                * Initialize the session structure.
+                */
+               if (ndma_session_initialize(&ndmp_sess)) {
+                  goto cleanup_ndmp;
+               }
+               session_initialized = true;
+
+               /*
+                * Copy the actual job to perform.
+                */
+               jcr->jr.FileIndex = current_fi;
+               if (bsr->sessid && bsr->sesstime) {
+                  jcr->jr.VolSessionId = bsr->sessid->sessid;
+                  jcr->jr.VolSessionTime = bsr->sesstime->sesstime;
+               } else {
+                  Jmsg(jcr, M_FATAL, 0, _("Wrong BSR missing sessid and/or sesstime\n"));
+                  goto cleanup_ndmp;
+               }
+
+               memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
+               if (!fill_restore_environment(jcr,
+                        current_fi,
+                        &ndmp_sess.control_acb->job)) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in fill_restore_environment\n"));
+                  goto cleanup_ndmp;
+               }
+
+               ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
+               if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_validate_job\n"));
+                  goto cleanup_ndmp;
+               }
+
+               /*
+                * Commission the session for a run.
+                */
+               if (ndma_session_commission(&ndmp_sess)) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in ndma_session_commission\n"));
+                  goto cleanup_ndmp;
+               }
+
+               /*
+                * Setup the DMA.
+                */
+               if (ndmca_connect_control_agent(&ndmp_sess)) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_connect_control_agent\n"));
+                  goto cleanup_ndmp;
+               }
+
+               ndmp_sess.conn_open = 1;
+               ndmp_sess.conn_authorized = 1;
+
+               /*
+                * Let the DMA perform its magic.
+                */
+               if (ndmca_control_agent(&ndmp_sess) != 0) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmca_control_agent\n"));
+                  goto cleanup_ndmp;
+               }
+
+               /*
+                * See if there were any errors during the restore.
+                */
+               if (!extract_post_restore_stats(jcr, &ndmp_sess)) {
+                  Jmsg(jcr, M_ERROR, 0, _("ERROR in extract_post_restore_stats\n"));
+                  goto cleanup_ndmp;
+               }
+
+               /*
+                * Reset the NDMP session states.
+                */
+               ndma_session_decommission(&ndmp_sess);
+
+               /*
+                * Cleanup the job after it has run.
+                */
+               ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
+               ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
+               ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
+
+               /*
+                * Release any tape device name allocated.
+                */
+               if (ndmp_sess.control_acb->job.tape_device) {
+                  free(ndmp_sess.control_acb->job.tape_device);
+                  ndmp_sess.control_acb->job.tape_device = NULL;
+               }
+
+               /*
+                * Destroy the session.
+                */
+               ndma_session_destroy(&ndmp_sess);
+
+               /*
+                * Free the param block.
+                */
+               free(ndmp_sess.param->log_tag);
+               free(ndmp_sess.param);
+               ndmp_sess.param = NULL;
+
+               /*
+                * Reset the initialized state so we don't try to cleanup again.
+                */
+               session_initialized = false;
+
+               /*
+                * Keep track that we finished this part of the restore.
+                */
+               cnt++;
             }
-
-            /*
-             * Perform the actual NDMP job.
-             * Initialize a new NDMP session
-             */
-            memset(&ndmp_sess, 0, sizeof(ndmp_sess));
-            ndmp_sess.conn_snooping = (me->ndmp_snooping) ? 1 : 0;
-            ndmp_sess.control_agent_enabled = 1;
-
-            ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
-            memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
-            ndmp_sess.param->log.deliver = ndmp_loghandler;
-            ndmp_sess.param->log_level = native_to_ndmp_loglevel(NdmpLoglevel, debug_level, nis);
-            nis->jcr = jcr;
-            ndmp_sess.param->log.ctx = nis;
-            ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");
-
-            /*
-             * Initialize the session structure.
-             */
-            if (ndma_session_initialize(&ndmp_sess)) {
-               goto cleanup_ndmp;
-            }
-            session_initialized = true;
-
-            /*
-             * Copy the actual job to perform.
-             */
-            jcr->jr.FileIndex = current_fi;
-            if (bsr->sessid && bsr->sesstime) {
-               jcr->jr.VolSessionId = bsr->sessid->sessid;
-               jcr->jr.VolSessionTime = bsr->sesstime->sesstime;
-            } else {
-               Jmsg(jcr, M_FATAL, 0, _("Wrong BSR missing sessid and/or sesstime\n"));
-               goto cleanup_ndmp;
-            }
-
-            memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
-            if (!fill_restore_environment(jcr,
-                                          current_fi,
-                                          &ndmp_sess.control_acb->job)) {
-               goto cleanup_ndmp;
-            }
-
-            ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
-            if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
-               goto cleanup_ndmp;
-            }
-
-            /*
-             * Commission the session for a run.
-             */
-            if (ndma_session_commission(&ndmp_sess)) {
-               goto cleanup_ndmp;
-            }
-
-            /*
-             * Setup the DMA.
-             */
-            if (ndmca_connect_control_agent(&ndmp_sess)) {
-               goto cleanup_ndmp;
-            }
-
-            ndmp_sess.conn_open = 1;
-            ndmp_sess.conn_authorized = 1;
-
-            /*
-             * Let the DMA perform its magic.
-             */
-            if (ndmca_control_agent(&ndmp_sess) != 0) {
-               goto cleanup_ndmp;
-            }
-
-            /*
-             * See if there were any errors during the restore.
-             */
-            if (!extract_post_restore_stats(jcr, &ndmp_sess)) {
-               goto cleanup_ndmp;
-            }
-
-            /*
-             * Reset the NDMP session states.
-             */
-            ndma_session_decommission(&ndmp_sess);
-
-            /*
-             * Cleanup the job after it has run.
-             */
-            ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
-            ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
-            ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
-
-            /*
-             * Release any tape device name allocated.
-             */
-            if (ndmp_sess.control_acb->job.tape_device) {
-               free(ndmp_sess.control_acb->job.tape_device);
-               ndmp_sess.control_acb->job.tape_device = NULL;
-            }
-
-            /*
-             * Destroy the session.
-             */
-            ndma_session_destroy(&ndmp_sess);
-
-            /*
-             * Free the param block.
-             */
-            free(ndmp_sess.param->log_tag);
-            free(ndmp_sess.param);
-            ndmp_sess.param = NULL;
-
-            /*
-             * Reset the initialized state so we don't try to cleanup again.
-             */
-            session_initialized = false;
-
-            /*
-             * Keep track that we finished this part of the restore.
-             */
-            cnt++;
          }
       }
 

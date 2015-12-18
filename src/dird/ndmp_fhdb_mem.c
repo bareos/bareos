@@ -555,10 +555,6 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_
       return 0;
    }
 
-   nis->jcr->lock();
-   nis->jcr->JobFiles++;
-   nis->jcr->unlock();
-
    if (nis->save_filehist) {
       N_TREE_ROOT *fhdb_root;
 
@@ -701,6 +697,10 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
 {
    NIS *nis = (NIS *)ixlog->ctx;
 
+   nis->jcr->lock();
+   nis->jcr->JobFiles++;
+   nis->jcr->unlock();
+
    if (nis->save_filehist) {
       int attr_size;
       int8_t FileType = 0;
@@ -819,8 +819,7 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
 void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog)
 {
    NIS *nis = (NIS *)ixlog->ctx;
-
-   if (nis->fhdb_state) {
+   if (nis && nis->fhdb_state) {
       N_TREE_ROOT *fhdb_root;
 
       fhdb_root = ((struct fhdb_state *)nis->fhdb_state)->fhdb_root;
@@ -876,10 +875,19 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
             /*
              * Now we have the full pathname of the file in fname.
              * Store the entry as a hardlinked entry to the original NDMP archive.
+             *
+             * Handling of incremental/differential backups:
+             * During incremental backups, NDMP4_FH_ADD_DIR is sent for ALL files
+             * Only for files being backed up, we also get NDMP4_FH_ADD_NODE
+             * So we skip entries that do not have any attribute
              */
-            Dmsg2(100, "==> %s [%s]\n", fname.c_str(), node->attr);
-            ndmp_store_attribute_record(nis->jcr, fname.c_str(), nis->virtual_filename,
-                                        node->attr, node->FileType, node->inode, node->Offset);
+            if (node->attr) {
+               Dmsg2(100, "==> %s [%s]\n", fname.c_str(), node->attr);
+               ndmp_store_attribute_record(nis->jcr, fname.c_str(), nis->virtual_filename,
+                                           node->attr, node->FileType, node->inode, node->Offset);
+            } else {
+               Dmsg1(100, "Skipping %s because it has no attributes\n", fname.c_str());
+            }
          }
       }
 

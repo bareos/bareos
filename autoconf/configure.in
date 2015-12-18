@@ -777,7 +777,6 @@ if test x$TERM_LIB = x ; then
 fi
 
 got_readline="no"
-READLINE_SRC=
 if test x$support_readline = xyes; then
    AC_ARG_WITH(readline,
       AC_HELP_STRING([--with-readline@<:@=DIR@:>@], [specify readline library directory]),
@@ -789,10 +788,10 @@ if test x$support_readline = xyes; then
 	  yes|*)
 	     if test -f ${with_readline}/readline.h; then
 		CONS_INC="-I${with_readline}"
-		CONS_LDFLAGS="-L$with_readline"
+		CONS_LIBS="-L$with_readline"
 	     elif test -f ${with_readline}/include/readline/readline.h; then
 		CONS_INC="-I${with_readline}/include/readline"
-		CONS_LDFLAGS="-L${with_readline}/lib"
+		CONS_LIBS="-L${with_readline}/lib"
 		with_readline="${with_readline}/include/readline"
 	     else
 		CONS_INC="-I/usr/include/readline"
@@ -802,7 +801,7 @@ if test x$support_readline = xyes; then
 	     AC_CHECK_HEADER(${with_readline}/readline.h,
 		[
 		    AC_DEFINE(HAVE_READLINE, 1, [Define to 1 if readline support should be enabled])
-		    CONS_LIBS="-lreadline -lhistory $TERM_LIB"
+		    CONS_LIBS="${CONS_LIBS} -lreadline -lhistory ${TERM_LIB}"
 		    got_readline="yes"
 		], [
 		    echo " "
@@ -819,24 +818,12 @@ if test x$support_readline = xyes; then
 		AC_DEFINE(HAVE_READLINE, 1, [Define to 1 if readline support should be enabled])
 		got_readline="yes"
 		CONS_INC="-I/usr/include/readline"
-		CONS_LIBS="-lreadline $TERM_LIB"
+		CONS_LIBS="${CONS_LIBS} -lreadline ${TERM_LIB}"
 	    ], [
-		dnl Did not find standard library, so try Bareos's default
-		AC_CHECK_HEADER(${TOP_DIR}/depkgs/readline/readline.h,
-		    [
-		        AC_DEFINE(HAVE_READLINE, 1, [Define to 1 if readline support should be enabled])
-			got_readline="yes"
-			CONS_INC="-I${TOP_DIR}/depkgs/readline"
-			CONS_LIBS="-lreadline -lhistory $TERM_LIB"
-			CONS_LDFLAGS="-L${TOP_DIR}/depkgs/readline"
-			PRTREADLINE_SRC="${TOP_DIR}/depkgs/readline"
-		    ], [
-			echo " "
-			echo "readline.h not found. readline turned off ..."
-			echo " "
-		    ]
-		)
-	    ]
+                echo " "
+                echo "readline.h not found. readline turned off ..."
+                echo " "
+            ]
 	 )
       ]
    )
@@ -845,8 +832,6 @@ fi
 AC_SUBST(CONS_INC)
 AC_SUBST(CONS_SRC)
 AC_SUBST(CONS_LIBS)
-AC_SUBST(CONS_LDFLAGS)
-AC_SUBST(READLINE_SRC)
 
 dnl End of readline/conio stuff
 
@@ -4805,7 +4790,7 @@ Configuration on `date`:
 
    Large file support:           $largefile_support
    Bareos conio support:         ${got_conio} ${CONS_LIBS}
-   readline support:             ${got_readline} ${PRTREADLINE_SRC}
+   readline support:             ${got_readline}
    TCP Wrappers support:         ${TCPW_MSG} ${WRAPLIBS}
    TLS support:                  ${have_tls}
    Encryption support:           ${have_crypto}

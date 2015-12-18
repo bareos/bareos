@@ -333,6 +333,8 @@ struct ndmp_msg_buf {
 	  ndmp9_error ndmp9_error_reply;
 	  ndmp9_connect_open_request ndmp9_connect_open_request_body;
 	  ndmp9_connect_open_reply ndmp9_connect_open_reply_body;
+	  ndmp9_connect_close_request ndmp9_connect_close_request_body;
+	  ndmp9_connect_close_reply ndmp9_connect_close_reply_body;
 	  ndmp9_connect_client_auth_request ndmp9_connect_client_auth_request_body;
 	  ndmp9_connect_client_auth_reply ndmp9_connect_client_auth_reply_body;
 	  ndmp9_connect_server_auth_request ndmp9_connect_server_auth_request_body;

@@ -1604,6 +1604,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
          ua->info_msg(_("Warning default storage overridden by \"%s\" on command line.\n"),
                       store->name());
          rx.store = store;
+         bstrncpy(Storage, store->name(), MAX_NAME_LENGTH);
          Dmsg1(200, "Set store=%s\n", rx.store->name());
       }
       return;
