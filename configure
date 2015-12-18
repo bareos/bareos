@@ -762,8 +762,6 @@ UNITTEST_DIRS
 CMOCKA_CFLAGS
 CMOCKA_LIBS
 DEBIAN_CONTROL
-READLINE_SRC
-CONS_LDFLAGS
 CONS_LIBS
 CONS_SRC
 CONS_INC
@@ -22620,7 +22618,6 @@ if test x$TERM_LIB = x ; then
 fi
 
 got_readline="no"
-READLINE_SRC=
 if test x$support_readline = xyes; then
 
 # Check whether --with-readline was given.
@@ -22633,10 +22630,10 @@ if test "${with_readline+set}" = set; then :
 	  yes|*)
 	     if test -f ${with_readline}/readline.h; then
 		CONS_INC="-I${with_readline}"
-		CONS_LDFLAGS="-L$with_readline"
+		CONS_LIBS="-L$with_readline"
 	     elif test -f ${with_readline}/include/readline/readline.h; then
 		CONS_INC="-I${with_readline}/include/readline"
-		CONS_LDFLAGS="-L${with_readline}/lib"
+		CONS_LIBS="-L${with_readline}/lib"
 		with_readline="${with_readline}/include/readline"
 	     else
 		CONS_INC="-I/usr/include/readline"
@@ -22650,7 +22647,7 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 
 $as_echo "#define HAVE_READLINE 1" >>confdefs.h
 
-		    CONS_LIBS="-lreadline -lhistory $TERM_LIB"
+		    CONS_LIBS="${CONS_LIBS} -lreadline -lhistory ${TERM_LIB}"
 		    got_readline="yes"
 
 else
@@ -22676,33 +22673,13 @@ $as_echo "#define HAVE_READLINE 1" >>confdefs.h
 
 		got_readline="yes"
 		CONS_INC="-I/usr/include/readline"
-		CONS_LIBS="-lreadline $TERM_LIB"
+		CONS_LIBS="${CONS_LIBS} -lreadline ${TERM_LIB}"
 
 else
 
-				as_ac_Header=`$as_echo "ac_cv_header_${TOP_DIR}/depkgs/readline/readline.h" | $as_tr_sh`
-ac_fn_c_check_header_mongrel "$LINENO" "${TOP_DIR}/depkgs/readline/readline.h" "$as_ac_Header" "$ac_includes_default"
-if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
-
-
-$as_echo "#define HAVE_READLINE 1" >>confdefs.h
-
-			got_readline="yes"
-			CONS_INC="-I${TOP_DIR}/depkgs/readline"
-			CONS_LIBS="-lreadline -lhistory $TERM_LIB"
-			CONS_LDFLAGS="-L${TOP_DIR}/depkgs/readline"
-			PRTREADLINE_SRC="${TOP_DIR}/depkgs/readline"
-
-else
-
-			echo " "
-			echo "readline.h not found. readline turned off ..."
-			echo " "
-
-
-fi
-
-
+                echo " "
+                echo "readline.h not found. readline turned off ..."
+                echo " "
 
 
 fi
@@ -22713,8 +22690,6 @@ fi
 fi
 
 fi
-
-
 
 
 
@@ -35995,7 +35970,7 @@ Configuration on `date`:
 
    Large file support:           $largefile_support
    Bareos conio support:         ${got_conio} ${CONS_LIBS}
-   readline support:             ${got_readline} ${PRTREADLINE_SRC}
+   readline support:             ${got_readline}
    TCP Wrappers support:         ${TCPW_MSG} ${WRAPLIBS}
    TLS support:                  ${have_tls}
    Encryption support:           ${have_crypto}
