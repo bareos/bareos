@@ -26,7 +26,6 @@ GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 CONS_INC = @CONS_INC@
 CONS_LIBS = @CONS_LIBS@
-CONS_LDFLAGS = @CONS_LDFLAGS@
 
 JANSSON_CPPFLAGS = @JANSSON_INC@
 
@@ -50,13 +49,13 @@ console_conf.o: console_conf.c
 	$(NO_ECHO)$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(CONS_INC) $(JANSSON_CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 bconsole: Makefile $(CONSOBJS) ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
+	      $(DLIB) -lbareoscfg -lbareos -lm $(CONS_LIBS) $(LIBS) $(GETTEXT_LIBS) \
 	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 static-bconsole: Makefile $(CONSOBJS) ../lib/libbareos.a ../lib/libbareoscfg$(DEFAULT_ARCHIVE_TYPE)
-	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) $(CONS_LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
-	      $(DLIB) $(CONS_LIBS) -lbareoscfg -lbareos -lm $(LIBS) $(GETTEXT_LIBS) \
+	$(LIBTOOL_LINK) $(CXX) -static $(LDFLAGS) -L../lib -L../cats -o $@ $(CONSOBJS) \
+	      $(DLIB) -lbareoscfg -lbareos -lm $(CONS_LIBS) $(LIBS) $(GETTEXT_LIBS) \
 	      $(OPENSSL_LIBS) $(GNUTLS_LIBS)
 	strip $@
 
