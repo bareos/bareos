@@ -70,7 +70,7 @@ list jobs
 @#
 @$out ${cwd}/tmp/log2.out
 list volumes
-restore where=${cwd}/tmp/bareos-restores select storage=DiskChanger
+restore where=${cwd}/tmp/bareos-restores select
 unmark *
 mark *
 done
