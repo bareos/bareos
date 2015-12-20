@@ -47,10 +47,11 @@
  * $Id: ndmp.x,v 1.11 1998/05/26 03:52:12 tim Exp $
  */
 
+%#ifdef __clang__
+%#pragma clang diagnostic ignored "-Wunused-variable"
+%#elif __GNUC__
 %#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 %#pragma GCC diagnostic ignored "-Wunused-variable"
-%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 470
-%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
 %#endif
 %#endif
 
@@ -60,7 +61,7 @@ const NDMP3VER = 3;
 const NDMP3PORT = 10000;
 
 %#define ndmp3_u_quad uint64_t
-%extern bool_t xdr_ndmp3_u_quad();
+%extern bool_t xdr_ndmp3_u_quad(register XDR *xdrs, ndmp3_u_quad *objp);
 
 struct _ndmp3_u_quad
 {
