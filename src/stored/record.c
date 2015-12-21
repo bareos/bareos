@@ -533,7 +533,7 @@ bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
 
       Dmsg9(890, "%s() state=%d (%s) FI=%s SessId=%d Strm=%s len=%d "
             "block_navail=%d remainder=%d\n",
-            __func__, rec->state, record_state_to_ascii(rec->state),
+            __PRETTY_FUNCTION__, rec->state, record_state_to_ascii(rec->state),
             FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
             stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len,
             block_write_navail(block), rec->remainder);
