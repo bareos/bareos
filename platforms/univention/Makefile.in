@@ -14,9 +14,11 @@ all:
 	@$(MKDIR)           ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/univention-bareos.ini ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/LICENSE_AGREEMENT     ../../AppCenter/
-	$(INSTALL_DATA)    AppCenter/README_POST_INSTALL   ../../AppCenter/
+	$(INSTALL_DATA)    AppCenter/README                ../../AppCenter/
+	$(INSTALL_DATA)    AppCenter/README_DE             ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/bareos-webui_screenshot.png  ../../AppCenter/
-	$(INSTALL_DATA)    ../../src/images/bareos_logo_shadow.png ../../AppCenter/bareos.png
+	$(INSTALL_DATA)    ../../src/images/bareos-logo.svg       ../../AppCenter/
+	$(INSTALL_DATA)    ../../src/images/bareos-logo-full.svg  ../../AppCenter/
 
 install:
 	(cd ../debian; $(MAKE) $@;)
@@ -47,10 +49,8 @@ install:
 	@$(INSTALL_PROGRAM) 63univention-bareos.uinst $(DESTDIR)/usr/lib/univention-uninstall/
 
 	@$(MKDIR)           $(DESTDIR)/usr/share/univention-bareos/
-	@$(INSTALL_PROGRAM) restart_director $(DESTDIR)/usr/share/univention-bareos/
-
-	@$(MKDIR)           $(DESTDIR)/usr/share/univention-bareos-schema/
-	@$(INSTALL_CONFIG)  univention-bareos.schema $(DESTDIR)/usr/share/univention-bareos-schema/univention-bareos.schema
+	@$(INSTALL_PROGRAM) restart_director         $(DESTDIR)/usr/share/univention-bareos/
+	@$(INSTALL_CONFIG)  univention-bareos.schema $(DESTDIR)/usr/share/univention-bareos/
 
 	@$(MKDIR)           $(DESTDIR)/etc/univention/templates/scripts/etc/bareos/
 	@$(INSTALL_PROGRAM) bareos-dir.conf $(DESTDIR)/etc/univention/templates/scripts/etc/bareos/

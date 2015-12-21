@@ -4188,7 +4188,6 @@ debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    DEBIAN_CONTROL_UNIVENTION_BAREOS=/dev/null
-   DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=/dev/null
    PFILES="${PFILES} ${DEBIAN_CONTROL} \
       debian/bareos-bat.install \
       debian/bareos-bat.postinst \
@@ -4243,10 +4242,7 @@ debian|ubuntu|univention)
          ;;
       univention)
          DEBIAN_CONTROL_UNIVENTION_BAREOS=./debian/control.univention-bareos
-         DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=./debian/control.univention-bareos-schema
          PFILES="${PFILES} \
-            debian/univention-bareos-schema.install \
-            debian/univention-bareos-schema.postinst \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
             platforms/univention/Makefile \
@@ -4255,7 +4251,6 @@ debian|ubuntu|univention)
          ;;
    esac
    AC_SUBST_FILE(DEBIAN_CONTROL_UNIVENTION_BAREOS)
-   AC_SUBST_FILE(DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA)
   ;;
 freebsd)
    VER=`echo $DISTVER | cut -c 1`

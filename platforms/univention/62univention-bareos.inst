@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=1
+VERSION=2
 
 . /usr/share/univention-lib/base.sh
 . /usr/share/univention-lib/ldap.sh
@@ -11,8 +11,11 @@ eval "$(univention-config-registry shell)"
 
 ucs_addServiceToLocalhost "Bareos Backup" "$@"
 
+ucs_registerLDAPExtension "$@" --schema /usr/share/univention-bareos/univention-bareos.schema
+
 # keep "cn=custom attributes,cn=univention,$ldap_base" clean
-univention-directory-manager container/cn create "$@" --ignore_exists \
+univention-directory-manager container/cn create "$@" \
+        --ignore_exists \
 		--position "cn=custom attributes,cn=univention,$ldap_base" \
 		--set name="bareos" || die
 
@@ -40,3 +43,4 @@ univention-directory-manager settings/extended_attribute create "$@" \
 joinscript_save_current_version
 
 exit 0
+
