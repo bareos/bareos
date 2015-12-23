@@ -337,7 +337,9 @@ This can be specified in this directive, e.g. for
     \item [\sdBackend{GFAPI}{GlusterFS}]
 	A GlusterFS Storage can be used as Storage backend of Bareos.
 	Prerequistes are a working GlusterFS storage system and the package \package{bareos-storage-glusterfs}.
-	See \url{http://www.gluster.org/} for more information regarding GlusterFS installation and configuration.
+	See \url{http://www.gluster.org/} for more information regarding GlusterFS installation and configuration
+    and specifically \url{https://gluster.readthedocs.org/en/latest/Administrator Guide/Bareos/}
+    for Bareos integration.
 	You can use following snippet to configure it as storage device:
 	\bconfigInput{config/SdDeviceDeviceOptionsGfapi1.conf}
 	Adapt server and volume name to your environment.
