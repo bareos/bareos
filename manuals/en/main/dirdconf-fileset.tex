@@ -417,26 +417,30 @@ The directives within an Options resource may be one of the following:
         Currently only used for Windows, to exclude files defined in the registry key \registrykey{HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\BackupRestore\FilesNotToBackup}, see section \nameref{FilesNotToBackup}.
     }
 
-    \item [compression={\textless}GZIP{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
-    \begin{description}
-        \item [compression=GZIP] \hfill \\
+    \item [compression={\textless}GZIP{\textbar}GZIP1{\textbar}...{\textbar}GZIP9{\textbar}LZO{\textbar}LZFAST{\textbar}LZ4{\textbar}LZ4HC{\textgreater}] \hfill \\
         \index[dir]{compression}
         \index[dir]{Directive!compression}
-        All files saved will be software compressed using the GNU ZIP
-        compression format.  The compression is done on a file by file basis by
-        the File daemon.  If there is a problem reading the tape in a single
-        record of a file, it will at most affect that file and none of the other
-        files on the tape.  Normally this option is {\bf not} needed if you have
-        a modern tape drive as the drive will do its own compression.  In fact,
-        if you specify software compression at the same time you have hardware
-        compression turned on, your files may actually take more space on the
-        volume.
 
-        Software compression is very important if you are writing your Volumes
-        to a file, and it can also be helpful if you have a fast computer but a
-        slow network, otherwise it is generally better to rely your tape drive's
-        hardware compression.  As noted above, it is not generally a good idea
-        to do both software and hardware compression.
+        Configures the software compression to be used by the File Daemon.
+        The compression is done on a file by file basis.
+        %If there is a problem reading the tape in a single
+        %record of a file, it will at most affect that file and none of the other
+        %files on the tape.
+
+        Software compression gets important if you are writing to a device that does not support compression by itself
+        (e.g. hard disks). Otherwise, all modern tape drive do support hardware compression.
+        Software compression can also be helpful to reduce the required network bandwidth,
+        as compression is done on the File Daemon.
+        However, using Bareos software compression and device hardware compression together
+        is not advised, as trying to compress precompressed data is a very CPU-intense task
+        and probably end up in even larger data.
+
+        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} = no option.
+
+    \begin{description}
+        \item [compression=GZIP] \hfill \\
+        All files saved will be software compressed using the GNU ZIP
+        compression format.
 
         Specifying {\bf GZIP} uses the default compression level 6 (i.e.  {\bf
         GZIP} is identical to {\bf GZIP6}).  If you want a different compression
@@ -448,11 +452,7 @@ The directives within an Options resource may be one of the following:
         compression levels greater than six generally give very little extra
         compression and are rather CPU intensive.
 
-        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
-
         \item [compression=LZO] \hfill \\
-        \index[dir]{compression}
-        \index[dir]{Directive!compression}
         All files saved will be software compressed using the LZO
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZO.
@@ -463,11 +463,7 @@ The directives within an Options resource may be one of the following:
 
         Note that Bareos only use one compression level LZO1X-1 specified by LZO.
 
-        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
-
         \item [compression=LZFAST] \hfill \\
-        \index[dir]{compression}
-        \index[dir]{Directive!compression}
         All files saved will be software compressed using the LZFAST
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZFAST.
@@ -476,11 +472,7 @@ The directives within an Options resource may be one of the following:
         compression ratio than GZIP. If your CPU is fast enough you should be able
         to compress your data without making the backup duration longer.
 
-        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
-
         \item [compression=LZ4] \hfill \\
-        \index[dir]{compression}
-        \index[dir]{Directive!compression}
         All files saved will be software compressed using the LZ4
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZ4.
@@ -493,13 +485,9 @@ The directives within an Options resource may be one of the following:
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
         good candidates.
 
-        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
-
-        \warning{As LZ4 compression is not supported by Bacula, you need to set \linkResourceDirective{Fd}{Client}{Compatible} = no.}
+        \warning{As LZ4 compression is not supported by Bacula, make sure \linkResourceDirective{Fd}{Client}{Compatible} = no.}
 
         \item [compression=LZ4HC] \hfill \\
-        \index[dir]{compression}
-        \index[dir]{Directive!compression}
         All files saved will be software compressed using the LZ4HC
         compression format. The compression is done on a file by file basis by
         the File daemon. Everything else about GZIP is true for LZ4.
@@ -512,8 +500,11 @@ The directives within an Options resource may be one of the following:
         the speed of the LZO compression. So for a restore both LZ4 and LZ4HC are
         good candidates.
 
-        You can overwrite this option per Storage resource using the \linkResourceDirective{Dir}{Storage}{Allow Compression} option.
+        \warning{As LZ4 compression is not supported by Bacula, make sure \linkResourceDirective{Fd}{Client}{Compatible} = no.}
+
     \end{description}
+
+
 
  \item [signature={\textless}SHA1{\textbar}MD5{\textgreater}] \hfill \\
     \begin{description}
