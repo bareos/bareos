@@ -273,6 +273,10 @@ static bRC newPlugin(bpContext *ctx)
       return bRC_Error;
    }
 
+   if (!initialize_com_security()) {
+      return bRC_Error;
+   }
+
    p_ctx = (plugin_ctx *)malloc(sizeof(plugin_ctx));
    if (!p_ctx) {
       return bRC_Error;
