@@ -29,7 +29,6 @@
 #ifndef __FIND_H
 #define __FIND_H
 
-#include "jcr.h"
 #include "fileopts.h"
 #include "bfile.h"
 

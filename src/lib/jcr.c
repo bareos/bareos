@@ -646,35 +646,48 @@ void free_jcr(JCR *jcr)
    Dmsg0(dbglvl, "Exit free_jcr\n");
 }
 
+void JCR::set_killable(bool killable)
+{
+   lock();
+
+   my_thread_killable = killable;
+   if (killable) {
+      my_thread_id = pthread_self();
+   } else {
+      memset(&my_thread_id, 0, sizeof(my_thread_id));
+   }
+
+   unlock();
+}
+
+void JCR::my_thread_send_signal(int sig)
+{
+   lock();
+
+   if (is_killable() && !pthread_equal(my_thread_id, pthread_self())) {
+      Dmsg1(800, "Send kill to jid=%d\n", JobId);
+      pthread_kill(my_thread_id, sig);
+   } else if (!is_killable()) {
+      Dmsg1(10, "Warning, can't send kill to jid=%d\n", JobId);
+   }
+
+   unlock();
+}
+
 /*
- * Remove jcr from thread specific data, but
- * but make sure it is us who are attached.
+ * Remove jcr from thread specific data, but but make sure it is us who are attached.
  */
 void remove_jcr_from_tsd(JCR *jcr)
 {
    JCR *tjcr = get_jcr_from_tsd();
+
    if (tjcr == jcr) {
       set_jcr_in_tsd(INVALID_JCR);
    }
 }
 
-void JCR::set_killable(bool killable)
-{
-   JCR *jcr = this;
-   jcr->lock();
-   jcr->my_thread_killable = killable;
-   if (killable) {
-      jcr->my_thread_id = pthread_self();
-   } else {
-      memset(&jcr->my_thread_id, 0, sizeof(jcr->my_thread_id));
-   }
-   jcr->unlock();
-}
-
 /*
  * Put this jcr in the thread specifc data
- * if update_thread_info is true and the jcr is valid,
- * we update the my_thread_id in the JCR
  */
 void set_jcr_in_tsd(JCR *jcr)
 {
@@ -686,19 +699,6 @@ void set_jcr_in_tsd(JCR *jcr)
       Jmsg1(jcr, M_ABORT, 0, _("pthread_setspecific failed: ERR=%s\n"),
             be.bstrerror(status));
    }
-}
-
-void JCR::my_thread_send_signal(int sig)
-{
-   this->lock();
-   if (this->is_killable() &&
-       !pthread_equal(this->my_thread_id, pthread_self())) {
-      Dmsg1(800, "Send kill to jid=%d\n", this->JobId);
-      pthread_kill(this->my_thread_id, sig);
-   } else if (!this->is_killable()) {
-      Dmsg1(10, "Warning, can't send kill to jid=%d\n", this->JobId);
-   }
-   this->unlock();
 }
 
 /*
@@ -714,22 +714,22 @@ JCR *get_jcr_from_tsd()
    if (jcr == INVALID_JCR) {
       jcr = NULL;
    }
+
    return jcr;
 }
-
 
 /*
  * Find which JobId corresponds to the current thread
  */
 uint32_t get_jobid_from_tsd()
 {
-   JCR *jcr;
+   JCR *jcr = (JCR *)pthread_getspecific(jcr_key);
    uint32_t JobId = 0;
-   jcr = get_jcr_from_tsd();
 
-   if (jcr) {
+   if (jcr && jcr != INVALID_JCR) {
       JobId = (uint32_t)jcr->JobId;
    }
+
    return JobId;
 }
 
@@ -752,6 +752,7 @@ JCR *get_jcr_by_id(uint32_t JobId)
       }
    }
    endeach_jcr(jcr);
+
    return jcr;
 }
 
@@ -773,9 +774,11 @@ uint32_t get_jobid_from_tid(pthread_t tid)
       }
    }
    endeach_jcr(jcr);
+
    if (found) {
       return jcr->JobId;
    }
+
    return 0;
 }
 
@@ -799,6 +802,7 @@ JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
       }
    }
    endeach_jcr(jcr);
+
    return jcr;
 }
 
@@ -817,6 +821,7 @@ JCR *get_jcr_by_partial_name(char *Job)
    if (!Job) {
       return NULL;
    }
+
    len = strlen(Job);
    foreach_jcr(jcr) {
       if (bstrncmp(Job, jcr->Job, len)) {
@@ -827,6 +832,7 @@ JCR *get_jcr_by_partial_name(char *Job)
       }
    }
    endeach_jcr(jcr);
+
    return jcr;
 }
 
@@ -844,6 +850,7 @@ JCR *get_jcr_by_full_name(char *Job)
    if (!Job) {
       return NULL;
    }
+
    foreach_jcr(jcr) {
       if (bstrcmp(jcr->Job, Job)) {
          jcr->inc_use_count();
@@ -853,6 +860,7 @@ JCR *get_jcr_by_full_name(char *Job)
       }
    }
    endeach_jcr(jcr);
+
    return jcr;
 }
 
@@ -915,6 +923,7 @@ static void update_wait_time(JCR *jcr, int newJobStatus)
 static int get_status_priority(int JobStatus)
 {
    int priority = 0;
+
    switch (JobStatus) {
    case JS_Incomplete:
       priority = 10;
@@ -931,6 +940,7 @@ static int get_status_priority(int JobStatus)
       priority = 7;
       break;
    }
+
    return priority;
 }
 
@@ -939,10 +949,10 @@ static int get_status_priority(int JobStatus)
  */
 bool JCR::sendJobStatus()
 {
-   JCR *jcr = this;
-   if (jcr->dir_bsock) {
-      return jcr->dir_bsock->fsend(Job_status, jcr->Job, jcr->JobStatus);
+   if (dir_bsock) {
+      return dir_bsock->fsend(Job_status, Job, JobStatus);
    }
+
    return true;
 }
 
@@ -951,28 +961,26 @@ bool JCR::sendJobStatus()
  */
 bool JCR::sendJobStatus(int newJobStatus)
 {
-   JCR *jcr = this;
-   if (!jcr->is_JobStatus(newJobStatus)) {
+   if (!is_JobStatus(newJobStatus)) {
       setJobStatus(newJobStatus);
-      if (jcr->dir_bsock) {
-         return jcr->dir_bsock->fsend(Job_status, jcr->Job, jcr->JobStatus);
+      if (dir_bsock) {
+         return dir_bsock->fsend(Job_status, Job, JobStatus);
       }
    }
+
    return true;
 }
 
 void JCR::setJobStarted()
 {
-   JCR *jcr = this;
-   jcr->job_started = true;
-   jcr->job_started_time = time(NULL);
+   job_started = true;
+   job_started_time = time(NULL);
 }
 
 void JCR::setJobStatus(int newJobStatus)
 {
-   JCR *jcr = this;
    int priority, old_priority;
-   int oldJobStatus = jcr->JobStatus;
+   int oldJobStatus = JobStatus;
    priority = get_status_priority(newJobStatus);
    old_priority = get_status_priority(oldJobStatus);
 
@@ -981,7 +989,7 @@ void JCR::setJobStatus(int newJobStatus)
    /*
     * Update wait_time depending on newJobStatus and oldJobStatus
     */
-   update_wait_time(jcr, newJobStatus);
+   update_wait_time(this, newJobStatus);
 
    /*
     * For a set of errors, ... keep the current status
@@ -997,13 +1005,13 @@ void JCR::setJobStatus(int newJobStatus)
    if (priority > old_priority || (
        priority == 0 && old_priority == 0)) {
       Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n",
-         jcr->JobStatus, old_priority, newJobStatus, priority);
-      jcr->JobStatus = newJobStatus;     /* replace with new status */
+            JobStatus, old_priority, newJobStatus, priority);
+      JobStatus = newJobStatus;     /* replace with new status */
    }
 
-   if (oldJobStatus != jcr->JobStatus) {
+   if (oldJobStatus != JobStatus) {
       Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus, newJobStatus);
-//    generate_plugin_event(jcr, bEventStatusChange, NULL);
+//    generate_plugin_event(this, bEventStatusChange, NULL);
    }
 }
 

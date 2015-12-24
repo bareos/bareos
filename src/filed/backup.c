@@ -1574,25 +1574,25 @@ static void close_vss_backup_session(JCR *jcr)
     * STOP VSS ON WIN32
     * Tell vss to close the backup session
     */
-   if (jcr->VSS) {
-      if (g_pVSSClient->CloseBackup()) {
+   if (jcr->pVSSClient) {
+      if (jcr->pVSSClient->CloseBackup()) {
          /*
           * Inform user about writer states
           */
-         for (int i=0; i<(int)g_pVSSClient->GetWriterCount(); i++) {
+         for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
             int msg_type = M_INFO;
-            if (g_pVSSClient->GetWriterState(i) < 1) {
+            if (jcr->pVSSClient->GetWriterState(i) < 1) {
                msg_type = M_WARNING;
                jcr->JobErrors++;
             }
-            Jmsg(jcr, msg_type, 0, _("VSS Writer (BackupComplete): %s\n"), g_pVSSClient->GetWriterInfo(i));
+            Jmsg(jcr, msg_type, 0, _("VSS Writer (BackupComplete): %s\n"), jcr->pVSSClient->GetWriterInfo(i));
          }
       }
 
       /*
        * Generate Job global writer metadata
        */
-      WCHAR *metadata = g_pVSSClient->GetMetadata();
+      WCHAR *metadata = jcr->pVSSClient->GetMetadata();
       if (metadata) {
          FF_PKT *ff_pkt = jcr->ff;
          ff_pkt->fname = (char *)"*all*"; /* for all plugins */

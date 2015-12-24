@@ -31,6 +31,7 @@ INCLUDES = -I. \
 	   -I../.. \
 	   -I../../include \
 	   -I../../lmdb \
+	   -I../../filed \
 	   -I../include \
 	   -I../compat/include \
 	   -I../vss/include

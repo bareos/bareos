@@ -39,12 +39,18 @@
 
 #ifdef WIN32_VSS
 
+void VSSInit(JCR *jcr);
+
 #define VSS_INIT_RESTORE_AFTER_INIT   1
 #define VSS_INIT_RESTORE_AFTER_GATHER 2
 
 // some forward declarations
 struct IVssAsync;
 struct IVssBackupComponents;
+struct _VSS_SNAPSHOT_PROP;
+
+typedef HRESULT (STDAPICALLTYPE *t_CreateVssBackupComponents)(OUT IVssBackupComponents **);
+typedef void (APIENTRY *t_VssFreeSnapshotProperties)(IN _VSS_SNAPSHOT_PROP *);
 
 class VSSClient
 {
@@ -85,6 +91,9 @@ protected:
    HMODULE m_hLib;
    JCR *m_jcr;
 
+   t_CreateVssBackupComponents m_CreateVssBackupComponents;
+   t_VssFreeSnapshotProperties m_VssFreeSnapshotProperties;
+
    DWORD m_dwContext;
 
    IUnknown *m_pVssObject;
@@ -101,7 +110,6 @@ protected:
    alist *m_pAlistWriterInfoText;
 
    bool m_bCoInitializeCalled;
-   bool m_bCoInitializeSecurityCalled;
    bool m_bDuringRestore;  /* true if we are doing a restore */
    bool m_bBackupIsInitialized;
    bool m_bWriterStatusCurrent;
@@ -184,11 +192,6 @@ private:
    virtual void QuerySnapshotSet(GUID snapshotSetID);
    bool CheckWriterStatus();
 };
-
-extern VSSClient *g_pVSSClient;
-
-bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen);
-bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
 
 #endif /* WIN32_VSS */
 

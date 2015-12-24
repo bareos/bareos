@@ -55,7 +55,6 @@ static int privs = 0;
 #ifdef WIN32_VSS
 #include "vss.h"
 #define VSS " VSS"
-extern VSSClient *g_pVSSClient;
 #else
 #define VSS ""
 #endif
@@ -98,7 +97,7 @@ static void list_status_header(STATUS_PKT *sp)
       if (!privs) {
          privs = enable_backup_privileges(NULL, 1);
       }
-      len = Mmsg(msg, "VSS %s, Priv 0x%x\n", g_pVSSClient ? "enabled" : "disabled", privs);
+      len = Mmsg(msg, "Priv 0x%x\n", privs);
       sendit(msg, len, sp);
       len = Mmsg(msg, "APIs=%sOPT,%sATP,%sLPV,%sCFA,%sCFW,\n",
                  p_OpenProcessToken ? "" : "!",
@@ -176,12 +175,6 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
    Dmsg0(1000, "Begin status jcr loop.\n");
    len = Mmsg(msg, _("\nRunning Jobs:\n"));
    sendit(msg, len, sp);
-   const char *vss = "";
-#ifdef WIN32_VSS
-   if (g_pVSSClient && g_pVSSClient->IsInitialized()) {
-      vss = "VSS ";
-   }
-#endif
 
    foreach_jcr(njcr) {
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
@@ -191,9 +184,16 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
          sendit(msg, len, sp);
+#ifdef WIN32_VSS
          len = Mmsg(msg, _("    %s%s %s Job started: %s\n"),
-                    vss, level_to_str(njcr->getJobLevel()),
+                    (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) ? "VSS "  : "",
+                    level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
+#else
+         len = Mmsg(msg, _("    %s %s Job started: %s\n"),
+                    level_to_str(njcr->getJobLevel()),
+                    job_type_to_str(njcr->getJobType()), dt);
+#endif
       }
       sendit(msg, len, sp);
       if (njcr->JobId == 0) {
@@ -253,13 +253,6 @@ static void list_running_jobs_api(STATUS_PKT *sp)
    /*
     * List running jobs for Bat/Bweb (simple to parse)
     */
-   int vss = 0;
-#ifdef WIN32_VSS
-   if (g_pVSSClient && g_pVSSClient->IsInitialized()) {
-      vss = 1;
-   }
-#endif
-
    foreach_jcr(njcr) {
       bstrutime(dt, sizeof(dt), njcr->start_time);
       if (njcr->JobId == 0) {
@@ -268,9 +261,14 @@ static void list_running_jobs_api(STATUS_PKT *sp)
          len = Mmsg(msg, "JobId=%d\n Job=%s\n",
                     njcr->JobId, njcr->Job);
          sendit(msg, len, sp);
+#ifdef WIN32_VSS
          len = Mmsg(msg," VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
-                    vss, njcr->getJobLevel(),
-                    njcr->getJobType(), dt);
+                    (njcr->pVSSClient && njcr->pVSSClient->IsInitialized()) ? 1 : 0,
+                    njcr->getJobLevel(), njcr->getJobType(), dt);
+#else
+         len = Mmsg(msg," VSS=%d\n Level=%c\n JobType=%c\n JobStarted=%s\n",
+                    0, njcr->getJobLevel(), njcr->getJobType(), dt);
+#endif
       }
       sendit(msg, len, sp);
       if (njcr->JobId == 0) {

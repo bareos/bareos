@@ -253,5 +253,5 @@ void InitWinAPIWrapper()
        p_InetPton = (t_InetPton) GetProcAddress(hLib, "InetPtonA");
    }
 
-   atexit(Win32ConvCleanupCache);
+   atexit(Win32TSDCleanup);
 }

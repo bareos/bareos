@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,9 +56,53 @@
  */
 static const int dbglvl = 500;
 
-#define b_errno_win32 (1<<29)
-
 #define MAX_PATHLENGTH  1024
+
+static pthread_mutex_t com_security_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool com_security_initialized = false;
+
+/*
+ * The CoInitializeSecurity function initializes the security layer and sets the specified values
+ * as the security default. If a process does not call CoInitializeSecurity, COM calls it automatically
+ * the first time an interface is marshaled or unmarshaled, registering the system default security.
+ * No default security packages are registered until then.
+ *
+ * This function may be called exactly once per process.
+ */
+bool initialize_com_security()
+{
+   HRESULT hr;
+   bool retval = false;
+
+   P(com_security_mutex);
+   if (com_security_initialized) {
+      retval = true;
+      goto bail_out;
+   }
+
+   hr = CoInitializeSecurity(NULL,                          /*  Allow *all* VSS writers to communicate back! */
+                             -1,                            /*  Default COM authentication service */
+                             NULL,                          /*  Default COM authorization service */
+                             NULL,                          /*  reserved parameter */
+                             RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
+                             RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
+                             NULL,                          /*  Default COM authentication settings */
+                             EOAC_NONE,                     /*  No special options */
+                             NULL);                         /*  Reserved parameter */
+
+   if (FAILED(hr)) {
+      Dmsg1(0, "initialize_com_security: CoInitializeSecurity returned 0x%08X\n", hr);
+      errno = b_errno_win32;
+      goto bail_out;
+   }
+
+   com_security_initialized = true;
+   retval = true;
+
+bail_out:
+   V(com_security_mutex);
+   return retval;
+}
 
 /*
  * UTF-8 to UCS2 path conversion is expensive,
@@ -66,10 +110,173 @@ static const int dbglvl = 500;
  * conversion is called 3 times (lstat, attribs, open),
  * by using the cache this is reduced to 1 time
  */
-static POOLMEM *g_pWin32ConvUTF8Cache = NULL;
-static POOLMEM *g_pWin32ConvUCS2Cache = NULL;
-static DWORD g_dwWin32ConvUTF8strlen = 0;
-static pthread_mutex_t Win32Convmutex = PTHREAD_MUTEX_INITIALIZER;
+struct thread_conversion_cache {
+   POOLMEM *pWin32ConvUTF8Cache;
+   POOLMEM *pWin32ConvUCS2Cache;
+   DWORD dwWin32ConvUTF8strlen;
+};
+
+struct thread_vss_path_convert {
+   t_pVSSPathConvert pPathConvert;
+   t_pVSSPathConvertW pPathConvertW;
+};
+
+/*
+ * We use thread specific data using pthread_set_specific and pthread_get_specific
+ * to have unique and separate data for each thread instead of global variables.
+ */
+static pthread_mutex_t tsd_mutex = PTHREAD_MUTEX_INITIALIZER;
+static bool pc_tsd_initialized = false;
+static bool cc_tsd_initialized = false;
+static pthread_key_t path_conversion_key;
+static pthread_key_t conversion_cache_key;
+
+static void VSSPathConvertCleanup(void *arg)
+{
+   thread_vss_path_convert *tvpc = (thread_vss_path_convert *)arg;
+
+   Dmsg1(dbglvl, "VSSPathConvertCleanup: Cleanup thread specific conversion pointers at address %p\n", tvpc);
+
+   free(tvpc);
+}
+
+bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW)
+{
+   int status;
+   thread_vss_path_convert *tvpc = NULL;
+
+   P(tsd_mutex);
+   if (!pc_tsd_initialized) {
+      status = pthread_key_create(&path_conversion_key, VSSPathConvertCleanup);
+      if (status != 0) {
+         V(tsd_mutex);
+         goto bail_out;
+      }
+      pc_tsd_initialized = true;
+   }
+   V(tsd_mutex);
+
+   tvpc = (thread_vss_path_convert *)pthread_getspecific(path_conversion_key);
+   if (!tvpc) {
+      tvpc = (thread_vss_path_convert *)malloc(sizeof(thread_vss_path_convert));
+      status = pthread_setspecific(path_conversion_key, (void *)tvpc);
+      if (status != 0) {
+         goto bail_out;
+      }
+   }
+
+   Dmsg1(dbglvl, "SetVSSPathConvert: Setup thread specific conversion pointers at address %p\n", tvpc);
+
+   tvpc->pPathConvert = pPathConvert;
+   tvpc->pPathConvertW = pPathConvertW;
+
+   return true;
+
+bail_out:
+   if (tvpc) {
+      free(tvpc);
+   }
+
+   return false;
+}
+
+static thread_vss_path_convert *Win32GetPathConvert()
+{
+   thread_vss_path_convert *tvpc = NULL;
+
+   P(tsd_mutex);
+   if (pc_tsd_initialized) {
+      tvpc = (thread_vss_path_convert *)pthread_getspecific(path_conversion_key);
+   }
+   V(tsd_mutex);
+
+   return tvpc;
+}
+
+/*
+ * UTF-8 to UCS2 path conversion caching.
+ */
+static void Win32ConvCleanupCache(void *arg)
+{
+   thread_conversion_cache *tcc = (thread_conversion_cache *)arg;
+
+   Dmsg1(dbglvl, "Win32ConvCleanupCache: Cleanup of thread specific cache at address %p\n", tcc);
+
+   free_pool_memory(tcc->pWin32ConvUCS2Cache);
+   free_pool_memory(tcc->pWin32ConvUTF8Cache);
+   free(tcc);
+}
+
+static thread_conversion_cache *Win32ConvInitCache()
+{
+   int status;
+   thread_conversion_cache *tcc = NULL;
+
+   P(tsd_mutex);
+   if (!cc_tsd_initialized) {
+      status = pthread_key_create(&conversion_cache_key, Win32ConvCleanupCache);
+      if (status != 0) {
+         V(tsd_mutex);
+         goto bail_out;
+      }
+      cc_tsd_initialized = true;
+   }
+   V(tsd_mutex);
+
+   /*
+    * Create a new cache.
+    */
+   tcc = (thread_conversion_cache *)malloc(sizeof(thread_conversion_cache));
+   tcc->pWin32ConvUTF8Cache = get_pool_memory(PM_FNAME);
+   tcc->pWin32ConvUCS2Cache = get_pool_memory(PM_FNAME);
+   tcc->dwWin32ConvUTF8strlen = 0;
+
+   status = pthread_setspecific(conversion_cache_key, (void *)tcc);
+   if (status != 0) {
+      goto bail_out;
+   }
+
+   Dmsg1(dbglvl, "Win32ConvInitCache: Setup of thread specific cache at address %p\n", tcc);
+
+   return tcc;
+
+bail_out:
+   if (tcc) {
+      free_pool_memory(tcc->pWin32ConvUCS2Cache);
+      free_pool_memory(tcc->pWin32ConvUTF8Cache);
+      free(tcc);
+   }
+
+   return NULL;
+}
+
+static thread_conversion_cache *Win32GetCache()
+{
+   thread_conversion_cache *tcc = NULL;
+
+   P(tsd_mutex);
+   if (cc_tsd_initialized) {
+      tcc = (thread_conversion_cache *)pthread_getspecific(conversion_cache_key);
+   }
+   V(tsd_mutex);
+
+   return tcc;
+}
+
+void Win32TSDCleanup()
+{
+   P(tsd_mutex);
+   if (pc_tsd_initialized) {
+      pthread_key_delete(path_conversion_key);
+      pc_tsd_initialized = false;
+   }
+
+   if (cc_tsd_initialized) {
+      pthread_key_delete(conversion_cache_key);
+      cc_tsd_initialized = false;
+   }
+   V(tsd_mutex);
+}
 
 /*
  * Special flag used to enable or disable Bacula compatible win32 encoding.
@@ -91,45 +298,10 @@ bool Win32IsCompatible()
    return win32_bacula_compatible;
 }
 
-static t_pVSSPathConvert g_pVSSPathConvert;
-static t_pVSSPathConvertW g_pVSSPathConvertW;
-
 /*
  * Forward referenced functions
  */
 static const char *errorString(void);
-
-void SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW)
-{
-   g_pVSSPathConvert = pPathConvert;
-   g_pVSSPathConvertW = pPathConvertW;
-}
-
-static void Win32ConvInitCache()
-{
-   if (g_pWin32ConvUTF8Cache) {
-      return;
-   }
-   g_pWin32ConvUTF8Cache = get_pool_memory(PM_FNAME);
-   g_pWin32ConvUCS2Cache = get_pool_memory(PM_FNAME);
-}
-
-void Win32ConvCleanupCache()
-{
-   P(Win32Convmutex);
-   if (g_pWin32ConvUTF8Cache) {
-      free_pool_memory(g_pWin32ConvUTF8Cache);
-      g_pWin32ConvUTF8Cache = NULL;
-   }
-
-   if (g_pWin32ConvUCS2Cache) {
-      free_pool_memory(g_pWin32ConvUCS2Cache);
-      g_pWin32ConvUCS2Cache = NULL;
-   }
-
-   g_dwWin32ConvUTF8strlen = 0;
-   V(Win32Convmutex);
-}
 
 /*
  * To allow the usage of the original version in this file here
@@ -156,82 +328,84 @@ extern DWORD g_MinorVersion;
  * Convert from UTF-8 to VSS Windows path/file
  * Used by compatibility layer for Unix system calls
  */
-static void conv_unix_to_vss_win32_path(const char *name, char *win32_name, DWORD dwSize)
+static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_name, DWORD dwSize)
 {
-    const char *fname = name;
-    char *tname = win32_name;
+   const char *fname = name;
+   char *tname = win32_name;
+   thread_vss_path_convert *tvpc;
 
-    Dmsg0(dbglvl, "Enter convert_unix_to_win32_path\n");
+   Dmsg0(dbglvl, "Enter convert_unix_to_win32_path\n");
 
-    if (IsPathSeparator(name[0]) &&
-        IsPathSeparator(name[1]) &&
-        name[2] == '.' &&
-        IsPathSeparator(name[3])) {
+   tvpc = Win32GetPathConvert();
+   if (IsPathSeparator(name[0]) &&
+      IsPathSeparator(name[1]) &&
+      name[2] == '.' &&
+      IsPathSeparator(name[3])) {
 
-        *win32_name++ = '\\';
-        *win32_name++ = '\\';
-        *win32_name++ = '.';
-        *win32_name++ = '\\';
+      *win32_name++ = '\\';
+      *win32_name++ = '\\';
+      *win32_name++ = '.';
+      *win32_name++ = '\\';
 
-        name += 4;
-    } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS &&
-               g_pVSSPathConvert == NULL) {
-        /*
-         * Allow path to be 32767 bytes
-         */
-        *win32_name++ = '\\';
-        *win32_name++ = '\\';
-        *win32_name++ = '?';
-        *win32_name++ = '\\';
-    }
+      name += 4;
+   } else if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS && !tvpc) {
+      /*
+       * Allow path to be 32767 bytes
+       */
+      *win32_name++ = '\\';
+      *win32_name++ = '\\';
+      *win32_name++ = '?';
+      *win32_name++ = '\\';
+   }
 
-    while (*name) {
-        /**
-         * Check for Unix separator and convert to Win32
-         */
-        if (name[0] == '/' && name[1] == '/') {  /* double slash? */
-           name++;                               /* yes, skip first one */
-        }
-        if (*name == '/') {
-            *win32_name++ = '\\';     /* convert char */
-        /*
-         * If Win32 separator that is "quoted", remove quote
-         */
-        } else if (*name == '\\' && name[1] == '\\') {
-            *win32_name++ = '\\';
-            name++;                   /* skip first \ */
-        } else {
-            *win32_name++ = *name;    /* copy character */
-        }
-        name++;
-    }
+   while (*name) {
+      /**
+       * Check for Unix separator and convert to Win32
+       */
+      if (name[0] == '/' && name[1] == '/') {  /* double slash? */
+         name++;                               /* yes, skip first one */
+      }
+      if (*name == '/') {
+          *win32_name++ = '\\';     /* convert char */
+      /*
+       * If Win32 separator that is "quoted", remove quote
+       */
+      } else if (*name == '\\' && name[1] == '\\') {
+          *win32_name++ = '\\';
+          name++;                   /* skip first \ */
+      } else {
+          *win32_name++ = *name;    /* copy character */
+      }
+      name++;
+   }
 
-    /**
-     * Strip any trailing slash, if we stored something
-     * but leave "c:\" with backslash (root directory case
-     */
-    if (*fname != 0 && win32_name[-1] == '\\' && strlen (fname) != 3) {
-        win32_name[-1] = 0;
-    } else {
-        *win32_name = 0;
-    }
+   /**
+    * Strip any trailing slash, if we stored something
+    * but leave "c:\" with backslash (root directory case
+    */
+   if (*fname != 0 && win32_name[-1] == '\\' && strlen (fname) != 3) {
+      win32_name[-1] = 0;
+   } else {
+      *win32_name = 0;
+   }
 
-    /**
-     * Here we convert to VSS specific file name which
-     * can get longer because VSS will make something like
-     * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
-     * from c:\bareos\uninstall.exe
-     */
-    Dmsg1(dbglvl, "path=%s\n", tname);
-    if (g_pVSSPathConvert != NULL) {
-       POOLMEM *pszBuf = get_pool_memory (PM_FNAME);
-       pszBuf = check_pool_memory_size(pszBuf, dwSize);
-       bstrncpy(pszBuf, tname, strlen(tname)+1);
-       g_pVSSPathConvert(pszBuf, tname, dwSize);
-       free_pool_memory(pszBuf);
-    }
+   /**
+    * Here we convert to VSS specific file name which
+    * can get longer because VSS will make something like
+    * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
+    * from c:\bareos\uninstall.exe
+    */
+   Dmsg1(dbglvl, "path=%s\n", tname);
+   if (tvpc) {
+      POOLMEM *pszBuf = get_pool_memory(PM_FNAME);
 
-    Dmsg1(dbglvl, "Leave cvt_u_to_win32_path path=%s\n", tname);
+      pszBuf = check_pool_memory_size(pszBuf, dwSize);
+      bstrncpy(pszBuf, tname, strlen(tname)+1);
+      tvpc->pPathConvert(pszBuf, tname, dwSize);
+      free_pool_memory(pszBuf);
+   }
+
+   Dmsg1(dbglvl, "Leave cvt_u_to_win32_path path=%s\n", tname);
 }
 
 /**
@@ -239,11 +413,13 @@ static void conv_unix_to_vss_win32_path(const char *name, char *win32_name, DWOR
  */
 void unix_name_to_win32(POOLMEM **win32_name, const char *name)
 {
+   DWORD dwSize;
+
    /*
     * One extra byte should suffice, but we double it
     * add MAX_PATH bytes for VSS shadow copy name.
     */
-   DWORD dwSize = 2 * strlen(name) + MAX_PATH;
+   dwSize = 2 * strlen(name) + MAX_PATH;
    *win32_name = check_pool_memory_size(*win32_name, dwSize);
    conv_unix_to_vss_win32_path(name, *win32_name, dwSize);
 }
@@ -259,7 +435,7 @@ void unix_name_to_win32(POOLMEM **win32_name, const char *name)
  *
  * Created 02/27/2006 Thorsten Engel
  */
-static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
+static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
 {
    Dmsg0(dbglvl, "Enter wchar_win32_path\n");
    if (pBIsRawPath) {
@@ -476,24 +652,27 @@ static POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*=
     * Here we convert to VSS specific file name which can get longer because VSS will make something like
     * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe from c:\bareos\uninstall.exe
     */
-   if (g_pVSSPathConvertW != NULL) {
+   thread_vss_path_convert *tvpc = Win32GetPathConvert();
+   if (tvpc) {
       /*
        * Is output buffer large enough?
        */
       pwszBuf = (wchar_t *)check_pool_memory_size((POOLMEM *)pwszBuf,
-                                                  (dwBufCharsNeeded+MAX_PATH) * sizeof(wchar_t));
+                                                  (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
       /*
        * Create temp. buffer
        */
       wchar_t *pszBuf = (wchar_t *)get_pool_memory(PM_FNAME);
       pszBuf = (wchar_t *)check_pool_memory_size((POOLMEM *)pszBuf,
-                                                 (dwBufCharsNeeded+MAX_PATH) * sizeof(wchar_t));
-      if (bAddPrefix)
+                                                 (dwBufCharsNeeded + MAX_PATH) * sizeof(wchar_t));
+      if (bAddPrefix) {
          nParseOffset = 4;
-      else
+      } else {
          nParseOffset = 0;
-      wcsncpy(pszBuf, &pwszBuf[nParseOffset], wcslen(pwszBuf)+1-nParseOffset);
-      g_pVSSPathConvertW(pszBuf, pwszBuf, dwBufCharsNeeded+MAX_PATH);
+      }
+
+      wcsncpy(pszBuf, &pwszBuf[nParseOffset], wcslen(pwszBuf) + 1 - nParseOffset);
+      tvpc->pPathConvertW(pszBuf, pwszBuf, dwBufCharsNeeded + MAX_PATH);
       free_pool_memory((POOLMEM *)pszBuf);
    }
 
@@ -653,21 +832,27 @@ void wchar_win32_path(const char *name, wchar_t *win32_name)
 
 int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL *pBIsRawPath /*= NULL*/)
 {
-   P(Win32Convmutex);
+   int nRet;
+   thread_conversion_cache *tcc;
 
    /*
     * If we find the utf8 string in cache, we use the cached ucs2 version.
     * we compare the stringlength first (quick check) and then compare the content.
     */
-   if (!g_pWin32ConvUTF8Cache) {
-      Win32ConvInitCache();
-   } else if (g_dwWin32ConvUTF8strlen == strlen(pszUTF)) {
-      if (bstrcmp(pszUTF, g_pWin32ConvUTF8Cache)) {
-         /* Return cached value */
-         int32_t nBufSize = sizeof_pool_memory(g_pWin32ConvUCS2Cache);
+   tcc = Win32GetCache();
+   if (!tcc) {
+      tcc = Win32ConvInitCache();
+   } else if (tcc->dwWin32ConvUTF8strlen == strlen(pszUTF)) {
+      if (bstrcmp(pszUTF, tcc->pWin32ConvUTF8Cache)) {
+         int nBufSize;
+
+         /*
+          * Return cached value
+          */
+         nBufSize = sizeof_pool_memory(tcc->pWin32ConvUCS2Cache);
          *pszUCS = check_pool_memory_size(*pszUCS, nBufSize);
-         wcscpy((LPWSTR) *pszUCS, (LPWSTR)g_pWin32ConvUCS2Cache);
-         V(Win32Convmutex);
+         wcscpy((LPWSTR) *pszUCS, (LPWSTR)tcc->pWin32ConvUCS2Cache);
+
          return nBufSize / sizeof (WCHAR);
       }
    }
@@ -675,7 +860,7 @@ int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL *pBI
    /*
     * Helper to convert from utf-8 to UCS-2 and to complete a path for 32K path syntax
     */
-   int nRet = UTF8_2_wchar(pszUCS, pszUTF);
+   nRet = UTF8_2_wchar(pszUCS, pszUTF);
 
 #ifdef USE_WIN32_32KPATHCONVERSION
    /*
@@ -683,20 +868,22 @@ int make_win32_path_UTF8_2_wchar(POOLMEM **pszUCS, const char *pszUTF, BOOL *pBI
     */
    *pszUCS = make_wchar_win32_path(*pszUCS, pBIsRawPath);
 #else
-   if (pBIsRawPath)
+   if (pBIsRawPath) {
       *pBIsRawPath = FALSE;
+   }
 #endif
 
    /*
     * Populate cache
     */
-   g_pWin32ConvUCS2Cache = check_pool_memory_size(g_pWin32ConvUCS2Cache, sizeof_pool_memory(*pszUCS));
-   wcscpy((LPWSTR) g_pWin32ConvUCS2Cache, (LPWSTR) *pszUCS);
+   if (tcc) {
+      tcc->pWin32ConvUCS2Cache = check_pool_memory_size(tcc->pWin32ConvUCS2Cache, sizeof_pool_memory(*pszUCS));
+      wcscpy((LPWSTR) tcc->pWin32ConvUCS2Cache, (LPWSTR) *pszUCS);
 
-   g_dwWin32ConvUTF8strlen = strlen(pszUTF);
-   g_pWin32ConvUTF8Cache = check_pool_memory_size(g_pWin32ConvUTF8Cache, g_dwWin32ConvUTF8strlen+2);
-   bstrncpy(g_pWin32ConvUTF8Cache, pszUTF, g_dwWin32ConvUTF8strlen+1);
-   V(Win32Convmutex);
+      tcc->dwWin32ConvUTF8strlen = strlen(pszUTF);
+      tcc->pWin32ConvUTF8Cache = check_pool_memory_size(tcc->pWin32ConvUTF8Cache, tcc->dwWin32ConvUTF8strlen + 2);
+      bstrncpy(tcc->pWin32ConvUTF8Cache, pszUTF, tcc->dwWin32ConvUTF8strlen + 1);
+   }
 
    return nRet;
 }

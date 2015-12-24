@@ -27,6 +27,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "find.h"
 
 #ifndef S_IRWXUGO

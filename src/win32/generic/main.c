@@ -342,11 +342,6 @@ int BareosAppMain()
    }
    WriteConsole(GetStdHandle(STD_OUTPUT_HANDLE), "\r\n", 2, &dwCharsWritten, NULL);
 
-#ifdef FILE_DAEMON
-   /* Start up Volume Shadow Copy (only on FD) */
-   VSSInit();
-#endif
-
    /* Startup networking */
    WSA_Init();
 

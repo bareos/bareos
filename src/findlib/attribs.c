@@ -26,6 +26,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "find.h"
 #include "ch.h"
 

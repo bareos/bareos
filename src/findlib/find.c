@@ -31,6 +31,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "find.h"
 
 static const int dbglvl = 450;

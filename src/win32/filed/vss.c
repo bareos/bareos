@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,66 +29,74 @@
 
 
 #ifdef WIN32_VSS
+
 #include "bareos.h"
+#include "filed.h"
 
 #include "ms_atl.h"
 #include <objbase.h>
 
-#include "vss.h"
+/*
+ * { b5946137-7b9f-4925-af80-51abd60b20d5 }
+ */
+static const GUID VSS_SWPRV_ProviderID = {
+   0xb5946137, 0x7b9f, 0x4925, { 0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5 }
+};
 
-VSSClient *g_pVSSClient;
-
-// {b5946137-7b9f-4925-af80-51abd60b20d5}
-
-static const GUID VSS_SWPRV_ProviderID =
-   { 0xb5946137, 0x7b9f, 0x4925, { 0xaf, 0x80, 0x51, 0xab, 0xd6, 0x0b, 0x20, 0xd5 } };
-
-void VSSCleanup()
+static bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
 {
-   if (g_pVSSClient) {
-      delete (g_pVSSClient);
-      g_pVSSClient = NULL;
+   JCR *jcr = get_jcr_from_tsd();
+
+   if (jcr && jcr->pVSSClient) {
+      return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
+   }
+
+   return false;
+}
+
+static bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
+{
+   JCR *jcr = get_jcr_from_tsd();
+
+   if (jcr && jcr->pVSSClient) {
+      return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
+   }
+
+   return false;
+}
+
+void VSSInit(JCR *jcr)
+{
+   /*
+    * Decide which vss class to initialize
+    */
+   if (g_MajorVersion == 5) {
+      switch (g_MinorVersion) {
+      case 1:
+         jcr->pVSSClient = new VSSClientXP();
+         break;
+      case 2:
+         jcr->pVSSClient = new VSSClient2003();
+         break;
+      }
+   /*
+    * Vista or Longhorn or later
+    */
+   } else if (g_MajorVersion >= 6) {
+      jcr->pVSSClient = new VSSClientVista();
+   }
+
+   /*
+    * Setup the callback functions.
+    */
+   if (!SetVSSPathConvert(VSSPathConvert, VSSPathConvertW)) {
+      Jmsg(jcr, M_FATAL, 0, "Failed to setup VSS Path Conversion callbacks.\n");
    }
 }
 
 /*
- * May be called multiple times
+ * Constructor
  */
-void VSSInit()
-{
-   if (g_pVSSClient) {
-      return;                   /* already initialized */
-   }
-   /* decide which vss class to initialize */
-   if (g_MajorVersion == 5) {
-      switch (g_MinorVersion) {
-      case 1:
-         g_pVSSClient = new VSSClientXP();
-         break;
-      case 2:
-         g_pVSSClient = new VSSClient2003();
-         break;
-      }
-   /* Vista or Longhorn or later */
-   } else if (g_MajorVersion >= 6) {
-      g_pVSSClient = new VSSClientVista();
-   }
-   if (g_pVSSClient) {
-      atexit(VSSCleanup);
-   }
-}
-
-bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
-{
-   return g_pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
-}
-
-bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
-{
-   return g_pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
-}
-
-// Constructor
 VSSClient::VSSClient()
 {
     memset(this, 0, sizeof(VSSClient));
@@ -96,11 +105,15 @@ VSSClient::VSSClient()
     m_uidCurrentSnapshotSet = GUID_NULL;
 }
 
-// Destructor
+/*
+ * Destructor
+ */
 VSSClient::~VSSClient()
 {
-   // Release the IVssBackupComponents interface
-   // WARNING: this must be done BEFORE calling CoUninitialize()
+   /*
+    * Release the IVssBackupComponents interface
+    * WARNING: this must be done BEFORE calling CoUninitialize()
+    */
    if (m_pVssObject) {
 //      m_pVssObject->Release();
       m_pVssObject = NULL;
@@ -110,7 +123,9 @@ VSSClient::~VSSClient()
    delete m_pAlistWriterState;
    delete m_pAlistWriterInfoText;
 
-   // Call CoUninitialize if the CoInitialize was performed successfully
+   /*
+    * Call CoUninitialize if the CoInitialize was performed successfully
+    */
    if (m_bCoInitializeCalled) {
       CoUninitialize();
    }
@@ -122,7 +137,6 @@ bool VSSClient::InitializeForBackup(JCR *jcr)
    m_jcr = jcr;
    return Initialize(0);
 }
-
 
 bool VSSClient::InitializeForRestore(JCR *jcr)
 {
@@ -136,7 +150,9 @@ bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nB
    if (!m_bBackupIsInitialized)
       return false;
 
-   /* check for valid pathname */
+   /*
+    * Check for valid pathname
+    */
    bool bIsValidName;
 
    bIsValidName = strlen(szFilePath) > 3;
@@ -167,7 +183,9 @@ bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath,
    if (!m_bBackupIsInitialized)
       return false;
 
-   /* check for valid pathname */
+   /*
+    * Check for valid pathname
+    */
    bool bIsValidName;
 
    bIsValidName = wcslen(szFilePath) > 3;
@@ -191,7 +209,6 @@ bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath,
    return false;
 }
 
-
 const size_t VSSClient::GetWriterCount()
 {
    return m_pAlistWriterInfoText->size();
@@ -202,12 +219,13 @@ const char* VSSClient::GetWriterInfo(int nIndex)
    return (char*)m_pAlistWriterInfoText->get(nIndex);
 }
 
-
 const int VSSClient::GetWriterState(int nIndex)
 {
    void *item = m_pAlistWriterState->get(nIndex);
 
-/* Eliminate compiler warnings */
+   /*
+    * Eliminate compiler warnings
+    */
 #ifdef HAVE_VSS64
    return (int64_t)(char *)item;
 #else
@@ -223,7 +241,7 @@ void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
 
 /*
  * Note, this is called at the end of every job, so release all
- *  the items in the alists, but do not delete the alist.
+ * the items in the alists, but do not delete the alist.
  */
 void VSSClient::DestroyWriterInfo()
 {

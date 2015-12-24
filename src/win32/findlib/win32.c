@@ -26,6 +26,7 @@
 
 #if defined(HAVE_WIN32)
 
+#include "jcr.h"
 #include "find.h"
 #include "lib/cbuf.h"
 
