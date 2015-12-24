@@ -2158,31 +2158,31 @@ static void statcmd()
 
    status = dev->status_dev();
 
-   Pmsg0(0, _("Device status:"));
+   printf( _("Device status:"));
    if (bit_is_set(BMT_TAPE, status))
-      Pmsg0(0, " TAPE");
+      printf( " TAPE");
    if (bit_is_set(BMT_EOF, status))
-      Pmsg0(0, " EOF");
+      printf( " EOF");
    if (bit_is_set(BMT_BOT, status))
-      Pmsg0(0, " BOT");
+      printf( " BOT");
    if (bit_is_set(BMT_EOT, status))
-      Pmsg0(0, " EOT");
+      printf( " EOT");
    if (bit_is_set(BMT_SM, status))
-      Pmsg0(0, " SETMARK");
+      printf( " SETMARK");
    if (bit_is_set(BMT_EOD, status))
-      Pmsg0(0, " EOD");
+      printf( " EOD");
    if (bit_is_set(BMT_WR_PROT, status))
-      Pmsg0(0, " WRPROT");
+      printf( " WRPROT");
    if (bit_is_set(BMT_ONLINE, status))
-      Pmsg0(0, " ONLINE");
+      printf( " ONLINE");
    if (bit_is_set(BMT_DR_OPEN, status))
-      Pmsg0(0, " DOOROPEN");
+      printf( " DOOROPEN");
    if (bit_is_set(BMT_IM_REP_EN, status))
-      Pmsg0(0, " IMMREPORT");
+      printf( " IMMREPORT");
 
    free(status);
 
-   Pmsg1(0, _(". ERR=%s\n"), dev->bstrerror());
+   printf(_(". ERR=%s\n"), dev->bstrerror());
 
 #ifdef xxxx
    debug_level = 30;
