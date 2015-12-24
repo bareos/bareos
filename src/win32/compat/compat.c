@@ -554,7 +554,7 @@ int UTF8_2_wchar(POOLMEM **ppszUCS, const char *pszUTF)
       DWORD cchSize = (strlen(pszUTF)+1);
       *ppszUCS = check_pool_memory_size(*ppszUCS, cchSize * sizeof (wchar_t));
 
-      int nRet = p_MultiByteToWideChar(CP_UTF8, 0, pszUTF, -1, (LPWSTR) *ppszUCS,cchSize);
+      int nRet = p_MultiByteToWideChar(CP_UTF8, 0, pszUTF, -1, (LPWSTR) *ppszUCS, cchSize);
       ASSERT (nRet > 0);
       return nRet;
    } else {
@@ -824,15 +824,29 @@ static time_t cvt_ftime_to_utime(const LARGE_INTEGER &time)
    return (time_t) (mstime & 0xffffffff);
 }
 
-static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
+static inline bool CreateJunction(const char *szJunction, const char *szPath)
 {
    DWORD dwRet;
    HANDLE hDir;
-   POOLMEM *buf;
+   POOLMEM *buf, *szJunctionW, *szPathW;
    bool retval = false;
    int buf_length, path_length, data_length;
    REPARSE_DATA_BUFFER *rdb;
-   char szDestDir[MAX_PATH];
+   POOL_MEM szDestDir(PM_FNAME);
+
+   /*
+    * We only implement a Wide string version of CreateJunction.
+    * So if p_CreateDirectoryW is not available we refuse to do anything.
+    */
+   if (!p_CreateDirectoryW) {
+      return false;
+   }
+
+   /*
+    * Create two buffers to hold the wide char strings.
+    */
+   szJunctionW = get_pool_memory(PM_FNAME);
+   szPathW = get_pool_memory(PM_FNAME);
 
    /*
     * Create a buffer big enough to hold all data.
@@ -842,36 +856,47 @@ static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
    buf = check_pool_memory_size(buf, buf_length);
    rdb = (REPARSE_DATA_BUFFER *)buf;
 
-   bstrncpy(szDestDir, "\\??\\", sizeof(szDestDir));
-   bstrncat(szDestDir, szPath, sizeof(szDestDir));
-   bstrncat(szDestDir, "\\", sizeof(szDestDir));
-
-   if (!CreateDirectory(szJunction, NULL)) {
+   /*
+    * Create directory
+    */
+   make_win32_path_UTF8_2_wchar(&szJunctionW, szJunction);
+   if (!p_CreateDirectoryW((LPCWSTR)szJunctionW, NULL)) {
       Dmsg1(dbglvl, "CreateDirectory Failed:%s\n", errorString());
       goto bail_out;
    }
 
-   hDir = CreateFile(szJunction,
-                     GENERIC_WRITE,
-                     0,
-                     NULL,
-                     OPEN_EXISTING,
-                     FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
-                     NULL);
+   /*
+    * Create file/open reparse point
+    */
+   hDir = p_CreateFileW((LPCWSTR)szJunctionW,
+                        GENERIC_WRITE,
+                        0,
+                        NULL,
+                        OPEN_EXISTING,
+                        FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
+                        NULL);
 
    if (hDir == INVALID_HANDLE_VALUE){
       Dmsg0(dbglvl, "INVALID_FILE_HANDLE");
-      RemoveDirectory(szJunction);
+      RemoveDirectoryW((LPCWSTR)szJunctionW);
       goto bail_out;
    }
 
+   /*
+    * Put data junction target into reparse buffer
+    */
    memset(buf, 0, buf_length);
-   path_length = MultiByteToWideChar(CP_ACP,
-                                     0,
-                                     szDestDir,
-                                     -1,
-                                     rdb->MountPointReparseBuffer.PathBuffer,
-                                     MAX_PATH * sizeof(WCHAR));
+
+   /*
+    * Translate the incoming PATH with a \??\ prefix and a \ postfix.
+    */
+   Mmsg(szDestDir, "\\??\\%s\\", szPath);
+   path_length = UTF8_2_wchar(&szPathW, szDestDir.c_str());
+   if (!path_length) {
+      goto bail_out;
+   }
+   wcsncpy((LPWSTR) rdb->MountPointReparseBuffer.PathBuffer,
+           (LPWSTR) szPathW, MAX_PATH * sizeof(WCHAR));
 
    rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
    rdb->ReparseDataLength = (path_length + 2) * sizeof(WCHAR) + 6;
@@ -879,6 +904,9 @@ static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
    rdb->MountPointReparseBuffer.PrintNameOffset = path_length * sizeof(WCHAR);
    data_length = rdb->ReparseDataLength + 8;
 
+   /*
+    * Write reparse point
+    */
    if (!DeviceIoControl(hDir,
                         FSCTL_SET_REPARSE_POINT,
                         (LPVOID)buf,
@@ -889,7 +917,7 @@ static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
                         0)) {
       Dmsg1(dbglvl, "DeviceIoControl Failed:%s\n", errorString());
       CloseHandle(hDir);
-      RemoveDirectory(szJunction);
+      RemoveDirectoryW((LPCWSTR)szJunctionW);
       goto bail_out;
    }
 
@@ -899,6 +927,8 @@ static inline bool CreateJunction(LPCSTR szJunction, LPCSTR szPath)
 bail_out:
 
    free_pool_memory(buf);
+   free_pool_memory(szJunctionW);
+   free_pool_memory(szPathW);
 
    return retval;
 }
@@ -1609,7 +1639,6 @@ int stat(const char *filename, struct stat *sb)
       if (!b) {
          goto bail_out;
       }
-
    } else if (p_GetFileAttributesExA) {
       win32_fname = get_pool_memory(PM_FNAME);
       unix_name_to_win32(&win32_fname, filename);
@@ -1876,13 +1905,49 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
       Dmsg0(130, "We have a File Symbolic Link \n");
    }
 
-   Dmsg2(dbglvl, "symlink called  name1=%s, name2=%s\n", name1, name2);
-   if (!CreateSymbolicLink(const_cast<char*>(name2), const_cast<char *>(name1), dwFlags)) {
-      Dmsg1(dbglvl, "CreateSymbolicLink failed:%s\n", errorString());
-      return -1;
+   Dmsg2(dbglvl, "symlink called name1=%s, name2=%s\n", name1, name2);
+   if (p_CreateSymbolicLinkW) {
+      /*
+       * Dynamically allocate enough space for UCS2 filename
+       */
+      POOLMEM *pwszBuf1 = get_pool_memory(PM_FNAME);
+      POOLMEM *pwszBuf2 = get_pool_memory(PM_FNAME);
+      make_win32_path_UTF8_2_wchar(&pwszBuf1, name1);
+      make_win32_path_UTF8_2_wchar(&pwszBuf2, name2);
+
+      BOOL b = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
+
+      free_pool_memory(pwszBuf1);
+      free_pool_memory(pwszBuf2);
+
+      if (!b) {
+         Dmsg1(dbglvl, "CreateSymbolicLinkW failed:%s\n", errorString());
+         goto bail_out;
+      }
+   } else if (p_CreateSymbolicLinkA) {
+      POOLMEM *win32_name1 = get_pool_memory(PM_FNAME);
+      POOLMEM *win32_name2 = get_pool_memory(PM_FNAME);
+      unix_name_to_win32(&win32_name1, name1);
+      unix_name_to_win32(&win32_name2, name2);
+
+      BOOL b = p_CreateSymbolicLinkA(win32_name2, win32_name1, dwFlags);
+
+      free_pool_memory(win32_name1);
+      free_pool_memory(win32_name2);
+
+      if (!b) {
+         Dmsg1(dbglvl, "CreateSymbolicLinkA failed:%s\n", errorString());
+         goto bail_out;
+      }
    } else {
-      return 0;
+      errno = ENOSYS;
+      goto bail_out;
    }
+
+   return 0;
+
+bail_out:
+   return -1;
 #else
    errno = ENOSYS;
    return -1;
