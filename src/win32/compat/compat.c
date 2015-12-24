@@ -876,7 +876,7 @@ int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL *pBI
     * Populate cache
     */
    if (tcc) {
-      tcc->pWin32ConvUCS2Cache = check_pool_memory_size(tcc->pWin32ConvUCS2Cache, sizeof_pool_memory(*pszUCS));
+      tcc->pWin32ConvUCS2Cache = check_pool_memory_size(tcc->pWin32ConvUCS2Cache, sizeof_pool_memory(pszUCS));
       wcscpy((LPWSTR) tcc->pWin32ConvUCS2Cache, (LPWSTR) pszUCS);
 
       tcc->dwWin32ConvUTF8strlen = strlen(pszUTF);
@@ -1045,7 +1045,7 @@ static inline bool CreateJunction(const char *szJunction, const char *szPath)
    /*
     * Create directory
     */
-   make_win32_path_UTF8_2_wchar(&szJunctionW, szJunction);
+   make_win32_path_UTF8_2_wchar(szJunctionW, szJunction);
    if (!p_CreateDirectoryW((LPCWSTR)szJunctionW, NULL)) {
       Dmsg1(dbglvl, "CreateDirectory Failed:%s\n", errorString());
       goto bail_out;
@@ -1077,7 +1077,7 @@ static inline bool CreateJunction(const char *szJunction, const char *szPath)
     * Translate the incoming PATH with a \??\ prefix and a \ postfix.
     */
    Mmsg(szDestDir, "\\??\\%s\\", szPath);
-   path_length = UTF8_2_wchar(&szPathW, szDestDir.c_str());
+   path_length = UTF8_2_wchar(szPathW, szDestDir.c_str());
    if (!path_length) {
       goto bail_out;
    }
@@ -2098,8 +2098,8 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
        */
       POOLMEM *pwszBuf1 = get_pool_memory(PM_FNAME);
       POOLMEM *pwszBuf2 = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf1, name1);
-      make_win32_path_UTF8_2_wchar(&pwszBuf2, name2);
+      make_win32_path_UTF8_2_wchar(pwszBuf1, name1);
+      make_win32_path_UTF8_2_wchar(pwszBuf2, name2);
 
       BOOL b = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
 
@@ -2113,8 +2113,8 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
    } else if (p_CreateSymbolicLinkA) {
       POOLMEM *win32_name1 = get_pool_memory(PM_FNAME);
       POOLMEM *win32_name2 = get_pool_memory(PM_FNAME);
-      unix_name_to_win32(&win32_name1, name1);
-      unix_name_to_win32(&win32_name2, name2);
+      unix_name_to_win32(win32_name1, name1);
+      unix_name_to_win32(win32_name2, name2);
 
       BOOL b = p_CreateSymbolicLinkA(win32_name2, win32_name1, dwFlags);
 
