@@ -1168,7 +1168,7 @@ static inline void perform_ado_backup(bpContext *ctx)
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
       Mmsg(ado_query,
-           "BACKUP LOG %s TO VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
+           "BACKUP LOG [%s] TO VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d",
            p_ctx->database,
            vdsname,
            DEFAULT_BLOCKSIZE,
@@ -1227,7 +1227,7 @@ static inline void perform_ado_restore(bpContext *ctx)
    switch (p_ctx->backup_level) {
    case L_INCREMENTAL:
       Mmsg(ado_query,
-           "RESTORE LOG %s FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
+           "RESTORE LOG [%s] FROM VIRTUAL_DEVICE='%s' WITH BLOCKSIZE=%d, BUFFERCOUNT=%d, MAXTRANSFERSIZE=%d, %s",
            p_ctx->database,
            vdsname,
            DEFAULT_BLOCKSIZE,
