@@ -2001,8 +2001,8 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
          break;                 /* a write only variable, ignore read request */
       case bVarVssObject:
 #ifdef HAVE_WIN32
-         if (g_pVSSClient) {
-            *(void **)value = g_pVSSClient->GetVssObject();
+         if (jcr->pVSSClient) {
+            *(void **)value = jcr->pVSSClient->GetVssObject();
             Dmsg1(dbglvl, "fd-plugin: return bVarVssObject=%p\n", *(void **)value);
             break;
           }
@@ -2010,8 +2010,8 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
           return bRC_Error;
       case bVarVssDllHandle:
 #ifdef HAVE_WIN32
-         if (g_pVSSClient) {
-            *(void **)value = g_pVSSClient->GetVssDllHandle();
+         if (jcr->pVSSClient) {
+            *(void **)value = jcr->pVSSClient->GetVssDllHandle();
             Dmsg1(dbglvl, "fd-plugin: return bVarVssDllHandle=%p\n", *(void **)value);
             break;
           }

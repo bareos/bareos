@@ -71,9 +71,6 @@ using namespace std;
 #include <strsafe.h>
 #endif
 
-bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen);
-bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
-
 #ifdef HAVE_MINGW
 class IXMLDOMDocument;
 #endif
@@ -107,22 +104,16 @@ class IXMLDOMDocument;
 
 #define VSS_ERROR_OBJECT_ALREADY_EXISTS 0x8004230D
 
-
-/* In VSSAPI.DLL */
-typedef HRESULT (STDAPICALLTYPE* t_CreateVssBackupComponents)(OUT IVssBackupComponents **);
-typedef void (APIENTRY* t_VssFreeSnapshotProperties)(IN VSS_SNAPSHOT_PROP*);
-
-static t_CreateVssBackupComponents p_CreateVssBackupComponents = NULL;
-static t_VssFreeSnapshotProperties p_VssFreeSnapshotProperties = NULL;
-
 #include "vss.h"
 
 static void JmsgVssApiStatus(JCR *jcr, int msg_status, HRESULT hr, const char *apiName)
 {
    const char *errmsg;
+
    if (hr == S_OK || hr == VSS_S_ASYNC_FINISHED) {
       return;
    }
+
    switch (hr) {
    case E_INVALIDARG:
       errmsg = "One of the parameter values is not valid.";
@@ -357,7 +348,7 @@ static inline bool HandleVolumeMountPoint(VSSClientGeneric *pVssClient,
       pVssClient->AddVolumeMountPointSnapshots(pVssObj, (wchar_t *)vol);
       Dmsg1(200, "%s added to snapshotset \n", pvol);
       retval = true;
-   } else if((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
+   } else if ((unsigned)hr == VSS_ERROR_OBJECT_ALREADY_EXISTS) {
       Dmsg1(200, "%s already in snapshotset, skipping.\n" ,pvol);
    } else {
       Dmsg3(200, "%s with vmp %s could not be added to snapshotset, COM ERROR: 0x%X\n", vol, mountpoint, hr);
@@ -420,8 +411,8 @@ VSSClientGeneric::VSSClientGeneric()
 {
    m_hLib = LoadLibraryA("VSSAPI.DLL");
    if (m_hLib) {
-      p_CreateVssBackupComponents = (t_CreateVssBackupComponents) GetProcAddress(m_hLib, VSSVBACK_ENTRY);
-      p_VssFreeSnapshotProperties = (t_VssFreeSnapshotProperties) GetProcAddress(m_hLib, "VssFreeSnapshotProperties");
+      m_CreateVssBackupComponents = (t_CreateVssBackupComponents) GetProcAddress(m_hLib, VSSVBACK_ENTRY);
+      m_VssFreeSnapshotProperties = (t_VssFreeSnapshotProperties) GetProcAddress(m_hLib, "VssFreeSnapshotProperties");
    }
 }
 
@@ -447,8 +438,9 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    VSS_BACKUP_TYPE backup_type;
    IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
 
-   if (!(p_CreateVssBackupComponents && p_VssFreeSnapshotProperties)) {
-      Dmsg2(0, "VSSClientGeneric::Initialize: p_CreateVssBackupComponents=0x%08X, p_VssFreeSnapshotProperties=0x%08X\n", p_CreateVssBackupComponents, p_VssFreeSnapshotProperties);
+   if (!(m_CreateVssBackupComponents && m_VssFreeSnapshotProperties)) {
+      Dmsg2(0, "VSSClientGeneric::Initialize: m_CreateVssBackupComponents=0x%08X, m_VssFreeSnapshotProperties=0x%08X\n",
+            m_CreateVssBackupComponents, m_VssFreeSnapshotProperties);
       Jmsg(m_jcr, M_FATAL, 0, "Entry point CreateVssBackupComponents or VssFreeSnapshotProperties missing.\n");
       return false;
    }
@@ -470,24 +462,9 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * Initialize COM security
     */
-   if (!m_bCoInitializeSecurityCalled) {
-      hr = CoInitializeSecurity(NULL,                          /*  Allow *all* VSS writers to communicate back! */
-                                -1,                            /*  Default COM authentication service */
-                                NULL,                          /*  Default COM authorization service */
-                                NULL,                          /*  reserved parameter */
-                                RPC_C_AUTHN_LEVEL_PKT_PRIVACY, /*  Strongest COM authentication level */
-                                RPC_C_IMP_LEVEL_IDENTIFY,      /*  Minimal impersonation abilities */
-                                NULL,                          /*  Default COM authentication settings */
-                                EOAC_NONE,                     /*  No special options */
-                                NULL);                         /*  Reserved parameter */
-
-      if (FAILED(hr)) {
-         Dmsg1(0, "VSSClientGeneric::Initialize: CoInitializeSecurity returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitializeSecurity");
-         errno = b_errno_win32;
-         return false;
-      }
-      m_bCoInitializeSecurityCalled = true;
+   if (!initialize_com_security()) {
+      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitializeSecurity");
+      return false;
    }
 
    /*
@@ -501,7 +478,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * Create new internal backup components object
     */
-   hr = p_CreateVssBackupComponents((IVssBackupComponents**)&m_pVssObject);
+   hr = m_CreateVssBackupComponents((IVssBackupComponents**)&m_pVssObject);
    if (FAILED(hr)) {
       berrno be;
       Dmsg2(0, "VSSClientGeneric::Initialize: CreateVssBackupComponents returned 0x%08X. ERR=%s\n",
@@ -515,7 +492,6 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     * Define shorthand VssObject with time
     */
    pVssObj = (IVssBackupComponents *)m_pVssObject;
-
 
    if (!bDuringRestore) {
 #if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
@@ -773,6 +749,12 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
     * startSnapshotSet
     */
    hr = pVssObj->StartSnapshotSet(&m_uidCurrentSnapshotSet);
+   while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
+      bmicrosleep(5,0);
+      Jmsg(m_jcr, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
+      hr = pVssObj->StartSnapshotSet(&m_uidCurrentSnapshotSet);
+   }
+
    if (FAILED(hr)) {
       JmsgVssApiStatus(m_jcr, M_FATAL, hr, "StartSnapshotSet");
       errno = ENOSYS;
@@ -843,8 +825,6 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
     */
    QuerySnapshotSet(m_uidCurrentSnapshotSet);
 
-   SetVSSPathConvert(VSSPathConvert, VSSPathConvertW);
-
    m_bBackupIsInitialized = true;
 
    return true;
@@ -863,8 +843,6 @@ bool VSSClientGeneric::CloseBackup()
       return bRet;
    }
    CComPtr<IVssAsync>  pAsync;
-
-   SetVSSPathConvert(NULL, NULL);
 
    m_bBackupIsInitialized = false;
 
@@ -950,7 +928,7 @@ bool VSSClientGeneric::CloseRestore()
  */
 void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 {
-   if (!(p_CreateVssBackupComponents && p_VssFreeSnapshotProperties)) {
+   if (!(m_CreateVssBackupComponents && m_VssFreeSnapshotProperties)) {
       Jmsg(m_jcr, M_FATAL, 0, "CreateVssBackupComponents or VssFreeSnapshotProperties API is NULL.\n");
       errno = ENOSYS;
       return;
@@ -1014,7 +992,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
             }
          }
       }
-      p_VssFreeSnapshotProperties(&Snap);
+      m_VssFreeSnapshotProperties(&Snap);
    }
    errno = 0;
 }

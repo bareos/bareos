@@ -30,6 +30,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "find.h"
 #ifdef HAVE_DARWIN_OS
 #include <sys/param.h>

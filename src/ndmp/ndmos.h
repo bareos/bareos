@@ -98,17 +98,22 @@
 /*
  * Silence compiler for known warnings.
  */
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wformat"
+#pragma clang diagnostic ignored "-Wenum-compare"
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#elif __GNUC__
 #if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wenum-compare"
-#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 460
+#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #endif
 #endif
-
-#if defined(__SUNPRO_C)
-#pragma error_messages (off, E_ENUM_TYPE_MISMATCH_OP, E_ENUM_TYPE_MISMATCH_ARG, E_STATEMENT_NOT_REACHED )
+#elif __SUNPRO_C
+#pragma error_messages (off, E_ENUM_TYPE_MISMATCH_OP, E_ENUM_TYPE_MISMATCH_ARG, E_STATEMENT_NOT_REACHED)
 #endif
 
 /*

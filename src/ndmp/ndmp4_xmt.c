@@ -295,9 +295,7 @@ struct ndmp_xdr_message_table	ndmp4_xdr_message_table[] = {
  * same as xdr_long - open coded to save a proc call!
  */
 bool_t
-xdr_ndmp4_u_quad(xdrs, objp)
-	register XDR *xdrs;
-	ndmp4_u_quad *objp;
+xdr_ndmp4_u_quad(register XDR *xdrs, ndmp4_u_quad *objp)
 {
 	uint32_t	hi, lo;
 

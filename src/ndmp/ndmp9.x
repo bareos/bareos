@@ -89,10 +89,11 @@
  * documentation and/or software.
  */
 
+%#ifdef __clang__
+%#pragma clang diagnostic ignored "-Wunused-variable"
+%#elif __GNUC__
 %#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 %#pragma GCC diagnostic ignored "-Wunused-variable"
-%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 470
-%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
 %#endif
 %#endif
 
@@ -229,8 +230,8 @@ struct ndmp9_just_error_reply {
 /*
  * 64-bit integers
  */
-%extern bool_t xdr_ndmp9_u_quad();
 %#define ndmp9_u_quad uint64_t
+%extern bool_t xdr_ndmp9_u_quad(register XDR *xdrs, ndmp9_u_quad *objp);
 
 /*
  * Valid values. Sometimes we have values, and sometimes we don't.

@@ -60,6 +60,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "find.h"
 
 #if !defined(HAVE_ACL) && !defined(HAVE_AFS_ACL)

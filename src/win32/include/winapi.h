@@ -117,6 +117,9 @@ typedef void (WINAPI *t_CloseEncryptedFileRaw)(PVOID);
 typedef BOOL (WINAPI * t_CreateDirectoryA) (LPCSTR, LPSECURITY_ATTRIBUTES);
 typedef BOOL (WINAPI * t_CreateDirectoryW) (LPCWSTR, LPSECURITY_ATTRIBUTES);
 
+typedef BOOL (WINAPI * t_CreateSymbolicLinkA) (LPTSTR, LPTSTR, DWORD);
+typedef BOOL (WINAPI * t_CreateSymbolicLinkW) (LPCWSTR, LPCWSTR, DWORD);
+
 typedef BOOL (WINAPI * t_SetProcessShutdownParameters)(DWORD, DWORD);
 typedef BOOL (WINAPI * t_BackupRead)(HANDLE,LPBYTE,DWORD,LPDWORD,BOOL,BOOL,LPVOID*);
 typedef BOOL (WINAPI * t_BackupWrite)(HANDLE,LPBYTE,DWORD,LPDWORD,BOOL,BOOL,LPVOID*);
@@ -170,6 +173,9 @@ extern t_CreateFileW DLL_IMP_EXP p_CreateFileW;
 
 extern t_CreateDirectoryA DLL_IMP_EXP p_CreateDirectoryA;
 extern t_CreateDirectoryW DLL_IMP_EXP p_CreateDirectoryW;
+
+extern t_CreateSymbolicLinkA DLL_IMP_EXP p_CreateSymbolicLinkA;
+extern t_CreateSymbolicLinkW DLL_IMP_EXP p_CreateSymbolicLinkW;
 
 extern t_OpenEncryptedFileRawA DLL_IMP_EXP p_OpenEncryptedFileRawA;
 extern t_OpenEncryptedFileRawW DLL_IMP_EXP p_OpenEncryptedFileRawW;

@@ -50,6 +50,7 @@
 
 #include "bareos.h"
 #include "find.h"
+#include "jcr.h"
 
 #if !defined(HAVE_XATTR)
 /**

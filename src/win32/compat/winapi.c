@@ -50,8 +50,11 @@ t_SetProcessShutdownParameters p_SetProcessShutdownParameters = NULL;
 t_CreateFileA p_CreateFileA = NULL;
 t_CreateFileW p_CreateFileW = NULL;
 
-t_CreateDirectoryA p_CreateDirectoryA;
-t_CreateDirectoryW p_CreateDirectoryW;
+t_CreateDirectoryA p_CreateDirectoryA = NULL;
+t_CreateDirectoryW p_CreateDirectoryW = NULL;
+
+t_CreateSymbolicLinkA p_CreateSymbolicLinkA = NULL;
+t_CreateSymbolicLinkW p_CreateSymbolicLinkW = NULL;
 
 t_OpenEncryptedFileRawA p_OpenEncryptedFileRawA = NULL;
 t_OpenEncryptedFileRawW p_OpenEncryptedFileRawW = NULL;
@@ -142,6 +145,7 @@ void InitWinAPIWrapper()
        */
       p_CreateFileA = (t_CreateFileA) GetProcAddress(hLib, "CreateFileA");
       p_CreateDirectoryA = (t_CreateDirectoryA) GetProcAddress(hLib, "CreateDirectoryA");
+      p_CreateSymbolicLinkA = (t_CreateSymbolicLinkA) GetProcAddress(hLib, "CreateSymbolicLinkA");
 
 #if (_WIN32_WINNT >= 0x0600)
       /*
@@ -183,6 +187,7 @@ void InitWinAPIWrapper()
       if (g_platform_id != VER_PLATFORM_WIN32_WINDOWS) {
          p_CreateFileW = (t_CreateFileW) GetProcAddress(hLib, "CreateFileW");
          p_CreateDirectoryW = (t_CreateDirectoryW) GetProcAddress(hLib, "CreateDirectoryW");
+         p_CreateSymbolicLinkW = (t_CreateSymbolicLinkW) GetProcAddress(hLib, "CreateSymbolicLinkW");
 
          /*
           * Backup calls
@@ -253,5 +258,5 @@ void InitWinAPIWrapper()
        p_InetPton = (t_InetPton) GetProcAddress(hLib, "InetPtonA");
    }
 
-   atexit(Win32ConvCleanupCache);
+   atexit(Win32TSDCleanup);
 }

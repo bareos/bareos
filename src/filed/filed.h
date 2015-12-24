@@ -28,6 +28,10 @@
 
 #define FILE_DAEMON 1
 #include "filed_conf.h"
+#ifdef HAVE_WIN32
+#include "vss.h"
+#endif
+#include "jcr.h"
 #include "lib/breg.h"
 #include "lib/htable.h"
 #include "lib/runscript.h"

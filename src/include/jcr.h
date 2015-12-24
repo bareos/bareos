@@ -517,11 +517,14 @@ public:
    alist *RunScripts;                     /* Commands to run before and after job */
    CRYPTO_CTX crypto;                     /* Crypto ctx */
    DIRRES *director;                      /* Director resource */
-   bool VSS;                              /* VSS used by FD */
+   bool enable_vss;                       /* VSS used by FD */
    bool got_metadata;                     /* Set when found job_metadata */
    bool multi_restore;                    /* Dir can do multiple storage restore */
    B_ACCURATE *file_list;                 /* Previous file list (accurate mode) */
    uint64_t base_size;                    /* Compute space saved with base job */
+#ifdef HAVE_WIN32
+   VSSClient *pVSSClient;                 /* VSS Client Instance */
+#endif
 #endif /* FILE_DAEMON */
 
 #ifdef STORAGE_DAEMON

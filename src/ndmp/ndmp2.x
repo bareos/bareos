@@ -48,10 +48,11 @@
  *
  */
 
+%#ifdef __clang__
+%#pragma clang diagnostic ignored "-Wunused-variable"
+%#elif __GNUC__
 %#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 %#pragma GCC diagnostic ignored "-Wunused-variable"
-%#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 470
-%#pragma GCC diagnostic ignored "-Wunprototyped-calls"
 %#endif
 %#endif
 
@@ -61,7 +62,7 @@ const NDMP2VER = 2;
 const NDMP2PORT = 10000;
 
 %#define ndmp2_u_quad uint64_t
-%extern bool_t xdr_ndmp2_u_quad();
+%extern bool_t xdr_ndmp2_u_quad(register XDR *xdrs, ndmp2_u_quad *objp);
 
 struct _ndmp2_u_quad
 {

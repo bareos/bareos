@@ -32,9 +32,6 @@
 
 #if defined(WIN32_VSS)
 #include "vss.h"
-
-static pthread_mutex_t vss_mutex = PTHREAD_MUTEX_INITIALIZER;
-static bool enable_vss = false;
 #endif
 
 extern bool backup_only_mode;
@@ -529,7 +526,7 @@ void *handle_director_connection(BSOCK *dir)
       /* Send termination status back to Dir */
       dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
                  edit_uint64(jcr->ReadBytes, ed1),
-                 edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors, jcr->VSS,
+                 edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors, jcr->enable_vss,
                  jcr->crypto.pki_encrypt);
       Dmsg1(110, "End FD msg: %s\n", dir->msg);
    }
@@ -1185,7 +1182,7 @@ static bool fileset_cmd(JCR *jcr)
    }
 
 #if defined(WIN32_VSS)
-   enable_vss = (vss && (count_include_list_file_entries(jcr) > 0)) ? true : false;
+   jcr->enable_vss = (vss && (count_include_list_file_entries(jcr) > 0)) ? true : false;
 #endif
 
    retval = dir->fsend(OKinc);
@@ -1721,17 +1718,8 @@ static bool backup_cmd(JCR *jcr)
    }
 
 #if defined(WIN32_VSS)
-   /*
-    * Capture state here, if client is backed up by multiple directors
-    * and one enables vss and the other does not then enable_vss can change
-    * between here and where its evaluated after the job completes.
-    */
-   jcr->VSS = g_pVSSClient && enable_vss;
-   if (jcr->VSS) {
-      /*
-       * Run only one at a time
-       */
-      P(vss_mutex);
+   if (jcr->enable_vss) {
+      VSSInit(jcr);
    }
 #endif
 
@@ -1820,8 +1808,8 @@ static bool backup_cmd(JCR *jcr)
    /*
     * START VSS ON WIN32
     */
-   if (jcr->VSS) {
-      if (g_pVSSClient->InitializeForBackup(jcr)) {
+   if (jcr->pVSSClient) {
+      if (jcr->pVSSClient->InitializeForBackup(jcr)) {
          int drive_count;
          char szWinDriveLetters[27];
          bool onefs_disabled;
@@ -1844,16 +1832,16 @@ static bool backup_cmd(JCR *jcr)
 
          if (drive_count > 0) {
             Jmsg(jcr, M_INFO, 0, _("Generate VSS snapshots. Driver=\"%s\", Drive(s)=\"%s\"\n"),
-                 g_pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None");
+                 jcr->pVSSClient->GetDriverName(), (drive_count) ? szWinDriveLetters : "None");
 
-            if (!g_pVSSClient->CreateSnapshots(szWinDriveLetters, onefs_disabled)) {
+            if (!jcr->pVSSClient->CreateSnapshots(szWinDriveLetters, onefs_disabled)) {
                berrno be;
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"), be.bstrerror());
             } else {
                /*
                 * Inform about VMPs if we have them
                 */
-               g_pVSSClient->ShowVolumeMountPointStats(jcr);
+               jcr->pVSSClient->ShowVolumeMountPointStats(jcr);
 
                /*
                 * Tell user if snapshot creation of a specific drive failed
@@ -1867,9 +1855,9 @@ static bool backup_cmd(JCR *jcr)
                /*
                 * Inform user about writer states
                 */
-               for (int i = 0; i < (int)g_pVSSClient->GetWriterCount(); i++) {
-                  if (g_pVSSClient->GetWriterState(i) < 1) {
-                     Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"), g_pVSSClient->GetWriterInfo(i));
+               for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
+                  if (jcr->pVSSClient->GetWriterState(i) < 1) {
+                     Jmsg(jcr, M_INFO, 0, _("VSS Writer (PrepareForBackup): %s\n"), jcr->pVSSClient->GetWriterInfo(i));
                   }
                }
             }
@@ -1945,10 +1933,8 @@ static bool backup_cmd(JCR *jcr)
 
 cleanup:
 #if defined(WIN32_VSS)
-   if (jcr->VSS) {
-      Win32ConvCleanupCache();
-      g_pVSSClient->DestroyWriterInfo();
-      V(vss_mutex);
+   if (jcr->pVSSClient) {
+      jcr->pVSSClient->DestroyWriterInfo();
    }
 #endif
 
@@ -2123,20 +2109,10 @@ static bool restore_cmd(JCR *jcr)
    /**
     * No need to enable VSS for restore if we do not have plugin data to restore
     */
-   enable_vss = jcr->got_metadata;
+   jcr->enable_vss = jcr->got_metadata;
 
-   Dmsg2(50, "g_pVSSClient = %p, enable_vss = %d\n", g_pVSSClient, enable_vss);
-   /*
-    * Capture state here, if client is backed up by multiple directors
-    * and one enables vss and the other does not then enable_vss can change
-    * between here and where its evaluated after the job completes.
-    */
-   jcr->VSS = g_pVSSClient && enable_vss;
-   if (jcr->VSS) {
-      /*
-       * Run only one at a time
-       */
-      P(vss_mutex);
+   if (jcr->enable_vss) {
+      VSSInit(jcr);
    }
 #endif
 
@@ -2162,14 +2138,6 @@ static bool restore_cmd(JCR *jcr)
       if (!jcr->where_bregexp) {
          Jmsg(jcr, M_FATAL, 0, _("Bad where regexp. where=%s\n"), args);
          free_pool_memory(args);
-#if defined(WIN32_VSS)
-         if (jcr->VSS) {
-            /*
-             * clear mutex
-             */
-            V(vss_mutex);
-         }
-#endif
          return false;
       }
    } else {
@@ -2199,13 +2167,15 @@ static bool restore_cmd(JCR *jcr)
    generate_plugin_event(jcr, bEventStartRestoreJob);
 
 #if defined(WIN32_VSS)
-   /* START VSS ON WIN32 */
-   if (jcr->VSS) {
-      if (!g_pVSSClient->InitializeForRestore(jcr)) {
+   /*
+    * START VSS ON WIN32
+    */
+   if (jcr->pVSSClient) {
+      if (!jcr->pVSSClient->InitializeForRestore(jcr)) {
          berrno be;
          Jmsg(jcr, M_WARNING, 0, _("VSS was not initialized properly. VSS support is disabled. ERR=%s\n"), be.bstrerror());
       }
-      //free_and_null_pool_memory(jcr->job_metadata);
+
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
                  (jcr->director && jcr->director->allowed_script_dirs) ?
                   jcr->director->allowed_script_dirs :
@@ -2236,28 +2206,27 @@ static bool restore_cmd(JCR *jcr)
    /* STOP VSS ON WIN32 */
    /* tell vss to close the restore session */
    Dmsg0(100, "About to call CloseRestore\n");
-   if (jcr->VSS) {
+   if (jcr->pVSSClient) {
 #if 0
       generate_plugin_event(jcr, bEventVssBeforeCloseRestore);
 #endif
       Dmsg0(100, "Really about to call CloseRestore\n");
-      if (g_pVSSClient->CloseRestore()) {
+      if (jcr->pVSSClient->CloseRestore()) {
          Dmsg0(100, "CloseRestore success\n");
 #if 0
          /* inform user about writer states */
-         for (int i=0; i<(int)g_pVSSClient->GetWriterCount(); i++) {
+         for (int i=0; i<(int)jcr->pVSSClient->GetWriterCount(); i++) {
             int msg_type = M_INFO;
-            if (g_pVSSClient->GetWriterState(i) < 1) {
+            if (jcr->pVSSClient->GetWriterState(i) < 1) {
                //msg_type = M_WARNING;
                //jcr->JobErrors++;
             }
-            Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"), g_pVSSClient->GetWriterInfo(i));
+            Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"), jcr->pVSSClient->GetWriterInfo(i));
          }
 #endif
-      }
-      else
+      } else {
          Dmsg1(100, "CloseRestore fail - %08x\n", errno);
-      V(vss_mutex);
+      }
    }
 #endif
 
@@ -2352,6 +2321,13 @@ static bool open_sd_read_session(JCR *jcr)
  */
 static void filed_free_jcr(JCR *jcr)
 {
+#if defined(WIN32_VSS)
+   if (jcr->pVSSClient) {
+      delete jcr->pVSSClient;
+      jcr->pVSSClient = NULL;
+   }
+#endif
+
    if (jcr->store_bsock) {
       jcr->store_bsock->close();
       delete jcr->store_bsock;
