@@ -24,6 +24,7 @@
 #define _BDB_PRIV_INTERFACE_
 
 #include "bareos.h"
+#include "jcr.h"
 #include "cats/cats.h"
 #include "cats/bdb_priv.h"
 #include "cats/sql_glue.h"
