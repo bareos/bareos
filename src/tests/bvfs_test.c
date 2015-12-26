@@ -25,6 +25,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "cats/cats.h"
 #include "cats/sql_glue.h"
 #include "cats/bvfs.h"

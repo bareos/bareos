@@ -42,6 +42,7 @@
  */
 
 #include "bareos.h"
+#include "jcr.h"
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
