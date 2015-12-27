@@ -283,7 +283,6 @@ Recommends: %{name}-traymonitor = %{version}
 Summary:    Bareos Director daemon
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-common = %{version}
 Requires:   %{name}-database-tools
 %if 0%{?suse_version}
 Requires(pre): pwdutils
@@ -353,33 +352,27 @@ Requires(pre): shadow-utils
 %package    common
 Summary:    Common files, required by multiple Bareos packages
 Group:      Productivity/Archiving/Backup
+Requires:   %{name}-database-backend = %{version}
 Requires:   openssl
 %if 0%{?suse_version}
 Requires(pre): pwdutils
 %else
 Requires(pre): shadow-utils
 %endif
+Provides:   %{name}-database-common = %{version}-%{release}
 Provides:   %{name}-libs
-
-%package    database-common
-Summary:    Generic abstraction libs and files to connect to a database
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-backend = %{version}
-Requires:   openssl
 Provides:   %{name}-sql
+Obsoletes:  %{name}-database-common < %{version}-%{release}
 
 %package    database-postgresql
 Summary:    Libs & tools for postgresql catalog
 Group:      Productivity/Archiving/Backup
-Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-postgresql
 Provides:   %{name}-database-backend
 
 %package    database-mysql
 Summary:    Libs & tools for mysql catalog
 Group:      Productivity/Archiving/Backup
-Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-mysql
 Provides:   %{name}-database-backend
 
@@ -390,7 +383,6 @@ Group:      Productivity/Archiving/Backup
 %if 0%{?suse_version}
 Requires:   sqlite3
 %endif
-Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-sqlite3
 Provides:   %{name}-database-backend
 %endif
@@ -399,7 +391,6 @@ Provides:   %{name}-database-backend
 Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-dbtools
 
 %package    tools
@@ -595,11 +586,6 @@ This package contains the File Daemon
 %{dscr}
 
 This package contains the shared libraries that are used by multiple daemons and tools.
-
-%description database-common
-%{dscr}
-
-This package contains the shared libraries that abstract the catalog interface
 
 %description database-postgresql
 %{dscr}
@@ -1041,12 +1027,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
 %doc AGPL-3.0.txt AUTHORS LICENSE README.*
 %doc build/
-
 %if !0%{?client_only}
-
-%files database-common
-# catalog independent files
-%defattr(-, root, root)
 %{library_dir}/libbareossql-%{_libversion}.so
 %{library_dir}/libbareoscats-%{_libversion}.so
 %dir %{script_dir}/ddl
@@ -1329,12 +1310,6 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 /sbin/ldconfig
 
 %postun common
-/sbin/ldconfig
-
-%post database-common
-/sbin/ldconfig
-
-%postun database-common
 /sbin/ldconfig
 
 %post database-postgresql
