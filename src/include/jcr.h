@@ -441,8 +441,6 @@ public:
    uint32_t FileIndex;                    /* Last FileIndex processed */
    utime_t MaxRunSchedTime;               /* Max run time in seconds from Initial Scheduled time */
    POOLMEM *fname;                        /* Name to put into catalog */
-   POOLMEM *component_fname;              /* Component info file name */
-   FILE *component_fd;                    /* Component info file desc */
    JOB_DBR jr;                            /* Job DB record for current job */
    JOB_DBR previous_jr;                   /* Previous job database record */
    JCR *mig_jcr;                          /* JCR for migration/copy job */
