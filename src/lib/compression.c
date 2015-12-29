@@ -833,6 +833,11 @@ void cleanup_compression(JCR *jcr)
 
 }
 #else
+const char *cmprs_algo_to_text(uint32_t compression_algorithm)
+{
+   return "Unknown";
+}
+
 bool setup_compression_buffers(JCR *jcr,
                                bool compatible,
                                uint32_t compression_algorithm,
