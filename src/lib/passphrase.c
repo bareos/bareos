@@ -45,13 +45,12 @@
  * in the length argument. The returned argument should be
  * freed by the caller.
  */
-char *generate_crypto_passphrase(int length)
+char *generate_crypto_passphrase(uint16_t length)
 {
 #ifdef HAVE_GNUTLS
    int error;
 #endif
-   int c;
-   int vc_len, cnt;
+   uint16_t vc_len, cnt, c;
    char *passphrase;
    unsigned char *rand_bytes;
    char valid_chars[] = "abcdefghijklmnopqrstuvwxyz"
@@ -115,10 +114,9 @@ char *generate_crypto_passphrase(int length)
  * in the length argument. The returned argument should be
  * freed by the caller.
  */
-char *generate_crypto_passphrase(int length)
+char *generate_crypto_passphrase(uint16_t length)
 {
-   char c;
-   int vc_len, cnt;
+   uint16_t vc_len, cnt, c;
    int *rand_bytes;
    char *passphrase;
    char valid_chars[] = "abcdefghijklmnopqrstuvwxyz"
