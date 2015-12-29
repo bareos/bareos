@@ -30,12 +30,16 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         dbc_dbtypes=`echo ${dbc_dbtypes} | sed 's/, *$//'`
 
         # action
-        param1="$1"
-        shift || true
+        if [ $# -gt 0 ]; then
+            param1="$1"
+            shift
+        fi
         # $2: when action is "configure": most-recently-configured-version
-        param2="$1"
-        param2_orig=$param2
-        shift || true
+        if [ $# -gt 0 ]; then
+            param2="$1"
+            param2_orig=$param2
+            shift
+        fi
 
         # When upgrading from an older version (param2),
         # do not pass the version number of the old package.
