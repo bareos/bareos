@@ -116,3 +116,34 @@ The Bareos project tries to limit the differences between these branches to a mi
         \item Debian.org does not include the libfastlz compression library and thesefore the Bareos (Debian.org) packages do not offer the fileset options \parameter{compression=LZFAST}, \parameter{compression=LZ4} and \parameter{compression=LZ4HC}.
         \item Debian.org prefers that Bareos (Debian.org) is linked against GnuTLS instead of OpenSSL. Therefore, the Bareos (Debian.org) package only support \nameref{sec:TransportEncryption} but no \nameref{DataEncryption}.
     \end{itemize}
+
+
+\subsection{Mac OS X}
+\index[general]{Platform!Mac!}
+\index[general]{Platform!Mac!OS X}
+\label{sec:macosx}
+
+The bareos installer package for Mac OS X contains the bareos file daemon for Mac OS X 10.4 or later built as an universal binary for PPC and Intel processors.
+
+\subsubsection{Requirements}
+
+The bareos file daemon is only the client component of the backup system. For proper operation the file daemon needs to have access to a bareos director and storage daemon.
+
+\subsubsection{Installation}
+
+Open the Bareos File Daemon installer package and follow the directions given to you.
+
+\subsubsection{Configuration}
+
+After the installation is complete you have to adapt the configuration file to your needs. The file is located at \path{/usr/local/etc/bareos/bareos-fd.conf}.
+
+\textbf{Note:} The configuration file contains passwords and therefore must not be accessible for any users except root. Use the following command line to edit the file as root-user: \command{sudo /Applications/TextEdit.app/Contents/MacOS/TextEdit /usr/local/etc/bareos/bareos-fd.conf}
+
+\subsubsection{Operating the File Daemon}
+
+Use launchctl to enable and disable the bareos file daemon.
+
+\begin{commands}{}
+sudo launchctl load -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+sudo launchctl unload -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+\end{commands}
