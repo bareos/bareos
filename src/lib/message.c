@@ -74,8 +74,9 @@ void setup_tsd_key();
  * Allow only one thread to tweak d->fd at a time
  */
 static pthread_mutex_t fides_mutex = PTHREAD_MUTEX_INITIALIZER;
-static MSGSRES *daemon_msgs;          /* global messages */
-static char *catalog_db = NULL;       /* database type */
+static MSGSRES *daemon_msgs;          /* Global messages */
+static char *catalog_db = NULL;       /* Database type */
+static const char *log_date_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, char *msg) = NULL;
 static FILE *trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -148,10 +149,9 @@ static void delivery_error(const char *fmt,...)
 
    pool_buf = get_pool_memory(PM_EMSG);
 
-   bstrftime_ny(dt, sizeof(dt), time(NULL));
+   bstrftime(dt, sizeof(dt), time(NULL), log_date_format);
+   bstrncat(dt, " ", sizeof(dt));
    dtlen = strlen(dt);
-   dt[dtlen++] = ' ';
-   dt[dtlen] = 0;
 
    i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
@@ -363,7 +363,7 @@ void init_console_msg(const char *wd)
    if (fd == -1) {
       berrno be;
       Emsg2(M_ERROR_TERM, 0, _("Could not open console message file %s: ERR=%s\n"),
-          con_fname, be.bstrerror());
+            con_fname, be.bstrerror());
    }
    if (lseek(fd, 0, SEEK_END) > 0) {
       console_msg_pending = 1;
@@ -373,12 +373,12 @@ void init_console_msg(const char *wd)
    if (!con_fd) {
       berrno be;
       Emsg2(M_ERROR, 0, _("Could not open console message file %s: ERR=%s\n"),
-          con_fname, be.bstrerror());
+            con_fname, be.bstrerror());
    }
    if (rwl_init(&con_lock) != 0) {
       berrno be;
       Emsg1(M_ERROR_TERM, 0, _("Could not get con mutex: ERR=%s\n"),
-         be.bstrerror());
+            be.bstrerror());
    }
 }
 
@@ -844,6 +844,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
    MSGSRES *msgs;
    BPIPE *bpipe;
    const char *mode;
+   bool dt_set = false;
 
    Dmsg2(850, "Enter dispatch_message type=%d msg=%s", type, msg);
 
@@ -856,15 +857,16 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
    if (mtime == 0) {
       mtime = time(NULL);
    }
+
    if (mtime == 1) {
       *dt = 0;
       dtlen = 0;
       mtime = time(NULL);      /* get time for SQL log */
    } else {
-      bstrftime_ny(dt, sizeof(dt), mtime);
+      bstrftime(dt, sizeof(dt), mtime, log_date_format);
+      bstrncat(dt, " ", sizeof(dt));
       dtlen = strlen(dt);
-      dt[dtlen++] = ' ';
-      dt[dtlen] = 0;
+      dt_set = true;
    }
 
    /*
@@ -1917,4 +1919,12 @@ void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
    pm_strcat(buf, more.c_str());
 
    Qmsg(jcr, type, mtime, "%s", buf.c_str());
+}
+
+/*
+ * Set gobal date format used for log messages.
+ */
+void set_log_date_format(const char *format)
+{
+   log_date_format = format;
 }

@@ -146,6 +146,7 @@ public:
    uint32_t stats_collect_interval;   /* Statistics collect interval in seconds */
    char *verid;                       /* Custom Id to print in version command */
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
+   char *log_date_format;             /* Date format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
 };
 

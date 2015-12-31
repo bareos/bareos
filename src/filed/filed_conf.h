@@ -116,7 +116,8 @@ public:
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    char *verid;                       /* Custom Id to print in version command */
-   char *secure_erase_cmdline;       /* Cmdline to execute to perform secure erase of file */
+   char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
+   char *log_date_format;             /* Date format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 };
 

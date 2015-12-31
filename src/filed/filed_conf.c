@@ -122,6 +122,7 @@ static RES_ITEM cli_items[] = {
    { "AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.always_use_lmdb), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL, NULL, NULL },
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, NULL, NULL },
+   { "LogDateFormat", CFG_TYPE_STR, ITEM(res_client.log_date_format), 0, 0, NULL, NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -363,6 +364,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_client.secure_erase_cmdline) {
          free(res->res_client.secure_erase_cmdline);
+      }
+      if (res->res_client.log_date_format) {
+         free(res->res_client.log_date_format);
       }
       break;
    case R_MSGS:
