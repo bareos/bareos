@@ -1,69 +1,104 @@
 %%
 %%
 
-The Bareos project provides and supports packages that have been released unter
+The Bareos project provides and supports packages that have been released at
 \url{http://download.bareos.org/bareos/release/}
 
-However, the following tabular gives an overview, what components are expected on which plattforms to run:
+However, the following tabular gives an overview, what components are expected on which platforms to run:
 
-\begin{tabular}[h]{|l|l|c|c|c|}
+\begin{tabular}[h]{|l|c|c|c|c|}
   \hline
   \textbf{Operating Systems} & \textbf{Version} & \textbf{Client Daemon} & \textbf{Director Daemon} & \textbf{Storage Daemon} \\
   \hline
   \hline
-  GNU/Linux  & all & v12.4 & v12.4 & v12.4 \\
+  \multicolumn{5}{c}{\textbf{Linux}} \index[general]{Platform!Linux} \\
   \hline
-  Univention Corporate Linux & App Center & v12.4 & v12.4 & v12.4 \\
+  Arch Linux
+  \index[general]{Platform!Arch Linux}
+                  & ~ & \elink{X}{https://aur.archlinux.org/pkgbase/bareos/} & \elink{X}{https://aur.archlinux.org/pkgbase/bareos/} & \elink{X}{https://aur.archlinux.org/pkgbase/bareos/} \\
   \hline
+  CentOS          & current & v12.4 & v12.4 & v12.4 \\
   \hline
-  MS Windows 32bit & 7/8/10       & v12.4 & \elink{nightly}{http://download.bareos.org/bareos/experimental/nightly/windows/} & \elink{nightly}{http://download.bareos.org/bareos/experimental/nightly/windows/} \\
-  ~                & 2008/Vista   &  &  &  \\
-  ~                & XP           &  &         &  \\
+  Debian          & current & v12.4 & v12.4 & v12.4 \\
   \hline
-  MS Windows 64bit & 7/2012/8/10  & v12.4 & \elink{nightly}{http://download.bareos.org/bareos/experimental/nightly/windows/} & \elink{nightly}{http://download.bareos.org/bareos/experimental/nightly/windows/} \\
-  ~                & 2008/Vista   &  &  &  \\
+  Fedora          & current & v12.4 & v12.4 & v12.4 \\
   \hline
-  \hline
-  MacOS X/Darwin   & ~ & \elink{beta 13.2}{http://download.bareos.org/bareos/beta/13.2/macosx/} &  &  \\
-  \hline
-  Solaris          & $\geq$ 8 & X & X & X \\
-  \hline
-  OpenSolaris      & ~ & X & X & X \\
-  \hline
-  Gentoo           
+  Gentoo
   \index[general]{Platform!Gentoo}
                     & ~ & \elink{X}{https://packages.gentoo.org/package/app-backup/bareos} & \elink{X}{https://packages.gentoo.org/package/app-backup/bareos} & \elink{X}{https://packages.gentoo.org/package/app-backup/bareos} \\
   \hline
-  FreeBSD          & $\geq$ 5.0 & X & X & X  \\
+  openSUSE        & current & v12.4 & v12.4 & v12.4 \\
+  \hline
+  RHEL            & current & v12.4 & v12.4 & v12.4 \\
+  \hline
+  SLES            & current & v12.4 & v12.4 & v12.4 \\
+  \hline
+  Ubuntu          & current & v12.4 & v12.4 & v12.4 \\
+  \hline
+  \ilink{Univention Corporate Linux}{sec:UniventionCorporateServer} & App Center & v12.4 & v12.4 & v12.4 \\
+  \hline
+  \multicolumn{5}{c}{\textbf{MS Windows}} \\
+  \hline
+  \ilink{MS Windows}{sec:windows} 32bit & 10/8/7       & v12.4 & v15.2 & v15.2 \\
+  ~                & 2008/Vista   &  &  &  \\
+  ~                & 2003/XP      & v12.4--v14.2 &         &  \\
+  \hline
+  \ilink{MS Windows}{sec:windows} 64bit & 10/8/2012/7  & v12.4 & v15.2 & v15.2 \\
+  ~                & 2008/Vista   &  &  &  \\
+  \hline
+  \multicolumn{5}{c}{\textbf{Mac OS}} \\
+  \hline
+  \ilink{Mac OS X/Darwin}{sec:macosx}   & ~ & v14.2 &  &  \\
+  \hline
+  \multicolumn{5}{c}{\textbf{BSD}} \\
+  \hline
+  FreeBSD
+  \index[general]{Platform!FreeBSD}
+                    & $\geq$ 5.0 & \elink{X}{http://www.freshports.org/sysutils/bareos-client/} & \elink{X}{http://www.freshports.org/sysutils/bareos-server/} & \elink{X}{http://www.freshports.org/sysutils/bareos-server/}  \\
   \hline
   OpenBSD          & ~ & X &  & ~ \\
   \hline
   NetBSD           & ~ & X &  & ~ \\
   \hline
-  AIX              & $\geq$ 4.3 & X & $\star$ & $\star$ \\
+  \multicolumn{5}{c}{\textbf{Unix}} \\
+  %\hline
+  %BSDI             & ~ & $\star$ & ~ & ~ \\
+  \hline
+  AIX
+  \index[general]{Platform!AIX}
+                   & $\geq$ 4.3 & com-13.2 & $\star$ & $\star$ \\
+  \hline
+  HP-UX
+  \index[general]{Platform!HP-UX}
+                   & ~ & com-13.2 & ~ & ~ \\
   \hline
   Irix             & ~ & $\star$ & ~ & ~ \\
+  %\hline
+  %OpenSolaris      & ~ & X & X & X \\
+  \hline
+  Solaris
+  \index[general]{Platform!Solaris}
+                   & $\geq$ 8 & com-12.4 & com-12.4 & com-12.4 \\
   \hline
   True64           & ~ & $\star$ & ~ & ~ \\
   \hline
-  BSDI             & ~ & $\star$ & ~ & ~ \\
-  \hline
-  HPUX             & ~ & $\star$ & ~ & ~ \\
-  \hline
 \end{tabular}
 
-\begin{tabular}[h]{l l}
+\begin{center}
+\begin{tabular}[h]{p{0,15\textwidth} p{0,8\textwidth}}
 \textbf{vVV.V}   & starting with Bareos version VV.V, this platform is official supported by the Bareos.org project \\
+\textbf{com-VV.V}   & starting with Bareos version VV.V, this platform is supported. However, pre-build packages are only available from  Bareos.com\\
 \textbf{nightly} & provided by Bareos nightly build. Bug reports are welcome, however it is not official supported \\
 \textbf{X}       & known to work \\
 \textbf{$\star$} & has been reported to work by the community\\
 \end{tabular}
+\end{center}
 
-\paragraph{Notes}
-
-\begin{itemize}
-    \item by GNU/Linux, we mean all x86 (32/64bit) versions of CentOS, Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES and Ubuntu that are officual supported  by the distribution itself.
-\end{itemize}
+% \paragraph{Notes}
+% 
+% \begin{itemize}
+%     \item by GNU/Linux, we mean all x86 (32/64bit) versions of CentOS, Debian, Fedora, openSUSE, Red Hat Enterprise Linux, SLES and Ubuntu that are officially supported  by the distribution itself.
+% \end{itemize}
 
 \section{}
 
@@ -75,7 +110,7 @@ Bareos tries to provide all packages for all platforms.
 
 On extra packages, it depends if the distribution contains the required dependencies.
 
-Packages names not containing the word \name{bareos} are required packages where we decided to include them ourselfs.
+Packages names not containing the word \name{bareos} are required packages where we decided to include them ourselves.
 
 {
     \small
@@ -103,7 +138,7 @@ Ubuntu Universe $>=$ 15.04 does also include these packages.
 In the further text, these version will be named \name{Bareos (Debian.org)} 
 (also for the Ubuntu Universe version, as this is based on the Debian version).
 
-The source of these packages comes from a seperate branch.
+The source of these packages comes from a separate branch.
 For the release \name{bareos-14.2} this is
 \url{https://github.com/bareos/bareos/tree/bareos-14.2-debian} instead of the standard branch \url{https://github.com/bareos/bareos/tree/bareos-14.2}.
 
@@ -113,37 +148,43 @@ The Bareos project tries to limit the differences between these branches to a mi
 \label{sec:DebianOrgLimitations}
 
     \begin{itemize}
-        \item Debian.org does not include the libfastlz compression library and thesefore the Bareos (Debian.org) packages do not offer the fileset options \parameter{compression=LZFAST}, \parameter{compression=LZ4} and \parameter{compression=LZ4HC}.
+        \item Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options \parameter{compression=LZFAST}, \parameter{compression=LZ4} and \parameter{compression=LZ4HC}.
         \item Debian.org prefers that Bareos (Debian.org) is linked against GnuTLS instead of OpenSSL. Therefore, the Bareos (Debian.org) package only support \nameref{sec:TransportEncryption} but no \nameref{DataEncryption}.
     \end{itemize}
 
 
 \subsection{Mac OS X}
-\index[general]{Platform!Mac!}
 \index[general]{Platform!Mac!OS X}
 \label{sec:macosx}
 
-The bareos installer package for Mac OS X contains the bareos file daemon for Mac OS X 10.4 or later built as an universal binary for PPC and Intel processors.
+The Bareos installer package for Mac OS X contains the \bareosFd for Mac OS X 10.4 or later built as an universal binary for PPC and Intel processors.
 
 \subsubsection{Requirements}
 
-The bareos file daemon is only the client component of the backup system. For proper operation the file daemon needs to have access to a bareos director and storage daemon.
+The \bareosFd is only the client component of the backup system. For proper operation the file daemon needs to have access to a \bareosDir and \bareosSd.
 
 \subsubsection{Installation}
 
-Open the Bareos File Daemon installer package and follow the directions given to you.
+Download the \bareosFd installer package from \url{http://download.bareos.org/bareos/release/latest/MacOS/},
+open it and follow the directions given to you.
 
 \subsubsection{Configuration}
 
-After the installation is complete you have to adapt the configuration file to your needs. The file is located at \path{/usr/local/etc/bareos/bareos-fd.conf}.
+After the installation is complete you have to adapt the configuration file to your needs. The file is located at \file{/usr/local/etc/bareos/bareos-fd.conf}.
 
-\textbf{Note:} The configuration file contains passwords and therefore must not be accessible for any users except root. Use the following command line to edit the file as root-user: \command{sudo /Applications/TextEdit.app/Contents/MacOS/TextEdit /usr/local/etc/bareos/bareos-fd.conf}
+\warning{The configuration file contains passwords and therefore must not be accessible for any users except root. Use the following command line to edit the file as root-user:}
+\begin{commands}{Adapt the bareos-fd configuration file}
+sudo /Applications/TextEdit.app/Contents/MacOS/TextEdit /usr/local/etc/bareos/bareos-fd.conf
+\end{commands}
 
 \subsubsection{Operating the File Daemon}
 
-Use launchctl to enable and disable the bareos file daemon.
+Use \command{launchctl} to enable and disable the bareos file daemon.
 
-\begin{commands}{}
+\begin{commands}{Load (start) the \bareosFd}
 sudo launchctl load -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+\end{commands}
+
+\begin{commands}{Unload (stop) the \bareosFd}
 sudo launchctl unload -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
 \end{commands}
