@@ -437,13 +437,13 @@ void unix_name_to_win32(POOLMEM *&win32_name, const char *name)
  */
 static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
 {
-   Dmsg0(dbglvl, "Enter wchar_win32_path\n");
+   Dmsg0(dbglvl, "Enter make_wchar_win32_path\n");
    if (pBIsRawPath) {
       *pBIsRawPath = FALSE;              /* Initialize, set later */
    }
 
    if (!p_GetCurrentDirectoryW) {
-      Dmsg0(dbglvl, "Leave wchar_win32_path no change \n");
+      Dmsg0(dbglvl, "Leave make_wchar_win32_path no change \n");
       return pszUCSPath;
    }
 
@@ -453,7 +453,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
     * If it has already the desired form, exit without changes
     */
    if (wcslen(name) > 3 && wcsncmp(name, L"\\\\?\\", 4) == 0) {
-      Dmsg0(dbglvl, "Leave wchar_win32_path no change \n");
+      Dmsg0(dbglvl, "Leave make_wchar_win32_path no change \n");
       return pszUCSPath;
    }
 
@@ -679,7 +679,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
    free_pool_memory(pszUCSPath);
    free_pool_memory((POOLMEM *)pwszCurDirBuf);
 
-   Dmsg1(dbglvl, "Leave wchar_win32_path=%s\n", pwszBuf);
+   Dmsg1(dbglvl, "Leave make_wchar_win32_path=%s\n", pwszBuf);
    return (POOLMEM *)pwszBuf;
 }
 
@@ -796,37 +796,6 @@ char *BSTR_2_str(const BSTR pSrc)
    }
 
    return szOut;
-}
-
-void wchar_win32_path(char *name, wchar_t *win32_name)
-{
-    char *fname = name;
-    while (*name) {
-        /*
-         * Check for Unix separator and convert to Win32
-         */
-        if (*name == '/') {
-            *win32_name++ = '\\';     /* convert char */
-        /*
-         * If Win32 separated that is "quoted", remove quote
-         */
-        } else if (*name == '\\' && name[1] == '\\') {
-            *win32_name++ = '\\';
-            name++;                   /* skip first \ */
-        } else {
-            *win32_name++ = *name;    /* copy character */
-        }
-        name++;
-    }
-
-    /*
-     * Strip any trailing slash, if we stored something
-     */
-    if (*fname != 0 && win32_name[-1] == '\\') {
-        win32_name[-1] = 0;
-    } else {
-        *win32_name = 0;
-    }
 }
 
 int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL *pBIsRawPath /*= NULL*/)

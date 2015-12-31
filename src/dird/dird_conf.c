@@ -148,6 +148,7 @@ static RES_ITEM dir_items[] = {
    { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir.audit_events), 0, 0, NULL, "14.2.0-", NULL },
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
+   { "LogDateFormat", CFG_TYPE_STR, ITEM(res_dir.log_date_format), 0, 0, NULL, NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -2392,6 +2393,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_dir.secure_erase_cmdline) {
          free(res->res_dir.secure_erase_cmdline);
+      }
+      if (res->res_dir.log_date_format) {
+         free(res->res_dir.log_date_format);
       }
       break;
    case R_DEVICE:

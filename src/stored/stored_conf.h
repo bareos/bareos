@@ -123,7 +123,8 @@ public:
    char *tls_cipherlist;              /* TLS Cipher List */
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
-   char *secure_erase_cmdline;       /* Cmdline to execute to perform secure erase of file */
+   char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
+   char *log_date_format;             /* Date format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */

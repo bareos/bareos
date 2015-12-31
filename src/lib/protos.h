@@ -285,7 +285,7 @@ void set_db_type(const char *name);
 void register_message_callback(void msg_callback(int type, char *msg));
 
 /* passphrase.c */
-char *generate_crypto_passphrase(int length);
+char *generate_crypto_passphrase(uint16_t length);
 
 /* path_list.c */
 htable *path_list_init();
