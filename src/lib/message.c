@@ -76,7 +76,7 @@ void setup_tsd_key();
 static pthread_mutex_t fides_mutex = PTHREAD_MUTEX_INITIALIZER;
 static MSGSRES *daemon_msgs;          /* Global messages */
 static char *catalog_db = NULL;       /* Database type */
-static const char *log_date_format = "%d-%b %H:%M";
+static const char *log_timestamp_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, char *msg) = NULL;
 static FILE *trace_fd = NULL;
 #if defined(HAVE_WIN32)
@@ -145,13 +145,11 @@ static void delivery_error(const char *fmt,...)
    int i, len, maxlen;
    POOLMEM *pool_buf;
    char dt[MAX_TIME_LENGTH];
-   int dtlen;
 
    pool_buf = get_pool_memory(PM_EMSG);
 
-   bstrftime(dt, sizeof(dt), time(NULL), log_date_format);
+   bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
    bstrncat(dt, " ", sizeof(dt));
-   dtlen = strlen(dt);
 
    i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
@@ -844,7 +842,6 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
    MSGSRES *msgs;
    BPIPE *bpipe;
    const char *mode;
-   bool dt_set = false;
 
    Dmsg2(850, "Enter dispatch_message type=%d msg=%s", type, msg);
 
@@ -863,10 +860,9 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
       dtlen = 0;
       mtime = time(NULL);      /* get time for SQL log */
    } else {
-      bstrftime(dt, sizeof(dt), mtime, log_date_format);
+      bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
       bstrncat(dt, " ", sizeof(dt));
       dtlen = strlen(dt);
-      dt_set = true;
    }
 
    /*
@@ -1924,7 +1920,7 @@ void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 /*
  * Set gobal date format used for log messages.
  */
-void set_log_date_format(const char *format)
+void set_log_timestamp_format(const char *format)
 {
-   log_date_format = format;
+   log_timestamp_format = format;
 }
