@@ -4,8 +4,8 @@
 #define LSMDATE "16Nov15"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
-                       "Copyright (C) 2013-2015 Bareos GmbH & Co. KG\n"
-#define BYEAR "2015"       /* year for copyright messages in progs */
+                       "Copyright (C) 2013-2016 Bareos GmbH & Co. KG\n"
+#define BYEAR "2016"       /* year for copyright messages in progs */
 
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced

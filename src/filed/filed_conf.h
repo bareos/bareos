@@ -117,7 +117,7 @@ public:
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    char *verid;                       /* Custom Id to print in version command */
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
-   char *log_date_format;             /* Date format to use in generic logging messages */
+   char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 };
 

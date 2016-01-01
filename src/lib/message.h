@@ -112,6 +112,7 @@ typedef struct s_dest {
    char msg_types[NR_MSG_TYPES];      /* Message type mask */
    char *where;                       /* Filename/program name */
    char *mail_cmd;                    /* Mail command */
+   char *timestamp_format;            /* Timestamp format to use in logging messages */
    int syslog_facility;               /* Syslog Facility */
    POOLMEM *mail_filename;            /* Unique mail filename */
 } DEST;
@@ -165,7 +166,7 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 bool get_trace(void);
 const char *get_basename(const char *pathname);
-void set_log_date_format(const char *format);
+void set_log_timestamp_format(const char *format);
 
 typedef bool (*db_log_insert_func)(JCR *jcr, utime_t mtime, char *msg);
 extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;

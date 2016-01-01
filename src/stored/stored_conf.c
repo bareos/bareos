@@ -110,7 +110,7 @@ static RES_ITEM store_items[] = {
    { "FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store.filedevice_concurrent_read), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
-   { "LogDateFormat", CFG_TYPE_STR, ITEM(res_store.log_date_format), 0, 0, NULL, NULL, NULL },
+   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -637,8 +637,8 @@ void free_resource(RES *sres, int type)
       if (res->res_store.secure_erase_cmdline) {
          free(res->res_store.secure_erase_cmdline);
       }
-      if (res->res_store.log_date_format) {
-         free(res->res_store.log_date_format);
+      if (res->res_store.log_timestamp_format) {
+         free(res->res_store.log_timestamp_format);
       }
       break;
    case R_DEVICE:
@@ -688,6 +688,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_msgs.operator_cmd) {
          free(res->res_msgs.operator_cmd);
+      }
+      if (res->res_msgs.timestamp_format) {
+         free(res->res_msgs.timestamp_format);
       }
       free_msgs_res((MSGSRES *)res);  /* free message resource */
       res = NULL;

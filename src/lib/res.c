@@ -31,7 +31,6 @@
 #include "generic_res.h"
 
 /* Forward referenced subroutines */
-static void scan_types(LEX *lc, MSGSRES *msg, int dest, char *where, char *cmd);
 
 extern CONFIG *my_config;             /* Our Global config */
 
@@ -133,24 +132,81 @@ const char *res_to_str(int rcode)
 }
 
 /*
+ * Scan for message types and add them to the message
+ * destination. The basic job here is to connect message types
+ * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
+ * destination (MAIL, FILE, OPERATOR, ...)
+ */
+static void scan_types(LEX *lc, MSGSRES *msg, int dest_code,
+                       char *where, char *cmd, char *timestamp_format)
+{
+   int i;
+   bool found, is_not;
+   int msg_type = 0;
+   char *str;
+
+   for (;;) {
+      lex_get_token(lc, T_NAME);            /* expect at least one type */
+      found = false;
+      if (lc->str[0] == '!') {
+         is_not = true;
+         str = &lc->str[1];
+      } else {
+         is_not = false;
+         str = &lc->str[0];
+      }
+      for (i = 0; msg_types[i].name; i++) {
+         if (bstrcasecmp(str, msg_types[i].name)) {
+            msg_type = msg_types[i].token;
+            found = true;
+            break;
+         }
+      }
+      if (!found) {
+         scan_err1(lc, _("message type: %s not found"), str);
+         return;
+      }
+
+      if (msg_type == M_MAX + 1) {       /* all? */
+         for (i = 1; i <= M_MAX; i++) {      /* yes set all types */
+            add_msg_dest(msg, dest_code, i, where, cmd, timestamp_format);
+         }
+      } else if (is_not) {
+         rem_msg_dest(msg, dest_code, msg_type, where);
+      } else {
+         add_msg_dest(msg, dest_code, msg_type, where, cmd, timestamp_format);
+      }
+      if (lc->ch != ',') {
+         break;
+      }
+      Dmsg0(900, "call lex_get_token() to eat comma\n");
+      lex_get_token(lc, T_ALL);          /* eat comma */
+   }
+   Dmsg0(900, "Done scan_types()\n");
+}
+
+/*
  * Store Messages Destination information
  */
 static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
-   char *cmd;
+   char *cmd = NULL,
+        *tsf = NULL;
    POOLMEM *dest;
    int dest_len;
    URES *res_all = (URES *)my_config->m_res_all;
 
    Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
+
+   tsf = res_all->res_msgs.timestamp_format;
    if (pass == 1) {
       switch (item->code) {
       case MD_STDOUT:
       case MD_STDERR:
       case MD_CONSOLE:
       case MD_CATALOG:
-         scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL);
+         scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL, tsf);
          break;
       case MD_SYSLOG: {            /* syslog */
          char *p;
@@ -189,24 +245,24 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             /*
              * Pick up a single facility.
              */
-            token = lex_get_token(lc, T_NAME);   /* scan destination */
+            token = lex_get_token(lc, T_NAME);   /* Scan destination */
             pm_strcpy(dest, lc->str);
             dest_len = lc->str_len;
             token = lex_get_token(lc, T_SKIP_EOL);
 
-            scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL);
+            scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL, NULL);
             free_pool_memory(dest);
             Dmsg0(900, "done with dest codes\n");
          } else {
-            scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL);
+            scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL, NULL);
          }
          break;
       }
-      case MD_OPERATOR:            /* send to operator */
-      case MD_DIRECTOR:            /* send to Director */
-      case MD_MAIL:                /* mail */
-      case MD_MAIL_ON_ERROR:       /* mail if Job errors */
-      case MD_MAIL_ON_SUCCESS:     /* mail if Job succeeds */
+      case MD_OPERATOR:            /* Send to operator */
+      case MD_DIRECTOR:            /* Send to Director */
+      case MD_MAIL:                /* Mail */
+      case MD_MAIL_ON_ERROR:       /* Mail if Job errors */
+      case MD_MAIL_ON_SUCCESS:     /* Mail if Job succeeds */
          if (item->code == MD_OPERATOR) {
             cmd = res_all->res_msgs.operator_cmd;
          } else {
@@ -215,14 +271,15 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
          dest = get_pool_memory(PM_MESSAGE);
          dest[0] = 0;
          dest_len = 0;
+
          /*
           * Pick up comma separated list of destinations.
           */
          for (;;) {
-            token = lex_get_token(lc, T_NAME);   /* scan destination */
+            token = lex_get_token(lc, T_NAME);   /* Scan destination */
             dest = check_pool_memory_size(dest, dest_len + lc->str_len + 2);
             if (dest[0] != 0) {
-               pm_strcat(dest, " ");  /* separate multiple destinations with space */
+               pm_strcat(dest, " ");  /* Separate multiple destinations with space */
                dest_len++;
             }
             pm_strcat(dest, lc->str);
@@ -230,7 +287,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             Dmsg2(900, "store_msgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
             token = lex_get_token(lc, T_SKIP_EOL);
             if (token == T_COMMA) {
-               continue;           /* get another destination */
+               continue;           /* Get another destination */
             }
             if (token != T_EQUALS) {
                scan_err1(lc, _("expected an =, got: %s"), lc->str);
@@ -239,17 +296,18 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             break;
          }
          Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, cmd);
+         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, cmd, tsf);
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
-      case MD_FILE:                /* file */
-      case MD_APPEND:              /* append */
+      case MD_FILE:                /* File */
+      case MD_APPEND:              /* Append */
          dest = get_pool_memory(PM_MESSAGE);
+
          /*
           * Pick up a single destination.
           */
-         token = lex_get_token(lc, T_NAME);   /* scan destination */
+         token = lex_get_token(lc, T_NAME);   /* Scan destination */
          pm_strcpy(dest, lc->str);
          dest_len = lc->str_len;
          token = lex_get_token(lc, T_SKIP_EOL);
@@ -258,7 +316,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             scan_err1(lc, _("expected an =, got: %s"), lc->str);
             return;
          }
-         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL);
+         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL, tsf);
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
@@ -271,59 +329,6 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all->hdr.item_present);
    clear_bit(index, res_all->hdr.inherit_content);
    Dmsg0(900, "Done store_msgs\n");
-}
-
-/*
- * Scan for message types and add them to the message
- * destination. The basic job here is to connect message types
- *  (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
- *  destination (MAIL, FILE, OPERATOR, ...)
- */
-static void scan_types(LEX *lc, MSGSRES *msg, int dest_code, char *where, char *cmd)
-{
-   int i;
-   bool found, is_not;
-   int msg_type = 0;
-   char *str;
-
-   for (;;) {
-      lex_get_token(lc, T_NAME);            /* expect at least one type */
-      found = false;
-      if (lc->str[0] == '!') {
-         is_not = true;
-         str = &lc->str[1];
-      } else {
-         is_not = false;
-         str = &lc->str[0];
-      }
-      for (i = 0; msg_types[i].name; i++) {
-         if (bstrcasecmp(str, msg_types[i].name)) {
-            msg_type = msg_types[i].token;
-            found = true;
-            break;
-         }
-      }
-      if (!found) {
-         scan_err1(lc, _("message type: %s not found"), str);
-         return;
-      }
-
-      if (msg_type == M_MAX + 1) {       /* all? */
-         for (i = 1; i <= M_MAX; i++) {      /* yes set all types */
-            add_msg_dest(msg, dest_code, i, where, cmd);
-         }
-      } else if (is_not) {
-         rem_msg_dest(msg, dest_code, msg_type, where);
-      } else {
-         add_msg_dest(msg, dest_code, msg_type, where, cmd);
-      }
-      if (lc->ch != ',') {
-         break;
-      }
-      Dmsg0(900, "call lex_get_token() to eat comma\n");
-      lex_get_token(lc, T_ALL);          /* eat comma */
-   }
-   Dmsg0(900, "Done scan_types()\n");
 }
 
 /*
@@ -1401,7 +1406,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       len = strlen(msgres->mail_cmd);
       cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
       escape_string(cmdbuf, msgres->mail_cmd, len);
-      Mmsg(temp, "   mailcommand = \"%s\"\n", cmdbuf);
+      Mmsg(temp, "   MailCommand = \"%s\"\n", cmdbuf);
       pm_strcat(cfg_str, temp.c_str());
    }
 
@@ -1409,7 +1414,15 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       len = strlen(msgres->operator_cmd);
       cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
       escape_string(cmdbuf, msgres->operator_cmd, len);
-      Mmsg(temp, "   operatorcommand = \"%s\"\n", cmdbuf);
+      Mmsg(temp, "   OperatorCommand = \"%s\"\n", cmdbuf);
+      pm_strcat(cfg_str, temp.c_str());
+   }
+
+   if (msgres->timestamp_format) {
+      len = strlen(msgres->timestamp_format);
+      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
+      escape_string(cmdbuf, msgres->timestamp_format, len);
+      Mmsg(temp, "   TimestampFormat = \"%s\"\n", cmdbuf);
       pm_strcat(cfg_str, temp.c_str());
    }
    free_pool_memory(cmdbuf);

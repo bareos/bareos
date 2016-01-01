@@ -123,7 +123,7 @@ static RES_ITEM cli_items[] = {
    { "LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client.lmdb_threshold), 0, 0, NULL, NULL, NULL },
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
-   { "LogDateFormat", CFG_TYPE_STR, ITEM(res_client.log_date_format), 0, 0, NULL, NULL, NULL },
+   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -366,8 +366,8 @@ void free_resource(RES *sres, int type)
       if (res->res_client.secure_erase_cmdline) {
          free(res->res_client.secure_erase_cmdline);
       }
-      if (res->res_client.log_date_format) {
-         free(res->res_client.log_date_format);
+      if (res->res_client.log_timestamp_format) {
+         free(res->res_client.log_timestamp_format);
       }
       break;
    case R_MSGS:
@@ -376,6 +376,9 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_msgs.operator_cmd) {
          free(res->res_msgs.operator_cmd);
+      }
+      if (res->res_msgs.timestamp_format) {
+         free(res->res_msgs.timestamp_format);
       }
       free_msgs_res((MSGSRES *)res);  /* free message resource */
       res = NULL;

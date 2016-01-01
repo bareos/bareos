@@ -268,7 +268,8 @@ void my_name_is(int argc, char *argv[], const char *name);
 void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback = NULL);
 void term_msg(void);
 void close_msg(JCR *jcr);
-void add_msg_dest(MSGSRES *msg, int dest, int type, char *where, char *dest_code);
+void add_msg_dest(MSGSRES *msg, int dest, int type,
+                  char *where, char *mail_cmd, char *timestamp_format);
 void rem_msg_dest(MSGSRES *msg, int dest, int type, char *where);
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
 void dispatch_message(JCR *jcr, int type, utime_t mtime, char *buf);

@@ -520,8 +520,8 @@ static int check_resources()
       if (me->secure_erase_cmdline) {
          set_secure_erase_cmdline(me->secure_erase_cmdline);
       }
-      if (me->log_date_format) {
-         set_log_date_format(me->log_date_format);
+      if (me->log_timestamp_format) {
+         set_log_timestamp_format(me->log_timestamp_format);
       }
    }
 
