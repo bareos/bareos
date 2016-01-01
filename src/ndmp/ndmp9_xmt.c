@@ -300,9 +300,7 @@ xdr_ndmp9_u_quad(register XDR *xdrs, ndmp9_u_quad *objp)
 }
 
 bool_t
-xdr_ndmp9_no_arguments(xdrs, objp)
-	register XDR *xdrs;
-	ndmp9_u_quad *objp;
+xdr_ndmp9_no_arguments(register XDR *xdrs, ndmp9_u_quad *objp)
 {
 	return TRUE;
 }
