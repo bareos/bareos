@@ -376,6 +376,9 @@ void free_resource(RES *sres, int type)
       if (res->res_msgs.operator_cmd) {
          free(res->res_msgs.operator_cmd);
       }
+      if (res->res_msgs.timestamp_format) {
+         free(res->res_msgs.timestamp_format);
+      }
       free_msgs_res((MSGSRES *)res);  /* free message resource */
       res = NULL;
       break;

@@ -304,7 +304,7 @@ void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
       daemon_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
       memset(daemon_msgs, 0, sizeof(MSGSRES));
       for (i=1; i<=M_MAX; i++) {
-         add_msg_dest(daemon_msgs, MD_STDOUT, i, NULL, NULL);
+         add_msg_dest(daemon_msgs, MD_STDOUT, i, NULL, NULL, NULL);
       }
       Dmsg1(050, "Create daemon global message resource %p\n", daemon_msgs);
       return;
@@ -390,7 +390,8 @@ void init_console_msg(const char *wd)
  * but in the case of MAIL is a space separated list of
  * email addresses, ...
  */
-void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where, char *mail_cmd)
+void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type,
+                  char *where, char *mail_cmd, char *timestamp_format)
 {
    DEST *d;
 
@@ -404,7 +405,7 @@ void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where, char *
          Dmsg4(850, "Add to existing d=%p msgtype=%d destcode=%d where=%s\n",
                d, msg_type, dest_code, NPRT(where));
          set_bit(msg_type, d->msg_types);
-         set_bit(msg_type, msg->send_msg);  /* set msg_type bit in our local */
+         set_bit(msg_type, msg->send_msg);  /* Set msg_type bit in our local */
          return;
       }
    }
@@ -416,16 +417,23 @@ void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where, char *
    memset(d, 0, sizeof(DEST));
    d->next = msg->dest_chain;
    d->dest_code = dest_code;
-   set_bit(msg_type, d->msg_types);      /* set type bit in structure */
-   set_bit(msg_type, msg->send_msg);     /* set type bit in our local */
+   set_bit(msg_type, d->msg_types);      /* Set type bit in structure */
+   set_bit(msg_type, msg->send_msg);     /* Set type bit in our local */
+
    if (where) {
       d->where = bstrdup(where);
    }
+
    if (mail_cmd) {
       d->mail_cmd = bstrdup(mail_cmd);
    }
-   Dmsg5(850, "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s\n",
-          d, msg_type, dest_code, NPRT(where), NPRT(d->mail_cmd));
+
+   if (timestamp_format) {
+      d->timestamp_format = bstrdup(timestamp_format);
+   }
+
+   Dmsg6(850, "add new d=%p msgtype=%d destcode=%d where=%s mailcmd=%s timestampformat=%s\n",
+         d, msg_type, dest_code, NPRT(where), NPRT(d->mail_cmd), NPRT(d->timestamp_format));
    msg->dest_chain = d;
 }
 
@@ -679,6 +687,9 @@ void free_msgs_res(MSGSRES *msgs)
       if (d->mail_cmd) {
          free(d->mail_cmd);
       }
+      if (d->timestamp_format) {
+         free(d->timestamp_format);
+      }
       old = d;                        /* save pointer to release */
       d = d->next;                    /* point to next buffer */
       free(old);                      /* free the destination item */
@@ -842,6 +853,7 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
    MSGSRES *msgs;
    BPIPE *bpipe;
    const char *mode;
+   bool dt_conversion = false;
 
    Dmsg2(850, "Enter dispatch_message type=%d msg=%s", type, msg);
 
@@ -858,11 +870,9 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
    if (mtime == 1) {
       *dt = 0;
       dtlen = 0;
-      mtime = time(NULL);      /* get time for SQL log */
+      mtime = time(NULL);      /* Get time for SQL log */
    } else {
-      bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
-      bstrncat(dt, " ", sizeof(dt));
-      dtlen = strlen(dt);
+      dt_conversion = true;
    }
 
    /*
@@ -922,6 +932,10 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
     * If closing this message resource, print and send to syslog, then get out.
     */
    if (msgs->is_closing()) {
+      if (dt_conversion) {
+         bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
+         bstrncat(dt, " ", sizeof(dt));
+      }
       fputs(dt, stdout);
       fputs(msg, stdout);
       fflush(stdout);
@@ -931,6 +945,20 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
 
    for (d = msgs->dest_chain; d; d = d->next) {
       if (bit_is_set(type, d->msg_types)) {
+         /*
+          * See if a specific timestamp format was specified for this log resource.
+          * Otherwise apply the global setting in log_timestamp_format.
+          */
+         if (dt_conversion) {
+            if (d->timestamp_format) {
+               bstrftime(dt, sizeof(dt), mtime, d->timestamp_format);
+            } else {
+               bstrftime(dt, sizeof(dt), mtime, log_timestamp_format);
+            }
+            bstrncat(dt, " ", sizeof(dt));
+            dtlen = strlen(dt);
+         }
+
          switch (d->dest_code) {
          case MD_CATALOG:
             if (!jcr || !jcr->db) {

@@ -112,6 +112,7 @@ typedef struct s_dest {
    char msg_types[NR_MSG_TYPES];      /* Message type mask */
    char *where;                       /* Filename/program name */
    char *mail_cmd;                    /* Mail command */
+   char *timestamp_format;            /* Timestamp format to use in logging messages */
    int syslog_facility;               /* Syslog Facility */
    POOLMEM *mail_filename;            /* Unique mail filename */
 } DEST;

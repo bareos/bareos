@@ -280,6 +280,7 @@ class MSGSRES : public BRSRES {
 public:
    char *mail_cmd;                    /* Mail command */
    char *operator_cmd;                /* Operator command */
+   char *timestamp_format;            /* Timestamp format */
    DEST *dest_chain;                  /* chain of destinations */
    char send_msg[nbytes_for_bits(M_MAX+1)]; /* Bit array of types */
 

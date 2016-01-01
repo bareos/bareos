@@ -38,6 +38,7 @@ static RES_ITEM msgs_items[] = {
    { "Description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL, NULL, NULL },
    { "OperatorCommand", CFG_TYPE_STR, ITEM(res_msgs.operator_cmd), 0, 0, NULL, NULL, NULL },
+   { "TimestampFormat", CFG_TYPE_STR, ITEM(res_msgs.timestamp_format), 0, 0, NULL, NULL, NULL },
    { "Syslog", CFG_TYPE_MSGS, ITEM(res_msgs), MD_SYSLOG, 0, NULL, NULL, NULL },
    { "Mail", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL, 0, NULL, NULL, NULL },
    { "MailOnError", CFG_TYPE_MSGS, ITEM(res_msgs), MD_MAIL_ON_ERROR, 0, NULL, NULL, NULL },
