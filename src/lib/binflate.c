@@ -44,7 +44,7 @@ int Zdeflate(char *in, int in_len, char *out, int &out_len)
    strm.zalloc = Z_NULL;
    strm.zfree = Z_NULL;
    strm.opaque = Z_NULL;
-   ret = deflateInit(&strm, 9);
+   ret = deflateInit(&strm, Z_BEST_COMPRESSION);
    if (ret != Z_OK) {
       Dmsg0(200, "deflateInit error\n");
       (void)deflateEnd(&strm);
