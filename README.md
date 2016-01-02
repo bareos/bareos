@@ -14,6 +14,8 @@ Release 16.1.x
 Release 15.4.x
 ==============
 
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
 * Storage Daemon Refactor record write code path.
 * Enable concurrent jobs on Windows platforms
 * Report the secure erase settings in the jobreport
@@ -385,26 +387,28 @@ Build System
   * Packages are build for:
       * CentOS 5
       * CentOS 6
+      * CentOS 7
       * Debian 6.0
       * Debian 7.0
-      * Fedora 18
-      * Fedora 19
+      * Debian 8.0
+      * Fedora 20
+      * Fedora 21
+      * Fedora 22
+      * Fedora 23
       * RedHat Enterprise Linux 5 (RHEL5)
       * RedHat Enterprise Linux 6 (RHEL6)
-      * Suse Linux Enterprise 11 SP1 (SLE_11_SP1)
-      * Suse Linux Enterprise 11 SP2 (SLE_11_SP2)
+      * RedHat Enterprise Linux 7 (RHEL7)
       * Suse Linux Enterprise 11 SP3 (SLE_11_SP3)
-      * Univention 3.1
-      * Univention 3.2
-      * OpenSuse 11.4
-      * OpenSuse 12.1
-      * OpenSuse 12.2
-      * OpenSuse 12.3
+      * Suse Linux Enterprise 11 SP4 (SLE_11_SP3)
+      * Suse Linux Enterprise 12 (SLE_12)
+      * Univention 4.0
       * OpenSuse 13.1
-      * OpenSuse factory
+      * OpenSuse 13.2
+      * OpenSuse LEAP 42.1
       * Ubuntu 10.04
       * Ubuntu 12.04
-      * Windows (32 and 64 Bit)
+      * Ubuntu 14.04
+      * Windows VISTA and later (32 and 64 Bit)
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
   * Fully automatic continuos integration tests of new packages with all supported Linux distributions
