@@ -23,7 +23,7 @@
 %define dirs_with_unittests "lib findlib"
 
 Name:           mingw64-winbareos
-Version:        15.4.0
+Version:        16.1.0
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
