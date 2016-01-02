@@ -6,10 +6,31 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
-Release 15.2.x
+Release 16.1.x
 ==============
 
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+
+Release 15.4.x
+==============
+
+* Storage Daemon Refactor record write code path.
+* Enable concurrent jobs on Windows platforms
+* Report the secure erase settings in the jobreport
+* Deprecated POOLMEM ** in favor of POOLMEM *&
+* One command loop for normal and dot commands
+* BVFS remove set_username()
+* BSOCK allow sending long messages
+* Cleanup reload_config command
+   * reload config command is callable as signal handler for SIGHUP
+     and by the bconsole reload command.
+   * Make sure, that the SIGHUP handler is only called once.
+   * Do not terminate the director in case of config errors.
+
+Release 15.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
 
 * Lots of refactoring of old code.
 * Systemd support for Debian >= 8 and Ubuntu >= 15.04
@@ -42,11 +63,16 @@ Release 15.2.x
    * Increase debug message timestamp resolution to include usecs.
    * When printing protocol messages drop printing \n
    * Set JCR in TSD for stored and filed.
+* NDMP enhancements
+   * Reference Implementation enhancements
+   * Single file restore fixes
+   * Incremental backups and restores fixed
+   * Relocation on restore fixed
 
 Release 15.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
 
 * Refactoring of Migrate/Copy selection code. (Mantis #342)
 * Major TLS overhaul. (Mantis #371)
@@ -59,7 +85,7 @@ Release 15.1.x
 Release 14.4.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
 
 * Support to rados SD backend for libradosstriper
 * Refactor socket handling.
