@@ -1424,7 +1424,16 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    /*
     * Create the VDI device set.
     */
-   hr = p_ctx->VDIDeviceSet->CreateEx(NULL, p_ctx->vdsname, &p_ctx->VDIConfig);
+   if (bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
+      hr = p_ctx->VDIDeviceSet->CreateEx(NULL, p_ctx->vdsname, &p_ctx->VDIConfig);
+   } else {
+      POOLMEM *instance_name;
+
+      instance_name = get_pool_memory(PM_NAME);
+      UTF8_2_wchar(&instance_name, p_ctx->instance);
+      hr = p_ctx->VDIDeviceSet->CreateEx((LPCWSTR)instance_name, p_ctx->vdsname, &p_ctx->VDIConfig);
+      free_pool_memory(instance_name);
+   }
    if (!SUCCEEDED(hr)) {
       comReportError(ctx, hr);
       return false;
