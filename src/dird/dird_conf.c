@@ -1768,19 +1768,17 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       for (int i = 0;  i < num_includes; i++) {
          INCEXE *incexe = include_items[i];
 
-         Mmsg(temp, "Include {\n");
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, "Include {\n");
 
          /*
           * Start options block
           */
          if (incexe->num_opts > 0) {
-            Mmsg(temp, "Options {\n");
-            indent_config_item(cfg_str, 2, temp.c_str());
-
             for (int j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
                bool enhanced_wild = false;
+
+               indent_config_item(cfg_str, 2, "Options {\n");
 
                for (int k = 0; fo->opts[k] != '\0'; k++) {
                   if (fo->opts[k]=='W') {
@@ -2059,9 +2057,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                   Mmsg(temp, "Writer = \"%s\"\n", fo->writer);
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
-            }
 
-            if (incexe->num_opts > 0) {
                indent_config_item(cfg_str, 2, "}\n");
             }
          } /* end options block */
