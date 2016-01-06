@@ -1804,7 +1804,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                      pm_strcat(cfg_str, "\n");
                      break;
                   case 'c':
-                     indent_config_item(cfg_str, 3, "CheckFileChanges = yes\n");
+                     indent_config_item(cfg_str, 3, "CheckFileChanges = Yes\n");
                      break;
                   case 'd':
                      switch(*(p + 1)) {
@@ -1827,19 +1827,19 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                      }
                      break;
                   case 'e':
-                     indent_config_item(cfg_str, 3, "Exclude = yes\n");
+                     indent_config_item(cfg_str, 3, "Exclude = Yes\n");
                      break;
                   case 'f':
-                     indent_config_item(cfg_str, 3, "OneFS = no\n");
+                     indent_config_item(cfg_str, 3, "OneFS = No\n");
                      break;
                   case 'h':                 /* no recursion */
-                     indent_config_item(cfg_str, 3, "Recurse = no\n");
+                     indent_config_item(cfg_str, 3, "Recurse = No\n");
                      break;
                   case 'H':                 /* no hard link handling */
-                     indent_config_item(cfg_str, 3, "Hardlinks = no\n");
+                     indent_config_item(cfg_str, 3, "Hardlinks = No\n");
                      break;
                   case 'i':
-                     indent_config_item(cfg_str, 3, "IgnoreCase = yes\n");
+                     indent_config_item(cfg_str, 3, "IgnoreCase = Yes\n");
                      break;
                   case 'J':                 /* Base Job */
                      indent_config_item(cfg_str, 3, "BaseJob = ");
