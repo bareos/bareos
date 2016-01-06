@@ -300,25 +300,34 @@ bool JCR::JobReads()
 }
 
 /*
- * Push a subroutine address into the job end callback stack
+ * Push a job_push_item onto the job end callback stack.
  */
-void job_end_push(JCR *jcr, void job_end_cb(JCR *jcr,void *), void *ctx)
+void job_end_push(JCR *jcr, void job_end_cb(JCR *jcr, void *), void *ctx)
 {
-   jcr->job_end_push.append((void *)job_end_cb);
-   jcr->job_end_push.append(ctx);
+   job_push_item *item;
+
+   item = (job_push_item *)malloc(sizeof(job_push_item));
+
+   item->job_end_cb = job_end_cb;
+   item->ctx = ctx;
+
+   jcr->job_end_push.push((void *)item);
 }
 
 /*
- * Pop each job_end subroutine and call it
+ * Pop each job_push_item and process it.
  */
 static void job_end_pop(JCR *jcr)
 {
-   void (*job_end_cb)(JCR *jcr, void *ctx);
-   void *ctx;
-   for (int i=jcr->job_end_push.size()-1; i > 0; ) {
-      ctx = jcr->job_end_push.get(i--);
-      job_end_cb = (void (*)(JCR *,void *))jcr->job_end_push.get(i--);
-      job_end_cb(jcr, ctx);
+   job_push_item *item;
+
+   if (jcr->job_end_push.size() > 0) {
+      item = (job_push_item *)jcr->job_end_push.pop();
+      while (item) {
+         item->job_end_cb(jcr, item->ctx);
+         free(item);
+         item = (job_push_item *)jcr->job_end_push.pop();
+      }
    }
 }
 

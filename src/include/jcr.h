@@ -260,6 +260,11 @@ struct CMPRS_CTX {
    } workset;
 };
 
+struct job_push_item {
+   void (*job_end_cb)(JCR *jcr, void *);
+   void *ctx;
+};
+
 typedef void (JCR_free_HANDLER)(JCR *jcr);
 
 /*
