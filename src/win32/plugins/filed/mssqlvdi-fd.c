@@ -1435,7 +1435,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
       POOLMEM *instance_name;
 
       instance_name = get_pool_memory(PM_NAME);
-      UTF8_2_wchar(&instance_name, p_ctx->instance);
+      UTF8_2_wchar(instance_name, p_ctx->instance);
       hr = p_ctx->VDIDeviceSet->CreateEx((LPCWSTR)instance_name, p_ctx->vdsname, &p_ctx->VDIConfig);
       free_pool_memory(instance_name);
    }
