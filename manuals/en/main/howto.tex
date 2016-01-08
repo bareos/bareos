@@ -731,35 +731,44 @@ In this section, we describe different methods to do a full backup of a MySQL da
 \label{backup-mysql-python}
 
 The Pyhton plugin from \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} makes a backup of all or selected 
-MySQL databases from the file-daemon or any other MySQL server.
+MySQL databases from the \bareosFd or any other MySQL server.
 
-\begin{bconfig}{bareos-dir.conf: Python FD MySQL plugin}
-FileSet {
-    Name = "mysql"
-    Include {
-    Options {
-        signature = MD5
-        compression = lz4
-    }
-    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb"
-    #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
-    }
-\end{bconfig}
-
-In the above example the plugin creates and saves a dump from the databases called \argument{test} and \argument{wikidb},
-running on the file-daemon. The commented example below
-specifies an explicit MySQL server called \parameter{dbhost}, and connects with user \argument{bareos}, password \argument{bareos}, to create and save a backup of all databases.
-
-You need to enable the plugin directory and disable bacula compatibility in the file-dameon config, too:
+Following settings must be done on the Bareos client (\bareosFd):
+\begin{itemize}
+  \item install and enable the \bareosFd Python plugin
+  \item install the Python MySQL plugin (for some platforms it is available prepackaged from \contribDownloadBareosOrg, on the other platforms: copy the plugin files to the Bareos Plugin Directory)
+  \item disable bacula compatibility (default for Bareos $>=$ 15.2)
+\end{itemize}
 
 \begin{bconfig}{bareos-fd.conf: enable Python FD plugins}
 FileDaemon {
   Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
-  compatible = no # default since bareos 15.2.0
+  Plugin Name = "python"
+  compatible = no
 }
 \end{bconfig}
+
+Configure the plugin in the \bareosDir:
+
+\begin{bconfig}{bareos-dir.conf: Python FD MySQL plugin}
+FileSet {
+    Name = "mysql"
+    Include {
+      Options {
+        signature = MD5
+        compression = lz4
+      }
+      Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:db=test,wikidb"
+      #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
+    }
+}
+\end{bconfig}
+
+In the above example the plugin creates and saves a dump from the databases called \argument{test} and \argument{wikidb},
+running on the file-daemon. The commented example below
+specifies an explicit MySQL server called \parameter{dbhost}, and connects with user \argument{bareos}, password \argument{bareos}, to create and save a backup of all databases.
 
 The plugin creates a pipe internally, thus no extra space on disk is needed. You will find one file per database in the backups in the virtual directory \path|/_mysqlbackups_|.
 
@@ -768,11 +777,13 @@ List of supported options:
  \item[db] comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
  \item[dumpbinary] command (with or without full path) to create the dumps. Default: \argument{mysqldump}
  \item[dumpoptions] options for dumpbinary, default: \bquote{\argument{--events --single-transaction}}
+ \item[drop\_and\_recreate] if not set to \argument{false}, adds \argument{--add-drop-database --databases} to dumpoptions
  \item[mysqlhost] MySQL host to connect to, default: \argument{localhost}
  \item[mysqluser] MySQL user. Default: unset, the user running the file-daemon will be used (usually root)
  \item[mysqlpassword] MySQL password. Default: unset (better use \file{my.cnf} to store passwords)
 \end{description}
 
+On restore, the database dumps are restored to the subdirectory \path|_mysqlbackups_| in the restore path. The database restore must be triggered manually (\command{mysql < _mysqlbackups_/DATABASENAME.sql}).
 
 
 \subsubsection{Backup of a MySQL Database by using the RunScript directive}
