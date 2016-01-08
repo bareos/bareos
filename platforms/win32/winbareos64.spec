@@ -38,10 +38,6 @@ BuildArch:      noarch
 %define addonsdir /bareos-addons/
 BuildRequires:  bareos-addons
 
-%define SIGNCERT ia.p12
-%define SIGNPWFILE signpassword
-
-
 Source1:        fillup.sed
 Patch1:         tray-monitor-conf.patch
 Patch2:         tray-monitor-conf-fd-sd.patch
@@ -88,8 +84,6 @@ BuildRequires:  mingw64-libjansson-devel
 BuildRequires:  sed
 BuildRequires:  vim, procps, bc
 
-BuildRequires:  osslsigncode
-BuildRequires:  obs-name-resolution-settings
 %description
 bareos
 
@@ -238,22 +232,6 @@ for flavor in `echo "%flavors"`; do
    do
       sed -f %SOURCE1 $sql -i ;
    done
-
-   # sign binary files
-   pushd $RPM_BUILD_ROOT%{_mingw64_bindir}/$flavor
-   for BINFILE in *; do
-      mv $BINFILE $BINFILE.unsigned
-      osslsigncode sign \
-                   -pkcs12 ${OLDPWD}/%SIGNCERT \
-                   -readpass ${OLDPWD}/%SIGNPWFILE \
-                   -n "${DESCRIPTION}" \
-                   -i http://www.bareos.com/ \
-                   -t http://timestamp.comodoca.com/authenticode \
-                   -in  $BINFILE.unsigned \
-                   -out $BINFILE
-      rm *.unsigned
-   done
-   popd
 done
 
 %clean
