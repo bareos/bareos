@@ -50,7 +50,7 @@ case "$1" in
         permissions
         /usr/lib/bareos/scripts/bareos-config setup_sd_user
         # on Univention distributions the ucr command allows to open the firewall
-        if [ -x "/etc/init.d/univention-firewall" ] && type ucr >/dev/null 2>&1; then
+        if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
             ucr set \
                 security/packetfilter/package/bareos-storage/tcp/@sd_port@/all="ACCEPT" \
                 security/packetfilter/package/bareos-storage/tcp/@sd_port@/all/en="bareos-sd"

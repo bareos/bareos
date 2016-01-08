@@ -37,7 +37,7 @@ os_type=`uname -s`
 is_function()
 {
     func=${1-}
-    test "$func" && type "$func" > /dev/null 2>&1
+    test "$func" && command -v "$func" > /dev/null 2>&1
     return $?
 }
 

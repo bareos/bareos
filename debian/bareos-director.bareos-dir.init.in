@@ -45,7 +45,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 . /lib/lsb/init-functions
 
 # workaround, if status_of_proc is not defined (Ubuntu 8.04)
-if ! type status_of_proc >/dev/null; then
+if ! command -v status_of_proc >/dev/null; then
 status_of_proc ()
 {
     local pidfile daemon name status OPTIND
