@@ -176,8 +176,23 @@ do
       test_lib.exe \
       test_findlib.exe ;
    do
-      cp %{_mingw32_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release32
-      cp %{_mingw64_bindir}/$flavor/$file $RPM_BUILD_ROOT/$flavor/release64
+      osslsigncode  sign \
+                    -pkcs12 %SIGNCERT \
+                    -readpass %SIGNPWFILE \
+                    -n "${DESCRIPTION}" \
+                    -i http://www.bareos.com/ \
+                    -t http://timestamp.comodoca.com/authenticode \
+                    -in  %{_mingw32_bindir}/$flavor/$file \
+                    -out $RPM_BUILD_ROOT/$flavor/release32/$file
+
+      osslsigncode  sign \
+                    -pkcs12 %SIGNCERT \
+                    -readpass %SIGNPWFILE \
+                    -n "${DESCRIPTION}" \
+                    -i http://www.bareos.com/ \
+                    -t http://timestamp.comodoca.com/authenticode \
+                    -in  %{_mingw64_bindir}/$flavor/$file \
+                    -out $RPM_BUILD_ROOT/$flavor/release64/$file
 
       osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release32/$file
       osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release64/$file
