@@ -25,11 +25,15 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
         . /usr/share/dbconfig-common/dpkg/postinst
 
         # action
-        param1="$1"
-        shift || true
+        if [ $# -gt 0 ]; then
+            param1="$1"
+            shift
+        fi
         # when action is "configure": most-recently-configured-version
-        param2="$1"
-        shift || true
+        if [ $# -gt 0 ]; then
+            param2="$1"
+            shift
+        fi
         if [ "$param2" ]; then
             case "$param1" in
                 configure|reconfigure)
