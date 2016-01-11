@@ -96,9 +96,12 @@ void start_socket_server(dlist *addrs)
       Dmsg1(10, "filed: listening on port %d\n", p->get_port_host_order());
    }
 
+   /*
+    * Permit MaxConnections connections.
+    */
    sock_fds = New(alist(10, not_owned_by_alist));
    bnet_thread_server_tcp(addrs,
-                          me->MaxConcurrentJobs,
+                          me->MaxConnections,
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,

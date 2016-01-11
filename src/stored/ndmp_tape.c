@@ -1357,7 +1357,7 @@ extern "C" void *ndmp_thread_server(void *arg)
                   be.bstrerror());
          }
       }
-      listen(fd_ptr->fd, 50);      /* tell system we are ready */
+      listen(fd_ptr->fd, me->MaxConnections); /* tell system we are ready */
       sockfds.append(fd_ptr);
 #ifdef HAVE_POLL
       nfds++;

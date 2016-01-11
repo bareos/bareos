@@ -90,7 +90,8 @@ public:
    alist *plugin_names;
    char *scripts_directory;
    alist *backend_directories;        /* Backend Directories */
-   uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs to run */
+   uint32_t MaxConcurrentJobs;        /* Maximum concurrent jobs to run */
+   uint32_t MaxConnections;           /* Maximum connections to allow */
    uint32_t ndmploglevel;             /* Initial NDMP log level */
    uint32_t jcr_watchdog_time;        /* Absolute time after which a Job gets terminated regardless of its progress */
    uint32_t stats_collect_interval;   /* Statistics collect interval in seconds */

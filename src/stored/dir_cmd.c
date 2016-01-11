@@ -195,6 +195,22 @@ static struct s_cmds cmds[] = {
    { NULL, NULL, false } /* list terminator */
 };
 
+ /*
+  * Count the number of running jobs.
+  */
+static inline bool count_running_jobs()
+{
+   JCR *jcr;
+   unsigned int cnt = 0;
+
+   foreach_jcr(jcr) {
+      cnt++;
+   }
+   endeach_jcr(jcr);
+
+   return (cnt >= me->MaxConcurrentJobs) ? false : true;
+}
+
 /*
  * Connection request from an director.
  *
@@ -211,6 +227,11 @@ void *handle_director_connection(BSOCK *dir)
    int i, errstat;
    int bnet_stat = 0;
    bool found, quit;
+
+   if (!count_running_jobs()) {
+      Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+      return NULL;
+   }
 
    /*
     * This is a connection from the Director, so setup a JCR
@@ -1217,7 +1238,7 @@ static inline bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
    if (!bs) {
       berrno be;
       Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file %s: ERR=%s\n"),
-         jcr->RestoreBootstrap, be.bstrerror());
+           jcr->RestoreBootstrap, be.bstrerror());
       goto bail_out;
    }
    Dmsg0(10, "=== Bootstrap file ===\n");
