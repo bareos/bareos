@@ -1,14 +1,29 @@
 
-subdirs = manuals/en/main/ manuals/en/developers/
+SUBDIRS = manuals/en/main/ manuals/en/developers/
+.PHONY: $(SUBDIRS)
 
-MAKE=make
+all:   TARGET=
+all:   $(SUBDIRS)
 
-all:
+check: TARGET=check
+check: $(SUBDIRS)
 
-depend:
-	@for I in ${subdirs}; \
-		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) $@ || exit 1); done
+clean: TARGET=clean
+clean: $(SUBDIRS)
 
-%:
-	@for I in ${subdirs}; \
-		do (cd $$I; echo "==>Entering directory `pwd`"; $(MAKE) $@ || exit 1); done
+html:  TARGET=html
+html:  $(SUBDIRS)
+
+pdf:   TARGET=pdf
+pdf:   $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@ $(TARGET)
+
+# %: $(SUBDIRS)
+# 	@echo $<
+# 	@echo $^
+# 	@echo $@
+# 	@echo $?
+# 	@echo "$< $@" >>/tmp/make.log
+# 	@if [ $@ != Makefile ]; then $(MAKE) -C $< $@; else $(MAKE) -C $<; fi
