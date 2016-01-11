@@ -15,6 +15,7 @@ s#@scriptdir@#C:/Program Files/Bareos#g
 s#@working_dir@#C:/ProgramData/Bareos/working#g
 s#@logdir@#C:/ProgramData/Bareos/logs#g
 s#@sbindir@#C:/Program Files/Bareos#g
+s#@bindir@/bsmtp#\\"C:/Program Files/Bareos/bsmtp\\"#g
 s#@bindir@#C:/Program Files/Bareos#g
 s#@sysconfdir@#C:/ProgramData/Bareos#g
 s/@uncomment_dbi/#/g
