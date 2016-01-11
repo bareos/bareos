@@ -190,7 +190,7 @@ streams.
 }
 
 \defDirective{Sd}{Device}{Auto Select}{}{}{%
-If this directive is set to {\bf yes} (default), and the Device
+If this directive is set to {\bf yes}, and the Device
 belongs to an autochanger, then when the Autochanger is referenced
 by the Director, this device can automatically be selected. If this
 directive is set to {\bf no}, then the Device can only be referenced
@@ -524,7 +524,7 @@ operator to intervene.
 }
 
 \defDirective{Sd}{Device}{Maximum Concurrent Jobs}{}{}{%
-where {\textless}number{\textgreater} is the maximum number of Jobs that can run
+This directive specifies the maximum number of Jobs that can run
 concurrently on a specified Device.  Using this directive, it is possible
 to have different Jobs using multiple drives, because when
 the Maximum Concurrent Jobs limit is
@@ -553,16 +553,15 @@ want to set the {\bf Maximum File Size} to 20GB or bigger to avoid making
 the drive stop to write an EOF mark.
 
 For more info regarding this parameter, read the tape speed whitepaper:
-\url{http://www.bareos.org/en/Whitepapers/articles/Speed\_Tuning\_of\_Tape\_Drives.html}
+\bareosWhitepaperTapeSpeedTuning
 
 Note, this directive does not limit the size of Volumes that Bareos
 will create regardless of whether they are tape or disk volumes. It
 changes only the number of EOF marks on a tape and the number of
-block positioning records (see below) that are generated. If you
+block positioning records that are generated. If you
 want to limit the size of all Volumes for a particular device, use
-the {\bf Maximum Volume Size} directive (above), or use the
-{\bf Maximum Volume Bytes} directive in the Director's Pool resource,
-which does the same thing but on a Pool (Volume) basis.
+the use the
+\linkResourceDirective{Dir}{Pool}{Maximum Volume Bytes} directive.
 }
 
 \defDirective{Sd}{Device}{Maximum Job Spool Size}{}{}{%
@@ -617,19 +616,15 @@ running.  The default is no limit.
 }
 
 \defDirective{Sd}{Device}{Maximum Volume Size}{}{}{%
-No more than {\bf size} bytes will be written onto a given volume on the
-archive device.  This directive is used mainly in testing Bareos to
-simulate a small Volume.  It can also be useful if you wish to limit the
-size of a File Volume to say less than 2GB of data.  In some rare cases
-of really antiquated tape drives that do not properly indicate when the
-end of a tape is reached during writing (though I have read about such
-drives, I have never personally encountered one).  Please note, this
-directive is deprecated (being phased out) in favor of the {\bf Maximum
-Volume Bytes} defined in the Director's configuration file.
+Normally, \linkResourceDirective{Dir}{Pool}{Maximum Volume Bytes} should be used instead.
+Limit the number of bytes that will be written onto a given volume on the
+archive device.
+This directive is used mainly in testing Bareos to
+simulate a small Volume.
 }
 
 \defDirective{Sd}{Device}{Media Type}{}{}{%
-The specified {\bf name-string} names the type of media supported by this
+The specified value names the type of media supported by this
 device, for example, "DLT7000".  Media type names are arbitrary in that you
 set them to anything you want, but they must be known to the volume
 database to keep track of which storage daemons can read which volumes.  In
@@ -715,9 +710,9 @@ Specifies the Name that the Director will use when asking to backup or
 restore to or from to this device. This is the logical  Device name, and may
 be any string up to 127 characters in length.  It is generally a good idea to
 make it correspond to the English  name of the backup device. The physical
-name of the device is  specified on the {\bf Archive Device} directive
-described below.  The name you specify here is also used in your Director's
-conf  file on the
+name of the device is  specified on the \linkResourceDirective{Sd}{Device}{Archive Device} directive.
+The name you specify here is also used in your Director's
+configuration  file on the
 \nameref{DirectorResourceStorage} in its Storage
 resource.
 }

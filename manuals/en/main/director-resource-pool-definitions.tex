@@ -138,10 +138,13 @@ If it is specified in the SD Device resource, it will take
 precedence over the value passed from the Director to the SD.
 }
 
-\defDirective{Dir}{Pool}{Maximum Blocksize}{}{14.2.0}{%
-The \configdirective{Maximum Block Size} can be defined here or at \linkResourceDirective{Sd}{Device}{Maximum Block Size}.
+\defDirective{Dir}{Pool}{Maximum Block Size}{}{14.2.0}{%
+The \configdirective{Maximum Block Size} can be defined here to define different block sizes per volume
+or statically for all volumes at \linkResourceDirective{Sd}{Device}{Maximum Block Size}.
 If not defined, its default is 63 KB.
-Increasing this value could improve the throughput of writing to tapes a lot, see \ilink{Setting Block Sizes}{setblocksizes} chapter.
+Increasing this value could improve the throughput of writing to tapes.
+
+\warning{However make sure to read the \ilink{Setting Block Sizes}{setblocksizes} chapter carefully before applying any changes.}
 }
 
 \defDirective{Dir}{Pool}{Maximum Volume Bytes}{}{}{%
@@ -249,8 +252,9 @@ If the previous Backup Job or Jobs selected have been in the Pool longer than
 the specified time, then they will be migrated.
 }
 
-\defDirective{Dir}{Pool}{Minimum Blocksize}{}{}{%
-The \configdirective{Minimum Block Size} can be defined here or at \linkResourceDirective{Sd}{Device}{Minimum Block Size}.
+\defDirective{Dir}{Pool}{Minimum Block Size}{}{}{%
+The \configdirective{Minimum Block Size} can be defined here to define different block sizes per volume
+or statically for all volumes at \linkResourceDirective{Sd}{Device}{Minimum Block Size}.
 For details, see chapter \ilink{Setting Block Sizes}{setblocksizes}.
 }
 
