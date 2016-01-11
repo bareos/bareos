@@ -1793,64 +1793,123 @@ void set_paired_storage(JCR *jcr)
 {
    STORERES *store, *pstore;
 
-   if (jcr->wstorage) {
+   switch (jcr->getJobType()) {
+   case JT_BACKUP:
       /*
-       * Setup the jcr->wstorage to point to all paired_storage
-       * entries of all the storage currently in the jcr->wstorage.
-       * Save the original list under jcr->pstorage.
+       * For a backup we look at the write storage.
        */
-      jcr->pstorage = jcr->wstorage;
-      jcr->wstorage = New(alist(10, not_owned_by_alist));
-      foreach_alist(store, jcr->pstorage) {
-         if (store->paired_storage) {
-            Dmsg1(100, "wstorage=%s\n", store->paired_storage->name());
-            jcr->wstorage->append(store->paired_storage);
-         }
-      }
-
-      /*
-       * Swap the actual jcr->res.wstore to point to the paired storage entry.
-       * We save the actual storage entry in pstore which is for restore
-       * in the free_paired_storage() function.
-       */
-      store = jcr->res.wstore;
-      if (store->paired_storage) {
-         jcr->res.wstore = store->paired_storage;
-         jcr->res.pstore = store;
-      }
-   } else {
-      /*
-       * Setup the jcr->pstorage to point to all paired_storage
-       * entries of all the storage currently in the jcr->rstorage.
-       */
-      jcr->pstorage = New(alist(10, not_owned_by_alist));
-      foreach_alist(pstore, jcr->rstorage) {
-         store = (STORERES *)GetNextRes(R_STORAGE, NULL);
-         while (store) {
-            if (store->paired_storage == pstore) {
-               break;
+      if (jcr->wstorage) {
+         /*
+          * Setup the jcr->wstorage to point to all paired_storage
+          * entries of all the storage currently in the jcr->wstorage.
+          * Save the original list under jcr->pstorage.
+          */
+         jcr->pstorage = jcr->wstorage;
+         jcr->wstorage = New(alist(10, not_owned_by_alist));
+         foreach_alist(store, jcr->pstorage) {
+            if (store->paired_storage) {
+               Dmsg1(100, "wstorage=%s\n", store->paired_storage->name());
+               jcr->wstorage->append(store->paired_storage);
             }
-
-            store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
          }
 
          /*
-          * See if we found a store that has the current pstore as
-          * its paired storage.
+          * Swap the actual jcr->res.wstore to point to the paired storage entry.
+          * We save the actual storage entry in pstore which is for restore
+          * in the free_paired_storage() function.
           */
-         if (store) {
-            jcr->pstorage->append(store);
+         store = jcr->res.wstore;
+         if (store->paired_storage) {
+            jcr->res.wstore = store->paired_storage;
+            jcr->res.pstore = store;
+         }
+      } else {
+         Jmsg(jcr, M_FATAL, 0,
+              _("No write storage, don't know how to setup paired storage\n"));
+      }
+      break;
+   case JT_RESTORE:
+      /*
+       * For a restores we look at the read storage.
+       */
+      if (jcr->rstorage) {
+         /*
+          * Setup the jcr->pstorage to point to all paired_storage
+          * entries of all the storage currently in the jcr->rstorage.
+          */
+         jcr->pstorage = New(alist(10, not_owned_by_alist));
+         foreach_alist(pstore, jcr->rstorage) {
+            store = (STORERES *)GetNextRes(R_STORAGE, NULL);
+            while (store) {
+               if (store->paired_storage == pstore) {
+                  break;
+               }
+
+               store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+            }
 
             /*
-             * If the current processed pstore is also the current
-             * entry in jcr->res.rstore update the jcr->pstore to point
-             * to this storage entry.
+             * See if we found a store that has the current pstore as
+             * its paired storage.
              */
-            if (pstore == jcr->res.rstore) {
-               jcr->res.pstore = store;
+            if (store) {
+               jcr->pstorage->append(store);
+
+               /*
+                * If the current processed pstore is also the current
+                * entry in jcr->res.rstore update the jcr->pstore to point
+                * to this storage entry.
+                */
+               if (pstore == jcr->res.rstore) {
+                  jcr->res.pstore = store;
+               }
             }
          }
+      } else {
+         Jmsg(jcr, M_FATAL, 0,
+              _("No read storage, don't know how to setup paired storage\n"));
       }
+      break;
+   case JT_MIGRATE:
+   case JT_COPY:
+      /*
+       * For a migrate or copy we look at the read storage.
+       */
+      if (jcr->rstorage) {
+         /*
+          * Setup the jcr->rstorage to point to all paired_storage
+          * entries of all the storage currently in the jcr->rstorage.
+          * Save the original list under jcr->pstorage.
+          */
+         jcr->pstorage = jcr->rstorage;
+         jcr->rstorage = New(alist(10, not_owned_by_alist));
+         foreach_alist(store, jcr->pstorage) {
+            if (store->paired_storage) {
+               Dmsg1(100, "rstorage=%s\n", store->paired_storage->name());
+               jcr->rstorage->append(store->paired_storage);
+            }
+         }
+
+         /*
+          * Swap the actual jcr->res.rstore to point to the paired storage entry.
+          * We save the actual storage entry in pstore which is for restore
+          * in the free_paired_storage() function.
+          */
+         store = jcr->res.rstore;
+         if (store->paired_storage) {
+            jcr->res.rstore = store->paired_storage;
+            jcr->res.pstore = store;
+         }
+      } else {
+         Jmsg(jcr, M_FATAL, 0,
+              _("No read storage, don't know how to setup paired storage\n"));
+      }
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0,
+           _("Unknown Job Type %s, don't know how to setup paired storage\n"),
+           job_type_to_str(jcr->getJobType()));
+      break;
    }
 }
 
@@ -1862,17 +1921,24 @@ void set_paired_storage(JCR *jcr)
 void free_paired_storage(JCR *jcr)
 {
    if (jcr->pstorage) {
-      if (jcr->wstorage) {
+      switch (jcr->getJobType()) {
+      case JT_BACKUP:
          /*
-          * The jcr->wstorage contain a set of paired storages.
-          * We just delete it content and swap back to the real master storage.
+          * For a backup we look at the write storage.
           */
-         delete jcr->wstorage;
-         jcr->wstorage = jcr->pstorage;
-         jcr->pstorage = NULL;
-         jcr->res.wstore = jcr->res.pstore;
-         jcr->res.pstore = NULL;
-      } else {
+         if (jcr->wstorage) {
+            /*
+             * The jcr->wstorage contain a set of paired storages.
+             * We just delete it content and swap back to the real master storage.
+             */
+            delete jcr->wstorage;
+            jcr->wstorage = jcr->pstorage;
+            jcr->pstorage = NULL;
+            jcr->res.wstore = jcr->res.pstore;
+            jcr->res.pstore = NULL;
+         }
+         break;
+      case JT_RESTORE:
          /*
           * The jcr->rstorage contain a set of paired storages.
           * For the read we created a list of alternative storage which we
@@ -1881,6 +1947,29 @@ void free_paired_storage(JCR *jcr)
          delete jcr->pstorage;
          jcr->pstorage = NULL;
          jcr->res.pstore = NULL;
+         break;
+      case JT_MIGRATE:
+      case JT_COPY:
+         /*
+          * For a migrate or copy we look at the read storage.
+          */
+         if (jcr->rstorage) {
+            /*
+             * The jcr->rstorage contains a set of paired storages.
+             * We just delete it content and swap back to the real master storage.
+             */
+            delete jcr->rstorage;
+            jcr->rstorage = jcr->pstorage;
+            jcr->pstorage = NULL;
+            jcr->res.rstore = jcr->res.pstore;
+            jcr->res.pstore = NULL;
+         }
+         break;
+      default:
+         Jmsg(jcr, M_FATAL, 0,
+              _("Unknown Job Type %s, don't know how to free paired storage\n"),
+              job_type_to_str(jcr->getJobType()));
+         break;
       }
    }
 }
@@ -1892,18 +1981,43 @@ bool has_paired_storage(JCR *jcr)
 {
    STORERES *store;
 
-   if (jcr->wstorage) {
-      foreach_alist(store, jcr->wstorage) {
-         if (!store->paired_storage) {
-            return false;
+   switch (jcr->getJobType()) {
+   case JT_BACKUP:
+      /*
+       * For a backup we look at the write storage.
+       */
+      if (jcr->wstorage) {
+         foreach_alist(store, jcr->wstorage) {
+            if (!store->paired_storage) {
+               return false;
+            }
          }
+      } else {
+         Jmsg(jcr, M_FATAL, 0,
+               _("No write storage, don't know how to check for paired storage\n"));
+         return false;
       }
-   } else {
-      foreach_alist(store, jcr->rstorage) {
-         if (!store->paired_storage) {
-            return false;
+      break;
+   case JT_RESTORE:
+   case JT_MIGRATE:
+   case JT_COPY:
+      if (jcr->rstorage) {
+         foreach_alist(store, jcr->rstorage) {
+            if (!store->paired_storage) {
+               return false;
+            }
          }
+      } else {
+         Jmsg(jcr, M_FATAL, 0,
+               _("No read storage, don't know how to check for paired storage\n"));
+         return false;
       }
+      break;
+   default:
+      Jmsg(jcr, M_FATAL, 0,
+           _("Unknown Job Type %s, don't know how to free paired storage\n"),
+           job_type_to_str(jcr->getJobType()));
+      return false;
    }
 
    return true;

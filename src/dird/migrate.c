@@ -1299,6 +1299,14 @@ static inline bool do_actual_migration(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Start %s JobId %s, Job=%s\n"),
         jcr->get_OperationName(), edit_uint64(jcr->JobId, ed1), jcr->Job);
 
+   /*
+    * See if the read storage is paired NDMP storage, if so setup
+    * the Job to use the native storage instead.
+    */
+   if (has_paired_storage(jcr)) {
+      set_paired_storage(jcr);
+   }
+
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
          ((STORERES *)jcr->rstorage->first())->name(),
          ((STORERES *)jcr->wstorage->first())->name());
@@ -1315,6 +1323,7 @@ static inline bool do_actual_migration(JCR *jcr)
        * Start conversation with Storage daemon
        */
       if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+         free_paired_storage(jcr);
          return false;
       }
 
@@ -1322,6 +1331,7 @@ static inline bool do_actual_migration(JCR *jcr)
        * Now start a job with the Storage daemon
        */
       if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
+         free_paired_storage(jcr);
          return false;
       }
 
@@ -1499,6 +1509,7 @@ static inline bool do_actual_migration(JCR *jcr)
            store->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {
+         free_paired_storage(jcr);
          return false;
       }
    }
@@ -1561,6 +1572,8 @@ bail_out:
       jcr->res.wstore = mig_jcr->res.wstore;
       mig_jcr->res.wstore = NULL;
    }
+
+   free_paired_storage(jcr);
 
    if (jcr->is_JobStatus(JS_Terminated)) {
       migration_cleanup(jcr, jcr->JobStatus);
