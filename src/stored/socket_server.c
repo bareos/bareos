@@ -114,7 +114,7 @@ void start_socket_server(dlist *addrs)
 
    sock_fds = New(alist(10, not_owned_by_alist));
    bnet_thread_server_tcp(addrs,
-                          me->max_concurrent_jobs * 2 + 1,
+                          me->MaxConnections,
                           sock_fds,
                           &socket_workq,
                           me->nokeepalive,

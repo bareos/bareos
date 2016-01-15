@@ -47,6 +47,160 @@
 static char replicatecmd[]  =
    "replicate Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
+/*
+ * Get Job names in Pool
+ */
+static const char *sql_job =
+   "SELECT DISTINCT Job.Name from Job,Pool"
+   " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
+
+/*
+ * Get JobIds from regex'ed Job names
+ */
+static const char *sql_jobids_from_job =
+   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
+   " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
+   " ORDER by Job.StartTime";
+
+/*
+ * Get Client names in Pool
+ */
+static const char *sql_client =
+   "SELECT DISTINCT Client.Name from Client,Pool,Job"
+   " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
+   " Job.PoolId=Pool.PoolId";
+
+/*
+ * Get JobIds from regex'ed Client names
+ */
+static const char *sql_jobids_from_client =
+   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool,Client"
+   " WHERE Client.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
+   " AND Job.ClientId=Client.ClientId AND Job.Type IN ('B','C')"
+   " AND Job.JobStatus IN ('T','W')"
+   " ORDER by Job.StartTime";
+
+/*
+ * Get Volume names in Pool
+ */
+static const char *sql_vol =
+   "SELECT DISTINCT VolumeName FROM Media,Pool WHERE"
+   " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
+
+/*
+ * Get JobIds from regex'ed Volume names
+ */
+static const char *sql_jobids_from_vol =
+   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Media,JobMedia,Job"
+   " WHERE Media.VolumeName='%s' AND Media.MediaId=JobMedia.MediaId"
+   " AND JobMedia.JobId=Job.JobId AND Job.Type IN ('B','C')"
+   " AND Job.JobStatus IN ('T','W') AND Media.Enabled=1"
+   " ORDER by Job.StartTime";
+
+/*
+ * Get JobIds from the smallest volume
+ */
+static const char *sql_smallest_vol =
+   "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
+   " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
+   " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
+   " ORDER BY VolBytes ASC LIMIT 1";
+
+/*
+ * Get JobIds from the oldest volume
+ */
+static const char *sql_oldest_vol =
+   "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
+   " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
+   " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
+   " ORDER BY LastWritten ASC LIMIT 1";
+
+/*
+ * Get JobIds when we have selected MediaId
+ */
+static const char *sql_jobids_from_mediaid =
+   "SELECT DISTINCT Job.JobId,Job.StartTime FROM JobMedia,Job"
+   " WHERE JobMedia.JobId=Job.JobId AND JobMedia.MediaId IN (%s)"
+   " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
+   " ORDER by Job.StartTime";
+
+/*
+ * Get the number of bytes in the pool
+ */
+static const char *sql_pool_bytes =
+   "SELECT SUM(JobBytes) FROM Job WHERE JobId IN"
+   " (SELECT DISTINCT Job.JobId from Pool,Job,Media,JobMedia WHERE"
+   " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
+   " VolStatus in ('Full','Used','Error','Append') AND Media.Enabled=1 AND"
+   " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
+   " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
+
+/*
+ * Get the number of bytes in the Jobs
+ */
+static const char *sql_job_bytes =
+   "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
+
+/*
+ * Get Media Ids in Pool
+ */
+static const char *sql_mediaids =
+   "SELECT MediaId FROM Media,Pool WHERE"
+   " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
+   " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
+
+/*
+ * Get JobIds in Pool longer than specified time
+ */
+static const char *sql_pool_time =
+   "SELECT DISTINCT Job.JobId FROM Pool,Job,Media,JobMedia WHERE"
+   " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
+   " VolStatus IN ('Full','Used','Error') AND Media.Enabled=1 AND"
+   " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
+   " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId"
+   " AND Job.RealEndTime<='%s'";
+
+/*
+ * Get JobIds from successfully completed backup jobs which have not been copied before
+ */
+static const char *sql_jobids_of_pool_uncopied_jobs =
+   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
+   " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
+   " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
+   " AND Job.jobBytes > 0"
+   " AND Job.JobId NOT IN"
+   " (SELECT PriorJobId FROM Job WHERE"
+   " Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
+   " AND PriorJobId != 0)"
+   " ORDER by Job.StartTime";
+
+/*
+ * Migrate NDMP Job MetaData.
+ */
+static const char *sql_migrate_ndmp_metadata =
+   "UPDATE File SET JobId=%s "
+   "WHERE JobId=%s "
+   "AND FilenameId NOT IN ("
+   "SELECT FilenameId "
+   "FROM File "
+   "WHERE JobId=%s)";
+
+/*
+ * Copy NDMP Job MetaData.
+ */
+static const char *sql_copy_ndmp_metadata =
+   "INSERT INTO File (FileIndex, JobId, PathId, FilenameId, DeltaSeq, MarkId, LStat, MD5) "
+   "SELECT FileIndex, %s, PathId, FilenameId, DeltaSeq, MarkId, LStat, MD5 "
+   "FROM File "
+   "WHERE JobId=%s "
+   "AND FilenameId NOT IN ("
+   "SELECT FilenameId "
+   "FROM File "
+   "WHERE JobId=%s)";
+
 static const int dbglevel = 10;
 
 struct idpkt {
@@ -374,143 +528,6 @@ static int unique_name_handler(void *ctx, int num_fields, char **row)
 
    return 0;
 }
-
-/*
- * Get Job names in Pool
- */
-static const char *sql_job =
-   "SELECT DISTINCT Job.Name from Job,Pool"
-   " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
-
-/*
- * Get JobIds from regex'ed Job names
- */
-static const char *sql_jobids_from_job =
-   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
-   " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
-   " ORDER by Job.StartTime";
-
-/*
- * Get Client names in Pool
- */
-static const char *sql_client =
-   "SELECT DISTINCT Client.Name from Client,Pool,Job"
-   " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
-   " Job.PoolId=Pool.PoolId";
-
-/*
- * Get JobIds from regex'ed Client names
- */
-static const char *sql_jobids_from_client =
-   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool,Client"
-   " WHERE Client.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
-   " AND Job.ClientId=Client.ClientId AND Job.Type IN ('B','C')"
-   " AND Job.JobStatus IN ('T','W')"
-   " ORDER by Job.StartTime";
-
-/*
- * Get Volume names in Pool
- */
-static const char *sql_vol =
-   "SELECT DISTINCT VolumeName FROM Media,Pool WHERE"
-   " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
-
-/*
- * Get JobIds from regex'ed Volume names
- */
-static const char *sql_jobids_from_vol =
-   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Media,JobMedia,Job"
-   " WHERE Media.VolumeName='%s' AND Media.MediaId=JobMedia.MediaId"
-   " AND JobMedia.JobId=Job.JobId AND Job.Type IN ('B','C')"
-   " AND Job.JobStatus IN ('T','W') AND Media.Enabled=1"
-   " ORDER by Job.StartTime";
-
-/*
- * Get JobIds from the smallest volume
- */
-static const char *sql_smallest_vol =
-   "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
-   " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
-   " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
-   " ORDER BY VolBytes ASC LIMIT 1";
-
-/*
- * Get JobIds from the oldest volume
- */
-static const char *sql_oldest_vol =
-   "SELECT Media.MediaId FROM Media,Pool,JobMedia WHERE"
-   " Media.MediaId in (SELECT DISTINCT MediaId from JobMedia) AND"
-   " Media.VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-   " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
-   " ORDER BY LastWritten ASC LIMIT 1";
-
-/*
- * Get JobIds when we have selected MediaId
- */
-static const char *sql_jobids_from_mediaid =
-   "SELECT DISTINCT Job.JobId,Job.StartTime FROM JobMedia,Job"
-   " WHERE JobMedia.JobId=Job.JobId AND JobMedia.MediaId IN (%s)"
-   " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
-   " ORDER by Job.StartTime";
-
-/*
- * Get the number of bytes in the pool
- */
-static const char *sql_pool_bytes =
-   "SELECT SUM(JobBytes) FROM Job WHERE JobId IN"
-   " (SELECT DISTINCT Job.JobId from Pool,Job,Media,JobMedia WHERE"
-   " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
-   " VolStatus in ('Full','Used','Error','Append') AND Media.Enabled=1 AND"
-   " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
-   " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
-
-/*
- * Get the number of bytes in the Jobs
- */
-static const char *sql_job_bytes =
-   "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
-
-/*
- * Get Media Ids in Pool
- */
-static const char *sql_mediaids =
-   "SELECT MediaId FROM Media,Pool WHERE"
-   " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
-   " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
-
-/*
- * Get JobIds in Pool longer than specified time
- */
-static const char *sql_pool_time =
-   "SELECT DISTINCT Job.JobId FROM Pool,Job,Media,JobMedia WHERE"
-   " Pool.Name='%s' AND Media.PoolId=Pool.PoolId AND"
-   " VolStatus IN ('Full','Used','Error') AND Media.Enabled=1 AND"
-   " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
-   " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId"
-   " AND Job.RealEndTime<='%s'";
-
-/*
- * Get JobIds from successfully completed backup jobs which have not been copied before
- */
-static const char *sql_jobids_of_pool_uncopied_jobs =
-   "SELECT DISTINCT Job.JobId,Job.StartTime FROM Job,Pool"
-   " WHERE Pool.Name = '%s' AND Pool.PoolId = Job.PoolId"
-   " AND Job.Type = 'B' AND Job.JobStatus IN ('T','W')"
-   " AND Job.jobBytes > 0"
-   " AND Job.JobId NOT IN"
-   " (SELECT PriorJobId FROM Job WHERE"
-   " Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
-   " AND PriorJobId != 0)"
-   " ORDER by Job.StartTime";
-
-/*
-* const char *sql_ujobid =
-*   "SELECT DISTINCT Job.Job from Client,Pool,Media,Job,JobMedia "
-*   " WHERE Media.PoolId=Pool.PoolId AND Pool.Name='%s' AND"
-*   " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId";
-*/
 
 /*
  * This routine returns:
@@ -1299,6 +1316,14 @@ static inline bool do_actual_migration(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Start %s JobId %s, Job=%s\n"),
         jcr->get_OperationName(), edit_uint64(jcr->JobId, ed1), jcr->Job);
 
+   /*
+    * See if the read storage is paired NDMP storage, if so setup
+    * the Job to use the native storage instead.
+    */
+   if (has_paired_storage(jcr)) {
+      set_paired_storage(jcr);
+   }
+
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
          ((STORERES *)jcr->rstorage->first())->name(),
          ((STORERES *)jcr->wstorage->first())->name());
@@ -1315,6 +1340,7 @@ static inline bool do_actual_migration(JCR *jcr)
        * Start conversation with Storage daemon
        */
       if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+         free_paired_storage(jcr);
          return false;
       }
 
@@ -1322,6 +1348,7 @@ static inline bool do_actual_migration(JCR *jcr)
        * Now start a job with the Storage daemon
        */
       if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
+         free_paired_storage(jcr);
          return false;
       }
 
@@ -1499,6 +1526,7 @@ static inline bool do_actual_migration(JCR *jcr)
            store->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {
+         free_paired_storage(jcr);
          return false;
       }
    }
@@ -1561,6 +1589,8 @@ bail_out:
       jcr->res.wstore = mig_jcr->res.wstore;
       mig_jcr->res.wstore = NULL;
    }
+
+   free_paired_storage(jcr);
 
    if (jcr->is_JobStatus(JS_Terminated)) {
       migration_cleanup(jcr, jcr->JobStatus);
@@ -1780,59 +1810,99 @@ void migration_cleanup(JCR *jcr, int TermCode)
            new_jobid);
       db_sql_query(mig_jcr->db, query.c_str());
 
-      /*
-       * If we terminated a migration normally:
-       * - mark the previous job as migrated
-       * - move any Log records to the new JobId
-       * - Purge the File records from the previous job
-       */
-      if (jcr->is_JobType(JT_MIGRATE) && jcr->is_terminated_ok()) {
+      if (jcr->is_terminated_ok()) {
          UAContext *ua;
 
-         Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
-              (char)JT_MIGRATED_JOB, old_jobid);
-         db_sql_query(mig_jcr->db, query.c_str());
-
-         /*
-          * Move JobLog to new JobId
-          */
-         ua = new_ua_context(jcr);
-         Mmsg(query, "UPDATE Log SET JobId=%s WHERE JobId=%s",
-              new_jobid, old_jobid);
-         db_sql_query(mig_jcr->db, query.c_str());
-
-         if (jcr->res.job->PurgeMigrateJob) {
+         switch (jcr->getJobType()) {
+         case JT_MIGRATE:
             /*
-             * Purge old Job record
+             * If we terminated a Migration Job successfully we should:
+             * - Mark the previous job as migrated
+             * - Move any Log records to the new JobId
+             * - Move any MetaData of a NDMP backup
+             * - Purge the File records from the previous job
              */
-            purge_jobs_from_catalog(ua, old_jobid);
-         } else {
+            Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
+                 (char)JT_MIGRATED_JOB, old_jobid);
+            db_sql_query(mig_jcr->db, query.c_str());
+
             /*
-             * Purge all old file records, but leave Job record
+             * Move JobLog to new JobId
              */
-            purge_files_from_jobs(ua, old_jobid);
+            Mmsg(query, "UPDATE Log SET JobId=%s WHERE JobId=%s",
+                 new_jobid, old_jobid);
+            db_sql_query(mig_jcr->db, query.c_str());
+
+            /*
+             * If we just migrated a NDMP job, we need to move the file MetaData
+             * to the new job. The file MetaData is stored as hardlinks to the
+             * NDMP archive itself. And as we only clone the actual data in the
+             * storage daemon we need to add data normally send to the director
+             * via the FHDB interface here.
+             */
+            switch (jcr->res.client->Protocol) {
+            case APT_NDMPV2:
+            case APT_NDMPV3:
+            case APT_NDMPV4:
+               Mmsg(query, sql_migrate_ndmp_metadata, new_jobid, old_jobid, new_jobid);
+               db_sql_query(mig_jcr->db, query.c_str());
+               break;
+            default:
+               break;
+            }
+
+            ua = new_ua_context(jcr);
+            if (jcr->res.job->PurgeMigrateJob) {
+               /*
+                * Purge old Job record
+                */
+               purge_jobs_from_catalog(ua, old_jobid);
+            } else {
+               /*
+                * Purge all old file records, but leave Job record
+                */
+               purge_files_from_jobs(ua, old_jobid);
+            }
+
+            free_ua_context(ua);
+            break;
+         case JT_COPY:
+            /*
+             * If we terminated a Copy Job successfully we should:
+             * - Copy any Log records to the new JobId
+             * - Copy any MetaData of a NDMP backup
+             * - Set type="Job Copy" for the new job
+             */
+            Mmsg(query, "INSERT INTO Log (JobId, Time, LogText ) "
+                        "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
+                 new_jobid, old_jobid);
+            db_sql_query(mig_jcr->db, query.c_str());
+
+            /*
+             * If we just copied a NDMP job, we need to copy the file MetaData
+             * to the new job. The file MetaData is stored as hardlinks to the
+             * NDMP archive itself. And as we only clone the actual data in the
+             * storage daemon we need to add data normally send to the director
+             * via the FHDB interface here.
+             */
+            switch (jcr->res.client->Protocol) {
+            case APT_NDMPV2:
+            case APT_NDMPV3:
+            case APT_NDMPV4:
+               Mmsg(query, sql_copy_ndmp_metadata, new_jobid, old_jobid, new_jobid);
+               db_sql_query(mig_jcr->db, query.c_str());
+               break;
+            default:
+               break;
+            }
+
+            Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
+                 (char)JT_JOB_COPY, new_jobid);
+            db_sql_query(mig_jcr->db, query.c_str());
+            break;
+         default:
+            break;
          }
-
-         free_ua_context(ua);
-      }
-
-      /*
-       * If we terminated a Copy (rather than a Migration) normally:
-       * - copy any Log records to the new JobId
-       * - set type="Job Copy" for the new job
-       */
-      if (jcr->is_JobType(JT_COPY) && jcr->is_terminated_ok()) {
-         /*
-          * Copy JobLog to new JobId
-          */
-         Mmsg(query, "INSERT INTO Log (JobId, Time, LogText ) "
-                     "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
-              new_jobid, old_jobid);
-         db_sql_query(mig_jcr->db, query.c_str());
-
-         Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
-              (char)JT_JOB_COPY, new_jobid);
-         db_sql_query(mig_jcr->db, query.c_str());
       }
 
       if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
@@ -1847,7 +1917,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
          /*
           * Note, if the job has failed, most likely it did not write any
           * tape, so suppress this "error" message since in that case
-          * it is normal.  Or look at it the other way, only for a
+          * it is normal. Or look at it the other way, only for a
           * normal exit should we complain about this error.
           */
          if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {

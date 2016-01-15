@@ -120,7 +120,9 @@ int main (int argc, char *argv[])
    init_msg(NULL, NULL);
    daemon_start_time = time(NULL);
 
-   /* Sanity checks */
+   /*
+    * Sanity checks
+    */
    if (TAPE_BSIZE % B_DEV_BSIZE != 0 || TAPE_BSIZE / B_DEV_BSIZE == 0) {
       Emsg2(M_ABORT, 0, _("Tape block size (%d) not multiple of system size (%d)\n"),
          TAPE_BSIZE, B_DEV_BSIZE);
@@ -278,7 +280,7 @@ int main (int argc, char *argv[])
    /*
     * Make sure on Solaris we can run concurrent, watch dog + servers + misc
     */
-   set_thread_concurrency(me->max_concurrent_jobs * 2 + 4);
+   set_thread_concurrency(me->MaxConcurrentJobs * 2 + 4);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    load_sd_plugins(me->plugin_directory, me->plugin_names);
@@ -314,8 +316,7 @@ int main (int argc, char *argv[])
     * Seperate thread that handles NDMP connections
     */
    if (me->ndmp_enable) {
-      start_ndmp_thread_server(me->NDMPaddrs,
-                               me->max_concurrent_jobs * 2 + 1);
+      start_ndmp_thread_server(me->NDMPaddrs, me->MaxConnections);
    }
 #endif
 
@@ -354,15 +355,24 @@ static int check_resources()
          configfile);
       OK = false;
    }
+
    if (GetNextRes(R_DIRECTOR, NULL) == NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("No Director resource defined in %s. Cannot continue.\n"),
          configfile);
       OK = false;
    }
+
    if (GetNextRes(R_DEVICE, NULL) == NULL){
       Jmsg1(NULL, M_ERROR, 0, _("No Device resource defined in %s. Cannot continue.\n"),
            configfile);
       OK = false;
+   }
+
+   /*
+    * Sanity check.
+    */
+   if (me->MaxConnections < ((2 * me->MaxConcurrentJobs) + 2)) {
+      me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
    }
 
    if (!me->messages) {

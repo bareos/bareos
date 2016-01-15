@@ -83,6 +83,7 @@ public:
    char *scripts_directory;
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;
+   uint32_t MaxConnections;
    utime_t SDConnectTimeout;          /* Timeout in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    uint32_t max_network_buffer_size;  /* Max network buf size */

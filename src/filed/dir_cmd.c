@@ -407,6 +407,22 @@ static inline void cleanup_fileset(JCR *jcr)
 }
 
 /*
+ * Count the number of running jobs.
+ */
+static inline bool count_running_jobs()
+{
+   JCR *jcr;
+   unsigned int cnt = 0;
+
+   foreach_jcr(jcr) {
+      cnt++;
+   }
+   endeach_jcr(jcr);
+
+   return (cnt >= me->MaxConcurrentJobs) ? false : true;
+}
+
+/*
  * Connection request from an director.
  *
  * Accept commands one at a time from the Director and execute them.
@@ -438,6 +454,11 @@ void *handle_director_connection(BSOCK *dir)
 #ifdef HAVE_WIN32
    prevent_os_suspensions();
 #endif
+
+   if (!count_running_jobs()) {
+      Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+      return NULL;
+   }
 
    jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
    jcr->dir_bsock = dir;

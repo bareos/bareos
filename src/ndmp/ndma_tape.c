@@ -454,10 +454,8 @@ ndmta_read_quantum (struct ndm_session *sess)
 			/* This ain't suppose to happen */
 		}
 		ta->mover_state.bytes_moved += count;
-		/* note this is calculated before mover_want_pos is incremented, since
-		 * record_num is the *last* block processed */
-		ta->mover_state.record_num = ta->mover_want_pos / ta->mover_state.record_size;
 		ta->mover_want_pos += count;
+		ta->mover_state.record_num = ta->mover_want_pos / ta->mover_state.record_size;
 		ch->beg_ix += count;
 		did_something++;
 		goto again;	/* write as much to tape as possible */

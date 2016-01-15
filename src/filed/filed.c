@@ -270,7 +270,7 @@ int main (int argc, char *argv[])
       terminate_filed(0);
    }
 
-   set_thread_concurrency(me->MaxConcurrentJobs + 10);
+   set_thread_concurrency(me->MaxConcurrentJobs * 2 + 10);
    lmgr_init_thread(); /* initialize the lockmanager stack */
 
    /* Maximum 1 daemon at a time */
@@ -353,6 +353,13 @@ static bool check_resources()
             "Without that I don't know who I am :-(\n"), configfile);
       OK = false;
    } else {
+      /*
+       * Sanity check.
+       */
+      if (me->MaxConnections < (2 * me->MaxConcurrentJobs)) {
+         me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
+      }
+
       if (GetNextRes(R_CLIENT, (RES *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
               configfile);
