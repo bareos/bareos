@@ -28,6 +28,7 @@ Vendor:         The Bareos Team
 #Source0:        http://pypi.python.org/packages/source/e/%%{srcname}/%%{srcname}-%%{version}.tar.gz
 Source:         %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-root
+%global debug_package %{nil}
 %if %{with python2}
 BuildRequires:  python-devel
 BuildRequires:  python-setuptools
