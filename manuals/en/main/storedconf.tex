@@ -6,7 +6,7 @@
 \index[general]{Storage Daemon Configuration}
 \index[general]{Configuration!Storage Daemon}
 
-The Storage Daemon configuration file has relatively few resource definitions.
+The \bareosSd configuration file has relatively few resource definitions.
 However, due to the great variation in backup media and system capabilities,
 the storage daemon must be highly configurable. As a consequence, there are
 quite a large number of directives in the Device Resource definition that
@@ -46,7 +46,7 @@ Following resources are optional:
 \section{Storage Resource}
 \label{StorageResource}
 \index[general]{Resource!Storage}
-\index[general]{Storage Resource}
+\index[general]{Storage!Resource}
 
 In general, the properties specified under the Storage resource define global
 properties of the Storage daemon. Each Storage daemon configuration file must
@@ -81,8 +81,8 @@ Storage {
 
 \section{Director Resource}
 \label{DirectorResource1}
-\index[general]{Director Resource}
 \index[general]{Resource!Director}
+\index[general]{Director!Resource}
 
 The Director resource specifies the Name of the Director which is permitted
 to use the services of the Storage daemon.  There may be multiple Director
@@ -106,7 +106,7 @@ Director {
 \section{NDMP Resource}
 \label{NDMPResource}
 \index[general]{Resource!NDMP}
-\index[general]{NDMP Resource}
+\index[general]{NDMP!Resource}
 
 The NDMP Resource specifies the authentication details of each NDMP client.
 There may be multiple NDMP resources for a single Storage daemon. In general,
@@ -121,7 +121,7 @@ the properties specified within the NDMP resource are specific to one client.
 \section{Device Resource}
 \label{DeviceResource}
 \index[general]{Resource!Device}
-\index[general]{Device Resource}
+\index[general]{Device!Resource}
 
 The Device Resource specifies the details of each device (normally a tape
 drive) that can be used by the Storage daemon.  There may be multiple
@@ -223,7 +223,7 @@ Unmount Command = "/bin/umount %m"
 \section{Messages Resource}
 \label{MessagesResource1}
 \index[general]{Resource!Messages}
-\index[general]{Messages Resource}
+\index[general]{Messages!Resource}
 
 For a description of the Messages Resource, please see the
 \nameref{MessagesChapter} chapter of this

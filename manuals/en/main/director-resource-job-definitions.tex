@@ -1278,8 +1278,10 @@ any text after the last quote character.
 }
 
 \defDirective{Dir}{Job}{Save File History}{}{14.2.0}{%
-\index[dir]{NDMP!File History}%
+\index[general]{NDMP!File History}%
 Allow disabling storing the file history, as this causes problems problems with some implementations of NDMP (out-of-order metadata).
+
+\warning{The File History is required to do a single file restore from NDMP backups. With this disabled, only full restores are possible.}
 }
 
 \defDirective{Dir}{Job}{Schedule}{}{}{%
@@ -1569,6 +1571,8 @@ be restored to their original location.  By default, we have set {\bf
 Where} in the example configuration files to be {\bf
 /tmp/bareos-restores}.  This is to prevent accidental overwriting of
 your files.
+
+\warning{To use Where on NDMP backups, please read \nameref{sec:ndmp-where}.}
 }
 
 \defDirective{Dir}{Job}{Write Bootstrap}{}{}{%

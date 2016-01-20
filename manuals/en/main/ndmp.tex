@@ -1,0 +1,957 @@
+\index[general]{NDMP!Overview}
+
+NDMP
+\begin{itemize}
+    \item is the abbreviation for Network Data Management Protocol.
+    \item is a protocol that transports data between Network Attached Storages (NAS) and backup devices.
+    \item is widely used by storage product vendors and OS vendors like NetApp, Isilon, EMC, Oracle.
+    \item information are available at \url{http://www.ndmp.org/}.
+    \item version is currently (2016) NDMP Version 4.
+    \item uses TCP/IP and XDR (External Data Representation) for the communication.
+\end{itemize}
+
+
+
+The Bareos NDMP implementation is based on the NDMJOB NDMP reference implementation of Traakan, Inc., Los Altos, CA which has a BSD style license (2 clause one) with some enhancements.
+% Technical details can be found in README.NDMP in the bareos sourcecode.
+
+
+An NDMP system consists of basically three elements:
+
+\begin{description}
+    \item[Data Management Application] or DMA does the administration of the backup in NDMP and commands the Primary and Secondary Storage Systems to do a backup or restore operation.
+    \item[Primary Storage System] or DATA AGENT is the Storage System that will be backed up, e.g. a NAS Server that is NDMP enabled.
+    \item[Secondary Storage System] or TAPE AGENT is the Storage System that the backup data will be stored on.
+\end{description}
+
+Bareos implements the \bquote{Data Management Application} inside of the \bareosDir, and a \bquote{Secondary Storage System} or TAPE AGENT in the \bareosSd.
+
+The TAPE AGENT in the \bareosSd emulates a NDMP tape drive that has an infinite tape.
+The blocks being written to the NDMP tape are stored inside of a normal Bareos backup stream
+and then stored into the volumes managed by Bareos.
+
+Therefore, there is always a pair of storage resource definitions:
+\begin{itemize}
+    \item a conventional Bareos storage resource and
+    \item a NDMP storage resource
+\end{itemize}
+
+These two are linked together and the data that is stored via NDMP into the NDMP storage resource is being really written into  the paired conventional Bareos storage resource.
+
+On restore, the data is read by the conventional resource, and then recovered as NDMP stream from the NDMP resource.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir ndmp-backup}
+\caption{Relationship between Bareos and NDMP components}
+\end{figure}%
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir ndmp-cfg}
+\caption{NDMP configuration overview}
+\label{fig:ndmp-overview}
+\end{figure}%
+
+
+\section{Example Setup for NDMP backup}
+\index[general]{NDMP!Example}
+
+This example starts from a clean default Bareos installation.
+
+\subsection{Enable NDMP on your storage appliance}
+
+The storage appliance needs to be configured to allow NDMP connections. Therefore  usually the
+NDMP service needs to be enabled and configured with a username and password.
+
+\subsection{\bareosDir: Configure NDMP Client Resource}
+
+Add a Client resource to the \bareosDir configuration
+and configure it to access your NDMP storage system (Primary Storage System/DATA AGENT).
+
+\begin{itemize}
+    \item \linkResourceDirective{Dir}{Client}{Protocol} must be either NDMPv2, NDMPv3 or NDMPv4.
+    \item \linkResourceDirective{Dir}{Client}{Port} is set to the NDMP Port (usually 10000).
+    \item \linkResourceDirective{Dir}{Client}{Username} and \linkResourceDirective{Dir}{Client}{Password} are used for the authentication against the NDMP Storage System.
+    \item \linkResourceDirective{Dir}{Client}{Auth Type} is either Cleartext or MD5. NDMP supports both.
+\end{itemize}
+
+In our example we connect to a Isilon storage appliance emulator:
+\begin{bconfig}{}
+Client {
+  Name = ndmp-client
+  Address = 10.20.250.91  # IP/FQDN of the storage appliance
+  Port = 10000            # Default port for NDMP
+  Protocol = NDMPv4       # Need to specify protocol before password as protocol determines password encoding used
+  Auth Type = Clear       # Cleartext Authentication
+  Username = "ndmpadmin"  # username of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+  Password = "test"       # password of the NDMP user on the DATA AGENT e.g. storage box being backuped.
+}
+\end{bconfig}
+
+Verify, that you can access your Primary Storage System via Bareos:
+
+\begin{bconsole}{verify connection to NDMP Primary Storage System}
+*<input>status client=ndmp-client</input>
+
+Data Agent 10.20.250.91 NDMPv4
+  Host info
+    hostname   isilonsim-1
+    os_type    Isilon OneFS
+    os_vers    v7.1.1.5
+    hostid     005056ad8483ba43cc55a711cd384506e3c1
+
+  Server info
+    vendor     Isilon
+    product    Isilon NDMP
+    revision   2.2
+    auths      (2) NDMP4_AUTH_TEXT NDMP4_AUTH_MD5
+
+  Connection types
+    addr_types (2) NDMP4_ADDR_TCP NDMP4_ADDR_LOCAL
+
+  Backup type info of tar format
+    attrs      0x7fe
+    set        FILESYSTEM=/ifs
+    set        FILES=
+    set        EXCLUDE=
+    set        PER_DIRECTORY_MATCHING=N
+    set        HIST=f
+    set        DIRECT=N
+    set        LEVEL=0
+    set        UPDATE=Y
+    set        RECURSIVE=Y
+    set        ENCODING=UTF-8
+    set        ENFORCE_UNIQUE_NODE=N
+    set        PATHNAME_SEPARATOR=/
+    set        DMP_NAME=
+    set        BASE_DATE=0
+    set        NDMP_UNICODE_FH=N
+
+  Backup type info of dump format
+    attrs      0x7fe
+    set        FILESYSTEM=/ifs
+    set        FILES=
+    set        EXCLUDE=
+    set        PER_DIRECTORY_MATCHING=N
+    set        HIST=f
+    set        DIRECT=N
+    set        LEVEL=0
+    set        UPDATE=Y
+    set        RECURSIVE=Y
+    set        ENCODING=UTF-8
+    set        ENFORCE_UNIQUE_NODE=N
+    set        PATHNAME_SEPARATOR=/
+    set        DMP_NAME=
+    set        BASE_DATE=0
+    set        NDMP_UNICODE_FH=N
+
+  File system /ifs
+    physdev    OneFS
+    unsupported 0x0
+    type       NFS
+    status
+    space      12182519808 total, 686768128 used, 11495751680 avail
+    inodes     17664000 total, 16997501 used
+    set        MNTOPTS=
+    set        MNTTIME=00:00:00 00:00:00
+\end{bconsole}
+
+This output shows that the access to the storage appliance was successful.
+
+
+
+\subsection{\bareosSd: Configure NDMP}
+
+\label{sec:ndmp-sd-configure}
+
+\subsubsection{Enabling NDMP}
+
+To enable the NDMP TAPE AGENT inside of the \bareosSd,
+set \linkResourceDirective{Sd}{Storage}{NDMP Enable}=yes:
+
+\begin{bconfig}{enable NDMP in \bareosSd}
+#
+# Default SD config block: enable the NDMP protocol,
+# otherwise it won't listen on port 10000.
+#
+Storage {
+   Name = ....
+   ...
+   NDMP Enable = yes
+}
+\end{bconfig}
+
+\subsubsection{Add a NDMP resource}
+
+%The NDMP service in the \bareosSd also needs access credentials.
+
+Additionally, we need to define the access credentials for our NDMP TAPE AGENT (Secondary Storage) inside of this Storage Daemon.
+%The NDMP Storage definition in the Director configuration will has the matching login information.
+
+These are configured by adding a NDMP resource to \file{bareos-sd.conf}:
+
+\begin{bconfig}{}
+#
+# This resource gives the DMA in the Director access to the Bareos SD via the NDMP protocol.
+# This option is used via the NDMP protocol to open the right TAPE AGENT connection to your
+# Bareos SD via the NDMP protocol. The initialization of the SD is done via the native protocol
+# and is handled via the PairedStorage keyword.
+#
+Ndmp {
+  Name = bareos-dir-isilon
+  Username = ndmpadmin
+  Password = test
+  AuthType = Clear
+}
+\end{bconfig}
+
+Username and Password can be anything, but they will have to match the settings in the \bareosDir NDMP Storage resource we configure next.
+
+Now restart the \bareosSd.
+If everything is correct, the \bareosSd starts and listens now on the usual port (9103) and additionally on port 10000 (ndmp).
+
+\begin{commands}{}
+<command>netstat</command> <parameter>-lntp | grep bareos-sd</parameter>
+tcp        0      0 0.0.0.0:9103            0.0.0.0:*               LISTEN      10661/bareos-sd
+tcp        0      0 0.0.0.0:10000           0.0.0.0:*               LISTEN      10661/bareos-sd
+\end{commands}{}
+
+\subsection{\bareosDir: Configure a Paired Storage}
+
+For NDMP Backups, we always need two storages that are paired together.
+The default configuration already has a Storage \resourcename{File} defined:
+
+\begin{bconfig}{}
+Storage {
+  Name = File
+  Address = bareos
+  Password = "pNZ3TvFAL/t+MyOIQo58p5B/oB79SFncdAmLXKHa9U59"
+  Device = FileStorage
+  Media Type = File
+}
+\end{bconfig}
+
+We now add a paired storage to the already existing \resourcename{File} storage:
+\begin{bconfig}{}
+#
+# Same storage daemon but via NDMP protocol.
+# We link via the PairedStorage config option the Bareos SD
+# instance definition to a NDMP TAPE AGENT.
+#
+Storage {
+  Name = NDMPFile
+  Address = bareos
+  Port = 10000
+  Protocol = NDMPv4
+  Auth Type = Clear
+  Username = ndmpadmin
+  Password = "test"
+  Device = FileStorage
+  Media Type = File
+  PairedStorage = File
+}
+\end{bconfig}
+
+The settings of Username and Password need to match the settings of the \bareosSd's NDMP resource we added before.
+The address will be used by the storage appliance's NDMP Daemon to connect to the \bareosSd via NDMP.
+Make sure that the Storage appliance can resolve the name or use an IP address.
+
+Now save the director resource and restart the \bareosDir.
+Verify that the configuration is correct:
+
+\begin{bconsole}{verify connection to the \bareosSd}
+*<input>status storage=NDMPFile</input>
+Connecting to Storage daemon File at bareos:9103
+
+bareos-sd Version: 15.2.2 (16 November 2015) x86_64-redhat-linux-gnu redhat Red Hat Enterprise Linux Server release 7.0 (Maipo)
+Daemon started 14-Jan-16 10:10. Jobs: run=0, running=0.
+ Heap: heap=135,168 smbytes=34,085 max_bytes=91,589 bufs=75 max_bufs=77
+ Sizes: boffset_t=8 size_t=8 int32_t=4 int64_t=8 mode=0 bwlimit=0kB/s
+
+Running Jobs:
+No Jobs running.
+====
+
+Jobs waiting to reserve a drive:
+====
+
+Terminated Jobs:
+====
+
+Device status:
+
+Device "FileStorage" (/var/lib/bareos/storage) is not open.
+==
+====
+
+Used Volume status:
+====
+
+====
+
+*
+\end{bconsole}
+
+The output looks the same, as if a \bcommand{status storage=File} would have been called.
+%  for the paired storage as when the director notices the NDMP
+% storage has so called paired storage it will use the native protocol to get the actual status via the
+% paired storage definition.
+
+\subsection{\bareosDir: Configure NDMP Fileset}
+
+To specify what files and directories from the storage appliance should be backed up,
+a Fileset needs to be specified. In our example, we decided to backup \path|/ifs/home| directory.
+
+The specified directory needs to be a filesystem or a subdirectory of a filesystem which can be accessed
+by NDMP. Which filesystems are available is showed in the \bcommand{status}{client} output of the NDMP client.
+
+\index[general]{NDMP!Environment variables}
+Additionally, NDMP can be configured via NDMP environment variables. These can be specified in the Options
+Block of the Fileset with the \configdirective{Meta} keyword. Which variables are available is partly depending on the
+NDMP implementation of the Storage Appliance.
+
+\begin{bconfig}{NDMP Fileset}
+Fileset {
+  Name = "NDMP Fileset"
+  Include {
+    Options {
+        meta = "USE_TBB_IF_AVAILABLE=y"
+        meta = "BUTYPE=DUMP"
+        meta = "ENCODING=ISO_8859_1"
+        meta = "RESTORE_HARDLINK_BY_TABLE=y"
+        meta = "FH_REPORT_FULL_DIRENTS=y"
+    }
+    File = /ifs/home
+  }
+}
+\end{bconfig}
+
+Use multiple \configdirective{File} directives in \linkResourceDirective{Dir}{FileSet}{Include} to backup multiple directories.
+
+\warning{Some NDMP environment variables are set automatically by the DMA in the director and should NOT be
+set by the user. The following environment variables are currently set automatically:
+\begin{itemize}
+    \item HIST
+    \item TYPE
+    \item DIRECT
+    \item LEVEL
+    \item UPDATE
+    \item EXCLUDE
+    \item INCLUDE
+    \item FILESYSTEM
+    \item PREFIX
+\end{itemize}}
+
+\warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options \textrightarrow Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
+
+
+\subsection{\bareosDir: Configure NDMP Jobs}
+
+To do NDMP backups and restores, some special settings need to be configured. We define special Backup and Restore jobs for NDMP.
+
+\begin{bconfig}{NDMP backup job}
+Job {
+  Name          = "ndmp-backup-job"
+  Type          = Backup
+  Protocol      = NDMP
+  Level         = Incremental
+  Client        = ndmp-client
+  Backup Format = dump
+  FileSet       = "NDMP Fileset"
+  Storage       = NDMPFile
+  Pool          = Full
+  Messages      = Standard
+}
+\end{bconfig}
+
+\begin{bconfig}{NDMP restore job}
+Job {
+  Name          = "ndmp-restore-job"
+  Type          = Restore
+  Protocol      = NDMP
+  Client        = ndmp-client
+  Backup Format = dump
+  FileSet       = "NDMP Fileset"
+  Storage       = NDMPFile
+  Pool          = Full
+  Messages      = Standard
+  Where         = /
+}
+\end{bconfig}
+
+\begin{itemize}
+    \item \linkResourceDirective{Dir}{Job}{Backup Format}=dump is used in our example. Other Backup Formats have other advantages/disadvantages.
+\end{itemize}
+
+
+\subsection{Run NDMP Backup}
+
+Now we are ready to do our first NDMP backup:
+
+\begin{bconsole}{run NDMP backup}
+*<input>run job=ndmp-backup-job</input>
+Using Catalog "MyCatalog"
+Run Backup job
+JobName:  ndmp-backup-job
+Level:    Incremental
+Client:   ndmp-client
+Format:   dump
+FileSet:  NDMP Fileset
+Pool:     Full (From Job resource)
+Storage:  NDMPFile (From Job resource)
+When:     2016-01-14 10:48:04
+Priority: 10
+OK to run? (yes/mod/no): <input>yes</input>
+Job queued. JobId=1
+*<input>wait jobid=1</input>
+JobId=1
+JobStatus=OK (T)
+*<input>list joblog jobid=1</input>
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Start NDMP Backup JobId 1, Job=NDMPJob.2016-01-14_10.57.51_04
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Created new Volume "Full-0001" in catalog.
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Using Device "FileStorage" to write.
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Opening tape drive LPDA-DEJC-ENJL-AHAI-JCBD-LICP-LKHL-IEDK@/ifs/home%0 read/write
+ 2016-01-14 10:57:53 bareos-sd JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+ 2016-01-14 10:57:53 bareos-sd JobId 1: Wrote label to prelabeled Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage)
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Commanding tape drive to rewind
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Waiting for operation to start
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Async request NDMP4_LOG_MESSAGE
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Operation started
+ 2016-01-14 10:57:53 bareos-dir JobId 1: Monitoring backup
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: 'Filetransfer: Transferred 5632 bytes in 0.087 seconds throughput of 63.133 KB/s'
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: 'Filetransfer: Transferred 5632 total bytes '
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: 'CPU  user=0.016416  sys=0.029437  ft=0.077296  cdb=0.000000'
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: 'maxrss=14576  in=13  out=22  vol=155  inv=72'
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: '
+        Objects (scanned/included):
+        ----------------------------
+        Regular Files:          (1/1)
+        Sparse Files:           (0/0)
+        Stub Files:             (0/0)
+        Directories:            (2/2)
+        ADS Entries:            (0/0)
+        ADS Containers:         (0/0)
+        Soft Links:             (0/0)
+        Hard Links:             (0/0)
+        Block Device:           (0/0)
+        Char Device:            (0/0)
+        FIFO:                   (0/0)
+        Socket:                 (0/0)
+        Whiteout:               (0/0)
+        Unknown:                (0/0)'
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: '
+        Dir Depth (count)
+        ----------------------------
+        Total Dirs:             2
+        Max Depth:              1
+
+        File Size (count)
+        ----------------------------
+        == 0                    0
+        <= 8k                   1
+        <= 64k                  0
+        <= 1M                   0
+        <= 20M                  0
+        <= 100M                 0
+        <= 1G                   0
+         > 1G                   0
+        -------------------------
+        Total Files:            1
+        Total Bytes:            643
+        Max Size:               643
+        Mean Size:              643'
+ 2016-01-14 10:57:53 bareos-dir JobId 1: LOG_MESSAGE: '
+        File History
+        ----------------------------
+        Num FH_HIST_FILE messages:              0
+        Num FH_HIST_DIR  messages:              6
+        Num FH_HIST_NODE messages:              3'
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Async request NDMP4_NOTIFY_MOVER_HALTED
+ 2016-01-14 10:57:54 bareos-dir JobId 1: DATA: bytes 2053KB  MOVER: written 2079KB record 33
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Operation done, cleaning up
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Waiting for operation to halt
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Commanding tape drive to NDMP9_MTIO_EOF 2 times
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Commanding tape drive to rewind
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Closing tape drive LPDA-DEJC-ENJL-AHAI-JCBD-LICP-LKHL-IEDK@/ifs/home%0
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Operation halted, stopping
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Operation ended OKAY
+ 2016-01-14 10:57:54 bareos-sd JobId 1: Elapsed time=00:00:01, Transfer rate=2.128 M Bytes/second
+ 2016-01-14 10:57:54 bareos-dir JobId 1: Bareos bareos-dir 15.2.2 (16Nov15):
+  Build OS:               x86_64-redhat-linux-gnu redhat Red Hat Enterprise Linux Server release 7.0 (Maipo)
+  JobId:                  1
+  Job:                    ndmp-backup-job.2016-01-14_10.57.51_04
+  Backup Level:           Full
+  Client:                 "ndmp-client" 
+  FileSet:                "NDMP Fileset" 2016-01-14 10:57:51
+  Pool:                   "Full" (From Job resource)
+  Catalog:                "MyCatalog" (From Client resource)
+  Storage:                "NDMPFile" (From Job resource)
+  Scheduled time:         14-Jan-2016 10:57:51
+  Start time:             14-Jan-2016 10:57:53
+  End time:               14-Jan-2016 10:57:54
+  Elapsed time:           1 sec
+  Priority:               10
+  NDMP Files Written:     3
+  SD Files Written:       1
+  NDMP Bytes Written:     2,102,784 (2.102 MB)
+  SD Bytes Written:       2,128,987 (2.128 MB)
+  Rate:                   2102.8 KB/s
+  Volume name(s):         Full-0001
+  Volume Session Id:      4
+  Volume Session Time:    1452764858
+  Last Volume Bytes:      2,131,177 (2.131 MB)
+  Termination:            Backup OK
+\end{bconsole}
+
+We have successfully created our first NDMP backup.
+
+Let us have a look what files are in our backup:
+
+\begin{bconsole}{list the files of the backup job}
+*<input>list files jobid=1</input>
+ /@NDMP/ifs/home%0
+ /ifs/home/
+ /ifs/home/admin/
+ /ifs/home/admin/.zshrc
+\end{bconsole}
+
+The real backup data is stored in the file \path|/@NDMP/ifs/home%0|
+(we will refer to it as \bquote{NDMP main backup file} or \bquote{main backup file} later on).
+One NDMP main backup file is created for every directory specified in the used Fileset.
+The other files show the file history and are hardlinks to the backup file.
+
+\subsubsection{NDMP Backup Level}
+\index[general]{NDMP!Level}
+The trailing number in the main backup file (after the \path|%| character)
+indicates the NDMP backup level:
+
+\begin{tabular}{c | l}
+Level & Description \\
+\hline
+0 & Full NDMP backup. \\
+1 & Differential or first Incremental backup.\\
+2-9 & second to ninth Incremental backup.\\
+\end{tabular}
+
+\paragraph{Differential Backups}
+ are supported.
+The NDMP backup level will be 1,
+visible as trailing number in the backup file (\path|/@NDMP/ifs/home%1|).
+
+\paragraph{Incremental Backups}
+ are supported.
+The NDMP backup level will increment with each run, until a Full (0) or Differential (1) will be made.
+The maximum backup level will be 9.
+Additional Incremental backups will result in a failed job and the message:
+\begin{bmessage}{}
+ 2016-01-21 13:35:51 bareos-dir JobId 12: Fatal error: NDMP dump format doesn't support more than 8 incrementals, please run a Differential or a Full Backup
+\end{bmessage}
+
+
+\subsection{Run NDMP Restore}
+
+Now that we have a NDMP backup, we of course also want to restore some data from the backup.
+If the backup we just did saved the Filehistory, we are able to select single files for restore.
+Otherwise, we will only be able to restore the whole backup.
+
+
+\subsubsection{Full Restore}
+
+Either select all files or the main backup file (\path|/@NDMP/ifs/home%0|).
+If file history is not included in the backup job, than only the main backup file is available.
+
+\subsubsection{Restore files to original path}
+
+\begin{bconsole}{}
+*<input>restore jobid=1</input>
+You have selected the following JobId: 1
+
+Building directory tree for JobId(s) 1 ...
+2 files inserted into the tree.
+
+You are now entering file selection mode where you add (mark) and
+remove (unmark) files to be restored. No files are initially added, unless
+you used the "all" keyword on the command line.
+Enter "done" to leave this mode.
+
+cwd is: /
+$ <input>mark /ifs/home/admin/.zshrc</input>
+$ <input>done</input>
+Bootstrap records written to /var/lib/bareos/bareos-dir.restore.1.bsr
+
+The job will require the following
+   Volume(s)                 Storage(s)                SD Device(s)
+===========================================================================
+
+    Full-0001                 File                      FileStorage
+
+Volumes marked with "*" are online.
+
+
+1 file selected to be restored.
+
+The defined Restore Job resources are:
+     1: RestoreFiles
+     2: ndmp-restore-job
+Select Restore Job (1-2): <input>2</input>
+Defined Clients:
+     1: bareos-fd
+     2: ndmp-client
+Select the Client (1-2): <input>2</input>
+Run Restore job
+JobName:         ndmp-backup-job
+Bootstrap:       /var/lib/bareos/bareos-dir.restore.1.bsr
+Where:           /
+Replace:         Always
+FileSet:         NDMP Fileset
+Backup Client:   ndmp-client
+Restore Client:  ndmp-client
+Format:          dump
+Storage:         File
+When:            2016-01-14 11:04:46
+Catalog:         MyCatalog
+Priority:        10
+Plugin Options:  *None*
+OK to run? (yes/mod/no): <input>yes</input>
+Job queued. JobId=2
+*<input>wait jobid=2</input>
+JobId=2
+JobStatus=OK (T)
+*<input>list joblog jobid=2</input>
+14-Jan 11:04 bareos-dir JobId 2: Start Restore Job ndmp-backup-job.2016-01-14_11.04.53_05
+14-Jan 11:04 bareos-dir JobId 2: Using Device "FileStorage" to read.
+14-Jan 11:04 bareos-dir JobId 2: Opening tape drive KKAE-IMLO-NHJD-GOCO-GJCO-GEHB-BODL-ADNG@/ifs/home read-only
+14-Jan 11:04 bareos-dir JobId 2: Commanding tape drive to rewind
+14-Jan 11:04 bareos-dir JobId 2: Waiting for operation to start
+14-Jan 11:04 bareos-sd JobId 2: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+14-Jan 11:04 bareos-sd JobId 2: Forward spacing Volume "Full-0001" to file:block 0:194.
+14-Jan 11:04 bareos-dir JobId 2: Async request NDMP4_LOG_MESSAGE
+14-Jan 11:04 bareos-dir JobId 2: Operation started
+14-Jan 11:04 bareos-dir JobId 2: Monitoring recover
+14-Jan 11:04 bareos-dir JobId 2: DATA: bytes 0KB  MOVER: read 0KB record 0
+14-Jan 11:04 bareos-dir JobId 2: LOG_MESSAGE: 'Filetransfer: Transferred 1048576 bytes in 0.135 seconds throughput of 7557.139 KB/s'
+14-Jan 11:04 bareos-dir JobId 2: OK: /admin/.zshrc
+14-Jan 11:04 bareos-dir JobId 2: LOG_MESSAGE: '
+        Objects:
+        ----------------------------
+        Regular Files:          (1)
+        Stub Files:             (0)
+        Directories:            (0)
+        ADS Entries:            (0)
+        Soft Links:             (0)
+        Hard Links:             (0)
+        Block Device:           (0)
+        Char Device:            (0)
+        FIFO:                   (0)
+        Socket:                 (0)
+        Unknown:                (0)'
+14-Jan 11:04 bareos-dir JobId 2: LOG_MESSAGE: '
+        File Size (count)
+        ----------------------------
+        == 0                    0
+        <= 8k                   1
+        <= 64k                  0
+        <= 1M                   0
+        <= 20M                  0
+        <= 100M                 0
+        <= 1G                   0
+         > 1G                   0
+        -------------------------
+        Total Files:            1
+        Total Bytes:            643
+        Max Size:               643
+        Mean Size:              643'
+14-Jan 11:04 bareos-dir JobId 2: Async request NDMP4_NOTIFY_MOVER_PAUSED
+14-Jan 11:04 bareos-dir JobId 2: DATA: bytes 1024KB  MOVER: read 2079KB record 32
+14-Jan 11:04 bareos-dir JobId 2: Mover paused, reason=NDMP9_MOVER_PAUSE_EOF
+14-Jan 11:04 bareos-dir JobId 2: End of tapes
+14-Jan 11:04 bareos-dir JobId 2: DATA: bytes 1024KB  MOVER: read 2079KB record 32
+14-Jan 11:04 bareos-dir JobId 2: Operation done, cleaning up
+14-Jan 11:04 bareos-dir JobId 2: Waiting for operation to halt
+14-Jan 11:04 bareos-dir JobId 2: Commanding tape drive to rewind
+14-Jan 11:04 bareos-dir JobId 2: Closing tape drive KKAE-IMLO-NHJD-GOCO-GJCO-GEHB-BODL-ADNG@/ifs/home
+14-Jan 11:04 bareos-dir JobId 2: Operation halted, stopping
+14-Jan 11:04 bareos-dir JobId 2: Operation ended OKAY
+14-Jan 11:04 bareos-dir JobId 2: LOG_FILE messages: 1 OK, 0 ERROR, total 1 of 1
+14-Jan 11:04 bareos-dir JobId 2: Bareos bareos-dir 15.2.2 (16Nov15):
+  Build OS:               x86_64-redhat-linux-gnu redhat Red Hat Enterprise Linux Server release 7.0 (Maipo)
+  JobId:                  2
+  Job:                    ndmp-backup-job.2016-01-14_11.04.53_05
+  Restore Client:         ndmp-client
+  Start time:             14-Jan-2016 11:04:55
+  End time:               14-Jan-2016 11:04:57
+  Elapsed time:           2 secs
+  Files Expected:         1
+  Files Restored:         1
+  Bytes Restored:         1,048,576
+  Rate:                   524.3 KB/s
+  SD termination status:  OK
+  Termination:            Restore OK
+\end{bconsole}
+
+\subsubsection{Restore files to different path}
+\label{sec:ndmp-where}
+
+The restore location is determined by the \linkResourceDirective{Dir}{Job}{Where} setting of the restore job.
+In NDMP, this parameter works in a special manner, the prefix can be either \bquote{relative} to the filesystem or \bquote{absolute}.
+If a prefix is set in form of a directory (like \directory{/bareos-restores}), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the data is restored in a different directory, but  into the same filesystem.
+If the prefix is set with a leading caret (\path|^|), it will be an absolute prefix and will be put at the front of the restore path. This is needed if the restored data should be stored into a different filesystem.
+
+Example:
+
+\begin{tabular}{l | l | l}
+original file name &  where &  restored file \\
+\hline
+\path|/ifs/home/admin/.zshrc| & \path|/bareos-restores|           & \path|/ifs/home/bareos-restores/admin/.zshrc| \\
+\path|/ifs/home/admin/.zshrc| & \path|^/ifs/data/bareos-restores| & \path|/ifs/data/bareos-restores/admin/.zshrc| \\
+\end{tabular}
+
+
+
+
+\section{NDMP Copy Jobs}
+\index[general]{Copy!NDMP}
+\index[general]{NDMP!Copy jobs}
+
+To be able to do copy jobs, we need to have a second storage where we can copy the data to.
+We set up an additional \bareosSd on a host named \host{bareos-sd2.example.com}
+with the default \resourcename{FileStorage} device.
+
+When this is done, add a second storage resource \resourcename{File2} to the \file{bareos-dir.conf}:
+\begin{bconfig}{Storage resource File2}
+Storage {
+  Name = File2
+  Address = bareos-sd2.example.com
+  Password = <secretpassword>
+  Device = FileStorage
+  Media Type = File
+}
+\end{bconfig}
+
+Copy Jobs copy data from one pool to another (see \nameref{MigrationChapter}).
+So we need to define a pool where the copies will be written to:
+
+Add a Pool that the copies will run to:
+\begin{bconfig}{Pool resource Copy}
+#
+# Copy Destination Pool
+#
+Pool {
+  Name = Copy
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 365 days         # How long should the Full Backups be kept? (#06)
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Maximum Volumes = 100               # Limit number of Volumes in Pool
+  Label Format = "Copy-"              # Volumes will be labeled "Full-<volume-id>"
+  Storage = File2                     # Pool belongs to Storage File2
+}
+\end{bconfig}
+
+Then we need to define the just defined pool as the \linkResourceDirective{Dir}{Pool}{Next Pool} of the pool 
+that actually holds the data to be copied.
+
+In our case this is the \resourcename{Full} Pool:
+\begin{bconfig}{add Next Pool setting}
+#
+# Full Pool definition
+#
+Pool {
+  Name = Full
+  [...]
+  Next Pool = Copy   # <- this line needs to be added!
+}
+\end{bconfig}
+
+
+Finally, we need to define a Copy Job that will select the jobs that are in the \resourcename{Full} pool
+and copy them over to the \resourcename{Copy} pool 
+reading the data via the \resourcename{File} Storage
+and writing the data via the \resourcename{File2} Storage:
+
+\begin{bconfig}{NDMP copy job}
+Job {
+   Name = NDMPCopy
+   Type = Copy
+   Messages = Standard
+   Selection Type = PoolUncopiedJobs
+   Pool = Full
+   Storage = NDMPFile
+}
+\end{bconfig}
+
+After restarting the director and storage daemon, we can run the Copy job:
+
+\begin{bconsole}{run copy job}
+*<input>run job=NDMPCopy</input>
+Run Copy job
+JobName:       NDMPCopy
+Bootstrap:     *None*
+Pool:          Full (From Job resource)
+NextPool:      Copy (From unknown source)
+Write Storage: File2 (From Storage from Run NextPool override)
+JobId:         *None*
+When:          2016-01-21 09:19:49
+Catalog:       MyCatalog
+Priority:      10
+OK to run? (yes/mod/no): <input>yes</input>
+Job queued. JobId=74
+*<input>wait jobid=74</input>
+JobId=74
+JobStatus=OK (T)
+*<input>messages</input>
+21-Jan 09:19 bareos-dir JobId 74: The following 1 JobId was chosen to be copied: 73
+21-Jan 09:19 bareos-dir JobId 74: Automatically selected Catalog: MyCatalog
+21-Jan 09:19 bareos-dir JobId 74: Using Catalog "MyCatalog"
+21-Jan 09:19 bareos-dir JobId 75: Copying using JobId=73 Job=NDMPJob.2016-01-21_09.18.50_49
+21-Jan 09:19 bareos-dir JobId 75: Bootstrap records written to /var/lib/bareos/bareos-dir.restore.20.bsr
+21-Jan 09:19 bareos-dir JobId 74: Job queued. JobId=75
+21-Jan 09:19 bareos-dir JobId 74: Copying JobId 75 started.
+21-Jan 09:19 bareos-dir JobId 74: Bareos bareos-dir 15.2.2 (16Nov15):
+  Build OS:               x86_64-redhat-linux-gnu redhat Red Hat Enterprise Linux Server release 7.0 (Maipo)
+  Current JobId:          74
+  Current Job:            NDMPCopy.2016-01-21_09.19.50_50
+  Catalog:                "MyCatalog" (From Default catalog)
+  Start time:             21-Jan-2016 09:19:52
+  End time:               21-Jan-2016 09:19:52
+  Elapsed time:           0 secs
+  Priority:               10
+  Termination:            Copying -- OK
+
+21-Jan 09:19 bareos-dir JobId 75: Start Copying JobId 75, Job=NDMPCopy.2016-01-21_09.19.52_51
+21-Jan 09:19 bareos-dir JobId 75: Using Device "FileStorage" to read.
+21-Jan 09:19 bareos-dir JobId 76: Using Device "FileStorage2" to write.
+21-Jan 09:19 bareos-sd JobId 75: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+21-Jan 09:19 bareos-sd JobId 76: Volume "Copy-0004" previously written, moving to end of data.
+21-Jan 09:19 bareos-sd JobId 76: Ready to append to end of Volume "Copy-0004" size=78177310
+21-Jan 09:19 bareos-sd JobId 75: Forward spacing Volume "Full-0001" to file:block 0:78177310.
+21-Jan 09:19 bareos-sd JobId 75: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full-0001"
+21-Jan 09:19 bareos-sd JobId 75: End of all volumes.
+21-Jan 09:19 bareos-sd JobId 76: Elapsed time=00:00:01, Transfer rate=64.61 K Bytes/second
+21-Jan 09:19 bareos-dir JobId 75: Bareos bareos-dir 15.2.2 (16Nov15):
+  Build OS:               x86_64-redhat-linux-gnu redhat Red Hat Enterprise Linux Server release 7.0 (Maipo)
+  Prev Backup JobId:      73
+  Prev Backup Job:        NDMPJob.2016-01-21_09.18.50_49
+  New Backup JobId:       76
+  Current JobId:          75
+  Current Job:            NDMPCopy.2016-01-21_09.19.52_51
+  Backup Level:           Incremental
+  Client:                 ndmp-client
+  FileSet:                "NDMP Fileset"
+  Read Pool:              "Full" (From Job resource)
+  Read Storage:           "NDMPFile" (From Job resource)
+  Write Pool:             "Copy" (From Job Pool's NextPool resource)
+  Write Storage:          "File2" (From Storage from Pool's NextPool resource)
+  Next Pool:              "Copy" (From Job Pool's NextPool resource)
+  Catalog:                "MyCatalog" (From Default catalog)
+  Start time:             21-Jan-2016 09:19:54
+  End time:               21-Jan-2016 09:19:54
+  Elapsed time:           0 secs
+  Priority:               10
+  SD Files Written:       1
+  SD Bytes Written:       64,614 (64.61 KB)
+  Rate:                   0.0 KB/s
+  Volume name(s):         Copy-0004
+  Volume Session Id:      43
+  Volume Session Time:    1453307753
+  Last Volume Bytes:      78,242,384 (78.24 MB)
+  SD Errors:              0
+  SD termination status:  OK
+  Termination:            Copying OK
+\end{bconsole}
+
+Now we successfully copied over the NDMP job.
+
+\warning{\bcommand{list}{jobs} will only show the number of main backup files as JobFiles. However, with \bcommand{list}{files jobid=...} all files are visible.}
+
+\subsection{Restore to NDMP Primary Storage System}
+
+Unfortunately, we are not able to restore the copied data to our NDMP storage. If we try we get this message:
+
+\begin{bmessage}{}
+21-Jan 09:21 bareos-dir JobId 77: Fatal error: Read storage File2 doesn't point to storage definition with paired storage option.
+\end{bmessage}
+
+To be able to do NDMP operations from the storage that was used to store the copies,
+we need to define a NDMP storage that is paired with it.
+The definition is very similar to our \resourcename{NDMPFile} Storage,
+as we want to restore the data to the same NDMP Storage system:
+
+\begin{bconfig}{add paired Storage resource for File2}
+Storage {
+  Name = NDMPFile2
+  Address = bareos-sd2.example.com
+  Port = 10000
+  Protocol = NDMPv4
+  Auth Type = Clear
+  Username = ndmpadmin
+  Password = "test"
+  Device = FileStorage2
+  Media Type = File
+  PairedStorage = File2
+}
+\end{bconfig}
+
+Also we have to configure NDMP on the \bareosSd \host{bareos-sd2.example.com}.
+For this follow the instruction from \nameref{sec:ndmp-sd-configure}.
+
+After this, a restore from \host{bareos-sd2.example.com} directly to the NDMP Primary Storage System is possible.
+
+\section{NDMP Debugging}
+
+To debug the NDMP backups, these settings can be adapted:
+
+\begin{itemize}
+\item \linkResourceDirective{Dir}{Director}{NDMP Snooping}
+\item \linkResourceDirective{Dir}{Director}{NDMP Log Level}
+\item \linkResourceDirective{Dir}{Client}{NDMP Log Level}
+\item \linkResourceDirective{Sd}{Storage}{NDMP Snooping}
+\item \linkResourceDirective{Sd}{Storage}{NDMP Log Level}
+\end{itemize}
+
+This will create a lot of debugging output that will help to find the problem during NDMP backups.
+
+
+\section{Limitations}
+
+\subsection{NDMP Job limitations when scanning in volumes}
+\label{sec:ndmp-filehistory}
+\index[general]{NDMP!File History}
+
+For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
+
+As hardlink information is only stored in the Bareos database, but not int the backup stream itself, it is not possible to recover the file history information from the NDMP stream with \command{bscan}.
+
+As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see \nameref{sec:before-disaster}), this should be not a big problem in correctly setup environments.
+
+For the same reason, the information about the number of files of a job (e.g. JobFiles with \bcommand{list}{jobs} command) is limited to the number of NDMP backup files in copied jobs.
+
+
+\subsection{Single file restore on incremental backups}
+
+Unfortunately, it is currently (bareos-15.2.2) not possible to restore a chain of Full and Incremental backups at once.
+The workaround for that problem is to restore the full backup and each incremental each in a single restore operation.
+
+\subsection{Restore always transfers the full main backup file to the Primary Storage System}
+
+On restore, the full main backup file (\path|@NDMP/...%.|)
+is always transfered back to the Primary Storage System,
+together with a description, want files to restore.
+
+The reason for this is that the Primary Storage System handles the backup data by itself.
+Bareos will not modify the backup data it receives from the Primary Storage System.
+
+\section{Tested Environments}
+
+Bareos NDMP support have been tested against:
+
+\begin{tabular}{l | l | l | l | l | l}
+Vendor     & Model & NDMP Subsystem & Bareos version & Features & Remarks \\
+\hline
+Isilon     & Isilon OneFS v7.1.1.5 & Isilon NDMP 2.2      & bareos-15.2.2 & & \\
+NetApp     &                       & Release 8.2.3 7-Mode & bareos-15.2.2 & & \\
+Oracle/Sun &                       &                      & bareos-15.2.2 & & \\
+\end{tabular}

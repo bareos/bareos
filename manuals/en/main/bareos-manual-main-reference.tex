@@ -59,6 +59,8 @@
 \usepackage{stringstrings}
 
 \usepackage{xspace}
+%\usepackage{svg}
+%\usepackage{import}
 
 \usepackage{bareos}
 
@@ -209,10 +211,14 @@
 \include{win32}
 
 \chapter{Network setup}
+\input{passiveclient}
 
-\include{passiveclient}
 \include{tls}
 \include{dataencryption}
+
+\chapter{NDMP Backups with Bareos}
+\input{ndmp}
+
 
 \include{catmaintenance}  %catalog
 
