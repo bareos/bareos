@@ -4479,23 +4479,26 @@ DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=/dev/null
 DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=/dev/null
 DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=/dev/null
 
-if test X"$support_python" = "Xyes" ; then
-   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
-   BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
-   DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=./debian/control.bareos-filedaemon-python-plugin
-   DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=./debian/control.bareos-storage-python-plugin
-   DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
-fi
+dnl build a list of plugins we need to build.
+if test x$use_libtool != xno; then
+   if test X"$support_python" = "Xyes" ; then
+      BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
+      BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+      DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=./debian/control.bareos-filedaemon-python-plugin
+      DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=./debian/control.bareos-storage-python-plugin
+      DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
+   fi
 
-if test X"$have_scsi_crypto" = "Xyes" ; then
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
-fi
+   if test X"$have_scsi_crypto" = "Xyes" ; then
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
+   fi
 
-if test X"$have_zlib" = "Xyes" -o \
-        X"$have_lzo" = "Xyes" -o \
-        X"$have_fastlz" = "Xyes" ; then
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+   if test X"$have_zlib" = "Xyes" -o \
+           X"$have_lzo" = "Xyes" -o \
+           X"$have_fastlz" = "Xyes" ; then
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+   fi
 fi
 
 if test X"$have_ceph_rados" = "Xyes" ; then
@@ -4517,7 +4520,7 @@ AC_SUBST_FILE(DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN)
 AC_SUBST_FILE(DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
 AC_SUBST_FILE(DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
 
-dnl build a list of storage backend  we need to build.
+dnl build a list of storage backends we need to build.
 if test x$use_libtool != xno; then
    BUILD_SD_BACKENDS="libbareossd-fifo.la libbareossd-gentape.la libbareossd-tape.la"
 
