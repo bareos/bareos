@@ -65,7 +65,7 @@ This example starts from a clean default Bareos installation.
 The storage appliance needs to be configured to allow NDMP connections. Therefore  usually the
 NDMP service needs to be enabled and configured with a username and password.
 
-\subsection{\bareosDir: Configure NDMP Client Resource}
+\subsection{Bareos Director: Configure NDMP Client Resource}
 
 Add a Client resource to the \bareosDir configuration
 and configure it to access your NDMP storage system (Primary Storage System/DATA AGENT).
@@ -162,7 +162,7 @@ This output shows that the access to the storage appliance was successful.
 
 
 
-\subsection{\bareosSd: Configure NDMP}
+\subsection{Bareos Storage Daemon: Configure NDMP}
 
 \label{sec:ndmp-sd-configure}
 
@@ -218,7 +218,7 @@ tcp        0      0 0.0.0.0:9103            0.0.0.0:*               LISTEN      
 tcp        0      0 0.0.0.0:10000           0.0.0.0:*               LISTEN      10661/bareos-sd
 \end{commands}{}
 
-\subsection{\bareosDir: Configure a Paired Storage}
+\subsection{Bareos Director: Configure a Paired Storage}
 
 For NDMP Backups, we always need two storages that are paired together.
 The default configuration already has a Storage \resourcename{File} defined:
@@ -299,7 +299,7 @@ The output looks the same, as if a \bcommand{status storage=File} would have bee
 % storage has so called paired storage it will use the native protocol to get the actual status via the
 % paired storage definition.
 
-\subsection{\bareosDir: Configure NDMP Fileset}
+\subsection{Bareos Director: Configure NDMP Fileset}
 
 To specify what files and directories from the storage appliance should be backed up,
 a Fileset needs to be specified. In our example, we decided to backup \path|/ifs/home| directory.
@@ -347,7 +347,7 @@ set by the user. The following environment variables are currently set automatic
 \warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options \textrightarrow Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
 
 
-\subsection{\bareosDir: Configure NDMP Jobs}
+\subsection{Bareos Director: Configure NDMP Jobs}
 
 To do NDMP backups and restores, some special settings need to be configured. We define special Backup and Restore jobs for NDMP.
 
@@ -528,11 +528,13 @@ The trailing number in the main backup file (after the \path|%| character)
 indicates the NDMP backup level:
 
 \begin{tabular}{c | l}
+\hline
 Level & Description \\
 \hline
 0 & Full NDMP backup. \\
 1 & Differential or first Incremental backup.\\
 2-9 & second to ninth Incremental backup.\\
+\hline
 \end{tabular}
 
 \paragraph{Differential Backups}
@@ -702,10 +704,12 @@ If the prefix is set with a leading caret (\path|^|), it will be an absolute pre
 Example:
 
 \begin{tabular}{l | l | l}
+\hline
 original file name &  where &  restored file \\
 \hline
 \path|/ifs/home/admin/.zshrc| & \path|/bareos-restores|           & \path|/ifs/home/bareos-restores/admin/.zshrc| \\
 \path|/ifs/home/admin/.zshrc| & \path|^/ifs/data/bareos-restores| & \path|/ifs/data/bareos-restores/admin/.zshrc| \\
+\hline
 \end{tabular}
 
 
@@ -949,9 +953,11 @@ Bareos will not modify the backup data it receives from the Primary Storage Syst
 Bareos NDMP support have been tested against:
 
 \begin{tabular}{l | l | l | l | l | l}
+\hline
 Vendor     & Model & NDMP Subsystem & Bareos version & Features & Remarks \\
 \hline
 Isilon     & Isilon OneFS v7.1.1.5 & Isilon NDMP 2.2      & bareos-15.2.2 & & \\
 NetApp     &                       & Release 8.2.3 7-Mode & bareos-15.2.2 & & \\
 Oracle/Sun &                       &                      & bareos-15.2.2 & & \\
+\hline
 \end{tabular}
