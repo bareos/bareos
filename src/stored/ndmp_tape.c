@@ -343,6 +343,15 @@ static inline bool bndmp_write_data_to_block(JCR *jcr,
    DCR *dcr = jcr->dcr;
    POOLMEM *rec_data;
 
+   if (!dcr) {
+      Dmsg0(100, "No dcr defined, bailing out\n");
+      return retval;
+   }
+
+   if (!dcr->rec) {
+      Dmsg0(100, "No dcr->rec defined, bailing out\n");
+      return retval;
+   }
    /*
     * Keep track of the original data buffer and restore it on exit from this function.
     */
