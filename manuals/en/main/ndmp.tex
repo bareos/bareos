@@ -47,14 +47,6 @@ On restore, the data is read by the conventional resource, and then recovered as
 \end{figure}%
 
 
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.8\linewidth]{\idir ndmp-cfg}
-\caption{NDMP configuration overview}
-\label{fig:ndmp-overview}
-\end{figure}%
-
-
 \section{Example Setup for NDMP backup}
 \index[general]{NDMP!Example}
 
@@ -386,7 +378,15 @@ Job {
 \end{itemize}
 
 
-\subsection{Run NDMP Backup}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir ndmp-cfg}
+\caption{NDMP configuration overview}
+\label{fig:ndmp-overview}
+\end{figure}%
+
+
+\section{Run NDMP Backup}
 
 Now we are ready to do our first NDMP backup:
 
@@ -522,7 +522,7 @@ The real backup data is stored in the file \path|/@NDMP/ifs/home%0|
 One NDMP main backup file is created for every directory specified in the used Fileset.
 The other files show the file history and are hardlinks to the backup file.
 
-\subsubsection{NDMP Backup Level}
+\subsection{NDMP Backup Level}
 \index[general]{NDMP!Level}
 The trailing number in the main backup file (after the \path|%| character)
 indicates the NDMP backup level:
@@ -552,19 +552,19 @@ Additional Incremental backups will result in a failed job and the message:
 \end{bmessage}
 
 
-\subsection{Run NDMP Restore}
+\section{Run NDMP Restore}
 
 Now that we have a NDMP backup, we of course also want to restore some data from the backup.
 If the backup we just did saved the Filehistory, we are able to select single files for restore.
 Otherwise, we will only be able to restore the whole backup.
 
 
-\subsubsection{Full Restore}
+\subsection{Full Restore}
 
 Either select all files or the main backup file (\path|/@NDMP/ifs/home%0|).
 If file history is not included in the backup job, than only the main backup file is available.
 
-\subsubsection{Restore files to original path}
+\subsection{Restore files to original path}
 
 \begin{bconsole}{}
 *<input>restore jobid=1</input>
@@ -693,7 +693,7 @@ JobStatus=OK (T)
   Termination:            Restore OK
 \end{bconsole}
 
-\subsubsection{Restore files to different path}
+\subsection{Restore files to different path}
 \label{sec:ndmp-where}
 
 The restore location is determined by the \linkResourceDirective{Dir}{Job}{Where} setting of the restore job.
@@ -806,7 +806,7 @@ Job queued. JobId=74
 *<input>wait jobid=74</input>
 JobId=74
 JobStatus=OK (T)
-*<input>messages</input>
+*<input>list joblog jobid=74</input>
 21-Jan 09:19 bareos-dir JobId 74: The following 1 JobId was chosen to be copied: 73
 21-Jan 09:19 bareos-dir JobId 74: Automatically selected Catalog: MyCatalog
 21-Jan 09:19 bareos-dir JobId 74: Using Catalog "MyCatalog"
@@ -954,10 +954,10 @@ Bareos NDMP support have been tested against:
 
 \begin{tabular}{l | l | l | l | l | l}
 \hline
-Vendor     & Model & NDMP Subsystem & Bareos version & Features & Remarks \\
+Vendor     & Product                       & NDMP Subsystem & Bareos version & Features & Remarks \\
 \hline
-Isilon     & Isilon OneFS v7.1.1.5 & Isilon NDMP 2.2      & bareos-15.2.2 & & \\
-NetApp     &                       & Release 8.2.3 7-Mode & bareos-15.2.2 & & \\
-Oracle/Sun &                       &                      & bareos-15.2.2 & & \\
+Isilon     & Isilon OneFS v7.1.1.5         & Isilon NDMP 2.2      & bareos-15.2.2 & & \\
+NetApp     &                               & Release 8.2.3 7-Mode & bareos-15.2.2 & & \\
+Oracle/Sun & ZFS Storage Appliance, OS 8.3 &                      & bareos-15.2.2 & & \\
 \hline
 \end{tabular}
