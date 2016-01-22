@@ -25,7 +25,7 @@ if [ "$1" = "configure" ]; then
             bareos/max_incr_volume_bytes?1 \
             bareos/max_incr_volumes?1 \
             bareos/backup_myself?no \
-            bareos/webui/console/user1/username?admin \
+            bareos/webui/console/user1/username?Administrator \
             bareos/webui/console/user1/password?
 
     # commit defaults
@@ -52,34 +52,6 @@ if [ "$1" = "configure" ]; then
 
     # reload apache
     invoke-rc.d apache2 reload
-
-    # Setting link to the web interface in ucs-overview administration
-    export P="ucs/web/overview/entries/admin"
-    export APP="bareos-webui"
-    export APPICON="../bareos-webui/img/bareos-logo.png"
-
-    ucr set \
-         "$P/$APP"/description/de="Bareos Backup Monitoring und Management" \
-         "$P/$APP"/description="Bareos Backup monitoring and management" \
-         "$P/$APP"/label/de="Bareos Backup - Web User Interface" \
-         "$P/$APP"/label="Bareos Backup - Web User Interface" \
-         "$P/$APP"/link="../bareos-webui/" \
-         "$P/$APP"/icon="$APPICON"
-         #"$P/$APP"/priority=xx-digits-for-sorting-or-just-dont-set
-
-    # Setting link to univention configuration registry in in ucs-overview administration
-    export P="ucs/web/overview/entries/admin"
-    export APP="bareos-core"
-    export APPICON="../bareos-webui/img/bareos-logo.png"
-
-    ucr set \
-         "$P/$APP"/description/de="Grundlegende Bareos Konfiguration mittels UCR Variablen bareos/*" \
-         "$P/$APP"/description="Basic configuration of Bareos by UCR variables bareos/*" \
-         "$P/$APP"/label/de="Bareos Backup - Konfiguration" \
-         "$P/$APP"/label="Bareos Backup - Configuration" \
-         "$P/$APP"/link="../univention-management-console/#module=ucr::0:" \
-         "$P/$APP"/icon="$APPICON"
-         #"$P/$APP"/priority=xx-digits-for-sorting-or-just-dont-set
 
     call_joinscript 62univention-bareos.inst
 fi

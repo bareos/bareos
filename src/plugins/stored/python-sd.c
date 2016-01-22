@@ -93,14 +93,16 @@ static psdFuncs pluginFuncs = {
  * Plugin private context
  */
 struct plugin_ctx {
-   PyThreadState *interpreter;
-   int64_t instance;
-   bool python_loaded;
-   char *module_path;
-   char *module_name;
-   PyObject *pModule;
-   PyObject *pDict;
-   PyObject *bpContext;
+   int64_t instance;                  /* Instance number of plugin */
+   bool python_loaded;                /* Plugin has python module loaded ? */
+   bool python_path_set;              /* Python plugin search path is set ? */
+   char *module_path;                 /* Plugin Module Path */
+   char *module_name;                 /* Plugin Module Name */
+   PyThreadState *interpreter;        /* Python interpreter for this instance of the plugin */
+   PyObject *pInstance;               /* Python Module instance */
+   PyObject *pModule;                 /* Python Module entry point */
+   PyObject *pDict;                   /* Python Dictionary */
+   PyObject *bpContext;               /* Python representation of plugin context */
 };
 
 #include "python-sd.h"
@@ -637,23 +639,33 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
    PyObject *sysPath,
             *mPath,
             *pName,
-            *pFunc,
-            *module;
+            *pFunc;
 
    /*
-    * Extend the Python search path with the given module_path.
+    * See if we already setup the python search path.
     */
-   if (p_ctx->module_path) {
-      sysPath = PySys_GetObject((char *)"path");
-      mPath = PyString_FromString(p_ctx->module_path);
-      PyList_Append(sysPath, mPath);
-      Py_DECREF(mPath);
+   if (!p_ctx->python_path_set) {
+      /*
+       * Extend the Python search path with the given module_path.
+       */
+      if (p_ctx->module_path) {
+         sysPath = PySys_GetObject((char *)"path");
+         mPath = PyString_FromString(p_ctx->module_path);
+         PyList_Append(sysPath, mPath);
+         Py_DECREF(mPath);
+         p_ctx->python_path_set = true;
+      }
    }
 
    /*
-    * Make our callback methods available for Python.
+    * See if we already setup the module structure.
     */
-   module = Py_InitModule("bareossd", BareosSDMethods);
+   if (!p_ctx->pInstance) {
+      /*
+       * Make our callback methods available for Python.
+       */
+      p_ctx->pInstance = Py_InitModule("bareossd", BareosSDMethods);
+   }
 
    /*
     * Try to load the Python module by name.
@@ -707,12 +719,12 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
          Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
          goto bail_out;
       }
-   }
 
-   /*
-    * Keep track we successfully loaded.
-    */
-   p_ctx->python_loaded = true;
+      /*
+       * Keep track we successfully loaded.
+       */
+      p_ctx->python_loaded = true;
+   }
 
    return retval;
 

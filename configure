@@ -988,7 +988,6 @@ DEBIAN_CONTROL_STORAGE_GLUSTERFS
 DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
 DEBIAN_CONTROL_STORAGE_CEPH
 DEBIAN_CONTROL_UNIVENTION_BAREOS
-DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA
 MCOMMON
 DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN
 DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN
@@ -32693,7 +32692,6 @@ debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
    DEBIAN_CONTROL_UNIVENTION_BAREOS=/dev/null
-   DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=/dev/null
    PFILES="${PFILES} ${DEBIAN_CONTROL} \
       debian/bareos-bat.install \
       debian/bareos-bat.postinst \
@@ -32748,10 +32746,7 @@ debian|ubuntu|univention)
          ;;
       univention)
          DEBIAN_CONTROL_UNIVENTION_BAREOS=./debian/control.univention-bareos
-         DEBIAN_CONTROL_UNIVENTION_BAREOS_SCHEMA=./debian/control.univention-bareos-schema
          PFILES="${PFILES} \
-            debian/univention-bareos-schema.install \
-            debian/univention-bareos-schema.postinst \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
             platforms/univention/Makefile \
@@ -32759,7 +32754,6 @@ debian|ubuntu|univention)
             platforms/univention/AppCenter/LICENSE_AGREEMENT"
          ;;
    esac
-
 
   ;;
 freebsd)
@@ -33051,23 +33045,25 @@ DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=/dev/null
 DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=/dev/null
 DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=/dev/null
 
-if test X"$support_python" = "Xyes" ; then
-   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
-   BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
-   DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=./debian/control.bareos-filedaemon-python-plugin
-   DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=./debian/control.bareos-storage-python-plugin
-   DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
-fi
+if test x$use_libtool != xno; then
+   if test X"$support_python" = "Xyes" ; then
+      BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
+      BUILD_DIR_PLUGINS="${BUILD_DIR_PLUGINS} python-dir.la"
+      DEBIAN_CONTROL_FILEDAEMON_PYTHON_PLUGIN=./debian/control.bareos-filedaemon-python-plugin
+      DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN=./debian/control.bareos-storage-python-plugin
+      DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
+   fi
 
-if test X"$have_scsi_crypto" = "Xyes" ; then
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
-fi
+   if test X"$have_scsi_crypto" = "Xyes" ; then
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
+   fi
 
-if test X"$have_zlib" = "Xyes" -o \
-        X"$have_lzo" = "Xyes" -o \
-        X"$have_fastlz" = "Xyes" ; then
-   BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+   if test X"$have_zlib" = "Xyes" -o \
+           X"$have_lzo" = "Xyes" -o \
+           X"$have_fastlz" = "Xyes" ; then
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+   fi
 fi
 
 if test X"$have_ceph_rados" = "Xyes" ; then

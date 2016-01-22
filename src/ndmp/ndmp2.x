@@ -48,8 +48,8 @@
  *
  */
 
-%#ifdef __clang__
-%#pragma clang diagnostic ignored "-Wunused-variable"
+%#if __clang__
+%#pragma clang diagnostic ignored "-Wunused-const-variable"
 %#elif __GNUC__
 %#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 %#pragma GCC diagnostic ignored "-Wunused-variable"

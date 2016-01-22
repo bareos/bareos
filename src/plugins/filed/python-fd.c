@@ -138,7 +138,8 @@ static pFuncs pluginFuncs = {
 struct plugin_ctx {
    int32_t backup_level;              /* Backup level e.g. Full/Differential/Incremental */
    utime_t since;                     /* Since time for Differential/Incremental */
-   bool python_loaded;                /* Plugin is loaded ? */
+   bool python_loaded;                /* Plugin has python module loaded ? */
+   bool python_path_set;              /* Python plugin search path is set ? */
    char *plugin_options;              /* Plugin Option string */
    char *module_path;                 /* Plugin Module Path */
    char *module_name;                 /* Plugin Module Name */
@@ -147,7 +148,8 @@ struct plugin_ctx {
    char *object_name;                 /* Restore Object Name */
    char *object;                      /* Restore Object Content */
    PyThreadState *interpreter;        /* Python interpreter for this instance of the plugin */
-   PyObject *pModule;                 /* Python Module pointer */
+   PyObject *pInstance;               /* Python Module instance */
+   PyObject *pModule;                 /* Python Module entry point */
    PyObject *pDict;                   /* Python Dictionary */
    PyObject *bpContext;               /* Python representation of plugin context */
 };
@@ -1129,103 +1131,113 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
    PyObject *sysPath,
             *mPath,
             *pName,
-            *pFunc,
-            *module;
+            *pFunc;
 
    /*
-    * Extend the Python search path with the given module_path.
+    * See if we already setup the python search path.
     */
-   if (p_ctx->module_path) {
-      sysPath = PySys_GetObject((char *)"path");
-      mPath = PyString_FromString(p_ctx->module_path);
-      PyList_Append(sysPath, mPath);
-      Py_DECREF(mPath);
+   if (!p_ctx->python_path_set) {
+      /*
+       * Extend the Python search path with the given module_path.
+       */
+      if (p_ctx->module_path) {
+         sysPath = PySys_GetObject((char *)"path");
+         mPath = PyString_FromString(p_ctx->module_path);
+         PyList_Append(sysPath, mPath);
+         Py_DECREF(mPath);
+         p_ctx->python_path_set = true;
+      }
    }
 
    /*
-    * Make our callback methods available for Python.
+    * See if we already setup the module structure.
     */
-   module = Py_InitModule("bareosfd", BareosFDMethods);
+   if (!p_ctx->pInstance) {
+      /*
+       * Make our callback methods available for Python.
+       */
+      p_ctx->pInstance = Py_InitModule("bareosfd", BareosFDMethods);
 
-   /*
-    * Fill in the slots of PyRestoreObject
-    */
-   PyRestoreObjectType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyRestoreObjectType) < 0) {
-      goto bail_out;
+      /*
+       * Fill in the slots of PyRestoreObject
+       */
+      PyRestoreObjectType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyRestoreObjectType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PyStatPacket
+       */
+      PyStatPacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyStatPacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PySavePacket
+       */
+      PySavePacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PySavePacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PyRestorePacket
+       */
+      PyRestorePacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyRestorePacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PyIoPacketType
+       */
+      PyIoPacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyIoPacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PyAclPacketType
+       */
+      PyAclPacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyAclPacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Fill in the slots of PyXattrPacketType
+       */
+      PyXattrPacketType.tp_new = PyType_GenericNew;
+      if (PyType_Ready(&PyXattrPacketType) < 0) {
+         goto cleanup;
+      }
+
+      /*
+       * Add the types to the module
+       */
+      Py_INCREF(&PyRestoreObjectType);
+      PyModule_AddObject(p_ctx->pInstance, "RestoreObject", (PyObject *)&PyRestoreObjectType);
+
+      Py_INCREF(&PyStatPacketType);
+      PyModule_AddObject(p_ctx->pInstance, "StatPacket", (PyObject *)&PyStatPacketType);
+
+      Py_INCREF(&PySavePacketType);
+      PyModule_AddObject(p_ctx->pInstance, "SavePacket", (PyObject *)&PySavePacketType);
+
+      Py_INCREF(&PyRestorePacketType);
+      PyModule_AddObject(p_ctx->pInstance, "RestorePacket", (PyObject *)&PyRestorePacketType);
+
+      Py_INCREF(&PyIoPacketType);
+      PyModule_AddObject(p_ctx->pInstance, "IoPacket", (PyObject *)&PyIoPacketType);
+
+      Py_INCREF(&PyAclPacketType);
+      PyModule_AddObject(p_ctx->pInstance, "AclPacket", (PyObject *)&PyAclPacketType);
+
+      Py_INCREF(&PyXattrPacketType);
+      PyModule_AddObject(p_ctx->pInstance, "XattrPacket", (PyObject *)&PyXattrPacketType);
    }
-
-   /*
-    * Fill in the slots of PyStatPacket
-    */
-   PyStatPacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyStatPacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Fill in the slots of PySavePacket
-    */
-   PySavePacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PySavePacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Fill in the slots of PyRestorePacket
-    */
-   PyRestorePacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyRestorePacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Fill in the slots of PyIoPacketType
-    */
-   PyIoPacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyIoPacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Fill in the slots of PyAclPacketType
-    */
-   PyAclPacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyAclPacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Fill in the slots of PyXattrPacketType
-    */
-   PyXattrPacketType.tp_new = PyType_GenericNew;
-   if (PyType_Ready(&PyXattrPacketType) < 0) {
-      goto bail_out;
-   }
-
-   /*
-    * Add the types to the module
-    */
-   Py_INCREF(&PyRestoreObjectType);
-   PyModule_AddObject(module, "RestoreObject", (PyObject *)&PyRestoreObjectType);
-
-   Py_INCREF(&PyStatPacketType);
-   PyModule_AddObject(module, "StatPacket", (PyObject *)&PyStatPacketType);
-
-   Py_INCREF(&PySavePacketType);
-   PyModule_AddObject(module, "SavePacket", (PyObject *)&PySavePacketType);
-
-   Py_INCREF(&PyRestorePacketType);
-   PyModule_AddObject(module, "RestorePacket", (PyObject *)&PyRestorePacketType);
-
-   Py_INCREF(&PyIoPacketType);
-   PyModule_AddObject(module, "IoPacket", (PyObject *)&PyIoPacketType);
-
-   Py_INCREF(&PyAclPacketType);
-   PyModule_AddObject(module, "AclPacket", (PyObject *)&PyAclPacketType);
-
-   Py_INCREF(&PyXattrPacketType);
-   PyModule_AddObject(module, "XattrPacket", (PyObject *)&PyXattrPacketType);
 
    /*
     * Try to load the Python module by name.
@@ -1279,14 +1291,17 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
          Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
          goto bail_out;
       }
+
+      /*
+       * Keep track we successfully loaded.
+       */
+      p_ctx->python_loaded = true;
    }
 
-   /*
-    * Keep track we successfully loaded.
-    */
-   p_ctx->python_loaded = true;
-
    return retval;
+
+cleanup:
+   p_ctx->pInstance = NULL;
 
 bail_out:
    if (PyErr_Occurred()) {

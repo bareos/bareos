@@ -1710,6 +1710,14 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
    jcr->res.fileset = fileset;
    close_db(ua);
 
+   switch (client->Protocol) {
+   case APT_NATIVE:
+      break;
+   default:
+      ua->error_msg(_("Estimate is only supported on native clients.\n"));
+      return true;
+   }
+
    if (job->pool->catalog) {
       ua->catalog = job->pool->catalog;
    } else {

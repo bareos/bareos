@@ -1430,7 +1430,7 @@ typedef struct MDB_ntxn {
 #endif
 
 	/** max bytes to write in one call */
-#define MAX_WRITE		(0x80000000U >> (sizeof(ssize_t) == 4))
+#define MAX_WRITE		(0x40000000U >> (sizeof(ssize_t) == 4))
 
 	/** Check \b txn and \b dbi arguments to a function */
 #define TXN_DBI_EXIST(txn, dbi, validity) \
@@ -1956,7 +1956,7 @@ static void
 mdb_cursor_unref(MDB_cursor *mc)
 {
 	int i;
-	if (!mc->mc_pg[0] || IS_SUBP(mc->mc_pg[0]))
+	if (!mc->mc_snum || !mc->mc_pg[0] || IS_SUBP(mc->mc_pg[0]))
 		return;
 	for (i=0; i<mc->mc_snum; i++)
 		mdb_page_unref(mc->mc_txn, mc->mc_pg[i]);
@@ -2433,7 +2433,7 @@ mdb_page_alloc(MDB_cursor *mc, int num, MDB_page **mp)
 			goto fail;
 	}
 #ifdef _WIN32
-	if (env->me_flags & MDB_WRITEMAP) {
+	if (!(env->me_flags & MDB_RDONLY)) {
 		void *p;
 		p = (MDB_page *)(env->me_map + env->me_psize * pgno);
 		p = VirtualAlloc(p, env->me_psize * num, MEM_COMMIT,
@@ -5263,14 +5263,16 @@ mdb_env_close0(MDB_env *env, int excl)
 	free(env->me_dbflags);
 	free(env->me_path);
 	free(env->me_dirty_list);
-	free(env->me_txn0);
 #ifdef MDB_VL32
+	if (env->me_txn0 && env->me_txn0->mt_rpages)
+		free(env->me_txn0->mt_rpages);
 	{ unsigned int x;
 		for (x=1; x<=env->me_rpages[0].mid; x++)
 		munmap(env->me_rpages[x].mptr, env->me_rpages[x].mcnt * env->me_psize);
 	}
 	free(env->me_rpages);
 #endif
+	free(env->me_txn0);
 	mdb_midl_free(env->me_free_pgs);
 
 	if (env->me_flags & MDB_ENV_TXKEY) {
@@ -5358,6 +5360,7 @@ mdb_env_close0(MDB_env *env, int excl)
 	}
 #ifdef MDB_VL32
 #ifdef _WIN32
+	if (env->me_fmh) CloseHandle(env->me_fmh);
 	if (env->me_rpmutex) CloseHandle(env->me_rpmutex);
 #else
 	pthread_mutex_destroy(&env->me_rpmutex);
@@ -5771,7 +5774,7 @@ notlocal:
 		pthread_mutex_lock(&env->me_rpmutex);
 retry:
 		y = 0;
-		for (i=1; i<tl[0].mid; i++) {
+		for (i=1; i<=tl[0].mid; i++) {
 			if (!tl[i].mref) {
 				if (!y) y = i;
 				/* tmp overflow pages don't go to env */
@@ -5851,7 +5854,7 @@ retry:
 		if (el[0].mid >= MDB_ERPAGE_MAX - env->me_rpcheck) {
 			/* purge unref'd pages */
 			unsigned i, y = 0;
-			for (i=1; i<el[0].mid; i++) {
+			for (i=1; i<=el[0].mid; i++) {
 				if (!el[i].mref) {
 					if (!y) y = i;
 					munmap(el[i].mptr, env->me_psize * el[i].mcnt);
@@ -6999,6 +7002,28 @@ fetchm:
 					mx->mc_db->md_pad;
 				data->mv_data = METADATA(mx->mc_pg[mx->mc_top]);
 				mx->mc_ki[mx->mc_top] = NUMKEYS(mx->mc_pg[mx->mc_top])-1;
+			} else {
+				rc = MDB_NOTFOUND;
+			}
+		}
+		break;
+	case MDB_PREV_MULTIPLE:
+		if (data == NULL) {
+			rc = EINVAL;
+			break;
+		}
+		if (!(mc->mc_db->md_flags & MDB_DUPFIXED)) {
+			rc = MDB_INCOMPATIBLE;
+			break;
+		}
+		if (!(mc->mc_flags & C_INITIALIZED))
+			rc = mdb_cursor_first(mc, key, data);
+		else {
+			MDB_cursor *mx = &mc->mc_xcursor->mx_cursor;
+			if (mx->mc_flags & C_INITIALIZED) {
+				rc = mdb_cursor_sibling(mx, 0);
+				if (rc == MDB_SUCCESS)
+					goto fetchm;
 			} else {
 				rc = MDB_NOTFOUND;
 			}
@@ -9984,7 +10009,7 @@ mdb_env_copyfd0(MDB_env *env, HANDLE fd)
 	MDB_txn *txn = NULL;
 	mdb_mutexref_t wmutex = NULL;
 	int rc;
-	size_t wsize;
+	mdb_size_t wsize, w3;
 	char *ptr;
 #ifdef _WIN32
 	DWORD len, w2;
@@ -10043,15 +10068,15 @@ mdb_env_copyfd0(MDB_env *env, HANDLE fd)
 	if (rc)
 		goto leave;
 
-	w2 = txn->mt_next_pgno * env->me_psize;
+	w3 = txn->mt_next_pgno * env->me_psize;
 	{
 		mdb_size_t fsize = 0;
 		if ((rc = mdb_fsize(env->me_fd, &fsize)))
 			goto leave;
-		if (w2 > fsize)
-			w2 = fsize;
+		if (w3 > fsize)
+			w3 = fsize;
 	}
-	wsize = w2 - wsize;
+	wsize = w3 - wsize;
 	while (wsize > 0) {
 		if (wsize > MAX_WRITE)
 			w2 = MAX_WRITE;

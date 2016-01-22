@@ -99,10 +99,9 @@
  * Silence compiler for known warnings.
  */
 #ifdef __clang__
-#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wunused-const-variable"
 #pragma clang diagnostic ignored "-Wformat"
-#pragma clang diagnostic ignored "-Wenum-compare"
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#pragma clang diagnostic ignored "-Wenum-conversion"
 #elif __GNUC__
 #if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402
 #pragma GCC diagnostic ignored "-Wunused-variable"
