@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,17 +102,17 @@ static RES_ITEM cli_items[] = {
    { "PkiMasterKey", CFG_TYPE_ALIST_DIR, ITEM(res_client.pki_master_key_files), 0, 0, NULL, NULL, NULL },
    { "PkiCipher", CFG_TYPE_CIPHER, ITEM(res_client.pki_cipher), 0, CFG_ITEM_DEFAULT, "aes128", NULL, NULL },
 #endif
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_client.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_client.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_client.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_client.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_client.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_client.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_client.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls.authenticate), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_client.tls.enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_client.tls.require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_client.tls.verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_client.tls.ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_client.tls.ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_client.tls.crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_client.tls.certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_client.tls.keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_client.tls.cipherlist), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_client.tls.allowed_cns), 0, 0, NULL, NULL, NULL },
    { "VerId", CFG_TYPE_STR, ITEM(res_client.verid), 0, 0, NULL, NULL, NULL },
    { "Compatible", CFG_TYPE_BOOL, ITEM(res_client.compatible), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
@@ -135,20 +135,27 @@ static RES_ITEM dir_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
+   { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL,
+      "Director Network Address. Only required for \"Initiate Connection To Director\"." },
+   { "Port", CFG_TYPE_PINT32, ITEM(res_dir.port), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, "16.2.0",
+      "Director Network Port. Only required for \"Initiate Connection To Director\"." },
+   { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_dir.connection_from_director_to_client), 0, CFG_ITEM_DEFAULT, "true", "16.2.0",
+      "This Client will accept incoming network connection from this Director." },
+   { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_dir.connection_from_client_to_director), 0, CFG_ITEM_DEFAULT, "false", "16.2.0",
+      "Let the Filedaemon initiate network connections to the Director." },
    { "Monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls.authenticate), 0, 0, NULL, NULL, NULL },
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls.enable), 0, 0, NULL, NULL, NULL },
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls.require), 0, 0, NULL, NULL, NULL },
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls.verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls.ca_certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls.ca_certdir), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls.crlfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls.certfile), 0, 0, NULL, NULL, NULL },
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls.keyfile), 0, 0, NULL, NULL, NULL },
+   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_dir.tls.dhfile), 0, 0, NULL, NULL, NULL },
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls.cipherlist), 0, 0, NULL, NULL, NULL },
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls.allowed_cns), 0, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
    { "AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL, NULL, NULL },
    { "AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL, NULL, NULL },
@@ -246,32 +253,32 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      if (res->res_dir.tls_ctx) {
-         free_tls_context(res->res_dir.tls_ctx);
+      if (res->res_dir.tls.ctx) {
+         free_tls_context(res->res_dir.tls.ctx);
       }
-      if (res->res_dir.tls_ca_certfile) {
-         free(res->res_dir.tls_ca_certfile);
+      if (res->res_dir.tls.ca_certfile) {
+         free(res->res_dir.tls.ca_certfile);
       }
-      if (res->res_dir.tls_ca_certdir) {
-         free(res->res_dir.tls_ca_certdir);
+      if (res->res_dir.tls.ca_certdir) {
+         free(res->res_dir.tls.ca_certdir);
       }
-      if (res->res_dir.tls_crlfile) {
-         free(res->res_dir.tls_crlfile);
+      if (res->res_dir.tls.crlfile) {
+         free(res->res_dir.tls.crlfile);
       }
-      if (res->res_dir.tls_certfile) {
-         free(res->res_dir.tls_certfile);
+      if (res->res_dir.tls.certfile) {
+         free(res->res_dir.tls.certfile);
       }
-      if (res->res_dir.tls_keyfile) {
-         free(res->res_dir.tls_keyfile);
+      if (res->res_dir.tls.keyfile) {
+         free(res->res_dir.tls.keyfile);
       }
-      if (res->res_dir.tls_dhfile) {
-         free(res->res_dir.tls_dhfile);
+      if (res->res_dir.tls.dhfile) {
+         free(res->res_dir.tls.dhfile);
       }
-      if (res->res_dir.tls_cipherlist) {
-         free(res->res_dir.tls_cipherlist);
+      if (res->res_dir.tls.cipherlist) {
+         free(res->res_dir.tls.cipherlist);
       }
-      if (res->res_dir.tls_allowed_cns) {
-         delete res->res_dir.tls_allowed_cns;
+      if (res->res_dir.tls.allowed_cns) {
+         delete res->res_dir.tls.allowed_cns;
       }
       if (res->res_dir.allowed_script_dirs) {
          delete res->res_dir.allowed_script_dirs;
@@ -331,29 +338,29 @@ void free_resource(RES *sres, int type)
          }
          delete res->res_client.pki_recipients;
       }
-      if (res->res_client.tls_ctx) {
-         free_tls_context(res->res_client.tls_ctx);
+      if (res->res_client.tls.ctx) {
+         free_tls_context(res->res_client.tls.ctx);
       }
-      if (res->res_client.tls_ca_certfile) {
-         free(res->res_client.tls_ca_certfile);
+      if (res->res_client.tls.ca_certfile) {
+         free(res->res_client.tls.ca_certfile);
       }
-      if (res->res_client.tls_ca_certdir) {
-         free(res->res_client.tls_ca_certdir);
+      if (res->res_client.tls.ca_certdir) {
+         free(res->res_client.tls.ca_certdir);
       }
-      if (res->res_client.tls_crlfile) {
-         free(res->res_client.tls_crlfile);
+      if (res->res_client.tls.crlfile) {
+         free(res->res_client.tls.crlfile);
       }
-      if (res->res_client.tls_certfile) {
-         free(res->res_client.tls_certfile);
+      if (res->res_client.tls.certfile) {
+         free(res->res_client.tls.certfile);
       }
-      if (res->res_client.tls_keyfile) {
-         free(res->res_client.tls_keyfile);
+      if (res->res_client.tls.keyfile) {
+         free(res->res_client.tls.keyfile);
       }
-      if (res->res_client.tls_cipherlist) {
-         free(res->res_client.tls_cipherlist);
+      if (res->res_client.tls.cipherlist) {
+         free(res->res_client.tls.cipherlist);
       }
-      if (res->res_client.tls_allowed_cns) {
-         delete res->res_client.tls_allowed_cns;
+      if (res->res_client.tls.allowed_cns) {
+         delete res->res_client.tls.allowed_cns;
       }
       if (res->res_client.verid) {
          free(res->res_client.verid);
@@ -441,7 +448,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+               res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
                res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
                res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             }
@@ -456,7 +463,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
                res->res_client.pki_signers = res_all.res_client.pki_signers;
                res->res_client.pki_recipients = res_all.res_client.pki_recipients;
                res->res_client.messages = res_all.res_client.messages;
-               res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
+               res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
                res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
                res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             }

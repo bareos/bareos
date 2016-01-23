@@ -628,7 +628,7 @@ static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
    /* Try to connect for 15 seconds */
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
       client->name(), client->address, client->FDport);
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
    }

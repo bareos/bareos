@@ -36,6 +36,7 @@ extern void *start_heap;
 static void list_scheduled_jobs(UAContext *ua);
 static void list_running_jobs(UAContext *ua);
 static void list_terminated_jobs(UAContext *ua);
+static void list_connected_clients(UAContext *ua);
 static void do_director_status(UAContext *ua);
 static void do_scheduler_status(UAContext *ua);
 static bool do_subscription_status(UAContext *ua);
@@ -820,6 +821,9 @@ static void do_director_status(UAContext *ua)
     * List terminated jobs
     */
    list_terminated_jobs(ua);
+
+   list_connected_clients(ua);
+
    ua->send_msg("====\n");
 }
 
@@ -1165,7 +1169,12 @@ static void list_running_jobs(UAContext *ua)
             emsg = (char *)get_pool_memory(PM_FNAME);
             pool_mem = true;
          }
-         if (!jcr->res.client || !jcr->res.wstore) {
+         if (!jcr->file_bsock) {
+            /*
+             * client initiated backup
+             */
+            Mmsg(emsg, _("is waiting for Client to connect (Client Initiated Connection)"));
+         } else if (!jcr->res.client || !jcr->res.wstore) {
             Mmsg(emsg, _("is waiting for Client to connect to Storage daemon"));
          } else {
             Mmsg(emsg, _("is waiting for Client %s to connect to Storage %s"),
@@ -1309,6 +1318,31 @@ static void list_terminated_jobs(UAContext *ua)
    }
    if (!ua->api) ua->send_msg(_("\n"));
    unlock_last_jobs_list();
+}
+
+
+static void list_connected_clients(UAContext *ua)
+{
+   CONNECTION *connection = NULL;
+   alist *connections = NULL;
+   const char *separator = "====================";
+   char dt[MAX_TIME_LENGTH];
+
+   ua->send->decoration("\n");
+   ua->send->decoration("Client Initiated Connections (waiting for jobs):\n");
+   connections = get_client_connections()->get_as_alist();
+   ua->send->decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol", "Authenticated", "Name");
+   ua->send->decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator, separator, separator, separator);
+   foreach_alist(connection, connections) {
+      ua->send->object_start("client-connection");
+      bstrftime_nc(dt, sizeof(dt), connection->connect_time());
+      ua->send->object_key_value("connect_time", dt, "%-20s");
+      ua->send->object_key_value("protocol_version", connection->protocol_version(), "%-20d");
+      ua->send->object_key_value("authenticated", connection->authenticated(), "%-20d");
+      ua->send->object_key_value("name", connection->name(), "%-40s");
+      ua->send->object_end("client-connection");
+      ua->send->decoration("\n");
+   }
 }
 
 static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_name)

@@ -263,9 +263,10 @@ bool do_verify(JCR *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
+      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
+      send_job_info(jcr);
       fd = jcr->file_bsock;
 
       /*
@@ -284,9 +285,10 @@ bool do_verify(JCR *jcr)
        * OK, now connect to the File daemon and ask him for the files.
        */
       jcr->setJobStatus(JS_Blocked);
-      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
+      if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
          goto bail_out;
       }
+      send_job_info(jcr);
       fd = jcr->file_bsock;
       break;
    }

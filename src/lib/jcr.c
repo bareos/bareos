@@ -988,10 +988,15 @@ void JCR::setJobStarted()
 
 void JCR::setJobStatus(int newJobStatus)
 {
-   int priority, old_priority;
-   int oldJobStatus = JobStatus;
+   int priority;
+   int old_priority = 0;
+   int oldJobStatus = ' ';
+
+   if (JobStatus) {
+      oldJobStatus = JobStatus;
+      old_priority = get_status_priority(oldJobStatus);
+   }
    priority = get_status_priority(newJobStatus);
-   old_priority = get_status_priority(oldJobStatus);
 
    Dmsg2(800, "set_jcr_job_status(%s, %c)\n", Job, newJobStatus);
 
@@ -1014,7 +1019,7 @@ void JCR::setJobStatus(int newJobStatus)
    if (priority > old_priority || (
        priority == 0 && old_priority == 0)) {
       Dmsg4(800, "Set new stat. old: %c,%d new: %c,%d\n",
-            JobStatus, old_priority, newJobStatus, priority);
+            oldJobStatus, old_priority, newJobStatus, priority);
       JobStatus = newJobStatus;     /* replace with new status */
    }
 

@@ -77,6 +77,26 @@ struct s_password {
 };
 
 /*
+ * store all TLS specific settings
+ * and backend specific context.
+ */
+struct tls_t {
+   bool authenticate;             /* Authenticate with TLS */
+   bool enable;                   /* Enable TLS */
+   bool require;                  /* Require TLS */
+   bool verify_peer;              /* TLS Verify Peer Certificate */
+   char *ca_certfile;             /* TLS CA Certificate File */
+   char *ca_certdir;              /* TLS CA Certificate Directory */
+   char *crlfile;                 /* TLS CA Certificate Revocation List File */
+   char *certfile;                /* TLS Client Certificate File */
+   char *keyfile;                 /* TLS Client Key File */
+   char *cipherlist;              /* TLS Cipher List */
+   char *dhfile;                  /* TLS Diffie-Hellman File */
+   alist *allowed_cns;            /* TLS Allowed Certificate Common Names (Clients) */
+   TLS_CONTEXT *ctx;              /* Shared TLS Context */
+};
+
+/*
  * This is the structure that defines the record types (items) permitted within each
  * resource. It is used to define the configuration tables.
  */

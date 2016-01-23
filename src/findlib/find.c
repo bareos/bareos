@@ -436,20 +436,22 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
  */
 int term_find_files(FF_PKT *ff)
 {
-   int hard_links;
+   int hard_links = 0;
 
-   free_pool_memory(ff->sys_fname);
-   if (ff->fname_save) {
-      free_pool_memory(ff->fname_save);
+   if (ff) {
+      free_pool_memory(ff->sys_fname);
+      if (ff->fname_save) {
+         free_pool_memory(ff->fname_save);
+      }
+      if (ff->link_save) {
+         free_pool_memory(ff->link_save);
+      }
+      if (ff->ignoredir_fname) {
+         free_pool_memory(ff->ignoredir_fname);
+      }
+      hard_links = term_find_one(ff);
+      free(ff);
    }
-   if (ff->link_save) {
-      free_pool_memory(ff->link_save);
-   }
-   if (ff->ignoredir_fname) {
-      free_pool_memory(ff->ignoredir_fname);
-   }
-   hard_links = term_find_one(ff);
-   free(ff);
 
    return hard_links;
 }

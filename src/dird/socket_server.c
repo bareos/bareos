@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,17 @@
 #include "bareos.h"
 #include "dird.h"
 
+static char hello_client_with_version[] =
+   "Hello Client %127s FdProtocolVersion=%d calling";
+
+static char hello_client[] =
+   "Hello Client %127s calling";
+
 /* Global variables */
 static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
+static CONNECTION_POOL *client_connections = NULL;
 
 struct s_addr_port {
    char *addr;
@@ -46,11 +53,17 @@ struct s_addr_port {
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN (int)sizeof(name) + 25
 
+CONNECTION_POOL *get_client_connections()
+{
+   return client_connections;
+}
+
 static void *handle_connection_request(void *arg)
 {
    BSOCK *bs = (BSOCK *)arg;
    char name[MAX_NAME_LENGTH];
    char tbuf[MAX_TIME_LENGTH];
+   int  fd_protocol_version = 0;
 
    if (bs->recv() <= 0) {
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());
@@ -75,9 +88,10 @@ static void *handle_connection_request(void *arg)
    /*
     * See if this is a File daemon connection. If so call FD handler.
     */
-   if (sscanf(bs->msg, "Hello Client %127s calling", name) == 1) {
+   if ((sscanf(bs->msg, hello_client_with_version, name, &fd_protocol_version) == 2) ||
+       (sscanf(bs->msg, hello_client, name) == 1)) {
       Dmsg1(110, "Got a FD connection at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-      return handle_filed_connection(bs, name);
+      return handle_filed_connection(client_connections, bs, name, fd_protocol_version);
    }
 
    return handle_UA_client_request(bs);
@@ -112,6 +126,9 @@ void start_socket_server(dlist *addrs)
    int status;
    static dlist *myaddrs = addrs;
 
+   if (client_connections == NULL) {
+      client_connections = New(CONNECTION_POOL());
+   }
    if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
       berrno be;
       Emsg1(M_ABORT, 0, _("Cannot create UA thread: %s\n"), be.bstrerror(status));
@@ -127,5 +144,8 @@ void stop_socket_server()
       cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
       delete sock_fds;
       sock_fds = NULL;
+   }
+   if (client_connections) {
+      delete(client_connections);
    }
 }

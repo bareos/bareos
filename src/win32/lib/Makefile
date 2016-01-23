@@ -1,7 +1,7 @@
 #
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,8 @@ LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
 		 berrno.c bget_msg.c binflate.c bnet_server_tcp.c bnet.c \
 		 bpipe.c breg.c bregex.c bsnprintf.c bsock.c bsock_sctp.c \
 		 bsock_tcp.c bsock_udt.c bsys.c btime.c btimers.c \
-		 compression.c cram-md5.c cbuf.c crypto.c crypto_cache.c \
+		 connection_pool.c compression.c cram-md5.c \
+		 cbuf.c crypto.c crypto_cache.c \
 		 crypto_gnutls.c crypto_none.c crypto_nss.c crypto_openssl.c \
 		 crypto_wrap.c daemon.c devlock.c dlist.c edit.c fnmatch.c \
 		 guid_to_name.c hmac.c htable.c jcr.c json.c lockmgr.c md5.c \

@@ -80,6 +80,8 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
    int status;
    s_sockfd *fd_ptr = NULL;
 
+   Dmsg0(100, "cleanup_bnet_thread_server_tcp: start\n");
+
    if (!sockfds->empty()) {
       /*
        * Cleanup open files and pointers to them
@@ -102,6 +104,8 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
                be.bstrerror());
       }
    }
+
+   Dmsg0(100, "cleanup_bnet_thread_server_tcp: finish\n");
 }
 
 /*

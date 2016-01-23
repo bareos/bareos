@@ -234,10 +234,12 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
                                        store->tls_enable, store->tls_require, store->tls_authenticate,
                                        store->tls_verify_peer, NULL, store->tls_ctx, "Storage daemon");
    if (!auth_success) {
-      Dmsg0(dbglvl, _("Director and Storage daemon passwords or names not the same.\n"));
+      Dmsg2(dbglvl, "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
+            sd->host(), sd->port());
       Jmsg(jcr, M_FATAL, 0,
            _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
              "Passwords or names not the same or\n"
+             "TLS negotiation problem or\n"
              "Maximum Concurrent Jobs exceeded on the SD or\n"
              "SD networking messed up (restart daemon).\n"
              "Please see %s for help.\n"),
@@ -274,6 +276,13 @@ bool authenticate_with_file_daemon(JCR *jcr)
    bool auth_success = false;
    alist *verify_list = NULL;
 
+   if (jcr->authenticated) {
+      /*
+       * already authenticated
+       */
+      return true;
+   }
+
    /*
     * Send my name to the File daemon then do authentication
     */
@@ -296,10 +305,11 @@ bool authenticate_with_file_daemon(JCR *jcr)
                                        client->tls_enable, client->tls_require, client->tls_authenticate,
                                        client->tls_verify_peer, verify_list, client->tls_ctx, "File daemon");
    if (!auth_success) {
-      Dmsg0(dbglvl, _("Director and File daemon passwords or names not the same.\n"));
+      Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
       Jmsg(jcr, M_FATAL, 0,
             _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
               "Passwords or names not the same or\n"
+              "TLS negotiation failed or\n"
               "Maximum Concurrent Jobs exceeded on the FD or\n"
               "FD networking messed up (restart daemon).\n"
               "Please see %s for help.\n"),
@@ -332,16 +342,15 @@ bool authenticate_with_file_daemon(JCR *jcr)
 /*
  * Authenticate File daemon connection
  */
-bool authenticate_file_daemon(JCR *jcr, char *client_name)
+bool authenticate_file_daemon(BSOCK *fd, char *client_name)
 {
    CLIENTRES *client;
-   BSOCK *fd = jcr->file_bsock;
    bool auth_success = false;
 
    unbash_spaces(client_name);
    client = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
    if (client) {
-      if (client->allow_client_connect) {
+      if (is_connect_from_client_allowed(client)) {
          ASSERT(client->password.encoding == p_encoding_md5);
          auth_success = two_way_authenticate(fd, NULL, client->password.value, true,
                                              client->tls_enable, client->tls_require, client->tls_authenticate,
@@ -359,7 +368,7 @@ bool authenticate_file_daemon(JCR *jcr, char *client_name)
       sleep(5);
       return false;
    }
-   fd->fsend(_("1000 OK: %s Version: %s (%s)\n"), my_name, VERSION, BDATE);
+   fd->fsend("1000 OK: %s Version: %s (%s)\n", my_name, VERSION, BDATE);
 
    return true;
 }

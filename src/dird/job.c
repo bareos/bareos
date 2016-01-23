@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -327,6 +327,51 @@ bool setup_job(JCR *jcr, bool suppress_output)
 bail_out:
    return false;
 }
+
+bool is_connecting_to_client_allowed(CLIENTRES *res)
+{
+   return res->connection_from_director_to_client;
+}
+
+bool is_connecting_to_client_allowed(JCR *jcr)
+{
+   return is_connecting_to_client_allowed(jcr->res.client);
+}
+
+bool is_connect_from_client_allowed(CLIENTRES *res)
+{
+   return res->connection_from_client_to_director;
+}
+
+bool is_connect_from_client_allowed(JCR *jcr)
+{
+   return is_connect_from_client_allowed(jcr->res.client);
+}
+
+
+bool use_waiting_client(JCR *jcr, int timeout)
+{
+   bool result = false;
+   CONNECTION *connection = NULL;
+   CONNECTION_POOL *connections = get_client_connections();
+
+   if (!is_connect_from_client_allowed(jcr)) {
+      Dmsg1(120, "Client Initiated Connection from \"%s\" is not allowed.\n", jcr->res.client->name());
+   } else {
+      connection = connections->remove(jcr->res.client->name(), timeout);
+      if (connection) {
+         jcr->file_bsock = connection->bsock();
+         jcr->FDVersion = connection->protocol_version();
+         jcr->authenticated = connection->authenticated();
+         delete(connection);
+         Jmsg(jcr, M_INFO, 0, _("Using Client Initiated Connection (%s).\n"), jcr->res.client->name());
+         result = true;
+      }
+   }
+
+   return result;
+}
+
 
 void update_job_end(JCR *jcr, int TermCode)
 {
@@ -1415,6 +1460,7 @@ void dird_free_jcr(JCR *jcr)
    }
 
    dird_free_jcr_pointers(jcr);
+
    if (jcr->term_wait_inited) {
       pthread_cond_destroy(&jcr->term_wait);
       jcr->term_wait_inited = false;

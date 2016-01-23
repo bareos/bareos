@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@ void admin_cleanup(JCR *jcr, int TermCode);
 /* authenticate.c */
 bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store);
 bool authenticate_with_file_daemon(JCR *jcr);
-bool authenticate_file_daemon(JCR *jcr, char *client_name);
+bool authenticate_file_daemon(BSOCK *fd, char *client_name);
 bool authenticate_user_agent(UAContext *ua);
 
 /* autoprune.c */
@@ -93,8 +93,8 @@ bool populate_defs();
 int variable_expansion(JCR *jcr, char *inp, POOLMEM *&exp);
 
 /* fd_cmds.c */
-int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time,
-                           bool verbose, bool start_job);
+bool connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose);
+int  send_job_info(JCR *jcr);
 bool send_include_list(JCR *jcr);
 bool send_exclude_list(JCR *jcr);
 bool send_level_command(JCR *jcr);
@@ -111,7 +111,15 @@ bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global);
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr);
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 void do_client_resolve(UAContext *ua, CLIENTRES *client);
-void *handle_filed_connection(BSOCK *fd, char *client_name);
+void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
+                              char *client_name, int fd_protocol_version);
+
+CONNECTION_POOL *get_client_connections();
+bool is_connecting_to_client_allowed(CLIENTRES *res);
+bool is_connecting_to_client_allowed(JCR *jcr);
+bool is_connect_from_client_allowed(CLIENTRES *res);
+bool is_connect_from_client_allowed(JCR *jcr);
+bool use_waiting_client(JCR *jcr_job, int timeout);
 
 /* getmsg.c */
 bool response(JCR *jcr, BSOCK *fd, char *resp, const char *cmd, e_prtmsg prtmsg);

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,6 +59,10 @@ const bool have_encryption = true;
 const bool have_encryption = false;
 #endif
 
+/* Global variables to handle Client Initiated Connections */
+static bool quit_client_initiate_connection = false;
+static alist *client_initiated_connection_threads = NULL;
+
 /* Imported functions */
 extern bool accurate_cmd(JCR *jcr);
 extern bool status_cmd(JCR *jcr);
@@ -94,6 +98,7 @@ static bool storage_cmd(JCR *jcr);
 static bool sm_dump_cmd(JCR *jcr);
 static bool verify_cmd(JCR *jcr);
 
+static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose);
 static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
 static void filed_free_jcr(JCR *jcr);
 static bool open_sd_read_session(JCR *jcr);
@@ -147,6 +152,19 @@ static struct s_cmds cmds[] = {
 };
 
 /*
+ * Commands send to director
+ */
+static char hello_client[] =
+   "Hello Client %s FdProtocolVersion=%d calling\n";
+
+/*
+ * Responses received from the director
+ */
+static
+const char OKversion[] =
+   "1000 OK: %s Version: %s (%u %s %u)";
+
+/*
  * Commands received from director that need scanning
  */
 static char setauthorizationcmd[] =
@@ -154,7 +172,7 @@ static char setauthorizationcmd[] =
 static char setbandwidthcmd[] =
    "setbandwidth=%lld Job=%127s";
 static char setdebugv0cmd[] =
-    "setdebug=%d trace=%d";
+   "setdebug=%d trace=%d";
 static char setdebugv1cmd[] =
    "setdebug=%d trace=%d hangup=%d";
 static char setdebugv2cmd[] =
@@ -193,6 +211,7 @@ static char runscriptcmd[] =
    "Run OnSuccess=%d OnFailure=%d AbortOnError=%d When=%d Command=%s";
 static char resolvecmd[] =
    "resolve %s";
+
 
 /*
  * Responses sent to Director
@@ -422,48 +441,14 @@ static inline bool count_running_jobs()
    return (cnt >= me->MaxConcurrentJobs) ? false : true;
 }
 
-/*
- * Connection request from an director.
- *
- * Accept commands one at a time from the Director and execute them.
- *
- * Concerning ClientRunBefore/After, the sequence of events
- * is rather critical. If they are not done in the right
- * order one can easily get FD->SD timeouts if the script
- * runs a long time.
- *
- * The current sequence of events is:
- *  1. Dir starts job with FD
- *  2. Dir connects to SD
- *  3. Dir connects to FD
- *  4. FD connects to SD
- *  5. FD gets/runs ClientRunBeforeJob and sends ClientRunAfterJob
- *  6. Dir sends include/exclude
- *  7. FD sends data to SD
- *  8. SD/FD disconnects while SD despools data and attributes (optional)
- *  9. FD runs ClientRunAfterJob
- */
-void *handle_director_connection(BSOCK *dir)
+JCR *create_new_director_session(BSOCK *dir)
 {
    JCR *jcr;
-   bool found;
-   bool quit = false;
    const char jobname[12] = "*Director*";
-// saveCWD save_cwd;
-
-#ifdef HAVE_WIN32
-   prevent_os_suspensions();
-#endif
-
-   if (!count_running_jobs()) {
-      Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
-      return NULL;
-   }
 
    jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
    jcr->dir_bsock = dir;
    jcr->ff = init_find_files();
-// save_cwd.save(jcr);
    jcr->start_time = time(NULL);
    jcr->RunScripts = New(alist(10, not_owned_by_alist));
    jcr->last_fname = get_pool_memory(PM_FNAME);
@@ -476,17 +461,26 @@ void *handle_director_connection(BSOCK *dir)
    jcr->crypto.pki_keypair = me->pki_keypair;
    jcr->crypto.pki_signers = me->pki_signers;
    jcr->crypto.pki_recipients = me->pki_recipients;
-   dir->set_jcr(jcr);
+   if (dir) {
+      dir->set_jcr(jcr);
+   }
    set_jcr_in_tsd(jcr);
+
    enable_backup_privileges(NULL, 1 /* ignore_errors */);
 
-   Dmsg0(120, "Calling Authenticate\n");
-   if (!authenticate_director(jcr)) {
-      return NULL;
-   }
+   return jcr;
+}
 
-   Dmsg0(120, "OK Authenticate\n");
-   jcr->authenticated = true;
+void *process_director_commands(void *p_jcr)
+{
+   JCR *jcr = (JCR *)p_jcr;
+   return process_director_commands(jcr, jcr->dir_bsock);
+}
+
+void *process_director_commands(JCR *jcr, BSOCK *dir)
+{
+   bool found;
+   bool quit = false;
 
    /**********FIXME******* add command handler error code */
 
@@ -499,7 +493,7 @@ void *handle_director_connection(BSOCK *dir)
       }
 
       dir->msg[dir->msglen] = 0;
-      Dmsg1(100, "<dird: %s", dir->msg);
+      Dmsg1(100, "<dird: %s\n", dir->msg);
       found = false;
       for (int i = 0; cmds[i].cmd; i++) {
          if (bstrncmp(cmds[i].cmd, dir->msg, strlen(cmds[i].cmd))) {
@@ -544,7 +538,9 @@ void *handle_director_connection(BSOCK *dir)
 
    if (jcr->JobId) {            /* send EndJob if running a job */
       char ed1[50], ed2[50];
-      /* Send termination status back to Dir */
+      /*
+       * Send termination status back to Dir
+       */
       dir->fsend(EndJob, jcr->JobStatus, jcr->JobFiles,
                  edit_uint64(jcr->ReadBytes, ed1),
                  edit_uint64(jcr->JobBytes, ed2), jcr->JobErrors, jcr->enable_vss,
@@ -569,12 +565,6 @@ void *handle_director_connection(BSOCK *dir)
     */
    cleanup_fileset(jcr);
 
-   Dmsg0(100, "Calling term_find_files\n");
-   term_find_files(jcr->ff);
-// save_cwd.restore(jcr);
-// save_cwd.release();
-   jcr->ff = NULL;
-   Dmsg0(100, "Done with term_find_files\n");
    free_jcr(jcr);                     /* destroy JCR record */
    Dmsg0(100, "Done with free_jcr\n");
    Dsm_check(100);
@@ -585,6 +575,205 @@ void *handle_director_connection(BSOCK *dir)
 #endif
 
    return NULL;
+}
+
+/*
+ * Create a new thread to handle director connection.
+ */
+static
+bool start_process_director_commands(JCR *jcr)
+{
+   int result = 0;
+   pthread_t thread;
+
+   if ((result = pthread_create(&thread, NULL, process_director_commands, (void *)jcr)) != 0) {
+      berrno be;
+      Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"), be.bstrerror(result));
+   }
+
+   return (result == 0);
+}
+
+/*
+ * Connection request from an director.
+ *
+ * Accept commands one at a time from the Director and execute them.
+ *
+ * Concerning ClientRunBefore/After, the sequence of events is rather critical.
+ * If they are not done in the right order one can easily get FD->SD timeouts
+ * if the script runs a long time.
+ *
+ * The current sequence of events is:
+ *  1. Dir starts job with FD
+ *  2. Dir connects to SD
+ *  3. Dir connects to FD
+ *  4. FD connects to SD
+ *  5. FD gets/runs ClientRunBeforeJob and sends ClientRunAfterJob
+ *  6. Dir sends include/exclude
+ *  7. FD sends data to SD
+ *  8. SD/FD disconnects while SD despools data and attributes (optional)
+ *  9. FD runs ClientRunAfterJob
+ */
+void *handle_director_connection(BSOCK *dir)
+{
+   JCR *jcr;
+
+#ifdef HAVE_WIN32
+   prevent_os_suspensions();
+#endif
+
+   if (!count_running_jobs()) {
+      Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+      return NULL;
+   }
+
+   jcr = create_new_director_session(dir);
+
+   Dmsg0(120, "Calling Authenticate\n");
+   if (!authenticate_director(jcr)) {
+      return NULL;
+   }
+
+   Dmsg0(120, "OK Authenticate\n");
+   jcr->authenticated = true;
+
+   return process_director_commands(jcr, dir);
+}
+
+static bool parse_ok_version(const char *string)
+{
+   char name[MAX_NAME_LENGTH];
+   char version[MAX_NAME_LENGTH];
+   unsigned int day = 0;
+   char month[100];
+   unsigned int year = 0;
+   int number = 0;
+
+   number = sscanf(string, OKversion, &name, &version, &day, &month, &year);
+   Dmsg2(120, "OK message: %s, Version: %s\n", name, version);
+   return (number == 5);
+}
+
+void *handle_connection_to_director(void *director_resource)
+{
+   DIRRES *dir_res = (DIRRES *)director_resource;
+   BSOCK *dir_bsock = NULL;
+   JCR *jcr = NULL;
+   int data_available = 0;
+   int retry_period = 60;
+   const int timeout_data = 60;
+
+   while (!quit_client_initiate_connection) {
+      if (jcr) {
+         /*
+          * cleanup old data structures
+          */
+         free_jcr(jcr);
+      }
+
+      jcr = create_new_director_session(NULL);
+      dir_bsock = connect_to_director(jcr, dir_res, true);
+      if (!dir_bsock) {
+         Emsg2(M_ERROR, 0, "Failed to connect to Director \"%s\". Retry in %ds.\n", dir_res->name(), retry_period);
+         sleep(retry_period);
+      } else {
+         Dmsg1(120, "Connected to \"%s\".\n", dir_res->name());
+
+         /*
+          * Returns: 1 if data available, 0 if timeout, -1 if error
+          */
+         data_available = 0;
+         while ((data_available == 0) && (!quit_client_initiate_connection)) {
+            Dmsg2(120, "Waiting for data from Director \"%s\" (timeout: %ds)\n",
+                  dir_res->name(), timeout_data);
+            data_available = dir_bsock->wait_data_intr(timeout_data);
+         };
+         if (!quit_client_initiate_connection) {
+            if (data_available < 0) {
+               Emsg1(M_ABORT, 0, _("Failed while waiting for data from Director \"%s\"\n"), dir_res->name());
+            } else {
+               /*
+                * data is available
+                */
+               dir_bsock->set_jcr(jcr);
+               jcr->dir_bsock = dir_bsock;
+               if (start_process_director_commands(jcr)) {
+                  /*
+                   * jcr (and dir_bsock) are now used by another thread.
+                   */
+                  dir_bsock = NULL;
+                  jcr = NULL;
+               }
+            }
+         }
+      }
+   }
+
+   Dmsg1(100, "Exiting Client Initiated Connection thread for %s\n", dir_res->name());
+   if (jcr) {
+      /*
+       * cleanup old data structures
+       */
+      free_jcr(jcr);
+   }
+
+   return NULL;
+}
+
+
+bool start_connect_to_director_threads()
+{
+   bool result = false;
+   DIRRES *dir_res = NULL;
+   int pthread_create_result = 0;
+   if (!client_initiated_connection_threads) {
+      client_initiated_connection_threads = New(alist());
+   }
+   pthread_t *thread;
+
+   foreach_res(dir_res, R_DIRECTOR) {
+      if (dir_res->connection_from_client_to_director) {
+         if (!dir_res->address) {
+            Emsg1(M_ERROR, 0, "Failed to connect to Director \"%s\". The address config directive is missing.\n", dir_res->name());
+         } else if (!dir_res->port) {
+            Emsg1(M_ERROR, 0, "Failed to connect to Director \"%s\". The port config directive is missing.\n", dir_res->name());
+         } else {
+            Dmsg3(120, "Connecting to Director \"%s\", address %s:%d.\n", dir_res->name(), dir_res->address, dir_res->port);
+            thread = (pthread_t *)bmalloc(sizeof(pthread_t));
+            if ((pthread_create_result = pthread_create(thread, NULL, handle_connection_to_director, (void *)dir_res)) == 0) {
+               client_initiated_connection_threads->append(thread);
+            } else {
+               berrno be;
+               Emsg1(M_ABORT, 0, _("Cannot create Director connect thread: %s\n"), be.bstrerror(pthread_create_result));
+            }
+         }
+      }
+   }
+
+   return result;
+}
+
+bool stop_connect_to_director_threads(bool wait)
+{
+   bool result = true;
+   pthread_t *thread = NULL;
+   quit_client_initiate_connection = true;
+   if (client_initiated_connection_threads) {
+      while(!client_initiated_connection_threads->empty()) {
+         thread = (pthread_t *)client_initiated_connection_threads->remove(0);
+         if (thread) {
+            pthread_kill(*thread, TIMEOUT_SIGNAL);
+            if (wait) {
+               if (pthread_join(*thread, NULL) != 0) {
+                  result = false;
+               }
+            }
+            bfree(thread);
+         }
+      }
+      delete(client_initiated_connection_threads);
+   }
+   return result;
 }
 
 static bool sm_dump_cmd(JCR *jcr)
@@ -635,7 +824,8 @@ static bool secureerasereq_cmd(JCR *jcr) {
 static bool exit_cmd(JCR *jcr)
 {
    jcr->dir_bsock->fsend("2000 exit OK\n");
-   terminate_filed(0);
+   //terminate_filed(0);
+   stop_socket_server();
    return false;
 }
 #endif
@@ -1016,9 +1206,9 @@ static bool pluginoptions_cmd(JCR *jcr)
 
 /*
  * This reads data sent from the Director from the
- *   RestoreObject table that allows us to get objects
- *   that were backed up (VSS .xml data) and are needed
- *   before starting the restore.
+ * RestoreObject table that allows us to get objects
+ * that were backed up (VSS .xml data) and are needed
+ * before starting the restore.
  */
 static bool restore_object_cmd(JCR *jcr)
 {
@@ -1227,9 +1417,9 @@ static uint32_t bsr_uniq = 0;
 
 /**
  * The Director sends us the bootstrap file, which
- *   we will in turn pass to the SD.
- *   Deprecated.  The bsr is now sent directly from the
- *   Director to the SD.
+ * we will in turn pass to the SD.
+ * Deprecated.  The bsr is now sent directly from the
+ * Director to the SD.
  */
 static bool bootstrap_cmd(JCR *jcr)
 {
@@ -1267,15 +1457,13 @@ static bool bootstrap_cmd(JCR *jcr)
    }
    fclose(bs);
    /*
-    * Note, do not free the bootstrap yet -- it needs to be
-    *  sent to the SD
+    * Note, do not free the bootstrap yet -- it needs to be sent to the SD
     */
    return dir->fsend(OKbootstrap);
 }
 
 /**
  * Get backup level from Director
- *
  */
 static bool level_cmd(JCR *jcr)
 {
@@ -1286,7 +1474,9 @@ static bool level_cmd(JCR *jcr)
    level = get_memory(dir->msglen+1);
    Dmsg1(10, "level_cmd: %s", dir->msg);
 
-   /* keep compatibility with older directors */
+   /*
+    * Keep compatibility with older directors
+    */
    if (strstr(dir->msg, "accurate")) {
       jcr->accurate = true;
    }
@@ -1296,11 +1486,16 @@ static bool level_cmd(JCR *jcr)
    if (sscanf(dir->msg, "level = %s ", level) != 1) {
       goto bail_out;
    }
-   /* Base backup requested? */
+
    if (bstrcmp(level, "base")) {
+      /*
+       * Base backup requested
+       */
       jcr->setJobLevel(L_BASE);
-   /* Full backup requested? */
    } else if (bstrcmp(level, "full")) {
+      /*
+       * Full backup requested
+       */
       jcr->setJobLevel(L_FULL);
    } else if (strstr(level, "differential")) {
       jcr->setJobLevel(L_DIFFERENTIAL);
@@ -1310,17 +1505,19 @@ static bool level_cmd(JCR *jcr)
       jcr->setJobLevel(L_INCREMENTAL);
       free_memory(level);
       return true;
-   /*
-    * We get his UTC since time, then sync the clocks and correct it
-    *   to agree with our clock.
-    */
    } else if (bstrcmp(level, "since_utime")) {
+      char ed1[50], ed2[50];
+
+      /*
+       * We get his UTC since time, then sync the clocks and correct it to agree with our clock.
+       */
       buf = get_memory(dir->msglen+1);
       utime_t since_time, adj;
       btime_t his_time, bt_start, rt=0, bt_adj=0;
       if (jcr->getJobLevel() == L_NONE) {
          jcr->setJobLevel(L_SINCE);     /* if no other job level set, do it now */
       }
+
       if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d prev_job=%127s",
                  buf, &mtime_only, jcr->PrevJob) != 3) {
          if (sscanf(dir->msg, "level = since_utime %s mtime_only=%d",
@@ -1328,12 +1525,11 @@ static bool level_cmd(JCR *jcr)
             goto bail_out;
          }
       }
+
       since_time = str_to_uint64(buf);  /* this is the since time */
       Dmsg2(100, "since_time=%lld prev_job=%s\n", since_time, jcr->PrevJob);
-      char ed1[50], ed2[50];
       /*
-       * Sync clocks by polling him for the time. We take
-       *   10 samples of his time throwing out the first two.
+       * Sync clocks by polling him for the time. We take 10 samples of his time throwing out the first two.
        */
       for (int i = 0; i < 10; i++) {
          bt_start = get_current_btime();
@@ -1359,7 +1555,10 @@ static bool level_cmd(JCR *jcr)
       Dmsg2(100, "rt=%s adj=%s\n", edit_uint64(rt, ed1), edit_uint64(bt_adj, ed2));
       adj = btime_to_utime(bt_adj);
       since_time += adj;              /* adjust for clock difference */
-      /* Don't notify if time within 3 seconds */
+
+      /*
+       * Don't notify if time within 3 seconds
+       */
       if (adj > 3 || adj < -3) {
          int type;
          if (adj > 600 || adj < -600) {
@@ -1380,11 +1579,14 @@ static bool level_cmd(JCR *jcr)
       free_memory(level);
       return false;
    }
+
    free_memory(level);
    if (buf) {
       free_memory(buf);
    }
+
    generate_plugin_event(jcr, bEventLevel, (void*)(intptr_t)jcr->getJobLevel());
+
    return dir->fsend(OKlevel);
 
 bail_out:
@@ -1399,7 +1601,7 @@ bail_out:
 
 /**
  * Get session parameters from Director -- this is for a Restore command
- *   This is deprecated. It is now passed via the bsr.
+ * This is deprecated. It is now passed via the bsr.
  */
 static bool session_cmd(JCR *jcr)
 {
@@ -1436,12 +1638,11 @@ static void set_storage_auth_key(JCR *jcr, char *key)
 
    /**
     * We can be contacting multiple storage daemons.
-    *   So, make sure that any old jcr->sd_auth_key is cleaned up.
+    * So, make sure that any old jcr->sd_auth_key is cleaned up.
     */
    if (jcr->sd_auth_key) {
       /*
-       * If we already have a Authorization key, director can do multi
-       * storage restore
+       * If we already have a Authorization key, director can do multi storage restore
        */
       Dmsg0(5, "set multi_restore=true\n");
       jcr->multi_restore = true;
@@ -2050,6 +2251,54 @@ static bool verify_cmd(JCR *jcr)
    return false;                      /* return and terminate command loop */
 }
 
+/*
+ * Open connection to Director.
+ */
+static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)
+{
+   BSOCK *dir = NULL;
+   utime_t heart_beat;
+   int retry_interval = 0;
+   int max_retry_time = 0;
+
+   ASSERT(dir_res != NULL);
+
+   dir = New(BSOCK_TCP);
+   if (me->nokeepalive) {
+      dir->clear_keepalive();
+   }
+
+   heart_beat = me->heartbeat_interval;
+
+   dir->set_source_address(me->FDsrc_addr);
+   if (!dir->connect(jcr, retry_interval, max_retry_time, heart_beat,
+            dir_res->name(),
+            dir_res->address, NULL,
+            dir_res->port, verbose)) {
+      delete dir;
+      dir = NULL;
+      return NULL;
+   }
+
+   Dmsg1(10, "Opened connection with Director %s\n", dir_res->name());
+   jcr->dir_bsock = dir;
+
+   dir->fsend(hello_client, my_name, FD_PROTOCOL_VERSION);
+   if (!authenticate_with_director(jcr, dir_res)) {
+      jcr->dir_bsock = NULL;
+      delete dir;
+      dir = NULL;
+      return NULL;
+   }
+
+   dir->recv();
+   parse_ok_version(dir->msg);
+
+   jcr->director = dir_res;
+
+   return dir;
+}
+
 #if 0
 #ifdef WIN32_VSS
 static bool vss_restore_init_callback(JCR *jcr, int init_type)
@@ -2337,8 +2586,7 @@ static bool open_sd_read_session(JCR *jcr)
 }
 
 /**
- * Destroy the Job Control Record and associated
- * resources (sockets).
+ * Destroy the Job Control Record and associated resources (sockets).
  */
 static void filed_free_jcr(JCR *jcr)
 {
@@ -2374,6 +2622,9 @@ static void filed_free_jcr(JCR *jcr)
       jcr->path_list = NULL;
    }
 
+   term_find_files(jcr->ff);
+   jcr->ff = NULL;
+
    if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bareos-fd", get_first_port_host_order(me->FDaddrs));
    }
@@ -2382,11 +2633,11 @@ static void filed_free_jcr(JCR *jcr)
 }
 
 /**
- * Get response from Storage daemon to a command we
- * sent. Check that the response is OK.
+ * Get response from Storage daemon to a command we sent.
+ * Check that the response is OK.
  *
- *  Returns: false on failure
- *           true on success
+ * Returns: false on failure
+ *          true on success
  */
 bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
 {

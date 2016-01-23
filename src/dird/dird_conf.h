@@ -115,8 +115,8 @@ public:
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxConnections;           /* Max concurrent connections */
    uint32_t MaxConsoleConnections;    /* Max concurrent console connections */
-   utime_t FDConnectTimeout;          /* timeout for connect in seconds */
-   utime_t SDConnectTimeout;          /* timeout in seconds */
+   utime_t FDConnectTimeout;          /* Timeout for connect in seconds */
+   utime_t SDConnectTimeout;          /* Timeout for connect in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    char *tls_ca_certfile;             /* TLS CA Certificate File */
    char *tls_ca_certdir;              /* TLS CA Certificate Directory */
@@ -259,7 +259,6 @@ public:
  */
 class CLIENTRES: public BRSRES {
 public:
-
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
    uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
@@ -288,7 +287,8 @@ public:
    alist *tls_allowed_cns;            /* TLS Allowed Clients */
    TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
-   bool allow_client_connect;         /* Allow a client to connect to the director */
+   bool connection_from_director_to_client; /* Connect to Client */
+   bool connection_from_client_to_director; /* Allow incoming connections */
    bool enabled;                      /* Set if client is enabled */
 
    bool tls_authenticate;             /* Authenticated with TLS */

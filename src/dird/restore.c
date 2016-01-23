@@ -177,9 +177,11 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
           */
          jcr->setJobStatus(JS_WaitFD);
          jcr->keep_sd_auth_key = true; /* don't clear the sd_auth_key now */
-         if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
+
+         if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
             goto bail_out;
          }
+         send_job_info(jcr);
          fd = jcr->file_bsock;
 
          if (!send_secure_erase_req_to_fd(jcr)) {

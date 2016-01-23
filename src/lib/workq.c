@@ -116,6 +116,7 @@ int workq_destroy(workq_t *wq)
         }
      }
      while (wq->num_workers > 0) {
+        Dmsg1(1400, "active workers: %d. Waiting for them to finish.\n", wq->num_workers);
         if ((status = pthread_cond_wait(&wq->work, &wq->mutex)) != 0) {
            V(wq->mutex);
            return status;

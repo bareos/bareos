@@ -397,6 +397,7 @@ void bash_spaces(POOL_MEM &pm);
 void unbash_spaces(char *str);
 void unbash_spaces(POOL_MEM &pm);
 char *encode_time(utime_t time, char *buf);
+bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds);
 char *encode_mode(mode_t mode, char *buf);
 int do_shell_expansion(char *name, int name_len);
 void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen);

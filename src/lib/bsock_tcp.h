@@ -45,6 +45,7 @@ private:
                  struct sockaddr *lclient_addr);
    bool open(JCR *jcr, const char *name, char *host, char *service,
              int port, utime_t heart_beat, int *fatal);
+   bool set_keepalive(JCR *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
    bool send_packet(int32_t *hdr, int32_t pktsiz);
 
 public:

@@ -122,7 +122,6 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    if (sd == NULL) {
       return false;
    }
-   sd->res = (RES *)store;        /* save pointer to other end */
    jcr->store_bsock = sd;
 
    if (!authenticate_with_storage_daemon(jcr, store)) {

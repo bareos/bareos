@@ -51,7 +51,6 @@ public:
    uint64_t read_seqno;               /* Read sequence number */
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
-   RES *res;                          /* Resource to which we are connected */
    int m_spool_fd;                    /* Spooling file */
    TLS_CONNECTION *tls;               /* Associated tls connection */
    IPADDR *src_addr;                  /* IP address to source connections from */
@@ -114,6 +113,9 @@ public:
    virtual int set_nonblocking() = 0;
    virtual int set_blocking() = 0;
    virtual void restore_blocking(int flags) = 0;
+   /*
+    * Returns: 1 if data available, 0 if timeout, -1 if error
+    */
    virtual int wait_data(int sec, int usec = 0) = 0;
    virtual int wait_data_intr(int sec, int usec = 0) = 0;
    bool fsend(const char*, ...);

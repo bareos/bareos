@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -88,97 +88,154 @@ extern DIRRES *director;
 #define INC_LIST 0
 #define EXC_LIST 1
 
-/*
- * Open connection with File daemon.
- * Try connecting every retry_interval (default 10 sec), and
- *   give up after max_retry_time (default 30 mins).
- */
-
-int connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose, bool start_job)
+static inline utime_t get_heartbeat_interval(CLIENTRES *res)
 {
-   BSOCK *fd;
-   char ed1[30];
+   utime_t heartbeat;
+
+   if (res->heartbeat_interval) {
+      heartbeat = res->heartbeat_interval;
+   } else {
+      heartbeat = me->heartbeat_interval;
+   }
+
+   return heartbeat;
+}
+
+/*
+ * Open connection to File daemon.
+ *
+ * Try connecting every retry_interval (default 10 sec), and
+ * give up after max_retry_time (default 30 mins).
+ */
+static inline bool connect_outgoing_to_file_daemon(JCR *jcr, int retry_interval,
+                                                   int max_retry_time, bool verbose)
+{
+   bool result = false;
+   BSOCK *fd = NULL;
    utime_t heart_beat;
+
+   if (!is_connecting_to_client_allowed(jcr)) {
+      Dmsg1(120, "connecting to client \"%s\" is not allowed.\n", jcr->res.client->name());
+      return false;
+   }
 
    fd = New(BSOCK_TCP);
    if (me->nokeepalive) {
       fd->clear_keepalive();
    }
-   if (jcr->res.client->heartbeat_interval) {
-      heart_beat = jcr->res.client->heartbeat_interval;
+   heart_beat = get_heartbeat_interval(jcr->res.client);
+
+   char name[MAX_NAME_LENGTH + 100];
+   bstrncpy(name, _("Client: "), sizeof(name));
+   bstrncat(name, jcr->res.client->name(), sizeof(name));
+
+   fd->set_source_address(me->DIRsrc_addr);
+   if (!fd->connect(jcr,retry_interval,max_retry_time,
+                    heart_beat, name,
+                    jcr->res.client->address, NULL,
+                    jcr->res.client->FDport, verbose)) {
+      delete fd;
+      fd = NULL;
+      jcr->setJobStatus(JS_ErrorTerminated);
    } else {
-      heart_beat = me->heartbeat_interval;
+      jcr->file_bsock = fd;
+      jcr->authenticated = false;
+      Dmsg0(10, "Opened connection with File daemon\n");
+      result = true;
    }
 
+   return result;
+}
+
+bool connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose)
+{
+   bool result = false;
+
+   /*
+    * connection already exists.
+    * TODO: when is this the case? Is it really used? Does it than really need authentication?
+    */
    if (!jcr->file_bsock) {
-      char name[MAX_NAME_LENGTH + 100];
-      bstrncpy(name, _("Client: "), sizeof(name));
-      bstrncat(name, jcr->res.client->name(), sizeof(name));
-
-      fd->set_source_address(me->DIRsrc_addr);
-      if (!fd->connect(jcr,retry_interval,max_retry_time, heart_beat, name,
-                       jcr->res.client->address, NULL,
-                       jcr->res.client->FDport, verbose)) {
-         delete fd;
-         fd = NULL;
+      /*
+       * check without waiting, if waiting client connection exists.
+       */
+      if (!use_waiting_client(jcr, 0)) {
+         /*
+          * open connection to client
+          */
+         if (!connect_outgoing_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
+            /*
+             * Check if a waiting client connection exist.
+             * If yes, use it, otherwise jcr->file_bsock will not be set.
+             */
+            use_waiting_client(jcr, max_retry_time);
+         }
       }
+   }
 
-      if (fd == NULL) {
+   /*
+    * connection have been established
+    */
+   if (jcr->file_bsock) {
+      jcr->setJobStatus(JS_Running);
+      if (authenticate_with_file_daemon(jcr)) {
+         result = true;
+      }
+   } else {
+      Jmsg(jcr, M_FATAL, 0, "Failed to connect to client \"%s\".\n", jcr->res.client->name());
+   }
+
+   if (!result) {
+     jcr->setJobStatus(JS_ErrorTerminated);
+   }
+
+   return result;
+}
+
+int send_job_info(JCR *jcr)
+{
+   BSOCK *fd = jcr->file_bsock;
+   char ed1[30];
+
+   /*
+    * Now send JobId and authorization key
+    */
+   if (jcr->sd_auth_key == NULL) {
+      jcr->sd_auth_key = bstrdup("dummy");
+   }
+
+   fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
+             jcr->VolSessionTime, jcr->sd_auth_key);
+
+   if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
+      memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
+   }
+
+   Dmsg1(100, ">filed: %s", fd->msg);
+   if (bget_dirmsg(fd) > 0) {
+      Dmsg1(110, "<filed: %s", fd->msg);
+      if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
+         Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
+              jcr->res.client->hdr.name, fd->msg);
          jcr->setJobStatus(JS_ErrorTerminated);
          return 0;
-      }
-      Dmsg0(10, "Opened connection with File daemon\n");
-   } else {
-      fd = jcr->file_bsock;           /* use existing connection */
-   }
-   fd->res = (RES *)jcr->res.client;  /* save resource in BSOCK */
-   jcr->file_bsock = fd;
-   jcr->setJobStatus(JS_Running);
+      } else if (jcr->db) {
+         CLIENT_DBR cr;
 
-   if (!authenticate_with_file_daemon(jcr)) {
+         memset(&cr, 0, sizeof(cr));
+         bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
+         cr.AutoPrune = jcr->res.client->AutoPrune;
+         cr.FileRetention = jcr->res.client->FileRetention;
+         cr.JobRetention = jcr->res.client->JobRetention;
+         bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
+         if (!db_update_client_record(jcr, jcr->db, &cr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"), db_strerror(jcr->db));
+         }
+      }
+   } else {
+      Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"), bnet_strerror(fd));
       jcr->setJobStatus(JS_ErrorTerminated);
       return 0;
-   }
-
-   if (start_job) {
-      /*
-       * Now send JobId and authorization key
-       */
-      if (jcr->sd_auth_key == NULL) {
-         jcr->sd_auth_key = bstrdup("dummy");
-      }
-      fd->fsend(jobcmd, edit_int64(jcr->JobId, ed1), jcr->Job, jcr->VolSessionId,
-                jcr->VolSessionTime, jcr->sd_auth_key);
-      if (!jcr->keep_sd_auth_key && !bstrcmp(jcr->sd_auth_key, "dummy")) {
-         memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
-      }
-      Dmsg1(100, ">filed: %s", fd->msg);
-      if (bget_dirmsg(fd) > 0) {
-          Dmsg1(110, "<filed: %s", fd->msg);
-          if (!bstrncmp(fd->msg, OKjob, strlen(OKjob))) {
-             Jmsg(jcr, M_FATAL, 0, _("File daemon \"%s\" rejected Job command: %s\n"),
-                jcr->res.client->hdr.name, fd->msg);
-             jcr->setJobStatus(JS_ErrorTerminated);
-             return 0;
-          } else if (jcr->db) {
-             CLIENT_DBR cr;
-             memset(&cr, 0, sizeof(cr));
-             bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
-             cr.AutoPrune = jcr->res.client->AutoPrune;
-             cr.FileRetention = jcr->res.client->FileRetention;
-             cr.JobRetention = jcr->res.client->JobRetention;
-             bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
-             if (!db_update_client_record(jcr, jcr->db, &cr)) {
-                Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"),
-                   db_strerror(jcr->db));
-             }
-          }
-      } else {
-         Jmsg(jcr, M_FATAL, 0, _("FD gave bad response to JobId command: %s\n"),
-         bnet_strerror(fd));
-         jcr->setJobStatus(JS_ErrorTerminated);
-         return 0;
-      }
    }
 
    return 1;
@@ -1008,7 +1065,7 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
    BSOCK *fd;
 
    ua->jcr->res.client = jcr->res.client;
-   if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, true, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, true)) {
       ua->error_msg(_("Failed to connect to File daemon.\n"));
       return false;
    }
@@ -1047,7 +1104,7 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
                    client->name(), client->address, client->FDport);
    }
 
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
@@ -1098,7 +1155,7 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
                    client->name(), client->address, client->FDport);
    }
 
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
       ua->send_msg(_("Failed to connect to Client %s.\n====\n"),
          client->name());
       if (ua->jcr->file_bsock) {
@@ -1135,20 +1192,51 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
  */
-void *handle_filed_connection(BSOCK *fd, char *client_name)
+void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
+                              char *client_name, int fd_protocol_version)
 {
-   JCR *jcr;
+   CLIENTRES *client_resource;
+   CONNECTION *connection = NULL;
 
-   jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-
-   if (!authenticate_file_daemon(jcr, client_name)) {
+   client_resource = GetClientResWithName(client_name);
+   if (!client_resource) {
+      Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
+                          "but no matching resource is definied.\n", client_name);
       goto getout;
    }
 
+   if (!is_connect_from_client_allowed(client_resource)) {
+      Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
+                          "but does not have the required permission.\n", client_name);
+      goto getout;
+   }
+
+   if (!authenticate_file_daemon(fd, client_name)) {
+      goto getout;
+   }
+
+   Dmsg1(20, "Connected to file daemon %s\n", client_name);
+
+   connection = connections->add_connection(client_name, fd_protocol_version, fd, true);
+   if (!connection) {
+      Emsg0(M_ERROR, 0, "Failed to add connection to pool.\n");
+      goto getout;
+   }
+
+   /*
+    * The connection is now keeped in connection_pool.
+    * This thread is no longer required and will end now.
+    */
+   return NULL;
+
 getout:
-   free_jcr(jcr);
    fd->close();
-   delete fd;
+   delete(fd);
+
+   if (connection) {
+      connections->remove(connection);
+      delete(connection);
+   }
 
    return NULL;
 }

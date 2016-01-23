@@ -60,7 +60,7 @@ static void *handle_connection_request(void *arg)
       return NULL;
    }
 
-   Dmsg1(110, "Conn: %s", bs->msg);
+   Dmsg1(110, "Conn: %s\n", bs->msg);
 
    /*
     * See if its a director making a connection.
@@ -108,12 +108,20 @@ void start_socket_server(dlist *addrs)
                           handle_connection_request);
 }
 
-void stop_socket_server()
+void stop_socket_server(bool wait)
 {
+   Dmsg0(100, "stop_socket_server\n");
    if (sock_fds) {
       bnet_stop_thread_server_tcp(tcp_server_tid);
-      cleanup_bnet_thread_server_tcp(sock_fds, &socket_workq);
-      delete sock_fds;
-      sock_fds = NULL;
+      /*
+       * before thread_servers terminates,
+       * it calls cleanup_bnet_thread_server_tcp
+       */
+      if (wait) {
+         pthread_join(tcp_server_tid, NULL);
+         delete(sock_fds);
+         sock_fds = NULL;
+      }
    }
 }
+

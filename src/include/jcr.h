@@ -426,6 +426,7 @@ public:
     */
    pthread_t SD_msg_chan;                 /* Message channel thread id */
    bool SD_msg_chan_started;              /* Message channel thread started */
+   pthread_cond_t start_wait;             /* Wait for FD to start Job */
    pthread_cond_t term_wait;              /* Wait for job termination */
    pthread_cond_t nextrun_ready;          /* Wait for job next run to become ready */
    workq_ele_t *work_item;                /* Work queue item if scheduled */
@@ -471,6 +472,7 @@ public:
    bool IgnoreStorageConcurrency;         /* Set in migration jobs */
    bool spool_data;                       /* Spool data in SD */
    bool acquired_resource_locks;          /* Set if resource locks acquired */
+   bool start_wait_inited;                /* Set when cond var inited */
    bool term_wait_inited;                 /* Set when cond var inited */
    bool nextrun_ready_inited;             /* Set when cond var inited */
    bool fn_printed;                       /* Printed filename */

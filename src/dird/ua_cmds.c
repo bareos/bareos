@@ -32,7 +32,6 @@
 /* Imported subroutines */
 
 /* Imported variables */
-extern jobq_t job_queue;              /* job queue */
 
 /*
  * Imported functions
@@ -775,7 +774,7 @@ static inline bool setbwlimit_filed(UAContext *ua, CLIENTRES *client, int64_t li
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
                 client->name(), client->address, client->FDport);
 
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return true;
    }
@@ -1146,7 +1145,7 @@ static void do_client_setdebug(UAContext *ua, CLIENTRES *client, int level, int 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
                 client->name(), client->address, client->FDport);
 
-   if (!connect_to_file_daemon(ua->jcr, 1, 15, false, false)) {
+   if (!connect_to_file_daemon(ua->jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
       return;
    }
@@ -1589,16 +1588,16 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
             client = GetClientResWithName(ua->argv[i]);
             if (!client) {
                ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
-               return true;
+               return false;
             }
             if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
                ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
-               return true;
+               return false;
             }
             continue;
          } else {
             ua->error_msg(_("Client name missing.\n"));
-            return true;
+            return false;
          }
       }
 
@@ -1607,16 +1606,16 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
             job = GetJobResWithName(ua->argv[i]);
             if (!job) {
                ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
-               return true;
+               return false;
             }
             if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
                ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
-               return true;
+               return false;
             }
             continue;
          } else {
             ua->error_msg(_("Job name missing.\n"));
-            return true;
+            return false;
          }
 
       }
@@ -1626,16 +1625,16 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
             fileset = GetFileSetResWithName(ua->argv[i]);
             if (!fileset) {
                ua->error_msg(_("Fileset \"%s\" not found.\n"), ua->argv[i]);
-               return true;
+               return false;
             }
             if (!acl_access_ok(ua, FileSet_ACL, fileset->name(), true)) {
                ua->error_msg(_("No authorization for FileSet \"%s\"\n"), fileset->name());
-               return true;
+               return false;
             }
             continue;
          } else {
             ua->error_msg(_("Fileset name missing.\n"));
-            return true;
+            return false;
          }
       }
 
@@ -1652,7 +1651,7 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
             continue;
          } else {
             ua->error_msg(_("Level value missing.\n"));
-            return true;
+            return false;
          }
       }
 
@@ -1666,14 +1665,14 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
             continue;
          } else {
             ua->error_msg(_("Accurate value missing.\n"));
-            return true;
+            return false;
          }
       }
    }
 
    if (!job && !(client && fileset)) {
       if (!(job = select_job_resource(ua))) {
-         return true;
+         return false;
       }
    }
 
@@ -1681,12 +1680,12 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
       job = GetJobResWithName(ua->argk[1]);
       if (!job) {
          ua->error_msg(_("No job specified.\n"));
-         return true;
+         return false;
       }
 
       if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
          ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
-         return true;
+         return false;
       }
    }
 
@@ -1695,7 +1694,7 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
       break;
    default:
       ua->error_msg(_("Wrong job specified of type %s.\n"), job_type_to_str(job->JobType));
-      return true;
+      return false;
    }
 
    if (!client) {
@@ -1708,12 +1707,12 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
 
    if (!client) {
       ua->error_msg(_("No client specified or selected.\n"));
-      return true;
+      return false;
    }
 
    if (!fileset) {
       ua->error_msg(_("No fileset specified or selected.\n"));
-      return true;
+      return false;
    }
 
    jcr->res.client = client;
@@ -1725,7 +1724,7 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
       break;
    default:
       ua->error_msg(_("Estimate is only supported on native clients.\n"));
-      return true;
+      return false;
    }
 
    if (job->pool->catalog) {
@@ -1735,7 +1734,7 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
    }
 
    if (!open_db(ua)) {
-      return true;
+      return false;
    }
 
    jcr->res.job = job;
@@ -1755,9 +1754,14 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
 
    ua->send_msg(_("Connecting to Client %s at %s:%d\n"),
                jcr->res.client->name(), jcr->res.client->address, jcr->res.client->FDport);
-   if (!connect_to_file_daemon(jcr, 1, 15, false, true)) {
+   if (!connect_to_file_daemon(jcr, 1, 15, false)) {
       ua->error_msg(_("Failed to connect to Client.\n"));
-      return true;
+      return false;
+   }
+
+   if (!send_job_info(jcr)) {
+      ua->error_msg(_("Failed to connect to Client.\n"));
+      return false;
    }
 
    /*

@@ -32,6 +32,7 @@ void accurate_free(JCR *jcr);
 
 /* authenticate.c */
 bool authenticate_director(JCR *jcr);
+bool authenticate_with_director(JCR *jcr, DIRRES *director);
 bool authenticate_storagedaemon(JCR *jcr);
 bool authenticate_with_storagedaemon(JCR *jcr);
 
@@ -61,7 +62,11 @@ bool encrypt_data(b_ctx *bctx, bool *need_more_data);
 bool decrypt_data(JCR *jcr, char **data, uint32_t *length, RESTORE_CIPHER_CTX *cipher_ctx);
 
 /* dir_cmd.c */
+JCR *create_new_director_session(BSOCK *dir);
+void *process_director_commands(JCR *jcr, BSOCK *dir);
 void *handle_director_connection(BSOCK *dir);
+bool start_connect_to_director_threads();
+bool stop_connect_to_director_threads(bool wait=false);
 
 /* estimate.c */
 int make_estimate(JCR *jcr);
@@ -95,7 +100,7 @@ void *handle_stored_connection(BSOCK *sd);
 
 /* socket_server.c */
 void start_socket_server(dlist *addrs);
-void stop_socket_server();
+void stop_socket_server(bool wait=false);
 
 /* verify.c */
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest);

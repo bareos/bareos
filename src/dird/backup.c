@@ -424,9 +424,11 @@ bool do_native_backup(JCR *jcr)
    }
 
    jcr->setJobStatus(JS_WaitFD);
-   if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true, true)) {
+   if (!connect_to_file_daemon(jcr, 10, me->FDConnectTimeout, true)) {
       goto bail_out;
    }
+   Dmsg1(120, "jobid: %d: connected\n", jcr->JobId);
+   send_job_info(jcr);
    fd = jcr->file_bsock;
 
    /*

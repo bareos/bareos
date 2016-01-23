@@ -26,6 +26,7 @@
  * Kern Sibbald, December MM
  */
 
+#include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "lib/breg.h"
 #include "lib/bsr.h"

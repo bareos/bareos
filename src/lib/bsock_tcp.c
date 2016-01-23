@@ -279,21 +279,7 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
       /*
        * Keep socket from timing out from inactivity
        */
-      if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
-         berrno be;
-         Qmsg1(jcr, M_WARNING, 0, _("Cannot set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
-      }
-
-#if defined(TCP_KEEPIDLE)
-      if (heart_beat) {
-         int opt = heart_beat;
-         if (setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&opt, sizeof(opt)) < 0) {
-            berrno be;
-            Qmsg1(jcr, M_WARNING, 0, _("Cannot set TCP_KEEPIDLE on socket: %s\n"),
-                  be.bstrerror());
-         }
-      }
-#endif
+      set_keepalive(jcr, sockfd, m_use_keepalive, heart_beat, heart_beat);
 
       /*
        * Connect to server
@@ -335,6 +321,56 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
    m_fd = sockfd;
    return true;
 }
+
+
+bool BSOCK_TCP::set_keepalive(JCR *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
+{
+   int value = int(enable);
+
+   /*
+    * Keep socket from timing out from inactivity
+    */
+   if (setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (sockopt_val_t)&value, sizeof(value)) < 0) {
+      berrno be;
+      Qmsg1(jcr, M_WARNING, 0, _("Failed to set SO_KEEPALIVE on socket: %s\n"), be.bstrerror());
+      return false;
+   }
+
+   if (enable && keepalive_interval) {
+#ifdef HAVE_WIN32
+      struct s_tcp_keepalive {
+         u_long  onoff;
+         u_long  keepalivetime;
+         u_long  keepaliveinterval;
+      } val;
+      val.onoff = enable;
+      val.keepalivetime = keepalive_start*1000L;
+      val.keepaliveinterval = keepalive_interval*1000L;
+      DWORD got = 0;
+      if (WSAIoctl(sockfd, SIO_KEEPALIVE_VALS, &val, sizeof(val), NULL, 0, &got, NULL, NULL) != 0) {
+         Qmsg1(jcr, M_WARNING, 0, "Failed to set SIO_KEEPALIVE_VALS on socket: %d\n", WSAGetLastError());
+         return false;
+      }
+#else
+#if defined(TCP_KEEPIDLE)
+      if (setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (sockopt_val_t)&keepalive_start, sizeof(keepalive_start)) < 0) {
+         berrno be;
+         Qmsg2(jcr, M_WARNING, 0, _("Failed to set TCP_KEEPIDLE = %d on socket: %s\n"),
+               keepalive_start, be.bstrerror());
+         return false;
+      }
+      if (setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, (sockopt_val_t)&keepalive_interval, sizeof(keepalive_interval)) < 0) {
+         berrno be;
+         Qmsg2(jcr, M_WARNING, 0, _("Failed to set TCP_KEEPINTVL = %d on socket: %s\n"),
+               keepalive_interval, be.bstrerror());
+         return false;
+      }
+#endif
+#endif
+   }
+   return true;
+}
+
 
 bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
 {
