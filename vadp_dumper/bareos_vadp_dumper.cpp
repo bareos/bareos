@@ -1452,7 +1452,7 @@ void usage(const char *program_name)
    fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f <vixdisklib_config] [-s sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
    fprintf(stderr, "Where:\n");
    fprintf(stderr, "   -C - Create local VMDK\n");
-   fprintf(stderr, "   -c - Check size of VMDK\n");
+   fprintf(stderr, "   -c - Don't check size of VMDK\n");
    fprintf(stderr, "   -D - Cleanup on Disconnect\n");
    fprintf(stderr, "   -d - Specify local VMDK name\n");
    fprintf(stderr, "   -f - Specify VDDK config file\n");
@@ -1480,6 +1480,10 @@ int main(int argc, char **argv)
       switch (ch) {
       case 'C':
          create_disk = true;
+         /*
+          * If we create the disk we should not check for the size as that won't match.
+          */
+         check_size = false;
          break;
       case 'c':
          check_size = false;
