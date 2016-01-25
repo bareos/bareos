@@ -70,11 +70,12 @@ UTF-8 is typically the default on Linux machines, but not on all
 Unix machines, nor on Windows, so you must take some care to ensure
 that your locale is set properly before starting Bareos.
 
+\index[general]{Windows!Configuration Files!UTF-8}
 To ensure that Bareos configuration files can be correctly read including
 foreign characters the {\bf LANG} environment variable
 must end in {\bf .UTF-8}. A full example is {\bf en\_US.UTF-8}. The
 exact syntax may vary a bit from OS to OS, and exactly how you define
-it will also vary.  On most newer Win32 machines, you can use {\bf notepad}
+it will also vary.  On most newer Win32 machines, you can use \command{notepad}
 to edit the conf files, then choose output encoding UTF-8.
 
 Bareos assumes that all filenames are in UTF-8 format on Linux and
@@ -108,7 +109,8 @@ Director {
 \hide{$}
 
 Defines the Director resource with the name "MyDir" and a working directory
-\$HOME/bareos/bin/working.
+\directory{$HOME/bareos/bin/working}.
+\hide{$}
 
 \subsection{Quotes}
 \label{sec:Quotes}
@@ -119,6 +121,8 @@ quoted strings and unquoted strings are all equal.
 
 However, if the configure directive defines a numbers, the number never has surrounding quotes.
 This is even true if the number is specified together with its unit, like \parameter{365 days}.
+
+Also do not prepend numbers by zeros (0), as these are not parsed in the expected manner (write 1 instead of 01).
 
 \subsection{Comments}
 \label{Comments}
@@ -690,16 +694,16 @@ must match up:
 \end{center}
 
 In the left column, you will find the Director, Storage, and Client resources,
-with their names and passwords -- these are all in {\bf bareos-dir.conf}. In
+with their names and passwords -- these are all in \file{bareos-dir.conf}. In
 the right column are where the corresponding values should be found in the
 Console, Storage daemon (SD), and File daemon (FD) configuration files.
 
-Please note that the Address, {\bf fd-sd}, that appears in the Storage
-resource of the Director, preceded with and asterisk in the above example, is
-passed to the File daemon in symbolic form. The File daemon then resolves it
+Please note that the address, \host{fw-sd}, that appears in the Storage
+resource of the Director,
+is passed to the File daemon in symbolic form. The File daemon then resolves it
 to an IP address. For this reason, you must use either an IP address or a
-fully qualified name. A name such as {\bf localhost}, not being a fully
-qualified name, will resolve in the File daemon to the localhost of the File
+resolvable fully qualified name. A name such as \host{localhost}, not being a fully
+qualified name, will resolve in the File daemon to the \host{localhost} of the File
 daemon, which is most likely not what is desired. The password used for the
 File daemon to authorize with the Storage daemon is a temporary password
 unique to each Job created by the daemons and is not specified in any .conf
