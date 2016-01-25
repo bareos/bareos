@@ -220,6 +220,34 @@ Version $>=$ #3%
 }
 }
 
+
+\makeatletter
+\newcommand{\limitation}{%
+\@ifstar{%
+\limitationStar
+}{%
+\limitationNostar
+}%
+}
+\makeatother
+
+\newcommand{\limitationStar}[3]{%
+\paragraph{#2.}
+%\limitationCommon{#1}{#2}{#3}
+#3
+\index[general]{Limitation!#1!#2}%
+\index[general]{#1!Limitation!#2}%
+}
+
+\newcommand{\limitationNostar}[3]{%
+\paragraph{Limitation: #1: #2.}
+%\limitationCommon{#1}{#2}{#3}
+#3
+\index[general]{Limitation!#1!#2}%
+\index[general]{#1!Limitation!#2}%
+}
+
+
 % #1 backend name (Rados)
 % [ #2: backend category (CEPH Object Store) ]
 \newcommand{\sdBackend}[2]{%

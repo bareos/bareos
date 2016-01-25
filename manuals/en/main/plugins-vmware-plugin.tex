@@ -1,7 +1,7 @@
 \subsection{VMware Plugin}
 \label{VMwarePlugin}
 \index[general]{Plugin!VMware}
-\index[general]{VMware!Plugin}
+\index[general]{VMware Plugin}
 
 The \vmware\ Plugin can be
 used for agentless backups of virtual machines running on
@@ -16,15 +16,17 @@ It is included in Bareos since \sinceVersion{fd}{VMware Plugin}{15.2.0}.
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
 Current limitations amongst others are:
-\begin{itemize}
-\item it is not yet possible to exclude normal (dependent) VM disks from backups,
-  but independent disks are excluded implicitly because they are not affected
-  by snapshots which are required for CBT based backup.
-\item the VM configuration is not yet backed up, so that it is not yet
-  possible to recreate a completely deleted VM
-\item the above implies that restore is still only possible to the same existing
-  VM with exising virtual disks
-\end{itemize}
+
+\limitation*{VMware Plugin}{Normal VM disks can not be excluded from the backup}{%
+    It is not yet possible to exclude normal (dependent) VM disks from backups.
+    However, independent disks are excluded implicitly because they are not affected
+    by snapshots which are required for CBT based backup.}
+
+\limitation*{VMware Plugin}{VM configuration is not backed up}{%
+    The VM configuration is not yet (bareos-15.2.2) backed up, so that it is not yet possible to recreate a completely deleted VM.}
+
+\limitation*{VMware Plugin}{Restore can only be done to the same VM}{%
+    The restore is only possible to the same existing VM with existing virtual disks.}
 
 \subsubsection{Requirements}
 As the Plugin is based on the \vSphere\ Storage APIs for Data Protection,

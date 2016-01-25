@@ -927,17 +927,20 @@ This will create a lot of debugging output that will help to find the problem du
 
 For NDMP jobs, all data is stored into a single big file. The file and directory information (File History in NDMP Terms) is stored as hardlinks to this big file.
 
+\limitation*{NDMP}{File information are not available in the Bareos backup stream}{%
 As hardlink information is only stored in the Bareos database, but not int the backup stream itself, it is not possible to recover the file history information from the NDMP stream with \command{bscan}.
 
 As storing the database dump for disaster recovery and storing the bootstrap file offsite is recommended  anyway (see \nameref{sec:before-disaster}), this should be not a big problem in correctly setup environments.
 
 For the same reason, the information about the number of files of a job (e.g. JobFiles with \bcommand{list}{jobs} command) is limited to the number of NDMP backup files in copied jobs.
-
+}
 
 \subsection{Single file restore on incremental backups}
 
+\limitation*{NDMP}{No single file restore on merged backups}{%
 Unfortunately, it is currently (bareos-15.2.2) not possible to restore a chain of Full and Incremental backups at once.
 The workaround for that problem is to restore the full backup and each incremental each in a single restore operation.
+}
 
 \subsection{Restore always transfers the full main backup file to the Primary Storage System}
 
