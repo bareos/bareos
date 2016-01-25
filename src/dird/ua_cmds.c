@@ -394,7 +394,7 @@ static struct cmdstruct commands[] = {
    { NT_("version"), version_cmd, _("Print Director version"),
      NT_(""), true, false },
    { NT_("wait"), wait_cmd, _("Wait until no jobs are running"),
-     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name>"), false, false }
+     NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false }
 };
 
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
