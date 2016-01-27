@@ -54,7 +54,7 @@ fi
 
 $bin/bareos-ctl-dir start >/dev/null
 pid=`cat $working/bareos-dir.$BASEPORT.pid`
-read a
+
 sleep 2
 
 ls -l /proc/$pid/fd | grep bareos-dir.conf
@@ -68,22 +68,45 @@ do_reload
 
 # backup the configuration
 cp $conf/bareos-dir.conf $tmp/1
+
+
+print_debug "Adding uncommented string to bareos-dir.conf"
 cat >> $conf/bareos-dir.conf<<EOF
 This is an error
 EOF
-
 detect_error
 do_reload
 
+
+print_debug "Adding empty job res bareos-dir.conf"
 cp $tmp/1 $conf/bareos-dir.conf
 cat >> $conf/bareos-dir.conf<<EOF
 Job {
 }
 EOF
-
 detect_error
 do_reload
 
+
+print_debug "Adding two identical Jobs to bareos-dir.conf"
+cp $tmp/1 $conf/bareos-dir.conf
+cat >> $conf/bareos-dir.conf<<EOF
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
+}
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
+}
+EOF
+detect_error
+do_reload
+
+
+print_debug "Adding second director to bareos-dir.conf"
 cp $tmp/1 $conf/bareos-dir.conf
 cat >> $conf/bareos-dir.conf<<EOF
 Director {
@@ -101,22 +124,8 @@ EOF
 detect_error
 do_reload
 
-cp $tmp/1 $conf/bareos-dir.conf
-cat >> $conf/bareos-dir.conf<<EOF
-Job {
-  Name = "BackupClient1"
-  JobDefs = "DefaultJob"
-  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
-}
-Job {
-  Name = "BackupClient1"
-  JobDefs = "DefaultJob"
-  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
-}
-EOF
 
-detect_error
-do_reload
+
 
 $bin/bareos-ctl-dir stop >/dev/null
 
