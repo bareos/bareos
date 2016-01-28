@@ -176,6 +176,7 @@ static VixDiskLibConnection connection = NULL;
 static VixDiskLibHandle diskHandle = NULL;
 static VixDiskLibInfo *info = NULL;
 static json_t *json_config = NULL;
+static int exit_code = 1;
 
 /*
  * Encode the VDDK VixDiskLibInfo into an internal representation.
@@ -342,7 +343,8 @@ static void PanicFunction(const char *fmt, va_list args)
 {
    fprintf(stderr, "Log: ");
    vfprintf(stderr, fmt, args);
-   exit(10);
+   exit_code = 10;
+   exit(exit_code);
 }
 
 static inline void cleanup_cnxParams()
@@ -378,7 +380,7 @@ static inline void cleanup_vixdisklib()
 /*
  * Generic cleanup function.
  */
-static void cleanup(int sig)
+static void cleanup(void)
 {
    VixError err;
 
@@ -438,9 +440,7 @@ static void cleanup(int sig)
       free(disktype);
    }
 
-   if (sig) {
-      exit(sig);
-   }
+   _exit(exit_code);
 }
 
 /*
@@ -458,7 +458,7 @@ static inline VixDiskLibDiskType lookup_disktype()
 
    if (!disk_types[cnt].type) {
       fprintf(stderr, "Unknown disktype %s\n", disktype);
-      cleanup(1);
+      exit(1);
    }
 
    return disk_types[cnt].vadp_type;
@@ -576,11 +576,16 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
       goto bail_out;
    }
 
+   /*
+    * Register our exit handler.
+    */
+   atexit(cleanup);
+
    succeeded = 1;
 
 bail_out:
    if (!succeeded) {
-      cleanup(1);
+      exit(1);
    }
 }
 
@@ -647,7 +652,7 @@ static inline void do_vixdisklib_open(const char *key, json_t *disk_params, bool
 
 bail_out:
    if (!succeeded) {
-      cleanup(1);
+      exit(1);
    }
 }
 
@@ -705,7 +710,7 @@ static inline void do_vixdisklib_create(const char *key, json_t *disk_params, ui
 
 bail_out:
    if (!succeeded) {
-      cleanup(1);
+      exit(1);
    }
 }
 
@@ -1361,7 +1366,7 @@ static inline void process_json_work_file(const char *json_work_file)
    if (!json_config) {
       fprintf(stderr, "Failed to parse JSON config %s [%s at line %d column %d]\n",
               json_work_file, error.text, error.line, error.column);
-      cleanup(1);
+      exit(1);
    }
 
    if (verbose) {
@@ -1386,7 +1391,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CON_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CON_PARAMS_KEY);
-      cleanup(1);
+      exit(1);
    }
 
    do_vixdisklib_connect(CON_PARAMS_KEY, value, true, true);
@@ -1398,7 +1403,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, DISK_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", DISK_PARAMS_KEY);
-      cleanup(1);
+      exit(1);
    }
 
    do_vixdisklib_open(DISK_PARAMS_KEY, value, true);
@@ -1406,7 +1411,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CBT_DISKCHANGEINFO_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CBT_DISKCHANGEINFO_KEY);
-      cleanup(1);
+      exit(1);
    }
 
    /*
@@ -1415,16 +1420,16 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
    if (multi_threaded) {
       if (!setup_copy_thread(read_from_vmdk, write_to_stream)) {
          fprintf(stderr, "Failed to initialize multithreading\n");
-         cleanup(1);
+         exit(1);
       }
    }
 
    if (!save_disk_info(CBT_DISKCHANGEINFO_KEY, value)) {
-      cleanup(1);
+      exit(1);
    }
 
    if (!save_meta_data()) {
-      cleanup(1);
+      exit(1);
    }
 
    if (raw_disk_name) {
@@ -1434,7 +1439,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
 
       if ((raw_disk_fd = open(raw_disk_name, O_WRONLY | O_TRUNC)) == -1) {
          fprintf(stderr, "Error: Failed to open the RAW DISK FILE\n");
-         cleanup(1);
+         exit(1);
       }
    }
 
@@ -1453,7 +1458,7 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, CON_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", CON_PARAMS_KEY);
-      cleanup(1);
+      exit(1);
    }
 
    if (cleanup_on_start) {
@@ -1465,7 +1470,7 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
    value = json_object_get(json_config, DISK_PARAMS_KEY);
    if (!value) {
       fprintf(stderr, "Failed to find %s in JSON definition\n", DISK_PARAMS_KEY);
-      cleanup(1);
+      exit(1);
    }
 
    return process_restore_stream(false, value);
@@ -1477,6 +1482,12 @@ static inline bool restore_vmdk_stream(const char *json_work_file)
 static inline int show_backup_stream()
 {
    return process_restore_stream(true, NULL);
+}
+
+static void signal_handler(int sig)
+{
+   exit_code = sig;
+   exit(sig);
 }
 
 void usage(const char *program_name)
@@ -1584,9 +1595,9 @@ int main(int argc, char **argv)
    /*
     * Install signal handlers for the most important signals.
     */
-   signal(SIGHUP, cleanup);
-   signal(SIGINT, cleanup);
-   signal(SIGTERM, cleanup);
+   signal(SIGHUP, signal_handler);
+   signal(SIGINT, signal_handler);
+   signal(SIGTERM, signal_handler);
 
    argc -= optind;
    argv += optind;
@@ -1601,20 +1612,21 @@ int main(int argc, char **argv)
       }
 
       retval = dump_vmdk_stream(argv[1]);
-      cleanup(0);
    } else if (strcasecmp(argv[0], "restore") == 0) {
       if (argc <= 1) {
          usage(program_name);
       }
 
       retval = restore_vmdk_stream(argv[1]);
-      cleanup(0);
    } else if (strcasecmp(argv[0], "show") == 0) {
       retval = show_backup_stream();
    } else {
       fprintf(stderr, "Unknown action %s\n", argv[1]);
-      exit(1);
    }
 
-   exit((retval) ? 0 : 1);
+   if (retval) {
+      exit_code = 0;
+   }
+
+   exit(exit_code);
 }
