@@ -66,8 +66,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap);
 static bRC setAcl(bpContext *ctx, acl_pkt *ap);
 static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
 static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
-
-static bRC parse_plugin_definition(bpContext *ctx, void *value);
+static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
 static bRC PyLoadModule(bpContext *ctx, void *value);
@@ -365,9 +364,10 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
-   bool event_dispatched = false;
-   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
    bRC retval = bRC_Error;
+   bool event_dispatched = false;
+   POOL_MEM plugin_options(PM_FNAME);
+   plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
       goto bail_out;
@@ -398,7 +398,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       */
    case bEventPluginCommand:
       event_dispatched = true;
-      retval = parse_plugin_definition(ctx, value);
+      retval = parse_plugin_definition(ctx, value, plugin_options);
       break;
    case bEventNewPluginOptions:
       /*
@@ -410,7 +410,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       }
 
       event_dispatched = true;
-      retval = parse_plugin_definition(ctx, value);
+      retval = parse_plugin_definition(ctx, value, plugin_options);
 
       /*
        * Save that we got a plugin override.
@@ -429,7 +429,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       if (!p_ctx->python_loaded) {
          if (rop && *rop->plugin_name) {
             event_dispatched = true;
-            retval = parse_plugin_definition(ctx, rop->plugin_name);
+            retval = parse_plugin_definition(ctx, rop->plugin_name, plugin_options);
          }
       }
       break;
@@ -473,14 +473,14 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
           * See if we already loaded the Python modules.
           */
          if (!p_ctx->python_loaded) {
-            retval = PyLoadModule(ctx, value);
+            retval = PyLoadModule(ctx, plugin_options.c_str());
          }
 
          /*
           * Only try to call when the loading succeeded.
           */
          if (retval == bRC_OK) {
-            retval = PyParsePluginDefinition(ctx, value);
+            retval = PyParsePluginDefinition(ctx, plugin_options.c_str());
          }
          break;
       case bEventRestoreObject: {
@@ -498,13 +498,13 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
              * See if we already loaded the Python modules.
              */
             if (!p_ctx->python_loaded && *rop->plugin_name) {
-               retval = PyLoadModule(ctx, rop->plugin_name);
+               retval = PyLoadModule(ctx, plugin_options.c_str());
 
                /*
                 * Only try to call when the loading succeeded.
                 */
                if (retval == bRC_OK) {
-                  retval = PyParsePluginDefinition(ctx, rop->plugin_name);
+                  retval = PyParsePluginDefinition(ctx, plugin_options.c_str());
                   if (retval == bRC_OK) {
                      retval = PyRestoreObjectData(ctx, rop);
                   }
@@ -891,11 +891,13 @@ static inline void set_string(char **destination, char *value)
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(bpContext *ctx, void *value)
+static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options)
 {
-   int i;
+   bool found;
+   int i, cnt;
    bool keep_existing;
-   char *plugin_definition, *bp, *argument, *argument_value;
+   POOL_MEM plugin_definition(PM_FNAME);
+   char *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!value) {
@@ -908,12 +910,42 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
     * Parse the plugin definition.
     * Make a private copy of the whole string.
     */
-   plugin_definition = bstrdup((char *)value);
+   if (!p_ctx->python_loaded && p_ctx->plugin_options) {
+      int len;
 
-   bp = strchr(plugin_definition, ':');
+      /*
+       * We got some option string which got pushed before we actual were able to send
+       * it to the python module as the entry point was not instantiated. So we prepend
+       * that now in the option string and append the new option string with the first
+       * argument being the pluginname removed as that is already part of the other
+       * plugin option string.
+       */
+      len = strlen(p_ctx->plugin_options);
+      pm_strcpy(plugin_definition, p_ctx->plugin_options);
+
+      bp = strchr((char *)value, ':');
+      if (!bp) {
+         Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", (char *)value);
+         goto bail_out;
+      }
+
+      /*
+       * See if option string end with ':'
+       */
+      if (p_ctx->plugin_options[len - 1] != ':') {
+         pm_strcat(plugin_definition, (char *)bp);
+      } else {
+         pm_strcat(plugin_definition, (char *)bp + 1);
+      }
+   } else {
+      pm_strcpy(plugin_definition, (char *)value);
+   }
+
+   bp = strchr(plugin_definition.c_str(), ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition.c_str());
+      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition.c_str());
       goto bail_out;
    }
 
@@ -921,6 +953,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
     * Skip the first ':'
     */
    bp++;
+
+   cnt = 0;
    while (bp) {
       if (strlen(bp) == 0) {
          break;
@@ -958,6 +992,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          }
       } while (bp);
 
+      found = false;
       for (i = 0; plugin_arguments[i].name; i++) {
          if (bstrcasecmp(argument, plugin_arguments[i].name)) {
             char **str_destination = NULL;
@@ -995,16 +1030,35 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             /*
              * When we have a match break the loop.
              */
+            found = true;
             break;
          }
       }
+
+      /*
+       * If we didn't consume this parameter we add it to the plugin_options list.
+       */
+      if (!found) {
+         POOL_MEM option(PM_FNAME);
+
+         if (cnt) {
+            Mmsg(option, ":%s=%s", argument, argument_value);
+            pm_strcat(plugin_options, option.c_str());
+         } else {
+            Mmsg(option, "%s=%s", argument, argument_value);
+            pm_strcat(plugin_options, option.c_str());
+         }
+         cnt++;
+      }
    }
 
-   free(plugin_definition);
+   if (cnt > 0) {
+      pm_strcat(plugin_options, ":");
+   }
+
    return bRC_OK;
 
 bail_out:
-   free(plugin_definition);
    return bRC_Error;
 }
 

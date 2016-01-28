@@ -620,6 +620,11 @@ bool do_reload_config()
       }
 
       /*
+       * Reset director resource to old config as check_resources() changed it
+       */
+      me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+
+      /*
        * Destroy the content of the failed config load.
        */
       free_saved_resources(&failed_config);
