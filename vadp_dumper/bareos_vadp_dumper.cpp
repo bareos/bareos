@@ -167,6 +167,8 @@ static bool restore_meta_data = false;
 static int sectors_per_call = SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
 static char *vmdk_disk_name = NULL;
+static char *raw_disk_name = NULL;
+static int raw_disk_fd;
 static char *vixdisklib_config = NULL;
 static char *disktype = NULL;
 static VixDiskLibConnectParams cnxParams;
@@ -404,6 +406,15 @@ static void cleanup(int sig)
          error_txt = VixDiskLib_GetErrorText(err, NULL);
          fprintf(stderr, "Failed to End Access: %s [%d]\n", error_txt, err);
          VixDiskLib_FreeErrorText(error_txt);
+      }
+   }
+
+   if (raw_disk_name) {
+      if (raw_disk_fd) {
+         if (verbose) {
+            fprintf(stderr, "Log: RAWFILE: Closing RAW file\n");
+         }
+         close(raw_disk_fd);
       }
    }
 
@@ -749,6 +760,9 @@ static size_t read_from_stream(size_t sector_offset, size_t nbyte, void *buf)
  */
 static size_t write_to_stream(size_t sector_offset, size_t nbyte, void *buf)
 {
+   if (raw_disk_name) {
+      robust_writer(raw_disk_fd, buf, nbyte);
+   }
    return robust_writer(STDOUT_FILENO, buf, nbyte);
 }
 
@@ -1135,6 +1149,13 @@ static inline bool process_cbt(const char *key, json_t *cbt)
          goto bail_out;
       }
 
+      if (raw_disk_name) {
+         lseek(raw_disk_fd, start_offset, SEEK_SET);
+         if (verbose) {
+            fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
+         }
+      }
+
       /*
        * Calculate the start offset and read as many sectors as defined by the
        * length element of the JSON structure.
@@ -1406,6 +1427,17 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
       cleanup(1);
    }
 
+   if (raw_disk_name) {
+      if (verbose) {
+         fprintf(stderr, "Log: RAWFILE: Trying to open RAW file\n");
+      }
+
+      if ((raw_disk_fd = open(raw_disk_name, O_WRONLY | O_TRUNC)) == -1) {
+         fprintf(stderr, "Error: Failed to open the RAW DISK FILE\n");
+         cleanup(1);
+      }
+   }
+
    return process_cbt(CBT_DISKCHANGEINFO_KEY, value);
 }
 
@@ -1460,6 +1492,7 @@ void usage(const char *program_name)
    fprintf(stderr, "   -l - Write to a local VMDK\n");
    fprintf(stderr, "   -M - Save metadata of VMDK on dump action\n");
    fprintf(stderr, "   -m - Use multithreading\n");
+   fprintf(stderr, "   -r - RAW Image disk name\n");
    fprintf(stderr, "   -R - Restore metadata of VMDK on restore action\n");
    fprintf(stderr, "   -S - Cleanup on Start\n");
    fprintf(stderr, "   -s - Sectors to read per call to VDDK\n");
@@ -1476,7 +1509,7 @@ int main(int argc, char **argv)
    int ch;
 
    program_name = argv[0];
-   while ((ch = getopt(argc, argv, "CcDd:f:hlMmRSs:t:v?")) != -1) {
+   while ((ch = getopt(argc, argv, "CcDd:r:f:hlMmRSs:t:v?")) != -1) {
       switch (ch) {
       case 'C':
          create_disk = true;
@@ -1495,6 +1528,13 @@ int main(int argc, char **argv)
          vmdk_disk_name = strdup(optarg);
          if (!vmdk_disk_name) {
             fprintf(stderr, "Failed to allocate memory to hold diskname, exiting ...\n");
+            exit(1);
+         }
+         break;
+     case 'r':
+         raw_disk_name = strdup(optarg);
+         if (!raw_disk_name) {
+            fprintf(stderr, "Failed to allocate memory to hold rawdiskname, exiting ...\n");
             exit(1);
          }
          break;
