@@ -605,6 +605,11 @@ void reload_config(int sig)
          my_config->m_res_head[i] = res_tab[i];
       }
       table = rtable;                 /* release new, bad, saved table below */
+
+      /*
+       * Reset director resource to old config as check_resources() changed it
+       */
+      me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
    } else {
       invalidate_schedules();
       /*
