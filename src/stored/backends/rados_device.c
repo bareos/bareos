@@ -38,6 +38,7 @@ enum device_option_type {
    argument_none = 0,
    argument_conffile,
    argument_poolname,
+   argument_clientid,
    argument_striped,
    argument_stripe_unit,
    argument_stripe_count
@@ -52,6 +53,7 @@ struct device_option {
 static device_option device_options[] = {
    { "conffile=", argument_conffile, 9 },
    { "poolname=", argument_poolname, 9 },
+   { "clientid=", argument_clientid, 9 },
 #ifdef HAVE_RADOS_STRIPER
    { "striped", argument_striped, 7 },
    { "stripe_unit=", argument_stripe_unit, 11 },
@@ -100,6 +102,10 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
                   m_rados_conffile = bp + device_options[i].compare_size;
                   done = true;
                   break;
+               case argument_clientid:
+                  m_rados_clientid = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
                case argument_poolname:
                   m_rados_poolname = bp + device_options[i].compare_size;
                   done = true;
@@ -139,6 +145,11 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
+      if (!m_rados_clientid) {
+         Mmsg0(errmsg, _("No client id configured defaulting to admin\n"));
+         m_rados_clientid = bstrdup("admin");
+      }
+
       if (!m_rados_poolname) {
          Mmsg0(errmsg, _("No rados pool configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
@@ -147,7 +158,7 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    }
 
    if (!m_cluster_initialized) {
-      status = rados_create(&m_cluster, NULL);
+      status = rados_create(&m_cluster, m_rados_clientid);
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to create RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
@@ -468,6 +479,7 @@ rados_device::rados_device()
    m_rados_configstring = NULL;
    m_rados_conffile = NULL;
    m_rados_poolname = NULL;
+   m_rados_clientid = NULL;
    m_cluster_initialized = false;
    m_ctx = NULL;
 #ifdef HAVE_RADOS_STRIPER
