@@ -36,9 +36,9 @@ static const int dbglvl = 150;
 #define PLUGIN_VERSION      "1"
 #define PLUGIN_DESCRIPTION  "Bareos CEPH rados File Daemon Plugin"
 #if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
-#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:id=<client_id>:poolname=<pool_name>:namespace=<name_space>:snapshotname=<snapshot_name>:"
+#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:clientid=<client_id>:poolname=<pool_name>:namespace=<name_space>:snapshotname=<snapshot_name>:"
 #else
-#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:id=<client_id>:poolname=<pool_name>:snapshotname=<snapshot_name>:"
+#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:clientid=<client_id>:poolname=<pool_name>:snapshotname=<snapshot_name>:"
 #endif
 
 /*
@@ -124,7 +124,7 @@ struct plugin_ctx {
    char *plugin_options;
    uint32_t JobId;
    char *rados_conffile;
-   char *rados_id;
+   char *rados_clientid;
    char *rados_poolname;
 #if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
    char *rados_namespace;
@@ -150,7 +150,7 @@ enum plugin_argument_type {
    argument_none,
    argument_conffile,
    argument_poolname,
-   argument_id,
+   argument_clientid,
 #if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
    argument_namespace,
 #endif
@@ -165,7 +165,7 @@ struct plugin_argument {
 static plugin_argument plugin_arguments[] = {
    { "conffile", argument_conffile },
    { "poolname", argument_poolname },
-   { "id", argument_id },
+   { "clientid", argument_clientid },
 #if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
    { "namespace", argument_namespace },
 #endif
@@ -282,8 +282,8 @@ static bRC freePlugin(bpContext *ctx)
       free(p_ctx->rados_poolname);
    }
 
-   if (p_ctx->rados_id) {
-      free(p_ctx->rados_id);
+   if (p_ctx->rados_clientid) {
+      free(p_ctx->rados_clientid);
    }
 
    if (p_ctx->rados_conffile) {
@@ -654,8 +654,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             case argument_conffile:
                str_destination = &p_ctx->rados_conffile;
                break;
-            case argument_id:
-               str_destination = &p_ctx->rados_id;
+            case argument_clientd:
+               str_destination = &p_ctx->rados_clientid;
                break;
             case argument_poolname:
                str_destination = &p_ctx->rados_poolname;
@@ -720,7 +720,7 @@ static bRC connect_to_rados(bpContext *ctx)
     * See if we need to initialize the cluster connection.
     */
    if (!p_ctx->cluster_initialized) {
-      status = rados_create(&p_ctx->cluster, p_ctx->rados_id);
+      status = rados_create(&p_ctx->cluster, p_ctx->rados_clientid);
       if (status < 0) {
          berrno be;
 

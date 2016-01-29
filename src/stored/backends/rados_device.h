@@ -39,7 +39,7 @@ private:
    char *m_rados_configstring;
    char *m_rados_conffile;
    char *m_rados_poolname;
-   char *m_rados_id;
+   char *m_rados_clientid;
    bool m_cluster_initialized;
 #ifdef HAVE_RADOS_STRIPER
    bool m_stripe_volume;
