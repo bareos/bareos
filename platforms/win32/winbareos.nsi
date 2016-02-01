@@ -1,7 +1,7 @@
 ;
 ;   BAREOS?? - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2014 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2016 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -864,7 +864,7 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe" '-c "$APPDATA\${PRODUCT_NAME}\bconsole.conf"'
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
 
   File "bconsole.exe"
   File "libhistory6.dll"
@@ -879,10 +879,10 @@ SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
 
   # autostart
-  CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe" '-c "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"'
+  CreateShortCut "$SMSTARTUP\bareos-tray-monitor.lnk" "$INSTDIR\bareos-tray-monitor.exe"
 
   File "bareos-tray-monitor.exe"
   File "libpng*.dll"
@@ -906,8 +906,8 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk" "$INSTDIR\bat.exe" '-c "$APPDATA\${PRODUCT_NAME}\bat.conf"'
-  CreateShortCut "$DESKTOP\BAT.lnk" "$INSTDIR\bat.exe" '-c "$APPDATA\${PRODUCT_NAME}\bat.conf"'
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk" "$INSTDIR\bat.exe"
+  CreateShortCut "$DESKTOP\BAT.lnk" "$INSTDIR\bat.exe"
 
   File "bat.exe"
   File "libpng*.dll"
@@ -990,20 +990,20 @@ Section -Post
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
-  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"'
+  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /install'
 
   ${If} ${SectionIsSelected} ${SEC_SD}
     nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /kill'
     sleep 3000
     nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /remove'
-    nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"'
+    nsExec::ExecToLog '"$INSTDIR\bareos-sd.exe" /install'
   ${EndIf}
 
   ${If} ${SectionIsSelected} ${SEC_DIR}
     nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /kill'
     sleep 3000
     nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
-    nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /install -c "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf"'
+    nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /install'
   ${EndIf}
 SectionEnd
 

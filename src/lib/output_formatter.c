@@ -31,11 +31,6 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 
-/*
- * Extra bytes to allocate for the wrap buffer.
- */
-#define WRAP_EXTRA_BYTES 50
-
 const char *json_error_message_template = "{ "
   "\"jsonrpc\": \"2.0\", "
   "\"id\": null, "
@@ -354,11 +349,11 @@ void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
    }
 
    /*
-    * Allocate a wrap buffer that is big enough to hold the original
-    * string + WRAP_EXTRA_BYTES. This means we can accommodate enough
-    * line breaks and spaces to wrap the original string.
+    * Allocate a wrap buffer that is big enough to hold the original string and the wrap chars.
+    * Using strlen * 2 means, we could add a wrap character after each character,
+    * which should be enough.
     */
-   rewrap_string.check_size(string.max_size() + WRAP_EXTRA_BYTES);
+   rewrap_string.check_size(string.strlen() * 2);
 
    /*
     * Walk the input buffer and copy the data to the wrap buffer

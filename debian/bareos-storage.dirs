@@ -1,2 +1,8 @@
 /etc/bareos/bareos-sd.d
+/etc/bareos/bareos-sd.d/autochanger
+/etc/bareos/bareos-sd.d/device
+/etc/bareos/bareos-sd.d/director
+/etc/bareos/bareos-sd.d/ndmp
+/etc/bareos/bareos-sd.d/messages
+/etc/bareos/bareos-sd.d/storage
 /var/lib/bareos/storage

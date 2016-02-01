@@ -54,6 +54,7 @@
 #endif
 
 #define MANUAL_AUTH_URL "http://doc.bareos.org/master/html/bareos-manual-main-reference.html#AuthorizationErrors"
+#define MANUAL_CONFIG_DIR_URL "http://doc.bareos.org/master/html/bareos-manual-main-reference.html#ConfigurationIncludeDirectory"
 
 #ifdef PROTOTYPES
 # define __PROTO(p)     p
@@ -671,7 +672,7 @@ extern void pause_msg(const char *file, const char *func, int line, const char *
 
 #else
 /*
- *   Unix/Linix
+ *   Unix/Linux
  */
 #define PathSeparator '/'
 

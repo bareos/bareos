@@ -242,8 +242,11 @@ install: all @LIBTOOL_INSTALL_TARGET@
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bcopy $(DESTDIR)$(sbindir)/bcopy
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bscan $(DESTDIR)$(sbindir)/bscan
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) btape $(DESTDIR)$(sbindir)/btape
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/
+	@for i in autochanger device director ndmp messages storage; do \
+	   $(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/$$i; \
+	done
 	@srcconf=bareos-sd.conf; \
-	$(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/; \
 	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \

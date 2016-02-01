@@ -896,10 +896,93 @@ bool print_config_schema_json(POOL_MEM &buffer)
 bool print_config_schema_json(POOL_MEM &buffer)
 {
    pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
+
    return false;
 }
 #endif
 
+static inline bool cmdline_item(POOL_MEM &buffer, RES_ITEM *item)
+{
+   POOL_MEM temp;
+   POOL_MEM key;
+   const char *nomod = "";
+   const char *mod_start = nomod;
+   const char *mod_end = nomod;
+
+   if (item->flags & CFG_ITEM_ALIAS) {
+      return false;
+   }
+
+   if (item->flags & CFG_ITEM_DEPRECATED) {
+      return false;
+   }
+
+   if (item->flags & CFG_ITEM_NO_EQUALS) {
+      /* TODO: currently not supported */
+      return false;
+   }
+
+   if (!(item->flags & CFG_ITEM_REQUIRED)) {
+      mod_start = "[";
+      mod_end = "]";
+   }
+
+   /*
+    * Tab completion only supports lower case keywords.
+    */
+   key.strcat(item->name);
+   key.toLower();
+
+   temp.bsprintf(" %s%s=<%s>%s", mod_start, key.c_str(), datatype_to_str(item->type), mod_end);
+   pm_strcat(buffer, temp.c_str());
+
+   return true;
+}
+
+static inline bool cmdline_items(POOL_MEM &buffer, RES_ITEM items[])
+{
+   if (!items) {
+      return false;
+   }
+
+   for (int i = 0; items[i].name; i++) {
+      cmdline_item(buffer, &items[i]);
+   }
+
+   return true;
+}
+
+/*
+ * Get the parameter string for the console "configure" command.
+ * This will be all available resource directives.
+ * They are formated in a way to be usable for command line completion.
+ */
+const char *get_configure_parameter()
+{
+   static POOL_MEM buffer;
+   POOL_MEM resourcename;
+
+   /*
+    * Only fill the buffer once. The content is static.
+    */
+   if (buffer.strlen() == 0) {
+      buffer.strcpy("add [");
+      for (int r = 0; resources[r].name; r++) {
+         if (resources[r].items) {
+            resourcename.strcpy(resources[r].name);
+            resourcename.toLower();
+            buffer.strcat(resourcename);
+            cmdline_items(buffer, resources[r].items);
+         }
+         if (resources[r+1].items) {
+            buffer.strcat("] | [");
+         }
+      }
+      buffer.strcat("]");
+   }
+
+   return buffer.c_str();
+}
 
 /*
  * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
@@ -1223,18 +1306,18 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                 */
                char *when = (char *)"never";
                switch (runscript->when) {
-                  case SCRIPT_Before:
-                     when  = (char *)"before";
-                     break;
-                  case SCRIPT_After:
-                     when = (char *)"after";
-                     break;
-                  case SCRIPT_AfterVSS:
-                     when = (char *)"aftervss";
-                     break;
-                  case SCRIPT_Any:
-                     when = (char *)"always";
-                     break;
+               case SCRIPT_Before:
+                  when  = (char *)"before";
+                  break;
+               case SCRIPT_After:
+                  when = (char *)"after";
+                  break;
+               case SCRIPT_AfterVSS:
+                  when = (char *)"aftervss";
+                  break;
+               case SCRIPT_Any:
+                  when = (char *)"always";
+                  break;
                }
 
                if (!bstrcasecmp(when, "never")) { /* suppress default value */
@@ -2533,6 +2616,199 @@ void free_resource(RES *sres, int type)
    }
 }
 
+static bool update_resource_pointer(int type, RES_ITEM *items)
+{
+   URES *res;
+   bool result = true;
+
+   switch (type) {
+   case R_PROFILE:
+   case R_CATALOG:
+   case R_MSGS:
+   case R_FILESET:
+   case R_DEVICE:
+      /*
+       * Resources not containing a resource
+       */
+      break;
+   case R_POOL:
+      /*
+       * Resources containing another resource or alist. First
+       * look up the resource which contains another resource. It
+       * was written during pass 1.  Then stuff in the pointers to
+       * the resources it contains, which were inserted this pass.
+       * Finally, it will all be stored back.
+       *
+       * Find resource saved in pass 1
+       */
+      if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
+         return false;
+      } else {
+         /*
+          * Explicitly copy resource pointers from this pass (res_all)
+          */
+         res->res_pool.NextPool = res_all.res_pool.NextPool;
+         res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
+         res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
+         res->res_pool.storage = res_all.res_pool.storage;
+         if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
+            res->res_pool.catalog = res_all.res_pool.catalog;
+         }
+      }
+      break;
+   case R_CONSOLE:
+      if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
+         return false;
+      } else {
+         res->res_con.tls.allowed_cns = res_all.res_con.tls.allowed_cns;
+         res->res_con.profiles = res_all.res_con.profiles;
+      }
+      break;
+   case R_DIRECTOR:
+      if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
+         return false;
+      } else {
+         res->res_dir.plugin_names = res_all.res_dir.plugin_names;
+         res->res_dir.messages = res_all.res_dir.messages;
+         res->res_dir.backend_directories = res_all.res_dir.backend_directories;
+         res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
+      }
+      break;
+   case R_STORAGE:
+      if (!(res = (URES *)GetResWithName(type, res_all.res_store.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
+         return false;
+      } else {
+         res->res_store.paired_storage = res_all.res_store.paired_storage;
+         res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
+
+         /*
+          * We must explicitly copy the device alist pointer
+          */
+         res->res_store.device = res_all.res_store.device;
+      }
+      break;
+   case R_JOBDEFS:
+   case R_JOB:
+      if (!(res = (URES *)GetResWithName(type, res_all.res_job.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
+         return false;
+      } else {
+         res->res_job.messages = res_all.res_job.messages;
+         res->res_job.schedule = res_all.res_job.schedule;
+         res->res_job.client = res_all.res_job.client;
+         res->res_job.fileset = res_all.res_job.fileset;
+         res->res_job.storage = res_all.res_job.storage;
+         res->res_job.catalog = res_all.res_job.catalog;
+         res->res_job.FdPluginOptions = res_all.res_job.FdPluginOptions;
+         res->res_job.SdPluginOptions = res_all.res_job.SdPluginOptions;
+         res->res_job.DirPluginOptions = res_all.res_job.DirPluginOptions;
+         res->res_job.base = res_all.res_job.base;
+         res->res_job.pool = res_all.res_job.pool;
+         res->res_job.full_pool = res_all.res_job.full_pool;
+         res->res_job.vfull_pool = res_all.res_job.vfull_pool;
+         res->res_job.inc_pool = res_all.res_job.inc_pool;
+         res->res_job.diff_pool = res_all.res_job.diff_pool;
+         res->res_job.next_pool = res_all.res_job.next_pool;
+         res->res_job.verify_job = res_all.res_job.verify_job;
+         res->res_job.jobdefs = res_all.res_job.jobdefs;
+         res->res_job.run_cmds = res_all.res_job.run_cmds;
+         res->res_job.RunScripts = res_all.res_job.RunScripts;
+
+         /*
+          * TODO: JobDefs where/regexwhere doesn't work well (but this is not very useful)
+          * We have to set_bit(index, res_all.hdr.item_present); or something like that
+          *
+          * We take RegexWhere before all other options
+          */
+         if (!res->res_job.RegexWhere &&
+               (res->res_job.strip_prefix ||
+                res->res_job.add_suffix ||
+                res->res_job.add_prefix)) {
+            int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
+                  res->res_job.add_prefix,
+                  res->res_job.add_suffix);
+            res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
+            bregexp_build_where(res->res_job.RegexWhere, len,
+                  res->res_job.strip_prefix,
+                  res->res_job.add_prefix,
+                  res->res_job.add_suffix);
+            /*
+             * TODO: test bregexp
+             */
+         }
+
+         if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
+            free(res->res_job.RestoreWhere);
+            res->res_job.RestoreWhere = NULL;
+         }
+      }
+      break;
+   case R_COUNTER:
+      if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
+         return false;
+      } else {
+         res->res_counter.Catalog = res_all.res_counter.Catalog;
+         res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
+      }
+      break;
+   case R_CLIENT:
+      if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
+         return false;
+      } else {
+         if (res_all.res_client.catalog) {
+            res->res_client.catalog = res_all.res_client.catalog;
+         } else {
+            /*
+             * No catalog overwrite given use the first catalog definition.
+             */
+            res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+         }
+         res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
+      }
+      break;
+   case R_SCHEDULE:
+      /*
+       * Schedule is a bit different in that it contains a RUNRES record
+       * chain which isn't a "named" resource. This chain was linked
+       * in by run_conf.c during pass 2, so here we jam the pointer
+       * into the Schedule resource.
+       */
+      if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
+         Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
+         return false;
+      } else {
+         res->res_sch.run = res_all.res_sch.run;
+      }
+      break;
+   default:
+      Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
+      result = false;
+      break;
+   }
+
+   /*
+    * Note, the resource name was already saved during pass 1,
+    * so here, we can just release it.
+    */
+   if (res_all.res_dir.hdr.name) {
+      free(res_all.res_dir.hdr.name);
+      res_all.res_dir.hdr.name = NULL;
+   }
+
+   if (res_all.res_dir.hdr.desc) {
+      free(res_all.res_dir.hdr.desc);
+      res_all.res_dir.hdr.desc = NULL;
+   }
+
+   return result;
+}
+
 /*
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
@@ -2543,7 +2819,6 @@ bool save_resource(int type, RES_ITEM *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
-   bool result = true;
 
    switch (type) {
    case R_JOBDEFS:
@@ -2578,229 +2853,42 @@ bool save_resource(int type, RES_ITEM *items, int pass)
     * record.
     */
    if (pass == 2) {
-      switch (type) {
-      case R_PROFILE:
-      case R_CATALOG:
-      case R_MSGS:
-      case R_FILESET:
-      case R_DEVICE:
-         /*
-          * Resources not containing a resource
-          */
-         break;
-      case R_POOL:
-         /*
-          * Resources containing another resource or alist. First
-          * look up the resource which contains another resource. It
-          * was written during pass 1.  Then stuff in the pointers to
-          * the resources it contains, which were inserted this pass.
-          * Finally, it will all be stored back.
-          *
-          * Find resource saved in pass 1
-          */
-         if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
-            return false;
-         } else {
-            /*
-             * Explicitly copy resource pointers from this pass (res_all)
-             */
-            res->res_pool.NextPool = res_all.res_pool.NextPool;
-            res->res_pool.RecyclePool = res_all.res_pool.RecyclePool;
-            res->res_pool.ScratchPool = res_all.res_pool.ScratchPool;
-            res->res_pool.storage = res_all.res_pool.storage;
-            if (res_all.res_pool.catalog || !res->res_pool.use_catalog) {
-               res->res_pool.catalog = res_all.res_pool.catalog;
-            }
-         }
-         break;
-      case R_CONSOLE:
-         if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
-            return false;
-         } else {
-            res->res_con.tls.allowed_cns = res_all.res_con.tls.allowed_cns;
-            res->res_con.profiles = res_all.res_con.profiles;
-         }
-         break;
-      case R_DIRECTOR:
-         if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
-            return false;
-         } else {
-            res->res_dir.plugin_names = res_all.res_dir.plugin_names;
-            res->res_dir.messages = res_all.res_dir.messages;
-            res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-            res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
-         }
-         break;
-      case R_STORAGE:
-         if (!(res = (URES *)GetResWithName(type, res_all.res_store.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
-            return false;
-         } else {
-            res->res_store.paired_storage = res_all.res_store.paired_storage;
-            res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
-
-            /*
-             * We must explicitly copy the device alist pointer
-             */
-            res->res_store.device = res_all.res_store.device;
-         }
-         break;
-      case R_JOBDEFS:
-      case R_JOB:
-         if (!(res = (URES *)GetResWithName(type, res_all.res_job.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
-            return false;
-         } else {
-            res->res_job.messages = res_all.res_job.messages;
-            res->res_job.schedule = res_all.res_job.schedule;
-            res->res_job.client = res_all.res_job.client;
-            res->res_job.fileset = res_all.res_job.fileset;
-            res->res_job.storage = res_all.res_job.storage;
-            res->res_job.catalog = res_all.res_job.catalog;
-            res->res_job.FdPluginOptions = res_all.res_job.FdPluginOptions;
-            res->res_job.SdPluginOptions = res_all.res_job.SdPluginOptions;
-            res->res_job.DirPluginOptions = res_all.res_job.DirPluginOptions;
-            res->res_job.base = res_all.res_job.base;
-            res->res_job.pool = res_all.res_job.pool;
-            res->res_job.full_pool = res_all.res_job.full_pool;
-            res->res_job.vfull_pool = res_all.res_job.vfull_pool;
-            res->res_job.inc_pool = res_all.res_job.inc_pool;
-            res->res_job.diff_pool = res_all.res_job.diff_pool;
-            res->res_job.next_pool = res_all.res_job.next_pool;
-            res->res_job.verify_job = res_all.res_job.verify_job;
-            res->res_job.jobdefs = res_all.res_job.jobdefs;
-            res->res_job.run_cmds = res_all.res_job.run_cmds;
-            res->res_job.RunScripts = res_all.res_job.RunScripts;
-
-            /*
-             * TODO: JobDefs where/regexwhere doesn't work well (but this is not very useful)
-             * We have to set_bit(index, res_all.hdr.item_present); or something like that
-             *
-             * We take RegexWhere before all other options
-             */
-            if (!res->res_job.RegexWhere &&
-                (res->res_job.strip_prefix ||
-                 res->res_job.add_suffix ||
-                 res->res_job.add_prefix)) {
-               int len = bregexp_get_build_where_size(res->res_job.strip_prefix,
-                                                      res->res_job.add_prefix,
-                                                      res->res_job.add_suffix);
-               res->res_job.RegexWhere = (char *) bmalloc (len * sizeof(char));
-               bregexp_build_where(res->res_job.RegexWhere, len,
-                                   res->res_job.strip_prefix,
-                                   res->res_job.add_prefix,
-                                   res->res_job.add_suffix);
-               /*
-                * TODO: test bregexp
-                */
-            }
-
-            if (res->res_job.RegexWhere && res->res_job.RestoreWhere) {
-               free(res->res_job.RestoreWhere);
-               res->res_job.RestoreWhere = NULL;
-            }
-         }
-         break;
-      case R_COUNTER:
-         if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
-            return false;
-         } else {
-            res->res_counter.Catalog = res_all.res_counter.Catalog;
-            res->res_counter.WrapCounter = res_all.res_counter.WrapCounter;
-         }
-         break;
-      case R_CLIENT:
-         if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
-            return false;
-         } else {
-            if (res_all.res_client.catalog) {
-               res->res_client.catalog = res_all.res_client.catalog;
-            } else {
-               /*
-                * No catalog overwrite given use the first catalog definition.
-                */
-               res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
-            }
-            res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
-         }
-         break;
-      case R_SCHEDULE:
-         /*
-          * Schedule is a bit different in that it contains a RUNRES record
-          * chain which isn't a "named" resource. This chain was linked
-          * in by run_conf.c during pass 2, so here we jam the pointer
-          * into the Schedule resource.
-          */
-         if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
-            Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
-            return false;
-         } else {
-            res->res_sch.run = res_all.res_sch.run;
-         }
-         break;
-      default:
-         Emsg1(M_ERROR, 0, _("Unknown resource type %d in save_resource.\n"), type);
-         result = false;
-         break;
-      }
-
-      /*
-       * Note, the resource name was already saved during pass 1,
-       * so here, we can just release it.
-       */
-      if (res_all.res_dir.hdr.name) {
-         free(res_all.res_dir.hdr.name);
-         res_all.res_dir.hdr.name = NULL;
-      }
-
-      if (res_all.res_dir.hdr.desc) {
-         free(res_all.res_dir.hdr.desc);
-         res_all.res_dir.hdr.desc = NULL;
-      }
-
-      return result;
+      return update_resource_pointer(type, items);
    }
 
    /*
     * Common
     */
-   if (result == true) {
-      res = (URES *)malloc(resources[rindex].size);
-      memcpy(res, &res_all, resources[rindex].size);
-      if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
-         Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
-               res->res_dir.name(), rindex);
-      } else {
-         RES *next, *last;
-         if (!res->res_dir.name()) {
-            Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
-                  resources[rindex]);
-            return false;
-         }
-         /*
-          * Add new res to end of chain
-          */
-         for (last = next = res_head[rindex]; next; next = next->next) {
-            last = next;
-            if (bstrcmp(next->name, res->res_dir.name())) {
-               Emsg2(M_ERROR, 0,
+   res = (URES *)malloc(resources[rindex].size);
+   memcpy(res, &res_all, resources[rindex].size);
+   if (!res_head[rindex]) {
+      res_head[rindex] = (RES *)res; /* store first entry */
+      Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
+            res->res_dir.name(), rindex);
+   } else {
+      RES *next, *last;
+      if (!res->res_dir.name()) {
+         Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
+               resources[rindex]);
+         return false;
+      }
+      /*
+       * Add new res to end of chain
+       */
+      for (last = next = res_head[rindex]; next; next = next->next) {
+         last = next;
+         if (bstrcmp(next->name, res->res_dir.name())) {
+            Emsg2(M_ERROR, 0,
                   _("Attempt to define second %s resource named \"%s\" is not permitted.\n"),
                   resources[rindex].name, res->res_dir.name());
-               return false;
-            }
+            return false;
          }
-         last->next = (RES *)res;
-         Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
-               res->res_dir.name(), rindex, pass);
       }
+      last->next = (RES *)res;
+      Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
+            res->res_dir.name(), rindex, pass);
    }
-   return result;
+   return true;
 }
 
 /*
@@ -3984,6 +4072,7 @@ void init_dir_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+   config->set_config_include_dir("bareos-dir.d");
 }
 
 bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)

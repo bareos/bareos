@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,10 +27,337 @@
 #include "bareos.h"
 #include "dird.h"
 
-/* Forward referenced functions */
+static void configure_lex_error_handler(const char *file, int line, LEX *lc, POOL_MEM &msg)
+{
+   UAContext *ua;
+
+   lc->error_counter++;
+   if (lc->caller_ctx) {
+      ua = (UAContext *)(lc->caller_ctx);
+      ua->error_msg("configure error: %s\n", msg.c_str());
+   };
+}
+
+static void configure_lex_error_handler(const char *file, int line, LEX *lc, const char *msg, ...)
+{
+   /*
+    * This function is an error handler, used by lex.
+    */
+   va_list ap;
+   int len, maxlen;
+   POOL_MEM buf(PM_NAME);
+
+   while (1) {
+      maxlen = buf.size() - 1;
+      va_start(ap, msg);
+      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         buf.realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
+
+   configure_lex_error_handler(file, line, lc, buf);
+}
+
+static inline bool configure_write_resource(const char *filename, const char *resourcetype,
+                                            const char *name, const char *content,
+                                            const bool overwrite = false)
+{
+   bool result = false;
+   size_t len;
+   int fd;
+   int flags = O_CREAT|O_WRONLY|O_TRUNC;
+
+   if (!overwrite) {
+      flags |= O_EXCL;
+   }
+
+   if ((fd = open(filename, flags, 0640)) >= 0) {
+      len = strlen(content);
+      write(fd, content, len);
+      close(fd);
+      result = true;
+   }
+
+   return result;
+}
+
+static inline RES_ITEM *config_get_res_item(UAContext *ua, RES_TABLE *res_table,
+                                            const char *key, const char *value)
+{
+   RES_ITEM *item = NULL;
+   const char *errorcharmsg = NULL;
+
+   if (res_table) {
+      item = my_config->get_resource_item(res_table->items, key);
+      if (!item) {
+         ua->error_msg("Resource \"%s\" does not permit directive \"%s\".\n", res_table->name, key);
+         return NULL;
+      }
+   }
+
+   /*
+    * Check against dangerous characters ('@', ';').
+    * Could be less strict, if this characters are quoted,
+    * but it is easier to handle it like this.
+    */
+   if (strchr(value, '@')) {
+      errorcharmsg = "'@' (include)";
+   }
+   if (strchr(value, ';')) {
+      errorcharmsg = "';' (end of directive)";
+   }
+   if (errorcharmsg) {
+      if (ua) {
+         ua->error_msg("Could not add directive \"%s\": character %s is forbidden.\n", key, errorcharmsg);
+      }
+      return NULL;
+   }
+
+   return item;
+}
+
+static inline bool config_add_directive(UAContext *ua, RES_TABLE *res_table, const char *key,
+                                        const char *value, POOL_MEM &resource, int indent = 2)
+{
+   POOL_MEM temp(PM_MESSAGE);
+   RES_ITEM *item = NULL;
+
+   item = config_get_res_item(ua, res_table, key, value);
+   if (res_table && (!item)) {
+      return false;
+   }
+
+   /*
+    * Use item->name instead of key for uniform formatting.
+    */
+   if (item) {
+      key = item->name;
+   }
+
+   /* TODO: check type, to see if quotes should be used */
+   temp.bsprintf("%-*s%s = %s\n", indent, "", key, value);
+   resource.strcat(temp);
+
+   return true;
+}
+
+static inline bool configure_create_resource_string(UAContext *ua, int first_parameter, RES_TABLE *res_table,
+                                                    POOL_MEM &resourcename, POOL_MEM &resource)
+{
+   resource.strcat(res_table->name);
+   resource.strcat(" {\n");
+
+   /*
+    * Is the name of the resource already given as value of the resource type?
+    * E.g. configure add client=newclient address=127.0.0.1 ...
+    * instead of configure add client name=newclient address=127.0.0.1 ...
+    */
+   if (ua->argv[first_parameter - 1]) {
+      resourcename.strcat(ua->argv[first_parameter - 1]);
+      if (!config_add_directive(ua, res_table, "name", resourcename.c_str(), resource)) {
+         return false;
+      }
+   }
+
+   for (int i = first_parameter; i < ua->argc; i++) {
+      if (!ua->argv[i]) {
+         ua->error_msg("Missing value for directive \"%s\"\n", ua->argk[i]);
+         return false;
+      }
+      if (bstrcasecmp(ua->argk[i], "name")) {
+         resourcename.strcat(ua->argv[i]);
+      }
+      if (!config_add_directive(ua, res_table, ua->argk[i], ua->argv[i], resource)) {
+         return false;
+      }
+   }
+   resource.strcat("}\n");
+
+   if (strlen(resourcename.c_str()) <= 0) {
+         ua->error_msg("Resource \"%s\": missing name parameter.\n", res_table->name);
+         return false;
+   }
+
+   return true;
+}
+
+static inline bool configure_create_fd_resource_string(POOL_MEM &resource, const char *clientname)
+{
+   POOL_MEM temp(PM_MESSAGE);
+   char *directorname = NULL;
+   s_password *password;
+
+   directorname = GetNextRes(R_DIRECTOR, NULL)->name;
+   password = &GetClientResWithName(clientname)->password;
+
+   resource.strcat("Director {\n");
+   config_add_directive(NULL, NULL, "Name", directorname, resource);
+
+   switch (password->encoding) {
+   case p_encoding_clear:
+      Mmsg(temp, "\"%s\"", password->value);
+      break;
+   case p_encoding_md5:
+      Mmsg(temp, "\"[md5]%s\"", password->value);
+      break;
+   default:
+      break;
+   }
+   config_add_directive(NULL, NULL, "Password", temp.c_str(), resource);
+
+   resource.strcat("}\n");
+
+   return true;
+}
+
+static inline bool configure_create_fd_resource(UAContext *ua, const char *clientname)
+{
+   POOL_MEM resource(PM_MESSAGE);
+   POOL_MEM filename_tmp(PM_FNAME);
+   POOL_MEM filename(PM_FNAME);
+   POOL_MEM temp(PM_MESSAGE);
+
+   if (!configure_create_fd_resource_string(resource, clientname)) {
+      return false;
+   }
+
+   if (!my_config->get_path_of_new_resource(filename, temp, "bareos-dir-export/bareos-fd.d", "director", clientname, false)) {
+      ua->error_msg("%s", temp.c_str());
+      return false;
+   } else {
+      filename_tmp.strcpy(temp);
+   }
+
+   if (!configure_write_resource(filename.c_str(), "filedaemon-export", clientname, resource.c_str())) {
+      ua->error_msg("failed to write filedaemon config resource file\n");
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ * To add a resource during runtime, the following approach is used:
+ *
+ * - Create a temporary file which contains the new resource.
+ * - Use the existing parsing functions to add the new resource to the configured resources.
+ *   - on error:
+ *     - remove the resource and the temporary file.
+ *   - on success:
+ *     - move the new temporary resource file to a place, where it will also be loaded on restart
+ *       (<CONFIGDIR>/bareos-dir.d/<resourcetype>/<name_of_the_resource>.conf).
+ *
+ * This way, the existing parsing functionality is used.
+ */
+static inline bool configure_add_resource(UAContext *ua, int first_parameter, RES_TABLE *res_table)
+{
+   POOL_MEM resource(PM_MESSAGE);
+   POOL_MEM name(PM_MESSAGE);
+   POOL_MEM filename_tmp(PM_FNAME);
+   POOL_MEM filename(PM_FNAME);
+   POOL_MEM temp(PM_FNAME);
+
+   if (!configure_create_resource_string(ua, first_parameter, res_table, name, resource)) {
+      return false;
+   }
+
+   if (GetResWithName(res_table->rcode, name.c_str())) {
+      ua->error_msg("Resource \"%s\" with name \"%s\" already exists.\n", res_table->name, name.c_str());
+      return false;
+   }
+
+   if (!my_config->get_path_of_new_resource(filename, temp, NULL, res_table->name, name.c_str(), true)) {
+      ua->error_msg("%s", temp.c_str());
+      return false;
+   } else {
+      filename_tmp.strcpy(temp);
+   }
+
+   if (!configure_write_resource(filename_tmp.c_str(), res_table->name, name.c_str(), resource.c_str())) {
+      ua->error_msg("failed to write config resource file\n");
+      return false;
+   }
+
+   if (!my_config->parse_config_file(filename_tmp.c_str(), ua, configure_lex_error_handler, NULL, M_ERROR)) {
+      unlink(filename_tmp.c_str());
+      my_config->remove_resource(res_table->rcode, name.c_str());
+      return false;
+   }
+
+   /*
+    * new config resource is working fine. Rename file to its permanent name.
+    */
+   if (rename(filename_tmp.c_str(), filename.c_str()) != 0 ) {
+      ua->error_msg("failed to create config file \"%s\"\n", filename.c_str());
+      unlink(filename_tmp.c_str());
+      my_config->remove_resource(res_table->rcode, name.c_str());
+      return false;
+   }
+
+   /*
+    * When adding a client, also create the client configuration file.
+    */
+   if (res_table->rcode==R_CLIENT) {
+      configure_create_fd_resource(ua, name.c_str());
+   }
+
+   ua->send->object_start("configure");
+   ua->send->object_start("add");
+   ua->send->object_key_value("resource", res_table->name);
+   ua->send->object_key_value("name", name.c_str());
+   ua->send->object_key_value("filename", filename.c_str(), "Created config file \"%s\":\n");
+   ua->send->object_key_value("content", resource.c_str(), "%s");
+   ua->send->object_end("add");
+   ua->send->object_end("configure");
+
+   return true;
+}
+
+static inline bool configure_add(UAContext *ua, int resource_type_parameter)
+{
+   bool result = false;
+   RES_TABLE *res_table = NULL;
+
+   res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
+   if (res_table) {
+      result = configure_add_resource(ua, resource_type_parameter+1, res_table);
+   } else {
+      ua->error_msg(_("invalid resource type %s.\n"), ua->argk[resource_type_parameter]);
+   }
+
+   return result;
+}
 
 bool configure_cmd(UAContext *ua, const char *cmd)
 {
-   ua->send_msg("Interactive configuration not implemented\n");
-   return true;
+   bool result = false;
+
+   if (!(my_config->is_using_config_include_dir())) {
+      ua->warning_msg(_(
+               "It seems that the configuration is not adapted to the include directory structure. "
+               "This means, that the configure command may not work as expected. "
+               "Your configuration changes may not survive a reload/restart. "
+               "Please see %s for details.\n"),
+               MANUAL_CONFIG_DIR_URL);
+   }
+
+   if (ua->argc < 3) {
+      ua->error_msg(_("usage: configure <subcommand> <resourcetype> ...\n"));
+      return false;
+   }
+
+   if (bstrcasecmp(ua->argk[1], NT_("add"))) {
+      result = configure_add(ua, 2);
+   } else {
+      ua->error_msg(_("invalid subcommand %s.\n"), ua->argk[1]);
+      return false;
+   }
+
+   return result;
 }

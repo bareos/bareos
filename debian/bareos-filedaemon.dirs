@@ -1,0 +1,4 @@
+/etc/bareos/bareos-fd.d
+/etc/bareos/bareos-fd.d/client
+/etc/bareos/bareos-fd.d/director
+/etc/bareos/bareos-fd.d/messages

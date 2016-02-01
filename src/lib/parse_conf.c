@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,10 +66,6 @@ union URES {
    RES hdr;
 };
 
-/* Forward referenced subroutines */
-static const char *get_default_configdir();
-static bool find_config_file(const char *config_file, char *full_path, int max_path);
-
 /* Common Resource definitions */
 
 /*
@@ -107,6 +103,9 @@ void CONFIG::init(const char *cf,
                   RES **res_head)
 {
    m_cf = cf;
+   m_use_config_include_dir = false;
+   m_config_include_dir = NULL;
+   m_config_include_naming_format = "%s/%s/%s.conf";
    m_scan_error = scan_error;
    m_scan_warning = scan_warning;
    m_init_res = init_res;
@@ -121,20 +120,16 @@ void CONFIG::init(const char *cf,
    m_res_head = res_head;
 }
 
+void CONFIG::set_config_include_dir(const char* rel_path)
+{
+   m_config_include_dir = bstrdup(rel_path);
+}
+
 bool CONFIG::parse_config()
 {
-   LEX *lc = NULL;
-   int token, i, pass;
-   int res_type = 0;
-   enum parse_state state = p_none;
-   RES_ITEM *items = NULL;
-   int level = 0;
    static bool first = true;
    int errstat;
-   const char *cf = m_cf;
-   LEX_ERROR_HANDLER *scan_error = m_scan_error;
-   LEX_WARNING_HANDLER *scan_warning = m_scan_warning;
-   int err_type = m_err_type;
+   POOL_MEM config_path;
 
    if (first && (errstat = rwl_init(&m_res_lock)) != 0) {
       berrno be;
@@ -143,12 +138,25 @@ bool CONFIG::parse_config()
    }
    first = false;
 
-   char *full_path = (char *)alloca(MAX_PATH + 1);
-
-   if (!find_config_file(cf, full_path, MAX_PATH +1)) {
-      Jmsg0(NULL, M_ABORT, 0, _("Config filename too long.\n"));
+   if (!find_config_file(config_path)) {
+      Jmsg0(NULL, M_ABORT, 0, _("Failed to find config filename.\n"));
    }
-   cf = full_path;
+   Dmsg1(100, "config file = %s\n", config_path.c_str());
+   return parse_config_file(config_path.c_str(), NULL, m_scan_error, m_scan_warning, m_err_type);
+}
+
+bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error,
+                               LEX_WARNING_HANDLER *scan_warning, int32_t err_type)
+{
+   bool result = true;
+   LEX *lc = NULL;
+   int token, i, pass;
+   int res_type = 0;
+   enum parse_state state = p_none;
+   RES_TABLE *res_table = NULL;
+   RES_ITEM *items = NULL;
+   RES_ITEM *item = NULL;
+   int level = 0;
 
    /*
     * Make two passes. The first builds the name symbol table,
@@ -159,6 +167,7 @@ bool CONFIG::parse_config()
       Dmsg1(900, "parse_config pass %d\n", pass);
       if ((lc = lex_open_file(lc, cf, scan_error, scan_warning)) == NULL) {
          berrno be;
+
          /*
           * We must create a lex packet to print the error
           */
@@ -181,12 +190,16 @@ bool CONFIG::parse_config()
          scan_err2(lc, _("Cannot open config file \"%s\": %s\n"),
             cf, be.bstrerror());
          free(lc);
+
          return 0;
       }
-      lex_set_error_handler_error_type(lc, err_type) ;
+      lex_set_error_handler_error_type(lc, err_type);
+      lc->error_counter = 0;
+      lc->caller_ctx = caller_ctx;
+
       while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
          Dmsg3(900, "parse state=%d pass=%d got token=%s\n", state, pass,
-              lex_tok_to_str(token));
+               lex_tok_to_str(token));
          switch (state) {
          case p_none:
             if (token == T_EOL) {
@@ -198,23 +211,18 @@ bool CONFIG::parse_config()
                break;
             } else if (token == T_UTF16_BOM) {
                scan_err0(lc, _("Currently we cannot handle UTF-16 source files. "
-                   "Please convert the conf file to UTF-8\n"));
+                               "Please convert the conf file to UTF-8\n"));
                goto bail_out;
             } else if (token != T_IDENTIFIER) {
                scan_err1(lc, _("Expected a Resource name identifier, got: %s"), lc->str);
                goto bail_out;
             }
-            for (i = 0; m_resources[i].name; i++) {
-               if (bstrcasecmp(m_resources[i].name, lc->str)) {
-                  items = m_resources[i].items;
-                  if (!items) {
-                     break;
-                  }
-                  state = p_resource;
-                  res_type = m_resources[i].rcode;
-                  init_resource(res_type, items, pass);
-                  break;
-               }
+            res_table = get_resource_table(lc->str);
+            if(res_table && res_table->items) {
+               items = res_table->items;
+               state = p_resource;
+               res_type = res_table->rcode;
+               init_resource(res_type, items, pass);
             }
             if (state == p_none) {
                scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -231,53 +239,50 @@ bool CONFIG::parse_config()
                   scan_err1(lc, _("not in resource definition: %s"), lc->str);
                   goto bail_out;
                }
-               for (i = 0; items[i].name; i++) {
-                  if (bstrcasecmp(items[i].name, lc->str)) {
-                     /*
-                      * If the CFG_ITEM_NO_EQUALS flag is set we do NOT
-                      *   scan for = after the keyword
-                      */
-                     if (!(items[i].flags & CFG_ITEM_NO_EQUALS)) {
-                        token = lex_get_token(lc, T_SKIP_EOL);
-                        Dmsg1 (900, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
-                        if (token != T_EQUALS) {
-                           scan_err1(lc, _("expected an equals, got: %s"), lc->str);
-                           goto bail_out;
-                        }
+               i = get_resource_item_index(items, lc->str);
+               if (i>=0) {
+                  item = &items[i];
+                  /*
+                   * If the CFG_ITEM_NO_EQUALS flag is set we do NOT
+                   *   scan for = after the keyword
+                   */
+                  if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
+                     token = lex_get_token(lc, T_SKIP_EOL);
+                     Dmsg1 (900, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
+                     if (token != T_EQUALS) {
+                        scan_err1(lc, _("expected an equals, got: %s"), lc->str);
+                        goto bail_out;
                      }
-
-                     /*
-                      * See if we are processing a deprecated keyword if so warn the user about it.
-                      */
-                     if (items[i].flags & CFG_ITEM_DEPRECATED) {
-                        scan_warn2(lc, _("using deprecated keyword %s on line %d"), items[i].name, lc->line_no);
-                        /*
-                         * As we only want to warn we continue parsing the config. So no goto bail_out here.
-                         */
-                     }
-
-                     Dmsg1(800, "calling handler for %s\n", items[i].name);
-
-                     /*
-                      * Call item handler
-                      */
-                     if (!store_resource(items[i].type, lc, &items[i], i, pass)) {
-                        /*
-                         * None of the generic types fired if there is a registered callback call that now.
-                         */
-                        if (m_store_res) {
-                           m_store_res(lc, &items[i], i, pass);
-                        }
-                     }
-                     i = -1;
-                     break;
                   }
-               }
-               if (i >= 0) {
+
+                  /*
+                   * See if we are processing a deprecated keyword if so warn the user about it.
+                   */
+                  if (item->flags & CFG_ITEM_DEPRECATED) {
+                     scan_warn2(lc, _("using deprecated keyword %s on line %d"), item->name, lc->line_no);
+                     /*
+                      * As we only want to warn we continue parsing the config. So no goto bail_out here.
+                      */
+                  }
+
+                  Dmsg1(800, "calling handler for %s\n", item->name);
+
+                  /*
+                   * Call item handler
+                   */
+                  if (!store_resource(item->type, lc, item, i, pass)) {
+                     /*
+                      * None of the generic types fired if there is a registered callback call that now.
+                      */
+                     if (m_store_res) {
+                        m_store_res(lc, item, i, pass);
+                     }
+                  }
+               } else {
                   Dmsg2(900, "level=%d id=%s\n", level, lc->str);
                   Dmsg1(900, "Keyword = %s\n", lc->str);
                   scan_err1(lc, _("Keyword \"%s\" not permitted in this resource.\n"
-                     "Perhaps you left the trailing brace off of the previous resource."), lc->str);
+                                  "Perhaps you left the trailing brace off of the previous resource."), lc->str);
                   goto bail_out;
                }
                break;
@@ -321,18 +326,69 @@ bool CONFIG::parse_config()
             dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL, false);
          }
       }
+
+      if (lc->error_counter > 0) {
+         result = false;
+      }
+
       lc = lex_close_file(lc);
    }
-   Dmsg0(900, "Leave parse_config()\n");
-   return 1;
+   Dmsg0(900, "Leave parse_config_file()\n");
+
+   return result;
+
 bail_out:
    if (lc) {
       lc = lex_close_file(lc);
    }
-   return 0;
+
+   return false;
 }
 
-const char *get_default_configdir()
+
+RES_TABLE *CONFIG::get_resource_table(const char *resource_type)
+{
+   RES_TABLE *result = NULL;
+   int i;
+
+   for (i = 0; m_resources[i].name; i++) {
+      if (bstrcasecmp(m_resources[i].name, resource_type)) {
+         result = &m_resources[i];
+      }
+   }
+
+   return result;
+}
+
+int CONFIG::get_resource_item_index(RES_ITEM *items, const char *item)
+{
+   int result = -1;
+   int i;
+
+   for (i = 0; items[i].name; i++) {
+      if (bstrcasecmp(items[i].name, item)) {
+         result = i;
+         break;
+      }
+   }
+
+   return result;
+}
+
+RES_ITEM *CONFIG::get_resource_item(RES_ITEM *items, const char *item)
+{
+   RES_ITEM *result = NULL;
+   int i = -1;
+
+   i = get_resource_item_index(items, item);
+   if (i>=0) {
+      result = &items[i];
+   }
+
+   return result;
+}
+
+const char *CONFIG::get_default_configdir()
 {
 #if defined(HAVE_WIN32)
    HRESULT hr;
@@ -352,78 +408,72 @@ const char *get_default_configdir()
          bstrncpy(szConfigDir, DEFAULT_CONFIGDIR, sizeof(szConfigDir));
       }
    }
+
    return szConfigDir;
 #else
    return CONFDIR;
 #endif
 }
 
+#ifdef HAVE_SETENV
+static inline void set_env(const char *key, const char *value)
+{
+   setenv(key, value, 1);
+}
+#elif HAVE_PUTENV
+static inline void set_env(const char *key, const char *value)
+{
+   POOL_MEM env_string;
+
+   Mmsg(env_string, "%s=%s", key, value);
+   putenv(bstrdup(env_string.c_str()));
+}
+#else
+static inline void set_env(const char *key, const char *value)
+{
+}
+#endif
+
 /*
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-static bool find_config_file(const char *config_file, char *full_path, int max_path)
+bool CONFIG::find_config_file(POOL_MEM &full_path)
 {
-   int dir_length, file_length;
-   const char *config_dir;
-#if defined(HAVE_SETENV) || defined(HAVE_PUTENV)
-   char *bp;
-   POOL_MEM env_string(PM_NAME);
-#endif
+   bool found = false;
+   POOL_MEM config_dir;
 
    /*
     * If a full path specified, use it
     */
-   file_length = strlen(config_file) + 1;
-   if (first_path_separator(config_file) != NULL) {
-      if (file_length > max_path) {
-         return false;
+   if (path_is_absolute(m_cf)) {
+      full_path.strcpy(m_cf);
+      path_get_directory(config_dir, full_path);
+      set_env("BAREOS_CFGDIR", config_dir.c_str());
+      found = true;
+   } else {
+      /*
+       * config_file is default file name, now find default directory.
+       */
+      config_dir.strcpy(get_default_configdir());
+      full_path.strcpy(config_dir);
+
+      if (path_append(full_path, m_cf)) {
+         if((!path_exists(full_path)) && (m_config_include_dir)) {
+            /*
+             * Default configdir plus config file name is not accessable.
+             * Use include directory structure instead.
+             */
+            if (get_path_of_resource(full_path, NULL, NULL, NULL, true)) {
+               m_use_config_include_dir = true;
+            }
+         }
+         found = true;
+         set_env("BAREOS_CFGDIR", config_dir.c_str());
       }
-
-      bstrncpy(full_path, config_file, file_length);
-
-#ifdef HAVE_SETENV
-      pm_strcpy(env_string, config_file);
-      bp = (char *)last_path_separator(env_string.c_str());
-      *bp = '\0';
-      setenv("BAREOS_CFGDIR", env_string.c_str(), 1);
-#elif HAVE_PUTENV
-      Mmsg(env_string, "BAREOS_CFGDIR=%s", config_file);
-      bp = (char *)last_path_separator(env_string.c_str());
-      *bp = '\0';
-      putenv(bstrdup(env_string.c_str()));
-#endif
-
-      return true;
    }
 
-   /*
-    * config_file is default file name, now find default dir
-    */
-   config_dir = get_default_configdir();
-   dir_length = strlen(config_dir);
-
-   if ((dir_length + 1 + file_length) > max_path) {
-      return false;
-   }
-
-#ifdef HAVE_SETENV
-   pm_strcpy(env_string, config_dir);
-   setenv("BAREOS_CFGDIR", env_string.c_str(), 1);
-#elif HAVE_PUTENV
-   Mmsg(env_string, "BAREOS_CFGDIR=%s", config_dir);
-   putenv(bstrdup(env_string.c_str()));
-#endif
-
-   memcpy(full_path, config_dir, dir_length + 1);
-
-   if (!IsPathSeparator(full_path[dir_length - 1])) {
-      full_path[dir_length++] = '/';
-   }
-
-   memcpy(full_path + dir_length, config_file, file_length);
-
-   return true;
+   return found;
 }
 
 void CONFIG::free_resources()
@@ -438,10 +488,12 @@ RES **CONFIG::save_resources()
 {
    int num = m_r_last - m_r_first + 1;
    RES **res = (RES **)malloc(num*sizeof(RES *));
+
    for (int i = 0; i < num; i++) {
       res[i] = m_res_head[i];
       m_res_head[i] = NULL;
    }
+
    return res;
 }
 
@@ -449,7 +501,9 @@ RES **CONFIG::new_res_head()
 {
    int size = (m_r_last - m_r_first + 1) * sizeof(RES *);
    RES **res = (RES **)malloc(size);
+
    memset(res, 0, size);
+
    return res;
 }
 
@@ -656,6 +710,42 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
    }
 }
 
+bool CONFIG::remove_resource(int type, const char *name)
+{
+   int rindex = type - m_r_first;
+   RES *last;
+
+   /*
+    * Remove resource from list.
+    *
+    * Note: this is intended for removing a resource that has just been added,
+    * but proven to be incorrect (added by console command "configure add").
+    * For a general approach, a check if this resource is referenced by other resources must be added.
+    * If it is referenced, don't remove it.
+    */
+   last = NULL;
+   for (RES *res = m_res_head[rindex]; res; res = res->next) {
+      if (bstrcmp(res->name, name)) {
+         if (!last) {
+            Dmsg2(900, _("removing resource %s, name=%s (first resource in list)\n"), res_to_str(type), name);
+            m_res_head[rindex] = res->next;
+        } else {
+            Dmsg2(900, _("removing resource %s, name=%s\n"), res_to_str(type), name);
+            last->next = res->next;
+        }
+        res->next = NULL;
+        free_resource(res, type);
+        return true;
+      }
+      last = res;
+   }
+
+   /*
+    * Resource with this name not found
+    */
+   return false;
+}
+
 void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
                             void *sock, bool hide_sensitive_data)
 {
@@ -664,6 +754,87 @@ void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
          dump_resource(i,m_res_head[i - m_r_first],sendit, sock, hide_sensitive_data);
       }
    }
+}
+
+bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
+                                  const char *resourcetype, const char *name, bool set_wildcards)
+{
+   POOL_MEM rel_path(PM_FNAME);
+   POOL_MEM directory(PM_FNAME);
+   POOL_MEM resourcetype_lowercase(resourcetype);
+   resourcetype_lowercase.toLower();
+
+   if (!component) {
+      component = m_config_include_dir;
+   }
+
+   if (resourcetype_lowercase.strlen() <= 0) {
+      if (set_wildcards) {
+         resourcetype_lowercase.strcpy("*");
+      } else {
+         return false;
+      }
+   }
+
+   if (!name) {
+      if (set_wildcards) {
+         name = "*";
+      } else {
+         return false;
+      }
+   }
+
+   path.strcpy(get_default_configdir());
+   rel_path.bsprintf(m_config_include_naming_format, component, resourcetype_lowercase.c_str(), name);
+   path_append(path, rel_path);
+
+   return true;
+}
+
+bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
+                                      const char *resourcetype, const char *name, bool error_if_exists)
+{
+   POOL_MEM rel_path(PM_FNAME);
+   POOL_MEM directory(PM_FNAME);
+   POOL_MEM resourcetype_lowercase(resourcetype);
+   resourcetype_lowercase.toLower();
+
+   if (!get_path_of_resource(path, component, resourcetype, name, false)) {
+      return false;
+   }
+
+   path_get_directory(directory, path);
+
+   if (!path_exists(directory)) {
+      extramsg.bsprintf("Resource config directory \"%s\" does not exist.\n", directory.c_str());
+      return false;
+   }
+
+   /*
+    * Store name for temporary file in extramsg.
+    * Can be used, if result is true.
+    * Otherwise it contains an error message.
+    */
+   extramsg.bsprintf("%s.tmp", path.c_str());
+
+   if (!error_if_exists) {
+      return true;
+   }
+
+   /*
+    * File should not exists, as it is going to be created.
+    */
+   if (path_exists(path)) {
+      extramsg.bsprintf("Resource config file \"%s\" already exists.\n", path.c_str());
+      return false;
+   }
+
+   if (path_exists(extramsg)) {
+      extramsg.bsprintf("Temporary resource config file \"%s.tmp\" already exists.\n", path.c_str());
+      return false;
+   }
+
+   return true;
 }
 
 void free_tls_t(tls_t &tls)

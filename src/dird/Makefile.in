@@ -143,8 +143,11 @@ devclean: realclean
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dir $(DESTDIR)$(sbindir)/bareos-dir
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dbcheck $(DESTDIR)$(sbindir)/bareos-dbcheck
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/
+	@for i in catalog client console counter director fileset job jobdefs messages pool profile schedule storage; do \
+	   $(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/$$i; \
+	done
 	@srcconf=bareos-dir.conf; \
-	   $(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/; \
 	   if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	      destconf=$$srcconf.new; \
 	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \

@@ -28,6 +28,7 @@ TARGET="/etc/bareos/${CONFIG}"
 permissions()
 {
   chown ${daemon_user}:${daemon_group} /etc/bareos/bareos-dir.d
+  chmod 750 /etc/bareos/bareos-dir.d
   chown ${daemon_user}:${daemon_group} $TARGET
   chmod 640 $TARGET
 }

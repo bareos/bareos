@@ -411,14 +411,34 @@ public:
       int32_t r_last,
       RES_TABLE *resources,
       RES **res_head);
-
+   void set_config_include_dir(const char *rel_path);
+   bool is_using_config_include_dir() { return m_use_config_include_dir; };
    bool parse_config();
+   bool parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error = NULL,
+                          LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
    void free_resources();
    RES **save_resources();
    RES **new_res_head();
    void init_resource(int type, RES_ITEM *items, int pass);
+   bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
+   RES_TABLE *get_resource_table(const char *resource_type);
+   int get_resource_item_index(RES_ITEM *res_table, const char *item);
+   RES_ITEM *get_resource_item(RES_ITEM *res_table, const char *item);
+   bool get_path_of_resource(POOL_MEM &path, const char *component, const char *resourcetype,
+                             const char *name, bool set_wildcards = false);
+   bool get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
+                                 const char *resourcetype, const char *name, bool error_if_exits = false);
+
+protected:
+   const char *m_config_include_dir;              /* rel. path to the config include directory
+                                                     (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
+   bool m_use_config_include_dir;                 /* Use the config include directory */
+   const char *m_config_include_naming_format;    /* Format string for file paths of resources */
+
+   const char *get_default_configdir();
+   bool find_config_file(POOL_MEM &full_path);
 };
 
 CONFIG *new_config_parser();

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,6 +116,7 @@ typedef struct s_lex_context {
    void (*scan_error)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    void (*scan_warning)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    int err_type;                      /* message level for scan_error (M_..) */
+   int error_counter;
    void *caller_ctx;                  /* caller private data */
    BPIPE *bpipe;                      /* set if we are piping */
 } LEX;

@@ -914,7 +914,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
 %defattr(-, root, root)
 %attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.conf
-%attr(-, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/autochanger
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/device
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/director
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/ndmp
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/messages
+%attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/storage
 %if 0%{?suse_version}
 %if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-sd
@@ -979,6 +985,10 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # fd package (bareos-fd, plugins)
 %defattr(-, root, root)
 %attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.conf
+%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/
+%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/client
+%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/director
+%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/messages
 %if 0%{?suse_version}
 %if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-fd
@@ -1006,7 +1016,22 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
 %if !0%{?client_only}
-%attr(-, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d
+# these directories belong to bareos-common,
+# as other packages may contain configurations for the director.
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/catalog
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/client
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/console
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/counter
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/director
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/fileset
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/job
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/jobdefs
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/messages
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/pool
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/profile
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/schedule
+%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/storage
 %endif
 %dir %{backend_dir}
 %{library_dir}/libbareos-*.so

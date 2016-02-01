@@ -34,6 +34,7 @@ permissions()
 {
   chown ${storage_daemon_user}:${daemon_group} $TARGET
   chown ${storage_daemon_user}:${daemon_group} /etc/bareos/bareos-sd.d
+  chmod 750 /etc/bareos/bareos-sd.d
   chown ${storage_daemon_user}:${daemon_group} /var/lib/bareos/storage/
   chmod 640 $TARGET
 }

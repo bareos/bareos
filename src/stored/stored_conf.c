@@ -845,6 +845,7 @@ void init_sd_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+   config->set_config_include_dir("bareos-sd.d");
 }
 
 bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)

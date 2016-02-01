@@ -236,8 +236,8 @@ static struct cmdstruct commands[] = {
      NT_("on | off"), false, true },
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
      NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false, true },
-   { NT_("configure"), configure_cmd, _("Configure director"),
-     NT_("terminal"), false, true },
+   { NT_("configure"), configure_cmd, _("Configure director resources"),
+     NT_(get_configure_parameter()), false, true },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
@@ -255,7 +255,7 @@ static struct cmdstruct commands[] = {
    { NT_("gui"), gui_cmd, _("Switch between interactive (gui off) and non-interactive (gui on) mode"),
      NT_("on | off"), false, false },
    { NT_("help"), help_cmd, _("Print help on specific command"),
-     NT_("add autodisplay automount cancel create delete disable\n"
+     NT_("add autodisplay automount cancel configure create delete disable\n"
          "\tenable estimate exit gui label list llist\n"
          "\tmessages memory mount prune purge quit query\n"
          "\trestore relabel release reload run status\n"

@@ -121,6 +121,10 @@ devclean: realclean
 
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-fd $(DESTDIR)$(sbindir)/bareos-fd
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-fd.d/
+	@for i in client director messages; do \
+	   $(MKDIR) ${DESTDIR}${confdir}/bareos-fd.d/$$i; \
+	done
 	@srcconf=bareos-fd.conf; \
 	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
 	   destconf=$$srcconf.new; \

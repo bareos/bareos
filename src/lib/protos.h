@@ -134,6 +134,16 @@ void stack_trace();
 int safer_unlink(const char *pathname, const char *regex);
 int secure_erase(JCR *jcr, const char *pathname);
 void set_secure_erase_cmdline(const char *cmdline);
+bool path_exists(const char *path);
+bool path_exists(POOL_MEM &path);
+bool path_is_directory(const char *path);
+bool path_is_directory(POOL_MEM &path);
+bool path_is_absolute(const char *path);
+bool path_is_absolute(POOL_MEM &path);
+bool path_get_directory(POOL_MEM &directory, POOL_MEM &path);
+bool path_append(char *path, const char *extra, unsigned int max_path);
+bool path_append(POOL_MEM &path, const char *extra);
+bool path_append(POOL_MEM &path, POOL_MEM &extra);
 
 /* compression.c */
 const char *cmprs_algo_to_text(uint32_t compression_algorithm);

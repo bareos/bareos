@@ -243,8 +243,8 @@ char *bstrinlinecpy(char *dest, const char *src)
  */
 char *bstrncpy(char *dest, const char *src, int maxlen)
 {
-   strncpy(dest, src, maxlen-1);
-   dest[maxlen-1] = 0;
+   strncpy(dest, src, maxlen - 1);
+   dest[maxlen - 1] = 0;
    return dest;
 }
 
@@ -253,8 +253,8 @@ char *bstrncpy(char *dest, const char *src, int maxlen)
  */
 char *bstrncpy(char *dest, POOL_MEM &src, int maxlen)
 {
-   strncpy(dest, src.c_str(), maxlen-1);
-   dest[maxlen-1] = 0;
+   strncpy(dest, src.c_str(), maxlen - 1);
+   dest[maxlen - 1] = 0;
    return dest;
 }
 
@@ -266,10 +266,10 @@ char *bstrncpy(char *dest, POOL_MEM &src, int maxlen)
 char *bstrncat(char *dest, const char *src, int maxlen)
 {
    int len = strlen(dest);
-   if (len < maxlen-1) {
-      strncpy(dest+len, src, maxlen-len-1);
+   if (len < maxlen - 1) {
+      strncpy(dest + len, src, maxlen - len - 1);
    }
-   dest[maxlen-1] = 0;
+   dest[maxlen - 1] = 0;
    return dest;
 }
 
@@ -281,10 +281,10 @@ char *bstrncat(char *dest, const char *src, int maxlen)
 char *bstrncat(char *dest, POOL_MEM &src, int maxlen)
 {
    int len = strlen(dest);
-   if (len < maxlen-1) {
-      strncpy(dest+len, src.c_str(), maxlen-len-1);
+   if (len < maxlen - 1) {
+      strncpy(dest + len, src.c_str(), maxlen - (len + 1));
    }
-   dest[maxlen-1] = 0;
+   dest[maxlen - 1] = 0;
    return dest;
 }
 
@@ -469,7 +469,7 @@ int bvsnprintf(char *str, int32_t size, const char  *format, va_list ap)
 #ifdef HAVE_VSNPRINTF
    int len;
    len = vsnprintf(str, size, format, ap);
-   str[size-1] = 0;
+   str[size - 1] = 0;
    return len;
 
 #else
@@ -801,7 +801,7 @@ char *bfgets(char *s, int size, FILE *fd)
    char *p = s;
    int ch;
    *p = 0;
-   for (int i=0; i < size-1; i++) {
+   for (int i = 0; i < size - 1; i++) {
       do {
          errno = 0;
          ch = fgetc(fd);
@@ -871,7 +871,7 @@ char *bfgets(POOLMEM *&s, FILE *fd)
          if (ch != '\n') { /* Mac (\r only) */
             (void)ungetc(ch, fd); /* Push next character back to fd */
          }
-         s[i-1] = '\n';
+         s[i - 1] = '\n';
          break;
       }
       if (ch == '\n') {
@@ -913,6 +913,132 @@ char *escape_filename(const char *file_path)
    *cur_char = '\0';
 
    return escaped_path;
+}
+
+bool path_exists(const char *path)
+{
+   struct stat statp;
+   if ((!path) or (strlen(path)<=0)) {
+      return false;
+   }
+   return (stat(path, &statp) == 0);
+}
+
+bool path_exists(POOL_MEM &path)
+{
+   return path_exists(path.c_str());
+}
+
+bool path_is_directory(const char *path)
+{
+   struct stat statp;
+   if ((!path) or (strlen(path)<=0)) {
+      return false;
+   }
+   return (S_ISDIR(statp.st_mode));
+}
+
+bool path_is_directory(POOL_MEM &path)
+{
+   return path_is_directory(path.c_str());
+}
+
+bool path_is_absolute(const char *path)
+{
+   int length = strlen(path);
+
+   if ((!path) || (length == 0)) {
+      /* no path: not an absolute path */
+      return false;
+   }
+
+   /*
+    * Is path absolute?
+    */
+   if (IsPathSeparator(path[0])) {
+      return true;
+   }
+
+#ifdef HAVE_WIN32
+   /*
+    * Windows:
+    * Does path begin with drive? if yes, it is absolute
+    */
+   if (length >= 3) {
+      if (isalpha(path[0]) && path[1] == ':' && IsPathSeparator(path[2])) {
+         return true;
+      }
+   }
+#endif
+
+   return false;
+}
+
+bool path_is_absolute(POOL_MEM &path)
+{
+   return path_is_absolute(path.c_str());
+}
+
+/*
+ * Get directory from path.
+ */
+bool path_get_directory(POOL_MEM &directory, POOL_MEM &path)
+{
+   char *dir = NULL;
+   int i = path.strlen();
+
+   directory.strcpy(path);
+   if (!path_is_directory(directory)) {
+      dir = directory.addr();
+      while ((!IsPathSeparator(dir[i])) && (i > 0)) {
+         dir[i] = 0;
+         i--;
+      }
+   }
+
+   if (path_is_directory(directory)) {
+      /* make sure, path ends with path separator */
+      path_append(directory, "");
+      return true;
+   }
+
+   return false;
+}
+
+bool path_append(char *path, const char *extra, unsigned int max_path)
+{
+   int path_len = strlen(path);
+   if ((path_len + 1 + strlen(extra)) > max_path) {
+      return false;
+   }
+
+   /*
+    * Add path separator after original path if missing.
+    */
+   if (!IsPathSeparator(path[path_len - 1])) {
+      path[path_len] = PathSeparator;
+      path_len++;
+   }
+
+   memcpy(path + path_len, extra, strlen(extra) + 1);
+   return true;
+}
+
+bool path_append(POOL_MEM &path, const char *extra)
+{
+   int required_length = path.strlen() + 1 + strlen(extra);
+   if (!path.check_size(required_length)) {
+      return false;
+   }
+   return path_append(path.c_str(), extra, required_length);
+}
+
+/*
+ * Append to paths together.
+ */
+bool path_append(POOL_MEM &path, POOL_MEM &extra)
+{
+   return path_append(path, extra.c_str());
 }
 
 /*

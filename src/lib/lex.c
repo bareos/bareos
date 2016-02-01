@@ -246,7 +246,7 @@ static inline LEX *lex_add(LEX *lf,
 {
    LEX *nf;
 
-   Dmsg1(400, "Open config file: %s\n", filename);
+   Dmsg1(100, "open config file: %s\n", filename);
    nf = (LEX *)malloc(sizeof(LEX));
    if (lf) {
       memcpy(nf, lf, sizeof(LEX));
@@ -330,10 +330,12 @@ LEX *lex_open_file(LEX *lf,
       char *filename_expanded = NULL;
 
       /*
-       * flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string is a wildcard string.
+       * Flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string is a wildcard string.
        */
 
-      /* clear fileglob at least required for mingw version of glob() */
+      /*
+       * Clear fileglob at least required for mingw version of glob()
+       */
       memset(&fileglob, 0, sizeof(fileglob));
       globrc = glob(filename, 0, NULL, &fileglob);
 
@@ -345,12 +347,12 @@ LEX *lex_open_file(LEX *lf,
          return lf;
       } else if (globrc != 0) {
          /*
-          * glob error has occured. Giving up.
+          * glob() error has occurred. Giving up.
           */
          return NULL;
       }
 
-      Dmsg2(400, "glob %s matches %i files.\n", filename, fileglob.gl_pathc);
+      Dmsg2(100, "glob %s: %i files\n", filename, fileglob.gl_pathc);
       for (size_t i = 0; i < fileglob.gl_pathc; i++) {
          filename_expanded = fileglob.gl_pathv[i];
          if ((fd = fopen(filename_expanded, "rb")) == NULL) {
@@ -379,7 +381,6 @@ LEX *lex_new_buffer(LEX *lf,
 
    return lf;
 }
-
 
 /*
  * Get the next character from the input.
