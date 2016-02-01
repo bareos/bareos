@@ -168,12 +168,13 @@ static int sectors_per_call = SECTORS_PER_CALL;
 static uint64_t absolute_start_offset = 0;
 static char *vmdk_disk_name = NULL;
 static char *raw_disk_name = NULL;
-static int raw_disk_fd;
+static int raw_disk_fd = -1;
 static char *vixdisklib_config = NULL;
 static char *disktype = NULL;
 static VixDiskLibConnectParams cnxParams;
 static VixDiskLibConnection connection = NULL;
-static VixDiskLibHandle diskHandle = NULL;
+static VixDiskLibHandle read_diskHandle = NULL;
+static VixDiskLibHandle write_diskHandle = NULL;
 static VixDiskLibInfo *info = NULL;
 static json_t *json_config = NULL;
 static int exit_code = 1;
@@ -388,9 +389,14 @@ static void cleanup(void)
       VixDiskLib_FreeInfo(info);
    }
 
-   if (diskHandle) {
-      VixDiskLib_Close(diskHandle);
-      diskHandle = NULL;
+   if (read_diskHandle) {
+      VixDiskLib_Close(read_diskHandle);
+      read_diskHandle = NULL;
+   }
+
+   if (write_diskHandle) {
+      VixDiskLib_Close(write_diskHandle);
+      write_diskHandle = NULL;
    }
 
    if (connection) {
@@ -411,13 +417,11 @@ static void cleanup(void)
       }
    }
 
-   if (raw_disk_name) {
-      if (raw_disk_fd) {
-         if (verbose) {
-            fprintf(stderr, "Log: RAWFILE: Closing RAW file\n");
-         }
-         close(raw_disk_fd);
+   if (raw_disk_fd != -1) {
+      if (verbose) {
+         fprintf(stderr, "Log: RAWFILE: Closing RAW file\n");
       }
+      close(raw_disk_fd);
    }
 
    cleanup_cnxParams();
@@ -592,14 +596,15 @@ bail_out:
 /*
  * Open a VMDK using VDDK.
  */
-static inline void do_vixdisklib_open(const char *key, json_t *disk_params, bool readonly)
+static inline void do_vixdisklib_open(const char *key, const char *disk_name, json_t *disk_params,
+                                      bool readonly, bool getdiskinfo, VixDiskLibHandle *diskHandle)
 {
    int succeeded = 0;
    VixError err;
    const char *disk_path;
    uint32_t flags;
 
-   if (!vmdk_disk_name) {
+   if (!disk_name) {
       json_t *object;
 
       /*
@@ -621,7 +626,7 @@ static inline void do_vixdisklib_open(const char *key, json_t *disk_params, bool
       flags |= VIXDISKLIB_FLAG_OPEN_READ_ONLY;
    }
 
-   err = VixDiskLib_Open(connection, disk_path, flags, &diskHandle);
+   err = VixDiskLib_Open(connection, disk_path, flags, diskHandle);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -631,21 +636,23 @@ static inline void do_vixdisklib_open(const char *key, json_t *disk_params, bool
       goto bail_out;
    }
 
-   /*
-    * See how big the logical disk is.
-    */
-   err = VixDiskLib_GetInfo(diskHandle, &info);
-   if (VIX_FAILED(err)) {
-      char *error_txt;
+   if (getdiskinfo) {
+      /*
+       * See how big the logical disk is.
+       */
+      err = VixDiskLib_GetInfo(*diskHandle, &info);
+      if (VIX_FAILED(err)) {
+         char *error_txt;
 
-      error_txt = VixDiskLib_GetErrorText(err, NULL);
-      fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%d]\n", disk_path, error_txt, err);
-      VixDiskLib_FreeErrorText(error_txt);
-      goto bail_out;
+         error_txt = VixDiskLib_GetErrorText(err, NULL);
+         fprintf(stderr, "Failed to get Logical Disk Info for %s, %s [%d]\n", disk_path, error_txt, err);
+         VixDiskLib_FreeErrorText(error_txt);
+         goto bail_out;
+      }
    }
 
    if (verbose) {
-      fprintf(stderr, "Selected transport method: %s\n", VixDiskLib_GetTransportMode(diskHandle));
+      fprintf(stderr, "Selected transport method: %s\n", VixDiskLib_GetTransportMode(*diskHandle));
    }
 
    succeeded = 1;
@@ -659,7 +666,8 @@ bail_out:
 /*
  * Create a VMDK using VDDK.
  */
-static inline void do_vixdisklib_create(const char *key, json_t *disk_params, uint64_t absolute_disk_length)
+static inline void do_vixdisklib_create(const char *key, const char *disk_name,
+                                        json_t *disk_params, uint64_t absolute_disk_length)
 {
    int succeeded = 0;
    VixError err;
@@ -671,7 +679,7 @@ static inline void do_vixdisklib_create(const char *key, json_t *disk_params, ui
       goto bail_out;
    }
 
-   if (!vmdk_disk_name) {
+   if (!disk_name) {
       json_t *object;
 
       /*
@@ -721,7 +729,7 @@ static size_t read_from_vmdk(size_t sector_offset, size_t nbyte, void *buf)
 {
    VixError err;
 
-   err = VixDiskLib_Read(diskHandle, sector_offset, nbyte / DEFAULT_SECTOR_SIZE, (uint8 *)buf);
+   err = VixDiskLib_Read(read_diskHandle, sector_offset, nbyte / DEFAULT_SECTOR_SIZE, (uint8 *)buf);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -740,7 +748,7 @@ static size_t write_to_vmdk(size_t sector_offset, size_t nbyte, void *buf)
 {
    VixError err;
 
-   err = VixDiskLib_Write(diskHandle, sector_offset, nbyte / DEFAULT_SECTOR_SIZE, (uint8 *)buf);
+   err = VixDiskLib_Write(write_diskHandle, sector_offset, nbyte / DEFAULT_SECTOR_SIZE, (uint8 *)buf);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -765,16 +773,35 @@ static size_t read_from_stream(size_t sector_offset, size_t nbyte, void *buf)
  */
 static size_t write_to_stream(size_t sector_offset, size_t nbyte, void *buf)
 {
-   if (raw_disk_name) {
+   /*
+    * Should we clone to rawdevice ?
+    */
+   if (raw_disk_fd != -1) {
       robust_writer(raw_disk_fd, buf, nbyte);
    }
+
+   /*
+    * Should we clone to new VMDK file ?
+    */
+   if (write_diskHandle) {
+      VixError err;
+
+      err = VixDiskLib_Write(write_diskHandle, sector_offset, nbyte / DEFAULT_SECTOR_SIZE, (uint8 *)buf);
+      if (VIX_FAILED(err)) {
+         char *error_txt;
+
+         error_txt = VixDiskLib_GetErrorText(err, NULL);
+         fprintf(stderr, "VMDK Write error: %s [%d]\n", error_txt, err);
+      }
+   }
+
    return robust_writer(STDOUT_FILENO, buf, nbyte);
 }
 
 /*
  * Encode the disk info of the disk saved into the backup output stream.
  */
-static inline bool save_disk_info(const char *key, json_t *cbt)
+static inline bool save_disk_info(const char *key, json_t *cbt, uint64_t *absolute_disk_length)
 {
    bool retval = false;
    struct runtime_disk_info_encoding rdie;
@@ -809,6 +836,9 @@ static inline bool save_disk_info(const char *key, json_t *cbt)
    }
 
    retval = true;
+   if (absolute_disk_length) {
+      *absolute_disk_length = rdie.absolute_disk_length;
+   }
 
 bail_out:
    return retval;
@@ -842,10 +872,10 @@ static inline bool process_disk_info(bool validate_only, json_t *value)
    }
 
    if (create_disk && !validate_only) {
-      do_vixdisklib_create(DISK_PARAMS_KEY, value, rdie.absolute_disk_length);
-      do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
+      do_vixdisklib_create(DISK_PARAMS_KEY, vmdk_disk_name, value, rdie.absolute_disk_length);
+      do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true, &write_diskHandle);
 
-      if (!diskHandle) {
+      if (!write_diskHandle) {
          fprintf(stderr, "Cannot process restore data as no VixDiskLib disk handle opened\n");
          goto bail_out;
       }
@@ -887,7 +917,7 @@ static inline bool read_meta_data_key(char *key)
       fprintf(stderr, "Processing metadata key %s\n", key);
    }
 
-   err = VixDiskLib_ReadMetadata(diskHandle, key, NULL, 0, &requiredLen);
+   err = VixDiskLib_ReadMetadata(read_diskHandle, key, NULL, 0, &requiredLen);
    if (err != VIX_OK && err != VIX_E_BUFFER_TOOSMALL) {
       return false;
    }
@@ -898,13 +928,29 @@ static inline bool read_meta_data_key(char *key)
       return false;
    }
 
-   err = VixDiskLib_ReadMetadata(diskHandle, key, buffer, requiredLen, NULL);
+   err = VixDiskLib_ReadMetadata(read_diskHandle, key, buffer, requiredLen, NULL);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
       error_txt = VixDiskLib_GetErrorText(err, NULL);
       fprintf(stderr, "Failed to read metadata for key %s : %s [%d] exiting ...\n", key, error_txt, err);
       goto bail_out;
+   }
+
+   /*
+    * Should we clone metadata to new VMDK file ?
+    */
+   if (write_diskHandle) {
+      VixError err;
+
+      err = VixDiskLib_WriteMetadata(write_diskHandle, key, buffer);
+      if (VIX_FAILED(err)) {
+         char *error_txt;
+
+         error_txt = VixDiskLib_GetErrorText(err, NULL);
+         fprintf(stderr, "Failed to write metadata for key %s : %s [%d] exiting ...\n", key, error_txt, err);
+         goto bail_out;
+      }
    }
 
    rmde.start_magic = BAREOSMAGIC;
@@ -953,7 +999,7 @@ static inline bool save_meta_data()
     * See if we are actually saving all meta data or should only write the META data end marker.
     */
    if (save_metadata) {
-      err = VixDiskLib_GetMetadataKeys(diskHandle, NULL, 0, &requiredLen);
+      err = VixDiskLib_GetMetadataKeys(read_diskHandle, NULL, 0, &requiredLen);
       if (err != VIX_OK && err != VIX_E_BUFFER_TOOSMALL) {
          return false;
       }
@@ -964,7 +1010,7 @@ static inline bool save_meta_data()
          return false;
       }
 
-      err = VixDiskLib_GetMetadataKeys(diskHandle, buffer, requiredLen, NULL);
+      err = VixDiskLib_GetMetadataKeys(read_diskHandle, buffer, requiredLen, NULL);
       if (VIX_FAILED(err)) {
          char *error_txt;
 
@@ -1070,7 +1116,7 @@ static inline bool process_meta_data(bool validate_only)
       if (!validate_only && restore_meta_data) {
          VixError err;
 
-         err = VixDiskLib_WriteMetadata(diskHandle, key, buffer);
+         err = VixDiskLib_WriteMetadata(write_diskHandle, key, buffer);
          if (VIX_FAILED(err)) {
             char *error_txt;
 
@@ -1106,7 +1152,7 @@ static inline bool process_cbt(const char *key, json_t *cbt)
    uint8 buf[DEFAULT_SECTOR_SIZE * SECTORS_PER_CALL];
    struct runtime_cbt_encoding rce;
 
-   if (!diskHandle) {
+   if (!read_diskHandle) {
       fprintf(stderr, "Cannot process CBT data as no VixDiskLib disk handle opened\n");
       goto bail_out;
    }
@@ -1154,7 +1200,7 @@ static inline bool process_cbt(const char *key, json_t *cbt)
          goto bail_out;
       }
 
-      if (raw_disk_name) {
+      if (raw_disk_fd != -1) {
          lseek(raw_disk_fd, start_offset, SEEK_SET);
          if (verbose) {
             fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
@@ -1218,9 +1264,9 @@ static inline bool process_cbt(const char *key, json_t *cbt)
    retval = true;
 
 bail_out:
-   if (diskHandle) {
-      VixDiskLib_Close(diskHandle);
-      diskHandle = NULL;
+   if (read_diskHandle) {
+      VixDiskLib_Close(read_diskHandle);
+      read_diskHandle = NULL;
    }
 
    return retval;
@@ -1241,9 +1287,9 @@ static inline bool process_restore_stream(bool validate_only, json_t *value)
    struct runtime_cbt_encoding rce;
 
    if (!create_disk && !validate_only) {
-      do_vixdisklib_open(DISK_PARAMS_KEY, value, false);
+      do_vixdisklib_open(DISK_PARAMS_KEY, vmdk_disk_name, value, false, true, &write_diskHandle);
 
-      if (!diskHandle) {
+      if (!write_diskHandle) {
          fprintf(stderr, "Cannot process restore data as no VixDiskLib disk handle opened\n");
          goto bail_out;
       }
@@ -1342,9 +1388,9 @@ static inline bool process_restore_stream(bool validate_only, json_t *value)
    retval = true;
 
 bail_out:
-   if (diskHandle) {
-      VixDiskLib_Close(diskHandle);
-      diskHandle = NULL;
+   if (write_diskHandle) {
+      VixDiskLib_Close(write_diskHandle);
+      write_diskHandle = NULL;
    }
 
    return retval;
@@ -1385,6 +1431,7 @@ static inline void process_json_work_file(const char *json_work_file)
 static inline bool dump_vmdk_stream(const char *json_work_file)
 {
    json_t *value;
+   uint64_t absolute_disk_length = 0;
 
    process_json_work_file(json_work_file);
 
@@ -1406,7 +1453,7 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
       exit(1);
    }
 
-   do_vixdisklib_open(DISK_PARAMS_KEY, value, true);
+   do_vixdisklib_open(DISK_PARAMS_KEY, NULL, value, true, true, &read_diskHandle);
 
    value = json_object_get(json_config, CBT_DISKCHANGEINFO_KEY);
    if (!value) {
@@ -1424,14 +1471,29 @@ static inline bool dump_vmdk_stream(const char *json_work_file)
       }
    }
 
-   if (!save_disk_info(CBT_DISKCHANGEINFO_KEY, value)) {
+   if (!save_disk_info(CBT_DISKCHANGEINFO_KEY, value, &absolute_disk_length)) {
       exit(1);
+   }
+
+   /*
+    * See if we are requested to clone the content to a new VMDK.
+    * save_disk_info() initializes absolute_disk_length.
+    */
+   if (vmdk_disk_name) {
+      if (create_disk) {
+         do_vixdisklib_create(NULL, vmdk_disk_name, value, absolute_disk_length);
+      }
+
+      do_vixdisklib_open(NULL, vmdk_disk_name, value, false, false, &write_diskHandle);
    }
 
    if (!save_meta_data()) {
       exit(1);
    }
 
+   /*
+    * See if we are requested to clone the content to a rawdevice.
+    */
    if (raw_disk_name) {
       if (verbose) {
          fprintf(stderr, "Log: RAWFILE: Trying to open RAW file\n");
