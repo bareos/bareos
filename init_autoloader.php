@@ -60,8 +60,8 @@ try {
          Unable to load Zend Framework 2.<br /><br />
          Please install Zend Framework 2 package from your distribution repository.<br />
          If Zend Framework 2 is already installed, please set the include_path in your php.ini or<br />
-         define a ZF2_PATH environment variable in your apache configuration file and do not forget<br />
-         to restart your apache webserver.<br />');
+         define a ZF2_PATH environment variable in your apache configuration file and/or do not forget<br />
+         to restart your webserver.<br />');
    }
 }
 catch(Exception $e) {
