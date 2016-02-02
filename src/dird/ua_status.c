@@ -1432,7 +1432,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
       return;
    }
 
-   vol_list = get_vol_list_from_SD(ua, store, true /* listall */ , true /* want to see all slots */);
+   vol_list = get_vol_list_from_storage(ua, store, true /* listall */ , true /* want to see all slots */);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
@@ -1531,7 +1531,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
 
 bail_out:
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    close_sd_bsock(ua);
 
@@ -1548,7 +1548,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
       return;
    }
 
-   vol_list = get_vol_list_from_SD(ua, store, true /* listall */ , true /* want to see all slots */);
+   vol_list = get_vol_list_from_storage(ua, store, true /* listall */ , true /* want to see all slots */);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
@@ -1663,7 +1663,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
 
 bail_out:
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    close_sd_bsock(ua);
 
@@ -1673,16 +1673,16 @@ bail_out:
 /*
  * Print slots from AutoChanger
  */
-static void status_slots(UAContext *ua, STORERES *store_r)
+static void status_slots(UAContext *ua, STORERES *store)
 {
-   USTORERES store;
    POOL_DBR pr;
+   MEDIA_DBR mr;
+   int max_slots;
+   char *slot_list;
    vol_list_t *vl1, *vl2;
    dlist *vol_list = NULL;
-   MEDIA_DBR mr;
-   char *slot_list;
-   int max_slots;
    bool is_loaded_in_drive;
+
    /*
     * Slot | Volume | Status | MediaType | Pool
     */
@@ -1694,11 +1694,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
 
    memset(&mr, 0, sizeof(mr));
 
-   store.store = store_r;
-   pm_strcpy(store.store_source, _("command line"));
-   set_wstorage(ua->jcr, &store);
-
-   max_slots = get_num_slots_from_SD(ua);
+   max_slots = get_num_slots(ua, store);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer to scan.\n"));
       return;
@@ -1711,7 +1707,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
       return;
    }
 
-   vol_list = get_vol_list_from_SD(ua, store.store, true /* listall */ , true /* want to see all slots */);
+   vol_list = get_vol_list_from_storage(ua, store, true /* listall */ , true /* want to see all slots */);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
@@ -1852,7 +1848,7 @@ static void status_slots(UAContext *ua, STORERES *store_r)
 
 bail_out:
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    free(slot_list);
    close_sd_bsock(ua);

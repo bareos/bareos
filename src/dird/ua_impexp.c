@@ -332,15 +332,15 @@ static inline dlist *scan_slots_for_volnames(UAContext *ua,
     * the volumes in the autochanger e.g. volumes in drives
     * being put back into slots etc we rescan the changer.
     */
-   new_vol_list = get_vol_list_from_SD(ua,
-                                       store,
-                                       true /* listall */,
-                                       true /* want to see all slots */);
+   new_vol_list = get_vol_list_from_storage(ua,
+                                            store,
+                                            true /* listall */,
+                                            true /* want to see all slots */);
    if (!new_vol_list) {
       /*
        * Free the old vol_list and return a NULL vol_list.
        */
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
       return NULL;
    }
 
@@ -449,7 +449,7 @@ static inline dlist *scan_slots_for_volnames(UAContext *ua,
    /*
     * Free the old vol_list and return the new data.
     */
-   free_vol_list(vol_list);
+   storage_free_vol_list(vol_list);
    return new_vol_list;
 }
 
@@ -1050,7 +1050,7 @@ static bool perform_move_operation(UAContext *ua, enum e_move_op operation)
     * Get the number of slots in the autochanger for
     * sizing the slot lists.
     */
-   max_slots = get_num_slots_from_SD(ua);
+   max_slots = get_num_slots(ua, store.store);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer.\n"));
       return retval;
@@ -1060,10 +1060,10 @@ static bool perform_move_operation(UAContext *ua, enum e_move_op operation)
     * Get the current content of the autochanger for
     * validation and selection purposes.
     */
-   vol_list = get_vol_list_from_SD(ua,
-                                   store.store,
-                                   true /* listall */,
-                                   true /* want to see all slots */);
+   vol_list = get_vol_list_from_storage(ua,
+                                        store.store,
+                                        true /* listall */,
+                                        true /* want to see all slots */);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found, or no barcodes.\n"));
       goto bail_out;
@@ -1328,7 +1328,7 @@ bail_out:
    close_sd_bsock(ua);
 
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    if (src_slot_list) {
       free(src_slot_list);

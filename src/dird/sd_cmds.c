@@ -231,10 +231,10 @@ static int compare_vol_list_entry(void *e1, void *e2)
 
 /*
  * We get the slot list from the Storage daemon.
- *  If listall is set we run an 'autochanger listall' cmd
- *  otherwise an 'autochanger list' cmd
- *  If scan is set and listall is not, we return all slots found,
- *  otherwise, we return only slots with valid barcodes (Volume names)
+ * If listall is set we run an 'autochanger listall' cmd
+ * otherwise an 'autochanger list' cmd
+ * If scan is set and listall is not, we return all slots found,
+ * otherwise, we return only slots with valid barcodes (Volume names)
  *
  * Input (output of mxt-changer list):
  *
@@ -259,7 +259,7 @@ static int compare_vol_list_entry(void *e1, void *e2)
  *
  * If a drive is loaded, the slot *should* be empty
  */
-dlist *get_vol_list_from_SD(UAContext *ua, STORERES *store, bool listall, bool scan)
+dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan)
 {
    int nr_fields;
    char *bp;
@@ -536,30 +536,13 @@ parse_error:
 }
 
 /*
- * Destroy the volume list returned from get_vol_list_from_SD
- */
-void free_vol_list(dlist *vol_list)
-{
-   vol_list_t *vl;
-
-   foreach_dlist(vl, vol_list) {
-      if (vl->VolName) {
-         free(vl->VolName);
-      }
-   }
-   vol_list->destroy();
-   delete vol_list;
-}
-
-/*
  * We get the number of slots in the changer from the SD
  */
-int get_num_slots_from_SD(UAContext *ua)
+int native_get_num_slots(UAContext *ua, STORERES *store)
 {
-   STORERES *store = ua->jcr->res.wstore;
-   char dev_name[MAX_NAME_LENGTH];
    BSOCK *sd;
    int slots = 0;
+   char dev_name[MAX_NAME_LENGTH];
 
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
@@ -587,12 +570,11 @@ int get_num_slots_from_SD(UAContext *ua)
 /*
  * We get the number of drives in the changer from the SD
  */
-int get_num_drives_from_SD(UAContext *ua)
+int native_get_num_drives(UAContext *ua, STORERES *store)
 {
-   STORERES *store = ua->jcr->res.wstore;
-   char dev_name[MAX_NAME_LENGTH];
    BSOCK *sd;
    int drives = 0;
+   char dev_name[MAX_NAME_LENGTH];
 
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
@@ -815,7 +797,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
  * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
-bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
+bool native_transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 {
    BSOCK *sd = NULL;
    bool retval = true;
@@ -861,8 +843,8 @@ bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
 /*
  * Ask the autochanger to perform a mount, umount or release operation.
  */
-bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
-                                     const char *operation, int drive, int slot)
+bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
+                                         const char *operation, int drive, int slot)
 {
    BSOCK *sd = NULL;
    bool retval = true;

@@ -1180,24 +1180,21 @@ int get_storage_drive(UAContext *ua, STORERES *store)
    if (i >= 0) {
       drive = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
-      /*
-       * If our structure is not set ask SD for # drives
-       */
-      if (store->drives == 0) {
-         store->drives = get_num_drives_from_SD(ua);
-      }
+      int drives;
+
+      drives = get_num_drives(ua, store);
 
       /*
        * If only one drive, default = 0
        */
-      if (store->drives == 1) {
+      if (drives == 1) {
          drive = 0;
       } else {
          /*
           * Ask user to enter drive number
           */
          start_prompt(ua, _("Select Drive:\n"));
-         for (cnt = 0; cnt < store->drives; cnt++) {
+         for (cnt = 0; cnt < drives; cnt++) {
             bsnprintf(drivename, sizeof(drivename), "Drive %d", cnt);
             add_prompt(ua, drivename);
          }

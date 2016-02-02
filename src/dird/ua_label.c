@@ -359,7 +359,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
 
    memset(&mr, 0, sizeof(mr));
 
-   max_slots = get_num_slots_from_SD(ua);
+   max_slots = get_num_slots(ua, store);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer to scan.\n"));
       return;
@@ -371,7 +371,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       goto bail_out;
    }
 
-   vol_list = get_vol_list_from_SD(ua, store, false /* no listall */ , false /*no scan*/);
+   vol_list = get_vol_list_from_storage(ua, store, false /* no listall */ , false /*no scan*/);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found to label, or no barcodes.\n"));
       goto bail_out;
@@ -480,7 +480,7 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
 bail_out:
    free(slot_list);
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    close_sd_bsock(ua);
 

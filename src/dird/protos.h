@@ -143,19 +143,6 @@ bool cancel_job(UAContext *ua, JCR *jcr);
 void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run);
 void init_jcr_job_record(JCR *jcr);
 void update_job_end(JCR *jcr, int TermCode);
-void copy_rwstorage(JCR *jcr, alist *storage, const char *where);
-void set_rwstorage(JCR *jcr, USTORERES *store);
-void free_rwstorage(JCR *jcr);
-void copy_wstorage(JCR *jcr, alist *storage, const char *where);
-void set_wstorage(JCR *jcr, USTORERES *store);
-void free_wstorage(JCR *jcr);
-void copy_rstorage(JCR *jcr, alist *storage, const char *where);
-void set_rstorage(JCR *jcr, USTORERES *store);
-void free_rstorage(JCR *jcr);
-bool select_next_rstore(JCR *jcr, bootstrap_info &info);
-void set_paired_storage(JCR *jcr);
-void free_paired_storage(JCR *jcr);
-bool has_paired_storage(JCR *jcr);
 bool setup_job(JCR *jcr, bool suppress_output = false);
 void create_clones(JCR *jcr);
 int create_restore_bootstrap_file(JCR *jcr);
@@ -209,8 +196,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
                                 const char *unwanted_volumes, bool create, bool purge);
 bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr);
 void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **reason);
-bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
-        STORERES *store);
+bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store);
 
 /* newvol.c */
 bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store);
@@ -232,17 +218,16 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
 BSOCK *open_sd_bsock(UAContext *ua);
 void close_sd_bsock(UAContext *ua);
 char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive);
-dlist *get_vol_list_from_SD(UAContext *ua, STORERES *store, bool listall, bool scan);
-void free_vol_list(dlist *vol_list);
-int get_num_slots_from_SD(UAContext *ua);
-int get_num_drives_from_SD(UAContext *ua);
+dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan);
+int native_get_num_slots(UAContext *ua, STORERES *store );
+int native_get_num_drives(UAContext *ua, STORERES *store );
 bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId);
 bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive = true);
 void cancel_storage_daemon_job(JCR *jcr);
 void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd);
-bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot);
-bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
-                                     const char *operation, int drive, int slot);
+bool native_transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot);
+bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
+                                         const char *operation, int drive, int slot);
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
 bool send_secure_erase_req_to_sd(JCR *jcr);
 bool do_storage_resolve(UAContext *ua, STORERES *store);
@@ -261,6 +246,33 @@ void stop_socket_server();
 int start_statistics_thread(void);
 void stop_statistics_thread();
 void stats_job_started();
+
+/* storage.c */
+void copy_rwstorage(JCR *jcr, alist *storage, const char *where);
+void set_rwstorage(JCR *jcr, USTORERES *store);
+void free_rwstorage(JCR *jcr);
+void copy_wstorage(JCR *jcr, alist *storage, const char *where);
+void set_wstorage(JCR *jcr, USTORERES *store);
+void free_wstorage(JCR *jcr);
+void copy_rstorage(JCR *jcr, alist *storage, const char *where);
+void set_rstorage(JCR *jcr, USTORERES *store);
+void free_rstorage(JCR *jcr);
+void set_paired_storage(JCR *jcr);
+void free_paired_storage(JCR *jcr);
+bool has_paired_storage(JCR *jcr);
+bool select_next_rstore(JCR *jcr, bootstrap_info &info);
+void storage_status(UAContext *ua, STORERES *store, char *cmd);
+int storage_compare_vol_list_entry(void *e1, void *e2);
+dlist *get_vol_list_from_storage(UAContext *ua, STORERES *store, bool listall, bool scan);
+int get_num_slots(UAContext *ua, STORERES *store);
+int get_num_drives(UAContext *ua, STORERES *store);
+bool transfer_volume(UAContext *ua, STORERES *store,
+                     int src_slot, int dst_slot);
+bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
+                                     const char *operation,
+                                     int drive, int slot);
+vol_list_t *vol_is_loaded_in_drive(STORERES *store, dlist *vol_list, int slot);
+void storage_free_vol_list(dlist *vol_list);
 
 /* ua_acl.c */
 bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);

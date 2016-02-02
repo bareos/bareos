@@ -1032,7 +1032,7 @@ static void update_slots(UAContext *ua)
       have_enabled = false;
    }
 
-   max_slots = get_num_slots_from_SD(ua);
+   max_slots = get_num_slots(ua, store.store);
    Dmsg1(100, "max_slots=%d\n", max_slots);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer to scan.\n"));
@@ -1046,7 +1046,7 @@ static void update_slots(UAContext *ua)
       return;
    }
 
-   vol_list = get_vol_list_from_SD(ua, store.store, false, scan);
+   vol_list = get_vol_list_from_storage(ua, store.store, false, scan);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found to update, or no barcodes.\n"));
       goto bail_out;
@@ -1166,7 +1166,7 @@ static void update_slots(UAContext *ua)
 
 bail_out:
    if (vol_list) {
-      free_vol_list(vol_list);
+      storage_free_vol_list(vol_list);
    }
    free(slot_list);
    close_sd_bsock(ua);

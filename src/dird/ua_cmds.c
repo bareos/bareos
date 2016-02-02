@@ -2167,7 +2167,7 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
    if (!do_alldrives) {
       do_autochanger_volume_operation(ua, store.store, cmd, drive, slot);
    } else {
-      nr_drives = get_num_drives_from_SD(ua);
+      nr_drives = get_num_drives(ua, store.store);
       for (i = 0; i < nr_drives; i++) {
          do_autochanger_volume_operation(ua, store.store, cmd, i, slot);
       }
