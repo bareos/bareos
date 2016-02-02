@@ -237,7 +237,7 @@ bool do_verify(JCR *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL, /* send_bsr */ true)) {
+      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
          return false;
       }
 

@@ -167,7 +167,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL)) {
+      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL)) {
          goto bail_out;
       }
 

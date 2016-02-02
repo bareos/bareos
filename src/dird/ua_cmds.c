@@ -415,8 +415,8 @@ bool do_a_command(UAContext *ua)
       return false;
    }
 
-   while (ua->jcr->wstorage->size()) {
-      ua->jcr->wstorage->remove(0);
+   while (ua->jcr->res.wstorage->size()) {
+      ua->jcr->res.wstorage->remove(0);
    }
 
    len = strlen(ua->argk[0]);

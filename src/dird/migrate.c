@@ -335,8 +335,8 @@ static inline bool same_storage(JCR *jcr)
 {
    STORERES *read_store, *write_store;
 
-   read_store = (STORERES *)jcr->rstorage->first();
-   write_store = (STORERES *)jcr->wstorage->first();
+   read_store = (STORERES *)jcr->res.rstorage->first();
+   write_store = (STORERES *)jcr->res.wstorage->first();
 
    if (!read_store->autochanger && !write_store->autochanger &&
        bstrcmp(read_store->name(), write_store->name())) {
@@ -1235,7 +1235,7 @@ bool do_migration_init(JCR *jcr)
        * Get the storage that was used for the original Job.
        * This only happens when the original pool used doesn't have an explicit storage.
        */
-      if (!jcr->rstorage) {
+      if (!jcr->res.rstorage) {
          copy_rstorage(jcr, prev_job->storage, _("previous Job"));
       }
 
@@ -1325,8 +1325,8 @@ static inline bool do_actual_migration(JCR *jcr)
    }
 
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
-         ((STORERES *)jcr->rstorage->first())->name(),
-         ((STORERES *)jcr->wstorage->first())->name());
+         ((STORERES *)jcr->res.rstorage->first())->name(),
+         ((STORERES *)jcr->res.wstorage->first())->name());
 
    if (!jcr->remote_replicate) {
       /*
@@ -1347,7 +1347,7 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Now start a job with the Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
+      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
          free_paired_storage(jcr);
          return false;
       }
@@ -1387,9 +1387,9 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Swap the wstorage between the jcr and the mig_jcr.
        */
-      wstorage = mig_jcr->wstorage;
-      mig_jcr->wstorage = jcr->wstorage;
-      jcr->wstorage = wstorage;
+      wstorage = mig_jcr->res.wstorage;
+      mig_jcr->res.wstorage = jcr->res.wstorage;
+      jcr->res.wstorage = wstorage;
 
       /*
        * Start conversation with Reading Storage daemon
@@ -1415,7 +1415,7 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Now start a job with the Reading Storage daemon
        */
-      if (!start_storage_daemon_job(jcr, jcr->rstorage, NULL, /* send_bsr */ true)) {
+      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, NULL, /* send_bsr */ true)) {
          goto bail_out;
       }
 
@@ -1424,7 +1424,7 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Now start a job with the Writing Storage daemon
        */
-      if (!start_storage_daemon_job(mig_jcr, NULL, mig_jcr->wstorage, /* send_bsr */ false)) {
+      if (!start_storage_daemon_job(mig_jcr, NULL, mig_jcr->res.wstorage, /* send_bsr */ false)) {
          goto bail_out;
       }
 
@@ -1574,9 +1574,9 @@ bail_out:
       /*
        * Swap the wstorage between the jcr and the mig_jcr.
        */
-      wstorage = mig_jcr->wstorage;
-      mig_jcr->wstorage = jcr->wstorage;
-      jcr->wstorage = wstorage;
+      wstorage = mig_jcr->res.wstorage;
+      mig_jcr->res.wstorage = jcr->res.wstorage;
+      jcr->res.wstorage = wstorage;
 
       /*
        * Undo the clear of the wstore in the jcr and assign the mig_jcr wstore

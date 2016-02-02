@@ -153,20 +153,20 @@ bool do_native_vbackup(JCR *jcr)
    char *p;
    db_list_ctx jobids;
 
-   if (!jcr->rstorage) {
+   if (!jcr->res.rstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
       return false;
    }
 
-   if (!jcr->wstorage) {
+   if (!jcr->res.wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No storage for writing given.\n"));
       return false;
    }
 
-   Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->rstorage, jcr->wstorage);
+   Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->res.rstorage, jcr->res.wstorage);
    Dmsg2(100, "Read store=%s, write store=%s\n",
-      ((STORERES *)jcr->rstorage->first())->name(),
-      ((STORERES *)jcr->wstorage->first())->name());
+      ((STORERES *)jcr->res.rstorage->first())->name(),
+      ((STORERES *)jcr->res.wstorage->first())->name());
 
    /*
     * Print Job Start message
@@ -233,7 +233,7 @@ bool do_native_vbackup(JCR *jcr)
    /*
     * Now start a job with the Storage daemon
     */
-   if (!start_storage_daemon_job(jcr, jcr->rstorage, jcr->wstorage, /* send_bsr */ true)) {
+   if (!start_storage_daemon_job(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
       return false;
    }
    Dmsg0(100, "Storage daemon connection OK\n");

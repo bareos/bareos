@@ -71,7 +71,7 @@ static inline bool validate_storage(JCR *jcr)
 {
    STORERES *store;
 
-   foreach_alist(store, jcr->wstorage) {
+   foreach_alist(store, jcr->res.wstorage) {
       switch (store->Protocol) {
       case APT_NATIVE:
          continue;
@@ -105,8 +105,7 @@ bool do_native_backup_init(JCR *jcr)
     * If pool storage specified, use it instead of job storage
     */
    copy_wstorage(jcr, jcr->res.pool->storage, _("Pool resource"));
-
-   if (!jcr->wstorage) {
+   if (!jcr->res.wstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No Storage specification found in Job or Pool.\n"));
       return false;
    }
@@ -392,7 +391,7 @@ bool do_native_backup(JCR *jcr)
    /*
     * Now start a job with the Storage daemon
     */
-   if (!start_storage_daemon_job(jcr, NULL, jcr->wstorage)) {
+   if (!start_storage_daemon_job(jcr, NULL, jcr->res.wstorage)) {
       return false;
    }
 

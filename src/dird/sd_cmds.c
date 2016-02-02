@@ -661,14 +661,14 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
    BSOCK *sd;
    USTORERES store;
 
-   if (!ua->jcr->wstorage) {
-      if (jcr->rstorage) {
-         copy_wstorage(ua->jcr, jcr->rstorage, _("Job resource"));
+   if (!ua->jcr->res.wstorage) {
+      if (jcr->res.rstorage) {
+         copy_wstorage(ua->jcr, jcr->res.rstorage, _("Job resource"));
       } else {
-         copy_wstorage(ua->jcr, jcr->wstorage, _("Job resource"));
+         copy_wstorage(ua->jcr, jcr->res.wstorage, _("Job resource"));
       }
    } else {
-      if (jcr->rstorage) {
+      if (jcr->res.rstorage) {
          store.store = jcr->res.rstore;
       } else {
          store.store = jcr->res.wstore;

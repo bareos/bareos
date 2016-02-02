@@ -763,12 +763,12 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
          njcr->JobStatus = -1;
          njcr->setJobStatus(jcr->JobStatus);
          if (jcr->res.rstore) {
-            copy_rstorage(njcr, jcr->rstorage, _("previous Job"));
+            copy_rstorage(njcr, jcr->res.rstorage, _("previous Job"));
          } else {
             free_rstorage(njcr);
          }
          if (jcr->res.wstore) {
-            copy_wstorage(njcr, jcr->wstorage, _("previous Job"));
+            copy_wstorage(njcr, jcr->res.wstorage, _("previous Job"));
          } else {
             free_wstorage(njcr);
          }

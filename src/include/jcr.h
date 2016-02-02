@@ -233,6 +233,9 @@ struct RESOURCES {
    POOLMEM *rstore_source;                /* Where read storage came from */
    POOLMEM *wstore_source;                /* Where write storage came from */
    POOLMEM *catalog_source;               /* Where catalog came from */
+   alist *rstorage;                       /* Read storage possibilities */
+   alist *wstorage;                       /* Write storage possibilities */
+   alist *pstorage;                       /* Paired storage possibilities (saved wstorage or rstorage) */
    bool run_pool_override;                /* Pool override was given on run cmdline */
    bool run_full_pool_override;           /* Full pool override was given on run cmdline */
    bool run_vfull_pool_override;          /* Virtual Full pool override was given on run cmdline */
@@ -428,9 +431,6 @@ public:
    workq_ele_t *work_item;                /* Work queue item if scheduled */
    BSOCK *ua;                             /* User agent */
    RESOURCES res;                         /* Resources assigned */
-   alist *rstorage;                       /* Read storage possibilities */
-   alist *wstorage;                       /* Write storage possibilities */
-   alist *pstorage;                       /* Paired storage possibilities (saved wstorage or rstorage) */
    TREE_ROOT *restore_tree_root;          /* Selected files to restore (some protocols need this info) */
    BSR *bsr;                              /* Bootstrap record -- has everything */
    char *backup_format;                   /* Backup format used when doing a NDMP backup */

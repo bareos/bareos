@@ -124,14 +124,14 @@ bool ndmp_validate_storage(JCR *jcr)
 {
    STORERES *store;
 
-   if (jcr->wstorage) {
-      foreach_alist(store, jcr->wstorage) {
+   if (jcr->res.wstorage) {
+      foreach_alist(store, jcr->res.wstorage) {
          if (!ndmp_validate_storage(jcr, store)) {
             return false;
          }
       }
    } else {
-      foreach_alist(store, jcr->rstorage) {
+      foreach_alist(store, jcr->res.rstorage) {
          if (!ndmp_validate_storage(jcr, store)) {
             return false;
          }
