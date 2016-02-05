@@ -5,7 +5,7 @@
  *	BerkeleyDB API, but much simplified.
  */
 /*
- * Copyright 2011-2015 Howard Chu, Symas Corp.
+ * Copyright 2011-2016 Howard Chu, Symas Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1079,7 +1079,7 @@ typedef struct MDB_db {
 	pgno_t		md_branch_pages;	/**< number of internal pages */
 	pgno_t		md_leaf_pages;		/**< number of leaf pages */
 	pgno_t		md_overflow_pages;	/**< number of overflow pages */
-	pgno_t		md_entries;		/**< number of data items */
+	mdb_size_t	md_entries;		/**< number of data items */
 	pgno_t		md_root;		/**< the root page of this tree */
 } MDB_db;
 
@@ -4036,7 +4036,7 @@ mdb_env_write_meta(MDB_txn *txn)
 		mp->mm_dbs[MAIN_DBI] = txn->mt_dbs[MAIN_DBI];
 		mp->mm_last_pg = txn->mt_next_pgno - 1;
 #if defined(__SUNPRO_C)
-                __machine_rw_barrier();
+		__machine_rw_barrier();
 #elif defined(__GNUC__)
 #if (__GNUC__ * 100 + __GNUC_MINOR__ >= 404) && /* TODO: portability */	\
 	!(defined(__i386__) || defined(__x86_64__))
@@ -5838,7 +5838,7 @@ retry:
 				if (rc)
 					goto fail;
 				if (!el[x].mref) {
-					munmap(el[x].mptr, el[x].mcnt);
+					munmap(el[x].mptr, env->me_psize * el[x].mcnt);
 					el[x].mptr = id3.mptr;
 					el[x].mcnt = id3.mcnt;
 				} else {
@@ -5890,36 +5890,15 @@ fail:
 			pthread_mutex_unlock(&env->me_rpmutex);
 			return rc;
 		}
-		/* If this page is far enough from the end of the env, scan for
-		 * any overflow pages that would spill onto another block.
-		 * Note we must compare against mt_last_pgno, the last written
-		 * page in the environment. Not mt_next_pgno, which increases
-		 * for every newly allocated (but not yet written) page. If
-		 * we scanned beyond the last written page we'd get a bus error.
-		 */
-		if (pgno + MDB_RPAGE_CHUNK <= txn->mt_last_pgno) {
-			int i;
-			char *cp = (char *)id3.mptr + rem * env->me_psize;
-			for (i=rem; i<MDB_RPAGE_CHUNK;) {
-				p = (MDB_page *)cp;
-				if (IS_OVERFLOW(p)) {
-					int nop = p->mp_pages;
-					if (nop + i > MDB_RPAGE_CHUNK) {
-						munmap(id3.mptr, len);
-						id3.mcnt = nop + i;
-						len = id3.mcnt * env->me_psize;
-						MAP(rc, env, id3.mptr, len, off);
-						if (rc)
-							goto fail;
-						break;
-					}
-					i += nop;
-					cp += nop * env->me_psize;
-				} else {
-					i++;
-					cp += env->me_psize;
-				}
-			}
+		/* check for overflow size */
+		p = (MDB_page *)((char *)id3.mptr + rem * env->me_psize);
+		if (IS_OVERFLOW(p) && p->mp_pages + rem > id3.mcnt) {
+			id3.mcnt = p->mp_pages + rem;
+			munmap(id3.mptr, len);
+			len = id3.mcnt * env->me_psize;
+			MAP(rc, env, id3.mptr, len, off);
+			if (rc)
+				goto fail;
 		}
 		mdb_mid3l_insert(el, &id3);
 		pthread_mutex_unlock(&env->me_rpmutex);
@@ -7574,7 +7553,7 @@ new_sub:
 		 */
 		if (do_sub) {
 			int xflags, new_dupdata;
-			size_t ecount;
+			mdb_size_t ecount;
 put_sub:
 			xdata.mv_size = 0;
 			xdata.mv_data = "";
@@ -8289,7 +8268,7 @@ mdb_cursor_renew(MDB_txn *txn, MDB_cursor *mc)
 
 /* Return the count of duplicate data items for the current key */
 int
-mdb_cursor_count(MDB_cursor *mc, size_t *countp)
+mdb_cursor_count(MDB_cursor *mc, mdb_size_t *countp)
 {
 	MDB_node	*leaf;
 
@@ -10149,7 +10128,7 @@ mdb_env_copy2(MDB_env *env, const char *path, unsigned int flags)
 #ifdef _WIN32
 	rc = utf8_to_utf16(lpath, -1, &wpath, NULL);
 	if (rc)
-		return rc;
+		goto leave;
 	newfd = CreateFileW(wpath, GENERIC_WRITE, 0, NULL, CREATE_NEW,
 				FILE_FLAG_NO_BUFFERING|FILE_FLAG_WRITE_THROUGH, NULL);
 	free(wpath);
