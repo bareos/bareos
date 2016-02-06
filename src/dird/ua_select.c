@@ -1170,7 +1170,6 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochanger
 int get_storage_drive(UAContext *ua, STORERES *store)
 {
    int i, drive = -1;
-   unsigned int cnt;
    char drivename[10];
 
    /*
@@ -1194,7 +1193,7 @@ int get_storage_drive(UAContext *ua, STORERES *store)
           * Ask user to enter drive number
           */
          start_prompt(ua, _("Select Drive:\n"));
-         for (cnt = 0; cnt < drives; cnt++) {
+         for (int cnt = 0; cnt < drives; cnt++) {
             bsnprintf(drivename, sizeof(drivename), "Drive %d", cnt);
             add_prompt(ua, drivename);
          }
