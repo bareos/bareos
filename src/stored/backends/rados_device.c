@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Planets Communications B.V.
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,6 +39,8 @@ enum device_option_type {
    argument_conffile,
    argument_poolname,
    argument_clientid,
+   argument_clustername,
+   argument_username,
    argument_striped,
    argument_stripe_unit,
    argument_stripe_count
@@ -53,7 +55,12 @@ struct device_option {
 static device_option device_options[] = {
    { "conffile=", argument_conffile, 9 },
    { "poolname=", argument_poolname, 9 },
+#if LIBRADOS_VERSION_CODE < 17408
    { "clientid=", argument_clientid, 9 },
+#else
+   { "clustername=", argument_clustername, 12 },
+   { "username=", argument_username, 9 },
+#endif
 #ifdef HAVE_RADOS_STRIPER
    { "striped", argument_striped, 7 },
    { "stripe_unit=", argument_stripe_unit, 11 },
@@ -102,10 +109,21 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
                   m_rados_conffile = bp + device_options[i].compare_size;
                   done = true;
                   break;
+#if LIBRADOS_VERSION_CODE < 17408
                case argument_clientid:
                   m_rados_clientid = bp + device_options[i].compare_size;
                   done = true;
                   break;
+#else
+               case argument_clustername:
+                  m_rados_clustername = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+               case argument_username:
+                  m_rados_username = bp + device_options[i].compare_size;
+                  done = true;
+                  break;
+#endif
                case argument_poolname:
                   m_rados_poolname = bp + device_options[i].compare_size;
                   done = true;
@@ -145,10 +163,20 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
+#if LIBRADOS_VERSION_CODE < 17408
       if (!m_rados_clientid) {
-         Mmsg0(errmsg, _("No client id configured defaulting to %s\n"), DEFAULT_CLIENTID);
+         Mmsg1(errmsg, _("No client id configured defaulting to %s\n"), DEFAULT_CLIENTID);
          m_rados_clientid = bstrdup(DEFAULT_CLIENTID);
       }
+#else
+      if (!m_rados_clustername) {
+         m_rados_clustername = bstrdup(DEFAULT_CLUSTERNAME);
+      }
+      if (!m_rados_username) {
+         Mmsg1(errmsg, _("No username configured defaulting to %s\n"), DEFAULT_USERNAME);
+         m_rados_username = bstrdup(DEFAULT_USERNAME);
+      }
+#endif
 
       if (!m_rados_poolname) {
          Mmsg0(errmsg, _("No rados pool configured\n"));
@@ -158,7 +186,19 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    }
 
    if (!m_cluster_initialized) {
+#if LIBRADOS_VERSION_CODE >= 17408
+      uint64_t rados_flags = 0;
+#endif
+
+      /*
+       * Use for versions lower then 0.69.1 the old rados_create() and
+       * for later version rados_create2() calls.
+       */
+#if LIBRADOS_VERSION_CODE < 17408
       status = rados_create(&m_cluster, m_rados_clientid);
+#else
+      status = rados_create2(&m_cluster, m_rados_clustername, m_rados_username, rados_flags);
+#endif
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to create RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
@@ -469,6 +509,19 @@ rados_device::~rados_device()
       m_cluster_initialized = false;
    }
 
+#if LIBRADOS_VERSION_CODE < 17408
+   if (m_rados_clientid) {
+      free(m_rados_clientid);
+   }
+#else
+   if (m_rados_clustername) {
+      free(m_rados_clustername);
+   }
+   if (m_rados_username) {
+      free(m_rados_username);
+   }
+#endif
+
    if (m_rados_configstring) {
       free(m_rados_configstring);
    }
@@ -479,7 +532,12 @@ rados_device::rados_device()
    m_rados_configstring = NULL;
    m_rados_conffile = NULL;
    m_rados_poolname = NULL;
+#if LIBRADOS_VERSION_CODE < 17408
    m_rados_clientid = NULL;
+#else
+   m_rados_clustername = NULL;
+   m_rados_username = NULL;
+#endif
    m_cluster_initialized = false;
    m_ctx = NULL;
 #ifdef HAVE_RADOS_STRIPER

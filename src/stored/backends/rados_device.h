@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Planets Communications B.V.
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,14 +34,27 @@
 #include <radosstriper/libradosstriper.h>
 #endif
 
+/*
+ * Use for versions lower then 0.68.0 of the API the old format and otherwise the new one.
+ */
+#if LIBRADOS_VERSION_CODE < 17408
 #define DEFAULT_CLIENTID "admin"
+#else
+#define DEFAULT_CLUSTERNAME "ceph"
+#define DEFAULT_USERNAME "client.admin"
+#endif
 
 class rados_device: public DEVICE {
 private:
    char *m_rados_configstring;
    char *m_rados_conffile;
    char *m_rados_poolname;
+#if LIBRADOS_VERSION_CODE < 17408
    char *m_rados_clientid;
+#else
+   char *m_rados_clustername;
+   char *m_rados_username;
+#endif
    bool m_cluster_initialized;
 #ifdef HAVE_RADOS_STRIPER
    bool m_stripe_volume;
