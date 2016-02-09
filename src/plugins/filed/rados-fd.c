@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2015 Planets Communications B.V.
-   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Planets Communications B.V.
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,13 +32,19 @@ static const int dbglvl = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
-#define PLUGIN_DATE         "February 2015"
-#define PLUGIN_VERSION      "1"
+#define PLUGIN_DATE         "February 2016"
+#define PLUGIN_VERSION      "2"
 #define PLUGIN_DESCRIPTION  "Bareos CEPH rados File Daemon Plugin"
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
-#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:clientid=<client_id>:poolname=<pool_name>:namespace=<name_space>:snapshotname=<snapshot_name>:"
+#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:namespace=<name_space>:clientid=<client_id>:clustername=<clustername>:username=<username>:snapshotname=<snapshot_name>:"
+
+/*
+ * Use for versions lower then 0.68.0 of the API the old format and otherwise the new one.
+ */
+#if LIBRADOS_VERSION_CODE < 17408
+#define DEFAULT_CLIENTID "admin"
 #else
-#define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:clientid=<client_id>:poolname=<pool_name>:snapshotname=<snapshot_name>:"
+#define DEFAULT_CLUSTERNAME "ceph"
+#define DEFAULT_USERNAME "client.admin"
 #endif
 
 /*
@@ -125,10 +131,10 @@ struct plugin_ctx {
    uint32_t JobId;
    char *rados_conffile;
    char *rados_clientid;
+   char *rados_clustername;
+   char *rados_username;
    char *rados_poolname;
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
    char *rados_namespace;
-#endif
    char *rados_snapshotname;
    bool cluster_initialized;
    const char *object_name;
@@ -151,9 +157,9 @@ enum plugin_argument_type {
    argument_conffile,
    argument_poolname,
    argument_clientid,
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
+   argument_clustername,
+   argument_username,
    argument_namespace,
-#endif
    argument_snapshotname
 };
 
@@ -166,9 +172,9 @@ static plugin_argument plugin_arguments[] = {
    { "conffile", argument_conffile },
    { "poolname", argument_poolname },
    { "clientid", argument_clientid },
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
+   { "clustername", argument_clustername },
+   { "username", argument_username },
    { "namespace", argument_namespace },
-#endif
    { "snapshotname", argument_snapshotname },
    { NULL, argument_none }
 };
@@ -272,11 +278,9 @@ static bRC freePlugin(bpContext *ctx)
       free(p_ctx->rados_snapshotname);
    }
 
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
    if (p_ctx->rados_namespace) {
       free(p_ctx->rados_namespace);
    }
-#endif
 
    if (p_ctx->rados_poolname) {
       free(p_ctx->rados_poolname);
@@ -284,6 +288,14 @@ static bRC freePlugin(bpContext *ctx)
 
    if (p_ctx->rados_clientid) {
       free(p_ctx->rados_clientid);
+   }
+
+   if (p_ctx->rados_clustername) {
+      free(p_ctx->rados_clustername);
+   }
+
+   if (p_ctx->rados_username) {
+      free(p_ctx->rados_username);
    }
 
    if (p_ctx->rados_conffile) {
@@ -657,14 +669,18 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
             case argument_clientid:
                str_destination = &p_ctx->rados_clientid;
                break;
+            case argument_clustername:
+               str_destination = &p_ctx->rados_clustername;
+               break;
+            case argument_username:
+               str_destination = &p_ctx->rados_username;
+               break;
             case argument_poolname:
                str_destination = &p_ctx->rados_poolname;
                break;
-#if defined(HAVE_RADOS_NAMESPACES) && defined(LIBRADOS_ALL_NSPACES)
             case argument_namespace:
                str_destination = &p_ctx->rados_namespace;
                break;
-#endif
             case argument_snapshotname:
                str_destination = &p_ctx->rados_snapshotname;
                break;
@@ -714,13 +730,42 @@ bail_out:
 static bRC connect_to_rados(bpContext *ctx)
 {
    int status;
+#if LIBRADOS_VERSION_CODE >= 17408
+   uint64_t rados_flags = 0;
+#endif
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    /*
     * See if we need to initialize the cluster connection.
     */
    if (!p_ctx->cluster_initialized) {
+#if LIBRADOS_VERSION_CODE < 17408
+      if (!p_ctx->rados_clientid) {
+         p_ctx->rados_clientid = bstrdup(DEFAULT_CLIENTID);
+      }
+
       status = rados_create(&p_ctx->cluster, p_ctx->rados_clientid);
+#else
+      if (!p_ctx->rados_clustername) {
+         p_ctx->rados_clustername = bstrdup(DEFAULT_CLUSTERNAME);
+      }
+
+      if (!p_ctx->rados_username) {
+         /*
+          * See if this uses the old clientid.
+          */
+         if (p_ctx->rados_clientid) {
+            POOL_MEM temp;
+
+            Mmsg(temp, "client.%s", p_ctx->rados_clientid);
+            p_ctx->rados_username = bstrdup(temp.c_str());
+         } else {
+            p_ctx->rados_username = bstrdup(DEFAULT_USERNAME);
+         }
+      }
+
+      status = rados_create2(&p_ctx->cluster, p_ctx->rados_clustername, p_ctx->rados_username, rados_flags);
+#endif
       if (status < 0) {
          berrno be;
 
