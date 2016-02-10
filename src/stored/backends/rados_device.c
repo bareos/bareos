@@ -63,8 +63,8 @@ static device_option device_options[] = {
 #endif
 #ifdef HAVE_RADOS_STRIPER
    { "striped", argument_striped, 7 },
-   { "stripe_unit=", argument_stripe_unit, 11 },
-   { "stripe_count=", argument_stripe_count, 12 },
+   { "stripe_unit=", argument_stripe_unit, 12 },
+   { "stripe_count=", argument_stripe_count, 13 },
 #endif
    { NULL, argument_none }
 };
