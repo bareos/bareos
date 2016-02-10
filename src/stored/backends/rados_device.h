@@ -77,7 +77,13 @@ private:
     */
    ssize_t read_object_data(boffset_t offset, char *buffer, size_t count);
    ssize_t write_object_data(boffset_t offset, char *buffer, size_t count);
+#ifdef HAVE_RADOS_STRIPER
+   ssize_t striper_volume_size();
+#endif
    ssize_t volume_size();
+#ifdef HAVE_RADOS_STRIPER
+   bool truncate_striper_volume(DCR *dcr);
+#endif
    bool truncate_volume(DCR *dcr);
 
 public:

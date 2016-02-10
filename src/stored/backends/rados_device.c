@@ -263,7 +263,15 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    /*
     * See if the object already exists.
     */
+#ifdef HAVE_RADOS_STRIPER
+   if (m_stripe_volume) {
+      status = rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime);
+   } else {
+      status = rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime);
+   }
+#else
    status = rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime);
+#endif
 
    /*
     * See if the O_CREAT flag is set.
@@ -278,8 +286,8 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
              */
 #ifdef HAVE_RADOS_STRIPER
             if (m_stripe_volume) {
-               rados_striper_write(m_ctx, m_virtual_filename, " ", 1, 0);
-               rados_striper_trunc(m_ctx, m_virtual_filename, 0);
+               rados_striper_write(m_striper, m_virtual_filename, " ", 1, 0);
+               rados_striper_trunc(m_striper, m_virtual_filename, 0);
             } else {
 #endif
                rados_write(m_ctx, m_virtual_filename, " ", 1, 0);
@@ -319,7 +327,7 @@ bail_out:
 ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t count)
 {
 #ifdef HAVE_RADOS_STRIPER
-   if (m_striper) {
+   if (m_stripe_volume) {
       return rados_striper_read(m_striper, m_virtual_filename, buffer, count, offset);
    } else {
 #endif
@@ -429,6 +437,20 @@ int rados_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
+#ifdef HAVE_RADOS_STRIPER
+ssize_t rados_device::striper_volume_size()
+{
+   uint64_t object_size;
+   time_t object_mtime;
+
+   if (rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime) == 0) {
+      return object_size;
+   } else {
+      return -1;
+   }
+}
+#endif
+
 ssize_t rados_device::volume_size()
 {
    uint64_t object_size;
@@ -453,7 +475,16 @@ boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
    case SEEK_END: {
       ssize_t filesize;
 
+#ifdef HAVE_RADOS_STRIPER
+      if (m_stripe_volume) {
+         filesize = striper_volume_size();
+      } else {
+         filesize = volume_size();
+      }
+#else
       filesize = volume_size();
+#endif
+
       if (filesize >= 0) {
          m_offset = filesize + offset;
       } else {
@@ -468,6 +499,42 @@ boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
    return m_offset;
 }
 
+#ifdef HAVE_RADOS_STRIPER
+bool rados_device::truncate_striper_volume(DCR *dcr)
+{
+   int status;
+   uint64_t object_size;
+   time_t object_mtime;
+   berrno be;
+
+   status = rados_striper_trunc(m_striper, m_virtual_filename, 0);
+   if (status < 0) {
+      Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
+      Emsg0(M_FATAL, 0, errmsg);
+      return false;
+   }
+
+   status = rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime);
+   if (status < 0) {
+      Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+      Dmsg1(100, "%s", errmsg);
+      return false;
+   }
+
+   if (object_size != 0) { /* rados_trunc() didn't work. */
+      status = rados_striper_remove(m_striper, m_virtual_filename);
+      if (status < 0) {
+         Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+         Dmsg1(100, "%s", errmsg);
+         return false;
+      }
+   }
+
+   m_offset = 0;
+   return true;
+}
+#endif
+
 bool rados_device::truncate_volume(DCR *dcr)
 {
    int status;
@@ -475,16 +542,7 @@ bool rados_device::truncate_volume(DCR *dcr)
    time_t object_mtime;
    berrno be;
 
-#ifdef HAVE_RADOS_STRIPER
-   if (m_stripe_volume) {
-      status = rados_striper_trunc(m_ctx, m_virtual_filename, 0);
-   } else {
-#endif
-      status = rados_trunc(m_ctx, m_virtual_filename, 0);
-#ifdef HAVE_RADOS_STRIPER
-   }
-#endif
-
+   status = rados_trunc(m_ctx, m_virtual_filename, 0);
    if (status < 0) {
       Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
       Emsg0(M_FATAL, 0, errmsg);
@@ -514,7 +572,15 @@ bool rados_device::truncate_volume(DCR *dcr)
 bool rados_device::d_truncate(DCR *dcr)
 {
    if (m_ctx) {
+#ifdef HAVE_RADOS_STRIPER
+      if (m_stripe_volume) {
+         return truncate_striper_volume(dcr);
+      } else {
+         return truncate_volume(dcr);
+      }
+#else
       return truncate_volume(dcr);
+#endif
    }
 
    return true;
