@@ -46,6 +46,9 @@
 
 class rados_device: public DEVICE {
 private:
+   /*
+    * Private Members
+    */
    char *m_rados_configstring;
    char *m_rados_conffile;
    char *m_rados_poolname;
@@ -67,8 +70,20 @@ private:
    rados_striper_t m_striper;
 #endif
    boffset_t m_offset;
+   POOLMEM *m_virtual_filename;
+
+   /*
+    * Private Methods
+    */
+   ssize_t read_object_data(boffset_t offset, char *buffer, size_t count);
+   ssize_t write_object_data(boffset_t offset, char *buffer, size_t count);
+   ssize_t volume_size();
+   bool truncate_volume(DCR *dcr);
 
 public:
+   /*
+    * Public Methods
+    */
    rados_device();
    ~rados_device();
 
