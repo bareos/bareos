@@ -134,7 +134,7 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
                   done = true;
                   break;
                case argument_stripe_unit:
-                  m_stripe_unit = size_to_uint64(bp + device_options[i].compare_size);
+                  size_to_uint64(bp + device_options[i].compare_size, &m_stripe_unit);
                   done = true;
                   break;
                case argument_stripe_count:
