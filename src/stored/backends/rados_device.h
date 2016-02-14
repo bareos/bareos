@@ -61,7 +61,7 @@ private:
    bool m_cluster_initialized;
 #ifdef HAVE_RADOS_STRIPER
    bool m_stripe_volume;
-   uint32_t m_stripe_unit;
+   uint64_t m_stripe_unit;
    uint32_t m_stripe_count;
 #endif
    rados_t m_cluster;
