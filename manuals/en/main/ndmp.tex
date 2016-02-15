@@ -719,7 +719,9 @@ original file name &  where &  restored file \\
 \index[general]{Copy!NDMP}
 \index[general]{NDMP!Copy jobs}
 
-To be able to do copy jobs, we need to have a second storage where we can copy the data to.
+To be able to do copy jobs, we need to have a second storage resource where we can copy the data to.
+Depending on your requirements, this resource can be added to the existing \bareosSd (e.g. \resourcename{autochanger-0} for tape based backups) or to an additional \bareosSd.
+
 We set up an additional \bareosSd on a host named \host{bareos-sd2.example.com}
 with the default \resourcename{FileStorage} device.
 
