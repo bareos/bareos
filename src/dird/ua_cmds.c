@@ -137,7 +137,7 @@ static struct cmdstruct commands[] = {
    { NT_("import"), import_cmd, _("Import volumes from import/export slots to normal slots"),
      NT_("storage=<storage-name> [ srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
    { NT_("label"), label_cmd, _("Label a tape"),
-     NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ barcodes ] [ encrypt ]"), false, true },
+     NT_("storage=<storage-name> volume=<volume-name> pool=<pool-name> slot=<slot> [ drive = <drivenum>] [ barcodes ] [ encrypt ] [ yes ]"), false, true },
    { NT_("list"), list_cmd, _("List objects from catalog"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] |\n"
@@ -188,7 +188,7 @@ static struct cmdstruct commands[] = {
    { NT_("memory"), memory_cmd, _("Print current memory usage"),
      NT_(""), true, false },
    { NT_("mount"), mount_cmd, _("Mount storage"),
-     NT_("storage=<storage-name> slot=<num> drive=<num>\n"
+     NT_("storage=<storage-name> slot=<num> drive=<drivenum>\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true, true },
@@ -196,7 +196,7 @@ static struct cmdstruct commands[] = {
      NT_("files | jobs | jobtype=<jobtype> | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true, true },
    { NT_("purge"), purge_cmd, _("Purge records from catalog"),
      NT_("files jobs volume=<volume-name> [ action=<action> devicetype=<type> pool=<pool-name>\n"
-         "\tallpools storage=<storage-name> drive=<num> ]"), true, true },
+         "\tallpools storage=<storage-name> drive=<drivenum> ]"), true, true },
    { NT_("quit"), quit_cmd, _("Terminate Bconsole session"),
      NT_(""), false, false },
    { NT_("query"), query_cmd, _("Query catalog"),
@@ -213,7 +213,7 @@ static struct cmdstruct commands[] = {
      NT_("storage=<storage-name> oldvolume=<old-volume-name>\n"
          "\tvolume=<new-volume-name> pool=<pool-name> [ encrypt ]"), false, true },
    { NT_("release"), release_cmd, _("Release storage"),
-     NT_("storage=<storage-name> [ drive=<num> ] [ alldrives ]"), false, true },
+     NT_("storage=<storage-name> [ drive=<drivenum> ] [ alldrives ]"), false, true },
    { NT_("reload"), reload_cmd, _("Reload conf file"),
      NT_(""), true, true },
    { NT_("rerun"), rerun_cmd, _("Rerun a job"),
@@ -252,10 +252,10 @@ static struct cmdstruct commands[] = {
    { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
      NT_("on | off"), true, true },
    { NT_("unmount"), unmount_cmd, _("Unmount storage"),
-     NT_("storage=<storage-name> [ drive=<num> ]\n"
+     NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("umount"), unmount_cmd, _("Umount - for old-time Unix guys, see unmount"),
-     NT_("storage=<storage-name> [ drive=<num> ]\n"
+     NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("update"), update_cmd, _("Update volume, pool or stats"),
      NT_("stats\n"

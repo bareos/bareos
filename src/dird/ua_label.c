@@ -30,7 +30,8 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt);
+static void label_from_barcodes(UAContext *ua, int drive,
+                                bool label_encrypt, bool yes);
 static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
                                POOL_DBR *pr, bool relabel, bool media_record_exists,
                                int drive);
@@ -75,18 +76,19 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
  */
 static int do_label(UAContext *ua, const char *cmd, bool relabel)
 {
-   USTORERES store;
+   int i, j;
+   int drive;
    BSOCK *sd;
-   char dev_name[MAX_NAME_LENGTH];
    MEDIA_DBR mr, omr;
    POOL_DBR pr;
+   USTORERES store;
+   bool ok = false;
+   bool yes = false;                 /* Was "yes" given on cmdline */
    bool print_reminder = true;
    bool label_barcodes = false;
    bool label_encrypt = false;
-   int ok = FALSE;
-   int i, j;
-   int drive;
    bool media_record_exists = false;
+   char dev_name[MAX_NAME_LENGTH];
    static const char *barcode_keywords[] = {
       "barcode",
       "barcodes",
@@ -100,6 +102,10 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
    memset(&pr, 0, sizeof(pr));
    memset(&mr, 0, sizeof(mr));
    memset(&omr, 0, sizeof(omr));
+
+   if (ua->batch || find_arg(ua, NT_("yes")) > 0) {
+      yes = true;
+   }
 
    /*
     * Look for one of the barcode keywords
@@ -152,7 +158,7 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
    drive = get_storage_drive(ua, store.store);
 
    if (label_barcodes) {
-      label_from_barcodes(ua, drive, label_encrypt);
+      label_from_barcodes(ua, drive, label_encrypt, yes);
       return 1;
    }
 
@@ -276,7 +282,6 @@ checkName:
    }
 
    ok = send_label_request(ua, &mr, &omr, &pr, relabel, media_record_exists, drive);
-
    if (ok) {
       sd = ua->jcr->store_bsock;
       if (relabel) {
@@ -346,7 +351,8 @@ checkName:
 /*
  * Request SD to send us the slot:barcodes, then wiffle through them all labeling them.
  */
-static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
+static void label_from_barcodes(UAContext *ua, int drive,
+                                bool label_encrypt, bool yes)
 {
    STORERES *store = ua->jcr->res.wstore;
    POOL_DBR pr;
@@ -389,10 +395,13 @@ static void label_from_barcodes(UAContext *ua, int drive, bool label_encrypt)
       }
       ua->send_msg("%4d  %s\n", vl->Slot, vl->VolName);
    }
-   if (!get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) ||
+
+   if (!yes ||
+       !get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) ||
        (ua->pint32_val == 0)) {
       goto bail_out;
    }
+
    /*
     * Select a pool
     */
