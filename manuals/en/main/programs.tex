@@ -215,7 +215,7 @@ The Bacula/Bareos Administration Tool (\command{bat}) is a native GUI for Bareos
 \index[general]{bls}
 \index[general]{Command!bls}
 
-{\bf bls} can be used to do an {\bf ls} type listing of a {\bf Bareos} tape or
+\command{bls} can be used to do an \command{ls} type listing of a Bareos tape or
 file. It is called:
 
 \footnotesize
@@ -438,13 +438,13 @@ something wrong. For example, if you are trying to recover a file
 but are having problems, please see the \nameref{sec:RestoreCatalog} chapter.
 
 Normally, you will restore files by running a {\bf Restore} Job from the {\bf
-Console} program. However, {\bf bextract} can be used to extract a single file
-or a list of files from a Bareos tape or file. In fact, {\bf bextract} can be
+Console} program. However, \command{bextract} can be used to extract a single file
+or a list of files from a Bareos tape or file. In fact, \command{bextract} can be
 a useful tool to restore files to an empty system assuming you are able to
-boot, you have statically linked {\bf bextract} and you have an appropriate
+boot, you have statically linked \command{bextract} and you have an appropriate
 {\bf bootstrap} file.
 
-Please note that some of the current limitations of bextract are:
+Please note that some of the current limitations of \command{bextract} are:
 
 \begin{enumerate}
 \item It cannot restore access control lists (ACL) that have been
@@ -455,9 +455,9 @@ Please note that some of the current limitations of bextract are:
       enter more volumes than the command line supports, please use a bootstrap
       file (see below).
 \item Extracting files from a Windows backup on a Linux system
-      will only extract the plain files, not the addtional Windows file information.
+      will only extract the plain files, not the additional Windows file information.
       If you have to extract files from a Windows backup,
-      you should use the Windows version of bextract.
+      you should use the Windows version of \command{bextract}.
 \end{enumerate}
 
 
@@ -616,17 +616,17 @@ for the Jobs that were added by scanning, the next time you run any backup Job
 with the same name, the records will be pruned again.  Since it takes a
 long time to scan Volumes this can be very frustrating.
 
-With some care, {\bf bscan} can also be used to synchronize your existing
+With some care, \command{bscan} can also be used to synchronize your existing
 catalog with a Volume.  Although we have never seen a case of bscan
 damaging a catalog, since bscan modifies your catalog, we recommend that
-you do a simple ASCII backup of your database before running {\bf bscan}
+you do a simple ASCII backup of your database before running \command{bscan}
 just to be sure.  See \ilink{Compacting Your Database}{CompactingMySQL} for
 the details of making a copy of your database.
 
-{\bf bscan} can also be useful in a disaster recovery situation, after the
+\command{bscan} can also be useful in a disaster recovery situation, after the
 loss of a hard disk, if you do not have a valid {\bf bootstrap} file for
 reloading your system, or if a Volume has been recycled but not overwritten,
-you can use {\bf bscan} to re-create your database, which can then be used to
+you can use \command{bscan} to re-create your database, which can then be used to
 {\bf restore} your system or a file to its previous state.
 
 It is called:
@@ -668,7 +668,7 @@ you have provided security on your database, you may need to supply either the
 database name ({\bf -b} option), the user name ({\bf -u} option), and/or the
 password ({\bf -p}) options.
 
-NOTE: before {\bf bscan} can work, it needs at least a bare bones valid
+NOTE: before \command{bscan} can work, it needs at least a bare bones valid
 database.  If your database exists but some records are missing because
 they were pruned, then you are all set. If your database was lost or
 destroyed, then you must first ensure that you have the SQL program running
@@ -714,7 +714,7 @@ bscan -s -m -v -V Vol001\|Vol002 /dev/nst0
 \end{verbatim}
 \normalsize
 
-When writing to the database, if bscan finds existing records, it will
+When writing to the database, if \command{bscan} finds existing records, it will
 generally either update them if something is wrong or leave them alone. Thus
 if the Volumes you are scanning are all or partially in the catalog already, no
 harm will be done to that existing data. Any missing data will simply be
@@ -729,7 +729,7 @@ bscan -s -m -v -V Vol001\|Vol002\|Vol003 /dev/nst0
 \normalsize
 
 Since there is a limit on the command line length (511 bytes) accepted
-by {\bf bscan}, if you have too many Volumes, you will need to manually
+by \command{bscan}, if you have too many Volumes, you will need to manually
 create a bootstrap file.  See the \ilink{Bootstrap}{BootstrapChapter}
 chapter of this manual for more details, in particular the section
 entitled \ilink{Bootstrap for bscan}{bscanBootstrap}. Basically, the
@@ -743,7 +743,7 @@ Volume=Vol003
 \end{verbatim}
 \normalsize
 
-Note: {\bf bscan} does not support supplying Volume names on the
+Note: \command{bscan} does not support supplying Volume names on the
 command line and at the same time in a bootstrap file.  Please
 use only one or the other.
 
@@ -955,7 +955,7 @@ the catalog.
 \index[general]{bcopy}
 \index[general]{Command!bcopy}
 
-The {\bf bcopy} program can be used to copy one {\bf Bareos} archive file to
+The \command{bcopy} program can be used to copy one Bareos archive file to
 another. For example, you may copy a tape to a file, a file to a tape, a file
 to a file, or a tape to a tape. For tape to tape, you will need two tape
 drives. In the
@@ -1470,13 +1470,12 @@ waste their time running bareos-dbcheck too often.
 \index[general]{bregex}
 \index[general]{Command!bregex}
 
-{\bf bregex} is a simple program that will allow you to test
+\command{bregex} is a simple program that will allow you to test
 regular expressions against a file of data. This can be useful
 because the regex libraries on most systems differ, and in
 addition, regex expressions can be complicated.
 
-{\bf bregex} is found in the src/tools directory and it is
-normally installed with your system binaries. To run it, use:
+To run it, use:
 
 \begin{verbatim}
 Usage: bregex [-d debug_level] -f <data-file>
@@ -1506,11 +1505,10 @@ applied against a list of filenames.
 \index[general]{bwild}
 \index[general]{Command!bwild}
 
-{\bf bwild} is a simple program that will allow you to test
+\command{bwild} is a simple program that will allow you to test
 wild-card expressions against a file of data.
 
-{\bf bwild} is found in the src/tools directory and it is
-normally installed with your system binaries. To run it, use:
+To run it, use:
 
 \begin{verbatim}
 Usage: bwild [-d debug_level] -f <data-file>
