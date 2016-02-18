@@ -45,7 +45,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 
 #ifndef HAVE_STRICOLL
-#define stricoll(str1, str2) bstrcasecmp(str1, str2)
+#define stricoll(str1, str2) strcasecmp(str1, str2)
 #endif
 
 enum {

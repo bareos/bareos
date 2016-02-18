@@ -252,10 +252,14 @@ void initialize_json();
 
 /* lex.c */
 LEX *lex_close_file(LEX *lf);
+LEX *lex_close_buffer(LEX *lf);
 LEX *lex_open_file(LEX *lf,
                    const char *fname,
                    LEX_ERROR_HANDLER *scan_error,
                    LEX_WARNING_HANDLER *scan_warning);
+LEX *lex_new_buffer(LEX *lf,
+                    LEX_ERROR_HANDLER *scan_error,
+                    LEX_WARNING_HANDLER *scan_warning);
 int lex_get_char(LEX *lf);
 void lex_unget_char(LEX *lf);
 const char *lex_tok_to_str(int token);

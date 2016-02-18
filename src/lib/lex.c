@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,9 @@
 
 #include "bareos.h"
 #include "lex.h"
+#ifdef HAVE_GLOB_H
+#include <glob.h>
+#endif
 
 extern int debug_level;
 
@@ -42,6 +45,7 @@ static const int dbglvl = 5000;
 void scan_to_eol(LEX *lc)
 {
    int token;
+
    Dmsg0(dbglvl, "start scan to eof\n");
    while ((token = lex_get_token(lc, T_ALL)) != T_EOL) {
       if (token == T_EOB) {
@@ -54,12 +58,14 @@ void scan_to_eol(LEX *lc)
 /*
  * Get next token, but skip EOL
  */
-int scan_to_next_not_eol(LEX * lc)
+int scan_to_next_not_eol(LEX *lc)
 {
    int token;
+
    do {
       token = lex_get_token(lc, T_ALL);
    } while (token == T_EOL);
+
    return token;
 }
 
@@ -167,8 +173,7 @@ int lex_set_error_handler_error_type(LEX *lf, int err_type)
 }
 
 /*
- * Free the current file, and retrieve the contents
- * of the previous packet if any.
+ * Free the current file, and retrieve the contents of the previous packet if any.
  */
 LEX *lex_close_file(LEX *lf)
 {
@@ -203,39 +208,45 @@ LEX *lex_close_file(LEX *lf)
    return lf;
 }
 
-/*
- * Open a new configuration file. We push the
- * state of the current file (lf) so that we
- * can do includes.  This is a bit of a hammer.
- * Instead of passing back the pointer to the
- * new packet, I simply replace the contents
- * of the caller's packet with the new packet,
- * and link the contents of the old packet into
- * the next field.
- *
- */
-LEX *lex_open_file(LEX *lf,
-                   const char *filename,
-                   LEX_ERROR_HANDLER *scan_error,
-                   LEX_WARNING_HANDLER *scan_warning)
+LEX *lex_close_buffer(LEX *lf)
+{
+   LEX *of;
 
+   if (lf == NULL) {
+      Emsg0(M_ABORT, 0, _("Close of NULL file\n"));
+   }
+
+   of = lf->next;
+
+   free_memory(lf->line);
+   free_memory(lf->str);
+   lf->line = NULL;
+   if (of) {
+      of->options = lf->options;      /* preserve options */
+      memcpy(lf, of, sizeof(LEX));
+      Dmsg1(dbglvl, "Restart scan of cfg file %s\n", of->fname);
+   } else {
+      of = lf;
+      lf = NULL;
+   }
+   free(of);
+
+   return lf;
+}
+
+/*
+ * Add lex structure for an included config file.
+ */
+static inline LEX *lex_add(LEX *lf,
+                           const char *filename,
+                           FILE *fd,
+                           BPIPE *bpipe,
+                           LEX_ERROR_HANDLER *scan_error,
+                           LEX_WARNING_HANDLER *scan_warning)
 {
    LEX *nf;
-   FILE *fd;
-   BPIPE *bpipe = NULL;
-   char *fname = bstrdup(filename);
 
-   if (fname[0] == '|') {
-      if ((bpipe = open_bpipe(fname+1, 0, "rb")) == NULL) {
-         free(fname);
-         return NULL;
-      }
-      fd = bpipe->rfd;
-   } else if ((fd = fopen(fname, "rb")) == NULL) {
-      free(fname);
-      return NULL;
-   }
-   Dmsg1(400, "Open config file: %s\n", fname);
+   Dmsg1(400, "Open config file: %s\n", filename);
    nf = (LEX *)malloc(sizeof(LEX));
    if (lf) {
       memcpy(nf, lf, sizeof(LEX));
@@ -267,15 +278,108 @@ LEX *lex_open_file(LEX *lf,
 
    lf->fd = fd;
    lf->bpipe = bpipe;
-   lf->fname = fname;
+   lf->fname = bstrdup(filename);
    lf->line = get_memory(1024);
    lf->str = get_memory(256);
    lf->str_max_len = sizeof_pool_memory(lf->str);
    lf->state = lex_none;
    lf->ch = L_EOL;
-   Dmsg1(dbglvl, "Return lex=%x\n", lf);
+
    return lf;
 }
+
+#ifdef HAVE_GLOB
+static inline bool is_wildcard_string(const char* string)
+{
+   return (strchr(string, '*') || strchr(string, '?'));
+}
+#endif
+
+/*
+ * Open a new configuration file. We push the
+ * state of the current file (lf) so that we
+ * can do includes.  This is a bit of a hammer.
+ * Instead of passing back the pointer to the
+ * new packet, I simply replace the contents
+ * of the caller's packet with the new packet,
+ * and link the contents of the old packet into
+ * the next field.
+ */
+LEX *lex_open_file(LEX *lf,
+                   const char *filename,
+                   LEX_ERROR_HANDLER *scan_error,
+                   LEX_WARNING_HANDLER *scan_warning)
+{
+   FILE *fd;
+   BPIPE *bpipe = NULL;
+   char *bpipe_filename = NULL;
+
+   if (filename[0] == '|') {
+      bpipe_filename = bstrdup(filename);
+      if ((bpipe = open_bpipe(bpipe_filename + 1, 0, "rb")) == NULL) {
+         free(bpipe_filename);
+         return NULL;
+      }
+      free(bpipe_filename);
+      fd = bpipe->rfd;
+      return lex_add(lf, filename, fd, bpipe, scan_error, scan_warning);
+   } else {
+#ifdef HAVE_GLOB
+      int globrc;
+      glob_t fileglob;
+      char *filename_expanded = NULL;
+
+      /*
+       * flag GLOB_NOMAGIC is a GNU extension, therefore manually check if string is a wildcard string.
+       */
+
+      /* clear fileglob at least required for mingw version of glob() */
+      memset(&fileglob, 0, sizeof(fileglob));
+      globrc = glob(filename, 0, NULL, &fileglob);
+
+      if ((globrc == GLOB_NOMATCH) && (is_wildcard_string(filename))) {
+         /*
+          * fname is a wildcard string, but no matching files have been found.
+          * Ignore this include statement and continue.
+          */
+         return lf;
+      } else if (globrc != 0) {
+         /*
+          * glob error has occured. Giving up.
+          */
+         return NULL;
+      }
+
+      Dmsg2(400, "glob %s matches %i files.\n", filename, fileglob.gl_pathc);
+      for (size_t i = 0; i < fileglob.gl_pathc; i++) {
+         filename_expanded = fileglob.gl_pathv[i];
+         if ((fd = fopen(filename_expanded, "rb")) == NULL) {
+            globfree(&fileglob);
+            return NULL;
+         }
+         lf = lex_add(lf, filename_expanded, fd, bpipe, scan_error, scan_warning);
+      }
+      globfree(&fileglob);
+#else
+      if ((fd = fopen(filename, "rb")) == NULL) {
+         return NULL;
+      }
+      lf = lex_add(lf, filename, fd, bpipe, scan_error, scan_warning);
+#endif
+      return lf;
+   }
+}
+
+LEX *lex_new_buffer(LEX *lf,
+                    LEX_ERROR_HANDLER *scan_error,
+                    LEX_WARNING_HANDLER *scan_warning)
+{
+   lf = lex_add(lf, NULL, NULL, NULL, scan_error, scan_warning);
+   Dmsg1(dbglvl, "Return lex=%x\n", lf);
+
+   return lf;
+}
+
 
 /*
  * Get the next character from the input.
@@ -289,11 +393,17 @@ int lex_get_char(LEX *lf)
       Emsg0(M_ABORT, 0, _("get_char: called after EOF."
          " You may have a open double quote without the closing double quote.\n"));
    }
+
    if (lf->ch == L_EOL) {
-      if (bfgets(lf->line, lf->fd) == NULL) {
+      /*
+       * See if we are really reading a file otherwise we have reached EndOfFile.
+       */
+      if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
          lf->ch = L_EOF;
          if (lf->next) {
-            lex_close_file(lf);
+            if (lf->fd) {
+               lex_close_file(lf);
+            }
          }
          return lf->ch;
       }
@@ -301,6 +411,7 @@ int lex_get_char(LEX *lf)
       lf->col_no = 0;
       Dmsg2(1000, "fget line=%d %s", lf->line_no, lf->line);
    }
+
    lf->ch = (uint8_t)lf->line[lf->col_no];
    if (lf->ch == 0) {
       lf->ch = L_EOL;
@@ -308,6 +419,7 @@ int lex_get_char(LEX *lf)
       lf->col_no++;
    }
    Dmsg2(dbglvl, "lex_get_char: %c %d\n", lf->ch, lf->ch);
+
    return lf->ch;
 }
 
@@ -319,7 +431,6 @@ void lex_unget_char(LEX *lf)
       lf->col_no--;                   /* Backup to re-read char */
    }
 }
-
 
 /*
  * Add a character to the current string
@@ -439,8 +550,7 @@ static uint64_t scan_pint64(LEX *lf, char *str)
  * Get the next token from the input
  *
  */
-int
-lex_get_token(LEX *lf, int expect)
+int lex_get_token(LEX *lf, int expect)
 {
    int ch;
    int token = T_NONE;
