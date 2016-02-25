@@ -2,6 +2,7 @@
 Communicates with the bareos-director
 """
 
+from   bareos.bsock.connectiontype import ConnectionType
 from   bareos.bsock.lowlevel import LowLevel
 from   bareos.exceptions import *
 import sys
@@ -14,11 +15,13 @@ class BSock(LowLevel):
                  port=9101,
                  dirname=None,
                  name="*UserAgent*",
-                 password=None):
+                 password=None,
+                 type=ConnectionType.DIRECTOR):
         super(BSock, self).__init__()
-        self.connect(address, port, dirname)
+        self.connect(address, port, dirname, type)
         self.auth(name=name, password=password)
-        self._set_state_director_prompt()
+        if type == ConnectionType.DIRECTOR:
+            self._set_state_director_prompt()
 
 
     def call(self, command):

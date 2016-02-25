@@ -9,6 +9,7 @@ from   bareos.exceptions import *
 from   bareos.util.bareosbase64 import BareosBase64
 from   bareos.util.password import Password
 from   bareos.bsock.constants import Constants
+from   bareos.bsock.connectiontype import ConnectionType
 from   bareos.bsock.protocolmessages import ProtocolMessages
 import hmac
 import logging
@@ -32,9 +33,10 @@ class LowLevel(object):
         self.dirname = None
         self.socket = None
         self.auth_credentials_valid = False
+        self.connection_type = None
 
 
-    def connect(self, address="localhost", port=9101, dirname=None):
+    def connect(self, address="localhost", port=9101, dirname=None, type=ConnectionType.DIRECTOR):
         '''
         connect to bareos-director
         '''
@@ -44,6 +46,7 @@ class LowLevel(object):
             self.dirname = dirname
         else:
             self.dirname = address
+        self.connection_type = type
         return self.__connect()
 
 
@@ -74,7 +77,7 @@ class LowLevel(object):
 
 
     def __auth(self):
-        bashed_name = ProtocolMessages.hello(self.name)
+        bashed_name = ProtocolMessages.hello(self.name, type=self.connection_type)
         # send the bash to the director
         self.send(bashed_name)
 

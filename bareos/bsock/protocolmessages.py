@@ -2,13 +2,18 @@
 Protocol messages between bareos-director and user-agent.
 """
 
+from   bareos.bsock.connectiontype import ConnectionType
+
 class ProtocolMessages():
     """
     strings defined by the protocol to talk to the Bareos Director.
     """
     @staticmethod
-    def hello(name):
-        return "Hello %s calling\n" % (name)
+    def hello(name, type=ConnectionType.DIRECTOR):
+        if type == ConnectionType.FILEDAEMON:
+            return "Hello Director %s calling\n" % (name)
+        else:
+            return "Hello %s calling\n" % (name)
 
     #@staticmethod
     #def ok():
