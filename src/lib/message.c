@@ -1462,40 +1462,38 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
    va_list ap;
    int len, maxlen;
    POOL_MEM buf(PM_EMSG),
-            more(PM_EMSG);
-
-   /*
-    * Check if we have a message destination defined.
-    * We always report M_ABORT and M_ERROR_TERM
-    */
-   if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
-                        !bit_is_set(type, daemon_msgs->send_msg))) {
-      return;                        /* no destination */
-   }
+            more(PM_EMSG),
+            typestr(PM_EMSG);
 
    switch (type) {
    case M_ABORT:
+      Mmsg(typestr, "ABORT");
       Mmsg(buf, _("%s: ABORTING due to ERROR in %s:%d\n"), my_name, get_basename(file), line);
       break;
    case M_ERROR_TERM:
+      Mmsg(typestr, "ERROR TERMINATION");
       Mmsg(buf, _("%s: ERROR TERMINATION at %s:%d\n"), my_name, get_basename(file), line);
       break;
    case M_FATAL:
+      Mmsg(typestr, "FATAL ERROR");
       if (level == -1)            /* skip details */
          Mmsg(buf, _("%s: Fatal Error because: "), my_name);
       else
          Mmsg(buf, _("%s: Fatal Error at %s:%d because:\n"), my_name, get_basename(file), line);
       break;
    case M_ERROR:
+      Mmsg(typestr, "ERROR");
       if (level == -1)            /* skip details */
          Mmsg(buf, _("%s: ERROR: "), my_name);
       else
          Mmsg(buf, _("%s: ERROR in %s:%d "), my_name, get_basename(file), line);
       break;
    case M_WARNING:
+      Mmsg(typestr, "WARNING");
       Mmsg(buf, _("%s: Warning: "), my_name);
       break;
    case M_SECURITY:
+      Mmsg(typestr, "Security violation");
       Mmsg(buf, _("%s: Security violation: "), my_name);
       break;
    default:
@@ -1515,6 +1513,20 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
       }
 
       break;
+   }
+
+   /*
+    * show error message also as debug message (level 10)
+    */
+   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
+
+   /*
+    * Check if we have a message destination defined.
+    * We always report M_ABORT and M_ERROR_TERM
+    */
+   if (!daemon_msgs || ((type != M_ABORT && type != M_ERROR_TERM) &&
+                        !bit_is_set(type, daemon_msgs->send_msg))) {
+      return;                        /* no destination */
    }
 
    pm_strcat(buf, more.c_str());
