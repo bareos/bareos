@@ -852,7 +852,7 @@ class BareosBSock implements BareosBSockInterface
                $debug = self::receive_message();
                if(!preg_match('/result/', $debug)) {
                   throw new \Exception("Error: API 2 not available on director.
-                  Please upgrade to version 15.2.1 or greater and/or compile with jansson support.");
+                  Please upgrade to version 15.2.2 or greater and/or compile with jansson support.");
                }
             }
             catch(\Exception $e) {
