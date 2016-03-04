@@ -416,7 +416,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
        */
       if (!p_ctx->dir_stack->empty()) {
          const char *cwd;
-         struct dir_stack_entry *new_entry;
+         struct dir_stack_entry *entry;
 
          /*
           * Change the GLFS cwd back one dir.
@@ -438,10 +438,10 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          /*
           * Pop the previous directory handle and continue processing that.
           */
-         new_entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
-         memcpy(&p_ctx->statp, &new_entry->statp, sizeof(p_ctx->statp));
-         p_ctx->cdir = new_entry->cdir;
-         free(new_entry);
+         entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
+         memcpy(&p_ctx->statp, &entry->statp, sizeof(p_ctx->statp));
+         p_ctx->cdir = entry->cdir;
+         free(entry);
       } else {
          return bRC_OK;
       }
