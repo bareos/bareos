@@ -1604,9 +1604,11 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       break;
    case FT_DELETED:
       Jmsg(ctx, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"), rp->ofname, rp->type);
+      rp->create_status = CF_SKIP;
       break;
    default:
       Jmsg(ctx, M_ERROR, 0, _("Unknown file type %d; not restored: %s\n"), rp->type, rp->ofname);
+      rp->create_status = CF_ERROR;
       break;
    }
 
