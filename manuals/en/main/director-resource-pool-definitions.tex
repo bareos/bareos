@@ -417,7 +417,9 @@ the Job resource or in the Pool, but it must be specified in
 one or the other.  If not configuration error will result.
   We highly recommend
    that you define the Storage resource to be used in the Pool rather
-   than elsewhere (job, schedule run, ...).
+   than elsewhere (job, schedule run, ...). Be aware that you theoretically can
+give a list of storages here but only the first item from the list is actually
+used for backup and restore jobs.
 }
 
 \defDirective{Dir}{Pool}{Use Catalog}{}{}{%

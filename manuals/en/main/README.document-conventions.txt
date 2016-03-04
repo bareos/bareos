@@ -1,3 +1,6 @@
+This file is not up to date. 
+Please refer to bareos.sty regarding defined macros that should be used.
+
 Conventions
 
 Domain: example.com
