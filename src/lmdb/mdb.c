@@ -1355,6 +1355,8 @@ struct MDB_env {
 #define	MDB_ENV_TXKEY	0x10000000U
 	/** fdatasync is unreliable */
 #define	MDB_FSYNCONLY	0x08000000U
+	/** using a raw block device */
+#define	MDB_RAWPART		0x04000000U
 	uint32_t 	me_flags;		/**< @ref mdb_env */
 	unsigned int	me_psize;	/**< DB page size, inited from me_os_psize */
 	unsigned int	me_os_psize;	/**< OS page size, from #GET_PAGESIZE */
@@ -1576,8 +1578,9 @@ mdb_strerror(int err)
 	 *	This works as long as no function between the call to mdb_strerror
 	 *	and the actual use of the message uses more than 4K of stack.
 	 */
-	char pad[4096];
-	char buf[1024], *ptr = buf;
+#define MSGSIZE	1024
+#define PADSIZE	4096
+	char buf[MSGSIZE+PADSIZE], *ptr = buf;
 #endif
 	int i;
 	if (!err)
@@ -1609,7 +1612,7 @@ mdb_strerror(int err)
 	buf[0] = 0;
 	FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
 		FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, err, 0, ptr, sizeof(buf), (va_list *)pad);
+		NULL, err, 0, ptr, MSGSIZE, (va_list *)buf+MSGSIZE);
 	return ptr;
 #else
 	return strerror(err);
@@ -3907,6 +3910,8 @@ mdb_env_read_header(MDB_env *env, MDB_meta *meta)
 		p = (MDB_page *)&pbuf;
 
 		if (!F_ISSET(p->mp_flags, P_META)) {
+			if (env->me_flags & MDB_RAWPART)
+				return ENOENT;
 			DPRINTF(("page %"Y"u not a meta page", p->mp_pgno));
 			return MDB_INVALID;
 		}
@@ -4167,6 +4172,19 @@ mdb_env_create(MDB_env **env)
 	return MDB_SUCCESS;
 }
 
+#ifdef _WIN32
+/** @brief Map a result from an NTAPI call to WIN32. */
+static DWORD
+mdb_nt2win32(NTSTATUS st)
+{
+	OVERLAPPED o = {0};
+	DWORD br;
+	o.Internal = st;
+	GetOverlappedResult(NULL, &o, &br, FALSE);
+	return GetLastError();
+}
+#endif
+
 static int ESECT
 mdb_env_map(MDB_env *env, void *addr)
 {
@@ -4196,7 +4214,7 @@ mdb_env_map(MDB_env *env, void *addr)
 
 	rc = NtCreateSection(&mh, access, NULL, NULL, secprot, SEC_RESERVE, env->me_fd);
 	if (rc)
-		return rc;
+		return mdb_nt2win32(rc);
 	map = addr;
 #ifdef MDB_VL32
 	msize = NUM_METAS * env->me_psize;
@@ -4208,7 +4226,7 @@ mdb_env_map(MDB_env *env, void *addr)
 	NtClose(mh);
 #endif
 	if (rc)
-		return rc;
+		return mdb_nt2win32(rc);
 	env->me_map = map;
 #else
 #ifdef MDB_VL32
@@ -4223,7 +4241,7 @@ mdb_env_map(MDB_env *env, void *addr)
 	int prot = PROT_READ;
 	if (flags & MDB_WRITEMAP) {
 		prot |= PROT_WRITE;
-		if (ftruncate(env->me_fd, env->me_mapsize) < 0)
+		if (!(flags & MDB_RAWPART) && ftruncate(env->me_fd, env->me_mapsize) < 0)
 			return ErrCode();
 	}
 	env->me_map = mmap(addr, env->me_mapsize, prot, MAP_SHARED,
@@ -5062,6 +5080,10 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 #ifdef _WIN32
 	wchar_t *wpath;
 #endif
+#ifndef _WIN32
+	struct stat st;
+#endif
+
 
 	if (env->me_fd!=INVALID_HANDLE_VALUE || (flags & ~(CHANGEABLE|CHANGELESS)))
 		return EINVAL;
@@ -5081,6 +5103,15 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 	if (flags & MDB_NOSUBDIR) {
 		rc = len + sizeof(LOCKSUFF) + len + 1;
 	} else {
+#ifndef _WIN32
+		rc = stat(path, &st);
+		if (rc)
+			return ErrCode();
+		if (S_ISBLK(st.st_mode)) {
+			flags |= MDB_RAWPART;
+			rc = len + sizeof(LOCKSUFF) + sizeof("/tmp/LMDB#0000");
+		} else
+#endif
 		rc = len + sizeof(LOCKNAME) + len + sizeof(DATANAME);
 	}
 	lpath = malloc(rc);
@@ -5089,6 +5120,12 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 	if (flags & MDB_NOSUBDIR) {
 		dpath = lpath + len + sizeof(LOCKSUFF);
 		sprintf(lpath, "%s" LOCKSUFF, path);
+		strcpy(dpath, path);
+	} else if (flags & MDB_RAWPART) {
+		dpath = lpath + sizeof(LOCKSUFF) + sizeof("/tmp/LMDB#0000");
+#ifndef _WIN32
+		sprintf(lpath, "/tmp/LMDB#%04x" LOCKSUFF, (unsigned)st.st_rdev);
+#endif
 		strcpy(dpath, path);
 	} else {
 		dpath = lpath + len + sizeof(LOCKNAME);
@@ -5700,7 +5737,8 @@ mdb_rpage_get(MDB_txn *txn, pgno_t pg0, MDB_page **ret)
 #define MAP(rc,env,addr,len,off)	\
 	addr = NULL; \
 	rc = NtMapViewOfSection(env->me_fmh, GetCurrentProcess(), &addr, 0, \
-		len, &off, &len, ViewUnmap, (env->me_flags & MDB_RDONLY) ? 0 : MEM_RESERVE, PAGE_READONLY)
+		len, &off, &len, ViewUnmap, (env->me_flags & MDB_RDONLY) ? 0 : MEM_RESERVE, PAGE_READONLY); \
+	if (rc) rc = mdb_nt2win32(rc)
 #else
 	off_t off;
 	size_t len;
@@ -7000,8 +7038,10 @@ fetchm:
 			break;
 		}
 		if (!(mc->mc_flags & C_INITIALIZED))
-			rc = mdb_cursor_first(mc, key, data);
-		else {
+			rc = mdb_cursor_last(mc, key, data);
+		else
+			rc = MDB_SUCCESS;
+		if (rc == MDB_SUCCESS) {
 			MDB_cursor *mx = &mc->mc_xcursor->mx_cursor;
 			if (mx->mc_flags & C_INITIALIZED) {
 				rc = mdb_cursor_sibling(mx, 0);
