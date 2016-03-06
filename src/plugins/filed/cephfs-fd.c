@@ -416,7 +416,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
        */
       if (!p_ctx->dir_stack->empty()) {
          const char *cwd;
-         struct dir_stack_entry *new_entry;
+         struct dir_stack_entry *entry;
 
          /*
           * Change the GLFS cwd back one dir.
@@ -438,10 +438,10 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          /*
           * Pop the previous directory handle and continue processing that.
           */
-         new_entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
-         memcpy(&p_ctx->statp, &new_entry->statp, sizeof(p_ctx->statp));
-         p_ctx->cdir = new_entry->cdir;
-         free(new_entry);
+         entry = (struct dir_stack_entry *)p_ctx->dir_stack->pop();
+         memcpy(&p_ctx->statp, &entry->statp, sizeof(p_ctx->statp));
+         p_ctx->cdir = entry->cdir;
+         free(entry);
       } else {
          return bRC_OK;
       }
@@ -1376,9 +1376,11 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       break;
    case FT_DELETED:
       Jmsg(ctx, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"), rp->ofname, rp->type);
+      rp->create_status = CF_SKIP;
       break;
    default:
       Jmsg(ctx, M_ERROR, 0, _("Unknown file type %d; not restored: %s\n"), rp->type, rp->ofname);
+      rp->create_status = CF_ERROR;
       break;
    }
 
@@ -1386,10 +1388,6 @@ bail_out:
    return bRC_OK;
 }
 
-/*
- * We will get here if the File is a directory after everything is written in the directory.
- * Or after IO completed to restore a file.
- */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 {
    int status;

@@ -1082,9 +1082,6 @@ bail_out:
    return bRC_OK;
 }
 
-/*
- * We will get here if the File is a directory after everything is written in the directory.
- */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
 {
    return bRC_OK;
