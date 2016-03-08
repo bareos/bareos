@@ -426,9 +426,9 @@ static bRC get_next_object_to_backup(bpContext *ctx)
             return bRC_OK;
          default:
 #if defined(HAVE_RADOS_NAMESPACES) && defined(HAVE_RADOS_NOBJECTS_LIST)
-            Jmsg(ctx, M_ERROR, "rados_nobjects_list_next() failed: %s\n", be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "rados-fd: rados_nobjects_list_next() failed: %s\n", be.bstrerror(-status));
 #else
-            Jmsg(ctx, M_ERROR, "rados_objects_list_next() failed: %s\n", be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "rados-fd: rados_objects_list_next() failed: %s\n", be.bstrerror(-status));
 #endif
             return bRC_Error;
          }
@@ -454,7 +454,7 @@ static bRC get_next_object_to_backup(bpContext *ctx)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_stat(%s) failed: %s\n", p_ctx->object_name, be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_stat(%s) failed: %s\n", p_ctx->object_name, be.bstrerror(-status));
          return bRC_Error;
       }
 
@@ -612,8 +612,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
 
    bp = strchr(plugin_definition, ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      Jmsg(ctx, M_FATAL, "rados-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, dbglvl, "rados-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -636,8 +636,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument = bp;
       argument_value = strchr(bp, '=');
       if (!argument_value) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         Jmsg(ctx, M_FATAL, "rados-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, dbglvl, "rados-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -710,8 +710,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        * Got an invalid keyword ?
        */
       if (!plugin_arguments[i].name) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Jmsg(ctx, M_FATAL, "rados-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, dbglvl, "rados-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -769,7 +769,7 @@ static bRC connect_to_rados(bpContext *ctx)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_create() failed: %s\n", be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_create() failed: %s\n", be.bstrerror(-status));
          return bRC_Error;
       }
 
@@ -777,7 +777,7 @@ static bRC connect_to_rados(bpContext *ctx)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_conf_read_file(%s) failed: %s\n",
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_conf_read_file(%s) failed: %s\n",
               p_ctx->rados_conffile, be.bstrerror(-status));
          return bRC_Error;
       }
@@ -786,7 +786,7 @@ static bRC connect_to_rados(bpContext *ctx)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_connect() failed: %s\n", be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_connect() failed: %s\n", be.bstrerror(-status));
          rados_shutdown(p_ctx->cluster);
          return bRC_Error;
       }
@@ -802,7 +802,7 @@ static bRC connect_to_rados(bpContext *ctx)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_ioctx_create(%s) failed: %s\n",
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_create(%s) failed: %s\n",
               p_ctx->rados_poolname, be.bstrerror(-status));
          rados_shutdown(p_ctx->cluster);
          p_ctx->cluster_initialized = false;
@@ -843,7 +843,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "rados_ioctx_snap_create(%s) failed: %s\n",
+      Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_snap_create(%s) failed: %s\n",
            p_ctx->rados_snapshotname, be.bstrerror(-status));
       goto bail_out;
    }
@@ -852,7 +852,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "rados_ioctx_snap_lookup(%s) failed: %s\n",
+      Jmsg(ctx, M_ERROR, "rados-fd: rados_ioctx_snap_lookup(%s) failed: %s\n",
            p_ctx->rados_snapshotname, be.bstrerror(-status));
       goto bail_out;
    }
@@ -880,9 +880,9 @@ static bRC setup_backup(bpContext *ctx, void *value)
          berrno be;
 
 #if defined(HAVE_RADOS_NAMESPACES) && defined(HAVE_RADOS_NOBJECTS_LIST)
-         Jmsg(ctx, M_ERROR, "rados_nobjects_list_open() failed: %s\n", be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_nobjects_list_open() failed: %s\n", be.bstrerror(-status));
 #else
-         Jmsg(ctx, M_ERROR, "rados_objects_list_open() failed: %s\n", be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_objects_list_open() failed: %s\n", be.bstrerror(-status));
 #endif
          goto bail_out;
       }
@@ -976,8 +976,8 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       io->io_errno = 0;
       break;
    case IO_SEEK:
-      Jmsg(ctx, M_ERROR, "Illegal Seek request on rados device.");
-      Dmsg(ctx, dbglvl, "Illegal Seek request on rados device.");
+      Jmsg(ctx, M_ERROR, "rados-fd: Illegal Seek request on rados device.");
+      Dmsg(ctx, dbglvl, "rados-fd: Illegal Seek request on rados device.");
       io->io_errno = EINVAL;
       goto bail_out;
    }
@@ -1055,20 +1055,20 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       switch (rp->replace) {
       case REPLACE_IFNEWER:
          if (rp->statp.st_mtime <= p_ctx->object_mtime) {
-            Jmsg(ctx, M_INFO, 0, _("File skipped. Not newer: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("rados-fd: File skipped. Not newer: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
          break;
       case REPLACE_IFOLDER:
          if (rp->statp.st_mtime >= p_ctx->object_mtime) {
-            Jmsg(ctx, M_INFO, 0, _("File skipped. Not older: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("rados-fd: File skipped. Not older: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
          break;
       case REPLACE_NEVER:
-         Jmsg(ctx, M_INFO, 0, _("File skipped. Already exists: %s\n"), rp->ofname);
+         Jmsg(ctx, M_INFO, 0, _("rados-fd: File skipped. Already exists: %s\n"), rp->ofname);
          rp->create_status = CF_SKIP;
          goto bail_out;
       case REPLACE_ALWAYS:
@@ -1124,7 +1124,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "rados_getxattrs(%s) failed: %s\n",
+         Jmsg(ctx, M_ERROR, "rados-fd: rados_getxattrs(%s) failed: %s\n",
               p_ctx->object_name, be.bstrerror(-status));
          goto bail_out;
       }
@@ -1137,7 +1137,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "rados_getxattrs_next(%s) failed: %s\n",
+      Jmsg(ctx, M_ERROR, "rados-fd: rados_getxattrs_next(%s) failed: %s\n",
            p_ctx->object_name, be.bstrerror(-status));
       goto bail_out;
    }
@@ -1186,7 +1186,7 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "rados_setxattr(%s) set xattr %s failed: %s\n",
+      Jmsg(ctx, M_ERROR, "rados-fd: rados_setxattr(%s) set xattr %s failed: %s\n",
            p_ctx->object_name, xp->name, be.bstrerror(-status));
       goto bail_out;
    }

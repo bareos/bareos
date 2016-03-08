@@ -925,8 +925,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
 
       bp = strchr((char *)value, ':');
       if (!bp) {
-         Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", (char *)value);
-         Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", (char *)value);
+         Jmsg(ctx, M_FATAL, "python-fd: Illegal plugin definition %s\n", (char *)value);
+         Dmsg(ctx, dbglvl, "python-fd: Illegal plugin definition %s\n", (char *)value);
          goto bail_out;
       }
 
@@ -944,8 +944,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
 
    bp = strchr(plugin_definition.c_str(), ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition.c_str());
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition.c_str());
+      Jmsg(ctx, M_FATAL, "python-fd: Illegal plugin definition %s\n", plugin_definition.c_str());
+      Dmsg(ctx, dbglvl, "python-fd: Illegal plugin definition %s\n", plugin_definition.c_str());
       goto bail_out;
    }
 
@@ -970,8 +970,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
       argument = bp;
       argument_value = strchr(bp, '=');
       if (!argument_value) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         Jmsg(ctx, M_FATAL, "python-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, dbglvl, "python-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -1163,9 +1163,9 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
    Py_XDECREF(value);
    Py_XDECREF(traceback);
 
-   Dmsg(ctx, dbglvl, "%s\n", error_string);
+   Dmsg(ctx, dbglvl, "python-fd: %s\n", error_string);
    if (msgtype) {
-      Jmsg(ctx, msgtype, "%s\n", error_string);
+      Jmsg(ctx, msgtype, "python-fd: %s\n", error_string);
    }
 
    free(error_string);
@@ -1297,17 +1297,17 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
     * Try to load the Python module by name.
     */
    if (p_ctx->module_name) {
-      Dmsg(ctx, dbglvl, "Trying to load module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, dbglvl, "python-fd: Trying to load module with name %s\n", p_ctx->module_name);
       pName = PyString_FromString(p_ctx->module_name);
       p_ctx->pModule = PyImport_Import(pName);
       Py_DECREF(pName);
 
       if (!p_ctx->pModule) {
-         Dmsg(ctx, dbglvl, "Failed to load module with name %s\n", p_ctx->module_name);
+         Dmsg(ctx, dbglvl, "python-fd: Failed to load module with name %s\n", p_ctx->module_name);
          goto bail_out;
       }
 
-      Dmsg(ctx, dbglvl, "Successfully loaded module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, dbglvl, "python-fd: Successfully loaded module with name %s\n", p_ctx->module_name);
 
       /*
        * Get the Python dictionary for lookups in the Python namespace.
@@ -1342,7 +1342,7 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
             Py_DECREF(pRetVal);
          }
       } else {
-         Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
+         Dmsg(ctx, dbglvl, "python-fd: Failed to find function named load_bareos_plugins()\n");
          goto bail_out;
       }
 
@@ -1403,7 +1403,7 @@ static bRC PyParsePluginDefinition(bpContext *ctx, void *value)
 
       return retval;
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named parse_plugin_definition()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named parse_plugin_definition()\n");
       return bRC_Error;
    }
 
@@ -1451,7 +1451,7 @@ static bRC PyHandlePluginEvent(bpContext *ctx, bEvent *event, void *value)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named handle_plugin_event()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named handle_plugin_event()\n");
    }
 
    return retval;
@@ -1729,7 +1729,7 @@ static bRC PyStartBackupFile(bpContext *ctx, struct save_pkt *sp)
          Py_DECREF((PyObject *)pSavePkt);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named start_backup_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named start_backup_file()\n");
    }
 
    return retval;
@@ -1768,7 +1768,7 @@ static bRC PyEndBackupFile(bpContext *ctx)
          retval = conv_python_retval(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named end_backup_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named end_backup_file()\n");
    }
 
    return retval;
@@ -1891,7 +1891,7 @@ static bRC PyPluginIO(bpContext *ctx, struct io_pkt *io)
       }
       Py_DECREF((PyObject *)pIoPkt);
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named plugin_io()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named plugin_io()\n");
    }
 
    return retval;
@@ -1938,7 +1938,7 @@ static bRC PyStartRestoreFile(bpContext *ctx, const char *cmd)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named start_restore_file()\n");
    }
 
    return retval;
@@ -1974,7 +1974,7 @@ static bRC PyEndRestoreFile(bpContext *ctx)
          retval = conv_python_retval(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named end_restore_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named end_restore_file()\n");
    }
 
    return retval;
@@ -2066,7 +2066,7 @@ static bRC PyCreateFile(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named create_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named create_file()\n");
    }
 
    return retval;
@@ -2112,7 +2112,7 @@ static bRC PySetFileAttributes(bpContext *ctx, struct restore_pkt *rp)
          Py_DECREF(pRestorePacket);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named set_file_attributes()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named set_file_attributes()\n");
    }
 
    return retval;
@@ -2154,7 +2154,7 @@ static bRC PyCheckFile(bpContext *ctx, char *fname)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named check_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named check_file()\n");
    }
 
    return retval;
@@ -2246,7 +2246,7 @@ static bRC PyGetAcl(bpContext *ctx, acl_pkt *ap)
          Py_DECREF(pAclPkt);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named get_acl()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named get_acl()\n");
    }
 
    return retval;
@@ -2292,7 +2292,7 @@ static bRC PySetAcl(bpContext *ctx, acl_pkt *ap)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named set_acl()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named set_acl()\n");
    }
 
    return retval;
@@ -2409,7 +2409,7 @@ static bRC PyGetXattr(bpContext *ctx, xattr_pkt *xp)
          Py_DECREF(pXattrPkt);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named get_xattr()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named get_xattr()\n");
    }
 
    return retval;
@@ -2455,7 +2455,7 @@ static bRC PySetXattr(bpContext *ctx, xattr_pkt *xp)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named set_xattr()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named set_xattr()\n");
    }
 
    return retval;
@@ -2520,7 +2520,7 @@ static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named start_restore_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named start_restore_file()\n");
    }
 
    return retval;
@@ -2571,7 +2571,7 @@ static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp)
          Py_DECREF(pSavePkt);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named handle_backup_file()\n");
+      Dmsg(ctx, dbglvl, "python-fd: Failed to find function named handle_backup_file()\n");
    }
 
    return retval;
@@ -2644,7 +2644,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
       break;                 /* a write only variable, ignore read request */
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "PyBareosGetValue: Unknown variable requested %d\n", var);
+      Dmsg(ctx, dbglvl, "python-fd: PyBareosGetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -2682,7 +2682,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
    }
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "PyBareosSetValue: Unknown variable requested %d\n", var);
+      Dmsg(ctx, dbglvl, "python-fd: PyBareosSetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -2707,7 +2707,7 @@ static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args)
 
    if (dbgmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, level, "%s", dbgmsg);
+      Dmsg(ctx, level, "python-fd: %s", dbgmsg);
    }
 
    Py_INCREF(Py_None);
@@ -2731,7 +2731,7 @@ static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args)
 
    if (jobmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Jmsg(ctx, type, "%s", jobmsg);
+      Jmsg(ctx, type, "python-fd: %s", jobmsg);
    }
 
    Py_INCREF(Py_None);
@@ -2766,7 +2766,7 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
       event = PyInt_AsLong(pyEvent);
 
       if (event >= bEventJobStart && event <= bEventComponentInfo) {
-         Dmsg(ctx, dbglvl, "PyBareosRegisterEvents: registering event %d\n", event);
+         Dmsg(ctx, dbglvl, "python-fd: PyBareosRegisterEvents registering event %d\n", event);
          bfuncs->registerBareosEvents(ctx, 1, event);
       }
    }

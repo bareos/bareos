@@ -286,19 +286,19 @@ static bRC handleJobEnd(bpContext *ctx)
    }
 
    if (p_ctx->inflate_bytes_in) {
-      Dmsg(ctx, dbglvl, "autoxflate-sd.c: inflate ratio: %lld/%lld = %0.2f%%\n" ,
+      Dmsg(ctx, dbglvl, "autoxflate-sd: inflate ratio: %lld/%lld = %0.2f%%\n" ,
            p_ctx->inflate_bytes_out, p_ctx->inflate_bytes_in,
           (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
-      Jmsg(ctx, M_INFO, _("autoxflate-sd.c: inflate ratio: %0.2f%%\n"),
+      Jmsg(ctx, M_INFO, _("autoxflate-sd: inflate ratio: %0.2f%%\n"),
            (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
    }
 
    if (p_ctx->deflate_bytes_in) {
-      Dmsg(ctx, dbglvl, "autoxflate-sd.c: deflate ratio: %lld/%lld =  %0.2f%%\n",
+      Dmsg(ctx, dbglvl, "autoxflate-sd: deflate ratio: %lld/%lld =  %0.2f%%\n",
            p_ctx->deflate_bytes_out,
            p_ctx->deflate_bytes_in,
           (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
-      Jmsg(ctx, M_INFO, _("autoxflate-sd.c: deflate ratio: %0.2f%%\n"),
+      Jmsg(ctx, M_INFO, _("autoxflate-sd: deflate ratio: %0.2f%%\n"),
            (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));
    }
 
@@ -344,7 +344,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
       deflate_out = SETTING_YES;
       break;
    default:
-      Jmsg(ctx, M_ERROR, _("Unexpected autodeflate setting on %s"), dcr->dev_name);
+      Jmsg(ctx, M_ERROR, _("autoxflate-sd: Unexpected autodeflate setting on %s"), dcr->dev_name);
       break;
    }
 
@@ -366,7 +366,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
       inflate_out = SETTING_YES;
       break;
    default:
-      Jmsg(ctx, M_ERROR, _("Unexpected autoinflate setting on %s"), dcr->dev_name);
+      Jmsg(ctx, M_ERROR, _("autoxflate-sd: Unexpected autoinflate setting on %s"), dcr->dev_name);
       break;
    }
 
@@ -403,7 +403,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
 
    if (did_setup) {
       Jmsg(ctx, M_INFO,
-            _("autoxflate-sd.c: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
+            _("autoxflate-sd: %s OUT:[SD->inflate=%s->deflate=%s->DEV] IN:[DEV->inflate=%s->deflate=%s->SD]\n"),
            dcr->dev_name, inflate_out, deflate_out, inflate_in, deflate_in);
    }
 
@@ -530,7 +530,7 @@ static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
 
       pZlibStream = (z_stream *)jcr->compress.workset.pZLIB;
       if ((zstat = deflateParams(pZlibStream, dcr->device->autodeflate_level, Z_DEFAULT_STRATEGY)) != Z_OK) {
-         Jmsg(ctx, M_FATAL, _("Compression deflateParams error: %d\n"), zstat);
+         Jmsg(ctx, M_FATAL, _("autoxflate-sd: Compression deflateParams error: %d\n"), zstat);
          jcr->setJobStatus(JS_ErrorTerminated);
          goto bail_out;
       }
@@ -562,7 +562,7 @@ static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
 
       pZfastStream = (zfast_stream *)jcr->compress.workset.pZFAST;
       if ((zstat = fastlzlibSetCompressor(pZfastStream, compressor)) != Z_OK) {
-         Jmsg(ctx, M_FATAL, _("Compression fastlzlibSetCompressor error: %d\n"), zstat);
+         Jmsg(ctx, M_FATAL, _("autoxflate-sd: Compression fastlzlibSetCompressor error: %d\n"), zstat);
          jcr->setJobStatus(JS_ErrorTerminated);
          goto bail_out;
       }
@@ -573,7 +573,7 @@ static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
       break;
    }
 
-   Jmsg(ctx, M_INFO,  _("autodeflation: Compressor on device %s is %s\n"), dcr->dev_name, compressorname);
+   Jmsg(ctx, M_INFO,  _("autoxflate-sd: Compressor on device %s is %s\n"), dcr->dev_name, compressorname);
    retval = true;
 
 bail_out:

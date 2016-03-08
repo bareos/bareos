@@ -425,7 +425,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_chdir(%s) failed: %s\n", "..", be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_chdir(%s) failed: %s\n", "..", be.bstrerror(-status));
             return bRC_Error;
          }
 
@@ -472,7 +472,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror(-status));
             return bRC_Error;
          }
 
@@ -480,7 +480,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_closedir(%s) failed: %s\n", p_ctx->cwd, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_closedir(%s) failed: %s\n", p_ctx->cwd, be.bstrerror(-status));
             return bRC_Error;
          }
 
@@ -521,7 +521,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_readlink(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_readlink(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror(-status));
             p_ctx->type = FT_NOFOLLOW;
          }
          p_ctx->link_target[status] = '\0';
@@ -538,7 +538,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          p_ctx->type = FT_SPEC;
          break;
       default:
-         Jmsg(ctx, M_FATAL, "Unknown filetype encountered %ld for %s\n",
+         Jmsg(ctx, M_FATAL, "cephfs-fd: Unknown filetype encountered %ld for %s\n",
               p_ctx->statp.st_mode & S_IFMT, p_ctx->next_filename);
          return bRC_Error;
       }
@@ -600,7 +600,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_chdir(%s) failed: %s\n",
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_chdir(%s) failed: %s\n",
                  p_ctx->next_filename, be.bstrerror(-status));
             p_ctx->type = FT_NOOPEN;
          } else {
@@ -624,7 +624,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
             if (status < 0) {
                berrno be;
 
-               Jmsg(ctx, M_ERROR, "ceph_opendir(%s) failed: %s\n",
+               Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_opendir(%s) failed: %s\n",
                     p_ctx->next_filename, be.bstrerror(-status));
                p_ctx->type = FT_NOOPEN;
 
@@ -643,7 +643,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
                   if (status < 0) {
                      berrno be;
 
-                     Jmsg(ctx, M_ERROR, "ceph_chdir(..) failed: %s\n",
+                     Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_chdir(..) failed: %s\n",
                           p_ctx->next_filename, be.bstrerror(-status));
                      return bRC_Error;
                   }
@@ -844,8 +844,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
 
    bp = strchr(plugin_definition, ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, dbglvl, "cephfs-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -868,8 +868,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument = bp;
       argument_value = strchr(bp, '=');
       if (!argument_value) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, dbglvl, "cephfs-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -927,8 +927,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        * Got an invalid keyword ?
        */
       if (!plugin_arguments[i].name) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, dbglvl, "cephfs-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -953,7 +953,7 @@ static bRC connect_to_cephfs(bpContext *ctx)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_create failed: %s\n", be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_create failed: %s\n", be.bstrerror(-status));
       return bRC_Error;
    }
 
@@ -961,7 +961,7 @@ static bRC connect_to_cephfs(bpContext *ctx)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_conf_read_file(%s) failed: %s\n", p_ctx->conffile, be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_conf_read_file(%s) failed: %s\n", p_ctx->conffile, be.bstrerror(-status));
       goto bail_out;
    }
 
@@ -969,7 +969,7 @@ static bRC connect_to_cephfs(bpContext *ctx)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_mount failed: %s\n", be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_mount failed: %s\n", be.bstrerror(-status));
       goto bail_out;
    }
 
@@ -1247,7 +1247,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    /*
     * See if the file already exists.
     */
-   Dmsg(ctx, 400, "Replace=%c %d\n", (char)rp->replace, rp->replace);
+   Dmsg(ctx, 400, "cephfs-fd: Replace=%c %d\n", (char)rp->replace, rp->replace);
    status = ceph_lstat(p_ctx->cmount, rp->ofname, &st);
    if (status == 0) {
       exists = true;
@@ -1255,14 +1255,14 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       switch (rp->replace) {
       case REPLACE_IFNEWER:
          if (rp->statp.st_mtime <= st.st_mtime) {
-            Jmsg(ctx, M_INFO, 0, _("File skipped. Not newer: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Not newer: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
          break;
       case REPLACE_IFOLDER:
          if (rp->statp.st_mtime >= st.st_mtime) {
-            Jmsg(ctx, M_INFO, 0, _("File skipped. Not older: %s\n"), rp->ofname);
+            Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Not older: %s\n"), rp->ofname);
             rp->create_status = CF_SKIP;
             goto bail_out;
          }
@@ -1274,7 +1274,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (rp->type == FT_DIREND && path_list_lookup(p_ctx->path_list, rp->ofname)) {
             break;
          }
-         Jmsg(ctx, M_INFO, 0, _("File skipped. Already exists: %s\n"), rp->ofname);
+         Jmsg(ctx, M_INFO, 0, _("cephfs-fd: File skipped. Already exists: %s\n"), rp->ofname);
          rp->create_status = CF_SKIP;
          goto bail_out;
       case REPLACE_ALWAYS:
@@ -1292,13 +1292,13 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
        * See if file already exists then we need to unlink it.
        */
       if (exists) {
-         Dmsg(ctx, 400, "unlink %s\n", rp->ofname);
+         Dmsg(ctx, 400, "cephfs-fd: unlink %s\n", rp->ofname);
          status = ceph_unlink(p_ctx->cmount, rp->ofname);
          if (status != 0) {
             berrno be;
 
             Jmsg(ctx, M_ERROR, 0,
-                 _("File %s already exists and could not be replaced. ERR=%s.\n"),
+                 _("cephfs-fd: File %s already exists and could not be replaced. ERR=%s.\n"),
                  rp->ofname, be.bstrerror(-status));
             /*
              * Continue despite error
@@ -1333,7 +1333,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_link(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_link(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
             rp->create_status = CF_ERROR;
          } else {
             rp->create_status = CF_CREATED;
@@ -1344,7 +1344,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_symlink(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_symlink(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
             rp->create_status = CF_ERROR;
          } else {
             rp->create_status = CF_CREATED;
@@ -1355,7 +1355,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          if (status < 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "ceph_mknod(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+            Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_mknod(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
             rp->create_status = CF_ERROR;
          } else {
             rp->create_status = CF_CREATED;
@@ -1375,11 +1375,11 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       }
       break;
    case FT_DELETED:
-      Jmsg(ctx, M_INFO, 0, _("Original file %s have been deleted: type=%d\n"), rp->ofname, rp->type);
+      Jmsg(ctx, M_INFO, 0, _("cephfs-fd: Original file %s have been deleted: type=%d\n"), rp->ofname, rp->type);
       rp->create_status = CF_SKIP;
       break;
    default:
-      Jmsg(ctx, M_ERROR, 0, _("Unknown file type %d; not restored: %s\n"), rp->type, rp->ofname);
+      Jmsg(ctx, M_ERROR, 0, _("cephfs-fd: Unknown file type %d; not restored: %s\n"), rp->type, rp->ofname);
       rp->create_status = CF_ERROR;
       break;
    }
@@ -1405,7 +1405,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_lchown(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_lchown(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
       return bRC_Error;
    }
 
@@ -1416,7 +1416,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_chmod(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_chmod(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
       return bRC_Error;
    }
 
@@ -1430,7 +1430,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_utime(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_utime(%s) failed: %s\n", rp->ofname, be.bstrerror(-status));
       return bRC_Error;
    }
 
@@ -1548,7 +1548,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap)
                xattr_value.check_size(current_size * 2);
                continue;
             default:
-               Jmsg(ctx, M_ERROR, "ceph_lgetxattr(%s) failed: %s\n", ap->fname, be.bstrerror(-xattr_value_length));
+               Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_lgetxattr(%s) failed: %s\n", ap->fname, be.bstrerror(-xattr_value_length));
                return bRC_Error;
             }
          }
@@ -1623,7 +1623,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
       if (status < 0) {
          berrno be;
 
-         Jmsg(ctx, M_ERROR, "ceph_lsetxattr(%s) failed: %s\n", ap->fname, be.bstrerror(-status));
+         Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_lsetxattr(%s) failed: %s\n", ap->fname, be.bstrerror(-status));
          return bRC_Error;
       }
    }
@@ -1673,7 +1673,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
                p_ctx->xattr_list = check_pool_memory_size(p_ctx->xattr_list, current_size * 2);
                continue;
             default:
-               Jmsg(ctx, M_ERROR, "ceph_llistxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-status));
+               Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_llistxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-status));
                return bRC_Error;
             }
          } else if (status == 0) {
@@ -1753,7 +1753,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
                xattr_value.check_size(current_size * 2);
                continue;
             default:
-               Jmsg(ctx, M_ERROR, "ceph_lgetxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-xattr_value_length));
+               Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_lgetxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-xattr_value_length));
                return bRC_Error;
             }
          }
@@ -1810,7 +1810,7 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
    if (status < 0) {
       berrno be;
 
-      Jmsg(ctx, M_ERROR, "ceph_lsetxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-status));
+      Jmsg(ctx, M_ERROR, "cephfs-fd: ceph_lsetxattr(%s) failed: %s\n", xp->fname, be.bstrerror(-status));
       return bRC_Error;
    }
 

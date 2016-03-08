@@ -406,8 +406,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
 
    bp = strchr(plugin_definition.c_str(), ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition.c_str());
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition.c_str());
+      Jmsg(ctx, M_FATAL, "python-dir: Illegal plugin definition %s\n", plugin_definition.c_str());
+      Dmsg(ctx, dbglvl, "python-dir: Illegal plugin definition %s\n", plugin_definition.c_str());
       goto bail_out;
    }
 
@@ -432,8 +432,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
       argument = bp;
       argument_value = strchr(bp, '=');
       if (!argument_value) {
-         Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         Jmsg(ctx, M_FATAL, "python-dir: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, dbglvl, "python-dir: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -623,9 +623,9 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
    Py_XDECREF(value);
    Py_XDECREF(traceback);
 
-   Dmsg(ctx, dbglvl, "%s\n", error_string);
+   Dmsg(ctx, dbglvl, "python-dir: %s\n", error_string);
    if (msgtype) {
-      Jmsg(ctx, msgtype, "%s\n", error_string);
+      Jmsg(ctx, msgtype, "python-dir: %s\n", error_string);
    }
 
    free(error_string);
@@ -677,17 +677,17 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
     * Try to load the Python module by name.
     */
    if (p_ctx->module_name) {
-      Dmsg(ctx, dbglvl, "Trying to load module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, dbglvl, "python-dir: Trying to load module with name %s\n", p_ctx->module_name);
       pName = PyString_FromString(p_ctx->module_name);
       p_ctx->pModule = PyImport_Import(pName);
       Py_DECREF(pName);
 
       if (!p_ctx->pModule) {
-         Dmsg(ctx, dbglvl, "Failed to load module with name %s\n", p_ctx->module_name);
+         Dmsg(ctx, dbglvl, "python-dir: Failed to load module with name %s\n", p_ctx->module_name);
          goto bail_out;
       }
 
-      Dmsg(ctx, dbglvl, "Successfully loaded module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, dbglvl, "python-dir: Successfully loaded module with name %s\n", p_ctx->module_name);
 
       /*
        * Get the Python dictionary for lookups in the Python namespace.
@@ -722,7 +722,7 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
             Py_DECREF(pRetVal);
          }
       } else {
-         Dmsg(ctx, dbglvl, "Failed to find function named load_bareos_plugins()\n");
+         Dmsg(ctx, dbglvl, "python-dir: Failed to find function named load_bareos_plugins()\n");
          goto bail_out;
       }
 
@@ -778,7 +778,7 @@ static bRC PyParsePluginDefinition(bpContext *ctx, void *value)
 
       return retval;
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named parse_plugin_definition()\n");
+      Dmsg(ctx, dbglvl, "python-dir: Failed to find function named parse_plugin_definition()\n");
       return bRC_Error;
    }
 
@@ -826,7 +826,7 @@ static bRC PyHandlePluginEvent(bpContext *ctx, bDirEvent *event, void *value)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "Failed to find function named handle_plugin_event()\n");
+      Dmsg(ctx, dbglvl, "python-dir: Failed to find function named handle_plugin_event()\n");
    }
 
    return retval;
@@ -914,7 +914,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    }
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "PyBareosGetValue: Unknown variable requested %d\n", var);
+      Dmsg(ctx, dbglvl, "python-dir: PyBareosGetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -965,7 +965,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
    }
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "PyBareosSetValue: Unknown variable requested %d\n", var);
+      Dmsg(ctx, dbglvl, "python-dir: PyBareosSetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -990,7 +990,7 @@ static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args)
 
    if (dbgmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, level, dbgmsg);
+      Dmsg(ctx, level, "python-dir: %s", dbgmsg);
    }
 
    Py_INCREF(Py_None);
@@ -1014,7 +1014,7 @@ static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args)
 
    if (jobmsg) {
       ctx = PyGetbpContext(pyCtx);
-      Jmsg(ctx, type, jobmsg);
+      Jmsg(ctx, type, "python-dir: %s", jobmsg);
    }
 
    Py_INCREF(Py_None);
@@ -1049,7 +1049,7 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
       event = PyInt_AsLong(pyEvent);
 
       if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
-         Dmsg(ctx, dbglvl, "PyBareosRegisterEvents: registering event %d\n", event);
+         Dmsg(ctx, dbglvl, "python-dir: PyBareosRegisterEvents registering event %d\n", event);
          bfuncs->registerBareosEvents(ctx, 1, event);
       }
    }
