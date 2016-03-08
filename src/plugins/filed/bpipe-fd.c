@@ -59,7 +59,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap);
 static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
 static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
 
-static char *apply_rp_codes(struct plugin_ctx * p_ctx);
+static char *apply_rp_codes(bpContext *ctx);
 static bRC parse_plugin_definition(bpContext *ctx, void *value);
 static bRC plugin_has_all_arguments(bpContext *ctx);
 
@@ -173,7 +173,6 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
  */
 bRC DLL_IMP_EXP unloadPlugin()
 {
-// printf("bpipe-fd: Unloaded\n");
    return bRC_OK;
 }
 
@@ -357,7 +356,6 @@ static bRC endBackupFile(bpContext *ctx)
    return bRC_OK;
 }
 
-
 /*
  * Bareos is calling us to do the actual I/O
  */
@@ -374,14 +372,14 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    case IO_OPEN:
       Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN\n");
       if (io->flags & (O_CREAT | O_WRONLY)) {
-         char *writer_codes = apply_rp_codes(p_ctx);
+         char *writer_codes = apply_rp_codes(ctx);
 
          p_ctx->pfd = open_bpipe(writer_codes, 0, "w");
          Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", p_ctx->pfd, writer_codes);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
-            Jmsg(ctx, M_FATAL, "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
-            Dmsg(ctx, dbglvl, "Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
+            Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
+            Dmsg(ctx, dbglvl, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
             if (writer_codes) {
                free(writer_codes);
             }
@@ -395,8 +393,8 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd, p_ctx->reader);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
-            Jmsg(ctx, M_FATAL, "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
-            Dmsg(ctx, dbglvl, "Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
+            Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
+            Dmsg(ctx, dbglvl, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
             return bRC_Error;
          }
       }
@@ -404,42 +402,42 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       break;
    case IO_READ:
       if (!p_ctx->pfd) {
-         Jmsg(ctx, M_FATAL, "Logic error: NULL read FD\n");
-         Dmsg(ctx, dbglvl, "Logic error: NULL read FD\n");
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL read FD\n");
+         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL read FD\n");
          return bRC_Error;
       }
       io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
       if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
          io->io_errno = errno;
-         Jmsg(ctx, M_FATAL, "Pipe read error: ERR=%s\n", strerror(io->io_errno));
-         Dmsg(ctx, dbglvl, "Pipe read error: ERR=%s\n", strerror(io->io_errno));
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Pipe read error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, dbglvl, "bpipe-fd: Pipe read error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
    case IO_WRITE:
       if (!p_ctx->pfd) {
-         Jmsg(ctx, M_FATAL, "Logic error: NULL write FD\n");
-         Dmsg(ctx, dbglvl, "Logic error: NULL write FD\n");
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL write FD\n");
+         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL write FD\n");
          return bRC_Error;
       }
       io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
       if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
          io->io_errno = errno;
-         Jmsg(ctx, M_FATAL, "Pipe write error: ERR=%s\n", strerror(io->io_errno));
-         Dmsg(ctx, dbglvl, "Pipe write error: ERR=%s\n", strerror(io->io_errno));
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Pipe write error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, dbglvl, "bpipe-fd: Pipe write error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
    case IO_CLOSE:
       if (!p_ctx->pfd) {
-         Jmsg(ctx, M_FATAL, "Logic error: NULL FD on bpipe close\n");
-         Dmsg(ctx, dbglvl, "Logic error: NULL FD on bpipe close\n");
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
+         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
       io->status = close_bpipe(p_ctx->pfd);
       if (io->status) {
-         Jmsg(ctx, M_FATAL, "bpipe plugin: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
-         Dmsg(ctx, dbglvl, "bpipe plugin: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
+         Dmsg(ctx, dbglvl, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
       }
       break;
    case IO_SEEK:
@@ -481,16 +479,15 @@ static bRC endRestoreFile(bpContext *ctx)
  * This is called during restore to create the file (if necessary)
  * We must return in rp->create_status:
  *
- *  CF_ERROR    -- error
- *  CF_SKIP     -- skip processing this file
- *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
- *  CF_CREATED  -- created, but no content to extract (typically directories)
- *
+ * CF_ERROR    -- error
+ * CF_SKIP     -- skip processing this file
+ * CF_EXTRACT  -- extract the file (i.e.call i/o routines)
+ * CF_CREATED  -- created, but no content to extract (typically directories)
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
    if (strlen(rp->where) > 512) {
-      printf("Restore target dir too long. Restricting to first 512 bytes.\n");
+      printf("bpipe-fd: Restore target dir too long. Restricting to first 512 bytes.\n");
    }
 
    bstrncpy(((struct plugin_ctx *)ctx->pContext)->where, rp->where, 513);
@@ -546,18 +543,22 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
  *
  * This function will allocate the required amount of memory with malloc.
  * Need to be free()d manually.
+ *
  * Inspired by edit_job_codes in lib/util.c
  */
-static char *apply_rp_codes(struct plugin_ctx * p_ctx)
+static char *apply_rp_codes(bpContext *ctx)
 {
-   char *p, *q;
-   const char *str;
    char add[10];
+   const char *str;
+   char *p, *q, *omsg, *imsg;
    int w_count = 0, r_count = 0;
-   char *omsg;
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
-   char *imsg = p_ctx->writer;
+   if (!p_ctx) {
+      return NULL;
+   }
 
+   imsg = p_ctx->writer;
    if (!imsg) {
       return NULL;
    }
@@ -583,7 +584,7 @@ static char *apply_rp_codes(struct plugin_ctx * p_ctx)
     */
    omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where)-2)) - r_count + 1);
    if (!omsg) {
-      fprintf(stderr, "Out of memory.");
+      Jmsg(ctx, M_FATAL, "bpipe-fd: Out of memory.");
       return NULL;
    }
 
@@ -705,8 +706,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
 
    bp = strchr(plugin_definition, ':');
    if (!bp) {
-      Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, dbglvl, "bpipe-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -735,8 +736,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          /*
           * Parsing something fishy ? e.g. partly with known keywords.
           */
-         Jmsg(ctx, M_FATAL, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
-         Dmsg(ctx, dbglvl, "Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         Dmsg(ctx, dbglvl, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
          goto bail_out;
       }
 
@@ -875,8 +876,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
           * Got an invalid keyword ?
           */
          if (!plugin_arguments[i].name) {
-            Jmsg(ctx, M_FATAL, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-            Dmsg(ctx, dbglvl, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+            Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+            Dmsg(ctx, dbglvl, "bpipe-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
             goto bail_out;
          }
       }
@@ -901,20 +902,20 @@ static bRC plugin_has_all_arguments(bpContext *ctx)
    }
 
    if (!p_ctx->fname) {
-      Jmsg(ctx, M_FATAL, _("Plugin File argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "Plugin File argument not specified.\n");
+      Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin File argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin File argument not specified.\n");
       retval = bRC_Error;
    }
 
    if (!p_ctx->reader) {
-      Jmsg(ctx, M_FATAL, _("Plugin Reader argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "Plugin Reader argument not specified.\n");
+      Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Reader argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin Reader argument not specified.\n");
       retval = bRC_Error;
    }
 
    if (!p_ctx->writer) {
-      Jmsg(ctx, M_FATAL, _("Plugin Writer argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "Plugin Writer argument not specified.\n");
+      Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Writer argument not specified.\n"));
+      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin Writer argument not specified.\n");
       retval = bRC_Error;
    }
 
