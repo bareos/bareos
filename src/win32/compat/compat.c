@@ -3435,7 +3435,7 @@ static void CloseHandleIfValid(HANDLE handle)
    }
 }
 
-BPIPE *open_bpipe(char *prog, int wait, const char *mode)
+BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    int mode_read, mode_write;
    SECURITY_ATTRIBUTES saAttr;
@@ -3471,7 +3471,7 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
       /*
        * Create a pipe for the child process's STDOUT.
        */
-      if (! CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0)) {
+      if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0)) {
          ErrorExit("Stdout pipe creation failed\n");
          goto cleanup;
       }
