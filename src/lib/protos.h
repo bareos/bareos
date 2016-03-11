@@ -89,7 +89,8 @@ void bnet_thread_server_tcp(dlist *addr_list,
 void bnet_stop_thread_server_tcp(pthread_t tid);
 
 /* bpipe.c */
-BPIPE *open_bpipe(char *prog, int wait, const char *mode);
+BPIPE *open_bpipe(char *prog, int wait, const char *mode,
+                  bool dup_stderr = true);
 int close_wpipe(BPIPE *bpipe);
 int close_bpipe(BPIPE *bpipe);
 

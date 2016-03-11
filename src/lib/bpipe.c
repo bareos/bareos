@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,7 +43,6 @@ int execvp_errors[] = {
 };
 int num_execvp_errors = (int)(sizeof(execvp_errors)/sizeof(int));
 
-
 #define MAX_ARGV 100
 
 #if !defined(HAVE_WIN32)
@@ -50,11 +50,11 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
 
 /*
  * Run an external program. Optionally wait a specified number
- *   of seconds. Program killed if wait exceeded. We open
- *   a bi-directional pipe so that the user can read from and
- *   write to the program.
+ * of seconds. Program killed if wait exceeded. We open
+ * a bi-directional pipe so that the user can read from and
+ * write to the program.
  */
-BPIPE *open_bpipe(char *prog, int wait, const char *mode)
+BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    char *bargv[MAX_ARGV];
    int bargc, i;
@@ -68,18 +68,17 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
    memset(bpipe, 0, sizeof(BPIPE));
    mode_read = (mode[0] == 'r');
    mode_write = (mode[0] == 'w' || mode[1] == 'w');
-   /* Build arguments for running program. */
+
+   /*
+    * Build arguments for running program.
+    */
    tprog = get_pool_memory(PM_FNAME);
    pm_strcpy(tprog, prog);
    build_argc_argv(tprog, &bargc, bargv, MAX_ARGV);
-#ifdef  xxxxxx
-   printf("argc=%d\n", bargc);
-   for (i=0; i<bargc; i++) {
-      printf("argc=%d argv=%s:\n", i, bargv[i]);
-   }
-#endif
 
-   /* Each pipe is one way, write one end, read the other, so we need two */
+   /*
+    * Each pipe is one way, write one end, read the other, so we need two
+    */
    if (mode_write && pipe(writep) == -1) {
       save_errno = errno;
       free(bpipe);
@@ -98,7 +97,10 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
       errno = save_errno;
       return NULL;
    }
-   /* Start worker process */
+
+   /*
+    * Start worker process
+    */
    switch (bpipe->worker_pid = fork()) {
    case -1:                           /* error */
       save_errno = errno;
@@ -123,10 +125,10 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
       if (mode_read) {
          close(readp[0]);             /* Close unused child fds */
          dup2(readp[1], 1);           /* dup our read to his stdout */
-         dup2(readp[1], 2);           /*   and his stderr */
+         if (dup_stderr) {
+            dup2(readp[1], 2);        /*   and his stderr */
+         }
       }
-/* Note, the close log cause problems, see bug #1536 */
-/*    closelog();                        close syslog if open */
 
 #if defined(HAVE_FCNTL_F_CLOSEM)
       /*
@@ -145,8 +147,11 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
 #endif
 
       execvp(bargv[0], bargv);        /* call the program */
-      /* Convert errno into an exit code for later analysis */
-      for (i=0; i< num_execvp_errors; i++) {
+
+      /*
+       * Convert errno into an exit code for later analysis
+       */
+      for (i = 0; i < num_execvp_errors; i++) {
          if (execvp_errors[i] == errno) {
             exit(200 + i);            /* exit code => errno */
          }
@@ -156,24 +161,32 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode)
    default:                           /* parent */
       break;
    }
+
    free_pool_memory(tprog);
+
    if (mode_read) {
       close(readp[1]);                /* close unused parent fds */
       bpipe->rfd = fdopen(readp[0], "r"); /* open file descriptor */
    }
+
    if (mode_write) {
       close(writep[0]);
       bpipe->wfd = fdopen(writep[1], "w");
    }
+
    bpipe->worker_stime = time(NULL);
    bpipe->wait = wait;
+
    if (wait > 0) {
       bpipe->timer_id = start_child_timer(NULL, bpipe->worker_pid, wait);
    }
+
    return bpipe;
 }
 
-/* Close the write pipe only */
+/*
+ * Close the write pipe only
+ */
 int close_wpipe(BPIPE *bpipe)
 {
    int status = 1;
@@ -191,8 +204,8 @@ int close_wpipe(BPIPE *bpipe)
 /*
  * Close both pipes and free resources
  *
- *  Returns: 0 on success
- *           berrno on failure
+ * Returns: 0 on success
+ *          berrno on failure
  */
 int close_bpipe(BPIPE *bpipe)
 {
@@ -203,11 +216,14 @@ int close_bpipe(BPIPE *bpipe)
    pid_t wpid = 0;
 
 
-   /* Close pipes */
+   /*
+    * Close pipes
+    */
    if (bpipe->rfd) {
       fclose(bpipe->rfd);
       bpipe->rfd = NULL;
    }
+
    if (bpipe->wfd) {
       fclose(bpipe->wfd);
       bpipe->wfd = NULL;
@@ -220,7 +236,9 @@ int close_bpipe(BPIPE *bpipe)
    }
    remaining_wait = bpipe->wait;
 
-   /* wait for worker child to exit */
+   /*
+    * Wait for worker child to exit
+    */
    for ( ;; ) {
       Dmsg2(800, "Wait for %d opt=%d\n", bpipe->worker_pid, wait_option);
       do {
@@ -244,6 +262,7 @@ int close_bpipe(BPIPE *bpipe)
          break;                       /* don't wait any longer */
       }
    }
+
    if (wpid > 0) {
       if (WIFEXITED(chldstatus)) {    /* process exit()ed */
          status = WEXITSTATUS(chldstatus);
@@ -258,11 +277,14 @@ int close_bpipe(BPIPE *bpipe)
          status |= b_errno_signal;    /* exit signal returned */
       }
    }
+
    if (bpipe->timer_id) {
       stop_child_timer(bpipe->timer_id);
    }
+
    free(bpipe);
    Dmsg2(800, "returning status=%d,%d\n", status & ~(b_errno_exit|b_errno_signal), status);
+
    return status;
 }
 
@@ -316,16 +338,16 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
 
 /*
  * Run an external program. Optionally wait a specified number
- *   of seconds. Program killed if wait exceeded. Optionally
- *   return the output from the program (normally a single line).
+ * of seconds. Program killed if wait exceeded. Optionally
+ * return the output from the program (normally a single line).
  *
- *   If the watchdog kills the program, fgets returns, and ferror is set
- *   to 1 (=>SUCCESS), so we check if the watchdog killed the program.
+ * If the watchdog kills the program, fgets returns, and ferror is set
+ * to 1 (=>SUCCESS), so we check if the watchdog killed the program.
  *
  * Contrary to my normal calling conventions, this program
  *
- *  Returns: 0 on success
- *           non-zero on error == berrno status
+ * Returns: 0 on success
+ *          non-zero on error == berrno status
  */
 int run_program(char *prog, int wait, POOLMEM *&results)
 {
@@ -338,15 +360,18 @@ int run_program(char *prog, int wait, POOLMEM *&results)
    if (!bpipe) {
       return ENOENT;
    }
+
    results[0] = 0;
    int len = sizeof_pool_memory(results) - 1;
    fgets(results, len, bpipe->rfd);
    results[len] = 0;
+
    if (feof(bpipe->rfd)) {
       stat1 = 0;
    } else {
       stat1 = ferror(bpipe->rfd);
    }
+
    if (stat1 < 0) {
       berrno be;
       Dmsg2(150, "Run program fgets stat=%d ERR=%s\n", stat1, be.bstrerror(errno));
@@ -354,9 +379,11 @@ int run_program(char *prog, int wait, POOLMEM *&results)
       Dmsg1(150, "Run program fgets stat=%d\n", stat1);
       if (bpipe->timer_id) {
          Dmsg1(150, "Run program fgets killed=%d\n", bpipe->timer_id->killed);
-         /* NB: I'm not sure it is really useful for run_program. Without the
+         /*
+          * NB: I'm not sure it is really useful for run_program. Without the
           * following lines run_program would not detect if the program was killed
-          * by the watchdog. */
+          * by the watchdog.
+          */
          if (bpipe->timer_id->killed) {
             stat1 = ETIME;
             pm_strcpy(results, _("Program killed by BAREOS (timeout)\n"));
@@ -366,24 +393,24 @@ int run_program(char *prog, int wait, POOLMEM *&results)
    stat2 = close_bpipe(bpipe);
    stat1 = stat2 != 0 ? stat2 : stat1;
    Dmsg1(150, "Run program returning %d\n", stat1);
+
    return stat1;
 }
 
 /*
  * Run an external program. Optionally wait a specified number
- *   of seconds. Program killed if wait exceeded (it is done by the
- *   watchdog, as fgets is a blocking function).
+ * of seconds. Program killed if wait exceeded (it is done by the
+ * watchdog, as fgets is a blocking function).
  *
- *   If the watchdog kills the program, fgets returns, and ferror is set
- *   to 1 (=>SUCCESS), so we check if the watchdog killed the program.
+ * If the watchdog kills the program, fgets returns, and ferror is set
+ * to 1 (=>SUCCESS), so we check if the watchdog killed the program.
  *
- *   Return the full output from the program (not only the first line).
+ * Return the full output from the program (not only the first line).
  *
  * Contrary to my normal calling conventions, this program
  *
- *  Returns: 0 on success
- *           non-zero on error == berrno status
- *
+ * Returns: 0 on success
+ *          non-zero on error == berrno status
  */
 int run_program_full_output(char *prog, int wait, POOLMEM *&results)
 {
@@ -434,6 +461,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
          }
       }
    }
+
    /*
     * We always check whether the timer killed the program. We would see
     * an eof even when it does so we just have to trust the killed flag
@@ -445,6 +473,7 @@ int run_program_full_output(char *prog, int wait, POOLMEM *&results)
       pm_strcpy(tmp, _("Program killed by BAREOS (timeout)\n"));
       stat1 = ETIME;
    }
+
    pm_strcpy(results, tmp);
    Dmsg3(1900, "resadr=0x%x reslen=%d res=%s\n", results, strlen(results), results);
    stat2 = close_bpipe(bpipe);
