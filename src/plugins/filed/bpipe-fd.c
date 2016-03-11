@@ -391,7 +391,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
             free(writer_codes);
          }
       } else {
-         p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "r");
+         p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "r", false);
          Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd, p_ctx->reader);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
