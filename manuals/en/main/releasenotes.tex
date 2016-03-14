@@ -16,6 +16,31 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \section*{Bareos-15.2}
 
+\releasenote{15.2.3}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2016-03-11\\
+Database Version  & 2004 (unchanged)\\
+Release Ticket    & \ticket{625} \\
+Url               & \releaseUrlDownloadBareosCom{15.2} \\
+\end{tabular}
+
+For upgrading from 14.2, please see releasenotes for 15.2.1.
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+ \item VMWare plugin can now restore to VMDK file 
+ \item Ceph support for SLES12 included
+ \item Multiple gfapi and ceph enhancements 
+ \item NDMP enhancements and bugfixes
+ \item Windows: multiple VSS Jobs can now run concurrently in one FD, installer fixes
+ \item bpipe: fix stderr/stdout problems
+ \item reload command enhancements (limitations eliminated)
+ \item label barcodes now can run without interaction 
+\end{itemize}
+}
+
+
 
 \releasenote{15.2.2}{
 
