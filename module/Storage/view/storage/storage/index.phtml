@@ -40,11 +40,12 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="storages">
+<table class="table table-hover" id="storagetable">
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
    <th><?php echo $this->translate("Autochanger"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 
 </table>
@@ -64,26 +65,19 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
-   var table= $('#storages').DataTable( {
+   var table= $('#storagetable').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
       },
       "columns" : [
-         {
-            "className": "storage-name",
-            "orderable": true,
-            "data": "name"
-         },
-         {
-            "className": "storage-autochanger",
-            "orderable": true,
-            "data": "autochanger"
-         },
+         { "data": "name", "orderable": true },
+         { "data": "autochanger", "orderable": true },
+         { "data": null, "orderable": false}
       ],
-      "paging":   true,
+      "paging": true,
       "ordering": true,
-      "info":     true,
+      "info": true,
       "pagingType": "full_numbers",
       "stateSave": true,
       "order": [[0, 'asc']],
@@ -104,7 +98,23 @@ $(document).ready(function() {
                return a;
             }
          },
+         {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               if(data.autochanger == "1") {
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+data.name+'" title="Manage autochanger" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
+               }
+               else {
+                  return '';
+               }
+            }
+         }
       ]
+   });
+
+
+   $('#storagetable tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
    });
 
 });

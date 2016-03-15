@@ -160,6 +160,18 @@ return array(
          array(
             'label' => 'Jobs',
             'route' => 'job',
+            'pages' => array(
+               array(
+                  'label' => 'Overview',
+                  'route' => 'job',
+                  'action' => 'index'
+               ),
+               array(
+                  'label' => 'Run',
+                  'route' => 'job',
+                  'action' => 'run'
+               ),
+            ),
          ),
          array(
             'label' => 'Restore',

@@ -40,7 +40,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table" id="volumes">
+<table class="table table-hover" id="volumes">
 
 <thead class="bg-primary">
    <th></th>
@@ -66,8 +66,18 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.buttons.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/buttons.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.bootstrap.min.css');
 ?>
 
 <style>
@@ -125,11 +135,23 @@ function format( d ) {
 
 $(document).ready(function() {
 
-   var table = $('#volumes').DataTable( {
+   var volumes = $('#volumes').DataTable( {
+      "dom": "l<'row'<'col-sm-9'B><'col-sm-3'f>>rtip",
       "ajax": {
          "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
       },
+      "paging": true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "ordering": true,
+      "order": [[4, "desc"]],
+      "searching": true,
+      "info": false,
+      /*"select": {
+         "style": "os",
+         "blurable": true
+      },*/
       "columns": [
          { "data": null, "orderable": false, "defaultContent": '', "className": 'details-control' },
          { "data": "volumename" },
@@ -143,12 +165,6 @@ $(document).ready(function() {
          { "type": "file-size", "data": null },
          { "data": "lastwritten" }
       ],
-      "paging":   true,
-      "ordering": true,
-      "info":     true,
-      "pagingType": "full_numbers",
-      "stateSave": true,
-      "order": [[4, "desc"]],
       "columnDefs": [
          {
             "targets": 1,
@@ -192,7 +208,59 @@ $(document).ready(function() {
             "visible": false,
             "searchable": false
          }
-      ]
+      ],
+      "buttons": [/*
+         {
+            "text": '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>' + ' Delete',
+            "action": function(e, dt, node, conf) {
+               var sel_volumes = $.map(volumes.rows('.selected').data(), function(item) {
+                  return item['volumename'];
+               });
+
+               alert(sel_volumes);
+            }
+         },
+         {
+            "text": '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>' + ' Purge',
+            "action": function(e, dt, node, conf) {
+               var sel_volumes = $.map(volumes.rows('.selected').data(), function(item) {
+                  return item['volumename'];
+               });
+
+               alert(sel_volumes);
+            }
+         },
+         {
+            "text": '<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>' + ' Prune',
+            "action": function(e, dt, node, conf) {
+               var sel_volumes = $.map(volumes.rows('.selected').data(), function(item) {
+                  return item['volumename'];
+               });
+
+               alert(sel_volumes);
+            }
+         },
+         {
+            "text": '<span class="glyphicon glyphicon-import" aria-hidden="true"></span>' + ' Import',
+            "action": function(e, dt, node, conf) {
+               var sel_volumes = $.map(volumes.rows('.selected').data(), function(item) {
+                  return item['volumename'];
+               });
+
+               alert(sel_volumes);
+            }
+         },
+         {
+            "text": '<span class="glyphicon glyphicon-export" aria-hidden="true"></span>' + ' Export',
+            "action": function(e, dt, node, conf) {
+               var sel_volumes = $.map(volumes.rows('.selected').data(), function(item) {
+                  return item['volumename'];
+               });
+
+               alert(sel_volumes);
+            }
+         },
+      */],
 
    } );
 
@@ -202,7 +270,7 @@ $(document).ready(function() {
 
    $('#volumes tbody').on('click', 'td.details-control', function () {
       var tr = $(this).closest('tr');
-      var row = table.row( tr );
+      var row = volumes.row( tr );
       if ( row.child.isShown() ) {
          // This row is already open - close it
          row.child.hide();

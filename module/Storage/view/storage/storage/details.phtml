@@ -7,7 +7,7 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author     Frank Bergkemper
+ * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -29,3 +29,556 @@ $this->headTitle($title);
 
 ?>
 
+<div class="spinner" id="spinner"></div>
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<!-- IMPORT/EXPORT SLOTS -->
+   <div class="col-xs-6 col-md-4">
+
+      <div class="panel panel-default">
+         <div class="panel-heading">
+            <h3 class="panel-title">Import/Export Slots - <?php echo $this->storagename; ?></h3>
+         </div>
+         <div class="panel-body" style="overflow-y: auto;">
+            <table class="table table-hover" id="storage-ie-slots">
+               <thead class="bg-primary">
+                  <th>Slot</th>
+                  <th>Content</th>
+                  <th>Volume</th>
+                  <th>Bytes</th>
+                  <th>Last written</th>
+                  <th>Expiration</th>
+                  <th>Status</th>
+                  <th>Media Type</th>
+                  <th>Pool</th>
+                  <th></th>
+                  <th>Actions</th>
+               </thead>
+               <tbody class="table table-bordered">
+               </tbody>
+            </table>
+         </div>
+      </div>
+
+      <div class="panel panel-default">
+         <div class="panel-heading">
+            <h3 class="panel-title">Drives - <?php echo $this->storagename; ?></h3>
+         </div>
+         <div class="panel-body" style="overflow-y: auto;">
+            <table class="table table-hover" id="storage-drives">
+               <thead class="bg-primary">
+                  <th>Drive</th>
+                  <th>Content</th>
+                  <th>Loaded</th>
+                  <th>Volume</th>
+                  <th></th>
+                  <th>Actions</th>
+               </thead>
+               <tbody class="table table-bordered">
+               </tbody>
+            </table>
+         </div>
+      </div>
+
+   </div>
+
+   <div class="col-xs-12 col-md-8">
+
+      <div class="panel panel-default">
+         <div class="panel-heading">
+            <h3 class="panel-title">Slots - <?php echo $this->storagename; ?></h3>
+         </div>
+         <div class="panel-body" style="overflow-y: auto;">
+            <table class="table table-hover" id="storage-slots">
+               <thead class="bg-primary">
+                  <th>Slot</th>
+                  <th>Content</th>
+                  <th>Volume</th>
+                  <th>Bytes</th>
+                  <th>Last written</th>
+                  <th>Expiration</th>
+                  <th>Status</th>
+                  <th>Media Type</th>
+                  <th>Pool</th>
+                  <th></th>
+                  <th></th>
+                  <th>Actions</th>
+               </thead>
+               <tbody class="table table-bordered">
+               </tbody>
+            </table>
+         </div>
+      </div>
+
+   </div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.buttons.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/buttons.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.bootstrap.min.css');
+?>
+
+<script>
+
+$.fn.DataTable.ext.search.push(
+   function( settings, aData, iDataIndex ) {
+      if(settings.nTable.id === 'storage-slots') {
+         return (aData[10] === 'slot') ? true : false;
+      }
+
+      if(settings.nTable.id === 'storage-drives') {
+         return (aData[4] === 'drive') ? true : false;
+      }
+
+      if(settings.nTable.id === 'storage-ie-slots') {
+         return (aData[9] === 'import_slot') ? true : false;
+      }
+
+      return false;
+   }
+);
+
+$(document).ready(function() {
+
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+   if(result.length > 0) {
+      $("#modal-001").modal();
+   }
+
+   var normal_slots = $('#storage-slots').DataTable( {
+      "dom": "<'row'<'col-md-2'l><'col-md-10'f>><'row'<'col-md-12'B>>rtip",
+      "ajax": {
+         "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
+         "dataSrc": ""
+      },
+      "responsive": true,
+      "paging": true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "ordering": true,
+      "order": [[0, "asc"]],
+      "searching": true,
+      "info": false,
+      /*"select": {
+         "style": "os",
+         "blurable": true
+      },*/
+      "columns": [
+         { "data": "slotnr", "defaultContent": "" },
+         { "data": "content", "defaultContent": "", "orderable": false },
+         { "data": "mr_volname", "defaultContent": "" },
+         { "type": "file-size", "data": "mr_volbytes", "defaultContent": "" },
+         { "data": "mr_lastwritten", "defaultContent": "0" },
+         { "data": null, "defaultContent": "" },
+         { "data": "mr_volstatus", "defaultContent": "" },
+         { "data": "mr_mediatype", "defaultContent": "" },
+         { "data": "pr_name", "defaultContent": "" },
+         { "type": "file-size", "data": "mr_volbytes", "defaultContent": "0" },
+         { "data": "type", "defaultContent": "unknown" },
+         { "data": null, "defaultContent": "", "orderable": false }
+      ],
+      "columnDefs": [
+         {
+            "targets": 1,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == 'empty') {
+                  return '';
+               }
+               else {
+                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
+               }
+            }
+         },
+         {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               if(data != null) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            }
+         },
+         {
+            "targets": 3,
+            "orderData": 9,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else if(data != null) {
+                  return formatBytes(data);
+               }
+            }
+         },
+         {
+            "targets": 4,
+            "render": function(data, type, full, meta) {
+               if(data == "" || data == 0 || data == null) {
+                  return '';
+               }
+               else {
+                  var f = moment.unix(data).format("YYYY-MM-DD HH:mm:ss");
+                  return f;
+               }
+            }
+         },
+         {
+            "targets": 5,
+            "render": function(data, type, full, meta) {
+               if(data.mr_volstatus != "Append") {
+                  if(data.mr_expire > data.mr_lastwritten && data.mr_lastwritten > 0) {
+                     var i = moment.unix(data.mr_expire).format("YYYY-MM-DD HH:mm:ss");
+                     return i;
+                  }
+               }
+
+               return '';
+            }
+         },
+         {
+            "targets": 6,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '<span class="label label-warning">not in catalog</span>';
+               }
+               else {
+                  return data;
+               }
+            }
+         },
+         {
+            "targets": 7,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else {
+                  return data;
+               }
+            }
+         },
+         {
+            "targets": 8,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else if(data != null) {
+                  return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            }
+         },
+         {
+            "targets": 9,
+            "visible": false,
+            "searchable": false
+         },
+         {
+            "targets": 10,
+            "visible": false
+         },
+         {
+            "targets": 11,
+            "render": function(data, type, full, meta) {
+               if(data.content == "empty") {
+                  return '';
+               }
+               else {
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=export&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Export" id="btn-1"><span class="glyphicon glyphicon-export"></span></a>';
+               }
+            }
+         }
+      ],
+      "buttons": [
+         {
+            "text": '<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>' + ' Update slots',
+            "action": function(e, dt, node, conf) {
+               //$('#spinner').fadeIn('normal');
+               window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=updateslots&storage=" . $this->storagename; ?>');
+            }
+         },
+         {
+            "text": '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' Label barcodes',
+            "action": function(e, dt, node, conf) {
+               //$('#spinner').fadeIn('normal');
+               window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename. "?action=label&storage=" . $this->storagename; ?>');
+            }
+         }
+      ]
+   });
+
+   var drive_slots = $('#storage-drives').DataTable( {
+      "dom": "l<'row'<'col-sm-6'B>>rtip",
+      "ajax": {
+         "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
+         "dataSrc": ""
+      },
+      "responsive": true,
+      "paging": false,
+      "ordering": false,
+      "order": [[0, "asc"]],
+      "info": false,
+      "searching": true,
+      /*"select": {
+         "style": "os",
+         "blurable": true
+      },*/
+      "columns": [
+         { "data": "slotnr", "defaultContent": "" },
+         { "data": "content", "defaultContent": "" },
+         { "data": "loaded", "defaultContent": "" },
+         { "data": "volname", "defaultContent": "" },
+         { "data": "type", "defaultContent": "unknown" },
+         { "data": null, "defaultContent": "" }
+      ],
+      "columnDefs": [
+         {
+            "targets": 1,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == 'empty') {
+                  return '';
+               }
+               else {
+                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
+               }
+            }
+         },
+         {
+            "targets": 3,
+            "render": function(data, type, full, meta) {
+               if(data != null) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            }
+         },
+         {
+            "targets": 4,
+            "visible": false
+         },
+         {
+            "targets": 5,
+            "render": function(data, type, full, meta) {
+               if(data.content == "empty") {
+                  return '';
+               }
+               else {
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=release&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Release" id="btn-1"><span class="glyphicon glyphicon-eject"></span></a>';
+               }
+            }
+         }
+      ],
+      "buttons": [
+      ]
+   });
+
+   var impexp_slots = $('#storage-ie-slots').DataTable( {
+      "dom": "l<'row'<'col-sm-6'B>>rtip",
+      "ajax": {
+         "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
+         "dataSrc": ""
+      },
+      "responsive": true,
+      "paging": false,
+      "ordering": false,
+      "order": [[0, "asc"]],
+      "info": false,
+      "searching": true,
+      /*"select": {
+         "style": "os",
+         "blurable": true
+      },*/
+      "columns": [
+         { "data": "slotnr", "defaultContent": "" },
+         { "data": "content", "defaultContent": "" },
+         { "data": "mr_volname", "defaultContent": "" },
+         { "type": "file-size", "data": "mr_volbytes", "defaultContent": "" },
+         { "data": "mr_lastwritten", "defaultContent": "" },
+         { "data": null, "defaultContent": "" },
+         { "data": "mr_volstatus", "defaultContent": "" },
+         { "data": "mr_mediatype", "defaultContent": "" },
+         { "data": "pr_name", "defaultContent": "" },
+         { "data": "type", "defaultContent": "unknown" },
+         { "data": null, "defaultContent": "" }
+      ],
+      "columnDefs": [
+         {
+            "targets": 1,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data != null && data != "empty") {
+                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
+               }
+            }
+         },
+         {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               if(data != null) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            }
+         },
+         {
+            "targets": 3,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else if(data != null) {
+                  return formatBytes(data);
+               }
+            }
+         },
+         {
+            "targets": 4,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == "" || data == 0 || data == null) {
+                  return '';
+               }
+               else {
+                  var f = moment.unix(data).format("YYYY-MM-DD HH:mm:ss");
+                  return f;
+               }
+            }
+         },
+         {
+            "targets": 5,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data.mr_expire > data.mr_lastwritten && data.mr_lastwritten > 0) {
+                  var i = moment.unix(data.mr_expire).format("YYYY-MM-DD HH:mm:ss");
+                  return i;
+               }
+               else {
+                  return '';
+               }
+            }
+         },
+         {
+            "targets": 6,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '<span class="label label-warning">not in catalog</span>';
+               }
+               else {
+                  return data;
+               }
+            }
+         },
+         {
+            "targets": 7,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else {
+                  return data;
+               }
+            }
+         },
+         {
+            "targets": 8,
+            "visible": false,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
+               }
+               else if(data != null) {
+                  return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            }
+         },
+         {
+            "targets": 9,
+            "visible": false
+         },
+         {
+            "targets": 10,
+            "render": function(data, type, full, meta) {
+               if(data.content == "empty") {
+                  return '';
+               }
+               else {
+                  return '<span id="import-action"><a class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=import&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Import" id="btn-1"><span class="glyphicon glyphicon-import"></span></a></span>';
+               }
+            }
+         }
+      ],
+      "buttons": [
+         {
+            "text": '<span class="glyphicon glyphicon-import" aria-hidden="true"></span>' + ' Import all',
+            "action": function(e, dt, node, conf) {
+               $('#spinner').fadeIn('normal');
+               window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=import&storage=" . $this->storagename; ?>');
+            }
+         },
+      ],
+   });
+
+   $('#storage-ie-slots tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   });
+
+   $('#storage-drives tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   });
+
+   $('#storage-slots tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   });
+
+   $('#spinner').fadeOut('normal');
+
+   $('#storage-ie-slots tbody').on('click', '#btn-1', function() {
+      $('#spinner').fadeIn('normal');
+   });
+
+   $('#storage-drives tbody').on('click', '#btn-1', function() {
+      $('#spinner').fadeIn('normal');
+   });
+
+   $('#storage-slots tbody').on('click', '#btn-1', function() {
+      $('#spinner').fadeIn('normal');
+   });
+
+});
+
+</script>

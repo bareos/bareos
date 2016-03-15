@@ -120,7 +120,7 @@ function formatExpiration(volstatus, lastwritten, volretention) {
 }
 
 function formatLastWritten(data) {
-   if(data == null || data == "") {
+   if(data == null || data == '' || data == 0) {
       return 'never';
    }
    else {
@@ -148,7 +148,7 @@ function formatLastWritten(data) {
 }
 
 function formatBytes(data) {
-   if(data == 0) {
+   if(data == 0 || data == null) {
       var b = "0.00 B";
    }
    else {

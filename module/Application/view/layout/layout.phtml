@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -30,84 +30,89 @@ echo $this->doctype();
 
 <html lang="en">
 
-    <head>
-   <meta charset="utf-8">
-   <?php echo $this->headTitle($_SESSION['bareos']['director'],'APPEND')->setSeparator(' | ')->setAutoEscape(false) ?>
+<head>
+<meta charset="utf-8">
 
-   <?php echo $this->headMeta()
-       ->appendName('viewport', 'width=device-width, initial-scale=1.0')
-       ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
-   ?>
+<?php echo $this->headTitle($_SESSION['bareos']['director'],'APPEND')->setSeparator(' | ')->setAutoEscape(false) ?>
 
-   <!-- Styles -->
-   <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
-         ->prependStylesheet($this->basePath() . '/css/style.css')
-         ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
-         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
-   ?>
+<?php echo $this->headMeta()
+   ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+   ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+?>
 
-   <!-- Scripts -->
-   <?php echo $this->headScript()
-       ->prependFile($this->basePath() . '/js/bootstrap.min.js')
-       ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
-       ->prependFile($this->basePath() . '/js/excanvas.min.js')
-       ->prependFile($this->basePath() . '/js/jquery.min.js')
-       ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
-       ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',));
-   ?>
+<!-- Styles -->
+<?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
+   ->prependStylesheet($this->basePath() . '/css/style.css')
+   ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
+   ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css');
+?>
 
-    </head>
+<!-- Scripts -->
+<?php echo $this->headScript()
+   ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+   ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
+   ->prependFile($this->basePath() . '/js/excanvas.min.js', 'text/jaavscript')
+   ->prependFile($this->basePath() . '/js/jquery.min.js', 'text/javascript')
+   ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9'))
+   ->prependFile($this->basePath() . '/js/html5shiv.js', 'text/javascript', array('conditional' => 'lt IE 9'));
+?>
 
-    <body>
+</head>
 
-   <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
-       <div class="container">
-            <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-               <span class="sr-only">Toggle navigation</span>
-         <span class="icon-bar"></span>
-         <span class="icon-bar"></span>
-         <span class="icon-bar"></span>
-          </button>
-            <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
+<body>
+
+<!-- TOP NAVBAR -->
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+   <div class="container-fluid">
+      <div class="navbar-header">
+         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+         </button>
+         <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
       </div>
       <div class="collapse navbar-collapse">
-         <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
+         <span class="navbar-brand">Bareos <small>Open Source Data Protection</small></span>
          <ul class="nav navbar-nav navbar-right">
             <li class="dropdown">
+               <a href="#"><span class="glyphicon glyphicon-th"></span>&nbsp;<?php echo $_SESSION['bareos']['director']; ?></a>
+            </li>
+            <li class="dropdown">
                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-                  <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
-                  &nbsp;<?php echo $_SESSION['bareos']['username']; ?> <span class="caret"></span>
+                  <span class="glyphicon glyphicon-user" aria-hidden="true"></span>&nbsp;<?php echo $_SESSION['bareos']['username']; ?> <span class="caret"></span>
                </a>
                <ul class="dropdown-menu" role="menu">
+                  <li><a href="http://doc.bareos.org" target="_blank">Help</a></li>
+                  <li role="separator" class="divider"></li>
                   <li><a href="<?php echo $this->url('auth', array('action' => 'logout')); ?>">Logout</a></li>
                </ul>
             </li>
          </ul>
       </div>
-       </div>
-   </nav>
-
-   <div class="container">
-         <?php echo $this->content; ?>
    </div>
+</nav>
 
-   <footer class="footer">
-     <div class="container">
-      <div class="row">
-         <div class="col-md-8">
-            <p class="text-muted">Bareos WebUI Version 16.1.0 &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>, GNU Affero General Public License Version 3</p>
-         </div>
-         <div class="col-md-4 text-right">
-            <p class="text-muted"><?php echo "Director: " . $_SESSION['bareos']['director']; ?></p>
-         </div>
-      </div>
-     </div>
-   </footer>
+<div class="container-fluid">
+<div class="row">
 
-   <?php echo $this->inlineScript() ?>
+<!-- LEFT NAVBAR -->
+<div class="col-xs-2 col-md-1 sidebar">
+   <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav nav-sidebar'); ?>
+</div>
 
-   </body>
+<!-- CONTENT CONTAINER -->
+<div class="col-xs-14 col-md-11 col-xs-offset-2 col-md-offset-1 main">
+   <?php echo $this->content; ?>
+</div>
+
+</div>
+</div>
+
+<?php echo $this->inlineScript() ?>
+
+</body>
 
 </html>
 

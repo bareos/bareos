@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -56,5 +56,83 @@ class StorageModel implements ServiceLocatorAwareInterface
       return $storages['result']['storages'];
    }
 
-}
+   public function getStatusStorageSlots($storagename=null)
+   {
+      $cmd = 'status storage="' . $storagename . '" slots';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $slots['result']['contents'];
+   }
 
+   public function importSlots($storage=null, $srcslots=null, $dstslots=null)
+   {
+      if($dstslots == null) {
+         $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots;
+      }
+      else {
+         $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+      }
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function exportSlots($storage=null, $slots=null)
+   {
+      $cmd = 'export storage="' . $storage . '" srcslots=' . $slots;
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function mountSlot($storage=null, $slot=null, $drive=null)
+   {
+      $cmd = 'mount storage="' . $storage . '" slot=' . $slot . ' drive=' . $drive;
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function unmountSlot($storage=null, $drive=null)
+   {
+      $cmd = 'unmount storage="' . $storage . '" drive=' . $drive;
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function releaseSlot($storage=null, $drive=null)
+   {
+      $cmd = 'release storage="' . $storage . '" drive=' . $drive;
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function updateSlots($storage=null)
+   {
+      $cmd = 'update slots storage="' . $storage . '"';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+   public function moveSlots($storage=null, $srcslots=null, $dstslots=null)
+   {
+      $cmd = 'move storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      return $result;
+   }
+
+   public function label($storage=null, $pool=null, $drive=null, $slots=null)
+   {
+      // Use Scratch pool by default as long as we don't display a pool selection dialog
+      $cmd = 'label storage="' . $storage . '" pool=Scratch drive=0 barcodes yes';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 0, null);
+      return $result;
+   }
+
+}
