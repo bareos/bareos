@@ -652,6 +652,7 @@ static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
 bool dot_admin_cmds(UAContext *ua, const char *cmd)
 {
    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+   bool result = true;
    STORERES *store = NULL;
    CLIENTRES *client = NULL;
    bool dir=false;
@@ -669,6 +670,8 @@ bool dot_admin_cmds(UAContext *ua, const char *cmd)
       }
    } else if (strncmp(ua->argk[0], ".dump", 5) == 0) {
       remote_cmd = "sm_dump";
+   } else if (strncmp(ua->argk[0], ".memcheck", 8) == 0) {
+      remote_cmd = "sm_check";
    } else if (strncmp(ua->argk[0], ".exit", 5) == 0) {
       remote_cmd = "exit";
    } else {
@@ -758,14 +761,22 @@ bool dot_admin_cmds(UAContext *ua, const char *cmd)
          jcr->JobId = 1000; /* another ref NULL pointer */
          jcr->JobId = a;
 
-      } else if (strncmp(remote_cmd, ".dump", 5) == 0) {
+      } else if (strncmp(remote_cmd, "sm_dump", 7) == 0) {
          sm_dump(false, true);
+         Dsm_check(100);
+      } else if (strncmp(remote_cmd, "sm_check", 8) == 0) {
+         result = sm_check_rtn(__FILE__, __LINE__, true);
+         if (result) {
+            ua->send_msg("memory: OK\n");
+         } else {
+            ua->error_msg("Memory managing problems detected.\n");
+         }
       } else if (strncmp(remote_cmd, ".exit", 5) == 0) {
          quit_cmd(ua, cmd);
       }
    }
 
-   return true;
+   return result;
 }
 #else
 /*

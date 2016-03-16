@@ -163,11 +163,13 @@ static struct cmdstruct commands[] = {
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
 #ifdef DEVELOPER
    { NT_(".die"), dot_admin_cmds, _("Generate Segmentation Fault"),
-     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, true },
+     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
    { NT_(".dump"), dot_admin_cmds, _("Dump memory statistics"),
-     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, true },
+     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
+   { NT_(".memcheck"), dot_admin_cmds, _("Checks for internal memory leaks"),
+     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
    { NT_(".exit"), dot_admin_cmds, _("Close connection"),
-     _("[dir | director] [dlient | fd] [store | storage | sd]"), false, false },
+     NT_("[dir | director] [client=<client>] [storage=<storage>]"), false, true },
 #endif
    { NT_(".filesets"), dot_filesets_cmd, _("List all filesets"),
      NULL, false, false },
