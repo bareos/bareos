@@ -52,6 +52,50 @@ extern bool quit_cmd(UAContext *ua, const char *cmd);
 /* ua_output.c */
 extern void do_messages(UAContext *ua, const char *cmd);
 
+struct authorization_mapping {
+   const char *type;
+   int acl_type;
+};
+
+static authorization_mapping authorization_mappings[] = {
+   { "job", Job_ACL },
+   { "client", Client_ACL },
+   { "storage", Storage_ACL },
+   { "schedule", Schedule_ACL },
+   { "pool", Pool_ACL },
+   { "cmd", Command_ACL },
+   { "fileset", FileSet_ACL },
+   { "catalog", Catalog_ACL },
+   { NULL, 0 },
+};
+
+bool dot_authorized_cmd(UAContext *ua, const char *cmd)
+{
+   bool retval = false;
+
+   for (int i = 1; i < ua->argc; i++) {
+      for (int j = 0; authorization_mappings[i].type; i++) {
+         if (bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
+            if (acl_access_ok(ua, authorization_mappings[j].acl_type, ua->argv[i], false)) {
+               retval = true;
+            } else {
+               retval = false;
+            }
+         }
+      }
+   }
+
+   ua->send->object_start(".authorized");
+   if (retval) {
+      ua->send->object_key_value_bool("authorized", retval, "authorized\n");
+   } else {
+      ua->send->object_key_value_bool("authorized", retval, "not authorized\n");
+   }
+   ua->send->object_end(".authorized");
+
+   return retval;
+}
+
 bool dot_bvfs_update_cmd(UAContext *ua, const char *cmd)
 {
    int pos;

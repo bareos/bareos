@@ -90,6 +90,7 @@ extern bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd);
 extern bool dot_bvfs_clear_cache_cmd(UAContext *ua, const char *cmd);
 extern bool dot_api_cmd(UAContext *ua, const char *cmd);
 extern bool dot_sql_cmd(UAContext *ua, const char *cmd);
+extern bool dot_authorized_cmd(UAContext *ua, const char *cmd);
 
 /* ua_status.c */
 extern bool dot_status_cmd(UAContext *ua, const char *cmd);
@@ -146,6 +147,20 @@ struct cmdstruct {
 static struct cmdstruct commands[] = {
    { NT_("."), noop_cmd, _("no op"),
      NULL, true, false },
+   { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
+     NULL, true, false },
+   { NT_(".api"), dot_api_cmd, _("Switch between different api modes"),
+     NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false },
+   { NT_(".authorized"), dot_authorized_cmd, _("Check for authorization"),
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | \n"
+         "schedule=<schedule-name> | pool=<pool-name> | cmd=<command> | \n"
+         "fileset=<fileset-name> | catalog=<catalog>"), false, false },
+   { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
+     NULL, false, false },
+   { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
+     NULL, true, false },
+   { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
+     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
 #ifdef DEVELOPER
    { NT_(".die"), dot_admin_cmds, _("Generate Segmentation Fault"),
      _("[dir | director] [dlient | fd] [store | storage | sd]"), false, true },
@@ -154,16 +169,6 @@ static struct cmdstruct commands[] = {
    { NT_(".exit"), dot_admin_cmds, _("Close connection"),
      _("[dir | director] [dlient | fd] [store | storage | sd]"), false, false },
 #endif
-   { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
-     NULL, true, false },
-   { NT_(".api"), dot_api_cmd, _("Switch between different api modes"),
-     NT_("[ 0 | 1 | 2 | off | on | json ] [compact=<yes|no>]"), false, false },
-   { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
-     NULL, false, false },
-   { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
-     NULL, true, false },
-   { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
-     NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },
    { NT_(".filesets"), dot_filesets_cmd, _("List all filesets"),
      NULL, false, false },
    { NT_(".help"), dot_help_cmd, _("Print parsable information about a command"),
