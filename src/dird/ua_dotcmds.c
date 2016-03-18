@@ -74,7 +74,7 @@ bool dot_authorized_cmd(UAContext *ua, const char *cmd)
    bool retval = false;
 
    for (int i = 1; i < ua->argc; i++) {
-      for (int j = 0; authorization_mappings[i].type; i++) {
+      for (int j = 0; authorization_mappings[j].type; j++) {
          if (bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
             if (acl_access_ok(ua, authorization_mappings[j].acl_type, ua->argv[i], false)) {
                retval = true;
