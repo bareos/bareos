@@ -169,6 +169,7 @@ public:
    CATRES *catalog;
    int Priority;
    int files;
+   int level_override;
    int spool_data;
    int accurate;
    int ignoreduplicatecheck;
