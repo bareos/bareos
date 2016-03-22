@@ -130,7 +130,7 @@ $(document).ready(function() {
          { "data": "jobid" },
          { "data": "name" },
          { "data": "client" },
-         { "data": "fileset" },
+         { "data": null },
          { "data": "type" },
          { "data": "level" },
          { "data": "poolname" }
@@ -142,6 +142,12 @@ $(document).ready(function() {
       "stateSave": true,
       "bFilter": false,
       "columnDefs": [
+         {
+            "targets": 3,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.fileset+'</a>';
+            }
+         },
          {
             "targets": 4,
             "render": function(data, type, full, meta) {

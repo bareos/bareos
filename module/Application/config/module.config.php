@@ -134,30 +134,6 @@ return array(
             'route' => 'dashboard',
          ),
          array(
-            'label' => 'Director',
-            'route' => 'director',
-         ),
-         array(
-            'label' => 'Filesets',
-            'route' => 'fileset',
-         ),
-         array(
-            'label' => 'Pools',
-            'route' => 'pool',
-         ),
-         array(
-            'label' => 'Volumes',
-            'route' => 'media',
-         ),
-         array(
-            'label' => 'Storages',
-            'route' => 'storage',
-         ),
-         array(
-            'label' => 'Clients',
-            'route' => 'client',
-         ),
-         array(
             'label' => 'Jobs',
             'route' => 'job',
             'pages' => array(
@@ -177,7 +153,35 @@ return array(
             'label' => 'Restore',
             'route' => 'restore',
          ),
+         array(
+            'label' => 'Clients',
+            'route' => 'client',
+         ),
+         array(
+            'label' => 'Storage',
+            'route' => 'storage',
+         ),
+         /*array(
+            'label' => 'Volumes',
+            'route' => 'media',
+         ),
+         array(
+            'label' => 'Pools',
+            'route' => 'pool',
+         ),*/
+         array(
+            'label' => 'Director',
+            'route' => 'director',
+         ),
+         /*array(
+            'label' => 'Filesets',
+            'route' => 'fileset',
+         ),
+         array(
+            'label' => 'Storages',
+            'route' => 'storage',
+         )*/
       ),
-    ),
+   ),
 );
 

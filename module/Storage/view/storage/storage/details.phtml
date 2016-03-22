@@ -29,8 +29,6 @@ $this->headTitle($title);
 
 ?>
 
-<div class="spinner" id="spinner"></div>
-
 <!-- modal-001 start -->
 <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
   <div class="modal-dialog modal-md">
@@ -52,85 +50,75 @@ $this->headTitle($title);
 </div>
 <!-- modal-001 end -->
 
-<!-- IMPORT/EXPORT SLOTS -->
-   <div class="col-xs-6 col-md-4">
+<div class="col-xs-6 col-md-4">
 
-      <div class="panel panel-default">
-         <div class="panel-heading">
-            <h3 class="panel-title">Import/Export Slots - <?php echo $this->storagename; ?></h3>
-         </div>
-         <div class="panel-body" style="overflow-y: auto;">
-            <table class="table table-hover" id="storage-ie-slots">
-               <thead class="bg-primary">
-                  <th>Slot</th>
-                  <th>Content</th>
-                  <th>Volume</th>
-                  <th>Bytes</th>
-                  <th>Last written</th>
-                  <th>Expiration</th>
-                  <th>Status</th>
-                  <th>Media Type</th>
-                  <th>Pool</th>
-                  <th></th>
-                  <th>Actions</th>
-               </thead>
-               <tbody class="table table-bordered">
-               </tbody>
-            </table>
-         </div>
+   <div class="panel panel-default">
+      <div class="panel-heading">
+         <h3 class="panel-title">Import/Export Slots - <?php echo $this->storagename; ?></h3>
       </div>
-
-      <div class="panel panel-default">
-         <div class="panel-heading">
-            <h3 class="panel-title">Drives - <?php echo $this->storagename; ?></h3>
-         </div>
-         <div class="panel-body" style="overflow-y: auto;">
-            <table class="table table-hover" id="storage-drives">
-               <thead class="bg-primary">
-                  <th>Drive</th>
-                  <th>Content</th>
-                  <th>Loaded</th>
-                  <th>Volume</th>
-                  <th></th>
-                  <th>Actions</th>
-               </thead>
-               <tbody class="table table-bordered">
-               </tbody>
-            </table>
-         </div>
+      <div class="panel-body" style="overflow-y: auto;">
+         <table class="table table-hover" id="storage-ie-slots">
+            <thead class="bg-primary">
+               <th>Slot</th>
+               <th>Volume</th>
+               <th></th>
+               <th>Actions</th>
+            </thead>
+            <tbody class="table table-bordered">
+            </tbody>
+         </table>
       </div>
-
    </div>
 
-   <div class="col-xs-12 col-md-8">
-
-      <div class="panel panel-default">
-         <div class="panel-heading">
-            <h3 class="panel-title">Slots - <?php echo $this->storagename; ?></h3>
-         </div>
-         <div class="panel-body" style="overflow-y: auto;">
-            <table class="table table-hover" id="storage-slots">
-               <thead class="bg-primary">
-                  <th>Slot</th>
-                  <th>Content</th>
-                  <th>Volume</th>
-                  <th>Bytes</th>
-                  <th>Last written</th>
-                  <th>Expiration</th>
-                  <th>Status</th>
-                  <th>Media Type</th>
-                  <th>Pool</th>
-                  <th></th>
-                  <th></th>
-                  <th>Actions</th>
-               </thead>
-               <tbody class="table table-bordered">
-               </tbody>
-            </table>
-         </div>
+   <div class="panel panel-default">
+      <div class="panel-heading">
+         <h3 class="panel-title">Drives - <?php echo $this->storagename; ?></h3>
       </div>
-
+      <div class="panel-body" style="overflow-y: auto;">
+         <table class="table table-hover" id="storage-drives">
+            <thead class="bg-primary">
+               <th>Drive</th>
+               <th>Loaded</th>
+               <th>Volume</th>
+               <th></th>
+               <th>Actions</th>
+            </thead>
+            <tbody class="table table-bordered">
+            </tbody>
+         </table>
+      </div>
    </div>
+
+</div>
+
+<div class="col-xs-12 col-md-8">
+
+   <div class="panel panel-default">
+      <div class="panel-heading">
+         <h3 class="panel-title">Slots - <?php echo $this->storagename; ?></h3>
+      </div>
+      <div class="panel-body" style="overflow-y: auto;">
+         <table class="table table-hover" id="storage-slots">
+            <thead class="bg-primary">
+               <th>Slot</th>
+               <th>Volume</th>
+               <th>Bytes</th>
+               <th>Last written</th>
+               <th>Expiration</th>
+               <th>Status</th>
+               <th>Media Type</th>
+               <th>Pool</th>
+               <th></th>
+               <th></th>
+               <th>Actions</th>
+            </thead>
+            <tbody class="table table-bordered">
+            </tbody>
+         </table>
+      </div>
+   </div>
+
+</div>
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
@@ -155,15 +143,15 @@ $this->headTitle($title);
 $.fn.DataTable.ext.search.push(
    function( settings, aData, iDataIndex ) {
       if(settings.nTable.id === 'storage-slots') {
-         return (aData[10] === 'slot') ? true : false;
+         return (aData[9] === 'slot') ? true : false;
       }
 
       if(settings.nTable.id === 'storage-drives') {
-         return (aData[4] === 'drive') ? true : false;
+         return (aData[3] === 'drive') ? true : false;
       }
 
       if(settings.nTable.id === 'storage-ie-slots') {
-         return (aData[9] === 'import_slot') ? true : false;
+         return (aData[2] === 'import_slot') ? true : false;
       }
 
       return false;
@@ -192,48 +180,38 @@ $(document).ready(function() {
       "order": [[0, "asc"]],
       "searching": true,
       "info": false,
-      /*"select": {
-         "style": "os",
-         "blurable": true
-      },*/
       "columns": [
          { "data": "slotnr", "defaultContent": "" },
-         { "data": "content", "defaultContent": "", "orderable": false },
-         { "data": "mr_volname", "defaultContent": "" },
+         { "data": null, "defaultContent": "" },
          { "type": "file-size", "data": "mr_volbytes", "defaultContent": "" },
          { "data": "mr_lastwritten", "defaultContent": "0" },
          { "data": null, "defaultContent": "" },
          { "data": "mr_volstatus", "defaultContent": "" },
          { "data": "mr_mediatype", "defaultContent": "" },
          { "data": "pr_name", "defaultContent": "" },
-         { "type": "file-size", "data": "mr_volbytes", "defaultContent": "0" },
-         { "data": "type", "defaultContent": "unknown" },
+         { "data": "mr_volbytes", "defaultContent": "0.00 B", "visible": false },
+         { "data": "type", "defaultContent": "unknown", "visible": false },
          { "data": null, "defaultContent": "", "orderable": false }
       ],
       "columnDefs": [
          {
             "targets": 1,
-            "visible": false,
             "render": function(data, type, full, meta) {
-               if(data == 'empty') {
-                  return '';
-               }
-               else {
-                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
+               if(data != null) {
+                  if(data.mr_volstatus != null) {
+                     if(data.mr_volstatus != '?') {
+                        return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+ data.mr_volname +'">'+ data.mr_volname +'</a>';
+                     }
+                     else {
+                        return data.mr_volname;
+                     }
+                  }
                }
             }
          },
          {
             "targets": 2,
-            "render": function(data, type, full, meta) {
-               if(data != null) {
-                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
-               }
-            }
-         },
-         {
-            "targets": 3,
-            "orderData": 9,
+            "orderData": 8,
             "render": function(data, type, full, meta) {
                if(data == '?') {
                   return '';
@@ -244,7 +222,7 @@ $(document).ready(function() {
             }
          },
          {
-            "targets": 4,
+            "targets": 3,
             "render": function(data, type, full, meta) {
                if(data == "" || data == 0 || data == null) {
                   return '';
@@ -256,7 +234,7 @@ $(document).ready(function() {
             }
          },
          {
-            "targets": 5,
+            "targets": 4,
             "render": function(data, type, full, meta) {
                if(data.mr_volstatus != "Append") {
                   if(data.mr_expire > data.mr_lastwritten && data.mr_lastwritten > 0) {
@@ -269,10 +247,21 @@ $(document).ready(function() {
             }
          },
          {
-            "targets": 6,
+            "targets": 5,
             "render": function(data, type, full, meta) {
                if(data == '?') {
                   return '<span class="label label-warning">not in catalog</span>';
+               }
+               else {
+                  return data;
+               }
+            }
+         },
+         {
+            "targets": 6,
+            "render": function(data, type, full, meta) {
+               if(data == '?') {
+                  return '';
                }
                else {
                   return data;
@@ -285,33 +274,13 @@ $(document).ready(function() {
                if(data == '?') {
                   return '';
                }
-               else {
-                  return data;
-               }
-            }
-         },
-         {
-            "targets": 8,
-            "render": function(data, type, full, meta) {
-               if(data == '?') {
-                  return '';
-               }
                else if(data != null) {
                   return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
                }
             }
          },
          {
-            "targets": 9,
-            "visible": false,
-            "searchable": false
-         },
-         {
             "targets": 10,
-            "visible": false
-         },
-         {
-            "targets": 11,
             "render": function(data, type, full, meta) {
                if(data.content == "empty") {
                   return '';
@@ -326,14 +295,12 @@ $(document).ready(function() {
          {
             "text": '<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>' + ' Update slots',
             "action": function(e, dt, node, conf) {
-               //$('#spinner').fadeIn('normal');
                window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=updateslots&storage=" . $this->storagename; ?>');
             }
          },
          {
             "text": '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' Label barcodes',
             "action": function(e, dt, node, conf) {
-               //$('#spinner').fadeIn('normal');
                window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename. "?action=label&storage=" . $this->storagename; ?>');
             }
          }
@@ -352,33 +319,16 @@ $(document).ready(function() {
       "order": [[0, "asc"]],
       "info": false,
       "searching": true,
-      /*"select": {
-         "style": "os",
-         "blurable": true
-      },*/
       "columns": [
          { "data": "slotnr", "defaultContent": "" },
-         { "data": "content", "defaultContent": "" },
          { "data": "loaded", "defaultContent": "" },
          { "data": "volname", "defaultContent": "" },
-         { "data": "type", "defaultContent": "unknown" },
+         { "data": "type", "defaultContent": "unknown", "visible": false },
          { "data": null, "defaultContent": "" }
       ],
       "columnDefs": [
          {
-            "targets": 1,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == 'empty') {
-                  return '';
-               }
-               else {
-                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
-               }
-            }
-         },
-         {
-            "targets": 3,
+            "targets": 2,
             "render": function(data, type, full, meta) {
                if(data != null) {
                   return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
@@ -387,10 +337,6 @@ $(document).ready(function() {
          },
          {
             "targets": 4,
-            "visible": false
-         },
-         {
-            "targets": 5,
             "render": function(data, type, full, meta) {
                if(data.content == "empty") {
                   return '';
@@ -417,121 +363,30 @@ $(document).ready(function() {
       "order": [[0, "asc"]],
       "info": false,
       "searching": true,
-      /*"select": {
-         "style": "os",
-         "blurable": true
-      },*/
       "columns": [
          { "data": "slotnr", "defaultContent": "" },
-         { "data": "content", "defaultContent": "" },
-         { "data": "mr_volname", "defaultContent": "" },
-         { "type": "file-size", "data": "mr_volbytes", "defaultContent": "" },
-         { "data": "mr_lastwritten", "defaultContent": "" },
          { "data": null, "defaultContent": "" },
-         { "data": "mr_volstatus", "defaultContent": "" },
-         { "data": "mr_mediatype", "defaultContent": "" },
-         { "data": "pr_name", "defaultContent": "" },
-         { "data": "type", "defaultContent": "unknown" },
+         { "data": "type", "defaultContent": "", "visible": false },
          { "data": null, "defaultContent": "" }
       ],
       "columnDefs": [
          {
             "targets": 1,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data != null && data != "empty") {
-                  return '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>';
-               }
-            }
-         },
-         {
-            "targets": 2,
             "render": function(data, type, full, meta) {
                if(data != null) {
-                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
+                  if(data.mr_volstatus != null) {
+                     if(data.mr_volstatus != '?') {
+                        return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+ data.mr_volname +'">'+ data.mr_volname +'</a>';
+                     }
+                     else {
+                        return data.mr_volname;
+                     }
+                  }
                }
             }
          },
          {
             "targets": 3,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == '?') {
-                  return '';
-               }
-               else if(data != null) {
-                  return formatBytes(data);
-               }
-            }
-         },
-         {
-            "targets": 4,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == "" || data == 0 || data == null) {
-                  return '';
-               }
-               else {
-                  var f = moment.unix(data).format("YYYY-MM-DD HH:mm:ss");
-                  return f;
-               }
-            }
-         },
-         {
-            "targets": 5,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data.mr_expire > data.mr_lastwritten && data.mr_lastwritten > 0) {
-                  var i = moment.unix(data.mr_expire).format("YYYY-MM-DD HH:mm:ss");
-                  return i;
-               }
-               else {
-                  return '';
-               }
-            }
-         },
-         {
-            "targets": 6,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == '?') {
-                  return '<span class="label label-warning">not in catalog</span>';
-               }
-               else {
-                  return data;
-               }
-            }
-         },
-         {
-            "targets": 7,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == '?') {
-                  return '';
-               }
-               else {
-                  return data;
-               }
-            }
-         },
-         {
-            "targets": 8,
-            "visible": false,
-            "render": function(data, type, full, meta) {
-               if(data == '?') {
-                  return '';
-               }
-               else if(data != null) {
-                  return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
-               }
-            }
-         },
-         {
-            "targets": 9,
-            "visible": false
-         },
-         {
-            "targets": 10,
             "render": function(data, type, full, meta) {
                if(data.content == "empty") {
                   return '';
@@ -565,18 +420,16 @@ $(document).ready(function() {
       $('[data-toggle="tooltip"]').tooltip();
    });
 
-   $('#spinner').fadeOut('normal');
-
    $('#storage-ie-slots tbody').on('click', '#btn-1', function() {
-      $('#spinner').fadeIn('normal');
+      $('#spinner').fadeTo('normal', 0.50);
    });
 
    $('#storage-drives tbody').on('click', '#btn-1', function() {
-      $('#spinner').fadeIn('normal');
+      $('#spinner').fadeTo('normal', 0.50);
    });
 
    $('#storage-slots tbody').on('click', '#btn-1', function() {
-      $('#spinner').fadeIn('normal');
+      $('#spinner').fadeTo('normal', 0.50);
    });
 
 });

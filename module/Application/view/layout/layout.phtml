@@ -61,6 +61,8 @@ echo $this->doctype();
 
 <body>
 
+<div class="spinner" id="spinner"></div>
+
 <!-- TOP NAVBAR -->
 <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
    <div class="container-fluid">
@@ -111,6 +113,10 @@ echo $this->doctype();
 </div>
 
 <?php echo $this->inlineScript() ?>
+
+<script>
+   $('#spinner').fadeOut('normal');
+</script>
 
 </body>
 

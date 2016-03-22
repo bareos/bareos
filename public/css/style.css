@@ -82,4 +82,5 @@ body {
    height: 100%;
    z-index: 10000;
    background: url(spinner.gif) center no-repeat #fff;
+   opacity: 0.5;
 }
