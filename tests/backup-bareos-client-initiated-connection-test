@@ -20,13 +20,13 @@ cp $scripts/bareos-dir.conf $tmp/1
 sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
 
 dircfg=$conf/bareos-dir.conf
-$bperl -e "add_attribute('$dircfg', 'Initiate Connection To Client', 'yes', 'Client')"
-$bperl -e "add_attribute('$dircfg', 'Allow Connection From Client', 'no', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'Connection From Director To Client', 'yes', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'Connection From Client To Director', 'no', 'Client')"
 
 fdcfg=$conf/bareos-fd.conf
 $bperl -e "add_attribute('$fdcfg', 'Address', 'localhost', 'Director')"
-$bperl -e "add_attribute('$fdcfg', 'Initiate Connection To Director', 'no', 'Director')"
-$bperl -e "add_attribute('$fdcfg', 'Allow Connection From Director', 'yes', 'Director')"
+$bperl -e "add_attribute('$fdcfg', 'Connection From Client To Director', 'no', 'Director')"
+$bperl -e "add_attribute('$fdcfg', 'Connection From Director To Client', 'yes', 'Director')"
 
 change_jobname BackupClient1 $JobName
 start_test
