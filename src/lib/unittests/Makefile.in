@@ -31,7 +31,8 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 .PHONY:
 .DONTCARE:
 
-TEST_SRCS = alist_test.c passphrase_test.c dlist_test.c htable_test.c rblist_test.c edit_test.c bsnprintf_test.c sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c
+TEST_SRCS = alist_test.c passphrase_test.c dlist_test.c htable_test.c rblist_test.c edit_test.c bsnprintf_test.c \
+				sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c junction_test.c
 TEST_OBJS = $(TEST_SRCS:.c=.o)
 
 TEST = test_lib

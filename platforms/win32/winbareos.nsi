@@ -561,11 +561,9 @@ SectionIn 1 2 3 4
   File "openssl.exe"
   File "sed.exe"
 
-# install unittests if WIN_DEBUG is configured
-!If ${WIN_DEBUG} == yes
+# install unittests
   File "test_*.exe"
   File "/oname=cmocka.dll" "libcmocka.dll"
-!Endif
 
   !insertmacro InstallConfFile bareos-fd.conf
 SectionEnd
@@ -1902,10 +1900,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*template"
 
 # delete unittest bin
-!If ${WIN_DEBUG} == yes
   Delete  "$INSTDIR\test_*.exe"
   Delete  "$INSTDIR\cmocka.dll"
-!Endif
 
 # copied stuff from postgresql install
   Delete "$INSTDIR\libpq.dll"

@@ -233,6 +233,9 @@ struct stat
 
 bool initialize_com_security();
 
+bool CreateJunction(const char *szJunction, const char *szPath);
+const char *errorString(void);
+
 typedef bool (*t_pVSSPathConvert)(const char *szFilePath, char *szShadowPath, int nBuflen);
 typedef bool (*t_pVSSPathConvertW)(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW);

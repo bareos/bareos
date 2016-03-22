@@ -38,16 +38,19 @@ extern "C" {
 
 int main(void) {
    const struct CMUnitTest tests[] = {
+#ifdef HAVE_WIN32
+      cmocka_unit_test(test_junction),
+#endif
       cmocka_unit_test(test_rwlock),
       cmocka_unit_test(test_devlock),
-      cmocka_unit_test(test_base64),
       cmocka_unit_test(test_sellist),
       cmocka_unit_test(test_scan),
       cmocka_unit_test(test_edit),
       cmocka_unit_test(test_dlist),
       cmocka_unit_test(test_bsnprintf),
       cmocka_unit_test(test_alist),
-      cmocka_unit_test(test_htable),
+//      cmocka_unit_test(test_base64),
+//      cmocka_unit_test(test_htable),
 //      cmocka_unit_test(test_generate_crypto_passphrase),
 //      cmocka_unit_test(test_fnmatch),
 //      cmocka_unit_test(test_guid_to_name),

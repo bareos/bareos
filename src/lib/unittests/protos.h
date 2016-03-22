@@ -31,3 +31,6 @@ void test_scan(void **state);
 void test_base64(void **state);
 void test_rwlock(void **state);
 void test_devlock(void **state);
+#ifdef HAVE_WIN32
+void test_junction(void **state);
+#endif
