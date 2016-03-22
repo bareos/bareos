@@ -132,6 +132,11 @@ void Win32ConvCleanupCache()
 }
 
 /*
+ * Forward referenced functions
+ */
+const char *errorString(void);
+
+/*
  * To allow the usage of the original version in this file here
  */
 #undef fputs
@@ -824,34 +829,41 @@ static time_t cvt_ftime_to_utime(const LARGE_INTEGER &time)
    return (time_t) (mstime & 0xffffffff);
 }
 
-static inline bool CreateJunction(const char *szJunction, const char *szPath)
+bool CreateJunction(const char *szJunction, const char *szPath)
 {
    DWORD dwRet;
    HANDLE hDir;
-   POOLMEM *buf, *szJunctionW, *szPathW;
    bool retval = false;
-   int buf_length, path_length, data_length;
+   int buf_length, data_length;
+   int SubstituteNameLength, PrintNameLength;   /* length in bytes */
    REPARSE_DATA_BUFFER *rdb;
    POOL_MEM szDestDir(PM_FNAME);
+   POOLMEM *buf, *szJunctionW, *szPrintName, *szSubstituteName;
 
    /*
     * We only implement a Wide string version of CreateJunction.
     * So if p_CreateDirectoryW is not available we refuse to do anything.
     */
    if (!p_CreateDirectoryW) {
+      Dmsg0(dbglvl, "CreateJunction: CreateDirectoryW not found, doing nothing\n");
       return false;
    }
 
    /*
-    * Create two buffers to hold the wide char strings.
+    * Create three buffers to hold the wide char strings.
     */
    szJunctionW = get_pool_memory(PM_FNAME);
-   szPathW = get_pool_memory(PM_FNAME);
+
+   /* With \\?\\ */
+   szSubstituteName = get_pool_memory(PM_FNAME);
+
+   /* Simple path */
+   szPrintName = get_pool_memory(PM_FNAME);
 
    /*
     * Create a buffer big enough to hold all data.
     */
-   buf_length = sizeof(REPARSE_DATA_BUFFER) + MAX_PATH * sizeof(WCHAR);
+   buf_length = sizeof(REPARSE_DATA_BUFFER) + 2 * MAX_PATH * sizeof(WCHAR);
    buf = get_pool_memory(PM_NAME);
    buf = check_pool_memory_size(buf, buf_length);
    rdb = (REPARSE_DATA_BUFFER *)buf;
@@ -859,7 +871,10 @@ static inline bool CreateJunction(const char *szJunction, const char *szPath)
    /*
     * Create directory
     */
-   make_win32_path_UTF8_2_wchar(&szJunctionW, szJunction);
+   if (!UTF8_2_wchar(&szJunctionW, szJunction)) {
+      goto bail_out;
+   }
+
    if (!p_CreateDirectoryW((LPCWSTR)szJunctionW, NULL)) {
       Dmsg1(dbglvl, "CreateDirectory Failed:%s\n", errorString());
       goto bail_out;
@@ -882,30 +897,44 @@ static inline bool CreateJunction(const char *szJunction, const char *szPath)
       goto bail_out;
    }
 
+   if (!UTF8_2_wchar(&szPrintName, szPath)) {
+      goto bail_out;
+   }
+
+   /*
+    * Add  \??\ prefix.
+    */
+   Mmsg(szDestDir, "\\??\\%s", szPath);
+   if (!UTF8_2_wchar(&szSubstituteName, szDestDir.c_str())) {
+      goto bail_out;
+   }
+
    /*
     * Put data junction target into reparse buffer
     */
    memset(buf, 0, buf_length);
 
-   /*
-    * Translate the incoming PATH with a \??\ prefix and a \ postfix.
-    */
-   Mmsg(szDestDir, "\\??\\%s\\", szPath);
-   path_length = UTF8_2_wchar(&szPathW, szDestDir.c_str());
-   if (!path_length) {
-      goto bail_out;
-   }
-   wcsncpy((LPWSTR) rdb->MountPointReparseBuffer.PathBuffer,
-           (LPWSTR) szPathW, MAX_PATH * sizeof(WCHAR));
+#define MOUNTPOINTREPARSEBUFFER_FIXED_HEADER_SIZE 8
 
+   SubstituteNameLength = wcslen( (LPWSTR)szSubstituteName) * sizeof(WCHAR);
+   PrintNameLength = wcslen( (LPWSTR)szPrintName) * sizeof(WCHAR);
+
+   wcsncpy((LPWSTR) rdb->MountPointReparseBuffer.PathBuffer,
+           (LPWSTR) szSubstituteName, SubstituteNameLength);
+
+   wcsncpy((LPWSTR) rdb->MountPointReparseBuffer.PathBuffer + wcslen( (LPWSTR)szSubstituteName) + 1,
+           (LPWSTR) szPrintName, PrintNameLength);
+
+   rdb->MountPointReparseBuffer.SubstituteNameLength = SubstituteNameLength;
+   rdb->MountPointReparseBuffer.PrintNameOffset = SubstituteNameLength + 2;
+   rdb->MountPointReparseBuffer.PrintNameLength = PrintNameLength;
+   rdb->ReparseDataLength = SubstituteNameLength + PrintNameLength + 12;
+   data_length = rdb->ReparseDataLength + MOUNTPOINTREPARSEBUFFER_FIXED_HEADER_SIZE;
    rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-   rdb->ReparseDataLength = (path_length + 2) * sizeof(WCHAR) + 6;
-   rdb->MountPointReparseBuffer.SubstituteNameLength = (path_length - 1) * sizeof(WCHAR);
-   rdb->MountPointReparseBuffer.PrintNameOffset = path_length * sizeof(WCHAR);
-   data_length = rdb->ReparseDataLength + 8;
 
    /*
     * Write reparse point
+    * For debugging use "fsutil reparsepoint query"
     */
    if (!DeviceIoControl(hDir,
                         FSCTL_SET_REPARSE_POINT,
@@ -924,16 +953,17 @@ static inline bool CreateJunction(const char *szJunction, const char *szPath)
    CloseHandle(hDir);
 
    retval = true;
-bail_out:
 
+bail_out:
    free_pool_memory(buf);
    free_pool_memory(szJunctionW);
-   free_pool_memory(szPathW);
+   free_pool_memory(szPrintName);
+   free_pool_memory(szSubstituteName);
 
    return retval;
 }
 
-static const char *errorString(void)
+const char *errorString(void)
 {
    LPVOID lpMsgBuf;
 
@@ -1545,7 +1575,7 @@ static int stat2(const char *filename, struct stat *sb)
       POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
 
       make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
-      attr = p_GetFileAttributesW((LPCWSTR) pwszBuf);
+      attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
       if (p_CreateFileW) {
          h = CreateFileW((LPCWSTR)pwszBuf,
                          GENERIC_READ,
@@ -1909,10 +1939,16 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
    if (p_CreateSymbolicLinkW) {
       /*
        * Dynamically allocate enough space for UCS2 filename
+       *
+       * pwszBuf1: lpTargetFileName
+       * pwszBuf2: lpSymlinkFileName
        */
       POOLMEM *pwszBuf1 = get_pool_memory(PM_FNAME);
       POOLMEM *pwszBuf2 = get_pool_memory(PM_FNAME);
-      make_win32_path_UTF8_2_wchar(&pwszBuf1, name1);
+
+      if (!UTF8_2_wchar(&pwszBuf1, name1)) {
+         goto bail_out;
+      }
       make_win32_path_UTF8_2_wchar(&pwszBuf2, name2);
 
       BOOL b = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
