@@ -190,6 +190,8 @@ dpl_storage_class(char *str)
 {
   if (!strcasecmp(str, "standard"))
     return DPL_STORAGE_CLASS_STANDARD;
+  else if (!strcasecmp(str, "standard_ia"))
+    return DPL_STORAGE_CLASS_STANDARD_IA;
   else if (!strcasecmp(str, "reduced_redundancy"))
     return DPL_STORAGE_CLASS_REDUCED_REDUNDANCY;
   else if (!strcasecmp(str, "custom"))
@@ -207,6 +209,8 @@ dpl_storage_class_str(dpl_storage_class_t storage_class)
       return NULL;
     case DPL_STORAGE_CLASS_STANDARD:
       return "STANDARD";
+    case DPL_STORAGE_CLASS_STANDARD_IA:
+      return "STANDARD_IA";
     case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
       return "REDUCED_REDUNDANCY";
     case DPL_STORAGE_CLASS_CUSTOM:

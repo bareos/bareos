@@ -551,6 +551,7 @@ dpl_uks_gen_random_key(dpl_ctx_t *ctx,
     {
     case DPL_STORAGE_CLASS_UNDEF:
     case DPL_STORAGE_CLASS_STANDARD:
+    case DPL_STORAGE_CLASS_STANDARD_IA:
       class = 2;
       break ;
     case DPL_STORAGE_CLASS_REDUCED_REDUNDANCY:
