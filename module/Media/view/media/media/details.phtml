@@ -39,59 +39,393 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-8">
+<div class="col-md-12">
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Volume</h3>
+<h3 class="panel-title">Volume <?php echo $this->volume; ?></h3>
 </div>
 
 <div class="panel-body">
 
-   <table class="table table-condensed">
-   <tr><th>Volume ID</th><td><?php echo $this->escapeHtml($media['mediaid']); ?></td></tr>
-   <tr><th>Volumename</th><td><?php echo $this->escapeHtml($media['volumename']); ?></td></tr>
-   <tr><th>Mediatype</th><td><?php echo $this->escapeHtml($media['mediatype']); ?></td></tr>
-   <tr><th>Mediatype ID</th><td></td></tr>
-   <tr><th>Labeltype</th><td><?php echo $this->escapeHtml($media['labeltype']); ?></td></tr>
-   <tr><th>First written</th><td><?php echo $this->printDate($media['firstwritten']); ?></td></tr>
-   <tr><th>Last written</th><td><?php echo $this->printDate($media['lastwritten']); ?></td></tr>
-   <tr><th>Label date</th><td><?php echo $this->printDate($media['labeldate']); ?></td></tr>
-   <tr><th>Volume jobs</th><td><?php echo $this->escapeHtml($media['voljobs']); ?></td></tr>
-   <tr><th>Volume files</th><td><?php echo $this->escapeHtml($media['volfiles']); ?></td></tr>
-   <tr><th>Volume blocks</th><td><?php echo $this->escapeHtml($media['volblocks']); ?></td></tr>
-   <tr><th>Volume mounts</th><td><?php echo $this->escapeHtml($media['volmounts']); ?></td></tr>
-   <tr><th>Volume used bytes</th><td><?php echo $this->printBytes($media['volbytes']); ?></td></tr>
-   <tr><th>Volume errors</th><td><?php echo $this->escapeHtml($media['volerrors']); ?></td></tr>
-   <tr><th>Volume writes</th><td><?php echo $this->escapeHtml($media['volwrites']); ?></td></tr>
-   <tr><th>Volume capacity bytes</th><td><?php echo $this->escapeHtml($media['volcapacitybytes']); ?></td></tr>
-   <tr><th>Volume Status</th><td><?php echo $this->escapeHtml($media['volstatus']); ?></td></tr>
-   <tr><th>Enabled</th><td><?php echo $this->escapeHtml($media['enabled']); ?></td></tr>
-   <tr><th>Recycle</th><td><?php echo $this->escapeHtml($media['recycle']); ?></td></tr>
-   <tr><th>Action on purge</th><td></td></tr>
-   <tr><th>Volume retention/expiration</th><td><?php echo $this->printExpiration($media['volretention'], $media['lastwritten'], $media['volstatus']); ?></td></tr>
-   <tr><th>Volume use duration</th><td><?php echo $this->escapeHtml($media['voluseduration']); ?></td></tr>
-   <tr><th>Volume maximum jobs</th><td><?php echo $this->escapeHtml($media['maxvoljobs']); ?></td></tr>
-   <tr><th>Volume maximum files</th><td><?php echo $this->escapeHtml($media['maxvolfiles']); ?></td></tr>
-   <tr><th>Volume maximum bytes</th><td><?php echo $this->printBytes($media['maxvolbytes']); ?></td></tr>
-   <tr><th>In changer</th><td><?php echo $this->escapeHtml($media['inchanger']); ?></td></tr>
-   <tr><th>Storage ID</th><td><?php echo $this->escapeHtml($media['storageid']); ?></td></tr>
-   <tr><th>Device ID</th><td><?php echo $this->escapeHtml($media['deviceid']); ?></td></tr>
-   <tr><th>Media addressing</th><td></td></tr>
-   <tr><th>Volume readtime</th><td></td></tr>
-   <tr><th>Volume writetime</th><td></td></tr>
-   <tr><th>Endfile</th><td><?php echo $this->escapeHtml($media['endfile']); ?></td></tr>
-   <tr><th>Endblock</th><td><?php echo $this->escapeHtml($media['endblock']); ?></td></tr>
-   <tr><th>Location ID</th><td><?php echo $this->escapeHtml($media['locationid']); ?></td></tr>
-   <tr><th>Recycle count</th><td><?php echo $this->escapeHtml($media['recyclecount']); ?></td></tr>
-   <tr><th>Initial write</th><td><?php echo $this->escapeHtml($media['initialwrite']); ?></td></tr>
-   <tr><th>Scratchpool ID</th><td><?php echo $this->escapeHtml($media['scratchpoolid']); ?></td></tr>
-   <tr><th>Recyclepool ID</th><td><?php echo $this->escapeHtml($media['recyclepoolid']); ?></td></tr>
-   <tr><th>Encryptionkey</th><td></td></tr>
-   <tr><th>Comment</th><td><?php echo $this->escapeHtml($media['comment']); ?></td></tr>
-   </table>
+<table class="table table-hover" id="vol">
+
+<thead class="bg-primary">
+   <th></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Storage"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Last written"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
+   <th><?php echo $this->translate("Retention/Expiration"); ?></th>
+   <th><?php echo $this->translate("Maximum bytes"); ?></div></th>
+   <th><?php echo $this->translate("Current bytes"); ?></div></th>
+   <th><?php echo $this->translate("Free bytes"); ?></div></th>
+</thead>
+
+</table>
 
 </div>
 </div>
 </div>
 </div>
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Jobs on volume <?php echo $this->volume; ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-hover" id="voljobs">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Job"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Client"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Level"); ?></th>
+   <th><?php echo $this->translate("Files"); ?></th>
+   <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Starttime"); ?></th>
+   <th><?php echo $this->translate("Endtime"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.buttons.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-select.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/buttons.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.bootstrap.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/select.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.dataTables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/buttons.bootstrap.min.css');
+?>
+
+<style>
+
+td.details-control:after {
+   font-family: "Glyphicons Halflings";
+   content: "\e081";
+   cursor: pointer;
+}
+
+tr.shown td.details-control:after {
+   font-family: "Glyphicons Halflings";
+   content: "\e082";
+   cursor: pointer;
+}
+
+</style>
+
+<script>
+
+function format( d ) {
+
+   var r;
+
+   if(d.recycle == 1) {
+      r = '<span class="label label-success">Yes</span>';
+   }
+   else {
+      r = '<span class="label label-danger">No</span>';
+   }
+
+   return '<table class="table table-bordered">'+
+      '<tr>'+
+      '<th>Label date</th>'+
+      '<td>'+ d.labeldate +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>First written</th>'+
+      '<td>'+ d.firstwritten +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Last written</th>'+
+      '<td>'+ d.lastwritten +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume jobs</th>'+
+      '<td>'+ d.voljobs +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Recycle</th>'+
+      '<td>'+ r +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume writes</th>'+
+      '<td>'+ d.volwrites +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Slot</th>'+
+      '<td>'+ d.slot +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Media Id</th>'+
+      '<td>'+ d.mediaid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume Blocks</th>'+
+      '<td>'+ d.volblocks +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume use duration</th>'+
+      '<td>'+ d.voluseduration +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume Pool Id</th>'+
+      '<td>'+ d.poolid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>In changer</th>'+
+      '<td>'+ d.inchanger +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume Files</th>'+
+      '<td>'+ d.volfiles +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Max. volume jobs</th>'+
+      '<td>'+ d.maxvoljobs +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume mounts</th>'+
+      '<td>'+ d.volmounts +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume capacity bytes</th>'+
+      '<td>'+ d.volcapacitybytes +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Volume errors</th>'+
+      '<td>'+ d.volerrors +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Enabled</th>'+
+      '<td>'+ d.enabled +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Max. volume files</th>'+
+      '<td>'+ d.maxvolfiles +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Endfile</th>'+
+      '<td>'+ d.endfile +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Endblock</th>'+
+      '<td>'+ d.endblock +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Labeltype</th>'+
+      '<td>'+ d.labeltype +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Device Id</th>'+
+      '<td>'+ d.deviceid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Location Id</th>'+
+      '<td>'+ d.locationid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Recycle count</th>'+
+      '<td>'+ d.recyclecount +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Initial write</th>'+
+      '<td>'+ d.initialwrite +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Scratch Pool Id</th>'+
+      '<td>'+ d.scratchpoolid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Recycle pool Id</th>'+
+      '<td>'+ d.recyclepoolid +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Comment</th>'+
+      '<td>'+ d.comment +'</td>'+
+      '</tr>'+
+      '</table>';
+}
+
+$(document).ready(function() {
+
+   var vol = $('#vol').DataTable( {
+      "dom": "l<'row'<'col-sm-9'B><'col-sm-3'f>>rtip",
+      "ajax": {
+         "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=details&volume=' . $this->volume; ?>",
+         "dataSrc": ""
+      },
+      "paging": false,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "ordering": true,
+      "order": [[4, "desc"]],
+      "searching": false,
+      "info": false,
+      "columns": [
+         { "data": null, "orderable": false, "defaultContent": '', "className": 'details-control' },
+         { "data": "volumename" },
+         { "data": "storageid" },
+         { "data": "mediatype" },
+         { "data": "lastwritten" },
+         { "data": "volstatus" },
+         { "data": null },
+         { "type": "file-size", "data": "maxvolbytes" },
+         { "type": "file-size", "data": "volbytes" },
+         { "type": "file-size", "data": null },
+         { "data": "lastwritten" }
+      ],
+      "columnDefs": [
+         {
+            "targets": 1,
+            "render": function(data, type, full, meta) {
+               return data;
+            }
+         },
+         {
+            "targets": 4,
+            "orderData": 10,
+            "render": function(data, type, full, meta) {
+               return formatLastWritten(data);
+            }
+         },
+         {
+            "targets": 6,
+            "render": function(data, type, full, meta) {
+               return formatExpiration(data.volstatus, data.lastwritten, data.volretention);
+            }
+         },
+         {
+            "targets": 7,
+            "render": function(data, type, full, meta) {
+               return formatBytes(data);
+            }
+         },
+         {
+            "targets": 8,
+            "render": function(data, type, full, meta) {
+               return formatBytes(data);
+            }
+         },
+         {
+            "targets": 9,
+            "render": function(data, type, full, meta) {
+               return formatFreeBytes(data.maxvolbytes, data.volbytes);
+            }
+         },
+         {
+            "targets": 10,
+            "visible": false,
+            "searchable": false
+         }
+      ],
+      "buttons": [
+      ],
+
+   } );
+
+   $('#vol tbody').on('mouseover', '#lastwritten', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   } );
+
+   $('#vol tbody').on('click', 'td.details-control', function () {
+      var tr = $(this).closest('tr');
+      var row = vol.row( tr );
+      if ( row.child.isShown() ) {
+         // This row is already open - close it
+         row.child.hide();
+         tr.removeClass('shown');
+      }
+      else {
+         // Open this row
+         row.child( format(row.data()) ).show();
+         tr.addClass('shown');
+      }
+   } );
+
+   var voljobs = $('#voljobs').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=jobs&volume=' . $this->volume; ?>",
+         "dataSrc": ""
+      },
+      "paging": true,
+      "ordering": true,
+      "info": true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "ordering": true,
+      "order": [[0, 'desc']],
+      "searching": true,
+      "columns": [
+         { "data": "jobid", "defaultContent": "" },
+         { "data": "name", "defaultContent": "" },
+         { "data": "client", "defaultContent": "" },
+         { "data": "type", "defaultContent": "" },
+         { "data": "level", "defaultContent": "" },
+         { "data": "jobfiles", "defaultContent": "" },
+         { "data": "jobbytes", "type": "file-size", "defaultContent": "0.00 B" },
+         { "data": "starttime", "defaultContent": "" },
+         { "data": "endtime", "defaultContent": "" },
+         { "data": "jobbytes", "defaultContent": "0", "visible": false}
+      ],
+      "columnDefs": [
+         {
+            "targets": 0,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 3,
+            "render": function(data, type, full, meta) {
+               return formatJobType(data);
+            }
+         },
+         {
+            "targets": 4,
+            "render": function(data, type, full, meta) {
+               return formatJobLevel(data);
+            }
+         },
+         {
+            "targets": 6,
+            "orderData": 9,
+            "render": function(data, type, full, meta) {
+               return formatBytes(data);
+            }
+         },
+      ]
+   });
+
+} );
+
+</script>

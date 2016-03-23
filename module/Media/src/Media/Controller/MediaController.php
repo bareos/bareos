@@ -56,10 +56,9 @@ class MediaController extends AbstractActionController
       if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
          $volumename = $this->params()->fromRoute('id');
-         $volume = $this->getMediaModel()->getVolume($volumename);
 
          return new ViewModel(array(
-            'media' => $volume,
+            'volume' => $volumename,
          ));
 
       }
@@ -73,9 +72,17 @@ class MediaController extends AbstractActionController
       if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()){
 
          $data = $this->params()->fromQuery('data');
+         $volume = $this->params()->fromQuery('volume');
 
          if($data == "all") {
             $result = $this->getMediaModel()->getVolumes();
+         }
+         elseif($data == "details") {
+            // workaround until llist volume returns array instead of object
+            $result[0] = $this->getMediaModel()->getVolume($volume);
+         }
+         elseif($data == "jobs") {
+            $result = $this->getMediaModel()->getVolumeJobs($volume);
          }
          else {
             $result = null;

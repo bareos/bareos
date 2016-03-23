@@ -69,4 +69,19 @@ class MediaModel implements ServiceLocatorAwareInterface
          return false;
       }
    }
+
+   public function getVolumeJobs($volume=null)
+   {
+      if(isset($volume)) {
+         $cmd = 'llist jobs volume="'.$volume.'"';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 2, null);
+         $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $volume['result']['jobs'];
+      }
+      else {
+         return false;
+      }
+   }
+
 }
