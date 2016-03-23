@@ -531,7 +531,7 @@ dpl_s3_req_build(const dpl_req_t *req,
    */
   if (req->behavior_flags & DPL_BEHAVIOR_KEEP_ALIVE)
     {
-      ret2 = dpl_dict_add(headers, "Connection", "keep-alive", 0);
+      ret2 = dpl_dict_add(headers, "Connection", "Keep-Alive", 0);
       if (DPL_SUCCESS != ret2)
         {
           ret = DPL_ENOMEM;
