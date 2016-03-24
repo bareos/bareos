@@ -527,14 +527,17 @@ static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
    default:
       break;
    }
-   /* Send autochanger slot status */
+
+   /*
+    * Send autochanger slot status
+    */
    if (dev->is_autochanger()) {
       if (dev->get_slot() > 0) {
          len = Mmsg(msg, _("    Slot %d %s loaded in drive %d.\n"),
-                    dev->get_slot(), dev->is_open() ? "is" : "was last", dev->drive_index);
+                    dev->get_slot(), dev->is_open() ? "is" : "was last", dev->drive);
          sendit(msg, len, sp);
       } else if (dev->get_slot() <= 0) {
-         len = Mmsg(msg, _("    Drive %d is not loaded.\n"), dev->drive_index);
+         len = Mmsg(msg, _("    Drive %d is not loaded.\n"), dev->drive);
          sendit(msg, len, sp);
       }
    }

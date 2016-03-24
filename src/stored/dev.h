@@ -297,7 +297,8 @@ public:
    bool norewindonclose;              /* Don't rewind tape drive on close */
    bool initiated;                    /* Set when init_dev() called */
    int label_type;                    /* Bareos/ANSI/IBM label types */
-   uint32_t drive_index;              /* Autochanger drive index (base 0) */
+   uint32_t drive;                    /* Autochanger logical drive number (base 0) */
+   uint32_t drive_index;              /* Autochanger physical drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
    POOLMEM *dev_options;              /* Device specific options */
    POOLMEM *prt_name;                 /* Name used for display purposes */

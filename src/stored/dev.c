@@ -272,6 +272,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    dev->max_open_vols = device->max_open_vols;
    dev->vol_poll_interval = device->vol_poll_interval;
    dev->max_spool_size = device->max_spool_size;
+   dev->drive = device->drive;
    dev->drive_index = device->drive_index;
    dev->autoselect = device->autoselect;
    dev->norewindonclose = device->norewindonclose;

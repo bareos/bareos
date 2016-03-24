@@ -1532,9 +1532,9 @@ try_again:
       /* We are going to load a new tape, so close the device */
       dev->close(dcr);
       Pmsg2(-1, _("3302 Issuing autochanger \"unload %d %d\" command.\n"),
-         loaded, dev->drive_index);
+            loaded, dev->drive);
       changer = edit_device_codes(dcr, changer,
-                   dcr->device->changer_command, "unload");
+                                  dcr->device->changer_command, "unload");
       status = run_program(changer, timeout, results);
       Pmsg2(-1, _("unload status=%s %d\n"), status==0?_("OK"):_("Bad"), status);
       if (status != 0) {
@@ -1551,15 +1551,15 @@ try_again:
    slot = 1;
    dcr->VolCatInfo.Slot = slot;
    Pmsg2(-1, _("3303 Issuing autochanger \"load %d %d\" command.\n"),
-      slot, dev->drive_index);
+         slot, dev->drive);
    changer = edit_device_codes(dcr, changer,
-                dcr->device->changer_command, "load");
+                               dcr->device->changer_command, "load");
    Dmsg1(100, "Changer=%s\n", changer);
    dev->close(dcr);
    status = run_program(changer, timeout, results);
    if (status == 0) {
       Pmsg2(-1,  _("3303 Autochanger \"load %d %d\" status is OK.\n"),
-         slot, dev->drive_index);
+            slot, dev->drive);
    } else {
       berrno be;
       Pmsg1(-1, _("3993 Bad autochanger command: %s\n"), changer);

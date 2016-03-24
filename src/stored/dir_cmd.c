@@ -829,14 +829,16 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
 
    unbash_spaces(devname);
    foreach_res(device, R_DEVICE) {
-      /* Find resource, and make sure we were able to open it */
+      /*
+       * Find resource, and make sure we were able to open it
+       */
       if (bstrcmp(device->name(), devname.c_str())) {
          if (!device->dev) {
             device->dev = init_dev(jcr, device);
          }
          if (!device->dev) {
             Jmsg(jcr, M_WARNING, 0, _("\n"
-               "     Device \"%s\" requested by DIR could not be opened or does not exist.\n"),
+                 "     Device \"%s\" requested by DIR could not be opened or does not exist.\n"),
                  devname.c_str());
             continue;
          }
@@ -845,11 +847,16 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
          break;
       }
    }
+
    if (!found) {
       foreach_res(changer, R_AUTOCHANGER) {
-         /* Find resource, and make sure we were able to open it */
+         /*
+          * Find resource, and make sure we were able to open it
+          */
          if (bstrcmp(devname.c_str(), changer->name())) {
-            /* Try each device in this AutoChanger */
+            /*
+             * Try each device in this AutoChanger
+             */
             foreach_alist(device, changer->device) {
                Dmsg1(100, "Try changer device %s\n", device->name());
                if (!device->dev) {
@@ -858,7 +865,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
                if (!device->dev) {
                   Dmsg1(100, "Device %s could not be opened. Skipped\n", devname.c_str());
                   Jmsg(jcr, M_WARNING, 0, _("\n"
-                     "     Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
+                       "     Device \"%s\" in changer \"%s\" requested by DIR could not be opened or does not exist.\n"),
                        device->name(), devname.c_str());
                   continue;
                }
@@ -866,13 +873,13 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, int drive, BLOCKSIZES *bloc
                   Dmsg1(100, "Device %s not autoselect skipped.\n", devname.c_str());
                   continue;              /* device is not available */
                }
-               if (drive < 0 || drive == (int)device->dev->drive_index) {
+               if (drive < 0 || drive == (int)device->dev->drive) {
                   Dmsg1(20, "Found changer device %s\n", device->name());
                   found = true;
                   break;
                }
                Dmsg3(100, "Device %s drive wrong: want=%d got=%d skipping\n",
-                  devname.c_str(), drive, (int)device->dev->drive_index);
+                     devname.c_str(), drive, (int)device->dev->drive);
             }
             break;                    /* we found it but could not open a device */
          }
