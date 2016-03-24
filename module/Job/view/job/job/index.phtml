@@ -136,6 +136,18 @@ function format( d ) {
 
    return '<table class="table table-bordered">'+
       '<tr>'+
+      '<th>Fileset</th>'+
+      '<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+d.filesetid+'">'+ d.fileset +'</a></td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Pool</th>'+
+      '<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+d.poolname+'">'+ d.poolname +'</a></td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th>Scheduled</th>'+
+      '<td>'+ d.schedtime +'</td>'+
+      '</tr>'+
+      '<tr>'+
       '<th>Start</th>'+
       '<td>'+ d.starttime +'</td>'+
       '</tr>'+
