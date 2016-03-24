@@ -1014,6 +1014,7 @@ enable_bat
 enable_traymonitor
 enable_smartalloc
 enable_lockmgr
+enable_developer
 enable_static_tools
 enable_static_fd
 enable_static_sd
@@ -1741,6 +1742,7 @@ Optional Features:
   --enable-traymonitor    enable build of traymonitor [default=no]
   --enable-smartalloc     enable smartalloc debugging support [default=no]
   --enable-lockmgr        enable lock manager support [default=no]
+  --enable-developer-mode enable developer mode [default=no]
   --enable-static-tools   enable static tape tools [default=no]
   --enable-static-fd      enable static File daemon [default=no]
   --enable-static-sd      enable static Storage daemon [default=no]
@@ -22748,6 +22750,25 @@ if test x$support_lockmgr = xyes; then
 $as_echo "#define _USE_LOCKMGR 1" >>confdefs.h
 
 fi
+
+
+# Check whether --enable-developer was given.
+if test "${enable_developer+set}" = set; then :
+  enableval=$enable_developer;
+       if test x$enableval = xyes; then
+	  enable_developer_commands=yes
+       fi
+
+
+fi
+
+
+if test x$enable_developer_commands = xyes; then
+
+$as_echo "#define DEVELOPER 1" >>confdefs.h
+
+fi
+
 
 
 # Check whether --enable-static-tools was given.
