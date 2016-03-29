@@ -69,11 +69,11 @@ void test_junction(void **state) {
    /*
     * convert names to wchar
     */
-   if (!UTF8_2_wchar(&szJunctionW, szJunction)) {
+   if (!UTF8_2_wchar(szJunctionW, szJunction)) {
       printf("error converting szJunction:%s\n", errorString());
    }
-   make_win32_path_UTF8_2_wchar(&szTargetW, szTarget);
-   make_win32_path_UTF8_2_wchar(&szTestFileW, szTestFile);
+   make_win32_path_UTF8_2_wchar(szTargetW, szTarget);
+   make_win32_path_UTF8_2_wchar(szTestFileW, szTestFile);
 
 
    if (!p_CreateDirectoryW((LPCWSTR)szTargetW, NULL)) {

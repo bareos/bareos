@@ -1021,7 +1021,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
    /*
     * Create directory
     */
-   if (!UTF8_2_wchar(&szJunctionW, szJunction)) {
+   if (!UTF8_2_wchar(szJunctionW, szJunction)) {
       goto bail_out;
    }
 
@@ -1047,7 +1047,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
       goto bail_out;
    }
 
-   if (!UTF8_2_wchar(&szPrintName, szPath)) {
+   if (!UTF8_2_wchar(szPrintName, szPath)) {
       goto bail_out;
    }
 
@@ -1055,7 +1055,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
     * Add  \??\ prefix.
     */
    Mmsg(szDestDir, "\\??\\%s", szPath);
-   if (!UTF8_2_wchar(&szSubstituteName, szDestDir.c_str())) {
+   if (!UTF8_2_wchar(szSubstituteName, szDestDir.c_str())) {
       goto bail_out;
    }
 
@@ -1724,7 +1724,7 @@ static int stat2(const char *filename, struct stat *sb)
    if (p_GetFileAttributesW) {
       POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
 
-      make_win32_path_UTF8_2_wchar(&pwszBuf, filename);
+      make_win32_path_UTF8_2_wchar(pwszBuf, filename);
       attr = p_GetFileAttributesW((LPCWSTR)pwszBuf);
       if (p_CreateFileW) {
          h = CreateFileW((LPCWSTR)pwszBuf,
@@ -2096,10 +2096,10 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
       POOLMEM *pwszBuf1 = get_pool_memory(PM_FNAME);
       POOLMEM *pwszBuf2 = get_pool_memory(PM_FNAME);
 
-      if (!UTF8_2_wchar(&pwszBuf1, name1)) {
+      if (!UTF8_2_wchar(pwszBuf1, name1)) {
          goto bail_out;
       }
-      make_win32_path_UTF8_2_wchar(&pwszBuf2, name2);
+      make_win32_path_UTF8_2_wchar(pwszBuf2, name2);
 
       BOOL b = p_CreateSymbolicLinkW((LPCWSTR)pwszBuf2, (LPCWSTR)pwszBuf1, dwFlags);
 
