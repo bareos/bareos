@@ -67,8 +67,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
-         Dmsg2(010, "Failed to open %s: ERR=%s\n",
-               device_name, be.bstrerror());
          return false;
       }
       opened_device = true;
@@ -91,8 +89,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
       Emsg2(M_ERROR, 0, _("Unable to perform SG_IO ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());
-      Dmsg2(010, "Unable to perform SG_IO ioctl on fd %d: ERR=%s\n",
-            fd, be.bstrerror());
       goto bail_out;
    }
 
@@ -100,10 +96,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
       Emsg3(M_ERROR, 0, _("Failed with info 0x%02x mask status 0x%02x msg status 0x%02x\n"),
             io_hdr.info, io_hdr.masked_status, io_hdr.msg_status);
       Emsg2(M_ERROR, 0, _("     host status 0x%02x driver status 0x%02x\n"),
-            io_hdr.host_status, io_hdr.driver_status );
-      Dmsg3(010, "Failed with info 0x%02x mask status 0x%02x msg status 0x%02x\n",
-            io_hdr.info, io_hdr.masked_status, io_hdr.msg_status);
-      Dmsg2(010, "     host status 0x%02x driver status 0x%02x\n",
             io_hdr.host_status, io_hdr.driver_status );
       goto bail_out;
    }
@@ -193,8 +185,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
-         Dmsg2(010, "Failed to open %s: ERR=%s\n",
-               device_name, be.bstrerror());
          return false;
       }
       opened_device = true;
@@ -218,10 +208,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
       Emsg2(M_ERROR, 0, _("Unable to perform USCSICMD ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());
       Emsg3(M_ERROR, 0, _("Sense Key: %0.2X ASC: %0.2X ASCQ: %0.2X\n"),
-            LOBYTE(sense.senseKey), sense.addSenseCode, sense.addSenseCodeQual);
-      Dmsg2(010, "Unable to perform USCSICMD ioctl on fd %d: ERR=%s\n",
-            fd, be.bstrerror());
-      Dmsg3(010, "Sense Key: %0.2X ASC: %0.2X ASCQ: %0.2X\n",
             LOBYTE(sense.senseKey), sense.addSenseCode, sense.addSenseCodeQual);
       goto bail_out;
    }
@@ -302,8 +288,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
       Emsg2(M_ERROR, 0, _("Failed to find CAM device for %s: ERR=%s\n"),
             device_name, be.bstrerror());
-      Dmsg2(010, "Failed to find CAM device for %s: ERR=%s\n",
-            device_name, be.bstrerror());
       return false;
    }
 
@@ -313,16 +297,12 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
       Emsg2(M_ERROR, 0, _("Failed to open CAM device for %s: ERR=%s\n"),
             device_name, be.bstrerror());
-      Dmsg2(010, "Failed to open CAM device for %s: ERR=%s\n",
-            device_name, be.bstrerror());
       return false;
    }
 
    ccb = cam_getccb(cam_dev);
    if (!ccb) {
       Emsg1(M_ERROR, 0, _("Failed to allocate new ccb for %s\n"),
-            device_name);
-      Dmsg1(0, "Failed to allocate new ccb for %s\n",
             device_name);
       goto bail_out;
    }
@@ -346,9 +326,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
    if (cam_send_ccb(cam_dev, ccb) < 0) {
       Emsg2(M_ERROR, 0, _("Failed to send ccb to device %s: %s\n"),
-            device_name, cam_error_string(cam_dev, ccb, errbuf, sizeof(errbuf),
-                                          CAM_ESF_ALL, CAM_EPF_ALL));
-      Dmsg2(010, "Failed to send ccb to device %s: %s\n",
             device_name, cam_error_string(cam_dev, ccb, errbuf, sizeof(errbuf),
                                           CAM_ESF_ALL, CAM_EPF_ALL));
       cam_freeccb(ccb);
@@ -440,8 +417,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
          Emsg2(M_ERROR, 0, _("Failed to open %s: ERR=%s\n"),
                device_name, be.bstrerror());
-         Dmsg2(010, "Failed to open %s: ERR=%s\n",
-               device_name, be.bstrerror());
          return false;
       }
       opened_device = true;
@@ -463,8 +438,6 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
 
       Emsg2(M_ERROR, 0, _("Unable to perform SCIOCCOMMAND ioctl on fd %d: ERR=%s\n"),
             fd, be.bstrerror());
-      Dmsg2(010, "Unable to perform SCIOCCOMMAND ioctl on fd %d: ERR=%s\n",
-            fd, be.bstrerror());
       goto bail_out;
    }
 
@@ -476,27 +449,19 @@ static inline bool do_scsi_cmd_page(int fd, const char *device_name,
       sense = req.sense;
       Emsg3(M_ERROR, 0, _("Sense Key: %0.2X ASC: %0.2X ASCQ: %0.2X\n"),
             LOBYTE(sense.senseKey), sense.addSenseCode, sense.addSenseCodeQual);
-      Dmsg3(010, "Sense Key: %0.2X ASC: %0.2X ASCQ: %0.2X\n",
-            LOBYTE(sense.senseKey), sense.addSenseCode, sense.addSenseCodeQual);
       break;
    case SCCMD_TIMEOUT:
       Emsg1(M_ERROR, 0, _("SCIOCCOMMAND ioctl on %s returned SCSI command timed out\n"),
             devicename);
-      Dmsg1(010, "SCIOCCOMMAND ioctl on %s returned SCSI command timed out\n",
-            devicename);
       break;
    case SCCMD_BUSY:
       Emsg1(M_ERROR, 0, _("SCIOCCOMMAND ioctl on %s returned device is busy\n"),
-            devicename);
-      Dmsg1(010, "SCIOCCOMMAND ioctl on %s returned device is busy\n",
             devicename);
       break;
    case SCCMD_SENSE:
       break;
    default:
       Emsg2(M_ERROR, 0, _("SCIOCCOMMAND ioctl on %s returned unknown status %d\n"),
-            device_name, req.retsts);
-      Dmsg2(010, "SCIOCCOMMAND ioctl on %s returned unknown status %d\n",
             device_name, req.retsts);
       break;
    }

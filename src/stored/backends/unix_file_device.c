@@ -285,7 +285,6 @@ bool unix_file_device::d_truncate(DCR *dcr)
 
       dev_errno = errno;
       Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), archive_name.c_str(), be.bstrerror());
-      Dmsg1(100, "reopen failed: %s", errmsg);
       Emsg0(M_FATAL, 0, errmsg);
 
       return false;

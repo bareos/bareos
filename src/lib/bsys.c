@@ -746,7 +746,6 @@ void write_state_file(char *dir, const char *progname, int port)
    secure_erase(NULL, fname);
    if ((sfd = open(fname, O_CREAT|O_WRONLY|O_BINARY, 0640)) < 0) {
       berrno be;
-      Dmsg2(000, "Could not create state file. %s ERR=%s\n", fname, be.bstrerror());
       Emsg2(M_ERROR, 0, _("Could not create state file. %s ERR=%s\n"), fname, be.bstrerror());
       goto bail_out;
    }
