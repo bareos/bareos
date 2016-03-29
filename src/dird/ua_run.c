@@ -371,8 +371,7 @@ int do_run_cmd(UAContext *ua, const char *cmd)
    }
 
    /*
-    * Create JCR to run job.  NOTE!!! after this point, free_jcr()
-    *  before returning.
+    * Create JCR to run job.  NOTE!!! after this point, free_jcr() before returning.
     */
    if (!jcr) {
       jcr = new_jcr(sizeof(JCR), dird_free_jcr);
@@ -602,6 +601,8 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          case JT_BACKUP:
             if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
                apply_pool_overrides(jcr, true);
+               rc.pool = jcr->res.pool;
+               rc.level_override = true;
             }
             break;
          default:
@@ -688,6 +689,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
             rc.pool = select_pool_resource(ua);
             if (rc.pool) {
                jcr->res.pool = rc.pool;
+               rc.level_override = false;
                Dmsg1(100, "Set new pool=%s\n", jcr->res.pool->name());
                goto try_again;
             }
@@ -826,8 +828,7 @@ try_again:
 
 /*
  * Reset the restore context.
- * This subroutine can be called multiple times, so it
- *  must keep any prior settings.
+ * This subroutine can be called multiple times, so it must keep any prior settings.
  */
 static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
 {
@@ -845,7 +846,7 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    if (rc.pool_name) {
       pm_strcpy(jcr->res.pool_source, _("command line"));
       jcr->IgnoreLevelPoolOverides = true;
-   } else if (jcr->res.pool != jcr->res.job->pool) {
+   } else if (!rc.level_override && jcr->res.pool != jcr->res.job->pool) {
       pm_strcpy(jcr->res.pool_source, _("user input"));
    }
    set_rwstorage(jcr, rc.store);

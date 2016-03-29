@@ -26,7 +26,8 @@ INCLUDES = -I../../.. \
 	        -I../../../include \
 	        -I../../include \
            -I../../compat/include \
-	        -I../../vss/include
+	        -I../../vss/include\
+			  -I../include
 LDLIBS = ../../lib/libbareos.a \
 	      ../../lib/libbareos.dll \
          $(MINGW_LIB)/libpthreadGCE2.a \
@@ -36,7 +37,7 @@ LDLIBS = ../../lib/libbareos.a \
 	      #$(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 
-TEST_LIBSRCS = alist_test.c  bsnprintf_test.c edit_test.c htable_test.c passphrase_test.c rblist_test.c dlist_test.c test_lib.c sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c
+TEST_LIBSRCS = alist_test.c  bsnprintf_test.c edit_test.c htable_test.c passphrase_test.c rblist_test.c dlist_test.c test_lib.c sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c junction_test.c
 TEST_LIBOBJS = $(TEST_LIBSRCS:.c=.o)
 
 #WINDRESSRCS = consoleres.rc

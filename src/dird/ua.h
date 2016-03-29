@@ -171,6 +171,7 @@ public:
    CATRES *catalog;
    int Priority;
    int files;
+   bool level_override;
    bool spool_data;
    bool accurate;
    bool ignoreduplicatecheck;
