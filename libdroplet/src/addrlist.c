@@ -217,7 +217,7 @@ dpl_addrlist_get_byname_nolock(dpl_addrlist_t *addrlist,
 
   free(new_host);
 
-  if (ret != 0)
+  if (ret != 0 || hresult == NULL)
     return NULL;
 
   port = atoi(portstr);
