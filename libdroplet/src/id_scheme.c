@@ -42,6 +42,7 @@
  *
  * @param ctx the droplect context
  * @param storage_class DPL_STORAGE_CLASS_STANDARD
+ * @param storage_class DPL_STORAGE_CLASS_STANDARD_IA
  * @param storage_class DPL_STORAGE_CLASS_REDUCED_REDUNDANCY
  * @param storage_class DPL_STORAGE_CLASS_CUSTOM
  * @param custom if DPL_STORAGE_CLASS_CUSTOM, specify the number of replicas
