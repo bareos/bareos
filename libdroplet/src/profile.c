@@ -917,12 +917,22 @@ dpl_ssl_profile_post(dpl_ctx_t *ctx)
   }
 
   if (ctx->ssl_ca_list != NULL) {
-    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, NULL) || !SSL_CTX_set_default_verify_paths(ctx->ssl_ctx)) {
+    if (!SSL_CTX_load_verify_locations(ctx->ssl_ctx, ctx->ssl_ca_list, NULL)) {
       unsigned long ssl_err = ERR_get_error();
       char buf[256];
       ERR_error_string_n(ssl_err, buf, sizeof buf);
       DPL_TRACE(ctx, DPL_TRACE_ERR, "Failed to load CA locations: %s", buf);
       DPL_SSL_PERROR(ctx, "SSL_CTX_load_verify_locations");
+      return DPL_FAILURE;
+    }
+  }
+  else {
+    if (!SSL_CTX_set_default_verify_paths(ctx->ssl_ctx)) {
+      unsigned long ssl_err = ERR_get_error();
+      char buf[256];
+      ERR_error_string_n(ssl_err, buf, sizeof buf);
+      DPL_TRACE(ctx, DPL_TRACE_ERR, "Failed to set default CA paths");
+      DPL_SSL_PERROR(ctx, "SSL_CTX_set_default_verify_paths");
       return DPL_FAILURE;
     }
   }
