@@ -54,7 +54,7 @@ LIBBAREOS_OBJS = $(LIBBAREOS_SRCS:.c=.o)
 LIBBAREOSCFG_SRCS = ini.c lex.c parse_bsr.c
 LIBBAREOSCFG_OBJS = $(LIBBAREOSCFG_SRCS:.c=.o)
 
-COMPAT_SRCS = compat.c print.c winapi.c
+COMPAT_SRCS = compat.c glob.c print.c winapi.c
 COMPAT_OBJS = $(COMPAT_SRCS:.c=.o)
 
 DYNAMIC_OBJS = $(LIBBAREOS_OBJS) $(LIBBAREOSCFG_OBJS) $(COMPAT_OBJS)

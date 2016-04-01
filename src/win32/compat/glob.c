@@ -30,6 +30,7 @@
  * Copyright (C) 2011-2013, MinGW.org Project.
  * ---------------------------------------------------------------------------
  */
+#include "bareos.h"
 #include <glob.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -38,6 +39,14 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <errno.h>
+
+#ifndef HAVE_READDIR_R
+int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+#endif
+
+#ifndef HAVE_STRICOLL
+#define stricoll(str1, str2) bstrcasecmp(str1, str2)
+#endif
 
 enum {
   /* Extend the flags offset enumeration, beyond the user visible
@@ -62,7 +71,8 @@ enum {
 # define GLOB_INLINE	static __inline__ __attribute__((__always_inline__))
 #endif
 
-#define GLOB_HARD_ESC	__CRT_GLOB_ESCAPE_CHAR__
+//#define GLOB_HARD_ESC	__CRT_GLOB_ESCAPE_CHAR__
+#define GLOB_HARD_ESC	(char)(127)
 
 #if defined _WIN32 || defined __MS_DOS__
 /*
@@ -87,7 +97,7 @@ GLOB_INLINE char *glob_strdup( const char *pattern )
   do { if( *origin == GLOB_HARD_ESC ) ++origin;
        *copy++ = *origin;
      } while( *origin++ );
-  return strdup( buf );
+  return bstrdup( buf );
 }
 
 #else
@@ -520,7 +530,8 @@ static int glob_strcmp( const char *pattern, const char *text, int flags )
 # include <sys/stat.h>
 
   GLOB_INLINE
-  int GLOB_ISDIR( const struct *dirent ent )
+  //int GLOB_ISDIR( const struct *dirent ent )
+  int GLOB_ISDIR( const struct dirent *ent )
   {
     struct stat entinfo;
     if( stat( ent->d_name, &entinfo ) == 0 )
@@ -555,7 +566,7 @@ static int glob_initialise( glob_t *gl_data )
      * for storage of the globbed paths vector...
      */
     int entries = gl_data->gl_offs + 1;
-    if( (gl_data->gl_pathv = malloc( entries * sizeof( char ** ) )) == NULL )
+    if( (gl_data->gl_pathv = (char **)malloc( entries * sizeof( char ** ) )) == NULL )
       /*
        * ...bailing out, if insufficient free heap memory.
        */
@@ -591,7 +602,7 @@ static int glob_store_entry( char *path, glob_t *gl_buf )
    */
   char **pathv;
   if(  (path != NULL)  &&  (gl_buf != NULL)
-  &&  ((pathv = realloc( gl_buf->gl_pathv, glob_expand( gl_buf ))) != NULL)  )
+  &&  ((pathv = (char **)realloc( gl_buf->gl_pathv, glob_expand( gl_buf ))) != NULL)  )
   {
     /* Memory expansion was successful; store the new path name
      * in place of the former NULL pointer at the end of the old
@@ -645,12 +656,13 @@ GLOB_INLINE struct glob_collator
     if( flags & GLOB_CASEMATCH )
       seq = strcoll( entry, ref->entry );
     else
-      seq = stricoll( entry, ref->entry );
+      //seq = stricoll( entry, ref->entry );
+      seq = strcoll( entry, ref->entry );
     ref = (seq > 0) ? ref->next : ref->prev;
   }
   /* Allocate storage for a new leaf node, and if successful...
    */
-  if( (ref = malloc( sizeof( struct glob_collator ))) != NULL )
+  if( (ref = (glob_collator*)malloc( sizeof( struct glob_collator ))) != NULL )
   {
     /* ...place the new entry on this new leaf...
      */
@@ -718,7 +730,7 @@ glob_store_collated_entries( struct glob_collator *collator, glob_t *gl_buf )
 }
 
 static int
-glob_match( const char *pattern, int flags, int (*errfn)(), glob_t *gl_buf )
+glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob_t *gl_buf )
 {
   /* Local helper function; it provides the backbone of the glob()
    * implementation, recursively decomposing the pattern into separate
@@ -731,7 +743,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(), glob_t *gl_buf )
   /* Begin by separating out any path prefix from the glob pattern.
    */
   char dirbuf[1 + strlen( pattern )];
-  const char *dir = dirname( memcpy( dirbuf, pattern, sizeof( dirbuf )) );
+  const char *dir = dirname( (char *)memcpy( dirbuf, pattern, sizeof( dirbuf )) );
   char **dirp, preferred_dirsep = GLOB_DIRSEP;
 
   /* Initialise a temporary local glob_t structure, to capture the
@@ -817,13 +829,16 @@ glob_match( const char *pattern, int flags, int (*errfn)(), glob_t *gl_buf )
       {
 	/* ...and when successful, instantiate a dirent structure...
 	 */
-	struct dirent *entry;
+	struct dirent data;
+	struct dirent *entry = &data;
+	struct dirent *result = NULL;
 	size_t dirlen = (dir == NULL) ? 0 : strlen( *dirp );
-	while( (entry = readdir( dp )) != NULL )
+	//while( (entry = readdir( dp )) != NULL )
+	while( (readdir_r( dp, entry, &result )) == 0 )
 	{
 	  /* ...into which we read each entry from the candidate
 	   * directory, in turn, then...
-	   */ 
+	   */
 	  if( (((flags & GLOB_DIRONLY) == 0) || GLOB_ISDIR( entry ))
 	    /*
 	     * ...provided we don't require it to be a subdirectory,
@@ -968,7 +983,7 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
     /* ...a registration (initialisation) request...
      */
     case GLOB_INIT:
-      if( glob_signed( gl_data->gl_magic, glob_magic ) != 0 )
+      if( glob_signed( (const char *)gl_data->gl_magic, glob_magic ) != 0 )
       {
 	/* The gl_magic field doesn't (yet) indicate that the
 	 * data structure has been initialised; assume that this
@@ -985,7 +1000,7 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
      * before we attempt to free it.
      */
     case GLOB_FREE:
-      if( glob_signed( gl_data->gl_magic, glob_magic ) == 0 )
+      if( glob_signed( (const char *)gl_data->gl_magic, glob_magic ) == 0 )
       {
 	/* On passing the sanity check, we may proceed to free
 	 * all dynamically (strdup) allocated string buffers in
@@ -1005,7 +1020,7 @@ static glob_t *glob_registry( int request, glob_t *gl_data )
 }
 
 int
-__mingw_glob( const char *pattern, int flags, int (*errfn)(), glob_t *gl_data )
+__mingw_glob( const char *pattern, int flags, int (*errfn)(const char *, int), glob_t *gl_data )
 {
   /* Module entry point for the glob() function.
    */

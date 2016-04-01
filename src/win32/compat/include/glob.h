@@ -123,7 +123,7 @@ enum {
  */
 #define GLOB_CASEMATCH	  __GLOB_FLAG__(CASEMATCH)
 
-BEGIN_C_DECLS
+//BEGIN_C_DECLS
 /*
  * Function prototypes.  Formally POSIX mandates:
  *
@@ -142,13 +142,13 @@ void __mingw_globfree( glob_t * );
 #define GLOB_INLINE  static __inline__ __attribute__((__always_inline__))
 
 GLOB_INLINE int glob
-( const char *__pattern, int __flags, int (*__errfunc)(), glob_t *__data )
+( const char *__pattern, int __flags, int (*__errfunc)(const char *, int), glob_t *__data )
 { return __mingw_glob( __pattern, __flags, __errfunc, __data ); }
 
 GLOB_INLINE void globfree( glob_t *__data )
 { return __mingw_globfree( __data ); }
 
-END_C_DECLS
+//END_C_DECLS
 
 /* Manifest definitions for the possible status values
  * which glob() may return.
