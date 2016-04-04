@@ -399,6 +399,12 @@
 /* Define to 1 if you have the `glfs_readdirplus' function. */
 #undef HAVE_GLFS_READDIRPLUS
 
+/* Define to 1 if you have the `glob' function. */
+#undef HAVE_GLOB
+
+/* Define to 1 if you have the <glob.h> header file. */
+#undef HAVE_GLOB_H
+
 /* Define to 1 if GNUTLS library is available */
 #undef HAVE_GNUTLS
 
