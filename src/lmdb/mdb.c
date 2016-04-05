@@ -1355,8 +1355,6 @@ struct MDB_env {
 #define	MDB_ENV_TXKEY	0x10000000U
 	/** fdatasync is unreliable */
 #define	MDB_FSYNCONLY	0x08000000U
-	/** using a raw block device */
-#define	MDB_RAWPART		0x04000000U
 	uint32_t 	me_flags;		/**< @ref mdb_env */
 	unsigned int	me_psize;	/**< DB page size, inited from me_os_psize */
 	unsigned int	me_os_psize;	/**< OS page size, from #GET_PAGESIZE */
@@ -3910,8 +3908,6 @@ mdb_env_read_header(MDB_env *env, MDB_meta *meta)
 		p = (MDB_page *)&pbuf;
 
 		if (!F_ISSET(p->mp_flags, P_META)) {
-			if (env->me_flags & MDB_RAWPART)
-				return ENOENT;
 			DPRINTF(("page %"Y"u not a meta page", p->mp_pgno));
 			return MDB_INVALID;
 		}
@@ -4241,7 +4237,7 @@ mdb_env_map(MDB_env *env, void *addr)
 	int prot = PROT_READ;
 	if (flags & MDB_WRITEMAP) {
 		prot |= PROT_WRITE;
-		if (!(flags & MDB_RAWPART) && ftruncate(env->me_fd, env->me_mapsize) < 0)
+		if (ftruncate(env->me_fd, env->me_mapsize) < 0)
 			return ErrCode();
 	}
 	env->me_map = mmap(addr, env->me_mapsize, prot, MAP_SHARED,
@@ -5080,10 +5076,6 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 #ifdef _WIN32
 	wchar_t *wpath;
 #endif
-#ifndef _WIN32
-	struct stat st;
-#endif
-
 
 	if (env->me_fd!=INVALID_HANDLE_VALUE || (flags & ~(CHANGEABLE|CHANGELESS)))
 		return EINVAL;
@@ -5103,15 +5095,6 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 	if (flags & MDB_NOSUBDIR) {
 		rc = len + sizeof(LOCKSUFF) + len + 1;
 	} else {
-#ifndef _WIN32
-		rc = stat(path, &st);
-		if (rc)
-			return ErrCode();
-		if (S_ISBLK(st.st_mode)) {
-			flags |= MDB_RAWPART;
-			rc = len + sizeof(LOCKSUFF) + sizeof("/tmp/LMDB#0000");
-		} else
-#endif
 		rc = len + sizeof(LOCKNAME) + len + sizeof(DATANAME);
 	}
 	lpath = malloc(rc);
@@ -5120,12 +5103,6 @@ mdb_env_open(MDB_env *env, const char *path, unsigned int flags, mdb_mode_t mode
 	if (flags & MDB_NOSUBDIR) {
 		dpath = lpath + len + sizeof(LOCKSUFF);
 		sprintf(lpath, "%s" LOCKSUFF, path);
-		strcpy(dpath, path);
-	} else if (flags & MDB_RAWPART) {
-		dpath = lpath + sizeof(LOCKSUFF) + sizeof("/tmp/LMDB#0000");
-#ifndef _WIN32
-		sprintf(lpath, "/tmp/LMDB#%04x" LOCKSUFF, (unsigned)st.st_rdev);
-#endif
 		strcpy(dpath, path);
 	} else {
 		dpath = lpath + len + sizeof(LOCKNAME);
@@ -6802,8 +6779,8 @@ set1:
 				if (op == MDB_GET_BOTH || rc > 0)
 					return MDB_NOTFOUND;
 				rc = 0;
-				*data = olddata;
 			}
+			*data = olddata;
 
 		} else {
 			if (mc->mc_xcursor)
