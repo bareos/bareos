@@ -2950,8 +2950,10 @@ bool win32_restore_file_attributes(POOLMEM *ofname, HANDLE handle, WIN32_FILE_AT
        * Restore the sparse file attribute on the restored file.
        */
       if (atts->dwFileAttributes & FILE_ATTRIBUTE_SPARSE_FILE) {
+         DWORD bytesreturned;
+
          Dmsg1(100, "Restore FILE_ATTRIBUTE_SPARSE_FILE on %s\n", ofname);
-         if (!DeviceIoControl(handle, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, NULL, NULL)) {
+         if (!DeviceIoControl(handle, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &bytesreturned, NULL)) {
             goto bail_out;
          }
       }
