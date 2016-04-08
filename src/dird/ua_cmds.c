@@ -2275,9 +2275,14 @@ static int status_handler(void *ctx, int num_fields, char **row)
  */
 static bool wait_cmd(UAContext *ua, const char *cmd)
 {
-   JCR *jcr;
    int i;
+   JCR *jcr;
+   int status;
+   char ed1[50];
+   uint32_t JobId = 0;
    time_t stop_time = 0;
+   char jobstatus = '?';        /* Unknown by default */
+   POOL_MEM temp(PM_MESSAGE);
 
    /*
     * no args
@@ -2307,30 +2312,29 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
       stop_time = time(NULL) + str_to_int64(ua->argv[i]);
    }
 
-   /* we have jobid, jobname or ujobid argument */
-
-   uint32_t jobid = 0 ;
-
+   /*
+    * We have jobid, jobname or ujobid argument
+    */
    if (!open_client_db(ua)) {
-      ua->error_msg(_("ERR: Can't open db\n")) ;
+      ua->error_msg(_("ERR: Can't open db\n"));
       return true;
    }
 
-   for (int i=1; i<ua->argc; i++) {
+   for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], "jobid")) {
          if (!ua->argv[i]) {
             break;
          }
-         jobid = str_to_int64(ua->argv[i]);
+         JobId = str_to_int64(ua->argv[i]);
          break;
       } else if (bstrcasecmp(ua->argk[i], "jobname") ||
                  bstrcasecmp(ua->argk[i], "job")) {
          if (!ua->argv[i]) {
             break;
          }
-         jcr=get_jcr_by_partial_name(ua->argv[i]) ;
+         jcr = get_jcr_by_partial_name(ua->argv[i]);
          if (jcr) {
-            jobid = jcr->JobId ;
+            JobId = jcr->JobId;
             free_jcr(jcr);
          }
          break;
@@ -2338,15 +2342,17 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
          if (!ua->argv[i]) {
             break;
          }
-         jcr=get_jcr_by_full_name(ua->argv[i]) ;
+         jcr = get_jcr_by_full_name(ua->argv[i]);
          if (jcr) {
-            jobid = jcr->JobId ;
+            JobId = jcr->JobId;
             free_jcr(jcr);
          }
          break;
-      /* Wait for a mount request */
       } else if (bstrcasecmp(ua->argk[i], "mount")) {
-         for (bool waiting=false; !waiting; ) {
+         /*
+          * Wait for a mount request
+          */
+         for (bool waiting = false; !waiting; ) {
             foreach_jcr(jcr) {
                if (jcr->JobId != 0 &&
                    (jcr->JobStatus == JS_WaitMedia || jcr->JobStatus == JS_WaitMount)) {
@@ -2368,9 +2374,9 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   if (jobid == 0) {
+   if (JobId == 0) {
       ua->error_msg(_("ERR: Job was not found\n"));
-      return true ;
+      return true;
    }
 
    /*
@@ -2380,10 +2386,9 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
    for (bool running = true; running; ) {
       running = false;
 
-      jcr=get_jcr_by_id(jobid) ;
-
+      jcr = get_jcr_by_id(JobId);
       if (jcr) {
-         running = true ;
+         running = true;
          free_jcr(jcr);
       }
 
@@ -2395,45 +2400,34 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
    /*
     * We have to get JobStatus
     */
-   int status ;
-   char jobstatus = '?';        /* Unknown by default */
-   char buf[256] ;
-
-   bsnprintf(buf, sizeof(buf),
-             "SELECT JobStatus FROM Job WHERE JobId='%i'", jobid);
-
-   db_sql_query(ua->db, buf,
-                status_handler, (void *)&jobstatus);
+   Mmsg(temp, "SELECT JobStatus FROM Job WHERE JobId='%s'", edit_int64(JobId, ed1));
+   db_sql_query(ua->db, temp.c_str(), status_handler, (void *)&jobstatus);
 
    switch (jobstatus) {
    case JS_Error:
-      status = 1 ;         /* Warning */
+      status = 1;          /* Warning */
       break;
-
    case JS_FatalError:
    case JS_ErrorTerminated:
    case JS_Canceled:
-      status = 2 ;         /* Critical */
+      status = 2;          /* Critical */
       break;
-
    case JS_Warnings:
    case JS_Terminated:
-      status = 0 ;         /* Ok */
+      status = 0;          /* Ok */
       break;
-
    default:
-      status = 3 ;         /* Unknown */
+      status = 3;          /* Unknown */
       break;
    }
 
-   ua->send_msg("JobId=%i\n", jobid) ;
-   ua->send_msg("JobStatus=%s (%c)\n",
-            job_status_to_str(jobstatus),
-            jobstatus) ;
-
-   if (ua->gui || ua->api) {
-      ua->send_msg("ExitStatus=%i\n", status) ;
-   }
+   Mmsg(temp, "%c", jobstatus);
+   ua->send->object_start("Job");
+   ua->send->object_key_value("JobId", "%s=", JobId, "%i\n");
+   ua->send->object_key_value("JobStatusLong", job_status_to_str(jobstatus), "JobStatus=%s ");
+   ua->send->object_key_value("JobStatus",  temp.c_str(), "(%s)\n");
+   ua->send->object_key_value("ExitStatus", status);
+   ua->send->object_end("Job");
 
    return true;
 }
