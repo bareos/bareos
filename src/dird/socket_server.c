@@ -63,7 +63,7 @@ static void *handle_connection_request(void *arg)
    BSOCK *bs = (BSOCK *)arg;
    char name[MAX_NAME_LENGTH];
    char tbuf[MAX_TIME_LENGTH];
-   int  fd_protocol_version = 0;
+   int fd_protocol_version = 0;
 
    if (bs->recv() <= 0) {
       Emsg1(M_ERROR, 0, _("Connection request from %s failed.\n"), bs->who());

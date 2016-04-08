@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,7 +95,7 @@ static int32_t res_all_size = sizeof(res_all);
  */
 static RES_ITEM dir_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Messages", CFG_TYPE_RES, ITEM(res_dir.messages), R_MSGS, 0, NULL, NULL, NULL },
    { "DirPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_dir.DIRaddrs), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
@@ -122,18 +122,6 @@ static RES_ITEM dir_items[] = {
    { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "180" /* 3 minutes */, NULL, NULL },
    { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_dir.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "1800" /* 30 minutes */, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_dir.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_dir.tls_dhfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCN", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "StatisticsRetention", CFG_TYPE_TIME, ITEM(res_dir.stats_retention), 0, CFG_ITEM_DEFAULT, "160704000" /* 5 years */, NULL, NULL },
    { "StatisticsCollectInterval", CFG_TYPE_PINT32, ITEM(res_dir.stats_collect_interval), 0, CFG_ITEM_DEFAULT, "150", "14.2.0-", NULL },
    { "VerId", CFG_TYPE_STR, ITEM(res_dir.verid), 0, 0, NULL, NULL, NULL },
@@ -149,6 +137,7 @@ static RES_ITEM dir_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
+   TLS_CONFIG(res_dir)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -159,29 +148,29 @@ static RES_ITEM dir_items[] = {
  */
 static RES_ITEM profile_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL, NULL,
-      "Additional information about the resource. Only used for UIs." },
+     "Additional information about the resource. Only used for UIs." },
    { "JobACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Job_ACL, 0, NULL, NULL,
-      "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },
+     "Lists the Job resources, this resource has access to. The special keyword *all* allows access to all Job resources." },
    { "ClientACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Client_ACL, 0, NULL, NULL,
-      "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },
+     "Lists the Client resources, this resource has access to. The special keyword *all* allows access to all Client resources." },
    { "StorageACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Storage_ACL, 0, NULL, NULL,
-      "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },
+     "Lists the Storage resources, this resource has access to. The special keyword *all* allows access to all Storage resources." },
    { "ScheduleACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Schedule_ACL, 0, NULL, NULL,
-      "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },
+     "Lists the Schedule resources, this resource has access to. The special keyword *all* allows access to all Schedule resources." },
    { "PoolACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Pool_ACL, 0, NULL, NULL,
-      "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },
+     "Lists the Pool resources, this resource has access to. The special keyword *all* allows access to all Pool resources." },
    { "CommandACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Command_ACL, 0, NULL, NULL,
-      "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },
+     "Lists the commands, this resource has access to. The special keyword *all* allows using commands." },
    { "FileSetACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), FileSet_ACL, 0, NULL, NULL,
-      "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },
+     "Lists the File Set resources, this resource has access to. The special keyword *all* allows access to all File Set resources." },
    { "CatalogACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Catalog_ACL, 0, NULL, NULL,
-      "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },
+     "Lists the Catalog resources, this resource has access to. The special keyword *all* allows access to all Catalog resources." },
    { "WhereACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), Where_ACL, 0, NULL, NULL,
-      "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },
+     "Specifies the base directories, where files could be restored. An empty string allows restores to all directories." },
    { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_profile.ACL_lists), PluginOptions_ACL, 0, NULL, NULL,
-      "Specifies the allowed plugin options. An empty strings allows all Plugin Options." },
+     "Specifies the allowed plugin options. An empty strings allows all Plugin Options." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -205,21 +194,10 @@ static RES_ITEM con_items[] = {
    { "CatalogACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Catalog_ACL, 0, NULL, NULL, NULL },
    { "WhereACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Where_ACL, 0, NULL, NULL, NULL },
    { "PluginOptionsACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), PluginOptions_ACL, 0, NULL, NULL, NULL },
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_con.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_con.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_con.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_con.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_con.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_con.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_con.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_con.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res_con.tls_dhfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_con.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCN", CFG_TYPE_ALIST_STR, ITEM(res_con.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, "14.2.3-",
-      "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
-      "First the console ACL is checked then any profile the console is linked to." },
+     "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
+     "First the console ACL is checked then any profile the console is linked to." },
+   TLS_CONFIG(res_con)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -230,7 +208,7 @@ static RES_ITEM con_items[] = {
  */
 static RES_ITEM cli_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
    { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
@@ -243,15 +221,15 @@ static RES_ITEM cli_items[] = {
    { "FdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
    { "Catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL, NULL, NULL },
    { "Passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-",
-      "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the netowrk connection to the Storage Daemon." },
-   { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client.connection_from_director_to_client), 0, CFG_ITEM_DEFAULT, "true", "16.2.0",
-      "Let the Director initiate the network connection to the Client." },
-   { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client.connection_from_client_to_director), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, NULL,
-      "Alias of \"Allow Connection From Client\"." },
-   { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client.connection_from_client_to_director), 0, CFG_ITEM_DEFAULT, "false", "16.2.0",
-      "The Director will accept incoming network connection from this Client." },
+     "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the netowrk connection to the Storage Daemon." },
+   { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client.conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT, "true", "16.2.2",
+     "Let the Director initiate the network connection to the Client." },
+   { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client.conn_from_fd_to_dir), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, NULL,
+     "Alias of \"Connection From Client To Director\"." },
+   { "ConnectionFromClientToDirector", CFG_TYPE_BOOL, ITEM(res_client.conn_from_fd_to_dir), 0, CFG_ITEM_DEFAULT, "false", "16.2.2",
+     "The Director will accept incoming network connection from this Client." },
    { "Enabled", CFG_TYPE_BOOL, ITEM(res_client.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-      "En- or disable this resource." },
+     "En- or disable this resource." },
    { "HardQuota", CFG_TYPE_SIZE64, ITEM(res_client.HardQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SoftQuota", CFG_TYPE_SIZE64, ITEM(res_client.SoftQuota), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SoftQuotaGracePeriod", CFG_TYPE_TIME, ITEM(res_client.SoftQuotaGracePeriod), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
@@ -262,20 +240,10 @@ static RES_ITEM cli_items[] = {
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_client.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "AutoPrune", CFG_TYPE_BOOL, ITEM(res_client.AutoPrune), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_client.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_client.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_client.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_client.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_client.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_client.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_client.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_client.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_client.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCN", CFG_TYPE_ALIST_STR, ITEM(res_client.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth), 0, 0, NULL, NULL, NULL },
    { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
    { "NdmpBlockSize", CFG_TYPE_PINT32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512", NULL, NULL },
+   TLS_CONFIG(res_client)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -300,25 +268,16 @@ static RES_ITEM store_items[] = {
    { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store.media_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store.autochanger), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "Enabled", CFG_TYPE_BOOL, ITEM(res_store.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-      "En- or disable this resource." },
+     "En- or disable this resource." },
    { "AllowCompression", CFG_TYPE_BOOL, ITEM(res_store.AllowCompress), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
    { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SddPort", CFG_TYPE_PINT32, ITEM(res_store.SDDport), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res_store.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_store.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_store.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_store.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCacertificateDir", CFG_TYPE_DIR, ITEM(res_store.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_store.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_store.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_store.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_store.tls_cipherlist), 0, 0, NULL, NULL, NULL },
    { "PairedStorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL, NULL, NULL },
    { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store.collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   TLS_CONFIG(res_store)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -329,7 +288,7 @@ static RES_ITEM store_items[] = {
  */
 static RES_ITEM cat_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
    { "DbAddress", CFG_TYPE_STR, ITEM(res_cat.db_address), 0, 0, NULL, NULL, NULL },
@@ -367,7 +326,7 @@ static RES_ITEM cat_items[] = {
  */
 RES_ITEM job_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Type", CFG_TYPE_JOBTYPE, ITEM(res_job.JobType), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Protocol", CFG_TYPE_PROTOCOLTYPE, ITEM(res_job.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
@@ -421,7 +380,7 @@ RES_ITEM job_items[] = {
    { "PruneVolumes", CFG_TYPE_BOOL, ITEM(res_job.PruneVolumes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "PurgeMigrationJob", CFG_TYPE_BOOL, ITEM(res_job.PurgeMigrateJob), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "Enabled", CFG_TYPE_BOOL, ITEM(res_job.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-      "En- or disable this resource." },
+     "En- or disable this resource." },
    { "SpoolAttributes", CFG_TYPE_BOOL, ITEM(res_job.SpoolAttributes), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "SpoolData", CFG_TYPE_BOOL, ITEM(res_job.spool_data), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
    { "SpoolSize", CFG_TYPE_SIZE64, ITEM(res_job.spool_size), 0, 0, NULL, NULL, NULL },
@@ -465,7 +424,7 @@ RES_ITEM job_items[] = {
  */
 static RES_ITEM fs_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Include", CFG_TYPE_INCEXC, { 0 }, 0, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
    { "Exclude", CFG_TYPE_INCEXC, { 0 }, 1, CFG_ITEM_NO_EQUALS, NULL, NULL, NULL },
@@ -481,11 +440,11 @@ static RES_ITEM fs_items[] = {
  */
 static RES_ITEM sch_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Run", CFG_TYPE_RUN, ITEM(res_sch.run), 0, 0, NULL, NULL, NULL },
    { "Enabled", CFG_TYPE_BOOL, ITEM(res_sch.enabled), 0, CFG_ITEM_DEFAULT, "true", NULL,
-      "En- or disable this resource." },
+     "En- or disable this resource." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -496,7 +455,7 @@ static RES_ITEM sch_items[] = {
  */
 static RES_ITEM pool_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "PoolType", CFG_TYPE_STRNAME, ITEM(res_pool.pool_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL, NULL, NULL },
@@ -539,7 +498,7 @@ static RES_ITEM pool_items[] = {
  */
 static RES_ITEM counter_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
-      "The name of the resource." },
+     "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Minimum", CFG_TYPE_INT32, ITEM(res_counter.MinValue), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "Maximum", CFG_TYPE_PINT32, ITEM(res_counter.MaxValue), 0, CFG_ITEM_DEFAULT, "2147483647" /* INT32_MAX */, NULL, NULL },
@@ -2357,33 +2316,6 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.DIRsrc_addr) {
          free_addresses(res->res_dir.DIRsrc_addr);
       }
-      if (res->res_dir.tls_ctx) {
-         free_tls_context(res->res_dir.tls_ctx);
-      }
-      if (res->res_dir.tls_ca_certfile) {
-         free(res->res_dir.tls_ca_certfile);
-      }
-      if (res->res_dir.tls_ca_certdir) {
-         free(res->res_dir.tls_ca_certdir);
-      }
-      if (res->res_dir.tls_crlfile) {
-         free(res->res_dir.tls_crlfile);
-      }
-      if (res->res_dir.tls_certfile) {
-         free(res->res_dir.tls_certfile);
-      }
-      if (res->res_dir.tls_keyfile) {
-         free(res->res_dir.tls_keyfile);
-      }
-      if (res->res_dir.tls_dhfile) {
-         free(res->res_dir.tls_dhfile);
-      }
-      if (res->res_dir.tls_cipherlist) {
-         free(res->res_dir.tls_cipherlist);
-      }
-      if (res->res_dir.tls_allowed_cns) {
-         delete res->res_dir.tls_allowed_cns;
-      }
       if (res->res_dir.verid) {
          free(res->res_dir.verid);
       }
@@ -2399,6 +2331,7 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.log_timestamp_format) {
          free(res->res_dir.log_timestamp_format);
       }
+      free_tls_t(res->res_dir.tls);
       break;
    case R_DEVICE:
    case R_COUNTER:
@@ -2415,33 +2348,6 @@ void free_resource(RES *sres, int type)
       if (res->res_con.password.value) {
          free(res->res_con.password.value);
       }
-      if (res->res_con.tls_ctx) {
-         free_tls_context(res->res_con.tls_ctx);
-      }
-      if (res->res_con.tls_ca_certfile) {
-         free(res->res_con.tls_ca_certfile);
-      }
-      if (res->res_con.tls_ca_certdir) {
-         free(res->res_con.tls_ca_certdir);
-      }
-      if (res->res_con.tls_crlfile) {
-         free(res->res_con.tls_crlfile);
-      }
-      if (res->res_con.tls_certfile) {
-         free(res->res_con.tls_certfile);
-      }
-      if (res->res_con.tls_keyfile) {
-         free(res->res_con.tls_keyfile);
-      }
-      if (res->res_con.tls_dhfile) {
-         free(res->res_con.tls_dhfile);
-      }
-      if (res->res_con.tls_cipherlist) {
-         free(res->res_con.tls_cipherlist);
-      }
-      if (res->res_con.tls_allowed_cns) {
-         delete res->res_con.tls_allowed_cns;
-      }
       if (res->res_con.profiles) {
          delete res->res_con.profiles;
       }
@@ -2451,6 +2357,7 @@ void free_resource(RES *sres, int type)
             res->res_con.ACL_lists[i] = NULL;
          }
       }
+      free_tls_t(res->res_con.tls);
       break;
    case R_CLIENT:
       if (res->res_client.address) {
@@ -2462,30 +2369,7 @@ void free_resource(RES *sres, int type)
       if (res->res_client.password.value) {
          free(res->res_client.password.value);
       }
-      if (res->res_client.tls_ctx) {
-         free_tls_context(res->res_client.tls_ctx);
-      }
-      if (res->res_client.tls_ca_certfile) {
-         free(res->res_client.tls_ca_certfile);
-      }
-      if (res->res_client.tls_ca_certdir) {
-         free(res->res_client.tls_ca_certdir);
-      }
-      if (res->res_client.tls_crlfile) {
-         free(res->res_client.tls_crlfile);
-      }
-      if (res->res_client.tls_certfile) {
-         free(res->res_client.tls_certfile);
-      }
-      if (res->res_client.tls_keyfile) {
-         free(res->res_client.tls_keyfile);
-      }
-      if (res->res_client.tls_cipherlist) {
-         free(res->res_client.tls_cipherlist);
-      }
-      if (res->res_client.tls_allowed_cns) {
-         delete res->res_client.tls_allowed_cns;
-      }
+      free_tls_t(res->res_client.tls);
       break;
    case R_STORAGE:
       if (res->res_store.address) {
@@ -2503,27 +2387,7 @@ void free_resource(RES *sres, int type)
       if (res->res_store.device) {
          delete res->res_store.device;
       }
-      if (res->res_store.tls_ctx) {
-         free_tls_context(res->res_store.tls_ctx);
-      }
-      if (res->res_store.tls_ca_certfile) {
-         free(res->res_store.tls_ca_certfile);
-      }
-      if (res->res_store.tls_ca_certdir) {
-         free(res->res_store.tls_ca_certdir);
-      }
-      if (res->res_store.tls_crlfile) {
-         free(res->res_store.tls_crlfile);
-      }
-      if (res->res_store.tls_certfile) {
-         free(res->res_store.tls_certfile);
-      }
-      if (res->res_store.tls_keyfile) {
-         free(res->res_store.tls_keyfile);
-      }
-      if (res->res_store.tls_cipherlist) {
-         free(res->res_store.tls_cipherlist);
-      }
+      free_tls_t(res->res_store.tls);
       break;
    case R_CATALOG:
       if (res->res_cat.db_address) {
@@ -2754,7 +2618,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
             return false;
          } else {
-            res->res_con.tls_allowed_cns = res_all.res_con.tls_allowed_cns;
+            res->res_con.tls.allowed_cns = res_all.res_con.tls.allowed_cns;
             res->res_con.profiles = res_all.res_con.profiles;
          }
          break;
@@ -2766,7 +2630,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             res->res_dir.plugin_names = res_all.res_dir.plugin_names;
             res->res_dir.messages = res_all.res_dir.messages;
             res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-            res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+            res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
          }
          break;
       case R_STORAGE:
@@ -2775,6 +2639,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             return false;
          } else {
             res->res_store.paired_storage = res_all.res_store.paired_storage;
+            res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
 
             /*
              * We must explicitly copy the device alist pointer
@@ -2860,7 +2725,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
                 */
                res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
             }
-            res->res_client.tls_allowed_cns = res_all.res_client.tls_allowed_cns;
+            res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
          }
          break;
       case R_SCHEDULE:

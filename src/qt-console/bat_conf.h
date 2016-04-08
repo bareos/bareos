@@ -54,20 +54,8 @@ public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    s_password password;               /* UA server password */
-   bool tls_authenticate;             /* Authenticate with tls */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Client Certificate File */
-   char *tls_keyfile;                 /* TLS Client Key File */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    utime_t heartbeat_interval;        /* Dir heartbeat interval */
-
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   tls_t tls;                         /* TLS structure */
 };
 
 class CONFONTRES : public BRSRES {
@@ -78,20 +66,8 @@ public:
 class CONRES : public BRSRES {
 public:
    s_password password;               /* UA server password */
-   bool tls_authenticate;             /* Authenticate with tls */
-   bool tls_enable;                   /* Enable TLS on all connections */
-   bool tls_require;                  /* Require TLS on all connections */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Client Certificate File */
-   char *tls_keyfile;                 /* TLS Client Key File */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    utime_t heartbeat_interval;        /* Cons heartbeat interval */
-
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   tls_t tls;                         /* TLS structure */
 };
 
 /* Define the Union of all the above

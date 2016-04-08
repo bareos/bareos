@@ -107,7 +107,7 @@ static inline utime_t get_heartbeat_interval(CLIENTRES *res)
  * Try connecting every retry_interval (default 10 sec), and
  * give up after max_retry_time (default 30 mins).
  */
-static inline bool connect_outgoing_to_file_daemon(JCR *jcr, int retry_interval,
+static inline bool connect_outbound_to_file_daemon(JCR *jcr, int retry_interval,
                                                    int max_retry_time, bool verbose)
 {
    bool result = false;
@@ -163,7 +163,7 @@ bool connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bo
          /*
           * open connection to client
           */
-         if (!connect_outgoing_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
+         if (!connect_outbound_to_file_daemon(jcr, retry_interval, max_retry_time, verbose)) {
             /*
              * Check if a waiting client connection exist.
              * If yes, use it, otherwise jcr->file_bsock will not be set.
@@ -1224,7 +1224,7 @@ void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
    }
 
    /*
-    * The connection is now keeped in connection_pool.
+    * The connection is now kept in connection_pool.
     * This thread is no longer required and will end now.
     */
    return NULL;

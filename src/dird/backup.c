@@ -489,8 +489,8 @@ bool do_native_backup(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (store->tls_enable) {
-         if (store->tls_require) {
+      if (store->tls.enable) {
+         if (store->tls.require) {
             tls_need = BNET_TLS_REQUIRED;
          } else {
             tls_need = BNET_TLS_OK;
@@ -507,8 +507,8 @@ bool do_native_backup(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (client->tls_enable) {
-         if (client->tls_require) {
+      if (client->tls.enable) {
+         if (client->tls.require) {
             tls_need = BNET_TLS_REQUIRED;
          } else {
             tls_need = BNET_TLS_OK;

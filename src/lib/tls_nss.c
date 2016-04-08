@@ -96,7 +96,7 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list)
+bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    return true;
 }
@@ -107,7 +107,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host)
+bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    return true;
 }
@@ -123,7 +123,7 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
       return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls)
+void free_tls_connection(TLS_CONNECTION *tls_conn)
 {
 }
 

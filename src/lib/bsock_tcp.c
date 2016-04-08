@@ -903,10 +903,10 @@ void BSOCK_TCP::close()
       /*
        * Shutdown tls cleanly.
        */
-      if (tls) {
+      if (tls_conn) {
          tls_bsock_shutdown(this);
-         free_tls_connection(tls);
-         tls = NULL;
+         free_tls_connection(tls_conn);
+         tls_conn = NULL;
       }
       if (is_timed_out()) {
          shutdown(m_fd, SHUT_RDWR);   /* discard any pending I/O */
@@ -954,7 +954,7 @@ int32_t BSOCK_TCP::read_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nread;
 
 #ifdef HAVE_TLS
-   if (tls) {
+   if (tls_conn) {
       /*
        * TLS enabled
        */
@@ -1033,7 +1033,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
    }
 
 #ifdef HAVE_TLS
-   if (tls) {
+   if (tls_conn) {
       /* TLS enabled */
       return (tls_bsock_writen(this, ptr, nbytes));
    }

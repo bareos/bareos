@@ -124,4 +124,3 @@ void stop_socket_server(bool wait)
       }
    }
 }
-

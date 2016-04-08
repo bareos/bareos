@@ -48,7 +48,6 @@ extern CONFIG *my_config;             /* Our Global config */
 void terminate_filed(int sig);
 
 /*
- * file daemon protocol version
+ * File Daemon protocol version
  */
 const int FD_PROTOCOL_VERSION = 54;
-

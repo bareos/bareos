@@ -761,9 +761,9 @@ static bool check_resources()
       /*
        * tls_require implies tls_enable
        */
-      if (me->tls_require) {
+      if (me->tls.require) {
          if (have_tls) {
-            me->tls_enable = true;
+            me->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
@@ -771,22 +771,22 @@ static bool check_resources()
          }
       }
 
-      need_tls = me->tls_enable || me->tls_authenticate;
+      need_tls = me->tls.enable || me->tls.authenticate;
 
-      if (!me->tls_certfile && need_tls) {
+      if (!me->tls.certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
          goto bail_out;
       }
 
-      if (!me->tls_keyfile && need_tls) {
+      if (!me->tls.keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"), me->name(), configfile);
          OK = false;
          goto bail_out;
       }
 
-      if ((!me->tls_ca_certfile && !me->tls_ca_certdir) &&
-           need_tls && me->tls_verify_peer) {
+      if ((!me->tls.ca_certfile && !me->tls.ca_certdir) &&
+           need_tls && me->tls.verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
               " Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
@@ -799,27 +799,29 @@ static bool check_resources()
       /*
        * If everything is well, attempt to initialize our per-resource TLS context
        */
-      if (OK && (need_tls || me->tls_require)) {
+      if (OK && (need_tls || me->tls.require)) {
          /*
           * Initialize TLS context.
           */
-         me->tls_ctx = new_tls_context(me->tls_ca_certfile,
-                                       me->tls_ca_certdir,
-                                       me->tls_crlfile,
-                                       me->tls_certfile,
-                                       me->tls_keyfile,
+         me->tls.ctx = new_tls_context(me->tls.ca_certfile,
+                                       me->tls.ca_certdir,
+                                       me->tls.crlfile,
+                                       me->tls.certfile,
+                                       me->tls.keyfile,
                                        NULL,
                                        NULL,
-                                       me->tls_dhfile,
-                                       me->tls_cipherlist,
-                                       me->tls_verify_peer);
+                                       me->tls.dhfile,
+                                       me->tls.cipherlist,
+                                       me->tls.verify_peer);
 
-         if (!me->tls_ctx) {
+         if (!me->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  me->name(), configfile);
             OK = false;
             goto bail_out;
          }
+         set_tls_enable(me->tls.ctx, need_tls);
+         set_tls_require(me->tls.ctx, me->tls.require);
       }
    }
 
@@ -842,9 +844,9 @@ static bool check_resources()
       /*
        * tls_require implies tls_enable
        */
-      if (cons->tls_require) {
+      if (cons->tls.require) {
          if (have_tls) {
-            cons->tls_enable = true;
+            cons->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
@@ -852,24 +854,24 @@ static bool check_resources()
          }
       }
 
-      need_tls = cons->tls_enable || cons->tls_authenticate;
+      need_tls = cons->tls.enable || cons->tls.authenticate;
 
-      if (!cons->tls_certfile && need_tls) {
+      if (!cons->tls.certfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
          goto bail_out;
       }
 
-      if (!cons->tls_keyfile && need_tls) {
+      if (!cons->tls.keyfile && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Console \"%s\" in %s.\n"),
             cons->name(), configfile);
          OK = false;
          goto bail_out;
       }
 
-      if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir)
-            && need_tls && cons->tls_verify_peer) {
+      if ((!cons->tls.ca_certfile && !cons->tls.ca_certdir)
+            && need_tls && cons->tls.verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\" or \"TLS CA"
             " Certificate Dir\" are defined for Console \"%s\" in %s."
             " At least one CA certificate store is required"
@@ -882,26 +884,28 @@ static bool check_resources()
       /*
        * If everything is well, attempt to initialize our per-resource TLS context
        */
-      if (OK && (need_tls || cons->tls_require)) {
+      if (OK && (need_tls || cons->tls.require)) {
          /*
           * Initialize TLS context.
           */
-         cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-                                         cons->tls_ca_certdir,
-                                         cons->tls_crlfile,
-                                         cons->tls_certfile,
-                                         cons->tls_keyfile,
+         cons->tls.ctx = new_tls_context(cons->tls.ca_certfile,
+                                         cons->tls.ca_certdir,
+                                         cons->tls.crlfile,
+                                         cons->tls.certfile,
+                                         cons->tls.keyfile,
                                          NULL,
                                          NULL,
-                                         cons->tls_dhfile,
-                                         cons->tls_cipherlist,
-                                         cons->tls_verify_peer);
-         if (!cons->tls_ctx) {
+                                         cons->tls.dhfile,
+                                         cons->tls.cipherlist,
+                                         cons->tls.verify_peer);
+         if (!cons->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                cons->name(), configfile);
             OK = false;
             goto bail_out;
          }
+         set_tls_enable(cons->tls.ctx, need_tls);
+         set_tls_require(cons->tls.ctx, cons->tls.require);
       }
 
    }
@@ -922,17 +926,17 @@ static bool check_resources()
       /*
        * tls_require implies tls_enable
        */
-      if (client->tls_require) {
+      if (client->tls.require) {
          if (have_tls) {
-            client->tls_enable = true;
+            client->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
             goto bail_out;
          }
       }
-      need_tls = client->tls_enable || client->tls_authenticate;
-      if ((!client->tls_ca_certfile && !client->tls_ca_certdir) && need_tls) {
+      need_tls = client->tls.enable || client->tls.authenticate;
+      if ((!client->tls.ca_certfile && !client->tls.ca_certdir) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
             " or \"TLS CA Certificate Dir\" are defined for File daemon \"%s\" in %s.\n"),
             client->name(), configfile);
@@ -943,27 +947,29 @@ static bool check_resources()
       /*
        * If everything is well, attempt to initialize our per-resource TLS context
        */
-      if (OK && (need_tls || client->tls_require)) {
+      if (OK && (need_tls || client->tls.require)) {
          /*
           * Initialize TLS context.
           */
-         client->tls_ctx = new_tls_context(client->tls_ca_certfile,
-                                           client->tls_ca_certdir,
-                                           client->tls_crlfile,
-                                           client->tls_certfile,
-                                           client->tls_keyfile,
+         client->tls.ctx = new_tls_context(client->tls.ca_certfile,
+                                           client->tls.ca_certdir,
+                                           client->tls.crlfile,
+                                           client->tls.certfile,
+                                           client->tls.keyfile,
                                            NULL,
                                            NULL,
                                            NULL,
-                                           client->tls_cipherlist,
-                                           client->tls_verify_peer);
+                                           client->tls.cipherlist,
+                                           client->tls.verify_peer);
 
-         if (!client->tls_ctx) {
+         if (!client->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
                client->name(), configfile);
             OK = false;
             goto bail_out;
          }
+         set_tls_enable(client->tls.ctx, need_tls);
+         set_tls_require(client->tls.ctx, client->tls.require);
       }
    }
 
@@ -975,9 +981,9 @@ static bool check_resources()
       /*
        * tls_require implies tls_enable
        */
-      if (store->tls_require) {
+      if (store->tls.require) {
          if (have_tls) {
-            store->tls_enable = true;
+            store->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
             OK = false;
@@ -985,9 +991,9 @@ static bool check_resources()
          }
       }
 
-      need_tls = store->tls_enable || store->tls_authenticate;
+      need_tls = store->tls.enable || store->tls.authenticate;
 
-      if ((!store->tls_ca_certfile && !store->tls_ca_certdir) && need_tls) {
+      if ((!store->tls.ca_certfile && !store->tls.ca_certdir) && need_tls) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
@@ -998,27 +1004,29 @@ static bool check_resources()
       /*
        * If everything is well, attempt to initialize our per-resource TLS context
        */
-      if (OK && (need_tls || store->tls_require)) {
+      if (OK && (need_tls || store->tls.require)) {
         /*
          * Initialize TLS context.
          */
-         store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-                                          store->tls_ca_certdir,
-                                          store->tls_crlfile,
-                                          store->tls_certfile,
-                                          store->tls_keyfile,
+         store->tls.ctx = new_tls_context(store->tls.ca_certfile,
+                                          store->tls.ca_certdir,
+                                          store->tls.crlfile,
+                                          store->tls.certfile,
+                                          store->tls.keyfile,
                                           NULL,
                                           NULL,
                                           NULL,
-                                          store->tls_cipherlist,
-                                          store->tls_verify_peer);
+                                          store->tls.cipherlist,
+                                          store->tls.verify_peer);
 
-         if (!store->tls_ctx) {
+         if (!store->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);
             OK = false;
             goto bail_out;
          }
+         set_tls_enable(store->tls.ctx, need_tls);
+         set_tls_require(store->tls.ctx, store->tls.require);
       }
 
       /*

@@ -284,14 +284,14 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
 /*
  * Certs are not automatically verified during the handshake.
  */
-static inline bool tls_cert_verify(TLS_CONNECTION *tls)
+static inline bool tls_cert_verify(TLS_CONNECTION *tls_conn)
 {
    unsigned int status = 0;
    int error;
    time_t now = time(NULL);
    time_t peertime;
 
-   error = gnutls_certificate_verify_peers2(tls->gnutls_state, &status);
+   error = gnutls_certificate_verify_peers2(tls_conn->gnutls_state, &status);
    if (error != GNUTLS_E_SUCCESS) {
       Jmsg1(NULL, M_ERROR, 0,
             _("gnutls_certificate_verify_peers2 failed: ERR=%s\n"),
@@ -306,7 +306,7 @@ static inline bool tls_cert_verify(TLS_CONNECTION *tls)
       return false;
    }
 
-   peertime = gnutls_certificate_expiration_time_peers(tls->gnutls_state);
+   peertime = gnutls_certificate_expiration_time_peers(tls_conn->gnutls_state);
    if (peertime == -1) {
       Jmsg0(NULL, M_ERROR, 0, _("gnutls_certificate_expiration_time_peers failed\n"));
       return false;
@@ -316,7 +316,7 @@ static inline bool tls_cert_verify(TLS_CONNECTION *tls)
       return false;
    }
 
-   peertime = gnutls_certificate_activation_time_peers(tls->gnutls_state);
+   peertime = gnutls_certificate_activation_time_peers(tls_conn->gnutls_state);
    if (peertime == -1) {
       Jmsg0(NULL, M_ERROR, 0, _("gnutls_certificate_activation_time_peers failed\n"));
       return false;
@@ -335,7 +335,7 @@ static inline bool tls_cert_verify(TLS_CONNECTION *tls)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list)
+bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    char *cn;
    int error, cnt;
@@ -349,11 +349,11 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls->ctx->verify_peer) {
+   if (!tls_conn->ctx->verify_peer) {
       return true;
    }
 
-   peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
+   peer_cert_list = gnutls_certificate_get_peers(tls_conn->gnutls_state, &list_size);
    if (!peer_cert_list) {
       return false;
    }
@@ -386,10 +386,12 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
        */
       cannonicalname[255] = '\0';
 
+
       /*
        * Try all the CNs in the list
        */
       foreach_alist(cn, verify_list) {
+         Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", cannonicalname, cn);
          if (bstrcasecmp(cn, cannonicalname)) {
             auth_success = true;
             break;
@@ -412,7 +414,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host)
+bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int error;
    unsigned int list_size;
@@ -422,11 +424,11 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls->ctx->verify_peer) {
+   if (!tls_conn->ctx->verify_peer) {
       return true;
    }
 
-   peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
+   peer_cert_list = gnutls_certificate_get_peers(tls_conn->gnutls_state, &list_size);
    if (!peer_cert_list) {
       return false;
    }
@@ -459,24 +461,24 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
  */
 TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
 {
-   TLS_CONNECTION *tls;
+   TLS_CONNECTION *tls_conn;
    int error;
 
    /*
     * Allocate our new tls connection
     */
-   tls = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
-   memset(tls, 0, sizeof(TLS_CONNECTION));
+   tls_conn = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
+   memset(tls_conn, 0, sizeof(TLS_CONNECTION));
 
    /*
     * Link the TLS context and the TLS session.
     */
-   tls->ctx = ctx;
+   tls_conn->ctx = ctx;
 
    if (server) {
-      error = gnutls_init(&tls->gnutls_state, GNUTLS_SERVER);
+      error = gnutls_init(&tls_conn->gnutls_state, GNUTLS_SERVER);
    } else {
-      error = gnutls_init(&tls->gnutls_state, GNUTLS_CLIENT);
+      error = gnutls_init(&tls_conn->gnutls_state, GNUTLS_CLIENT);
    }
 
    if (error != GNUTLS_E_SUCCESS) {
@@ -490,15 +492,15 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
     * Set the default ciphers to use for the TLS connection.
     */
    if (ctx->cipher_list) {
-      gnutls_priority_set_direct(tls->gnutls_state, ctx->cipher_list, NULL);
+      gnutls_priority_set_direct(tls_conn->gnutls_state, ctx->cipher_list, NULL);
    } else {
-      gnutls_priority_set_direct(tls->gnutls_state, TLS_DEFAULT_CIPHERS, NULL);
+      gnutls_priority_set_direct(tls_conn->gnutls_state, TLS_DEFAULT_CIPHERS, NULL);
    }
 
    /*
     * Link the credentials and the session.
     */
-   gnutls_credentials_set(tls->gnutls_state, GNUTLS_CRD_CERTIFICATE, ctx->gnutls_cred);
+   gnutls_credentials_set(tls_conn->gnutls_state, GNUTLS_CRD_CERTIFICATE, ctx->gnutls_cred);
 
    /*
     * Link the TLS session and the filedescriptor of the socket used.
@@ -507,9 +509,9 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
     * when available (since GnuTLS >= 3.1.9)
     */
 #ifdef HAVE_GNUTLS_TRANSPORT_SET_INT
-   gnutls_transport_set_int(tls->gnutls_state, fd);
+   gnutls_transport_set_int(tls_conn->gnutls_state, fd);
 #else
-   gnutls_transport_set_ptr(tls->gnutls_state, (gnutls_transport_ptr_t)fd);
+   gnutls_transport_set_ptr(tls_conn->gnutls_state, (gnutls_transport_ptr_t)fd);
 #endif
 
    /*
@@ -520,25 +522,25 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
        * See if we require the other party to have a certificate too.
        */
       if (ctx->tls_require) {
-         gnutls_certificate_server_set_request(tls->gnutls_state, GNUTLS_CERT_REQUIRE);
+         gnutls_certificate_server_set_request(tls_conn->gnutls_state, GNUTLS_CERT_REQUIRE);
       } else {
-         gnutls_certificate_server_set_request(tls->gnutls_state, GNUTLS_CERT_REQUEST);
+         gnutls_certificate_server_set_request(tls_conn->gnutls_state, GNUTLS_CERT_REQUEST);
       }
 
-      gnutls_dh_set_prime_bits(tls->gnutls_state, DH_BITS);
+      gnutls_dh_set_prime_bits(tls_conn->gnutls_state, DH_BITS);
    }
 
-   return tls;
+   return tls_conn;
 
 bail_out:
-   free(tls);
+   free(tls_conn);
    return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls)
+void free_tls_connection(TLS_CONNECTION *tls_conn)
 {
-   gnutls_deinit(tls->gnutls_state);
-   free(tls);
+   gnutls_deinit(tls_conn->gnutls_state);
+   free(tls_conn);
 }
 
 static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
@@ -547,7 +549,7 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
    bool status = true;
    bool done = false;
    unsigned int list_size;
-   TLS_CONNECTION *tls = bsock->tls;
+   TLS_CONNECTION *tls_conn = bsock->tls_conn;
    const gnutls_datum_t *peer_cert_list;
 
    /* Ensure that socket is non-blocking */
@@ -559,7 +561,7 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
    bsock->set_killable(false);
 
    while (!done) {
-      error = gnutls_handshake(tls->gnutls_state);
+      error = gnutls_handshake(tls_conn->gnutls_state);
 
       switch (error) {
       case GNUTLS_E_SUCCESS:
@@ -568,7 +570,7 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
          break;
       case GNUTLS_E_AGAIN:
       case GNUTLS_E_INTERRUPTED:
-         if (gnutls_record_get_direction(tls->gnutls_state) == 1) {
+         if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
             wait_for_writable_fd(bsock->m_fd, 10000, false);
          } else {
             wait_for_readable_fd(bsock->m_fd, 10000, false);
@@ -587,13 +589,13 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
       /*
        * See if we need to verify the peer.
        */
-      peer_cert_list = gnutls_certificate_get_peers(tls->gnutls_state, &list_size);
-      if (!peer_cert_list && !tls->ctx->tls_require) {
+      peer_cert_list = gnutls_certificate_get_peers(tls_conn->gnutls_state, &list_size);
+      if (!peer_cert_list && !tls_conn->ctx->tls_require) {
          goto cleanup;
       }
 
-      if (tls->ctx->verify_peer) {
-         if (!tls_cert_verify(tls)) {
+      if (tls_conn->ctx->verify_peer) {
+         if (!tls_cert_verify(tls_conn)) {
             status = false;
             goto cleanup;
          }
@@ -633,15 +635,15 @@ bool tls_bsock_accept(BSOCK *bsock)
 
 void tls_bsock_shutdown(BSOCK *bsock)
 {
-   TLS_CONNECTION *tls = bsock->tls;
+   TLS_CONNECTION *tls_conn = bsock->tls_conn;
 
-   gnutls_bye(tls->gnutls_state, GNUTLS_SHUT_WR);
+   gnutls_bye(tls_conn->gnutls_state, GNUTLS_SHUT_WR);
 }
 
 /* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
 static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
 {
-   TLS_CONNECTION *tls = bsock->tls;
+   TLS_CONNECTION *tls_conn = bsock->tls_conn;
    int error;
    int flags;
    int nleft = 0;
@@ -659,9 +661,9 @@ static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bo
 
    while (nleft > 0) {
       if (write) {
-         nwritten = gnutls_record_send(tls->gnutls_state, ptr, nleft);
+         nwritten = gnutls_record_send(tls_conn->gnutls_state, ptr, nleft);
       } else {
-         nwritten = gnutls_record_recv(tls->gnutls_state, ptr, nleft);
+         nwritten = gnutls_record_recv(tls_conn->gnutls_state, ptr, nleft);
       }
 
       /* Handle errors */
@@ -676,14 +678,14 @@ static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bo
             /*
              * TLS renegotiation requested.
              */
-            error = gnutls_handshake(tls->gnutls_state);
+            error = gnutls_handshake(tls_conn->gnutls_state);
             if (error != GNUTLS_E_SUCCESS) {
                goto cleanup;
             }
             break;
          case GNUTLS_E_AGAIN:
          case GNUTLS_E_INTERRUPTED:
-            if (gnutls_record_get_direction(tls->gnutls_state) == 1) {
+            if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
                wait_for_writable_fd(bsock->m_fd, 10000, false);
             } else {
                wait_for_readable_fd(bsock->m_fd, 10000, false);

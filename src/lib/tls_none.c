@@ -76,7 +76,7 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
    return NULL;
 }
 
-void free_tls_connection(TLS_CONNECTION *tls)
+void free_tls_connection(TLS_CONNECTION *tls_conn)
 {
 }
 

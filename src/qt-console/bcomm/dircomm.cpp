@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -106,7 +107,7 @@ bool DirComm::connect_dir()
    UnlockRes();
 
    /* Initialize Console TLS context once */
-   if (cons && !cons->tls_ctx && (cons->tls_enable || cons->tls_require)) {
+   if (cons && !cons->tls.ctx && (cons->tls.enable || cons->tls.require)) {
       /* Generate passphrase prompt */
       bsnprintf(buf, sizeof(buf), "Passphrase for Console \"%s\" TLS private key: ",
                 cons->name());
@@ -114,18 +115,18 @@ bool DirComm::connect_dir()
       /*
        * Initialize TLS context.
        */
-      cons->tls_ctx = new_tls_context(cons->tls_ca_certfile,
-                                      cons->tls_ca_certdir,
-                                      cons->tls_crlfile,
-                                      cons->tls_certfile,
-                                      cons->tls_keyfile,
+      cons->tls.ctx = new_tls_context(cons->tls.ca_certfile,
+                                      cons->tls.ca_certdir,
+                                      cons->tls.crlfile,
+                                      cons->tls.certfile,
+                                      cons->tls.keyfile,
                                       tls_pem_callback,
                                       &buf,
                                       NULL,
-                                      cons->tls_cipherlist,
-                                      cons->tls_verify_peer);
+                                      cons->tls.cipherlist,
+                                      cons->tls.verify_peer);
 
-      if (!cons->tls_ctx) {
+      if (!cons->tls.ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Console \"%s\".\n"),
             m_console->m_dir->name());
          if (mainWin->m_connDebug) {
@@ -134,12 +135,12 @@ bool DirComm::connect_dir()
          goto bail_out;
       }
 
-      set_tls_enable(cons->tls_ctx, cons->tls_enable);
-      set_tls_require(cons->tls_ctx, cons->tls_require);
+      set_tls_enable(cons->tls.ctx, cons->tls.enable);
+      set_tls_require(cons->tls.ctx, cons->tls.require);
    }
 
    /* Initialize Director TLS context once */
-   if (!m_console->m_dir->tls_ctx && (m_console->m_dir->tls_enable || m_console->m_dir->tls_require)) {
+   if (!m_console->m_dir->tls.ctx && (m_console->m_dir->tls.enable || m_console->m_dir->tls.require)) {
       /* Generate passphrase prompt */
       bsnprintf(buf, sizeof(buf), "Passphrase for Director \"%s\" TLS private key: ",
                 m_console->m_dir->name());
@@ -147,18 +148,18 @@ bool DirComm::connect_dir()
       /*
        * Initialize TLS context.
        */
-      m_console->m_dir->tls_ctx = new_tls_context(m_console->m_dir->tls_ca_certfile,
-                                                  m_console->m_dir->tls_ca_certdir,
-                                                  m_console->m_dir->tls_crlfile,
-                                                  m_console->m_dir->tls_certfile,
-                                                  m_console->m_dir->tls_keyfile,
+      m_console->m_dir->tls.ctx = new_tls_context(m_console->m_dir->tls.ca_certfile,
+                                                  m_console->m_dir->tls.ca_certdir,
+                                                  m_console->m_dir->tls.crlfile,
+                                                  m_console->m_dir->tls.certfile,
+                                                  m_console->m_dir->tls.keyfile,
                                                   tls_pem_callback,
                                                   &buf,
                                                   NULL,
-                                                  m_console->m_dir->tls_cipherlist,
-                                                  m_console->m_dir->tls_verify_peer);
+                                                  m_console->m_dir->tls.cipherlist,
+                                                  m_console->m_dir->tls.verify_peer);
 
-      if (!m_console->m_dir->tls_ctx) {
+      if (!m_console->m_dir->tls.ctx) {
          m_console->display_textf(_("Failed to initialize TLS context for Director \"%s\".\n"),
                                   m_console->m_dir->name());
          mainWin->set_status("Connection failed");
@@ -168,8 +169,8 @@ bool DirComm::connect_dir()
          goto bail_out;
       }
 
-      set_tls_enable(m_console->m_dir->tls_ctx, m_console->m_dir->tls_enable);
-      set_tls_require(m_console->m_dir->tls_ctx, m_console->m_dir->tls_require);
+      set_tls_enable(m_console->m_dir->tls.ctx, m_console->m_dir->tls.enable);
+      set_tls_require(m_console->m_dir->tls.ctx, m_console->m_dir->tls.require);
    }
 
    if (m_console->m_dir->heartbeat_interval) {
@@ -566,25 +567,20 @@ bool DirComm::authenticate_with_director(JCR *jcr, DIRRES *director, CONRES *con
                                          char *errmsg, int errmsg_len)
 {
    const char *name;
-   char *password;
-   alist *verify_list = NULL;
-   TLS_CONTEXT *tls_ctx = NULL;
+   s_password *password;
+   tls_t *tls = NULL;
    BSOCK *dir = jcr->dir_bsock;
 
    errmsg[0] = 0;
    if (cons) {
-      ASSERT(cons->password.encoding == p_encoding_md5);
       name = cons->hdr.name;
-      password = cons->password.value;
-      tls_ctx = cons->tls_ctx;
-      verify_list = cons->tls_allowed_cns;
+      password = &cons->password;
+      tls = &cons->tls;
    } else {
-      ASSERT(director->password.encoding == p_encoding_md5);
       name = "*UserAgent*";
-      password = director->password.value;
-      tls_ctx = director->tls_ctx;
-      verify_list = director->tls_allowed_cns;
+      password = &director->password;
+      tls = &director->tls;
    }
 
-   return dir->authenticate_with_director(name, password, tls_ctx, verify_list, errmsg, errmsg_len);
+   return dir->authenticate_with_director(jcr, name, *password, *tls, errmsg, errmsg_len);
 }

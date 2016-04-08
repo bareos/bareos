@@ -52,7 +52,7 @@ public:
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
    int m_spool_fd;                    /* Spooling file */
-   TLS_CONNECTION *tls;               /* Associated tls connection */
+   TLS_CONNECTION *tls_conn;          /* Associated tls connection */
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
    uint32_t out_msg_no;               /* Output message number */
@@ -91,6 +91,11 @@ protected:
    virtual bool open(JCR *jcr, const char *name, char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;
 
+private:
+   bool two_way_authenticate(JCR *jcr, const char *what,
+                             const char *name, s_password &password,
+                             tls_t &tls, bool initiated_by_remote);
+
 public:
    BSOCK();
    virtual ~BSOCK();
@@ -123,8 +128,8 @@ public:
    bool signal(int signal);
    const char *bstrerror();           /* last error on socket */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
-   bool authenticate_with_director(const char *name, const char *password,
-                                   TLS_CONTEXT *tls_ctx, alist *verify_list,
+   bool authenticate_with_director(JCR *jcr,
+                                   const char *name, s_password &password, tls_t &tls,
                                    char *response, int response_len);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
@@ -132,6 +137,16 @@ public:
    void control_bwlimit(int bytes);   /* in bsock.c */
 
    /* Inline functions */
+   bool authenticate_outbound_connection(JCR *jcr, const char *what,
+                                         const char *name, s_password &password,
+                                         tls_t &tls) {
+      return two_way_authenticate(jcr, what, name, password, tls, false);
+   }
+   bool authenticate_inbound_connection(JCR *jcr, const char *what,
+                                        const char *name, s_password &password,
+                                        tls_t &tls) {
+      return two_way_authenticate(jcr, what, name, password, tls, true);
+   }
    void set_jcr(JCR *jcr) { m_jcr = jcr; };
    void set_who(char *who) { m_who = who; };
    void set_host(char *host) { m_host = host; };
@@ -147,11 +162,11 @@ public:
    bool is_stop() { return errors || is_terminated(); }
    bool is_error() { errno = b_errno; return errors; }
    void set_data_end(int32_t FileIndex) {
-          if (m_spool && FileIndex > m_FileIndex) {
-              m_FileIndex = FileIndex - 1;
-              m_data_end = lseek(m_spool_fd, 0, SEEK_CUR);
-           }
-        };
+      if (m_spool && FileIndex > m_FileIndex) {
+         m_FileIndex = FileIndex - 1;
+         m_data_end = lseek(m_spool_fd, 0, SEEK_CUR);
+      }
+   };
    boffset_t get_data_end() { return m_data_end; };
    int32_t get_FileIndex() { return m_FileIndex; };
    void set_bwlimit(int64_t maxspeed) { m_bwlimit = maxspeed; };

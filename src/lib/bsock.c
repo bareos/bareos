@@ -54,8 +54,8 @@ void BSOCK::free_bsock()
 
 void BSOCK::free_tls()
 {
-   free_tls_connection(this->tls);
-   this->tls = NULL;
+   free_tls_connection(this->tls_conn);
+   this->tls_conn = NULL;
 }
 
 /*
@@ -241,12 +241,10 @@ static char OKhello[] =
 /*
  * Authenticate Director
  */
-bool BSOCK::authenticate_with_director(const char *name, const char *password,
-                                       TLS_CONTEXT *tls_ctx, alist *verify_list,
+bool BSOCK::authenticate_with_director(JCR *jcr,
+                                       const char *name, s_password &password, tls_t &tls,
                                        char *response, int response_len)
 {
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
    bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
    BSOCK *dir = this;        /* for readability */
@@ -265,55 +263,8 @@ bool BSOCK::authenticate_with_director(const char *name, const char *password,
    dir->start_timer(60 * 5);
    dir->fsend(hello, bashed_name);
 
-   if (get_tls_enable(tls_ctx)) {
-      tls_local_need = get_tls_require(tls_ctx) ? BNET_TLS_REQUIRED : BNET_TLS_OK;
-   }
-
-   /*
-    * Respond to Dir challenge and then challenge the Dir.
-    */
-   if (!cram_md5_respond(dir, password, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(dir, password, tls_local_need, compatible)) {
-      bsnprintf(response, response_len, _("Director authorization problem at \"%s:%d\"\n"),
-                dir->host(), dir->port());
+   if (!authenticate_outbound_connection(jcr, "Director", name, password, tls)) {
       goto bail_out;
-   }
-
-   /*
-    * Verify that the remote host is willing to meet our TLS requirements
-    */
-   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      bsnprintf(response, response_len, _("Authorization problem:"
-                                          " Remote server at \"%s:%d\" did not advertise required TLS support.\n"),
-                dir->host(), dir->port());
-      goto bail_out;
-   }
-
-   /*
-    * Verify that we are willing to meet the remote host's requirements
-    */
-   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      bsnprintf(response, response_len, _("Authorization problem with Director at \"%s:%d\":"
-                                          " Remote server requires TLS.\n"),
-                dir->host(), dir->port());
-
-      goto bail_out;
-   }
-
-   /*
-    * Is TLS Enabled?
-    */
-   if (have_tls) {
-      if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-         /*
-          * Engage TLS! Full Speed Ahead!
-          */
-         if (!bnet_tls_client(tls_ctx, dir, get_tls_verify_peer(tls_ctx), verify_list)) {
-            bsnprintf(response, response_len, _("TLS negotiation failed with Director at \"%s:%d\"\n"),
-                      dir->host(), dir->port());
-            goto bail_out;
-         }
-      }
    }
 
    Dmsg1(6, ">dird: %s", dir->msg);
@@ -348,6 +299,160 @@ bail_out:
 
    return false;
 }
+
+/*
+ * Depending on the initiate parameter perform one of the following:
+ *
+ * - First make him prove his identity and then prove our identity to the Remote.
+ * - First prove our identity to the Remote and then make him prove his identity.
+ */
+bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
+                                 const char *name, s_password &password,
+                                 tls_t &tls, bool initiated_by_remote)
+{
+   const int dbglvl = 50;
+   int tls_local_need = BNET_TLS_NONE;
+   int tls_remote_need = BNET_TLS_NONE;
+   bool compatible = true;
+   bool auth_success = false;
+   btimer_t *tid = NULL;
+
+   ASSERT(password.encoding == p_encoding_md5);
+
+   /*
+    * TLS Requirement
+    */
+   if (get_tls_enable(tls.ctx)) {
+      tls_local_need = get_tls_require(tls.ctx) ? BNET_TLS_REQUIRED : BNET_TLS_OK;
+   }
+
+   if (jcr && job_canceled(jcr)) {
+      Dmsg0(dbglvl, "Failed, because job is canceled.\n");
+      auth_success = false;     /* force quick exit */
+      goto auth_fatal;
+   }
+
+   /*
+    * Timeout Hello after 10 min
+    */
+   tid = start_bsock_timer(this, AUTH_TIMEOUT);
+
+   /*
+    * See if we initiate the challenge or respond to a challenge.
+    */
+   if (initiated_by_remote) {
+      /*
+       * Challenge Remote.
+       */
+      auth_success = cram_md5_challenge(this, password.value, tls_local_need, compatible);
+      if (auth_success) {
+          /*
+           * Respond to remote challenge
+           */
+          auth_success = cram_md5_respond(this, password.value, &tls_remote_need, &compatible);
+          if (!auth_success) {
+             Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", who());
+          }
+      } else {
+         Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", who());
+      }
+   } else {
+      /*
+       * Respond to remote challenge
+       */
+      auth_success = cram_md5_respond(this, password.value, &tls_remote_need, &compatible);
+      if (!auth_success) {
+         Dmsg1(dbglvl, "cram_respond failed for %s\n", who());
+      } else {
+         /*
+          * Challenge Remote.
+          */
+         auth_success = cram_md5_challenge(this, password.value, tls_local_need, compatible);
+         if (!auth_success) {
+            Dmsg1(dbglvl, "cram_challenge failed for %s\n", who());
+         }
+      }
+   }
+
+   if (!auth_success) {
+      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s %s.\n"
+                              "Please see %s for help.\n"),
+                              what, name, MANUAL_AUTH_URL);
+      goto auth_fatal;
+   }
+
+   if (jcr && job_canceled(jcr)) {
+         Dmsg0(dbglvl, "Failed, because job is canceled.\n");
+         auth_success = false;     /* force quick exit */
+         goto auth_fatal;
+   }
+
+   /*
+    * Verify that the remote host is willing to meet our TLS requirements
+    */
+   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
+                              " advertize required TLS support.\n"));
+      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
+      auth_success = false;
+      goto auth_fatal;
+   }
+
+   /*
+    * Verify that we are willing to meet the remote host's requirements
+    */
+   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
+      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
+      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
+      auth_success = false;
+      goto auth_fatal;
+   }
+
+   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
+      alist *verify_list = NULL;
+
+      if (tls.verify_peer) {
+         verify_list = tls.allowed_cns;
+      }
+
+      /*
+       * See if we are handshaking a passive client connection.
+       */
+      if (initiated_by_remote) {
+         if (!bnet_tls_server(tls.ctx, this, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+            Dmsg0(dbglvl, "TLS negotiation failed.\n");
+            auth_success = false;
+            goto auth_fatal;
+         }
+      } else {
+         if (!bnet_tls_client(tls.ctx, this, tls.verify_peer, verify_list)) {
+            Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+            Dmsg0(dbglvl, "TLS negotiation failed.\n");
+            auth_success = false;
+            goto auth_fatal;
+         }
+      }
+
+      if (tls.authenticate) {           /* tls authentication only? */
+         free_tls();                    /* yes, shutdown tls */
+      }
+   }
+
+auth_fatal:
+   if (tid) {
+      stop_bsock_timer(tid);
+      tid = NULL;
+   }
+
+   if (jcr) {
+      jcr->authenticated = auth_success;
+   }
+
+   return auth_success;
+}
+
+
 
 /*
  * Try to limit the bandwidth of a network connection

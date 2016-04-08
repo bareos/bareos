@@ -451,6 +451,15 @@ bool do_a_command(UAContext *ua)
             log_audit_event_cmdline(ua);
          }
 
+         /*
+          * Some commands alter the JobStatus of the JCR.
+          * As the console JCR keeps running,
+          * we set it to running state again.
+          * ua->jcr->setJobStatus(JS_Running)
+          * isn't enough, as it does not overwrite error states.
+          */
+         ua->jcr->JobStatus = JS_Running;
+
          if (ua->api) {
             user->signal(BNET_CMD_BEGIN);
          }

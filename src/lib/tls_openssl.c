@@ -605,9 +605,9 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list)
+bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
-   SSL *ssl = tls->openssl;
+   SSL *ssl = tls_conn->openssl;
    X509 *cert;
    X509_NAME *subject;
    bool auth_success = false;
@@ -616,7 +616,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls->ctx->verify_peer) {
+   if (!tls_conn->ctx->verify_peer) {
       return true;
    }
 
@@ -637,6 +637,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
           * Try all the CNs in the list
           */
          foreach_alist(cn, verify_list) {
+            Dmsg2(120, "comparing CNs: cert-cn=%s, allowed-cn=%s\n", data, cn);
             if (bstrcasecmp(data, cn)) {
                auth_success = true;
             }
@@ -654,7 +655,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls, alist *verify_list
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host)
+bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int i, j;
    int extensions;
@@ -663,13 +664,13 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls, const char *host
    X509_NAME *subject;
    X509_NAME_ENTRY *neCN;
    ASN1_STRING *asn1CN;
-   SSL *ssl = tls->openssl;
+   SSL *ssl = tls_conn->openssl;
    bool auth_success = false;
 
    /*
     * See if we verify the peer certificate.
     */
-   if (!tls->ctx->verify_peer) {
+   if (!tls_conn->ctx->verify_peer) {
       return true;
    }
 
@@ -796,6 +797,7 @@ success:
 TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
 {
    BIO *bio;
+   TLS_CONNECTION *tls_conn;
 
    /*
     * Create a new BIO and assign the fd.
@@ -810,46 +812,47 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server)
    BIO_set_fd(bio, fd, BIO_NOCLOSE);
 
    /* Allocate our new tls connection */
-   TLS_CONNECTION *tls = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
+   tls_conn = (TLS_CONNECTION *)malloc(sizeof(TLS_CONNECTION));
 
    /* Link the TLS context and the TLS session. */
-   tls->ctx = ctx;
+   tls_conn->ctx = ctx;
 
    /* Create the SSL object and attach the socket BIO */
-   if ((tls->openssl = SSL_new(ctx->openssl)) == NULL) {
+   if ((tls_conn->openssl = SSL_new(ctx->openssl)) == NULL) {
       /* Not likely, but never say never */
       openssl_post_errors(M_FATAL, _("Error creating new SSL object"));
       goto err;
    }
 
-   SSL_set_bio(tls->openssl, bio, bio);
+   SSL_set_bio(tls_conn->openssl, bio, bio);
 
    /* Non-blocking partial writes */
-   SSL_set_mode(tls->openssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+   SSL_set_mode(tls_conn->openssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-   return tls;
+   return tls_conn;
 
 err:
    /* Clean up */
    BIO_free(bio);
-   SSL_free(tls->openssl);
-   free(tls);
+   SSL_free(tls_conn->openssl);
+   free(tls_conn);
+
    return NULL;
 }
 
 /*
  * Free TLS_CONNECTION instance
  */
-void free_tls_connection(TLS_CONNECTION *tls)
+void free_tls_connection(TLS_CONNECTION *tls_conn)
 {
-   SSL_free(tls->openssl);
-   free(tls);
+   SSL_free(tls_conn->openssl);
+   free(tls_conn);
 }
 
 /* Does all the manual labor for tls_bsock_accept() and tls_bsock_connect() */
 static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
 {
-   TLS_CONNECTION *tls = bsock->tls;
+   TLS_CONNECTION *tls_conn = bsock->tls_conn;
    int err;
    int flags;
    bool status = true;
@@ -864,13 +867,13 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
 
    for (;;) {
       if (server) {
-         err = SSL_accept(tls->openssl);
+         err = SSL_accept(tls_conn->openssl);
       } else {
-         err = SSL_connect(tls->openssl);
+         err = SSL_connect(tls_conn->openssl);
       }
 
       /* Handle errors */
-      switch (SSL_get_error(tls->openssl, err)) {
+      switch (SSL_get_error(tls_conn->openssl, err)) {
       case SSL_ERROR_NONE:
          status = true;
          goto cleanup;
@@ -950,16 +953,16 @@ void tls_bsock_shutdown(BSOCK *bsock)
    bsock->set_blocking();
 
    tid = start_bsock_timer(bsock, 60 * 2);
-   err = SSL_shutdown(bsock->tls->openssl);
+   err = SSL_shutdown(bsock->tls_conn->openssl);
    stop_bsock_timer(tid);
    if (err == 0) {
       /* Complete shutdown */
       tid = start_bsock_timer(bsock, 60 * 2);
-      err = SSL_shutdown(bsock->tls->openssl);
+      err = SSL_shutdown(bsock->tls_conn->openssl);
       stop_bsock_timer(tid);
    }
 
-   switch (SSL_get_error(bsock->tls->openssl, err)) {
+   switch (SSL_get_error(bsock->tls_conn->openssl, err)) {
    case SSL_ERROR_NONE:
       break;
    case SSL_ERROR_ZERO_RETURN:
@@ -976,7 +979,7 @@ void tls_bsock_shutdown(BSOCK *bsock)
 /* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
 static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
 {
-   TLS_CONNECTION *tls = bsock->tls;
+   TLS_CONNECTION *tls_conn = bsock->tls_conn;
    int flags;
    int nleft = 0;
    int nwritten = 0;
@@ -993,13 +996,13 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
 
    while (nleft > 0) {
       if (write) {
-         nwritten = SSL_write(tls->openssl, ptr, nleft);
+         nwritten = SSL_write(tls_conn->openssl, ptr, nleft);
       } else {
-         nwritten = SSL_read(tls->openssl, ptr, nleft);
+         nwritten = SSL_read(tls_conn->openssl, ptr, nleft);
       }
 
       /* Handle errors */
-      switch (SSL_get_error(tls->openssl, nwritten)) {
+      switch (SSL_get_error(tls_conn->openssl, nwritten)) {
       case SSL_ERROR_NONE:
          nleft -= nwritten;
          if (nleft) {

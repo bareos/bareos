@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,19 +77,9 @@ static RES_ITEM cons_items[] = {
    { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons.history_file), 0, 0, NULL, NULL, NULL },
    { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons.history_length), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "TlsAuthenticate",CFG_TYPE_BOOL, ITEM(res_cons.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_cons.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_cons.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_cons.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_cons.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_cons.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_cons.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_cons.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_cons.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_cons.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   TLS_CONFIG(res_cons)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -100,18 +90,8 @@ static RES_ITEM dir_items[] = {
    { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "TlsAuthenticate",CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res_dir.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res_dir.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res_dir.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res_dir.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res_dir.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res_dir.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res_dir.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res_dir.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res_dir.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   TLS_CONFIG(res_dir)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -191,59 +171,13 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.history_file) {
          free(res->res_cons.history_file);
       }
-      if (res->res_cons.tls_ctx) {
-         free_tls_context(res->res_cons.tls_ctx);
-      }
-      if (res->res_cons.tls_ca_certfile) {
-         free(res->res_cons.tls_ca_certfile);
-      }
-      if (res->res_cons.tls_ca_certdir) {
-         free(res->res_cons.tls_ca_certdir);
-      }
-      if (res->res_cons.tls_crlfile) {
-         free(res->res_cons.tls_crlfile);
-      }
-      if (res->res_cons.tls_certfile) {
-         free(res->res_cons.tls_certfile);
-      }
-      if (res->res_cons.tls_keyfile) {
-         free(res->res_cons.tls_keyfile);
-      }
-      if (res->res_cons.tls_cipherlist) {
-         free(res->res_cons.tls_cipherlist);
-      }
-      if (res->res_cons.tls_allowed_cns) {
-         delete res->res_cons.tls_allowed_cns;
-      }
+      free_tls_t(res->res_cons.tls);
       break;
    case R_DIRECTOR:
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      if (res->res_dir.tls_ctx) {
-         free_tls_context(res->res_dir.tls_ctx);
-      }
-      if (res->res_dir.tls_ca_certfile) {
-         free(res->res_dir.tls_ca_certfile);
-      }
-      if (res->res_dir.tls_ca_certdir) {
-         free(res->res_dir.tls_ca_certdir);
-      }
-      if (res->res_dir.tls_crlfile) {
-         free(res->res_dir.tls_crlfile);
-      }
-      if (res->res_dir.tls_certfile) {
-         free(res->res_dir.tls_certfile);
-      }
-      if (res->res_dir.tls_keyfile) {
-         free(res->res_dir.tls_keyfile);
-      }
-      if (res->res_dir.tls_cipherlist) {
-         free(res->res_dir.tls_cipherlist);
-      }
-      if (res->res_dir.tls_allowed_cns) {
-         delete res->res_dir.tls_allowed_cns;
-      }
+      free_tls_t(res->res_dir.tls);
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
@@ -291,14 +225,14 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
-               res->res_cons.tls_allowed_cns = res_all.res_cons.tls_allowed_cns;
+               res->res_cons.tls.allowed_cns = res_all.res_cons.tls.allowed_cns;
             }
             break;
          case R_DIRECTOR:
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls_allowed_cns = res_all.res_dir.tls_allowed_cns;
+               res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
             }
             break;
          default:

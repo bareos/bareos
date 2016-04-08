@@ -1171,7 +1171,7 @@ static void list_running_jobs(UAContext *ua)
          }
          if (!jcr->file_bsock) {
             /*
-             * client initiated backup
+             * client initiated connection
              */
             Mmsg(emsg, _("is waiting for Client to connect (Client Initiated Connection)"));
          } else if (!jcr->res.client || !jcr->res.wstore) {

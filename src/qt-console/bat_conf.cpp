@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,18 +77,8 @@ static RES_ITEM dir_items[] = {
    { "DirPort", CFG_TYPE_PINT32, ITEM(dir_res.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(dir_res.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(dir_res.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "TlsAuthenticate",CFG_TYPE_BOOL, ITEM(dir_res.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(dir_res.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(dir_res.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(dir_res.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(dir_res.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(dir_res.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(dir_res.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(dir_res.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(dir_res.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(dir_res.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(dir_res.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "HeartBeatInterval", CFG_TYPE_TIME, ITEM(dir_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   TLS_CONFIG(dir_res)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -96,18 +86,8 @@ static RES_ITEM con_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(con_res.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(con_res.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(con_res.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
-   { "Tlsauthenticate",CFG_TYPE_BOOL, ITEM(con_res.tls_authenticate), 0, 0, NULL, NULL, NULL },
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(con_res.tls_enable), 0, 0, NULL, NULL, NULL },
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(con_res.tls_require), 0, 0, NULL, NULL, NULL },
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(con_res.tls_verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(con_res.tls_ca_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(con_res.tls_ca_certdir), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(con_res.tls_crlfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(con_res.tls_certfile), 0, 0, NULL, NULL, NULL },
-   { "TlsKey", CFG_TYPE_DIR, ITEM(con_res.tls_keyfile), 0, 0, NULL, NULL, NULL },
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(con_res.tls_cipherlist), 0, 0, NULL, NULL, NULL },
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(con_res.tls_allowed_cns), 0, 0, NULL, NULL, NULL },
    { "HeartBeatInterval", CFG_TYPE_TIME, ITEM(con_res.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   TLS_CONFIG(dir_res)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -198,59 +178,13 @@ void free_resource(RES *sres, int type)
       if (res->dir_res.address) {
          free(res->dir_res.address);
       }
-      if (res->dir_res.tls_ctx) {
-         free_tls_context(res->dir_res.tls_ctx);
-      }
-      if (res->dir_res.tls_ca_certfile) {
-         free(res->dir_res.tls_ca_certfile);
-      }
-      if (res->dir_res.tls_ca_certdir) {
-         free(res->dir_res.tls_ca_certdir);
-      }
-      if (res->dir_res.tls_crlfile) {
-         free(res->dir_res.tls_crlfile);
-      }
-      if (res->dir_res.tls_certfile) {
-         free(res->dir_res.tls_certfile);
-      }
-      if (res->dir_res.tls_keyfile) {
-         free(res->dir_res.tls_keyfile);
-      }
-      if (res->dir_res.tls_cipherlist) {
-         free(res->dir_res.tls_cipherlist);
-      }
-      if (res->dir_res.tls_allowed_cns) {
-         delete res->dir_res.tls_allowed_cns;
-      }
+      free_tls_t(res->dir_res.tls);
       break;
    case R_CONSOLE:
       if (res->con_res.password.value) {
          free(res->con_res.password.value);
       }
-      if (res->con_res.tls_ctx) {
-         free_tls_context(res->con_res.tls_ctx);
-      }
-      if (res->con_res.tls_ca_certfile) {
-         free(res->con_res.tls_ca_certfile);
-      }
-      if (res->con_res.tls_ca_certdir) {
-         free(res->con_res.tls_ca_certdir);
-      }
-      if (res->con_res.tls_crlfile) {
-         free(res->con_res.tls_crlfile);
-      }
-      if (res->con_res.tls_certfile) {
-         free(res->con_res.tls_certfile);
-      }
-      if (res->con_res.tls_keyfile) {
-         free(res->con_res.tls_keyfile);
-      }
-      if (res->con_res.tls_cipherlist) {
-         free(res->con_res.tls_cipherlist);
-      }
-      if (res->con_res.tls_allowed_cns) {
-         delete res->con_res.tls_allowed_cns;
-      }
+      free_tls_t(res->con_res.tls);
       break;
    case R_CONSOLE_FONT:
       if (res->con_font.fontface) {

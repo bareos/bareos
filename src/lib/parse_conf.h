@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,6 +95,45 @@ struct tls_t {
    alist *allowed_cns;            /* TLS Allowed Certificate Common Names (Clients) */
    TLS_CONTEXT *ctx;              /* Shared TLS Context */
 };
+
+/*
+ * free the tls_t structure.
+ */
+void free_tls_t(tls_t &tls);
+
+/*
+ * All configuration resources using TLS have the same directives,
+ * therefore define it once and use it in every resource.
+ */
+#define TLS_CONFIG(res) \
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Use TLS only to authenticate, not for encryption." }, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Enable TLS support." }, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
+         "Enabling this implicietly sets \"TLS Enable = yes\"." }, \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls.verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+         "If disabled, all certificates signed by a known CA will be accepted. " \
+         "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
+   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res.tls.ca_certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS CA certificate(s) file." }, \
+   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res.tls.ca_certdir), 0, 0, NULL, NULL, \
+         "Path of a TLS CA certificate directory." }, \
+   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res.tls.crlfile), 0, 0, NULL, NULL, \
+         "Path of a Certificate Revocation List file." }, \
+   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res.tls.certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS certificate." }, \
+   { "TlsKey", CFG_TYPE_DIR, ITEM(res.tls.keyfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+         "List of valid TLS Ciphers." }, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls.allowed_cns), 0, 0, NULL, NULL, \
+         "\"Common Name\"s (CNs) of the allowed peer certificates."  }, \
+   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res.tls.dhfile), 0, 0, NULL, NULL, \
+         "Path to PEM encoded Diffie-Hellman parameter file. " \
+         "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
+         "allowing for forward secrecy of communications." },
 
 /*
  * This is the structure that defines the record types (items) permitted within each

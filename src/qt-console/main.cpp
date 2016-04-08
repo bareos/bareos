@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -207,18 +208,18 @@ static int check_resources()
    foreach_res(director, R_DIRECTOR) {
       numdir++;
       /* tls_require implies tls_enable */
-      if (director->tls_require) {
+      if (director->tls.require) {
          if (have_tls) {
-            director->tls_enable = true;
+            director->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             ok = false;
             continue;
          }
       }
-      tls_needed = director->tls_enable || director->tls_authenticate;
+      tls_needed = director->tls.enable || director->tls.authenticate;
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) && tls_needed) {
+      if ((!director->tls.ca_certfile && !director->tls.ca_certdir) && tls_needed) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required.\n"),
@@ -237,18 +238,18 @@ static int check_resources()
    /* Loop over Consoles */
    foreach_res(cons, R_CONSOLE) {
       /* tls_require implies tls_enable */
-      if (cons->tls_require) {
+      if (cons->tls.require) {
          if (have_tls) {
-            cons->tls_enable = true;
+            cons->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             ok = false;
             continue;
          }
       }
-      tls_needed = cons->tls_enable || cons->tls_authenticate;
+      tls_needed = cons->tls.enable || cons->tls.authenticate;
 
-      if ((!cons->tls_ca_certfile && !cons->tls_ca_certdir) && tls_needed) {
+      if ((!cons->tls.ca_certfile && !cons->tls.ca_certdir) && tls_needed) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s.\n"),
                              cons->name(), configfile);

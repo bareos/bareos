@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,20 +118,8 @@ public:
    utime_t FDConnectTimeout;          /* Timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* Timeout for connect in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Server Certificate File */
-   char *tls_keyfile;                 /* TLS Server Key File */
-   char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    utime_t stats_retention;           /* Statistics retention period in seconds */
-   bool tls_authenticate;             /* Authenticated with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
+   tls_t tls;                         /* TLS structure */
    bool optimize_for_size;            /* Optimize daemon for minimum memory size */
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
@@ -213,19 +201,7 @@ public:
    s_password password;               /* UA server password */
    alist *ACL_lists[Num_ACL];         /* Pointers to ACLs */
    alist *profiles;                   /* Pointers to profile resources */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Server Certificate File */
-   char *tls_keyfile;                 /* TLS Server Key File */
-   char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
-   bool tls_authenticate;             /* Authenticated with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
+   tls_t tls;                         /* TLS structure */
 };
 
 /*
@@ -278,27 +254,15 @@ public:
    CATRES *catalog;                   /* Catalog resource */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t NumConcurrentJobs;         /* number of concurrent jobs running */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Client Certificate File */
-   char *tls_keyfile;                 /* TLS Client Key File */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
    bool passive;                      /* Passive Client */
-   bool connection_from_director_to_client; /* Connect to Client */
-   bool connection_from_client_to_director; /* Allow incoming connections */
+   bool conn_from_dir_to_fd;          /* Connect to Client */
+   bool conn_from_fd_to_dir;          /* Allow incoming connections */
    bool enabled;                      /* Set if client is enabled */
-
-   bool tls_authenticate;             /* Authenticated with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool AutoPrune;                    /* Do automatic pruning? */
    bool StrictQuotas;                 /* Enable strict quotas? */
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
    int64_t max_bandwidth;             /* Limit speed on this client */
+   tls_t tls;                         /* TLS structure */
 };
 
 /*
@@ -319,17 +283,6 @@ public:
    int32_t MaxConcurrentReadJobs;     /* Maximum concurrent jobs reading */
    int32_t NumConcurrentJobs;         /* Number of concurrent jobs running */
    int32_t NumConcurrentReadJobs;     /* Number of jobs reading */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Client Certificate File */
-   char *tls_keyfile;                 /* TLS Client Key File */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
-   bool tls_authenticate;             /* Authenticated with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool enabled;                      /* Set if device is enabled */
    bool autochanger;                  /* Set if autochanger */
    bool collectstats;                 /* Set if statistics should be collected of this SD */
@@ -340,6 +293,7 @@ public:
    uint32_t drives;                   /* Number of drives in autochanger */
    uint32_t slots;                    /* Number of slots in autochanger */
    STORERES *paired_storage;          /* Paired storage configuration item for protocols like NDMP */
+   tls_t tls;                         /* TLS structure */
 
    /* Methods */
    char *dev_name() const;

@@ -665,3 +665,34 @@ void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
       }
    }
 }
+
+void free_tls_t(tls_t &tls)
+{
+   if (tls.ctx) {
+      free_tls_context(tls.ctx);
+   }
+   if (tls.ca_certfile) {
+      free(tls.ca_certfile);
+   }
+   if (tls.ca_certdir) {
+      free(tls.ca_certdir);
+   }
+   if (tls.crlfile) {
+      free(tls.crlfile);
+   }
+   if (tls.certfile) {
+      free(tls.certfile);
+   }
+   if (tls.keyfile) {
+      free(tls.keyfile);
+   }
+   if (tls.dhfile) {
+      free(tls.dhfile);
+   }
+   if (tls.cipherlist) {
+      free(tls.cipherlist);
+   }
+   if (tls.allowed_cns) {
+      delete tls.allowed_cns;
+   }
+}

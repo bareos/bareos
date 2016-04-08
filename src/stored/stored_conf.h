@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,22 +49,9 @@ public:
    s_password password;               /* Director password */
    char *address;                     /* Director IP address or zero */
    bool monitor;                      /* Have only access to status and .status functions */
-   bool tls_authenticate;             /* Authenticate with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Server Certificate File */
-   char *tls_keyfile;                 /* TLS Server Key File */
-   char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
    s_password keyencrkey;             /* Key Encryption Key */
-
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   tls_t tls;                         /* TLS structure */
 };
 
 class NDMPRES {
@@ -106,29 +93,16 @@ public:
    bool allow_bw_bursting;            /* Allow bursting with bandwidth limiting */
    bool ndmp_enable;                  /* Enable NDMP protocol listener */
    bool ndmp_snooping;                /* Enable NDMP protocol snooping */
-   bool tls_authenticate;             /* Authenticate with TLS */
-   bool tls_enable;                   /* Enable TLS */
-   bool tls_require;                  /* Require TLS */
-   bool tls_verify_peer;              /* TLS Verify Peer Certificate */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool collect_dev_stats;            /* Collect Device Statistics */
    bool collect_job_stats;            /* Collect Job Statistics */
    bool device_reserve_by_mediatype;  /* Allow device reservation based on a matching mediatype */
    bool filedevice_concurrent_read;   /* Allow filedevices to be read concurrently */
-   char *tls_ca_certfile;             /* TLS CA Certificate File */
-   char *tls_ca_certdir;              /* TLS CA Certificate Directory */
-   char *tls_crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *tls_certfile;                /* TLS Server Certificate File */
-   char *tls_keyfile;                 /* TLS Server Key File */
-   char *tls_dhfile;                  /* TLS Diffie-Hellman Parameters */
-   char *tls_cipherlist;              /* TLS Cipher List */
-   alist *tls_allowed_cns;            /* TLS Allowed Clients */
    char *verid;                       /* Custom Id to print in version command */
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
-
-   TLS_CONTEXT *tls_ctx;              /* Shared TLS Context */
+   tls_t tls;                         /* TLS structure */
 };
 
 class AUTOCHANGERRES : public BRSRES {

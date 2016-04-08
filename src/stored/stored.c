@@ -393,9 +393,9 @@ static int check_resources()
    STORES *store;
    foreach_res(store, R_STORAGE) {
       /* tls_require implies tls_enable */
-      if (store->tls_require) {
+      if (store->tls.require) {
          if (have_tls) {
-            store->tls_enable = true;
+            store->tls.enable = true;
          } else {
             Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
             OK = false;
@@ -403,21 +403,21 @@ static int check_resources()
          }
       }
 
-      tls_needed = store->tls_enable || store->tls_authenticate;
+      tls_needed = store->tls.enable || store->tls.authenticate;
 
-      if (!store->tls_certfile && tls_needed) {
+      if (!store->tls.certfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
          OK = false;
       }
 
-      if (!store->tls_keyfile && tls_needed) {
+      if (!store->tls.keyfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Storage \"%s\" in %s.\n"),
               store->name(), configfile);
          OK = false;
       }
 
-      if ((!store->tls_ca_certfile && !store->tls_ca_certdir) && tls_needed && store->tls_verify_peer) {
+      if ((!store->tls.ca_certfile && !store->tls.ca_certdir) && tls_needed && store->tls.verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Storage \"%s\" in %s."
               " At least one CA certificate store is required"
@@ -427,54 +427,54 @@ static int check_resources()
       }
 
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (tls_needed || store->tls_require)) {
+      if (OK && (tls_needed || store->tls.require)) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         store->tls_ctx = new_tls_context(store->tls_ca_certfile,
-                                          store->tls_ca_certdir,
-                                          store->tls_crlfile,
-                                          store->tls_certfile,
-                                          store->tls_keyfile,
+         store->tls.ctx = new_tls_context(store->tls.ca_certfile,
+                                          store->tls.ca_certdir,
+                                          store->tls.crlfile,
+                                          store->tls.certfile,
+                                          store->tls.keyfile,
                                           NULL,
                                           NULL,
-                                          store->tls_dhfile,
-                                          store->tls_cipherlist,
-                                          store->tls_verify_peer);
+                                          store->tls.dhfile,
+                                          store->tls.cipherlist,
+                                          store->tls.verify_peer);
 
-         if (!store->tls_ctx) {
+         if (!store->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Storage \"%s\" in %s.\n"),
                  store->name(), configfile);
             OK = false;
          }
 
-         set_tls_enable(store->tls_ctx, tls_needed);
-         set_tls_require(store->tls_ctx, store->tls_require);
+         set_tls_enable(store->tls.ctx, tls_needed);
+         set_tls_require(store->tls.ctx, store->tls.require);
       }
    }
 
    DIRRES *director;
    foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
-      if (director->tls_require) {
-         director->tls_enable = true;
+      if (director->tls.require) {
+         director->tls.enable = true;
       }
 
-      tls_needed = director->tls_enable || director->tls_authenticate;
+      tls_needed = director->tls.enable || director->tls.authenticate;
 
-      if (!director->tls_certfile && tls_needed) {
+      if (!director->tls.certfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
               director->name(), configfile);
          OK = false;
       }
 
-      if (!director->tls_keyfile && tls_needed) {
+      if (!director->tls.keyfile && tls_needed) {
          Jmsg(NULL, M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
               director->name(), configfile);
          OK = false;
       }
 
-      if ((!director->tls_ca_certfile && !director->tls_ca_certdir) && tls_needed && director->tls_verify_peer) {
+      if ((!director->tls.ca_certfile && !director->tls.ca_certdir) && tls_needed && director->tls.verify_peer) {
          Jmsg(NULL, M_FATAL, 0, _("Neither \"TLS CA Certificate\""
               " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
               " At least one CA certificate store is required"
@@ -484,29 +484,29 @@ static int check_resources()
       }
 
       /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (tls_needed || director->tls_require)) {
+      if (OK && (tls_needed || director->tls.require)) {
          /* Initialize TLS context:
           * Args: CA certfile, CA certdir, Certfile, Keyfile,
           * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls_ctx = new_tls_context(director->tls_ca_certfile,
-                                             director->tls_ca_certdir,
-                                             director->tls_crlfile,
-                                             director->tls_certfile,
-                                             director->tls_keyfile,
+         director->tls.ctx = new_tls_context(director->tls.ca_certfile,
+                                             director->tls.ca_certdir,
+                                             director->tls.crlfile,
+                                             director->tls.certfile,
+                                             director->tls.keyfile,
                                              NULL,
                                              NULL,
-                                             director->tls_dhfile,
-                                             director->tls_cipherlist,
-                                             director->tls_verify_peer);
+                                             director->tls.dhfile,
+                                             director->tls.cipherlist,
+                                             director->tls.verify_peer);
 
-         if (!director->tls_ctx) {
+         if (!director->tls.ctx) {
             Jmsg(NULL, M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
                  director->name(), configfile);
             OK = false;
          }
 
-         set_tls_enable(director->tls_ctx, tls_needed);
-         set_tls_require(director->tls_ctx, director->tls_require);
+         set_tls_enable(director->tls.ctx, tls_needed);
+         set_tls_require(director->tls.ctx, director->tls.require);
       }
    }
 

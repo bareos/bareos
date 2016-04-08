@@ -1514,8 +1514,8 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (store->tls_enable) {
-         if (store->tls_require) {
+      if (store->tls.enable) {
+         if (store->tls.require) {
             tls_need = BNET_TLS_REQUIRED;
          } else {
             tls_need = BNET_TLS_OK;

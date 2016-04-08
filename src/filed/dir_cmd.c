@@ -212,7 +212,6 @@ static char runscriptcmd[] =
 static char resolvecmd[] =
    "resolve %s";
 
-
 /*
  * Responses sent to Director
  */
@@ -580,8 +579,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
 /*
  * Create a new thread to handle director connection.
  */
-static
-bool start_process_director_commands(JCR *jcr)
+static bool start_process_director_commands(JCR *jcr)
 {
    int result = 0;
    pthread_t thread;
@@ -720,7 +718,6 @@ void *handle_connection_to_director(void *director_resource)
    return NULL;
 }
 
-
 bool start_connect_to_director_threads()
 {
    bool result = false;
@@ -732,7 +729,7 @@ bool start_connect_to_director_threads()
    pthread_t *thread;
 
    foreach_res(dir_res, R_DIRECTOR) {
-      if (dir_res->connection_from_client_to_director) {
+      if (dir_res->conn_from_fd_to_dir) {
          if (!dir_res->address) {
             Emsg1(M_ERROR, 0, "Failed to connect to Director \"%s\". The address config directive is missing.\n", dir_res->name());
          } else if (!dir_res->port) {
@@ -2272,9 +2269,8 @@ static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)
 
    dir->set_source_address(me->FDsrc_addr);
    if (!dir->connect(jcr, retry_interval, max_retry_time, heart_beat,
-            dir_res->name(),
-            dir_res->address, NULL,
-            dir_res->port, verbose)) {
+                     dir_res->name(), dir_res->address, NULL,
+                     dir_res->port, verbose)) {
       delete dir;
       dir = NULL;
       return NULL;

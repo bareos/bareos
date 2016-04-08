@@ -112,16 +112,16 @@ bool bnet_send(BSOCK *bsock)
 #ifdef HAVE_TLS
 bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
 {
-   TLS_CONNECTION *tls;
+   TLS_CONNECTION *tls_conn;
    JCR *jcr = bsock->jcr();
 
-   tls = new_tls_connection(ctx, bsock->m_fd, true);
-   if (!tls) {
+   tls_conn = new_tls_connection(ctx, bsock->m_fd, true);
+   if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->tls = tls;
+   bsock->tls_conn = tls_conn;
 
    /*
     * Initiate TLS Negotiation
@@ -132,7 +132,7 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
    }
 
    if (verify_list) {
-      if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
+      if (!tls_postconnect_verify_cn(jcr, tls_conn, verify_list)) {
          Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                          " Peer certificate did not match a required commonName\n"),
                                          bsock->host());
@@ -144,8 +144,8 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
    return true;
 
 err:
-   free_tls_connection(tls);
-   bsock->tls = NULL;
+   free_tls_connection(tls_conn);
+   bsock->tls_conn = NULL;
    return false;
 }
 
@@ -156,16 +156,16 @@ err:
  */
 bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
 {
-   TLS_CONNECTION *tls;
+   TLS_CONNECTION *tls_conn;
    JCR *jcr = bsock->jcr();
 
-   tls  = new_tls_connection(ctx, bsock->m_fd, false);
-   if (!tls) {
+   tls_conn  = new_tls_connection(ctx, bsock->m_fd, false);
+   if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->tls = tls;
+   bsock->tls_conn = tls_conn;
 
    /*
     * Initiate TLS Negotiation
@@ -180,14 +180,14 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *ve
        * certificate's CN. Otherwise, we use standard host/CN matching.
        */
       if (verify_list) {
-         if (!tls_postconnect_verify_cn(jcr, tls, verify_list)) {
+         if (!tls_postconnect_verify_cn(jcr, tls_conn, verify_list)) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS certificate verification failed."
                                             " Peer certificate did not match a required commonName\n"),
                                             bsock->host());
             goto err;
          }
       } else {
-         if (!tls_postconnect_verify_host(jcr, tls, bsock->host())) {
+         if (!tls_postconnect_verify_host(jcr, tls_conn, bsock->host())) {
             Qmsg1(bsock->jcr(), M_FATAL, 0, _("TLS host certificate verification failed. Host name \"%s\" did not match presented certificate\n"),
                   bsock->host());
             goto err;
@@ -199,8 +199,8 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *ve
    return true;
 
 err:
-   free_tls_connection(tls);
-   bsock->tls = NULL;
+   free_tls_connection(tls_conn);
+   bsock->tls_conn = NULL;
    return false;
 }
 #else

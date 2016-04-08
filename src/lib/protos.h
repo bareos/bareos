@@ -370,9 +370,9 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              bool verify_peer);
 void free_tls_context(TLS_CONTEXT *ctx);
 #ifdef HAVE_TLS
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls,
+bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn,
                                  const char *host);
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls,
+bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn,
                                alist *verify_list);
 TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server);
 bool tls_bsock_accept(BSOCK *bsock);
@@ -381,7 +381,7 @@ int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);
 #endif /* HAVE_TLS */
 bool tls_bsock_connect(BSOCK *bsock);
 void tls_bsock_shutdown(BSOCK *bsock);
-void free_tls_connection(TLS_CONNECTION *tls);
+void free_tls_connection(TLS_CONNECTION *tls_conn);
 bool get_tls_require(TLS_CONTEXT *ctx);
 void set_tls_require(TLS_CONTEXT *ctx, bool value);
 bool get_tls_enable(TLS_CONTEXT *ctx);

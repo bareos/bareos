@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,158 +57,6 @@ static char Dir_sorry[] =
    "1999 You are not authorized.\n";
 
 /*
- * Depending on the initiate parameter perform one of the following:
- *
- * - First make him prove his identity and then prove our identity to the Remote.
- * - First prove our identity to the Remote and then make him prove his identity.
- */
-static inline bool two_way_authenticate(BSOCK *bs, JCR *jcr, const char *passwd, bool initiate,
-                                        bool tls_enable, bool tls_require, bool tls_authenticate,
-                                        bool tls_verify_peer, alist *verify_list,
-                                        TLS_CONTEXT *tls_ctx, const char *what)
-{
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   bool compatible = true;
-   bool auth_success = false;
-   btimer_t *tid = NULL;
-
-   /*
-    * TLS Requirement
-    */
-   if (tls_enable) {
-      if (tls_require) {
-         tls_local_need = BNET_TLS_REQUIRED;
-      } else {
-         tls_local_need = BNET_TLS_OK;
-      }
-   }
-
-   if (tls_authenticate) {
-      tls_local_need = BNET_TLS_REQUIRED;
-   }
-
-   /*
-    * Timeout Hello after 5 mins
-    */
-   tid = start_bsock_timer(bs, AUTH_TIMEOUT);
-
-   /*
-    * See if we initiate the challenge or respond to a challenge.
-    */
-   if (initiate) {
-      /*
-       * Challenge remote.
-       */
-      auth_success = cram_md5_challenge(bs, passwd, tls_local_need, compatible);
-      if (auth_success) {
-          /*
-           * Respond to his challenge
-           */
-          auth_success = cram_md5_respond(bs, passwd, &tls_remote_need, &compatible);
-          if (!auth_success) {
-             Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", bs->who());
-          }
-      } else {
-         Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", bs->who());
-      }
-   } else {
-      /*
-       * Respond to his challenge
-       */
-      auth_success = cram_md5_respond(bs, passwd, &tls_remote_need, &compatible);
-      if (auth_success) {
-         /*
-          * Challenge remote.
-          */
-         auth_success = cram_md5_challenge(bs, passwd, tls_local_need, compatible);
-         if (!auth_success) {
-            Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", bs->who());
-         }
-      } else {
-         Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", bs->who());
-      }
-   }
-
-   if (!auth_success) {
-      goto auth_fatal;
-   }
-
-   /*
-    * Verify that the remote host is willing to meet our TLS requirements
-    */
-   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      if (jcr) {
-         Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
-                                 " advertize required TLS support.\n"));
-      } else {
-         Emsg0(M_FATAL, 0, _("Authorization problem: Remote server did not"
-                            " advertize required TLS support.\n"));
-      }
-      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
-      auth_success = false;
-      goto auth_fatal;
-   }
-
-   /*
-    * Verify that we are willing to meet the remote host's requirements
-    */
-   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      if (jcr) {
-         Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
-      } else {
-         Emsg0(M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
-      }
-      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
-      auth_success = false;
-      goto auth_fatal;
-   }
-
-   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      /*
-       * Check if we need to be client or server.
-       */
-      if (initiate) {
-         if (!bnet_tls_server(tls_ctx, bs, verify_list)) {
-            if (jcr) {
-               Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
-                    what, bs->host(), bs->port());
-            } else {
-               Emsg3(M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
-                    what, bs->host(), bs->port());
-            }
-            auth_success = false;
-            goto auth_fatal;
-         }
-      } else {
-         if (!bnet_tls_client(tls_ctx, bs, tls_verify_peer, verify_list)) {
-            if (jcr) {
-               Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
-                    what, bs->host(), bs->port());
-            } else {
-               Emsg3(M_FATAL, 0, _("TLS negotiation failed with %s at \"%s:%d\"\n"),
-                    what, bs->host(), bs->port());
-            }
-            auth_success = false;
-            goto auth_fatal;
-         }
-      }
-
-      if (tls_authenticate) {          /* tls authenticate only? */
-         bs->free_tls();                   /* yes, shut it down */
-      }
-   }
-
-auth_fatal:
-   stop_bsock_timer(tid);
-   if (jcr) {
-      jcr->authenticated = auth_success;
-   }
-
-   return auth_success;
-}
-
-/*
  * Authenticate with a remote Storage daemon
  */
 bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
@@ -229,10 +77,9 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
       return false;
    }
 
-   ASSERT(store->password.encoding == p_encoding_md5);
-   auth_success = two_way_authenticate(sd, jcr, store->password.value, false,
-                                       store->tls_enable, store->tls_require, store->tls_authenticate,
-                                       store->tls_verify_peer, NULL, store->tls_ctx, "Storage daemon");
+   auth_success = sd->authenticate_outbound_connection(jcr, "Storage daemon",
+                                                       store->name(), store->password,
+                                                       store->tls);
    if (!auth_success) {
       Dmsg2(dbglvl, "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
             sd->host(), sd->port());
@@ -274,7 +121,6 @@ bool authenticate_with_file_daemon(JCR *jcr)
    CLIENTRES *client = jcr->res.client;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
-   alist *verify_list = NULL;
 
    if (jcr->authenticated) {
       /*
@@ -296,14 +142,9 @@ bool authenticate_with_file_daemon(JCR *jcr)
    }
    Dmsg1(dbglvl, "Sent: %s", fd->msg);
 
-   if (client->tls_verify_peer) {
-      verify_list = client->tls_allowed_cns;
-   }
-
-   ASSERT(client->password.encoding == p_encoding_md5);
-   auth_success = two_way_authenticate(fd, jcr, client->password.value, false,
-                                       client->tls_enable, client->tls_require, client->tls_authenticate,
-                                       client->tls_verify_peer, verify_list, client->tls_ctx, "File daemon");
+   auth_success = fd->authenticate_outbound_connection(jcr, "File Daemon",
+                                                       client->name(), client->password,
+                                                       client->tls);
    if (!auth_success) {
       Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
       Jmsg(jcr, M_FATAL, 0,
@@ -351,10 +192,9 @@ bool authenticate_file_daemon(BSOCK *fd, char *client_name)
    client = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
    if (client) {
       if (is_connect_from_client_allowed(client)) {
-         ASSERT(client->password.encoding == p_encoding_md5);
-         auth_success = two_way_authenticate(fd, NULL, client->password.value, true,
-                                             client->tls_enable, client->tls_require, client->tls_authenticate,
-                                             client->tls_verify_peer, client->tls_allowed_cns, client->tls_ctx, "File daemon");
+         auth_success = fd->authenticate_inbound_connection(NULL, "File Daemon",
+                                                            client_name, client->password,
+                                                            client->tls);
       }
    }
 
@@ -416,18 +256,16 @@ bool authenticate_user_agent(UAContext *uac)
    }
 
    if (bstrcmp(name, "*UserAgent*")) {  /* default console */
-      ASSERT(me->password.encoding == p_encoding_md5);
-      auth_success = two_way_authenticate(ua, NULL, me->password.value, true,
-                                          me->tls_enable, me->tls_require, me->tls_authenticate,
-                                          me->tls_verify_peer, me->tls_allowed_cns, me->tls_ctx, "Console");
+      auth_success = ua->authenticate_inbound_connection(NULL, "Console",
+                                                         "*UserAgent*", me->password,
+                                                         me->tls);
    } else {
       unbash_spaces(name);
       cons = (CONRES *)GetResWithName(R_CONSOLE, name);
       if (cons) {
-         ASSERT(cons->password.encoding == p_encoding_md5);
-         auth_success = two_way_authenticate(ua, NULL, cons->password.value, true,
-                                             cons->tls_enable, cons->tls_require, cons->tls_authenticate,
-                                             cons->tls_verify_peer, cons->tls_allowed_cns, cons->tls_ctx, "Console");
+         auth_success = ua->authenticate_inbound_connection(NULL, "Console",
+                                                            name, cons->password,
+                                                            cons->tls);
 
          if (auth_success) {
             uac->cons = cons;           /* save console resource pointer */

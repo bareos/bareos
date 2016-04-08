@@ -53,8 +53,8 @@ public:
    s_password password;               /* Director password */
    char *address;                     /* Director address or zero */
    uint32_t port;                     /* Director port */
-   bool connection_from_director_to_client; /* Allow incoming connections */
-   bool connection_from_client_to_director; /* Connect to director */
+   bool conn_from_dir_to_fd;          /* Allow incoming connections */
+   bool conn_from_fd_to_dir;          /* Connect to director */
    bool monitor;                      /* Have only access to status and .status functions */
    tls_t tls;                         /* TLS structure */
    alist *allowed_script_dirs;        /* Only allow to run scripts in this directories */

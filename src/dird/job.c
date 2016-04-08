@@ -330,7 +330,7 @@ bail_out:
 
 bool is_connecting_to_client_allowed(CLIENTRES *res)
 {
-   return res->connection_from_director_to_client;
+   return res->conn_from_dir_to_fd;
 }
 
 bool is_connecting_to_client_allowed(JCR *jcr)
@@ -340,14 +340,13 @@ bool is_connecting_to_client_allowed(JCR *jcr)
 
 bool is_connect_from_client_allowed(CLIENTRES *res)
 {
-   return res->connection_from_client_to_director;
+   return res->conn_from_fd_to_dir;
 }
 
 bool is_connect_from_client_allowed(JCR *jcr)
 {
    return is_connect_from_client_allowed(jcr->res.client);
 }
-
 
 bool use_waiting_client(JCR *jcr, int timeout)
 {
@@ -371,7 +370,6 @@ bool use_waiting_client(JCR *jcr, int timeout)
 
    return result;
 }
-
 
 void update_job_end(JCR *jcr, int TermCode)
 {
