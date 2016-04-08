@@ -752,7 +752,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                   Mmsg(temp, "client run after job = \"%s\"\n", cmdbuf);
                } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
                           !bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "before job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "client run before job = \"%s\"\n", cmdbuf);
                } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
                           runscript->on_failure &&
                          !runscript->on_success &&
