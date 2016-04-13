@@ -1009,13 +1009,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(-, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d
 %endif
 %dir %{backend_dir}
-%{library_dir}/libbareos-%{_libversion}.so
-%{library_dir}/libbareoscfg-%{_libversion}.so
-%{library_dir}/libbareosfind-%{_libversion}.so
-%{library_dir}/libbareoslmdb-%{_libversion}.so
+%{library_dir}/libbareos-*.so
+%{library_dir}/libbareoscfg-*.so
+%{library_dir}/libbareosfind-*.so
+%{library_dir}/libbareoslmdb-*.so
 %if !0%{?client_only}
-%{library_dir}/libbareosndmp-%{_libversion}.so
-%{library_dir}/libbareossd-%{_libversion}.so
+%{library_dir}/libbareosndmp-*.so
+%{library_dir}/libbareossd-*.so
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
@@ -1047,8 +1047,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files database-common
 # catalog independent files
 %defattr(-, root, root)
-%{library_dir}/libbareossql-%{_libversion}.so
-%{library_dir}/libbareoscats-%{_libversion}.so
+%{library_dir}/libbareossql-*.so
+%{library_dir}/libbareoscats-*.so
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops
@@ -1067,14 +1067,14 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
 %{backend_dir}/libbareoscats-postgresql.so
-%{backend_dir}/libbareoscats-postgresql-%{_libversion}.so
+%{backend_dir}/libbareoscats-postgresql-*.so
 
 %files database-mysql
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
 %{backend_dir}/libbareoscats-mysql.so
-%{backend_dir}/libbareoscats-mysql-%{_libversion}.so
+%{backend_dir}/libbareoscats-mysql-*.so
 
 %if 0%{?build_sqlite3}
 %files database-sqlite3
@@ -1082,7 +1082,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{script_dir}/ddl/*/sqlite3*.sql
 %{backend_dir}/libbareoscats-sqlite3.so
-%{backend_dir}/libbareoscats-sqlite3-%{_libversion}.so
+%{backend_dir}/libbareoscats-sqlite3-*.so
 %endif
 
 %files database-tools
