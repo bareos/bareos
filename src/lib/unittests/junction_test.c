@@ -31,13 +31,13 @@ extern "C" {
 #include <cmocka.h>
 }
 
+#ifdef HAVE_WIN32
 #include "bareos.h"
 #include "winapi.h"
 
 bool CreateJunction(const char *szJunction, const char *szPath);
 
 
-#ifdef HAVE_WIN32
 /*
  * Test the CreateJunction functionality
  * - create target directory
