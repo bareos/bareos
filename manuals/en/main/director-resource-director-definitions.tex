@@ -151,13 +151,9 @@ option set either one to \parameter{yes} as they are mutually exclusive.
 
 \defDirective{Dir}{Director}{Password}{}{}{%
 Specifies the password that must be supplied for the default Bareos
-Console to be authorized.  The same password must appear in the {\bf
-Director} resource of the Console configuration file.  For added
-security, the password is never passed across the network but instead a
-challenge response hash code created with the password.  
-Bareos tries to generate a random password during the configuration
-process, otherwise it will be left blank and you must manually supply
-it.
+Console to be authorized.
+This password correspond to \linkResourceDirective{Console}{Director}{Password}
+of the Console configuration file.
 
 The password is plain text.
 }

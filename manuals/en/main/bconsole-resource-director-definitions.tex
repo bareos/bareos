@@ -8,8 +8,7 @@ address used to connect  to the Director.
 
 \defDirective{Console}{Director}{Dir Port}{}{}{%
 This port must be identical to the
-\linkResourceDirective{Dir}{Director}{Dir Port} specified in the {\bf Director} resource of
-the \nameref{DirectorChapter} file.
+\linkResourceDirective{Dir}{Director}{Dir Port} specified in the \nameref{DirectorChapter} file.
 }
 
 \defDirective{Console}{Director}{Heartbeat Interval}{}{}{%
@@ -21,11 +20,8 @@ name is not used.
 }
 
 \defDirective{Console}{Director}{Password}{}{}{%
-Where the password is the  password needed for the Director to accept the
-Console connection.  This password must be identical to the {\bf Password}
-specified in  the {\bf Director} resource of the
-\nameref{DirectorChapter} file. This
-directive is required.
+This password is used to authenticate when connecting to the \bareosDir as default console.
+It must correspond to \linkResourceDirective{Dir}{Director}{Password}.
 }
 
 \defDirective{Console}{Director}{TLS Authenticate}{}{}{%

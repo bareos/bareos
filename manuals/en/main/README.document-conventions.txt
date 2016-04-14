@@ -4,16 +4,14 @@ Please refer to bareos.sty regarding defined macros that should be used.
 Conventions
 
 Domain: example.com
-Hosts: ???
+Hosts:
+  * bareos.example.com (if only one system, or one system for Director and Storage Daemon (and webui)
+  * bareos-dir.example.com
+  * bareos-sd1.example.com, bareos-sd2.example.com, ...
+  * client1.example.com, client2.example.com, ... (Clients, where Bareos is running on).
 
 \fileStoragePath
 \unixConfigPath
-
-Links, internal:
-\ilink{Description}{LaTex-Label}
-
-Links, external
-\elink{Description}{URL}
 
 \newcommand{\command}[1]{\path|#1|}
 \newcommand{\bcommand}[1]{\path|#1|}
@@ -78,4 +76,4 @@ Using \index:
 
 There are 4 indexes: general, dir, sd, fd, console, monitor.
 The default is general. Maybe the other indexes will get integrated into general.
-It is possible to define a hierachie of index words, seperated by "!".
+It is possible to define a hierarchy of index words, separated by "!".
