@@ -260,15 +260,18 @@ This directive has been deprecated in favor of
 \linkResourceDirective{Dir}{Job}{Incremental Max Runtime}
 }
 
-\defDirective{Dir}{Job}{Job Defs}{}{}{
-If a Job Defs resource name is specified, all the values contained in the
-named JobDefs resource will be used as the defaults for the current Job.
+\defDirective{Dir}{Job}{Job Defs}{}{}{%
+If a \ilink{Job Defs}{DirectorResourceJobDefs} resource name is specified,
+all the values contained in the
+named \ilink{Job Defs}{DirectorResourceJobDefs} resource will be used as the defaults for the current Job.
 Any value that you explicitly define in the current Job resource, will
-override any defaults specified in the JobDefs resource.  The use of
+override any defaults specified in the \ilink{Job Defs}{DirectorResourceJobDefs} resource.
+The use of
 this directive permits writing much more compact Job resources where the
-bulk of the directives are defined in one or more JobDefs.  This is
-particularly useful if you have many similar Jobs but with minor
+bulk of the directives are defined in one or more \ilink{Job Defs}{DirectorResourceJobDefs}.
+This is particularly useful if you have many similar Jobs but with minor
 variations such as different Clients.
+To structure the configuration even more, \ilink{Job Defs}{DirectorResourceJobDefs} themselves can also refer to other \ilink{Job Defs}{DirectorResourceJobDefs}.
 }
 
 \defDirective{Dir}{Job}{Job To Verify}{}{}{
