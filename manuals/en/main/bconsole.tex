@@ -1225,7 +1225,7 @@ setbandwidth limit=<nb> [jobid=<id> | client=<cli>]
 
 
 \item [setdebug]
-    \label{bcommandSetdebug}
+   \label{bcommandSetdebug}
    \index[general]{Console!Command!setdebug}
    \index[general]{Debug!setdebug}
    \index[general]{Debug!Windows}
@@ -1254,12 +1254,15 @@ setdebug level=nnn [trace=0/1 client=<client-name> | dir | director | storage=<s
 
    If trace=1 is set, then tracing will be enabled, and the daemon will be
    placed in trace mode, which means that all debug output as set by the
-   debug level will be directed to the file \file{bareos.trace} in the
-   current directory of the daemon.  Normally, tracing is needed only for
-   Windows clients where the debug output cannot be written to a terminal or
-   redirected to a file.  When tracing, each debug output message is
+   debug level will be directed to his trace file in the
+   current directory of the daemon.  When tracing, each debug output message is
    appended to the trace file.  You must explicitly delete the file when
    you are done.
+
+\begin{bconsole}{set Director debug level to 100 and get messages written to his trace file}
+*<input>setdebug level=100 trace=1 dir</input>
+level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.example.com.trace
+\end{bconsole}
 
 \item [setip]
    \index[general]{Console!Command!setip}

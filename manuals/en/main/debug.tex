@@ -2,9 +2,12 @@
 %%
 
 %\chapter{What To Do When Bareos Crashes (Kaboom)}
-\label{debug}
 \index[general]{Crash}
 \index[general]{Debug!crash}
+
+This chapter describes, how to debug Bareos, when the program crashes.
+If you are just interested about how to get more information about a running Bareos daemon,
+please read \nameref{sec:debug-messages}.
 
 If you are running on a Linux system, and you have a set of working
 configuration files, it is very unlikely that {\bf Bareos} will crash. As with
@@ -110,8 +113,8 @@ changes), you would do the following:
 \item Start the Storage daemon under the debugger:
 
 \begin{commands}{run the Bareos Storage daemon in the debugger}
-<command>gdb</command><parameter> /usr/sbin/bareos-sd</parameter>
-(gdb) <input>run -f -s -d 200</input>
+<command>gdb</command><parameter> --args /usr/sbin/bareos-sd -f -s -d 200</parameter>
+(gdb) <input>run</input>
 \end{commands}
 
 Parameter:

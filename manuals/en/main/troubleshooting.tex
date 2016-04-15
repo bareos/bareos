@@ -1,9 +1,16 @@
 
+\section{Debug Messages}
+\label{sec:debug-messages}
+
+The Bareos programs contain a lot of debug messages. Normally, these are not printed.
+See the \ilink{setdebug}{bcommandSetdebug} chapter about how to enable them.
+
+
 \section{Client Access Problems}
 \label{AccessProblems}
 \index[general]{Cannot Access a Client}
    There are several reasons why Bareos could not contact a client  on a
-   different machine. They are:  
+   different machine. They are:
 
 \begin{itemize}
 \item Check if the client file daemon is really running.
@@ -13,7 +20,7 @@
 \item You have a firewall, and it is blocking traffic on port  9102 between
    the Director's machine and the Client's  machine (or on port 9103 between the
    Client and the Storage daemon  machines). 
-\item If your system is using Tcpwrapper ({\bf hosts.allow} or {\bf hosts.deny} file), verify that is
+\item If your system is using Tcpwrapper (\file{hosts.allow} or \file{hosts.deny} file), verify that is
    permitting access.
 \item Your password or names are not correct in both the Director and  the
    Client machine. Try configuring everything identical to  how you run the
@@ -789,10 +796,6 @@ There are basically three steps to take:
 \end{enumerate}
 
 When the above is complete, you can begin bscanning your Volumes. Please
-see the \ilink{bscan}{bscan} section of the Volume Utility Tools of this
-chapter for more details.
+see the \nameref{bscan} chapter for more details.
 
 \end{description}
-
-
-\TODO{add the debug chapter?}
