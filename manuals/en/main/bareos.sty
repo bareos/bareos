@@ -15,7 +15,6 @@
 %\def\idir{../../images/conv/}  %% images directory
 \def\idir{images/}
 
-
 \newcommand{\bareosFd}{Bareos File Daemon\xspace}
 \newcommand{\bareosSd}{Bareos Storage Daemon\xspace}
 \newcommand{\bareosDir}{Bareos Director\xspace}
@@ -98,6 +97,17 @@
 % \hyppertarget{label}{text}
 % and
 % \hyperlink{label}{text}
+
+% short cut for links from check marks to a internal chapter
+% \DeclareUnicodeCharacter{2713}{\bcheckmark}
+% \DeclareRobustCommand\bcheckmark{%
+%   \unskip\nobreak\thinspace\textemdash\allowbreak\thinspace\ignorespaces}
+\newcommand{\bcheckmark}{x}
+% check mark internal link
+\newcommand{\cmlink}[1]{\ilink{\bcheckmark}{#1}}
+
+
+
 
 \newcommand{\ticket}[1]{%
     \href{https://bugs.bareos.org/view.php?id=#1}{Ticket \##1}%

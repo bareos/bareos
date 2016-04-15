@@ -3,7 +3,8 @@
 
 \chapter{Storage Daemon Configuration}
 \label{StoredConfChapter}
-\index[general]{Storage Daemon Configuration}
+\index[sd]{Configuration}
+\index[general]{Storage Daemon!Configuration}
 \index[general]{Configuration!Storage Daemon}
 
 The \bareosSd configuration file has relatively few resource definitions.
@@ -21,13 +22,13 @@ following Storage Resource definitions must be defined:
 
 \begin{itemize}
 \item
-   \ilink{Storage}{StorageResource} -- to define the  name of the
+   \ilink{Storage}{StorageResourceStorage} -- to define the  name of the
    Storage daemon.
 \item
-   \ilink{Director}{DirectorResource1} -- to  define the Director's
+   \ilink{Director}{StorageResourceDirector} -- to  define the Director's
    name and his access password.
 \item
-   \ilink{Device}{DeviceResource} -- to define  the
+   \ilink{Device}{StorageResourceDevice} -- to define  the
    characteristics of your storage device (tape  drive).
 \item
    \ilink{Messages}{MessagesChapter} -- to define where error  and
@@ -37,16 +38,16 @@ following Storage Resource definitions must be defined:
 Following resources are optional:
 \begin{itemize}
 \item
-   \nameref{AutochangerRes} -- to define Autochanger devices.
+   \nameref{StorageResourceAutochanger} -- to define Autochanger devices.
 \item
-   \nameref{NDMPResource} -- to define the NDMP authentication
+   \nameref{StorageResourceNDMP} -- to define the NDMP authentication
    context.
 \end{itemize}
 
 \section{Storage Resource}
-\label{StorageResource}
-\index[general]{Resource!Storage}
-\index[general]{Storage!Resource}
+\label{StorageResourceStorage}
+\index[sd]{Resource!Storage}
+\index[sd]{Storage!Resource}
 
 In general, the properties specified under the Storage resource define global
 properties of the Storage daemon. Each Storage daemon configuration file must
@@ -80,9 +81,9 @@ Storage {
 \end{bconfig}
 
 \section{Director Resource}
-\label{DirectorResource1}
-\index[general]{Resource!Director}
-\index[general]{Director!Resource}
+\label{StorageResourceDirector}
+\index[sd]{Resource!Director}
+\index[sd]{Director!Resource}
 
 The Director resource specifies the Name of the Director which is permitted
 to use the services of the Storage daemon.  There may be multiple Director
@@ -105,8 +106,9 @@ Director {
 
 \section{NDMP Resource}
 \label{NDMPResource}
-\index[general]{Resource!NDMP}
-\index[general]{NDMP!Resource}
+\label{StorageResourceNDMP}
+\index[sd]{Resource!NDMP}
+\index[sd]{NDMP!Resource}
 
 The NDMP Resource specifies the authentication details of each NDMP client.
 There may be multiple NDMP resources for a single Storage daemon. In general,
@@ -119,9 +121,9 @@ the properties specified within the NDMP resource are specific to one client.
 
 
 \section{Device Resource}
-\label{DeviceResource}
-\index[general]{Resource!Device}
-\index[general]{Device!Resource}
+\label{StorageResourceDevice}
+\index[sd]{Resource!Device}
+\index[sd]{Device!Resource}
 
 The Device Resource specifies the details of each device (normally a tape
 drive) that can be used by the Storage daemon.  There may be multiple

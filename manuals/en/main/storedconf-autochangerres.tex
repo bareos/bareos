@@ -3,7 +3,7 @@
 \index[sd]{Autochanger Resource}
 \index[sd]{Resource!Autochanger}
 \label{AutochangerRes}
-\label{AutochangerResource1}
+\label{StorageResourceAutochanger}
 
 
 The Autochanger resource supports single or multiple drive
@@ -22,8 +22,7 @@ use an Autochanger must refer to the Autochanger resource name.
 
 The following is an example of a valid Autochanger resource definition:
 
-\footnotesize
-\begin{verbatim}
+\begin{bconfig}{Autochanger Configuration Example}
 Autochanger {
   Name = "DDS-4-changer"
   Device = DDS-4-1, DDS-4-2, DDS-4-3
@@ -48,8 +47,7 @@ Device {
   Autoselect = no
   ...
 }
-\end{verbatim}
-\normalsize
+\end{bconfig}
 
 Please note that it is important to include the {\bf Autochanger = yes} directive
 in each Device definition that belongs to an Autochanger.  A device definition

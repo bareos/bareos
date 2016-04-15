@@ -12,50 +12,38 @@ Each service (Director, Client, Storage, Console) has its own configuration
 file containing a set of Resource definitions. These resources are very
 similar from one service to another, but may contain different directives
 (records) depending on the service. For example, in the Director's resource
-file, the {\bf Director} resource defines the name of the Director, a number
+file, the \nameref{DirectorResourceDirector} defines the name of the Director, a number
 of global Director parameters and his password. In the File daemon
-configuration file, the {\bf Director} resource specifies which Directors are
+configuration file, the \nameref{ClientResourceDirector} specifies which Directors are
 permitted to use the File daemon.
 
 If you install a full Bareos system (Director, Storage and File Daemon) to one system,
-the Bareos packages tries there best to generate a working configuration.
-However, this configuration is very limited and before you will use Bareos in production,
-it will be required, that you customize the configuration.
+the Bareos packages tries there best to generate a working configuration as a basis for your individual configuration.
 
-
-%\addcontentsline{lof}{figure}{Bareos Objects}
-%\includegraphics{\idir bareos-objects}
-%\label{ResFormat}
-
-
-%\section{Detailed Information for each Daemon}
-\index[general]{Detailed Information for each Daemon}
-\index[general]{Daemon!Detailed Information for each}
-
-The details of each Resource and the directives permitted therein are
+The details of each resource and the directives permitted therein are
 described in the following chapters.
 
 The following configuration files must be defined:
 
 \begin{itemize}
 \item
-   \nameref{ConsoleConfChapter} -- to define the resources for
-   the Console program (user interface to the Director).  It defines which
-Directors are  available so that you may interact with them.
-\item
    \nameref{DirectorChapter} -- to define the resources
    necessary for the Director. You define all the Clients  and Storage daemons
-that you use in this configuration file.
-\item
-   \nameref{FiledConfChapter} -- to define the resources for
-   each client to be backed up. That is, you will have a separate  Client
-resource file on each machine that runs a File daemon.
+   that you use in this configuration file.
 \item
    \nameref{StoredConfChapter} -- to define the resources to
    be used by each Storage daemon. Normally, you will have  a single Storage
-daemon that controls your tape drive or tape  drives. However, if you have
-tape drives on several machines,  you will have at least one Storage daemon
-per machine.
+   daemon that controls your tape drive or tape  drives. However, if you have
+   tape drives on several machines,  you will have at least one Storage daemon
+   per machine.
+\item
+   \nameref{FiledConfChapter} -- to define the resources for
+   each client to be backed up. That is, you will have a separate  Client
+   resource file on each machine that runs a File daemon.
+\item
+   \nameref{ConsoleConfChapter} -- to define the resources for
+   the Console program (user interface to the Director).  It defines which
+Directors are  available so that you may interact with them.
 \end{itemize}
 
 
@@ -169,20 +157,41 @@ All other characters and punctuation are invalid.
 \index[general]{Configuration!Including Files}
 
 If you wish to break your configuration file into smaller pieces, you can do
-so by including other files using the syntax @{\bf filename} where {\bf
-filename} is the full path and filename of another file. The @filename
+so by including other files using the syntax \configdirective{@filename}
+where \file{filename} is the full path and filename of another file.
+The \configdirective{@filename}
 specification can be given anywhere a primitive token would appear.
 
-If you wish include all files in a specific directory, you can use the following:
 \begin{bconfig}{include configuration files}
-# Include subfiles associated with configuration of clients.
-# They define the bulk of the Clients, Jobs, and FileSets.
-# Remember to "reload" the Director after adding a client file.
-#
-@|"sh -c 'for f in /etc/bareos/clientdefs/*.conf ; do echo @${f} ; done'"
+@/etc/bareos/extra/clients.conf
 \end{bconfig}
-\hide{$}
 
+Since Bareos \sinceVersion{}{Including Configuration files by wildcard}{16.2.1} wildcards in pathes are supported:
+\begin{bconfig}{include multiple configuration files}
+@/etc/bareos/extra/*.conf
+\end{bconfig}
+
+% Before 
+% this could be archived by
+% If you wish include all files in a specific directory, you can use the following:
+% \begin{bconfig}{include configuration files}
+% # Include subfiles associated with configuration of clients.
+% # They define the bulk of the Clients, Jobs, and FileSets.
+% # Remember to "reload" the Director after adding a client file.
+% #
+% @|"sh -c 'for f in /etc/bareos/clientdefs/*.conf ; do echo @${f} ; done'"
+% \end{bconfig}
+% \hide{$}
+
+By using \configdirective {@!command} it is also possible to include the output of a script as configuration:
+\begin{bconfig}{use the output of a script as configuration}
+@|"/etc/bareos/generate_configuration_to_stdout.sh"
+\end{bconfig}
+or if parameter should be used:
+\begin{bconfig}{use the output of a script with parameter as configuration}
+@|"sh -c '/etc/bareos/generate_client_configuration_to_stdout.sh clientname=client1.example.com'"
+\end{bconfig}
+The scripts are called at the start of the daemon. You should use them with care.
 
 
 \subsection{Data Types}
@@ -631,44 +640,48 @@ At the configuration of mail and operator commands following variables can be us
 
 The following table lists all current Bareos resource types. It shows what
 resources must be defined for each service (daemon). The default configuration
-files will already contain at least one example of each permitted resource, so
-you need not worry about creating all these kinds of resources from scratch.
+files will already contain at least one example of each permitted resource.
 
 \addcontentsline{lot}{table}{Resource Types}
-\begin{longtable}{|l|c|c|c|c|}
+\begin{longtable}{|l||c|c|c|c|}
  \hline
-\multicolumn{1}{|c| }{\bf Resource } & \multicolumn{1}{c| }{\bf Director } &
-\multicolumn{1}{c| }{\bf Client } & \multicolumn{1}{c| }{\bf Storage } &
-\multicolumn{1}{c| }{\bf Console  } \\
+\multicolumn{1}{|c|| }{\bf Resource } &
+\multicolumn{1}{c| }{ \ilink{Director}{DirectorConfChapter} } &
+\multicolumn{1}{c| }{ \ilink{Client}{FiledConfChapter} } &
+\multicolumn{1}{c| }{ \ilink{Storage}{StoredConfChapter} } &
+\multicolumn{1}{c| }{ \ilink{Console}{ConsoleConfChapter}  } \\
  \hline
-{Autochanger } &  &  & x &  \\
+ \hline
+{Autochanger} &                                 &                                 & \cmlink{StorageResourceAutochanger} &  \\
 \hline
-{Catalog } & x &    &    &    \\
+{Catalog }  & \cmlink{DirectorResourceCatalog}  &                                 &    &    \\
  \hline
-{Client  } & x & x &    &    \\
+{Client  }  & \cmlink{DirectorResourceClient}   & \cmlink{ClientResourceClient}   &    &    \\
  \hline
-{Console } & x &    &    & x \\
+{Console }  & \cmlink{DirectorResourceConsole}  &                                 &                                  & \cmlink{ConsoleResourceConsole} \\
  \hline
-{Device  } &    &    & x &    \\
+{Device  }  &                                   &                                 & \cmlink{StorageResourceDevice}   &    \\
  \hline
-{Director } & x & x & x & x \\
+{Director } & \cmlink{DirectorResourceDirector} & \cmlink{ClientResourceDirector} & \cmlink{StorageResourceDirector} & \cmlink{ConsoleResourceDirector} \\
  \hline
-{FileSet } & x &    &    &    \\
+{FileSet }  & \cmlink{DirectorResourceFileSet}  &                                 &    &    \\
  \hline
-{Job  } & x &    &    &    \\
+{Job}       & \cmlink{DirectorResourceJob}      &                                 &    &    \\
  \hline
-{JobDefs } & x &    &    &    \\
+{JobDefs }  & \cmlink{DirectorResourceJobDefs}  &                                 &    &    \\
  \hline
-{Message } & x & x & x &    \\
+{Message }  & \cmlink{ResourceMessages}         & \cmlink{ResourceMessages}       & \cmlink{ResourceMessages} &    \\
  \hline
-{NDMP } &    &    & x &    \\
+{NDMP }     &                                   &                                 & \cmlink{StorageResourceNDMP} &    \\
  \hline
-{Pool  } & x &    &    &    \\
+{Pool  }    & \cmlink{DirectorResourcePool}     &                                 &    &    \\
  \hline
-{Schedule } & x &    &    &    \\
+{Profile}   & \cmlink{DirectorResourceProfile}  &                                 &    &    \\
  \hline
-{Storage } & x &    & x &   
-\\ \hline
+{Schedule } & \cmlink{DirectorResourceSchedule} &                                 &    &    \\
+ \hline
+{Storage }  & \cmlink{DirectorResourceStorage}  &                                 & \cmlink{StorageResourceStorage} & \\
+\hline
 \end{longtable}
 
 \section{Names, Passwords and Authorization}
