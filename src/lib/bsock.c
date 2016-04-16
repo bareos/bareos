@@ -245,7 +245,6 @@ bool BSOCK::authenticate_with_director(JCR *jcr,
                                        const char *name, s_password &password, tls_t &tls,
                                        char *response, int response_len)
 {
-   bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
    BSOCK *dir = this;        /* for readability */
 
@@ -310,12 +309,12 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
                                  const char *name, s_password &password,
                                  tls_t &tls, bool initiated_by_remote)
 {
+   btimer_t *tid = NULL;
    const int dbglvl = 50;
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
    bool compatible = true;
    bool auth_success = false;
-   btimer_t *tid = NULL;
+   int tls_local_need = BNET_TLS_NONE;
+   int tls_remote_need = BNET_TLS_NONE;
 
    ASSERT(password.encoding == p_encoding_md5);
 

@@ -47,26 +47,29 @@ CONNECTION::~CONNECTION()
 }
 
 /*
- * check if connection is still active.
+ * Check if connection is still active.
  */
 bool CONNECTION::check(int timeout_data)
 {
    int data_available = 0;
-   int data_received = 0;
    bool ok = true;
 
    /*
     * Returns: 1 if data available, 0 if timeout, -1 if error
     */
    data_available = m_socket->wait_data_intr(timeout_data);
+
    /*
-    * use lock to prevent that data is read for job thread.
+    * Use lock to prevent that data is read for job thread.
     */
    lock();
    if (data_available < 0) {
       ok = false;
    } else if ((data_available > 0) && (!m_in_use)) {
-      data_received = m_socket->recv();
+      if (m_socket->recv() <= 0) {
+         ok = false;
+      }
+
       if (m_socket->is_error()) {
          ok = false;
       }
@@ -77,7 +80,7 @@ bool CONNECTION::check(int timeout_data)
 }
 
 /*
- * wait until an error occurs
+ * Wait until an error occurs
  * or the connection is requested by some other thread.
  */
 bool CONNECTION::wait(int timeout)
@@ -91,8 +94,7 @@ bool CONNECTION::wait(int timeout)
 }
 
 /*
- * request to take over the connection (socket)
- * from another thread.
+ * Request to take over the connection (socket) from another thread.
  */
 bool CONNECTION::take()
 {
@@ -223,7 +225,6 @@ CONNECTION *CONNECTION_POOL::get_connection(const char *name, timespec &timeout)
 
    return connection;
 }
-
 
 int CONNECTION_POOL::wait_for_new_connection(timespec &timeout)
 {
