@@ -443,22 +443,19 @@ extern "C" int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw
 
    if (nis->save_filehist) {
       int8_t FileType = 0;
-      char namebuf[NDMOS_CONST_PATH_MAX];
       POOL_MEM attribs(PM_FNAME),
                pathname(PM_FNAME);
-
-      ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
       /*
        * Every file entry is releative from the filesystem currently being backuped.
        */
-      Dmsg2(100, "bndmp_fhdb_mem_add_file: New filename ==> %s/%s\n", nis->filesystem, namebuf);
+      Dmsg2(100, "bndmp_fhdb_mem_add_file: New filename ==> %s/%s\n", nis->filesystem, raw_name);
 
       if (nis->jcr->ar) {
          /*
           * See if this is the top level entry of the tree e.g. len == 0
           */
-         if (strlen(namebuf) == 0) {
+         if (strlen(raw_name) == 0) {
             ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
             pm_strcpy(pathname, nis->filesystem);
@@ -469,7 +466,7 @@ extern "C" int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw
 
             pm_strcpy(pathname, nis->filesystem);
             pm_strcat(pathname, "/");
-            pm_strcat(pathname, namebuf);
+            pm_strcat(pathname, raw_name);
 
             if (FileType == FT_DIREND) {
                /*
@@ -493,7 +490,7 @@ extern "C" int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw
  * and for those we have this workaround.
  */
 static inline void add_out_of_order_metadata(NIS *nis, N_TREE_ROOT *fhdb_root,
-                                             const char *namebuf, ndmp9_u_quad dir_node, ndmp9_u_quad node)
+                                             const char *raw_name, ndmp9_u_quad dir_node, ndmp9_u_quad node)
 {
    N_TREE_NODE *nt_node;
    OOO_MD *md_entry = NULL;
@@ -502,13 +499,13 @@ static inline void add_out_of_order_metadata(NIS *nis, N_TREE_ROOT *fhdb_root,
    nt_node = ndmp_fhdb_new_tree_node(fhdb_root);
    nt_node->inode = node;
    nt_node->FileIndex = fhdb_root->FileIndex;
-   nt_node->fname_len = strlen(namebuf);
+   nt_node->fname_len = strlen(raw_name);
    /*
     * Allocate a new entry with 2 bytes extra e.g. the extra slash
     * needed for directories and the \0.
     */
    nt_node->fname = ndmp_fhdb_tree_alloc(fhdb_root, nt_node->fname_len + 2);
-   bstrncpy(nt_node->fname, namebuf, nt_node->fname_len + 1);
+   bstrncpy(nt_node->fname, raw_name, nt_node->fname_len + 1);
 
    /*
     * See if we already allocated the htable.
@@ -544,21 +541,18 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_
                                       ndmp9_u_quad dir_node, ndmp9_u_quad node)
 {
    NIS *nis = (NIS *)ixlog->ctx;
-   char namebuf[NDMOS_CONST_PATH_MAX];
-
-   ndmcstr_from_str(raw_name, namebuf, sizeof(namebuf));
 
    /*
     * Ignore . and .. directory entries.
     */
-   if (bstrcmp(namebuf, ".") || bstrcmp(namebuf, "..")) {
+   if (bstrcmp(raw_name, ".") || bstrcmp(raw_name, "..")) {
       return 0;
    }
 
    if (nis->save_filehist) {
       N_TREE_ROOT *fhdb_root;
 
-      Dmsg3(100, "bndmp_fhdb_mem_add_dir: New filename ==> %s [%llu] - [%llu]\n", namebuf, dir_node, node);
+      Dmsg3(100, "bndmp_fhdb_mem_add_dir: New filename ==> %s [%llu] - [%llu]\n", raw_name, dir_node, node);
 
       fhdb_root = ((struct fhdb_state *)nis->fhdb_state)->fhdb_root;
       if (!fhdb_root) {
@@ -571,7 +565,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_
        */
       if (fhdb_root->cached_parent &&
           fhdb_root->cached_parent->inode == dir_node) {
-         search_and_insert_tree_node(namebuf, fhdb_root->FileIndex, node,
+         search_and_insert_tree_node(raw_name, fhdb_root->FileIndex, node,
                                      fhdb_root, fhdb_root->cached_parent);
       } else {
          /*
@@ -579,10 +573,10 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_
           */
          fhdb_root->cached_parent = find_tree_node(fhdb_root, dir_node);
          if (fhdb_root->cached_parent) {
-            search_and_insert_tree_node(namebuf, fhdb_root->FileIndex, node,
+            search_and_insert_tree_node(raw_name, fhdb_root->FileIndex, node,
                                         fhdb_root, fhdb_root->cached_parent);
          } else {
-            add_out_of_order_metadata(nis, fhdb_root, namebuf, dir_node, node);
+            add_out_of_order_metadata(nis, fhdb_root, raw_name, dir_node, node);
          }
       }
    }

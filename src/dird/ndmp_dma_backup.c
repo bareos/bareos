@@ -46,17 +46,29 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static inline void register_callback_hooks(struct ndmlog *ixlog)
 {
+#ifdef HAVE_LMDB
+   ndmp_fhdb_lmdb_register(ixlog);
+#else
    ndmp_fhdb_mem_register(ixlog);
+#endif
 }
 
 static inline void unregister_callback_hooks(struct ndmlog *ixlog)
 {
+#ifdef HAVE_LMDB
+   ndmp_fhdb_lmdb_unregister(ixlog);
+#else
    ndmp_fhdb_mem_unregister(ixlog);
+#endif
 }
 
 static inline void process_fhdb(struct ndmlog *ixlog)
 {
+#ifdef HAVE_LMDB
+   ndmp_fhdb_lmdb_process_db(ixlog);
+#else
    ndmp_fhdb_mem_process_db(ixlog);
+#endif
 }
 
 static inline int native_to_ndmp_level(JCR *jcr, char *filesystem)
