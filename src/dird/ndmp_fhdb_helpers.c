@@ -76,6 +76,19 @@ void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
     */
    memset(&statp, 0, sizeof(statp));
 
+   Dmsg11(100, "ftype:%d mtime:%lu atime:%lu ctime:%lu uid:%lu gid:%lu mode:%lu size:%llu links:%lu node:%llu fh_info:%llu \n",
+            fstat->ftype,
+            fstat->mtime.value,
+            fstat->atime.value,
+            fstat->ctime.value,
+            fstat->uid.value,
+            fstat->gid.value,
+            fstat->mode.value,
+            fstat->size.value,
+            fstat->links.value,
+            fstat->node.value,
+            fstat->fh_info.value);
+
    /*
     * If we got a valid mode of the file fill the UNIX stat struct.
     */

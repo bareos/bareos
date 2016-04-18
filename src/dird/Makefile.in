@@ -22,6 +22,8 @@ GETTEXT_LIBS = @LIBINTL@
 CAP_LIBS = @CAP_LIBS@
 NDMP_LIBS = @NDMP_LIBS@
 DB_LIBS=@DB_LIBS@
+LMDB_LIBS=@LMDB_LIBS@
+
 OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
 GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
@@ -47,7 +49,7 @@ DBCHKOBJS = $(DBCHKSRCS:.c=.o)
 TSTFNDSRCS = testfind.c dird_conf.c ua_acl.c ua_audit.c run_conf.c inc_conf.c
 TSTFNDOBJS = $(TSTFNDSRCS:.c=.o)
 
-INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
+INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/lmdb -I$(basedir)/ndmp
 
 JANSSON_CPPFLAGS = @JANSSON_INC@
 
@@ -79,7 +81,7 @@ bareos-dir: Makefile $(SVROBJS) \
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
 	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) \
 	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(CAP_LIBS) \
-	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
+	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED) $(LMDB_LIBS)
 
 bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
