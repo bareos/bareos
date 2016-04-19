@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,7 +90,14 @@ static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
  * Check to see if we allow the file system type of a file or directory.
  * If we do not have a list of file system types, we accept anything.
  */
-static int accept_fstype(FF_PKT *ff, void *dummy) {
+#if defined(HAVE_WIN32)
+static bool accept_fstype(FF_PKT *ff, void *dummy)
+{
+   return true;
+}
+#else
+static bool accept_fstype(FF_PKT *ff, void *dummy)
+{
    int i;
    char fs[1000];
    bool accept = true;
@@ -111,14 +118,18 @@ static int accept_fstype(FF_PKT *ff, void *dummy) {
          }
       }
    }
+
    return accept;
 }
+#endif
 
 /*
  * Check to see if we allow the drive type of a file or directory.
  * If we do not have a list of drive types, we accept anything.
  */
-static inline int accept_drivetype(FF_PKT *ff, void *dummy) {
+#if defined(HAVE_WIN32)
+static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
+{
    int i;
    char dt[100];
    bool accept = true;
@@ -139,8 +150,15 @@ static inline int accept_drivetype(FF_PKT *ff, void *dummy) {
          }
       }
    }
+
    return accept;
 }
+#else
+static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
+{
+   return true;
+}
+#endif
 
 /*
  * This function determines whether we can use getattrlist()
@@ -833,43 +851,47 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
 /*
  * See if we need to perform any processing for a given file.
  */
-static inline int needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
+static inline bool needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
 {
+   int loglevel = M_INFO;
+
    if (!accept_fstype(ff_pkt, NULL)) {
+      char fs[100];
+
       ff_pkt->type = FT_INVALIDFS;
       if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
          restore_file_times(ff_pkt, fname);
       }
 
-      char fs[100];
-
       if (!fstype(ff_pkt->fname, fs, sizeof(fs))) {
-          bstrncpy(fs, "unknown", sizeof(fs));
+         bstrncpy(fs, "unknown", sizeof(fs));
+         loglevel = M_WARNING;
       }
 
-      Jmsg(jcr, M_INFO, 0, _("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname, fs);
-      return 1;      /* Just ignore this error - or the whole backup is cancelled */
+      Jmsg(jcr, loglevel, 0, _("Top level directory \"%s\" has unlisted fstype \"%s\"\n"), fname, fs);
+      return false;  /* Just ignore this error - or the whole backup is cancelled */
    }
 
    if (!accept_drivetype(ff_pkt, NULL)) {
+      char dt[100];
+
       ff_pkt->type = FT_INVALIDDT;
       if (bit_is_set(FO_KEEPATIME, ff_pkt->flags)) {
          restore_file_times(ff_pkt, fname);
       }
 
-      char dt[100];
-
       if (!drivetype(ff_pkt->fname, dt, sizeof(dt))) {
-          bstrncpy(dt, "unknown", sizeof(dt));
+         bstrncpy(dt, "unknown", sizeof(dt));
+         loglevel = M_WARNING;
       }
 
-      Jmsg(jcr, M_INFO, 0, _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"), fname, dt);
-      return 1;      /* Just ignore this error - or the whole backup is cancelled */
+      Jmsg(jcr, loglevel, 0, _("Top level directory \"%s\" has an unlisted drive type \"%s\"\n"), fname, dt);
+      return false;  /* Just ignore this error - or the whole backup is cancelled */
    }
 
    ff_pkt->volhas_attrlist = volume_has_attrlist(fname);
 
-   return 0;
+   return true;
 }
 
 /*
@@ -904,8 +926,9 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
     * We check for allowed fstypes and drivetypes at top_level and fstype change (below).
     */
    if (top_level) {
-      if (needs_processing(jcr, ff_pkt, fname) == 1)
+      if (!needs_processing(jcr, ff_pkt, fname)) {
          return 1;
+      }
    }
 
    /*
