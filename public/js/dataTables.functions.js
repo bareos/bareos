@@ -76,6 +76,22 @@ function formatJobLevel(data) {
          return 'Differential';
       case 'I':
          return 'Incremental';
+      case 'f':
+         return 'VirtualFull';
+      case 'B':
+         return 'Base';
+      case 'C':
+         return 'Catalog';
+      case 'V':
+         return 'InitCatalog';
+      case 'O':
+         return 'VolumeToCatalog';
+      case 'd':
+         return 'DiskToCatalog';
+      case 'A':
+         return 'Data';
+      case ' ':
+         return 'None';
       default:
          return data;
    }
