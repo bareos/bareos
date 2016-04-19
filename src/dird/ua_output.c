@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,12 @@ extern struct s_jl joblevels[];
 static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
 static bool list_nextvol(UAContext *ua, int ndays);
 static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist);
+
+/*
+ * Some defaults.
+ */
+#define DEFAULT_LOG_LINES 5
+#define DEFAULT_NR_DAYS 50
 
 /*
  * Turn auto display of console messages on/off
@@ -338,6 +344,7 @@ bail_out:
  *  list jobmedia ujobid=uname
  *  list joblog jobid=<nn>
  *  list joblog job=name
+ *  list log [ limit=<number> [ offset=<number> ] ]
  *  list basefiles jobid=nnn    - list files saved for job nn
  *  list basefiles ujobid=uname
  *  list files jobid=<nn>       - list files saved for job nn
@@ -408,6 +415,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    char *clientname = NULL;
    char *volumename = NULL;
    utime_t now;
+   bool reverse;
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -594,6 +602,17 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
+   } else if (bstrcasecmp(ua->argk[1], NT_("log"))) {
+      /*
+       * List last <limit> LOG entries
+       * default is DEFAULT_LOG_LINES entries
+       */
+      reverse = (find_arg(ua, NT_("reverse")) != -1);
+
+      if (strlen(query_range.c_str()) == 0) {
+         Mmsg(query_range, " LIMIT %d", DEFAULT_LOG_LINES);
+      }
+      db_list_log_records(ua->jcr, ua->db, query_range.c_str(), reverse,  ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("pool")) ||
               bstrcasecmp(ua->argk[1], NT_("pools"))) {
       POOL_DBR pr;
@@ -718,8 +737,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       i = find_arg_with_value(ua, NT_("days"));
       if (i >= 0) {
          days = atoi(ua->argv[i]);
-         if ((days < 0) || (days > 50)) {
-            ua->warning_msg(_("Ignoring invalid value for days. Max is 50.\n"));
+         if ((days < 0) || (days > DEFAULT_NR_DAYS)) {
+            ua->warning_msg(_("Ignoring invalid value for days. Max is %d.\n"), DEFAULT_NR_DAYS);
             days = 1;
          }
       }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,7 +86,7 @@ bool db_find_failed_job_since(JCR *jcr, B_DB *mdb, JOB_DBR *jr, POOLMEM *stime, 
 
 /* sql_get.c */
 bool db_get_volume_jobids(JCR *jcr, B_DB *mdb,
-                         MEDIA_DBR *mr, db_list_ctx *lst);
+                          MEDIA_DBR *mr, db_list_ctx *lst);
 bool db_get_base_file_list(JCR *jcr, B_DB *mdb, bool use_md5,
                            DB_RESULT_HANDLER *result_handler,void *ctx);
 int db_get_path_record(JCR *jcr, B_DB *mdb);
@@ -137,6 +137,8 @@ void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, JobId_t JobId,
                               OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_joblog_records(JCR *jcr, B_DB *mdb, JobId_t JobId,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_log_records(JCR *jcr, B_DB *mdb, const char *range, bool reverse,
+                         OUTPUT_FORMATTER *sendit, e_list_type type);
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        OUTPUT_FORMATTER *sendit, e_list_type type,
                        bool verbose);
