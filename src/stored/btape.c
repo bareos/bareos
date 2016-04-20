@@ -372,7 +372,7 @@ static void terminate_btape(int status)
    close_memory_pool();               /* free memory in pool */
    lmgr_cleanup_main();
 
-   sm_dump(false);
+   sm_dump(false, false);
    exit(status);
 }
 

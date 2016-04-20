@@ -331,7 +331,7 @@ void terminate_filed(int sig)
    cleanup_crypto();
    close_memory_pool();               /* release free memory in pool */
    lmgr_cleanup_main();
-   sm_dump(false);                    /* dump orphaned buffers */
+   sm_dump(false, false);             /* dump orphaned buffers */
    exit(sig);
 }
 
