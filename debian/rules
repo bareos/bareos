@@ -17,6 +17,8 @@ DH_VERBOSE = 1
 # This has to be exported to make some magic below work.
 DH_OPTIONS = -v
 
+export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos
 DIRECTOR_DAEMON_USER = $(DAEMON_USER)
