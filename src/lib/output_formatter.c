@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,6 +71,8 @@ OUTPUT_FORMATTER::~OUTPUT_FORMATTER()
    json_object_clear(result_json);
    json_decref(result_json);
    delete result_stack_json;
+   json_object_clear(message_object_json);
+   json_decref(message_object_json);
 #endif
 }
 
@@ -79,7 +81,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
 #if HAVE_JANSSON
    json_t *json_object_current = NULL;
    json_t *json_object_existing = NULL;
-   json_t *json_object_new = json_object();
+   json_t *json_object_new = NULL;
 #endif
 
    Dmsg1(800, "obj start: %s\n", name);
@@ -97,6 +99,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
           * Add nameless object.
           */
          if (json_is_array(json_object_current)) {
+            json_object_new = json_object();
             json_array_append_new(json_object_current, json_object_new);
             result_stack_json->push(json_object_new);
          } else {
@@ -116,6 +119,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
          } else {
             Dmsg2(800, "create new json object %s (stack size: %d)\n",
                   name, result_stack_json->size());
+            json_object_new = json_object();
             json_object_set_new(json_object_current, name, json_object_new);
          }
          result_stack_json->push(json_object_new);
@@ -149,7 +153,7 @@ void OUTPUT_FORMATTER::array_start(const char *name)
 #if HAVE_JANSSON
    json_t *json_object_current = NULL;
    json_t *json_object_existing = NULL;
-   json_t *json_new = json_array();
+   json_t *json_new = NULL;
 #endif
 
    Dmsg1(800, "array start: %s\n", name);
@@ -175,6 +179,7 @@ void OUTPUT_FORMATTER::array_start(const char *name)
                            "This should not happen. Ignoring.\n", name, result_stack_json->size());
          return;
       }
+      json_new = json_array();
       json_object_set_new(json_object_current, name, json_new);
       result_stack_json->push(json_new);
       Dmsg1(800, "result stack: %d\n", result_stack_json->size());
@@ -632,7 +637,7 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
                             "Message length = %lld\n", string_length);
          Emsg0(M_ERROR, 0, error_msg.c_str());
          json_send_error_message(error_msg.c_str());
-     }
+      }
       free(string);
    }
 
