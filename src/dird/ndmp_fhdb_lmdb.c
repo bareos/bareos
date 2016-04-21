@@ -172,20 +172,25 @@ retry:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg2(dbglvl, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          Jmsg2(nis->jcr, M_FATAL, 0, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog *ixlog, int tagc,
@@ -253,16 +258,18 @@ retry_del:
                } else {
                   Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+                  goto bail_out;
                }
             } else {
                Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
             break;
          default:
             Dmsg1(dbglvl, _("Unable delete old data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable delete old data: %s\n"), mdb_strerror(result));
-            break;
+            goto bail_out;
          }
 
 retry_put:
@@ -286,16 +293,18 @@ retry_put:
                } else {
                   Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+                  goto bail_out;
                }
             } else {
                Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
             break;
          default:
             Dmsg1(dbglvl, _("Unable put new data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable put new data: %s\n"), mdb_strerror(result));
-            break;
+            goto bail_out;
          }
          break;
       case MDB_TXN_FULL:
@@ -311,20 +320,25 @@ retry_put:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg1(dbglvl, _("Unable get old data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable get old data: %s\n"), mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog *ixlog, int tagc,
@@ -380,20 +394,25 @@ retry:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg1(dbglvl, _("Unable insert new data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 /*
