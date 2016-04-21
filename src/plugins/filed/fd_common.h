@@ -42,11 +42,10 @@
 #endif
 #endif
 
-DLL_IMP_EXP void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
-DLL_IMP_EXP void sm_free(const char *file, int line, void *fp);
 DLL_IMP_EXP void *reallymalloc(const char *fname, int lineno, unsigned int nbytes);
 DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
 
+#ifdef SMARTALLOC
 #ifndef bmalloc
 #define bmalloc(s) sm_malloc(__FILE__, __LINE__, (s))
 #define bfree(o) sm_free(__FILE__, __LINE__, (o))
@@ -61,6 +60,9 @@ DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
 
 #define malloc(s)    sm_malloc(__FILE__, __LINE__, (s))
 #define free(o)      sm_free(__FILE__, __LINE__, (o))
+
+DLL_IMP_EXP void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
+DLL_IMP_EXP void sm_free(const char *file, int line, void *fp);
 
 inline void *operator new(size_t size, char const * file, int line)
 {
@@ -101,34 +103,9 @@ inline void operator delete[] (void *buf)
 {
   sm_free(__FILE__, __LINE__, buf);
 }
+#endif
 
 #define Dmsg(context, level,  ...) bfuncs->DebugMessage(context, __FILE__, __LINE__, level, __VA_ARGS__ )
 #define Jmsg(context, type,  ...) bfuncs->JobMessage(context, __FILE__, __LINE__, type, 0, __VA_ARGS__ )
 
-#ifdef USE_ADD_DRIVE
-/* Keep drive letters for windows vss snapshot */
-static void add_drive(char *drives, int *nCount, char *fname) {
-   if (strlen(fname) >= 2 && B_ISALPHA(fname[0]) && fname[1] == ':') {
-      /* always add in uppercase */
-      char ch = toupper(fname[0]);
-      /* if not found in string, add drive letter */
-      if (!strchr(drives,ch)) {
-         drives[*nCount] = ch;
-         drives[*nCount+1] = 0;
-         (*nCount)++;
-      }
-   }
-}
-
-/* Copy our drive list to Bareos core list */
-static void copy_drives(char *drives, char *dest) {
-   int last = strlen(dest);     /* dest is 27 bytes long */
-   for (char *p = drives; *p && last < 26; p++) {
-      if (!strchr(dest, *p)) {
-         dest[last++] = *p;
-         dest[last] = 0;
-      }
-   }
-}
-#endif
 #endif

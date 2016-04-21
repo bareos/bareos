@@ -279,6 +279,7 @@ static struct cmdstruct commands[] = {
          "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
+         "log [ limit=<number> [ offset=<number> ] ] [reverse]|\n"
          "media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
          "media=<media-name> |\n"
          "nextvol job=<job-name> | nextvolume ujobid=<complete_name> |\n"

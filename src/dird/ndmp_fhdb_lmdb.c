@@ -169,13 +169,18 @@ retry:
             result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
             if (result == 0) {
                goto retry;
+            } else {
+               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
             }
+         } else {
+            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
          }
-         /*
-          * Fallthrough wanted.
-          */
+         break;
       default:
          Dmsg2(dbglvl, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
+         Jmsg2(nis->jcr, M_FATAL, 0, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          break;
       }
    }
@@ -245,11 +250,15 @@ retry_del:
                result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
                if (result == 0) {
                   goto retry_del;
+               } else {
+                  Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+                  Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
                }
+            } else {
+               Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             }
-            /*
-             * Fallthrough wanted.
-             */
+            break;
          default:
             Dmsg1(dbglvl, _("Unable delete old data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable delete old data: %s\n"), mdb_strerror(result));
@@ -274,11 +283,15 @@ retry_put:
                result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
                if (result == 0) {
                   goto retry_put;
+               } else {
+                  Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+                  Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
                }
+            } else {
+               Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             }
-            /*
-             * Fallthrough wanted.
-             */
+            break;
          default:
             Dmsg1(dbglvl, _("Unable put new data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable put new data: %s\n"), mdb_strerror(result));
@@ -295,11 +308,15 @@ retry_put:
             result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
             if (result == 0) {
                goto retry_get;
+            } else {
+               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
             }
+         } else {
+            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
          }
-         /*
-          * Fallthrough wanted.
-          */
+         break;
       default:
          Dmsg1(dbglvl, _("Unable get old data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable get old data: %s\n"), mdb_strerror(result));
@@ -360,13 +377,18 @@ retry:
             result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
             if (result == 0) {
                goto retry;
+            } else {
+               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
             }
+         } else {
+            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
          }
-         /*
-          * Fallthrough wanted.
-          */
+         break;
       default:
          Dmsg1(dbglvl, _("Unable insert new data: %s\n"), mdb_strerror(result));
+         Jmsg1(nis->jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
          break;
       }
    }

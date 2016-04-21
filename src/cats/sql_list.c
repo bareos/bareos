@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -308,6 +308,47 @@ void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *JobIds
       list_result(jcr, mdb, send, type);
       send->array_end("copies");
    }
+
+   sql_free_result(mdb);
+
+bail_out:
+   db_unlock(mdb);
+}
+
+void db_list_log_records(JCR *jcr, B_DB *mdb, const char* range, bool reverse,
+                         OUTPUT_FORMATTER *sendit, e_list_type type)
+{
+   const char *query;
+   const char *reverse_query = "SELECT Time, LogText FROM Log ORDER BY Log.LogId DESC %s";
+   const char *forward_query = "SELECT Time, LogText FROM ("
+                                  "SELECT * FROM Log ORDER BY Log.LogId DESC %s"
+                               ") ORDER BY LogId ASC";
+   if (reverse) {
+     query = reverse_query;
+   } else {
+     query = forward_query;
+   }
+
+   db_lock(mdb);
+   if (type == VERT_LIST) {
+      Mmsg(mdb->cmd, query, range);
+   } else {
+      Mmsg(mdb->cmd, query, range);
+      /*
+       * When something else then a vertical list is requested set the list type
+       * to RAW_LIST e.g. non formated raw data as that makes the only sense for
+       * the logtext output. The logtext already has things like \n etc in it
+       * so we should just dump the raw content out for the best visible output.
+       */
+      type = RAW_LIST;
+   }
+   if (!QUERY_DB(jcr, mdb, mdb->cmd)) {
+      goto bail_out;
+   }
+
+   sendit->array_start("log");
+   list_result(jcr, mdb, sendit, type);
+   sendit->array_end("log");
 
    sql_free_result(mdb);
 

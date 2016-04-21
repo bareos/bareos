@@ -208,11 +208,13 @@ retry:
          result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
          if (result == 0) {
             goto retry;
+         } else {
+            Jmsg1(jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
          }
+      } else {
+         Jmsg1(jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
       }
-      /*
-       * Fallthrough wanted.
-       */
+      break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
       break;
@@ -379,11 +381,13 @@ retry:
          result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
          if (result == 0) {
             goto retry;
+         } else {
+            Jmsg1(jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
          }
+      } else {
+         Jmsg1(jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
       }
-      /*
-       * Fallthrough wanted.
-       */
+      break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
       break;

@@ -37,6 +37,8 @@
 
 #include "bareos.h"
 
+#define HEAD_SIZE BALIGN(sizeof(struct abufhead))
+
 #ifdef HAVE_MALLOC_TRIM
 extern "C" int malloc_trim (size_t pad);
 #endif
@@ -101,9 +103,8 @@ struct abufhead {
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#ifdef SMARTALLOC
 
-#define HEAD_SIZE BALIGN(sizeof(struct abufhead))
+
 
 /*
  * Special version of error reporting using a static buffer so we don't use
@@ -130,6 +131,8 @@ static void smart_alloc_msg(const char *file, int line, const char *fmt, ...)
    p[0] = 0;                    /* Generate segmentation violation */
 }
 
+
+#ifdef SMARTALLOC
 POOLMEM *sm_get_pool_memory(const char *fname, int lineno, int pool)
 {
    struct abufhead *buf;
@@ -285,7 +288,7 @@ POOLMEM *get_pool_memory(int pool)
       return (POOLMEM *)((char *)buf + HEAD_SIZE);
    }
 
-   if ((buf=malloc(pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
+   if ((buf = (struct abufhead *)malloc(pool_ctl[pool].size + HEAD_SIZE)) == NULL) {
       V(mutex);
       smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), pool_ctl[pool].size);
       return NULL;
@@ -308,7 +311,7 @@ POOLMEM *get_memory(int32_t size)
    struct abufhead *buf;
    int pool = 0;
 
-   if ((buf=malloc(size + HEAD_SIZE)) == NULL) {
+   if ((buf = (struct abufhead *)malloc(size + HEAD_SIZE)) == NULL) {
       smart_alloc_msg(__FILE__, __LINE__, _("Out of memory requesting %d bytes\n"), size);
       return NULL;
    }
