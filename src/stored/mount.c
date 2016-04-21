@@ -67,8 +67,8 @@ bool DCR::mount_next_write_volume()
    int mode;
    DCR *dcr = this;
 
-   Dmsg2(150, "Enter mount_next_volume(release=%d) dev=%s\n", dev->must_unload(),
-      dev->print_name());
+   Dmsg2(150, "Enter mount_next_volume(release=%d) dev=%s\n",
+         dev->must_unload(), dev->print_name());
 
    init_device_wait_timers(dcr);
 
@@ -156,7 +156,7 @@ mount_next_vol:
        * that is not in the autochanger so that means we need to ask the operator to
        * mount it.
        */
-      if (!VolCatInfo.InChanger) {
+      if (dev->is_autochanger() && !VolCatInfo.InChanger) {
          ask = true;
       } else {
          ask = retry >= 2;
