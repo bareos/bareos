@@ -231,15 +231,6 @@ The following values are allowed:
 \end{enumerate}
 
 
-\item [path]
-    \index[general]{Data Type!path}
-    \label{DataTypeDirectory}
-   A path is either a quoted or  non-quoted string. A path will be
-passed to your  standard shell for expansion when it is scanned. Thus
-constructs such as {\bf \$HOME} are interpreted to be  their correct values.
-If can either reference to a file or a directory.
-
-
 \item [integer]
     \index[general]{Data Type!integer}
     \label{DataTypeInteger}
@@ -282,10 +273,18 @@ right side of an equal (i.e.  they are values to be associated with a keyword).
    This is a Bareos password and it is stored internally in MD5 hashed format.
 
 
+% \item [path]
+%     \index[general]{Data Type!path}
+%     \label{DataTypePath}
+%     File name, including path.
+
 \item [path]
     \index[general]{Data Type!path}
-    \label{DataTypePath}
-    File name, including path.
+    \label{DataTypeDirectory}
+   A path is either a quoted or  non-quoted string. A path will be
+passed to your  standard shell for expansion when it is scanned. Thus
+constructs such as {\bf \$HOME} are interpreted to be  their correct values.
+If can either reference to a file or a directory.
 
 
 \item [positive integer]
