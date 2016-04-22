@@ -91,7 +91,6 @@ return array(
       'invokables' => array (
       'printDate' => 'Application\View\Helper\Date',
       'printJobStatus' => 'Application\View\Helper\JobStatus',
-      'printJobLevel' => 'Application\View\Helper\JobLevel',
       'printJobType' => 'Application\View\Helper\JobType',
       'printJobDuration' => 'Application\View\Helper\JobDuration',
       'printBytes' => 'Application\View\Helper\Bytes',

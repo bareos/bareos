@@ -76,6 +76,22 @@ function formatJobLevel(data) {
          return 'Differential';
       case 'I':
          return 'Incremental';
+      case 'f':
+         return 'VirtualFull';
+      case 'B':
+         return 'Base';
+      case 'C':
+         return 'Catalog';
+      case 'V':
+         return 'InitCatalog';
+      case 'O':
+         return 'VolumeToCatalog';
+      case 'd':
+         return 'DiskToCatalog';
+      case 'A':
+         return 'Data';
+      case ' ':
+         return 'None';
       default:
          return data;
    }
@@ -104,18 +120,22 @@ function formatExpiration(volstatus, lastwritten, volretention) {
          var b = new Date(a[0]).getTime() / 1000;
          var interval = (d - b) / (3600 * 24);
          var retention = Math.round(volretention / 60 / 60 / 24);
-         var expiration = Math.round(retention - interval);
+         var expiration = (retention - interval).toFixed(2);
          if(expiration <= 0) {
             return '<span class="label label-danger">expired</span>';
          }
 
-         if(expiration > 0) {
-            return '<span class="label label-warning">expires in ' + expiration  + ' day(s)</span>';
+         if(expiration > 0 && expiration <= 1) {
+            return '<span class="label label-warning">expires in 1 day</span>';
+         }
+
+         if(expiration > 1) {
+            return '<span class="label label-warning">expires in ' + Math.ceil(expiration) + ' days</span>';
          }
       }
    }
    else {
-      return Math.round((volretention / 60 / 60 / 24)) + ' day(s)';
+      return Math.ceil((volretention / 60 / 60 / 24)) + ' day(s)';
    }
 }
 
