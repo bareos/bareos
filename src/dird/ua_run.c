@@ -1584,19 +1584,21 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          } else {
             prt_type = _("Type: Migration\nTitle: Run Migration Job\n");
          }
-         ua->send_msg(_("%s"
+         ua->send_msg("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
+                     "Read Storage:  %s\n"
                      "Pool:          %s\n"
-                     "NextPool:      %s\n"
                      "Write Storage: %s\n"
+                     "NextPool:      %s\n"
                      "JobId:         %s\n"
                      "When:          %s\n"
                      "Catalog:       %s\n"
-                     "Priority:      %d\n"),
+                     "Priority:      %d\n",
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
+           jcr->res.rstore ? jcr->res.rstore->name() : _("*None*"),
            NPRT(jcr->res.pool->name()),
            jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
            jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
@@ -1613,9 +1615,10 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          ua->send_msg(_("%s"
                      "JobName:       %s\n"
                      "Bootstrap:     %s\n"
+                     "Read Storage:  %s (From %s)\n"
                      "Pool:          %s (From %s)\n"
-                     "NextPool:      %s (From %s)\n"
                      "Write Storage: %s (From %s)\n"
+                     "NextPool:      %s (From %s)\n"
                      "JobId:         %s\n"
                      "When:          %s\n"
                      "Catalog:       %s\n"
@@ -1623,11 +1626,13 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
            prt_type,
            job->name(),
            NPRT(jcr->RestoreBootstrap),
+           jcr->res.rstore ? jcr->res.rstore->name() : _("*None*"),
+           jcr->res.rstore_source,
            NPRT(jcr->res.pool->name()), jcr->res.pool_source,
-           jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
-           NPRT(jcr->res.npool_source),
            jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
            jcr->res.wstore_source,
+           jcr->res.next_pool ? jcr->res.next_pool->name() : _("*None*"),
+           NPRT(jcr->res.npool_source),
            jcr->MigrateJobId == 0 ? _("*None*") : edit_uint64(jcr->MigrateJobId, ec1),
            bstrutime(dt, sizeof(dt), jcr->sched_time),
            jcr->res.catalog->name(),
