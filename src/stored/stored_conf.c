@@ -566,7 +566,7 @@ void free_resource(RES *sres, int type)
       if (res->res_store.log_timestamp_format) {
          free(res->res_store.log_timestamp_format);
       }
-      free_tls_t(res->res_dir.tls);
+      free_tls_t(res->res_store.tls);
       break;
    case R_DEVICE:
       if (res->res_dev.media_type) {
