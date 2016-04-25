@@ -98,9 +98,11 @@ class htable : public SMARTALLOC {
    void grow_table();                 /* Grow the table */
 
 public:
-   htable(void *item, void *link, int tsize = 31, int nr_pages = 0);
+   htable(void *item, void *link, int tsize = 31,
+          int nr_pages = 0, int nr_entries = 4);
    ~htable() { destroy(); }
-   void init(void *item, void *link, int tsize = 31, int nr_pages = 0);
+   void init(void *item, void *link, int tsize = 31,
+             int nr_pages = 0, int nr_entries = 4);
    bool insert(char *key, void *item);
    bool insert(uint32_t key, void *item);
    bool insert(uint64_t key, void *item);

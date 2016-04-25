@@ -167,12 +167,12 @@ void htable::hash_index(uint8_t *key, uint32_t keylen)
 /*
  * tsize is the estimated number of entries in the hash table
  */
-htable::htable(void *item, void *link, int tsize, int nr_pages)
+htable::htable(void *item, void *link, int tsize, int nr_pages, int nr_entries)
 {
-   init(item, link, tsize, nr_pages);
+   init(item, link, tsize, nr_pages, nr_entries);
 }
 
-void htable::init(void *item, void *link, int tsize, int nr_pages)
+void htable::init(void *item, void *link, int tsize, int nr_pages, int nr_entries)
 {
    int pwr;
    int pagesize;
@@ -190,7 +190,7 @@ void htable::init(void *item, void *link, int tsize, int nr_pages)
    mask = ~((~0) << pwr);             /* 3 bits => table size = 8 */
    rshift = 30 - pwr;                 /* Start using bits 28, 29, 30 */
    buckets = 1 << pwr;                /* Hash table size -- power of two */
-   max_items = buckets * 4;           /* Allow average 4 entries per chain */
+   max_items = buckets * nr_entries;  /* Allow average nr_entries entries per chain */
    table = (hlink **)malloc(buckets * sizeof(hlink *));
    memset(table, 0, buckets * sizeof(hlink *));
 
