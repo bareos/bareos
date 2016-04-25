@@ -98,6 +98,7 @@ struct ndmp_internal_state {
    int32_t FileIndex;
    char *virtual_filename;
    bool save_filehist;
+   int64_t filehist_size;
    void *fhdb_state;
 };
 typedef struct ndmp_internal_state NIS;

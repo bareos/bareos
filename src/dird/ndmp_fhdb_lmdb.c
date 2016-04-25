@@ -57,6 +57,9 @@ struct fhdb_state {
 
 static int dbglvl = 100;
 
+/*
+ * Payload = 8 + 8 + 96 = 112 bytes + namelength.
+ */
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
 
@@ -436,7 +439,6 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
 
    if (nis->save_filehist) {
       int result;
-      uint64_t nbfile = 1000000; // number of files
       size_t mapsize = 10485760;
       NIS *nis = (NIS *)ixlog->ctx;
       struct fhdb_state *fhdb_state;
@@ -458,7 +460,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
          goto bail_out;
       }
 
-      if ((nbfile * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+      if ((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
          size_t pagesize;
 
 #ifdef HAVE_GETPAGESIZE
@@ -467,7 +469,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
          pagesize = B_PAGE_SIZE;
 #endif
 
-         mapsize = (((nbfile * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
+         mapsize = (((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
       }
 
       result = mdb_env_set_mapsize(fhdb_state->db_env, mapsize);
