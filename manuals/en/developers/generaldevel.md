@@ -4,7 +4,7 @@ Bareos Developer Notes
 ======================
 
 This document is intended mostly for developers and describes how you
-can contribute to the Bareos project and the the general framework of
+can contribute to the Bareos project and the general framework of
 making Bareos source changes.
 
 ### History
@@ -440,20 +440,14 @@ must explicitly code the of arguments to be substituted in the message.
 error-code indicates the severity or class of error, and it may be one
 of the following:
 
-<span>lp<span>3in</span></span> <span><span>**M\_ABORT**</span> </span>
-& <span>Causes the daemon to immediately abort. This should be used only
-in extreme cases. It attempts to produce a traceback. </span>\
-<span><span>**M\_ERROR\_TERM**</span> </span> & <span>Causes the daemon
-to immediately terminate. This should be used only in extreme cases. It
-does not produce a traceback. </span>\
-<span><span>**M\_FATAL**</span> </span> & <span>Causes the daemon to
-terminate the current job, but the daemon keeps running </span>\
-<span><span>**M\_ERROR**</span> </span> & <span>Reports the error. The
-daemon and the job continue running </span>\
-<span><span>**M\_WARNING**</span> </span> & <span>Reports an warning
-message. The daemon and the job continue running </span>\
-<span><span>**M\_INFO**</span> </span> & <span>Reports an informational
-message.</span>
+ERROR_CODE   | Description
+-------------|-------------------------------------------------------------------------------------------------------------------------------
+M_ABORT      | Causes the daemon to immediately abort. This should be used only in extrem e cases. It attempts to produce a traceback.
+M_ERROR_TERM | Causes the daemon to immediately terminate. This should be used only in extreme cases. It does not produce a traceback.
+M_FATAL      | Causes the daemon to terminate the current job, but the daemon keeps running
+M_ERROR      | Reports the error. The daemon and the job continue running
+M_WARNING    | Reports an warning message. The daemon and the job continue running
+M_INFO       | Reports an informational message
 
 There are other error message classes, but they are in a state of being
 redesigned or deprecated, so please do not use them. Some actual

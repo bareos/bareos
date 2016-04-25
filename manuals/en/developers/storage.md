@@ -19,7 +19,7 @@ changer or jukebox, etc.), and may employ auxiliary storage resources
 and/or optimize use of the permanent storage medium.
 
 Any number of storage daemons may be run on a given machine; each
-associated with an individual storage device connected to it, and BACULA
+associated with an individual storage device connected to it, and Bareos
 operations may employ storage daemons on any number of hosts connected
 by a network, local or remote. The ability to employ remote storage
 daemons (with appropriate security measures) permits automatic off-site
