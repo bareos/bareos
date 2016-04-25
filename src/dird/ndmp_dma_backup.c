@@ -545,6 +545,7 @@ bool do_ndmp_backup(JCR *jcr)
          nis->FileIndex = cnt + 1;
          nis->jcr = jcr;
          nis->save_filehist = jcr->res.job->SaveFileHist;
+         nis->filehist_size = jcr->res.job->FileHistSize;
 
          ndmp_sess.param->log.ctx = nis;
          ndmp_sess.param->log_tag = bstrdup("DIR-NDMP");

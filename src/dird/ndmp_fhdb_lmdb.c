@@ -57,6 +57,9 @@ struct fhdb_state {
 
 static int dbglvl = 100;
 
+/*
+ * Payload = 8 + 8 + 96 = 112 bytes + namelength.
+ */
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
 
@@ -172,20 +175,25 @@ retry:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg2(dbglvl, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          Jmsg2(nis->jcr, M_FATAL, 0, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog *ixlog, int tagc,
@@ -253,16 +261,18 @@ retry_del:
                } else {
                   Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+                  goto bail_out;
                }
             } else {
                Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
             break;
          default:
             Dmsg1(dbglvl, _("Unable delete old data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable delete old data: %s\n"), mdb_strerror(result));
-            break;
+            goto bail_out;
          }
 
 retry_put:
@@ -286,16 +296,18 @@ retry_put:
                } else {
                   Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+                  goto bail_out;
                }
             } else {
                Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
             break;
          default:
             Dmsg1(dbglvl, _("Unable put new data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable put new data: %s\n"), mdb_strerror(result));
-            break;
+            goto bail_out;
          }
          break;
       case MDB_TXN_FULL:
@@ -311,20 +323,25 @@ retry_put:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg1(dbglvl, _("Unable get old data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable get old data: %s\n"), mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 extern "C" int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog *ixlog, int tagc,
@@ -380,20 +397,25 @@ retry:
             } else {
                Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               goto bail_out;
             }
          } else {
             Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            goto bail_out;
          }
          break;
       default:
          Dmsg1(dbglvl, _("Unable insert new data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
-         break;
+         goto bail_out;
       }
    }
 
    return 0;
+
+bail_out:
+   return 1;
 }
 
 /*
@@ -417,7 +439,6 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
 
    if (nis->save_filehist) {
       int result;
-      uint64_t nbfile = 1000000; // number of files
       size_t mapsize = 10485760;
       NIS *nis = (NIS *)ixlog->ctx;
       struct fhdb_state *fhdb_state;
@@ -439,7 +460,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
          goto bail_out;
       }
 
-      if ((nbfile * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+      if ((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
          size_t pagesize;
 
 #ifdef HAVE_GETPAGESIZE
@@ -448,7 +469,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
          pagesize = B_PAGE_SIZE;
 #endif
 
-         mapsize = (((nbfile * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
+         mapsize = (((nis->filehist_size * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
       }
 
       result = mdb_env_set_mapsize(fhdb_state->db_env, mapsize);

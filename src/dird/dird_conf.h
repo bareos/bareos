@@ -375,10 +375,11 @@ public:
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    int64_t spool_size;                /* Size of spool file for this job */
+   int64_t max_bandwidth;             /* Speed limit on this job */
+   int64_t FileHistSize;              /* Hint about the size of the expected File history */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t NumConcurrentJobs;         /* Number of concurrent jobs running */
    int32_t MaxConcurrentCopies;       /* Limit number of concurrent jobs one Copy Job spawns */
-   bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
 
    MSGSRES *messages;                 /* How and where to send messages */
    SCHEDRES *schedule;                /* When -- Automatic schedule */
@@ -398,6 +399,7 @@ public:
    alist *run_cmds;                   /* Run commands */
    alist *RunScripts;                 /* Run {client} program {after|before} Job */
 
+   bool allow_mixed_priority;         /* Allow jobs with higher priority concurrently with this */
    bool where_use_regexp;             /* true if RestoreWhere is a BREGEXP */
    bool RescheduleOnError;            /* Set to reschedule on error */
    bool RescheduleIncompleteJobs;     /* Set to reschedule incomplete Jobs */
@@ -425,7 +427,6 @@ public:
    alist *SdPluginOptions;            /* Generic SD plugin options used by this Job */
    alist *DirPluginOptions;           /* Generic DIR plugin options used by this Job */
    alist *base;                       /* Base jobs */
-   int64_t max_bandwidth;             /* Speed limit on this job */
 
    /* Methods */
 };
