@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import argparse
 #import bareos
 import bareos.bsock
@@ -39,7 +40,7 @@ if __name__ == '__main__':
         parameter['password']=password
         director = bareos.bsock.BSock(**parameter)
     except RuntimeError as e:
-        print str(e)
+        print(str(e))
         sys.exit(1)
     logger.debug( "authentication successful" )
     director.interactive()

@@ -26,7 +26,7 @@ class BSockJson(BSock):
         json = self.call_fullresult(command)
         if json == None:
             return
-        if json.has_key('result'):
+        if 'result' in json:
             result = json['result']
         else:
             # TODO: or raise an exception?
@@ -38,8 +38,9 @@ class BSockJson(BSock):
         resultstring = super(BSockJson, self).call(command)
         data = None
         if resultstring:
+            print(resultstring.decode('utf-8'))
             try:
-                data = json.loads(resultstring)
+                data = json.loads(resultstring.decode('utf-8'))
             except ValueError as e:
                 # in case result is not valid json,
                 # create a JSON-RPC wrapper
@@ -60,7 +61,11 @@ class BSockJson(BSock):
         self._set_state_director_prompt()
         command = ""
         while command != "exit" and command != "quit":
-            command = raw_input(">>")
+            try:
+                myinput = raw_input
+            except NameError:
+                myinput = input
+            command = myinput(">>")
             if command:
                 pprint(self.call(command))
         return True

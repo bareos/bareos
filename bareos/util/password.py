@@ -11,7 +11,7 @@ class Password(object):
         self.set_plaintext(password)
 
     def set_plaintext(self, password):
-        self.password_plaintext = password
+        self.password_plaintext = bytearray(password, 'utf-8')
         self.set_md5(self.__plaintext2md5(password))
 
     def set_md5(self, password):
@@ -29,5 +29,5 @@ class Password(object):
         md5 the password and return the hex style
         '''
         md5 = hashlib.md5()
-        md5.update(password)
+        md5.update(bytearray(password, 'utf-8'))
         return md5.hexdigest()

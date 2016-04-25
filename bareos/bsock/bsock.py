@@ -35,9 +35,9 @@ class BSock(LowLevel):
         Call a bareos-director user agent command.
         If connection is lost, try to reconnect.
         '''
-        result = ''
+        result = b''
         try:
-            self.send(str(command))
+            self.send(bytearray(command, 'utf-8'))
             result = self.recv_msg()
         except (SocketEmptyHeader, ConnectionLostError) as e:
             self.logger.error("connection problem (%s): %s" % (type(e).__name__, str(e)))
@@ -58,7 +58,12 @@ class BSock(LowLevel):
         self._set_state_director_prompt()
         command = ""
         while command != "exit" and command != "quit":
-            command = raw_input(">>")
+            # Python2: raw_input, Python3: input
+            try:
+                myinput = raw_input
+            except NameError:
+                myinput = input
+            command = myinput(">>")
             resultmsg = self.call(command)
-            sys.stdout.write(resultmsg)
+            sys.stdout.write(resultmsg.decode('utf-8'))
         return True

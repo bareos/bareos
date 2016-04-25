@@ -11,9 +11,9 @@ class ProtocolMessages():
     @staticmethod
     def hello(name, type=ConnectionType.DIRECTOR):
         if type == ConnectionType.FILEDAEMON:
-            return "Hello Director %s calling\n" % (name)
+            return bytearray("Hello Director %s calling\n" % (name), 'utf-8')
         else:
-            return "Hello %s calling\n" % (name)
+            return bytearray("Hello %s calling\n" % (name), 'utf-8')
 
     #@staticmethod
     #def ok():
@@ -21,11 +21,11 @@ class ProtocolMessages():
 
     @staticmethod
     def auth_ok():
-        return "1000 OK auth\n"
+        return b"1000 OK auth\n"
 
     @staticmethod
     def auth_failed():
-        return "1999 Authorization failed.\n"
+        return b"1999 Authorization failed.\n"
 
     @staticmethod
     def is_auth_ok(msg):

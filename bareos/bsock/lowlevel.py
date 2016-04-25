@@ -115,7 +115,7 @@ class LowLevel(object):
         try:
             # convert to network flow
             self.socket.sendall(struct.pack("!i", msg_len) + msg)
-            self.logger.debug("%s" %(msg.encode('string-escape')))
+            self.logger.debug("%s" %(msg))
         except socket.error as e:
             self._handleSocketError(e)
 
@@ -136,7 +136,7 @@ class LowLevel(object):
     def recv_msg(self):
         '''will receive data from director '''
         self.__check_socket_connection()
-        msg = ""
+        msg = b""
         try:
             timeouts = 0
             while True:
@@ -166,7 +166,7 @@ class LowLevel(object):
 
     def recv_submsg(self, length):
         # get the message
-        msg = ""
+        msg = b""
         while length > 0:
             self.logger.debug("  submsg len: " + str(length))
             # TODO
@@ -175,6 +175,10 @@ class LowLevel(object):
             length -= len(submsg)
             #self.logger.debug(submsg)
             msg += submsg
+        if (type(msg) is str):
+            msg = bytearray(msg, 'utf-8')
+        if (type(msg) is bytes):
+            msg = bytearray(msg)
         return msg
 
 
@@ -213,21 +217,23 @@ class LowLevel(object):
         # to confirm the director so can do this on bconsole`way
         rand = random.randint(1000000000, 9999999999)
         #chal = "<%u.%u@%s>" %(rand, int(time.time()), self.dirname)
-        chal = "<%u.%u@%s>" %(rand, int(time.time()), clientname)
-        msg = 'auth cram-md5 %s ssl=%d\n' %(chal, tls_local_need)
+        chal = '<%u.%u@%s>' %(rand, int(time.time()), clientname)
+        msg = bytearray('auth cram-md5 %s ssl=%d\n' %(chal, tls_local_need), 'utf-8')
         # send the confirmation
         self.send(msg)
         # get the response
-        msg = self.recv().strip(chr(0))
-        self.logger.debug("received: " + msg)
+        msg = self.recv()
+        if msg[-1] == 0:
+            del msg[-1]
+        self.logger.debug("received: " + str(msg))
 
         # hash with password
-        hmac_md5 = hmac.new(password)
-        hmac_md5.update(chal)
+        hmac_md5 = hmac.new(bytearray(password, 'utf-8'))
+        hmac_md5.update(bytearray(chal, 'utf-8'))
         bbase64compatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), True)
         bbase64notcompatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), False)
-        self.logger.debug("string_to_base64, compatible:     " + bbase64compatible)
-        self.logger.debug("string_to_base64, not compatible: " + bbase64notcompatible)
+        self.logger.debug("string_to_base64, compatible:     " + str(bbase64compatible))
+        self.logger.debug("string_to_base64, not compatible: " + str(bbase64notcompatible))
 
         is_correct = ((msg == bbase64compatible) or (msg == bbase64notcompatible))
         # check against compatible base64 and Bareos specific base64
@@ -256,14 +262,14 @@ class LowLevel(object):
             self.logger.error("RuntimeError exception in recv")
             return (0, True, False)
         # check the receive message
-        self.logger.debug("(recv): " + msg.encode('string-escape'))
-        msg_list = msg.split(" ")
+        self.logger.debug("(recv): " + str(msg))
+        msg_list = msg.split(b" ")
         chal = msg_list[2]
         # get th timestamp and the tle info from director response
         ssl = int(msg_list[3][4])
         compatible = True
         # hmac chal and the password
-        hmac_md5 = hmac.new(password)
+        hmac_md5 = hmac.new(bytearray(password, 'utf-8'))
         hmac_md5.update(chal)
 
         # base64 encoding
@@ -275,7 +281,7 @@ class LowLevel(object):
         if  ProtocolMessages.is_auth_ok(received):
             result = True
         else:
-            self.logger.error("failed: " + received)
+            self.logger.error("failed: " + str(received))
         return (ssl, compatible, result)
 
 
@@ -286,9 +292,9 @@ class LowLevel(object):
 
 
     def _set_state_director_prompt(self):
-        self.send(".")
+        self.send(b".")
         msg = self.recv_msg()
-        self.logger.debug("received message: " + msg)
+        self.logger.debug("received message: " + str(msg))
         # TODO: check prompt
         return True
 

@@ -19,7 +19,7 @@ class BareosBase64(object):
         '''
         Initialize the Base 64 conversion routines
         '''
-        self.base64_map = dict(zip(self.base64_digits, xrange(0, 64)))
+        self.base64_map = dict(list(zip(self.base64_digits, list(range(0, 64)))))
 
     @staticmethod
     def twos_comp(val, bits):
@@ -40,12 +40,12 @@ class BareosBase64(object):
             neg = True
             first = 1
 
-        for i in xrange(first, len(base64)):
+        for i in range(first, len(base64)):
             value = value << 6
             try:
                 value += self.base64_map[base64[i]]
             except KeyError:
-                print "KeyError:", i
+                print("KeyError:", i)
 
         return -value if neg else value
 
@@ -96,4 +96,4 @@ class BareosBase64(object):
                 buf += self.base64_digits[(reg & mask) << (6 - rem)]
             else:
                 buf += self.base64_digits[reg & mask]
-        return buf
+        return bytearray(buf, 'utf-8')
