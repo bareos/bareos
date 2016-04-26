@@ -380,6 +380,8 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
          #
          if test x${MYSQL_LIBDIR} = x -o \
             ! \( -f ${MYSQL_LIBDIR}/libmysqlclient_r.so -o \
+                 -f ${MYSQL_LIBDIR}/libmysqlclient.so -o \
+                 -f ${MYSQL_LIBDIR}/libmysqlclient.a -o \
                  -f ${MYSQL_LIBDIR}/libmysqlclient_r.a \); then
             if test -f /usr/local/mysql/include/mysql/mysql.h; then
                MYSQL_INCDIR=/usr/local/mysql/include/mysql
@@ -473,6 +475,7 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
 
       if test x${MYSQL_LIBDIR} != x; then
          MYSQL_INCLUDE=-I$MYSQL_INCDIR
+
          if test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
               -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
             if test x$use_libtool != xno; then
@@ -481,8 +484,19 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
                MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
             fi
             DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+            MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
+         else
+            if test -f $MYSQL_LIBDIR/libmysqlclient.a \
+                 -o -f $MYSQL_LIBDIR/libmysqlclient.so; then
+               if test x$use_libtool != xno; then
+                  MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient -lz"
+               else
+                  MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient -lz"
+               fi
+               DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+            fi
+            MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient.a
          fi
-         MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
 
          AC_DEFINE(HAVE_MYSQL, 1, [Set if you have an MySQL Database])
          AC_MSG_RESULT(yes)
@@ -508,12 +522,25 @@ AC_HELP_STRING([--with-mysql@<:@=DIR@:>@], [Include MySQL support. DIR is the My
              saved_LIBS="${LIBS}"
              LIBS="${saved_LIBS} -lz"
 
-             AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Define to 1 if you have the `mysql_thread_safe' function.]))
-             if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
-                 if test -z "${batch_insert_db_backends}"; then
-                     batch_insert_db_backends="MySQL"
-                 else
-                     batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+             if test -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
+                 AC_CHECK_LIB(mysqlclient_r, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Define to 1 if you have the `mysql_thread_safe' function.]))
+
+                 if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
+                     if test -z "${batch_insert_db_backends}"; then
+                         batch_insert_db_backends="MySQL"
+                     else
+                         batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                     fi
+                 fi
+             else
+                 AC_CHECK_LIB(mysqlclient, mysql_thread_safe, AC_DEFINE(HAVE_MYSQL_THREAD_SAFE, 1, [Define to 1 if you have the `mysql_thread_safe' function.]))
+
+                 if test "x$ac_cv_lib_mysqlclient_mysql_thread_safe" = "xyes"; then
+                     if test -z "${batch_insert_db_backends}"; then
+                         batch_insert_db_backends="MySQL"
+                     else
+                         batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                     fi
                  fi
              fi
 
