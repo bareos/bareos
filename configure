@@ -25129,6 +25129,8 @@ if test "${with_mysql+set}" = set; then :
          #
          if test x${MYSQL_LIBDIR} = x -o \
             ! \( -f ${MYSQL_LIBDIR}/libmysqlclient_r.so -o \
+                 -f ${MYSQL_LIBDIR}/libmysqlclient.so -o \
+                 -f ${MYSQL_LIBDIR}/libmysqlclient.a -o \
                  -f ${MYSQL_LIBDIR}/libmysqlclient_r.a \); then
             if test -f /usr/local/mysql/include/mysql/mysql.h; then
                MYSQL_INCDIR=/usr/local/mysql/include/mysql
@@ -25224,6 +25226,7 @@ $as_echo "no" >&6; }
 
       if test x${MYSQL_LIBDIR} != x; then
          MYSQL_INCLUDE=-I$MYSQL_INCDIR
+
          if test -f $MYSQL_LIBDIR/libmysqlclient_r.a \
               -o -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
             if test x$use_libtool != xno; then
@@ -25232,8 +25235,19 @@ $as_echo "no" >&6; }
                MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient_r -lz"
             fi
             DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+            MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
+         else
+            if test -f $MYSQL_LIBDIR/libmysqlclient.a \
+                 -o -f $MYSQL_LIBDIR/libmysqlclient.so; then
+               if test x$use_libtool != xno; then
+                  MYSQL_LIBS="-R $MYSQL_LIBDIR -L$MYSQL_LIBDIR -lmysqlclient -lz"
+               else
+                  MYSQL_LIBS="-L$MYSQL_LIBDIR -lmysqlclient -lz"
+               fi
+               DB_LIBS="${DB_LIBS} ${MYSQL_LIBS}"
+            fi
+            MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient.a
          fi
-         MYSQL_LIB=$MYSQL_LIBDIR/libmysqlclient_r.a
 
 
 $as_echo "#define HAVE_MYSQL 1" >>confdefs.h
@@ -25258,7 +25272,8 @@ $as_echo "yes" >&6; }
              saved_LIBS="${LIBS}"
              LIBS="${saved_LIBS} -lz"
 
-             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
+             if test -f $MYSQL_LIBDIR/libmysqlclient_r.so; then
+                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient_r" >&5
 $as_echo_n "checking for mysql_thread_safe in -lmysqlclient_r... " >&6; }
 if ${ac_cv_lib_mysqlclient_r_mysql_thread_safe+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -25300,11 +25315,64 @@ $as_echo "#define HAVE_MYSQL_THREAD_SAFE 1" >>confdefs.h
 
 fi
 
-             if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
-                 if test -z "${batch_insert_db_backends}"; then
-                     batch_insert_db_backends="MySQL"
-                 else
-                     batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+
+                 if test "x$ac_cv_lib_mysqlclient_r_mysql_thread_safe" = "xyes"; then
+                     if test -z "${batch_insert_db_backends}"; then
+                         batch_insert_db_backends="MySQL"
+                     else
+                         batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                     fi
+                 fi
+             else
+                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mysql_thread_safe in -lmysqlclient" >&5
+$as_echo_n "checking for mysql_thread_safe in -lmysqlclient... " >&6; }
+if ${ac_cv_lib_mysqlclient_mysql_thread_safe+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmysqlclient  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char mysql_thread_safe ();
+int
+main ()
+{
+return mysql_thread_safe ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mysqlclient_mysql_thread_safe=yes
+else
+  ac_cv_lib_mysqlclient_mysql_thread_safe=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mysqlclient_mysql_thread_safe" >&5
+$as_echo "$ac_cv_lib_mysqlclient_mysql_thread_safe" >&6; }
+if test "x$ac_cv_lib_mysqlclient_mysql_thread_safe" = xyes; then :
+
+$as_echo "#define HAVE_MYSQL_THREAD_SAFE 1" >>confdefs.h
+
+fi
+
+
+                 if test "x$ac_cv_lib_mysqlclient_mysql_thread_safe" = "xyes"; then
+                     if test -z "${batch_insert_db_backends}"; then
+                         batch_insert_db_backends="MySQL"
+                     else
+                         batch_insert_db_backends="${batch_insert_db_backends} MySQL"
+                     fi
                  fi
              fi
 
