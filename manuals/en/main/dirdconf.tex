@@ -113,7 +113,7 @@ Director {
 \label{DirectorResourceJob}
 \label{JobResource}
 \index[general]{Resource!Job}
-\index[general]{Job Resource}
+\index[general]{Job!Resource}
 
 The Job resource defines a Job (Backup, Restore, ...) that Bareos must
 perform. Each Job resource definition contains the name of a Client and
@@ -167,7 +167,7 @@ Job {
 
 \section{JobDefs Resource}
 \label{DirectorResourceJobDefs}
-\index[general]{JobDefs Resource}
+\index[general]{Job!JobDefs Resource}
 \index[general]{Resource!JobDefs}
 
 The JobDefs resource permits all the same directives that can appear in a Job
@@ -184,7 +184,7 @@ be mentioned in each Job.
 \section{Schedule Resource}
 \label{DirectorResourceSchedule}
 \index[general]{Resource!Schedule}
-\index[general]{Schedule Resource}
+\index[general]{Schedule!Resource}
 
 The Schedule resource provides a means of automatically scheduling a Job as
 well as the ability to override the default Level, Pool, Storage and Messages
@@ -296,7 +296,7 @@ Schedule {
 \end{bconfig}
 
 \subsection{Technical Notes on Schedules}
-\index[general]{Schedules!Technical Notes}
+\index[general]{Schedule!Technical Notes on Schedules}
 
 Internally Bareos keeps a schedule as a bit mask. There are six masks and a
 minute field to each schedule. The masks are hour, day of the month (mday),

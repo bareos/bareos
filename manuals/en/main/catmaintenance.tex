@@ -605,6 +605,7 @@ of this manual.
 
 \item [File Retention = {\textless}time-period-specification{\textgreater}]
    \index[general]{File Retention}
+   \index[general]{Retention!File}
    The  File Retention record defines the length of time that  Bareos will keep
 File records in the Catalog database.  When this time period expires, and if
 {\bf AutoPrune} is set to {\bf yes}, Bareos will prune (remove) File records
@@ -631,7 +632,8 @@ of modifier specification.
 The default File retention period is 60 days.
 
 \item [Job Retention = {\textless}time-period-specification{\textgreater}]
-   \index[general]{Job Retention}
+   \index[general]{Job!Retention}
+   \index[general]{Retention!Job}
    The Job Retention record defines the length of time that {\bf Bareos}
 will keep Job records in the Catalog database.  When this time period
 expires, and if {\bf AutoPrune} is set to {\bf yes} Bareos will prune
@@ -658,6 +660,7 @@ The default Job Retention period is 180 days.
 
 \item [AutoPrune = {\textless}yes/no{\textgreater}]
    \index[general]{AutoPrune}
+   \index[general]{Job!Retention!AutoPrune}
    If AutoPrune is set to  {\bf yes} (default), Bareos will  automatically apply
 the File retention period and the Job  retention period for the Client at the
 end of the Job.
@@ -1294,8 +1297,9 @@ version.
 }
 
 \section{Backing Up Your Bareos Database}
-\index[general]{Backing Up Your Bareos Database}
-\index[general]{Database!Backing Up Your Bareos}
+\index[general]{Backup!Bareos database}
+\index[general]{Backup!Catalog}
+\index[general]{Database!Backup Bareos database}
 \label{BackingUpBareos}
 
 If ever the machine on which your Bareos database crashes, and you need to

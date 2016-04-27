@@ -3,8 +3,7 @@
 
 %\chapter{Basic Volume Management}
 \label{DiskChapter}
-\index[general]{Volume Management}
-\index[general]{Management!Volume}
+\index[general]{Volume!Management}
 \index[general]{Disk Volumes}
 
 This chapter presents most all the features needed to do Volume management.
@@ -21,8 +20,8 @@ either disk or tape volumes.
 
 \label{Concepts}
 \section{Key Concepts and Resource Records}
+\index[general]{Volume!Management!Key Concepts and Resource Records}
 \index[general]{Key Concepts and Resource Records}
-\index[general]{Records!Key Concepts and Resource}
 
 Getting Bareos to write to disk rather than tape in the simplest case is
 rather easy. In the Storage daemon's configuration file, you simply define an
@@ -151,8 +150,8 @@ so no weekend backups will be done until Monday morning.
 
 \label{AutomaticLabeling}
 \subsection{Automatic Volume Labeling}
-\index[general]{Automatic Volume Labeling}
-\index[general]{Labeling!Automatic Volume}
+\index[general]{Automatic!Volume Labeling}
+\index[general]{Label!Automatic Volume Labeling}
 
 Use of the above records brings up another problem -- that of labeling your
 Volumes. For automated disk backup, you can either manually label each of your
@@ -501,7 +500,7 @@ monthly cycle (take care about the amount of archive disk space used).
 \section{Backing up to Multiple Disks}
 \label{MultipleDisks}
 \index[general]{Disks!Backing up to Multiple}
-\index[general]{Backing up to Multiple Disks}
+\index[general]{Backup!to Multiple Disks}
 
 Bareos can, of course, use multiple disks, but in general, each disk must be a
 separate Device specification in the Storage daemon's conf file, and you must

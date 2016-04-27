@@ -4,7 +4,7 @@
 \chapter{Autochanger Support}
 \label{AutochangersChapter}
 \index[general]{Support!Autochanger}
-\index[general]{Autochanger Support}
+\index[general]{Autochanger!Support}
 
 Bareos provides autochanger support for reading and writing tapes.  In
 order to work with an autochanger, Bareos requires a number of things, each of
@@ -252,7 +252,6 @@ the Storage daemon to maximize the use of drives.
 
 \label{ConfigRecords}
 \section{Device Configuration Records}
-\index[general]{Records!Device Configuration}
 \index[general]{Device Configuration Records}
 
 Configuration of autochangers within Bareos is done in the Device resource of
@@ -438,7 +437,7 @@ system.
 
 \section{Specifying Slots When Labeling}
 \index[general]{Specifying Slots When Labeling}
-\index[general]{Labeling!Specifying Slots When}
+\index[general]{Label!Specifying Slots When Labeling}
 \label{SpecifyingSlots}
 
 If you add an {\bf Autochanger = yes} record to the Storage resource in your
@@ -489,7 +488,7 @@ and will not be mounted.
 
 
 \section{Changing Cartridges}
-\index[general]{Changing Cartridges}
+\index[general]{Cartridges!Changing}
 If you wish to insert or remove cartridges in your autochanger or
 you manually run the {\bf mtx} program, you must first tell Bareos
 to release the autochanger by doing:
@@ -815,8 +814,7 @@ command to synchronize autochanger content with your catalog.
 
 
 \section{Bareos Autochanger Interface}
-\index[general]{Interface!Autochanger}
-\index[general]{Autochanger Interface}
+\index[general]{Autochanger!Interface}
 \label{autochanger-interface}
 
 Bareos calls the autochanger script that you specify on the {\bf Changer
