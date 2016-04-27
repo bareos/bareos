@@ -319,10 +319,10 @@ void db_list_log_records(JCR *jcr, B_DB *mdb, const char* range, bool reverse,
                          OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    const char *query;
-   const char *reverse_query = "SELECT Time, LogText FROM Log ORDER BY Log.LogId DESC %s";
-   const char *forward_query = "SELECT Time, LogText FROM ("
-                                  "SELECT * FROM Log ORDER BY Log.LogId DESC %s"
-                               ") ORDER BY LogId ASC";
+   const char *reverse_query = "SELECT LogId, Time, LogText FROM Log ORDER BY Log.LogId DESC %s";
+   const char *forward_query = "SELECT LogId, Time, LogText FROM ("
+                                  "SELECT LogId, Time, LogText FROM Log ORDER BY Log.LogId DESC %s"
+                               ") AS sub ORDER BY LogId ASC";
    if (reverse) {
      query = reverse_query;
    } else {
