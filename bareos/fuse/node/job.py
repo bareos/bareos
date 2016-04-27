@@ -16,7 +16,7 @@ class Job(Directory):
         self.job = job
         super(Job, self).__init__(root, self.get_name(job))
         try:
-            if not job.has_key('client'):
+            if 'client' not in job:
                 job['client'] = job['clientname']
         except KeyError:
             pass

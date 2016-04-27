@@ -39,8 +39,8 @@ if __name__ == '__main__':
         parameter['password']=password
         bsock=FileDaemon(**parameter)
     except RuntimeError as e:
-        print str(e)
+        print(str(e))
         sys.exit(1)
     logger.debug( "authentication successful" )
     if args.command:
-        print bsock.call(args.command)
+        print(bsock.call(args.command).decode('utf-8'))

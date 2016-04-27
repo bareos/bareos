@@ -33,7 +33,8 @@ class BvfsDir(Directory, BvfsCommon):
 
     def setxattr(self, path, key, value, flags):
         if path.len() == 0:
-            if key == self.XattrKeyRestoreTrigger and value == "restore":
+            self.logger.debug("value: " + value + " ,type: " + str(type(value)))
+            if key == self.XattrKeyRestoreTrigger and value == b"restore":
                 if not self.root.restoreclient:
                     self.logger.warning("no restoreclient given, files can not be restored")
                     return -errno.ENOENT

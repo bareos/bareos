@@ -117,10 +117,10 @@ class Base(object):
     def add_subnode(self, classtype, *args, **kwargs):
         instance = self.root.factory.get_instance(classtype, *args, **kwargs)
         name = instance.get_name(*args, **kwargs)
-        if not self.subnodes.has_key(name):
+        if name not in self.subnodes:
             self.subnodes[name] = instance
         else:
-            if self.subnodes_old.has_key(name):
+            if name in self.subnodes_old:
                 del(self.subnodes_old[name])
 
     def update_stat(self):
@@ -159,7 +159,7 @@ class Base(object):
             #  and delete all not updated subnodes after do_update()
             self.subnodes_old = self.subnodes.copy()
             self.do_update()
-            for i in self.subnodes_old.keys():
+            for i in list(self.subnodes_old.keys()):
                 self.logger.debug("removing outdated node %s" % (i))
                 del(self.subnodes[i])
             self.subnode_count = len(self.subnodes)
@@ -228,7 +228,7 @@ class Base(object):
         #self.logger.debug("%s(\"%s\", %s)" % (str(self.get_name()), str(path), str(size)))
         result = []
         if path.len() == 0:
-            result = self.xattr.keys()
+            result = list(self.xattr.keys())
         else:
             if path.get(0) in self.subnodes:
                 topdir = path.shift()
@@ -258,8 +258,6 @@ class Base(object):
         '''
         set value of extended attribute
         '''
-        #self.logger.debug("%s(\"%s\")" % (str(self), str(path)))
-        #result = -errno.EOPNOTSUPP
         result = 0
         if path.len() == 0:
             self.xattr[key] = value

@@ -23,6 +23,7 @@ class BareosFuse(fuse.Fuse):
         self.bsock = None
         self.bareos = None
         self.restoreclient = None
+        self.restorejob = None
         self.restorepath = '/var/cache/bareosfs/'
         super(BareosFuse, self).__init__(*args, **kw)
         self.multithreaded = False
@@ -70,7 +71,7 @@ class BareosFuse(fuse.Fuse):
             except socket.error as e:
                 self.logger.exception(e)
                 raise bareos.fuse.SocketConnectionRefused(e)
-            self.bareos = Root(self.bsock, self.restoreclient, self.restorepath)
+            self.bareos = Root(self.bsock, self.restoreclient, self.restorejob, self.restorepath)
         super(BareosFuse, self).main(*args, **kw)
         self.logger.debug('done')
 

@@ -38,7 +38,7 @@ class BSockJson(BSock):
         resultstring = super(BSockJson, self).call(command)
         data = None
         if resultstring:
-            print(resultstring.decode('utf-8'))
+            #print(resultstring.decode('utf-8'))
             try:
                 data = json.loads(resultstring.decode('utf-8'))
             except ValueError as e:

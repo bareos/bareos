@@ -8,15 +8,15 @@ import stat
 class VolumeStatus(File):
 
     __volstatus2filemode = {
-        "Archive": 0440,
+        "Archive": 0o440,
         # rw
-        "Append": 0660,
+        "Append": 0o660,
         # ro
-        "Full": 0440,
-        "Used": 0440,
+        "Full": 0o440,
+        "Used": 0o440,
         # to be used
-        "Recycle": 0100,
-        "Purged": 0100,
+        "Recycle": 0o100,
+        "Purged": 0o100,
         # not to use
         "Cleaning": 0000,
         "Error": 0000,
@@ -55,7 +55,7 @@ class VolumeStatus(File):
 
         # set mode dependend on if volume is in apppend mode or full
         volstatus = self.volume['volstatus']
-        if self.__volstatus2filemode.has_key(volstatus):
+        if volstatus in self.__volstatus2filemode:
             self.stat.st_mode = stat.S_IFREG | self.__volstatus2filemode[volstatus]
         else:
             self.logger.warning( "volume status %s unknown" % (self.volume['volstatus']) )

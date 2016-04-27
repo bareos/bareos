@@ -29,5 +29,5 @@ class Password(object):
         md5 the password and return the hex style
         '''
         md5 = hashlib.md5()
-        md5.update(bytearray(password, 'utf-8'))
+        md5.update(bytes(bytearray(password, 'utf-8')))
         return md5.hexdigest()

@@ -176,7 +176,7 @@ class LowLevel(object):
             #self.logger.debug(submsg)
             msg += submsg
         if (type(msg) is str):
-            msg = bytearray(msg, 'utf-8')
+            msg = bytearray(msg.decode('utf-8'), 'utf-8')
         if (type(msg) is bytes):
             msg = bytearray(msg)
         return msg
@@ -228,8 +228,8 @@ class LowLevel(object):
         self.logger.debug("received: " + str(msg))
 
         # hash with password
-        hmac_md5 = hmac.new(bytearray(password, 'utf-8'))
-        hmac_md5.update(bytearray(chal, 'utf-8'))
+        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')))
+        hmac_md5.update(bytes(bytearray(chal, 'utf-8')))
         bbase64compatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), True)
         bbase64notcompatible = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()), False)
         self.logger.debug("string_to_base64, compatible:     " + str(bbase64compatible))
@@ -269,8 +269,8 @@ class LowLevel(object):
         ssl = int(msg_list[3][4])
         compatible = True
         # hmac chal and the password
-        hmac_md5 = hmac.new(bytearray(password, 'utf-8'))
-        hmac_md5.update(chal)
+        hmac_md5 = hmac.new(bytes(bytearray(password, 'utf-8')))
+        hmac_md5.update(bytes(chal))
 
         # base64 encoding
         msg = BareosBase64().string_to_base64(bytearray(hmac_md5.digest()))

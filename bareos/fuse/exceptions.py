@@ -14,6 +14,10 @@ class RestoreClientUnknown(Exception):
     """given restore client is not known"""
     pass
 
+class RestoreJobUnknown(Exception):
+    """given restore job is not known"""
+    pass
+
 class RestorePathInvalid(Exception):
     """restore path is invalid"""
     pass

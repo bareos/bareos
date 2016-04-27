@@ -16,9 +16,9 @@ class BvfsCommon(Base):
         self.static = True
         self.restorepath = os.path.normpath("/%s/jobid=%s/" % (self.root.restorepath, self.jobid))
         if filename:
-            self.restorepathfull = os.path.normpath(u"%s%s%s" % (self.restorepath, path, filename))
+            self.restorepathfull = os.path.normpath("%s%s%s" % (self.restorepath, path, filename))
         else:
-            self.restorepathfull = os.path.normpath(u"%s%s" % (self.restorepath, path))
+            self.restorepathfull = os.path.normpath("%s%s" % (self.restorepath, path))
         self.xattr = {
                 'user.bareos.restorepath': self.restorepathfull,
                 'user.bareos.restored': 'no',
@@ -56,10 +56,14 @@ class BvfsCommon(Base):
                 dirid = dirId,
                 fileid = fileId,
                 bvfs_restore_id = bvfs_restore_id))
+        restorejob=''
+        if self.root.restorejob:
+            restorejob="restorejob={restorejob} ".format(restorejob=self.root.restorejob)
         restore = self.bsock.call(
-            'restore file=?{bvfs_restore_id} client={client} restoreclient={restoreclient} where="{where}" yes'.format(
+            'restore file=?{bvfs_restore_id} client={client} restoreclient={restoreclient} {restorejob} where="{where}" yes'.format(
                 client = self.job.job['client'],
                 restoreclient = self.root.restoreclient,
+                restorejob = restorejob,
                 where = self.restorepath,
                 bvfs_restore_id = bvfs_restore_id))
         try:

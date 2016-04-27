@@ -14,7 +14,7 @@ class Directory(Base):
     def __init__(self, root, name):
         super(Directory, self).__init__(root, name)
         self.defaultdirs = [ '.', '..' ]
-        self.stat.st_mode = stat.S_IFDIR | 0755
+        self.stat.st_mode = stat.S_IFDIR | 0o755
         self.stat.st_nlink = len(self.defaultdirs)
         # arbitrary default value
         self.stat.st_size = 4096
