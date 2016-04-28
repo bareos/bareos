@@ -258,6 +258,7 @@ $(document).ready(function() {
                   switch(data.jobstatus) {
                      case 'T':
                      case 'W':
+                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="Rerun" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="Show Files" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                      case 'E':
                      case 'e':
                      case 'f':

@@ -158,7 +158,8 @@ $(document).ready(function() {
          { "data": "fileset" },
          { "data": "level" },
          { "data": "jobfiles" },
-         { "data": "jobbytes", "type": "file-size" }
+         { "data": "jobbytes", "type": "file-size" },
+         { "data": null }
       ],
       "paging": true,
       "ordering": true,
@@ -184,11 +185,21 @@ $(document).ready(function() {
             "render": function(data, type, full, meta) {
                return formatBytes(data);
             }
+         },
+         {
+            "targets": 6,
+            "render": function(data, type, full, meta) {
+               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="Show Files" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+            }
          }
       ]
    } );
 
    $('#tab-client tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   } );
+
+   $('#tab-backups tbody').on('mouseover', '#btn-1', function () {
       $('[data-toggle="tooltip"]').tooltip();
    } );
 
