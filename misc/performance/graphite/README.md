@@ -8,7 +8,7 @@ The default configuration file is /etc/bareos/graphite-poller.conf, which can be
 Here you configure Bareos director access and the Graphite backend.
 
 ```
-director]
+[director]
 server=fqhn
 name=your-director-name
 password=secret
