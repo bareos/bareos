@@ -525,7 +525,7 @@ install: install-am
 	mkdir -p $(DESTDIR)/etc/bareos/bareos-dir.d/
 	mkdir -p $(DESTDIR)/etc/bareos-webui/
 
-	cp -pr init_autoloader.php config/ data/ module/ public/ vendor/ $(DESTDIR)$(pkgdatadir)
+	cp -pr version.txt init_autoloader.php config/ data/ module/ public/ vendor/ $(DESTDIR)$(pkgdatadir)
 	cp -p install/directors.ini $(DESTDIR)/etc/bareos-webui/directors.ini
 	$(INSTALL) -m 0640 install/bareos/webui-consoles.conf $(DESTDIR)/etc/bareos/bareos-dir.d/
 	$(INSTALL) -m 0640 install/bareos/webui-profiles.conf $(DESTDIR)/etc/bareos/bareos-dir.d/

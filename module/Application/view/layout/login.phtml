@@ -61,12 +61,20 @@ echo $this->doctype();
 
 <body>
 
+   <?php
+      $version = "";
+      $vfp = "version.txt";
+      if(is_readable($vfp)) {
+         $version = "Version " . file_get_contents($vfp);
+      }
+   ?>
+
    <div class="container text-center">
       <img src="<?php echo $this->basePath() . '/img/bareos.png'; ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
-      <p class="text-muted">Bareos WebUI Version 16.2.1 &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />GNU Affero General Public License Version 3</p>
+      <p class="text-muted">Bareos WebUI <?php echo $version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />GNU Affero General Public License Version 3</p>
    </div>
 
    <?php echo $this->inlineScript() ?>

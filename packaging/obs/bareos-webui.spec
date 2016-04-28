@@ -85,6 +85,9 @@ make
 #makeinstall
 make DESTDIR=%{buildroot} install
 
+# write version to version file
+echo %version | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > %{buildroot}/%_datadir/%name/version.txt
+
 %post
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true

@@ -10,6 +10,8 @@
 # Modified to make a template file for a multi-binary package with separated
 # build-arch and build-indep targets  by Bill Allombert 2001
 
+BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )
+
 # Uncomment this to turn on verbose mode.
 export DH_VERBOSE = 1
 
@@ -19,6 +21,9 @@ export DH_OPTIONS = -v
 #override_dh_auto_configure:
 #       autoreconf -fvi
 #       dh_auto_configure
+override_dh_install:
+	echo $(BAREOS_VERSION) > ./debian/bareos-webui/usr/share/bareos-webui/version.txt
+	dh_install
 
 %:
 	dh $@
