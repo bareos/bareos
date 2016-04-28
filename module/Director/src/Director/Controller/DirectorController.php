@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -35,67 +35,67 @@ class DirectorController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array(
-               'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array(
+         'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
+      ));
    }
 
    public function messagesAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array(
-               'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array(
+         'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
+      ));
    }
 
    public function scheduleAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array(
-               'directorOutput' => $this->getDirectorModel()->getDirectorSchedules()
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array(
+         'directorOutput' => $this->getDirectorModel()->getDirectorSchedules()
+      ));
    }
 
    public function schedulerstatusAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array(
-               'directorOutput' => $this->getDirectorModel()->getDirectorSchedulerStatus()
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array(
+         'directorOutput' => $this->getDirectorModel()->getDirectorSchedulerStatus()
+      ));
    }
 
    public function versionAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array(
-               'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array(
+         'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
+      ));
    }
 
    public function getDirectorModel()

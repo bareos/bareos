@@ -38,230 +38,187 @@ class JobController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $status = "all";
-         $period = 7;
-
-         $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : '7';
-         $status = $this->params()->fromQuery('status') ? $this->params()->fromQUery('status') : 'all';
-
-         $form = new JobForm($period, $status);
-
-         return new ViewModel(
-            array(
-               'form' => $form,
-               'status' => $status,
-               'period' => $period
-            )
-         );
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $status = "all";
+      $period = 7;
+
+      $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : '7';
+      $status = $this->params()->fromQuery('status') ? $this->params()->fromQUery('status') : 'all';
+
+      $form = new JobForm($period, $status);
+
+      return new ViewModel(
+         array(
+            'form' => $form,
+            'status' => $status,
+            'period' => $period
+         )
+      );
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $jobid = (int) $this->params()->fromRoute('id', 0);
-         $job = $this->getJobModel()->getJob($jobid);
-         $joblog = $this->getJobModel()->getJobLog($jobid);
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         return new ViewModel(array(
-            'job' => $job,
-            'joblog' => $joblog,
-            'jobid' => $jobid
-         ));
-      }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
-   }
+      $jobid = (int) $this->params()->fromRoute('id', 0);
+      $job = $this->getJobModel()->getJob($jobid);
+      $joblog = $this->getJobModel()->getJobLog($jobid);
 
-   public function runningAction()
-   {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-
-            $jobs_R = $this->getJobModel()->getJobsByStatus('R', null, null);
-            $jobs_l = $this->getJobModel()->getJobsByStatus('l', null, null);
-
-            $jobs = array_merge($jobs_R, $jobs_l);
-
-            return new ViewModel(
-               array(
-                  'jobs' => $jobs
-               )
-            );
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
-   }
-
-   public function waitingAction()
-   {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            return new ViewModel();
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
-   }
-
-   public function unsuccessfulAction()
-   {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            return new ViewModel();
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
-   }
-
-   public function successfulAction()
-   {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            return new ViewModel();
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+      return new ViewModel(array(
+         'job' => $job,
+         'joblog' => $joblog,
+         'jobid' => $jobid
+      ));
    }
 
    public function rerunAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            $jobid = (int) $this->params()->fromRoute('id', 0);
-            $result = $this->getJobModel()->rerunJob($jobid);
-            return new ViewModel(
-                  array(
-                     'bconsoleOutput' => $result,
-                     'jobid' => $jobid,
-                  )
-            );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $jobid = (int) $this->params()->fromRoute('id', 0);
+      $result = $this->getJobModel()->rerunJob($jobid);
+
+      return new ViewModel(
+            array(
+               'bconsoleOutput' => $result,
+               'jobid' => $jobid,
+            )
+      );
    }
 
    public function cancelAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            $jobid = (int) $this->params()->fromRoute('id', 0);
-            $result = $this->getJobModel()->cancelJob($jobid);
-            return new ViewModel(
-                  array(
-                     'bconsoleOutput' => $result
-                  )
-            );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $jobid = (int) $this->params()->fromRoute('id', 0);
+      $result = $this->getJobModel()->cancelJob($jobid);
+
+      return new ViewModel(
+            array(
+               'bconsoleOutput' => $result
+            )
+      );
    }
 
    public function runAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-            return new ViewModel();
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel();
    }
 
    public function queueAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         $jobname = $this->params()->fromQuery('job');
-         $result = $this->getJobModel()->runJob($jobname);
-         return new ViewModel(
-            array(
-               'result' => $result
-            )
-         );
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $jobname = $this->params()->fromQuery('job');
+      $result = $this->getJobModel()->runJob($jobname);
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $data = $this->params()->fromQuery('data');
-         $jobid = $this->params()->fromQuery('jobid');
-         $status = $this->params()->fromQuery('status');
-         $period = $this->params()->fromQuery('period');
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($data == "jobs" && $status == "all") {
-            $result = $this->getJobModel()->getJobs($status, $period);
-         }
-         elseif($data == "jobs" && $status == "successful") {
-            $jobs_T = $this->getJobModel()->getJobsByStatus('T', $period, null); // Terminated
-            $jobs_W = $this->getJobModel()->getJobsByStatus('W', $period, null); // Terminated with warnings
-            $result = array_merge($jobs_T, $jobs_W);
-         }
-         elseif($data == "jobs" && $status == "unsuccessful") {
-            $jobs_A = $this->getJobModel()->getJobsByStatus('A', $period, null); // Canceled jobs
-            $jobs_E = $this->getJobModel()->getJobsByStatus('E', $period, null); //
-            $jobs_e = $this->getJobModel()->getJobsByStatus('e', $period, null); //
-            $jobs_f = $this->getJobModel()->getJobsByStatus('f', $period, null); //
-            $result = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
-         }
-         elseif($data == "jobs" && $status == "running") {
-            $jobs_R = $this->getJobModel()->getJobsByStatus('R', $period, null);
-            $jobs_l = $this->getJobModel()->getJobsByStatus('l', $period, null);
-            $result = array_merge($jobs_R, $jobs_l);
-         }
-         elseif($data == "jobs" && $status == "waiting") {
-            $jobs_F = $this->getJobModel()->getJobsByStatus('F', $period, null);
-            $jobs_S = $this->getJobModel()->getJobsByStatus('S', $period, null);
-            $jobs_m = $this->getJobModel()->getJobsByStatus('m', $period, null);
-            $jobs_M = $this->getJobModel()->getJobsByStatus('M', $period, null);
-            $jobs_s = $this->getJobModel()->getJobsByStatus('s', $period, null);
-            $jobs_j = $this->getJobModel()->getJobsByStatus('j', $period, null);
-            $jobs_c = $this->getJobModel()->getJobsByStatus('c', $period, null);
-            $jobs_d = $this->getJobModel()->getJobsByStatus('d', $period, null);
-            $jobs_t = $this->getJobModel()->getJobsByStatus('t', $period, null);
-            $jobs_p = $this->getJobModel()->getJobsByStatus('p', $period, null);
-            $jobs_q = $this->getJobModel()->getJobsByStatus('q', $period, null);
-            $jobs_C = $this->getJobModel()->getJobsByStatus('C', $period, null);
-            $result = array_merge(
-               $jobs_F,$jobs_S,$jobs_m,$jobs_M,
-               $jobs_s,$jobs_j,$jobs_c,$jobs_d,
-               $jobs_t,$jobs_p,$jobs_q,$jobs_C
-            );
-         }
-         elseif($data == "backupjobs") {
-            $result = $this->getJobModel()->getBackupJobs();
-         }
-         elseif($data == "details") {
-            $result = $this->getJobModel()->getJob($jobid);
-         }
-         elseif($data == "logs" && isset($jobid)) {
-            $result = $this->getJobModel()->getJobLog($jobid);
-         }
-         else {
-            $result = null;
-         }
+      $data = $this->params()->fromQuery('data');
+      $jobid = $this->params()->fromQuery('jobid');
+      $status = $this->params()->fromQuery('status');
+      $period = $this->params()->fromQuery('period');
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
+      if($data == "jobs" && $status == "all") {
+         $result = $this->getJobModel()->getJobs($status, $period);
+      }
+      elseif($data == "jobs" && $status == "successful") {
+         $jobs_T = $this->getJobModel()->getJobsByStatus('T', $period, null); // Terminated
+         $jobs_W = $this->getJobModel()->getJobsByStatus('W', $period, null); // Terminated with warnings
+         $result = array_merge($jobs_T, $jobs_W);
+      }
+      elseif($data == "jobs" && $status == "unsuccessful") {
+         $jobs_A = $this->getJobModel()->getJobsByStatus('A', $period, null); // Canceled jobs
+         $jobs_E = $this->getJobModel()->getJobsByStatus('E', $period, null); //
+         $jobs_e = $this->getJobModel()->getJobsByStatus('e', $period, null); //
+         $jobs_f = $this->getJobModel()->getJobsByStatus('f', $period, null); //
+         $result = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
+      }
+      elseif($data == "jobs" && $status == "running") {
+         $jobs_R = $this->getJobModel()->getJobsByStatus('R', $period, null);
+         $jobs_l = $this->getJobModel()->getJobsByStatus('l', $period, null);
+         $result = array_merge($jobs_R, $jobs_l);
+      }
+      elseif($data == "jobs" && $status == "waiting") {
+         $jobs_F = $this->getJobModel()->getJobsByStatus('F', $period, null);
+         $jobs_S = $this->getJobModel()->getJobsByStatus('S', $period, null);
+         $jobs_m = $this->getJobModel()->getJobsByStatus('m', $period, null);
+         $jobs_M = $this->getJobModel()->getJobsByStatus('M', $period, null);
+         $jobs_s = $this->getJobModel()->getJobsByStatus('s', $period, null);
+         $jobs_j = $this->getJobModel()->getJobsByStatus('j', $period, null);
+         $jobs_c = $this->getJobModel()->getJobsByStatus('c', $period, null);
+         $jobs_d = $this->getJobModel()->getJobsByStatus('d', $period, null);
+         $jobs_t = $this->getJobModel()->getJobsByStatus('t', $period, null);
+         $jobs_p = $this->getJobModel()->getJobsByStatus('p', $period, null);
+         $jobs_q = $this->getJobModel()->getJobsByStatus('q', $period, null);
+         $jobs_C = $this->getJobModel()->getJobsByStatus('C', $period, null);
+         $result = array_merge(
+            $jobs_F,$jobs_S,$jobs_m,$jobs_M,
+            $jobs_s,$jobs_j,$jobs_c,$jobs_d,
+            $jobs_t,$jobs_p,$jobs_q,$jobs_C
+         );
+      }
+      elseif($data == "backupjobs") {
+         $result = $this->getJobModel()->getBackupJobs();
+      }
+      elseif($data == "details") {
+         $result = $this->getJobModel()->getJob($jobid);
+      }
+      elseif($data == "logs" && isset($jobid)) {
+         $result = $this->getJobModel()->getJobLog($jobid);
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getJobModel()

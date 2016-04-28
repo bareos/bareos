@@ -42,115 +42,115 @@ class RestoreController extends AbstractActionController
     */
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $this->getRestoreParams();
-         $errors = null;
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($this->restore_params['client'] == null) {
-            $clients = $this->getRestoreModel()->getClients();
-            $client = array_pop($clients);
-            $this->restore_params['client'] = $client['name'];
-         }
+      $this->getRestoreParams();
+      $errors = null;
 
-         if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
-            $latestbackup = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc", 1);
-            if(empty($latestbackup)) {
-               $this->restore_params['jobid'] = null;
-            }
-            else {
-               $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
-            }
-         }
+      if($this->restore_params['client'] == null) {
+         $clients = $this->getRestoreModel()->getClients();
+         $client = array_pop($clients);
+         $this->restore_params['client'] = $client['name'];
+      }
 
-         if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
-            $jobids = $this->restore_params['jobid'];
+      if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
+         $latestbackup = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc", 1);
+         if(empty($latestbackup)) {
+            $this->restore_params['jobid'] = null;
          }
          else {
-            $jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
-            $this->restore_params['jobids'] = $jobids;
+            $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
          }
+      }
 
-         if($this->restore_params['type'] == "client") {
-            $backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
-         }
+      if(isset($this->restore_params['mergejobs']) && $this->restore_params['mergejobs'] == 1) {
+         $jobids = $this->restore_params['jobid'];
+      }
+      else {
+         $jobids = $this->getRestoreModel()->getJobIds($this->restore_params['jobid'], $this->restore_params['mergefilesets']);
+         $this->restore_params['jobids'] = $jobids;
+      }
 
-         //$jobs = $this->getRestoreModel()->getJobs();
-         $clients = $this->getRestoreModel()->getClients();
-         $filesets = $this->getRestoreModel()->getFilesets();
-         $restorejobs = $this->getRestoreModel()->getRestoreJobs();
+      if($this->restore_params['type'] == "client") {
+         $backups = $this->getRestoreModel()->getClientBackups($this->restore_params['client'], "any", "desc");
+      }
 
-         if($backups == null) {
-            $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
-         }
+      //$jobs = $this->getRestoreModel()->getJobs();
+      $clients = $this->getRestoreModel()->getClients();
+      $filesets = $this->getRestoreModel()->getFilesets();
+      $restorejobs = $this->getRestoreModel()->getRestoreJobs();
 
-         // Create the form
-         $form = new RestoreForm(
-            $this->restore_params,
-            //$jobs,
-            $clients,
-            $filesets,
-            $restorejobs,
-            $jobids,
-            $backups
-         );
+      if($backups == null) {
+         $errors = 'No backups of client <strong>'.$this->restore_params['client'].'</strong> found.';
+      }
 
-         // Set the method attribute for the form
-         $form->setAttribute('method', 'post');
-         $form->setAttribute('onsubmit','return getFiles()');
+      // Create the form
+      $form = new RestoreForm(
+         $this->restore_params,
+         //$jobs,
+         $clients,
+         $filesets,
+         $restorejobs,
+         $jobids,
+         $backups
+      );
 
-         $request = $this->getRequest();
+      // Set the method attribute for the form
+      $form->setAttribute('method', 'post');
+      $form->setAttribute('onsubmit','return getFiles()');
 
-         if($request->isPost()) {
+      $request = $this->getRequest();
 
-            $restore = new Restore();
-            $form->setInputFilter($restore->getInputFilter());
-            $form->setData( $request->getPost() );
+      if($request->isPost()) {
 
-            if($form->isValid()) {
+         $restore = new Restore();
+         $form->setInputFilter($restore->getInputFilter());
+         $form->setData( $request->getPost() );
 
-               if($this->restore_params['type'] == "client") {
+         if($form->isValid()) {
 
-                  $type = $this->restore_params['type'];
-                  $jobid = $form->getInputFilter()->getValue('jobid');
-                  $client = $form->getInputFilter()->getValue('client');
-                  $restoreclient = $form->getInputFilter()->getValue('restoreclient');
-                  $restorejob = $form->getInputFilter()->getValue('restorejob');
-                  $where = $form->getInputFilter()->getValue('where');
-                  $fileid = $form->getInputFilter()->getValue('checked_files');
-                  $dirid = $form->getInputFilter()->getValue('checked_directories');
-                  $jobids = $form->getInputFilter()->getValue('jobids_hidden');
-                  $replace = $form->getInputFilter()->getValue('replace');
+            if($this->restore_params['type'] == "client") {
 
-                  $result = $this->getRestoreModel()->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
+               $type = $this->restore_params['type'];
+               $jobid = $form->getInputFilter()->getValue('jobid');
+               $client = $form->getInputFilter()->getValue('client');
+               $restoreclient = $form->getInputFilter()->getValue('restoreclient');
+               $restorejob = $form->getInputFilter()->getValue('restorejob');
+               $where = $form->getInputFilter()->getValue('where');
+               $fileid = $form->getInputFilter()->getValue('checked_files');
+               $dirid = $form->getInputFilter()->getValue('checked_directories');
+               $jobids = $form->getInputFilter()->getValue('jobids_hidden');
+               $replace = $form->getInputFilter()->getValue('replace');
 
-               }
-
-               return new ViewModel(array(
-                  'result' => $result
-               ));
+               $result = $this->getRestoreModel()->restore($type, $jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace);
 
             }
-            else {
-               return new ViewModel(array(
-                  'restore_params' => $this->restore_params,
-                  'form' => $form,
-               ));
-            }
+
+            return new ViewModel(array(
+               'result' => $result
+            ));
 
          }
          else {
             return new ViewModel(array(
                'restore_params' => $this->restore_params,
                'form' => $form,
-               'errors' => $errors
             ));
          }
 
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         return new ViewModel(array(
+            'restore_params' => $this->restore_params,
+            'form' => $form,
+            'errors' => $errors
+         ));
       }
+
    }
 
    /**
@@ -158,16 +158,18 @@ class RestoreController extends AbstractActionController
     */
    public function filebrowserAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         $this->getRestoreParams();
-         $this->layout('layout/json');
-         return new ViewModel(array(
-            'items' => $this->buildSubtree()
-         ));
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else{
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $this->getRestoreParams();
+      $this->layout('layout/json');
+
+      return new ViewModel(array(
+         'items' => $this->buildSubtree()
+      ));
    }
 
    /**

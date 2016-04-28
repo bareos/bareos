@@ -36,131 +36,132 @@ class StorageController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
-         return new ViewModel(array());
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(array());
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $action = $this->params()->fromQuery('action');
-         $storagename = $this->params()->fromRoute('id');
-
-         if(empty($action)) {
-            return new ViewModel(array(
-               'storagename' => $storagename
-            ));
-         }
-         elseif($action == "import") {
-            $storage = $this->params()->fromQuery('storage');
-            $srcslots = $this->params()->fromQuery('srcslots');
-            $dstslots = $this->params()->fromQuery('dstslots');
-            $result = $this->getStorageModel()->importSlots($storage, $srcslots, $dstslots);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-
-         elseif($action == "export") {
-            $storage = $this->params()->fromQuery('storage');
-            $srcslots = $this->params()->fromQuery('srcslots');
-            $result = $this->getStorageModel()->exportSlots($storage, $srcslots);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-         elseif($action == "mount") {
-            $storage = $this->params()->fromQuery('storage');
-            $slot = $this->params()->fromQuery('slot');
-            $drive = $this->params()->fromQuery('drive');
-            $result = $this->getStorageModel()->mountSlot($storage, $slot, $drive);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result'=> $result
-            ));
-         }
-         elseif($action == "unmount") {
-            $storage = $this->params()->fromQuery('storage');
-            $drive = $this->params()->fromQuery('drive');
-            $result = $this->getStorageModel()->unmountSlot($storage, $drive);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-         elseif($action == "release") {
-            $storage = $this->params()->fromQuery('storage');
-            $drive = $this->params()->fromQuery('drive');
-            $result = $this->getStorageModel()->releaseSlot($storage, $drive);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-         elseif($action == "label") {
-            $storage = $this->params()->fromQuery('storage');
-            $pool = $this->params()->fromQuery('label');
-            $drive = $this->params()->fromQuery('drive');
-            $slots = $this->params()->fromQuery('slots');
-            $result = $this->getStorageModel()->label($storage, $pool, $drive, $slots);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-         elseif($action == "updateslots") {
-            $storage = $this->params()->fromQuery('storage');
-            $result = $this->getStorageModel()->updateSlots($storage);
-            return new ViewModel(array(
-               'storagename' => $storagename,
-               'result' => $result
-            ));
-         }
-         elseif($action == "labelbarcodes") {
-         }
-
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
+
+      $action = $this->params()->fromQuery('action');
+      $storagename = $this->params()->fromRoute('id');
+
+      if(empty($action)) {
+         return new ViewModel(array(
+            'storagename' => $storagename
+         ));
       }
+      elseif($action == "import") {
+         $storage = $this->params()->fromQuery('storage');
+         $srcslots = $this->params()->fromQuery('srcslots');
+         $dstslots = $this->params()->fromQuery('dstslots');
+         $result = $this->getStorageModel()->importSlots($storage, $srcslots, $dstslots);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+
+      elseif($action == "export") {
+         $storage = $this->params()->fromQuery('storage');
+         $srcslots = $this->params()->fromQuery('srcslots');
+         $result = $this->getStorageModel()->exportSlots($storage, $srcslots);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+      elseif($action == "mount") {
+         $storage = $this->params()->fromQuery('storage');
+         $slot = $this->params()->fromQuery('slot');
+         $drive = $this->params()->fromQuery('drive');
+         $result = $this->getStorageModel()->mountSlot($storage, $slot, $drive);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result'=> $result
+         ));
+      }
+      elseif($action == "unmount") {
+         $storage = $this->params()->fromQuery('storage');
+         $drive = $this->params()->fromQuery('drive');
+         $result = $this->getStorageModel()->unmountSlot($storage, $drive);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+      elseif($action == "release") {
+         $storage = $this->params()->fromQuery('storage');
+         $drive = $this->params()->fromQuery('drive');
+         $result = $this->getStorageModel()->releaseSlot($storage, $drive);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+      elseif($action == "label") {
+         $storage = $this->params()->fromQuery('storage');
+         $pool = $this->params()->fromQuery('label');
+         $drive = $this->params()->fromQuery('drive');
+         $slots = $this->params()->fromQuery('slots');
+         $result = $this->getStorageModel()->label($storage, $pool, $drive, $slots);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+      elseif($action == "updateslots") {
+         $storage = $this->params()->fromQuery('storage');
+         $result = $this->getStorageModel()->updateSlots($storage);
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
+      elseif($action == "labelbarcodes") {
+      }
+
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $data = $this->params()->fromQuery('data');
-         $storage = $this->params()->fromQuery('storage');
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($data == "all") {
-            $result = $this->getStorageModel()->getStorages();
-         }
-         elseif($data == "statusslots") {
-            $result = $this->getStorageModel()->getStatusStorageSlots($storage);
-         }
-         else {
-            $result = null;
-         }
+      $data = $this->params()->fromQuery('data');
+      $storage = $this->params()->fromQuery('storage');
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
+      if($data == "all") {
+         $result = $this->getStorageModel()->getStorages();
+      }
+      elseif($data == "statusslots") {
+         $result = $this->getStorageModel()->getStatusStorageSlots($storage);
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getStorageModel()

@@ -44,7 +44,7 @@ class AuthController extends AbstractActionController
    public function loginAction()
    {
 
-      if(isset($_SESSION['bareos']['authenticated']) && $_SESSION['bareos']['authenticated']) {
+      if($this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
       }
 
@@ -81,7 +81,12 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['authenticated'] = true;
                $_SESSION['bareos']['idletime'] = time();
 
-               return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
+               if(!empty($this->params()->fromQuery('req'))) {
+                  return $this->redirect()->toUrl($this->params()->fromQuery('req'));
+               }
+               else {
+                  return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
+               }
 
             } else {
 

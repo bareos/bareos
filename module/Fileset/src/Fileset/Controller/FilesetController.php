@@ -36,68 +36,68 @@ class FilesetController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-            $filesets = $this->getFilesetModel()->getFilesets();
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-            return new ViewModel(
-               array(
-                  'filesets' => $filesets,
-                  )
-            );
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+      $filesets = $this->getFilesetModel()->getFilesets();
+
+      return new ViewModel(
+         array(
+            'filesets' => $filesets,
+            )
+      );
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-            $filesetid = $this->params()->fromRoute('id', 0);
-            $fileset = $this->getFilesetModel()->getFileset($filesetid);
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-            return new ViewModel(
-               array(
-                  'fileset' => $fileset
-               )
-            );
-      }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+      $filesetid = $this->params()->fromRoute('id', 0);
+      $fileset = $this->getFilesetModel()->getFileset($filesetid);
+
+      return new ViewModel(
+         array(
+            'fileset' => $fileset
+         )
+      );
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $data = $this->params()->fromQuery('data');
-         $fileset = $this->params()->fromQuery('fileset');
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($data == "all") {
-            $result = $this->getFilesetModel()->getFilesets();
-         }
-         elseif($data == "details" && isset($fileset)) {
-            $result = $this->getFilesetModel()->getFileset($fileset);
-         }
-         else {
-            $result = null;
-         }
+      $data = $this->params()->fromQuery('data');
+      $fileset = $this->params()->fromQuery('fileset');
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
+      if($data == "all") {
+         $result = $this->getFilesetModel()->getFilesets();
+      }
+      elseif($data == "details" && isset($fileset)) {
+         $result = $this->getFilesetModel()->getFileset($fileset);
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getFilesetModel()

@@ -35,73 +35,71 @@ class PoolController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-            $pools = $this->getPoolModel()->getPools();
-
-            return new ViewModel(
-               array(
-                  'pools' => $pools,
-               )
-            );
-
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $pools = $this->getPoolModel()->getPools();
+
+      return new ViewModel(
+         array(
+            'pools' => $pools,
+         )
+      );
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-
-            $poolname = $this->params()->fromRoute('id');
-            $pool = $this->getPoolModel()->getPool($poolname);
-
-            return new ViewModel(
-               array(
-                  'pool' => $poolname,
-               )
-            );
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $poolname = $this->params()->fromRoute('id');
+      $pool = $this->getPoolModel()->getPool($poolname);
+
+      return new ViewModel(
+         array(
+            'pool' => $poolname,
+         )
+      );
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $data = $this->params()->fromQuery('data');
-         $pool = $this->params()->fromQuery('pool');
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($data == "all") {
-            $result = $this->getPoolModel()->getPools();
-         }
-         elseif($data == "details" && isset($pool)) {
-            $result = $this->getPoolModel()->getPool($pool);
-         }
-         elseif($data == "volumes" && isset($pool)) {
-            $result = $this->getPoolModel()->getPoolMedia($pool);
-         }
-         else {
-            $result = null;
-         }
+      $data = $this->params()->fromQuery('data');
+      $pool = $this->params()->fromQuery('pool');
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
-
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
+      if($data == "all") {
+         $result = $this->getPoolModel()->getPools();
+      }
+      elseif($data == "details" && isset($pool)) {
+         $result = $this->getPoolModel()->getPool($pool);
+      }
+      elseif($data == "volumes" && isset($pool)) {
+         $result = $this->getPoolModel()->getPoolMedia($pool);
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getPoolModel()

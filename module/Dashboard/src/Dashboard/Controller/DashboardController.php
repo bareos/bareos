@@ -34,20 +34,20 @@ class DashboardController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         return new ViewModel(
-            array(
-               'runningJobs' => $this->getJobs("running", 1, null),
-               'waitingJobs' => $this->getJobs("waiting", 1, null),
-               'successfulJobs' => $this->getJobs("successful", 1, null),
-               'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
-            )
-         );
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      return new ViewModel(
+         array(
+            'runningJobs' => $this->getJobs("running", 1, null),
+            'waitingJobs' => $this->getJobs("waiting", 1, null),
+            'successfulJobs' => $this->getJobs("successful", 1, null),
+            'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
+         )
+      );
    }
 
    private function getJobs($status=null, $days=1, $hours=null)

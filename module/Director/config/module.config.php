@@ -33,6 +33,7 @@ return array(
    'controller_plugins' => array(
       'invokables' => array(
          'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+         'RequestURIPlugin' => 'Application\Controller\Plugin\RequestURIPlugin',
       ),
    ),
    'router' => array(

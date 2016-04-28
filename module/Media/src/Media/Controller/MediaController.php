@@ -35,72 +35,69 @@ class MediaController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-            $volumes = $this->getMediaModel()->getVolumes();
-
-            return new ViewModel(
-               array(
-                  'volumes' => $volumes,
-               )
-            );
-
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-            return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $volumes = $this->getMediaModel()->getVolumes();
+
+      return new ViewModel(
+         array(
+            'volumes' => $volumes,
+         )
+      );
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $volumename = $this->params()->fromRoute('id');
-
-         return new ViewModel(array(
-            'volume' => $volumename,
-         ));
-
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $volumename = $this->params()->fromRoute('id');
+
+      return new ViewModel(array(
+         'volume' => $volumename,
+      ));
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()){
+      $this->RequestURIPlugin()->setRequestURI();
 
-         $data = $this->params()->fromQuery('data');
-         $volume = $this->params()->fromQuery('volume');
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         if($data == "all") {
-            $result = $this->getMediaModel()->getVolumes();
-         }
-         elseif($data == "details") {
-            // workaround until llist volume returns array instead of object
-            $result[0] = $this->getMediaModel()->getVolume($volume);
-         }
-         elseif($data == "jobs") {
-            $result = $this->getMediaModel()->getVolumeJobs($volume);
-         }
-         else {
-            $result = null;
-         }
+      $data = $this->params()->fromQuery('data');
+      $volume = $this->params()->fromQuery('volume');
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type','application/json');
-
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
-
+      if($data == "all") {
+         $result = $this->getMediaModel()->getVolumes();
+      }
+      elseif($data == "details") {
+         // workaround until llist volume returns array instead of object
+         $result[0] = $this->getMediaModel()->getVolume($volume);
+      }
+      elseif($data == "jobs") {
+         $result = $this->getMediaModel()->getVolumeJobs($volume);
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type','application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getMediaModel()
