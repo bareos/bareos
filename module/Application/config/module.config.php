@@ -67,27 +67,26 @@ return array(
          'director' => 'Bareos\BSock\BareosBSockServiceFactory',
       ),
    'aliases' => array(
-       //'translator' => 'MvcTranslator',
    ),
       'invokables' => array(
       ),
     ),
-    'translator' => array(
-   'locale' => 'en_US',
-   'translation_file_patterns' => array(
-       array(
-      'type'     => 'gettext',
-      'base_dir' => __DIR__ . '/../language',
-      'pattern'  => '%s.mo',
-       ),
+   'translator' => array(
+      'locale' => 'en_EN',
+      'translation_file_patterns' => array(
+          array(
+            'type'     => 'gettext',
+            'base_dir' => __DIR__ . '/../language',
+            'pattern'  => '%s.mo',
+         ),
+      ),
    ),
-    ),
-    'controllers' => array(
-   'invokables' => array(
-      'Application\Controller\Index' => 'Application\Controller\IndexController',
+   'controllers' => array(
+      'invokables' => array(
+         'Application\Controller\Index' => 'Application\Controller\IndexController',
+      ),
    ),
-    ),
-    'view_helpers' => array(
+   'view_helpers' => array(
       'invokables' => array (
       'printDate' => 'Application\View\Helper\Date',
       'printJobStatus' => 'Application\View\Helper\JobStatus',
@@ -99,7 +98,7 @@ return array(
       'printExpiration' => 'Application\View\Helper\Expiration',
       'printStatusGlyphicons' => 'Application\View\Helper\StatusGlyphicons',
       ),
-    ),
+   ),
     'view_manager' => array(
    'display_not_found_reason' => true,
    'display_exceptions'       => true,
@@ -129,55 +128,55 @@ return array(
     'navigation' => array(
       'default' => array(
          array(
-            'label' => 'Dashboard',
+            'label' => _('Dashboard'),
             'route' => 'dashboard',
          ),
          array(
-            'label' => 'Jobs',
+            'label' => _('Jobs'),
             'route' => 'job',
             'pages' => array(
                array(
-                  'label' => 'Overview',
+                  'label' => _('Overview'),
                   'route' => 'job',
                   'action' => 'index'
                ),
                array(
-                  'label' => 'Run',
+                  'label' => _('Run'),
                   'route' => 'job',
                   'action' => 'run'
                ),
             ),
          ),
          array(
-            'label' => 'Restore',
+            'label' => _('Restore'),
             'route' => 'restore',
          ),
          array(
-            'label' => 'Clients',
+            'label' => _('Clients'),
             'route' => 'client',
          ),
          array(
-            'label' => 'Storage',
+            'label' => _('Storages'),
             'route' => 'storage',
          ),
          /*array(
-            'label' => 'Volumes',
+            'label' => _('Volumes'),
             'route' => 'media',
          ),
          array(
-            'label' => 'Pools',
+            'label' => _('Pools'),
             'route' => 'pool',
          ),*/
          array(
-            'label' => 'Director',
+            'label' => _('Director'),
             'route' => 'director',
          ),
          /*array(
-            'label' => 'Filesets',
+            'label' => _('Filesets'),
             'route' => 'fileset',
          ),
          array(
-            'label' => 'Storages',
+            'label' => _('Storages'),
             'route' => 'storage',
          )*/
       ),

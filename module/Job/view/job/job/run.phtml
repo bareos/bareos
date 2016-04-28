@@ -62,6 +62,7 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
@@ -72,6 +73,9 @@ $this->headTitle($title);
       "ajax": {
          "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
          {

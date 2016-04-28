@@ -86,9 +86,9 @@ echo $this->doctype();
                   <span class="glyphicon glyphicon-user" aria-hidden="true"></span>&nbsp;<?php echo $_SESSION['bareos']['username']; ?> <span class="caret"></span>
                </a>
                <ul class="dropdown-menu" role="menu">
-                  <li><a href="http://doc.bareos.org" target="_blank">Help</a></li>
+                  <li><a href="http://doc.bareos.org" target="_blank"><?php echo $this->translate("Help"); ?></a></li>
                   <li role="separator" class="divider"></li>
-                  <li><a href="<?php echo $this->url('auth', array('action' => 'logout')); ?>">Logout</a></li>
+                  <li><a href="<?php echo $this->url('auth', array('action' => 'logout')); ?>"><?php echo $this->translate("Logout"); ?></a></li>
                </ul>
             </li>
          </ul>

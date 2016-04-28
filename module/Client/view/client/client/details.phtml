@@ -23,7 +23,7 @@
  *
  */
 
-$title = 'Client details';
+$title = _('Client details');
 $this->headTitle($title);
 
 ?>
@@ -34,7 +34,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Client</h3>
+<h3 class="panel-title"><?php echo $this->translate("Client"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -60,7 +60,7 @@ $this->headTitle($title);
 
 <div class="panel panel-default">
 <div class="panel-heading">
-<h3 class="panel-title">Last successful backups</h3>
+<h3 class="panel-title"><?php echo $this->translate("Last successful backups"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -73,6 +73,7 @@ $this->headTitle($title);
    <th><?php echo $this->translate("Level"); ?></th>
    <th><?php echo $this->translate("Files"); ?></th>
    <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 </table>
 
@@ -97,6 +98,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=details&client='.$this->client; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
          { "data": "name" },
@@ -144,6 +148,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=backups&client='.$this->client; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
          { "data": "jobid" },

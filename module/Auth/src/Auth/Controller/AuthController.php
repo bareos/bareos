@@ -67,6 +67,7 @@ class AuthController extends AbstractActionController
             $director = $form->getInputFilter()->getValue('director');
             $username = $form->getInputFilter()->getValue('consolename');
             $password = $form->getInputFilter()->getValue('password');
+            $locale = $form->getInputFilter()->getValue('locale');
 
             $config = $this->getServiceLocator()->get('Config');
             $this->director = $this->getServiceLocator()->get('director');
@@ -79,6 +80,7 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['username'] = $username;
                $_SESSION['bareos']['password'] = $password;
                $_SESSION['bareos']['authenticated'] = true;
+               $_SESSION['bareos']['locale'] = $locale;
                $_SESSION['bareos']['idletime'] = time();
 
                if(!empty($this->params()->fromQuery('req'))) {

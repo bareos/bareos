@@ -32,12 +32,16 @@ class LoginForm extends Form
 
    protected $config;
    protected $directors;
+   protected $availableLocales;
+   protected $locale;
 
    public function __construct($config=null, $name=null)
    {
 
       $this->config = $config;
       $this->directors = $this->getDirectors();
+      $this->availableLocales = $this->getAvailableLocales();
+      $this->locale = $this->determineLanguage();
 
       parent::__construct('login');
 
@@ -71,6 +75,36 @@ class LoginForm extends Form
                   )
                )
          );
+      }
+
+      if(isset($this->locale)) {
+         $this->add(array(
+            'name' => 'locale',
+            'type' => 'select',
+            'options' => array(
+               'label' => 'Language',
+               'empty_option' => 'Please choose a language',
+               'value_options' => $this->availableLocales
+            ),
+            'attributes' => array(
+               'id' => 'locale',
+               'value' => key($this->locale)
+            )
+         ));
+      }
+      else {
+         $this->add(array(
+            'name' => 'locale',
+            'type' => 'select',
+            'options' => array(
+               'label' => 'Language',
+               'empty_option' => 'Please choose a language',
+               'value_options' => $this->availableLocales
+            ),
+            'attributes' => array(
+               'id' => 'locale',
+            )
+         ));
       }
 
       $this->add(array(
@@ -109,6 +143,93 @@ class LoginForm extends Form
 
    }
 
+   private function determineLanguage($default = "en_EN") {
+
+      $l = array();
+
+      if(!isset($_SERVER["HTTP_ACCEPT_LANGUAGE"]) || empty($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+         $l['en_EN'] = 'English';
+         return $l;
+      }
+
+      $accepted = preg_split("{,\s*}", $_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+      $language = $default;
+      $quality = 0;
+
+      if(is_array($accepted) && (count($accepted) > 0)) {
+         foreach($accepted as $key => $value) {
+            if(!preg_match("{^([a-z]{1,8}(?:-[a-z]{1,8})*)(?:;\s*q=(0(?:\.[0-9]{1,3})?|1(?:\.0{1,3})?))?$}i", $value, $matches)) {
+                continue;
+            }
+
+            $code = explode("-", $matches[1]);
+
+            if(isset($matches[2])) {
+                $priority = floatval($matches[2]);
+            } else {
+                $priority = 1.0;
+            }
+
+            while(count($code) > 0) {
+                if($priority > $quality) {
+                    $language = implode("_", $code);
+                    $quality = $priority;
+                    break;
+                }
+                break;
+            }
+         }
+      }
+
+      switch($language) {
+         case 'de_DE':
+            $l['de_DE'] = 'German';
+            break;
+         case 'de':
+            $l['de_DE'] = 'German';
+            break;
+         case 'en_EN':
+            $l['en_EN'] = 'English';
+            break;
+         case 'en_GB':
+            $l['en_EN'] = 'English';
+            break;
+         case 'en_US':
+            $l['en_EN'] = 'English';
+            break;
+         case 'en':
+            $l['en_EN'] = 'English';
+            break;
+         case 'fr':
+            $l['fr_FR'] = 'French';
+            break;
+         case 'fr_FR':
+            $l['fr_FR'] = 'French';
+            break;
+         case 'ru_RU':
+            $l['ru_RU'] = 'Russian';
+            break;
+         case 'ru':
+            $l['ru_RU'] = 'Russian';
+            break;
+         default:
+            $l = null;
+      }
+
+      return $l;
+   }
+
+   private function getAvailableLocales()
+   {
+      $locales = array();
+
+      $locales['en_EN'] = "English";
+      $locales['fr_FR'] = "French";
+      $locales['de_DE'] = "German";
+      $locales['ru_RU'] = "Russian";
+
+      return $locales;
+   }
 
    public function getDirectors()
    {

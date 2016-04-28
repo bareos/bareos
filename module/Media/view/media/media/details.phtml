@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Volume details';
+$title = _('Volume details');
 $this->headTitle($title);
 
 ?>
@@ -76,7 +76,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Jobs on volume <?php echo $this->volume; ?></h3>
+<h3 class="panel-title"><?php echo $this->translate("Jobs on volume"); ?> <?php echo $this->volume; ?></h3>
 </div>
 
 <div class="panel-body">
@@ -152,119 +152,119 @@ function format( d ) {
 
    return '<table class="table table-bordered">'+
       '<tr>'+
-      '<th>Label date</th>'+
+      '<th><?php echo $this->translate("Label date"); ?></th>'+
       '<td>'+ d.labeldate +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>First written</th>'+
+      '<th><?php echo $this->translate("First written"); ?></th>'+
       '<td>'+ d.firstwritten +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Last written</th>'+
+      '<th><?php echo $this->translate("Last written"); ?></th>'+
       '<td>'+ d.lastwritten +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume jobs</th>'+
+      '<th><?php echo $this->translate("Volume jobs"); ?></th>'+
       '<td>'+ d.voljobs +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Recycle</th>'+
+      '<th><?php echo $this->translate("Recycle"); ?></th>'+
       '<td>'+ r +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume writes</th>'+
+      '<th><?php echo $this->translate("Volume writes"); ?></th>'+
       '<td>'+ d.volwrites +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Slot</th>'+
+      '<th><?php echo $this->translate("Slot"); ?></th>'+
       '<td>'+ d.slot +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Media Id</th>'+
+      '<th><?php echo $this->translate("Media Id"); ?></th>'+
       '<td>'+ d.mediaid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume Blocks</th>'+
+      '<th><?php echo $this->translate("Volume Blocks"); ?></th>'+
       '<td>'+ d.volblocks +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume use duration</th>'+
+      '<th><?php echo $this->translate("Volume use duration"); ?></th>'+
       '<td>'+ d.voluseduration +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume Pool Id</th>'+
+      '<th><?php echo $this->translate("Volume Pool Id"); ?></th>'+
       '<td>'+ d.poolid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>In changer</th>'+
+      '<th><?php echo $this->translate("In changer"); ?></th>'+
       '<td>'+ d.inchanger +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume Files</th>'+
+      '<th><?php echo $this->translate("Volume Files"); ?></th>'+
       '<td>'+ d.volfiles +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Max. volume jobs</th>'+
+      '<th><?php echo $this->translate("Max. volume jobs"); ?></th>'+
       '<td>'+ d.maxvoljobs +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume mounts</th>'+
+      '<th><?php echo $this->translate("Volume mounts"); ?></th>'+
       '<td>'+ d.volmounts +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume capacity bytes</th>'+
+      '<th><?php echo $this->translate("Volume capacity bytes"); ?></th>'+
       '<td>'+ d.volcapacitybytes +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Volume errors</th>'+
+      '<th><?php echo $this->translate("Volume errors"); ?></th>'+
       '<td>'+ d.volerrors +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Enabled</th>'+
+      '<th><?php echo $this->translate("Enabled"); ?></th>'+
       '<td>'+ d.enabled +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Max. volume files</th>'+
+      '<th><?php echo $this->translate("Max. volume files"); ?></th>'+
       '<td>'+ d.maxvolfiles +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Endfile</th>'+
+      '<th><?php echo $this->translate("Endfile"); ?></th>'+
       '<td>'+ d.endfile +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Endblock</th>'+
+      '<th><?php echo $this->translate("Endblock"); ?></th>'+
       '<td>'+ d.endblock +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Labeltype</th>'+
+      '<th><?php echo $this->translate("Labeltype"); ?></th>'+
       '<td>'+ d.labeltype +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Device Id</th>'+
+      '<th><?php echo $this->translate("Device Id"); ?></th>'+
       '<td>'+ d.deviceid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Location Id</th>'+
+      '<th><?php echo $this->translate("Location Id"); ?></th>'+
       '<td>'+ d.locationid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Recycle count</th>'+
+      '<th><?php echo $this->translate("Recycle count"); ?></th>'+
       '<td>'+ d.recyclecount +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Initial write</th>'+
+      '<th><?php echo $this->translate("Initial write"); ?></th>'+
       '<td>'+ d.initialwrite +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Scratch Pool Id</th>'+
+      '<th><?php echo $this->translate("Scratch Pool Id"); ?></th>'+
       '<td>'+ d.scratchpoolid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Recycle pool Id</th>'+
+      '<th><?php echo $this->translate("Recycle pool Id"); ?></th>'+
       '<td>'+ d.recyclepoolid +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Comment</th>'+
+      '<th><?php echo $this->translate("Comment"); ?></th>'+
       '<td>'+ d.comment +'</td>'+
       '</tr>'+
       '</table>';
@@ -277,6 +277,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=details&volume=' . $this->volume; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "paging": false,
       "pagingType": "full_numbers",
@@ -370,6 +373,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=jobs&volume=' . $this->volume; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "paging": true,
       "ordering": true,

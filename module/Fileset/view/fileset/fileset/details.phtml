@@ -23,7 +23,7 @@
  *
  */
 
-$title = 'Fileset details';
+$title = _('Fileset details');
 $this->headTitle($title);
 
 ?>
@@ -34,7 +34,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Fileset</h3>
+<h3 class="panel-title"><?php echo $this->translate("Fileset"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -42,10 +42,10 @@ $this->headTitle($title);
 <table class="table table-hover" id="fileset">
 
 <thead class="bg-primary">
-   <th>Id</th>
-   <th>Name</th>
-   <th>MD5 checksum</th>
-   <th>Creation time</th>
+   <th><?php echo $this->translate("Id"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("MD5 checksum"); ?></th>
+   <th><?php echo $this->translate("Creation time"); ?></th>
 </thead>
 
 </table>
@@ -64,6 +64,7 @@ $this->headTitle($title);
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
@@ -73,6 +74,9 @@ $this->headTitle($title);
       "ajax": {
          "url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=details&fileset='.$this->fileset[0]['filesetid']; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns": [
          { "data": "filesetid" },

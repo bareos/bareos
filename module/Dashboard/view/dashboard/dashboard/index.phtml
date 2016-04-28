@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Dashboard';
+$title = _('Dashboard');
 $this->headTitle($title);
 
 ?>
@@ -93,10 +93,10 @@ $this->headTitle($title);
    function chart1() {
 
       var data = [
-         ['Running', <?php echo $this->runningJobs; ?>],
-         ['Waiting', <?php echo $this->waitingJobs; ?>],
-         ['Successful', <?php echo $this->successfulJobs; ?>],
-         ['Unsuccessful', <?php echo $this->unsuccessfulJobs; ?>]
+         ['<?php echo $this->translate('Running'); ?>', <?php echo $this->runningJobs; ?>],
+         ['<?php echo $this->translate('Waiting'); ?>', <?php echo $this->waitingJobs; ?>],
+         ['<?php echo $this->translate('Successful'); ?>', <?php echo $this->successfulJobs; ?>],
+         ['<?php echo $this->translate('Unsuccessful'); ?>', <?php echo $this->unsuccessfulJobs; ?>]
       ];
 
       var plot1 = jQuery.jqplot(

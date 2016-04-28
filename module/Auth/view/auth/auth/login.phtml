@@ -112,6 +112,21 @@ $this->headTitle($title);
    <div class="form-group">
 
    <?php
+      echo '<div class="input-group">';
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-flag" aria-hidden="true"></span></div>';
+      echo $this->formSelect($form->get('locale')->setAttribute('class','form-control selectpicker'));
+      echo '</div>';
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
       echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
    ?>
 

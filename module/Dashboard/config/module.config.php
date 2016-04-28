@@ -53,10 +53,18 @@ return array(
          ),
       ),
    ),
-
    'view_manager' => array(
       'template_path_stack' => array(
          'dashboard' => __DIR__ . '/../view',
+      ),
+   ),
+   'translator' => array(
+      'translation_file_patterns' => array(
+         array(
+            'type' => 'gettext',
+            'base_dir' => __DIR__ . '../../Application/language',
+            'pattern' => '%s.mo',
+         ),
       ),
    ),
 

@@ -325,3 +325,27 @@ function formatJobStatus(data) {
    return output;
 }
 
+function getLocale(locale) {
+   switch(locale) {
+      case 'en':
+      case 'en_EN':
+         lang = 'English.json';
+         break;
+      case 'fr':
+      case 'fr_FR':
+         lang = 'French.json';
+         break;
+      case 'de':
+      case 'de_DE':
+         lang = 'German.json';
+         break;
+      case 'ru':
+      case 'ru_RU':
+         lang = 'Russian.json';
+         break;
+      default:
+         lang = 'English.json';
+   }
+   return lang;
+}
+

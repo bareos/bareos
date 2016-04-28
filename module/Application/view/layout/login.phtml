@@ -52,7 +52,8 @@ echo $this->doctype();
          ->prependFile($this->basePath() . '/js/bootstrap.min.js')
          ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
          ->prependFile($this->basePath() . '/js/excanvas.min.js')
-         ->prependFile($this->basePath() . '/js/jquery.min.js')
+         ->prependFile($this->basePath() . '/js/jquery.cookie.js', 'text/javascript')
+         ->prependFile($this->basePath() . '/js/jquery.min.js', 'text/javascript')
          ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
          ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',));
       ?>

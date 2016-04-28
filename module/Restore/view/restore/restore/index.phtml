@@ -23,7 +23,7 @@
  *
  */
 
-$title = 'Restore';
+$title = _('Restore');
 $this->headTitle($title);
 
 ?>
@@ -88,7 +88,9 @@ $this->headTitle($title);
       <?php
          if($this->restore_params['type'] == "client") {
                //echo $this->formRow($form->get('jobids_display')->setAttribute('class','form-control')); // for debugging
-               echo '<strong>Select files to be restored</strong>';
+               echo '<strong>';
+               echo $this->translate("Select files to be restored");
+               echo '</strong>';
                echo '<div class="panel panel-default" style="height: 650px; overflow: scroll;"><div id="filebrowser"></div></div>';
                /*
                echo '<div class="input-group">';
@@ -243,9 +245,9 @@ $this->headTitle($title);
       'plugins' : [ "grid", "checkbox", "state", "sort", "search" ],
       'grid' : {
          columns: [
-            { width: 500, header: "Name", title: "_DATA_" },
-            { width: 125, header: "Size", value: function(node) { return(format_bytes(node.data.stat.size)); } },
-            { header: "Date", value: function(node) { return(unix_to_human(node.data.stat.mtime)); } }
+            { width: 500, header: '<?php echo $this->translate("Name"); ?>', title: "_DATA_" },
+            { width: 125, header: '<?php echo $this->translate("Size"); ?>', value: function(node) { return(format_bytes(node.data.stat.size)); } },
+            { header: '<?php echo $this->translate("Date"); ?>', value: function(node) { return(unix_to_human(node.data.stat.mtime)); } }
          ],
          resizable: true,
       },

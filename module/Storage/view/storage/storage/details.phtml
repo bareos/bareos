@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Storage details';
+$title = _('Storage details');
 $this->headTitle($title);
 
 ?>
@@ -43,7 +43,7 @@ $this->headTitle($title);
          <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
       </div>
       <div class="modal-footer">
-         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
       </div>
     </div>
   </div>
@@ -59,10 +59,10 @@ $this->headTitle($title);
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-ie-slots">
             <thead class="bg-primary">
-               <th>Slot</th>
-               <th>Volume</th>
+               <th><?php echo $this->translate("Slot"); ?></th>
+               <th><?php echo $this->translate("Volume"); ?></th>
                <th></th>
-               <th>Actions</th>
+               <th><?php echo $this->translate("Actions"); ?></th>
             </thead>
             <tbody class="table table-bordered">
             </tbody>
@@ -77,11 +77,11 @@ $this->headTitle($title);
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-drives">
             <thead class="bg-primary">
-               <th>Drive</th>
-               <th>Loaded</th>
-               <th>Volume</th>
+               <th><?php echo $this->translate("Drive"); ?></th>
+               <th><?php echo $this->translate("Loaded"); ?></th>
+               <th><?php echo $this->translate("Volume"); ?></th>
                <th></th>
-               <th>Actions</th>
+               <th><?php echo $this->translate("Actions"); ?></th>
             </thead>
             <tbody class="table table-bordered">
             </tbody>
@@ -100,17 +100,17 @@ $this->headTitle($title);
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-slots">
             <thead class="bg-primary">
-               <th>Slot</th>
-               <th>Volume</th>
-               <th>Bytes</th>
-               <th>Last written</th>
-               <th>Expiration</th>
-               <th>Status</th>
-               <th>Media Type</th>
-               <th>Pool</th>
+               <th><?php echo $this->translate("Slot"); ?></th>
+               <th><?php echo $this->translate("Volume"); ?></th>
+               <th><?php echo $this->translate("Bytes"); ?></th>
+               <th><?php echo $this->translate("Last written"); ?></th>
+               <th><?php echo $this->translate("Expiration"); ?></th>
+               <th><?php echo $this->translate("Status"); ?></th>
+               <th><?php echo $this->translate("Media Type"); ?></th>
+               <th><?php echo $this->translate("Pool"); ?></th>
                <th></th>
                <th></th>
-               <th>Actions</th>
+               <th><?php echo $this->translate("Actions"); ?></th>
             </thead>
             <tbody class="table table-bordered">
             </tbody>
@@ -171,6 +171,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "responsive": true,
       "paging": true,
@@ -313,6 +316,9 @@ $(document).ready(function() {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
          "dataSrc": ""
       },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+      },
       "responsive": true,
       "paging": false,
       "ordering": false,
@@ -356,6 +362,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=statusslots&storage=' . $this->storagename; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "responsive": true,
       "paging": false,

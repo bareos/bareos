@@ -20,10 +20,13 @@ class Module
 
    public function onBootstrap(MvcEvent $e)
    {
-      $eventManager   = $e->getApplication()->getEventManager();
+      $eventManager = $e->getApplication()->getEventManager();
       $moduleRouteListener = new ModuleRouteListener();
       $moduleRouteListener->attach($eventManager);
       $this->initSession($e);
+
+      $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
+      $translator->setLocale( ( isset( $_SESSION['bareos']['locale'] ) ? $_SESSION['bareos']['locale'] : 'en_EN' ) )->setFallbackLocale('en_EN');
    }
 
    public function getConfig()

@@ -53,7 +53,16 @@ return array(
          ),
       ),
    ),
-
+   'translator' => array(
+      'locale' => 'en_EN',
+      'translation_file_patterns' => array(
+          array(
+            'type'     => 'gettext',
+            'base_dir' => __DIR__ . '/../../Application/language',
+            'pattern'  => '%s.mo',
+         ),
+      ),
+   ),
    'view_manager' => array(
          'template_path_stack' => array(
                'job' => __DIR__ . '/../view',

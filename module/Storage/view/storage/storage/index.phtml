@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Storages';
+$title = _('Storages');
 $this->headTitle($title);
 
 ?>
@@ -43,7 +43,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Storages</h3>
+<h3 class="panel-title"><?php echo $this->translate("Storages"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -66,6 +66,7 @@ $this->headTitle($title);
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
@@ -77,6 +78,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
          { "data": "name", "orderable": true },
@@ -99,9 +103,9 @@ $(document).ready(function() {
          {
             "targets": 1,
             "render": function(data, type, full, meta) {
-               var a = '<span class="label label-default">No</span>';
+               var a = '<span class="label label-default"><?php echo $this->translate('No'); ?></span>';
                if(data == "1") {
-                  a = '<span class="label label-success">Yes</span>';
+                  a = '<span class="label label-success"><?php echo $this->translate('Yes'); ?></span>';
                }
                return a;
             }

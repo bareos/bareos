@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Pools';
+$title = _('Pools');
 $this->headTitle($title);
 
 ?>
@@ -43,7 +43,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Pools</h3>
+<h3 class="panel-title"><?php echo $this->translate("Pools"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -51,13 +51,13 @@ $this->headTitle($title);
 <table class="table table-hover" id="pools">
 
 <thead class="bg-primary">
-   <th>Name</th>
-   <th>Type</th>
-   <th>Volumes</th>
-   <th>Maximum volumes</th>
-   <th>Volume retention</th>
-   <th>Maximum volume jobs</th>
-   <th>Maximum volume bytes</th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Volumes"); ?></th>
+   <th><?php echo $this->translate("Maximum volumes"); ?></th>
+   <th><?php echo $this->translate("Volume retention"); ?></th>
+   <th><?php echo $this->translate("Maximum volume jobs"); ?></th>
+   <th><?php echo $this->translate("Maximum volume bytes"); ?></th>
 </thead>
 
 </table>
@@ -81,6 +81,9 @@ var table= $('#pools').DataTable( {
    "ajax": {
       "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",
       "dataSrc": ""
+   },
+   "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
    },
    "columns" : [
       { "data": "name" },

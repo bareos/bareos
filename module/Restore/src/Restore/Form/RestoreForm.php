@@ -59,8 +59,8 @@ class RestoreForm extends Form
             'name' => 'jobid',
             'type' => 'select',
             'options' => array(
-               'label' => 'Job',
-               'empty_option' => 'Please choose a job',
+               'label' => _('Job'),
+               'empty_option' => _('Please choose a job'),
                'value_options' => $this->getJobList()
             ),
             'attributes' => array(
@@ -74,8 +74,8 @@ class RestoreForm extends Form
             'name' => 'jobid',
             'type' => 'select',
             'options' => array(
-               'label' => 'Job',
-               'empty_option' => 'Please choose a job',
+               'label' => _('Job'),
+               'empty_option' => _('Please choose a job'),
                'value_options' => $this->getJobList()
             ),
             'attributes' => array(
@@ -91,8 +91,8 @@ class RestoreForm extends Form
             'name' => 'backups',
             'type' => 'select',
             'options' => array(
-               'label' => 'Backup jobs',
-               //'empty_option' => 'Please choose a backup',
+               'label' => _('Backup jobs'),
+               //'empty_option' => _('Please choose a backup'),
                'value_options' => $this->getBackupList()
             ),
             'attributes' => array(
@@ -108,8 +108,8 @@ class RestoreForm extends Form
             'name' => 'backups',
             'type' => 'select',
             'options' => array(
-               'label' => 'Backups',
-               //'empty_option' => 'Please choose a backup',
+               'label' => _('Backups'),
+               //'empty_option' => _('Please choose a backup'),
                'value_options' => $this->getBackupList()
             ),
             'attributes' => array(
@@ -127,8 +127,8 @@ class RestoreForm extends Form
                'name' => 'client',
                'type' => 'select',
                'options' => array(
-                  'label' => 'Client',
-                  //'empty_option' => 'Please choose a client',
+                  'label' => _('Client'),
+                  //'empty_option' => _('Please choose a client'),
                   'value_options' => $this->getClientList()
                ),
                'attributes' => array(
@@ -144,8 +144,8 @@ class RestoreForm extends Form
                'name' => 'client',
                'type' => 'select',
                'options' => array(
-                  'label' => 'Client',
-                  //'empty_option' => 'Please choose a client',
+                  'label' => _('Client'),
+                  //'empty_option' => _('Please choose a client'),
                   'value_options' => $this->getClientList()
                ),
                'attributes' => array(
@@ -162,8 +162,8 @@ class RestoreForm extends Form
             'name' => 'client',
             'type' => 'select',
             'options' => array(
-               'label' => 'Client',
-               //'empty_option' => 'Please choose a client',
+               'label' => _('Client'),
+               //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -181,8 +181,8 @@ class RestoreForm extends Form
             'name' => 'restoreclient',
             'type' => 'select',
             'options' => array(
-               'label' => 'Restore to (another) client',
-               //'empty_option' => 'Please choose a client',
+               'label' => _('Restore to (another) client'),
+               //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -198,8 +198,8 @@ class RestoreForm extends Form
             'name' => 'restoreclient',
             'type' => 'select',
             'options' => array(
-               'label' => 'Restore to (another) client',
-               //'empty_option' => 'Please choose a client',
+               'label' => _('Restore to (another) client'),
+               //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -215,8 +215,8 @@ class RestoreForm extends Form
             'name' => 'restoreclient',
             'type' => 'select',
             'options' => array(
-               'label' => 'Restore to (another) client',
-               //'empty_option' => 'Please choose a client',
+               'label' => _('Restore to (another) client'),
+               //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
             'attributes' => array(
@@ -233,8 +233,8 @@ class RestoreForm extends Form
             'name' => 'fileset',
             'type' => 'select',
             'options' => array(
-               'label' => 'Fileset',
-               'empty_option' => 'Please choose a fileset',
+               'label' => _('Fileset'),
+               'empty_option' => _('Please choose a fileset'),
                'value_options' => $this->getFilesetList()
             ),
             'attributes' => array(
@@ -248,8 +248,8 @@ class RestoreForm extends Form
             'name' => 'fileset',
             'type' => 'select',
             'options' => array(
-               'label' => 'Fileset',
-               'empty_option' => 'Please choose a fileset',
+               'label' => _('Fileset'),
+               'empty_option' => _('Please choose a fileset'),
                'value_options' => $this->getFilesetList()
             ),
             'attributes' => array(
@@ -264,8 +264,8 @@ class RestoreForm extends Form
             'name' => 'restorejob',
             'type' => 'select',
             'options' => array(
-               'label' => 'Restore job',
-               //'empty_option' => 'Please choose a restore job',
+               'label' => _('Restore job'),
+               //'empty_option' => _('Please choose a restore job'),
                'value_options' => $this->getRestoreJobList()
             ),
             'attributes' => array(
@@ -282,8 +282,8 @@ class RestoreForm extends Form
                'name' => 'restorejob',
                'type' => 'select',
                'options' => array(
-                  'label' => 'Restore job',
-                  //'empty_option' => 'Please choose a restore job',
+                  'label' => _('Restore job'),
+                  //'empty_option' => _('Please choose a restore job'),
                   'value_options' => $this->getRestoreJobList()
                ),
                'attributes' => array(
@@ -299,8 +299,8 @@ class RestoreForm extends Form
                'name' => 'restorejob',
                'type' => 'select',
                'options' => array(
-                  'label' => 'Restore job',
-                  //'empty_option' => 'Please choose a restore job',
+                  'label' => _('Restore job'),
+                  //'empty_option' => _('Please choose a restore job'),
                   'value_options' => $this->getRestoreJobList()
                ),
                'attributes' => array(
@@ -318,10 +318,10 @@ class RestoreForm extends Form
             'name' => 'mergefilesets',
             'type' => 'select',
             'options' => array(
-               'label' => 'Merge all client filesets?',
+               'label' => _('Merge all client filesets?'),
                'value_options' => array(
-                     '0' => 'Yes',
-                     '1' => 'No'
+                     '0' => _('Yes'),
+                     '1' => _('No')
                   )
                ),
             'attributes' => array(
@@ -337,10 +337,10 @@ class RestoreForm extends Form
             'name' => 'mergefilesets',
             'type' => 'select',
             'options' => array(
-               'label' => 'Merge all client filesets?',
+               'label' => _('Merge all client filesets?'),
                'value_options' => array(
-                     '0' => 'Yes',
-                     '1' => 'No'
+                     '0' => _('Yes'),
+                     '1' => _('No')
                   )
                ),
             'attributes' => array(
@@ -358,10 +358,10 @@ class RestoreForm extends Form
             'name' => 'mergejobs',
             'type' => 'select',
             'options' => array(
-               'label' => 'Merge all related jobs to last full backup of selected backup job?',
+               'label' => _('Merge all related jobs to last full backup of selected backup job?'),
                'value_options' => array(
-                     '0' => 'Yes',
-                     '1' => 'No'
+                     '0' => _('Yes'),
+                     '1' => _('No')
                   )
                ),
             'attributes' => array(
@@ -377,10 +377,10 @@ class RestoreForm extends Form
             'name' => 'mergejobs',
             'type' => 'select',
             'options' => array(
-               'label' => 'Merge jobs?',
+               'label' => _('Merge jobs?'),
                'value_options' => array(
-                     '0' => 'Yes',
-                     '1' => 'No'
+                     '0' => _('Yes'),
+                     '1' => _('No')
                   )
                ),
             'attributes' => array(
@@ -397,12 +397,12 @@ class RestoreForm extends Form
          'name' => 'replace',
          'type' => 'select',
          'options' => array(
-            'label' => 'Replace files on client?',
+            'label' => _('Replace files on client?'),
             'value_options' => array(
-                  'always' => 'always',
-                  'never' => 'never',
-                  'ifolder' => 'if older',
-                  'ifnewer' => 'if newer'
+                  'always' => _('always'),
+                  'never' => _('never'),
+                  'ifolder' => _('if older'),
+                  'ifnewer' => _('if newer')
                )
             ),
          'attributes' => array(
@@ -418,14 +418,14 @@ class RestoreForm extends Form
          'name' => 'where',
          'type' => 'text',
          'options' => array(
-            'label' => 'Restore location on client'
+            'label' => _('Restore location on client')
             ),
          'attributes' => array(
             'class' => 'form-control selectpicker show-tick',
             'value' => '/tmp/bareos-restores/',
             'id' => 'where',
             'size' => '30',
-            'placeholder' => 'e.g. / or /tmp/bareos-restores/'
+            'placeholder' => _('e.g. / or /tmp/bareos-restores/')
             )
          )
       );
@@ -446,7 +446,7 @@ class RestoreForm extends Form
          'name' => 'jobids_display',
          'type' => 'text',
          'options' => array(
-            'label' => 'Related jobs for a most recent full restore'
+            'label' => _('Related jobs for a most recent full restore')
             ),
          'attributes' => array(
             'value' => $this->getJobIds(),
@@ -483,7 +483,7 @@ class RestoreForm extends Form
          'name' => 'submit',
          'type' => 'submit',
          'attributes' => array(
-            'value' => 'Restore',
+            'value' => _('Restore'),
             'id' => 'submit'
          )
       ));

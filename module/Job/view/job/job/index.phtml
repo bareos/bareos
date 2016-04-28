@@ -57,7 +57,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Overview</h3>
+<h3 class="panel-title"><?php echo $this->translate('Overview'); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -107,7 +107,7 @@ $this->headTitle($title);
    <p class="text-danger">Failed to send result as json. Maybe result message to long?</p>
       </div>
       <div class="modal-footer">
-   <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
       </div>
     </div>
   </div>
@@ -190,6 +190,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&status='.$this->status.'&period='.$this->period; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns": [
          { "data": null, "orderable": false, "defaultContent": "", "className": "details-control" },

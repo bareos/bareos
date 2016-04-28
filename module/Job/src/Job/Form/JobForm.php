@@ -46,19 +46,20 @@ class JobForm extends Form
             'name' => 'period',
             'type' => 'select',
             'options' => array(
-               'label' => 'Time period',
+               'label' => _('Time period'),
                'value_options' => array(
-                  '1' => 'past 24 hours',
-                  '7' => 'last week',
-                  '31' => 'last month',
-                  '365' => 'last year',
-                  'all' => 'all'
+                  '1' => _('past 24 hours'),
+                  '3' => _('last 3 days'),
+                  '7' => _('last week'),
+                  '31' => _('last month'),
+                  '365' => _('last year'),
+                  'all' => _('all')
                )
             ),
             'attributes' => array(
                'class' => 'form-control selectpicker show-tick',
-               'data-size' => '5',
-               'id' => 'period',
+               'data-size' => '6',
+               'id' => _('period'),
                'value' => $period
             )
          ));
@@ -69,13 +70,13 @@ class JobForm extends Form
             'name' => 'status',
             'type' => 'select',
             'options' => array(
-               'label' => 'Status',
+               'label' => _('Status'),
                'value_options' => array(
-                  'all' => 'all',
-                  'running' => 'running',
-                  'waiting' => 'waiting',
-                  'unsuccessful' => 'unsuccessful',
-                  'successful' => 'successful'
+                  'all' => _('all'),
+                  'running' => _('running'),
+                  'waiting' => _('waiting'),
+                  'unsuccessful' => _('unsuccessful'),
+                  'successful' => _('successful')
                )
             ),
             'attributes' => array(

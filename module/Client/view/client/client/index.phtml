@@ -23,18 +23,18 @@
  *
  */
 
-$title = 'Clients';
+$title = _('Clients');
 $this->headTitle($title);
 
 ?>
 
 <div class="row">
 
-<div class="col-md-12">
+<div class="col-md-6">
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Clients</h3>
+<h3 class="panel-title"><?php echo $this->translate('Clients'); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -43,6 +43,7 @@ $this->headTitle($title);
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Filedaemon"); ?></th>
    <th><?php echo $this->translate("Version"); ?></th>
    <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
@@ -57,6 +58,7 @@ $this->headTitle($title);
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 

@@ -24,7 +24,7 @@
  *
  */
 
-$title = 'Volumes';
+$title = _('Volumes');
 $this->headTitle($title);
 
 ?>
@@ -43,7 +43,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Volumes</h3>
+<h3 class="panel-title"><?php echo $this->translate("Volumes"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -148,6 +148,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "paging": true,
       "pagingType": "full_numbers",
