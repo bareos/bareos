@@ -439,7 +439,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
 
    if (nis->save_filehist) {
       int result;
-      size_t mapsize = 10485760;
+      ssize_t mapsize = 10485760;
       NIS *nis = (NIS *)ixlog->ctx;
       struct fhdb_state *fhdb_state;
 

@@ -140,7 +140,7 @@ static inline bool parse_gfapi_devicename(char *devicename,
       /*
        * Validate URI.
        */
-      if (!bp || !*bp == '/') {
+      if (!bp || !(*bp == '/')) {
          goto bail_out;
       }
 

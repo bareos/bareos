@@ -11,6 +11,8 @@ Build-Depends: acl-dev, autotools-dev, bc, chrpath, debhelper (>= 7.0.50~), dpkg
 #   0%{?debian_version} >= 800 || 0%{?ubuntu_version} >= 1404
 #     libcephfs-dev
 #     librados-dev
+#   0%{?ubuntu_version} >= 1604
+#     libradosstriper-dev
 #   0%{?debian_version} >= 800 || 0%{?ubuntu_version} >= 1504
 #     glusterfs-common
 #     dh-systemd
