@@ -70,7 +70,7 @@ to the filesystem.
 \end{description}
 
 Please note that the two items above describing the "reader" and "writer", these programs are "executed" by Bareos, which means 
-there is no shell inerpretation of any command line arguments you might use. If you want to use shell characters (redirection of input 
+there is no shell interpretation of any command line arguments you might use. If you want to use shell characters (redirection of input 
 or output, ...), then we recommend that you put your command or commands in a shell script and execute the script. In addition if you
 backup a file with reader program, when running the writer program during the restore, Bareos will not automatically create the path
 to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.
