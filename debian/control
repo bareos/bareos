@@ -13,6 +13,6 @@ Vcs-Browser: https://github.com/bareos/bareos-webui.git
 
 Package: bareos-webui
 Architecture: all
-Depends: apache2 | httpd, libapache2-mod-php5 | php5 | php5-cgi, zendframework (>= 2.2.0) | zend-framework (>= 2.2.0) | php5-zendframework2 (>= 2.2.0), ${misc:Depends}
+Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | php | php-cgi, zendframework (>= 2.2.0) | zend-framework (>= 2.2.0) | php5-zendframework2 (>= 2.2.0), ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - webui
  This package contains the webui.

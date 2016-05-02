@@ -1,5 +1,6 @@
 #!/bin/sh
 
+which a2enmod && a2enmod rewrite setenv php7 2> /dev/null || true
 which a2enmod && a2enmod rewrite setenv php5 2> /dev/null || true
 which a2enconf && a2enconf bareos-webui || true
 
