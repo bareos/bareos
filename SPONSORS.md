@@ -8,6 +8,12 @@ http://www.cardtech.de
     * Secure Erase feature
       * Allow to define an external program (like wipe or shred.exe) for deleting data in a secure manner. This can be necessary to comply to strict industry standards and government regulations that force organizations to mitigate the risk of unauthorized exposure of confidential corporate and government data.
 
+dass IT GmbH
+------------
+http://www.dass-it.de
+
+ * dass IT has partcicpated over years with active development and by providing infrastructure such as servers and the Bareos build system.
+
 Globalways
 ----------
 http://www.globalways.net
