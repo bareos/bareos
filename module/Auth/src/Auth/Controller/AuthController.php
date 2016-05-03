@@ -83,7 +83,7 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['locale'] = $locale;
                $_SESSION['bareos']['idletime'] = time();
 
-               if(!empty($this->params()->fromQuery('req'))) {
+               if($this->params()->fromQuery('req')) {
                   return $this->redirect()->toUrl($this->params()->fromQuery('req'));
                }
                else {
