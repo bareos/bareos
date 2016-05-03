@@ -74,6 +74,7 @@ bool authenticate_director(JCR *jcr)
             dir->who(), dir->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
             dir->who(), dir->msg);
+      free_pool_memory(dirname);
       return false;
    }
 
@@ -98,9 +99,11 @@ bool authenticate_director(JCR *jcr)
       Dmsg2(dbglvl, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
       bmicrosleep(5, 0);
+      free_pool_memory(dirname);
       return false;
    }
 
+   free_pool_memory(dirname);
    return dir->fsend("%s", OK_hello);
 }
 
