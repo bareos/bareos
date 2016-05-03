@@ -482,6 +482,10 @@ void CONFIG::free_resources()
       free_resource(m_res_head[i-m_r_first], i);
       m_res_head[i-m_r_first] = NULL;
    }
+
+   if (m_config_include_dir)  {
+      free((void *)m_config_include_dir);
+   }
 }
 
 RES **CONFIG::save_resources()
