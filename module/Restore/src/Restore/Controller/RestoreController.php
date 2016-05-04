@@ -220,7 +220,7 @@ class RestoreController extends AbstractActionController
                --$dnum;
                $items .= '{';
                $items .= '"id":"-' . $dir['pathid'] . '"';
-               $items .= ',"text":"' . $dir["name"] . '"';
+               $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', $dir["name"]) . '"';
                $items .= ',"icon":"glyphicon glyphicon-folder-close"';
                $items .= ',"state":""';
                $items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
@@ -243,7 +243,7 @@ class RestoreController extends AbstractActionController
          foreach($files as $file) {
             $items .= '{';
             $items .= '"id":"' . $file["fileid"] . '"';
-            $items .= ',"text":"' . $file["name"] . '"';
+            $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', $file["name"]) . '"';
             $items .= ',"icon":"glyphicon glyphicon-file"';
             $items .= ',"state":""';
             $items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
