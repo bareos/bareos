@@ -148,11 +148,12 @@ return array(
    'directors' => read_dir_config($config, $file),
    'service_manager' => array(
       'factories' => array(
-         'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
+         'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',
+         //'Zend\Db\Adapter\Adapter' => 'Zend\Db\Adapter\AdapterServiceFactory',
       ),
       'abstract_factories' => array(
          // to allow other adapters to be called by $sm->get('adaptername')
-         'Zend\Db\Adapter\AdapterAbstractServiceFactory',
+         //'Zend\Db\Adapter\AdapterAbstractServiceFactory',
       ),
    ),
    'session' => array(
@@ -161,7 +162,7 @@ return array(
          'options' => array(
             'name' => 'bareos',
             'use_cookies' => true,
-            'cookie_lifetime' => '3600',
+            'cookie_lifetime' => '0', // to reset lifetime to maximum at every click
             'gc_maxlifetime' => '3600',
             'cache_expire' => 3600,
             'remember_me_seconds' => 3600,
