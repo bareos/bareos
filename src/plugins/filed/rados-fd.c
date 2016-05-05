@@ -548,19 +548,6 @@ static inline void strip_back_slashes(char *value)
 }
 
 /*
- * Parse a boolean value e.g. check if its yes or true anything else translates to false.
- */
-static inline bool parse_boolean(const char *argument_value)
-{
-   if (bstrcasecmp(argument_value, "yes") ||
-       bstrcasecmp(argument_value, "true")) {
-      return true;
-   } else {
-      return false;
-   }
-}
-
-/*
  * Only set destination to value when it has no previous setting.
  */
 static inline void set_string_if_null(char **destination, char *value)

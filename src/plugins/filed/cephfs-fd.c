@@ -299,6 +299,10 @@ static bRC freePlugin(bpContext *ctx)
    free_pool_memory(p_ctx->next_filename);
    free_pool_memory(p_ctx->cwd);
 
+   if (p_ctx->basedir) {
+      free(p_ctx->basedir);
+   }
+
    if (p_ctx->conffile) {
       free(p_ctx->conffile);
    }
@@ -776,19 +780,6 @@ static inline void strip_back_slashes(char *value)
       }
 
       bp++;
-   }
-}
-
-/*
- * Parse a boolean value e.g. check if its yes or true anything else translates to false.
- */
-static inline bool parse_boolean(const char *argument_value)
-{
-   if (bstrcasecmp(argument_value, "yes") ||
-       bstrcasecmp(argument_value, "true")) {
-      return true;
-   } else {
-      return false;
    }
 }
 
