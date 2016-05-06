@@ -10,8 +10,7 @@ class SessionTimeoutPlugin extends AbstractPlugin
    public function timeout()
    {
       // preparation for setting timeout via config file:
-      $config = $this->getController()->getServiceLocator()->get('config');
-
+      $this->getController()->getServiceLocator()->get('config');
       $timeout = 3600;
 
       if($timeout === 0) {
