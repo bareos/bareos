@@ -88,15 +88,7 @@ return array(
    ),
    'view_helpers' => array(
       'invokables' => array (
-      'printDate' => 'Application\View\Helper\Date',
-      'printJobStatus' => 'Application\View\Helper\JobStatus',
-      'printJobType' => 'Application\View\Helper\JobType',
-      'printJobDuration' => 'Application\View\Helper\JobDuration',
-      'printBytes' => 'Application\View\Helper\Bytes',
-      'printRetention' => 'Application\View\Helper\Retention',
-      'printHumanReadableTimeperiod' => 'Application\View\Helper\HumanReadableTimeperiod',
-      'printExpiration' => 'Application\View\Helper\Expiration',
-      'printStatusGlyphicons' => 'Application\View\Helper\StatusGlyphicons',
+         //'printExample' => 'Application\View\Helper\Example', // Example ViewHelper
       ),
    ),
     'view_manager' => array(

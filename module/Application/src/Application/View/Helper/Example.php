@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  * @author    Frank Bergkemper
  *
@@ -23,47 +23,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 namespace Application\View\Helper;
 
-use DateTime;
-use IntlDateFormatter;
 use Zend\View\Helper\AbstractHelper;
 
-class Date extends AbstractHelper
+class Example extends AbstractHelper
 {
 
-    public function __invoke($dateString, $mode = 'iso8601')
-    {
-   if ($dateString == '0000-00-00 00:00:00' || $dateString == '') {
-       return '-';
+   protected $result;
+
+   public function __invoke($var)
+   {
+      $this->result = $var;
+
+      // DO SOMETHING
+
+      return $this->result;
    }
-
-   switch ($mode) {
-       case 'full':
-      $dateType = IntlDateFormatter::FULL;
-      $timeType = IntlDateFormatter::FULL;
-      break;
-       case 'long':
-      $dateType = IntlDateFormatter::LONG;
-      $timeType = IntlDateFormatter::LONG;
-      break;
-       case 'short':
-      $dateType = IntlDateFormatter::SHORT;
-      $timeType = IntlDateFormatter::SHORT;
-      break;
-       case 'medium':
-      $dateType = IntlDateFormatter::MEDIUM;
-      $timeType = IntlDateFormatter::MEDIUM;
-      break;
-       default:
-       case 'iso8601':
-      return $dateString;
-   }
-
-   $dateTime = new DateTime($dateString);
-
-   return $this->getView()->dateFormat($dateTime, $dateType, $timeType);
-    }
-
 }
