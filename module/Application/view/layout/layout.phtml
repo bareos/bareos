@@ -76,7 +76,7 @@ echo $this->doctype();
          <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
       </div>
       <div class="collapse navbar-collapse">
-         <span class="navbar-brand">Bareos <small>Open Source Data Protection</small></span>
+         <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
          <ul class="nav navbar-nav navbar-right">
             <li class="dropdown">
                <a href="#"><span class="glyphicon glyphicon-th"></span>&nbsp;<?php echo $_SESSION['bareos']['director']; ?></a>
@@ -98,17 +98,9 @@ echo $this->doctype();
 
 <div class="container-fluid">
 <div class="row">
-
-<!-- LEFT NAVBAR -->
-<div class="col-xs-2 col-md-1 sidebar">
-   <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav nav-sidebar'); ?>
-</div>
-
-<!-- CONTENT CONTAINER -->
-<div class="col-xs-14 col-md-11 col-xs-offset-2 col-md-offset-1 main">
+<div class="col-md-12">
    <?php echo $this->content; ?>
 </div>
-
 </div>
 </div>
 
