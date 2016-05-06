@@ -278,9 +278,6 @@ void dump_record(const char *tag, const DEV_RECORD *rec)
    }
    Dmsg3(100, "%-14s %u (%s)\n", "state", rec->state, record_state_to_ascii(rec->state));
    Dmsg2(100, "%-14s %p\n", "bsr", rec->bsr);
-   for (unsigned int i = 0; i < (sizeof(rec->ser_buf) / sizeof(rec->ser_buf[0])); i++) {
-      Dmsg3(100, "%-11s[%d] %2.2x\n", "ser_buf", i, (uint8_t)rec->ser_buf[i]);
-   }
    Dmsg2(100, "%-14s %p\n", "data", rec->data);
    Dmsg2(100, "%-14s %d\n", "match_stat", rec->match_stat);
    Dmsg2(100, "%-14s %u\n", "last_VolSessionId", rec->last_VolSessionId);

@@ -118,7 +118,6 @@ struct DEV_RECORD {
    char state_bits[REC_STATE_BYTES];  /* State bits */
    rec_state state;                   /* State of write_record_to_block */
    BSR *bsr;                          /* Pointer to bsr that matched */
-   uint8_t ser_buf[WRITE_RECHDR_LENGTH]; /* Serialized record header goes here */
    POOLMEM *data;                     /* Record data. This MUST be a memory pool item */
    int32_t match_stat;                /* BSR match status */
    uint32_t last_VolSessionId;        /* Used in sequencing FI for Vbackup */
