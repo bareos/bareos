@@ -46,6 +46,45 @@ bool accurate_mark_file_as_seen(JCR *jcr, char *fname)
    return true;
 }
 
+bool accurate_unmark_file_as_seen(JCR *jcr, char *fname)
+{
+   accurate_payload *temp;
+
+   if (!jcr->accurate || !jcr->file_list) {
+      return false;
+   }
+
+   temp = jcr->file_list->lookup_payload(jcr, fname);
+   if (temp) {
+      jcr->file_list->unmark_file_as_seen(jcr, temp);
+      Dmsg1(dbglvl, "unmarked <%s> as seen\n", fname);
+   } else {
+      Dmsg1(dbglvl, "<%s> not found to be unmarked as seen\n", fname);
+   }
+
+   return true;
+}
+
+bool accurate_mark_all_files_as_seen(JCR *jcr)
+{
+   if (!jcr->accurate || !jcr->file_list) {
+      return false;
+   }
+
+   jcr->file_list->mark_all_files_as_seen(jcr);
+   return true;
+}
+
+bool accurate_unmark_all_files_as_seen(JCR *jcr)
+{
+   if (!jcr->accurate || !jcr->file_list) {
+      return false;
+   }
+
+   jcr->file_list->unmark_all_files_as_seen(jcr);
+   return true;
+}
+
 static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **payload)
 {
    bool found = false;

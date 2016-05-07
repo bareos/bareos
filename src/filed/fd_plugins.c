@@ -59,11 +59,11 @@ extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int 
 static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value);
 static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value);
 static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
-static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosJobMsg(bpContext *ctx, const char *fname, int line,
                         int type, utime_t mtime, const char *fmt, ...);
-static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *fname, int line,
                           int level, const char *fmt, ...);
-static void *bareosMalloc(bpContext *ctx, const char *file, int line,
+static void *bareosMalloc(bpContext *ctx, const char *fname, int line,
                           size_t size);
 static void bareosFree(bpContext *ctx, const char *file, int line, void *mem);
 static bRC  bareosAddExclude(bpContext *ctx, const char *file);
@@ -78,6 +78,8 @@ static bool is_plugin_compatible(Plugin *plugin);
 static bool get_plugin_name(JCR *jcr, char *cmd, int *ret);
 static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp);
 static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp);
+static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname);
+static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname);
 
 /*
  * These will be plugged into the global pointer structure for the findlib.
@@ -114,7 +116,9 @@ static bFuncs bfuncs = {
    bareosNewInclude,
    bareosNewPreInclude,
    bareosCheckChanges,
-   bareosAcceptFile
+   bareosAcceptFile,
+   bareosSetSeenBitmap,
+   bareosClearSeenBitmap
 };
 
 /*
@@ -2157,7 +2161,7 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    return bRC_OK;
 }
 
-static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosJobMsg(bpContext *ctx, const char *fname, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
    JCR *jcr;
@@ -2178,7 +2182,7 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
+static bRC bareosDebugMsg(bpContext *ctx, const char *fname, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
@@ -2187,25 +2191,24 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
    va_start(arg_ptr, fmt);
    buffer.bvsprintf(fmt, arg_ptr);
    va_end(arg_ptr);
-   d_msg(file, line, level, "%s", buffer.c_str());
+   d_msg(fname, line, level, "%s", buffer.c_str());
 
    return bRC_OK;
 }
 
-static void *bareosMalloc(bpContext *ctx, const char *file, int line,
-                          size_t size)
+static void *bareosMalloc(bpContext *ctx, const char *fname, int line, size_t size)
 {
 #ifdef SMARTALLOC
-   return sm_malloc(file, line, size);
+   return sm_malloc(fname, line, size);
 #else
    return malloc(size);
 #endif
 }
 
-static void bareosFree(bpContext *ctx, const char *file, int line, void *mem)
+static void bareosFree(bpContext *ctx, const char *fname, int line, void *mem)
 {
 #ifdef SMARTALLOC
-   sm_free(file, line, mem);
+   sm_free(fname, line, mem);
 #else
    free(mem);
 #endif
@@ -2233,7 +2236,7 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
 /**
  * Let the plugin define files/directories to be excluded from the main backup.
  */
-static bRC bareosAddExclude(bpContext *ctx, const char *file)
+static bRC bareosAddExclude(bpContext *ctx, const char *fname)
 {
    JCR *jcr;
    findINCEXE *old;
@@ -2241,7 +2244,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
    }
-   if (!file) {
+   if (!fname) {
       return bRC_Error;
    }
 
@@ -2266,14 +2269,14 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
     */
    set_incexe(jcr, bctx->exclude);
 
-   add_file_to_fileset(jcr, file, true);
+   add_file_to_fileset(jcr, fname, true);
 
    /*
     * Restore the current context
     */
    set_incexe(jcr, old);
 
-   Dmsg1(100, "Add exclude file=%s\n", file);
+   Dmsg1(100, "Add exclude file=%s\n", fname);
 
    return bRC_OK;
 }
@@ -2281,7 +2284,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *file)
 /**
  * Let the plugin define files/directories to be excluded from the main backup.
  */
-static bRC bareosAddInclude(bpContext *ctx, const char *file)
+static bRC bareosAddInclude(bpContext *ctx, const char *fname)
 {
    JCR *jcr;
    findINCEXE *old;
@@ -2291,7 +2294,7 @@ static bRC bareosAddInclude(bpContext *ctx, const char *file)
       return bRC_Error;
    }
 
-   if (!file) {
+   if (!fname) {
       return bRC_Error;
    }
 
@@ -2312,14 +2315,14 @@ static bRC bareosAddInclude(bpContext *ctx, const char *file)
    }
 
    set_incexe(jcr, bctx->include);
-   add_file_to_fileset(jcr, file, true);
+   add_file_to_fileset(jcr, fname, true);
 
    /*
     * Restore the current context
     */
    set_incexe(jcr, old);
 
-   Dmsg1(100, "Add include file=%s\n", file);
+   Dmsg1(100, "Add include file=%s\n", fname);
 
    return bRC_OK;
 }
@@ -2500,6 +2503,70 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
       ret = bRC_OK;
    } else {
       ret = bRC_Skip;
+   }
+
+bail_out:
+   return ret;
+}
+
+/**
+ * Manipulate the accurate seen bitmap for setting bits
+ */
+static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname)
+{
+   JCR *jcr;
+   b_plugin_ctx *bctx;
+   bRC ret = bRC_Error;
+
+   if (!is_ctx_good(ctx, jcr, bctx)) {
+      goto bail_out;
+   }
+
+   if (all && fname) {
+      Dmsg0(dbglvl, "fd-plugin: API error in call to SetSeenBitmap, both all and fname set!!!\n");
+      goto bail_out;
+   }
+
+   if (all) {
+      if (accurate_mark_all_files_as_seen(jcr)) {
+         ret = bRC_OK;
+      }
+   } else if (fname) {
+      if (accurate_mark_file_as_seen(jcr, fname)) {
+         ret = bRC_OK;
+      }
+   }
+
+bail_out:
+   return ret;
+}
+
+/**
+ * Manipulate the accurate seen bitmap for clearing bits
+ */
+static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname)
+{
+   JCR *jcr;
+   b_plugin_ctx *bctx;
+   bRC ret = bRC_Error;
+
+   if (!is_ctx_good(ctx, jcr, bctx)) {
+      goto bail_out;
+   }
+
+   if (all && fname) {
+      Dmsg0(dbglvl, "fd-plugin: API error in call to ClearSeenBitmap, both all and fname set!!!\n");
+      goto bail_out;
+   }
+
+   if (all) {
+      if (accurate_unmark_all_files_as_seen(jcr)) {
+         ret = bRC_OK;
+      }
+   } else if (fname) {
+      if (accurate_unmark_file_as_seen(jcr, fname)) {
+         ret = bRC_OK;
+      }
    }
 
 bail_out:

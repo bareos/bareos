@@ -75,6 +75,9 @@ public:
    virtual bool send_deleted_list(JCR *jcr) = 0;
    virtual void destroy(JCR *jcr) = 0;
    void mark_file_as_seen(JCR *jcr, accurate_payload *payload) { set_bit(payload->filenr, m_seen_bitmap); };
+   void unmark_file_as_seen(JCR *jcr, accurate_payload *payload) { clear_bit(payload->filenr, m_seen_bitmap); };
+   void mark_all_files_as_seen(JCR *jcr) { set_bits(0, m_filenr - 1, m_seen_bitmap); };
+   void unmark_all_files_as_seen(JCR *jcr) { clear_bits(0, m_filenr - 1, m_seen_bitmap); };
 };
 
 /*

@@ -28,6 +28,9 @@
 bool accurate_finish(JCR *jcr);
 bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt);
 bool accurate_mark_file_as_seen(JCR *jcr, char *fname);
+bool accurate_unmark_file_as_seen(JCR *jcr, char *fname);
+bool accurate_mark_all_files_as_seen(JCR *jcr);
+bool accurate_unmark_all_files_as_seen(JCR *jcr);
 void accurate_free(JCR *jcr);
 
 /* authenticate.c */

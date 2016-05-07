@@ -290,12 +290,11 @@ typedef struct s_bareosFuncs {
    bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*getBareosValue)(bpContext *ctx, bVariable var, void *value);
    bRC (*setBareosValue)(bpContext *ctx, bVariable var, void *value);
-   bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
-       int type, utime_t mtime, const char *fmt, ...);
-   bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
-       int level, const char *fmt, ...);
-   void *(*bareosMalloc)(bpContext *ctx, const char *file, int line,
-       size_t size);
+   bRC (*JobMessage)(bpContext *ctx, const char *file, int line, int type,
+                     utime_t mtime, const char *fmt, ...);
+   bRC (*DebugMessage)(bpContext *ctx, const char *file, int line, int level,
+                       const char *fmt, ...);
+   void *(*bareosMalloc)(bpContext *ctx, const char *file, int line, size_t size);
    void (*bareosFree)(bpContext *ctx, const char *file, int line, void *mem);
    bRC (*AddExclude)(bpContext *ctx, const char *file);
    bRC (*AddInclude)(bpContext *ctx, const char *file);
@@ -307,6 +306,8 @@ typedef struct s_bareosFuncs {
    bRC (*NewPreInclude)(bpContext *ctx);
    bRC (*checkChanges)(bpContext *ctx, struct save_pkt *sp);
    bRC (*AcceptFile)(bpContext *ctx, struct save_pkt *sp); /* Need fname and statp */
+   bRC (*SetSeenBitmap)(bpContext *ctx, bool all, char *fname);
+   bRC (*ClearSeenBitmap)(bpContext *ctx, bool all, char *fname);
 } bFuncs;
 
 /****************************************************************************
@@ -324,8 +325,7 @@ typedef enum {
 #define FD_PLUGIN_INTERFACE_VERSION 9
 
 /*
- * This is a set of function pointers that Bareos can call
- *  within the plugin.
+ * This is a set of function pointers that Bareos can call within the plugin.
  */
 typedef struct s_pluginFuncs {
    uint32_t size;
