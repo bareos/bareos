@@ -1069,9 +1069,9 @@ bail_out:
  * back and which allow the callback function to understand what bpContext
  * its talking about.
  */
-#if ((PY_VERSION_HEX <  0x02070000) || \
+#if ((PY_VERSION_HEX < 0x02070000) || \
      ((PY_VERSION_HEX >= 0x03000000) && \
-      (PY_VERSION_HEX <  0x03010000)))
+      (PY_VERSION_HEX < 0x03010000)))
 /*
  * Python version before 2.7 and 3.0.
  */
@@ -1110,10 +1110,15 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
  */
 static inline bRC conv_python_retval(PyObject *pRetVal)
 {
-   int retval;
+   return (bRC)PyInt_AsLong(pRetVal);
+}
 
-   retval = PyInt_AsLong(pRetVal);
-   return (bRC)retval;
+/*
+ * Convert a return value from bRC enum value into Python Object.
+ */
+static inline PyObject *conv_retval_python(bRC retval)
+{
+   return (PyObject *)PyInt_FromLong((int)retval);
 }
 
 /*
@@ -2605,10 +2610,12 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bVarExePath:
    case bVarVersion:
    case bVarDistName: {
-      char *value;
+      char *value = NULL;
 
       if (bfuncs->getBareosValue(ctx, (bVariable)var, &value) == bRC_OK) {
-         pRetVal = PyString_FromString(value);
+         if (value) {
+            pRetVal = PyString_FromString(value);
+         }
       }
       break;
    }
@@ -2619,11 +2626,13 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bVarSinceTime:
    case bVarAccurate:
    case bVarPrefixLinks: {
-      int value;
+      int value = NULL;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (bVariable)var, &value) == bRC_OK) {
-         pRetVal = PyInt_FromLong(value);
+         if (value) {
+            pRetVal = PyInt_FromLong(value);
+         }
       }
       break;
    }
@@ -2632,11 +2641,13 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bVarPrevJobName:
    case bVarWhere:
    case bVarRegexWhere: {
-      char *value;
+      char *value = NULL;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (bVariable)var, &value) == bRC_OK) {
-         pRetVal = PyString_FromString(value);
+         if (value) {
+            pRetVal = PyString_FromString(value);
+         }
       }
       break;
    }
@@ -2664,10 +2675,11 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
 {
    int var;
    bpContext *ctx = NULL;
+   bRC retval = bRC_Error;
    PyObject *pyCtx, *pyValue;
 
    if (!PyArg_ParseTuple(args, "OiO:BareosSetValue", &pyCtx, &var, &pyValue)) {
-      return NULL;
+      goto bail_out;
    }
 
    switch (var) {
@@ -2676,7 +2688,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
 
       value = PyString_AsString(pyValue);
       if (value) {
-         bfuncs->setBareosValue(ctx, (bVariable)var, value);
+         retval = bfuncs->setBareosValue(ctx, (bVariable)var, value);
       }
       break;
    }
@@ -2686,8 +2698,8 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
       break;
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2747,15 +2759,16 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
 {
    int len, event;
    bpContext *ctx;
+   bRC retval = bRC_Error;
    PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
 
    if (!PyArg_ParseTuple(args, "OO:BareosRegisterEvents", &pyCtx, &pyEvents)) {
-      return NULL;
+      goto bail_out;
    }
 
    pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
    if (!pySeq) {
-      return NULL;
+      goto bail_out;
    }
 
    len = PySequence_Fast_GET_SIZE(pySeq);
@@ -2765,16 +2778,89 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
       pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
       event = PyInt_AsLong(pyEvent);
 
-      if (event >= bEventJobStart && event <= bEventComponentInfo) {
+      if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
          Dmsg(ctx, dbglvl, "python-fd: PyBareosRegisterEvents registering event %d\n", event);
-         bfuncs->registerBareosEvents(ctx, 1, event);
+         retval = bfuncs->registerBareosEvents(ctx, 1, event);
+
+         if (retval != bRC_OK) {
+            break;
+         }
       }
    }
 
    Py_DECREF(pySeq);
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue an Unregister Event to unregister events it doesn't want to
+ * receive anymore.
+ */
+static PyObject *PyBareosUnRegisterEvents(PyObject *self, PyObject *args)
+{
+   int len, event;
+   bpContext *ctx;
+   bRC retval = bRC_Error;
+   PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
+
+   if (!PyArg_ParseTuple(args, "OO:BareosUnRegisterEvents", &pyCtx, &pyEvents)) {
+      goto bail_out;
+   }
+
+   pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
+   if (!pySeq) {
+      goto bail_out;
+   }
+
+   len = PySequence_Fast_GET_SIZE(pySeq);
+
+   ctx = PyGetbpContext(pyCtx);
+   for (int i = 0; i < len; i++) {
+      pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
+      event = PyInt_AsLong(pyEvent);
+
+      if (event >= bEventJobStart && event <= FD_NR_EVENTS) {
+         Dmsg(ctx, dbglvl, "PyBareosUnRegisterEvents: unregistering event %d\n", event);
+         retval = bfuncs->unregisterBareosEvents(ctx, 1, event);
+      }
+   }
+
+   Py_DECREF(pySeq);
+
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a GetInstanceCount to retrieve the number of instances of
+ * the current plugin being loaded into the daemon.
+ */
+static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args)
+{
+   int value;
+   bpContext *ctx = NULL;
+   PyObject *pyCtx;
+   PyObject *pRetVal = NULL;
+
+   if (!PyArg_ParseTuple(args, "O:BareosGetInstanceCount", &pyCtx)) {
+      return NULL;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+   if (bfuncs->getInstanceCount(ctx, &value) == bRC_OK) {
+      pRetVal = PyInt_FromLong(value);
+   }
+
+   if (!pRetVal) {
+      Py_INCREF(Py_None);
+      pRetVal = Py_None;
+   }
+
+   return pRetVal;
 }
 
 /*
@@ -2786,18 +2872,19 @@ static PyObject *PyBareosAddExclude(PyObject *self, PyObject *args)
    char *file = NULL;
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O|z:BareosAddExclude", &pyCtx, &file)) {
-      return NULL;
+      goto bail_out;
    }
 
    if (file) {
       ctx = PyGetbpContext(pyCtx);
-      bfuncs->AddExclude(ctx, file);
+      retval = bfuncs->AddExclude(ctx, file);
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2809,18 +2896,19 @@ static PyObject *PyBareosAddInclude(PyObject *self, PyObject *args)
    char *file = NULL;
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O|z:BareosAddInclude", &pyCtx, &file)) {
-      return NULL;
+      goto bail_out;
    }
 
    if (file) {
       ctx = PyGetbpContext(pyCtx);
-      bfuncs->AddInclude(ctx, file);
+      retval = bfuncs->AddInclude(ctx, file);
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2832,18 +2920,19 @@ static PyObject *PyBareosAddOptions(PyObject *self, PyObject *args)
    char *opts = NULL;
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O|z:BareosAddOptions", &pyCtx, &opts)) {
-      return NULL;
+      goto bail_out;
    }
 
    if (opts) {
       ctx = PyGetbpContext(pyCtx);
-      bfuncs->AddOptions(ctx, opts);
+      retval = bfuncs->AddOptions(ctx, opts);
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2856,18 +2945,19 @@ static PyObject *PyBareosAddRegex(PyObject *self, PyObject *args)
    char *item = NULL;
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O|zi:BareosAddRegex", &pyCtx, &item, &type)) {
-      return NULL;
+      goto bail_out;
    }
 
    if (item) {
       ctx = PyGetbpContext(pyCtx);
-      bfuncs->AddRegex(ctx, item, type);
+      retval = bfuncs->AddRegex(ctx, item, type);
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2880,18 +2970,19 @@ static PyObject *PyBareosAddWild(PyObject *self, PyObject *args)
    char *item = NULL;
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O|zi:BareosAddWild", &pyCtx, &item, &type)) {
-      return NULL;
+      goto bail_out;
    }
 
    if (item) {
       ctx = PyGetbpContext(pyCtx);
-      bfuncs->AddWild(ctx, item, type);
+      retval = bfuncs->AddWild(ctx, item, type);
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2902,16 +2993,17 @@ static PyObject *PyBareosNewOptions(PyObject *self, PyObject *args)
 {
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O:BareosNewOptions", &pyCtx)) {
-      return NULL;
+      goto bail_out;
    }
 
    ctx = PyGetbpContext(pyCtx);
-   bfuncs->NewOptions(ctx);
+   retval = bfuncs->NewOptions(ctx);
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2922,16 +3014,17 @@ static PyObject *PyBareosNewInclude(PyObject *self, PyObject *args)
 {
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O:BareosNewInclude", &pyCtx)) {
-      return NULL;
+      goto bail_out;
    }
 
    ctx = PyGetbpContext(pyCtx);
-   bfuncs->NewInclude(ctx);
+   retval = bfuncs->NewInclude(ctx);
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -2942,16 +3035,162 @@ static PyObject *PyBareosNewPreInclude(PyObject *self, PyObject *args)
 {
    bpContext *ctx;
    PyObject *pyCtx;
+   bRC retval = bRC_Error;
 
    if (!PyArg_ParseTuple(args, "O:BareosNewPreInclude", &pyCtx)) {
-      return NULL;
+      goto bail_out;
    }
 
    ctx = PyGetbpContext(pyCtx);
-   bfuncs->NewPreInclude(ctx);
+   retval = bfuncs->NewPreInclude(ctx);
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a check if a file have to be backuped using Accurate code.
+ */
+static PyObject *PyBareosCheckChanges(PyObject *self, PyObject *args)
+{
+   bpContext *ctx;
+   PyObject *pyCtx;
+   struct save_pkt sp;
+   bRC retval = bRC_Error;
+   PySavePacket *pSavePkt;
+
+   if (!PyArg_ParseTuple(args, "OO:BareosCheckChanges", &pyCtx, &pSavePkt)) {
+      goto bail_out;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+
+   /*
+    * CheckFile only has a need for a limited version of the PySavePacket so we handle
+    * that here separately and don't call PySavePacketToNative().
+    */
+   sp.type = pSavePkt->type;
+   if (pSavePkt->fname) {
+      if (PyString_Check(pSavePkt->fname)) {
+         sp.fname = PyString_AsString(pSavePkt->fname);
+      } else {
+         goto bail_out;
+      }
+   } else {
+      goto bail_out;
+   }
+   if (pSavePkt->link) {
+      if (PyString_Check(pSavePkt->link)) {
+         sp.link = PyString_AsString(pSavePkt->link);
+      } else {
+         goto bail_out;
+      }
+   }
+   sp.save_time = pSavePkt->save_time;
+
+   retval = bfuncs->checkChanges(ctx, &sp);
+
+   /*
+    * Copy back the two fields that are changed by checkChanges().
+    */
+   pSavePkt->delta_seq = sp.delta_seq;
+   pSavePkt->accurate_found = sp.accurate_found;
+
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a check if a file would be saved using current Include/Exclude code.
+ */
+static PyObject *PyBareosAcceptFile(PyObject *self, PyObject *args)
+{
+   bpContext *ctx;
+   PyObject *pyCtx;
+   struct save_pkt sp;
+   bRC retval = bRC_Error;
+   PySavePacket *pSavePkt;
+
+   if (!PyArg_ParseTuple(args, "OO:BareosAcceptFile", &pyCtx, &pSavePkt)) {
+      goto bail_out;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+
+   /*
+    * Acceptfile only needs fname and statp from PySavePacket so we handle
+    * that here separately and don't call PySavePacketToNative().
+    */
+   if (pSavePkt->fname) {
+      if (PyString_Check(pSavePkt->fname)) {
+         sp.fname = PyString_AsString(pSavePkt->fname);
+      } else {
+         goto bail_out;
+      }
+   } else {
+      goto bail_out;
+   }
+
+   if (pSavePkt->statp) {
+      PyStatPacketToNative((PyStatPacket *)pSavePkt->statp, &sp.statp);
+   } else {
+      goto bail_out;
+   }
+
+   retval = bfuncs->AcceptFile(ctx, &sp);
+
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a Set bit in the Accurate Seen bitmap.
+ */
+static PyObject *PyBareosSetSeenBitmap(PyObject *self, PyObject *args)
+{
+   bool all;
+   bpContext *ctx;
+   char *fname = NULL;
+   bRC retval = bRC_Error;
+   PyObject *pyCtx, *pyBool;
+
+   if (!PyArg_ParseTuple(args, "OO|s:BareosSetSeenBitmap", &pyCtx, &pyBool, &fname)) {
+      goto bail_out;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+   all = PyObject_IsTrue(pyBool);
+   retval = bfuncs->SetSeenBitmap(ctx, all, fname);
+
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a Clear bit in the Accurate Seen bitmap.
+ */
+static PyObject *PyBareosClearSeenBitmap(PyObject *self, PyObject *args)
+{
+   bool all;
+   bpContext *ctx;
+   char *fname = NULL;
+   bRC retval = bRC_Error;
+   PyObject *pyCtx, *pyBool;
+
+   if (!PyArg_ParseTuple(args, "OO|s:BareosClearSeenBitmap", &pyCtx, &pyBool, &fname)) {
+      goto bail_out;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+   all = PyObject_IsTrue(pyBool);
+   retval = bfuncs->ClearSeenBitmap(ctx, all, fname);
+
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*

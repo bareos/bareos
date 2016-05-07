@@ -640,6 +640,8 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args);
 static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args);
 static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args);
 static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args);
+static PyObject *PyBareosUnRegisterEvents(PyObject *self, PyObject *args);
+static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args);
 static PyObject *PyBareosAddExclude(PyObject *self, PyObject *args);
 static PyObject *PyBareosAddInclude(PyObject *self, PyObject *args);
 static PyObject *PyBareosAddOptions(PyObject *self, PyObject *args);
@@ -648,6 +650,10 @@ static PyObject *PyBareosAddWild(PyObject *self, PyObject *args);
 static PyObject *PyBareosNewOptions(PyObject *self, PyObject *args);
 static PyObject *PyBareosNewInclude(PyObject *self, PyObject *args);
 static PyObject *PyBareosNewPreInclude(PyObject *self, PyObject *args);
+static PyObject *PyBareosCheckChanges(PyObject *self, PyObject *args);
+static PyObject *PyBareosAcceptFile(PyObject *self, PyObject *args);
+static PyObject *PyBareosSetSeenBitmap(PyObject *self, PyObject *args);
+static PyObject *PyBareosClearSeenBitmap(PyObject *self, PyObject *args);
 
 static PyMethodDef BareosFDMethods[] = {
    { "GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value" },
@@ -655,6 +661,8 @@ static PyMethodDef BareosFDMethods[] = {
    { "DebugMessage", PyBareosDebugMessage, METH_VARARGS, "Print a Debug message" },
    { "JobMessage", PyBareosJobMessage, METH_VARARGS, "Print a Job message" },
    { "RegisterEvents", PyBareosRegisterEvents, METH_VARARGS, "Register Plugin Events" },
+   { "UnRegisterEvents", PyBareosUnRegisterEvents, METH_VARARGS, "Unregister Plugin Events" },
+   { "GetInstanceCount", PyBareosGetInstanceCount, METH_VARARGS, "Get number of instances of current plugin" },
    { "AddExclude", PyBareosAddExclude, METH_VARARGS, "Add Exclude pattern" },
    { "AddInclude", PyBareosAddInclude, METH_VARARGS, "Add Include pattern" },
    { "AddOptions", PyBareosAddOptions, METH_VARARGS, "Add Include options" },
@@ -663,6 +671,10 @@ static PyMethodDef BareosFDMethods[] = {
    { "NewOptions", PyBareosNewOptions, METH_VARARGS, "Add new option block" },
    { "NewInclude", PyBareosNewInclude, METH_VARARGS, "Add new include block" },
    { "NewPreInclude", PyBareosNewPreInclude, METH_VARARGS, "Add new pre include block" },
+   { "CheckChanges", PyBareosCheckChanges, METH_VARARGS, "Check if a file have to be backuped using Accurate code" },
+   { "AcceptFile", PyBareosAcceptFile, METH_VARARGS, "Check if a file would be saved using current Include/Exclude code" },
+   { "SetSeenBitmap", PyBareosSetSeenBitmap, METH_VARARGS, "Set bit in the Accurate Seen bitmap" },
+   { "ClearSeenBitmap", PyBareosClearSeenBitmap, METH_VARARGS, "Clear bit in the Accurate Seen bitmap" },
    { NULL, NULL, 0, NULL }
 };
 #endif /* BPYTHONFD_H */

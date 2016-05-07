@@ -55,6 +55,8 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args);
 static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args);
 static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args);
 static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args);
+static PyObject *PyBareosUnRegisterEvents(PyObject *self, PyObject *args);
+static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args);
 
 static PyMethodDef BareosDIRMethods[] = {
    { "GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value" },
@@ -62,6 +64,8 @@ static PyMethodDef BareosDIRMethods[] = {
    { "DebugMessage", PyBareosDebugMessage, METH_VARARGS, "Print a Debug message" },
    { "JobMessage", PyBareosJobMessage, METH_VARARGS, "Print a Job message" },
    { "RegisterEvents", PyBareosRegisterEvents, METH_VARARGS, "Register Plugin Events" },
+   { "UnRegisterEvents", PyBareosUnRegisterEvents, METH_VARARGS, "Unregister Plugin Events" },
+   { "GetInstanceCount", PyBareosGetInstanceCount, METH_VARARGS, "Get number of instances of current plugin" },
    { NULL, NULL, 0, NULL }
 };
 

@@ -529,9 +529,9 @@ bail_out:
  * back and which allow the callback function to understand what bpContext
  * its talking about.
  */
-#if ((PY_VERSION_HEX <  0x02070000) || \
+#if ((PY_VERSION_HEX < 0x02070000) || \
      ((PY_VERSION_HEX >= 0x03000000) && \
-      (PY_VERSION_HEX <  0x03010000)))
+      (PY_VERSION_HEX < 0x03010000)))
 /*
  * Python version before 2.7 and 3.0.
  */
@@ -570,10 +570,15 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
  */
 static inline bRC conv_python_retval(PyObject *pRetVal)
 {
-   int retval;
+   return (bRC)PyInt_AsLong(pRetVal);
+}
 
-   retval = PyInt_AsLong(pRetVal);
-   return (bRC)retval;
+/*
+ * Convert a return value from bRC enum value into Python Object.
+ */
+static inline PyObject *conv_retval_python(bRC retval)
+{
+   return (PyObject *)PyInt_FromLong((int)retval);
 }
 
 /*
@@ -896,19 +901,23 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bDirVarCatalog:
    case bDirVarMediaType:
    case bDirVarVolumeName: {
-      char *value;
+      char *value = NULL;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (brDirVariable)var, &value) == bRC_OK) {
-         pRetVal = PyString_FromString(value);
+         if (value) {
+            pRetVal = PyString_FromString(value);
+         }
       }
       break;
    }
    case bDirVarPluginDir: {
-      char *value;
+      char *value = NULL;
 
       if (bfuncs->getBareosValue(NULL, (brDirVariable)var, &value) == bRC_OK) {
-         pRetVal = PyString_FromString(value);
+         if (value) {
+            pRetVal = PyString_FromString(value);
+         }
       }
       break;
    }
@@ -934,10 +943,11 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
 {
    int var;
    bpContext *ctx = NULL;
+   bRC retval = bRC_Error;
    PyObject *pyCtx, *pyValue;
 
    if (!PyArg_ParseTuple(args, "OiO:BareosSetValue", &pyCtx, &var, &pyValue)) {
-      return NULL;
+      goto bail_out;
    }
 
    switch (var) {
@@ -947,7 +957,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
       ctx = PyGetbpContext(pyCtx);
       value = PyString_AsString(pyValue);
       if (value) {
-         bfuncs->setBareosValue(ctx, (bwDirVariable)var, value);
+         retval = bfuncs->setBareosValue(ctx, (bwDirVariable)var, value);
       }
 
       break;
@@ -959,7 +969,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
       ctx = PyGetbpContext(pyCtx);
       value = PyInt_AsLong(pyValue);
       if (value >= 0) {
-         bfuncs->setBareosValue(ctx, (bwDirVariable)var, &value);
+         retval = bfuncs->setBareosValue(ctx, (bwDirVariable)var, &value);
       }
       break;
    }
@@ -969,8 +979,8 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
       break;
    }
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
 }
 
 /*
@@ -1030,15 +1040,16 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
 {
    int len, event;
    bpContext *ctx;
+   bRC retval = bRC_Error;
    PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
 
    if (!PyArg_ParseTuple(args, "OO:BareosRegisterEvents", &pyCtx, &pyEvents)) {
-      return NULL;
+      goto bail_out;
    }
 
    pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
    if (!pySeq) {
-      return NULL;
+      goto bail_out;
    }
 
    len = PySequence_Fast_GET_SIZE(pySeq);
@@ -1050,12 +1061,89 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
 
       if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
          Dmsg(ctx, dbglvl, "python-dir: PyBareosRegisterEvents registering event %d\n", event);
-         bfuncs->registerBareosEvents(ctx, 1, event);
+         retval = bfuncs->registerBareosEvents(ctx, 1, event);
+
+         if (retval != bRC_OK) {
+            break;
+         }
       }
    }
 
    Py_DECREF(pySeq);
 
-   Py_INCREF(Py_None);
-   return Py_None;
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue an Unregister Event to unregister events it doesn't want to
+ * receive anymore.
+ */
+static PyObject *PyBareosUnRegisterEvents(PyObject *self, PyObject *args)
+{
+   int len, event;
+   bpContext *ctx;
+   bRC retval = bRC_Error;
+   PyObject *pyCtx, *pyEvents, *pySeq, *pyEvent;
+
+   if (!PyArg_ParseTuple(args, "OO:BareosUnRegisterEvents", &pyCtx, &pyEvents)) {
+      goto bail_out;
+   }
+
+   pySeq = PySequence_Fast(pyEvents, "Expected a sequence of events");
+   if (!pySeq) {
+      goto bail_out;
+   }
+
+   len = PySequence_Fast_GET_SIZE(pySeq);
+
+   ctx = PyGetbpContext(pyCtx);
+   for (int i = 0; i < len; i++) {
+      pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
+      event = PyInt_AsLong(pyEvent);
+
+      if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
+         Dmsg(ctx, dbglvl, "PyBareosUnRegisterEvents: registering event %d\n", event);
+         retval = bfuncs->unregisterBareosEvents(ctx, 1, event);
+
+         if (retval != bRC_OK) {
+            break;
+         }
+      }
+   }
+
+   Py_DECREF(pySeq);
+
+bail_out:
+   return conv_retval_python(retval);
+}
+
+/*
+ * Callback function which is exposed as a part of the additional methods which allow
+ * a Python plugin to issue a GetInstanceCount to retrieve the number of instances of
+ * the current plugin being loaded into the daemon.
+ */
+static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args)
+{
+   int value;
+   bpContext *ctx = NULL;
+   PyObject *pyCtx;
+   PyObject *pRetVal = NULL;
+
+   if (!PyArg_ParseTuple(args, "O:BareosGetInstanceCount", &pyCtx)) {
+      return NULL;
+   }
+
+   ctx = PyGetbpContext(pyCtx);
+   if (bfuncs->getInstanceCount(ctx, &value) == bRC_OK) {
+      pRetVal = PyInt_FromLong(value);
+   }
+
+   if (!pRetVal) {
+      Py_INCREF(Py_None);
+      pRetVal = Py_None;
+   }
+
+   return pRetVal;
 }
