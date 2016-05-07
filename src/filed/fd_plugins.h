@@ -289,6 +289,7 @@ typedef struct s_bareosFuncs {
    uint32_t version;
    bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*unregisterBareosEvents)(bpContext *ctx, int nr_events, ...);
+   bRC (*getInstanceCount)(bpContext *ctx, int *ret);
    bRC (*getBareosValue)(bpContext *ctx, bVariable var, void *value);
    bRC (*setBareosValue)(bpContext *ctx, bVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line, int type,

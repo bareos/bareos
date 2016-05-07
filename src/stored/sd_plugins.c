@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,11 +38,14 @@ const char *plugin_type = "-sd.so";
 #endif
 static alist *sd_plugin_list = NULL;
 
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /* Forward referenced functions */
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value);
 static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value);
 static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
 static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...);
+static bRC bareosGetInstanceCount(bpContext *ctx, int *ret);
 static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
 static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
@@ -69,6 +72,7 @@ static bsdFuncs bfuncs = {
    SD_PLUGIN_INTERFACE_VERSION,
    bareosRegisterEvents,
    bareosUnRegisterEvents,
+   bareosGetInstanceCount,
    bareosGetValue,
    bareosSetValue,
    bareosJobMsg,
@@ -90,6 +94,7 @@ struct b_plugin_ctx {
    bRC  rc;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
    char events[nbytes_for_bits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
+   Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
 };
 
 static inline bool is_event_enabled(bpContext *ctx, bsdEventType eventType)
@@ -125,6 +130,25 @@ static inline bool is_plugin_disabled(JCR *jcr)
    return is_plugin_disabled(jcr->plugin_ctx);
 }
 #endif
+
+static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
+{
+   if (!ctx) {
+      return false;
+   }
+
+   bctx = (b_plugin_ctx *)ctx->bContext;
+   if (!bctx) {
+      return false;
+   }
+
+   jcr = bctx->jcr;
+   if (!jcr) {
+      return false;
+   }
+
+   return true;
+}
 
 /*
  * Edit codes into ChangerCommand
@@ -476,6 +500,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t i
    b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
    memset(b_ctx, 0, sizeof(b_plugin_ctx));
    b_ctx->jcr = jcr;
+   b_ctx->plugin = plugin;
 
    Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
@@ -661,7 +686,7 @@ void free_plugins(JCR *jcr)
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
    JCR *jcr = NULL;
-   bRC ret = bRC_OK;
+   bRC retval = bRC_OK;
 
    if (!value) {
       return bRC_Error;
@@ -715,7 +740,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
             *((char **)value) = jcr->dcr->pool_name;
             Dmsg1(dbglvl, "sd-plugin: return bsdVarPool=%s\n", NPRT(*((char **)value)));
          } else {
-            ret = bRC_Error;
+            retval = bRC_Error;
          }
          break;
       case bsdVarPoolType:
@@ -723,7 +748,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
             *((char **)value) = jcr->dcr->pool_type;
             Dmsg1(dbglvl, "sd-plugin: return bsdVarPoolType=%s\n", NPRT(*((char **)value)));
          } else {
-            ret = bRC_Error;
+            retval = bRC_Error;
          }
          break;
       case bsdVarStorage:
@@ -731,7 +756,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
             *((char **)value) = jcr->dcr->device->name();
             Dmsg1(dbglvl, "sd-plugin: return bsdVarStorage=%s\n", NPRT(*((char **)value)));
          } else {
-            ret = bRC_Error;
+            retval = bRC_Error;
          }
          break;
       case bsdVarMediaType:
@@ -739,7 +764,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
             *((char **)value) = jcr->dcr->media_type;
             Dmsg1(dbglvl, "sd-plugin: return bsdVarMediaType=%s\n", NPRT(*((char **)value)));
          } else {
-            ret = bRC_Error;
+            retval = bRC_Error;
          }
          break;
       case bsdVarJobName:
@@ -755,7 +780,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
             *((char **)value) = jcr->dcr->VolumeName;
             Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", NPRT(*((char **)value)));
          } else {
-            ret = bRC_Error;
+            retval = bRC_Error;
          }
          Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", jcr->VolumeName);
          break;
@@ -776,7 +801,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       }
    }
 
-   return ret;
+   return retval;
 }
 
 static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
@@ -849,6 +874,41 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
    }
    va_end(args);
    return bRC_OK;
+}
+
+static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
+{
+   int cnt;
+   JCR *jcr, *njcr;
+   bpContext *nctx;
+   b_plugin_ctx *bctx;
+   bRC retval = bRC_Error;
+
+   if (!is_ctx_good(ctx, jcr, bctx)) {
+      goto bail_out;
+   }
+
+   P(mutex);
+
+   cnt = 0;
+   foreach_jcr(njcr) {
+      if (jcr->plugin_ctx_list) {
+         foreach_alist(nctx, jcr->plugin_ctx_list) {
+            if (nctx->plugin == bctx->plugin) {
+               cnt++;
+            }
+         }
+      }
+   }
+   endeach_jcr(njcr);
+
+   V(mutex);
+
+   *ret = cnt;
+   retval = bRC_OK;
+
+bail_out:
+   return retval;
 }
 
 static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,

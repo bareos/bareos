@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,9 +40,9 @@ const char *plugin_type = "-fd.dll";
 const char *plugin_type = "-fd.so";
 #endif
 static alist *fd_plugin_list = NULL;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
-extern bool check_changes(JCR *jcr, FF_PKT *ff_pkt);
 
 /*
  * Function pointers to be set here
@@ -81,6 +81,7 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp);
 static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp);
 static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname);
 static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname);
+static bRC bareosGetInstanceCount(bpContext *ctx, int *ret);
 
 /*
  * These will be plugged into the global pointer structure for the findlib.
@@ -103,6 +104,7 @@ static bFuncs bfuncs = {
    FD_PLUGIN_INTERFACE_VERSION,
    bareosRegisterEvents,
    bareosUnRegisterEvents,
+   bareosGetInstanceCount,
    bareosGetValue,
    bareosSetValue,
    bareosJobMsg,
@@ -135,6 +137,7 @@ struct b_plugin_ctx {
    char events[nbytes_for_bits(FD_NR_EVENTS + 1)]; /* enabled events bitmask */
    findINCEXE *exclude;                            /* pointer to exclude files */
    findINCEXE *include;                            /* pointer to include/exclude files */
+   Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
 };
 
 static inline bool is_event_enabled(bpContext *ctx, bEventType eventType)
@@ -167,6 +170,25 @@ static inline bool is_plugin_disabled(bpContext *ctx)
    }
 
    return b_ctx->disabled;
+}
+
+static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
+{
+   if (!ctx) {
+      return false;
+   }
+
+   bctx = (b_plugin_ctx *)ctx->bContext;
+   if (!bctx) {
+      return false;
+   }
+
+   jcr = bctx->jcr;
+   if (!jcr) {
+      return false;
+   }
+
+   return true;
 }
 
 /**
@@ -414,7 +436,7 @@ bool plugin_check_file(JCR *jcr, char *fname)
 {
    bpContext *ctx;
    alist *plugin_ctx_list;
-   int ret = bRC_OK;
+   int retval = bRC_OK;
 
    if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list || jcr->is_job_canceled()) {
       return false;                      /* Return if no plugins loaded */
@@ -436,13 +458,13 @@ bool plugin_check_file(JCR *jcr, char *fname)
          continue;
       }
 
-      ret = plug_func(ctx->plugin)->checkFile(ctx, fname);
-      if (ret == bRC_Seen) {
+      retval = plug_func(ctx->plugin)->checkFile(ctx, fname);
+      if (retval == bRC_Seen) {
          break;
       }
    }
 
-   return ret == bRC_Seen;
+   return retval == bRC_Seen;
 }
 
 /**
@@ -531,7 +553,7 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
 {
    int len;
    char *cmd;
-   bRC ret = bRC_Core;
+   bRC retval = bRC_Core;
    bEvent event;
    bEventType eventType;
    bpContext *ctx;
@@ -582,13 +604,13 @@ bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
       }
 
       jcr->plugin_ctx = ctx;
-      ret = plug_func(ctx->plugin)->handlePluginEvent(ctx, &event, sp);
+      retval = plug_func(ctx->plugin)->handlePluginEvent(ctx, &event, sp);
 
       goto bail_out;
    } /* end foreach loop */
 
 bail_out:
-   return ret;
+   return retval;
 }
 
 /**
@@ -609,7 +631,7 @@ bail_out:
 int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
    int len;
-   bRC ret;
+   bRC retval;
    char *cmd;
    bEvent event;
    bpContext *ctx;
@@ -803,12 +825,12 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
           */
          copy_bits(FO_MAX, flags, ff_pkt->flags);
 
-         ret = plug_func(ctx->plugin)->endBackupFile(ctx);
-         if (ret == bRC_More || ret == bRC_OK) {
+         retval = plug_func(ctx->plugin)->endBackupFile(ctx);
+         if (retval == bRC_More || retval == bRC_OK) {
             accurate_mark_file_as_seen(jcr, fname.c_str());
          }
 
-         if (ret == bRC_More) {
+         if (retval == bRC_More) {
             continue;
          }
 
@@ -966,12 +988,12 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
             Dmsg2(dbglvl, "index=%d object=%s\n", sp.index, sp.object);
          }
 
-         bRC ret = plug_func(ctx->plugin)->endBackupFile(ctx);
-         if (ret == bRC_More || ret == bRC_OK) {
+         bRC retval = plug_func(ctx->plugin)->endBackupFile(ctx);
+         if (retval == bRC_More || retval == bRC_OK) {
             accurate_mark_file_as_seen(jcr, sp.fname);
          }
 
-         if (ret == bRC_More) {
+         if (retval == bRC_More) {
             continue;
          }
 
@@ -1168,7 +1190,7 @@ bail_out:
 int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
 {
    int flags;
-   int ret;
+   int retval;
    int status;
    Plugin *plugin;
    struct restore_pkt rp;
@@ -1211,9 +1233,9 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
       return CF_ERROR;
    }
 
-   ret = plug_func(plugin)->createFile(ctx, &rp);
-   if (ret != bRC_OK) {
-      Qmsg2(jcr, M_ERROR, 0, _("Plugin createFile call failed. Stat=%d file=%s\n"), ret, attr->ofname);
+   retval = plug_func(plugin)->createFile(ctx, &rp);
+   if (retval != bRC_OK) {
+      Qmsg2(jcr, M_ERROR, 0, _("Plugin createFile call failed. Stat=%d file=%s\n"), retval, attr->ofname);
       return CF_ERROR;
    }
 
@@ -1737,6 +1759,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char insta
    b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
    memset(b_ctx, 0, sizeof(b_plugin_ctx));
    b_ctx->jcr = jcr;
+   b_ctx->plugin = plugin;
 
    ctx = (bpContext *)malloc(sizeof(bpContext));
    ctx->instance = instance;
@@ -2163,6 +2186,44 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    return bRC_OK;
 }
 
+/**
+ * Get the number of instaces instantiated of a certain plugin.
+ */
+static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
+{
+   int cnt;
+   JCR *jcr, *njcr;
+   bpContext *nctx;
+   b_plugin_ctx *bctx;
+   bRC retval = bRC_Error;
+
+   if (!is_ctx_good(ctx, jcr, bctx)) {
+      goto bail_out;
+   }
+
+   P(mutex);
+
+   cnt = 0;
+   foreach_jcr(njcr) {
+      if (jcr->plugin_ctx_list) {
+         foreach_alist(nctx, jcr->plugin_ctx_list) {
+            if (nctx->plugin == bctx->plugin) {
+               cnt++;
+            }
+         }
+      }
+   }
+   endeach_jcr(njcr);
+
+   V(mutex);
+
+   *ret = cnt;
+   retval = bRC_OK;
+
+bail_out:
+   return retval;
+}
+
 static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
 {
    int i;
@@ -2239,25 +2300,6 @@ static void bareosFree(bpContext *ctx, const char *fname, int line, void *mem)
 #endif
 }
 
-static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
-{
-   if (!ctx) {
-      return false;
-   }
-
-   bctx = (b_plugin_ctx *)ctx->bContext;
-   if (!bctx) {
-      return false;
-   }
-
-   jcr = bctx->jcr;
-   if (!jcr) {
-      return false;
-   }
-
-   return true;
-}
-
 /**
  * Let the plugin define files/directories to be excluded from the main backup.
  */
@@ -2266,6 +2308,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *fname)
    JCR *jcr;
    findINCEXE *old;
    b_plugin_ctx *bctx;
+
    if (!is_ctx_good(ctx, jcr, bctx)) {
       return bRC_Error;
    }
@@ -2456,7 +2499,7 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
    JCR *jcr;
    b_plugin_ctx *bctx;
    FF_PKT *ff_pkt;
-   bRC ret = bRC_Error;
+   bRC retval = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
       goto bail_out;
@@ -2486,9 +2529,9 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
    memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
    if (check_changes(jcr, ff_pkt))  {
-      ret = bRC_OK;
+      retval = bRC_OK;
    } else {
-      ret = bRC_Seen;
+      retval = bRC_Seen;
    }
 
    /*
@@ -2498,8 +2541,8 @@ static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
    sp->accurate_found = ff_pkt->accurate_found;
 
 bail_out:
-   Dmsg1(100, "checkChanges=%i\n", ret);
-   return ret;
+   Dmsg1(100, "checkChanges=%i\n", retval);
+   return retval;
 }
 
 /**
@@ -2510,7 +2553,7 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
    JCR *jcr;
    FF_PKT *ff_pkt;
    b_plugin_ctx *bctx;
-   bRC ret = bRC_Error;
+   bRC retval = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
       goto bail_out;
@@ -2525,13 +2568,13 @@ static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
    memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
 
    if (accept_file(ff_pkt)) {
-      ret = bRC_OK;
+      retval = bRC_OK;
    } else {
-      ret = bRC_Skip;
+      retval = bRC_Skip;
    }
 
 bail_out:
-   return ret;
+   return retval;
 }
 
 /**
@@ -2541,7 +2584,7 @@ static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname)
 {
    JCR *jcr;
    b_plugin_ctx *bctx;
-   bRC ret = bRC_Error;
+   bRC retval = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
       goto bail_out;
@@ -2554,16 +2597,16 @@ static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname)
 
    if (all) {
       if (accurate_mark_all_files_as_seen(jcr)) {
-         ret = bRC_OK;
+         retval = bRC_OK;
       }
    } else if (fname) {
       if (accurate_mark_file_as_seen(jcr, fname)) {
-         ret = bRC_OK;
+         retval = bRC_OK;
       }
    }
 
 bail_out:
-   return ret;
+   return retval;
 }
 
 /**
@@ -2573,7 +2616,7 @@ static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname)
 {
    JCR *jcr;
    b_plugin_ctx *bctx;
-   bRC ret = bRC_Error;
+   bRC retval = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
       goto bail_out;
@@ -2586,20 +2629,19 @@ static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname)
 
    if (all) {
       if (accurate_unmark_all_files_as_seen(jcr)) {
-         ret = bRC_OK;
+         retval = bRC_OK;
       }
    } else if (fname) {
       if (accurate_unmark_file_as_seen(jcr, fname)) {
-         ret = bRC_OK;
+         retval = bRC_OK;
       }
    }
 
 bail_out:
-   return ret;
+   return retval;
 }
 
 #ifdef TEST_PROGRAM
-
 /* Exported variables */
 CLIENTRES *me;                        /* my resource */
 
