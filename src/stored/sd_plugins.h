@@ -139,6 +139,7 @@ typedef struct s_sdbareosFuncs {
    uint32_t size;
    uint32_t version;
    bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
+   bRC (*unregisterBareosEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*getBareosValue)(bpContext *ctx, bsdrVariable var, void *value);
    bRC (*setBareosValue)(bpContext *ctx, bsdwVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
@@ -181,7 +182,7 @@ typedef enum {
 } psdVariable;
 
 #define SD_PLUGIN_MAGIC     "*SDPluginData*"
-#define SD_PLUGIN_INTERFACE_VERSION  3
+#define SD_PLUGIN_INTERFACE_VERSION  4
 
 /*
  * Functions that must be defined in every plugin

@@ -59,6 +59,7 @@ extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int 
 static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value);
 static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value);
 static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...);
+static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...);
 static bRC bareosJobMsg(bpContext *ctx, const char *fname, int line,
                         int type, utime_t mtime, const char *fmt, ...);
 static bRC bareosDebugMsg(bpContext *ctx, const char *fname, int line,
@@ -101,6 +102,7 @@ static bFuncs bfuncs = {
    sizeof(bFuncs),
    FD_PLUGIN_INTERFACE_VERSION,
    bareosRegisterEvents,
+   bareosUnRegisterEvents,
    bareosGetValue,
    bareosSetValue,
    bareosJobMsg,
@@ -2153,8 +2155,31 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
-      Dmsg1(dbglvl, "Plugin wants event=%u\n", event);
+      Dmsg1(dbglvl, "fd-plugin: Plugin registered event=%u\n", event);
       set_bit(event, b_ctx->events);
+   }
+   va_end(args);
+
+   return bRC_OK;
+}
+
+static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
+{
+   int i;
+   va_list args;
+   uint32_t event;
+   b_plugin_ctx *b_ctx;
+
+   if (!ctx) {
+      return bRC_Error;
+   }
+   b_ctx = (b_plugin_ctx *)ctx->bContext;
+
+   va_start(args, nr_events);
+   for (i = 0; i < nr_events; i++) {
+      event = va_arg(args, uint32_t);
+      Dmsg1(dbglvl, "fd-plugin: Plugin unregistered event=%u\n", event);
+      clear_bit(event, b_ctx->events);
    }
    va_end(args);
 

@@ -135,6 +135,7 @@ typedef struct s_dirbareosFuncs {
    uint32_t size;
    uint32_t version;
    bRC (*registerBareosEvents)(bpContext *ctx, int nr_events, ...);
+   bRC (*unregisterBareosEvents)(bpContext *ctx, int nr_events, ...);
    bRC (*getBareosValue)(bpContext *ctx, brDirVariable var, void *value);
    bRC (*setBareosValue)(bpContext *ctx, bwDirVariable var, void *value);
    bRC (*JobMessage)(bpContext *ctx, const char *file, int line,
@@ -169,7 +170,7 @@ typedef enum {
 } pDirVariable;
 
 #define DIR_PLUGIN_MAGIC     "*DirPluginData*"
-#define DIR_PLUGIN_INTERFACE_VERSION  3
+#define DIR_PLUGIN_INTERFACE_VERSION  4
 
 typedef struct s_dirpluginFuncs {
    uint32_t size;
