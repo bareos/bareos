@@ -918,9 +918,11 @@ char *escape_filename(const char *file_path)
 bool path_exists(const char *path)
 {
    struct stat statp;
-   if ((!path) or (strlen(path)<=0)) {
+
+   if (!path || !strlen(path)) {
       return false;
    }
+
    return (stat(path, &statp) == 0);
 }
 
@@ -932,10 +934,16 @@ bool path_exists(POOL_MEM &path)
 bool path_is_directory(const char *path)
 {
    struct stat statp;
-   if ((!path) or (strlen(path)<=0)) {
+
+   if (!path || !strlen(path)) {
       return false;
    }
-   return (S_ISDIR(statp.st_mode));
+
+   if (stat(path, &statp) == 0) {
+      return (S_ISDIR(statp.st_mode));
+   } else {
+      return false;
+   }
 }
 
 bool path_is_directory(POOL_MEM &path)
@@ -945,10 +953,10 @@ bool path_is_directory(POOL_MEM &path)
 
 bool path_is_absolute(const char *path)
 {
-   int length = strlen(path);
-
-   if ((!path) || (length == 0)) {
-      /* no path: not an absolute path */
+   if (!path || !strlen(path)) {
+      /*
+       * No path: not an absolute path
+       */
       return false;
    }
 
