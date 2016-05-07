@@ -197,11 +197,17 @@ static bool for_this_plugin(Plugin *plugin, char *name, int len)
 /**
  * Raise a certain plugin event.
  */
-static inline bRC trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *event, bpContext *ctx, void *value)
+static inline bool trigger_plugin_event(JCR *jcr, bEventType eventType,
+                                        bEvent *event, bpContext *ctx,
+                                        void *value, alist *plugin_ctx_list,
+                                        int *index, bRC *rc)
+
 {
+   bool stop = false;
+
    if (!is_event_enabled(ctx, eventType)) {
       Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
-      return bRC_OK;
+      goto bail_out;
    }
 
    if (is_plugin_disabled(ctx)) {
@@ -222,13 +228,56 @@ static inline bRC trigger_plugin_event(JCR *jcr, bEventType eventType, bEvent *e
       }
    }
 
-   return plug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+   /*
+    * See if we should care about the return code.
+    */
+   if (rc) {
+      *rc = plug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+      switch (*rc) {
+      case bRC_OK:
+         break;
+      case bRC_Stop:
+      case bRC_Error:
+         stop = true;
+         break;
+      case bRC_More:
+         break;
+      case bRC_Term:
+         /*
+          * Request to unload this plugin.
+          * As we remove the plugin from the list of plugins we decrement
+          * the running index value so the next plugin gets triggered as
+          * that moved back a position in the alist.
+          */
+         if (index) {
+            unload_plugin(plugin_ctx_list, ctx->plugin, *index);
+            *index = ((*index) - 1);
+         }
+         break;
+      case bRC_Seen:
+         break;
+      case bRC_Core:
+         break;
+      case bRC_Skip:
+         stop = true;
+         break;
+      case bRC_Cancel:
+         break;
+      default:
+         break;
+      }
+   } else {
+      plug_func(ctx->plugin)->handlePluginEvent(ctx, event, value);
+   }
+
+bail_out:
+   return stop;
 }
 
 /**
  * Create a plugin event When receiving bEventCancelCommand, this function is called by another thread.
  */
-void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
+bRC generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
 {
    bEvent event;
    char *name = NULL;
@@ -238,9 +287,21 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
    restore_object_pkt *rop;
    bpContext *ctx;
    alist *plugin_ctx_list;
+   bRC rc = bRC_OK;
 
-   if (!fd_plugin_list || !jcr || !jcr->plugin_ctx_list) {
-      return;                         /* Return if no plugins loaded */
+   if (!fd_plugin_list) {
+      Dmsg0(dbglvl, "No bplugin_list: generate_plugin_event ignored.\n");
+      goto bail_out;
+   }
+
+   if (!jcr) {
+      Dmsg0(dbglvl, "No jcr: generate_plugin_event ignored.\n");
+      goto bail_out;
+   }
+
+   if (!jcr->plugin_ctx_list) {
+      Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n");
+      goto bail_out;
    }
 
    plugin_ctx_list = jcr->plugin_ctx_list;
@@ -253,7 +314,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
    case bEventOptionPlugin:
       name = (char *)value;
       if (!get_plugin_name(jcr, name, &len)) {
-         return;
+         goto bail_out;
       }
       break;
    case bEventRestoreObject:
@@ -268,7 +329,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
          if (*rop->plugin_name) {
             name = rop->plugin_name;
             if (!get_plugin_name(jcr, name, &len)) {
-               return;
+               goto bail_out;
             }
          }
       }
@@ -294,7 +355,7 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
     * If call_if_canceled is set, we call the plugin anyway
     */
    if (!call_if_canceled && jcr->is_job_canceled()) {
-      return;
+      goto bail_out;
    }
 
    event.eventType = eventType;
@@ -314,7 +375,9 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
             continue;
          }
 
-         trigger_plugin_event(jcr, eventType, &event, ctx, value);
+         if (trigger_plugin_event(jcr, eventType, &event, ctx, value, plugin_ctx_list, &i, &rc)) {
+            break;
+         }
       }
    } else {
       foreach_alist_index(i, ctx, plugin_ctx_list) {
@@ -323,11 +386,19 @@ void generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool rev
             continue;
          }
 
-         trigger_plugin_event(jcr, eventType, &event, ctx, value);
+         if (trigger_plugin_event(jcr, eventType, &event, ctx, value, plugin_ctx_list, &i, &rc)) {
+            break;
+         }
       }
    }
 
-   return;
+   if (jcr->is_job_canceled()) {
+      Dmsg0(dbglvl, "Cancel return from generate_plugin_event\n");
+      rc = bRC_Cancel;
+   }
+
+bail_out:
+   return rc;
 }
 
 /**

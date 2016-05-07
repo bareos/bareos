@@ -165,7 +165,7 @@ int list_sd_plugins(POOL_MEM &msg);
 void dispatch_new_plugin_options(JCR *jcr);
 void new_plugins(JCR *jcr);
 void free_plugins(JCR *jcr);
-int generate_plugin_event(JCR *jcr, bsdEventType event,
+bRC generate_plugin_event(JCR *jcr, bsdEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 
