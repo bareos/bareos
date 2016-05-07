@@ -123,7 +123,7 @@ struct plugin_ctx {
    int replace;
 
    int nb_obj;                        /* Number of objects created */
-   POOLMEM *buf;                      /* store ConfigFile */
+   POOL_MEM *buf;                     /* store ConfigFile */
 };
 
 #ifdef __cplusplus
@@ -202,7 +202,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
    if (p_ctx->buf) {
-      free_pool_memory(p_ctx->buf);
+      delete p_ctx->buf;
    }
    if (p_ctx->cmd) {
       free(p_ctx->cmd);                  /* free any allocated command string */
@@ -582,12 +582,13 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 
    } else if (p_ctx->nb_obj == 1) {
       ConfigFile ini;
-      p_ctx->buf = get_pool_memory(PM_BSOCK);
+
+      p_ctx->buf = new POOL_MEM(PM_BSOCK);
       ini.register_items(test_items, sizeof(struct ini_items));
 
       sp->object_name = (char*)INI_RESTORE_OBJECT_NAME;
       sp->object_len = ini.serialize(p_ctx->buf);
-      sp->object = p_ctx->buf;
+      sp->object = p_ctx->buf->c_str();
       sp->type = FT_PLUGIN_CONFIG;
 
       Dmsg(ctx, dbglvl, "RestoreOptions=<%s>\n", p_ctx->buf);

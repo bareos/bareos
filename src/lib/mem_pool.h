@@ -112,12 +112,15 @@ public:
 int pm_strcat(POOLMEM *&pm, const char *str);
 int pm_strcat(POOLMEM *&pm, POOL_MEM &str);
 int pm_strcat(POOL_MEM &pm, const char *str);
+int pm_strcat(POOL_MEM *&pm, const char *str);
 
 int pm_strcpy(POOLMEM *&pm, const char *str);
 int pm_strcpy(POOLMEM *&pm, POOL_MEM &str);
 int pm_strcpy(POOL_MEM &pm, const char *str);
+int pm_strcpy(POOL_MEM *&pm, const char *str);
 
 int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n);
 int pm_memcpy(POOLMEM *&pm, POOL_MEM &data, int32_t n);
 int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n);
+int pm_memcpy(POOL_MEM *&pm, const char *data, int32_t n);
 #endif

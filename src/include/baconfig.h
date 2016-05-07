@@ -553,6 +553,7 @@ class POOL_MEM;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
 int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
 int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
+int Mmsg(POOL_MEM *&msgbuf, const char *fmt, ...);
 
 class JCR;
 void d_msg(const char *file, int line, int level, const char *fmt, ...);

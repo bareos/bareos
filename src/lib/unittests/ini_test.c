@@ -77,7 +77,7 @@ int main()
    FILE *fp;
    int pos;
    ConfigFile *ini = new ConfigFile();
-   POOLMEM *buf = get_pool_memory(PM_BSOCK);
+   POOL_MEM *buf;
 
    nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
    ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
@@ -165,9 +165,10 @@ int main()
       );
    fclose(fp);
 
+   buf = new POOL_MEM(PM_BSOCK);
    ok(ini->unserialize("test2.cfg"), "Test dynamic parse");
    ok(ini->serialize("test4.cfg"), "Try to dump the item table in a file");
-   ok(ini->serialize(&buf) > 0, "Try to dump the item table in a buffer");
+   ok(ini->serialize(buf) > 0, "Try to dump the item table in a buffer");
    ok(ini->parse("test3.cfg"), "Parse test file with dynamic grammar");
 
    ok((pos = ini->get_item("datastore")) == 0, "Check datastore definition");
@@ -189,13 +190,14 @@ int main()
    ok((pos = ini->get_item("bool")) == 4, "Check bool definition");
    ok(ini->items[pos].val.boolval == true, "Test bool");
 
-   ok(ini->dump_results(&buf), "Test to dump results");
+   ok(ini->dump_results(buf), "Test to dump results");
    printf("<%s>\n", buf);
 
    ini->clear_items();
    ini->free_items();
    report();
 
-   free_pool_memory(buf);
+   delete buf;
+
    exit (0);
 }

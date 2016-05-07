@@ -187,12 +187,12 @@ public:
     * Dump the item table format to a buffer (used on plugin side)
     * returns the length of the buffer, -1 if error
     */
-   int serialize(POOLMEM *&buf);
+   int serialize(POOL_MEM *buf);
 
    /*
     * Dump the item table content to a buffer
     */
-   int dump_results(POOLMEM *&buf);
+   int dump_results(POOL_MEM *buf);
 
    /*
     * Get item position in items list (useful when dynamic)

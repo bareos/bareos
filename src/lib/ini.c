@@ -409,9 +409,9 @@ bool ConfigFile::dump_string(const char *buf, int32_t len)
 bool ConfigFile::serialize(const char *fname)
 {
    FILE *fp;
-   POOLMEM *tmp;
    int32_t len;
    bool ret = false;
+   POOL_MEM tmp(PM_MESSAGE);
 
    if (!items) {
       return ret;
@@ -422,12 +422,10 @@ bool ConfigFile::serialize(const char *fname)
       return ret;
    }
 
-   tmp = get_pool_memory(PM_MESSAGE);
-   len = serialize(tmp);
-   if (fwrite(tmp, len, 1, fp) == 1) {
+   len = serialize(&tmp);
+   if (fwrite(tmp.c_str(), len, 1, fp) == 1) {
       ret = true;
    }
-   free_pool_memory(tmp);
 
    fclose(fp);
    return ret;
@@ -436,12 +434,16 @@ bool ConfigFile::serialize(const char *fname)
 /*
  * Dump the item table format to a text file (used by plugin)
  */
-int ConfigFile::serialize(POOLMEM *&buf)
+int ConfigFile::serialize(POOL_MEM *buf)
 {
    int len;
-   POOLMEM *tmp;
+   POOL_MEM tmp(PM_MESSAGE);
+
    if (!items) {
-      buf[0] = '\0';
+      char *p;
+
+      p = buf->c_str();
+      p[0] = '\0';
       return 0;
    }
 
@@ -452,23 +454,22 @@ int ConfigFile::serialize(POOLMEM *&buf)
    for (int i = 0; items[i].name; i++) {
       if (items[i].comment) {
          Mmsg(tmp, "OptPrompt=%s\n", items[i].comment);
-         pm_strcat(buf, tmp);
+         pm_strcat(buf, tmp.c_str());
       }
       if (items[i].default_value) {
          Mmsg(tmp, "OptDefault=%s\n", items[i].default_value);
-         pm_strcat(buf, tmp);
+         pm_strcat(buf, tmp.c_str());
       }
       if (items[i].required) {
          Mmsg(tmp, "OptRequired=yes\n");
-         pm_strcat(buf, tmp);
+         pm_strcat(buf, tmp.c_str());
       }
 
       /* variable = @INT64@ */
       Mmsg(tmp, "%s=%s\n\n",
            items[i].name, ini_get_store_code(items[i].type));
-      len = pm_strcat(buf, tmp);
+      len = pm_strcat(buf, tmp.c_str());
    }
-   free_pool_memory(tmp);
 
    return len ;
 }
@@ -476,17 +477,19 @@ int ConfigFile::serialize(POOLMEM *&buf)
 /*
  * Dump the item table content to a text file (used by director)
  */
-int ConfigFile::dump_results(POOLMEM *&buf)
+int ConfigFile::dump_results(POOL_MEM *buf)
 {
    int len;
-   POOLMEM *tmp;
+   POOL_MEM tmp(PM_MESSAGE);
+
    if (!items) {
-      *buf = '\0';
+      char *p;
+
+      p = buf->c_str();
+      p[0] = '\0';
       return 0;
    }
    len = Mmsg(buf, "# Plugin configuration file\n# Version %d\n", version);
-
-   tmp = get_pool_memory(PM_MESSAGE);
 
    for (int i = 0; items[i].name; i++) {
       if (items[i].found) {
@@ -520,13 +523,12 @@ int ConfigFile::dump_results(POOLMEM *&buf)
          }
          if (items[i].comment && *items[i].comment) {
             Mmsg(tmp, "# %s\n", items[i].comment);
-            pm_strcat(buf, tmp);
+            pm_strcat(buf, tmp.c_str());
          }
          Mmsg(tmp, "%s=%s\n\n", items[i].name, this->edit);
-         len = pm_strcat(buf, tmp);
+         len = pm_strcat(buf, tmp.c_str());
       }
    }
-   free_pool_memory(tmp);
 
    return len ;
 }
@@ -732,4 +734,3 @@ bool ConfigFile::unserialize(const char *fname)
    lc = lex_close_file(lc);
    return ret;
 }
-

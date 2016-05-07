@@ -1799,6 +1799,28 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
    return len;
 }
 
+int Mmsg(POOL_MEM *&pool_buf, const char *fmt, ...)
+{
+   int len, maxlen;
+   va_list ap;
+
+   while (1) {
+      maxlen = pool_buf->max_size() - 1;
+      va_start(ap, fmt);
+      len = bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
+      va_end(ap);
+
+      if (len < 0 || len >= (maxlen - 5)) {
+         pool_buf->realloc_pm(maxlen + maxlen / 2);
+         continue;
+      }
+
+      break;
+   }
+
+   return len;
+}
+
 /*
  * We queue messages rather than print them directly. This
  * is generally used in low level routines (msg handler, bnet)
