@@ -433,7 +433,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 {
    VMPs = 0;
    VMP_snapshots = 0;
-   HRESULT hr;
+   HRESULT hr = S_OK;
    CComPtr<IVssAsync> pAsync1;
    VSS_BACKUP_TYPE backup_type;
    IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
@@ -743,7 +743,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
 
    m_uidCurrentSnapshotSet = GUID_NULL;
 
-   pVssObj = (IVssBackupComponents*)m_pVssObject;
+   pVssObj = (IVssBackupComponents *)m_pVssObject;
 
    /*
     * startSnapshotSet
@@ -830,19 +830,32 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    return true;
 }
 
-bool VSSClientGeneric::CloseBackup()
+bool VSSClientGeneric::SetBackupSucceeded()
 {
    bool bRet = false;
-   HRESULT hr;
-   BSTR xml;
-   IVssBackupComponents* pVssObj = (IVssBackupComponents*)m_pVssObject;
 
    if (!m_pVssObject) {
       Jmsg(m_jcr, M_FATAL, 0, "VssOject is NULL.\n");
       errno = ENOSYS;
       return bRet;
    }
-   CComPtr<IVssAsync>  pAsync;
+
+   return bRet;
+}
+
+bool VSSClientGeneric::CloseBackup()
+{
+   bool bRet = false;
+   HRESULT hr;
+   BSTR xml;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+
+   if (!m_pVssObject) {
+      Jmsg(m_jcr, M_FATAL, 0, "VssOject is NULL.\n");
+      errno = ENOSYS;
+      return bRet;
+   }
+   CComPtr<IVssAsync> pAsync;
 
    m_bBackupIsInitialized = false;
 
@@ -913,7 +926,7 @@ wchar_t *VSSClientGeneric::GetMetadata()
 
 bool VSSClientGeneric::CloseRestore()
 {
-   IVssBackupComponents* pVssObj = (IVssBackupComponents*)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
    CComPtr<IVssAsync> pAsync;
 
    if (!pVssObj) {
@@ -942,7 +955,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
       return;
    }
 
-   IVssBackupComponents* pVssObj = (IVssBackupComponents*) m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
 
    /*
     * Get list all shadow copies.
@@ -1002,126 +1015,127 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
  */
 bool VSSClientGeneric::CheckWriterStatus()
 {
-    /*
-     * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx
-     */
-    IVssBackupComponents* pVssObj = (IVssBackupComponents*)m_pVssObject;
-    if (!pVssObj) {
-       Jmsg(m_jcr, M_FATAL, 0, "Cannot get IVssBackupComponents pointer.\n");
-       errno = ENOSYS;
-       return false;
-    }
-    DestroyWriterInfo();
+   /*
+    * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx
+    */
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   if (!pVssObj) {
+      Jmsg(m_jcr, M_FATAL, 0, "Cannot get IVssBackupComponents pointer.\n");
+      errno = ENOSYS;
+      return false;
+   }
+   DestroyWriterInfo();
 
-    if (m_bWriterStatusCurrent) {
-       m_bWriterStatusCurrent = false;
-       pVssObj->FreeWriterStatus();
-    }
+   if (m_bWriterStatusCurrent) {
+      m_bWriterStatusCurrent = false;
+      pVssObj->FreeWriterStatus();
+   }
 
-    /*
-     * Gather writer status to detect potential errors
-     */
-    CComPtr<IVssAsync>  pAsync;
+   /*
+    * Gather writer status to detect potential errors
+    */
+   CComPtr<IVssAsync>  pAsync;
 
-    HRESULT hr = pVssObj->GatherWriterStatus(&pAsync.p);
-    if (FAILED(hr)) {
-       JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatus");
-       errno = b_errno_win32;
-       return false;
-    }
+   HRESULT hr = pVssObj->GatherWriterStatus(&pAsync.p);
+   if (FAILED(hr)) {
+      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatus");
+      errno = b_errno_win32;
+      return false;
+   }
 
-    /*
-     * Waits for the async operation to finish and checks the result
-     */
-    if (!WaitAndCheckForAsyncOperation(pAsync.p)) {
-       errno = b_errno_win32;
-       return false;
-    }
+   /*
+    * Waits for the async operation to finish and checks the result
+    */
+   if (!WaitAndCheckForAsyncOperation(pAsync.p)) {
+      errno = b_errno_win32;
+      return false;
+   }
 
-    m_bWriterStatusCurrent = true;
+   m_bWriterStatusCurrent = true;
 
-    unsigned cWriters = 0;
+   unsigned cWriters = 0;
 
-    hr = pVssObj->GetWriterStatusCount(&cWriters);
-    if (FAILED(hr)) {
-       JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatusCount");
-       errno = b_errno_win32;
-       return false;
-    }
+   hr = pVssObj->GetWriterStatusCount(&cWriters);
+   if (FAILED(hr)) {
+      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatusCount");
+      errno = b_errno_win32;
+      return false;
+   }
 
     int nState;
     POOLMEM *szBuf = get_pool_memory(PM_FNAME);
 
-    /*
-     * Enumerate each writer
-     */
-    for (unsigned iWriter = 0; iWriter < cWriters; iWriter++) {
-        VSS_ID idInstance = GUID_NULL;
-        VSS_ID idWriter= GUID_NULL;
-        VSS_WRITER_STATE eWriterStatus = VSS_WS_UNKNOWN;
-        CComBSTR bstrWriterName;
-        HRESULT hrWriterFailure = S_OK;
+   /*
+    * Enumerate each writer
+    */
+   for (unsigned iWriter = 0; iWriter < cWriters; iWriter++) {
+      VSS_ID idInstance = GUID_NULL;
+      VSS_ID idWriter= GUID_NULL;
+      VSS_WRITER_STATE eWriterStatus = VSS_WS_UNKNOWN;
+      CComBSTR bstrWriterName;
+      HRESULT hrWriterFailure = S_OK;
 
-        /*
-         * Get writer status
-         */
-        hr = pVssObj->GetWriterStatus(iWriter,
-                                      &idInstance,
-                                      &idWriter,
-                                      &bstrWriterName,
-                                      &eWriterStatus,
-                                      &hrWriterFailure);
-        if (FAILED(hr)) {
-            /*
-             * Api failed
-             */
-            JmsgVssApiStatus(m_jcr, M_WARNING, hr, "GetWriterStatus");
-            nState = 0;         /* Unknown writer state -- API failed */
-        } else {
-            switch(eWriterStatus) {
-            case VSS_WS_FAILED_AT_IDENTIFY:
-            case VSS_WS_FAILED_AT_PREPARE_BACKUP:
-            case VSS_WS_FAILED_AT_PREPARE_SNAPSHOT:
-            case VSS_WS_FAILED_AT_FREEZE:
-            case VSS_WS_FAILED_AT_THAW:
-            case VSS_WS_FAILED_AT_POST_SNAPSHOT:
-            case VSS_WS_FAILED_AT_BACKUP_COMPLETE:
-            case VSS_WS_FAILED_AT_PRE_RESTORE:
-            case VSS_WS_FAILED_AT_POST_RESTORE:
+      /*
+       * Get writer status
+       */
+      hr = pVssObj->GetWriterStatus(iWriter,
+                                    &idInstance,
+                                    &idWriter,
+                                    &bstrWriterName,
+                                    &eWriterStatus,
+                                    &hrWriterFailure);
+      if (FAILED(hr)) {
+          /*
+           * Api failed
+           */
+          JmsgVssApiStatus(m_jcr, M_WARNING, hr, "GetWriterStatus");
+          nState = 0;         /* Unknown writer state -- API failed */
+      } else {
+          switch(eWriterStatus) {
+          case VSS_WS_FAILED_AT_IDENTIFY:
+          case VSS_WS_FAILED_AT_PREPARE_BACKUP:
+          case VSS_WS_FAILED_AT_PREPARE_SNAPSHOT:
+          case VSS_WS_FAILED_AT_FREEZE:
+          case VSS_WS_FAILED_AT_THAW:
+          case VSS_WS_FAILED_AT_POST_SNAPSHOT:
+          case VSS_WS_FAILED_AT_BACKUP_COMPLETE:
+          case VSS_WS_FAILED_AT_PRE_RESTORE:
+          case VSS_WS_FAILED_AT_POST_RESTORE:
 #if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
-            case VSS_WS_FAILED_AT_BACKUPSHUTDOWN:
+          case VSS_WS_FAILED_AT_BACKUPSHUTDOWN:
 #endif
-               /*
-                * Writer status problem
-                */
-               wchar_2_UTF8(szBuf, bstrWriterName.p);
-               JmsgVssWriterStatus(m_jcr, M_WARNING, eWriterStatus, szBuf);
-               nState = -1;       /* bad writer state */
-               break;
-            default:
-               nState = 1;        /* Writer state OK */
-            }
-        }
+             /*
+              * Writer status problem
+              */
+             wchar_2_UTF8(szBuf, bstrWriterName.p);
+             JmsgVssWriterStatus(m_jcr, M_WARNING, eWriterStatus, szBuf);
+             nState = -1;       /* bad writer state */
+             break;
+          default:
+             nState = 1;        /* Writer state OK */
+          }
+       }
 
-        /*
-         * store text info
-         */
-        char str[1000];
-        bstrncpy(str, "\"", sizeof(str));
-        wchar_2_UTF8(szBuf, bstrWriterName.p);
-        bstrncat(str, szBuf, sizeof(str));
-        bstrncat(str, "\", State: 0x", sizeof(str));
-        itoa(eWriterStatus, szBuf, sizeof_pool_memory(szBuf));
-        bstrncat(str, szBuf, sizeof(str));
-        bstrncat(str, " (", sizeof(str));
-        wchar_2_UTF8(szBuf, GetStringFromWriterStatus(eWriterStatus));
-        bstrncat(str, szBuf, sizeof(str));
-        bstrncat(str, ")", sizeof(str));
-        AppendWriterInfo(nState, (const char *)str);
-    }
+       /*
+        * store text info
+        */
+       char str[1000];
+       bstrncpy(str, "\"", sizeof(str));
+       wchar_2_UTF8(szBuf, bstrWriterName.p);
+       bstrncat(str, szBuf, sizeof(str));
+       bstrncat(str, "\", State: 0x", sizeof(str));
+       itoa(eWriterStatus, szBuf, sizeof_pool_memory(szBuf));
+       bstrncat(str, szBuf, sizeof(str));
+       bstrncat(str, " (", sizeof(str));
+       wchar_2_UTF8(szBuf, GetStringFromWriterStatus(eWriterStatus));
+       bstrncat(str, szBuf, sizeof(str));
+       bstrncat(str, ")", sizeof(str));
+       AppendWriterInfo(nState, (const char *)str);
+   }
 
-    free_pool_memory(szBuf);
-    errno = 0;
-    return true;
+   free_pool_memory(szBuf);
+   errno = 0;
+
+   return true;
 }
 #endif /* WIN32_VSS */

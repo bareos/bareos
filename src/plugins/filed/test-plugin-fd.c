@@ -181,13 +181,12 @@ static bRC newPlugin(bpContext *ctx)
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
    bfuncs->registerBareosEvents(ctx,
-                                6,
+                                5,
                                 bEventJobStart,
                                 bEventEndFileSet,
                                 bEventRestoreObject,
                                 bEventEstimateCommand,
-                                bEventBackupCommand,
-                                bEventComponentInfo);
+                                bEventBackupCommand);
 
    return bRC_OK;
 }
@@ -333,9 +332,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
            p_ctx->cmd, p_ctx->fname, p_ctx->reader, p_ctx->writer);
       break;
    }
-   case bEventComponentInfo:
-      Dmsg(ctx, dbglvl, "plugin: Component=%s\n", NPRT((char *)value));
-      break;
    default:
       Dmsg(ctx, dbglvl, "test-plugin-fd: unknown event=%d\n", event->eventType);
       break;

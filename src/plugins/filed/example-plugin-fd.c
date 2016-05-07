@@ -130,7 +130,7 @@ static bRC newPlugin(bpContext *ctx)
    bfuncs->getBareosValue(ctx, bVarJobId, (void *)&JobId);
 // printf("plugin: newPlugin JobId=%d\n", JobId);
    bfuncs->registerBareosEvents(ctx,
-                                11,
+                                10,
                                 bEventJobStart,
                                 bEventJobEnd,
                                 bEventStartBackupJob,
@@ -140,8 +140,7 @@ static bRC newPlugin(bpContext *ctx)
                                 bEventStartRestoreJob,
                                 bEventEndRestoreJob,
                                 bEventRestoreCommand,
-                                bEventBackupCommand,
-                                bEventComponentInfo);
+                                bEventBackupCommand);
    return bRC_OK;
 }
 
@@ -222,9 +221,6 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
        * Plugin command e.g. plugin = <plugin-name>:<name-space>:command
        */
       printf("plugin: backup command=%s\n", NPRT((char *)value));
-      break;
-   case bEventComponentInfo:
-      printf("plugin: Component=%s\n", NPRT((char *)value));
       break;
    default:
       printf("plugin: unknown event=%d\n", event->eventType);

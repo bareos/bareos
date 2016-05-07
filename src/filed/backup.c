@@ -494,13 +494,13 @@ static inline bool do_backup_xattr(JCR *jcr, FF_PKT *ff_pkt)
 
 /**
  * Called here by find() for each file included.
- *   This is a callback. The original is find_files() above.
+ * This is a callback. The original is find_files() above.
  *
- *  Send the file and its data to the Storage daemon.
+ * Send the file and its data to the Storage daemon.
  *
- *  Returns: 1 if OK
- *           0 if error
- *          -1 to ignore file/directory (not used here)
+ * Returns: 1 if OK
+ *          0 if error
+ *         -1 to ignore file/directory (not used here)
  */
 int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
 {
@@ -1575,6 +1575,20 @@ static void close_vss_backup_session(JCR *jcr)
     * Tell vss to close the backup session
     */
    if (jcr->pVSSClient) {
+      /*
+       * Generate a bEventVssSetBackupSucceeded event and if none of the plugins
+       * give back a bRC_Skip it means this was not performed before so we do it
+       * ourself.
+       */
+      if (generate_plugin_event(jcr, bEventVssSetBackupSucceeded) != bRC_Skip) {
+         jcr->pVSSClient->SetBackupSucceeded();
+      }
+
+      /*
+       * We are about to call the BackupComplete VSS method so let all plugins know
+       * that by raising the bEventVssBackupComplete event.
+       */
+      generate_plugin_event(jcr, bEventVssBackupComplete);
       if (jcr->pVSSClient->CloseBackup()) {
          /*
           * Inform user about writer states
@@ -1599,7 +1613,7 @@ static void close_vss_backup_session(JCR *jcr)
          ff_pkt->type = FT_RESTORE_FIRST;
          ff_pkt->LinkFI = 0;
          ff_pkt->object_name = (char *)"job_metadata.xml";
-         ff_pkt->object = (char *)metadata;
+         ff_pkt->object = BSTR_2_str(metadata);
          ff_pkt->object_len = (wcslen(metadata) + 1) * sizeof(wchar_t);
          ff_pkt->object_index = (int)time(NULL);
          save_file(jcr, ff_pkt, true);

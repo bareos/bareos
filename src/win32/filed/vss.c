@@ -133,8 +133,10 @@ VSSClient::~VSSClient()
 
 bool VSSClient::InitializeForBackup(JCR *jcr)
 {
-    //return Initialize (VSS_CTX_BACKUP);
    m_jcr = jcr;
+
+   generate_plugin_event(jcr, bEventVssInitializeForBackup);
+
    return Initialize(0);
 }
 
@@ -142,7 +144,10 @@ bool VSSClient::InitializeForRestore(JCR *jcr)
 {
    m_metadata = NULL;
    m_jcr = jcr;
-   return Initialize(0, true/*=>Restore*/);
+
+   generate_plugin_event(jcr, bEventVssInitializeForRestore);
+
+   return Initialize(0, true /*=>Restore*/);
 }
 
 bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nBuflen)

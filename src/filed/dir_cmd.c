@@ -2057,6 +2057,8 @@ static bool backup_cmd(JCR *jcr)
                berrno be;
                Jmsg(jcr, M_FATAL, 0, _("CreateSGenerate VSS snapshots failed. ERR=%s\n"), be.bstrerror());
             } else {
+               generate_plugin_event(jcr, bEventVssCreateSnapshots);
+
                /*
                 * Inform about VMPs if we have them
                 */
@@ -2295,28 +2297,8 @@ static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)
    return dir;
 }
 
-#if 0
-#ifdef WIN32_VSS
-static bool vss_restore_init_callback(JCR *jcr, int init_type)
-{
-   switch (init_type) {
-   case VSS_INIT_RESTORE_AFTER_INIT:
-      generate_plugin_event(jcr, bEventVssRestoreLoadComponentMetadata);
-      return true;
-   case VSS_INIT_RESTORE_AFTER_GATHER:
-      generate_plugin_event(jcr, bEventVssRestoreSetComponentsSelected);
-      return true;
-   default:
-      return false;
-      break;
-   }
-}
-#endif
-#endif
-
 /**
  * Do a Restore for Director
- *
  */
 static bool restore_cmd(JCR *jcr)
 {
@@ -2442,6 +2424,8 @@ static bool restore_cmd(JCR *jcr)
          Jmsg(jcr, M_WARNING, 0, _("VSS was not initialized properly. VSS support is disabled. ERR=%s\n"), be.bstrerror());
       }
 
+      generate_plugin_event(jcr, bEventVssRestoreLoadComponentMetadata);
+
       run_scripts(jcr, jcr->RunScripts, "ClientAfterVSS",
                  (jcr->director && jcr->director->allowed_script_dirs) ?
                   jcr->director->allowed_script_dirs :
@@ -2469,27 +2453,30 @@ static bool restore_cmd(JCR *jcr)
    sd->signal(BNET_TERMINATE);
 
 #if defined(WIN32_VSS)
-   /* STOP VSS ON WIN32 */
-   /* tell vss to close the restore session */
-   Dmsg0(100, "About to call CloseRestore\n");
+   /*
+    * STOP VSS ON WIN32
+    * Tell vss to close the restore session
+    */
    if (jcr->pVSSClient) {
-#if 0
-      generate_plugin_event(jcr, bEventVssBeforeCloseRestore);
-#endif
+      Dmsg0(100, "About to call CloseRestore\n");
+
+      generate_plugin_event(jcr, bEventVssCloseRestore);
+
       Dmsg0(100, "Really about to call CloseRestore\n");
       if (jcr->pVSSClient->CloseRestore()) {
          Dmsg0(100, "CloseRestore success\n");
-#if 0
-         /* inform user about writer states */
-         for (int i=0; i<(int)jcr->pVSSClient->GetWriterCount(); i++) {
+         /*
+          * Inform user about writer states
+          */
+         for (int i = 0; i < (int)jcr->pVSSClient->GetWriterCount(); i++) {
             int msg_type = M_INFO;
+
             if (jcr->pVSSClient->GetWriterState(i) < 1) {
-               //msg_type = M_WARNING;
-               //jcr->JobErrors++;
+               msg_type = M_WARNING;
+               jcr->JobErrors++;
             }
             Jmsg(jcr, msg_type, 0, _("VSS Writer (RestoreComplete): %s\n"), jcr->pVSSClient->GetWriterInfo(i));
          }
-#endif
       } else {
          Dmsg1(100, "CloseRestore fail - %08x\n", errno);
       }

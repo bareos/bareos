@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,6 +51,7 @@
 #include "fileopts.h"
 #include "lib/plugins.h"
 #include <sys/stat.h>
+
 #ifdef HAVE_WIN32
 #include "vss.h"
 #endif
@@ -174,67 +175,64 @@ struct xattr_pkt {
  * Bareos Variable Ids
  */
 typedef enum {
-  bVarJobId = 1,
-  bVarFDName = 2,
-  bVarLevel = 3,
-  bVarType = 4,
-  bVarClient = 5,
-  bVarJobName = 6,
-  bVarJobStatus = 7,
-  bVarSinceTime = 8,
-  bVarAccurate = 9,
-  bVarFileSeen = 10,
-  bVarVssObject = 11,
-  bVarVssDllHandle = 12,
-  bVarWorkingDir = 13,
-  bVarWhere = 14,
-  bVarRegexWhere = 15,
-  bVarExePath = 16,
-  bVarVersion = 17,
-  bVarDistName = 18,
-  bVarPrevJobName = 19,
-  bVarPrefixLinks = 20
+   bVarJobId = 1,
+   bVarFDName = 2,
+   bVarLevel = 3,
+   bVarType = 4,
+   bVarClient = 5,
+   bVarJobName = 6,
+   bVarJobStatus = 7,
+   bVarSinceTime = 8,
+   bVarAccurate = 9,
+   bVarFileSeen = 10,
+   bVarVssClient = 11,
+   bVarWorkingDir = 12,
+   bVarWhere = 13,
+   bVarRegexWhere = 14,
+   bVarExePath = 15,
+   bVarVersion = 16,
+   bVarDistName = 17,
+   bVarPrevJobName = 18,
+   bVarPrefixLinks = 19
 } bVariable;
 
 /*
  * Events that are passed to plugin
  */
 typedef enum {
-  bEventJobStart = 1,
-  bEventJobEnd = 2,
-  bEventStartBackupJob = 3,
-  bEventEndBackupJob = 4,
-  bEventStartRestoreJob = 5,
-  bEventEndRestoreJob = 6,
-  bEventStartVerifyJob = 7,
-  bEventEndVerifyJob = 8,
-  bEventBackupCommand = 9,
-  bEventRestoreCommand = 10,
-  bEventEstimateCommand = 11,
-  bEventLevel = 12,
-  bEventSince = 13,
-  bEventCancelCommand = 14,                    /* Executed by another thread */
-  bEventVssBackupAddComponents = 15,           /* Just before bEventVssPrepareSnapshot */
-  bEventVssRestoreLoadComponentMetadata = 16,
-  bEventVssRestoreSetComponentsSelected = 17,
-  bEventRestoreObject = 18,
-  bEventEndFileSet = 19,
-  bEventPluginCommand = 20,                    /* Sent during FileSet creation */
-  bEventVssBeforeCloseRestore = 21,
-
-  /* Add drives to VSS snapshot
-   *  argument: char[27] drivelist
-   * You need to add them without duplicates,
-   * see fd_common.h add_drive() copy_drives() to get help
-   */
-  bEventVssPrepareSnapshot = 22,
-  bEventOptionPlugin = 23,
-  bEventHandleBackupFile = 24,                 /* Used with Options Plugin */
-  bEventComponentInfo = 25,                    /* Plugin component */
-  bEventNewPluginOptions = 26
+   bEventJobStart = 1,
+   bEventJobEnd = 2,
+   bEventStartBackupJob = 3,
+   bEventEndBackupJob = 4,
+   bEventStartRestoreJob = 5,
+   bEventEndRestoreJob = 6,
+   bEventStartVerifyJob = 7,
+   bEventEndVerifyJob = 8,
+   bEventBackupCommand = 9,
+   bEventRestoreCommand = 10,
+   bEventEstimateCommand = 11,
+   bEventLevel = 12,
+   bEventSince = 13,
+   bEventCancelCommand = 14,
+   bEventRestoreObject = 15,
+   bEventEndFileSet = 16,
+   bEventPluginCommand = 17,
+   bEventOptionPlugin = 18,
+   bEventHandleBackupFile = 19,
+   bEventNewPluginOptions = 20,
+   bEventVssInitializeForBackup = 21,
+   bEventVssInitializeForRestore = 22,
+   bEventVssBackupAddComponents = 23,
+   bEventVssPrepareSnapshot = 24,
+   bEventVssCreateSnapshots = 25,
+   bEventVssRestoreLoadComponentMetadata = 26,
+   bEventVssRestoreSetComponentsSelected = 27,
+   bEventVssCloseRestore = 28,
+   bEventVssSetBackupSucceeded = 29,
+   bEventVssBackupComplete = 30
 } bEventType;
 
-#define FD_NR_EVENTS bEventHandleBackupFile /* keep this updated ! */
+#define FD_NR_EVENTS bEventVssBackupComplete /* keep this updated ! */
 
 typedef struct s_bEvent {
    uint32_t eventType;
@@ -324,7 +322,7 @@ typedef enum {
 } pVariable;
 
 #define FD_PLUGIN_MAGIC  "*FDPluginData*"
-#define FD_PLUGIN_INTERFACE_VERSION 9
+#define FD_PLUGIN_INTERFACE_VERSION 10
 
 /*
  * This is a set of function pointers that Bareos can call within the plugin.

@@ -67,7 +67,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *fname, int line,
 static void *bareosMalloc(bpContext *ctx, const char *fname, int line,
                           size_t size);
 static void bareosFree(bpContext *ctx, const char *file, int line, void *mem);
-static bRC  bareosAddExclude(bpContext *ctx, const char *file);
+static bRC bareosAddExclude(bpContext *ctx, const char *file);
 static bRC bareosAddInclude(bpContext *ctx, const char *file);
 static bRC bareosAddOptions(bpContext *ctx, const char *opts);
 static bRC bareosAddRegex(bpContext *ctx, const char *item, int type);
@@ -2099,24 +2099,15 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
          break;
       case bVarFileSeen:
          break;                 /* a write only variable, ignore read request */
-      case bVarVssObject:
+      case bVarVssClient:
 #ifdef HAVE_WIN32
          if (jcr->pVSSClient) {
-            *(void **)value = jcr->pVSSClient->GetVssObject();
-            Dmsg1(dbglvl, "fd-plugin: return bVarVssObject=%p\n", *(void **)value);
+            *(void **)value = jcr->pVSSClient;
+            Dmsg1(dbglvl, "fd-plugin: return bVarVssClient=%p\n", *(void **)value);
             break;
-          }
+         }
 #endif
-          return bRC_Error;
-      case bVarVssDllHandle:
-#ifdef HAVE_WIN32
-         if (jcr->pVSSClient) {
-            *(void **)value = jcr->pVSSClient->GetVssDllHandle();
-            Dmsg1(dbglvl, "fd-plugin: return bVarVssDllHandle=%p\n", *(void **)value);
-            break;
-          }
-#endif
-       return bRC_Error;
+         return bRC_Error;
       case bVarWhere:
          *(char **)value = jcr->where;
          Dmsg1(dbglvl, "fd-plugin: return bVarWhere=%s\n", NPRT(*((char **)value)));
