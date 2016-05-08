@@ -87,7 +87,8 @@ json_t *json_datatype(const int type, RES_ITEM items[]);
 const char *auth_protocol_to_str(uint32_t auth_protocol);
 const char *level_to_str(int level);
 extern "C" char *job_code_callback_director(JCR *jcr, const char*);
-const char *get_configure_parameter();
+const char *get_configure_usage_string();
+void destroy_configure_usage_string();
 bool populate_defs();
 
 /* expand.c */

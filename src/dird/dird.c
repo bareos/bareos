@@ -467,6 +467,7 @@ void terminate_dird(int sig)
    already_here = true;
    debug_level = 0;                   /* turn off debug */
 
+   destroy_configure_usage_string();
    stop_statistics_thread();
    stop_watchdog();
    db_sql_pool_destroy();

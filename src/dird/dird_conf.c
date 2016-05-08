@@ -59,6 +59,7 @@ extern struct s_kw RunFields[];
  */
 static RES *sres_head[R_LAST - R_FIRST + 1];
 static RES **res_head = sres_head;
+static POOL_MEM *configure_usage_string = NULL;
 
 /*
  * Set default indention e.g. 2 spaces.
@@ -901,7 +902,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
 }
 #endif
 
-static inline bool cmdline_item(POOL_MEM &buffer, RES_ITEM *item)
+static inline bool cmdline_item(POOL_MEM *buffer, RES_ITEM *item)
 {
    POOL_MEM temp;
    POOL_MEM key;
@@ -939,7 +940,7 @@ static inline bool cmdline_item(POOL_MEM &buffer, RES_ITEM *item)
    return true;
 }
 
-static inline bool cmdline_items(POOL_MEM &buffer, RES_ITEM items[])
+static inline bool cmdline_items(POOL_MEM *buffer, RES_ITEM items[])
 {
    if (!items) {
       return false;
@@ -953,35 +954,47 @@ static inline bool cmdline_items(POOL_MEM &buffer, RES_ITEM items[])
 }
 
 /*
- * Get the parameter string for the console "configure" command.
+ * Get the usage string for the console "configure" command.
+ *
  * This will be all available resource directives.
  * They are formated in a way to be usable for command line completion.
  */
-const char *get_configure_parameter()
+const char *get_configure_usage_string()
 {
-   static POOL_MEM buffer;
    POOL_MEM resourcename;
 
+   if (!configure_usage_string) {
+      configure_usage_string = new POOL_MEM(PM_BSOCK);
+   }
+
    /*
-    * Only fill the buffer once. The content is static.
+    * Only fill the configure_usage_string once. The content is static.
     */
-   if (buffer.strlen() == 0) {
-      buffer.strcpy("add [");
+   if (configure_usage_string->strlen() == 0) {
+      configure_usage_string->strcpy("add [");
       for (int r = 0; resources[r].name; r++) {
          if (resources[r].items) {
             resourcename.strcpy(resources[r].name);
             resourcename.toLower();
-            buffer.strcat(resourcename);
-            cmdline_items(buffer, resources[r].items);
+            configure_usage_string->strcat(resourcename);
+            cmdline_items(configure_usage_string, resources[r].items);
          }
          if (resources[r+1].items) {
-            buffer.strcat("] | [");
+            configure_usage_string->strcat("] | [");
          }
       }
-      buffer.strcat("]");
+      configure_usage_string->strcat("]");
    }
 
-   return buffer.c_str();
+   return configure_usage_string->c_str();
+}
+
+void destroy_configure_usage_string()
+{
+   if (configure_usage_string) {
+      delete configure_usage_string;
+      configure_usage_string = NULL;
+   }
 }
 
 /*

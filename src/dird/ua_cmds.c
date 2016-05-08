@@ -237,7 +237,7 @@ static struct cmdstruct commands[] = {
    { NT_("cancel"), cancel_cmd, _("Cancel a job"),
      NT_("storage=<storage-name> | jobid=<jobid> | job=<job-name> | ujobid=<unique-jobid> | state=<job_state> | all yes"), false, true },
    { NT_("configure"), configure_cmd, _("Configure director resources"),
-     NT_(get_configure_parameter()), false, true },
+     NT_(get_configure_usage_string()), false, true },
    { NT_("create"), create_cmd, _("Create DB Pool from resource"),
      NT_("pool=<pool-name>"), false, true },
    { NT_("delete"), delete_cmd, _("Delete volume, pool or job"),
