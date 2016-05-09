@@ -27,6 +27,7 @@ namespace Dashboard\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Json\Json;
 
 class DashboardController extends AbstractActionController
 {
@@ -101,6 +102,27 @@ class DashboardController extends AbstractActionController
       else {
          return null;
       }
+   }
+
+   public function getDataAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $result = $this->getDashboardModel()->getJobsLastStatus();
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
+
    }
 
    public function getDashboardModel()

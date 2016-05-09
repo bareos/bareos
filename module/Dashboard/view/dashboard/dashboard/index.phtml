@@ -31,51 +31,75 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-8">
+   <!-- Jobs during past 24 hours -->
+   <div class="col-md-4">
 
-<div class="panel panel-default">
+      <div class="panel panel-default">
 
-   <div class="panel-heading">
-      <h3 class="panel-title">
-      <span class="glyphicon glyphicon-stats"></span>
-      <?php echo $this->translate('Jobs during the past 24 hours') ?>
-      </h3>
-   </div>
+         <div class="panel-heading">
+            <h3 class="panel-title"><?php echo $this->translate('Jobs during the past 24 hours') ?></h3>
+         </div>
 
-   <div class="panel-body" style="overflow-y: auto;">
+         <div class="panel-body" style="overflow-y: auto;">
 
-      <div class="col-md-4">
+            <div class="row-md-6">
+               <div class="col-md-4">
+                  <table class="table">
+                     <tr>
+                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
+                        <td><span class="badge"><?php echo $this->runningJobs; ?></span></td>
+                     </tr>
+                     <tr>
+                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+                        <td><span class="badge"><?php echo $this->waitingJobs; ?></span></td>
+                     </tr>
+                     <tr>
+                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+                        <td><span class="badge"><?php echo $this->successfulJobs; ?></span></td>
+                     </tr>
+                     <tr>
+                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+                        <td><span class="badge"><?php echo $this->unsuccessfulJobs; ?></span></td>
+                     </tr>
+                  </table>
+               </div>
+               <div class="col-md-2">
+                  <div id="chart1" style="width:350px; height:250px;"></div>
+               </div>
+            </div>
 
-      <table class="table">
-         <tr>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->runningJobs; ?></a></td>
-         </tr>
-         <tr>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->waitingJobs; ?></a></td>
-         </tr>
-         <tr>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->successfulJobs; ?></a></td>
-         </tr>
-         <tr>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
-            <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->unsuccessfulJobs; ?></a></td>
-         </tr>
-      </table>
+         </div>
 
       </div>
 
-      <div class="col-md-4">
-         <div id="chart1" style="width:450px; height:300px;"></div>
+   </div>
+
+   <!-- LIST JOBS LAST -->
+   <div class="col-md-8">
+
+      <div class="panel panel-default">
+
+         <div class="panel-heading">
+            <h3 class="panel-title"><?php echo $this->translate('Jobs last status'); ?></h3>
+         </div>
+
+         <div class="panel-body">
+            <table class="table table-hover" id="jobs-last-status">
+               <thead class="bg-primary">
+                  <th><?php echo $this->translate("Job"); ?></th>
+                  <th><?php echo $this->translate("Status"); ?></th>
+                  <th><?php echo $this->translate("Name"); ?></th>
+                  <th><?php echo $this->translate("Client"); ?></th>
+                  <th><?php echo $this->translate("Level"); ?></th>
+                  <th><?php echo $this->translate("Start"); ?></th>
+                  <th><?php echo $this->translate("End"); ?></th>
+               </thead>
+            </table>
+         </div>
+
       </div>
 
    </div>
-
-</div>
-
-</div>
 
 </div>
 
@@ -86,6 +110,12 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pieRenderer.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.jqplot.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css');
+
+   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
 ?>
 
 <script type="text/javascript">
@@ -108,20 +138,18 @@ $this->headTitle($title);
                renderer: jQuery.jqplot.PieRenderer,
                rendererOptions: {
                   fill: true,
-                  sliceMargin: 5,
-                  lineWidth: 3,
-                  showDataLabels: true
+                  showDataLabels: true,
                },
-               shadow: true,
+               shadow: false,
             },
             legend:{
                show: true,
                location: 'se',
-               xoffset: 1,
-               yoffset: 1,
             },
             grid: {
-               drawGridLines: true,
+               background: '#ffffff',
+               drawGridLines: false,
+               drawBorder: false,
                borderColor: 'transparent',
                shadowColor: 'transparent',
             }
@@ -131,9 +159,63 @@ $this->headTitle($title);
    }
 
    $(document).ready(
-      function(){
-         chart1();
+
+      function() {
+
+            chart1();
+
+            var table = $('#jobs-last-status').DataTable({
+               "ajax": {
+                  "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null); ?>",
+                  "dataSrc": ""
+               },
+               "language": {
+                  "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+               },
+               "columns" : [
+                  { "data": "jobid" },
+                  { "data": "jobstatus" },
+                  { "data": "name" },
+                  { "data": "client" },
+                  { "data": "level" },
+                  { "data": "starttime" },
+                  { "data": "endtime" }
+               ],
+               "paging": true,
+               "ordering": true,
+               "info": true,
+               "pagingType": "full_numbers",
+               "stateSave": true,
+               "order": [[0, 'desc']],
+               "columnDefs": [
+                  {
+                     "targets": 0,
+                     "render": function(data, type, full, meta) {
+                        return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+                     }
+                  },
+                  {
+                     "targets": 1,
+                     "render": function(data, type, full, meta) {
+                        return formatJobStatus(data);
+                     }
+                  },
+                  {
+                     "targets": 3,
+                     "render": function(data, type, full, meta) {
+                        return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+                     }
+                  },
+                  {
+                     "targets": 4,
+                     "render": function(data, type, full, meta) {
+                        return formatJobLevel(data);
+                     }
+                  }
+               ]
+            });
       }
+
    );
 
 </script>

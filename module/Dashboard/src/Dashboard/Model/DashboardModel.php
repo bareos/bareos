@@ -27,6 +27,7 @@ namespace Dashboard\Model;
 
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\Json\Json;
 
 class DashboardModel implements ServiceLocatorAwareInterface
 {
@@ -67,6 +68,15 @@ class DashboardModel implements ServiceLocatorAwareInterface
       else {
          return false;
       }
+   }
+
+   public function getJobsLastStatus()
+   {
+      $cmd = 'llist jobs last';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $jobs['result']['jobs'];
    }
 
 }
