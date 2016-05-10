@@ -297,8 +297,12 @@ if __name__ == '__main__':
     dir_port = parser.getint("director", "port")
     carbonHost = parser.get("graphite", "server")
     carbonPort = parser.getint("graphite", "port")
+    try:
+        prefix = parser.get("graphite", "prefix")
+    except ConfigParser.NoOptionError:
+        prefix = "bareos."
     eventUrl = "http://%s/events/" % carbonHost
-    metricPrefix = "bareos." + dirname
+    metricPrefix = prefix + dirname
     timeStampFile = "/var/tmp/bareos-graphite-poller_"
     timeStampFileHandler = None
     # evaluate time-ranges (only needed for events and job/devicestats
