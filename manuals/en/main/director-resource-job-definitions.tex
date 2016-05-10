@@ -278,13 +278,14 @@ To structure the configuration even more, \ilink{Job Defs}{DirectorResourceJobDe
 }
 
 \defDirective{Dir}{Job}{Level}{}{}{%
-The Level directive specifies the default Job level to be run.  Each
-different Job Type (Backup, Restore, Verify, ...) has a different set of Levels
-that can be specified.  The Level is normally overridden by a different
-value that is specified in the {\bf Schedule} resource.  This directive
-is not required, but must be specified either by a {\bf Level} directive
-or as an override specified in the {\bf Schedule} resource.
-
+The Level directive specifies the default Job level to be run.
+Each different \linkResourceDirective{Dir}{Job}{Type} (Backup, Restore, Verify, ...) has a different set of Levels
+that can be specified.
+The Level is normally overridden by a different
+value that is specified in the \nameref{DirectorResourceSchedule}.
+This directive is not required,
+but must be specified either by this  directive
+or as an override specified in the \nameref{DirectorResourceSchedule}.
 
 \begin{description}
     \item [Backup] \hfill \\
@@ -1477,19 +1478,11 @@ Using \texttt{Strip Prefix=/etc}, \texttt{/etc/passwd} will be restored to
 Under Windows, if you want to restore \texttt{c:/files} to \texttt{d:/files},
 you can use:
 
-% \begin{bconfig}{}^^J
-%  Strip Prefix = c:^^J
-%  Add Prefix = d:^^J
-% \end{bconfig}
-% 
 \bconfigInput{config/DirJobStripPrefix1.conf}
 }
 
 \defDirective{Dir}{Job}{Type}{}{}{%
-The {\bf Type} directive specifies  the Job type, which may be one of the
-following: {\bf Backup},  {\bf Restore}, {\bf Verify}, or {\bf Admin}. This
-directive  is required. Within a particular Job Type, there are also Levels
-as discussed in the next item.
+The \configdirective{Type} directive specifies the Job type, which is one of the following:
 
 \begin{description}
 
@@ -1553,6 +1546,9 @@ Although an Admin job is recorded in the  catalog, very little data is saved.
    automatically upgraded to a Backup rather than a Copy, and it will
    subsequently be used for restoration.
 \end{description}
+
+Within a particular Job Type, there are also Levels,
+see \linkResourceDirective{Dir}{Job}{Level}.
 }
 
 \defDirective{Dir}{Job}{Verify Job}{}{}{%
