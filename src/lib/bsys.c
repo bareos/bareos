@@ -972,7 +972,7 @@ bool path_is_absolute(const char *path)
     * Windows:
     * Does path begin with drive? if yes, it is absolute
     */
-   if (length >= 3) {
+   if (strlen(path) >= 3) {
       if (isalpha(path[0]) && path[1] == ':' && IsPathSeparator(path[2])) {
          return true;
       }
