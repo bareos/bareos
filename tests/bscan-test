@@ -67,9 +67,9 @@ else
 fi
 
 if test "$debug" -eq 1 ; then
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr -c bin/bareos-sd.conf ${cwd}/tmp
+  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp
 else
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr -c bin/bareos-sd.conf ${cwd}/tmp >tmp/log3.out 2>&1
+  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp >tmp/log3.out 2>&1
 fi
 
 cat <<END_OF_DATA >tmp/bconcmds

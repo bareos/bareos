@@ -44,9 +44,9 @@ stop_bareos
 
 mkdir -p ${cwd}/tmp/bareos-restores
 if test "$debug" -eq 1 ; then
-  $bin/bextract -v -b working/restore.bsr -c bin/bareos-sd.conf ${cwd}/tmp ${cwd}/tmp/bareos-restores
+  $bin/bextract -v -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores
 else
-  $bin/bextract -b working/restore.bsr -c bin/bareos-sd.conf ${cwd}/tmp ${cwd}/tmp/bareos-restores 2>&1 >/dev/null
+  $bin/bextract -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores 2>&1 >/dev/null
 fi
 rstat=$?
 grep "^  Termination: *Backup OK" ${cwd}/tmp/log1.out 2>&1 >/dev/null
