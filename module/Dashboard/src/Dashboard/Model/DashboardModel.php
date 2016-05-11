@@ -79,4 +79,13 @@ class DashboardModel implements ServiceLocatorAwareInterface
       return $jobs['result']['jobs'];
    }
 
+   public function getLastDirectorMessages()
+   {
+      $cmd = 'llist log limit=50';
+      $this->director = $this->getServiceLocator()->get('director');
+      $result = $this->director->send_command($cmd, 2, null);
+      $msg = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $msg['result']['log'];
+   }
+
 }

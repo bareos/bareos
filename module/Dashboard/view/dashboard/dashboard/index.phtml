@@ -103,6 +103,31 @@ $this->headTitle($title);
 
 </div>
 
+<!-- DIRD MSG TICKER -->
+<div class="row">
+
+   <div class="col-md-4">
+
+   <div class="panel panel-default">
+
+         <div class="panel-heading">
+            <h3 class="panel-title"><?php echo $this->translate('Last Director messages'); ?></h3>
+         </div>
+
+         <div class="panel-body" style="overflow-x: auto;">
+
+            <div class="dird-msg-ticker" style="height: 250px;">
+               <div class="msg" id="0"></div>
+            </div>
+
+         </div>
+
+   </div>
+
+   </div>
+
+</div>
+
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pointLabels.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.categoryAxisRenderer.min.js');
@@ -158,15 +183,40 @@ $this->headTitle($title);
 
    }
 
+   var lastlogid = 0;
+
+   function getDirectorMessages() {
+
+      $.ajax({
+         url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=dirdmsg'; ?>',
+         dataType: 'json',
+         timeout: 10000,
+         success: function(data) {
+            for(var i in data) {
+               if(data[i].logid > lastlogid) {
+                  var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext.replace(/(?:\r\n|\r|\n)/g, '<br />')+'</div>');
+                  msg.insertBefore('#'+lastlogid).fadeIn('slow');
+                  lastlogid = data[i].logid;
+               }
+            }
+         }
+      });
+
+   }
+
    $(document).ready(
 
       function() {
 
             chart1();
 
-            var table = $('#jobs-last-status').DataTable({
+            getDirectorMessages();
+
+            setInterval('getDirectorMessages()', 30000);
+
+            var table_jobs_last_status = $('#jobs-last-status').DataTable({
                "ajax": {
-                  "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null); ?>",
+                  "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>",
                   "dataSrc": ""
                },
                "language": {
@@ -214,6 +264,7 @@ $this->headTitle($title);
                   }
                ]
             });
+
       }
 
    );

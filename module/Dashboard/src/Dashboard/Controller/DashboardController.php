@@ -112,7 +112,17 @@ class DashboardController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
 
-      $result = $this->getDashboardModel()->getJobsLastStatus();
+      $data = $this->params()->fromQuery('data');
+
+      if($data == "jobslaststatus") {
+         $result = $this->getDashboardModel()->getJobsLastStatus();
+      }
+      elseif($data == "dirdmsg") {
+         $result = $this->getDashboardModel()->getLastDirectorMessages();
+      }
+      else {
+         $result = null;
+      }
 
       $response = $this->getResponse();
       $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
