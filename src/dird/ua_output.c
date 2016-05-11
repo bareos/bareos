@@ -169,7 +169,7 @@ static void show_disabled_schedules(UAContext *ua)
       if (!sched->enabled) {
          if (first) {
             first = false;
-            ua->send_msg(_("Disabled Scedules:\n"));
+            ua->send_msg(_("Disabled Schedules:\n"));
          }
          ua->send_msg("   %s\n", sched->name());
       }
