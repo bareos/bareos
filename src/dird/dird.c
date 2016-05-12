@@ -94,8 +94,6 @@ struct resource_table_reference {
 
 static bool check_catalog(cat_op mode);
 
-#define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
-
 static void free_saved_resources(resource_table_reference *table)
 {
    int num = my_config->m_r_last - my_config->m_r_first + 1;
@@ -315,10 +313,6 @@ int main (int argc, char *argv[])
    }
    if (argc) {
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    /*

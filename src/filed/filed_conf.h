@@ -26,6 +26,8 @@
  * Kern Sibbald, Sep MM
  */
 
+#define CONFIG_FILE "bareos-fd.conf"  /* default config file */
+
 /*
  * Resource codes -- they must be sequential for indexing
  */

@@ -96,8 +96,6 @@ static int num_media = 0;
 static int num_files = 0;
 static int num_restoreobjects = 0;
 
-#define CONFIG_FILE "bareos-sd.conf"
-
 static void usage()
 {
    fprintf(stderr, _(
@@ -106,7 +104,7 @@ PROG_COPYRIGHT
 "Usage: bscan [ options ] <device-name>\n"
 "       -B <drivername>   specify the database driver name (default NULL) <postgresql|mysql|sqlite3>\n"
 "       -b <bootstrap>    specify a bootstrap file\n"
-"       -c <file>         specify storage daemon configuration file (default: %s)\n"
+"       -c <file>         specify storage daemon configuration file\n"
 "       -d <nnn>          set debug level to <nnn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -m                update media info in database\n"
@@ -127,7 +125,7 @@ PROG_COPYRIGHT
 "       -w <directory>    specify working directory (default from configuration file)\n"
 "       -?                print this message\n\n"
 "example:\n"
-"bscan -B postgresql -V Full-0001 FileStorage\n"), 2001, VERSION, BDATE, CONFIG_FILE, backend_directory);
+"bscan -B postgresql -V Full-0001 FileStorage\n"), 2001, VERSION, BDATE, backend_directory);
    exit(1);
 }
 
@@ -257,10 +255,6 @@ int main (int argc, char *argv[])
    if (argc != 1) {
       Pmsg0(0, _("Wrong number of arguments: \n"));
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    my_config = new_config_parser();

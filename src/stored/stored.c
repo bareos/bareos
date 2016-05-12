@@ -49,8 +49,6 @@ static void cleanup_old_files();
 
 extern "C" void *device_initialization(void *arg);
 
-#define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
-
 /* Global variables exported */
 char OK_msg[]   = "3000 OK\n";
 char TERM_msg[] = "3999 Terminate\n";
@@ -212,10 +210,6 @@ int main (int argc, char *argv[])
    }
    if (argc) {
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    /*

@@ -26,6 +26,8 @@
  * Kern Sibbald, Sep MM
  */
 
+#define CONFIG_FILE "bconsole.conf"   /* default configuration file */
+
 /*
  * Resource codes -- they must be sequential for indexing
  */

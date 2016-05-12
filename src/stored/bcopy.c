@@ -51,8 +51,6 @@ static uint32_t jobs = 0;
 static DEV_BLOCK *out_block;
 static SESSION_LABEL sessrec;
 
-#define CONFIG_FILE "bareos-sd.conf"
-
 static void usage()
 {
    fprintf(stderr, _(
@@ -163,10 +161,6 @@ int main (int argc, char *argv[])
    OSDependentInit();
 
    working_directory = wd;
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
-   }
 
    my_config = new_config_parser();
    parse_sd_config(my_config, configfile, M_ERROR_TERM);

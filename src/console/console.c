@@ -107,8 +107,6 @@ static int eolcmd(FILE *input, BSOCK *UA_sock);
 
 #endif
 
-#define CONFIG_FILE "bconsole.conf"   /* default configuration file */
-
 static void usage()
 {
    fprintf(stderr, _(
@@ -1200,10 +1198,6 @@ int main(int argc, char *argv[])
    if (argc) {
       usage();
       exit(1);
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    if (export_config_schema) {

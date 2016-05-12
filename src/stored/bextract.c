@@ -62,8 +62,6 @@ static char *wbuf;                    /* write buffer address */
 static uint32_t wsize;                /* write size */
 static uint64_t fileAddr = 0;         /* file write address */
 
-#define CONFIG_FILE "bareos-sd.conf"
-
 static void usage()
 {
    fprintf(stderr, _(
@@ -194,10 +192,6 @@ int main (int argc, char *argv[])
    if (argc != 2) {
       Pmsg0(0, _("Wrong number of arguments. Make sure the last two parameters are <bareos-archive-device-name> <directory-to-store-files>\n"));
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    my_config = new_config_parser();

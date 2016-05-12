@@ -411,6 +411,7 @@ public:
       int32_t r_last,
       RES_TABLE *resources,
       RES **res_head);
+   void set_default_config_filename(const char *filename);
    void set_config_include_dir(const char *rel_path);
    bool is_using_config_include_dir() { return m_use_config_include_dir; };
    bool parse_config();
@@ -432,13 +433,17 @@ public:
                                  const char *resourcetype, const char *name, bool error_if_exits = false);
 
 protected:
+   const char *m_config_default_filename;         /* default config filename, that is used, if no filename is given */
+   const char *m_config_dir;                      /* base directory of configuration files */
    const char *m_config_include_dir;              /* rel. path to the config include directory
                                                      (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
    bool m_use_config_include_dir;                 /* Use the config include directory */
    const char *m_config_include_naming_format;    /* Format string for file paths of resources */
 
    const char *get_default_configdir();
-   bool find_config_file(POOL_MEM &full_path);
+   bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
+   bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
+   bool find_config_path(POOL_MEM &full_path);
 };
 
 CONFIG *new_config_parser();

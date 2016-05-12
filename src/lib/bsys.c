@@ -1005,7 +1005,9 @@ bool path_get_directory(POOL_MEM &directory, POOL_MEM &path)
    }
 
    if (path_is_directory(directory)) {
-      /* make sure, path ends with path separator */
+      /*
+       * Make sure, path ends with path separator
+       */
       path_append(directory, "");
       return true;
    }
@@ -1015,8 +1017,16 @@ bool path_get_directory(POOL_MEM &directory, POOL_MEM &path)
 
 bool path_append(char *path, const char *extra, unsigned int max_path)
 {
-   int path_len = strlen(path);
-   if ((path_len + 1 + strlen(extra)) > max_path) {
+   int path_len;
+   int required_length;
+
+   if (!path || !extra) {
+      return true;
+   }
+
+   path_len = strlen(path);
+   required_length = path_len + 1 + strlen(extra);
+   if (required_length > max_path) {
       return false;
    }
 
@@ -1029,15 +1039,23 @@ bool path_append(char *path, const char *extra, unsigned int max_path)
    }
 
    memcpy(path + path_len, extra, strlen(extra) + 1);
+
    return true;
 }
 
 bool path_append(POOL_MEM &path, const char *extra)
 {
-   int required_length = path.strlen() + 1 + strlen(extra);
+   int required_length;
+
+   if (!extra) {
+      return true;
+   }
+
+   required_length = path.strlen() + 1 + strlen(extra);
    if (!path.check_size(required_length)) {
       return false;
    }
+
    return path_append(path.c_str(), extra, required_length);
 }
 

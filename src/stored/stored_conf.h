@@ -21,6 +21,8 @@
    02110-1301, USA.
 */
 
+#define CONFIG_FILE "bareos-sd.conf"  /* Default config file */
+
 /*
  * Resource codes -- they must be sequential for indexing
  */

@@ -28,6 +28,8 @@
 
 /* NOTE:  #includes at the end of this file */
 
+#define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
+
 /*
  * Resource codes -- they must be sequential for indexing
  */

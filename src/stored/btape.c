@@ -85,7 +85,6 @@ static bool do_unfill();
 
 /* Static variables */
 
-#define CONFIG_FILE "bareos-sd.conf"
 #define MAX_CMD_ARGS 30
 
 static POOLMEM *cmd;
@@ -251,10 +250,6 @@ int main(int margc, char *margv[])
 
    if (signals) {
       init_signals(terminate_btape);
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    daemon_start_time = time(NULL);

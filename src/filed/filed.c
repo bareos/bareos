@@ -47,8 +47,6 @@ bool backup_only_mode = false;
 bool restore_only_mode = false;
 void *start_heap;
 
-#define CONFIG_FILE "bareos-fd.conf"  /* default config file */
-
 char *configfile = NULL;
 static bool foreground = false;
 
@@ -59,7 +57,7 @@ PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bareos-fd [options] [-c config_file]\n"
 "        -b          backup only mode\n"
-"        -c <file>   use <file> as configuration file\n"
+"        -c <path>   use <path> as configuration file or directory\n"
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -f          run in foreground (for debugging)\n"
@@ -197,10 +195,6 @@ int main (int argc, char *argv[])
    }
    if (argc) {
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    if (!uid && keep_readall_caps) {

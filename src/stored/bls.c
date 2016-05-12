@@ -52,8 +52,6 @@ static SESSION_LABEL sessrec;
 static uint32_t num_files = 0;
 static ATTR *attr;
 
-#define CONFIG_FILE "bareos-sd.conf"
-
 static FF_PKT *ff;
 static BSR *bsr = NULL;
 
@@ -205,10 +203,6 @@ int main (int argc, char *argv[])
    if (!argc) {
       Pmsg0(0, _("No archive name specified\n"));
       usage();
-   }
-
-   if (configfile == NULL) {
-      configfile = bstrdup(CONFIG_FILE);
    }
 
    my_config = new_config_parser();

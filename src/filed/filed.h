@@ -26,6 +26,9 @@
  * Kern Sibbald, Jan MMI
  */
 
+#ifndef __FILED_H_
+#define __FILED_H_
+
 #define FILE_DAEMON 1
 #include "filed_conf.h"
 #ifdef HAVE_WIN32
@@ -51,3 +54,5 @@ void terminate_filed(int sig);
  * File Daemon protocol version
  */
 const int FD_PROTOCOL_VERSION = 54;
+
+#endif /* __FILED_H_ */

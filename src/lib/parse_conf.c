@@ -120,6 +120,11 @@ void CONFIG::init(const char *cf,
    m_res_head = res_head;
 }
 
+void CONFIG::set_default_config_filename(const char *filename)
+{
+   m_config_default_filename = bstrdup(filename);
+}
+
 void CONFIG::set_config_include_dir(const char* rel_path)
 {
    m_config_include_dir = bstrdup(rel_path);
@@ -138,8 +143,8 @@ bool CONFIG::parse_config()
    }
    first = false;
 
-   if (!find_config_file(config_path)) {
-      Jmsg0(NULL, M_ABORT, 0, _("Failed to find config filename.\n"));
+   if (!find_config_path(config_path)) {
+      Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
    }
    Dmsg1(100, "config file = %s\n", config_path.c_str());
    return parse_config_file(config_path.c_str(), NULL, m_scan_error, m_scan_warning, m_err_type);
@@ -434,43 +439,119 @@ static inline void set_env(const char *key, const char *value)
 }
 #endif
 
+bool CONFIG::get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename)
+{
+   bool found = false;
+
+   if (!path_is_directory(config_dir)) {
+      return false;
+   }
+
+   if (config_filename) {
+      full_path.strcpy(config_dir);
+      if (path_append(full_path, config_filename)) {
+         if (path_exists(full_path)) {
+            m_config_dir = bstrdup(config_dir);
+            found = true;
+         }
+      }
+   }
+
+   return found;
+}
+
+bool CONFIG::get_config_include_path(POOL_MEM &full_path, const char *config_dir)
+{
+   bool found = false;
+
+   if (m_config_include_dir) {
+      /*
+       * Set full_path to the initial part of the include path,
+       * so it can be used as result, even on errors.
+       * On success, full_path will be overwritten with the full path.
+       */
+      full_path.strcpy(config_dir);
+      path_append(full_path, m_config_include_dir);
+      if (path_is_directory(full_path)) {
+         m_config_dir = bstrdup(config_dir);
+         /*
+          * Set full_path to wildcard path.
+          */
+         if (get_path_of_resource(full_path, NULL, NULL, NULL, true)) {
+            m_use_config_include_dir = true;
+            found = true;
+         }
+      }
+   }
+
+   return found;
+}
+
 /*
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-bool CONFIG::find_config_file(POOL_MEM &full_path)
+bool CONFIG::find_config_path(POOL_MEM &full_path)
 {
    bool found = false;
    POOL_MEM config_dir;
+   POOL_MEM config_path_file;
 
-   /*
-    * If a full path specified, use it
-    */
-   if (path_is_absolute(m_cf)) {
-      full_path.strcpy(m_cf);
-      path_get_directory(config_dir, full_path);
-      set_env("BAREOS_CFGDIR", config_dir.c_str());
-      found = true;
-   } else {
+   if (!m_cf) {
       /*
-       * config_file is default file name, now find default directory.
+       * No path is given, so use the defaults.
        */
-      config_dir.strcpy(get_default_configdir());
-      full_path.strcpy(config_dir);
-
-      if (path_append(full_path, m_cf)) {
-         if((!path_exists(full_path)) && (m_config_include_dir)) {
-            /*
-             * Default configdir plus config file name is not accessable.
-             * Use include directory structure instead.
-             */
-            if (get_path_of_resource(full_path, NULL, NULL, NULL, true)) {
-               m_use_config_include_dir = true;
-            }
-         }
-         found = true;
-         set_env("BAREOS_CFGDIR", config_dir.c_str());
+      found = get_config_file(full_path, get_default_configdir(), m_config_default_filename);
+      if (!found) {
+         config_path_file.strcpy(full_path);
+         found = get_config_include_path(full_path, get_default_configdir());
       }
+      if (!found) {
+         Jmsg2(NULL, M_ERROR, 0,
+               _("Failed to read config file at the default locations "
+                 "\"%s\" (config file path) and \"%s\" (config include directory).\n"),
+               config_path_file.c_str(), full_path.c_str());
+      }
+   } else if (path_exists(m_cf)) {
+      /*
+       * Path is given and exists.
+       */
+      if (path_is_directory(m_cf)) {
+         found = get_config_file(full_path, m_cf, m_config_default_filename);
+         if (!found) {
+            config_path_file.strcpy(full_path);
+            found = get_config_include_path(full_path, m_cf);
+         }
+         if (!found) {
+            Jmsg3(NULL, M_ERROR, 0,
+                  _("Failed to find configuration files under directory \"%s\". "
+                  "Did look for \"%s\" (config file path) and \"%s\" (config include directory).\n"),
+                  m_cf, config_path_file.c_str(), full_path.c_str());
+         }
+      } else {
+         full_path.strcpy(m_cf);
+         path_get_directory(config_dir, full_path);
+         m_config_dir = bstrdup(config_dir.c_str());
+         found = true;
+      }
+   } else if (!m_config_default_filename) {
+      /*
+       * Compatibility with older versions.
+       * If m_config_default_filename is not set,
+       * m_cf may contain what is expected in m_config_default_filename.
+       */
+      found = get_config_file(full_path, get_default_configdir(), m_cf);
+      if (!found) {
+         Jmsg2(NULL, M_ERROR, 0,
+               _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
+               m_cf, full_path.c_str());
+      }
+   } else {
+      Jmsg1(NULL, M_ERROR, 0, _("Failed to read config file \"%s\"\n"), m_cf);
+   }
+
+   if (found) {
+      set_env("BAREOS_CFGDIR", m_config_dir);
    }
 
    return found;
@@ -483,7 +564,15 @@ void CONFIG::free_resources()
       m_res_head[i-m_r_first] = NULL;
    }
 
-   if (m_config_include_dir)  {
+   if (m_config_default_filename) {
+      free((void *)m_config_default_filename);
+   }
+
+   if (m_config_dir) {
+      free((void *)m_config_dir);
+   }
+
+   if (m_config_include_dir) {
       free((void *)m_config_include_dir);
    }
 }
@@ -769,7 +858,11 @@ bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
    resourcetype_lowercase.toLower();
 
    if (!component) {
-      component = m_config_include_dir;
+      if (m_config_include_dir) {
+         component = m_config_include_dir;
+      } else {
+         return false;
+      }
    }
 
    if (resourcetype_lowercase.strlen() <= 0) {
@@ -788,7 +881,7 @@ bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
       }
    }
 
-   path.strcpy(get_default_configdir());
+   path.strcpy(m_config_dir);
    rel_path.bsprintf(m_config_include_naming_format, component, resourcetype_lowercase.c_str(), name);
    path_append(path, rel_path);
 
