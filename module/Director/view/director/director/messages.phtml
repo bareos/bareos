@@ -40,10 +40,48 @@ $this->headTitle($title);
 
 <div class="row">
 <div class="col-md-12">
-<pre style="font-size: 8pt;">
-<code>
-<?php echo $this->directorOutput; ?>
-</code>
-</pre>
+
+<div class="text-right"><a class="btn btn-primary" onclick="refreshMessages();" /><span class="glyphicon glyphicon-refresh">&nbsp;</span><?php echo $this->translate("Refresh"); ?></a></div>
+<br />
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+   <h3 class="panel-title"><?php echo $this->translate("Last 500 Director messages"); ?></h3>
+</div>
+
+<div class="panel-body">
+   <pre class="dird-messages" style="height: 500px; font-size: 8pt;">
+   </pre>
+</div>
+
 </div>
 </div>
+</div>
+
+<script>
+
+function getDirectorMessages() {
+   $.ajax({
+      url : '<?php echo $this->url('director', array('action' => 'getData'), null) . '?data=messages&limit=500'; ?>',
+      dataType: 'json',
+      timeout: 10000,
+      success: function(data) {
+         for(var i in data) {
+               var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext.replace(/(?:\r\n|\r|\n)/g, '<br />')+'</div>');
+               msg.appendTo('.dird-messages');
+         }
+      }
+   });
+}
+
+function refreshMessages() {
+   $('.msg').remove();
+   getDirectorMessages();
+}
+
+$(document).ready(function() {
+   getDirectorMessages();
+});
+
+</script>

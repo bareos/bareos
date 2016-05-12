@@ -108,7 +108,7 @@ $this->headTitle($title);
          success: function(data) {
             for(var i in data) {
                if(data[i].logid > lastlogid) {
-                  var msg = $('<div class="msg" id="'+data[i].logid+'">'+data[i].time+'&nbsp;'+data[i].logtext+'</div>');
+                  var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext+'</div>');
                   msg.insertBefore('#'+lastlogid).fadeIn('slow');
                   lastlogid = data[i].logid;
                }

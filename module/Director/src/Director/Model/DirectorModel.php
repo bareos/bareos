@@ -55,12 +55,13 @@ class DirectorModel implements ServiceLocatorAwareInterface
       return $result;
    }
 
-   public function getDirectorMessages()
+   public function getDirectorMessages($limit=null, $offset=null, $reverse=null)
    {
-      $cmd = 'messages';
+      $cmd = 'list log limit='.$limit.' reverse';
       $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
+      $result = $this->director->send_command($cmd, 2, null);
+      $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+      return $messages['result']['log'];
    }
 
    public function getDirectorSchedules()

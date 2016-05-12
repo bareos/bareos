@@ -28,6 +28,7 @@ namespace Director\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
+use Zend\Json\Json;
 
 class DirectorController extends AbstractActionController
 {
@@ -54,9 +55,7 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
 
-      return new ViewModel(array(
-         'directorOutput' => $this->getDirectorModel()->getDirectorMessages()
-      ));
+      return new ViewModel();
    }
 
    public function scheduleAction()
@@ -96,6 +95,36 @@ class DirectorController extends AbstractActionController
       return new ViewModel(array(
          'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
       ));
+   }
+
+   public function getDataAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $data = $this->params()->fromQuery('data');
+      $limit = $this->params()->fromQuery('limit');
+      $offset = $this->params()->fromQuery('offset');
+      $reverse = $this->params()->fromQuery('reverse');
+
+      if($data == "messages") {
+         $result = $this->getDirectorModel()->getDirectorMessages($limit);
+      }
+      else {
+         $result = null;
+      }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getDirectorModel()
