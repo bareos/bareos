@@ -58,7 +58,7 @@ Bvfs::Bvfs(JCR *j, B_DB *mdb) {
    prev_dir = get_pool_memory(PM_NAME);
    pattern = get_pool_memory(PM_NAME);
    *jobids = *prev_dir = *pattern = 0;
-   dir_filenameid = pwd_id = offset = 0;
+   pwd_id = offset = 0;
    see_copies = see_all_versions = false;
    limit = 1000;
    attr = new_attr(jcr);
@@ -428,21 +428,6 @@ bail_out:
    return retval;
 }
 
-/*
- * Find an store the filename descriptor for empty directories Filename.Name=''
- */
-DBId_t Bvfs::get_dir_filenameid()
-{
-   uint32_t id;
-   if (dir_filenameid) {
-      return dir_filenameid;
-   }
-   POOL_MEM q;
-   Mmsg(q, "SELECT FilenameId FROM Filename WHERE Name = ''");
-   db_sql_query(db, q.c_str(), db_int_handler, &id);
-   dir_filenameid = id;
-   return dir_filenameid;
-}
 
 void bvfs_update_cache(JCR *jcr, B_DB *mdb)
 {
@@ -532,10 +517,10 @@ bool Bvfs::ch_dir(const char *path)
  * Get all file versions for a specified client
  * TODO: Handle basejobs using different client
  */
-void Bvfs::get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client)
+void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *client)
 {
-   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid,
-         (uint64_t)fnid, client);
+   Dmsg3(dbglevel, "get_all_file_versions(%lld, %s, %s)\n", (uint64_t)pathid,
+         fname, client);
    char ed1[50], ed2[50];
    POOL_MEM q;
    if (see_copies) {
@@ -547,13 +532,13 @@ void Bvfs::get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client)
    POOL_MEM query;
 
    Mmsg(query,//    1           2              3
-"SELECT 'V', File.PathId, File.FilenameId,  File.Md5, "
+"SELECT 'V', File.PathId, File.Name,  File.Md5, "
 //         4          5           6
         "File.JobId, File.LStat, File.FileId, "
 //         7                    8
        "Media.VolumeName, Media.InChanger "
 "FROM File, Job, Client, JobMedia, Media "
-"WHERE File.FilenameId = %s "
+"WHERE File.Name = %s "
   "AND File.PathId=%s "
   "AND File.JobId = Job.JobId "
   "AND Job.JobId = JobMedia.JobId "
@@ -563,7 +548,7 @@ void Bvfs::get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client)
   "AND Job.ClientId = Client.ClientId "
   "AND Client.Name = '%s' "
   "%s ORDER BY FileId LIMIT %d OFFSET %d"
-        ,edit_uint64(fnid, ed1), edit_uint64(pathid, ed2), client, q.c_str(),
+        ,fname, edit_uint64(pathid, ed2), client, q.c_str(),
         limit, offset);
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
    db_sql_query(db, query.c_str(), list_entries, user_data);
@@ -607,9 +592,6 @@ void Bvfs::ls_special_dirs()
    if (*jobids == 0) {
       return;
    }
-   if (!dir_filenameid) {
-      get_dir_filenameid();
-   }
 
    /* Will fetch directories  */
    *prev_dir = 0;
@@ -629,11 +611,11 @@ void Bvfs::ls_special_dirs()
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
               "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
-       "WHERE File1.FilenameId = %s "
+       "WHERE File1.Name = '' "
        "AND File1.JobId IN (%s)) AS listfile1 "
   "ON (tmp.PathId = listfile1.PathId) "
   "ORDER BY tmp.Path, JobId DESC ",
-        query.c_str(), edit_uint64(dir_filenameid, ed2), jobids);
+        query.c_str(), jobids);
 
    Dmsg1(dbglevel_sql, "q=%s\n", query2.c_str());
    db_sql_query(db, query2.c_str(), path_handler, this);
@@ -655,21 +637,11 @@ bool Bvfs::ls_dirs()
            match_query[db_get_type_index(db)], pattern);
    }
 
-   if (!dir_filenameid) {
-      get_dir_filenameid();
-   }
-
    /* the sql query displays same directory multiple time, take the first one */
    *prev_dir = 0;
 
-   /* Let's retrieve the list of the visible dirs in this dir ...
-    * First, I need the empty filenameid to locate efficiently
-    * the dirs in the file table
-    * my $dir_filenameid = $self->get_dir_filenameid();
-    */
-   /* Then we get all the dir entries from File ... */
    Mmsg(query,
-//       0     1     2   3      4     5       6
+//       0     1     2   3      4     5
 "SELECT 'D', PathId, 0, Path, JobId, LStat, FileId FROM ( "
     "SELECT Path1.PathId AS PathId, Path1.Path AS Path, "
            "lower(Path1.Path) AS lpath, "
@@ -691,14 +663,13 @@ bool Bvfs::ls_dirs()
    "LEFT JOIN ( " /* get attributes if any */
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
               "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
-       "WHERE File1.FilenameId = %s "
+       "WHERE File1.Name = '' "
        "AND File1.JobId IN (%s)) AS listfile1 "
        "ON (listpath1.PathId = listfile1.PathId) "
     ") AS A ORDER BY 2,3 DESC LIMIT %d OFFSET %d",
         edit_uint64(pwd_id, ed1),
         jobids,
         filter.c_str(),
-        edit_uint64(dir_filenameid, ed2),
         jobids,
         limit, offset);
 
@@ -745,7 +716,7 @@ bool Bvfs::ls_files()
 
    edit_uint64(pwd_id, pathid);
    if (*pattern) {
-      Mmsg(filter, " AND Filename.Name %s '%s' ",
+      Mmsg(filter, " AND File.Name %s '%s' ",
            match_query[db_get_type_index(db)], pattern);
    }
 
@@ -872,7 +843,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
    if (*fileid) {               /* Select files with their direct id */
       init=true;
-      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, FilenameId, "
+      Mmsg(tmp,"SELECT Job.JobId, JobTDate, FileIndex, File.Name, "
                       "PathId, FileId "
                  "FROM File JOIN Job USING (JobId) WHERE FileId IN (%s)",
            fileid);
@@ -915,7 +886,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
          query.strcat(" UNION ");
       }
 
-      Mmsg(tmp, "SELECT Job.JobId, JobTDate, File.FileIndex, File.FilenameId, "
+      Mmsg(tmp, "SELECT Job.JobId, JobTDate, File.FileIndex, File.Name, "
                         "File.PathId, FileId "
                    "FROM Path JOIN File USING (PathId) JOIN Job USING (JobId) "
                   "WHERE Path.Path LIKE '%s' AND File.JobId IN (%s) ",
@@ -927,7 +898,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
 
       /* A directory can have files from a BaseJob */
       Mmsg(tmp, "SELECT File.JobId, JobTDate, BaseFiles.FileIndex, "
-                        "File.FilenameId, File.PathId, BaseFiles.FileId "
+                        "File.Name, File.PathId, BaseFiles.FileId "
                    "FROM BaseFiles "
                         "JOIN File USING (FileId) "
                         "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
@@ -953,7 +924,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink,
             tmp.strcat(") UNION ");
             query.strcat(tmp.c_str());
          }
-         Mmsg(tmp,   "SELECT Job.JobId, JobTDate, FileIndex, FilenameId, "
+         Mmsg(tmp,   "SELECT Job.JobId, JobTDate, FileIndex, Name, "
                             "PathId, FileId "
                        "FROM File JOIN Job USING (JobId) WHERE JobId = %lld "
                         "AND FileIndex IN (%lld", jobid, id);

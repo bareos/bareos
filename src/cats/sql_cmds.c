@@ -248,11 +248,12 @@ const char *uar_print_jobs =
  * Find all files for a particular JobId and insert them into
  *  the tree during a restore.
  */
-const char *uar_sel_files =
-   "SELECT Path.Path,Filename.Name,FileIndex,JobId,LStat "
-   "FROM File,Filename,Path "
-   "WHERE File.JobId IN (%s) AND Filename.FilenameId=File.FilenameId "
-   "AND Path.PathId=File.PathId";
+// 2016-05-25 sduehr: TODO: not referenced anywhere, obsolete?
+//const char *uar_sel_files =
+//   "SELECT Path.Path,Filename.Name,FileIndex,JobId,LStat "
+//   "FROM File,Filename,Path "
+//   "WHERE File.JobId IN (%s) AND Filename.FilenameId=File.FilenameId "
+//   "AND Path.PathId=File.PathId";
 
 const char *uar_del_temp  = "DROP TABLE temp";
 const char *uar_del_temp1 = "DROP TABLE temp1";
@@ -365,29 +366,27 @@ const char *uar_sel_filesetid =
  *  for use when inserting individual files into the tree.
  */
 const char *uar_jobid_fileindex =
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId=File.JobId "
    "AND Job.StartTime<='%s' "
    "AND Path.Path='%s' "
-   "AND Filename.Name='%s' "
+   "AND File.Name='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.PathId "
-   "AND Filename.FilenameId=File.FilenameId "
    "AND JobStatus IN ('T','W') AND Type='B' "
    "ORDER BY Job.StartTime DESC LIMIT 1";
 
 const char *uar_jobids_fileindex =
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId IN (%s) "
    "AND Job.JobId=File.JobId "
    "AND Job.StartTime<='%s' "
    "AND Path.Path='%s' "
-   "AND Filename.Name='%s' "
+   "AND File.Name='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.PathId "
-   "AND Filename.FilenameId=File.FilenameId "
    "ORDER BY Job.StartTime DESC LIMIT 1";
 
 /* Query to get list of files from table -- presuably built by an external program */
@@ -406,22 +405,22 @@ const char *uar_jobid_fileindex_from_table =
  */
 static const char *select_recent_version_with_basejob_default =
    "SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, "
-          "File.FilenameId AS FilenameId, LStat, MD5, DeltaSeq, "
+          "File.Name AS Name, LStat, MD5, DeltaSeq, "
           "Job.JobTDate AS JobTDate "
    "FROM Job, File, ( "
-       "SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId "
+       "SELECT MAX(JobTDate) AS JobTDate, PathId, FileName "
          "FROM ( "
-           "SELECT JobTDate, PathId, FilenameId "   /* Get all normal files */
+           "SELECT JobTDate, PathId, File.Name AS FileName "   /* Get all normal files */
              "FROM File JOIN Job USING (JobId) "    /* from selected backup */
             "WHERE File.JobId IN (%s) "
              "UNION ALL "
-           "SELECT JobTDate, PathId, FilenameId "   /* Get all files from */
+           "SELECT JobTDate, PathId, File.Name AS FileName "   /* Get all files from */
              "FROM BaseFiles "                      /* BaseJob */
                   "JOIN File USING (FileId) "
                   "JOIN Job  ON    (BaseJobId = Job.JobId) "
             "WHERE BaseFiles.JobId IN (%s) "        /* Use Max(JobTDate) to find */
           ") AS tmp "
-          "GROUP BY PathId, FilenameId "            /* the latest file version */
+          "GROUP BY PathId, FileName "            /* the latest file version */
        ") AS T1 "
    "WHERE (Job.JobId IN ( "  /* Security, we force JobId to be valid */
            "SELECT DISTINCT BaseJobId FROM BaseFiles WHERE JobId IN (%s)) "
@@ -429,25 +428,25 @@ static const char *select_recent_version_with_basejob_default =
      "AND T1.JobTDate = Job.JobTDate " /* Join on JobTDate to get the orginal */
      "AND Job.JobId = File.JobId "     /* Job/File record */
      "AND T1.PathId = File.PathId "
-     "AND T1.FilenameId = File.FilenameId";
+     "AND T1.FileName = File.Name";
 
 const char *select_recent_version_with_basejob[] = {
    /* MySQL */
    select_recent_version_with_basejob_default,
 
    /* Postgresql */    /* The DISTINCT ON () permits to avoid extra join */
-   "SELECT DISTINCT ON (FilenameId, PathId) JobTDate, JobId, FileId, "
-         "FileIndex, PathId, FilenameId, LStat, MD5, DeltaSeq "
+   "SELECT DISTINCT ON (Name, PathId) JobTDate, JobId, FileId, "
+         "FileIndex, PathId, FileName AS Name, LStat, MD5, DeltaSeq "
    "FROM "
-     "(SELECT FileId, JobId, PathId, FilenameId, FileIndex, LStat, MD5, DeltaSeq "
+     "(SELECT FileId, JobId, PathId, Name AS FileName, FileIndex, LStat, MD5, DeltaSeq "
          "FROM File WHERE JobId IN (%s) "
         "UNION ALL "
-       "SELECT File.FileId, File.JobId, PathId, FilenameId, "
+       "SELECT File.FileId, File.JobId, PathId, File.Name AS FileName, "
               "File.FileIndex, LStat, MD5, DeltaSeq "
          "FROM BaseFiles JOIN File USING (FileId) "
         "WHERE BaseFiles.JobId IN (%s) "
        ") AS T JOIN Job USING (JobId) "
-   "ORDER BY FilenameId, PathId, JobTDate DESC ",
+   "ORDER BY Name, PathId, JobTDate DESC ",
 
    /* SQLite3 */
    select_recent_version_with_basejob_default,
@@ -473,22 +472,22 @@ const char *select_recent_version_with_basejob[] = {
  */
 static const char *select_recent_version_with_basejob_and_delta_default =
    "SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, "
-          "File.FilenameId AS FilenameId, LStat, MD5, File.DeltaSeq AS DeltaSeq, "
+          "File.Name AS Name, LStat, MD5, File.DeltaSeq AS DeltaSeq, "
           "Job.JobTDate AS JobTDate "
    "FROM Job, File, ( "
-       "SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId, DeltaSeq "
+       "SELECT MAX(JobTDate) AS JobTDate, PathId, FileName, DeltaSeq "
          "FROM ( "
-          "SELECT JobTDate, PathId, FilenameId, DeltaSeq " /*Get all normal files*/
+          "SELECT JobTDate, PathId, File.Name AS FileName, DeltaSeq " /*Get all normal files*/
             "FROM File JOIN Job USING (JobId) "          /* from selected backup */
            "WHERE File.JobId IN (%s) "
             "UNION ALL "
-          "SELECT JobTDate, PathId, FilenameId, DeltaSeq " /*Get all files from */
+          "SELECT JobTDate, PathId, File.Name AS FileName, DeltaSeq " /*Get all files from */
             "FROM BaseFiles "                            /* BaseJob */
                  "JOIN File USING (FileId) "
                  "JOIN Job  ON    (BaseJobId = Job.JobId) "
            "WHERE BaseFiles.JobId IN (%s) "        /* Use Max(JobTDate) to find */
           ") AS tmp "
-          "GROUP BY PathId, FilenameId, DeltaSeq "    /* the latest file version */
+          "GROUP BY PathId, FileName, DeltaSeq "    /* the latest file version */
        ") AS T1 "
    "WHERE (Job.JobId IN ( "  /* Security, we force JobId to be valid */
            "SELECT DISTINCT BaseJobId FROM BaseFiles WHERE JobId IN (%s)) "
@@ -496,25 +495,25 @@ static const char *select_recent_version_with_basejob_and_delta_default =
      "AND T1.JobTDate = Job.JobTDate " /* Join on JobTDate to get the orginal */
      "AND Job.JobId = File.JobId "     /* Job/File record */
      "AND T1.PathId = File.PathId "
-     "AND T1.FilenameId = File.FilenameId";
+     "AND T1.FileName = File.Name";
 
 const char *select_recent_version_with_basejob_and_delta[] = {
    /* MySQL */
    select_recent_version_with_basejob_and_delta_default,
 
    /* Postgresql */    /* The DISTINCT ON () permits to avoid extra join */
-   "SELECT DISTINCT ON (FilenameId, PathId, DeltaSeq) JobTDate, JobId, FileId, "
-         "FileIndex, PathId, FilenameId, LStat, MD5, DeltaSeq "
+   "SELECT DISTINCT ON (Name, PathId, DeltaSeq) JobTDate, JobId, FileId, "
+         "FileIndex, PathId, Filename AS Name, LStat, MD5, DeltaSeq "
    "FROM "
-    "(SELECT FileId, JobId, PathId, FilenameId, FileIndex, LStat, MD5,DeltaSeq "
+    "(SELECT FileId, JobId, PathId, Name AS FileName, FileIndex, LStat, MD5,DeltaSeq "
          "FROM File WHERE JobId IN (%s) "
         "UNION ALL "
-       "SELECT File.FileId, File.JobId, PathId, FilenameId, "
+       "SELECT File.FileId, File.JobId, PathId, File.Name AS FileName, "
               "File.FileIndex, LStat, MD5, DeltaSeq "
          "FROM BaseFiles JOIN File USING (FileId) "
         "WHERE BaseFiles.JobId IN (%s) "
        ") AS T JOIN Job USING (JobId) "
-   "ORDER BY FilenameId, PathId, DeltaSeq, JobTDate DESC ",
+   "ORDER BY Name, PathId, DeltaSeq, JobTDate DESC ",
 
    /* SQLite3 */
    select_recent_version_with_basejob_and_delta_default,
@@ -528,30 +527,30 @@ const char *select_recent_version_with_basejob_and_delta[] = {
  */
 static const char *select_recent_version_default =
    "SELECT j1.JobId AS JobId, f1.FileId AS FileId, f1.FileIndex AS FileIndex, "
-           "f1.PathId AS PathId, f1.FilenameId AS FilenameId, "
+           "f1.PathId AS PathId, f1.Name AS Name, "
            "f1.LStat AS LStat, f1.MD5 AS MD5, j1.JobTDate "
       "FROM ( "     /* Choose the last version for each Path/Filename */
-        "SELECT max(JobTDate) AS JobTDate, PathId, FilenameId "
+        "SELECT max(JobTDate) AS JobTDate, PathId, File.Name "
           "FROM File JOIN Job USING (JobId) "
          "WHERE File.JobId IN (%s) "
-        "GROUP BY PathId, FilenameId "
+        "GROUP BY PathId, File.Name "
       ") AS t1, Job AS j1, File AS f1 "
      "WHERE t1.JobTDate = j1.JobTDate "
        "AND j1.JobId IN (%s) "
-       "AND t1.FilenameId = f1.FilenameId "
        "AND t1.PathId = f1.PathId "
-       "AND j1.JobId = f1.JobId";
+       "AND j1.JobId = f1.JobId "
+       "AND t1.Name = f1.Name";
 
 const char *select_recent_version[] = {
    /* MySQL */
    select_recent_version_default,
 
    /* Postgresql */
-   "SELECT DISTINCT ON (FilenameId, PathId) JobTDate, JobId, FileId, "
-          "FileIndex, PathId, FilenameId, LStat, MD5 "
+   "SELECT DISTINCT ON (File.Name, PathId) JobTDate, JobId, FileId, "
+          "FileIndex, PathId, File.Name, LStat, MD5 "
      "FROM File JOIN Job USING (JobId) "
     "WHERE JobId IN (%s) "
-    "ORDER BY FilenameId, PathId, JobTDate DESC ",
+    "ORDER BY File.Name, PathId, JobTDate DESC ",
 
    /* SQLite3 */
    select_recent_version_default,
@@ -622,41 +621,37 @@ const char *create_temp_basefile[] = {
 const char *create_temp_new_basefile[] = {
    /* Mysql */
    "CREATE TEMPORARY TABLE new_basefile%lld AS "
-   "SELECT Path.Path AS Path, Filename.Name AS Name, Temp.FileIndex AS FileIndex,"
+   "SELECT Path.Path AS Path, Temp.Name AS Name, Temp.FileIndex AS FileIndex,"
    "Temp.JobId AS JobId, Temp.LStat AS LStat, Temp.FileId AS FileId, "
    "Temp.MD5 AS MD5 "
    "FROM ( %s ) AS Temp "
-   "JOIN Filename ON (Filename.FilenameId = Temp.FilenameId) "
    "JOIN Path ON (Path.PathId = Temp.PathId) "
    "WHERE Temp.FileIndex > 0",
 
    /* Postgresql */
    "CREATE TEMPORARY TABLE new_basefile%lld AS "
-   "SELECT Path.Path AS Path, Filename.Name AS Name, Temp.FileIndex AS FileIndex,"
+   "SELECT Path.Path AS Path, Temp.Name AS Name, Temp.FileIndex AS FileIndex,"
    "Temp.JobId AS JobId, Temp.LStat AS LStat, Temp.FileId AS FileId, "
    "Temp.MD5 AS MD5 "
    "FROM ( %s ) AS Temp "
-   "JOIN Filename ON (Filename.FilenameId = Temp.FilenameId) "
    "JOIN Path ON (Path.PathId = Temp.PathId) "
    "WHERE Temp.FileIndex > 0",
 
    /* SQLite3 */
    "CREATE TEMPORARY TABLE new_basefile%lld AS "
-   "SELECT Path.Path AS Path, Filename.Name AS Name, Temp.FileIndex AS FileIndex,"
+   "SELECT Path.Path AS Path, Temp.Name AS Name, Temp.FileIndex AS FileIndex,"
    "Temp.JobId AS JobId, Temp.LStat AS LStat, Temp.FileId AS FileId, "
    "Temp.MD5 AS MD5 "
    "FROM ( %s ) AS Temp "
-   "JOIN Filename ON (Filename.FilenameId = Temp.FilenameId) "
    "JOIN Path ON (Path.PathId = Temp.PathId) "
    "WHERE Temp.FileIndex > 0",
 
    /* Ingres */
    "DECLARE GLOBAL TEMPORARY TABLE new_basefile%lld AS "
-   "SELECT Path.Path AS Path, Filename.Name AS Name, Temp.FileIndex AS FileIndex,"
+   "SELECT Path.Path AS Path, Temp.Name AS Name, Temp.FileIndex AS FileIndex,"
    "Temp.JobId AS JobId, Temp.LStat AS LStat, Temp.FileId AS FileId, "
    "Temp.MD5 AS MD5 "
    "FROM ( %s ) AS Temp "
-   "JOIN Filename ON (Filename.FilenameId = Temp.FilenameId) "
    "JOIN Path ON (Path.PathId = Temp.PathId) "
    "WHERE Temp.FileIndex > 0 "
    "ON COMMIT PRESERVE ROWS WITH NORECOVERY"
@@ -752,43 +747,43 @@ const char *uap_upgrade_copies_oldest_job[] = {
 const char *uar_file[] = {
    /* Mysql */
    "SELECT Job.JobId as JobId,"
-   "CONCAT(Path.Path,Filename.Name) as Name, "
+   "CONCAT(Path.Path,File.Name) as Name, "
    "StartTime,Type as JobType,JobStatus,JobFiles,JobBytes "
-   "FROM Client,Job,File,Filename,Path WHERE Client.Name='%s' "
+   "FROM Client,Job,File,Path WHERE Client.Name='%s' "
    "AND Client.ClientId=Job.ClientId "
    "AND Job.JobId=File.JobId AND File.FileIndex > 0 "
-   "AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId "
-   "AND Filename.Name='%s' ORDER BY StartTime DESC LIMIT 20",
+   "AND Path.PathId=File.PathId "
+   "AND File.Name='%s' ORDER BY StartTime DESC LIMIT 20",
 
    /* Postgresql */
    "SELECT Job.JobId as JobId,"
-   "Path.Path||Filename.Name as Name, "
+   "Path.Path||File.Name as Name, "
    "StartTime,Type as JobType,JobStatus,JobFiles,JobBytes "
-   "FROM Client,Job,File,Filename,Path WHERE Client.Name='%s' "
+   "FROM Client,Job,File,Path WHERE Client.Name='%s' "
    "AND Client.ClientId=Job.ClientId "
    "AND Job.JobId=File.JobId AND File.FileIndex > 0 "
-   "AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId "
-   "AND Filename.Name='%s' ORDER BY StartTime DESC LIMIT 20",
+   "AND Path.PathId=File.PathId "
+   "AND File.Name='%s' ORDER BY StartTime DESC LIMIT 20",
 
    /* SQLite3 */
    "SELECT Job.JobId as JobId,"
-   "Path.Path||Filename.Name as Name, "
+   "Path.Path||File.Name as Name, "
    "StartTime,Type as JobType,JobStatus,JobFiles,JobBytes "
-   "FROM Client,Job,File,Filename,Path WHERE Client.Name='%s' "
+   "FROM Client,Job,File,Path WHERE Client.Name='%s' "
    "AND Client.ClientId=Job.ClientId "
    "AND Job.JobId=File.JobId AND File.FileIndex > 0 "
-   "AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId "
-   "AND Filename.Name='%s' ORDER BY StartTime DESC LIMIT 20",
+   "AND Path.PathId=File.PathId "
+   "AND File.Name='%s' ORDER BY StartTime DESC LIMIT 20",
 
    /* Ingres */
    "SELECT Job.JobId as JobId,"
-   "Path.Path||Filename.Name as Name, "
+   "Path.Path||File.Name as Name, "
    "StartTime,Type as JobType,JobStatus,JobFiles,JobBytes "
-   "FROM Client,Job,File,Filename,Path WHERE Client.Name='%s' "
+   "FROM Client,Job,File,Path WHERE Client.Name='%s' "
    "AND Client.ClientId=Job.ClientId "
    "AND Job.JobId=File.JobId AND File.FileIndex > 0 "
-   "AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId "
-   "AND Filename.Name='%s' ORDER BY StartTime DESC FETCH FIRST 20 ROWS ONLY"
+   "AND Path.PathId=File.PathId "
+   "AND File.Name='%s' ORDER BY StartTime DESC FETCH FIRST 20 ROWS ONLY"
 };
 
 const char *uar_create_temp[] = {
@@ -850,46 +845,42 @@ const char *uar_create_temp1[] = {
 
 const char *uar_jobid_fileindex_from_dir[] = {
    /* Mysql */
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId IN (%s) "
    "AND Job.JobId=File.JobId "
    "AND Path.Path='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.Pathid "
-   "AND Filename.FilenameId=File.FilenameId "
    "GROUP BY File.FileIndex ",
 
    /* Postgresql */
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId IN (%s) "
    "AND Job.JobId=File.JobId "
    "AND Path.Path='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
-   "AND Path.PathId=File.Pathid "
-   "AND Filename.FilenameId=File.FilenameId",
+   "AND Path.PathId=File.Pathid ",
 
    /* SQLite3 */
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId IN (%s) "
    "AND Job.JobId=File.JobId "
    "AND Path.Path='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.Pathid "
-   "AND Filename.FilenameId=File.FilenameId "
    "GROUP BY File.FileIndex ",
 
    /* Ingres */
-   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Filename,Client "
+   "SELECT Job.JobId,File.FileIndex FROM Job,File,Path,Client "
    "WHERE Job.JobId IN (%s) "
    "AND Job.JobId=File.JobId "
    "AND Path.Path='%s' "
    "AND Client.Name='%s' "
    "AND Job.ClientId=Client.ClientId "
    "AND Path.PathId=File.Pathid "
-   "AND Filename.FilenameId=File.FilenameId"
 };
 
 const char *sql_media_order_most_recently_written[] = {
@@ -928,13 +919,12 @@ const char *default_sql_bvfs_select =
    "CREATE TABLE %s AS "
    "SELECT File.JobId, File.FileIndex, File.FileId "
    "FROM Job, File, ( "
-       "SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId "
-          "FROM btemp%s GROUP BY PathId, FilenameId "
-       ") AS T1 JOIN Filename USING (FilenameId) "
+       "SELECT MAX(JobTDate) AS JobTDate, PathId, Name "
+          "FROM btemp%s GROUP BY PathId, Name "
+       ") AS T1 "
    "WHERE T1.JobTDate = Job.JobTDate "
      "AND Job.JobId = File.JobId "
      "AND T1.PathId = File.PathId "
-     "AND T1.FilenameId = File.FilenameId "
      "AND File.FileIndex > 0 "
      "AND Job.JobId IN (SELECT DISTINCT JobId FROM btemp%s) ";
 
@@ -946,10 +936,10 @@ const char *sql_bvfs_select[] = {
    "CREATE TABLE %s AS ( "
         "SELECT JobId, FileIndex, FileId "
           "FROM ( "
-             "SELECT DISTINCT ON (PathId, FilenameId) "
+             "SELECT DISTINCT ON (PathId, Name) "
                     "JobId, FileIndex, FileId "
                "FROM btemp%s "
-              "ORDER BY PathId, FilenameId, JobTDate DESC "
+              "ORDER BY PathId, Name, JobTDate DESC "
           ") AS T "
           "WHERE FileIndex > 0)",
 
@@ -960,29 +950,32 @@ const char *sql_bvfs_select[] = {
    "SELECT 0"
 };
 
+// 2016-06-23 sduehr: TODO: before denormalize filename table, this was:
+// "SELECT 'F', T1.PathId, T1.FilenameId, Filename.Name, "
+// ua_dotcmds.c:bvfs_result_handler() still expects 7 fields, so temporary
+// fake this to prevent from segfault.
 static const char *sql_bvfs_list_files_default =
-   "SELECT 'F', T1.PathId, T1.FilenameId, Filename.Name, "
+   "SELECT 'F', T1.PathId, -1 AS FilenameId, File.Name, "
            "File.JobId, File.LStat, File.FileId "
    "FROM Job, File, ( "
-       "SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId "
+       "SELECT MAX(JobTDate) AS JobTDate, PathId, Name "
          "FROM ( "
-           "SELECT JobTDate, PathId, FilenameId "
+           "SELECT JobTDate, PathId, Name "
              "FROM File JOIN Job USING (JobId) "
             "WHERE File.JobId IN (%s) AND PathId = %s "
              "UNION ALL "
-           "SELECT JobTDate, PathId, FilenameId "
+           "SELECT JobTDate, PathId, File.Name "
              "FROM BaseFiles "
                   "JOIN File USING (FileId) "
                   "JOIN Job  ON    (BaseJobId = Job.JobId) "
             "WHERE BaseFiles.JobId IN (%s)   AND PathId = %s "
-          ") AS tmp GROUP BY PathId, FilenameId "
+          ") AS tmp GROUP BY PathId, File.Name "
         "LIMIT %lld OFFSET %lld"
-       ") AS T1 JOIN Filename USING (FilenameId) "
+       ") AS T1 "
    "WHERE T1.JobTDate = Job.JobTDate "
      "AND Job.JobId = File.JobId "
      "AND T1.PathId = File.PathId "
-     "AND T1.FilenameId = File.FilenameId "
-     "AND Filename.Name != '' "
+     "AND File.Name != '' "
      "AND File.FileIndex > 0 "
      " %s "                     /* AND Name LIKE '' */
      "AND (Job.JobId IN ( "
@@ -996,22 +989,27 @@ const char *sql_bvfs_list_files[] = {
 
    /* JobId PathId JobId PathId WHERE? Filename? Limit Offset*/
    /* Postgresql */
-   "SELECT Type, PathId, FilenameId, Name, JobId, LStat, FileId "
+   // 2016-06-08 sduehr: TODO: before denormalize filename table, this was:
+   // "SELECT Type, PathId, FilenameId, Name, JobId, LStat, FileId "
+   // ua_dotcmds.c:bvfs_result_handler() still expects 7 fields, so temporary
+   // fake this to prevent from segfault.
+   // "SELECT Type, PathId, Name, JobId, LStat, FileId "
+   "SELECT Type, PathId, -1 AS FilenameId, Name, JobId, LStat, FileId "
     "FROM ("
-     "SELECT DISTINCT ON (FilenameId) 'F' as Type, PathId, T.FilenameId, "
-      "Filename.Name, JobId, LStat, FileId, FileIndex "
+     "SELECT DISTINCT ON (Name) 'F' as Type, PathId, "
+      "FileName AS Name, JobId, LStat, FileId, FileIndex "
        "FROM "
-           "(SELECT FileId, JobId, PathId, FilenameId, FileIndex, LStat, MD5 "
+           "(SELECT FileId, JobId, PathId, Name AS FileName, FileIndex, LStat, MD5 "
               "FROM File WHERE JobId IN (%s) AND PathId = %s "
              "UNION ALL "
-            "SELECT File.FileId, File.JobId, PathId, FilenameId, "
+            "SELECT File.FileId, File.JobId, PathId, File.Name AS FileName, "
                    "File.FileIndex, LStat, MD5 "
               "FROM BaseFiles JOIN File USING (FileId) "
              "WHERE BaseFiles.JobId IN (%s) AND File.PathId = %s "
-            ") AS T JOIN Job USING (JobId) JOIN Filename USING (FilenameId) "
-            " WHERE Filename.Name != '' "
+            ") AS T JOIN Job USING (JobId) "
+            " WHERE FileName != '' "
             " %s "               /* AND Name LIKE '' */
-       "ORDER BY FilenameId, StartTime DESC "
+       "ORDER BY FileName, StartTime DESC "
      ") AS A WHERE A.FileIndex > 0 "
      "LIMIT %lld OFFSET %lld ",
 

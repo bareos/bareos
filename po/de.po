@@ -13435,13 +13435,13 @@ msgstr "Fehler beim holen der Zeile: %s\n"
 
 #: src/cats/sql_get.c:150
 #, fuzzy, c-format
-msgid "get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"
+msgid "get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"
 msgstr "get_file_record erwartet 1 erhalten rows=%d\n"
 
 #: src/cats/sql_get.c:158
 #, c-format
-msgid "File record for PathId=%s FilenameId=%s not found.\n"
-msgstr "File Eintrag für PathId=%s FilenameId=%s nicht gefunden.\n"
+msgid "File record for PathId=%s Filename=%s not found.\n"
+msgstr "File Eintrag für PathId=%s Filename=%s nicht gefunden.\n"
 
 #: src/cats/sql_get.c:164
 msgid "File record not found in Catalog.\n"

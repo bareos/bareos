@@ -183,8 +183,8 @@ static const char *sql_jobids_of_pool_uncopied_jobs =
 static const char *sql_migrate_ndmp_metadata =
    "UPDATE File SET JobId=%s "
    "WHERE JobId=%s "
-   "AND FilenameId NOT IN ("
-   "SELECT FilenameId "
+   "AND Name NOT IN ("
+   "SELECT Name "
    "FROM File "
    "WHERE JobId=%s)";
 
@@ -192,12 +192,12 @@ static const char *sql_migrate_ndmp_metadata =
  * Copy NDMP Job MetaData.
  */
 static const char *sql_copy_ndmp_metadata =
-   "INSERT INTO File (FileIndex, JobId, PathId, FilenameId, DeltaSeq, MarkId, LStat, MD5) "
-   "SELECT FileIndex, %s, PathId, FilenameId, DeltaSeq, MarkId, LStat, MD5 "
+   "INSERT INTO File (FileIndex, JobId, PathId, Name, DeltaSeq, MarkId, LStat, MD5) "
+   "SELECT FileIndex, %s, PathId, Name, DeltaSeq, MarkId, LStat, MD5 "
    "FROM File "
    "WHERE JobId=%s "
-   "AND FilenameId NOT IN ("
-   "SELECT FilenameId "
+   "AND Name NOT IN ("
+   "SELECT Name "
    "FROM File "
    "WHERE JobId=%s)";
 

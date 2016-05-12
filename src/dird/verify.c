@@ -873,10 +873,9 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     */
    jcr->fn_printed = false;
    Mmsg(buf,
-      "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
+      "SELECT Path.Path,File.Name FROM File,Path "
       "WHERE File.JobId=%d AND File.FileIndex > 0 "
-      "AND File.MarkId!=%d AND File.PathId=Path.PathId "
-      "AND File.FilenameId=Filename.FilenameId",
+      "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
          JobId, jcr->JobId);
    /* missing_handler is called for each file found */
    db_sql_query(jcr->db, buf.c_str(), missing_handler, (void *)jcr);

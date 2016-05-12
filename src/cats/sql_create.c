@@ -47,7 +47,6 @@ static const int dbglevel = 100;
  * Forward referenced subroutines
  */
 static bool db_create_file_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar);
-static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar);
 
 /**
  * Create a new record for the Job
@@ -861,6 +860,7 @@ bool db_write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
+   /*
    if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)])) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
@@ -876,14 +876,14 @@ bool db_write_batch_file_records(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
    }
+   */
 
    if (!db_sql_query(jcr->db_batch,
-                     "INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) "
+                     "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq) "
                      "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-                     "Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq "
+                     "batch.Name,batch.LStat, batch.MD5, batch.DeltaSeq "
                      "FROM batch "
-                     "JOIN Path ON (batch.Path = Path.Path) "
-                     "JOIN Filename ON (batch.Name = Filename.Name)")) {
+                     "JOIN Path ON (batch.Path = Path.Path) ")) {
       Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", jcr->db_batch->errmsg);
       goto bail_out;
    }
@@ -967,12 +967,6 @@ bool db_create_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    split_path_and_file(jcr, mdb, ar->fname);
 
-   if (!db_create_filename_record(jcr, mdb, ar)) {
-      goto bail_out;
-   }
-   Dmsg1(dbglevel, "db_create_filename_record: %s\n", mdb->esc_name);
-
-
    if (!db_create_path_record(jcr, mdb, ar)) {
       goto bail_out;
    }
@@ -984,7 +978,7 @@ bool db_create_file_attributes_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    }
    Dmsg0(dbglevel, "db_create_file_record OK\n");
 
-   Dmsg3(dbglevel, "CreateAttributes Path=%s File=%s FilenameId=%d\n", mdb->path, mdb->fname, ar->FilenameId);
+   Dmsg2(dbglevel, "CreateAttributes Path=%s File=%s\n", mdb->path, mdb->fname);
    retval = true;
 
 bail_out:
@@ -1006,7 +1000,9 @@ static bool db_create_file_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    ASSERT(ar->JobId);
    ASSERT(ar->PathId);
-   ASSERT(ar->FilenameId);
+
+   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
+   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = no_digest;
@@ -1016,9 +1012,9 @@ static bool db_create_file_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
 
    /* Must create it */
    Mmsg(mdb->cmd,
-        "INSERT INTO File (FileIndex,JobId,PathId,FilenameId,"
-        "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,%u,'%s','%s',%u)",
-        ar->FileIndex, ar->JobId, ar->PathId, ar->FilenameId,
+        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
+        "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,'%s','%s','%s',%u)",
+        ar->FileIndex, ar->JobId, ar->PathId, mdb->esc_name,
         ar->attr, digest, ar->DeltaSeq);
 
    ar->FileId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("File"));
@@ -1031,52 +1027,6 @@ static bool db_create_file_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
    return retval;
 }
 
-/**
- * Create a Unique record for the filename -- no duplicates
- * Returns: false on failure
- *          true on success with filenameid filled in
- */
-static bool db_create_filename_record(JCR *jcr, B_DB *mdb, ATTR_DBR *ar)
-{
-   SQL_ROW row;
-   int num_rows;
-
-   mdb->errmsg[0] = 0;
-   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
-   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
-
-   Mmsg(mdb->cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", mdb->esc_name);
-
-   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
-      num_rows = sql_num_rows(mdb);
-      if (num_rows > 1) {
-         char ed1[30];
-         Mmsg2(mdb->errmsg, _("More than one Filename! %s for file: %s\n"), edit_uint64(num_rows, ed1), mdb->fname);
-         Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
-      }
-      if (num_rows >= 1) {
-         if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg2(mdb->errmsg, _("Error fetching row for file=%s: ERR=%s\n"), mdb->fname, sql_strerror(mdb));
-            Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
-            ar->FilenameId = 0;
-         } else {
-            ar->FilenameId = str_to_int64(row[0]);
-         }
-         sql_free_result(mdb);
-         return ar->FilenameId > 0;
-      }
-      sql_free_result(mdb);
-   }
-
-   Mmsg(mdb->cmd, "INSERT INTO Filename (Name) VALUES ('%s')", mdb->esc_name);
-
-   ar->FilenameId = sql_insert_autokey_record(mdb, mdb->cmd, NT_("Filename"));
-   if (ar->FilenameId == 0) {
-      Mmsg2(mdb->errmsg, _("Create db Filename record %s failed. ERR=%s\n"), mdb->cmd, sql_strerror(mdb));
-      Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
-   }
-   return ar->FilenameId > 0;
-}
 
 /**
  * Create file attributes record, or base file attributes record

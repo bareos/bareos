@@ -1,13 +1,3 @@
-CREATE TABLE Filename
-(
-    FilenameId        SERIAL      NOT NULL,
-    Name              TEXT        NOT NULL,
-    PRIMARY KEY (FilenameId)
-);
-
-ALTER TABLE Filename ALTER COLUMN Name SET STATISTICS 1000;
-CREATE UNIQUE INDEX filename_name_idx ON Filename (Name);
-
 CREATE TABLE Path
 (
     PathId            SERIAL      NOT NULL,
@@ -38,7 +28,7 @@ CREATE TABLE File
     FileIndex         INTEGER     NOT NULL  DEFAULT 0,
     JobId             INTEGER     NOT NULL,
     PathId            INTEGER     NOT NULL,
-    FilenameId        INTEGER     NOT NULL,
+    Name              TEXT        DEFAULT '',
     DeltaSeq          SMALLINT    NOT NULL  DEFAULT 0,
     MarkId            INTEGER     NOT NULL  DEFAULT 0,
     LStat             TEXT        NOT NULL,
@@ -46,7 +36,7 @@ CREATE TABLE File
     PRIMARY KEY (FileId)
 );
 
-CREATE INDEX file_jpfid_idx ON File (JobId, PathId, FilenameId);
+CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 CREATE INDEX file_jobid_idx ON File (JobId);
 
 --
@@ -336,14 +326,15 @@ CREATE TABLE basefiles
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
-CREATE TABLE UnsavedFiles
-(
-    UnsavedId         INTEGER     NOT NULL,
-    JobId             INTEGER     NOT NULL,
-    PathId            INTEGER     NOT NULL,
-    FilenameId        INTEGER     NOT NULL,
-    PRIMARY KEY (UnsavedId)
-);
+-- This table seems to be obsolete
+-- CREATE TABLE UnsavedFiles
+-- (
+--     UnsavedId         INTEGER     NOT NULL,
+--     JobId             INTEGER     NOT NULL,
+--     PathId            INTEGER     NOT NULL,
+--     FilenameId        INTEGER     NOT NULL,
+--     PRIMARY KEY (UnsavedId)
+-- );
 
 CREATE TABLE PathHierarchy
 (

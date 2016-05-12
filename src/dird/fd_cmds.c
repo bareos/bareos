@@ -1001,7 +1001,6 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          ar->JobId = jcr->JobId;
          ar->ClientId = jcr->ClientId;
          ar->PathId = 0;
-         ar->FilenameId = 0;
          ar->Digest = NULL;
          ar->DigestType = CRYPTO_DIGEST_NONE;
          ar->DeltaSeq = 0;

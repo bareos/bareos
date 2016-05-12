@@ -183,7 +183,6 @@ struct ATTR_DBR {
    JobId_t  JobId;
    DBId_t ClientId;
    DBId_t PathId;
-   DBId_t FilenameId;
    FileId_t FileId;
    char *Digest;
    int DigestType;
@@ -211,7 +210,6 @@ struct FILE_DBR {
    FileId_t FileId;
    uint32_t FileIndex;
    JobId_t JobId;
-   DBId_t FilenameId;
    DBId_t PathId;
    JobId_t MarkId;
    uint32_t DeltaSeq;

@@ -595,28 +595,26 @@ void db_list_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, OUTPUT_FORMATTER 
     * Stupid MySQL is NON-STANDARD !
     */
    if (db_get_type_index(mdb) == SQL_TYPE_MYSQL) {
-      Mmsg(mdb->cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+      Mmsg(mdb->cmd, "SELECT CONCAT(Path.Path,Name) AS Filename "
+           "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
                   "UNION ALL "
-                 "SELECT PathId, FilenameId "
+                 "SELECT PathId, Name "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
-           ") AS F, Filename,Path "
-           "WHERE Filename.FilenameId=F.FilenameId "
-           "AND Path.PathId=F.PathId",
+           ") AS F, Path "
+           "WHERE Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
    } else {
-      Mmsg(mdb->cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+      Mmsg(mdb->cmd, "SELECT Path.Path||Name AS Filename "
+           "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
                   "UNION ALL "
-                 "SELECT PathId, FilenameId "
+                 "SELECT PathId, Name "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
-           ") AS F, Filename,Path "
-           "WHERE Filename.FilenameId=F.FilenameId "
-           "AND Path.PathId=F.PathId",
+           ") AS F, Path "
+           "WHERE Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
    }
 
@@ -643,19 +641,17 @@ void db_list_base_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid, OUTPUT_FORMA
     * Stupid MySQL is NON-STANDARD !
     */
    if (db_get_type_index(mdb) == SQL_TYPE_MYSQL) {
-      Mmsg(mdb->cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(mdb->cmd, "SELECT CONCAT(Path.Path,File.Name) AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
          edit_int64(jobid, ed1));
    } else {
-      Mmsg(mdb->cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(mdb->cmd, "SELECT Path.Path||File.Name AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
            edit_int64(jobid, ed1));
    }

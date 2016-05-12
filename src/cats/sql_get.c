@@ -47,7 +47,6 @@
 
 /* Forward referenced functions */
 static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr);
-static int db_get_filename_record(JCR *jcr, B_DB *mdb);
 
 /**
  * Given a full filename (with path), look up the File record
@@ -63,8 +62,6 @@ bool db_get_file_attributes_record(JCR *jcr, B_DB *mdb, char *fname, JOB_DBR *jr
 
    db_lock(mdb);
    split_path_and_file(jcr, mdb, fname);
-
-   fdbr->FilenameId = db_get_filename_record(jcr, mdb);
 
    fdbr->PathId = db_get_path_record(jcr, mdb);
 
@@ -105,33 +102,36 @@ static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr)
    char ed1[50], ed2[50], ed3[50];
    int num_rows;
 
+   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
+   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
+
    if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
       Mmsg(mdb->cmd,
 "SELECT FileId, LStat, MD5 FROM File,Job WHERE "
 "File.JobId=Job.JobId AND File.PathId=%s AND "
-"File.FilenameId=%s AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
+"File.Name='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
       edit_int64(fdbr->PathId, ed1),
-      edit_int64(fdbr->FilenameId, ed2),
+      mdb->esc_name,
       edit_int64(jr->ClientId,ed3));
    } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
       Mmsg(mdb->cmd,
            "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-           "File.FilenameId=%s AND File.FileIndex=%u",
+           "File.Name='%s' AND File.FileIndex=%u",
            edit_int64(fdbr->JobId, ed1),
            edit_int64(fdbr->PathId, ed2),
-           edit_int64(fdbr->FilenameId,ed3),
+           mdb->esc_name,
            jr->FileIndex);
    } else {
       Mmsg(mdb->cmd,
 "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
-"File.FilenameId=%s",
+"File.Name='%s'",
       edit_int64(fdbr->JobId, ed1),
       edit_int64(fdbr->PathId, ed2),
-      edit_int64(fdbr->FilenameId,ed3));
+      mdb->esc_name);
    }
-   Dmsg3(450, "Get_file_record JobId=%u FilenameId=%u PathId=%u\n",
-      fdbr->JobId, fdbr->FilenameId, fdbr->PathId);
+   Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n",
+      fdbr->JobId, mdb->esc_name, fdbr->PathId);
 
    Dmsg1(100, "Query=%s\n", mdb->cmd);
 
@@ -147,17 +147,17 @@ static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr)
             bstrncpy(fdbr->Digest, row[2], sizeof(fdbr->Digest));
             retval = true;
             if (num_rows > 1) {
-               Mmsg3(mdb->errmsg, _("get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"),
+               Mmsg3(mdb->errmsg, _("get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"),
                   num_rows,
                   edit_int64(fdbr->PathId, ed1),
-                  edit_int64(fdbr->FilenameId, ed2));
+                  mdb->esc_name);
                Dmsg1(000, "=== Problem!  %s", mdb->errmsg);
             }
          }
       } else {
-         Mmsg2(mdb->errmsg, _("File record for PathId=%s FilenameId=%s not found.\n"),
+         Mmsg2(mdb->errmsg, _("File record for PathId=%s Filename=%s not found.\n"),
             edit_int64(fdbr->PathId, ed1),
-            edit_int64(fdbr->FilenameId, ed2));
+            mdb->esc_name);
       }
       sql_free_result(mdb);
    } else {
@@ -166,51 +166,6 @@ static bool db_get_file_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr, FILE_DBR *fdbr)
    return retval;
 }
 
-/**
- * Get Filename record
- * Returns: 0 on failure
- *          FilenameId on success
- *
- *   DO NOT use Jmsg in this routine (see notes for get_file_record)
- */
-static int db_get_filename_record(JCR *jcr, B_DB *mdb)
-{
-   SQL_ROW row;
-   int FilenameId = 0;
-   int num_rows;
-
-   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
-   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
-
-   Mmsg(mdb->cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", mdb->esc_name);
-   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
-      char ed1[30];
-      num_rows = sql_num_rows(mdb);
-      if (num_rows > 1) {
-         Mmsg2(mdb->errmsg, _("More than one Filename!: %s for file: %s\n"),
-            edit_uint64(num_rows, ed1), mdb->fname);
-         Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
-      }
-      if (num_rows >= 1) {
-         if ((row = sql_fetch_row(mdb)) == NULL) {
-            Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
-         } else {
-            FilenameId = str_to_int64(row[0]);
-            if (FilenameId <= 0) {
-               Mmsg2(mdb->errmsg, _("Get DB Filename record %s found bad record: %d\n"),
-                  mdb->cmd, FilenameId);
-               FilenameId = 0;
-            }
-         }
-      } else {
-         Mmsg1(mdb->errmsg, _("Filename record: %s not found.\n"), mdb->fname);
-      }
-      sql_free_result(mdb);
-   } else {
-      Mmsg(mdb->errmsg, _("Filename record: %s not found in Catalog.\n"), mdb->fname);
-   }
-   return FilenameId;
-}
 
 /**
  * Get path record
@@ -1328,9 +1283,8 @@ bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
     * or Migration
     */
    Mmsg(query,
-"SELECT Path.Path, Filename.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
+"SELECT Path.Path, T1.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
  "FROM ( %s ) AS T1 "
- "JOIN Filename ON (Filename.FilenameId = T1.FilenameId) "
  "JOIN Path ON (Path.PathId = T1.PathId) "
 "WHERE FileIndex > 0 "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */

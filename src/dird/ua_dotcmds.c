@@ -186,7 +186,6 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FilenameId", (uint64_t)0, "%lld\t");
       ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
       ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->object_key_value("lstat", lstat, "%s\t");
@@ -199,7 +198,6 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
       ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
       ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->object_key_value("lstat", lstat, "%s\t");
@@ -211,7 +209,6 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_start();
       ua->send->object_key_value("Type", row[BVFS_Type]);
       ua->send->object_key_value("PathId", str_to_uint64(row[BVFS_PathId]), "%lld\t");
-      ua->send->object_key_value("FilenameId", str_to_uint64(row[BVFS_FilenameId]), "%lld\t");
       ua->send->object_key_value("FileId", str_to_uint64(fileid), "%lld\t");
       ua->send->object_key_value("JobId", str_to_uint64(jobid), "%lld\t");
       ua->send->object_key_value("lstat", lstat, "%s\t");
@@ -224,19 +221,16 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
-static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, DBId_t *fnid, bool *versions, bool *copies)
+static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, char **fname, bool *versions, bool *copies)
 {
-   *fnid = 0;
+   *fname = NULL;
    *client = NULL;
    *versions = false;
    *copies = false;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("fnid")) ||
-          bstrcasecmp(ua->argk[i], NT_("filenameid"))) {
-         if (ua->argv[i] && is_a_number(ua->argv[i])) {
-            *fnid = str_to_int64(ua->argv[i]);
-         }
+      if (bstrcasecmp(ua->argk[i], NT_("fname"))) {
+         *fname = ua->argv[i];
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("client"))) {
@@ -252,7 +246,7 @@ static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, DBId_t *
       }
    }
 
-   return (*client && *fnid > 0);
+   return (*client && *fname);
 }
 
 static bool bvfs_parse_arg(UAContext *ua, DBId_t *pathid, char **path, char **jobid, int *limit, int *offset)
@@ -544,13 +538,13 @@ bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * .bvfs_versions jobid=0 client=<client-name> fnid=10 pathid=10 copies versions (jobid isn't used)
+ * .bvfs_versions jobid=0 client=<client-name> fname=<file-name> pathid=10 copies versions (jobid isn't used)
  */
 bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
 {
-   DBId_t pathid = 0, fnid = 0;
+   DBId_t pathid = 0;
    int limit = 2000, offset = 0;
-   char *path = NULL, *jobid = NULL, *client = NULL;
+   char *path = NULL, *jobid = NULL, *client = NULL, *fname = NULL;
    bool copies = false, versions = false;
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
@@ -558,8 +552,8 @@ bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
       return false;             /* not enough param */
    }
 
-   if (!bvfs_parse_arg_version(ua, &client, &fnid, &versions, &copies)) {
-      ua->error_msg("Can't find client or fnid argument\n");
+   if (!bvfs_parse_arg_version(ua, &client, &fname, &versions, &copies)) {
+      ua->error_msg("Can't find client or fname argument\n");
       return false;              /* not enough param */
    }
 
@@ -579,7 +573,7 @@ bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_offset(offset);
    ua->send->array_start("versions");
-   fs.get_all_file_versions(pathid, fnid, client);
+   fs.get_all_file_versions(pathid, fname, client);
    ua->send->array_end("versions");
 
    return true;
