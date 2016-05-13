@@ -773,6 +773,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
 {
    char *p, *q;
    const char *str;
+   char ed1[50];
    char add[50];
    char name[MAX_NAME_LENGTH];
    int i;
@@ -786,7 +787,8 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
             str = "%";
             break;
          case 'B':                    /* Job Bytes in human readable format */
-            str = edit_uint64_with_suffix(jcr->JobBytes, add);
+            bsnprintf(add, sizeof(add), "%sB", edit_uint64_with_suffix(jcr->JobBytes, ed1));
+            str = add;
             break;
          case 'F':                    /* Job Files */
             str = edit_uint64(jcr->JobFiles, add);
