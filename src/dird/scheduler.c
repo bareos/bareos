@@ -188,7 +188,9 @@ again:
 
    free(next_job);
 
-   if (!job->enabled || (job->client && !job->client->enabled)) {
+   if (!job->enabled ||
+       (job->schedule && !job->schedule->enabled) ||
+       (job->client && !job->client->enabled)) {
       free_jcr(jcr);
       goto again;                     /* ignore this job */
    }
