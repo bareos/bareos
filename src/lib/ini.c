@@ -448,9 +448,6 @@ int ConfigFile::serialize(POOL_MEM *buf)
    }
 
    len = Mmsg(buf, "# Plugin configuration file\n# Version %d\n", version);
-
-   tmp = get_pool_memory(PM_MESSAGE);
-
    for (int i = 0; items[i].name; i++) {
       if (items[i].comment) {
          Mmsg(tmp, "OptPrompt=%s\n", items[i].comment);
