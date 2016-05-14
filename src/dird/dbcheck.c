@@ -317,7 +317,7 @@ int main (int argc, char *argv[])
                          NULL);
    if (!db_open_database(NULL, db)) {
       Emsg1(M_FATAL, 0, "%s", db_strerror(db));
-          return 1;
+      return 1;
    }
 
    /*
@@ -372,7 +372,9 @@ static void print_catalog_details(CATRES *catalog, const char *working_dir)
                          catalog->db_port,
                          catalog->db_socket,
                          catalog->mult_db_connections,
-                         catalog->disable_batch_insert);
+                         catalog->disable_batch_insert,
+                         catalog->try_reconnect,
+                         catalog->exit_on_fatal);
    if (db) {
       printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details),
              db->db_get_type(), working_directory);

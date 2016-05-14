@@ -1157,8 +1157,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
 }
 
 /*
- * Fill in the remaining fields of the jcr as if it
- *  is going to run the job.
+ * Fill in the remaining fields of the jcr as if it is going to run the job.
  */
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
 {
@@ -1185,7 +1184,9 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,
                                           jcr->res.catalog->mult_db_connections,
-                                          jcr->res.catalog->disable_batch_insert);
+                                          jcr->res.catalog->disable_batch_insert,
+                                          jcr->res.catalog->try_reconnect,
+                                          jcr->res.catalog->exit_on_fatal);
    if (jcr->db == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"),
                  jcr->res.catalog->db_name);
