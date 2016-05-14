@@ -149,7 +149,9 @@ void *statistics_thread_runner(void *arg)
                                           jcr->res.catalog->db_port,
                                           jcr->res.catalog->db_socket,
                                           jcr->res.catalog->mult_db_connections,
-                                          jcr->res.catalog->disable_batch_insert);
+                                          jcr->res.catalog->disable_batch_insert,
+                                          jcr->res.catalog->try_reconnect,
+                                          jcr->res.catalog->exit_on_fatal);
    if (jcr->db == NULL) {
       Jmsg(jcr, M_FATAL, 0, _("Could not open database \"%s\".\n"), jcr->res.catalog->db_name);
       goto bail_out;

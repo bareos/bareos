@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -78,10 +78,12 @@ B_DB *B_DB::db_clone_database_connection(JCR *jcr,
     */
    if (get_pooled_connection) {
       return db_sql_get_pooled_connection(jcr, m_db_driver, m_db_name, m_db_user, m_db_password,
-                                          m_db_address, m_db_port, m_db_socket, true, m_disabled_batch_insert, need_private);
+                                          m_db_address, m_db_port, m_db_socket, mult_db_connections, m_disabled_batch_insert,
+                                          m_try_reconnect, m_exit_on_fatal, need_private);
    } else {
       return db_sql_get_non_pooled_connection(jcr, m_db_driver, m_db_name, m_db_user, m_db_password,
-                                              m_db_address, m_db_port, m_db_socket, true, m_disabled_batch_insert, need_private);
+                                              m_db_address, m_db_port, m_db_socket, mult_db_connections, m_disabled_batch_insert,
+                                              m_try_reconnect, m_exit_on_fatal, need_private);
    }
 }
 

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,10 +52,8 @@ protected:
    int m_field_number;                /* Field number from sql_field_seek */
    SQL_ROW m_rows;                    /* Defined rows */
    SQL_FIELD *m_fields;               /* Defined fields */
-   bool m_allow_transactions;         /* Transactions allowed */
-   bool m_transaction;                /* Transaction started */
-   bool m_try_reconnect;              /* Try reconnecting DB connection */
-   bool m_exit_on_fatal;              /* Exit on FATAL DB errors */
+   bool m_allow_transactions;         /* Transactions allowed ? */
+   bool m_transaction;                /* Transaction started ? */
 
 public:
    /* methods */
@@ -66,7 +65,7 @@ public:
    int sql_num_fields(void) { return m_num_fields; };
    virtual void sql_free_result(void) = 0;
    virtual SQL_ROW sql_fetch_row(void) = 0;
-   virtual bool sql_query(const char *query, int flags=0) = 0;
+   virtual bool sql_query(const char *query, int flags = 0) = 0;
    virtual const char *sql_strerror(void) = 0;
    virtual void sql_data_seek(int row) = 0;
    virtual int sql_affected_rows(void) = 0;

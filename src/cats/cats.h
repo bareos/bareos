@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -512,6 +512,8 @@ protected:
    int m_ref_count;                       /* reference count */
    bool m_connected;                      /* connection made to db */
    bool m_have_batch_insert;              /* have batch insert support ? */
+   bool m_try_reconnect;                  /* Try reconnecting DB connection ? */
+   bool m_exit_on_fatal;                  /* Exit on FATAL DB errors ? */
    char *m_db_driver;                     /* database driver */
    char *m_db_driverdir;                  /* database driver dir */
    char *m_db_name;                       /* database name */

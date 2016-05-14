@@ -1080,7 +1080,10 @@ static bool check_catalog(cat_op mode)
                             catalog->db_port,
                             catalog->db_socket,
                             catalog->mult_db_connections,
-                            catalog->disable_batch_insert);
+                            catalog->disable_batch_insert,
+                            catalog->try_reconnect,
+                            catalog->exit_on_fatal);
+
       if (!db || !db_open_database(NULL, db)) {
          Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);

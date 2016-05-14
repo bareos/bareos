@@ -144,7 +144,7 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        bool verbose);
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        OUTPUT_FORMATTER *sendit, e_list_type type,
-                       const char *description, bool verbose=false);
+                       const char *description, bool verbose = false);
 void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *jobids,
@@ -178,11 +178,11 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        const char *db_address,
                                        int db_port,
                                        const char *db_socket,
-                                       bool mult_db_connections = false,
-                                       bool disable_batch_insert = false,
-                                       bool need_private = false,
-                                       bool try_reconnect = false,
-                                       bool exit_on_fatal = false);
+                                       bool mult_db_connections,
+                                       bool disable_batch_insert,
+                                       bool try_reconnect,
+                                       bool exit_on_fatal,
+                                       bool need_private = false);
 B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
@@ -191,12 +191,12 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_address,
                                    int db_port,
                                    const char *db_socket,
-                                   bool mult_db_connections = false,
-                                   bool disable_batch_insert = false,
-                                   bool need_private = false,
-                                   bool try_reconnect = false,
-                                   bool exit_on_fatal = false);
-void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort=false);
+                                   bool mult_db_connections,
+                                   bool disable_batch_insert,
+                                   bool try_reconnect,
+                                   bool exit_on_fatal,
+                                   bool need_private = false);
+void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort = false);
 
 /* sql_update.c */
 bool db_update_job_start_record(JCR *jcr, B_DB *db, JOB_DBR *jr);
