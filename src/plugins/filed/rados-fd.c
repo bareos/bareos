@@ -570,7 +570,7 @@ static inline void set_string(char **destination, char *value)
  *
  * The definition is in this form:
  *
- * rados:
+ * rados:conffile=<ceph_conf_file>:namespace=<name_space>:clientid=<client_id>:clustername=<clustername>:username=<username>:snapshotname=<snapshot_name>:
  */
 static bRC parse_plugin_definition(bpContext *ctx, void *value)
 {
@@ -984,19 +984,34 @@ static bRC endRestoreFile(bpContext *ctx)
  */
 static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
 {
+   char *bp;
    int status;
+   bool exists = false;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
       return bRC_Error;
    }
 
-   status = rados_stat(p_ctx->ioctx, rp->ofname,
-                       &p_ctx->object_size, &p_ctx->object_mtime);
+   /*
+    * Filename is in the form <pool_name>/<object_name>
+    */
+   pm_strcpy(p_ctx->next_filename, rp->ofname);
+   bp = strrchr(p_ctx->next_filename, '/');
+   if (!bp) {
+      rp->create_status = CF_SKIP;
+      goto bail_out;
+   }
+   p_ctx->object_name = ++bp;
+
+   rp->create_status = CF_EXTRACT;
+
+   status = rados_stat(p_ctx->ioctx, p_ctx->object_name, &p_ctx->object_size, &p_ctx->object_mtime);
    if (status < 0) {
-      rp->create_status = CF_EXTRACT;
-      return bRC_OK;
+      goto bail_out;
    } else {
+      exists = true;
+
       switch (rp->replace) {
       case REPLACE_IFNEWER:
          if (rp->statp.st_mtime <= p_ctx->object_mtime) {
@@ -1021,7 +1036,31 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
       }
    }
 
-   rp->create_status = CF_EXTRACT;
+   switch (rp->type) {
+   case FT_REG:                       /* Regular file */
+      /*
+       * See if object already exists then we need to unlink it.
+       */
+      if (exists) {
+         status = rados_remove(p_ctx->ioctx, p_ctx->object_name);
+         if (status < 0) {
+            berrno be;
+
+            Jmsg(ctx, M_ERROR, "rados-fd: rados_remove(%s) failed: %s\n",
+                 p_ctx->object_name, be.bstrerror(-status));
+            goto bail_out;
+         }
+      }
+      break;
+   case FT_DELETED:
+      Jmsg(ctx, M_INFO, 0, _("rados-fd: Original file %s have been deleted: type=%d\n"), rp->ofname, rp->type);
+      rp->create_status = CF_SKIP;
+      break;
+   default:
+      Jmsg(ctx, M_ERROR, 0, _("rados-fd: Unknown file type %d; not restored: %s\n"), rp->type, rp->ofname);
+      rp->create_status = CF_ERROR;
+      break;
+   }
 
 bail_out:
    return bRC_OK;
@@ -1123,11 +1162,12 @@ static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
    }
 
    bp = strrchr(xp->fname, '/');
-   if (!bp++) {
+   if (!bp) {
       goto bail_out;
    }
 
-   status = rados_setxattr(p_ctx->ioctx, bp, xp->name, xp->value, xp->value_length);
+   p_ctx->object_name = ++bp;
+   status = rados_setxattr(p_ctx->ioctx, p_ctx->object_name, xp->name, xp->value, xp->value_length);
    if (status < 0) {
       berrno be;
 
