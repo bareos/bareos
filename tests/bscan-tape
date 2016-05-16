@@ -102,9 +102,9 @@ else
 fi
 
 if test "$debug" -eq 1 ; then
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr -c bin/bareos-sd.conf tape
+  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr tape
 else
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr -c bin/bareos-sd.conf tape >/dev/null 2>&1
+  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr tape >/dev/null 2>&1
 fi
 
 echo $BSCANLIBDBI
