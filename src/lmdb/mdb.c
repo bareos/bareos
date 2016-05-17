@@ -7476,8 +7476,13 @@ current:
 					/* Note - this page is already counted in parent's dirty_room */
 					rc2 = mdb_mid2l_insert(mc->mc_txn->mt_u.dirty_list, &id2);
 					mdb_cassert(mc, rc2 == 0);
+					/* Currently we make the page look as with put() in the
+					 * parent txn, in case the user peeks at MDB_RESERVEd
+					 * or unused parts. Some users treat ovpages specially.
+					 */
 					if (!(flags & MDB_RESERVE)) {
-						/* Copy end of page, adjusting alignment so
+						/* Skip the part where LMDB will put *data.
+						 * Copy end of page, adjusting alignment so
 						 * compiler may copy words instead of bytes.
 						 */
 						off = (PAGEHDRSZ + data->mv_size) & -sizeof(size_t);
@@ -9735,7 +9740,7 @@ mdb_env_cthr_toggle(mdb_copy *my, int st)
 static int ESECT
 mdb_env_cwalk(mdb_copy *my, pgno_t *pg, int flags)
 {
-	MDB_cursor mc;
+	MDB_cursor mc = {0};
 	MDB_node *ni;
 	MDB_page *mo, *mp, *leaf;
 	char *buf, *ptr;
@@ -9747,8 +9752,8 @@ mdb_env_cwalk(mdb_copy *my, pgno_t *pg, int flags)
 		return MDB_SUCCESS;
 
 	mc.mc_snum = 1;
-	mc.mc_top = 0;
 	mc.mc_txn = my->mc_txn;
+	mc.mc_flags = my->mc_txn->mt_flags & (C_ORIG_RDONLY|C_WRITEMAP);
 
 	rc = mdb_page_get(&mc, *pg, &mc.mc_pg[0], NULL);
 	if (rc)
