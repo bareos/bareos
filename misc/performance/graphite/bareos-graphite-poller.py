@@ -354,7 +354,7 @@ if __name__ == '__main__':
 
     try:
         logger.info("Connect to Bareos director %s, host %s, port: %d" % (dirname, host, dir_port))
-        print password
+        # print password
         director = bareos.bsock.BSockJson(address=host, port=dir_port, dirname=dirname,
                                           password=bareos.bsock.Password(password))
     except RuntimeError as e:
