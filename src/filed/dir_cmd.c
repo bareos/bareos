@@ -478,7 +478,7 @@ void *handle_director_connection(BSOCK *dir)
 
    Dmsg0(120, "Calling Authenticate\n");
    if (!authenticate_director(jcr)) {
-      return NULL;
+      goto bail_out;
    }
 
    Dmsg0(120, "OK Authenticate\n");
@@ -548,6 +548,7 @@ void *handle_director_connection(BSOCK *dir)
       Dmsg1(110, "End FD msg: %s\n", dir->msg);
    }
 
+bail_out:
    generate_plugin_event(jcr, bEventJobEnd);
 
    dequeue_messages(jcr);             /* send any queued messages */
