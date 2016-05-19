@@ -483,7 +483,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
 
    /**********FIXME******* add command handler error code */
 
-   while (!quit) {
+   while (jcr->authenticated && (!quit)) {
       /*
        * Read command
        */
@@ -547,7 +547,6 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
       Dmsg1(110, "End FD msg: %s\n", dir->msg);
    }
 
-bail_out:
    generate_plugin_event(jcr, bEventJobEnd);
 
    dequeue_messages(jcr);             /* send any queued messages */
@@ -629,12 +628,9 @@ void *handle_director_connection(BSOCK *dir)
    jcr = create_new_director_session(dir);
 
    Dmsg0(120, "Calling Authenticate\n");
-   if (!authenticate_director(jcr)) {
-      return NULL;
+   if (authenticate_director(jcr)) {
+      Dmsg0(120, "OK Authenticate\n");
    }
-
-   Dmsg0(120, "OK Authenticate\n");
-   jcr->authenticated = true;
 
    return process_director_commands(jcr, dir);
 }
