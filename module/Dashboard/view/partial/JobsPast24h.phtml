@@ -1,0 +1,65 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+?>
+
+<div class="panel panel-default">
+
+   <div class="panel-heading">
+      <h3 class="panel-title"><?php echo $this->translate('Jobs during the past 24 hours') ?></h3>
+   </div>
+
+   <div class="panel-body" style="overflow-y: auto;">
+
+      <div class="row-md-6">
+         <div class="col-md-4">
+            <table class="table">
+               <tr>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
+                  <td><span class="badge"><?php echo $this->runningJobs; ?></span></td>
+               </tr>
+               <tr>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
+                  <td><span class="badge"><?php echo $this->waitingJobs; ?></span></td>
+               </tr>
+               <tr>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+                  <td><span class="badge"><?php echo $this->successfulJobs; ?></span></td>
+               </tr>
+               <tr>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+                  <td><span class="badge"><?php echo $this->unsuccessfulJobs; ?></span></td>
+               </tr>
+            </table>
+         </div>
+         <div class="col-md-2">
+            <div id="chart1" style="width:350px; height:250px;"></div>
+         </div>
+      </div>
+
+   </div>
+
+</div>

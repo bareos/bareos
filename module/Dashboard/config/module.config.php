@@ -57,6 +57,11 @@ return array(
       'template_path_stack' => array(
          'dashboard' => __DIR__ . '/../view',
       ),
+      'template_map' => array(
+         'JobsPast24h' => __DIR__ . '/../view/partial/JobsPast24h.phtml',
+         'JobsLastStatus' => __DIR__ . '/../view/partial/JobsLastStatus.phtml',
+         'LastDirectorMessages' => __DIR__ . '/../view/partial/LastDirectorMessages.phtml',
+      ),
    ),
    'translator' => array(
       'translation_file_patterns' => array(

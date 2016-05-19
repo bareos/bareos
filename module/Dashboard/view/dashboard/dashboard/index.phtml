@@ -31,99 +31,13 @@ $this->headTitle($title);
 
 <div class="row">
 
-   <!-- Jobs during past 24 hours -->
    <div class="col-md-4">
-
-      <div class="panel panel-default">
-
-         <div class="panel-heading">
-            <h3 class="panel-title"><?php echo $this->translate('Jobs during the past 24 hours') ?></h3>
-         </div>
-
-         <div class="panel-body" style="overflow-y: auto;">
-
-            <div class="row-md-6">
-               <div class="col-md-4">
-                  <table class="table">
-                     <tr>
-                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'running'))); ?>"><?php echo $this->translate("Running"); ?></a></td>
-                        <td><span class="badge"><?php echo $this->runningJobs; ?></span></td>
-                     </tr>
-                     <tr>
-                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'waiting'))); ?>"><?php echo $this->translate("Waiting"); ?></a></td>
-                        <td><span class="badge"><?php echo $this->waitingJobs; ?></span></td>
-                     </tr>
-                     <tr>
-                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
-                        <td><span class="badge"><?php echo $this->successfulJobs; ?></span></td>
-                     </tr>
-                     <tr>
-                        <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
-                        <td><span class="badge"><?php echo $this->unsuccessfulJobs; ?></span></td>
-                     </tr>
-                  </table>
-               </div>
-               <div class="col-md-2">
-                  <div id="chart1" style="width:350px; height:250px;"></div>
-               </div>
-            </div>
-
-         </div>
-
-      </div>
-
+      <?php echo $this->partial('JobsPast24h'); ?>
+      <?php echo $this->partial('LastDirectorMessages'); ?>
    </div>
 
-   <!-- LIST JOBS LAST -->
    <div class="col-md-8">
-
-      <div class="panel panel-default">
-
-         <div class="panel-heading">
-            <h3 class="panel-title"><?php echo $this->translate('Jobs last status'); ?></h3>
-         </div>
-
-         <div class="panel-body">
-            <table class="table table-hover" id="jobs-last-status">
-               <thead class="bg-primary">
-                  <th><?php echo $this->translate("Job"); ?></th>
-                  <th><?php echo $this->translate("Status"); ?></th>
-                  <th><?php echo $this->translate("Name"); ?></th>
-                  <th><?php echo $this->translate("Client"); ?></th>
-                  <th><?php echo $this->translate("Level"); ?></th>
-                  <th><?php echo $this->translate("Start"); ?></th>
-                  <th><?php echo $this->translate("End"); ?></th>
-               </thead>
-            </table>
-         </div>
-
-      </div>
-
-   </div>
-
-</div>
-
-<!-- DIRD MSG TICKER -->
-<div class="row">
-
-   <div class="col-md-4">
-
-   <div class="panel panel-default">
-
-         <div class="panel-heading">
-            <h3 class="panel-title"><?php echo $this->translate('Last Director messages'); ?></h3>
-         </div>
-
-         <div class="panel-body" style="overflow-x: auto;">
-
-            <div class="dird-msg-ticker" style="height: 250px;">
-               <div class="msg" id="0"></div>
-            </div>
-
-         </div>
-
-   </div>
-
+      <?php echo $this->partial('JobsLastStatus'); ?>
    </div>
 
 </div>
@@ -194,7 +108,7 @@ $this->headTitle($title);
          success: function(data) {
             for(var i in data) {
                if(data[i].logid > lastlogid) {
-                  var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext.replace(/(?:\r\n|\r|\n)/g, '<br />')+'</div>');
+                  var msg = $('<div class="msg" id="'+data[i].logid+'">'+data[i].time+'&nbsp;'+data[i].logtext+'</div>');
                   msg.insertBefore('#'+lastlogid).fadeIn('slow');
                   lastlogid = data[i].logid;
                }
@@ -270,4 +184,3 @@ $this->headTitle($title);
    );
 
 </script>
-
