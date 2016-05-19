@@ -547,6 +547,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
       Dmsg1(110, "End FD msg: %s\n", dir->msg);
    }
 
+bail_out:
    generate_plugin_event(jcr, bEventJobEnd);
 
    dequeue_messages(jcr);             /* send any queued messages */

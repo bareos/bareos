@@ -178,9 +178,7 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
 
    foreach_jcr(njcr) {
       bstrftime_nc(dt, sizeof(dt), njcr->start_time);
-      if (njcr->JobId == 0) {
-         len = Mmsg(msg, _("Director connected at: %s\n"), dt);
-      } else {
+      if (njcr->JobId > 0) {
          len = Mmsg(msg, _("JobId %d Job %s is running.\n"),
                     njcr->JobId, njcr->Job);
          sendit(msg, len, sp);
@@ -194,6 +192,13 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
                     level_to_str(njcr->getJobLevel()),
                     job_type_to_str(njcr->getJobType()), dt);
 #endif
+      } else if ((njcr->JobId == 0) && (njcr->director)) {
+         len = Mmsg(msg, _("%s (director) connected at: %s\n"), njcr->director->name(), dt);
+      } else {
+         /*
+          * This should not occur shortly, until the JCR values are set.
+          */
+         len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
       }
       sendit(msg, len, sp);
       if (njcr->JobId == 0) {
