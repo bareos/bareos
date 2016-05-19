@@ -91,20 +91,16 @@ static inline bool two_way_authenticate(int rcode, BSOCK *bs, JCR* jcr)
       bs->msg[100] = 0;
       Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n",
             bs->who(), bs->msg);
-      Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
-            who, bs->msg);
+      Emsg2(M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"), who, bs->msg);
       goto auth_fatal;
    }
    unbash_spaces(dirname);
-   foreach_res(director, R_DIRECTOR) {
-      if (bstrcmp(director->name(), dirname))
-         break;
-   }
+   director = (DIRRES *)GetResWithName(R_DIRECTOR, dirname);
    if (!director) {
       char addr[64];
       char *who = bnet_get_peer(bs, addr, sizeof(addr)) ? bs->who() : addr;
-      Jmsg2(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"),
-            dirname, who);
+      Dmsg2(dbglvl, "Connection from unknown Director %s at %s rejected.\n", dirname, who);
+      Emsg2(M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"), dirname, who);
       goto auth_fatal;
    }
 
