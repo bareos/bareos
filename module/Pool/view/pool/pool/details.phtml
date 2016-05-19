@@ -92,7 +92,6 @@ $this->headTitle($title);
    <th><?php echo $this->translate("Retention/Expiration"); ?></th>
    <th><?php echo $this->translate("Maximum bytes"); ?></th>
    <th><?php echo $this->translate("Current bytes"); ?></th>
-   <th><?php echo $this->translate("Free bytes"); ?></th>
 </thead>
 
 </table>
@@ -213,7 +212,6 @@ $(document).ready(function() {
          { "data": null },
          { "data": "maxvolbytes", "type": "file-size" },
          { "data": "volbytes", "type": "file-size" },
-         { "data": null, "type": "file-size" },
          { "data": "lastwritten" }
       ],
       "paging": true,
@@ -231,7 +229,7 @@ $(document).ready(function() {
          },
          {
             "targets": 4,
-            "orderData": 10,
+            "orderData": 9,
             "render": function(data, type, full, meta) {
                return formatLastWritten(data);
             }
@@ -256,12 +254,6 @@ $(document).ready(function() {
          },
          {
             "targets": 9,
-            "render": function(data, type, full, meta) {
-               return formatFreeBytes(data.maxvolbytes, data.volbytes);
-            }
-         },
-         {
-            "targets": 10,
             "visible": false,
             "searchable": false
          }
