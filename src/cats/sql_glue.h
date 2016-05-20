@@ -34,11 +34,11 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_address,
                        int db_port,
                        const char *db_socket,
-                       bool mult_db_connections = false,
-                       bool disable_batch_insert = false,
-                       bool is_private = false,
-                       bool try_reconnect = false,
-                       bool exit_on_fatal = false);
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool try_reconnect,
+                       bool exit_on_fatal,
+                       bool need_private = false);
 
 /*
  * Glue functions from sql_glue.c

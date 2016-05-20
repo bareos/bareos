@@ -90,9 +90,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private,
                        bool try_reconnect,
-                       bool exit_on_fatal)
+                       bool exit_on_fatal,
+                       bool need_private)
 {
    struct stat st;
    char *backend_dir;
@@ -144,9 +144,9 @@ B_DB *db_init_database(JCR *jcr,
                                                                db_socket,
                                                                mult_db_connections,
                                                                disable_batch_insert,
-                                                               need_private,
                                                                try_reconnect,
-                                                               exit_on_fatal);
+                                                               exit_on_fatal,
+                                                               need_private);
          }
       }
    }
@@ -245,9 +245,9 @@ B_DB *db_init_database(JCR *jcr,
                                                          db_socket,
                                                          mult_db_connections,
                                                          disable_batch_insert,
-                                                         need_private,
                                                          try_reconnect,
-                                                         exit_on_fatal);
+                                                         exit_on_fatal,
+                                                         need_private);
    } else {
       Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for libbareoscats-%s%s\n"),
            backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
@@ -291,9 +291,9 @@ B_DB *db_init_database(JCR *jcr,
                        const char *db_socket,
                        bool mult_db_connections,
                        bool disable_batch_insert,
-                       bool need_private,
                        bool try_reconnect,
-                       bool exit_on_fatal)
+                       bool exit_on_fatal,
+                       bool need_private)
 {
    Jmsg(jcr, M_FATAL, 0, _("Please replace this dummy libbareoscats library with a proper one.\n"));
    Dmsg0(0, _("Please replace this dummy libbareoscats library with a proper one.\n"));
