@@ -38,9 +38,9 @@ public:
                    const char *db_socket,
                    bool mult_db_connections,
                    bool disable_batch_insert,
-                   bool need_private,
                    bool try_reconnect,
-                   bool exit_on_fatal);
+                   bool exit_on_fatal,
+                   bool need_private);
    ~B_DB_POSTGRESQL();
 
    /* low level operations */

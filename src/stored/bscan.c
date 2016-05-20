@@ -320,7 +320,19 @@ int main (int argc, char *argv[])
    db_set_backend_dirs(backend_directories);
 #endif
 
-   if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password, db_host, db_port, NULL)) == NULL) {
+   db = db_init_database(NULL,
+                         db_driver,
+                         db_name,
+                         db_user,
+                         db_password,
+                         db_host,
+                         db_port,
+                         NULL,
+                         false,
+                         false,
+                         false,
+                         false);
+   if (db == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
    if (!db_open_database(NULL, db)) {

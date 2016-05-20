@@ -1465,9 +1465,9 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   const char *db_socket,
                                                   bool mult_db_connections,
                                                   bool disable_batch_insert,
-                                                  bool need_private,
                                                   bool try_reconnect,
-                                                  bool exit_on_fatal)
+                                                  bool exit_on_fatal,
+                                                  bool need_private)
 #else
 B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
@@ -1481,7 +1481,8 @@ B_DB *db_init_database(JCR *jcr,
                        bool disable_batch_insert,
                        bool need_private,
                        bool try_reconnect,
-                       bool exit_on_fatal)
+                       bool exit_on_fatal,
+                       bool need_private)
 #endif
 {
    B_DB_DBI *mdb = NULL;
@@ -1528,9 +1529,9 @@ B_DB *db_init_database(JCR *jcr,
                       db_socket,
                       mult_db_connections,
                       disable_batch_insert,
-                      need_private,
                       try_reconnect,
-                      exit_on_fatal));
+                      exit_on_fatal,
+                      need_private));
 
 bail_out:
    V(mutex);

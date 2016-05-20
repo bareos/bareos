@@ -314,7 +314,11 @@ int main (int argc, char *argv[])
                          password,
                          dbhost,
                          dbport,
-                         NULL);
+                         NULL,
+                         false,
+                         false,
+                         false,
+                         false);
    if (!db_open_database(NULL, db)) {
       Emsg1(M_FATAL, 0, "%s", db_strerror(db));
       return 1;
