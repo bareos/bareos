@@ -33,17 +33,28 @@ $this->headTitle($title);
    <li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'schedule')); ?>"><?php echo $this->translate('Schedule'); ?></a></li>
    <li class="active"><a href="<?php echo $this->url('director', array('action'=>'schedulerstatus')); ?>"><?php echo $this->translate('Scheduler status'); ?></a></li>
-   <li><a href="<?php echo $this->url('director', array('action'=>'version')); ?>"><?php echo $this->translate('Version'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
 </ul>
 
 <br />
 
 <div class="row">
-<div class="col-md-12">
-<pre style="font-size: 8pt;">
+<div class="col-md-8">
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+   <h3 class="panel-title"><?php echo $this->translate("Scheduler Status"); ?></h3>
+</div>
+
+<div class="panel-body">
+<pre class="dird-messages" style="height: 500px; font-size: 8pt;">
 <code>
 <?php echo $this->directorOutput; ?>
 </code>
 </pre>
 </div>
+
 </div>
+</div>
+

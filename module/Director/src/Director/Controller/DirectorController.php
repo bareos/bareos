@@ -84,7 +84,7 @@ class DirectorController extends AbstractActionController
       ));
    }
 
-   public function versionAction()
+   public function consoleAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
 
@@ -93,7 +93,6 @@ class DirectorController extends AbstractActionController
       }
 
       return new ViewModel(array(
-         'directorOutput' => $this->getDirectorModel()->getDirectorVersion()
       ));
    }
 
@@ -109,9 +108,13 @@ class DirectorController extends AbstractActionController
       $limit = $this->params()->fromQuery('limit');
       $offset = $this->params()->fromQuery('offset');
       $reverse = $this->params()->fromQuery('reverse');
+      $command = $this->params()->fromPost('command');
 
       if($data == "messages") {
          $result = $this->getDirectorModel()->getDirectorMessages($limit);
+      }
+      elseif($data == "cli") {
+         $result = $this->getDirectorModel()->sendCommand($command);
       }
       else {
          $result = null;

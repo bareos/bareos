@@ -80,9 +80,8 @@ class DirectorModel implements ServiceLocatorAwareInterface
       return $result;
    }
 
-   public function getDirectorVersion()
+   public function sendCommand($cmd=null)
    {
-      $cmd = 'version';
       $this->director = $this->getServiceLocator()->get('director');
       $result = $this->director->send_command($cmd, 0, null);
       return $result;

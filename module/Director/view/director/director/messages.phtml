@@ -33,15 +33,16 @@ $this->headTitle($title);
    <li class="active"><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'schedule')); ?>"><?php echo $this->translate('Schedule'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'schedulerstatus')); ?>"><?php echo $this->translate('Scheduler status'); ?></a></li>
-   <li><a href="<?php echo $this->url('director', array('action'=>'version')); ?>"><?php echo $this->translate('Version'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
 </ul>
 
 <br />
 
 <div class="row">
-<div class="col-md-12">
+<div class="col-md-8">
 
 <div class="text-right"><a class="btn btn-primary" onclick="refreshMessages();" /><span class="glyphicon glyphicon-refresh">&nbsp;</span><?php echo $this->translate("Refresh"); ?></a></div>
+
 <br />
 
 <div class="panel panel-default">
