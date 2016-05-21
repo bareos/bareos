@@ -148,9 +148,9 @@ public:
    uint32_t max_network_buffer_size;  /* Max network buf size */
    uint32_t max_concurrent_jobs;      /* Maximum concurrent jobs this drive */
    uint32_t autodeflate_algorithm;    /* Compression algorithm to use for compression */
-   uint32_t autodeflate_level;        /* Compression level to use for compression algorithm which uses levels */
-   uint32_t autodeflate;              /* Perform auto deflation in this IO direction */
-   uint32_t autoinflate;              /* Perform auto inflation in this IO direction */
+   uint16_t autodeflate_level;        /* Compression level to use for compression algorithm which uses levels */
+   uint16_t autodeflate;              /* Perform auto deflation in this IO direction */
+   uint16_t autoinflate;              /* Perform auto inflation in this IO direction */
    utime_t vol_poll_interval;         /* Interval between polling volume during mount */
    int64_t max_volume_files;          /* Max files to put on one volume */
    int64_t max_volume_size;           /* Max bytes to put on one volume */

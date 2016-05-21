@@ -144,7 +144,9 @@ struct RES_ITEM {
    const int type;
    union {
       char **value;                     /* Where to store the item */
+      uint16_t *ui16value;
       uint32_t *ui32value;
+      int16_t *i16value;
       int32_t *i32value;
       uint64_t *ui64value;
       int64_t *i64value;
@@ -238,22 +240,24 @@ enum {
    CFG_TYPE_ALIST_RES = 9,              /* List of resources */
    CFG_TYPE_ALIST_STR = 10,             /* List of strings */
    CFG_TYPE_ALIST_DIR = 11,             /* List of dirs */
-   CFG_TYPE_INT32 = 12,                 /* 32 bits Integer */
-   CFG_TYPE_PINT32 = 13,                /* Positive 32 bits Integer (unsigned) */
-   CFG_TYPE_MSGS = 14,                  /* Message resource */
-   CFG_TYPE_INT64 = 15,                 /* 64 bits Integer */
-   CFG_TYPE_BIT = 16,                   /* Bitfield */
-   CFG_TYPE_BOOL = 17,                  /* Boolean */
-   CFG_TYPE_TIME = 18,                  /* Time value */
-   CFG_TYPE_SIZE64 = 19,                /* 64 bits file size */
-   CFG_TYPE_SIZE32 = 20,                /* 32 bits file size */
-   CFG_TYPE_SPEED = 21,                 /* Speed limit */
-   CFG_TYPE_DEFS = 22,                  /* Definition */
-   CFG_TYPE_LABEL = 23,                 /* Label */
-   CFG_TYPE_ADDRESSES = 24,             /* List of ip addresses */
-   CFG_TYPE_ADDRESSES_ADDRESS = 25,     /* Ip address */
-   CFG_TYPE_ADDRESSES_PORT = 26,        /* Ip port */
-   CFG_TYPE_PLUGIN_NAMES = 27,          /* Plugin Name(s) */
+   CFG_TYPE_INT16 = 12,                 /* 16 bits Integer */
+   CFG_TYPE_PINT16 = 13,                /* Positive 16 bits Integer (unsigned) */
+   CFG_TYPE_INT32 = 14,                 /* 32 bits Integer */
+   CFG_TYPE_PINT32 = 15,                /* Positive 32 bits Integer (unsigned) */
+   CFG_TYPE_MSGS = 16,                  /* Message resource */
+   CFG_TYPE_INT64 = 17,                 /* 64 bits Integer */
+   CFG_TYPE_BIT = 18,                   /* Bitfield */
+   CFG_TYPE_BOOL = 19,                  /* Boolean */
+   CFG_TYPE_TIME = 20,                  /* Time value */
+   CFG_TYPE_SIZE64 = 21,                /* 64 bits file size */
+   CFG_TYPE_SIZE32 = 22,                /* 32 bits file size */
+   CFG_TYPE_SPEED = 23,                 /* Speed limit */
+   CFG_TYPE_DEFS = 24,                  /* Definition */
+   CFG_TYPE_LABEL = 25,                 /* Label */
+   CFG_TYPE_ADDRESSES = 26,             /* List of ip addresses */
+   CFG_TYPE_ADDRESSES_ADDRESS = 27,     /* Ip address */
+   CFG_TYPE_ADDRESSES_PORT = 28,        /* Ip port */
+   CFG_TYPE_PLUGIN_NAMES = 29,          /* Plugin Name(s) */
 
    /*
     * Director resource types. handlers in dird_conf.

@@ -186,7 +186,7 @@ static RES_ITEM dev_items[] = {
    { "SpoolDirectory", CFG_TYPE_DIR, ITEM(res_dev.spool_directory), 0, 0, NULL, NULL, NULL },
    { "MaximumSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_spool_size), 0, 0, NULL, NULL, NULL },
    { "MaximumJobSpoolSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_job_spool_size), 0, 0, NULL, NULL, NULL },
-   { "DriveIndex", CFG_TYPE_PINT32, ITEM(res_dev.drive_index), 0, 0, NULL, NULL, NULL },
+   { "DriveIndex", CFG_TYPE_PINT16, ITEM(res_dev.drive_index), 0, 0, NULL, NULL, NULL },
    { "MaximumPartSize", CFG_TYPE_SIZE64, ITEM(res_dev.max_part_size), 0, CFG_ITEM_DEPRECATED, NULL, NULL, NULL },
    { "MountPoint", CFG_TYPE_STRNAME, ITEM(res_dev.mount_point), 0, 0, NULL, NULL, NULL },
    { "MountCommand", CFG_TYPE_STRNAME, ITEM(res_dev.mount_command), 0, 0, NULL, NULL, NULL },
@@ -200,7 +200,7 @@ static RES_ITEM dev_items[] = {
    { "QueryCryptoStatus", CFG_TYPE_BOOL, ITEM(res_dev.query_crypto_status), 0, 0, NULL, NULL, NULL },
    { "AutoDeflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autodeflate), 0, 0, NULL, "13.4.0-", NULL },
    { "AutoDeflateAlgorithm", CFG_TYPE_CMPRSALGO, ITEM(res_dev.autodeflate_algorithm), 0, 0, NULL, "13.4.0-", NULL },
-   { "AutoDeflateLevel", CFG_TYPE_PINT32, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", "13.4.0-", NULL },
+   { "AutoDeflateLevel", CFG_TYPE_PINT16, ITEM(res_dev.autodeflate_level), 0, CFG_ITEM_DEFAULT, "6", "13.4.0-", NULL },
    { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev.autoinflate), 0, 0, NULL, "13.4.0-", NULL },
    { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev.collectstats), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
@@ -391,7 +391,7 @@ static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
    lex_get_token(lc, T_NAME);
    for (i = 0; io_directions[i].name; i++) {
       if (bstrcasecmp(lc->str, io_directions[i].name)) {
-         *(uint32_t *)(item->value) = io_directions[i].token;
+         *(uint16_t *)(item->value) = io_directions[i].token & 0xffff;
          i = 0;
          break;
       }
@@ -414,7 +414,7 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
    lex_get_token(lc, T_NAME);
    for (i = 0; compression_algorithms[i].name; i++) {
       if (bstrcasecmp(lc->str, compression_algorithms[i].name)) {
-         *(uint32_t *)(item->value) = compression_algorithms[i].token;
+         *(uint32_t *)(item->value) = compression_algorithms[i].token & 0xffffffff;
          i = 0;
          break;
       }

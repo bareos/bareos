@@ -515,6 +515,7 @@ const char *lex_tok_to_str(int token)
 static uint32_t scan_pint(LEX *lf, char *str)
 {
    int64_t val = 0;
+
    if (!is_a_number(str)) {
       scan_err1(lf, _("expected a positive integer number, got: %s"), str);
       /* NOT REACHED */
@@ -526,12 +527,14 @@ static uint32_t scan_pint(LEX *lf, char *str)
          /* NOT REACHED */
       }
    }
-   return (uint32_t)val;
+
+   return (uint32_t)(val & 0xffffffff);
 }
 
 static uint64_t scan_pint64(LEX *lf, char *str)
 {
    uint64_t val = 0;
+
    if (!is_a_number(str)) {
       scan_err1(lf, _("expected a positive integer number, got: %s"), str);
       /* NOT REACHED */
@@ -543,6 +546,7 @@ static uint64_t scan_pint64(LEX *lf, char *str)
          /* NOT REACHED */
       }
    }
+
    return val;
 }
 
@@ -873,16 +877,22 @@ int lex_get_token(LEX *lf, int expect)
     *  and possible additional scanning (e.g. for range).
     */
    switch (expect) {
+   case T_PINT16:
+      lf->u.pint16_val = (scan_pint(lf, lf->str) & 0xffff);
+      lf->u2.pint16_val = lf->u.pint16_val;
+      token = T_PINT16;
+      break;
+
    case T_PINT32:
-      lf->pint32_val = scan_pint(lf, lf->str);
-      lf->pint32_val2 = lf->pint32_val;
+      lf->u.pint32_val = scan_pint(lf, lf->str);
+      lf->u2.pint32_val = lf->u.pint32_val;
       token = T_PINT32;
       break;
 
    case T_PINT32_RANGE:
       if (token == T_NUMBER) {
-         lf->pint32_val = scan_pint(lf, lf->str);
-         lf->pint32_val2 = lf->pint32_val;
+         lf->u.pint32_val = scan_pint(lf, lf->str);
+         lf->u2.pint32_val = lf->u.pint32_val;
          token = T_PINT32;
       } else {
          char *p = strchr(lf->str, '-');
@@ -893,9 +903,27 @@ int lex_get_token(LEX *lf, int expect)
             break;
          }
          *p++ = 0;                       /* terminate first half of range */
-         lf->pint32_val  = scan_pint(lf, lf->str);
-         lf->pint32_val2 = scan_pint(lf, p);
+         lf->u.pint32_val  = scan_pint(lf, lf->str);
+         lf->u2.pint32_val = scan_pint(lf, p);
          token = T_PINT32_RANGE;
+      }
+      break;
+
+   case T_INT16:
+      if (token != T_NUMBER || !is_a_number(lf->str)) {
+         scan_err2(lf, _("expected an integer number, got %s: %s"),
+               lex_tok_to_str(token), lf->str);
+         token = T_ERROR;
+         break;
+      }
+      errno = 0;
+      lf->u.int16_val = (int16_t)str_to_int64(lf->str);
+      if (errno != 0) {
+         scan_err2(lf, _("expected an integer number, got %s: %s"),
+               lex_tok_to_str(token), lf->str);
+         token = T_ERROR;
+      } else {
+         token = T_INT16;
       }
       break;
 
@@ -907,7 +935,7 @@ int lex_get_token(LEX *lf, int expect)
          break;
       }
       errno = 0;
-      lf->int32_val = (int32_t)str_to_int64(lf->str);
+      lf->u.int32_val = (int32_t)str_to_int64(lf->str);
       if (errno != 0) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
@@ -926,7 +954,7 @@ int lex_get_token(LEX *lf, int expect)
          break;
       }
       errno = 0;
-      lf->int64_val = str_to_int64(lf->str);
+      lf->u.int64_val = str_to_int64(lf->str);
       if (errno != 0) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
@@ -938,8 +966,8 @@ int lex_get_token(LEX *lf, int expect)
 
    case T_PINT64_RANGE:
       if (token == T_NUMBER) {
-         lf->pint64_val = scan_pint64(lf, lf->str);
-         lf->pint64_val2 = lf->pint64_val;
+         lf->u.pint64_val = scan_pint64(lf, lf->str);
+         lf->u2.pint64_val = lf->u.pint64_val;
          token = T_PINT64;
       } else {
          char *p = strchr(lf->str, '-');
@@ -950,8 +978,8 @@ int lex_get_token(LEX *lf, int expect)
             break;
          }
          *p++ = 0;                       /* terminate first half of range */
-         lf->pint64_val  = scan_pint64(lf, lf->str);
-         lf->pint64_val2 = scan_pint64(lf, p);
+         lf->u.pint64_val  = scan_pint64(lf, lf->str);
+         lf->u2.pint64_val = scan_pint64(lf, p);
          token = T_PINT64_RANGE;
       }
       break;

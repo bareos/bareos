@@ -156,7 +156,7 @@ static bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_INT64) == T_ERROR) {
       return false;
    }
-   item->val.int64val = lc->int64_val;
+   item->val.int64val = lc->u.int64_val;
    scan_to_eol(lc);
    return true;
 }
@@ -170,7 +170,7 @@ static bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_PINT64) == T_ERROR) {
       return false;
    }
-   item->val.int64val = lc->pint64_val;
+   item->val.int64val = lc->u.pint64_val;
    scan_to_eol(lc);
    return true;
 }
@@ -184,7 +184,7 @@ static bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_PINT32) == T_ERROR) {
       return false;
    }
-   item->val.int32val = lc->pint32_val;
+   item->val.int32val = lc->u.pint32_val;
    scan_to_eol(lc);
    return true;
 }
@@ -198,7 +198,7 @@ static bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
    if (lex_get_token(lc, T_INT32) == T_ERROR) {
       return false;
    }
-   item->val.int32val = lc->int32_val;
+   item->val.int32val = lc->u.int32_val;
    scan_to_eol(lc);
    return true;
 }

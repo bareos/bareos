@@ -58,14 +58,16 @@
  * the appropriate expect flag has been set
  */
 #define T_SKIP_EOL                    113  /* scan through EOLs */
-#define T_PINT32                      114  /* positive integer */
-#define T_PINT32_RANGE                115  /* positive integer range */
-#define T_INT32                       116  /* integer */
-#define T_INT64                       117  /* 64 bit integer */
-#define T_NAME                        118  /* name max 128 chars */
-#define T_STRING                      119  /* string */
-#define T_PINT64_RANGE                120  /* positive integer range */
-#define T_PINT64                      121  /* positive integer range */
+#define T_PINT16                      114  /* 16 bit positive integer */
+#define T_PINT32                      115  /* 32 bit positive integer */
+#define T_PINT32_RANGE                116  /* 32 bit positive integer range */
+#define T_INT16                       117  /* 16 bit integer */
+#define T_INT32                       118  /* 32 bit integer */
+#define T_INT64                       119  /* 64 bit integer */
+#define T_NAME                        120  /* name max 128 chars */
+#define T_STRING                      121  /* string */
+#define T_PINT64_RANGE                122  /* positive integer range */
+#define T_PINT64                      123  /* positive integer range */
 
 #define T_ALL                           0  /* no expectations */
 
@@ -107,12 +109,19 @@ typedef struct s_lex_context {
    enum lex_state state;              /* lex_state variable */
    int ch;                            /* last char/L_VAL returned by get_char */
    int token;
-   uint32_t pint32_val;
-   uint32_t pint32_val2;
-   int32_t int32_val;
-   int64_t int64_val;
-   uint64_t pint64_val;
-   uint64_t pint64_val2;
+   union {
+      uint16_t pint16_val;
+      uint32_t pint32_val;
+      uint64_t pint64_val;
+      int16_t int16_val;
+      int32_t int32_val;
+      int64_t int64_val;
+   } u;
+   union {
+      uint16_t pint16_val;
+      uint32_t pint32_val;
+      uint64_t pint64_val;
+   } u2;
    void (*scan_error)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    void (*scan_warning)(const char *file, int line, struct s_lex_context *lc, const char *msg, ...);
    int err_type;                      /* message level for scan_error (M_..) */

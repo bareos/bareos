@@ -743,12 +743,23 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store an integer at specified address
  */
+static void store_int16(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_INT16);
+   *(item->i16value) = lc->u.int16_val;
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
+}
+
 static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_INT32);
-   *(item->i32value) = lc->int32_val;
+   *(item->i32value) = lc->u.int32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
    clear_bit(index, res_all->hdr.inherit_content);
@@ -757,12 +768,23 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a positive integer at specified address
  */
+static void store_pint16(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_PINT16);
+   *(item->ui16value) = lc->u.pint16_val;
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
+}
+
 static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_PINT32);
-   *(item->ui32value) = lc->pint32_val;
+   *(item->ui32value) = lc->u.pint32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
    clear_bit(index, res_all->hdr.inherit_content);
@@ -776,7 +798,7 @@ static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    lex_get_token(lc, T_INT64);
-   *(item->i64value) = lc->int64_val;
+   *(item->i64value) = lc->u.int64_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
    clear_bit(index, res_all->hdr.inherit_content);
@@ -1222,6 +1244,12 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    case CFG_TYPE_ALIST_DIR:
       store_alist_dir(lc, item, index, pass);
       break;
+   case CFG_TYPE_INT16:
+      store_int16(lc, item, index, pass);
+      break;
+   case CFG_TYPE_PINT16:
+      store_pint16(lc, item, index, pass);
+      break;
    case CFG_TYPE_INT32:
       store_int32(lc, item, index, pass);
       break;
@@ -1534,6 +1562,12 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
             case CFG_TYPE_STRNAME:
                print_item = !bstrcmp(*(items[i].value), items[i].default_value);
                break;
+            case CFG_TYPE_INT16:
+               print_item = (*(items[i].i16value) != (int16_t)str_to_int32(items[i].default_value));
+               break;
+            case CFG_TYPE_PINT16:
+               print_item = (*(items[i].ui16value) != (uint16_t)str_to_int32(items[i].default_value));
+               break;
             case CFG_TYPE_INT32:
                print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
                break;
@@ -1578,6 +1612,12 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
             case CFG_TYPE_NAME:
             case CFG_TYPE_STRNAME:
                print_item = *(items[i].value) != NULL;
+               break;
+            case CFG_TYPE_INT16:
+               print_item = (*(items[i].i16value) > 0);
+               break;
+            case CFG_TYPE_PINT16:
+               print_item = (*(items[i].ui16value) > 0);
                break;
             case CFG_TYPE_INT32:
                print_item = (*(items[i].i32value) > 0);
@@ -1674,6 +1714,18 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
             }
          }
          break;
+      case CFG_TYPE_INT16:
+         if (print_item) {
+            Mmsg(temp, "%s = %hd\n", items[i].name, *(items[i].i16value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
+      case CFG_TYPE_PINT16:
+         if (print_item) {
+            Mmsg(temp, "%s = %hu\n", items[i].name, *(items[i].ui16value));
+            indent_config_item(cfg_str, 1, temp.c_str());
+         }
+         break;
       case CFG_TYPE_INT32:
          if (print_item) {
             Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i32value));
@@ -1682,7 +1734,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          break;
       case CFG_TYPE_PINT32:
          if (print_item) {
-            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui32value));
+            Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui32value));
             indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
@@ -1694,7 +1746,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          break;
       case CFG_TYPE_SPEED:
          if (print_item) {
-            Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].ui64value));
+            Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui64value));
             indent_config_item(cfg_str, 1, temp.c_str());
          }
          break;
@@ -1936,6 +1988,8 @@ static DATATYPE_NAME datatype_names[] = {
    { CFG_TYPE_ALIST_RES, "RESOURCE_LIST", "Resource list" },
    { CFG_TYPE_ALIST_STR, "STRING_LIST", "string list" },
    { CFG_TYPE_ALIST_DIR, "DIRECTORY_LIST", "directory list" },
+   { CFG_TYPE_INT16, "INT16", "Integer 16 bits" },
+   { CFG_TYPE_PINT16, "PINT16", "Positive 16 bits Integer (unsigned)" },
    { CFG_TYPE_INT32, "INT32", "Integer 32 bits" },
    { CFG_TYPE_PINT32, "PINT32", "Positive 32 bits Integer (unsigned)" },
    { CFG_TYPE_MSGS, "MESSAGES", "Message resource" },

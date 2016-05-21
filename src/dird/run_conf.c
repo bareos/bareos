@@ -231,7 +231,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
             case 'p':                 /* Priority */
                token = lex_get_token(lc, T_PINT32);
                if (pass == 2) {
-                  lrun.Priority = lc->pint32_val;
+                  lrun.Priority = lc->u.pint32_val;
                }
                break;
             case 'P':                 /* Pool */

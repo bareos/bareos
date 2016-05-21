@@ -444,8 +444,8 @@ static BSR *store_findex(LEX *lc, BSR *bsr)
       }
       findex = (BSR_FINDEX *)malloc(sizeof(BSR_FINDEX));
       memset(findex, 0, sizeof(BSR_FINDEX));
-      findex->findex = lc->pint32_val;
-      findex->findex2 = lc->pint32_val2;
+      findex->findex = lc->u.pint32_val;
+      findex->findex2 = lc->u2.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -481,8 +481,8 @@ static BSR *store_jobid(LEX *lc, BSR *bsr)
       }
       jobid = (BSR_JOBID *)malloc(sizeof(BSR_JOBID));
       memset(jobid, 0, sizeof(BSR_JOBID));
-      jobid->JobId = lc->pint32_val;
-      jobid->JobId2 = lc->pint32_val2;
+      jobid->JobId = lc->u.pint32_val;
+      jobid->JobId2 = lc->u2.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -514,7 +514,7 @@ static BSR *store_count(LEX *lc, BSR *bsr)
    if (token == T_ERROR) {
       return NULL;
    }
-   bsr->count = lc->pint32_val;
+   bsr->count = lc->u.pint32_val;
    scan_to_eol(lc);
    return bsr;
 }
@@ -575,8 +575,8 @@ static BSR *store_volfile(LEX *lc, BSR *bsr)
       }
       volfile = (BSR_VOLFILE *)malloc(sizeof(BSR_VOLFILE));
       memset(volfile, 0, sizeof(BSR_VOLFILE));
-      volfile->sfile = lc->pint32_val;
-      volfile->efile = lc->pint32_val2;
+      volfile->sfile = lc->u.pint32_val;
+      volfile->efile = lc->u2.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -615,8 +615,8 @@ static BSR *store_volblock(LEX *lc, BSR *bsr)
       }
       volblock = (BSR_VOLBLOCK *)malloc(sizeof(BSR_VOLBLOCK));
       memset(volblock, 0, sizeof(BSR_VOLBLOCK));
-      volblock->sblock = lc->pint32_val;
-      volblock->eblock = lc->pint32_val2;
+      volblock->sblock = lc->u.pint32_val;
+      volblock->eblock = lc->u2.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -655,8 +655,8 @@ static BSR *store_voladdr(LEX *lc, BSR *bsr)
       }
       voladdr = (BSR_VOLADDR *)malloc(sizeof(BSR_VOLADDR));
       memset(voladdr, 0, sizeof(BSR_VOLADDR));
-      voladdr->saddr = lc->pint64_val;
-      voladdr->eaddr = lc->pint64_val2;
+      voladdr->saddr = lc->u.pint64_val;
+      voladdr->eaddr = lc->u2.pint64_val;
 
       /*
        * Add it to the end of the chain
@@ -692,8 +692,8 @@ static BSR *store_sessid(LEX *lc, BSR *bsr)
       }
       sid = (BSR_SESSID *)malloc(sizeof(BSR_SESSID));
       memset(sid, 0, sizeof(BSR_SESSID));
-      sid->sessid = lc->pint32_val;
-      sid->sessid2 = lc->pint32_val2;
+      sid->sessid = lc->u.pint32_val;
+      sid->sessid2 = lc->u2.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -729,7 +729,7 @@ static BSR *store_sesstime(LEX *lc, BSR *bsr)
       }
       stime = (BSR_SESSTIME *)malloc(sizeof(BSR_SESSTIME));
       memset(stime, 0, sizeof(BSR_SESSTIME));
-      stime->sesstime = lc->pint32_val;
+      stime->sesstime = lc->u.pint32_val;
 
       /*
        * Add it to the end of the chain
@@ -765,7 +765,7 @@ static BSR *store_stream(LEX *lc, BSR *bsr)
       }
       stream = (BSR_STREAM *)malloc(sizeof(BSR_STREAM));
       memset(stream, 0, sizeof(BSR_STREAM));
-      stream->stream = lc->int32_val;
+      stream->stream = lc->u.int32_val;
 
       /*
        * Add it to the end of the chain
@@ -798,11 +798,10 @@ static BSR *store_slot(LEX *lc, BSR *bsr)
       return NULL;
    }
    if (!bsr->volume) {
-      Emsg1(M_ERROR,0, _("Slot %d in bsr at inappropriate place.\n"),
-         lc->pint32_val);
+      Emsg1(M_ERROR,0, _("Slot %d in bsr at inappropriate place.\n"), lc->u.pint32_val);
       return bsr;
    }
-   bsr->volume->Slot = lc->pint32_val;
+   bsr->volume->Slot = lc->u.pint32_val;
    scan_to_eol(lc);
    return bsr;
 }
