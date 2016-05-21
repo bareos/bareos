@@ -222,7 +222,18 @@ int main (int argc, char *argv[])
    db_set_backend_dirs(backend_directories);
 #endif
 
-   if ((db = db_init_database(NULL, NULL, db_name, db_user, db_password, db_host, 0, NULL)) == NULL) {
+   if ((db = db_init_database(NULL,
+                              NULL,
+                              db_name,
+                              db_user,
+                              db_password,
+                              db_host,
+                              0,
+                              NULL,
+                              false,
+                              false,
+                              false,
+                              false)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
    Dmsg1(0, "db_type=%s\n", db_get_type(db));

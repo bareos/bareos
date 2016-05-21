@@ -210,8 +210,18 @@ int main (int argc, char *argv[])
       db_set_backend_dirs(backend_directories);
 #endif
 
-      if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
-                                 db_host, 0, NULL, false, disable_batch)) == NULL) {
+      if ((db = db_init_database(NULL,
+                                 db_driver,
+                                 db_name,
+                                 db_user,
+                                 db_password,
+                                 db_host,
+                                 0,
+                                 NULL,
+                                 false,
+                                 disable_batch,
+                                 false,
+                                 false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
       if (!db_open_database(NULL, db)) {
@@ -259,8 +269,18 @@ int main (int argc, char *argv[])
       bjcr->fileset_md5 = get_pool_memory(PM_FNAME);
       pm_strcpy(bjcr->fileset_md5, "Dummy.fileset.md5");
 
-      if ((db = db_init_database(NULL, db_driver, db_name, db_user, db_password,
-                                 db_host, 0, NULL, false, false)) == NULL) {
+      if ((db = db_init_database(NULL,
+                                 db_driver,
+                                 db_name,
+                                 db_user,
+                                 db_password,
+                                 db_host,
+                                 0,
+                                 NULL,
+                                 false,
+                                 false,
+                                 false,
+                                 false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
       if (!db_open_database(NULL, db)) {
