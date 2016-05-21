@@ -637,7 +637,7 @@ bail_out:
  */
 static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
                                  char *pool, char *storage,
-                                 int drive, BSOCK *sd)
+                                 drive_number_t drive, BSOCK *sd)
 {
    bool ok=false;
    uint64_t VolBytes = 0;
@@ -673,7 +673,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
     * Do it by relabeling the Volume, which truncates it
     */
    sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-             "MediaType=%s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d\n",
+             "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
              storage,
              mr->VolumeName, mr->VolumeName,
              pool, mr->MediaType, mr->Slot, drive,
@@ -717,7 +717,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
 static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
 {
    bool allpools = false;
-   int drive = -1;
+   drive_number_t drive = -1;
    int nb = 0;
    uint32_t *results = NULL;
    const char *action = "all";

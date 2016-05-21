@@ -998,12 +998,12 @@ static void update_slots(UAContext *ua)
 {
    USTORERES store;
    vol_list_t *vl;
-   dlist *vol_list = NULL;
+   changer_vol_list_t *vol_list = NULL;
    MEDIA_DBR mr;
    char *slot_list;
    bool scan;
-   int max_slots;
-   int drive = -1;
+   slot_number_t max_slots;
+   drive_number_t drive = -1;
    int Enabled = VOL_ENABLED;
    bool have_enabled;
    int i;
@@ -1032,7 +1032,7 @@ static void update_slots(UAContext *ua)
       have_enabled = false;
    }
 
-   max_slots = get_num_slots(ua, store.store);
+   max_slots = get_num_slots(ua, ua->jcr->res.wstore);
    Dmsg1(100, "max_slots=%d\n", max_slots);
    if (max_slots <= 0) {
       ua->warning_msg(_("No slots in changer to scan.\n"));
@@ -1046,7 +1046,7 @@ static void update_slots(UAContext *ua)
       return;
    }
 
-   vol_list = get_vol_list_from_storage(ua, store.store, false, scan);
+   vol_list = get_vol_list_from_storage(ua, store.store, false, scan, false);
    if (!vol_list) {
       ua->warning_msg(_("No Volumes found to update, or no barcodes.\n"));
       goto bail_out;
@@ -1061,7 +1061,7 @@ static void update_slots(UAContext *ua)
     * Walk through the list updating the media records
     */
    memset(&mr, 0, sizeof(mr));
-   foreach_dlist(vl, vol_list) {
+   foreach_dlist(vl, vol_list->contents) {
       if (vl->Slot > max_slots) {
          ua->warning_msg(_("Slot %d greater than max %d ignored.\n"), vl->Slot, max_slots);
          continue;
@@ -1166,7 +1166,7 @@ static void update_slots(UAContext *ua)
 
 bail_out:
    if (vol_list) {
-      storage_free_vol_list(vol_list);
+      storage_release_vol_list(store.store, vol_list);
    }
    free(slot_list);
    close_sd_bsock(ua);
@@ -1185,7 +1185,7 @@ bail_out:
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list)
+void update_slots_from_vol_list(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
    MEDIA_DBR mr;
@@ -1197,7 +1197,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list,
    /*
     * Walk through the list updating the media records
     */
-   foreach_dlist(vl, vol_list) {
+   foreach_dlist(vl, vol_list->contents) {
       /*
        * We are only interested in normal slots.
        */
@@ -1290,7 +1290,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list,
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list)
+void update_inchanger_for_export(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
    MEDIA_DBR mr;
@@ -1302,7 +1302,7 @@ void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list
    /*
     * Walk through the list updating the media records
     */
-   foreach_dlist(vl, vol_list) {
+   foreach_dlist(vl, vol_list->contents) {
       /*
        * We are only interested in normal slots.
        */

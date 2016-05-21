@@ -539,113 +539,217 @@ int storage_compare_vol_list_entry(void *e1, void *e2)
    }
 }
 
-/*
- * Generic routine to get the content of a storage device.
- */
-dlist *get_vol_list_from_storage(UAContext *ua, STORERES *store, bool listall, bool scan)
+static inline void free_vol_list(changer_vol_list_t *vol_list)
 {
-   switch (store->Protocol) {
-   case APT_NATIVE:
-      return native_get_vol_list(ua, store, listall, scan);
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
-   default:
-      return (dlist *)NULL;
+   vol_list_t *vl;
+
+   foreach_dlist(vl, vol_list->contents) {
+      if (vl->VolName) {
+         free(vl->VolName);
+      }
    }
+   vol_list->contents->destroy();
+   delete vol_list->contents;
+   vol_list->contents = NULL;
 }
 
-int get_num_slots(UAContext *ua, STORERES *store)
+/*
+ * Generic routine to get the content of a storage autochanger.
+ */
+changer_vol_list_t *get_vol_list_from_storage(UAContext *ua, STORERES *store, bool listall, bool scan, bool cached)
 {
-   int slots;
+   vol_list_type type;
+   dlist *contents = NULL;
+   changer_vol_list_t *vol_list = NULL;
+
+   P(store->rss->changer_lock);
+
+   if (listall) {
+      type = VOL_LIST_ALL;
+   } else {
+      type = VOL_LIST_PARTIAL;
+   }
+
+   /*
+    * Do we have a cached version of the content that is still valid ?
+    */
+   if (store->rss->vol_list) {
+      utime_t now;
+
+      now = (utime_t)time(NULL);
+
+      /*
+       * Are we allowed to return a cached list ?
+       */
+      if (cached && store->rss->vol_list->type == type) {
+         if ((now - store->rss->vol_list->timestamp) <= store->cache_status_interval) {
+            Dmsg0(100, "Using cached storage status\n");
+            vol_list = store->rss->vol_list;
+            vol_list->reference_count++;
+            goto bail_out;
+         }
+      }
+
+      /*
+       * Cached version expired or want non-cached version or wrong type.
+       * Remove the cached contents and retrieve the new contents from the autochanger.
+       */
+      Dmsg0(100, "Freeing volume list\n");
+      if (store->rss->vol_list->reference_count == 0) {
+         free_vol_list(store->rss->vol_list);
+      } else {
+         /*
+          * Need to cleanup but things are still referenced.
+          * We just remove the old changer_vol_list_t and on the next call to
+          * storage_release_vol_list() this orphaned changer_vol_list_t will
+          * then be destroyed.
+          */
+         Dmsg0(100, "Need to free still referenced vol_list\n");
+         store->rss->vol_list = (changer_vol_list_t *)malloc(sizeof(changer_vol_list_t));
+         memset(store->rss->vol_list, 0, sizeof(changer_vol_list_t));
+      }
+   }
+
+   /*
+    * Nothing cached or uncached data wanted so perform retrieval.
+    */
+   switch (store->Protocol) {
+   case APT_NATIVE:
+      contents = native_get_vol_list(ua, store, listall, scan);
+      break;
+   default:
+      break;
+   }
+
+   if (contents) {
+      /*
+       * Cache the returned content of the autochanger.
+       */
+      if (!store->rss->vol_list) {
+         store->rss->vol_list = (changer_vol_list_t *)malloc(sizeof(changer_vol_list_t));
+         memset(store->rss->vol_list, 0, sizeof(changer_vol_list_t));
+      }
+      vol_list = store->rss->vol_list;
+      vol_list->reference_count++;
+      vol_list->contents = contents;
+      vol_list->timestamp = (utime_t)time(NULL);
+      vol_list->type = type;
+   }
+
+bail_out:
+   V(store->rss->changer_lock);
+
+   return vol_list;
+}
+
+slot_number_t get_num_slots(UAContext *ua, STORERES *store)
+{
+   slot_number_t slots = 0;
 
    /*
     * See if we can use the cached number of slots.
     */
-   if (store->slots) {
-      return store->slots;
+   if (store->rss->slots > 0) {
+      return store->rss->slots;
    }
+
+   P(store->rss->changer_lock);
 
    switch (store->Protocol) {
    case APT_NATIVE:
       slots = native_get_num_slots(ua, store);
       break;
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
    default:
-      return 0;
+      break;
    }
 
-   store->slots = slots;
+   store->rss->slots = slots;
+
+   V(store->rss->changer_lock);
+
    return slots;
 }
 
-int get_num_drives(UAContext *ua, STORERES *store)
+slot_number_t get_num_drives(UAContext *ua, STORERES *store)
 {
-   int drives;
+   drive_number_t drives = 0;
 
    /*
     * See if we can use the cached number of drives.
     */
-   if (store->drives) {
-      return store->drives;
+   if (store->rss->drives > 0) {
+      return store->rss->drives;
    }
+
+   P(store->rss->changer_lock);
 
    switch (store->Protocol) {
    case APT_NATIVE:
       drives = native_get_num_drives(ua, store);
       break;
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
    default:
-      return 0;
+      break;
    }
 
-   store->drives = drives;
+   store->rss->drives = drives;
+
+   V(store->rss->changer_lock);
+
    return drives;
 }
 
-bool transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
+bool transfer_volume(UAContext *ua, STORERES *store,
+                     slot_number_t src_slot, slot_number_t dst_slot)
 {
+   bool retval = false;
+
+   P(store->rss->changer_lock);
+
    switch (store->Protocol) {
    case APT_NATIVE:
-      return native_transfer_volume(ua, store, src_slot, dst_slot);
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
+      retval = native_transfer_volume(ua, store, src_slot, dst_slot);
+      break;
    default:
-      return false;
+      break;
    }
+
+   V(store->rss->changer_lock);
+
+   return retval;
 }
 
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store, const char *operation,
-                                     int drive, int slot)
+                                     drive_number_t drive, slot_number_t slot)
 {
+   bool retval = false;
+
+   P(store->rss->changer_lock);
+
    switch (store->Protocol) {
    case APT_NATIVE:
-      return native_autochanger_volume_operation(ua, store, operation, drive, slot);
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
+      retval = native_autochanger_volume_operation(ua, store, operation, drive, slot);
+      break;
    default:
-      return false;
+      break;
    }
+
+   V(store->rss->changer_lock);
+
+   return retval;
 }
 
 /*
  * See if a specific slot is loaded in one of the drives.
  */
-vol_list_t *vol_is_loaded_in_drive(STORERES *store, dlist *vol_list, int slot)
+vol_list_t *vol_is_loaded_in_drive(STORERES *store, changer_vol_list_t *vol_list, slot_number_t slot)
 {
    vol_list_t *vl;
 
-   vl = (vol_list_t *)vol_list->first();
+   vl = (vol_list_t *)vol_list->contents->first();
    while (vl) {
       switch (vl->Type) {
       case slot_type_drive:
-         Dmsg2(100, "Checking drive %d for loaded volume == %d\n", vl->Slot, vl->Loaded);
+         Dmsg2(100, "Checking drive %hd for loaded volume == %hd\n", vl->Slot, vl->Loaded);
          if (vl->Loaded == slot) {
             return vl;
          }
@@ -653,24 +757,84 @@ vol_list_t *vol_is_loaded_in_drive(STORERES *store, dlist *vol_list, int slot)
       default:
          break;
       }
-      vl = (vol_list_t *)vol_list->next((void *)vl);
+      vl = (vol_list_t *)vol_list->contents->next((void *)vl);
    }
 
    return NULL;
 }
 
 /*
- * Destroy the volume list returned from get_vol_list_from_storage()
+ * Release the reference to the volume list returned from get_vol_list_from_storage()
  */
-void storage_free_vol_list(dlist *vol_list)
+void storage_release_vol_list(STORERES *store, changer_vol_list_t *vol_list)
 {
-   vol_list_t *vl;
+   P(store->rss->changer_lock);
 
-   foreach_dlist(vl, vol_list) {
-      if (vl->VolName) {
-         free(vl->VolName);
+   Dmsg0(100, "Releasing volume list\n");
+
+   /*
+    * See if we are releasing a reference to the currently cached value.
+    */
+   if (store->rss->vol_list == vol_list) {
+      vol_list->reference_count--;
+   } else {
+      vol_list->reference_count--;
+      if (vol_list->reference_count == 0) {
+         /*
+          * It seems this is a release of an uncached version of the vol_list.
+          * We just destroy this vol_list as there are no more references to it.
+          */
+         free_vol_list(vol_list);
+         free(vol_list);
       }
    }
-   vol_list->destroy();
-   delete vol_list;
+
+   V(store->rss->changer_lock);
+}
+
+/*
+ * Destroy the volume list returned from get_vol_list_from_storage()
+ */
+void storage_free_vol_list(STORERES *store, changer_vol_list_t *vol_list)
+{
+   P(store->rss->changer_lock);
+
+   Dmsg1(100, "Freeing volume list at %p\n", vol_list);
+
+   free_vol_list(vol_list);
+
+   /*
+    * Clear the cached vol_list if needed.
+    */
+   if (store->rss->vol_list == vol_list) {
+      store->rss->vol_list = NULL;
+   }
+
+   V(store->rss->changer_lock);
+}
+
+/*
+ * Invalidate a cached volume list returned from get_vol_list_from_storage()
+ * Called by functions that change the content of the storage like mount, umount, release.
+ */
+void invalidate_vol_list(STORERES *store)
+{
+   P(store->rss->changer_lock);
+
+   if (store->rss->vol_list) {
+      Dmsg1(100, "Invalidating volume list at %p\n", store->rss->vol_list);
+
+      /*
+       * If the volume list is unreferenced we can destroy it otherwise we just
+       * reset the pointer and the storage_release_vol_list() will destroy it for
+       * us the moment there are no more references.
+       */
+      if (store->rss->vol_list->reference_count == 0) {
+         free_vol_list(store->rss->vol_list);
+      } else {
+         store->rss->vol_list = NULL;
+      }
+   }
+
+   V(store->rss->changer_lock);
 }

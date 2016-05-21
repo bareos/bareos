@@ -502,7 +502,8 @@ static bool add_cmd(UAContext *ua, const char *cmd)
    int num, i, max, startnum;
    char name[MAX_NAME_LENGTH];
    STORERES *store;
-   int Slot = 0, InChanger = 0;
+   slot_number_t Slot = 0;
+   int8_t InChanger = 0;
 
    ua->send_msg(_("You probably don't want to be using this command since it\n"
                   "creates database records without labeling the Volumes.\n"
@@ -611,7 +612,7 @@ static bool add_cmd(UAContext *ua, const char *cmd)
       if (!get_pint(ua, _("Enter slot (0 for none): "))) {
          return true;
       }
-      Slot = ua->pint32_val;
+      Slot = (slot_number_t)ua->pint32_val;
       if (!get_yesno(ua, _("InChanger? yes/no: "))) {
          return true;
       }
@@ -2140,9 +2141,9 @@ static bool memory_cmd(UAContext *ua, const char *cmd)
 static void do_mount_cmd(UAContext *ua, const char *cmd)
 {
    USTORERES store;
-   int nr_drives, i;
-   int drive = -1;
-   int slot = -1;
+   drive_number_t nr_drives;
+   drive_number_t drive = -1;
+   slot_number_t slot = -1;
    bool do_alldrives = false;
 
    if ((bstrcmp(cmd, "release") || bstrcmp(cmd, "unmount")) &&
@@ -2182,17 +2183,19 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
       slot = get_storage_slot(ua, store.store);
    }
 
-   Dmsg3(120, "Found storage, MediaType=%s DevName=%s drive=%d\n",
+   Dmsg3(120, "Found storage, MediaType=%s DevName=%s drive=%hd\n",
          store.store->media_type, store.store->dev_name(), drive);
 
    if (!do_alldrives) {
       do_autochanger_volume_operation(ua, store.store, cmd, drive, slot);
    } else {
-      nr_drives = get_num_drives(ua, store.store);
-      for (i = 0; i < nr_drives; i++) {
+      nr_drives = get_num_drives(ua, ua->jcr->res.wstore);
+      for (drive_number_t i = 0; i < nr_drives; i++) {
          do_autochanger_volume_operation(ua, store.store, cmd, i, slot);
       }
    }
+
+   invalidate_vol_list(store.store);
 }
 
 /*

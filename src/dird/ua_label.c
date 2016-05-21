@@ -30,11 +30,11 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static void label_from_barcodes(UAContext *ua, int drive,
+static void label_from_barcodes(UAContext *ua, drive_number_t drive,
                                 bool label_encrypt, bool yes);
 static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
                                POOL_DBR *pr, bool relabel, bool media_record_exists,
-                               int drive);
+                               drive_number_t drive);
 static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr);
 
 /* External functions */
@@ -77,13 +77,13 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
 static int do_label(UAContext *ua, const char *cmd, bool relabel)
 {
    int i, j;
-   int drive;
    BSOCK *sd;
    MEDIA_DBR mr, omr;
    POOL_DBR pr;
    USTORERES store;
    bool ok = false;
    bool yes = false;                 /* Was "yes" given on cmdline */
+   drive_number_t drive;
    bool print_reminder = true;
    bool label_barcodes = false;
    bool label_encrypt = false;
@@ -251,7 +251,7 @@ checkName:
       if (!get_pint(ua, _("Enter slot (0 or Enter for none): "))) {
          return 1;
       }
-      mr.Slot = ua->pint32_val;
+      mr.Slot = (slot_number_t)ua->pint32_val;
       if (mr.Slot < 0) {
          mr.Slot = 0;
       }
@@ -307,7 +307,7 @@ checkName:
          bstrncpy(dev_name, store.store->dev_name(), sizeof(dev_name));
          ua->info_msg(_("Requesting to mount %s ...\n"), dev_name);
          bash_spaces(dev_name);
-         sd->fsend("mount %s drive=%d", dev_name, drive);
+         sd->fsend("mount %s drive=%hd", dev_name, drive);
          unbash_spaces(dev_name);
 
          /*
@@ -351,17 +351,17 @@ checkName:
 /*
  * Request SD to send us the slot:barcodes, then wiffle through them all labeling them.
  */
-static void label_from_barcodes(UAContext *ua, int drive,
+static void label_from_barcodes(UAContext *ua, drive_number_t drive,
                                 bool label_encrypt, bool yes)
 {
    STORERES *store = ua->jcr->res.wstore;
    POOL_DBR pr;
    MEDIA_DBR mr;
    vol_list_t *vl;
-   dlist *vol_list = NULL;
+   changer_vol_list_t *vol_list = NULL;
    bool media_record_exists;
    char *slot_list;
-   int max_slots;
+   slot_number_t max_slots;
 
    memset(&mr, 0, sizeof(mr));
 
@@ -389,7 +389,7 @@ static void label_from_barcodes(UAContext *ua, int drive,
    ua->send_msg(_("The following Volumes will be labeled:\n"
                   "Slot  Volume\n"
                   "==============\n"));
-   foreach_dlist(vl, vol_list) {
+   foreach_dlist(vl, vol_list->contents) {
       if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
          continue;
       }
@@ -413,7 +413,7 @@ static void label_from_barcodes(UAContext *ua, int drive,
    /*
     * Fire off the label requests
     */
-   foreach_dlist(vl, vol_list) {
+   foreach_dlist(vl, vol_list->contents) {
       if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
          continue;
       }
@@ -422,7 +422,7 @@ static void label_from_barcodes(UAContext *ua, int drive,
       media_record_exists = false;
       if (db_get_media_record(ua->jcr, ua->db, &mr)) {
          if (mr.VolBytes != 0) {
-            ua->warning_msg(_("Media record for Slot %d Volume \"%s\" already exists.\n"),
+            ua->warning_msg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
                             vl->Slot, mr.VolumeName);
             mr.Slot = vl->Slot;
             mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
@@ -489,7 +489,7 @@ static void label_from_barcodes(UAContext *ua, int drive,
 bail_out:
    free(slot_list);
    if (vol_list) {
-      storage_free_vol_list(vol_list);
+      storage_release_vol_list(store, vol_list);
    }
    close_sd_bsock(ua);
 
@@ -561,7 +561,7 @@ bool is_volume_name_legal(UAContext *ua, const char *name)
  */
 static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
                                POOL_DBR *pr, bool relabel, bool media_record_exists,
-                               int drive)
+                               drive_number_t drive)
 {
    BSOCK *sd;
    char dev_name[MAX_NAME_LENGTH];
@@ -581,7 +581,7 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
    if (relabel) {
       bash_spaces(omr->VolumeName);
       sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-                "MediaType=%s Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
+                "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
                 dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
                 mr->MediaType, mr->Slot, drive,
                  /*
@@ -592,17 +592,17 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
                    omr->VolumeName, mr->VolumeName);
    } else {
       sd->fsend("label %s VolumeName=%s PoolName=%s MediaType=%s "
-                "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d",
+                "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
                 dev_name, mr->VolumeName, pr->Name, mr->MediaType,
                 mr->Slot, drive,
                  /*
                   * If labeling, use blocksize defined in pool
                   */
                 pr->MinBlocksize, pr->MaxBlocksize);
-      ua->send_msg(_("Sending label command for Volume \"%s\" Slot %d ...\n"),
+      ua->send_msg(_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
                    mr->VolumeName, mr->Slot);
       Dmsg8(100, "label %s VolumeName=%s PoolName=%s MediaType=%s "
-                 "Slot=%d drive=%d MinBlocksize=%d MaxBlocksize=%d\n",
+                 "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
             dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
             pr->MinBlocksize, pr->MaxBlocksize);
    }
@@ -645,7 +645,7 @@ static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
          mr->Enabled = VOL_ENABLED;
          set_storageid_in_mr(ua->jcr->res.wstore, mr);
          if (db_create_media_record(ua->jcr, ua->db, mr)) {
-            ua->info_msg(_("Catalog record for Volume \"%s\", Slot %d  successfully created.\n"),
+            ua->info_msg(_("Catalog record for Volume \"%s\", Slot %hd  successfully created.\n"),
             mr->VolumeName, mr->Slot);
             /*
              * Update number of volumes in pool

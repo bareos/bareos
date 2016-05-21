@@ -272,6 +272,7 @@ static RES_ITEM store_items[] = {
      "En- or disable this resource." },
    { "AllowCompression", CFG_TYPE_BOOL, ITEM(res_store.AllowCompress), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { "CacheStatusInterval", CFG_TYPE_TIME, ITEM(res_store.cache_status_interval), 0, CFG_ITEM_DEFAULT, "30", NULL, NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
    { "MaximumConcurrentReadJobs", CFG_TYPE_PINT32, ITEM(res_store.MaxConcurrentReadJobs), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { "SddPort", CFG_TYPE_PINT32, ITEM(res_store.SDDport), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
@@ -2466,6 +2467,9 @@ void free_resource(RES *sres, int type)
       if (res->res_client.password.value) {
          free(res->res_client.password.value);
       }
+      if (res->res_client.rcs) {
+         free(res->res_client.rcs);
+      }
       free_tls_t(res->res_client.tls);
       break;
    case R_STORAGE:
@@ -2483,6 +2487,24 @@ void free_resource(RES *sres, int type)
       }
       if (res->res_store.device) {
          delete res->res_store.device;
+      }
+      if (res->res_store.rss) {
+         if (res->res_store.rss->vol_list) {
+            if (res->res_store.rss->vol_list->contents) {
+               vol_list_t *vl;
+
+               foreach_dlist(vl, res->res_store.rss->vol_list->contents) {
+                  if (vl->VolName) {
+                     free(vl->VolName);
+                  }
+               }
+               res->res_store.rss->vol_list->contents->destroy();
+               delete res->res_store.rss->vol_list->contents;
+            }
+            free(res->res_store.rss->vol_list);
+         }
+         pthread_mutex_destroy(&res->res_store.rss->changer_lock);
+         free(res->res_store.rss);
       }
       free_tls_t(res->res_store.tls);
       break;
@@ -2601,6 +2623,9 @@ void free_resource(RES *sres, int type)
          free_runscripts(res->res_job.RunScripts);
          delete res->res_job.RunScripts;
       }
+      if (res->res_job.rjs) {
+         free(res->res_job.rjs);
+      }
       break;
    case R_MSGS:
       if (res->res_msgs.mail_cmd) {
@@ -2695,6 +2720,8 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
          Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
          return false;
       } else {
+         int status;
+
          res->res_store.paired_storage = res_all.res_store.paired_storage;
          res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
 
@@ -2702,6 +2729,14 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
           * We must explicitly copy the device alist pointer
           */
          res->res_store.device = res_all.res_store.device;
+
+         res->res_store.rss = (runtime_storage_status_t *)malloc(sizeof(runtime_storage_status_t));
+         memset(res->res_store.rss, 0, sizeof(runtime_storage_status_t));
+         if ((status = pthread_mutex_init(&res->res_store.rss->changer_lock, NULL)) != 0) {
+            berrno be;
+
+            Emsg1(M_ERROR_TERM, 0, _("pthread_mutex_init: ERR=%s\n"), be.bstrerror(status));
+         }
       }
       break;
    case R_JOBDEFS:
@@ -2758,6 +2793,11 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
             free(res->res_job.RestoreWhere);
             res->res_job.RestoreWhere = NULL;
          }
+
+         if (type == R_JOB) {
+            res->res_job.rjs = (runtime_job_status_t *)malloc(sizeof(runtime_job_status_t));
+            memset(res->res_job.rjs, 0, sizeof(runtime_job_status_t));
+         }
       }
       break;
    case R_COUNTER:
@@ -2783,6 +2823,9 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
             res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
          }
          res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
+
+         res->res_client.rcs = (runtime_client_status_t *)malloc(sizeof(runtime_client_status_t));
+         memset(res->res_client.rcs, 0, sizeof(runtime_client_status_t));
       }
       break;
    case R_SCHEDULE:

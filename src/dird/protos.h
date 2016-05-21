@@ -227,17 +227,18 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
                                int max_retry_time, bool verbose);
 BSOCK *open_sd_bsock(UAContext *ua);
 void close_sd_bsock(UAContext *ua);
-char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive);
+char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t drive);
 dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan);
-int native_get_num_slots(UAContext *ua, STORERES *store );
-int native_get_num_drives(UAContext *ua, STORERES *store );
+slot_number_t native_get_num_slots(UAContext *ua, STORERES *store);
+drive_number_t native_get_num_drives(UAContext *ua, STORERES *store);
 bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId);
 bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive = true);
 void cancel_storage_daemon_job(JCR *jcr);
 void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd);
-bool native_transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot);
-bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
-                                         const char *operation, int drive, int slot);
+bool native_transfer_volume(UAContext *ua, STORERES *store,
+                            slot_number_t src_slot, slot_number_t dst_slot);
+bool native_autochanger_volume_operation(UAContext *ua, STORERES *store, const char *operation,
+                                         drive_number_t drive, slot_number_t slot);
 bool send_bwlimit_to_sd(JCR *jcr, const char *Job);
 bool send_secure_erase_req_to_sd(JCR *jcr);
 bool do_storage_resolve(UAContext *ua, STORERES *store);
@@ -273,16 +274,19 @@ bool has_paired_storage(JCR *jcr);
 bool select_next_rstore(JCR *jcr, bootstrap_info &info);
 void storage_status(UAContext *ua, STORERES *store, char *cmd);
 int storage_compare_vol_list_entry(void *e1, void *e2);
-dlist *get_vol_list_from_storage(UAContext *ua, STORERES *store, bool listall, bool scan);
-int get_num_slots(UAContext *ua, STORERES *store);
-int get_num_drives(UAContext *ua, STORERES *store);
+changer_vol_list_t *get_vol_list_from_storage(UAContext *ua, STORERES *store,
+                                              bool listall, bool scan, bool cached = true);
+slot_number_t get_num_slots(UAContext *ua, STORERES *store);
+drive_number_t get_num_drives(UAContext *ua, STORERES *store);
 bool transfer_volume(UAContext *ua, STORERES *store,
-                     int src_slot, int dst_slot);
+                     slot_number_t src_slot, slot_number_t dst_slot);
 bool do_autochanger_volume_operation(UAContext *ua, STORERES *store,
                                      const char *operation,
-                                     int drive, int slot);
-vol_list_t *vol_is_loaded_in_drive(STORERES *store, dlist *vol_list, int slot);
-void storage_free_vol_list(dlist *vol_list);
+                                     drive_number_t drive, slot_number_t slot);
+vol_list_t *vol_is_loaded_in_drive(STORERES *store, changer_vol_list_t *vol_list, slot_number_t slot);
+void storage_release_vol_list(STORERES *store, changer_vol_list_t *vol_list);
+void storage_free_vol_list(STORERES *store, changer_vol_list_t *vol_list);
+void invalidate_vol_list(STORERES *store);
 
 /* ua_acl.c */
 bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);
@@ -327,8 +331,8 @@ bool is_volume_name_legal(UAContext *ua, const char *name);
 
 /* ua_update.c */
 void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr);
-void update_slots_from_vol_list(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list);
-void update_inchanger_for_export(UAContext *ua, STORERES *store, dlist *vol_list, char *slot_list);
+void update_slots_from_vol_list(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list);
+void update_inchanger_for_export(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list);
 
 /* ua_output.c */
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
@@ -365,8 +369,8 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt,
 CATRES *get_catalog_resource(UAContext *ua);
 STORERES *get_storage_resource(UAContext *ua, bool use_default = false,
                                bool autochanger_only = false);
-int get_storage_drive(UAContext *ua, STORERES *store);
-int get_storage_slot(UAContext *ua, STORERES *store);
+drive_number_t get_storage_drive(UAContext *ua, STORERES *store);
+slot_number_t get_storage_slot(UAContext *ua, STORERES *store);
 int get_media_type(UAContext *ua, char *MediaType, int max_media);
 bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk = "pool");
 bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr);

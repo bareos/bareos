@@ -308,6 +308,13 @@ typedef int64_t   boffset_t;
 typedef off_t     boffset_t;
 #endif
 
+/*
+ * Create some simple types for now int16_t e.g. 65 K should be enough.
+ */
+typedef int16_t slot_number_t;
+typedef int16_t drive_number_t;
+typedef int16_t slot_flags_t;
+
 /* These probably should be subroutines */
 #define Pw(x) \
    do { int errstat; if ((errstat=rwl_writelock(&(x)))) \

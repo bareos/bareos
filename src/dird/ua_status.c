@@ -1351,7 +1351,7 @@ static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_
    POOL_DBR pr;
    MEDIA_DBR mr;
    /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
-   const char *slot_api_full_format="%c|%d|%d|%s|%s|%s|%s|%s|%s|%s\n";
+   const char *slot_api_full_format="%c|%hd|%hd|%s|%s|%s|%s|%s|%s|%s\n";
 
    memset(&pr, 0, sizeof(pr));
    memset(&mr, 0, sizeof(mr));
@@ -1392,7 +1392,7 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
 
       ua->send->object_start();
       ua->send->object_key_value("type", type, "%s\n");
-      ua->send->object_key_value("slotnr", Slot, "%d\n");
+      ua->send->object_key_value("slotnr", Slot, "%hd\n");
       ua->send->object_key_value("content", "full", "%s\n");
       ua->send->object_key_value("mr_slotnr", mr.Slot, "%lld\n");
       ua->send->object_key_value("mr_volname", mr.VolumeName, "%s\n");
@@ -1406,7 +1406,7 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
    } else {                  /* Media unknown */
       ua->send->object_start();
       ua->send->object_key_value("type", type, "%s\n");
-      ua->send->object_key_value("slotnr", Slot, "%d\n");
+      ua->send->object_key_value("slotnr", Slot, "%hd\n");
       ua->send->object_key_value("content", "full", "%s\n");
       ua->send->object_key_value("mr_slotnr", (uint64_t)0, "%lld\n");
       ua->send->object_key_value("mr_volname", mr.VolumeName, "%s\n");
@@ -1457,10 +1457,10 @@ static void status_content_api(UAContext *ua, STORERES *store)
 {
    bool found;
    vol_list_t *vl1, *vl2;
-   dlist *vol_list = NULL;
-   const char *slot_api_drive_full_format="%c|%d|%d|%s\n";
-   const char *slot_api_drive_empty_format="%c|%d||\n";
-   const char *slot_api_slot_empty_format="%c|%d||||||||\n";
+   changer_vol_list_t *vol_list = NULL;
+   const char *slot_api_drive_full_format="%c|%hd|%hd|%s\n";
+   const char *slot_api_drive_empty_format="%c|%hd||\n";
+   const char *slot_api_slot_empty_format="%c|%hd||||||||\n";
 
    if (!open_client_db(ua)) {
       return;
@@ -1472,7 +1472,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
       goto bail_out;
    }
 
-   foreach_dlist(vl1, vol_list) {
+   foreach_dlist(vl1, vol_list->contents) {
       switch (vl1->Type) {
       case slot_type_drive:
          switch (vl1->Content) {
@@ -1507,7 +1507,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
              * in one of the drives.
              */
             found = false;
-            vl2 = (vol_list_t *)vol_list->first();
+            vl2 = (vol_list_t *)vol_list->contents->first();
             while (!found && vl2) {
                switch (vl2->Type) {
                case slot_type_drive:
@@ -1523,23 +1523,13 @@ static void status_content_api(UAContext *ua, STORERES *store)
                         break;
                      }
                      found = true;
-
-                     /*
-                      * When we used this entry we can remove it from
-                      * the list so we limit the search time next round.
-                      */
-                     vol_list->remove(vl2);
-                     if (vl2->VolName) {
-                        free(vl2->VolName);
-                     }
-                     free(vl2);
                      continue;
                   }
                   break;
                default:
                   break;
                }
-               vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+               vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
             }
             if (!found) {
                switch (vl1->Type) {
@@ -1565,7 +1555,7 @@ static void status_content_api(UAContext *ua, STORERES *store)
 
 bail_out:
    if (vol_list) {
-      storage_free_vol_list(vol_list);
+      storage_release_vol_list(store, vol_list);
    }
    close_sd_bsock(ua);
 
@@ -1576,7 +1566,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
 {
    bool found;
    vol_list_t *vl1, *vl2;
-   dlist *vol_list = NULL;
+   changer_vol_list_t *vol_list = NULL;
 
    if (!open_client_db(ua)) {
       return;
@@ -1589,16 +1579,16 @@ static void status_content_json(UAContext *ua, STORERES *store)
    }
 
    ua->send->array_start("contents");
-   foreach_dlist(vl1, vol_list) {
+   foreach_dlist(vl1, vol_list->contents) {
       switch (vl1->Type) {
       case slot_type_drive:
          ua->send->object_start();
          ua->send->object_key_value("type", "drive", "%s\n");
-         ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
+         ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
          switch (vl1->Content) {
          case slot_content_full:
             ua->send->object_key_value("content", "full", "%s\n");
-            ua->send->object_key_value("loaded", vl1->Loaded, "%d\n");
+            ua->send->object_key_value("loaded", vl1->Loaded, "%hd\n");
             ua->send->object_key_value("volname", vl1->VolName, "%s\n");
             break;
          case slot_content_empty:
@@ -1630,7 +1620,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
              * in one of the drives.
              */
             found = false;
-            vl2 = (vol_list_t *)vol_list->first();
+            vl2 = (vol_list_t *)vol_list->contents->first();
             while (!found && vl2) {
                switch (vl2->Type) {
                case slot_type_drive:
@@ -1646,37 +1636,27 @@ static void status_content_json(UAContext *ua, STORERES *store)
                         break;
                      }
                      found = true;
-
-                     /*
-                      * When we used this entry we can remove it from
-                      * the list so we limit the search time next round.
-                      */
-                     vol_list->remove(vl2);
-                     if (vl2->VolName) {
-                        free(vl2->VolName);
-                     }
-                     free(vl2);
                      continue;
                   }
                   break;
                default:
                   break;
                }
-               vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+               vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
             }
             if (!found) {
                switch (vl1->Type) {
                case slot_type_normal:
                   ua->send->object_start();
                   ua->send->object_key_value("type", "slot", "%s\n");
-                  ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
+                  ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
                   ua->send->object_key_value("content", "empty", "%s\n");
                   ua->send->object_end();
                   break;
                case slot_type_import:
                   ua->send->object_start();
                   ua->send->object_key_value("type", "import_slot", "%s\n");
-                  ua->send->object_key_value("slotnr", vl1->Slot, "%d\n");
+                  ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
                   ua->send->object_key_value("content", "empty", "%s\n");
                   ua->send->object_end();
                   break;
@@ -1697,7 +1677,7 @@ static void status_content_json(UAContext *ua, STORERES *store)
 
 bail_out:
    if (vol_list) {
-      storage_free_vol_list(vol_list);
+      storage_release_vol_list(store, vol_list);
    }
    close_sd_bsock(ua);
 
@@ -1711,10 +1691,10 @@ static void status_slots(UAContext *ua, STORERES *store)
 {
    POOL_DBR pr;
    MEDIA_DBR mr;
-   int max_slots;
+   slot_number_t max_slots;
    char *slot_list;
    vol_list_t *vl1, *vl2;
-   dlist *vol_list = NULL;
+   changer_vol_list_t *vol_list = NULL;
    bool is_loaded_in_drive;
 
    /*
@@ -1753,7 +1733,7 @@ static void status_slots(UAContext *ua, STORERES *store)
     * Walk through the list getting the media records
     * Slots start numbering at 1.
     */
-   foreach_dlist(vl1, vol_list) {
+   foreach_dlist(vl1, vol_list->contents) {
       switch (vl1->Type) {
       case slot_type_drive:
          /*
@@ -1763,7 +1743,7 @@ static void status_slots(UAContext *ua, STORERES *store)
       case slot_type_normal:
       case slot_type_import:
          if (vl1->Slot > max_slots) {
-            ua->warning_msg(_("Slot %d greater than max %d ignored.\n"),
+            ua->warning_msg(_("Slot %hd greater than max %hd ignored.\n"),
                             vl1->Slot, max_slots);
             continue;
          }
@@ -1771,7 +1751,7 @@ static void status_slots(UAContext *ua, STORERES *store)
           * Check if user wants us to look at this slot
           */
          if (!bit_is_set(vl1->Slot - 1, slot_list)) {
-            Dmsg1(100, "Skipping slot=%d\n", vl1->Slot);
+            Dmsg1(100, "Skipping slot=%hd\n", vl1->Slot);
             continue;
          }
 
@@ -1784,7 +1764,7 @@ static void status_slots(UAContext *ua, STORERES *store)
                 * See if this empty slot is empty because the volume is loaded
                 * in one of the drives.
                 */
-               vl2 = (vol_list_t *)vol_list->first();
+               vl2 = (vol_list_t *)vol_list->contents->first();
                while (!is_loaded_in_drive && vl2) {
                   switch (vl2->Type) {
                   case slot_type_drive:
@@ -1796,7 +1776,7 @@ static void status_slots(UAContext *ua, STORERES *store)
                   default:
                      break;
                   }
-                  vl2 = (vol_list_t *)vol_list->next((void *)vl2);
+                  vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
                }
                if (!is_loaded_in_drive) {
                   ua->send_msg(slot_hformat,
@@ -1820,7 +1800,7 @@ static void status_slots(UAContext *ua, STORERES *store)
              */
             if (vl1->Content == slot_content_full) {
                if (!vl1->VolName) {
-                  Dmsg1(100, "No VolName for Slot=%d.\n", vl1->Slot);
+                  Dmsg1(100, "No VolName for Slot=%hd.\n", vl1->Slot);
                   ua->send_msg(slot_hformat,
                                vl1->Slot,
                               (vl1->Type == slot_type_import) ? '@' : '*',
@@ -1832,7 +1812,7 @@ static void status_slots(UAContext *ua, STORERES *store)
                bstrncpy(mr.VolumeName, vl1->VolName, sizeof(mr.VolumeName));
             } else {
                if (!vl2 || !vl2->VolName) {
-                  Dmsg1(100, "No VolName for Slot=%d.\n", vl1->Slot);
+                  Dmsg1(100, "No VolName for Slot=%hd.\n", vl1->Slot);
                   ua->send_msg(slot_hformat,
                                vl1->Slot,
                               (vl1->Type == slot_type_import) ? '@' : '*',
@@ -1882,7 +1862,7 @@ static void status_slots(UAContext *ua, STORERES *store)
 
 bail_out:
    if (vol_list) {
-      storage_free_vol_list(vol_list);
+      storage_release_vol_list(store, vol_list);
    }
    free(slot_list);
    close_sd_bsock(ua);

@@ -33,7 +33,7 @@
 
 /* Commands sent to Storage daemon */
 static char readlabelcmd[] =
-   "readlabel %s Slot=%d drive=%d\n";
+   "readlabel %s Slot=%hd drive=%hd\n";
 static char changerlistallcmd[] =
    "autochanger listall %s \n";
 static char changerlistcmd[] =
@@ -43,11 +43,11 @@ static char changerslotscmd[] =
 static char changerdrivescmd[] =
    "autochanger drives %s\n";
 static char changertransfercmd[] =
-   "autochanger transfer %s %d %d \n";
+   "autochanger transfer %s %hd %hd \n";
 static char changervolopslotcmd[] =
-   "%s %s drive=%d slot=%d\n";
+   "%s %s drive=%hd slot=%hd\n";
 static char changervolopcmd[] =
-   "%s %s drive=%d\n";
+   "%s %s drive=%hd\n";
 static char canceljobcmd[] =
    "cancel Job=%s\n";
 static char dotstatuscmd[] =
@@ -71,11 +71,11 @@ static char OKSecureEraseCmd[] =
 
 /* Commands received from storage daemon that need scanning */
 static char readlabelresponse[] =
-   "3001 Volume=%s Slot=%d";
+   "3001 Volume=%s Slot=%hd";
 static char changerslotsresponse[] =
-   "slots=%d\n";
+   "slots=%hd\n";
 static char changerdrivesresponse[] =
-   "drives=%d\n";
+   "drives=%hd\n";
 
 /*
  * Establish a connection with the Storage daemon and perform authentication.
@@ -168,7 +168,7 @@ void close_sd_bsock(UAContext *ua)
 /*
  * We get the volume name from the SD
  */
-char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive)
+char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t drive)
 {
    BSOCK *sd;
    STORERES *store = ua->jcr->res.wstore;
@@ -209,23 +209,6 @@ char *get_volume_name_from_SD(UAContext *ua, int Slot, int drive)
    close_sd_bsock(ua);
    Dmsg1(100, "get_vol_name=%s\n", NPRT(VolName));
    return VolName;
-}
-
-/*
- * Simple comparison function for binary insert of vol_list_t
- */
-static int compare_vol_list_entry(void *e1, void *e2)
-{
-   vol_list_t *v1, *v2;
-
-   v1 = (vol_list_t *)e1;
-   v2 = (vol_list_t *)e2;
-
-   if (v1->Index == v2->Index) {
-      return 0;
-   } else {
-      return (v1->Index < v2->Index) ? -1 : 1;
-   }
 }
 
 /*
@@ -450,7 +433,7 @@ dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool sc
             }
             vl->Index = INDEX_DRIVE_OFFSET + vl->Slot;
             if (vl->Index >= INDEX_MAX_DRIVES) {
-               ua->error_msg(_("Drive number %d greater then INDEX_MAX_DRIVES(%d) please increase define\n"),
+               ua->error_msg(_("Drive number %hd greater then INDEX_MAX_DRIVES(%hd) please increase define\n"),
                              vl->Slot, INDEX_MAX_DRIVES);
                free(vl);
                continue;
@@ -498,14 +481,14 @@ dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool sc
       }
 
       if (vl->VolName) {
-         Dmsg6(100, "Add index = %d slot=%d loaded=%d type=%d content=%d Vol=%s to SD list.\n",
+         Dmsg6(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s to SD list.\n",
                vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content, NPRT(vl->VolName));
       } else {
-         Dmsg5(100, "Add index = %d slot=%d loaded=%d type=%d content=%d Vol=NULL to SD list.\n",
+         Dmsg5(100, "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL to SD list.\n",
                vl->Index, vl->Slot, vl->Loaded, vl->Type, vl->Content);
       }
 
-      vol_list->binary_insert(vl, compare_vol_list_entry);
+      vol_list->binary_insert(vl, storage_compare_vol_list_entry);
       continue;
 
 parse_error:
@@ -537,11 +520,11 @@ parse_error:
 /*
  * We get the number of slots in the changer from the SD
  */
-int native_get_num_slots(UAContext *ua, STORERES *store)
+slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
 {
-   BSOCK *sd;
-   int slots = 0;
    char dev_name[MAX_NAME_LENGTH];
+   BSOCK *sd;
+   slot_number_t slots = 0;
 
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
@@ -562,18 +545,19 @@ int native_get_num_slots(UAContext *ua, STORERES *store)
       }
    }
    close_sd_bsock(ua);
-   ua->send_msg(_("Device \"%s\" has %d slots.\n"), store->dev_name(), slots);
+   ua->send_msg(_("Device \"%s\" has %hd slots.\n"), store->dev_name(), slots);
+
    return slots;
 }
 
 /*
  * We get the number of drives in the changer from the SD
  */
-int native_get_num_drives(UAContext *ua, STORERES *store)
+drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
 {
-   BSOCK *sd;
-   int drives = 0;
    char dev_name[MAX_NAME_LENGTH];
+   BSOCK *sd;
+   drive_number_t drives = 0;
 
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
@@ -594,7 +578,7 @@ int native_get_num_drives(UAContext *ua, STORERES *store)
       }
    }
    close_sd_bsock(ua);
-//   bsendmsg(ua, _("Device \"%s\" has %d drives.\n"), store->dev_name(), drives);
+
    return drives;
 }
 
@@ -796,7 +780,8 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
  * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
-bool native_transfer_volume(UAContext *ua, STORERES *store, int src_slot, int dst_slot)
+bool native_transfer_volume(UAContext *ua, STORERES *store,
+                            slot_number_t src_slot, slot_number_t dst_slot)
 {
    BSOCK *sd = NULL;
    bool retval = true;
@@ -843,7 +828,7 @@ bool native_transfer_volume(UAContext *ua, STORERES *store, int src_slot, int ds
  * Ask the autochanger to perform a mount, umount or release operation.
  */
 bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
-                                         const char *operation, int drive, int slot)
+                                         const char *operation, drive_number_t drive, slot_number_t slot)
 {
    BSOCK *sd = NULL;
    bool retval = true;

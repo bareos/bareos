@@ -1167,10 +1167,11 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochanger
 /*
  * Get drive that we are working with for this storage
  */
-int get_storage_drive(UAContext *ua, STORERES *store)
+drive_number_t get_storage_drive(UAContext *ua, STORERES *store)
 {
-   int i, drive = -1;
+   int i;
    char drivename[10];
+   drive_number_t drive = -1;
 
    /*
     * Get drive for autochanger if possible
@@ -1179,7 +1180,7 @@ int get_storage_drive(UAContext *ua, STORERES *store)
    if (i >= 0) {
       drive = atoi(ua->argv[i]);
    } else if (store && store->autochanger) {
-      int drives;
+      drive_number_t drives;
 
       drives = get_num_drives(ua, store);
 
@@ -1193,14 +1194,14 @@ int get_storage_drive(UAContext *ua, STORERES *store)
           * Ask user to enter drive number
           */
          start_prompt(ua, _("Select Drive:\n"));
-         for (int cnt = 0; cnt < drives; cnt++) {
-            bsnprintf(drivename, sizeof(drivename), "Drive %d", cnt);
+         for (drive_number_t cnt = 0; cnt < drives; cnt++) {
+            bsnprintf(drivename, sizeof(drivename), "Drive %hd", cnt);
             add_prompt(ua, drivename);
          }
          if (do_prompt(ua, _("Drive"), _("Select drive"), drivename, sizeof(drivename)) < 0) {
             drive = -1; /* None */
          } else {
-            sscanf(drivename, "Drive %d", &drive);
+            sscanf(drivename, "Drive %hd", &drive);
          }
       }
    } else {
@@ -1216,9 +1217,10 @@ int get_storage_drive(UAContext *ua, STORERES *store)
 /*
  * Get slot that we are working with for this storage
  */
-int get_storage_slot(UAContext *ua, STORERES *store)
+slot_number_t get_storage_slot(UAContext *ua, STORERES *store)
 {
-   int i, slot = -1;
+   int i;
+   slot_number_t slot = -1;
 
    /*
     * Get slot for autochanger if possible
