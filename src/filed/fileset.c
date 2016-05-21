@@ -35,15 +35,27 @@
 /* Forward referenced functions */
 static int set_options(findFOPTS *fo, const char *opts);
 
+/*
+ * callback function for edit_job_codes
+ * See ../lib/util.c, function edit_job_codes, for more remaining codes
+ *
+ * %D = Director
+ * %m = Modification time (for incremental and differential)
+ */
 extern "C" char *job_code_callback_filed(JCR *jcr, const char* param)
 {
+   static char str[50];
+
    switch (param[0]) {
    case 'D':
       if (jcr->director) {
          return jcr->director->name();
       }
       break;
+   case 'm':
+      return edit_uint64(jcr->mtime, str);
    }
+
    return NULL;
 }
 

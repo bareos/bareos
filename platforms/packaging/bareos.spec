@@ -809,6 +809,10 @@ rm -f %{buildroot}/%{plugin_dir}/*.py*
 rm -f %{buildroot}/%{_sysconfdir}/bareos/bareos-dir.d/plugin-python-ldap.conf
 %endif
 
+%if ! 0%{?glusterfs}
+rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
+%endif
+
 %if 0%{?build_bat}
 %if 0%{?suse_version} > 1010
 %suse_update_desktop_file -i bat System Utility Archiving
@@ -1208,6 +1212,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 
 %if 0%{?glusterfs}
 %files filedaemon-glusterfs-plugin
+%{script_dir}/bareos-glusterfind-wrapper
 %{plugin_dir}/gfapi-fd.so
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-gfapi.conf
 %endif

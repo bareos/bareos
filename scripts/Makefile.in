@@ -64,6 +64,7 @@ install: installdirs
 	$(INSTALL_SCRIPT) bareos-config ${DESTDIR}${scriptdir}/bareos-config
 	$(INSTALL_SCRIPT) bareos-config-lib.sh ${DESTDIR}${scriptdir}/bareos-config-lib.sh
 	$(INSTALL_SCRIPT) bareos-explorer ${DESTDIR}${scriptdir}/bareos-explorer
+	$(INSTALL_SCRIPT) bareos-glusterfind-wrapper ${DESTDIR}${scriptdir}/bareos-glusterfind-wrapper
 	$(INSTALL_SCRIPT) btraceback $(DESTDIR)$(sbindir)/btraceback
 	#$(INSTALL_DATA) logrotate $(DESTDIR)/etc/logrotate.d/bareos-dir
 

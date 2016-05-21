@@ -760,9 +760,9 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  %j = Unique Job id
  *  %l = job level
  *  %n = Unadorned Job name
+ *  %r = Recipients
  *  %s = Since time
  *  %t = Job type (Backup, ...)
- *  %r = Recipients
  *  %v = Volume name(s)
  *
  *  omsg = edited output message
@@ -793,31 +793,31 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
          case 'F':                    /* Job Files */
             str = edit_uint64(jcr->JobFiles, add);
             break;
-         case 'P':
+         case 'P':                    /* Process Id */
             bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
             str = add;
             break;
          case 'b':                    /* Job Bytes */
             str = edit_uint64(jcr->JobBytes, add);
             break;
-         case 'c':
+         case 'c':                    /* Client's name */
             if (jcr) {
                str = jcr->client_name;
             } else {
                str = _("*None*");
             }
             break;
-         case 'd':
-            str = my_name;            /* Director's name */
+         case 'd':                    /* Director's name */
+            str = my_name;
             break;
-         case 'e':
+         case 'e':                    /* Job Exit code */
             if (jcr) {
                str = job_status_to_str(jcr->JobStatus);
             } else {
                str = _("*None*");
             }
             break;
-         case 'i':
+         case 'i':                    /* JobId */
             if (jcr) {
                bsnprintf(add, sizeof(add), "%d", jcr->JobId);
                str = add;
@@ -832,14 +832,14 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
                str = _("*None*");
             }
             break;
-         case 'l':
+         case 'l':                    /* Job level */
             if (jcr) {
                str = job_level_to_str(jcr->getJobLevel());
             } else {
                str = _("*None*");
             }
             break;
-         case 'n':
+         case 'n':                    /* Unadorned Job name */
              if (jcr) {
                 bstrncpy(name, jcr->Job, sizeof(name));
                 /*
@@ -855,7 +855,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
                 str = _("*None*");
              }
              break;
-         case 'r':
+         case 'r':                    /* Recipients */
             str = to;
             break;
          case 's':                    /* Since time */
@@ -865,14 +865,14 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
                str = _("*None*");
             }
             break;
-         case 't':
+         case 't':                    /* Job type */
             if (jcr) {
                str = job_type_to_str(jcr->getJobType());
             } else {
                str = _("*None*");
             }
             break;
-         case 'v':
+         case 'v':                    /* Volume name(s) */
             if (jcr) {
                if (jcr->VolumeName) {
                   str = jcr->VolumeName;
@@ -906,6 +906,7 @@ POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_co
       pm_strcat(omsg, str);
       Dmsg1(1200, "omsg=%s\n", omsg);
    }
+
    return omsg;
 }
 

@@ -4605,6 +4605,7 @@ manpages/Makefile \
 scripts/bareos-config \
 scripts/bareos-config-lib.sh \
 scripts/bareos-explorer \
+scripts/bareos-glusterfind-wrapper \
 scripts/btraceback \
 scripts/bconsole \
 scripts/bareos \
