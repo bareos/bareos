@@ -1,5 +1,5 @@
 #
-# Default Bareos Director configuration file for disk-only backup
+# Default Bareos Director configuration file for d2d2t backup using disk-changer
 #
 # Each configuration item has a reference number that shows
 # where this property can be changed in the configuration file.
@@ -21,8 +21,6 @@
 #      bareos system needs an operator intervention.
 #      May be the same address as in (#02)
 #
-#
-# This disk-only setup stores all data into @archivedir@
 #
 # The preconfigured backup scheme is as follows:
 #
@@ -73,16 +71,30 @@ JobDefs {
   Type = Backup
   Level = Incremental
   Client = @basename@-fd
-  FileSet = "SelfTest"                     # selftest fileset                            (#13)
+  FileSet = "SelfTest"                     # selftest fileset                       (#13)
   Schedule = "WeeklyCycle"
-  Storage = File
+  Storage = vtl
   Messages = Standard
   Pool = Incremental
   Priority = 10
   Write Bootstrap = "@working_dir@/%c.bsr"
-  Full Backup Pool = Full                  # write Full Backups into "Full" Pool         (#05)
-  Differential Backup Pool = Differential  # write Diff Backups into "Differential" Pool (#08)
-  Incremental Backup Pool = Incremental    # write Incr Backups into "Incremental" Pool  (#11)
+  Full Backup Pool = FullVTL               # write Full Backups into "FullVTL" Pool (#05)
+  Differential Backup Pool = DiffVTL       # write Diff Backups into "DiffVTL" Pool (#08)
+  Incremental Backup Pool = IncrVTL        # write Incr Backups into "IncrVTL" Pool (#11)
+}
+
+JobDefs {
+  Name = CopyDiskToTape
+  Type = Copy
+  Messages = StandardCopy
+  Selection Type = PoolUncopiedJobs
+  Maximum Concurrent Jobs = 10
+  Spool Data = Yes
+  Allow Duplicate Jobs = Yes
+  Cancel Queued Duplicates = No
+  Cancel Running Duplicates = No
+  Priority = 13
+  Maximum Concurrent Jobs = 10
 }
 
 #
@@ -126,7 +138,7 @@ Job {
   Type = Restore
   Client=@basename@-fd
   FileSet = "Linux All"
-  Storage = File
+  Storage = vtl
   Pool = Incremental
   Messages = Standard
   Where = /tmp/bareos-restores
@@ -227,15 +239,29 @@ Client {
 }
 
 #
-# Definition of file storage device
+# Definition of vtl storage device
 #
 Storage {
-  Name = File
+  Name = vtl
 # Do not use "localhost" here
   Address = @hostname@                # N.B. Use a fully qualified name here
   Password = "@sd_password@"
-  Device = FileStorage
-  Media Type = File
+  Device = vtl
+  Media Type = VTL
+  Autochanger = yes
+}
+
+#
+# Definition of vtl storage device
+#
+Storage {
+  Name = TandbergT40
+# Do not use "localhost" here
+  Address = @hostname@                # N.B. Use a fully qualified name here
+  Password = "@sd_password@"
+  Device = vtl
+  Media Type = VTL
+  Autochanger = yes
 }
 
 #
@@ -266,6 +292,17 @@ Messages {
   catalog = all, !audit
 }
 
+Messages {
+  Name = StandardCopy
+  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
+  operatorcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
+  mail = @job_email@ = all, !skipped, !audit # (#02)
+  operator = @job_email@ = mount     # (#03)
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !audit
+  catalog = all, !audit
+}
+
 #
 # Message delivery for daemon messages (no job).
 #
@@ -279,53 +316,89 @@ Messages {
 }
 
 #
-# Full Pool definition
+# VTL Pools.
 #
 Pool {
-  Name = Full
+  Name = FullVTL
+  Pool Type = Backup
+  Purge Oldest Volume = Yes           # Purge the Oldest volume in this vtl pool if we run out of volumes
+  Storage = vtl
+  Maximum Volume Bytes = 100G         # Limit Volume size to something reasonable
+  ScratchPool = VTLScratchPool
+  RecyclePool = VTLScratchPool
+  NextPool = FullTapePool
+}
+
+Pool {
+  Name = DiffVTL
+  Pool Type = Backup
+  Purge Oldest Volume = Yes           # Purge the Oldest volume in this vtl pool if we run out of volumes
+  Storage = vtl
+  Maximum Volume Bytes = 100G         # Limit Volume size to something reasonable
+  ScratchPool = VTLScratchPool
+  RecyclePool = VTLScratchPool
+  NextPool = DiffTapePool
+}
+
+Pool {
+  Name = IncrVTL
+  Pool Type = Backup
+  Purge Oldest Volume = Yes           # Purge the Oldest volume in this vtl pool if we run out of volumes
+  Storage = vtl
+  Maximum Volume Bytes = 100G         # Limit Volume size to something reasonable
+  ScratchPool = VTLScratchPool
+  RecyclePool = VTLScratchPool
+  NextPool = IncrTapePool
+}
+
+Pool {
+  Name = VTLScratchPool
+  Pool Type = Scratch
+}
+
+#
+# Tape Pools.
+#
+Pool {
+  Name = FullTapePool
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
   AutoPrune = yes                     # Prune expired volumes
   Volume Retention = 365 days         # How long should the Full Backups be kept? (#06)
-  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
-  Maximum Volumes = 100               # Limit number of Volumes in Pool
-  Label Format = "Full-"              # Volumes will be labeled "Full-<volume-id>"
+  Storage = TandbergT40
+  ScratchPool = TapeScratchPool
+  RecyclePool = TapeScratchPool
+  Maximum Blocksize = 262144          # 256 Kb
 }
 
-#
-# Differential Pool definition
-#
 Pool {
-  Name = Differential
+  Name = DiffTapePool
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
   AutoPrune = yes                     # Prune expired volumes
   Volume Retention = 90 days          # How long should the Differential Backups be kept? (#09)
-  Maximum Volume Bytes = 10G          # Limit Volume size to something reasonable
-  Maximum Volumes = 100               # Limit number of Volumes in Pool
-  Label Format = "Differential-"      # Volumes will be labeled "Differential-<volume-id>"
+  Storage = TandbergT40
+  ScratchPool = TapeScratchPool
+  RecyclePool = TapeScratchPool
+  Maximum Blocksize = 262144          # 256 Kb
 }
 
-#
-# Incremental Pool definition
-#
 Pool {
-  Name = Incremental
+  Name = IncrTapePool
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
   AutoPrune = yes                     # Prune expired volumes
   Volume Retention = 30 days          # How long should the Incremental Backups be kept?  (#12)
-  Maximum Volume Bytes = 1G           # Limit Volume size to something reasonable
-  Maximum Volumes = 100               # Limit number of Volumes in Pool
-  Label Format = "Incremental-"       # Volumes will be labeled "Incremental-<volume-id>"
+  Storage = TandbergT40
+  ScratchPool = TapeScratchPool
+  RecyclePool = TapeScratchPool
+  Maximum Blocksize = 262144          # 256 Kb
 }
 
-#
-# Scratch pool definition
-#
 Pool {
-  Name = Scratch
+  Name = TapeScratchPool
   Pool Type = Scratch
+  Volume Retention = 5 years
 }
 
 #
