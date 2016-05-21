@@ -219,6 +219,7 @@ void daemon_start();
 /* edit.c */
 uint64_t str_to_uint64(const char *str);
 int64_t str_to_int64(const char *str);
+#define str_to_int16(str)((int16_t)str_to_int64(str))
 #define str_to_int32(str)((int32_t)str_to_int64(str))
 char *edit_uint64_with_commas(uint64_t val, char *buf);
 char *edit_uint64_with_suffix(uint64_t val, char *buf);

@@ -1471,7 +1471,8 @@ static int append_test()
 static int autochanger_test()
 {
    POOLMEM *results, *changer;
-   int slot, status, loaded;
+   slot_number_t slot, loaded;
+   int status;
    int timeout = dcr->device->max_changer_wait;
    int sleep_time = 0;
 

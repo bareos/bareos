@@ -50,10 +50,11 @@ bool authenticate_with_filedaemon(JCR *jcr);
 bool init_autochangers();
 int autoload_device(DCR *dcr, int writing, BSOCK *dir);
 bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd);
-bool autochanger_transfer_cmd(DCR *dcr, BSOCK *dir, int src_slot, int dst_slot);
-bool unload_autochanger(DCR *dcr, int loaded);
+bool autochanger_transfer_cmd(DCR *dcr, BSOCK *dir,
+                              slot_number_t src_slot, slot_number_t dst_slot);
+bool unload_autochanger(DCR *dcr, slot_number_t loaded);
 bool unload_dev(DCR *dcr, DEVICE *dev);
-int get_autochanger_loaded_slot(DCR *dcr);
+slot_number_t get_autochanger_loaded_slot(DCR *dcr);
 
 /* block.c */
 void dump_block(DEV_BLOCK *b, const char *msg);

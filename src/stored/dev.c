@@ -858,16 +858,20 @@ bool DEVICE::offline_or_rewind()
    }
 }
 
-void DEVICE::set_slot(int32_t slot)
+void DEVICE::set_slot(slot_number_t slot)
 {
    m_slot = slot;
-   if (vol) vol->clear_slot();
+   if (vol) {
+      vol->clear_slot();
+   }
 }
 
 void DEVICE::clear_slot()
 {
    m_slot = -1;
-   if (vol) vol->set_slot(-1);
+   if (vol) {
+      vol->set_slot(-1);
+   }
 }
 
 /*

@@ -533,11 +533,11 @@ static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
     */
    if (dev->is_autochanger()) {
       if (dev->get_slot() > 0) {
-         len = Mmsg(msg, _("    Slot %d %s loaded in drive %d.\n"),
+         len = Mmsg(msg, _("    Slot %hd %s loaded in drive %hd.\n"),
                     dev->get_slot(), dev->is_open() ? "is" : "was last", dev->drive);
          sendit(msg, len, sp);
       } else if (dev->get_slot() <= 0) {
-         len = Mmsg(msg, _("    Drive %d is not loaded.\n"), dev->drive);
+         len = Mmsg(msg, _("    Drive %hd is not loaded.\n"), dev->drive);
          sendit(msg, len, sp);
       }
    }

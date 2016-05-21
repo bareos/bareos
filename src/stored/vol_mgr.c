@@ -529,7 +529,8 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
           * Caller wants to switch Volume to another device
           */
          if (!vol->dev->is_busy() && !vol->is_swapping()) {
-            int32_t slot;
+            slot_number_t slot;
+
             Dmsg3(dbglvl, "==== Swap vol=%s from dev=%s to %s\n",
                   VolumeName, vol->dev->print_name(), dev->print_name());
             free_volume(dev);            /* free any volume attached to our drive */

@@ -267,7 +267,7 @@ private:
    int m_blocked;                     /* Set if we must wait (i.e. change tape) */
    int m_count;                       /* Mutex use count -- DEBUG only */
    int m_num_reserved;                /* Counter of device reservations */
-   int32_t m_slot;                    /* Slot loaded in drive or -1 if none */
+   slot_number_t m_slot;              /* Slot loaded in drive or -1 if none */
    pthread_t m_pid;                   /* Thread that locked -- DEBUG only */
    bool m_unload;                     /* Set when Volume must be unloaded */
    bool m_load;                       /* Set when Volume must be loaded */
@@ -297,8 +297,8 @@ public:
    bool norewindonclose;              /* Don't rewind tape drive on close */
    bool initiated;                    /* Set when init_dev() called */
    int label_type;                    /* Bareos/ANSI/IBM label types */
-   uint32_t drive;                    /* Autochanger logical drive number (base 0) */
-   uint32_t drive_index;              /* Autochanger physical drive index (base 0) */
+   drive_number_t drive;              /* Autochanger logical drive number (base 0) */
+   drive_number_t drive_index;        /* Autochanger physical drive index (base 0) */
    POOLMEM *dev_name;                 /* Physical device name */
    POOLMEM *dev_options;              /* Device specific options */
    POOLMEM *prt_name;                 /* Name used for display purposes */
@@ -443,7 +443,7 @@ public:
    void clear_load() { m_load = false; };
    char *bstrerror(void) { return errmsg; };
    char *print_errmsg() { return errmsg; };
-   int32_t get_slot() const { return m_slot; };
+   slot_number_t get_slot() const { return m_slot; };
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
@@ -465,7 +465,7 @@ public:
    void edit_mount_codes(POOL_MEM &omsg, const char *imsg);
    bool offline_or_rewind();
    bool scan_dir_for_volume(DCR *dcr);
-   void set_slot(int32_t slot);
+   void set_slot(slot_number_t slot);
    void clear_slot();
 
    void set_blocksizes(DCR* dcr);

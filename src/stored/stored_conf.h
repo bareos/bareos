@@ -134,8 +134,8 @@ public:
    bool drive_crypto_enabled;         /* Enable hardware crypto */
    bool query_crypto_status;          /* Query device for crypto status */
    bool collectstats;                 /* Set if statistics should be collected */
-   uint32_t drive;                    /* Autochanger logical drive number */
-   uint32_t drive_index;              /* Autochanger physical drive index */
+   drive_number_t drive;              /* Autochanger logical drive number */
+   drive_number_t drive_index;        /* Autochanger physical drive index */
    char cap_bits[CAP_BYTES];          /* Capabilities of this device */
    utime_t max_changer_wait;          /* Changer timeout */
    utime_t max_rewind_wait;           /* Maximum secs to wait for rewind */
