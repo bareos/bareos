@@ -6,28 +6,21 @@ A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 ### INSTALLATION
 
-Please see [doc/INSTALL.md](doc/INSTALL.md).
+From package: [http://doc.bareos.org/master/html/bareos-manual-main-reference.html#InstallingBareosWebui](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#InstallingBareosWebui)
+From source: [doc/INSTALL.md](doc/INSTALL.md).
 
-### LICENSES
+### LICENSE
 
 The Bareos WebUI is licensed under AGPL Version 3.
 You can find a copy of this license in [AGPL-3.0.txt](AGPL-3.0.txt).
 
-Some other licenses are also involved by the use of external libraries
-and frameworks.
+### MAILINGLISTS
 
-* [Zend Framework 2 - BSD 3-Clause License](http://framework.zend.com/)
-* [Twitter Bootstrap - Apache License v2.0](http://getbootstrap.com/)
-* [jQuery - MIT License](http://jquery.com/)
-* [jqplot - dual licensed under MIT License and GPL Version 2 License](http://www.jqplot.com/)
-* [jstree - MIT License](http://www.jstree.com/)
-* [Moments.js - MIT License](http://momentjs.com/)
-* [Bootstrap 3 Datepicker - MIT License](http://eonasdan.github.io/bootstrap-datetimepicker/)
-* [composer - MIT License](https://getcomposer.org/)
+The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 
-You can find a complete file listing in [LICENSE](LICENSE).
+ * bareos-users@googlegroups.com
+ * bareos-devel@googlegroups.com
 
 ### BUGTRACKER
 
 [http://bugs.bareos.org](http://bugs.bareos.org)
-
