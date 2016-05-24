@@ -196,7 +196,7 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
          len = Mmsg(msg, _("%s (director) connected at: %s\n"), njcr->director->name(), dt);
       } else {
          /*
-          * This should not occur shortly, until the JCR values are set.
+          * This should only occur shortly, until the JCR values are set.
           */
          len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
       }
