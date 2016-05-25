@@ -4575,20 +4575,6 @@ fi
 AC_SUBST(BUILD_SD_BACKENDS)
 
 
-
-dnl install storage backend config files
-
-INSTALL_SD_CONFS="device-fifo.conf device-tape-with-autoloader.conf"
-if test X"$have_glusterfs" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-gluster.conf"
-fi
-if test X"$have_ceph_rados" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-ceph-rados.conf"
-fi
-AC_SUBST(INSTALL_SD_CONFS)
-
-
-
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "
@@ -4637,6 +4623,29 @@ src/qt-console/bat.conf \
 src/qt-console/bat.desktop \
 src/qt-console/bat.pro \
 src/qt-console/install_conf_file \
+src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf \
+src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf \
+src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf \
+src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf \
+src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf \
+src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf \
+src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf \
+src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf \
+src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf \
+src/defaultconfigs/bareos-dir.d/messages/Daemon.conf \
+src/defaultconfigs/bareos-dir.d/messages/Standard.conf \
+src/defaultconfigs/bareos-dir.d/storage/File.conf \
+src/defaultconfigs/bareos-sd.d/device/FileStorage.conf \
+src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf \
+src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf \
+src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf \
+src/defaultconfigs/bareos-fd.d/client/myself.conf \
+src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf \
+src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf \
+src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf \
+src/defaultconfigs/tray-monitor.d/director/Director-local.conf \
+src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf \
+src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf \
 src/dird/Makefile \
 src/dird/bareos-dir.conf \
 src/lib/Makefile \
@@ -4665,7 +4674,7 @@ src/ndmp/Makefile \
 src/tests/Makefile \
 src/tools/Makefile \
 src/plugins/filed/Makefile \
-src/plugins/filed/plugin-python-ldap.conf \
+src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example \
 src/plugins/stored/Makefile \
 src/plugins/dird/Makefile \
 po/Makefile.in \

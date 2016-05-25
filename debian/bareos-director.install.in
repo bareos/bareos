@@ -3,7 +3,29 @@
 @scriptdir@/make_catalog_backup
 @scriptdir@/make_catalog_backup.pl
 @scriptdir@/query.sql
-@confdir@/bareos-dir.conf    @configtemplatedir@
+@confdir@/bareos-dir.d/catalog/MyCatalog.conf                @configtemplatedir@/bareos-dir.d/catalog/
+@confdir@/bareos-dir.d/client/bareos-fd.conf                 @configtemplatedir@/bareos-dir.d/client/
+@confdir@/bareos-dir.d/console/bareos-mon.conf               @configtemplatedir@/bareos-dir.d/console/
+@confdir@/bareos-dir.d/director/bareos-dir.conf              @configtemplatedir@/bareos-dir.d/director/
+@confdir@/bareos-dir.d/fileset/Catalog.conf                  @configtemplatedir@/bareos-dir.d/fileset/
+@confdir@/bareos-dir.d/fileset/LinuxAll.conf                 @configtemplatedir@/bareos-dir.d/fileset/
+@confdir@/bareos-dir.d/fileset/SelfTest.conf                 @configtemplatedir@/bareos-dir.d/fileset/
+@confdir@/bareos-dir.d/fileset/Windows?All?Drives.conf       @configtemplatedir@/bareos-dir.d/fileset/
+@confdir@/bareos-dir.d/job/backup-bareos-fd.conf             @configtemplatedir@/bareos-dir.d/job/
+@confdir@/bareos-dir.d/job/BackupCatalog.conf                @configtemplatedir@/bareos-dir.d/job/
+@confdir@/bareos-dir.d/job/BackupClient1.conf                @configtemplatedir@/bareos-dir.d/job/
+@confdir@/bareos-dir.d/job/RestoreFiles.conf                 @configtemplatedir@/bareos-dir.d/job/
+@confdir@/bareos-dir.d/jobdefs/DefaultJob.conf               @configtemplatedir@/bareos-dir.d/jobdefs/
+@confdir@/bareos-dir.d/messages/Daemon.conf                  @configtemplatedir@/bareos-dir.d/messages/
+@confdir@/bareos-dir.d/messages/Standard.conf                @configtemplatedir@/bareos-dir.d/messages/
+@confdir@/bareos-dir.d/pool/Differential.conf                @configtemplatedir@/bareos-dir.d/pool/
+@confdir@/bareos-dir.d/pool/Full.conf                        @configtemplatedir@/bareos-dir.d/pool/
+@confdir@/bareos-dir.d/pool/Incremental.conf                 @configtemplatedir@/bareos-dir.d/pool/
+@confdir@/bareos-dir.d/pool/Scratch.conf                     @configtemplatedir@/bareos-dir.d/pool/
+@confdir@/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf  @configtemplatedir@/bareos-dir.d/schedule/
+@confdir@/bareos-dir.d/schedule/WeeklyCycle.conf             @configtemplatedir@/bareos-dir.d/schedule/
+@confdir@/bareos-dir.d/storage/File.conf                     @configtemplatedir@/bareos-dir.d/storage/
+@confdir@/tray-monitor.d/director/Director-local*.conf
 /usr/sbin/bareos-dir
 /usr/share/man/man8/bareos-dir.8.gz
 /usr/share/man/man8/bareos.8.gz

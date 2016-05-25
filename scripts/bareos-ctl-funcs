@@ -112,9 +112,9 @@ killproc() {
 checkcfg() {
    echo "Checking Configuration and Database connection ... "
    if [ ! -z "${DIR_USER}" ]; then
-      su -s /bin/sh ${DIR_USER} -c "${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t -c ${BACDIRCFG}/bareos-dir.conf"
+      su -s /bin/sh ${DIR_USER} -c "${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t"
    else
-      ${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t -c ${BACDIRCFG}/bareos-dir.conf
+      ${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t
    fi
    if [ $? -eq 0 ]; then
       return 0

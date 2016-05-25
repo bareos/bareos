@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@
 #include "bareos.h"
 #include "tray_conf.h"
 
-extern CONFIG *my_config;             /* Our Global config */
+#define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */
 
 /*
  * Define the first and last resource ID record
@@ -375,6 +375,8 @@ void init_tmon_config(CONFIG *config, const char *configfile, int exit_code)
                 R_LAST,
                 resources,
                 res_head);
+   config->set_default_config_filename(CONFIG_FILE);
+   config->set_config_include_dir("tray-monitor.d");
 }
 
 bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)

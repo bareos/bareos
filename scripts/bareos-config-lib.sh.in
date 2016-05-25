@@ -4,7 +4,7 @@ CONFIG_LIB=@scriptdir@/bareos-config-lib.sh
 DIR_CFG=@confdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=@scriptdir@
-DBCHECK="@sbindir@/bareos-dbcheck -B -c ${CFG_DIR}"
+DBCHECK="@sbindir@/bareos-dbcheck -B"
 
 SEC_GROUPS="tape disk"
 
@@ -295,6 +295,60 @@ setup_sd_user()
    exit 1
 }
 
+get_config_path()
+{
+    # configuration component (either file or bareos-dir, ...)
+    COMPONENT="${1}"
+
+    if [ -f "${COMPONENT}" ]; then
+        printf "%s" "${COMPONENT}"
+    elif [ -f "${DIR_CFG}/${COMPONENT}.conf" ]; then
+        printf "%s" "${DIR_CFG}/${COMPONENT}.conf"
+    elif [ -d "${DIR_CFG}/${COMPONENT}.d/" ]; then
+        printf "%s" "${DIR_CFG}/${COMPONENT}.d/"
+    else
+        warn "failed to find config for component \"${COMPONENT}\"."
+        return 1
+    fi
+}
+
+has_config()
+{
+    # configuration component (either file or bareos-dir, ...)
+    COMPONENT="${1}"
+
+    if ! CONFIG_PATH=`get_config_path "${COMPONENT}" 2>/dev/null`; then
+        return 1
+    fi
+
+    if [ -d "${CONFIG_PATH}" ]; then
+        # Check if config files exist.
+        # There should a least be 2 configuration files.
+        # bareos-dir:
+        #   It could be, that only the file MyCatalog.conf exists,
+        #   (created by bareos-database-common) but no other files.
+        #   In this case, it counts as not configured.
+        [ `echo ${CONFIG_PATH}/*/*.conf | wc -l` -gt 2 ]
+        return $?
+    fi
+
+    # config file exists
+    return 0
+}
+
+deploy_config()
+{
+    SOURCE=${1:-}
+    DEST=${2:-}
+
+    [ -d "$SOURCE" ] || return 1
+    [ -d "$DEST" ] || return 1
+
+    # copy all files, but do not overwrite existing file.
+    cp --recursive --no-clobber "$SOURCE/." "$DEST/."
+    true
+}
+
 get_config_param()
 {
     #
@@ -347,9 +401,58 @@ set_config_param()
     # - does not handle includes ("@" and include scripts)
     #   Possible workaround: get expanded config by "bareos-* -xc"
 
+    # configuration component (either file or bareos-dir, ...)
+    COMPONENT="${1}"
+    # section / resource type
+    SECTION="${2}"
+    # name of the section, currently ignored
+    NAME="${3}"
+    # parameter to set in the config file
+    PARAM="${4}"
+    # value to set
+    VALUE="${5}"
+
+    if ! CONFIG_PATH=`get_config_path "${COMPONENT}"`; then
+        return 1
+    fi
+
+    if [ -d "${CONFIG_PATH}" ]; then
+        set_config_param_in_directory "${CONFIG_PATH}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+    else
+        set_config_param_in_file "${CONFIG_PATH}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+    fi
+
+    return
+}
+
+[ ${os_type} = Linux ] && \
+set_config_param_in_directory()
+{
+    # configuration file
+    DIRECTORY="${1}"
+    # section / resource type
+    SECTION=`echo "${2}" | tr '[:upper:]' '[:lower:]'`
+    # name of the section, currently ignored
+    NAME="${3}"
+    # parameter to set in the config file
+    PARAM="${4}"
+    # value to set
+    VALUE="${5}"
+
+    FILE="${DIRECTORY}/${SECTION}/${NAME}.conf"
+    if ! [ -f "${FILE}" ]; then
+        printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" > "${FILE}"
+    fi
+    set_config_param_in_file "${FILE}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+    return $?
+}
+
+[ ${os_type} = Linux ] && \
+set_config_param_in_file()
+{
     # configuration file
     FILE="${1}"
-    # section, currently ignored
+    # section / resource type
     SECTION="${2}"
     # name of the section, currently ignored
     NAME="${3}"
@@ -359,7 +462,7 @@ set_config_param()
     VALUE="${5}"
 
     if [ ! -w "${FILE}" ]; then
-        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access ${CFG_FILE}"
+        warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access file '${FILE}'"
         return 1
     fi
 
@@ -676,7 +779,7 @@ translate_sql_files()
 
     db_type="${db_type:-`get_database_driver_default`}"
 
-    for i in `find "$SOURCE_DIR" -name "${db_type}*.sql" -printf "%P\n"`; do
+    for i in `find "$SOURCE_DIR" -name "${db_type}*.sql" -print | cut -d'/' -f2-`; do
         dest_file=${DEST_DIR}/$i
         mkdir -p `dirname $dest_file`
         get_translated_sql_file ${SOURCE_DIR}/$i > $dest_file
@@ -692,33 +795,30 @@ apply_dbconfig_settings()
     # this function is only useful on Debian Linux based distributions
     # as dbconfig-common is only available there
 
-    # check if bareos-director configuration file already exists
-    [ -r "${CFG_DIR}" ] || return 0
-
     # check if dbconfig configuration file exists
     [ -r "/etc/dbconfig-common/bareos-database-common.conf" ] || return 0
     . /etc/dbconfig-common/bareos-database-common.conf
 
     # check if dbconfig is enabled
-    [ $dbc_upgrade = 'true' ] || return 0
+    [ $dbc_install = 'true' ] && [ $dbc_upgrade = 'true' ] || return 0
 
     if [ -n "$dbc_dbuser" ]; then
-        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbuser" "$dbc_dbuser"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbuser" "$dbc_dbuser"
     fi
 
     if [ -n "$dbc_dbname" ]; then
-        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbname" "$dbc_dbname"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbname" "$dbc_dbname"
     fi
 
     case "$dbc_dbtype" in
         pgsql)
-            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "postgresql"
+            set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbdriver" "postgresql"
             ;;
         mysql)
-            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "mysql"
+            set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbdriver" "mysql"
             ;;
         sqlite3)
-            set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbdriver" "sqlite3"
+            set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbdriver" "sqlite3"
             #   dbconfig creates the db file as ${dbc_basepath}/${dbc_dbname}
             #   while bareos expects the sqlite3 db file
             #   as ${dbc_basepath}/${dbc_dbname}.db
@@ -737,7 +837,7 @@ apply_dbconfig_settings()
     esac
 
     if [ "$dbc_authmethod_user" != "ident" ] && [ "$dbc_dbpass" ]; then
-        set_config_param "${CFG_DIR}" "Catalog" "MyCatalog" "dbpassword" "$dbc_dbpass"
+        set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbpassword" "$dbc_dbpass"
     fi
 }
 
@@ -766,10 +866,11 @@ replace()
     SEARCH="$1"
     REPLACE="$2"
 
-    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
-    do
-        echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf`; do
+        if [ -f "$file" ]; then
+            echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
+            sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+        fi
     done
     return 0
 }
@@ -796,8 +897,7 @@ replace_password()
     SEARCH="$1"
     REPLACE="$2"
 
-    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf`
-    do
+    for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf ${DIR_CFG}/tray-monitor.d/*/*.conf`; do
         echo "replacing '${SEARCH}' in $file"
         sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
     done

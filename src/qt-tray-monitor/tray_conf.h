@@ -35,6 +35,8 @@
 #ifndef TRAY_CONF_H_INCLUDED
 #define TRAY_CONF_H_INCLUDED
 
+extern CONFIG *my_config;
+
 enum Rescode {
    R_UNKNOWN = 0,
    R_MONITOR = 1001,

@@ -58,7 +58,8 @@ LIBBAREOSSD_LT_RELEASE = @LIBBAREOSSD_LT_RELEASE@
 INCLUDES += -I$(srcdir) -I.. -I$(basedir) -I$(basedir)/include
 
 BUILD_BACKENDS = @BUILD_SD_BACKENDS@
-INSTALL_CONFS  = @INSTALL_SD_CONFS@
+
+CONF_EXTRA_DIR = config.d
 
 .SUFFIXES:	.c .o .lo
 .PHONY:
@@ -72,6 +73,7 @@ INSTALL_CONFS  = @INSTALL_SD_CONFS@
 .c.lo:
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(ELASTO_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -80,10 +82,12 @@ $(ELASTO_LOBJS):
 $(CHEPHFS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(CEPHFS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(GFAPI_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(OBJECT_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -92,6 +96,7 @@ $(OBJECT_LOBJS):
 $(RADOS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(RADOS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 #-------------------------------------------------------------------------
 all: Makefile $(BUILD_BACKENDS)
@@ -149,6 +154,7 @@ libtool-clean:
 
 clean:	libtool-clean
 	@$(RMF) core a.out *.o *.bak *~ *.intpro *.extpro 1 2 3
+	@$(RMF) -r $(CONF_EXTRA_DIR)
 
 realclean: clean
 	$(RMF) tags
@@ -169,12 +175,34 @@ libtool-install: all
 	   $(RM) $(DESTDIR)$(backenddir)/$$backend; \
 	done
 
-install-configs:
-	$(MKDIR) ${DESTDIR}${confdir}/bareos-sd.d/
-	@for conf in $(INSTALL_CONFS); do \
-	   $(INSTALL_CONFIG) ../../defaultconfigs/bareos-sd.d/$$conf ${DESTDIR}${confdir}/bareos-sd.d/; \
+install-config:
+	# copy configuration resource files to directory structure
+	@SRCCONFDIR=$(CONF_EXTRA_DIR)/bareos-sd.d/; \
+	DESTCONFDIR=${DESTDIR}${confdir}/bareos-sd.d/; \
+	echo "installing configuration resource files to $$DESTCONFDIR"; \
+	$(MKDIR) $$DESTCONFDIR; \
+	for RESTYPE in autochanger device director ndmp messages storage; do \
+		$(MKDIR) "$$DESTCONFDIR/$$RESTYPE"; \
+		for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
+			if test -e "$$f"; then \
+				RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
+				RES=`basename "$$f"`; \
+				if test -f "$$RESDIR/$$RES"; then \
+					destconf="$$RESDIR/$$RES.new"; \
+					echo "    $$RESTYPE/$$RES as \"$$destconf\" (keep existing)"; \
+				else \
+					destconf="$$RESDIR/$$RES"; \
+					echo "    $$RESTYPE/$$RES as \"$$destconf\""; \
+				fi; \
+				${INSTALL_CONFIG} "$$f" "$$destconf"; \
+				if test "x${sd_group}" != "x"; then \
+					chgrp -f ${sd_group} $$destconf || true; \
+				fi; \
+			fi; \
+		done; \
 	done
 
-install: @LIBTOOL_INSTALL_TARGET@ install-configs
+
+install: @LIBTOOL_INSTALL_TARGET@ install-config
 
 depend:

@@ -22,8 +22,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <version.h>
-
 #include <QMainWindow>
 #include <QApplication>
 #include <QMessageBox>

@@ -1,0 +1,7 @@
+Job {
+  Name = "BackupRados"
+  JobDefs = "DefaultJob"
+  FileSet = "plugin-rados"
+  # Client = "radoshost-fd"
+}
+

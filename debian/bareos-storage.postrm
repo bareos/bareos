@@ -6,6 +6,7 @@ set -e
 case "$1" in
   purge)
     rm -f /etc/bareos/bareos-sd.conf /etc/bareos/bareos-sd.conf.dist
+    rm -rf /etc/bareos/bareos-sd.d/
   ;;
 esac
 

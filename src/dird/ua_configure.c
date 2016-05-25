@@ -221,13 +221,18 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    POOL_MEM resource(PM_MESSAGE);
    POOL_MEM filename_tmp(PM_FNAME);
    POOL_MEM filename(PM_FNAME);
+   POOL_MEM basedir(PM_FNAME);
    POOL_MEM temp(PM_MESSAGE);
+   const bool error_if_exists = false;
+   const bool create_directories = true;
 
    if (!configure_create_fd_resource_string(resource, clientname)) {
       return false;
    }
 
-   if (!my_config->get_path_of_new_resource(filename, temp, "bareos-dir-export/bareos-fd.d", "director", clientname, false)) {
+   basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
+   if (!my_config->get_path_of_new_resource(filename, temp, basedir.c_str(), "director", clientname,
+                                            error_if_exists, create_directories)) {
       ua->error_msg("%s", temp.c_str());
       return false;
    } else {

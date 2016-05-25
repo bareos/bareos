@@ -32,7 +32,7 @@
 
 function checkcfg () {
    echo "Checking Configuration and Database connection ... "
-   su -s /bin/sh @dir_user@ -c "@sbindir@/bareos-dir -f -t -c @confdir@/bareos-dir.conf"
+   su -s /bin/sh @dir_user@ -c "@sbindir@/bareos-dir -f -t"
    if [ $? -eq 0 ]; then
       return 0
    else
@@ -46,7 +46,7 @@ case "$1" in
        checkcfg
        if [ $? -eq 0 ]; then
           echo -n "Starting the Bareos Director: "
-          /sbin/startproc -u @dir_user@ -g @dir_group@ @sbindir@/bareos-dir $2 -c @confdir@/bareos-dir.conf
+          /sbin/startproc -u @dir_user@ -g @dir_group@ @sbindir@/bareos-dir $2
           rc_status -v && touch @subsysdir@/bareos-dir
        else
           echo "Configuration check failed, please check log file for errors"

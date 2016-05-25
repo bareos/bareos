@@ -1,4 +1,8 @@
-@confdir@/bareos-fd.conf     @configtemplatedir@
+@confdir@/bareos-fd.d/client/myself.conf        @configtemplatedir@/bareos-fd.d/client/
+@confdir@/bareos-fd.d/director/bareos-dir.conf  @configtemplatedir@/bareos-fd.d/director/
+@confdir@/bareos-fd.d/director/bareos-mon.conf  @configtemplatedir@/bareos-fd.d/director/
+@confdir@/bareos-fd.d/messages/Standard.conf    @configtemplatedir@/bareos-fd.d/messages/
+@confdir@/tray-monitor.d/client/FileDaemon-local*.conf
 /usr/sbin/bareos-fd
 @plugindir@/bpipe-fd.so
 /usr/share/man/man8/bareos-fd.8.gz

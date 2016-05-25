@@ -1,0 +1,7 @@
+Job {
+  Name = "RestoreRados"
+  JobDefs = "DefaultJob"
+  Type = Restore
+  Fileset= "plugin-rados"
+  # Client = "radoshost-fd"
+}

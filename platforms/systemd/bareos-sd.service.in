@@ -28,7 +28,7 @@ WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bareos-sd.@sd_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bareos-sd
 StandardOutput=syslog
-ExecStart=@sbindir@/bareos-sd -c @confdir@/bareos-sd.conf
+ExecStart=@sbindir@/bareos-sd
 SuccessExitStatus=0 15
 Restart=on-failure
 

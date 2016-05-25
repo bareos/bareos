@@ -23,8 +23,6 @@
 #include "ui_mainwindow.h"
 #include "systemtrayicon.h"
 
-#include <version.h>
-
 #include <QDebug>
 #include <QPlainTextEdit>
 #include <QTimer>

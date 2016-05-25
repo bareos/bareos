@@ -87,7 +87,7 @@ fi
 
 checkcfg() {
    echo "Checking Configuration and Database connection ... "
-   su -s /bin/sh $DAEMON_USER -c "@sbindir@/bareos-dir -f -t -c @confdir@/bareos-dir.conf"
+   su -s /bin/sh $DAEMON_USER -c "@sbindir@/bareos-dir -f -t"
    if [ $? -eq 0 ]; then
       return 0
    else

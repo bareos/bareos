@@ -5,15 +5,9 @@
 # to start a corresponding reader/writer program.
 #
 
-#
-# Preparations:
-#
-# include this configuration file in bareos-sd.conf by
-# @/etc/bareos/bareos-sd.d/device-fifo.conf
-#
-
 Device {
   Name = NULL
+  Description = "Dummy device, write-only, for testing."
   Archive Device = /dev/null
   Device Type = fifo
   Media Type = null

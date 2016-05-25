@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,14 +27,11 @@
 #include <QApplication>
 #include <QMessageBox>
 
-#include "version.h"
 #include "mainwindow.h"
 #include "tray-monitor.h"
 #include "authenticate.h"
 #include "monitoritem.h"
 #include "monitoritemthread.h"
-
-#define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */
 
 CONFIG *my_config = NULL;             /* Our Global config */
 
@@ -50,8 +47,8 @@ static void usage()
 
    out = out.sprintf(_(PROG_COPYRIGHT
                        "\nVersion: %s (%s) %s %s %s\n\n"
-                       "Usage: tray-monitor [-c config_file] [-d debug_level]\n"
-                       "        -c <file>   set configuration file to file\n"
+                       "Usage: tray-monitor [options]\n"
+                       "        -c <path>   use <path> as configuration file or directory\n"
                        "        -d <nn>     set debug level to <nn>\n"
                        "        -dt         print timestamp in debug output\n"
                        "        -t          test - read configuration and exit\n"
@@ -120,10 +117,6 @@ static void parse_command_line(int argc, char* argv[], cl_opts& cl)
       usage();
       exit(1);
    }
-
-   if (!cl.configfile) {
-      cl.configfile = bstrdup(CONFIG_FILE);
-   }
 }
 
 static void setupQtObjects()
@@ -184,6 +177,7 @@ static void init_environment(int argc, char* argv[])
    init_msg(NULL, NULL);
    signal(SIGINT, intHandler);
    working_directory = "/tmp";
+   OSDependentInit();
    WSA_Init(); /* Initialize Windows sockets */
 }
 

@@ -517,12 +517,12 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
    if (pass == 2) {
       res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
-         scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
+         scan_err3(lc, _("Could not find config resource \"%s\" referenced on line %d: %s"),
                    lc->str, lc->line_no, lc->line);
          return;
       }
       if (*(item->resvalue)) {
-         scan_err3(lc, _("Attempt to redefine resource \"%s\" referenced on line %d : %s\n"),
+         scan_err3(lc, _("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
                    item->name, lc->line_no, lc->line);
          return;
       }

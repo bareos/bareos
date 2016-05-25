@@ -106,6 +106,7 @@ void CONFIG::init(const char *cf,
    m_use_config_include_dir = false;
    m_config_include_dir = NULL;
    m_config_include_naming_format = "%s/%s/%s.conf";
+   m_used_config_path = NULL;
    m_scan_error = scan_error;
    m_scan_warning = scan_warning;
    m_init_res = init_res;
@@ -146,7 +147,8 @@ bool CONFIG::parse_config()
    if (!find_config_path(config_path)) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
    }
-   Dmsg1(100, "config file = %s\n", config_path.c_str());
+   m_used_config_path = bstrdup(config_path.c_str());
+   Dmsg1(100, "config file = %s\n", m_used_config_path);
    return parse_config_file(config_path.c_str(), NULL, m_scan_error, m_scan_warning, m_err_type);
 }
 
@@ -575,6 +577,11 @@ void CONFIG::free_resources()
    if (m_config_include_dir) {
       free((void *)m_config_include_dir);
    }
+
+   if (m_used_config_path) {
+      free((void *)m_used_config_path);
+   }
+
 }
 
 RES **CONFIG::save_resources()
@@ -889,7 +896,8 @@ bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
 }
 
 bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
-                                      const char *resourcetype, const char *name, bool error_if_exists)
+                                      const char *resourcetype, const char *name,
+                                      bool error_if_exists, bool create_directories)
 {
    POOL_MEM rel_path(PM_FNAME);
    POOL_MEM directory(PM_FNAME);
@@ -901,6 +909,10 @@ bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const 
    }
 
    path_get_directory(directory, path);
+
+   if (create_directories) {
+      path_create(directory);
+   }
 
    if (!path_exists(directory)) {
       extramsg.bsprintf("Resource config directory \"%s\" does not exist.\n", directory.c_str());

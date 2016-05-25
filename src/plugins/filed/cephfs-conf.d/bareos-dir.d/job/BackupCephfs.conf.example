@@ -1,0 +1,7 @@
+Job {
+  Name = "BackupCephfs"
+  JobDefs = "DefaultJob"
+  FileSet = "plugin-cephfs"
+  # Client = "cephfshost-fd"
+}
+

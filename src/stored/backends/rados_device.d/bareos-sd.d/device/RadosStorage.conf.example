@@ -8,9 +8,6 @@
 # /usr/bin/rados mkpool bareos
 # /usr/bin/rados df
 #
-# include this configuration file in bareos-sd.conf by
-# @/etc/bareos/bareos-sd.d/device-ceph-rados.conf
-#
 # Old syntax:
 #    Archive Device = /etc/ceph/ceph.conf:poolname
 #
@@ -31,3 +28,4 @@ Device {
   Removable Media = no
   Always Open = no
 }
+

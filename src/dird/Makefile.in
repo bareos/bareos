@@ -53,6 +53,8 @@ INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/lmdb -I$(
 
 JANSSON_CPPFLAGS = @JANSSON_INC@
 
+DIRD_RESTYPES = catalog client console counter director fileset job jobdefs messages pool profile schedule storage
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -143,22 +145,32 @@ devclean: realclean
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dir $(DESTDIR)$(sbindir)/bareos-dir
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dbcheck $(DESTDIR)$(sbindir)/bareos-dbcheck
-	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/
-	@for i in catalog client console counter director fileset job jobdefs messages pool profile schedule storage; do \
-	   $(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/$$i; \
+	# copy configuration resource files to directory structure
+	@SRCCONFDIR=../defaultconfigs/bareos-dir.d/; \
+	DESTCONFDIR=${DESTDIR}${confdir}/bareos-dir.d/; \
+	echo "installing configuration resource files to $$DESTCONFDIR"; \
+	$(MKDIR) $$DESTCONFDIR; \
+	for RESTYPE in $(DIRD_RESTYPES); do \
+	   $(MKDIR) "$$DESTCONFDIR/$$RESTYPE"; \
+	   for f in $$SRCCONFDIR/$$RESTYPE/*.conf; do \
+	      if test -f "$$f"; then \
+	         RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
+	         RES=`basename "$$f"`; \
+	         if test -f "$$RESDIR/$$RES"; then \
+	            destconf="$$RESDIR/$$RES.new"; \
+	            echo "    $$RESTYPE/$$RES as \"$$destconf\" (keep existing)"; \
+	         else \
+	            destconf="$$RESDIR/$$RES"; \
+	            echo "    $$RESTYPE/$$RES as \"$$destconf\""; \
+	         fi; \
+	         ${INSTALL_CONFIG} "$$f" "$$destconf"; \
+	         if test "x${dir_group}" != "x"; then \
+	            chgrp -f ${dir_group} $$destconf || true; \
+	         fi; \
+	      fi; \
+	   done; \
 	done
-	@srcconf=bareos-dir.conf; \
-	   if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
-	      destconf=$$srcconf.new; \
-	      echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
-	   else \
-	      destconf=$$srcconf; \
-	   fi; \
-	   echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
-	   ${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
-	   -@if test "x${dir_group}" != "x"; then \
-	      chgrp -f ${dir_group} ${DESTDIR}${confdir}/$$destconf ; \
-	   fi
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir-export/bareos-fd.d/director/
 	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \

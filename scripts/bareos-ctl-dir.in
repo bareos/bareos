@@ -66,9 +66,9 @@ case "$1" in
          fi
 
 	 if [ "x${VALGRIND_DIR}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}/bareos-dir.conf
+	    valgrind --leak-check=full ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}
 	 else
-	    ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}/bareos-dir.conf
+	    ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}
 	 fi
 	 sleep 1
       }

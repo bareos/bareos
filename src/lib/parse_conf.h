@@ -381,7 +381,7 @@ public:
    /*
     * Members
     */
-   const char *m_cf;                    /* Config file */
+   const char *m_cf;                    /* Config file parameter */
    LEX_ERROR_HANDLER *m_scan_error;     /* Error handler if non-null */
    LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
    INIT_RES_HANDLER *m_init_res;        /* Init resource handler for non default types if non-null */
@@ -422,6 +422,7 @@ public:
    bool parse_config();
    bool parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
+   const char *get_base_config_path() { return m_used_config_path; };
    void free_resources();
    RES **save_resources();
    RES **new_res_head();
@@ -435,7 +436,8 @@ public:
    bool get_path_of_resource(POOL_MEM &path, const char *component, const char *resourcetype,
                              const char *name, bool set_wildcards = false);
    bool get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
-                                 const char *resourcetype, const char *name, bool error_if_exits = false);
+                                 const char *resourcetype, const char *name,
+                                 bool error_if_exits = false, bool create_directories = false);
 
 protected:
    const char *m_config_default_filename;         /* default config filename, that is used, if no filename is given */
@@ -444,6 +446,7 @@ protected:
                                                      (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
    bool m_use_config_include_dir;                 /* Use the config include directory */
    const char *m_config_include_naming_format;    /* Format string for file paths of resources */
+   const char *m_used_config_path;                /* Config file that is used. */
 
    const char *get_default_configdir();
    bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);

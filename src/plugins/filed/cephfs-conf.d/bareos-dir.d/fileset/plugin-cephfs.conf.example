@@ -1,0 +1,14 @@
+FileSet {
+  Name = "plugin-cephfs"
+  Include {
+    Options {
+      aclsupport = yes
+      signature = MD5
+      xattrsupport = yes
+    }
+    # adapt this to your environment
+    #   basedir: optional, othewrwise all data will be backuped
+    Plugin = "cephfs:conffile=<ceph_conf_file>:basedir=<basedir>:"
+  }
+}
+

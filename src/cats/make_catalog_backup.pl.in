@@ -34,7 +34,7 @@ use strict;
 =cut
 
 my $cat = shift or die "Usage: $0 catalogname";
-my $dir_conf='@sbindir@/bareos-dbcheck -B -c @confdir@/bareos-dir.conf';
+my $dir_conf='@sbindir@/bareos-dbcheck -B -c @confdir@';
 my $wd = "@working_dir@";
 
 sub dump_sqlite3

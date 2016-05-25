@@ -39,7 +39,7 @@ case "$1" in
        fi
 
        echo -n "Starting Bareos Storage services: "
-       daemon --user ${SD_USER} @sbindir@/bareos-sd $2 ${SD_OPTIONS} -c @confdir@/bareos-sd.conf
+       daemon --user ${SD_USER} @sbindir@/bareos-sd $2 ${SD_OPTIONS}
        RETVAL=$?
        echo
        [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd

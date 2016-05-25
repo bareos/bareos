@@ -1,2 +1,2 @@
-/etc/bareos/bareos-sd.d/device-fifo.conf
 @backenddir@/libbareossd-fifo*.so
+@confdir@/bareos-sd.d/device/NULL.conf.example

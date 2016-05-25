@@ -144,6 +144,8 @@ bool path_get_directory(POOL_MEM &directory, POOL_MEM &path);
 bool path_append(char *path, const char *extra, unsigned int max_path);
 bool path_append(POOL_MEM &path, const char *extra);
 bool path_append(POOL_MEM &path, POOL_MEM &extra);
+bool path_create(const char *path, mode_t mode = 0750);
+bool path_create(POOL_MEM &path, mode_t mode = 0750);
 
 /* compression.c */
 const char *cmprs_algo_to_text(uint32_t compression_algorithm);

@@ -353,7 +353,7 @@ int main (int argc, char *argv[])
    }
 
    if (!check_resources()) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
 
@@ -388,7 +388,7 @@ int main (int argc, char *argv[])
    mode = (test_config) ? CHECK_CONNECTION : UPDATE_AND_FIX;
 
    if (!check_catalog(mode)) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
 
@@ -397,7 +397,7 @@ int main (int argc, char *argv[])
    }
 
    if (!initialize_sql_pooling()) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       goto bail_out;
    }
 
@@ -598,7 +598,7 @@ bool do_reload_config()
       int num;
       resource_table_reference failed_config;
 
-      Jmsg(NULL, M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
+      Jmsg(NULL, M_ERROR, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
       Jmsg(NULL, M_ERROR, 0, _("Resetting to previous configuration.\n"));
 
       /*
@@ -702,6 +702,7 @@ static bool check_resources()
    bool OK = true;
    JOBRES *job;
    bool need_tls;
+   const char *configfile = my_config->get_base_config_path();
 
    LockRes();
 
@@ -925,7 +926,7 @@ static bool check_resources()
          if (have_tls) {
             client->tls.enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
             OK = false;
             goto bail_out;
          }
@@ -980,7 +981,7 @@ static bool check_resources()
          if (have_tls) {
             store->tls.enable = true;
          } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in BAREOS.\n"));
+            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured.\n"));
             OK = false;
             goto bail_out;
          }

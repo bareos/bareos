@@ -1068,6 +1068,115 @@ bool path_append(POOL_MEM &path, POOL_MEM &extra)
 }
 
 /*
+ * based on
+ * src/findlib/mkpath.c:bool makedir(...)
+ */
+static bool path_mkdir(char *path, mode_t mode)
+{
+   if (path_exists(path)) {
+      Dmsg1(500, "skipped, path %s already exists.\n", path);
+      return path_is_directory(path);
+   }
+
+   if (mkdir(path, mode) != 0) {
+      berrno be;
+      Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n",
+              path, be.bstrerror());
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ * based on
+ * src/findlib/mkpath.c:bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode, ...
+ */
+bool path_create(const char *apath, mode_t mode)
+{
+   char *p;
+   int len;
+   bool ok = false;
+   struct stat statp;
+   char *path = NULL;
+
+   if (stat(apath, &statp) == 0) {     /* Does dir exist? */
+      if (!S_ISDIR(statp.st_mode)) {
+         Emsg1(M_ERROR, 0, "%s exists but is not a directory.\n", path);
+         return false;
+      }
+      return true;
+   }
+
+   len = strlen(apath);
+   path = (char *)alloca(len + 1);
+   bstrncpy(path, apath, len + 1);
+   strip_trailing_slashes(path);
+
+#if defined(HAVE_WIN32)
+   /*
+    * Validate drive letter
+    */
+   if (path[1] == ':') {
+      char drive[4] = "X:\\";
+
+      drive[0] = path[0];
+
+      UINT drive_type = GetDriveType(drive);
+
+      if (drive_type == DRIVE_UNKNOWN || drive_type == DRIVE_NO_ROOT_DIR) {
+         Emsg1(M_ERROR, 0, "%c: is not a valid drive.\n", path[0]);
+         goto bail_out;
+      }
+
+      if (path[2] == '\0') {          /* attempt to create a drive */
+         ok = true;
+         goto bail_out;               /* OK, it is already there */
+      }
+
+      p = &path[3];
+   } else {
+      p = path;
+   }
+#else
+   p = path;
+#endif
+
+   /*
+    * Skip leading slash(es)
+    */
+   while (IsPathSeparator(*p)) {
+      p++;
+   }
+   while ((p = first_path_separator(p))) {
+      char save_p;
+      save_p = *p;
+      *p = 0;
+      if (!path_mkdir(path, mode)) {
+         goto bail_out;
+      }
+      *p = save_p;
+      while (IsPathSeparator(*p)) {
+         p++;
+      }
+   }
+
+   if (!path_mkdir(path, mode)) {
+      goto bail_out;
+   }
+
+   ok = true;
+
+bail_out:
+   return ok;
+}
+
+bool path_create(POOL_MEM &path, mode_t mode)
+{
+   return path_create(path.c_str(), mode);
+}
+
+/*
  * Some Solaris specific support needed for Solaris 10 and lower.
  */
 #if defined(HAVE_SUN_OS)

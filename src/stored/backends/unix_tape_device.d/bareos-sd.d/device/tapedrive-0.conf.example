@@ -1,16 +1,13 @@
 #
 # Preparations:
 #
-# include this configuration file in bareos-sd.conf by
-# @/etc/bareos/bareos-sd.d/device-tape-with-autoloader.conf
-#
-
 # on Linux use "lsscsi --generic"
 # to get a list of your SCSI devices.
 # However, normaly you should access your devices by-id
 # (eg. /dev/tape/by-id/scsi-350011d00018a5f03-nst),
 # because the short device names like /dev/nst1
 # might change on reboot.
+#
 
 Device {
 
@@ -38,16 +35,3 @@ Device {
     MaximumFileSize = 10GB                  # default: 1000000000 (1GB)
 }
 
-
-
-Autochanger {
-  Name = "autochanger-0"
-  # adapt this, to match your storage loader
-  Changer Device = /dev/tape/by-id/scsi-1TANDBERGStorageLoader_AA45JC001732
-
-  # an Autochanger can contain multiple drive devices
-  Device = tapedrive-0
-  #Device = tapedrive-1
-
-  Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
-}

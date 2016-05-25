@@ -1,0 +1,4 @@
+Director {
+  Name = Director-local
+  Address = localhost
+}

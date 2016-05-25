@@ -20,29 +20,25 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-DEFCONFIGDIR="@configtemplatedir@"
-CONFIG="bareos-dir.conf"
-TARGET="/etc/bareos/${CONFIG}"
-
+DEFCONFIGDIR="@configtemplatedir@/bareos-dir.d/"
+CONFIGDIR="/etc/bareos/bareos-dir.d/"
 
 permissions()
 {
-  chown ${daemon_user}:${daemon_group} /etc/bareos/bareos-dir.d
-  chmod 750 /etc/bareos/bareos-dir.d
-  chown ${daemon_user}:${daemon_group} $TARGET
-  chmod 640 $TARGET
+  for dir in ${CONFIGDIR} /etc/bareos/bareos-dir-export/; do
+    chown ${daemon_user}:${daemon_group} ${dir}
+    chmod 750 ${dir}
+  done
 }
 
 case "$1" in
     configure)
-        if [ ! -f "$TARGET" ]; then
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}
+        if ! /usr/lib/bareos/scripts/bareos-config has_config "bareos-dir"; then
+            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
             /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
             /usr/lib/bareos/scripts/bareos-config initialize_passwords
             /usr/lib/bareos/scripts/bareos-config initialize_database_driver
             /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
-        else
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
         fi
         permissions
         # on Univention distributions the ucr command allows to open the firewall

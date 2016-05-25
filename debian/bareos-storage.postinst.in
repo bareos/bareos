@@ -25,28 +25,25 @@ storage_daemon_user=$daemon_user
 #file_daemon_user=root
 storage_daemon_group=$daemon_group
 
-DEFCONFIGDIR="@configtemplatedir@"
-CONFIG="bareos-sd.conf"
-TARGET="/etc/bareos/${CONFIG}"
+DEFCONFIGDIR="@configtemplatedir@/bareos-sd.d/"
+CONFIGDIR="/etc/bareos/bareos-sd.d/"
+
 
 
 permissions()
 {
-  chown ${storage_daemon_user}:${daemon_group} $TARGET
-  chown ${storage_daemon_user}:${daemon_group} /etc/bareos/bareos-sd.d
-  chmod 750 /etc/bareos/bareos-sd.d
+  chown ${storage_daemon_user}:${daemon_group} ${CONFIGDIR}
+  chmod 750 ${CONFIGDIR}
   chown ${storage_daemon_user}:${daemon_group} /var/lib/bareos/storage/
-  chmod 640 $TARGET
+  chmod 750 /var/lib/bareos/storage/
 }
 
 case "$1" in
     configure)
-        if [ ! -f "$TARGET" ]; then
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}
+        if ! /usr/lib/bareos/scripts/bareos-config has_config "bareos-sd"; then
+            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
             /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
             /usr/lib/bareos/scripts/bareos-config initialize_passwords
-        else
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
         fi
         permissions
         /usr/lib/bareos/scripts/bareos-config setup_sd_user

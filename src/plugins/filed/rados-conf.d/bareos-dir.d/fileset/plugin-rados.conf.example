@@ -1,0 +1,15 @@
+FileSet {
+  Name = "plugin-rados"
+  Include {
+    Options {
+      aclsupport = yes
+      signature = MD5
+      xattrsupport = yes
+    }
+    # adapt this to your environment
+    #   namespace: optional
+    #   snapshotname: optional (a snapshot in any case)
+    Plugin = "rados:conffile=<ceph_conf_file>:clientid=<client_id>:poolname=<pool_name>:namespace=<name_space>:snapshotname=<snapshot_name>:"
+  }
+}
+

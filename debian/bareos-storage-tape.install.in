@@ -1,5 +1,6 @@
 /etc/bareos/mtx-changer.conf
-/etc/bareos/bareos-sd.d/device-tape-with-autoloader.conf
+@confdir@/bareos-sd.d/device/autochanger-0.conf.example
+@confdir@/bareos-sd.d/device/tapedrive-0.conf.example
 @backenddir@/libbareossd-gentape*.so
 @backenddir@/libbareossd-tape*.so
 @plugindir@/scsicrypto-sd.so

@@ -1,0 +1,7 @@
+Job {
+  Name = "BackupGFAPI"
+  JobDefs = "DefaultJob"
+  FileSet = "plugin-gfapi"
+  # Client = "gfapihost-fd"
+}
+

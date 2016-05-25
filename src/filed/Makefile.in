@@ -48,6 +48,8 @@ FDLIBS += @XATTR_LIBS_NONSHARED@
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include -I$(basedir)/lmdb
 
+FILED_RESTYPES = client director messages
+
 .SUFFIXES:	.c .o
 .PHONY:
 .DONTCARE:
@@ -121,22 +123,30 @@ devclean: realclean
 
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-fd $(DESTDIR)$(sbindir)/bareos-fd
-	$(MKDIR) ${DESTDIR}${confdir}/bareos-fd.d/
-	@for i in client director messages; do \
-	   $(MKDIR) ${DESTDIR}${confdir}/bareos-fd.d/$$i; \
+	@SRCCONFDIR=../defaultconfigs/bareos-fd.d/; \
+	DESTCONFDIR=${DESTDIR}${confdir}/bareos-fd.d/; \
+	echo "installing configuration resource files to $$DESTCONFDIR"; \
+	$(MKDIR) $$DESTCONFDIR; \
+	for RESTYPE in $(FILED_RESTYPES); do \
+	   $(MKDIR) "$$DESTCONFDIR/$$RESTYPE"; \
+	   for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
+	      if test -f "$$f"; then \
+	         RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
+	         RES=`basename "$$f"`; \
+	         if test -f "$$RESDIR/$$RES"; then \
+	            destconf="$$RESDIR/$$RES.new"; \
+	            echo "    $$RESTYPE/$$RES as \"$$destconf\" (keep existing)"; \
+	         else \
+	            destconf="$$RESDIR/$$RES"; \
+	            echo "    $$RESTYPE/$$RES as \"$$destconf\""; \
+	         fi; \
+	         ${INSTALL_CONFIG} "$$f" "$$destconf"; \
+	         if test "x${fd_group}" != "x"; then \
+	            chgrp -f ${fd_group} $$destconf || true; \
+	         fi; \
+	      fi; \
+	   done; \
 	done
-	@srcconf=bareos-fd.conf; \
-	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
-	   destconf=$$srcconf.new; \
-	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
-	else \
-	   destconf=$$srcconf; \
-	fi; \
-	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
-	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
-	-@if test "x${fd_group}" != "x"; then \
-	   chgrp -f ${fd_group} ${DESTDIR}${confdir}/$$destconf ; \
-	fi
 	@if test -f static-bareos-fd; then \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bareos-fd $(DESTDIR)$(sbindir)/static-bareos-fd; \
 	fi

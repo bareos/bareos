@@ -1223,7 +1223,7 @@ int main(int argc, char *argv[])
    }
 
    if (!check_resources()) {
-      Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), configfile);
+      Emsg1(M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
    }
 
    if (!no_conio) {
@@ -1486,14 +1486,14 @@ static int check_resources()
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
                              " At least one CA certificate store is required.\n"),
-                             director->name(), configfile);
+                             director->name(), my_config->get_base_config_path());
          OK = false;
       }
    }
 
    if (numdir == 0) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"
-                          "Without that I don't how to speak to the Director :-(\n"), configfile);
+                          "Without that I don't how to speak to the Director :-(\n"), my_config->get_base_config_path());
       OK = false;
    }
 
@@ -1518,7 +1518,7 @@ static int check_resources()
       if ((!cons->tls.ca_certfile && !cons->tls.ca_certdir) && tls_needed) {
          Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
                              " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s.\n"),
-                             cons->name(), configfile);
+                             cons->name(), my_config->get_base_config_path());
          OK = false;
       }
    }

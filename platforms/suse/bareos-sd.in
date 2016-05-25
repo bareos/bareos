@@ -30,7 +30,7 @@
 case "$1" in
     start)
        echo -n "Starting the Bareos Storage daemon: "
-       /sbin/startproc -u @sd_user@ -g @sd_group@ @sbindir@/bareos-sd $2 -c @confdir@/bareos-sd.conf
+       /sbin/startproc -u @sd_user@ -g @sd_group@ @sbindir@/bareos-sd $2
        rc_status -v && touch @subsysdir@/bareos-sd
        ;;
     stop)

@@ -20,24 +20,21 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-DEFCONFIGDIR="@configtemplatedir@"
-CONFIG="tray-monitor.conf"
-TARGET="/etc/bareos/${CONFIG}"
+DEFCONFIGDIR="@configtemplatedir@/tray-monitor.d/"
+CONFIGDIR="/etc/bareos/tray-monitor.d/"
 
 permissions()
 {
-  chown root:${daemon_group} $TARGET
-  chmod 640 $TARGET
+  chown root:${daemon_group} ${CONFIGDIR}
+  chmod 755 ${CONFIGDIR}
 }
 
 case "$1" in
     configure)
-        if [ ! -f "$TARGET" ]; then
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}
+        if ! /usr/lib/bareos/scripts/bareos-config has_config "tray-monitor"; then
+            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
             /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
             /usr/lib/bareos/scripts/bareos-config initialize_passwords
-        else
-            cat ${DEFCONFIGDIR}/${CONFIG} > ${TARGET}.dist
         fi
         permissions
         ;;

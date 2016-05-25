@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2015 Bareos GmbH & Co KG
+#               2013-2016 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -894,7 +894,33 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_sysconfdir}/rc.d/init.d/bareos-dir
 %endif
 %endif
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/catalog/MyCatalog.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/client/bareos-fd.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/console/bareos-mon.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/director/bareos-dir.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/fileset/Catalog.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/fileset/LinuxAll.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/fileset/SelfTest.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) "%{_sysconfdir}/bareos/bareos-dir.d/fileset/Windows All Drives.conf"
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/backup-bareos-fd.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupCatalog.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupClient1.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/jobdefs/DefaultJob.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreFiles.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/messages/Daemon.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/messages/Standard.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/pool/Differential.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/pool/Full.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/pool/Incremental.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/pool/Scratch.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/schedule/WeeklyCycle.conf
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/storage/File.conf
+%attr(0750, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir-export/
+%if 0%{?build_qt_monitor}
+%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d/director
+%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.d/director/Director-local.conf
+%endif
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
 # we do not have any dir plugin but the python plugin
 #%%{plugin_dir}/*-dir.so
@@ -917,7 +943,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files storage
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
 %defattr(-, root, root)
-%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.conf
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/autochanger
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/device
@@ -925,6 +950,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/ndmp
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/messages
 %attr(0750, %{storage_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-sd.d/storage
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device/FileStorage.conf
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/director/bareos-dir.conf
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/director/bareos-mon.conf
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/messages/Standard.conf
+%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/storage/bareos-sd.conf
+%if 0%{?build_qt_monitor}
+%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d/storage
+%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.d/storage/StorageDaemon-local.conf
+%endif
 %if 0%{?suse_version}
 %if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-sd
@@ -959,20 +993,21 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/bscrypto
 %{_sbindir}/btape
-%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-tape-with-autoloader.conf
+%{_sysconfdir}/bareos/bareos-sd.d/device/autochanger-0.conf.example
+%{_sysconfdir}/bareos/bareos-sd.d/device/tapedrive-0.conf.example
 %{plugin_dir}/scsicrypto-sd.so
 %{plugin_dir}/scsitapealert-sd.so
 
 %files storage-fifo
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-fifo*.so
-%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-fifo.conf
+%{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
-%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-gluster.conf
+%{_sysconfdir}/bareos/bareos-sd.d/device/GlusterStorage.conf.example
 %endif
 
 %if 0%{?ceph}
@@ -980,7 +1015,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-rados*.so
 %{backend_dir}/libbareossd-cephfs*.so
-%attr(0640, %{storage_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-sd.d/device-ceph-rados.conf
+%{_sysconfdir}/bareos/bareos-sd.d/device/RadosStorage.conf.example
 %endif
 
 %endif # not client_only
@@ -988,11 +1023,18 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files filedaemon
 # fd package (bareos-fd, plugins)
 %defattr(-, root, root)
-%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.conf
 %attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/
 %attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/client
 %attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/director
 %attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-fd.d/messages
+%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.d/client/myself.conf
+%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.d/director/bareos-dir.conf
+%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.d/director/bareos-mon.conf
+%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-fd.d/messages/Standard.conf
+%if 0%{?build_qt_monitor}
+%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d/client
+%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.d/client/FileDaemon-local.conf
+%endif
 %if 0%{?suse_version}
 %if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-fd
@@ -1036,6 +1078,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/profile
 %attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/schedule
 %attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/storage
+# tray monitor configurate is installed by the target daemons
+%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d
 %endif
 %dir %{backend_dir}
 %{library_dir}/libbareos-*.so
@@ -1143,7 +1187,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %if 0%{?build_qt_monitor}
 %files traymonitor
 %defattr(-,root, root)
-%attr(-, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.conf
+%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d/monitor
+%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/tray-monitor.d/monitor/bareos-mon.conf
 %config %{_sysconfdir}/xdg/autostart/bareos-tray-monitor.desktop
 %{_bindir}/bareos-tray-monitor
 %{_mandir}/man1/bareos-tray-monitor.1.gz
@@ -1188,7 +1233,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
 %{plugin_dir}/BareosFdPluginLDAP.py*
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-python-ldap.conf
+%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-ldap.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/backup-ldap.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/restore-ldap.conf.example
 
 %files director-python-plugin
 %defattr(-, root, root)
@@ -1214,15 +1261,21 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files filedaemon-glusterfs-plugin
 %{script_dir}/bareos-glusterfind-wrapper
 %{plugin_dir}/gfapi-fd.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-gfapi.conf
+%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-gfapi.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/BackupGFAPI.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
 %if 0%{?ceph}
 %files filedaemon-ceph-plugin
 %{plugin_dir}/cephfs-fd.so
+%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-cephfs.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/BackupCephfs.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreCephfs.conf.example
 %{plugin_dir}/rados-fd.so
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-cephfs.conf
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/plugin-rados.conf
+%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-rados.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/BackupRados.conf.example
+%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreRados.conf.example
 %endif
 
 #
@@ -1318,6 +1371,11 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %endif
 
 %post director
+# bareos-dir.conf has been part of bareos <= 16.2.
+# Keep the old config file.
+if [ -f  /etc/bareos/bareos-dir.conf ]; then
+   cp -a /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep
+fi
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %{script_dir}/bareos-config initialize_database_driver
@@ -1328,7 +1386,18 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %add_service_start bareos-dir
 %endif
 
+%posttrans director
+CFG=/etc/bareos/bareos-dir.conf
+if [ ! -e $CFG -a -e /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep ]; then
+   mv /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep $CFG
+fi
+
 %post storage
+# bareos-sd.conf has been part of bareos <= 16.2.
+# Keep the old config file.
+if [ -f  /etc/bareos/bareos-sd.conf ]; then
+   cp -a /etc/bareos/bareos-sd.conf /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep
+fi
 # pre script has already generated the storage daemon user,
 # but here we add the user to additional groups
 %{script_dir}/bareos-config setup_sd_user
@@ -1341,7 +1410,18 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %add_service_start bareos-sd
 %endif
 
+%posttrans storage
+CFG=/etc/bareos/bareos-sd.conf
+if [ ! -e $CFG -a -e /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep ]; then
+   mv /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep $CFG
+fi
+
 %post filedaemon
+# bareos-fd.conf has been part of bareos <= 16.2.
+# Keep the old config file.
+if [ -f  /etc/bareos/bareos-fd.conf ]; then
+   cp -a /etc/bareos/bareos-fd.conf /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep
+fi
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %if 0%{?suse_version} >= 1210
@@ -1350,6 +1430,12 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %else
 %add_service_start bareos-fd
 %endif
+
+%posttrans filedaemon
+CFG=/etc/bareos/bareos-fd.conf
+if [ ! -e $CFG -a -e /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep ]; then
+   mv /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep $CFG
+fi
 
 %post bconsole
 %{script_dir}/bareos-config initialize_local_hostname
@@ -1388,9 +1474,22 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %endif
 
 %if 0%{?build_qt_monitor}
+
 %post traymonitor
+# tray-monitor.conf has been part of bareos <= 16.2.
+# Keep the old config file.
+if [ -f  /etc/bareos/tray-monitor.conf ]; then
+   cp -a /etc/bareos/tray-monitor.conf /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep
+fi
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
+
+%posttrans traymonitor
+CFG=/etc/bareos/tray-monitor.conf
+if [ ! -e $CFG -a -e /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep ]; then
+   mv /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep $CFG
+fi
+
 %endif
 
 %if 0%{?build_bat}

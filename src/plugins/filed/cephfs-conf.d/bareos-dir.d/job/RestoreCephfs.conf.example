@@ -1,0 +1,8 @@
+Job {
+  Name = "RestoreCephfs"
+  JobDefs = "DefaultJob"
+  Type = Restore
+  Fileset= "plugin-cephfs"
+  # Client = "cephfshost-fd"
+}
+

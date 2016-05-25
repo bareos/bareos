@@ -61,9 +61,9 @@ case "$1" in
 	 fi
 
 	 if [ "x${VALGRIND_FD}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}/bareos-fd.conf
+	    valgrind --leak-check=full ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}
 	 else
-	    ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}/bareos-fd.conf
+	    ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}
 	 fi
       }
       ;;

@@ -175,8 +175,9 @@ bool restore_cmd(UAContext *ua, const char *cmd)
    UnlockRes();
    if (!rx.restore_jobs) {
       ua->error_msg(_(
-         "No Restore Job Resource found in bareos-dir.conf.\n"
-         "You must create at least one before running this command.\n"));
+         "No Restore Job Resource found in %s.\n"
+         "You must create at least one before running this command.\n"),
+         my_config->get_base_config_path());
       goto bail_out;
    }
 

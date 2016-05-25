@@ -23,6 +23,14 @@ bins.path            = /$(DESTDIR)@bindir@
 bins.files           = bareos-tray-monitor
 confs.path           = /$(DESTDIR)@confdir@
 confs.files          = tray-monitor.conf
+conf_client.path     = /$(DESTDIR)@confdir@/tray-monitor.d/client/
+conf_client.files    = ../defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf
+conf_director.path   = /$(DESTDIR)@confdir@/tray-monitor.d/director/
+conf_director.files  = ../defaultconfigs/tray-monitor.d/director/Director-local.conf
+conf_monitor.path    = /$(DESTDIR)@confdir@/tray-monitor.d/monitor/
+conf_monitor.files   = ../defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf
+conf_storage.path    = /$(DESTDIR)@confdir@/tray-monitor.d/storage/
+conf_storage.files   = ../defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf
 icons.path           = /$(DESTDIR)@datarootdir@/pixmaps/
 icons.files          = bareos-tray-monitor.xpm
 desktopentries.path  = /$(DESTDIR)@datarootdir@/applications/
@@ -52,6 +60,6 @@ SOURCES += authenticate.cpp tray_conf.cpp tray-monitor.cpp traymenu.cpp systemtr
 
 FORMS += mainwindow.ui
 
-INSTALLS += bins confs icons desktopentries autostarts
+INSTALLS += bins conf_client conf_director conf_monitor conf_storage icons desktopentries autostarts
 
 QMAKE_EXTRA_TARGETS += depend

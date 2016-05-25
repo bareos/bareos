@@ -96,16 +96,20 @@ install: all
 	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
-	@for plugin in $(BUILD_PLUGINS); do \
+	for plugin in $(BUILD_PLUGINS); do \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
 	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
-		CONF=`echo $$plugin | sed 's/\(.*\)-fd.la$$/plugin-\1.conf/'`; \
-		if [ -f "$$CONF" ]; then \
-			$(INSTALL_CONFIG) $$CONF ${DESTDIR}${confdir}/bareos-dir.d/; \
-		fi; \
+	   CONF=`echo $$plugin | sed 's/\(.*\)-fd.la$$/\1-conf.d/'`; \
+	   if [ -d "$$CONF" ]; then \
+	      for i in `find "$$CONF/" \( -name "*.conf" -o -name "*.conf.example" \) -print | cut -d'/' -f2-`; do \
+	         $(INSTALL_CONFIG) -D $$CONF/$$i ${DESTDIR}${confdir}/$$i; \
+	      done; \
+	   fi; \
 	done
 	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
-	$(INSTALL_CONFIG) plugin-python-ldap.conf ${DESTDIR}${confdir}/bareos-dir.d/
+	for i in `find python-ldap-conf.d/ \( -name "*.conf" -o -name "*.conf.example" \) -print | cut -d'/' -f2-`; do \
+	   $(INSTALL_CONFIG) -D python-ldap-conf.d/$$i ${DESTDIR}${confdir}/$$i; \
+	done
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)

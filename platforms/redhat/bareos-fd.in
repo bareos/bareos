@@ -38,7 +38,7 @@ case "$1" in
 	  FD_OPTIONS="${FD_OPTIONS} -g ${FD_GROUP}"
        fi
        echo -n "Starting Bareos File services: "
-       daemon --user ${FD_USER} @sbindir@/bareos-fd $2 ${FD_OPTIONS} -c @confdir@/bareos-fd.conf
+       daemon --user ${FD_USER} @sbindir@/bareos-fd $2 ${FD_OPTIONS}
        RETVAL=$?
        echo
        [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-fd

@@ -187,7 +187,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   if (configfile) {
+   if (configfile || (argc == 0)) {
       CATRES *catalog = NULL;
       int found = 0;
       if (argc > 0) {
@@ -248,11 +248,6 @@ int main (int argc, char *argv[])
    } else {
       if (argc > 6) {
          Pmsg0(0, _("Wrong number of arguments.\n"));
-         usage();
-      }
-
-      if (argc < 1) {
-         Pmsg0(0, _("Working directory not supplied.\n"));
          usage();
       }
 

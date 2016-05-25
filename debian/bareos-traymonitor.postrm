@@ -6,6 +6,7 @@ set -e
 case "$1" in
   purge)
     rm -f /etc/bareos/tray-monitor.conf /etc/bareos/tray-monitor.conf.dist
+    rm -f -r  etc/bareos/tray-monitor.d/monitor/
   ;;
 esac
 

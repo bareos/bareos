@@ -1,11 +1,13 @@
-#! /bin/sh
+#!/bin/sh
 
 set -e
 
 
 case "$1" in
   purge)
-    rm -f /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.conf.dist
+    rm -f  /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.conf.dist
+    rm -rf /etc/bareos/bareos-dir.d/
+    rm -rf /etc/bareos/bareos-dir-export/
   ;;
 esac
 

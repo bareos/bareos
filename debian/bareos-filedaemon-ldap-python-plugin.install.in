@@ -1,3 +1,5 @@
 @plugindir@/bareos-fd-ldap.py*
 @plugindir@/BareosFdPluginLDAP.py*
-/etc/bareos/bareos-dir.d/plugin-python-ldap.conf
+/etc/bareos/bareos-dir.d/fileset/plugin-ldap.conf.example
+/etc/bareos/bareos-dir.d/job/backup-ldap.conf.example
+/etc/bareos/bareos-dir.d/job/restore-ldap.conf.example

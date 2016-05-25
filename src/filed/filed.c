@@ -55,7 +55,7 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bareos-fd [options] [-c config_file]\n"
+"Usage: bareos-fd [options]\n"
 "        -b          backup only mode\n"
 "        -c <path>   use <path> as configuration file or directory\n"
 "        -d <nn>     set debug level to <nn>\n"
@@ -246,7 +246,7 @@ int main (int argc, char *argv[])
    }
 
    if (!check_resources()) {
-      Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), configfile);
+      Emsg1(M_ERROR, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
       terminate_filed(1);
    }
 
@@ -347,6 +347,7 @@ static bool check_resources()
    bool OK = true;
    DIRRES *director;
    bool need_tls;
+   const char *configfile = my_config->get_base_config_path();
 
    LockRes();
 

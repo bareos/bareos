@@ -12,4 +12,5 @@
 /etc/bareos/bareos-dir.d/profile
 /etc/bareos/bareos-dir.d/schedule
 /etc/bareos/bareos-dir.d/storage
+/etc/bareos/bareos-dir-export/
 /usr/lib/bareos

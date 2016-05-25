@@ -1,2 +1,2 @@
 @backenddir@/libbareossd-gfapi*.so
-@confdir@/bareos-sd.d/device-gluster.conf
+@confdir@/bareos-sd.d/device/GlusterStorage.conf.example

@@ -32,8 +32,8 @@ WorkingDirectory=@working_dir@
 PIDFile=@piddir@/bareos-dir.@dir_port@.pid
 # EnvironmentFile=-/etc/sysconfig/bareos-dir
 # StandardOutput=syslog
-ExecStartPre=@sbindir@/bareos-dir -c @confdir@/bareos-dir.conf -t -f
-ExecStart=@sbindir@/bareos-dir -c @confdir@/bareos-dir.conf
+ExecStartPre=@sbindir@/bareos-dir -t -f
+ExecStart=@sbindir@/bareos-dir
 SuccessExitStatus=0 1 15
 # This daemon should be able to reload the conf file
 #ExecReload=/sbin/killproc -p @piddir@/bareos-dir.pid -HUP @sbindir@/bareos-dir

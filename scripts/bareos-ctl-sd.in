@@ -61,9 +61,9 @@ case "$1" in
 	 fi
 
 	 if [ "x${VALGRIND_SD}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}/bareos-sd.conf
+	    valgrind --leak-check=full ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}
 	 else
-	    ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}/bareos-sd.conf
+	    ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}
 	 fi
       }
       ;;
