@@ -298,6 +298,7 @@ public:
    bool AutoPrune;                    /* Do automatic pruning? */
    bool StrictQuotas;                 /* Enable strict quotas? */
    bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
+   bool ndmp_use_lmdb;                /* NDMP Protocol specific use LMDB for the FHDB or not */
    int64_t max_bandwidth;             /* Limit speed on this client */
 };
 
