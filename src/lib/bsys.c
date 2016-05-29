@@ -1017,8 +1017,8 @@ bool path_get_directory(POOL_MEM &directory, POOL_MEM &path)
 
 bool path_append(char *path, const char *extra, unsigned int max_path)
 {
-   int path_len;
-   int required_length;
+   unsigned int path_len;
+   unsigned int required_length;
 
    if (!path || !extra) {
       return true;
@@ -1045,7 +1045,7 @@ bool path_append(char *path, const char *extra, unsigned int max_path)
 
 bool path_append(POOL_MEM &path, const char *extra)
 {
-   int required_length;
+   unsigned int required_length;
 
    if (!extra) {
       return true;
