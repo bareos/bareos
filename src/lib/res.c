@@ -347,7 +347,7 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
    }
    free_pool_memory(msg);
    /*
-    * Store the name both pass 1 and pass 2
+    * Store the name both in pass 1 and pass 2
     */
    if (*(item->value)) {
       scan_err2(lc, _("Attempt to redefine name \"%s\" to \"%s\"."),
@@ -1975,6 +1975,7 @@ static DATATYPE_NAME datatype_names[] = {
    { CFG_TYPE_INCEXC, "INCLUDE_EXCLUDE_ITEM", "Include/Exclude item" },
    { CFG_TYPE_RUN, "SCHEDULE_RUN_COMMAND", "Schedule Run Command" },
    { CFG_TYPE_ACTIONONPURGE, "ACTION_ON_PURGE", "Action to perform on Purge" },
+   { CFG_TYPE_POOLTYPE, "POOLTYPE", "Pool Type" },
 
    /*
     * Director fileset options. handlers in dird_conf.
