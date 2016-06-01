@@ -83,11 +83,10 @@ $this->headTitle($title);
 </div>
 
 <?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.dataTables.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.plugins.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/dataTables.bootstrap.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/dataTables.bootstrap.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.plugins.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
 ?>
 
 <script>
