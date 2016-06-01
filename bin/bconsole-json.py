@@ -37,7 +37,7 @@ if __name__ == '__main__':
         logger.debug('options: %s' % (parameter))
         password = bareos.bsock.Password(args.password)
         parameter['password']=password
-        director = bareos.bsock.BSockJson(**parameter)
+        director = bareos.bsock.DirectorConsoleJson(**parameter)
     except RuntimeError as e:
         print(str(e))
         sys.exit(1)

@@ -39,7 +39,7 @@ class Constants:
         BNET_EOD:           "End of data stream, new data may follow",
         BNET_EOD_POLL:      "End of data and poll all in one",
         BNET_STATUS:        "Send full status",
-        BNET_TERMINATE:     "Conversation terminated, doing close()",
+        BNET_TERMINATE:     "Conversation terminated",
         BNET_POLL:          "Poll request, I'm hanging on a read",
         BNET_HEARTBEAT:     "Heartbeat Response requested",
         BNET_HB_RESPONSE:   "Only response permited to HB",

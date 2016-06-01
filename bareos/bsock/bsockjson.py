@@ -1,83 +1,12 @@
 """
-Reimplementation of the bconsole program in python.
+Communicates with the bareos-director using JSON results
+
+Legacy, use DirectorConsoleJson instead.
 """
 
-from   bareos.bsock.bsock import BSock
-from   pprint import pformat, pprint
-import json
+from   bareos.bsock.directorconsolejson import DirectorConsoleJson
 
-class BSockJson(BSock):
-    """
-    use to send and receive the response from director
-    """
+class BSockJson(DirectorConsoleJson):
 
-    def __init__(self,
-                 address="localhost",
-                 port=9101,
-                 dirname=None,
-                 name="*UserAgent*",
-                 password=None):
-        super(BSockJson, self).__init__(
-            address, port, dirname, name,
-            password)
-
-
-    def call(self, command):
-        json = self.call_fullresult(command)
-        if json == None:
-            return
-        if 'result' in json:
-            result = json['result']
-        else:
-            # TODO: or raise an exception?
-            result = json
-        return result
-
-
-    def call_fullresult(self, command):
-        resultstring = super(BSockJson, self).call(command)
-        data = None
-        if resultstring:
-            #print(resultstring.decode('utf-8'))
-            try:
-                data = json.loads(resultstring.decode('utf-8'))
-            except ValueError as e:
-                # in case result is not valid json,
-                # create a JSON-RPC wrapper
-                data = {
-                    'error': {
-                        'code': 2,
-                        'message': str(e),
-                        'data': resultstring
-                    },
-                }
-        return data
-
-
-    def interactive(self):
-        """
-        Enter the interactive mode.
-        """
-        self._set_state_director_prompt()
-        command = ""
-        while command != "exit" and command != "quit":
-            try:
-                myinput = raw_input
-            except NameError:
-                myinput = input
-            command = myinput(">>")
-            if command:
-                pprint(self.call(command))
-        return True
-
-
-    def _set_state_director_prompt(self):
-        result = False
-        if super(BSockJson, self)._set_state_director_prompt():
-            # older version did not support compact mode,
-            # therfore first set api mode to json (which should always work in bareos >= 15.2.0)
-            # and then set api mode json compact (which should work with bareos >= 15.2.2)
-            self.call(".api json")
-            self.call(".api json compact=yes")
-            result = True
-        return result
+    def __init__(self, *args, **kwargs):
+        super(BSockJson, self).__init__(*args, **kwargs)

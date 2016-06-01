@@ -13,7 +13,7 @@ def getArguments():
     parser.add_argument('-p', '--password', help="password to authenticate to a Bareos File Daemon", required=True)
     parser.add_argument('--port', default=9102, help="Bareos File Daemon network port")
     parser.add_argument('address', nargs='?', default="localhost", help="Bareos File Daemon network address")
-    parser.add_argument('command', nargs='?', help="Command to send to the Bareos File Daemon")
+    parser.add_argument('command', nargs='*', help="Command to send to the Bareos File Daemon")
     args = parser.parse_args()
     return args
 
@@ -43,4 +43,6 @@ if __name__ == '__main__':
         sys.exit(1)
     logger.debug( "authentication successful" )
     if args.command:
-        print(bsock.call(args.command).decode('utf-8'))
+        bsock.call(args.command)
+    else:
+        bsock.interactive()
