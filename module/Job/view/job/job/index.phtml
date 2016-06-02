@@ -286,12 +286,23 @@ $(document).ready(function() {
                   case 'R':
                   case 'l':
                      switch(data.type) {
+                        case 'R':
+                           switch(data.jobstatus) {
+                              case 'R':
+                              case 'l':
+                                 return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="Cancel" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                              default:
+                                 return '';
+                           }
                         case 'B':
                         case 'C':
                            return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="Cancel" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                        default:
+                           return '';
                      }
+                  default:
+                     return '';
                }
-               return '';
             }
          }
       ]
