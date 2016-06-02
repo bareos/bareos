@@ -326,7 +326,6 @@ jobid=536
 \end{description}
 
 \section{Console Commands}
-\index[general]{Console!Commands}
     \label{sec:ConsoleCommands}
 
 The following commands are currently implemented:
@@ -1687,8 +1686,7 @@ wait [jobid=<jobid>] [jobuid=<unique id>] [job=<job name>]
 
 \subsection{Special dot (.) Commands}
 \label{dotcommands}
-\index[general]{Console!Command!Special .}
-\index[general]{Console!Command!. Commands}
+\index[general]{Console!Command!. commands}
 
 There is a list of commands that are prefixed with a period (.). These
 commands are intended to be used either by batch programs or graphical user
@@ -1712,8 +1710,8 @@ the TTY console program and not in the Bat Console. These commands are:
    \index[general]{Console!Command!\at{}input {\textless}filename{\textgreater}}
    Read and execute the commands  contained in the file specified.
 
-\item [@output {\textless}filename{\textgreater} w/a]
-   \index[general]{Console!Command!\at{}output {\textless}filename{\textgreater} w/a}
+\item [@output {\textless}filename{\textgreater} {\textless}w{\textbar}a{\textgreater}]
+   \index[general]{Console!Command!\at{}output {\textless}filename{\textgreater} {\textless}w{\textbar}a{\textgreater}}
    Send all following output to the  filename specified either overwriting the
 file (w) or appending to  the file (a). To redirect the output to the
 terminal, simply enter  {\bf @output} without a filename specification.
@@ -1725,12 +1723,11 @@ regression  test might be:
     @output /dev/null
     commands ...
     @output
-
 \end{verbatim}
 \normalsize
 
-\item [@tee {\textless}filename{\textgreater} w/a]
-   \index[general]{Console!Command!\at{}tee {\textless}filename{\textgreater} w/a}
+\item [@tee {\textless}filename{\textgreater} {\textless}w{\textbar}a{\textgreater}]
+   \index[general]{Console!Command!\at{}tee {\textless}filename{\textgreater} {\textless}w{\textbar}a{\textgreater}}
    Send all subsequent output to  both the specified file and the terminal. It is
    turned off by  specifying {\bf @tee} or {\bf @output} without a filename.
 

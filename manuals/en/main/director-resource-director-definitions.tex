@@ -85,12 +85,10 @@ different Key Encryption Key.
 }
 
 \defDirective{Dir}{Director}{Maximum Concurrent Jobs}{}{}{%
-\label{DirMaxConJobs}%
 \index[general]{Simultaneous Jobs}%
 \index[general]{Concurrent Jobs}%
-where {\textless}number{\textgreater}  is the maximum number of total Director Jobs that
-should run  concurrently. The default is set to 1, but you may set it to a
-larger number.
+This directive specifies the maximum number of total Director Jobs that
+should run concurrently.
 
 The Volume format becomes more complicated with
 multiple simultaneous jobs, consequently, restores may take longer if
@@ -104,9 +102,8 @@ See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
 }
 
 \defDirective{Dir}{Director}{Maximum Console Connections}{}{}{%
-where \parameter{number}  is the maximum number of Console Connections that
-could run  concurrently. The default is set to 20, but you may set it to a
-larger number.
+This directive specifies the maximum number of Console Connections that
+could run concurrently.
 }
 
 \defDirective{Dir}{Director}{Messages}{}{}{%

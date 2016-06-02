@@ -182,12 +182,19 @@
 }
 \newcommand{\parameter}[1]{\path|#1|}
 \newcommand{\pluginevent}[1]{\path|#1|}
-\newcommand{\pool}[1]{\path|#1|}
+\newcommand{\pool}[1]{\resourcename{Dir}{Pool}{#1}}
 \newcommand{\argument}[1]{\textit{#1}}
-\newcommand{\resourcename}[1]{\path|#1|}
+\newcommand{\resourcetype}[2]{\path|#2|$^{\mbox{\tiny #1}}$}
+\newcommand{\resourcename}[3]{\path|#3|$^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}
 \newcommand{\registrykey}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
 \newcommand{\volume}[1]{\path|#1|}
+\newcommand{\volumestatus}[1]{\path|#1|}
+\newcommand{\volumeparameter}[2]{\ifthenelse{\isempty{#2}}{%
+    \path|#1|%
+}{%
+    \path|#1 = #2|%
+}}
 \newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
     \path|#1|\index[general]{Platform!#1}%
 }{%

@@ -87,21 +87,19 @@ The default value is zero, which means no change is made to the socket.
 }
 
 \defDirective{Dir}{Storage}{Maximum Concurrent Jobs}{}{}{%
-where {\textless}number{\textgreater}  is the maximum number of Jobs with the current
+This directive specifies the maximum number of Jobs with the current
 Storage resource that can run concurrently.  Note, this directive limits
 only Jobs for Jobs using this Storage daemon.  Any other restrictions on
-the maximum concurrent jobs such as in the Director, Job, or Client
-resources will also apply in addition to any limit specified here.  The
-default is set to 1, but you may set it to a larger number.  However, if
-you set the Storage daemon's number of concurrent jobs greater than one,
-we recommend that you read the waring documented under \ilink{Maximum
-Concurrent Jobs}{DirMaxConJobs} in the Director's resource or simply
-turn data spooling on as documented in the \ilink{Data
-Spooling}{SpoolingChapter} chapter of this manual.
+the maximum concurrent jobs such as in the Director, Job or Client
+resources will also apply in addition to any limit specified here.
+
+If you set the Storage daemon's number of concurrent jobs greater than one,
+we recommend that you read \nameref{ConcurrentJobs} and/or
+turn data spooling on as documented in \nameref{SpoolingChapter}.
 }
 
 \defDirective{Dir}{Storage}{Maximum Concurrent Read Jobs}{}{}{%
-where {\textless}number{\textgreater}  is the maximum number of Jobs with the current
+This directive specifies the maximum number of Jobs with the current
 Storage resource that can read concurrently.
 }
 

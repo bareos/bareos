@@ -121,8 +121,8 @@ digits with leading zeros.  For example, with a
 \configdirective{Label Format = "File-"},
 the first volumes will be named \volume{File-0001}, \volume{File-0002}, ...
 
-With the exception of Job specific variables, you can test your 
-\configdirective{Label Format} 
+With the exception of Job specific variables, you can test your
+\configdirective{Label Format}
 by using the \ilink{var command}{var} the Console Chapter
 of this manual.
 
@@ -300,17 +300,17 @@ when all Volumes are full, but you don't want to worry about setting
 proper retention periods.  However, by using this option you risk losing
 valuable data.
 
-Please be aware that {\bf Purge Oldest Volume} disregards all retention
+\warning{
+Be aware that \configdirective{Purge Oldest Volume} disregards all retention
 periods. If you have only a single Volume defined and you turn this
 variable on, that Volume will always be immediately overwritten when it
 fills!  So at a minimum, ensure that you have a decent number of Volumes
 in your Pool before running any jobs.  If you want retention periods to
-apply do not use this directive.  To specify a retention period, use the
-{\bf Volume Retention} directive (see above).
-
-We {\bf highly} recommend against using this directive, because it is
-sure that some day, Bareos will recycle a Volume that contains current
-data.  The default is {\bf no}.
+apply do not use this directive.\\
+We \textbf{highly} recommend against using this directive, because it is
+sure that some day, Bareos will purge a Volume that contains current
+data.
+}
 }
 
 \defDirective{Dir}{Pool}{Recycle}{}{}{%

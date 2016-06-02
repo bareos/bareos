@@ -237,15 +237,15 @@ Storage {
 \end{bconfig}
 
 Note that the backup job writes to the \pool{Default} pool, which
-corresponds to \resourcename{File} storage. There is no
+corresponds to \resourcename{Dir}{Storage}{File} storage. There is no
 \linkResourceDirective{Dir}{Pool}{Storage} directive
-in the Job resource while the two \configresource{Pool} resources contain
+in the Job resource while the two \resourcetype{Dir}{Pool} resources contain
 different \linkResourceDirective{Dir}{Pool}{Storage} directives.
 Moreover, the \pool{Default}
 pool contains a \linkResourceDirective{Dir}{Pool}{Next Pool} directive
 that refers to the \pool{Tape} pool.
 
-In order to migrate jobs from the \pool{Default} pool to the \pool{Tape} pool
+In order to migrate jobs from the \resourcename{Dir}{Pool}{Default} pool to the \resourcename{Dir}{Pool}{Tape} pool
 we add the following Job resource:
 
 \begin{bconfig}{migrate all volumes of a pool}

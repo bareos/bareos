@@ -213,7 +213,7 @@ tcp        0      0 0.0.0.0:10000           0.0.0.0:*               LISTEN      
 \subsection{Bareos Director: Configure a Paired Storage}
 
 For NDMP Backups, we always need two storages that are paired together.
-The default configuration already has a Storage \resourcename{File} defined:
+The default configuration already has a Storage \resourcename{Dir}{Storage}{File} defined:
 
 \begin{bconfig}{}
 Storage {
@@ -225,7 +225,7 @@ Storage {
 }
 \end{bconfig}
 
-We now add a paired storage to the already existing \resourcename{File} storage:
+We now add a paired storage to the already existing \resourcename{Dir}{}{File} storage:
 \begin{bconfig}{}
 #
 # Same storage daemon but via NDMP protocol.
@@ -720,12 +720,12 @@ original file name &  where &  restored file \\
 \index[general]{NDMP!Copy jobs}
 
 To be able to do copy jobs, we need to have a second storage resource where we can copy the data to.
-Depending on your requirements, this resource can be added to the existing \bareosSd (e.g. \resourcename{autochanger-0} for tape based backups) or to an additional \bareosSd.
+Depending on your requirements, this resource can be added to the existing \bareosSd (e.g. \resourcename{Sd}{Storage}{autochanger-0} for tape based backups) or to an additional \bareosSd.
 
 We set up an additional \bareosSd on a host named \host{bareos-sd2.example.com}
-with the default \resourcename{FileStorage} device.
+with the default \resourcename{Sd}{Storage}{FileStorage} device.
 
-When this is done, add a second storage resource \resourcename{File2} to the \file{bareos-dir.conf}:
+When this is done, add a second storage resource \resourcename{Dir}{Storage}{File2} to the \file{bareos-dir.conf}:
 \begin{bconfig}{Storage resource File2}
 Storage {
   Name = File2
@@ -760,7 +760,7 @@ Pool {
 Then we need to define the just defined pool as the \linkResourceDirective{Dir}{Pool}{Next Pool} of the pool 
 that actually holds the data to be copied.
 
-In our case this is the \resourcename{Full} Pool:
+In our case this is the \resourcename{Dir}{Pool}{Full} Pool:
 \begin{bconfig}{add Next Pool setting}
 #
 # Full Pool definition
@@ -773,10 +773,10 @@ Pool {
 \end{bconfig}
 
 
-Finally, we need to define a Copy Job that will select the jobs that are in the \resourcename{Full} pool
-and copy them over to the \resourcename{Copy} pool 
-reading the data via the \resourcename{File} Storage
-and writing the data via the \resourcename{File2} Storage:
+Finally, we need to define a Copy Job that will select the jobs that are in the \resourcename{Dir}{Pool}{Full} pool
+and copy them over to the \resourcename{Dir}{Pool}{Copy} pool 
+reading the data via the \resourcename{Dir}{Storage}{File} Storage
+and writing the data via the \resourcename{Dir}{Storage}{File2} Storage:
 
 \begin{bconfig}{NDMP copy job}
 Job {
@@ -883,7 +883,7 @@ Unfortunately, we are not able to restore the copied data to our NDMP storage. I
 
 To be able to do NDMP operations from the storage that was used to store the copies,
 we need to define a NDMP storage that is paired with it.
-The definition is very similar to our \resourcename{NDMPFile} Storage,
+The definition is very similar to our \resourcename{Dir}{Storage}{NDMPFile} Storage,
 as we want to restore the data to the same NDMP Storage system:
 
 \begin{bconfig}{add paired Storage resource for File2}

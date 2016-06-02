@@ -560,8 +560,8 @@ The time specifies the maximum allowed time that a job may run, counted
 from when the job starts, ({\bf not} necessarily the same as when the
 job was scheduled).
 
-By default, the the watchdog thread will kill any Job that has run more
-than 6 days.  The maximum watchdog timeout is independent of MaxRunTime
+By default, the watchdog thread will kill any Job that has run more
+than 6 days.  The maximum watchdog timeout is independent of \configdirective{Max Run Time}
 and cannot be changed.
 }
 
@@ -610,10 +610,10 @@ Specifies the maximum number of Jobs from the current
 Job resource that can run concurrently.  Note, this directive limits
 only Jobs with the same name as the resource in which it appears.  Any
 other restrictions on the maximum concurrent jobs such as in the
-Director, Client, or Storage resources will also apply in addition to
-the limit specified here.  The default is set to 1, but you may set it
-to a larger number.  We strongly recommend that you read the WARNING
-documented under \nameref{DirMaxConJobs}.
+Director, Client or Storage resources will also apply in addition to
+the limit specified here.
+
+For details, see the \nameref{ConcurrentJobs} chapter.
 }
 
 \defDirective{Dir}{Job}{Maxrun Sched Time}{}{}{%

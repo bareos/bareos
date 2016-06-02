@@ -45,7 +45,7 @@ the action the other commands are not invoked at all.
 If runscripts are not needed it would be recommended as a security measure to disable
 running those or only allow the commands that you really want to be used.
 
-Runscripts are particularly a problem as they allow the filedaemon to run
+Runscripts are particularly a problem as they allow the \bareosFd to run
 arbitrary commands. You may also look into the \linkResourceDirective{Fd}{Client}{Allowed Script Dir} keyword to
 limit the impact of the runscript command.
 }
@@ -115,10 +115,8 @@ of the Director's  configuration file.
 }
 
 \defDirective{Fd}{Client}{FD Source Address}{}{}{%
-This record is optional,  and if it is specified, it will cause the File
-daemon server (for  Storage connections) to bind to the specified {\bf
-IP-Address},  which is either a domain name or an IP address specified as a
-dotted quadruple. If this record is not specified, the kernel will choose
+If specified, the \bareosFd will bind to the specified address when creating outbound connections.
+If this record is not specified, the kernel will choose
 the best address according to the routing table (the default).
 }
 
@@ -133,23 +131,6 @@ This feature is particularly useful if you have a router
 that does not follow Internet standards and times out a valid
 connection after a short duration despite the fact that keepalive is
 set. This usually results in a broken pipe error message.
-
-% If you continue getting broken pipe error messages despite using the
-% Heartbeat Interval, and you are using Windows, you should consider
-% upgrading your ethernet driver.  This is a known problem with NVidia
-% NForce 3 drivers (4.4.2 17/05/2004), or try the following workaround
-% suggested by Thomas Simmons for Win32 machines:
-%
-% Browse to:
-% Start {\textgreater} Control Panel {\textgreater} Network Connections
-%
-% Right click the connection for the nvidia adapter and select properties.
-% Under the General tab, click "Configure...". Under the Advanced tab set
-% "Checksum Offload" to disabled and click OK to save the change.
-
-% Lack of communications, or communications that get interrupted can
-% also be caused by Linux firewalls where you have a rule that throttles
-% connections or traffic.
 }
 
 \defDirective{Fd}{Client}{LMDB Threshold}{}{}{%
@@ -157,20 +138,21 @@ set. This usually results in a broken pipe error message.
 
 \defDirective{Fd}{Client}{Maximum Bandwidth Per Job}{}{}{%
 The speed parameter specifies the maximum allowed bandwidth that a job may
-use. The speed parameter should be specified in k/s, kb/s, m/s or mb/s.
+use.
 }
 
 \defDirective{Fd}{Client}{Maximum Concurrent Jobs}{}{}{%
-where {\textless}number{\textgreater} is the maximum number of Jobs that should run
+This directive specifies the maximum number of Jobs that should run
 concurrently. Each contact from the Director (e.g. status request, job start
-request) is considered as a Job, so if you want to be able to do a {\bf
-status} request in the console at the same time as a Job is running, you
+request) is considered as a Job,
+so if you want to be able to do a \bcommand{status} request in the console
+at the same time as a Job is running, you
 will need to set this value greater than 1.
 }
 
 \defDirective{Fd}{Client}{Maximum Network Buffer Size}{}{}{%
-where {\textless}bytes{\textgreater} specifies the initial network buffer  size to use with
-the File daemon. This size will be adjusted down  if it is too large until it
+This directive specifies the initial network buffer size to use.
+This size will be adjusted down if it is too large until it
 is accepted by the OS. Please use  care in setting this value since if it is
 too large, it will  be trimmed by 512 bytes until the OS is happy, which may
 require  a large number of system calls. The default value is 65,536 bytes.

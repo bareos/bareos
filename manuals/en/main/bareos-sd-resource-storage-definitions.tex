@@ -69,17 +69,15 @@ results in a broken pipe error message.
 }
 
 \defDirective{Sd}{Storage}{Maximum Concurrent Jobs}{}{}{%
-where {\textless}number{\textgreater} is the maximum number of Jobs that may run
-concurrently.  The default is set to 10, but you may set it to a larger
-number.  Each contact from the Director (e.g.  status request, job start
-request) is considered as a Job, so if you want to be able to do a {\bf
-status} request in the console at the same time as a Job is running, you
+This directive specifies the maximum number of Jobs that may run
+concurrently. Each contact from the Director (e.g.  status request, job start
+request) is considered as a Job, so if you want to be able to do a \bcommand{status}{}
+request in the console at the same time as a Job is running, you
 will need to set this value greater than 1.  To run simultaneous Jobs,
 you will need to set a number of other directives in the Director's
 configuration file.  Which ones you set depend on what you want, but you
-will almost certainly need to set the {\bf Maximum Concurrent Jobs} in
-the Storage resource in the Director's configuration file and possibly
-those in the Job and Client resources.
+will almost certainly need to set the \linkResourceDirective{Dir}{Storage}{Maximum Concurrent Jobs}.
+Please refer to the \nameref{ConcurrentJobs} chapter.
 }
 
 \defDirective{Sd}{Storage}{Maximum Network Buffer Size}{}{}{%

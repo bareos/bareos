@@ -59,12 +59,6 @@ Some of the DNS and Firewall problems can be circumvented by configuring clients
    this manual.  You will run a backup to disk and a restore.  Only when
    that works, should you begin customization of the configuration files.
 
-   Another reason that you can get authentication errors is if you are
-   running Multiple Concurrent Jobs in the Director, but you have not set
-   them in the File daemon or the Storage daemon.  Once you reach their
-   limit, they will reject the connection producing authentication (or
-   connection) errors.
-
    Some users report that authentication fails if there is not a proper
    reverse DNS lookup entry for the machine.  This seems to be a
    requirement of gethostbyname(), which is what Bareos uses to translate
@@ -80,13 +74,14 @@ Some of the DNS and Firewall problems can be circumvented by configuring clients
    \end{center}
 
    In the left column, you will find the Director, Storage, and  Client
-   resources, with their names and passwords -- these  are all in {\bf
-   bareos-dir.conf}. The right column is where the corresponding values
+   resources, with their names and passwords -- these  are all in the
+   \bareosDir configuration.
+   The right column is where the corresponding values
    should be found in the  Console, Storage daemon (SD), and File daemon (FD)
    configuration  files.  
 
    Another thing to check is to ensure that the Bareos component you are
-   trying to access has {\bf Maximum Concurrent Jobs} set large enough to
+   trying to access has \configdirective{Maximum Concurrent Jobs} set large enough to
    handle each of the Jobs and the Console that want to connect
    simultaneously.  Once the maximum connections has been reached, each
    Bareos component will reject all new connections.
@@ -97,33 +92,46 @@ Some of the DNS and Firewall problems can be circumvented by configuring clients
 \index[general]{Running Concurrent Jobs}
 \index[general]{Concurrent Jobs}
 
-Bareos can run multiple concurrent jobs. 
-Using the {\bf Maximum Concurrent Jobs} directive, you
-can configure how many and which jobs can be run simultaneously. 
-The Director's default value for {\bf Maximum Concurrent Jobs} is "1".
-
-To initially setup concurrent jobs you need to define {\bf Maximum Concurrent Jobs} in 
-the Director's configuration file (bareos-dir.conf) in the 
-Director, Job, Client, and Storage resources.
-
-Additionally the File daemon, and the Storage daemon each have their own
-{\bf Maximum Concurrent Jobs} directive that sets the overall maximum
-number of concurrent jobs the daemon will run.  The default for both the
-File daemon and the Storage daemon is "20".
+Bareos can run multiple concurrent jobs. Using the \configdirective{Maximum Concurrent Jobs} directives, you
+can configure how many and which jobs can be run simultaneously:
+\begin{description}
+  \item[\bareosDir] \hfill\\
+    \begin{itemize}
+    \item \linkResourceDirective{Dir}{Director}{Maximum Concurrent Jobs}
+    \item \linkResourceDirective{Dir}{Client}{Maximum Concurrent Jobs}
+    \item \linkResourceDirective{Dir}{Job}{Maximum Concurrent Jobs}
+    \item \linkResourceDirective{Dir}{Storage}{Maximum Concurrent Jobs}
+    \end{itemize}
+  \item[\bareosSd] \hfill\\
+    \begin{itemize}
+    \item \linkResourceDirective{Sd}{Storage}{Maximum Concurrent Jobs}
+    \item \linkResourceDirective{Sd}{Device}{Maximum Concurrent Jobs}
+    \end{itemize}
+  \item[\bareosFd] \hfill\\
+    \begin{itemize}
+    \item \linkResourceDirective{Fd}{Client}{Maximum Concurrent Jobs}
+    \end{itemize}
+\end{description}
 
 For example, if you want two different jobs to run simultaneously backing up
 the same Client to the same Storage device, they will run concurrently only if
-you have set {\bf Maximum Concurrent Jobs} greater than one in the Director
-resource, the Client resource, and the Storage resource in bareos-dir.conf. 
+you have set \configdirective{Maximum Concurrent Jobs} greater than one in the \configresource{Director}
+resource, the \configresource{Client} resource, and the \configresource{Storage} resource in \bareosDir configuration.
 
-We recommend that you read the \ilink{Data
-Spooling}{SpoolingChapter} of this manual first, then test your multiple
-concurrent backup including restore testing before you put it into
-production.
+% TODO: is there a better explaination for interleaving? Then more label to that place.
+\label{sec:Interleaving}
+When running concurrent jobs without \nameref{sec:DataSpooling}, the volume format becomes more complicated,
+consequently, restores may take longer if Bareos must sort through interleaved volume blocks from  multiple simultaneous
+jobs. This can be avoided by having each simultaneous job write to
+a different volume or by using data spooling
+We recommend that you read the \nameref{sec:DataSpooling} of this manual first, then test your multiple
+concurrent backup including restore testing before you put it into production.
 
-Below is a super stripped down bareos-dir.conf file showing you the four
-places where the the file must be modified to allow the same job {\bf
-NightlySave} to run up to four times concurrently. The change to the Job
+When using random access media as backup space (e.g. disk), you should also read the chapter about \nameref{ConcurrentDiskJobs}.
+
+Below is a super stripped down \file{bareos-dir.conf} file showing you the four
+places where the the file must be modified to allow the same job \resourcename{Dir}{Job}{NightlySave} 
+to run up to four times concurrently. The change to the Job
 resource is not necessary if you want different Jobs to run at the same time,
 which is the normal case. 
 
