@@ -12,13 +12,11 @@ or simply install it from your distributions package repository if available.
 
 ### How to refresh webui.pot file, when some strings have been added, modified or removed from source files?
 
-Run the shellscript modules/Application/language/update-pot.sh, which updates the webui.pot file.
+Run 'make update-pot' in modules/Application/language, which updates the webui.pot file.
 
 ### How to update an existing *.po file, when some strings have been added, modified or removed from source files?
 
-After updating the webui.pot, see above run the shellscript modules/Application/language/update-po.sh, which updates your selected lang_LANG.po file.
-
-Example: ./update-po.sh de_DE.po
+After updating the webui.pot, please see above, run e.g. 'make update-po PO=en_EN.po' in modules/Application/language, which updates your given lang_LANG.po file and merges changes from webui.pot.
 
 ### How do I add a new translation into language xyz?
 
