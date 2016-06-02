@@ -5,12 +5,12 @@
  * 
  * About: Version
  * 
- * version: 1.0.8 
- * revision: 1250
+ * version: 1.0.9 
+ * revision: d96a669
  * 
  * About: Copyright & License
  * 
- * Copyright (c) 2009-2013 Chris Leonello
+ * Copyright (c) 2009-2016 Chris Leonello
  * jqPlot is currently available for use in all personal or commercial projects 
  * under both the MIT and GPL version 2.0 licenses. This means that you can 
  * choose the license that best suits your project and use it accordingly.
@@ -244,8 +244,8 @@
         }
     };
 
-    $.jqplot.version = "1.0.8";
-    $.jqplot.revision = "1250";
+    $.jqplot.version = "1.0.9";
+    $.jqplot.revision = "d96a669";
 
     $.jqplot.targetCounter = 1;
 
@@ -295,6 +295,25 @@
             if ($.jqplot.use_excanvas) {
                 return window.G_vmlCanvasManager.initElement(canvas);
             }
+
+            var cctx = canvas.getContext('2d');
+
+            var canvasBackingScale = 1;
+            if (window.devicePixelRatio > 1 && (cctx.webkitBackingStorePixelRatio === undefined || 
+                                                cctx.webkitBackingStorePixelRatio < 2)) {
+                canvasBackingScale = window.devicePixelRatio;
+            }
+            var oldWidth = canvas.width;
+            var oldHeight = canvas.height;
+
+            canvas.width = canvasBackingScale * canvas.width;
+            canvas.height = canvasBackingScale * canvas.height;
+            canvas.style.width = oldWidth + 'px';
+            canvas.style.height = oldHeight + 'px';
+            cctx.save();
+
+            cctx.scale(canvasBackingScale, canvasBackingScale);
+
             return canvas;
         };
 
@@ -1307,6 +1326,7 @@
         this._sumy = 0;
         this._sumx = 0;
         this._type = '';
+        this.step = false;
     }
     
     Series.prototype = new $.jqplot.ElemContainer();
@@ -3113,8 +3133,33 @@
                 }
 
                 var fb = this.fillBetween;
-                if (fb.fill && fb.series1 !== fb.series2 && fb.series1 < seriesLength && fb.series2 < seriesLength && series[fb.series1]._type === 'line' && series[fb.series2]._type === 'line') {
+                if(typeof fb.series1 == 'number'){
+                    if(fb.fill&&fb.series1!==fb.series2&&fb.series1<seriesLength&&fb.series2<seriesLength&&series[fb.series1]._type==="line"&&series[fb.series2]._type==="line")
                     this.doFillBetweenLines();
+                }
+                else{
+                    if(fb.series1 != null && fb.series2 != null){
+                        var doFb = false;
+                        if(fb.series1.length === fb.series2.length){
+                            var tempSeries1 = 0;
+                            var tempSeries2 = 0;
+                            
+                            for(var cnt = 0; cnt < fb.series1.length; cnt++){
+                                tempSeries1 = fb.series1[cnt];
+                                tempSeries2 = fb.series2[cnt];
+                                if(tempSeries1!==tempSeries2&&tempSeries1<seriesLength&&tempSeries2<seriesLength&&series[tempSeries1]._type==="line"&&series[tempSeries2]._type==="line"){
+                                    doFb = true;
+                                }
+                                else{
+                                    doFb = false;
+                                    break;
+                                }
+                            }
+                        }
+                        if(fb.fill && doFb){
+                            this.doFillBetweenLines();
+                        }
+                    }
                 }
 
                 for (var i=0, l=$.jqplot.postDrawHooks.length; i<l; i++) {
@@ -3156,37 +3201,47 @@
 
         jqPlot.prototype.doFillBetweenLines = function () {
             var fb = this.fillBetween;
+            var series = this.series;
             var sid1 = fb.series1;
             var sid2 = fb.series2;
-            // first series should always be lowest index
-            var id1 = (sid1 < sid2) ? sid1 : sid2;
-            var id2 = (sid2 >  sid1) ? sid2 : sid1;
+            var id1 = 0, id2 = 0;
 
-            var series1 = this.series[id1];
-            var series2 = this.series[id2];
-
-            if (series2.renderer.smooth) {
-                var tempgd = series2.renderer._smoothedData.slice(0).reverse();
+            function fill(id1, id2){
+                var series1 = series[id1];
+                var series2 = series[id2];
+                if (series2.renderer.smooth)
+                    var tempgd = series2.renderer._smoothedData.slice(0).reverse();
+                else
+                    var tempgd = series2.gridData.slice(0).reverse();
+                if (series1.renderer.smooth)
+                    var gd = series1.renderer._smoothedData.concat(tempgd);
+                else
+                    var gd = series1.gridData.concat(tempgd);
+                var color = fb.color !== null ? fb.color : series[sid1].fillColor;
+                var baseSeries = fb.baseSeries !== null ? fb.baseSeries : id1;
+                var sr =
+                    series[baseSeries].renderer.shapeRenderer;
+                var opts =
+                {
+                    fillStyle : color,
+                    fill : true,
+                    closePath : true
+                };
+                sr.draw(series1.shadowCanvas._ctx, gd, opts)
             }
-            else {
-                var tempgd = series2.gridData.slice(0).reverse();
-            }
 
-            if (series1.renderer.smooth) {
-                var gd = series1.renderer._smoothedData.concat(tempgd);
+            if(typeof sid1 == 'number' && typeof sid2 == 'number'){
+                id1 = sid1 < sid2 ? sid1 : sid2;
+                id2 = sid2 > sid1 ? sid2 : sid1;
+                fill(id1, id2);
             }
-            else {
-                var gd = series1.gridData.concat(tempgd);
+            else{
+                for(var cnt = 0; cnt < sid1.length ; cnt++){
+                    id1 = sid1[cnt] < sid2[cnt] ? sid1[cnt] : sid2[cnt];
+                    id2 = sid2[cnt] > sid1[cnt] ? sid2[cnt] : sid1[cnt];
+                    fill(id1, id2);
+                }
             }
-
-            var color = (fb.color !== null) ? fb.color : this.series[sid1].fillColor;
-            var baseSeries = (fb.baseSeries !== null) ? fb.baseSeries : id1;
-
-            // now apply a fill to the shape on the lower series shadow canvas,
-            // so it is behind both series.
-            var sr = this.series[baseSeries].renderer.shapeRenderer;
-            var opts = {fillStyle: color, fill: true, closePath: true};
-            sr.draw(series1.shadowCanvas._ctx, gd, opts);
         };
         
         this.bindCustomEvents = function() {
@@ -3243,7 +3298,7 @@
                         for (j=0; j<s._barPoints.length; j++) {
                             points = s._barPoints[j];
                             p = s.gridData[j];
-                            if (x>points[0][0] && x<points[2][0] && y>points[2][1] && y<points[0][1]) {
+                            if (x>points[0][0] && x<points[2][0] && (y>points[2][1] && y<points[0][1] || y<points[2][1] && y>points[0][1])) {
                                 return {seriesIndex:s.index, pointIndex:j, gridData:p, data:s.data[j], points:s._barPoints[j]};
                             }
                         }
@@ -5624,6 +5679,9 @@
         for (var i=0; i<data.length; i++) {
             // if not a line series or if no nulls in data, push the converted point onto the array.
             if (data[i][0] != null && data[i][1] != null) {
+                if (this.step && i>0) {
+                    gd.push([xp.call(this._xaxis, data[i][0]), yp.call(this._yaxis, data[i-1][1])]);
+                }
                 gd.push([xp.call(this._xaxis, data[i][0]), yp.call(this._yaxis, data[i][1])]);
             }
             // else if there is a null, preserve it.
@@ -9139,7 +9197,7 @@
 
             for (var i=0; i<wl; i++) {
                 w += words[i];
-                if (context.measureText(w).width > tagwidth) {
+                if (context.measureText(w).width > tagwidth && w.length > words[i].length) {
                     breaks.push(i);
                     w = '';
                     i--;
@@ -9327,7 +9385,7 @@
      * @author Chris Leonello
      * @date #date#
      * @version #VERSION#
-     * @copyright (c) 2010-2013 Chris Leonello
+     * @copyright (c) 2010-2015 Chris Leonello
      * jsDate is currently available for use in all personal or commercial projects 
      * under both the MIT and GPL version 2.0 licenses. This means that you can 
      * choose the license that best suits your project and use it accordingly.
@@ -9961,16 +10019,16 @@
         },
         
         'fr': {
-            monthNames: ['Janvier','FÃ©vrier','Mars','Avril','Mai','Juin','Juillet','AoÃ»t','Septembre','Octobre','Novembre','DÃ©cembre'],
-            monthNamesShort: ['Jan','FÃ©v','Mar','Avr','Mai','Jun','Jul','AoÃ»','Sep','Oct','Nov','DÃ©c'],
+            monthNames: ['Janvier','FÈ¨vrier','Mars','Avril','Mai','Juin','Juillet','AoÈ©t','Septembre','Octobre','Novembre','DÈ¨cembre'],
+            monthNamesShort: ['Jan','FÈ¨v','Mar','Avr','Mai','Jun','Jul','AoÈ©','Sep','Oct','Nov','DÈ¨c'],
             dayNames: ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],
             dayNamesShort: ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'],
             formatString: '%Y-%m-%d %H:%M:%S'
         },
         
         'de': {
-            monthNames: ['Januar','Februar','MÃ¤rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
-            monthNamesShort: ['Jan','Feb','MÃ¤r','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+            monthNames: ['Januar','Februar','MÈñrz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+            monthNamesShort: ['Jan','Feb','MÈñr','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
             dayNames: ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
             dayNamesShort: ['So','Mo','Di','Mi','Do','Fr','Sa'],
             formatString: '%Y-%m-%d %H:%M:%S'
@@ -9985,18 +10043,18 @@
         },
         
         'ru': {
-            monthNames: ['Ğ¯Ğ½Ğ²Ğ°Ñ€ÑŒ','Ğ¤ĞµĞ²Ñ€Ğ°Ğ»ÑŒ','ĞœĞ°Ñ€Ñ‚','ĞĞ¿Ñ€ĞµĞ»ÑŒ','ĞœĞ°Ğ¹','Ğ˜ÑĞ½ÑŒ','Ğ˜ÑĞ»ÑŒ','ĞĞ²Ğ³ÑƒÑÑ‚','Ğ¡ĞµĞ½Ñ‚ÑĞ±Ñ€ÑŒ','ĞĞºÑ‚ÑĞ±Ñ€ÑŒ','ĞĞ¾ÑĞ±Ñ€ÑŒ','Ğ”ĞµĞºĞ°Ğ±Ñ€ÑŒ'],
-            monthNamesShort: ['Ğ¯Ğ½Ğ²','Ğ¤ĞµĞ²','ĞœĞ°Ñ€','ĞĞ¿Ñ€','ĞœĞ°Ğ¹','Ğ˜ÑĞ½','Ğ˜ÑĞ»','ĞĞ²Ğ³','Ğ¡ĞµĞ½','ĞĞºÑ‚','ĞĞ¾Ñ','Ğ”ĞµĞº'],
-            dayNames: ['Ğ²Ğ¾ÑĞºÑ€ĞµÑĞµĞ½ÑŒĞµ','Ğ¿Ğ¾Ğ½ĞµĞ´ĞµĞ»ÑŒĞ½Ğ¸Ğº','Ğ²Ñ‚Ğ¾Ñ€Ğ½Ğ¸Ğº','ÑÑ€ĞµĞ´Ğ°','Ñ‡ĞµÑ‚Ğ²ĞµÑ€Ğ³','Ğ¿ÑÑ‚Ğ½Ğ¸Ñ†Ğ°','ÑÑƒĞ±Ğ±Ğ¾Ñ‚Ğ°'],
-            dayNamesShort: ['Ğ²ÑĞº','Ğ¿Ğ½Ğ´','Ğ²Ñ‚Ñ€','ÑÑ€Ğ´','Ñ‡Ñ‚Ğ²','Ğ¿Ñ‚Ğ½','ÑĞ±Ñ‚'],
+            monthNames: ['Ï¯Ï»Ï™Ï—ÒÇÒî','ÏñÏ´Ï™ÒÇÏ—Ï©Òî','Ï£Ï—ÒÇÒé','ÏÉÏÀÒÇÏ´Ï©Òî','Ï£Ï—Ï ','ÏÿÒÄÏ»Òî','ÏÿÒÄÏ©Òî','ÏÉÏ™ÏşÒâÒüÒé','ÏíÏ´Ï»ÒéÒÅÏ˜ÒÇÒî','Ï¤Ï¦ÒéÒÅÏ˜ÒÇÒî','Ï¥Ï¾ÒÅÏ˜ÒÇÒî','ÏöÏ´Ï¦Ï—Ï˜ÒÇÒî'],
+            monthNamesShort: ['Ï¯Ï»Ï™','ÏñÏ´Ï™','Ï£Ï—ÒÇ','ÏÉÏÀÒÇ','Ï£Ï—Ï ','ÏÿÒÄÏ»','ÏÿÒÄÏ©','ÏÉÏ™Ïş','ÏíÏ´Ï»','Ï¤Ï¦Òé','Ï¥Ï¾ÒÅ','ÏöÏ´Ï¦'],
+            dayNames: ['Ï™Ï¾ÒüÏ¦ÒÇÏ´ÒüÏ´Ï»ÒîÏ´','ÏÀÏ¾Ï»Ï´Ï³Ï´Ï©ÒîÏ»Ï¹Ï¦','Ï™ÒéÏ¾ÒÇÏ»Ï¹Ï¦','ÒüÒÇÏ´Ï³Ï—','ÒçÏ´ÒéÏ™Ï´ÒÇÏş','ÏÀÒÅÒéÏ»Ï¹ÒåÏ—','ÒüÒâÏ˜Ï˜Ï¾ÒéÏ—'],
+            dayNamesShort: ['Ï™ÒüÏ¦','ÏÀÏ»Ï³','Ï™ÒéÒÇ','ÒüÒÇÏ³','ÒçÒéÏ™','ÏÀÒéÏ»','ÒüÏ˜Òé'],
             formatString: '%Y-%m-%d %H:%M:%S'
         },
         
         'ar': {
-            monthNames: ['ÙƒØ§Ù†ÙˆÙ† Ø§Ù„Ø«Ø§Ù†ÙŠ', 'Ø´Ø¨Ø§Ø·', 'Ø¢Ø°Ø§Ø±', 'Ù†ÙŠØ³Ø§Ù†', 'Ø¢Ø°Ø§Ø±', 'Ø­Ø²ÙŠØ±Ø§Ù†','ØªÙ…ÙˆØ²', 'Ø¢Ø¨', 'Ø£ÙŠÙ„ÙˆÙ„',   'ØªØ´Ø±ÙŠÙ† Ø§Ù„Ø£ÙˆÙ„', 'ØªØ´Ø±ÙŠÙ† Ø§Ù„Ø«Ø§Ù†ÙŠ', 'ÙƒØ§Ù†ÙˆÙ† Ø§Ù„Ø£ÙˆÙ„'],
+            monthNames: ['ãâÛºãåãêãå ÛºãäÛ½Ûºãåãè', 'Û³Û¿ÛºÛ¸', 'ÛóÛ—ÛºÛ˜', 'ãåãèÛşÛºãå', 'ÛóÛ—ÛºÛ˜', 'Û¡Û™ãèÛ˜Ûºãå','Û¬ãàãêÛ™', 'ÛóÛ¿', 'Ûúãèãäãêãä',   'Û¬Û³Û˜ãèãå ÛºãäÛúãêãä', 'Û¬Û³Û˜ãèãå ÛºãäÛ½Ûºãåãè', 'ãâÛºãåãêãå ÛºãäÛúãêãä'],
             monthNamesShort: ['1','2','3','4','5','6','7','8','9','10','11','12'],
-            dayNames: ['Ø§Ù„Ø³Ø¨Øª', 'Ø§Ù„Ø£Ø­Ø¯', 'Ø§Ù„Ø§Ø«Ù†ÙŠÙ†', 'Ø§Ù„Ø«Ù„Ø§Ø«Ø§Ø¡', 'Ø§Ù„Ø£Ø±Ø¨Ø¹Ø§Ø¡', 'Ø§Ù„Ø®Ù…ÙŠØ³', 'Ø§Ù„Ø¬Ù…Ø¹Ø©'],
-            dayNamesShort: ['Ø³Ø¨Øª', 'Ø£Ø­Ø¯', 'Ø§Ø«Ù†ÙŠÙ†', 'Ø«Ù„Ø§Ø«Ø§Ø¡', 'Ø£Ø±Ø¨Ø¹Ø§Ø¡', 'Ø®Ù…ÙŠØ³', 'Ø¬Ù…Ø¹Ø©'],
+            dayNames: ['ÛºãäÛşÛ¿Û¬', 'ÛºãäÛúÛ¡Û¯', 'ÛºãäÛºÛ½ãåãèãå', 'ÛºãäÛ½ãäÛºÛ½ÛºÛí', 'ÛºãäÛúÛ˜Û¿Û ÛºÛí', 'ÛºãäÛ«ãàãèÛş', 'ÛºãäÛ¼ãàÛ Û¨'],
+            dayNamesShort: ['ÛşÛ¿Û¬', 'ÛúÛ¡Û¯', 'ÛºÛ½ãåãèãå', 'Û½ãäÛºÛ½ÛºÛí', 'ÛúÛ˜Û¿Û ÛºÛí', 'Û«ãàãèÛş', 'Û¼ãàÛ Û¨'],
             formatString: '%Y-%m-%d %H:%M:%S'
         },
         
@@ -10017,10 +10075,10 @@
         },
         
         'pl': {
-            monthNames: ['StyczeÅ„','Luty','Marzec','KwiecieÅ„','Maj','Czerwiec','Lipiec','SierpieÅ„','WrzesieÅ„','PaÅºdziernik','Listopad','GrudzieÅ„'],
-            monthNamesShort: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze','Lip', 'Sie', 'Wrz', 'PaÅº', 'Lis', 'Gru'],
-            dayNames: ['Niedziela', 'PoniedziaÅ‚ek', 'Wtorek', 'Åšroda', 'Czwartek', 'PiÄ…tek', 'Sobota'],
-            dayNamesShort: ['Ni', 'Pn', 'Wt', 'Åšr', 'Cz', 'Pt', 'Sb'],
+            monthNames: ['StyczeÊä','Luty','Marzec','KwiecieÊä','Maj','Czerwiec','Lipiec','SierpieÊä','WrzesieÊä','PaÊ¦dziernik','Listopad','GrudzieÊä'],
+            monthNamesShort: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze','Lip', 'Sie', 'Wrz', 'PaÊ¦', 'Lis', 'Gru'],
+            dayNames: ['Niedziela', 'PoniedziaÊéek', 'Wtorek', 'ÊÜroda', 'Czwartek', 'Piıàtek', 'Sobota'],
+            dayNamesShort: ['Ni', 'Pn', 'Wt', 'ÊÜr', 'Cz', 'Pt', 'Sb'],
             formatString: '%Y-%m-%d %H:%M:%S'
         },
 
@@ -10034,10 +10092,18 @@
 
         'sv': {
             monthNames: ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'],
-          monthNamesShort: ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],
-            dayNames: ['sÃ¶ndag','mÃ¥ndag','tisdag','onsdag','torsdag','fredag','lÃ¶rdag'],
-            dayNamesShort: ['sÃ¶n','mÃ¥n','tis','ons','tor','fre','lÃ¶r'],
+            monthNamesShort: ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'],
+            dayNames: ['sÈµndag','mÈÑndag','tisdag','onsdag','torsdag','fredag','lÈµrdag'],
+            dayNamesShort: ['sÈµn','mÈÑn','tis','ons','tor','fre','lÈµr'],
             formatString: '%Y-%m-%d %H:%M:%S'
+        },
+
+        'it': {
+            monthNames: ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'],
+            monthNamesShort: ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'],
+            dayNames: ['Domenica','Lunedi','Martedi','Mercoledi','Giovedi','Venerdi','Sabato'],
+            dayNamesShort: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
+            formatString: '%d-%m-%Y %H:%M:%S'
         }
     
     };
