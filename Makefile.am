@@ -1,3 +1,5 @@
+SUBDIRS = module/Application/language
+
 install: install-am
 	mkdir -p $(DESTDIR)$(pkgdatadir)
 	mkdir -p $(DESTDIR)/@HTTPD_CONF@
@@ -10,4 +12,3 @@ install: install-am
 	$(INSTALL) -m 0640 install/bareos/webui-profiles.conf $(DESTDIR)/etc/bareos/bareos-dir.d/
 	$(INSTALL) -m 0640 install/apache/bareos-webui.conf $(DESTDIR)@HTTPD_CONF@/
 
-#	#$(INSTALL_SCRIPT) install/bareos-webui-config $(DESTDIR)@sbindir@
