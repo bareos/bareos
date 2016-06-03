@@ -63,18 +63,44 @@ smc_parse_volume_tag (
 
 
 
+void
+smc_cleanup_element_status_data (
+  struct smc_ctrl_block *smc)
+{
+	struct smc_element_descriptor *edp, *edp_next;
+
+	edp = smc->elem_desc;
+	while (edp) {
+		edp_next = edp->next;
+		if (edp->primary_vol_tag) {
+			NDMOS_API_FREE (edp->primary_vol_tag);
+		}
+		if (edp->alternate_vol_tag) {
+			NDMOS_API_FREE (edp->alternate_vol_tag);
+		}
+		NDMOS_API_FREE (edp);
+		edp = edp_next;
+	}
+
+	smc->elem_desc = (struct smc_element_descriptor *)NULL;
+	smc->elem_desc_tail = (struct smc_element_descriptor *)NULL;
+}
+
+
+
 int
 smc_parse_element_status_data (
   char *	raw,
   unsigned	raw_len,
-  struct smc_element_descriptor elem_desc[],
+  struct smc_ctrl_block *smc,
   unsigned	max_elem_desc)
 {
 	unsigned char *			p = (unsigned char *)raw;
 	unsigned char *			raw_end = p + raw_len;
 	unsigned int			n_elem = 0;
+	struct smc_element_descriptor * edp;
 
-	bzero (elem_desc, sizeof elem_desc[0] * max_elem_desc);
+	smc_cleanup_element_status_data (smc);
 
 	WITH(p, esdh, struct smc_raw_element_status_data_header)
 		unsigned	byte_count = SMC_GET3(esdh->byte_count);
@@ -110,13 +136,15 @@ smc_parse_element_status_data (
 		p += 8;
 
 		for (;p + desc_size <= pgend; p += desc_size) {
-		    struct smc_element_descriptor *edp;
 
 		    if (n_elem >= max_elem_desc) {
 			/* bust out */
 			goto done;
 		    }
-		    edp = &elem_desc[n_elem++];
+
+		    edp = NDMOS_API_MALLOC (sizeof(struct smc_element_descriptor));
+		    NDMOS_MACRO_ZEROFILL(edp);
+
 		    WITH (p, red, struct smc_raw_element_descriptor)
 			unsigned char *p2;
 
@@ -150,18 +178,28 @@ smc_parse_element_status_data (
 
 			p2 = (unsigned char *) &red->data;
 			if (edp->PVolTag) {
+				edp->primary_vol_tag = NDMOS_API_MALLOC (sizeof(struct smc_volume_tag));
 				smc_parse_volume_tag ((void*)p2,
-						&edp->primary_vol_tag);
+						edp->primary_vol_tag);
 				p2 += SMC_VOL_TAG_LEN;
 			}
 			if (edp->AVolTag) {
+				edp->alternate_vol_tag = NDMOS_API_MALLOC (sizeof(struct smc_volume_tag));
 				smc_parse_volume_tag ((void*)p2,
-						&edp->alternate_vol_tag);
+						edp->alternate_vol_tag);
 				p2 += SMC_VOL_TAG_LEN;
 			}
 			p2 += 4;        /* resv84 */
 			/* p2 ready for vendor_specific */
 		    ENDWITH
+
+		    if (!smc->elem_desc_tail) {
+			smc->elem_desc = edp;
+			smc->elem_desc_tail = edp;
+		    } else {
+			smc->elem_desc_tail->next = edp;
+			smc->elem_desc_tail = edp;
+		    }
 		}
 		p = pgend;
 	    ENDWITH

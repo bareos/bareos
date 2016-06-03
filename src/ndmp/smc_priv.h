@@ -52,7 +52,7 @@ extern int
 smc_parse_element_status_data (
   char *	raw,
   unsigned	raw_len,
-  struct smc_element_descriptor elem_desc[],
+  struct smc_ctrl_block *smc,
   unsigned	max_elem_desc);
 
 extern int

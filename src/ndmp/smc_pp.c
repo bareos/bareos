@@ -101,8 +101,8 @@ smc_pp_element_descriptor (struct smc_element_descriptor *edp,
 
 	if (edp->PVolTag && edp->Full) {
 		sprintf (strend(buf), " PVolTag(%s,#%d)",
-			edp->primary_vol_tag.volume_id,
-			edp->primary_vol_tag.volume_seq);
+			edp->primary_vol_tag->volume_id,
+			edp->primary_vol_tag->volume_seq);
 	}
 
 	if (edp->Except) {
@@ -117,8 +117,8 @@ smc_pp_element_descriptor (struct smc_element_descriptor *edp,
 
 	if (edp->AVolTag) {
 		sprintf (buf, INDENT_SPACES "AVolTag(%s,#%d)",
-			edp->alternate_vol_tag.volume_id,
-			edp->alternate_vol_tag.volume_seq);
+			edp->alternate_vol_tag->volume_id,
+			edp->alternate_vol_tag->volume_seq);
 	}
 
 	if (*buf && nline++ == lineno) strcpy (ret_buf, buf);

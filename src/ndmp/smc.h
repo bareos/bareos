@@ -122,14 +122,19 @@ struct smc_element_descriptor {
 	unsigned char	scsi_sid;	/* if ID_valid, SID of drive */
 	unsigned char	scsi_lun;	/* if LU_valid, LUN of drive */
 
-	struct smc_volume_tag primary_vol_tag;	/* if PVolTag */
-	struct smc_volume_tag alternate_vol_tag;/* if AVolTag */
+	struct smc_volume_tag *primary_vol_tag;	/* if PVolTag */
+	struct smc_volume_tag *alternate_vol_tag;/* if AVolTag */
+	struct smc_element_descriptor *next;
 };
 
 
 
+#ifndef SMC_PAGE_LEN
+#define SMC_PAGE_LEN		32768
+#endif
+
 #ifndef SMC_MAX_ELEMENT
-#define SMC_MAX_ELEMENT		80
+#define SMC_MAX_ELEMENT		320
 #endif
 
 struct smc_ctrl_block {
@@ -141,8 +146,10 @@ struct smc_ctrl_block {
 	struct smc_element_address_assignment
 				elem_aa;
 
-	struct smc_element_descriptor
-				elem_desc[SMC_MAX_ELEMENT];
+	struct smc_element_descriptor *
+				elem_desc;
+	struct smc_element_descriptor *
+				elem_desc_tail;
 	unsigned		n_elem_desc;
 
 	struct smc_scsi_req	scsi_req;
@@ -156,6 +163,7 @@ struct smc_ctrl_block {
 };
 
 
+extern void	smc_cleanup_element_status_data (struct smc_ctrl_block *smc);
 extern int	smc_inquire (struct smc_ctrl_block *smc);
 extern int	smc_test_unit_ready (struct smc_ctrl_block *smc);
 extern int	smc_get_elem_aa (struct smc_ctrl_block *smc);

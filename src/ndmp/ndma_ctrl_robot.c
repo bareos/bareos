@@ -223,11 +223,9 @@ struct smc_element_descriptor *
 ndmca_robot_find_element (struct ndm_session *sess, int element_address)
 {
 	struct smc_ctrl_block *		smc = sess->control_acb->smc_cb;
-	unsigned int			i;
 	struct smc_element_descriptor *	edp;
 
-	for (i = 0; i < smc->n_elem_desc; i++) {
-		edp = &smc->elem_desc[i];
+	for (edp = smc->elem_desc; edp; edp = edp->next) {
 		if (edp->element_address == element_address)
 			return edp;
 	}
@@ -360,10 +358,11 @@ ndmca_robot_query (struct ndm_session *sess)
 {
 	struct smc_ctrl_block *	smc = sess->control_acb->smc_cb;
 	int			rc;
-	unsigned int		i;
+	unsigned int		i = 0;
 	char			buf[111];
 	char			lnbuf[30];
 	int			lineno, nline = 1;
+	struct smc_element_descriptor *	edp;
 
 	ndmalogqr (sess, "  Type");
 
@@ -399,11 +398,7 @@ ndmca_robot_query (struct ndm_session *sess)
 	} else {
 		ndmalogqr (sess, "    E#  Addr Type Status");
 		ndmalogqr (sess, "    --  ---- ---- ---------------------");
-		for (i = 0; i < smc->n_elem_desc; i++) {
-			struct smc_element_descriptor *	edp;
-
-			edp = &smc->elem_desc[i];
-
+		for (edp = smc->elem_desc; edp; edp = edp->next) {
 			for (lineno = 0, nline = 1; lineno < nline; lineno++) {
 				rc = smc_pp_element_descriptor (edp,
 								lineno, buf);
@@ -419,6 +414,7 @@ ndmca_robot_query (struct ndm_session *sess)
 				nline = rc;
 				ndmalogqr (sess, "%s %s", lnbuf, buf);
 			}
+			i++;
 		}
 	}
 
@@ -447,9 +443,7 @@ ndmca_robot_verify_media (struct ndm_session *sess)
 			continue;	/* what now */
 		}
 
-		for (i = 0; i < smc->n_elem_desc; i++) {
-			edp = &smc->elem_desc[i];
-
+		for (edp = smc->elem_desc; edp; edp = edp->next) {
 			if (edp->element_type_code != SMC_ELEM_TYPE_SE)
 				continue;
 
@@ -464,7 +458,8 @@ ndmca_robot_verify_media (struct ndm_session *sess)
 			}
 			break;
 		}
-		if (i >= smc->n_elem_desc) {
+
+		if (!edp) {
 			me->slot_bad = 1;
 			errcnt++;
 		}
@@ -490,9 +485,7 @@ ndmca_robot_synthesize_media (struct ndm_session *sess)
 	rc = ndmca_robot_obtain_info (sess);
 	if (rc) return rc;
 
-	for (i = 0; i < smc->n_elem_desc; i++) {
-		edp = &smc->elem_desc[i];
-
+	for (edp = smc->elem_desc; edp; edp = edp->next) {
 		if (edp->element_type_code != SMC_ELEM_TYPE_SE)
 			continue;
 

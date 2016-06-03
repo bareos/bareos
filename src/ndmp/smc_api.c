@@ -341,13 +341,13 @@ int
 smc_read_elem_status (struct smc_ctrl_block *smc)
 {
 	struct smc_scsi_req *	sr = &smc->scsi_req;
-	unsigned char		data[8192];
+	unsigned char		data[SMC_PAGE_LEN];
 	int			rc;
 
   retry:
 	bzero (sr, sizeof *sr);
 	bzero (data, sizeof data);
-	bzero (&smc->elem_desc, sizeof smc->elem_desc);
+	smc_cleanup_element_status_data(smc);
 	smc->n_elem_desc = 0;
 	smc->valid_elem_desc = 0;
 
@@ -360,8 +360,8 @@ smc_read_elem_status (struct smc_ctrl_block *smc)
 	}
 	sr->cmd[2] = 0;				/* starting elem MSB */
 	sr->cmd[3] = 0;				/* starting elem LSB */
-	sr->cmd[4] = 0;				/* number of elem MSB */
-	sr->cmd[5] = SMC_MAX_ELEMENT;		/* number of elem LSB */
+	sr->cmd[4] = (SMC_MAX_ELEMENT >> 8) & 0xff;/* number of elem MSB */
+	sr->cmd[5] = (SMC_MAX_ELEMENT) & 0xff;	/* number of elem LSB */
 	sr->cmd[6] = 0;				/* reserved */
 	SMC_PUT3 (&sr->cmd[7], sizeof data);
 	sr->cmd[10] = 0;			/* reserved */
@@ -379,7 +379,7 @@ smc_read_elem_status (struct smc_ctrl_block *smc)
 	}
 
 	rc = smc_parse_element_status_data ((void*)data, sr->n_data_done,
-				smc->elem_desc, SMC_MAX_ELEMENT);
+				smc, SMC_MAX_ELEMENT);
 	if (rc < 0) {
 		strcpy (smc->errmsg, "elem_status format error");
 		return -1;

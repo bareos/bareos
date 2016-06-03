@@ -88,6 +88,7 @@ ndmca_destroy (struct ndm_session *sess)
 	}
 
 	if (sess->control_acb->smc_cb) {
+		smc_cleanup_element_status_data(sess->control_acb->smc_cb);
 		NDMOS_API_FREE (sess->control_acb->smc_cb);
 	}
 
