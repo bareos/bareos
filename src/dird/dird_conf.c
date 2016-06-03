@@ -461,7 +461,7 @@ static RES_ITEM pool_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL, NULL, NULL },
-   { "PoolType", CFG_TYPE_STRNAME, ITEM(res_pool.pool_type), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "PoolType", CFG_TYPE_POOLTYPE, ITEM(res_pool.pool_type), 0, CFG_ITEM_DEFAULT, "Backup", NULL, NULL },
    { "LabelFormat", CFG_TYPE_STRNAME, ITEM(res_pool.label_format), 0, 0, NULL, NULL, NULL },
    { "LabelType", CFG_TYPE_LABEL, ITEM(res_pool.LabelType), 0, 0, NULL, NULL, NULL },
    { "CleaningPrefix", CFG_TYPE_STRNAME, ITEM(res_pool.cleaning_prefix), 0, CFG_ITEM_DEFAULT, "CLN", NULL, NULL },
@@ -642,7 +642,8 @@ static struct s_kw authprotocols[] = {
    { NULL, 0 }
 };
 
-/* Keywords (RHS) permitted in Authentication type records
+/*
+ * Keywords (RHS) permitted in Authentication type records
  *
  * name token
  */
@@ -672,7 +673,9 @@ static struct s_jt migtypes[] = {
 };
 
 /*
- * Options permitted in Restore replace=
+ * Keywords (RHS) permitted in Restore replace type records
+ *
+ * name token
  */
 struct s_kw ReplaceOptions[] = {
    { "Always", REPLACE_ALWAYS },
@@ -683,7 +686,9 @@ struct s_kw ReplaceOptions[] = {
 };
 
 /*
- * Options permited in ActionOnPurge=
+ * Keywords (RHS) permitted in ActionOnPurge type records
+ *
+ * name token
  */
 struct s_kw ActionOnPurgeOptions[] = {
    { "None", ON_PURGE_NONE },
@@ -692,7 +697,12 @@ struct s_kw ActionOnPurgeOptions[] = {
 };
 
 /*
- * Volume status allowed for a Volume.
+ * Keywords (RHS) permitted in Volume status type records
+ *
+ * token is set to zero for all items as this
+ * is not a mapping but a filter table.
+ *
+ * name token
  */
 struct s_kw VolumeStatus[] = {
    { "Append", 0 },
@@ -705,13 +715,31 @@ struct s_kw VolumeStatus[] = {
    { NULL, 0 }
 };
 
+/*
+ * Keywords (RHS) permitted in Pool type records
+ *
+ * token is set to zero for all items as this
+ * is not a mapping but a filter table.
+ *
+ * name token
+ */
+struct s_kw PoolTypes[] = {
+   { "Backup", 0 },
+   { "Copy", 0 },
+   { "Cloned", 0 },
+   { "Archive", 0 },
+   { "Migration", 0 },
+   { "Scratch", 0 },
+   { NULL, 0 }
+};
+
 #ifdef HAVE_JANSSON
 json_t *json_item(s_jl *item)
 {
    json_t *json = json_object();
 
    json_object_set_new(json, "level", json_integer(item->level));
-   json_object_set_new(json, "type",  json_integer(item->job_type));
+   json_object_set_new(json, "type", json_integer(item->job_type));
 
    return json;
 }
@@ -720,7 +748,7 @@ json_t *json_item(s_jt *item)
 {
    json_t *json = json_object();
 
-   json_object_set_new(json, "type",  json_integer(item->job_type));
+   json_object_set_new(json, "type", json_integer(item->job_type));
 
    return json;
 }
@@ -730,14 +758,14 @@ json_t *json_datatype_header(const int type, const char *typeclass)
    json_t *json = json_object();
    const char *description = datatype_to_description(type);
 
-   json_object_set_new(json, "number",  json_integer(type));
+   json_object_set_new(json, "number", json_integer(type));
 
    if (description) {
-      json_object_set_new(json, "description",  json_string(description));
+      json_object_set_new(json, "description", json_string(description));
    }
 
    if (typeclass) {
-      json_object_set_new(json, "class",  json_string(typeclass));
+      json_object_set_new(json, "class", json_string(typeclass));
    }
 
    return json;
@@ -768,7 +796,7 @@ json_t *json_datatype(const int type, s_jl items[])
    if (items) {
       json_t *values = json_object();
       for (int i = 0; items[i].level_name; i++) {
-         json_object_set_new(values, items[i].level_name,  json_item(&items[i]));
+         json_object_set_new(values, items[i].level_name, json_item(&items[i]));
       }
       json_object_set_new(json, "values", values);
    }
@@ -781,7 +809,7 @@ json_t *json_datatype(const int type, s_jt items[])
    if (items) {
       json_t *values = json_object();
       for (int i = 0; items[i].type_name; i++) {
-         json_object_set_new(values, items[i].type_name,  json_item(&items[i]));
+         json_object_set_new(values, items[i].type_name, json_item(&items[i]));
       }
       json_object_set_new(json, "values", values);
    }
@@ -793,10 +821,10 @@ json_t *json_datatype(const int type, RES_ITEM items[])
    json_t *json = json_datatype_header(type, "sub");
    if (items) {
       json_t *values = json_object();
-      json_object_set_new(json, "values", values);
       for (int i = 0; items[i].name; i++) {
-         json_object_set_new(values, items[i].name,  json_item(&items[i]));
+         json_object_set_new(values, items[i].name, json_item(&items[i]));
       }
+      json_object_set_new(json, "values", values);
    }
    return json;
 }
@@ -872,6 +900,9 @@ bool print_config_schema_json(POOL_MEM &buffer)
          break;
       case CFG_TYPE_ACTIONONPURGE:
          json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_ACTIONONPURGE, ActionOnPurgeOptions));
+         break;
+      case CFG_TYPE_POOLTYPE:
+         json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_POOLTYPE, PoolTypes));
          break;
       case CFG_TYPE_RUN:
          json_object_set(json_datatype_obj, datatype_to_str(datatype->number), json_datatype(CFG_TYPE_RUN, RunFields));
@@ -3062,6 +3093,36 @@ bail_out:
    return retval;
 }
 
+static void store_pooltype(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+
+   lex_get_token(lc, T_NAME);
+   if (pass == 1) {
+      for (i = 0; PoolTypes[i].name; i++) {
+         if (bstrcasecmp(lc->str, PoolTypes[i].name)) {
+            /*
+             * If a default was set free it first.
+             */
+            if (*(item->value)) {
+               free(*(item->value));
+            }
+            *(item->value) = bstrdup(PoolTypes[i].name);
+            i = 0;
+            break;
+         }
+      }
+
+      if (i != 0) {
+         scan_err1(lc, _("Expected a Pool Type option, got: %s"), lc->str);
+      }
+   }
+
+   scan_to_eol(lc);
+   set_bit(index, res_all.hdr.item_present);
+   clear_bit(index, res_all.hdr.inherit_content);
+}
+
 static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
@@ -3069,6 +3130,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
+    * Store the type both in pass 1 and pass 2
     * Scan ActionOnPurge options
     */
    for (i = 0; ActionOnPurgeOptions[i].name; i++) {
@@ -3146,7 +3208,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
-    * Store the type both pass 1 and pass 2
+    * Store the type both in pass 1 and pass 2
     */
    for (i = 0; migtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, migtypes[i].type_name)) {
@@ -3174,7 +3236,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
-    * Store the type both pass 1 and pass 2
+    * Store the type both in pass 1 and pass 2
     */
    for (i = 0; jobtypes[i].type_name; i++) {
       if (bstrcasecmp(lc->str, jobtypes[i].type_name)) {
@@ -3202,7 +3264,7 @@ static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
-    * Store the type both pass 1 and pass 2
+    * Store the type both in pass 1 and pass 2
     */
    for (i = 0; backupprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, backupprotocols[i].name)) {
@@ -3255,7 +3317,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
-    * Store the type both pass 1 and pass 2
+    * Store the type both in pass 1 and pass 2
     */
    for (i = 0; authprotocols[i].name; i++) {
       if (bstrcasecmp(lc->str, authprotocols[i].name)) {
@@ -3282,7 +3344,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 
    lex_get_token(lc, T_NAME);
    /*
-    * Store the type both pass 1 and pass 2
+    * Store the type both in pass 1 and pass 2
     */
    for (i = 0; authmethods[i].name; i++) {
       if (bstrcasecmp(lc->str, authmethods[i].name)) {
@@ -3803,6 +3865,9 @@ static void init_resource_cb(RES_ITEM *item, int pass)
             }
          }
          break;
+      case CFG_TYPE_POOLTYPE:
+         *(item->value) = bstrdup(item->default_value);
+         break;
       default:
          break;
       }
@@ -3866,6 +3931,9 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
       break;
    case CFG_TYPE_ACTIONONPURGE:
       store_actiononpurge(lc, item, index, pass);
+      break;
+   case CFG_TYPE_POOLTYPE:
+      store_pooltype(lc, item, index, pass);
       break;
    default:
       break;
@@ -4108,6 +4176,10 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       }
       break;
    }
+   case CFG_TYPE_POOLTYPE:
+      Mmsg(temp, "%s = %s\n", items[i].name, *(items[i].value));
+      indent_config_item(cfg_str, 1, temp.c_str());
+      break;
    default:
       Dmsg2(200, "%s is UNSUPPORTED TYPE: %d\n", items[i].name, items[i].type);
       break;

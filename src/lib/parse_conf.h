@@ -281,6 +281,7 @@ enum {
    CFG_TYPE_INCEXC = 66,                /* Include/Exclude item */
    CFG_TYPE_RUN = 67,                   /* Schedule Run Command */
    CFG_TYPE_ACTIONONPURGE = 68,         /* Action to perform on Purge */
+   CFG_TYPE_POOLTYPE = 69,              /* Pool Type */
 
    /*
     * Director fileset options. handlers in dird_conf.
