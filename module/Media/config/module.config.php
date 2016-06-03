@@ -43,7 +43,7 @@ return array(
                'route' => '/media[/][:action][/][:id]',
                'constraints' => array(
                   'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[a-zA-Z0-9_-]*',
+                  'id' => '[a-zA-Z0-9\._-]*',
                ),
                'defaults' => array(
                   'controller' => 'Media\Controller\Media',
