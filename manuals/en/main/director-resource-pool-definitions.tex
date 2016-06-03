@@ -32,13 +32,13 @@ this catalog setting takes precedence over any other definition.
 
 \defDirective{Dir}{Pool}{Catalog Files}{}{}{%
 This directive defines whether or not you want the names of the files
-that were saved to be put into the catalog.  The default is {\bf yes}.
-The advantage of specifying {\bf Catalog Files = No} is that you will
-have a significantly smaller Catalog database.  The disadvantage is that
+that were saved to be put into the catalog.
+If disabled, the Catalog database will be significantly smaller.
+The disadvantage is that
 you will not be able to produce a Catalog listing of the files backed up
 for each Job (this is often called Browsing).  Also, without the File
-entries in the catalog, you will not be able to use the Console {\bf
-restore} command nor any other command that references File entries.
+entries in the catalog, you will not be able to use the Console \bcommand{restore}{} command
+nor any other command that references File entries.
 }
 
 \defDirective{Dir}{Pool}{Cleaning Prefix}{}{}{%
@@ -356,7 +356,7 @@ Volume in the Pool.
 However, if you use this directive and have only one Volume in the Pool,
 you will immediately recycle your Volume if you fill it and Bareos needs
 another one.  Thus your backup will be totally invalid.  Please use this
-directive with care.  The default is {\bf no}.
+directive with care.
 }
 
 \defDirective{Dir}{Pool}{Recycle Oldest Volume}{}{}{%
@@ -377,7 +377,7 @@ retention periods.
 However, if you use this directive and have only one
 Volume in the Pool, you will immediately recycle your Volume if you fill
 it and Bareos needs another one. Thus your backup will be totally invalid.
-Please use this directive with care. The default is {\bf no}.
+Please use this directive with care.
 }
 
 \defDirective{Dir}{Pool}{Recycle Pool}{}{}{%

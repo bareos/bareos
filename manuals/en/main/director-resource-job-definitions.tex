@@ -571,8 +571,7 @@ actual start time for the Job.  For example, a job can be scheduled to
 run at 1:00am, but because other jobs are running, it may wait to run.
 If the delay is set to 3600 (one hour) and the job has not begun to run
 by 2:00am, the job will be canceled.  This can be useful, for example,
-to prevent jobs from running during day time hours.  The default is 0
-which indicates no limit.
+to prevent jobs from running during day time hours. The default is no limit.
 }
 
 \defDirective{Dir}{Job}{Max Virtual Full Interval}{}{14.4.0}{%
@@ -850,7 +849,7 @@ There are several points that must be taken into account when using this
 directive: first, a failed job is defined as one that has not terminated
 normally, which includes any running job of the same name (you need to
 ensure that two jobs of the same name do not run simultaneously);
-secondly, the {\bf Ignore FileSet Changes} directive is not considered
+secondly, the \linkResourceDirective{Dir}{FileSet}{Ignore FileSet Changes} directive is not considered
 when checking for failed levels, which means that any FileSet change will
 trigger a rerun.
 }
@@ -866,10 +865,10 @@ rescheduled on error.
 
 \defDirective{Dir}{Job}{Reschedule On Error}{}{}{%
 If this directive is enabled, and the job terminates in error, the job
-will be rescheduled as determined by the {\bf Reschedule Interval} and
-{\bf Reschedule Times} directives.  If you cancel the job, it will not
-be rescheduled.  The default is {\bf no} (i.e.  the job will not be
-rescheduled).
+will be rescheduled as determined by the \linkResourceDirective{Dir}{Job}{Reschedule Interval} and
+\linkResourceDirective{Dir}{Job}{Reschedule Times} directives.
+If you cancel the job, it will not
+be rescheduled.
 
 This specification can be useful for portables, laptops, or other
 machines that are not always connected to the network or switched on.

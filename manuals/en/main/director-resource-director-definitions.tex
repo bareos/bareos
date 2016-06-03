@@ -47,9 +47,8 @@ resource.
 \defDirective{Dir}{Director}{Dir Port}{}{}{%
 Specify the port on which the  Director daemon will
 listen for Bareos Console connections.  This same port number must be
-specified in the Director resource  of the Console configuration file. The
-default is 9101, so  normally this directive need not be specified.  This
-directive should not be used if you specify \linkResourceDirective{Dir}{Director}{Dir Addresses} (N.B plural)
+specified in the Director resource  of the Console configuration file.
+This directive should not be used if you specify \linkResourceDirective{Dir}{Director}{Dir Addresses} (N.B plural)
 directive.
 }
 
@@ -65,7 +64,7 @@ its outgoing connections according to the system routing table (the default).
 \defDirective{Dir}{Director}{FD Connect Timeout}{}{}{%
 where \parameter{time} is the time that the Director should continue
 attempting to contact the File daemon to start a job, and after which
-the Director will cancel the job.  The default is 3 minutes.
+the Director will cancel the job.
 }
 
 \defDirective{Dir}{Director}{Heartbeat Interval}{}{}{%
@@ -214,12 +213,12 @@ command of the Console.
 \defDirective{Dir}{Director}{SD Connect Timeout}{}{}{%
 where \parameter{time} is the time that the Director should continue
 attempting to contact the Storage daemon to start a job, and after which
-the Director will cancel the job.  The default is 30 minutes.
+the Director will cancel the job.
 }
 
 
 \defDirective{Dir}{Director}{Statistics Collect Interval}{}{14.2.0}{%
-Bareos offers the possibilty to collect statistic information from its connected devices.
+Bareos offers the possibility to collect statistic information from its connected devices.
 To do so, \linkResourceDirective{Dir}{Storage}{Collect Statistics} must be enabled.
 This interval defines, how often the Director connects to the attached Storage Daemons to collect the statistic information.
 }

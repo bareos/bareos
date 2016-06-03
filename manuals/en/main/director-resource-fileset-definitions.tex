@@ -29,13 +29,9 @@ guarantee that any additions or deletions are properly saved.
 We strongly recommend against setting this directive to yes,
 since doing so may cause you to have an incomplete set of backups.
 
-If this directive is set to {\bf yes}, any changes you make to the
+If this directive is set to \parameter{yes}, any changes you make to the
 FileSet Include or Exclude lists, will not force a Full during
 subsequent backups.
-
-The default is {\bf no}, in which case, if you change the Include or
-Exclude, Bareos will force a Full backup to ensure that everything is
-properly backed up.
 }
 
 \defDirective{Dir}{FileSet}{Include}{}{}{%
