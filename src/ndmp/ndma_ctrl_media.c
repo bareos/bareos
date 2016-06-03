@@ -40,10 +40,40 @@
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 
+void
+ndmca_media_register_callbacks (struct ndm_session *sess,
+  struct ndmca_media_callbacks *callbacks)
+{
+	/*
+	 * Only allow one register.
+	 */
+        if (!sess->nmc) {
+		sess->nmc = NDMOS_API_MALLOC (sizeof(struct ndmca_media_callbacks));
+		if (sess->nmc) {
+			memcpy (sess->nmc, callbacks, sizeof(struct ndmca_media_callbacks));
+		}
+        }
+}
+
+void
+ndmca_media_unregister_callbacks (struct ndm_session *sess)
+{
+        if (sess->nmc) {
+		NDMOS_API_FREE (sess->nmc);
+		sess->nmc = NULL;
+	}
+}
 
 int
 ndmca_media_load_first (struct ndm_session *sess)
 {
+	int		rc;
+
+	if (sess->nmc && sess->nmc->load_first) {
+		rc = sess->nmc->load_first (sess);
+		if (rc) return rc;
+        }
+
 	sess->control_acb->cur_media_ix = 1;
 	return ndmca_media_load_current (sess);
 }
@@ -59,8 +89,15 @@ ndmca_media_load_first (struct ndm_session *sess)
 int
 ndmca_media_load_next (struct ndm_session *sess)
 {
-	int		n_media =  sess->control_acb->job.media_tab.n_media;
+	int		rc;
+	int		n_media;
 
+	if (sess->nmc && sess->nmc->load_next) {
+		rc = sess->nmc->load_next (sess);
+		if (rc) return rc;
+        }
+
+	n_media = sess->control_acb->job.media_tab.n_media;
 	if (sess->control_acb->cur_media_ix >= n_media) {
 		ndmalogf (sess, 0, 0, "Out of tapes");
 		return -1;
@@ -255,6 +292,11 @@ ndmca_media_unload_current (struct ndm_session *sess)
 	}
 
 	ca->media_is_loaded = 0;
+
+	if (sess->nmc && sess->nmc->unload_current) {
+		rc = sess->nmc->unload_current (sess);
+		if (rc) return rc;
+        }
 
 	return 0;
 }

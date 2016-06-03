@@ -459,6 +459,16 @@ extern int	ndmca_mover_set_record_size (struct ndm_session *sess);
 
 
 /* ndma_ctrl_media.c */
+
+struct ndmca_media_callbacks {
+	int (*load_first)(struct ndm_session *sess);
+	int (*load_next)(struct ndm_session *sess);
+	int (*unload_current)(struct ndm_session *sess);
+};
+
+extern void	ndmca_media_register_callbacks (struct ndm_session *sess,
+				struct ndmca_media_callbacks *callbacks);
+extern void	ndmca_media_unregister_callbacks (struct ndm_session *sess);
 extern int	ndmca_media_load_first (struct ndm_session *sess);
 extern int	ndmca_media_load_next (struct ndm_session *sess);
 extern int	ndmca_media_unload_last (struct ndm_session *sess);
@@ -1090,6 +1100,7 @@ struct ndm_session_param {
 struct ndm_session {
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 	struct ndm_control_agent *control_acb;
+	struct ndmca_media_callbacks *nmc;
 #endif /* !NDMOS_OPTION_NO_CONTROL_AGENT */
 #ifndef NDMOS_OPTION_NO_DATA_AGENT
 	struct ndm_data_agent	*data_acb;
