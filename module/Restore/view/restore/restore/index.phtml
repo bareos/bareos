@@ -118,19 +118,12 @@ $this->headTitle($title);
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/jstree.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
 ?>
 
 <script type="text/javascript">
-
-   function unix_to_human(UNIX_timestamp) {
-
-      var t = new Date(UNIX_timestamp * 1000);
-      var formatted = t.toUTCString();
-
-      return formatted;
-
-   }
 
    function format_bytes(v) {
       if(v == 0) {
@@ -247,7 +240,7 @@ $this->headTitle($title);
          columns: [
             { width: 500, header: '<?php echo $this->translate("Name"); ?>', title: "_DATA_" },
             { width: 125, header: '<?php echo $this->translate("Size"); ?>', value: function(node) { return(format_bytes(node.data.stat.size)); } },
-            { header: '<?php echo $this->translate("Date"); ?>', value: function(node) { return(unix_to_human(node.data.stat.mtime)); } }
+            { header: '<?php echo $this->translate("Date"); ?>', value: function(node) { return(moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss")); } }
          ],
          resizable: true,
       },
