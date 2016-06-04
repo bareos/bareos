@@ -125,6 +125,8 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables-ext.min.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables-ext.min.css');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
 ?>
