@@ -214,7 +214,7 @@ def getEvents(whereJobs):
     ...
     '''
     events = []
-    statement = """select * from Job %s""" % whereJobs
+    statement = """select * from Job %s and starttime <> '0000-00-00 00:00:00'""" % whereJobs
     logger.debug("Query db: %s" % statement)
     response = director.call(".sql query=\"%s\"" % statement)
     if 'query' in response.keys():
