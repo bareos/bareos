@@ -59,7 +59,15 @@ class RestoreModel implements ServiceLocatorAwareInterface
          $result = $this->director->send_command($cmd, 2, $jobid);
          $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          if(empty($directories['result']['directories'])) {
-            return null;
+            $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=@';
+            $result = $this->director->send_command($cmd, 2, $jobid);
+            $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            if(empty($directories['result']['directories'])) {
+               return null;
+            }
+            else {
+               return $directories['result']['directories'];
+            }
          }
          else {
             return $directories['result']['directories'];
@@ -82,7 +90,15 @@ class RestoreModel implements ServiceLocatorAwareInterface
          $result = $this->director->send_command($cmd, 2, $jobid);
          $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          if(empty($files['result']['files'])) {
-            return null;
+            $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=@';
+            $result = $this->director->send_command($cmd, 2, $jobid);
+            $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            if(empty($files['result']['files'])) {
+               return null;
+            }
+            else {
+               return $files['result']['files'];
+            }
          }
          else {
             return $files['result']['files'];
