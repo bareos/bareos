@@ -36,69 +36,71 @@ class ClientController extends AbstractActionController
 
    public function indexAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-         $clients = $this->getClientModel()->getClients();
+      $this->RequestURIPlugin()->setRequestURI();
 
-         return new ViewModel(
-            array(
-               'clients' => $clients,
-            )
-         );
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+
+      $clients = $this->getClientModel()->getClients();
+
+      return new ViewModel(
+         array(
+            'clients' => $clients,
+         )
+      );
    }
 
    public function detailsAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
+      $this->RequestURIPlugin()->setRequestURI();
 
-         return new ViewModel(
-            array(
-               'client' => $this->params()->fromRoute('id')
-            )
-         );
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-      }
-      else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
-      }
+      return new ViewModel(
+         array(
+            'client' => $this->params()->fromRoute('id')
+         )
+      );
+
    }
 
    public function getDataAction()
    {
-      if($_SESSION['bareos']['authenticated'] == true && $this->SessionTimeoutPlugin()->timeout()) {
 
-         $data = $this->params()->fromQuery('data');
-         $client = $this->params()->fromQuery('client');
+      $this->RequestURIPlugin()->setRequestURI();
 
-         if($data == "all") {
-            $result = $this->getClientModel()->getClients();
-         }
-         elseif($data == "details" && isset($client)) {
-            $result = $this->getClientModel()->getClient($client);
-         }
-         elseif($data == "backups" && isset($client)) {
-            $result = $this->getClientModel()->getClientBackups($client, null, 'desc');
-         }
-         else {
-            $result = null;
-         }
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
 
-         $response = $this->getResponse();
-         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+      $data = $this->params()->fromQuery('data');
+      $client = $this->params()->fromQuery('client');
 
-         if(isset($result)) {
-            $response->setContent(JSON::encode($result));
-         }
-
-         return $response;
+      if($data == "all") {
+         $result = $this->getClientModel()->getClients();
+      }
+      elseif($data == "details" && isset($client)) {
+         $result = $this->getClientModel()->getClient($client);
+      }
+      elseif($data == "backups" && isset($client)) {
+         $result = $this->getClientModel()->getClientBackups($client, null, 'desc');
       }
       else {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'));
+         $result = null;
       }
+
+      $response = $this->getResponse();
+      $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
+
+      if(isset($result)) {
+         $response->setContent(JSON::encode($result));
+      }
+
+      return $response;
    }
 
    public function getClientModel()
