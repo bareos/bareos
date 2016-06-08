@@ -12,7 +12,17 @@ dass IT GmbH
 ------------
 http://www.dass-it.de
 
- * dass IT has partcicpated over years with active development and by providing infrastructure such as servers and the Bareos build system.
+ * dass IT has participated over years with active development and by providing infrastructure such as servers and the Bareos build system.
+
+Friedrich-Schiller-Universität Jena
+-----------------------------------
+https://www.uni-jena.de
+
+  * bareos-15.2.4
+    * Improved NDMP support for Bareos
+      * NDMP on Solaris SPARC
+      * NDMP Single File Restore on NetApp
+      * Improved NDMP restores on Isilon
 
 Globalways
 ----------
